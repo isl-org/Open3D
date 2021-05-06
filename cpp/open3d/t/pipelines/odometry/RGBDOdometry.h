@@ -51,42 +51,22 @@ public:
     /// \brief Constructor for the convergence criteria, where we stop
     /// iterations once the criteria are met.
     ///
-<<<<<<< HEAD
     /// \param max_iteration Maximum iteration before iteration stops.
-    /// \param relative_rmse Relative rmse threshold where we stop iterations.
-    /// \param relative_fitness Relative fitness threshold where we stop
-    /// iterations.
-    OdometryConvergenceCriteria(int max_iteration,
-                                double relative_rmse = 1e-6,
-                                double relative_fitness = 1e-6)
-        : max_iteration_(max_iteration),
-=======
     /// \param relative_rmse Relative rmse threshold where we stop iterations
     /// when \f$ |rmse_{i+1} - rmse_i|/rmse_i < relative rmse\f$.
     /// \param relative_fitness Relative fitness threshold where we stop
     /// iterations when \f$ |fitness_{i+1} - fitness_i|/fitness_i < relative
     /// fitness\f$
-    OdometryConvergenceCriteria(int iterations,
+    OdometryConvergenceCriteria(int max_iteration,
                                 double relative_rmse = 1e-6,
                                 double relative_fitness = 1e-6)
-        : iterations_(iterations),
->>>>>>> bd3d909a6aa8f28589041fe5b9c1c17bbc359b92
+        : max_iteration_(max_iteration),
           relative_rmse_(relative_rmse),
           relative_fitness_(relative_fitness) {}
 
 public:
-<<<<<<< HEAD
-    /// Maximum iteration before iteration stops.
     int max_iteration_;
-    /// If relative change (difference) of inliner RMSE score is lower than
-    /// `relative_rmse`, the iteration stops.
     double relative_rmse_;
-    /// If relative change (difference) of fitness score is lower than
-    /// `relative_fitness`, the iteration stops.
-=======
-    int iterations_;
-    double relative_rmse_;
->>>>>>> bd3d909a6aa8f28589041fe5b9c1c17bbc359b92
     double relative_fitness_;
 };
 
@@ -109,17 +89,8 @@ public:
     ~OdometryResult() {}
 
 public:
-<<<<<<< HEAD
-    /// The estimated transformation matrix of dtype Float64 on CPU device.
-    core::Tensor transformation_;
-    /// RMSE of all inlier. Lower is better.
-    double inlier_rmse_;
-    /// The overlapping area (# of inlier correspondences / # of points
-    /// in target). Higher is better.
-=======
     core::Tensor transformation_;
     double inlier_rmse_;
->>>>>>> bd3d909a6aa8f28589041fe5b9c1c17bbc359b92
     double fitness_;
 };
 
@@ -151,10 +122,6 @@ public:
     }
 
 public:
-<<<<<<< HEAD
-    /// Depth difference threshold used to filter projective associations.
-=======
->>>>>>> bd3d909a6aa8f28589041fe5b9c1c17bbc359b92
     float depth_outlier_trunc_;
     float depth_huber_delta_;
     float intensity_huber_delta_;
@@ -176,16 +143,12 @@ public:
 /// \param depth_scale Converts depth pixel values to meters by dividing the
 /// scale factor.
 /// \param depth_max Max depth to truncate depth image with noisy measurements.
-/// \param criteria Criteria used to define and terminate iterations. In
+/// \param criteria_list Criteria used to define and terminate iterations. In
 /// multiscale odometry the order is from coarse to fine. Inputting a vector of
 /// iterations by default triggers the implicit conversion.
 /// \param method Method used to apply RGBD odometry.
 /// \param params Parameters used in loss function, including outlier rejection
-<<<<<<< HEAD
-/// threshold and huber norm parameters.
-=======
 /// threshold and Huber norm parameters.
->>>>>>> bd3d909a6aa8f28589041fe5b9c1c17bbc359b92
 /// \return odometry result, with (4, 4) optimized transformation matrix from
 /// source to target, inlier ratio, and fitness.
 OdometryResult RGBDOdometryMultiScale(
@@ -196,7 +159,8 @@ OdometryResult RGBDOdometryMultiScale(
                 4, core::Dtype::Float64, core::Device("CPU:0")),
         const float depth_scale = 1000.0f,
         const float depth_max = 3.0f,
-        const std::vector<OdometryConvergenceCriteria>& criteria = {10, 5, 3},
+        const std::vector<OdometryConvergenceCriteria>& criteria_list = {10, 5,
+                                                                         3},
         const Method method = Method::Hybrid,
         const OdometryLossParams& params = OdometryLossParams());
 

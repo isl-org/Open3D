@@ -146,8 +146,6 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
 
     Tensor intrinsics_pyr = intrinsics;
 
-    core::Tensor intrinsics_pyr = intrinsics;
-
     // Create image pyramid.
     for (int64_t i = 0; i < n_levels; ++i) {
         Image source_vertex_map =
@@ -180,7 +178,7 @@ OdometryResult RGBDOdometryMultiScalePointToPlane(
 
     OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
-        for (int iter = 0; iter < criteria[i].iterations_; ++iter) {
+        for (int iter = 0; iter < criteria[i].max_iteration_; ++iter) {
             auto delta_result = ComputeOdometryResultPointToPlane(
                     source_vertex_maps[i], target_vertex_maps[i],
                     target_normal_maps[i], intrinsic_matrices[i],
@@ -279,7 +277,7 @@ OdometryResult RGBDOdometryMultiScaleIntensity(
     // Odometry
     OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
-        for (int iter = 0; iter < criteria[i].iterations_; ++iter) {
+        for (int iter = 0; iter < criteria[i].max_iteration_; ++iter) {
             auto delta_result = ComputeOdometryResultIntensity(
                     source_depth[i], target_depth[i], source_intensity[i],
                     target_intensity[i], target_intensity_dx[i],
@@ -384,7 +382,7 @@ OdometryResult RGBDOdometryMultiScaleHybrid(
     // Odometry
     OdometryResult result(trans, /*prev rmse*/ 0.0, /*prev fitness*/ 1.0);
     for (int64_t i = 0; i < n_levels; ++i) {
-        for (int iter = 0; iter < criteria[i].iterations_; ++iter) {
+        for (int iter = 0; iter < criteria[i].max_iteration_; ++iter) {
             auto delta_result = ComputeOdometryResultHybrid(
                     source_depth[i], target_depth[i], source_intensity[i],
                     target_intensity[i], target_depth_dx[i], target_depth_dy[i],

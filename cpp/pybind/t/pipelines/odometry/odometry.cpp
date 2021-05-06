@@ -132,7 +132,7 @@ void pybind_odometry_classes(py::module &m) {
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"criteria", "Odometry convergence criteria."},
-                {"criterias", "Vector of Odometry convergence criteria."},
+                {"criteria_list", "List of Odometry convergence criteria."},
                 {"depth_outlier_trunc",
                  "Depth difference threshold used to filter projective "
                  "associations."},
@@ -205,7 +205,8 @@ void pybind_odometry_methods(py::module &m) {
           "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
                                                         core::Device("CPU:0")),
           "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f,
-          "criterias"_a = std::vector<OdometryConvergenceCriteria>({10, 5, 3}),
+          "criteria_list"_a =
+                  std::vector<OdometryConvergenceCriteria>({10, 5, 3}),
           "method"_a = Method::Hybrid, "params"_a = OdometryLossParams());
     docstring::FunctionDocInject(m, "rgbd_odometry_multi_scale",
                                  map_shared_argument_docstrings);
@@ -214,10 +215,10 @@ void pybind_odometry_methods(py::module &m) {
           &ComputeOdometryResultPointToPlane,
           "Estimates the 4x4 rigid transformation T from source to target. "
           "Performs one iteration of RGBD odometry using loss function "
-          "[(V_p - V_q)^T N_p]^2, where "
-          "V_p  denotes the vertex at pixel p in the source, "
-          "V_q  denotes the vertex at pixel q in the target, "
-          "N_p  denotes the normal at pixel p in the source. "
+          ":math: `\\f$[(V_p\ - V_q)^T N_p]^2\\f$`, where "
+          ":math: `\\f$ V_p \\f$` denotes the vertex at pixel p in the source, "
+          ":math: `\\f$ V_q \\f$` denotes the vertex at pixel q in the target, "
+          ":math: `\\f$ N_p \\f$` denotes the normal at pixel p in the source. "
           "q is obtained by transforming p with init_source_to_target then "
           "projecting with intrinsics. "
           "KinectFusion, ISMAR 2011.",
@@ -230,9 +231,11 @@ void pybind_odometry_methods(py::module &m) {
     m.def("compute_odometry_result_intensity", &ComputeOdometryResultIntensity,
           "Estimates the OdometryResult. "
           "Performs one iteration of RGBD odometry using loss function "
-          "(I_p - I_q)^2, where "
-          "I_p  denotes the intensity at pixel p in the source, "
-          "I_q  denotes the intensity at pixel q in the target. "
+          ":math: `\\f$(I_p - I_q)^2\\f$`, where "
+          ":math: `\\f$ I_p \\f$` denotes the intensity at pixel p in the "
+          "source, "
+          ":math: `\\f$ I_q \\f$` denotes the intensity at pixel q in the "
+          "target. "
           "q is obtained by transforming p with init_source_to_target then "
           "projecting with intrinsics. "
           "Real-time visual odometry from dense RGB-D images, ICCV Workshops, "
@@ -248,11 +251,13 @@ void pybind_odometry_methods(py::module &m) {
     m.def("compute_odometry_result_hybrid", &ComputeOdometryResultHybrid,
           "Estimates the OdometryResult. "
           "Performs one iteration of RGBD odometry using loss function "
-          "(I_p - I_q)^2 + lambda(D_p - (D_q)')^2, where "
-          "I_p  denotes the intensity at pixel p in the source, "
-          "I_q  denotes the intensity at pixel q in the target. "
-          "D_p  denotes the depth pixel p in the source, "
-          "D_q  denotes the depth pixel q in the target. "
+          ":math: `\\f$(I_p - I_q)^2 + \\lambda(D_p - (D_q)')^2\\f$`, where "
+          ":math: `\\f$ I_p \\f$` denotes the intensity at pixel p in the "
+          "source, "
+          ":math: `\\f$ I_q \\f$` denotes the intensity at pixel q in the "
+          "target. "
+          ":math: `\\f$ D_p \\f$` denotes the depth pixel p in the source, "
+          ":math: `\\f$ D_q \\f$` denotes the depth pixel q in the target. "
           "q is obtained by transforming p with init_source_to_target then "
           "projecting with intrinsics. "
           "Colored ICP Revisited, ICCV 2017. ",
