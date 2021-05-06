@@ -11,10 +11,18 @@ set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
 endif()
 
 if(UNIX AND NOT APPLE)
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
+    # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
+    execute_process(COMMAND uname -p
+        OUTPUT_VARIABLE PROCESSOR_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(PROCESSOR_ARCH STREQUAL "aarch64")
         set(LINUX_AARCH64 TRUE)
     endif()
 endif()
+
+include(CMakeDependentOption)
 
 # Open3D build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
@@ -37,7 +45,7 @@ endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
 if(UNIX AND NOT APPLE AND NOT LINUX_AARCH64)
-    option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
+    cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
 else()
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
 endif()
@@ -170,11 +178,22 @@ endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
-if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_WEBRTC)
-    message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON, requires setting BUILD_WEBRTC=ON.")
-endif()
 if(BUILD_WEBRTC AND (APPLE OR WIN32 OR LINUX_AARCH64))
-    message(FATAL_ERROR "WebRTC visualizer is only supported on Linux (x86).")
+    message(WARNING "WebRTC visualizer is only supported on Linux (x86), setting BUILD_WEBRTC=OFF")
+    set(BUILD_WEBRTC OFF)
+endif()
+if(BUILD_WEBRTC AND NOT BUILD_GUI)
+    message(WARNING "WebRTC visualizer requires BUILD_GUI=ON, setting BUILD_WEBRTC=OFF")
+    set(BUILD_WEBRTC OFF)
+endif()
+if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_WEBRTC)
+    # BUILD_JUPYTER_EXTENSION transitively depends on BUILD_GUI
+    message(WARNING "Jupyter extention requires BUILD_WEBRTC=ON, setting BUILD_JUPYTER_EXTENSION=OFF")
+    set(BUILD_JUPYTER_EXTENSION OFF)
+endif()
+if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
+    message(WARNING "Jupyter extention requires BUILD_PYTHON_MODULE=ON, setting BUILD_JUPYTER_EXTENSION=OFF")
+    set(BUILD_JUPYTER_EXTENSION OFF)
 endif()
 
 # Parse Open3D version number
@@ -656,6 +675,7 @@ open3d_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
 open3d_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
 open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
 open3d_aligned_print("Build GUI" "${BUILD_GUI}")
+open3d_aligned_print("Build WebRTC visualizer" "${BUILD_WEBRTC}")
 open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
 if(WIN32)
    open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
@@ -663,9 +683,7 @@ endif()
 open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
 open3d_aligned_print("Build Examples" "${BUILD_EXAMPLES}")
 open3d_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")
-if(BUILD_PYTHON_MODULE)
-    open3d_aligned_print("- with Jupyter Notebook Support" "${BUILD_JUPYTER_EXTENSION}")
-endif()
+open3d_aligned_print("Build Jupyter Extension" "${BUILD_JUPYTER_EXTENSION}")
 open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
 if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
@@ -720,6 +738,7 @@ set(deps
     TINYFILEDIALOGS
     TINYGLTF
     TINYOBJLOADER
+    WEBRTC
 )
 foreach(dep IN ITEMS ${deps})
     if(${dep}_TARGET)

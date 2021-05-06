@@ -494,7 +494,7 @@ build_docs() {
     fi
     cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
-        "-DBUILD_JUPYTER_EXTENSION=ON"
+        "-DBUILD_JUPYTER_EXTENSION=ON" # Only turned on in the second build when BUILD_GUI=ON
         "-DWITH_OPENMP=ON"
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=ON"
