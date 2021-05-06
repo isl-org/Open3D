@@ -946,14 +946,17 @@ if(BUILD_GUI)
     set(FILAMENT_RUNTIME_VER "")
     if (WIN32)
         if (STATIC_WINDOWS_RUNTIME)
-            set(FILAMENT_RUNTIME_VER "mt$<$<CONFIG:DEBUG>:d>")
+            set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
         else()
-            set(FILAMENT_RUNTIME_VER "md$<$<CONFIG:DEBUG>:d>")
+            set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
         endif()
+    endif()
+    if (APPLE)
+        set(FILAMENT_RUNTIME_VER x86_64)
     endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
-        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_RUNTIME_VER}
+        LIB_DIR ${FILAMENT_ROOT}/lib/${FILAMENT_RUNTIME_VER}
         LIBRARIES ${filament_LIBRARIES}
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
@@ -1199,3 +1202,34 @@ if (BUILD_CUDA_MODULE)
     add_dependencies(3rdparty_stdgpu ext_stdgpu)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${STDGPU_TARGET}")
 endif ()
+
+# WebRTC
+if(BUILD_WEBRTC)
+    # WebRTC
+    if(BUILD_WEBRTC_FROM_SOURCE)
+        include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_build.cmake)
+    else()
+        include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_download.cmake)
+    endif()
+    import_3rdparty_library(3rdparty_webrtc
+        INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
+        LIB_DIR      ${WEBRTC_LIB_DIR}
+        LIBRARIES    ${WEBRTC_LIBRARIES}
+    )
+    set(WEBRTC_TARGET "3rdparty_webrtc")
+    add_dependencies(3rdparty_webrtc ext_webrtc_all)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${WEBRTC_TARGET}")
+    target_link_libraries(3rdparty_webrtc INTERFACE Threads::Threads dl)
+
+    # CivetWeb server
+    include(${Open3D_3RDPARTY_DIR}/civetweb/civetweb.cmake)
+    import_3rdparty_library(3rdparty_civetweb
+        INCLUDE_DIRS ${CIVETWEB_INCLUDE_DIRS}
+        LIB_DIR      ${CIVETWEB_LIB_DIR}
+        LIBRARIES    ${CIVETWEB_LIBRARIES}
+    )
+    set(CIVETWEB_TARGET "3rdparty_civetweb")
+    add_dependencies(3rdparty_civetweb ext_civetweb)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CIVETWEB_TARGET}")
+endif()
+

@@ -171,8 +171,8 @@ void StdGPUHashmap<Key, Hash>::Find(const void* input_keys,
                                     addr_t* output_addrs,
                                     bool* output_masks,
                                     int64_t count) {
-    int threads = 32;
-    int blocks = (count + threads - 1) / threads;
+    uint32_t threads = 128;
+    uint32_t blocks = (count + threads - 1) / threads;
 
     STDGPUFindKernel<<<blocks, threads>>>(impl_, buffer_accessor_,
                                           static_cast<const Key*>(input_keys),
@@ -192,6 +192,11 @@ __global__ void STDGPUEraseKernel(stdgpu::unordered_map<Key, addr_t, Hash> map,
     if (tid >= count) return;
 
     Key key = input_keys[tid];
+    auto iter = map.find(key);
+    bool flag = (iter != map.end());
+    output_masks[tid] = flag;
+    output_addrs[tid] = flag ? iter->second : 0;
+
     if (output_masks[tid]) {
         output_masks[tid] = map.erase(key);
         if (output_masks[tid]) {
@@ -204,19 +209,13 @@ template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::Erase(const void* input_keys,
                                      bool* output_masks,
                                      int64_t count) {
-    stdgpu::index_t threads = 32;
-    stdgpu::index_t blocks = (count + threads - 1) / threads;
+    uint32_t threads = 128;
+    uint32_t blocks = (count + threads - 1) / threads;
 
-    // Erase has to go in two passes -- find the iterator, then erase and free
-    // Not frequently used, may not be fully optimized due to the tricky
-    // iterator change in the erase operation
     core::Tensor toutput_addrs =
             core::Tensor({count}, Dtype::Int32, this->device_);
     addr_t* output_addrs = static_cast<addr_t*>(toutput_addrs.GetDataPtr());
 
-    STDGPUFindKernel<<<blocks, threads>>>(impl_, buffer_accessor_,
-                                          static_cast<const Key*>(input_keys),
-                                          output_addrs, output_masks, count);
     STDGPUEraseKernel<<<blocks, threads>>>(impl_, buffer_accessor_,
                                            static_cast<const Key*>(input_keys),
                                            output_addrs, output_masks, count);
@@ -351,8 +350,8 @@ void StdGPUHashmap<Key, Hash>::InsertImpl(const void* input_keys,
                                           addr_t* output_addrs,
                                           bool* output_masks,
                                           int64_t count) {
-    stdgpu::index_t threads = 32;
-    stdgpu::index_t blocks = (count + threads - 1) / threads;
+    uint32_t threads = 128;
+    uint32_t blocks = (count + threads - 1) / threads;
 
     STDGPUInsertKernel<<<blocks, threads>>>(impl_, buffer_accessor_,
                                             static_cast<const Key*>(input_keys),
@@ -379,6 +378,7 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
 
     impl_ = stdgpu::unordered_map<Key, addr_t, Hash>::createDeviceObject(
             this->capacity_);
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
 template <typename Key, typename Hash>

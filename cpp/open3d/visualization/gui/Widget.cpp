@@ -148,7 +148,28 @@ void Widget::DrawImGuiPopEnabledState() {
 void Widget::DrawImGuiTooltip() {
     if (!impl_->tooltip_.empty() && IsEnabled() &&
         (ImGui::IsItemActive() || ImGui::IsItemHovered())) {
-        ImGui::SetTooltip("%s", impl_->tooltip_.c_str());
+        // The default margins of the tooltips are 0 and rather ugly. It turns
+        // out that tooltips are implemented as ImGui Windows, so we need to
+        // push WindowPadding, not FramePadding as you might expect.
+        // Note: using Push/PopStyleVar() causes problems because we might
+        //       already done a Push of the WindowPadding above, and the pushes
+        //       seem to get coalesced, so when we pop here, it effectively pops
+        //       in calling code, which then crashes because there are too many
+        //       pops.
+        float border_radius = std::round(0.2f * ImGui::GetFont()->FontSize);
+        float margin = 0.25f * ImGui::GetFont()->FontSize;
+        float old_radius = ImGui::GetStyle().WindowRounding;
+        ImVec2 old_padding = ImGui::GetStyle().WindowPadding;
+        ImGui::GetStyle().WindowPadding = ImVec2(2.0f * margin, margin);
+        ImGui::GetStyle().WindowRounding = border_radius;
+
+        ImGui::BeginTooltip();
+        ImGui::Text("%s", impl_->tooltip_.c_str());
+        ImGui::EndTooltip();
+
+        // Pop
+        ImGui::GetStyle().WindowPadding = old_padding;
+        ImGui::GetStyle().WindowRounding = old_radius;
     }
 }
 

@@ -149,7 +149,8 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
         int view_width_px,
         int view_height_px,
         const Eigen::Matrix3d &intrinsic,
-        const Eigen::Matrix4d &extrinsic) {
+        const Eigen::Matrix4d &extrinsic,
+        double scale) {
     Eigen::Matrix4d intrinsic4;
     intrinsic4 << intrinsic(0, 0), intrinsic(0, 1), intrinsic(0, 2), 0.0,
             intrinsic(1, 0), intrinsic(1, 1), intrinsic(1, 2), 0.0,
@@ -165,7 +166,6 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
         return Eigen::Vector3d{result.x() / result.w(), result.y() / result.w(),
                                result.z() / result.w()};
     };
-    double dist = 1.0;
     double w = double(view_width_px);
     double h = double(view_height_px);
     // Matrix m transforms from homogenous pixel coordinates to world
@@ -173,11 +173,11 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
     // first point, the eye point, z=0, so x and y will be zero, too regardless
     // of their initial values as the center.
     lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, 0.0, 0.0}));
-    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, 0.0, dist}));
-    lines->points_.push_back(mult(m, Eigen::Vector3d{w * dist, 0.0, dist}));
+    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, 0.0, scale}));
+    lines->points_.push_back(mult(m, Eigen::Vector3d{w * scale, 0.0, scale}));
     lines->points_.push_back(
-            mult(m, Eigen::Vector3d{w * dist, h * dist, dist}));
-    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, h * dist, dist}));
+            mult(m, Eigen::Vector3d{w * scale, h * scale, scale}));
+    lines->points_.push_back(mult(m, Eigen::Vector3d{0.0, h * scale, scale}));
 
     lines->lines_.push_back({0, 1});
     lines->lines_.push_back({0, 2});

@@ -263,6 +263,8 @@ public:
                     impl_.super_blocks_ + i * kUIntsPerSuperBlock, 0x00,
                     kBlocksPerSuperBlock * kSlabsPerBlock * sizeof(uint32_t)));
         }
+        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+        OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 
     std::vector<int> CountSlabsPerSuperblock() {
@@ -285,7 +287,7 @@ public:
         thrust::copy(slabs_per_superblock.begin(), slabs_per_superblock.end(),
                      result.begin());
 
-        return std::move(result);
+        return result;
     }
 
 public:

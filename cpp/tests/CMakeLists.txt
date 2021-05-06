@@ -84,9 +84,11 @@ set(UNIT_TEST_SOURCE_FILES
     pipelines/odometry/OdometryOption.cpp
     t/io/PointCloudIO.cpp
     t/io/ImageIO.cpp
+    t/io/TriangleMeshIO.cpp
     t/pipelines/odometry/RGBDOdometry.cpp
     t/pipelines/registration/Registration.cpp
     t/pipelines/registration/TransformationEstimation.cpp
+    t/pipelines/slac/ControlGrid.cpp
     t/pipelines/TransformationConverter.cpp
     t/geometry/PointCloud.cpp
     t/geometry/TriangleMesh.cpp
