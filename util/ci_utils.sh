@@ -494,7 +494,6 @@ build_docs() {
     fi
     cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
-        "-DBUILD_JUPYTER_EXTENSION=ON" # Only turned on in the second build when BUILD_GUI=ON
         "-DWITH_OPENMP=ON"
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=ON"
@@ -505,6 +504,7 @@ build_docs() {
     )
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
+        -DBUILD_JUPYTER_EXTENSION=OFF \
         -DENABLE_HEADLESS_RENDERING=ON \
         -DBUILD_GUI=OFF \
         ..
@@ -522,6 +522,7 @@ build_docs() {
     echo
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
+        -DBUILD_JUPYTER_EXTENSION=ON \
         -DENABLE_HEADLESS_RENDERING=OFF \
         -DBUILD_GUI=ON \
         ..
