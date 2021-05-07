@@ -14,7 +14,7 @@ using namespace open3d;
 using namespace open3d::visualization;
 using namespace open3d::t::pipelines::registration;
 
-const int WIDTH = 1200;
+const int WIDTH = 1600;
 const int HEIGHT = 900;
 float verticalFoV = 25;
 
