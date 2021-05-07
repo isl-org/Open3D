@@ -53,6 +53,28 @@ enum class KeyModifier {
 
 struct MouseEvent {
     enum Type { MOVE, BUTTON_DOWN, DRAG, BUTTON_UP, WHEEL };
+
+    static MouseEvent MakeMoveEvent(const Type type,
+                                    const int x,
+                                    const int y,
+                                    const int modifiers,
+                                    const int buttons);
+
+    static MouseEvent MakeButtonEvent(const Type type,
+                                      const int x,
+                                      const int y,
+                                      const int modifiers,
+                                      const MouseButton button,
+                                      const int count);
+
+    static MouseEvent MakeWheelEvent(const Type type,
+                                     const int x,
+                                     const int y,
+                                     const int modifiers,
+                                     const float dx,
+                                     const float dy,
+                                     const bool isTrackpad);
+
     Type type;
     int x;
     int y;

@@ -25,5 +25,5 @@
 # ----------------------------------------------------------------------------
 
 # This file is machine generated. Do not modify.
+import tensorflow as _tf
 from .lib import _lib
-

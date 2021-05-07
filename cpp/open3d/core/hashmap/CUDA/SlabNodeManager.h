@@ -287,7 +287,7 @@ public:
         thrust::copy(slabs_per_superblock.begin(), slabs_per_superblock.end(),
                      result.begin());
 
-        return std::move(result);
+        return result;
     }
 
 public:

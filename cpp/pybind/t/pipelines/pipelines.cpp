@@ -28,6 +28,7 @@
 
 #include "pybind/open3d_pybind.h"
 #include "pybind/t/pipelines/registration/registration.h"
+#include "pybind/t/pipelines/slac/slac.h"
 
 namespace open3d {
 namespace t {
@@ -37,6 +38,7 @@ void pybind_pipelines(py::module& m) {
     py::module m_pipelines = m.def_submodule(
             "pipelines", "Tensor-based geometry processing pipelines.");
     registration::pybind_registration(m_pipelines);
+    slac::pybind_slac(m_pipelines);
 }
 
 }  // namespace pipelines

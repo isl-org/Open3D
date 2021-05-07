@@ -140,6 +140,13 @@ public:
                      const Eigen::Vector3f& center,
                      const Eigen::Vector3f& eye,
                      const Eigen::Vector3f& up);
+    void SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
+                     const Eigen::Matrix4d& extrinsic);
+    void SetupCamera(const Eigen::Matrix3d& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px);
+
     void ResetCameraToDefault();
 
     void ShowSettings(bool show);

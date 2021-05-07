@@ -44,6 +44,11 @@ namespace impl {
 ///
 /// All pointer arguments point to device memory unless stated otherwise.
 ///
+/// \tparam TFeat    Type for the features and weights
+/// \tparam TOut     Type for the output features
+/// \tparam TReal    Type for point positions and extents
+/// \tparam TIndex   Type for neighbor indexing
+///
 /// \param temp    Pointer to temporary memory. If nullptr then the required
 ///        size of temporary memory will be written to \p temp_size and no
 ///        work is done. This function can make use of more memory and
@@ -124,27 +129,27 @@ namespace impl {
 ///        by the number of points (neighbors_importance is null) or by the sum
 ///        of the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void CConvBackpropFilterCUDA(const cudaStream_t& stream,
                              void* temp,
                              size_t& temp_size,
                              size_t& max_temp_size,
                              int texture_alignment,
-                             TReal* filter_backprop,
+                             TOut* filter_backprop,
                              const std::vector<int>& filter_dims,
                              TIndex num_out,
                              const TReal* out_positions,
                              TIndex num_inp,
                              const TReal* inp_positions,
-                             const TReal* inp_features,
-                             const TReal* inp_importance,
+                             const TFeat* inp_features,
+                             const TFeat* inp_importance,
                              size_t neighbors_index_size,
                              const TIndex* neighbors_index,
-                             const TReal* neighbors_importance,
+                             const TFeat* neighbors_importance,
                              const int64_t* neighbors_row_splits,
                              const TReal* extents,
                              const TReal* offsets,
-                             const TReal* out_features_gradient,
+                             const TFeat* out_features_gradient,
                              InterpolationMode interpolation,
                              CoordinateMapping coordinate_mapping,
                              bool align_corners,
@@ -171,7 +176,7 @@ void CConvBackpropFilterCUDA(const cudaStream_t& stream,
     const size_t min_num_cols_per_run = std::min(size_t(num_out), size_t(32));
     const size_t max_num_cols_per_run = num_out;
     const size_t bytes_per_column =
-            sizeof(TReal) * (spatial_filter_size * in_channels);
+            sizeof(TFeat) * (spatial_filter_size * in_channels);
     const size_t min_temp_size_bytes = min_num_cols_per_run * bytes_per_column;
     const size_t max_temp_size_bytes = max_num_cols_per_run * bytes_per_column;
 
@@ -198,7 +203,7 @@ void CConvBackpropFilterCUDA(const cudaStream_t& stream,
     // init output
     cudaMemsetAsync(
             filter_backprop, 0,
-            sizeof(TReal) * spatial_filter_size * in_channels * out_channels,
+            sizeof(TOut) * spatial_filter_size * in_channels * out_channels,
             stream);
 
     size_t num_cols_per_run =
@@ -213,7 +218,7 @@ void CConvBackpropFilterCUDA(const cudaStream_t& stream,
 
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
 
-    TReal* columns = (TReal*)mem_columns.first;
+    TFeat* columns = (TFeat*)mem_columns.first;
 
     // if we cannot process all data at once we need multiple runs
     size_t num_runs = DivUp(num_out, num_cols_per_run);
@@ -223,7 +228,7 @@ void CConvBackpropFilterCUDA(const cudaStream_t& stream,
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run);
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        FillColumn<TReal, TIndex>(
+        FillColumn<TFeat, TReal, TIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 out_positions, num_inp, inp_positions, inp_features,
                 inp_importance, neighbors_index_size, neighbors_index,

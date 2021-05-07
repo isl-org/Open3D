@@ -23,9 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-"""
-3D ML pipelines for PyTorch.
-"""
+"""3D ML pipelines for PyTorch."""
 
 import os as _os
 from open3d import _build_config

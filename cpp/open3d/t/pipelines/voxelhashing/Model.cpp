@@ -58,16 +58,23 @@ Model::Model(float voxel_size,
 void Model::SynthesizeModelFrame(Frame& raycast_frame,
                                  float depth_scale,
                                  float depth_min,
-                                 float depth_max) {
+                                 float depth_max,
+                                 bool enable_color) {
     using MaskCode = t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
+
+    int flag = MaskCode::DepthMap;
+    if (enable_color) {
+        flag |= MaskCode::ColorMap;
+    }
     auto result = voxel_grid_.RayCast(
             raycast_frame.GetIntrinsics(),
             t::geometry::InverseTransformation(GetCurrentFramePose()),
             raycast_frame.GetWidth(), raycast_frame.GetHeight(), depth_scale,
-            depth_min, depth_max, std::min(frame_id_ * 1.0f, 3.0f),
-            MaskCode::DepthMap | MaskCode::ColorMap);
+            depth_min, depth_max, std::min(frame_id_ * 1.0f, 3.0f), flag);
     raycast_frame.SetData("depth", result[MaskCode::DepthMap]);
-    raycast_frame.SetData("color", result[MaskCode::ColorMap]);
+    if (enable_color) {
+        raycast_frame.SetData("color", result[MaskCode::ColorMap]);
+    }
 }
 
 odometry::OdometryResult Model::TrackFrameToModel(const Frame& input_frame,
@@ -85,7 +92,8 @@ odometry::OdometryResult Model::TrackFrameToModel(const Frame& input_frame,
             t::geometry::RGBDImage(raycast_frame.GetDataAsImage("color"),
                                    raycast_frame.GetDataAsImage("depth")),
             raycast_frame.GetIntrinsics(), identity, depth_scale, depth_max,
-            {6, 3, 1}, odometry::Method::PointToPlane,
+            std::vector<odometry::OdometryConvergenceCriteria>{6, 3, 1},
+            odometry::Method::PointToPlane,
             odometry::OdometryLossParams(depth_diff));
 }
 
@@ -104,9 +112,7 @@ t::geometry::PointCloud Model::ExtractPointCloud(int estimated_number,
     return voxel_grid_.ExtractSurfacePoints(estimated_number, weight_threshold);
 }
 
-int64_t Model::GetHashmapSize() {
-    return voxel_grid_.GetBlockHashmap()->Size();
-}
+core::Hashmap Model::GetHashmap() { return *voxel_grid_.GetBlockHashmap(); }
 }  // namespace voxelhashing
 }  // namespace pipelines
 }  // namespace t

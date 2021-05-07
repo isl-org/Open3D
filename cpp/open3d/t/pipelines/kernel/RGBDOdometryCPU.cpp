@@ -69,7 +69,7 @@ void ComputeOdometryResultPointToPlaneCPU(
 
     std::vector<float> A_1x29(29, 0.0);
 
-#ifdef _WIN32
+#ifdef _MSC_VER
     std::vector<float> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
@@ -106,7 +106,7 @@ void ComputeOdometryResultPointToPlaneCPU(
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _WIN32
+#ifdef _MSC_VER
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -162,7 +162,7 @@ void ComputeOdometryResultIntensityCPU(
 
     std::vector<float> A_1x29(29, 0.0);
 
-#ifdef _WIN32
+#ifdef _MSC_VER
     std::vector<float> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
@@ -203,7 +203,7 @@ void ComputeOdometryResultIntensityCPU(
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _WIN32
+#ifdef _MSC_VER
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -263,7 +263,7 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
 
     std::vector<float> A_1x29(29, 0.0);
 
-#ifdef _WIN32
+#ifdef _MSC_VER
     std::vector<float> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
@@ -311,7 +311,7 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _WIN32
+#ifdef _MSC_VER
                 return A_reduction;
             },
             // TBB: Defining reduction operation.

@@ -141,20 +141,25 @@ static void RGBDOdometryMultiScale(
 
     // Very strict criteria to ensure running most the iterations
     t::pipelines::odometry::OdometryLossParams loss(depth_diff);
-    t::pipelines::odometry::OdometryConvergenceCriteria criteria(1e-12, 1e-12);
+    std::vector<t::pipelines::odometry::OdometryConvergenceCriteria> criteria{
+            t::pipelines::odometry::OdometryConvergenceCriteria(10, 1e-12,
+                                                                1e-12),
+            t::pipelines::odometry::OdometryConvergenceCriteria(5, 1e-12,
+                                                                1e-12),
+            t::pipelines::odometry::OdometryConvergenceCriteria(3, 1e-12,
+                                                                1e-12)};
 
     // Warp up
     RGBDOdometryMultiScale(
             source, target, intrinsic_t,
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")),
-            depth_scale, depth_max, {10, 5, 3}, method, loss, criteria);
+            depth_scale, depth_max, criteria, method, loss);
 
     for (auto _ : state) {
         RGBDOdometryMultiScale(source, target, intrinsic_t,
                                core::Tensor::Eye(4, core::Dtype::Float64,
                                                  core::Device("CPU:0")),
-                               depth_scale, depth_max, {10, 5, 3}, method, loss,
-                               criteria);
+                               depth_scale, depth_max, criteria, method, loss);
     }
 }
 
