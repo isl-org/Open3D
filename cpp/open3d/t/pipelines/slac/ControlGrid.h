@@ -84,7 +84,7 @@ public:
     /// - addrs Active indices in the buffer of shape (N, )
     /// - addrs_nb Neighbor indices (including non-allocated entries) for
     /// the active entries of shape (N, 6).
-    /// - masks_nb Corresponding neighbor masks of shape (N, 6) .
+    /// - masks_nb Corresponding neighbor masks of shape (N, 6).
     std::tuple<core::Tensor, core::Tensor, core::Tensor> GetNeighborGridMap();
 
     /// Parameterize an input point cloud by embedding each point in the grid

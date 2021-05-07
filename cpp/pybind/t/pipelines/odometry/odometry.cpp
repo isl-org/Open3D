@@ -205,16 +205,18 @@ void pybind_odometry_methods(py::module &m) {
 
     m.def("compute_odometry_result_point_to_plane",
           &ComputeOdometryResultPointToPlane,
-          "(Estimates the OdometryResult (4x4 rigid transformation "
-          "T from source to target, with inlier rmse and fitness). "
-          "Performs one iteration of RGBD odometry using "
-          "Loss function: :math: `[(V_p - V_q)^T N_p]^2`, where "
-          ":math: `V_p` denotes the vertex at pixel p in the source, "
-          ":math: `V_q` denotes the vertex at pixel q in the target. "
-          ":math: `N_p` denotes the normal at pixel p in the source. "
-          "q is obtained by transforming p with init_source_to_target then "
-          "projecting with intrinsics. "
-          "Reference: KinectFusion, ISMAR 2011.",
+          R"(Estimates the OdometryResult (4x4 rigid transformation T from 
+source to target, with inlier rmse and fitness). Performs one iteration of
+RGBD odometry using 
+Loss function: :math:`[(V_p - V_q)^T N_p]^2`
+where,
+:math:`V_p` denotes the vertex at pixel p in the source, 
+:math:`V_q` denotes the vertex at pixel q in the target. 
+:math:`N_p` denotes the normal at pixel p in the source. 
+q is obtained by transforming p with init_source_to_target then 
+projecting with intrinsics. "
+
+Reference: KinectFusion, ISMAR 2011.)",
           "source_vertex_map"_a, "target_vertex_map"_a, "target_normal_map"_a,
           "intrinsics"_a, "init_source_to_target"_a, "depth_outlier_trunc"_a,
           "depth_huber_delta"_a);
@@ -222,16 +224,19 @@ void pybind_odometry_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("compute_odometry_result_intensity", &ComputeOdometryResultIntensity,
-          "Estimates the OdometryResult.(4x4 rigid transformation "
-          "T from source to target, with inlier rmse and fitness). "
-          "Performs one iteration of RGBD odometry using loss function "
-          ":math: `(I_p - I_q)^2`, where "
-          ":math: `I_p` denotes the intensity at pixel p in the source, "
-          ":math: `I_q` denotes the intensity at pixel q in the target. "
-          "q is obtained by transforming p with init_source_to_target then "
-          "projecting with intrinsics. "
-          "Reference: Real-time visual odometry from dense RGB-D images, "
-          "ICCV Workshops, 2017.",
+          R"(Estimates the OdometryResult (4x4 rigid transformation T from 
+source to target, with inlier rmse and fitness). Performs one iteration of
+RGBD odometry using 
+Loss function: :math:`(I_p - I_q)^2`
+where,
+:math:`I_p` denotes the intensity at pixel p in the source, 
+:math:`I_q` denotes the intensity at pixel q in the target. 
+q is obtained by transforming p with init_source_to_target then 
+projecting with intrinsics. "
+
+Reference: 
+Real-time visual odometry from dense RGB-D images,
+ICCV Workshops, 2017.)",
           "source_depth"_a, "target_depth"_a, "source_intensity"_a,
           "target_intensity"_a, "target_intensity_dx"_a,
           "target_intensity_dy"_a, "source_vertex_map"_a, "intrinsics"_a,
@@ -241,17 +246,20 @@ void pybind_odometry_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("compute_odometry_result_hybrid", &ComputeOdometryResultHybrid,
-          "Estimates the OdometryResult. (4x4 rigid transformation "
-          "T from source to target, with inlier rmse and fitness). "
-          "Performs one iteration of RGBD odometry using loss function "
-          ":math: `(I_p - I_q)^2 + \\lambda(D_p - (D_q)')^2`, where "
-          ":math: `I_p` denotes the intensity at pixel p in the source, "
-          ":math: `I_q` denotes the intensity at pixel q in the target. "
-          ":math: `D_p` denotes the depth pixel p in the source, "
-          ":math: `D_q` denotes the depth pixel q in the target. "
-          "q is obtained by transforming p with init_source_to_target then "
-          "projecting with intrinsics. "
-          "Reference: Colored ICP Revisited, ICCV 2017.",
+          R"(Estimates the OdometryResult (4x4 rigid transformation T from 
+source to target, with inlier rmse and fitness). Performs one iteration of
+RGBD odometry using 
+Loss function: :math:`(I_p - I_q)^2 + \lambda(D_p - (D_q)')^2`
+where,
+:math:`I_p` denotes the intensity at pixel p in the source, 
+:math:`I_q` denotes the intensity at pixel q in the target. 
+:math:`D_p` denotes the depth pixel p in the source, 
+:math:`D_q` denotes the depth pixel q in the target. 
+q is obtained by transforming p with init_source_to_target then 
+projecting with intrinsics. "
+
+Reference: 
+Colored ICP Revisited, ICCV 2017.)",
           "source_depth"_a, "target_depth"_a, "source_intensity"_a,
           "target_intensity"_a, "target_depth_dx"_a, "target_depth_dy"_a,
           "target_intensity_dx"_a, "target_intensity_dy"_a,
