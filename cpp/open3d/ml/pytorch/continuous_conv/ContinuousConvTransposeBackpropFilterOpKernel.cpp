@@ -32,7 +32,7 @@
 
 using namespace open3d::ml::impl;
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void ContinuousConvTransposeBackpropFilterCPU(
         const torch::Tensor& filters,
         const torch::Tensor& out_positions,
@@ -59,27 +59,28 @@ void ContinuousConvTransposeBackpropFilterCPU(
     for (auto d : filters.sizes()) {
         filter_dims.push_back(d);
     }
-    CConvTransposeBackpropFilterCPU<TReal, TIndex>(
-            filter_backprop.data_ptr<TReal>(), filter_dims,
+    CConvTransposeBackpropFilterCPU<TFeat, TOut, TReal, TIndex>(
+            filter_backprop.data_ptr<TOut>(), filter_dims,
             out_positions.size(0), out_positions.data_ptr<TReal>(),
-            out_importance.size(0) ? out_importance.data_ptr<TReal>() : nullptr,
+            out_importance.size(0) ? out_importance.data_ptr<TFeat>() : nullptr,
             inp_positions.size(0), inp_positions.data_ptr<TReal>(),
-            inp_features.data_ptr<TReal>(),
+            inp_features.data_ptr<TFeat>(),
             inp_neighbors_importance_sum.size(0)
-                    ? inp_neighbors_importance_sum.data_ptr<TReal>()
+                    ? inp_neighbors_importance_sum.data_ptr<TFeat>()
                     : nullptr,
             inp_neighbors_row_splits.data_ptr<int64_t>(),
             neighbors_index.size(0), neighbors_index.data_ptr<TIndex>(),
             neighbors_importance.size(0)
-                    ? neighbors_importance.data_ptr<TReal>()
+                    ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
             neighbors_row_splits.data_ptr<int64_t>(), extents.data_ptr<TReal>(),
-            offset.data_ptr<TReal>(), out_features_gradient.data_ptr<TReal>(),
+            offset.data_ptr<TReal>(), out_features_gradient.data_ptr<TFeat>(),
             interpolation, coordinate_mapping, align_corners,
             individual_extents, isotropic_extents, normalize);
 }
-#define INSTANTIATE(TReal, TIndex)                                             \
-    template void ContinuousConvTransposeBackpropFilterCPU<TReal, TIndex>(     \
+#define INSTANTIATE(TFeat, TOut, TReal, TIndex)                                \
+    template void                                                              \
+    ContinuousConvTransposeBackpropFilterCPU<TFeat, TOut, TReal, TIndex>(      \
             const torch::Tensor& filters, const torch::Tensor& out_positions,  \
             const torch::Tensor& out_importance, const torch::Tensor& extents, \
             const torch::Tensor& offset, const torch::Tensor& inp_positions,   \
@@ -95,4 +96,4 @@ void ContinuousConvTransposeBackpropFilterCPU(
             const InterpolationMode interpolation,                             \
             const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
 
-INSTANTIATE(float, int32_t)
+INSTANTIATE(float, float, float, int32_t)

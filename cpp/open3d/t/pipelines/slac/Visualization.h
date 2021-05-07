@@ -39,11 +39,8 @@ namespace t {
 namespace pipelines {
 namespace slac {
 
-t::geometry::PointCloud CreateTPCDFromFile(
-        const std::string& fname,
-        const core::Device& device = core::Device("CPU:0"));
-
-/// Visualize pairs with correspondences.
+/// \brief Visualize pairs with correspondences.
+///
 /// \param tpcd_i, source point cloud.
 /// \param tpcd_j, target point cloud.
 /// \param correspondences Putative correspondence between tcpd_i and tpcd_j.
@@ -63,6 +60,7 @@ void VisualizePointCloudDeformation(const geometry::PointCloud& tpcd_param,
                                     ControlGrid& ctr_grid);
 
 void VisualizeGridDeformation(ControlGrid& cgrid);
+
 }  // namespace slac
 }  // namespace pipelines
 }  // namespace t

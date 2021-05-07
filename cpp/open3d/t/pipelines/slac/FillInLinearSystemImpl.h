@@ -29,11 +29,9 @@
 #include <fstream>
 
 #include "open3d/core/EigenConverter.h"
-#include "open3d/geometry/LineSet.h"
-#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
+#include "open3d/t/pipelines/slac/SLACOptimizer.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
 namespace t {
@@ -41,14 +39,24 @@ namespace pipelines {
 namespace slac {
 
 using namespace open3d::core::eigen_converter;
-using TPointCloud = t::geometry::PointCloud;
 using core::Tensor;
+using t::geometry::PointCloud;
+
+// Reads pointcloud from filename, and loads on the device as
+// Tensor PointCloud of Float32 dtype.
+static PointCloud CreateTPCDFromFile(
+        const std::string& fname,
+        const core::Device& device = core::Device("CPU:0")) {
+    std::shared_ptr<open3d::geometry::PointCloud> pcd =
+            open3d::io::CreatePointCloudFromFile(fname);
+    return PointCloud::FromLegacyPointCloud(*pcd, core::Dtype::Float32, device);
+}
 
 static void FillInRigidAlignmentTerm(Tensor& AtA,
                                      Tensor& Atb,
                                      Tensor& residual,
-                                     TPointCloud& tpcd_i,
-                                     TPointCloud& tpcd_j,
+                                     PointCloud& tpcd_i,
+                                     PointCloud& tpcd_j,
                                      const Tensor& Ti,
                                      const Tensor& Tj,
                                      const int i,
@@ -83,14 +91,14 @@ void FillInRigidAlignmentTerm(Tensor& AtA,
             continue;
         }
         Tensor corres_ij = Tensor::Load(corres_fname).To(device);
-        TPointCloud tpcd_i = CreateTPCDFromFile(fnames[i], device);
-        TPointCloud tpcd_j = CreateTPCDFromFile(fnames[j], device);
+        PointCloud tpcd_i = CreateTPCDFromFile(fnames[i], device);
+        PointCloud tpcd_j = CreateTPCDFromFile(fnames[j], device);
 
-        TPointCloud tpcd_i_indexed(
+        PointCloud tpcd_i_indexed(
                 tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}));
         tpcd_i_indexed.SetPointNormals(
                 tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]}));
-        TPointCloud tpcd_j_indexed(
+        PointCloud tpcd_j_indexed(
                 tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}));
 
         Tensor Ti = EigenMatrixToTensor(pose_graph.nodes_[i].pose_)
@@ -113,8 +121,8 @@ static void FillInSLACAlignmentTerm(Tensor& AtA,
                                     Tensor& Atb,
                                     Tensor& residual,
                                     ControlGrid& ctr_grid,
-                                    const TPointCloud& tpcd_param_i,
-                                    const TPointCloud& tpcd_param_j,
+                                    const PointCloud& tpcd_param_i,
+                                    const PointCloud& tpcd_param_j,
                                     const Tensor& Ti,
                                     const Tensor& Tj,
                                     const int i,
@@ -133,8 +141,8 @@ static void FillInSLACAlignmentTerm(Tensor& AtA,
             tpcd_param_j.GetPointAttr(ControlGrid::kGrid8NbVertexInterpRatios);
 
     // Deform with control grids
-    TPointCloud tpcd_nonrigid_i = ctr_grid.Deform(tpcd_param_i);
-    TPointCloud tpcd_nonrigid_j = ctr_grid.Deform(tpcd_param_j);
+    PointCloud tpcd_nonrigid_i = ctr_grid.Deform(tpcd_param_i);
+    PointCloud tpcd_nonrigid_j = ctr_grid.Deform(tpcd_param_j);
 
     Tensor Cps = tpcd_nonrigid_i.GetPoints();
     Tensor Cqs = tpcd_nonrigid_j.GetPoints();
@@ -183,22 +191,22 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
         }
         Tensor corres_ij = Tensor::Load(corres_fname).To(device);
 
-        TPointCloud tpcd_i = CreateTPCDFromFile(fnames[i], device);
-        TPointCloud tpcd_j = CreateTPCDFromFile(fnames[j], device);
+        PointCloud tpcd_i = CreateTPCDFromFile(fnames[i], device);
+        PointCloud tpcd_j = CreateTPCDFromFile(fnames[j], device);
 
-        TPointCloud tpcd_i_indexed(
+        PointCloud tpcd_i_indexed(
                 tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}));
         tpcd_i_indexed.SetPointNormals(
                 tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]}));
 
-        TPointCloud tpcd_j_indexed(
+        PointCloud tpcd_j_indexed(
                 tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}));
         tpcd_j_indexed.SetPointNormals(
                 tpcd_j.GetPointNormals().IndexGet({corres_ij.T()[1]}));
 
         // Parameterize points in the control grid.
-        TPointCloud tpcd_param_i = ctr_grid.Parameterize(tpcd_i_indexed);
-        TPointCloud tpcd_param_j = ctr_grid.Parameterize(tpcd_j_indexed);
+        PointCloud tpcd_param_i = ctr_grid.Parameterize(tpcd_i_indexed);
+        PointCloud tpcd_param_j = ctr_grid.Parameterize(tpcd_j_indexed);
 
         // Load poses.
         auto Ti = EigenMatrixToTensor(pose_graph.nodes_[i].pose_)

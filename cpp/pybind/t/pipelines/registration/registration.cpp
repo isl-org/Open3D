@@ -50,15 +50,16 @@ public:
     }
     double ComputeRMSE(const t::geometry::PointCloud &source,
                        const t::geometry::PointCloud &target,
-                       const CorrespondenceSet &corres) const {
+                       const CorrespondenceSet &correspondences) const {
         PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase, source,
-                               target, corres);
+                               target, correspondences);
     }
-    core::Tensor ComputeTransformation(const t::geometry::PointCloud &source,
-                                       const t::geometry::PointCloud &target,
-                                       const CorrespondenceSet &corres) const {
+    core::Tensor ComputeTransformation(
+            const t::geometry::PointCloud &source,
+            const t::geometry::PointCloud &target,
+            const CorrespondenceSet &correspondences) const {
         PYBIND11_OVERLOAD_PURE(core::Tensor, TransformationEstimationBase,
-                               source, target, corres);
+                               source, target, correspondences);
     }
 };
 
@@ -140,25 +141,25 @@ void pybind_registration_classes(py::module &m) {
                "clouds. The virtual function ComputeTransformation() must be "
                "implemented in subclasses.");
     te.def("compute_rmse", &TransformationEstimation::ComputeRMSE, "source"_a,
-           "target"_a, "corres"_a,
+           "target"_a, "correspondences"_a,
            "Compute RMSE between source and target points cloud given "
            "correspondences.");
     te.def("compute_transformation",
            &TransformationEstimation::ComputeTransformation, "source"_a,
-           "target"_a, "corres"_a,
+           "target"_a, "correspondences"_a,
            "Compute transformation from source to target point cloud given "
            "correspondences.");
     docstring::ClassMethodDocInject(
             m, "TransformationEstimation", "compute_rmse",
             {{"source", "Source point cloud."},
              {"target", "Target point cloud."},
-             {"corres",
+             {"correspondences",
               "Correspondence set between source and target point cloud."}});
     docstring::ClassMethodDocInject(
             m, "TransformationEstimation", "compute_transformation",
             {{"source", "Source point cloud."},
              {"target", "Target point cloud."},
-             {"corres",
+             {"correspondences",
               "Correspondence set between source and target point cloud."}});
 
     // open3d.t.pipelines.registration.TransformationEstimationPointToPoint
@@ -200,7 +201,7 @@ void pybind_registration_classes(py::module &m) {
 // Registration functions have similar arguments, sharing arg docstrings.
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
-                {"corres",
+                {"correspondences",
                  "pair of Tensors that stores indices of "
                  "corresponding point or feature arrays."},
                 {"criteria", "Convergence criteria"},

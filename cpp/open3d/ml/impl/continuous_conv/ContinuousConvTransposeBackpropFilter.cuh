@@ -44,6 +44,11 @@ namespace impl {
 ///
 /// All pointer arguments point to device memory unless stated otherwise.
 ///
+/// \tparam TFeat    Type for the features and weights
+/// \tparam TOut     Type for the output features
+/// \tparam TReal    Type for point positions and extents
+/// \tparam TIndex   Type for neighbor indexing
+///
 /// \param temp    Pointer to temporary memory. If nullptr then the required
 ///        size of temporary memory will be written to \p temp_size and no
 ///        work is done. This function can make use of more memory and
@@ -136,29 +141,29 @@ namespace impl {
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void CConvTransposeBackpropFilterCUDA(const cudaStream_t& stream,
                                       void* temp,
                                       size_t& temp_size,
                                       size_t& max_temp_size,
                                       int texture_alignment,
-                                      TReal* filter_backprop,
+                                      TOut* filter_backprop,
                                       const std::vector<int>& filter_dims,
                                       TIndex num_out,
                                       const TReal* out_positions,
-                                      const TReal* out_importance,
+                                      const TFeat* out_importance,
                                       TIndex num_inp,
                                       const TReal* inp_positions,
-                                      const TReal* inp_features,
-                                      const TReal* inp_neighbors_importance_sum,
+                                      const TFeat* inp_features,
+                                      const TFeat* inp_neighbors_importance_sum,
                                       const int64_t* inp_neighbors_row_splits,
                                       size_t neighbors_index_size,
                                       const TIndex* neighbors_index,
-                                      const TReal* neighbors_importance,
+                                      const TFeat* neighbors_importance,
                                       const int64_t* neighbors_row_splits,
                                       const TReal* extents,
                                       const TReal* offsets,
-                                      const TReal* out_features_gradient,
+                                      const TFeat* out_features_gradient,
                                       InterpolationMode interpolation,
                                       CoordinateMapping coordinate_mapping,
                                       bool align_corners,
@@ -185,8 +190,8 @@ void CConvTransposeBackpropFilterCUDA(const cudaStream_t& stream,
     const size_t min_num_cols_per_run = std::min(size_t(num_out), size_t(32));
     const size_t max_num_cols_per_run = num_out;
     size_t bytes_per_column =
-            sizeof(TReal) * (spatial_filter_size * in_channels);
-    if (out_importance) bytes_per_column += sizeof(TReal) * out_channels;
+            sizeof(TFeat) * (spatial_filter_size * in_channels);
+    if (out_importance) bytes_per_column += sizeof(TFeat) * out_channels;
     const size_t min_temp_size_bytes = min_num_cols_per_run * bytes_per_column;
     const size_t max_temp_size_bytes = max_num_cols_per_run * bytes_per_column;
 
@@ -214,7 +219,7 @@ void CConvTransposeBackpropFilterCUDA(const cudaStream_t& stream,
 
     cudaMemsetAsync(
             filter_backprop, 0,
-            sizeof(TReal) * spatial_filter_size * in_channels * out_channels,
+            sizeof(TOut) * spatial_filter_size * in_channels * out_channels,
             stream);
 
     typedef cutlass::gemm::SgemmTraits<
@@ -226,8 +231,8 @@ void CConvTransposeBackpropFilterCUDA(const cudaStream_t& stream,
 
     typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
 
-    TReal* columns = (TReal*)mem_columns.first;
-    TReal* gradient = ((TReal*)mem_columns.first) +
+    TFeat* columns = (TFeat*)mem_columns.first;
+    TFeat* gradient = ((TFeat*)mem_columns.first) +
                       num_cols_per_run * spatial_filter_size * in_channels;
 
     // if we cannot process all data at once we need multiple runs
@@ -245,12 +250,12 @@ void CConvTransposeBackpropFilterCUDA(const cudaStream_t& stream,
                             (run_i * num_cols_per_run * out_channels),
                     out_importance + (run_i * num_cols_per_run));
         } else {
-            gradient = const_cast<TReal*>(
+            gradient = const_cast<TFeat*>(
                     out_features_gradient +
                     (run_i * num_cols_per_run * out_channels));
         }
 
-        FillColumnTranspose<TReal, TIndex>(
+        FillColumnTranspose<TFeat, TReal, TIndex>(
                 stream, columns, in_channels, begin_idx, end_idx, num_out,
                 out_positions, num_inp, inp_positions, inp_features,
                 inp_neighbors_importance_sum, inp_neighbors_row_splits,
