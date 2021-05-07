@@ -1,5 +1,5 @@
 ipywidgets>=7.6.0
-jupyter_packaging~=0.9
+jupyter_packaging~=0.10
 jupyterlab>=3.0.0,==3.*
 setuptools>=40.8.0
 wheel>=0.36.0
