@@ -77,13 +77,9 @@ core::Tensor ComputePosePointToPlane(
                                    target_normals_ptr, corres_first,
                                    corres_second, n, pose, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        ComputePosePointToPlaneCUDA(source_points_ptr, target_points_ptr,
-                                    target_normals_ptr, corres_first,
-                                    corres_second, n, pose, dtype, device);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(ComputePosePointToPlaneCUDA, source_points_ptr,
+                  target_points_ptr, target_normals_ptr, corres_first,
+                  corres_second, n, pose, dtype, device);
     } else {
         utility::LogError("Unimplemented device.");
     }

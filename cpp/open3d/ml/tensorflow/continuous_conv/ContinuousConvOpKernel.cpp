@@ -32,7 +32,7 @@ using namespace open3d;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 class ContinuousConvOpKernelCPU : public ContinuousConvOpKernel<TIndex> {
 public:
     explicit ContinuousConvOpKernelCPU(OpKernelConstruction* construction)
@@ -55,19 +55,19 @@ public:
                 const bool point_importances,
                 const bool has_neighbors_importances,
                 tensorflow::Tensor& out_features) {
-        CConvComputeFeaturesCPU<TReal, TIndex>(
-                out_features.flat<TReal>().data(), filter_dims,
-                filter.flat<TReal>().data(), out_positions.shape().dim_size(0),
+        CConvComputeFeaturesCPU<TFeat, TOut, TReal, TIndex>(
+                out_features.flat<TOut>().data(), filter_dims,
+                filter.flat<TFeat>().data(), out_positions.shape().dim_size(0),
                 out_positions.flat<TReal>().data(),
                 inp_positions.shape().dim_size(0),
                 inp_positions.flat<TReal>().data(),
-                inp_features.flat<TReal>().data(),
-                point_importances ? inp_importance.flat<TReal>().data()
+                inp_features.flat<TFeat>().data(),
+                point_importances ? inp_importance.flat<TFeat>().data()
                                   : nullptr,
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
                 extents.flat<TReal>().data(), offset.flat<TReal>().data(),
@@ -77,11 +77,16 @@ public:
     }
 };
 
-#define REG_KB(type, indextype)                                           \
-    REGISTER_KERNEL_BUILDER(Name("Open3DContinuousConv")                  \
-                                    .Device(DEVICE_CPU)                   \
-                                    .TypeConstraint<type>("TReal")        \
-                                    .TypeConstraint<indextype>("TIndex"), \
-                            ContinuousConvOpKernelCPU<type, indextype>);
-REG_KB(float, int32)
+#define REG_KB(feattype, outtype, realtype, indextype)                      \
+    REGISTER_KERNEL_BUILDER(Name("Open3DContinuousConv")                    \
+                                    .Device(DEVICE_CPU)                     \
+                                    .TypeConstraint<feattype>("TFeat")      \
+                                    .TypeConstraint<outtype>("output_type") \
+                                    .TypeConstraint<realtype>("TReal")      \
+                                    .TypeConstraint<indextype>("TIndex"),   \
+                            ContinuousConvOpKernelCPU<feattype, outtype,    \
+                                                      realtype, indextype>);
+REG_KB(float, float, float, int32)
+REG_KB(bfloat16, float, float, int32)
+REG_KB(bfloat16, bfloat16, float, int32)
 #undef REG_KB

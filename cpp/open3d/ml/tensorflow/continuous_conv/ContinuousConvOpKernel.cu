@@ -34,7 +34,7 @@ using namespace open3d::ml;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 class ContinuousConvOpKernelCUDA : public ContinuousConvOpKernel<TIndex> {
 public:
     explicit ContinuousConvOpKernelCUDA(OpKernelConstruction* construction)
@@ -66,21 +66,21 @@ public:
         size_t max_temp_size = 0;
 
         // determine temp_size
-        CConvComputeFeaturesCUDA<TReal, TIndex>(
+        CConvComputeFeaturesCUDA<TFeat, TOut, TReal, TIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
-                texture_alignment, out_features.flat<TReal>().data(),
-                filter_dims, filter.flat<TReal>().data(),
+                texture_alignment, out_features.flat<TOut>().data(),
+                filter_dims, filter.flat<TFeat>().data(),
                 out_positions.shape().dim_size(0),
                 out_positions.flat<TReal>().data(),
                 inp_positions.shape().dim_size(0),
                 inp_positions.flat<TReal>().data(),
-                inp_features.flat<TReal>().data(),
-                point_importances ? inp_importance.flat<TReal>().data()
+                inp_features.flat<TFeat>().data(),
+                point_importances ? inp_importance.flat<TFeat>().data()
                                   : nullptr,
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
                 extents.flat<TReal>().data(), offset.flat<TReal>().data(),
@@ -101,21 +101,21 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually run the operation
-        CConvComputeFeaturesCUDA<TReal, TIndex>(
+        CConvComputeFeaturesCUDA<TFeat, TOut, TReal, TIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
                 texture_alignment, out_features.flat<TReal>().data(),
-                filter_dims, filter.flat<TReal>().data(),
+                filter_dims, filter.flat<TFeat>().data(),
                 out_positions.shape().dim_size(0),
                 out_positions.flat<TReal>().data(),
                 inp_positions.shape().dim_size(0),
                 inp_positions.flat<TReal>().data(),
-                inp_features.flat<TReal>().data(),
-                point_importances ? inp_importance.flat<TReal>().data()
+                inp_features.flat<TFeat>().data(),
+                point_importances ? inp_importance.flat<TFeat>().data()
                                   : nullptr,
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
                 extents.flat<TReal>().data(), offset.flat<TReal>().data(),
@@ -128,11 +128,14 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type, indextype)                                           \
-    REGISTER_KERNEL_BUILDER(Name("Open3DContinuousConv")                  \
-                                    .Device(DEVICE_GPU)                   \
-                                    .TypeConstraint<type>("TReal")        \
-                                    .TypeConstraint<indextype>("TIndex"), \
-                            ContinuousConvOpKernelCUDA<type, indextype>);
-REG_KB(float, int32)
+#define REG_KB(feattype, outtype, realtype, indextype)                      \
+    REGISTER_KERNEL_BUILDER(Name("Open3DContinuousConv")                    \
+                                    .Device(DEVICE_GPU)                     \
+                                    .TypeConstraint<feattype>("TFeat")      \
+                                    .TypeConstraint<outtype>("output_type") \
+                                    .TypeConstraint<realtype>("TReal")      \
+                                    .TypeConstraint<indextype>("TIndex"),   \
+                            ContinuousConvOpKernelCUDA<feattype, outtype,   \
+                                                       realtype, indextype>);
+REG_KB(float, float, float, int32)
 #undef REG_KB

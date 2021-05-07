@@ -31,7 +31,7 @@
 #include "open3d/ml/impl/continuous_conv/ContinuousConvTypes.h"
 #include "torch/script.h"
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void ContinuousConvBackpropFilterCPU(
         const torch::Tensor& filters,
         const torch::Tensor& out_positions,
@@ -52,7 +52,7 @@ void ContinuousConvBackpropFilterCPU(
         torch::Tensor& filter_backprop);
 
 #ifdef BUILD_CUDA_MODULE
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void ContinuousConvBackpropFilterCUDA(
         const torch::Tensor& filters,
         const torch::Tensor& out_positions,
