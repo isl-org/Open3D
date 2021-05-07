@@ -88,8 +88,7 @@ void pybind_slac_classes(py::module &m) {
             .def(py::init<const bool, const int>(), "debug"_a = false,
                  "debug_start_node_idx"_a = 0)
             .def(py::init<const int>(), "debug_start_node_idx"_a)
-            .def_readwrite("debug_option", &SLACDebugOption::debug_,
-                           "Enable debug.")
+            .def_readwrite("debug", &SLACDebugOption::debug_, "Enable debug.")
             .def_readwrite("debug_start_node_idx",
                            &SLACDebugOption::debug_start_node_idx_,
                            "The node id to start debugging with. Smaller nodes "

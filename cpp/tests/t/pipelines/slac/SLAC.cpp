@@ -285,11 +285,9 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
             utility::LogDebug("{}: Deformation + Integration takes {}", k,
                               timer.GetDuration());
 
-            if (k % 10 == 0) {
 #ifdef BUILD_CUDA_MODULE
-                core::CUDACachedMemoryManager::ReleaseCache();
+            core::CUDACachedMemoryManager::ReleaseCache();
 #endif
-            }
         }
     }
 
