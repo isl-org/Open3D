@@ -27,6 +27,7 @@
 #include "pybind/t/pipelines/slac/slac.h"
 
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/pipelines/slac/ControlGrid.h"
 #include "open3d/t/pipelines/slac/SLACOptimizer.h"
 #include "open3d/utility/Console.h"
 #include "pybind/docstring.h"
@@ -99,6 +100,118 @@ void pybind_slac_classes(py::module &m) {
                         "debug_start_node_idx={:d}].",
                         debug_option.debug_,
                         debug_option.debug_start_node_idx_);
+            });
+
+    py::class_<ControlGrid> control_grid(
+            m, "control_grid",
+            " ControlGrid is a spatially hashed voxel grid used for non-rigid "
+            "point cloud registration and TSDF integration. Each grid stores a "
+            "map from the initial grid location to the deformed location. You "
+            "can imagine a control grid as a jelly that is warped upon "
+            "perturbation with its overall shape preserved. "
+            "Reference: "
+            "https://github.com/qianyizh/ElasticReconstruction/blob/master/"
+            "FragmentOptimizer/OptApp.cpp "
+            "http://vladlen.info/papers/elastic-fragments.pdf. ");
+    py::detail::bind_copy_functions<ControlGrid>(control_grid);
+    py::detail::bind_default_constructor<ControlGrid>(control_grid);
+    control_grid
+            .def(py::init<float, int64_t, const core::Device>(), "grid_size"_a,
+                 "grid_count"_a = 1000, "device"_a = core::Device("CPU:0"))
+            .def(py::init<float, core::Tensor, core::Tensor,
+                          const core::Device>(),
+                 "grid_size"_a, "keys"_a, "values"_a,
+                 "device"_a = core::Device("CPU:0"))
+            .def(
+                    "touch",
+                    [](ControlGrid &control_grid, geometry::PointCloud &pcd) {
+                        control_grid.Touch(pcd);
+                    },
+                    "Allocate control grids in the shared camera space.",
+                    "pointcloud"_a)
+            .def("compactify", &ControlGrid::Compactify,
+                 "Force rehashing, so that all entries are remapped to [0, "
+                 "size) and form a contiguous index map.")
+            .def("get_neighbor_grid_map", &ControlGrid::GetNeighborGridMap,
+                 "Get the neighbor indices per grid to construct the "
+                 "regularizer. "
+                 "Returns a 6-way neighbor grid map for all the active "
+                 "entries of shape (N, ). "
+                 "\n - addrs Active indices in the buffer of shape (N, ) "
+                 "\n - addrs_nb Neighbor indices (including non-allocated "
+                 "entries) for the active entries of shape (N, 6). "
+                 "\n - masks_nb Corresponding neighbor masks of shape (N, "
+                 "6). ")
+            .def(
+                    "parameterize",
+                    [](ControlGrid &control_grid,
+                       const geometry::PointCloud &pcd) {
+                        return control_grid.Parameterize(pcd);
+                    },
+                    "Parameterize an input point cloud by embedding each point "
+                    "in the grid "
+                    "with 8 corners via indexing and interpolation. "
+                    "Returns: A PointCloud with parameterization attributes: "
+                    "\n- neighbors: Index of 8 neighbor control grid points of "
+                    "shape (8, ) in Int64. "
+                    "\n- ratios: Interpolation ratios of 8 neighbor control "
+                    "grid points of shape (8, ) in Float32.",
+                    "pointcloud"_a)
+            .def(
+                    "deform",
+                    [](ControlGrid &control_grid,
+                       const geometry::PointCloud &pcd) {
+                        return control_grid.Deform(pcd);
+                    },
+                    "Non-rigidly deform a point cloud using the control grid.",
+                    "pointcloud"_a)
+            .def(
+                    "deform",
+                    [](ControlGrid &control_grid, const geometry::Image &depth,
+                       const core::Tensor &intrinsics,
+                       const core::Tensor &extrinsics, float depth_scale,
+                       float depth_max) {
+                        return control_grid.Deform(depth, intrinsics,
+                                                   extrinsics, depth_scale,
+                                                   depth_max);
+                    },
+                    "Non-rigidly deform a depth image by "
+                    "\n- unprojecting the depth image to a point cloud "
+                    "\n- deform the point cloud; "
+                    "\n- project the deformed point cloud back to the image. ",
+                    "depth"_a, "intrinsics"_a, "extrinsics"_a, "depth_scale"_a,
+                    "depth_max"_a)
+            .def(
+                    "deform",
+                    [](ControlGrid &control_grid,
+                       const geometry::RGBDImage &rgbd,
+                       const core::Tensor &intrinsics,
+                       const core::Tensor &extrinsics, float depth_scale,
+                       float depth_max) {
+                        return control_grid.Deform(rgbd, intrinsics, extrinsics,
+                                                   depth_scale, depth_max);
+                    },
+                    "Non-rigidly deform a RGBD image by "
+                    "\n- unprojecting the RGBD image to a point cloud "
+                    "\n- deform the point cloud; "
+                    "\n- project the deformed point cloud back to the image. ",
+                    "rgbd"_a, "intrinsics"_a, "extrinsics"_a, "depth_scale"_a,
+                    "depth_max"_a)
+            .def("get_init_positions", &ControlGrid::GetInitPositions,
+                 "Get control grid original positions directly from tensor "
+                 "keys.")
+            .def("get_curr_positions", &ControlGrid::GetCurrPositions,
+                 "Get control grid shifted positions from tensor values "
+                 "(optimized in-place)")
+            .def("get_hashmap", &ControlGrid::GetHashmap)
+            .def("size", &ControlGrid::Size)
+            .def("get_device", &ControlGrid::GetDevice)
+            .def("get_anchor_idx", &ControlGrid::GetAnchorIdx)
+            .def("__repr__", [](ControlGrid &control_grid) {
+                return fmt::format(
+                        "ControlGrid[size={:d}, "
+                        "anchor_idx={:d}].",
+                        control_grid.Size(), control_grid.GetAnchorIdx());
             });
 }
 
