@@ -816,6 +816,19 @@ def test_boolean_advanced_indexing(device):
     o3_y = o3_x[o3_row_sum <= 2, :]
     np.testing.assert_equal(np_y, o3_y.cpu().numpy())
 
+    o3_a = o3d.core.Tensor(1, device=device)
+    o3_i = o3d.core.Tensor(False, device=device)
+    np_a = np.array(1)
+    np_a = np.array(False)
+    o3_a[o3_i] = 2
+    np_a[np_i] = 2
+    np.testing.assert_equal(np_a, o3_a.cpu().numpy())
+    o3_i = o3d.core.Tensor(True, device=device)
+    np_a = np.array(True)
+    o3_a[o3_i] = 2
+    np_a[np_i] = 2
+    np.testing.assert_equal(np_a, o3_a.cpu().numpy())
+
     np_a = np.array(-1)
     o3_a = o3d.core.Tensor(np_a, device=device)
     np_a[np_a < 0] = 0
@@ -827,6 +840,21 @@ def test_boolean_advanced_indexing(device):
     np_a[np_a < 0] = 0
     o3_a[o3_a < 0] = 0
     np.testing.assert_equal(np_a, o3_a.cpu().numpy())
+
+    np_a = np.array(1)
+    o3_a = o3d.core.Tensor(np_a, device=device)
+    np_i = np.array(False)
+    o3_i = o3d.core.Tensor(np_i, device=device)
+    np_o = np_a[np_i]
+    o3_o = o3_a[o3_i]
+    # TODO: find a better way to assert for 0-D.
+    np.testing.assert_equal(np_o, o3_o.cpu().numpy())
+
+    np_i = np.array(True)
+    o3_i = o3d.core.Tensor(np_i, device=device)
+    np_o = np_a[np_i]
+    o3_o = o3_a[o3_i]
+    np.testing.assert_equal(np_o, o3_o.cpu().numpy())
 
 
 @pytest.mark.parametrize("device", list_devices())

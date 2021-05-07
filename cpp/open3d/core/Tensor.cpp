@@ -702,6 +702,22 @@ Tensor Tensor::Slice(int64_t dim,
 }
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
+    // Handle 0-D tensor.
+    // NOTE: Numpy supports only boolean indexing for 0-D tensor.
+    if (shape_.size() == 0) {
+        if (index_tensors.size() != 1 &&
+            index_tensors[0].GetDtype() != core::Dtype::Bool) {
+            utility::LogError(
+                    "Index vector should have only one element boolean tensor "
+                    "for 0-D tensor.");
+            return *this;
+        }
+        if (index_tensors[0].IsNonZero()) {
+            return *this;
+        }
+        return Tensor({0}, core::Dtype::Int64, GetDevice());
+    }
+
     AdvancedIndexPreprocessor aip(*this, index_tensors);
     Tensor dst = Tensor(aip.GetOutputShape(), dtype_, GetDevice());
     kernel::IndexGet(aip.GetTensor(), dst, aip.GetIndexTensors(),
@@ -713,11 +729,13 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
     // Handle 0-D tensor.
+    // NOTE: Numpy supports only boolean indexing for 0-D tensor.
     if (shape_.size() == 0) {
-        if (index_tensors.size() != 1) {
+        if (index_tensors.size() != 1 &&
+            index_tensors[0].GetDtype() != core::Dtype::Bool) {
             utility::LogError(
-                    "Index vector should have only one element for 0-D "
-                    "tensor.");
+                    "Index vector should have only one element boolean tensor "
+                    "for 0-D tensor.");
             return;
         }
         if (src_tensor.NumElements() != 1) {

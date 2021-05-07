@@ -901,6 +901,18 @@ TEST_P(TensorPermuteDevicePairs, IndexGet) {
     EXPECT_TRUE(dst_t.IsContiguous());
     EXPECT_EQ(dst_t.GetShape(), core::SizeVector({2, 2}));
     EXPECT_EQ(dst_t.ToFlatVector<float>(), std::vector<float>({5, 10, 17, 22}));
+
+    // Check with 0-D tensor.
+    src_t = core::Tensor::Init<int>(1, src_device);
+    indices = {core::Tensor::Init<bool>(true, idx_device)};
+    dst_t = src_t.IndexGet(indices);
+    EXPECT_TRUE(dst_t.AllClose(src_t));
+
+    src_t = core::Tensor::Init<int>(1, src_device);
+    indices = {core::Tensor::Init<bool>(false, idx_device)};
+    dst_t = src_t.IndexGet(indices);
+    EXPECT_TRUE(
+            dst_t.AllClose(core::Tensor({0}, core::Dtype::Int64, src_device)));
 }
 
 TEST_P(TensorPermuteDevicePairs, IndexGetNegative) {
