@@ -15,9 +15,6 @@ set(WEBRTC_STREAMER_SRC
 add_library(webrtc_server OBJECT
     ${WEBRTC_STREAMER_SRC}
 )
-target_include_directories(webrtc_server SYSTEM PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
 target_compile_definitions(webrtc_server PRIVATE
     WEBRTC_POSIX
     _FILE_OFFSET_BITS=64 # for civetweb

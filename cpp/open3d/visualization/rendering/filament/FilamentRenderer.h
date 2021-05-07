@@ -43,7 +43,6 @@ class VertexBuffer;
 /// @endcond
 
 namespace open3d {
-
 namespace visualization {
 namespace rendering {
 

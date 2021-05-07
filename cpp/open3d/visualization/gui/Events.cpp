@@ -43,15 +43,15 @@ std::string MouseEvent::ToString() const {
     ss << "MouseEvent{";
     ss << "type: ";
     if (type == Type::MOVE) {
-        ss << "Type::MOVE";
+        ss << "MOVE";
     } else if (type == Type::BUTTON_DOWN) {
-        ss << "Type::BUTTON_DOWN";
+        ss << "BUTTON_DOWN";
     } else if (type == Type::DRAG) {
-        ss << "Type::DRAG";
+        ss << "DRAG";
     } else if (type == Type::BUTTON_UP) {
-        ss << "Type::BUTTON_UP";
+        ss << "BUTTON_UP";
     } else if (type == Type::WHEEL) {
-        ss << "Type::WHEEL";
+        ss << "WHEEL";
     } else {
         ss << "ERROR";
     }
@@ -63,17 +63,17 @@ std::string MouseEvent::ToString() const {
     } else if (type == Type::BUTTON_DOWN || type == Type::BUTTON_UP) {
         ss << ", button.button: ";
         if (button.button == MouseButton::NONE) {
-            ss << "MouseButton::NONE";
+            ss << "NONE";
         } else if (button.button == MouseButton::LEFT) {
-            ss << "MouseButton::LEFT";
+            ss << "LEFT";
         } else if (button.button == MouseButton::MIDDLE) {
-            ss << "MouseButton::MIDDLE";
+            ss << "MIDDLE";
         } else if (button.button == MouseButton::RIGHT) {
-            ss << "MouseButton::RIGHT";
+            ss << "RIGHT";
         } else if (button.button == MouseButton::BUTTON4) {
-            ss << "MouseButton::BUTTON4";
+            ss << "BUTTON4";
         } else if (button.button == MouseButton::BUTTON5) {
-            ss << "MouseButton::BUTTON5";
+            ss << "BUTTON5";
         } else {
             ss << "ERROR";
         }

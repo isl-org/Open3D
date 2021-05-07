@@ -415,7 +415,7 @@ void Application::AddWindow(std::shared_ptr<Window> window) {
     if (auto webrtc_window_system =
                 std::dynamic_pointer_cast<webrtc_server::WebRTCWindowSystem>(
                         impl_->window_system_)) {
-        // Start the WebRTC server at the first run. No-op of the server has
+        // Start the WebRTC server at the first run. No-op if the server has
         // already been started.
         webrtc_window_system->StartWebRTCServer();
 

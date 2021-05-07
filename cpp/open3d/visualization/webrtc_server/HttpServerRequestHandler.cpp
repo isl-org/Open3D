@@ -45,7 +45,7 @@ namespace visualization {
 namespace webrtc_server {
 
 static int LogMessage(const struct mg_connection *conn, const char *message) {
-    fprintf(stderr, "%s\n", message);
+    utility::LogInfo("CivetServer: {}", message);
     return 0;
 }
 

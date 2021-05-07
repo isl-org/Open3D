@@ -272,7 +272,7 @@ struct Window::Impl {
 
 private:
     std::string GenerateUID() {
-        static size_t count = 0;
+        static std::atomic<size_t> count{0};
         return "window_" + std::to_string(count++);
     }
 };

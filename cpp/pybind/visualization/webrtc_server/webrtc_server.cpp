@@ -37,7 +37,7 @@ static void pybind_webrtc_server_classes(py::module &m) {
                                            "Global WebRTCServer singleton.");
 
     webrtc_server.def("__repr__", [](const WebRTCServer &ws) {
-        return std::string("Global WebRTCServer instance.");
+        return std::string("Global Open3D WebRTCServer instance.");
     });
     webrtc_server.def_property_readonly_static(
             "instance",
@@ -47,11 +47,18 @@ static void pybind_webrtc_server_classes(py::module &m) {
             py::return_value_policy::reference,
             "Gets the WebRTCServer singleton (read-only).");
     webrtc_server.def("call_http_api", &WebRTCServer::CallHttpAPI,
-                      "entry_point"_a, "query_string"_a = "", "data"_a = "");
+                      "entry_point"_a, "query_string"_a = "", "data"_a = "",
+                      "Emulates Open3D WebRTCServer's HTTP API calls. This is "
+                      "used when the HTTP handshake server is disabled (e.g. "
+                      "in Jupyter), and handshakes are done by this function.");
     webrtc_server.def("enable_webrtc", &WebRTCServer::EnableWebRTC,
                       "Use WebRTC streams to display rendered gui window.");
     webrtc_server.def("disable_http_handshake",
-                      &WebRTCServer::DisableHttpHandshake);
+                      &WebRTCServer::DisableHttpHandshake,
+                      "Disables the HTTP handshake server. In Jupyter "
+                      "environemnt, WebRTC handshake is performed by "
+                      "call_http_api() with Jupyter's own COMMS interface, "
+                      "thus the HTTP server shall be turned off.");
 }
 
 void pybind_webrtc_server(py::module &m) {
