@@ -26,25 +26,18 @@
 
 #include "open3d/t/pipelines/slac/SLACOptimizer.h"
 
-#include <fstream>
-#include <set>
-
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
-#include "open3d/geometry/LineSet.h"
 #include "open3d/io/PointCloudIO.h"
-#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/t/pipelines/slac/FillInLinearSystemImpl.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace slac {
+using t::geometry::PointCloud;
 
-using PointCloud = open3d::geometry::PointCloud;
-using TPointCloud = t::geometry::PointCloud;
 // Write point clouds to disk after preprocessing (remove outliers,
 // estimate normals, etc).
 static std::vector<std::string> PreprocessPointClouds(
@@ -150,8 +143,8 @@ static core::Tensor ConvertCorrespondencesTargetIndexedToCx2Form(
 static core::Tensor GetCorrespondenceSetForPointCloudPair(
         int i,
         int j,
-        TPointCloud& tpcd_i,
-        TPointCloud& tpcd_j,
+        PointCloud& tpcd_i,
+        PointCloud& tpcd_j,
         const core::Tensor& T_i,
         const core::Tensor& T_j,
         const core::Tensor& T_ij,
@@ -169,7 +162,7 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     T_j.AssertShape({4, 4});
     T_ij.AssertShape({4, 4});
 
-    TPointCloud tpcd_i_transformed_Tij = tpcd_i.Clone();
+    PointCloud tpcd_i_transformed_Tij = tpcd_i.Clone();
     tpcd_i_transformed_Tij.Transform(T_ij.To(device, dtype));
 
     // Obtain correspondence via nns, between tpcd_i_transformed_Tij and tpcd_j.
@@ -188,9 +181,9 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
             ConvertCorrespondencesTargetIndexedToCx2Form(target_indices);
 
     // Get correspondence indexed pointcloud.
-    TPointCloud tpcd_i_indexed(
+    PointCloud tpcd_i_indexed(
             tpcd_i.GetPoints().IndexGet({correspondence_set.T()[0]}));
-    TPointCloud tpcd_j_indexed(
+    PointCloud tpcd_j_indexed(
             tpcd_j.GetPoints().IndexGet({correspondence_set.T()[1]}));
 
     // Inlier Ratio is calculated on pointclouds transformed by their pose in
@@ -243,8 +236,10 @@ void SaveCorrespondencesForPointClouds(
                 "{}/{:03d}_{:03d}.npy", params.GetSubfolderName(), i, j);
         if (utility::filesystem::FileExists(correspondences_fname)) continue;
 
-        TPointCloud tpcd_i = CreateTPCDFromFile(fnames_processed[i]);
-        TPointCloud tpcd_j = CreateTPCDFromFile(fnames_processed[j]);
+        PointCloud tpcd_i =
+                CreateTPCDFromFile(fnames_processed[i], params.device_);
+        PointCloud tpcd_j =
+                CreateTPCDFromFile(fnames_processed[j], params.device_);
 
         // pose of i in model frame.
         core::Tensor T_i = core::eigen_converter::EigenMatrixToTensor(

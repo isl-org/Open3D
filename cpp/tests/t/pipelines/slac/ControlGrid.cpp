@@ -35,7 +35,7 @@
 namespace open3d {
 namespace tests {
 
-t::geometry::PointCloud CreateTPCDFromFile(
+static t::geometry::PointCloud CreateTPCDFromFile(
         const std::string& fname,
         const core::Device& device = core::Device("CPU:0")) {
     auto pcd = io::CreatePointCloudFromFile(fname);
