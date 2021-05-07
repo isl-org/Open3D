@@ -56,6 +56,9 @@
     tensor.def(#py_name, [](Tensor& self, double value) {                    \
         return self.cpp_name(Scalar(value));                                 \
     });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, int8_t value) {                    \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
     tensor.def(#py_name, [](Tensor& self, int16_t value) {                   \
         return self.cpp_name(Scalar(value));                                 \
     });                                                                      \
@@ -66,6 +69,15 @@
         return self.cpp_name(Scalar(value));                                 \
     });                                                                      \
     tensor.def(#py_name, [](Tensor& self, uint8_t value) {                   \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint16_t value) {                  \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint32_t value) {                  \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint64_t value) {                  \
         return self.cpp_name(Scalar(value));                                 \
     });                                                                      \
     tensor.def(#py_name, [](Tensor& self, bool value) {                      \
