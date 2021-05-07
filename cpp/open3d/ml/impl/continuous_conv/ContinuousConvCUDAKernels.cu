@@ -34,13 +34,14 @@ namespace ml {
 namespace impl {
 
 /// Kernel for FillColumn
-template <class TReal,
+template <class TFeat,
+          class TReal,
           class TIndex,
           bool ALIGN_CORNERS,
           CoordinateMapping MAPPING,
           InterpolationMode INTERPOLATION>
 __global__ void FillColumnKernel(
-        TReal* columns,
+        TFeat* columns,
         int in_channels,
         TIndex begin_idx,
         TIndex end_idx,
@@ -48,11 +49,11 @@ __global__ void FillColumnKernel(
         const TReal* const __restrict__ out_positions,
         TIndex num_inp,
         const TReal* const __restrict__ inp_positions,
-        const TReal* const __restrict__ inp_features,
-        const TReal* const __restrict__ inp_importance,
+        const TFeat* const __restrict__ inp_features,
+        const TFeat* const __restrict__ inp_importance,
         size_t neighbors_index_size,
         const TIndex* const __restrict__ neighbors_index,
-        const TReal* const __restrict__ neighbors_importance,
+        const TFeat* const __restrict__ neighbors_importance,
         const int64_t* const __restrict__ neighbors_row_splits,
         const TReal* const __restrict__ extents,
         const TReal* const __restrict__ offsets,
@@ -77,7 +78,7 @@ __global__ void FillColumnKernel(
     TReal offset[3] = {offsets[0], offsets[1], offsets[2]};
 
     const TIndex col_idx = out_idx - begin_idx;
-    TReal* out_column = columns + filter_size_x * filter_size_y *
+    TFeat* out_column = columns + filter_size_x * filter_size_y *
                                           filter_size_z * in_channels * col_idx;
     const int64_t neighbor_start = neighbors_row_splits[out_idx];
     const int64_t neighbor_end = neighbors_row_splits[out_idx + 1];
@@ -129,8 +130,8 @@ __global__ void FillColumnKernel(
 
     for (int64_t n_idx = neighbor_start; n_idx < neighbor_end; ++n_idx) {
         const TIndex inp_idx = neighbors_index[n_idx];
-        const TReal n_importance =
-                NEIGHBOR_IMPORTANCE ? neighbors_importance[n_idx] : TReal(1);
+        const TFeat n_importance =
+                NEIGHBOR_IMPORTANCE ? neighbors_importance[n_idx] : TFeat(1);
 
         TReal x, y, z;
         x = inp_positions[inp_idx * 3 + 0] - out_pos[0];
@@ -144,8 +145,8 @@ __global__ void FillColumnKernel(
         Interpolate<INTERPOLATION>(interp_weights, interp_indices, x, y, z,
                                    filter_size_x, filter_size_y, filter_size_z);
 
-        TReal infeat = 0;
-        TReal importance = 1;
+        TFeat infeat = 0;
+        TFeat importance = 1;
         if (POINT_IMPORTANCE) importance = inp_importance[inp_idx];
         if (NEIGHBOR_IMPORTANCE) importance *= n_importance;
         if (NORMALIZE && normalizer != 0) importance /= normalizer;
@@ -153,16 +154,16 @@ __global__ void FillColumnKernel(
         for (int ic = threadIdx.x; ic < in_channels; ic += blockDim.x) {
             infeat = importance * inp_features[inp_idx * in_channels + ic];
             for (int j = 0; j < NUM_INTERP_VALUES; ++j) {
-                TReal value = interp_weights[j] * infeat;
+                TFeat value = interp_weights[j] * infeat;
                 out_column[interp_indices[j] * in_channels + ic] += value;
             }
         }
     }  // for n
 }
 
-template <class TReal, class TIndex>
+template <class TFeat, class TReal, class TIndex>
 void FillColumn(const cudaStream_t& stream,
-                TReal* columns,
+                TFeat* columns,
                 int in_channels,
                 TIndex begin_idx,
                 TIndex end_idx,
@@ -170,11 +171,11 @@ void FillColumn(const cudaStream_t& stream,
                 const TReal* const __restrict__ out_positions,
                 TIndex num_inp,
                 const TReal* const __restrict__ inp_positions,
-                const TReal* const __restrict__ inp_features,
-                const TReal* const __restrict__ inp_importance,
+                const TFeat* const __restrict__ inp_features,
+                const TFeat* const __restrict__ inp_importance,
                 size_t neighbors_index_size,
                 const TIndex* const __restrict__ neighbors_index,
-                const TReal* const __restrict__ neighbors_importance,
+                const TFeat* const __restrict__ neighbors_importance,
                 const int64_t* const __restrict__ neighbors_row_splits,
                 const TReal* const __restrict__ extents,
                 const TReal* const __restrict__ offsets,
@@ -193,7 +194,7 @@ void FillColumn(const cudaStream_t& stream,
     int filter_spatial_size = filter_size_x * filter_size_y * filter_size_z;
     cudaMemsetAsync(
             columns, 0,
-            sizeof(TReal) * filter_spatial_size * in_channels * num_columns,
+            sizeof(TFeat) * filter_spatial_size * in_channels * num_columns,
             stream);
 
     const int BLOCKSIZE = 32;
@@ -209,10 +210,11 @@ void FillColumn(const cudaStream_t& stream,
             individual_extent, isotropic_extent, normalize,                    \
             inp_importance != nullptr, neighbors_importance != nullptr
 
-#define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS)                   \
-    if (INTERPOLATION == interpolation && MAPPING == coordinate_mapping &&     \
-        ALIGN_CORNERS == align_corners)                                        \
-        FillColumnKernel<TReal, TIndex, ALIGN_CORNERS, MAPPING, INTERPOLATION> \
+#define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS)               \
+    if (INTERPOLATION == interpolation && MAPPING == coordinate_mapping && \
+        ALIGN_CORNERS == align_corners)                                    \
+        FillColumnKernel<TFeat, TReal, TIndex, ALIGN_CORNERS, MAPPING,     \
+                         INTERPOLATION>                                    \
                 <<<grid, block, 0, stream>>>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2(INTERPOLATION, MAPPING)  \
@@ -243,7 +245,7 @@ void FillColumn(const cudaStream_t& stream,
 #undef FN_PARAMETERS
 }
 
-template void FillColumn<float, int32_t>(
+template void FillColumn<float, float, int32_t>(
         const cudaStream_t& stream,
         float* columns,
         int in_channels,
@@ -269,13 +271,14 @@ template void FillColumn<float, int32_t>(
         bool isotropic_extent,
         bool normalize);
 
-template <class TReal,
+template <class TFeat,
+          class TReal,
           class TIndex,
           bool ALIGN_CORNERS,
           CoordinateMapping MAPPING,
           InterpolationMode INTERPOLATION>
 __global__ void FillColumnTransposeKernel(
-        TReal* columns,
+        TFeat* columns,
         int in_channels,
         TIndex begin_idx,
         TIndex end_idx,
@@ -283,12 +286,12 @@ __global__ void FillColumnTransposeKernel(
         const TReal* const __restrict__ out_positions,
         TIndex num_inp,
         const TReal* const __restrict__ inp_positions,
-        const TReal* const __restrict__ inp_features,
+        const TFeat* const __restrict__ inp_features,
         size_t neighbors_index_size,
         const TIndex* const __restrict__ neighbors_index,
-        const TReal* const __restrict__ inp_neighbors_importance_sum,
+        const TFeat* const __restrict__ inp_neighbors_importance_sum,
         const int64_t* const __restrict__ inp_neighbors_prefix_sum,
-        const TReal* const __restrict__ neighbors_importance,
+        const TFeat* const __restrict__ neighbors_importance,
         const int64_t* const __restrict__ neighbors_row_splits,
         const TReal* const __restrict__ extents,
         const TReal* const __restrict__ offsets,
@@ -312,7 +315,7 @@ __global__ void FillColumnTransposeKernel(
     TReal offset[3] = {offsets[0], offsets[1], offsets[2]};
 
     const TIndex col_idx = out_idx - begin_idx;
-    TReal* out_column = columns + filter_size_x * filter_size_y *
+    TFeat* out_column = columns + filter_size_x * filter_size_y *
                                           filter_size_z * in_channels * col_idx;
     const int64_t neighbor_start = neighbors_row_splits[out_idx];
     const int64_t neighbor_end = neighbors_row_splits[out_idx + 1];
@@ -381,23 +384,23 @@ __global__ void FillColumnTransposeKernel(
         Interpolate<INTERPOLATION>(interp_weights, interp_indices, x, y, z,
                                    filter_size_x, filter_size_y, filter_size_z);
 
-        TReal infeat = 0;
+        TFeat infeat = 0;
         for (int ic = threadIdx.x; ic < in_channels; ic += blockDim.x) {
             infeat = inp_features[inp_idx * in_channels + ic];
             if (NEIGHBOR_IMPORTANCE) infeat *= neighbors_importance[n_idx];
             if (NORMALIZE) infeat *= num_inp_neighbors_normalizer;
             for (int j = 0; j < NUM_INTERP_VALUES; ++j) {
-                TReal value = interp_weights[j] * infeat;
+                TFeat value = interp_weights[j] * infeat;
                 out_column[interp_indices[j] * in_channels + ic] += value;
             }
         }
     }  // for n
 }
 
-template <class TReal, class TIndex>
+template <class TFeat, class TReal, class TIndex>
 void FillColumnTranspose(
         const cudaStream_t& stream,
-        TReal* columns,
+        TFeat* columns,
         int in_channels,
         TIndex begin_idx,
         TIndex end_idx,
@@ -405,12 +408,12 @@ void FillColumnTranspose(
         const TReal* const __restrict__ out_positions,
         TIndex num_inp,
         const TReal* const __restrict__ inp_positions,
-        const TReal* const __restrict__ inp_features,
-        const TReal* const __restrict__ inp_neighbors_importance_sum,
+        const TFeat* const __restrict__ inp_features,
+        const TFeat* const __restrict__ inp_neighbors_importance_sum,
         const int64_t* const __restrict__ inp_neighbors_prefix_sum,
         size_t neighbors_index_size,
         const TIndex* const __restrict__ neighbors_index,
-        const TReal* const __restrict__ neighbors_importance,
+        const TFeat* const __restrict__ neighbors_importance,
         const int64_t* const __restrict__ neighbors_row_splits,
         const TReal* const __restrict__ extents,
         const TReal* const __restrict__ offsets,
@@ -430,7 +433,7 @@ void FillColumnTranspose(
     int filter_spatial_size = filter_size_x * filter_size_y * filter_size_z;
     cudaMemsetAsync(
             columns, 0,
-            sizeof(TReal) * filter_spatial_size * in_channels * num_columns,
+            sizeof(TFeat) * filter_spatial_size * in_channels * num_columns,
             stream);
 
     const int BLOCKSIZE = 32;
@@ -450,8 +453,8 @@ void FillColumnTranspose(
 #define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS)               \
     if (INTERPOLATION == interpolation && MAPPING == coordinate_mapping && \
         ALIGN_CORNERS == align_corners)                                    \
-        FillColumnTransposeKernel<TReal, TIndex, ALIGN_CORNERS, MAPPING,   \
-                                  INTERPOLATION>                           \
+        FillColumnTransposeKernel<TFeat, TReal, TIndex, ALIGN_CORNERS,     \
+                                  MAPPING, INTERPOLATION>                  \
                 <<<grid, block, 0, stream>>>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2(INTERPOLATION, MAPPING)  \
@@ -482,7 +485,7 @@ void FillColumnTranspose(
 #undef FN_PARAMETERS
 }
 
-template void FillColumnTranspose<float, int32_t>(
+template void FillColumnTranspose<float, float, int32_t>(
         const cudaStream_t& stream,
         float* columns,
         int in_channels,

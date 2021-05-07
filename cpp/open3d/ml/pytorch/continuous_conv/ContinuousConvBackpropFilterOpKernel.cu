@@ -33,7 +33,7 @@
 
 using namespace open3d::ml::impl;
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void ContinuousConvBackpropFilterCUDA(
         const torch::Tensor& filters,
         const torch::Tensor& out_positions,
@@ -70,19 +70,19 @@ void ContinuousConvBackpropFilterCUDA(
     size_t max_temp_size = 0;
 
     // determine temp_size
-    CConvBackpropFilterCUDA<TReal, TIndex>(
+    CConvBackpropFilterCUDA<TFeat, TOut, TReal, TIndex>(
             stream, temp_ptr, temp_size, max_temp_size, texture_alignment,
-            filter_backprop.data_ptr<TReal>(), filter_dims,
+            filter_backprop.data_ptr<TOut>(), filter_dims,
             out_positions.size(0), out_positions.data_ptr<TReal>(),
             inp_positions.size(0), inp_positions.data_ptr<TReal>(),
-            inp_features.data_ptr<TReal>(),
-            inp_importance.size(0) ? inp_importance.data_ptr<TReal>() : nullptr,
+            inp_features.data_ptr<TFeat>(),
+            inp_importance.size(0) ? inp_importance.data_ptr<TFeat>() : nullptr,
             neighbors_index.size(0), neighbors_index.data_ptr<TIndex>(),
             neighbors_importance.size(0)
-                    ? neighbors_importance.data_ptr<TReal>()
+                    ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
             neighbors_row_splits.data_ptr<int64_t>(), extents.data_ptr<TReal>(),
-            offset.data_ptr<TReal>(), out_features_gradient.data_ptr<TReal>(),
+            offset.data_ptr<TReal>(), out_features_gradient.data_ptr<TFeat>(),
             interpolation, coordinate_mapping, align_corners,
             individual_extents, isotropic_extents, normalize);
 
@@ -93,24 +93,25 @@ void ContinuousConvBackpropFilterCUDA(
     auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
 
     // actually run the operation
-    CConvBackpropFilterCUDA<TReal, TIndex>(
+    CConvBackpropFilterCUDA<TFeat, TOut, TReal, TIndex>(
             stream, temp_ptr, temp_size, max_temp_size, texture_alignment,
-            filter_backprop.data_ptr<TReal>(), filter_dims,
+            filter_backprop.data_ptr<TOut>(), filter_dims,
             out_positions.size(0), out_positions.data_ptr<TReal>(),
             inp_positions.size(0), inp_positions.data_ptr<TReal>(),
-            inp_features.data_ptr<TReal>(),
-            inp_importance.size(0) ? inp_importance.data_ptr<TReal>() : nullptr,
+            inp_features.data_ptr<TFeat>(),
+            inp_importance.size(0) ? inp_importance.data_ptr<TFeat>() : nullptr,
             neighbors_index.size(0), neighbors_index.data_ptr<TIndex>(),
             neighbors_importance.size(0)
-                    ? neighbors_importance.data_ptr<TReal>()
+                    ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
             neighbors_row_splits.data_ptr<int64_t>(), extents.data_ptr<TReal>(),
-            offset.data_ptr<TReal>(), out_features_gradient.data_ptr<TReal>(),
+            offset.data_ptr<TReal>(), out_features_gradient.data_ptr<TFeat>(),
             interpolation, coordinate_mapping, align_corners,
             individual_extents, isotropic_extents, normalize);
 }
-#define INSTANTIATE(TReal, TIndex)                                            \
-    template void ContinuousConvBackpropFilterCUDA<TReal, TIndex>(            \
+#define INSTANTIATE(TFeat, TOut, TReal, TIndex)                               \
+    template void                                                             \
+    ContinuousConvBackpropFilterCUDA<TFeat, TOut, TReal, TIndex>(             \
             const torch::Tensor& filters, const torch::Tensor& out_positions, \
             const torch::Tensor& extents, const torch::Tensor& offset,        \
             const torch::Tensor& inp_positions,                               \
@@ -126,4 +127,4 @@ void ContinuousConvBackpropFilterCUDA(
             const open3d::ml::impl::InterpolationMode interpolation,          \
             const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
 
-INSTANTIATE(float, int32_t)
+INSTANTIATE(float, float, float, int32_t)
