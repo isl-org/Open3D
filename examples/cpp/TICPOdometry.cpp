@@ -108,6 +108,7 @@ protected:
         output_->SetText(output.c_str());
     }
 };
+//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 // Class containing the MultiScaleICP based Frame to Frame Odometry function
@@ -127,12 +128,13 @@ public:
         // sets the "__visualization_scalar" parameter and its min max values.
         pointclouds_device_ = LoadTensorPointClouds();
 
-        // Rendering Materials for Current Frame.
+        // Rendering Material used for `current frame`.
         mat_ = rendering::Material();
         mat_.shader = "defaultUnlit";
         mat_.base_color = Eigen::Vector4f(0.72f, 0.45f, 0.69f, 1.0f);
         mat_.point_size = 3.0f;
-        // Rendering Materials for cummulative pointcloud.
+
+        // Rendering Material used for `cummulative pointcloud`.
         pointcloud_mat_ = GetPointCloudMaterial();
 
         // When window is closed, it will stop the execution of the code.
@@ -141,6 +143,7 @@ public:
             is_done_ = true;
             return true;  // false would cancel the close
         });
+
         update_thread_ = std::thread([this]() { this->UpdateMain(); });
     }
 
@@ -151,19 +154,36 @@ private:
 
     void UpdateMain() {
         // ----------------- VISUALIZATION --------------------
+        // Initialize visualization.
         if (visualize_output_) {
             {
-                std::lock_guard<std::mutex> lock(cloud_lock_);
+                // lock `pcd_current_` before modifying the value, to
+                // protect the case, when visualizer is accessing it
+                // at the same time we are modifying it.
+                std::lock_guard<std::mutex> lock(pcd_current_lock_);
+
+                // Copying the pointcloud to pcd_current_ on the `main thread`
+                // on CPU, which is later passed to the visualizer for
+                // rendering.
                 pcd_current_ = pointclouds_device_[0].CPU();
+
+                // Removing `normal` attribute before passing it to
+                // the visualizer might give us some performance benifits.
                 pcd_current_.RemovePointAttr("normals");
             }
+
             gui::Application::GetInstance().PostToMainThread(this, [&]() {
-                std::lock_guard<std::mutex> lock(cloud_lock_);
+                std::lock_guard<std::mutex> lock(pcd_current_lock_);
+
+                // Setting background for the visualizer. [In this case: Black].
                 this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1.0});
 
+                // Adding the first frame of the sequence to the visualizer,
+                // and rendering it using the material set for `current scan`.
                 this->widget3d_->GetScene()->AddGeometry(filenames_[0],
                                                          &pcd_current_, mat_);
 
+                // Getting bounding box and center to setup camera view.
                 auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
                 auto center = bbox.GetCenter().cast<float>();
                 this->widget3d_->SetupCamera(verticalFoV, bbox, center);
@@ -238,14 +258,10 @@ private:
                 std::stringstream out_;
 
                 {
-                    // Locking on to the tread as we are going to modify the
-                    // memory which is being used by the visualizer also, and
-                    // we don't want both of this things to occur at the same
-                    // time. [Therefore, we don't want to write to the memory,
-                    // while the visualizer is using it].
-                    // Also, by doing this we ensure that the data is present
-                    // on the `main thread` being used by the visualizer.
-                    std::lock_guard<std::mutex> lock(cloud_lock_);
+                    // lock `pcd_current_` before modifying the value, to
+                    // protect the case, when visualizer is accessing it
+                    // at the same time we are modifying it.
+                    std::lock_guard<std::mutex> lock(pcd_current_lock_);
 
                     // For visualization it is required that the pointcloud
                     // must be on CPU device.
@@ -259,7 +275,7 @@ private:
                             pcd_current_.GetPoints().GetLength();
 
                     // Removing `normal` attribute before passing it to
-                    // Visualization might give us some performance benifits.
+                    // the visualizer might give us some performance benifits.
                     pcd_current_.RemovePointAttr("normals");
                 }
 
@@ -279,13 +295,12 @@ private:
                         this, [this, i, out_ = out_.str()]() {
                             // Note. We are getting `i` and `out_` by value
                             // instead of by reference, therefore the data is
-                            // copied, inside the `main thread` itself, on which
+                            // copied inside the `main thread` itself, on which
                             // the visualizer is running. So, we don't need to
-                            // worry about simultaneous access or the condition
-                            // if the data is not present on the `main thread`.
+                            // use locks for such cases.
                             this->SetOutput(out_);
 
-                            std::lock_guard<std::mutex> lock(cloud_lock_);
+                            std::lock_guard<std::mutex> lock(pcd_current_lock_);
 
                             // We render the `source` or the previous
                             // "current scan" pointcloud by using the material
@@ -317,7 +332,7 @@ private:
     }
 
 private:
-    // To read parameters from config file.
+    // To read parameters from the config file (.txt).
     void ReadConfigFile(const std::string& path_config) {
         std::ifstream cFile(path_config);
         std::vector<double> relative_fitness;
@@ -471,7 +486,6 @@ private:
         std::vector<t::geometry::PointCloud> pointclouds_device(
                 filenames_.size(), t::geometry::PointCloud(device_));
 
-        max_points_in_frame_ = 0;
         try {
             int i = 0;
             t::geometry::PointCloud pointcloud_local;
@@ -493,6 +507,13 @@ private:
                     }
                 }
 
+                // `__visualization_scalar` attribute in a tensor pointcloud
+                // is used by the visualizer when shader is set to
+                // `unlitGradient`. `unlitGradient` assigns each point a
+                // color based on this value. More about this is described in
+                // the `GetPointCloudMaterial` function.
+                // Here `z` value of a `x y z` point is used as
+                // `__visualization_scalar`.
                 pointcloud_local.SetPointAttr("__visualization_scalar",
                                               pointcloud_local.GetPoints()
                                                       .Slice(0, 0, -1)
@@ -516,14 +537,12 @@ private:
                     pointcloud_local.SetPointNormals(pointcloud_normals);
                 }
                 // Adding it to our vector of pointclouds.
-
+                // We save the pointcloud downsampled by the highest
+                // resolution voxel size, during data pre-fetching,
+                // to same memory.
                 pointclouds_device[i++] =
                         pointcloud_local.To(device_).VoxelDownSample(
                                 voxel_sizes_[icp_scale_levels_ - 1]);
-
-                max_points_in_frame_ = std::max(
-                        max_points_in_frame_,
-                        pointclouds_device[i - 1].GetPoints().GetLength());
             }
             std::cout << std::endl;
         } catch (...) {
@@ -541,10 +560,32 @@ private:
     rendering::Material GetPointCloudMaterial() {
         auto pointcloud_mat = rendering::Material();
         pointcloud_mat.shader = "unlitGradient";
+
+        // The values of `__visualization_scalar` for each point is mapped to
+        // [0, 1] such that value <= scalar_min are mapped to 0,
+        // value >= scalar_max are mapped to 1, and the values in between are
+        // linearly mapped. [Windowed normalisation method].
         pointcloud_mat.scalar_min = min_visualization_scalar_;
         pointcloud_mat.scalar_max = max_visualization_scalar_;
+
         pointcloud_mat.point_size = 0.3f;
 
+        // This defines the color gradient scheme for rending the material.
+        // The values of `__visualization_scalar` is mapped to the
+        // color gradient, such that the points <= scalar_min are assigned
+        // the color {0.0f, 0.25f, 0.0f, 1.0f}, and the points >= scalar_max
+        // are assigned the color {1.0f, 0.0f, 0.0f, 1.0f}. The points
+        // between this range are assigned colors accordingly.
+        //
+        // For example:
+        // let's say the points {0, 1, 2, 3, 4, 5} have the following
+        // `__visualization_scalar` values: {-20.5, -1.0, -0.0, 1, 3.5, 500}.
+        // if we set `scalar_min` = -1, `scalar_max` = 3.
+        // The windowed_normalized values will be: {0, 0, 0.25, 0.50, 1.0, 1.0}.
+        // Therefore the color assigned to the points according to the following
+        // scheme will be:
+        // {{0.0f, 0.25f, 0.0f}, {0.0f, 0.25f, 0.0f}, {0.0f, 1.0f, 1.0f},
+        //  {0.0f, 1.0f, 0.0f},  {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}.
         pointcloud_mat.gradient = std::make_shared<
                 rendering::Gradient>(std::vector<rendering::Gradient::Point>{
                 rendering::Gradient::Point{0.000f, {0.0f, 0.25f, 0.0f, 1.0f}},
@@ -561,7 +602,7 @@ private:
     }
 
 private:
-    std::mutex cloud_lock_;
+    std::mutex pcd_current_lock_;
 
     std::atomic<bool> is_done_;
     open3d::visualization::rendering::Material pointcloud_mat_;
@@ -570,7 +611,6 @@ private:
     std::vector<open3d::t::geometry::PointCloud> pointclouds_device_;
     t::geometry::PointCloud pcd_current_;
 
-    int64_t max_points_in_frame_;
     double min_visualization_scalar_;
     double max_visualization_scalar_;
 
