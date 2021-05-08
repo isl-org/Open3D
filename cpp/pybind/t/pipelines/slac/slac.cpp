@@ -246,11 +246,7 @@ void pybind_slac_methods(py::module &m) {
     docstring::FunctionDocInject(m, "save_correspondences_for_pointclouds",
                                  map_shared_argument_docstrings);
 
-<<<<<<< HEAD
     m.def("run_slac_optimizer_for_fragments", &RunSLACOptimizerForFragments,
-=======
-    m.def("run_slac_optimize_for_fragments", &RunSLACOptimizerForFragments,
->>>>>>> 2ba60d5ef840ce8c1cc2c046b0ed2613e138e088
           "Simultaneous Localization and Calibration: Self-Calibration of "
           "Consumer Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun "
           "Estimate a shared control grid for all fragments for scene "
@@ -259,15 +255,8 @@ void pybind_slac_methods(py::module &m) {
           "fragment_filenames"_a, "fragment_pose_graph"_a,
           "params"_a = SLACOptimizerParams(),
           "debug_option"_a = SLACDebugOption());
-<<<<<<< HEAD
-    docstring::FunctionDocInject(m, "run_slac_optimizer_for_fragments",
-=======
     docstring::FunctionDocInject(m, "run_slac_optimize_for_fragments",
->>>>>>> 2ba60d5ef840ce8c1cc2c046b0ed2613e138e088
                                  map_shared_argument_docstrings);
-
-    m.def("run_rigid_optimize_for_fragments", &RunRigidOptimizerForFragments,
-          "Extended ICP to simultaneously align multiple point clouds with "
           "dense pairwise point-to-plane distances.",
           "fragment_filenames"_a, "fragment_pose_graph"_a,
           "params"_a = SLACOptimizerParams(),
