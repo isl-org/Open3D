@@ -230,6 +230,7 @@ static const std::unordered_map<std::string, std::string>
 void pybind_slac_methods(py::module &m) {
     m.def("save_correspondences_for_pointclouds",
           &SaveCorrespondencesForPointClouds,
+          py::call_guard<py::gil_scoped_release>(),
           "Read pose graph containing loop closures and odometry to compute "
           "correspondences. Uses aggressive pruning -- reject any suspicious "
           "pair.",
@@ -240,6 +241,7 @@ void pybind_slac_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("run_slac_optimize_for_fragments", &RunSLACOptimizerForFragments,
+          py::call_guard<py::gil_scoped_release>(),
           "Simultaneous Localization and Calibration: Self-Calibration of "
           "Consumer Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun "
           "Estimate a shared control grid for all fragments for scene "
@@ -252,6 +254,7 @@ void pybind_slac_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("run_rigid_optimize_for_fragments", &RunRigidOptimizerForFragments,
+          py::call_guard<py::gil_scoped_release>(),
           "Extended ICP to simultaneously align multiple point clouds with "
           "dense pairwise point-to-plane distances.",
           "fragment_filenames"_a, "fragment_pose_graph"_a,
