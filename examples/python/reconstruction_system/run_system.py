@@ -33,6 +33,7 @@ if __name__ == "__main__":
         "--integrate",
         help="Step 4) integrate the whole RGBD sequence to make final mesh",
         action="store_true")
+    parser.add_argument("--slac", help="Step 5) run slac.", action="store_true")
     parser.add_argument("--debug_mode",
                         help="turn on debug mode",
                         action="store_true")
@@ -41,7 +42,8 @@ if __name__ == "__main__":
     if not args.make and \
             not args.register and \
             not args.refine and \
-            not args.integrate:
+            not args.integrate and \
+            not args.slac:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
@@ -85,6 +87,11 @@ if __name__ == "__main__":
         import integrate_scene
         integrate_scene.run(config)
         times[3] = time.time() - start_time
+    if args.slac:
+        start_time = time.time()
+        import slac
+        slac.run(config)
+        time[4] = time.time() - start_time
 
     print("====================================")
     print("Elapsed time (in h:m:s)")
@@ -93,5 +100,6 @@ if __name__ == "__main__":
     print("- Register fragments  %s" % datetime.timedelta(seconds=times[1]))
     print("- Refine registration %s" % datetime.timedelta(seconds=times[2]))
     print("- Integrate frames    %s" % datetime.timedelta(seconds=times[3]))
+    print("- SLAC                %s" % datetime.timedelta(seconds=times[4]))
     print("- Total               %s" % datetime.timedelta(seconds=sum(times)))
     sys.stdout.flush()

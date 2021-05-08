@@ -33,6 +33,10 @@ def initialize_config(config):
     set_default_value(config, "global_registration", "ransac")
     set_default_value(config, "python_multi_threading", True)
 
+    set_default_value(config, "regularizer_weight", 1)
+    set_default_value(config, "max_iterations", 5)
+    set_default_value(config, "device", "CPU:0")
+
     set_default_value(config, "folder_fragment", "fragments/")
     set_default_value(config, "template_fragment_posegraph",
                       "fragments/fragment_%03d.json")
