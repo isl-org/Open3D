@@ -153,13 +153,13 @@ private:
     std::thread update_thread_;
 
     void UpdateMain() {
-        // ----------------- VISUALIZATION --------------------
-        // Initialize visualization.
+        // --------------------- VISUALIZATION ------------------------------
+        // Initialize visualizer.
         if (visualize_output_) {
             {
-                // lock `pcd_current_` before modifying the value, to
-                // protect the case, when visualizer is accessing it
-                // at the same time we are modifying it.
+                // lock to protect `src_pcd_` and `tar_pcd_` before modifying
+                // the value, ensuring the visualizer thread doesn't read the
+                // data, while we are modifying it.
                 std::lock_guard<std::mutex> lock(pcd_current_lock_);
 
                 // Copying the pointcloud to pcd_current_ on the `main thread`
@@ -189,7 +189,7 @@ private:
                 this->widget3d_->SetupCamera(verticalFoV, bbox, center);
             });
         }
-        // -----------------------------------------------------
+        // ------------------------------------------------------------------
 
         // Initial transfrom from source to target, to initialize ICP.
         core::Tensor initial_transform = core::Tensor::Eye(
@@ -218,8 +218,10 @@ private:
         int64_t total_points_in_frame = 0;
         int i = 0;
 
+        int total_frames = end_index_ - start_index_;
+
         // --------------------- Main Compute Function ----------------------
-        for (i = 0; i < end_range_ - 1 && !is_done_; i++) {
+        for (i = 0; i < total_frames - 1 && !is_done_; i++) {
             utility::Timer time_total;
             time_total.Start();
 
@@ -295,9 +297,8 @@ private:
                         this, [this, i, out_ = out_.str()]() {
                             // Note. We are getting `i` and `out_` by value
                             // instead of by reference, therefore the data is
-                            // copied inside the `main thread` itself, on which
-                            // the visualizer is running. So, we don't need to
-                            // use locks for such cases.
+                            // locally copied on the `main thread` itself,
+                            // so, we don't need to use locks for such cases.
                             this->SetOutput(out_);
 
                             std::lock_guard<std::mutex> lock(pcd_current_lock_);
@@ -322,12 +323,12 @@ private:
                                                          center);
                         });
             }
-            // -----------------------------------------------------
+            // --------------------------------------------------------------
 
             time_total.Stop();
             total_time_i += time_total.GetDuration();
         }
-        // ----------------------------------------------------------
+        // ------------------------------------------------------------------
         utility::LogInfo(" Total Average FPS: {}", 1000 * i / total_time_i);
     }
 
@@ -340,6 +341,7 @@ private:
         std::vector<int> max_iterations;
         std::string verb, visualize;
 
+        // ---------------------- Reading Configuration File ----------------
         if (cFile.is_open()) {
             std::string line;
             while (getline(cFile, line)) {
@@ -355,9 +357,12 @@ private:
                     path_dataset = value;
                 } else if (name == "visualization") {
                     visualize = value;
-                } else if (name == "end_range") {
+                } else if (name == "start_index") {
                     std::istringstream is(value);
-                    end_range_ = std::stoi(value);
+                    start_index_ = std::stoi(value);
+                } else if (name == "end_index") {
+                    std::istringstream is(value);
+                    end_index_ = std::stoi(value);
                 } else if (name == "registration_method") {
                     registration_method_ = value;
                 } else if (name == "criteria.relative_fitness") {
@@ -389,20 +394,29 @@ private:
         } else {
             std::cerr << "Couldn't open config file for reading.\n";
         }
+        //-------------------------------------------------------------------
+
+        //-------- Prining values and intilising class data members ---------
+
+        if (end_index_ < start_index_ + 1) {
+            utility::LogError(
+                    " End index must be greater than the start index. Please "
+                    "recheck the configuration file.");
+        }
 
         utility::LogInfo(" Dataset path: {}", path_dataset);
 
         // The dataset might be too large for your memory. If that is the case,
         // one may directly read the pointcloud frame inside
-        if (end_range_ > 500) {
+        if (end_index_ - start_index_ > 500) {
             utility::LogWarning(
                     " The range might be too large range. Might exceed memory. "
                     "To use large dataset, it is advised to avoid pre-fetching "
                     "data to device, and read the pointcloud directly from "
                     "inside computation loop.");
         }
-        utility::LogInfo(" Range: 0 to {} pointcloud files in sequence.",
-                         end_range_ - 1);
+        utility::LogInfo(" Range: {} to {} pointcloud files in sequence.",
+                         start_index_, end_index_ - 1);
         utility::LogInfo(" Registrtion method: {}", registration_method_);
         std::cout << std::endl;
 
@@ -466,39 +480,56 @@ private:
             visualize_output_ = false;
         }
 
+        //-------------------------------------------------------------------
         std::cout << " Config file read complete. " << std::endl;
     }
 
     // To perform required dtype conversion, normal estimation.
     std::vector<t::geometry::PointCloud> LoadTensorPointClouds() {
+        // Reading all the filenames in the given dataset path
+        // with supported extensions. [.ply and .pcd].
+        std::vector<std::string> all_pcd_files;
         utility::filesystem::ListFilesInDirectoryWithExtension(
-                path_dataset, "pcd", filenames_);
-        if (filenames_.size() == 0) {
+                path_dataset, "pcd", all_pcd_files);
+        if (all_pcd_files.size() == 0) {
             utility::filesystem::ListFilesInDirectoryWithExtension(
-                    path_dataset, "ply", filenames_);
+                    path_dataset, "ply", all_pcd_files);
         }
 
-        std::sort(filenames_.begin(), filenames_.end());
+        if (static_cast<int>(all_pcd_files.size()) < end_index_) {
+            utility::LogError(
+                    "Pointcloud files in the directory {}, must be more than "
+                    "the defined end index: {}, but only {} found.",
+                    path_dataset, end_index_, all_pcd_files.size());
+        }
 
-        filenames_.resize(end_range_);
+        // Sorting the filenames to get the data in sequence.
+        std::sort(all_pcd_files.begin(), all_pcd_files.end());
+        utility::LogInfo(" Number of frames: {}", all_pcd_files.size());
+
+        filenames_ =
+                std::vector<std::string>(all_pcd_files.begin() + start_index_,
+                                         all_pcd_files.begin() + end_index_);
         utility::LogInfo(" Number of frames: {}", filenames_.size());
 
+        int total_frames = filenames_.size();
         std::vector<t::geometry::PointCloud> pointclouds_device(
-                filenames_.size(), t::geometry::PointCloud(device_));
+                total_frames, t::geometry::PointCloud(device_));
 
         try {
             int i = 0;
             t::geometry::PointCloud pointcloud_local;
             for (auto& path : filenames_) {
-                std::cout << " \rPre-fetching Data... " << i * 100 / end_range_
-                          << "%"
+                std::cout << " \rPre-fetching Data... "
+                          << i * 100 / total_frames << "%"
                           << " " << std::flush;
 
                 t::io::ReadPointCloud(path, pointcloud_local,
                                       {"auto", false, false, true});
 
-                // Dtype conversion to Float32. Currently only Float32
-                // pointcloud is supported.
+                // Cpnverting attributes to Floar32 and currently only
+                // Float32 pointcloud is supported by the tensor
+                // registration module.
                 for (std::string attr : {"points", "colors", "normals"}) {
                     if (pointcloud_local.HasPointAttr(attr)) {
                         pointcloud_local.SetPointAttr(
@@ -549,9 +580,9 @@ private:
             utility::LogError(
                     " Failed to read pointcloud in sequence. Ensure pointcloud "
                     "files are present in the given dataset path in continuous "
-                    "sequence from 0 to {}. Also, in case of large range, the "
+                    "sequence from {} to {}. Also, in case of large range, the "
                     "system might be going out-of-memory. ",
-                    end_range_);
+                    start_index_, end_index_);
         }
 
         return pointclouds_device;
@@ -619,7 +650,8 @@ private:
     std::string registration_method_;
     std::vector<std::string> filenames_;
     utility::VerbosityLevel verbosity_;
-    int end_range_;
+    int end_index_;
+    int start_index_;
     bool visualize_output_;
     double visualization_min_;
     double visualization_max_;

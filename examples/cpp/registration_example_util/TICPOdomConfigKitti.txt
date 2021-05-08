@@ -4,7 +4,7 @@
 # 1. Run script download_kitti_samples.sh.
 # 2. Go to build/bin/examples
 # 3. Run the following command:
-# ./DemoTICPOdom CPU:0 ../../../examples/cpp/registration_example_util/TICPOdomConfig.txt
+# ./DemoTICPOdom CPU:0 ../../../examples/cpp/registration_example_util/TICPOdomConfigKitti.txt
 # Change CPU:0 to CUDA:0 for running it on primary GPU.
 
 # option to turn ON / OFF visualization:
@@ -15,12 +15,12 @@ visualization_max = 1.5
 # Verbosity can be Info, Debug.
 verbosity = Info
 
-# Path of the downloaded dataset containing frames in .pcd format, named
-# sequentially from 0.pcd to [end_range - 1].pcd.
- dataset_path = ../../../examples/test_data/Datasets/kitti_samples/
+# Path of the downloaded dataset containing frames in .pcd or .ply format.
+ dataset_path = /home/rey/Datasets/kitti_samples/
 
-# Range of frames is 0 to end_range - 1.
-end_range = 500
+# Range of frames is start_index to end_index.
+start_index = 0
+end_index = 500
 
 # Registration method can be PointToPoint or PointToPlane.
 registration_method = PointToPlane

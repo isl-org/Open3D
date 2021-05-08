@@ -140,20 +140,37 @@ private:
                 4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor cumulative_transform = initial_transform.Clone();
 
-        // --------------------- VISUALIZER ---------------------
+        // ------------------------ VISUALIZER ------------------------------
+        // Intialize visualizer.
         {
-            std::lock_guard<std::mutex> lock(cloud_lock_);
+            // lock to protect `src_pcd_` and `tar_pcd_` before modifying the
+            // value, ensuring the visualizer thread doesn't read the data,
+            // while we are modifying it.
+            std::lock_guard<std::mutex> lock(pcd_lock_);
+
+            // Copying the pointcloud on CPU, as required by the visualizer.
             src_pcd_ = source_.CPU();
             tar_pcd_ = target_.CPU();
         }
 
         gui::Application::GetInstance().PostToMainThread(this, [this]() {
-            std::lock_guard<std::mutex> lock(cloud_lock_);
+            // lock to protect `src_pcd_` and `tar_pcd_` before passing it
+            // to the visualizer, ensuring we don't modify the value,
+            // when visualizer is reading it.
+            std::lock_guard<std::mutex> lock(pcd_lock_);
+
+            // Setting the background.
             this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1});
 
+            // Adding the target pointcloud.
             this->widget3d_->GetScene()->AddGeometry(DST_CLOUD, &tar_pcd_,
                                                      tar_cloud_mat_);
 
+            // Adding the source pointcloud, and correspondences pointclouds.
+            // This works as a pointcloud container, i.e. reserves the
+            // resources. Later we will just use `UpdateGeometry` which is
+            // efficient when the number of points in the updated pointcloud
+            // are same or less than the geometry added initially.
             this->widget3d_->GetScene()->GetScene()->AddGeometry(
                     SRC_CLOUD, src_pcd_, src_cloud_mat_);
             this->widget3d_->GetScene()->GetScene()->AddGeometry(
@@ -161,6 +178,7 @@ private:
             this->widget3d_->GetScene()->GetScene()->AddGeometry(
                     TAR_CORRES, src_pcd_, tar_corres_mat_);
 
+            // Getting bounding box and center to setup camera view.
             auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
             auto center = bbox.GetCenter().cast<float>();
             this->widget3d_->SetupCamera(18, bbox, center);
@@ -314,7 +332,7 @@ private:
 
                 // -------------------- VISUALIZER ----------------------
                 {
-                    std::lock_guard<std::mutex> lock(cloud_lock_);
+                    std::lock_guard<std::mutex> lock(pcd_lock_);
                     correspondence_src_pcd.SetPoints(
                             source_down_pyramid[i]
                                     .GetPoints()
@@ -332,9 +350,14 @@ private:
                             transformation.To(dtype_));
                 }
 
+                // To update visualizer, we go to the `main thread`,
+                // bring the data on the `main thread`, ensure there is no race
+                // condition with the data, and pass it to the visualizer for
+                // rendering, using `AddGeometry`, or update an existing
+                // pointcloud using `UpdateGeometry`, then setup camera.
                 gui::Application::GetInstance().PostToMainThread(this, [this,
                                                                         i]() {
-                    std::lock_guard<std::mutex> lock(cloud_lock_);
+                    std::lock_guard<std::mutex> lock(pcd_lock_);
 
                     this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
                             SRC_CLOUD, src_pcd_,
@@ -360,7 +383,8 @@ private:
                     break;
                 }
 
-                // Delay to allow users to see each iteration clearly.
+                // Delays each iteration to allow clear visualization of
+                // each iteration.
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
         }
@@ -368,7 +392,7 @@ private:
         // Clearing up the correspondences representation,
         // after all the iterations are completed.
         gui::Application::GetInstance().PostToMainThread(this, [this]() {
-            std::lock_guard<std::mutex> lock(cloud_lock_);
+            std::lock_guard<std::mutex> lock(pcd_lock_);
 
             this->widget3d_->GetScene()->GetScene()->RemoveGeometry(SRC_CORRES);
             this->widget3d_->GetScene()->GetScene()->RemoveGeometry(TAR_CORRES);
@@ -509,8 +533,8 @@ private:
         t::io::ReadPointCloud(path_target_, target,
                               {"auto", false, false, true});
 
-        // Currently only Float32 pointcloud is supported by the tensor
-        // registration module.
+        // Cpnverting attributes to Floar32 and currently only
+        // Float32 pointcloud is supported by the tensor registration module.
         for (std::string attr : {"points", "colors", "normals"}) {
             if (source.HasPointAttr(attr)) {
                 source.SetPointAttr(attr, source.GetPointAttr(attr).To(dtype_));
@@ -612,7 +636,7 @@ private:
     core::Dtype dtype_;
 
 private:
-    std::mutex cloud_lock_;
+    std::mutex pcd_lock_;
 
     std::atomic<bool> is_done_;
     open3d::visualization::rendering::Material src_cloud_mat_;
