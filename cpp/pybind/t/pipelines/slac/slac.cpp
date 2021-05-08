@@ -69,6 +69,13 @@ void pybind_slac_classes(py::module &m) {
             .def_readwrite("slac_folder", &SLACOptimizerParams::slac_folder_,
                            "Relative directory to store SLAC results in the "
                            "dataset folder.")
+            .def(
+                    "get_subfolder_name",
+                    [](const SLACOptimizerParams &slac_optimizer_params) {
+                        return slac_optimizer_params.GetSubfolderName();
+                    },
+                    "Relative directory to store SLAC results in the dataset "
+                    "folder.")
             .def("__repr__", [](const SLACOptimizerParams &params) {
                 return fmt::format(
                         "SLACOptimizerParams[max_iterations={:d}, "
@@ -239,7 +246,7 @@ void pybind_slac_methods(py::module &m) {
     docstring::FunctionDocInject(m, "save_correspondences_for_pointclouds",
                                  map_shared_argument_docstrings);
 
-    m.def("run_slac_optimize_for_fragments", &RunSLACOptimizerForFragments,
+    m.def("run_slac_optimizer_for_fragments", &RunSLACOptimizerForFragments,
           "Simultaneous Localization and Calibration: Self-Calibration of "
           "Consumer Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun "
           "Estimate a shared control grid for all fragments for scene "
@@ -248,7 +255,7 @@ void pybind_slac_methods(py::module &m) {
           "fragment_filenames"_a, "fragment_pose_graph"_a,
           "params"_a = SLACOptimizerParams(),
           "debug_option"_a = SLACDebugOption());
-    docstring::FunctionDocInject(m, "run_slac_optimize_for_fragments",
+    docstring::FunctionDocInject(m, "run_slac_optimizer_for_fragments",
                                  map_shared_argument_docstrings);
 
     m.def("run_rigid_optimize_for_fragments", &RunRigidOptimizerForFragments,
