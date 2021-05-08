@@ -107,6 +107,30 @@ inline int GetCUDACurrentDeviceTextureAlignment() {
     }
     return value;
 }
+
+/// Returns the maximum shared memory per thread block in bytes.
+inline int GetCUDACurrentDeviceMaxSharedMemoryPerBlock() {
+    int device = 0;
+    cudaError_t err = cudaGetDevice(&device);
+    if (err != cudaSuccess) {
+        utility::LogError(
+                "GetCUDACurrentDeviceMaxSharedMemoryPerBlock(): cudaGetDevice "
+                "failed "
+                "with {}",
+                cudaGetErrorString(err));
+    }
+
+    int value = 0;
+    err = cudaDeviceGetAttribute(&value, cudaDevAttrMaxSharedMemoryPerBlock,
+                                 device);
+    if (err != cudaSuccess) {
+        utility::LogError(
+                "GetCUDACurrentDeviceMaxSharedMemoryPerBlock(): "
+                "cudaDeviceGetAttribute failed with {}",
+                cudaGetErrorString(err));
+    }
+    return value;
+}
 #endif
 
 namespace cuda {

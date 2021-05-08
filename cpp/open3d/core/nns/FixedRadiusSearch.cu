@@ -29,6 +29,7 @@
 #include <cub/cub.cuh>
 #include <moderngpu/kernel_segsort.hxx>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/nns/FixedRadiusSearch.h"
 #include "open3d/core/nns/MemoryAllocation.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
@@ -563,14 +564,18 @@ __global__ void WriteNeighborsHybridKernel(
         const T inv_voxel_size,
         const T radius,
         const T threshold,
-        const int max_knn) {
+        const int max_knn,
+        int shared_memory) {
     int query_idx = blockDim.x * blockIdx.x + threadIdx.x;
     if (query_idx >= num_queries) return;
 
     size_t indices_offset = max_knn * query_idx;
     extern __shared__ __align__(sizeof(T)) unsigned char _shared_mem[];
-    T* distance_thread =
+    T* distance_shared =
             reinterpret_cast<T*>(_shared_mem) + max_knn * threadIdx.x;
+
+    T* distance_ptr =
+            shared_memory > 0 ? distance_shared : distances + indices_offset;
 
     Vec3<T> query_pos(query_points[query_idx * 3 + 0],
                       query_points[query_idx * 3 + 1],
@@ -620,7 +625,7 @@ __global__ void WriteNeighborsHybridKernel(
                 // If count if less than max_knn, record idx and dist.
                 if (count < max_knn) {
                     indices[indices_offset + count] = idx;
-                    distance_thread[count] = dist;
+                    distance_ptr[count] = dist;
                     // Update max_index and max_value.
                     if (count == 0 || max_value < dist) {
                         max_index = count;
@@ -633,14 +638,14 @@ __global__ void WriteNeighborsHybridKernel(
                     if (max_value > dist) {
                         // Replace idx and dist at current max_index.
                         indices[indices_offset + max_index] = idx;
-                        distance_thread[max_index] = dist;
+                        distance_ptr[max_index] = dist;
                         // Update max_value
                         max_value = dist;
                         // Find max_index.
                         for (auto k = 0; k < max_knn; ++k) {
-                            if (distance_thread[k] > max_value) {
+                            if (distance_ptr[k] > max_value) {
                                 max_index = k;
-                                max_value = distance_thread[k];
+                                max_value = distance_ptr[k];
                             }
                         }
                     }
@@ -650,12 +655,12 @@ __global__ void WriteNeighborsHybridKernel(
     }
     // heap sort
     for (int i = (count / 2) - 1; i > -1; i--) {
-        heapify(distance_thread, indices + indices_offset, i, count);
+        heapify(distance_ptr, indices + indices_offset, i, count);
     }
-    heap_sort(distance_thread, indices + indices_offset, count);
+    heap_sort(distance_ptr, indices + indices_offset, count);
     for (auto i = 0; i < max_knn; ++i) {
         if (i < count) {
-            distances[indices_offset + i] = distance_thread[i];
+            distances[indices_offset + i] = distance_ptr[i];
         } else {
             distances[indices_offset + i] = 0;
             indices[indices_offset + i] = -1;
@@ -725,17 +730,28 @@ void WriteNeighborsHybrid(const cudaStream_t& stream,
     dim3 grid(0, 1, 1);
     grid.x = utility::DivUp(num_queries, block.x);
 
-    if (grid.x) {
-#define FN_PARAMETERS                                                   \
-    indices, distances, point_index_table, hash_table_cell_splits,      \
-            hash_table_cell_splits_size - 1, query_points, num_queries, \
-            points, num_points, inv_voxel_size, radius, threshold, max_knn
+    int max_shared_memory = GetCUDACurrentDeviceMaxSharedMemoryPerBlock();
+    int req_shared_memory = BLOCKSIZE * max_knn * sizeof(T);
+    int shared_memory =
+            max_shared_memory > req_shared_memory ? req_shared_memory : 0;
 
-#define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                             \
-    if (METRIC == metric && RETURN_DISTANCES == return_distances) {         \
-        WriteNeighborsHybridKernel<T, METRIC, RETURN_DISTANCES>             \
-                <<<grid, block, BLOCKSIZE * max_knn * sizeof(T), stream>>>( \
-                        FN_PARAMETERS);                                     \
+    if (grid.x) {
+#define FN_PARAMETERS                                                       \
+    indices, distances, point_index_table, hash_table_cell_splits,          \
+            hash_table_cell_splits_size - 1, query_points, num_queries,     \
+            points, num_points, inv_voxel_size, radius, threshold, max_knn, \
+            shared_memory
+
+#define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                     \
+    if (METRIC == metric && RETURN_DISTANCES == return_distances) { \
+        if (max_shared_memory > req_shared_memory) {                \
+            WriteNeighborsHybridKernel<T, METRIC, RETURN_DISTANCES> \
+                    <<<grid, block, req_shared_memory, stream>>>(   \
+                            FN_PARAMETERS);                         \
+        } else {                                                    \
+            WriteNeighborsHybridKernel<T, METRIC, RETURN_DISTANCES> \
+                    <<<grid, block, 0, stream>>>(FN_PARAMETERS);    \
+        }                                                           \
     }
 
 #define CALL_TEMPLATE2(METRIC)  \
