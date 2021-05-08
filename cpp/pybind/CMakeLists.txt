@@ -99,6 +99,7 @@ set(PY_ALL_SOURCE_FILES
     t/geometry/tsdf_voxelgrid.cpp
     t/pipelines/pipelines.cpp
     t/pipelines/slac/slac.cpp
+    t/pipelines/odometry/odometry.cpp
     t/pipelines/registration/registration.cpp
     utility/console.cpp
     utility/eigen.cpp
