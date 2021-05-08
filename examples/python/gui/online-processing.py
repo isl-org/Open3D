@@ -31,7 +31,7 @@
 - Captures / reads color and depth frames. Allow recording from camera.
 - Convert frames to point cloud, optionally with normals.
 - Visualize point cloud video and results.
-- Save point clouds for selected frames.
+- Save point clouds and RGBD images for selected frames.
 """
 
 import json
@@ -46,17 +46,26 @@ import open3d as o3d
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 
-import gtimer as gt
 
-
-# camera and processing
+# Camera and processing
 class PipelineModel:
+    """Controls IO (camera, video file, recording, saving frames)."""
 
     def __init__(self,
                  update_view,
                  camera_config_file=None,
                  rgbd_video=None,
                  device=None):
+        """Initialize.
+
+        Args:
+            update_view (callback): Callback to update display elements for a
+                frame.
+            camera_config_file (str): Camera configuration json file.
+            rgbd_video (str): RS bag file containing the RGBD video. If this is
+                provided, connected cameras are ignored.
+            device (str): Compute device (e.g.: 'cpu:0' or 'cuda:0').
+        """
         self.update_view = update_view
         if device:
             self.device = device.lower()
@@ -73,6 +82,7 @@ class PipelineModel:
         if rgbd_video:  # Video file
             self.video = o3d.t.io.RGBDVideoReader.create(rgbd_video)
             self.rgbd_metadata = self.video.metadata
+            self.status_message = f"Video {rgbd_video} opened."
 
         else:  # Depth camera
             now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -88,6 +98,7 @@ class PipelineModel:
 
             self.camera.start_capture(start_record=False)
             self.rgbd_metadata = self.camera.get_metadata()
+            self.status_message = f"Camera {self.rgbd_metadata.serial_number} opened."
 
         self.max_points = self.rgbd_metadata.width * self.rgbd_metadata.height
         log.info(self.rgbd_metadata)
@@ -123,7 +134,6 @@ class PipelineModel:
         n_pts = 0
         frame_id = 0
         t1 = time.perf_counter()
-        gt.stamp('Startup')
         if self.video:
             self.rgbd_frame = self.video.next_frame()
         else:
@@ -131,7 +141,7 @@ class PipelineModel:
                 wait=True, align_depth_to_color=True)
 
         pcd_errors = 0
-        while (frame_id < 1000 and not self.flag_exit and
+        while (not self.flag_exit and
                (self.video is None or self.video and not self.video.is_eof())):
             if self.video:
                 future_rgbd_frame = self.executor.submit(self.video.next_frame)
@@ -140,7 +150,6 @@ class PipelineModel:
                     self.camera.capture_frame,
                     wait=True,
                     align_depth_to_color=True)
-            gt.stamp("SubmitCapture", unique=False)
 
             try:
                 self.rgbd_frame = self.rgbd_frame.to(self.o3d_device)
@@ -148,38 +157,35 @@ class PipelineModel:
                     self.rgbd_frame, self.intrinsic_matrix, self.extrinsics,
                     self.rgbd_metadata.depth_scale, self.depth_max,
                     self.pcd_stride, self.flag_normals)
-                gt.stamp("DepthToPCD", unique=False)
                 depth_in_color = self.rgbd_frame.depth.colorize_depth(
                     self.rgbd_metadata.depth_scale, 0, self.depth_max)
-                gt.stamp("ColorizeDepth", unique=False)
             except RuntimeError:
                 pcd_errors += 1
 
-            n_pts += self.pcd_frame.point['points'].shape[0]
-            frame_elements = {
-                'color': self.rgbd_frame.color,
-                'depth': depth_in_color,
-                'pcd': self.pcd_frame
-            }
             if self.pcd_frame.is_empty():
                 log.warning(f"No valid depth data in frame {frame_id})")
                 continue
 
-            self.update_view(frame_elements)
-            self.rgbd_frame = future_rgbd_frame.result()
-            gt.stamp("GetCapture", unique=False)
-            if frame_id % 30 == 0:
+            n_pts += self.pcd_frame.point['points'].shape[0]
+            if frame_id % 60 == 0:
                 t0, t1 = t1, time.perf_counter()
-                # frame_elements['status_message'] = f"FPS: {30./(t1-t0):0.2f}"
-                log.debug(f"\nframe_id = {frame_id}, \t {(t1-t0)*1000./30:0.2f}"
+                self.status_message = f"FPS: {60./(t1-t0):0.2f}"
+                log.debug(f"\nframe_id = {frame_id}, \t {(t1-t0)*1000./60:0.2f}"
                           f"ms/frame \t {(t1-t0)*1e9/n_pts} ms/Mp\t")
                 n_pts = 0
+            frame_elements = {
+                'color': self.rgbd_frame.color,
+                'depth': depth_in_color,
+                'pcd': self.pcd_frame,
+                'status_message': self.status_message
+            }
+            self.update_view(frame_elements)
 
+            self.rgbd_frame = future_rgbd_frame.result()
             with self.cv_capture:  # Wait for capture to be enabled
                 self.cv_capture.wait_for(
                     predicate=lambda: self.flag_capture or self.flag_exit)
             self.toggle_record()
-            gt.stamp("UserWait", unique=False)
             frame_id += 1
 
         if self.camera:
@@ -188,7 +194,6 @@ class PipelineModel:
             self.video.close()
         self.executor.shutdown()
         log.debug(f"create_from_depth_image() errors = {pcd_errors}")
-        log.debug(gt.report())
 
     def toggle_record(self):
         if self.camera is not None:
@@ -208,10 +213,11 @@ class PipelineModel:
                                           255).to(o3d.core.Dtype.UInt8)
         self.executor.submit(o3d.t.io.write_point_cloud,
                              filename,
-                             self.pcd_frame,
+                             self.pcd_frame.cpu(),
                              write_ascii=False,
                              compressed=True,
                              print_progress=False)
+        self.status_message = f"Saving point cloud to {filename}."
 
     def on_save_rgbd(self):
         """Callback to save current RGBD image pair."""
@@ -222,19 +228,30 @@ class PipelineModel:
         filename = f"{self.rgbd_metadata.serial_number}_depth_{now}.png"
         self.executor.submit(o3d.t.io.write_image, filename,
                              self.rgbd_frame.depth)
+        self.status_message = (
+            f"Saving RGBD images to {filename[:-3]}.{{jpg,png}}.")
 
 
-# Main thread, GUI scene
 class PipelineView:
+    """Controls display and user interface. Must run in the main thread."""
 
     def __init__(self, vfov=60, max_pcd_vertices=1 << 20, **callbacks):
+        """Initialize.
+
+        Args:
+            vfov (float): Vertical field of view for the 3D scene.
+            max_pcd_vertices (int): Maximum point clud verties for which memory
+                is allocated.
+            callbacks (dict of kwargs): Callbacks provided by the controller
+                for various operations.
+        """
 
         self.vfov = vfov
         self.max_pcd_vertices = max_pcd_vertices
 
         gui.Application.instance.initialize()
         self.window = gui.Application.instance.create_window(
-            "Open3D || Online Depth Video Processing", 1024, 768)
+            "Open3D || Online Depth Video Processing", 1280, 960)
         # Called on window layout (eg: resize)
         self.window.set_on_layout(self.on_layout)
         self.window.set_on_close(callbacks['on_window_close'])
@@ -242,7 +259,7 @@ class PipelineView:
         self.pcd_material = o3d.visualization.rendering.Material()
         self.pcd_material.shader = "defaultLit"
         # Set n_pixels displayed for each 3D point, accounting for HiDPI scaling
-        self.pcd_material.point_size = 8 * self.window.scaling
+        self.pcd_material.point_size = 4 * self.window.scaling
 
         # 3D scene
         self.pcdview = gui.SceneWidget()
@@ -261,9 +278,9 @@ class PipelineView:
         em = self.window.theme.font_size
 
         # Options panel
-        self.panel = gui.Vert(em / 2, gui.Margins(em, em, em, em))
+        self.panel = gui.Vert(em, gui.Margins(em, em, em, em))
         self.window.add_child(self.panel)
-        toggles = gui.Horiz(2 * em)
+        toggles = gui.Horiz(em)
         self.panel.add_child(toggles)
 
         toggle_capture = gui.ToggleSwitch("Capture / Play")
@@ -279,49 +296,55 @@ class PipelineView:
             callbacks['on_toggle_normals'])  # callback
         toggles.add_child(self.toggle_normals)
 
-        view_buttons = gui.Horiz(2 * em)
+        view_buttons = gui.Horiz(em)
         self.panel.add_child(view_buttons)
+        view_buttons.add_stretch()  # for centering
         camera_view = gui.Button("Camera view")
         camera_view.set_on_clicked(self.camera_view)  # callback
         view_buttons.add_child(camera_view)
         birds_eye_view = gui.Button("Bird's eye view")
         birds_eye_view.set_on_clicked(self.birds_eye_view)  # callback
         view_buttons.add_child(birds_eye_view)
-        self.panel.add_fixed(em)  # spacing
+        view_buttons.add_stretch()  # for centering
 
-        save_buttons = gui.Horiz(2 * em)
-        self.panel.add_child(save_buttons)
+        save_toggle = gui.Horiz(em)
+        self.panel.add_child(save_toggle)
+        save_toggle.add_child(gui.Label("Record / Save"))
         self.toggle_record = None
         if callbacks['on_toggle_record'] is not None:
-            self.toggle_record = gui.ToggleSwitch("Record video")
+            save_toggle.add_fixed(1.5 * em)
+            self.toggle_record = gui.ToggleSwitch("Video")
             self.toggle_record.is_on = False
             self.toggle_record.set_on_clicked(callbacks['on_toggle_record'])
-            save_buttons.add_child(self.toggle_record)
+            save_toggle.add_child(self.toggle_record)
 
-        save_pcd = gui.Button("Save point cloud")
+        save_buttons = gui.Horiz(em)
+        self.panel.add_child(save_buttons)
+        save_buttons.add_stretch()  # for centering
+        save_pcd = gui.Button("Save Point cloud")
         save_pcd.set_on_clicked(callbacks['on_save_pcd'])
         save_buttons.add_child(save_pcd)
         save_rgbd = gui.Button("Save RGBD frame")
         save_rgbd.set_on_clicked(callbacks['on_save_rgbd'])
         save_buttons.add_child(save_rgbd)
-        self.panel.add_fixed(em)  # spacing
+        save_buttons.add_stretch()  # for centering
 
-        video_size = (320, 480, 3)
+        video_size = (240, 320, 3)
         self.constraints = gui.Widget.Constraints()
-        self.constraints.width = video_size[1]
-        self.constraints.height = video_size[0]
+        self.constraints.height, self.constraints.width = video_size[:2]
         self.show_color = gui.CollapsableVert("Color image")
+        self.show_color.set_is_open(False)
         self.panel.add_child(self.show_color)
         self.color_video = gui.ImageWidget(
             o3d.geometry.Image(np.zeros(video_size, dtype=np.uint8)))
         self.show_color.add_child(self.color_video)
         self.show_depth = gui.CollapsableVert("Depth image")
+        self.show_depth.set_is_open(False)
         self.panel.add_child(self.show_depth)
         self.depth_video = gui.ImageWidget(
             o3d.geometry.Image(np.zeros(video_size, dtype=np.uint8)))
         self.show_depth.add_child(self.depth_video)
 
-        self.panel.add_fixed(em)  # spacing
         self.status_message = gui.Label("")
         self.panel.add_child(self.status_message)
 
@@ -329,8 +352,8 @@ class PipelineView:
         self.flag_gui_init = False
 
     def update(self, frame_elements):
-        """Update visualization with point cloud and bounding boxes
-        Must run in main thread since this makes GUI calls.
+        """Update visualization with point cloud and images. Must run in main
+        thread since this makes GUI calls.
 
         Args:
             frame_elements: dict {element_type: geometry element}.
@@ -380,7 +403,6 @@ class PipelineView:
             self.status_message.text = frame_elements["status_message"]
 
         self.pcdview.force_redraw()
-        gt.stamp(name="GUI", unique=False)
 
     def camera_view(self):
         """Callback to reset point cloud view to the camera"""
@@ -400,16 +422,27 @@ class PipelineView:
         em = layout_context.theme.font_size
         panel_size = self.panel.calc_preferred_size(layout_context,
                                                     self.constraints)
-        panel_rect = gui.Rect(frame.get_right() - panel_size.width - em,
-                              frame.y + em, panel_size.width, panel_size.height)
+        panel_rect = gui.Rect(frame.get_right() - panel_size.width, frame.y,
+                              panel_size.width, panel_size.height)
         self.panel.frame = panel_rect
         self.pcdview.frame = frame
 
 
-# Main thread, GUI options panel
 class PipelineController:
+    """Entry point for the app. Controls the PipelineModel object for IO and
+    processing  and the PipelineView object for display and UI. Operates on the
+    main thread.
+    """
 
     def __init__(self, camera_config_file=None, rgbd_video=None, device=None):
+        """Initialize.
+
+        Args:
+            camera_config_file (str): Camera configuration json file.
+            rgbd_video (str): RS bag file containing the RGBD video. If this is
+                provided, connected cameras are ignored.
+            device (str): Compute device (e.g.: 'cpu:0' or 'cuda:0').
+        """
         self.pipeline_model = PipelineModel(self.update_view,
                                             camera_config_file, rgbd_video,
                                             device)
@@ -428,7 +461,12 @@ class PipelineController:
         gui.Application.instance.run()
 
     def update_view(self, frame_elements):
-        """May be called from any thread."""
+        """Updates view with new data. May be called from any thread.
+
+        Args:
+            frame_elements (dict): Display elements (point cloud and images)
+                from the new frame to be shown.
+        """
         gui.Application.instance.post_to_main_thread(
             self.pipeline_view.window,
             lambda: self.pipeline_view.update(frame_elements))
@@ -455,7 +493,7 @@ class PipelineController:
         self.pipeline_view.flag_gui_init = False
 
     def on_window_close(self):
-        """Callback when the user closes the application window"""
+        """Callback when the user closes the application window."""
         self.pipeline_model.flag_exit = True
         with self.pipeline_model.cv_capture:
             self.pipeline_model.cv_capture.notify_all()
@@ -464,7 +502,7 @@ class PipelineController:
 
 if __name__ == "__main__":
 
-    log.basicConfig(level=log.DEBUG)
+    log.basicConfig(level=log.INFO)
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
