@@ -286,8 +286,6 @@ private:
                     max_correspondence_distances[i], transformation);
 
             for (int j = 0; j < criterias[i].max_iteration_; j++) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
                 utility::LogDebug(
                         " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, "
                         "RMSE "
@@ -361,9 +359,14 @@ private:
                             criterias_[i].relative_rmse_) {
                     break;
                 }
+
+                // Delay to allow users to see each iteration clearly.
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
         }
         // ------------------ VISUALIZER ----------------------------
+        // Clearing up the correspondences representation,
+        // after all the iterations are completed.
         gui::Application::GetInstance().PostToMainThread(this, [this]() {
             std::lock_guard<std::mutex> lock(cloud_lock_);
 
@@ -503,29 +506,24 @@ private:
         // t::io::ReadPointCloud copies the pointcloud to CPU.
         t::io::ReadPointCloud(path_source_, source,
                               {"auto", false, false, true});
-        // t::io::ReadPointCloud(path_target_, target,
-        //                       {"auto", false, false, true});
+        t::io::ReadPointCloud(path_target_, target,
+                              {"auto", false, false, true});
 
-        core::Tensor temp_transform =
-                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
-                                            {-0.139, 0.967, -0.215, 0.7},
-                                            {0.487, 0.255, 0.835, -1.4},
-                                            {0.0, 0.0, 0.0, 1.0}});
-        target = source.Clone().Transform(temp_transform);
-
-        // Currently only Float32 pointcloud is supported.
+        // Currently only Float32 pointcloud is supported by the tensor
+        // registration module.
         for (std::string attr : {"points", "colors", "normals"}) {
             if (source.HasPointAttr(attr)) {
                 source.SetPointAttr(attr, source.GetPointAttr(attr).To(dtype_));
             }
         }
-
         for (std::string attr : {"points", "colors", "normals"}) {
             if (target.HasPointAttr(attr)) {
                 target.SetPointAttr(attr, target.GetPointAttr(attr).To(dtype_));
             }
         }
 
+        // Normals are required for `PointToPlane` type registration method.
+        // Currenly Normal Estimation is not supported by Tensor Pointcloud.
         if (registration_method_ == "PointToPlane" &&
             !target.HasPointNormals()) {
             auto target_legacy = target.ToLegacyPointCloud();

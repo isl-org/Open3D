@@ -40,8 +40,10 @@ using namespace open3d;
 using namespace open3d::visualization;
 using namespace open3d::t::pipelines::registration;
 
-const int WIDTH = 1600;
-const int HEIGHT = 900;
+#define DONT_RESAMPLE -1
+
+const int WIDTH = 1024;
+const int HEIGHT = 768;
 float verticalFoV = 25;
 
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);
@@ -119,9 +121,10 @@ public:
           dtype_(core::Dtype::Float32) {
         ReadConfigFile(path_config);
 
-        // Loads the pointcloud, converts to Float32, estimates normals if
-        // required, sets the "__visualization_scalar" parameter and it's min
-        // max values.
+        // Loads the pointcloud, converts to Float32 if required (currently
+        // only Float32 dtype pointcloud is supported by tensor registration
+        // pipeline), estimates normals if required (PointToPlane Registration),
+        // sets the "__visualization_scalar" parameter and its min max values.
         pointclouds_device_ = LoadTensorPointClouds();
 
         // Rendering Materials for Current Frame.
@@ -132,7 +135,7 @@ public:
         // Rendering Materials for cummulative pointcloud.
         pointcloud_mat_ = GetPointCloudMaterial();
 
-        // When window is closed, it will stop the execute of the code.
+        // When window is closed, it will stop the execution of the code.
         is_done_ = false;
         SetOnClose([this]() {
             is_done_ = true;
@@ -168,57 +171,95 @@ private:
         }
         // -----------------------------------------------------
 
+        // Initial transfrom from source to target, to initialize ICP.
         core::Tensor initial_transform = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
+
+        // Cumulative transform or frame to model transform
+        // from pcd[i] (current frame) to pcd[0] (initial or reference frame).
         core::Tensor cumulative_transform = initial_transform.Clone();
 
         // Final scale level downsampling is already performed while loading the
         // data. -1 avoids re-downsampling for the last scale level.
-        voxel_sizes_[icp_scale_levels_ - 1] = -1;
+        voxel_sizes_[icp_scale_levels_ - 1] = DONT_RESAMPLE;
 
-        // --------------------- Warm up ------------------------
+        // ---------------- Warm up -----------------------
         auto result = RegistrationMultiScaleICP(
                 pointclouds_device_[0].To(device_),
                 pointclouds_device_[1].To(device_), voxel_sizes_, criterias_,
                 search_radius_, initial_transform, *estimation_);
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // -----------------------------------------------------
+        // ------------------------------------------------
 
         utility::SetVerbosityLevel(verbosity_);
 
-        // Global variable for storing total runtime till i-th iteration.
+        // Global variables required for calculating avergage FPS till
+        // i-th iteration.
         double total_time_i = 0;
         int64_t total_points_in_frame = 0;
-
-        // --------------------- Main Function -----------------------
         int i = 0;
+
+        // --------------------- Main Compute Function ----------------------
         for (i = 0; i < end_range_ - 1 && !is_done_; i++) {
             utility::Timer time_total;
             time_total.Start();
 
+            // NOTE:
+            // IN CASE THE DATASET IS TOO LARGE FOR YOUR MEMORY, AVOID
+            // PREFETCHING THE DATA IN THE FUNCTION `LoadTensorPointClouds()`
+            // AND READ IT HERE DIRECTLY. REFER TO THE FUNCTION
+            // `LoadTensorPointClouds` TO UNDERSTAND THE PRE-PROCESSING
+            // REQUIREMENTS.
+
+            // Reads the pre-fetched and pre-processed pointcloud frames.
             auto source = pointclouds_device_[i].To(device_);
             auto target = pointclouds_device_[i + 1].To(device_);
 
+            // Computes the transformation from pcd_[i] to pcd_[i + 1], for
+            // `Frame to Frame Odometry`.
             auto result = RegistrationMultiScaleICP(
                     source, target, voxel_sizes_, criterias_, search_radius_,
                     initial_transform, *estimation_);
 
+            // `cumulative_transform` before update is from `i to 0`.
+            // `result.transformation_` is from i to i + 1.
+            // so, `cumulative_transform @ (result.transformation_).Inverse`
+            // gives `transformation of [i + 1]th frame to 0` [reference or
+            // initial] frame. So, pose of the ego-vehicle / sensor
+            // till this frame w.r.t. the inital frame, or `global_pose`
+            // or `frame to model transform` is given by `cumulative_transform.`
             cumulative_transform = cumulative_transform.Matmul(
                     t::geometry::InverseTransformation(
                             result.transformation_.Contiguous()));
 
-            // ----------------- VISUALIZATION --------------------
+            // -------------------- VISUALIZATION ----------------------------
             if (visualize_output_) {
+                // Output stream to our visualizer, in this case we update the
+                // Average FPS and Total Points values.
                 std::stringstream out_;
 
                 {
+                    // Locking on to the tread as we are going to modify the
+                    // memory which is being used by the visualizer also, and
+                    // we don't want both of this things to occur at the same
+                    // time. [Therefore, we don't want to write to the memory,
+                    // while the visualizer is using it].
+                    // Also, by doing this we ensure that the data is present
+                    // on the `main thread` being used by the visualizer.
                     std::lock_guard<std::mutex> lock(cloud_lock_);
+
+                    // For visualization it is required that the pointcloud
+                    // must be on CPU device.
+                    // The `target` pointcloud is transformed to it's global
+                    // position in the model by it's `frame to model transform`.
                     pcd_current_ = target.Transform(cumulative_transform.To(
                                                             device_, dtype_))
                                            .CPU();
+
                     total_points_in_frame +=
                             pcd_current_.GetPoints().GetLength();
+
+                    // Removing `normal` attribute before passing it to
+                    // Visualization might give us some performance benifits.
                     pcd_current_.RemovePointAttr("normals");
                 }
 
@@ -229,17 +270,36 @@ private:
                          << "Total Points: " << total_points_in_frame;
                 }
 
+                // To update visualizer, we go to the `main thread`,
+                // bring the data on the `main thread`, ensure there is no race
+                // condition with the data, and pass it to the visualizer for
+                // rendering, using `AddGeometry`, or update an existing
+                // pointcloud using `UpdateGeometry`, then setup camera.
                 gui::Application::GetInstance().PostToMainThread(
                         this, [this, i, out_ = out_.str()]() {
+                            // Note. We are getting `i` and `out_` by value
+                            // instead of by reference, therefore the data is
+                            // copied, inside the `main thread` itself, on which
+                            // the visualizer is running. So, we don't need to
+                            // worry about simultaneous access or the condition
+                            // if the data is not present on the `main thread`.
                             this->SetOutput(out_);
+
                             std::lock_guard<std::mutex> lock(cloud_lock_);
 
+                            // We render the `source` or the previous
+                            // "current scan" pointcloud by using the material
+                            // we set for the entire model.
                             this->widget3d_->GetScene()->ModifyGeometryMaterial(
                                     filenames_[i], pointcloud_mat_);
 
+                            // To highlight the `current scan` we render using
+                            // a different material. In next iteration we will
+                            // change the material to the `model` material.
                             this->widget3d_->GetScene()->AddGeometry(
                                     filenames_[i + 1], &pcd_current_, mat_);
 
+                            // Bounding box and camera setup.
                             auto bbox = this->widget3d_->GetScene()
                                                 ->GetBoundingBox();
                             auto center = bbox.GetCenter().cast<float>();
@@ -316,8 +376,15 @@ private:
         }
 
         utility::LogInfo(" Dataset path: {}", path_dataset);
+
+        // The dataset might be too large for your memory. If that is the case,
+        // one may directly read the pointcloud frame inside
         if (end_range_ > 500) {
-            utility::LogWarning(" Too large range. Memory might exceed.");
+            utility::LogWarning(
+                    " The range might be too large range. Might exceed memory. "
+                    "To use large dataset, it is advised to avoid pre-fetching "
+                    "data to device, and read the pointcloud directly from "
+                    "inside computation loop.");
         }
         utility::LogInfo(" Range: 0 to {} pointcloud files in sequence.",
                          end_range_ - 1);
@@ -432,8 +499,9 @@ private:
                                                       .Slice(1, 2, 3)
                                                       .To(dtype_, true));
 
-                // Normal Estimation. Currenly Normal Estimation is not
-                // supported by Tensor Pointcloud.
+                // Normals are required by `PointToPlane` registration method.
+                // Currenly Normal Estimation is not supported by
+                // Tensor Pointcloud.
                 if (registration_method_ == "PointToPlane" &&
                     !pointcloud_local.HasPointNormals()) {
                     auto pointcloud_legacy =
@@ -476,8 +544,6 @@ private:
         pointcloud_mat.scalar_min = min_visualization_scalar_;
         pointcloud_mat.scalar_max = max_visualization_scalar_;
         pointcloud_mat.point_size = 0.3f;
-        // pointcloud_mat.base_color =
-        //         Eigen::Vector4f(1.f, 1.0f, 1.0f, 0.5f);
 
         pointcloud_mat.gradient = std::make_shared<
                 rendering::Gradient>(std::vector<rendering::Gradient::Point>{
