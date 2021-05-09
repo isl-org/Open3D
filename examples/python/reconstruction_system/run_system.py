@@ -34,6 +34,10 @@ if __name__ == "__main__":
         help="Step 4) integrate the whole RGBD sequence to make final mesh",
         action="store_true")
     parser.add_argument("--slac", help="Step 5) run slac.", action="store_true")
+    parser.add_argument(
+        "--slac_integrate",
+        help="Step 6) integrate fragements using slac to make final mesh.",
+        action="store_true")
     parser.add_argument("--debug_mode",
                         help="turn on debug mode",
                         action="store_true")
@@ -43,7 +47,8 @@ if __name__ == "__main__":
             not args.register and \
             not args.refine and \
             not args.integrate and \
-            not args.slac:
+            not args.slac and \
+            not args.slac_integrate:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
@@ -66,7 +71,7 @@ if __name__ == "__main__":
     for key, val in config.items():
         print("%40s : %s" % (key, str(val)))
 
-    times = [0, 0, 0, 0]
+    times = [0, 0, 0, 0, 0, 0]
     if args.make:
         start_time = time.time()
         import make_fragments
@@ -91,7 +96,12 @@ if __name__ == "__main__":
         start_time = time.time()
         import slac
         slac.run(config)
-        time[4] = time.time() - start_time
+        times[4] = time.time() - start_time
+    if args.slac_integrate:
+        start_time = time.time()
+        import slac_integrate
+        slac_integrate.run(config)
+        times[5] = time.time() - start_time
 
     print("====================================")
     print("Elapsed time (in h:m:s)")
@@ -101,5 +111,6 @@ if __name__ == "__main__":
     print("- Refine registration %s" % datetime.timedelta(seconds=times[2]))
     print("- Integrate frames    %s" % datetime.timedelta(seconds=times[3]))
     print("- SLAC                %s" % datetime.timedelta(seconds=times[4]))
+    print("- SLAC Integrate      %s" % datetime.timedelta(seconds=times[5]))
     print("- Total               %s" % datetime.timedelta(seconds=sum(times)))
     sys.stdout.flush()

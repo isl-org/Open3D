@@ -25,14 +25,14 @@ def run(config):
     pose_graph_fragment = o3d.io.read_pose_graph(
         join(path_dataset, config["template_refined_posegraph_optimized"]))
 
-    slac_params = o3d.t.pipelines.slac.slac_optimizer_params()
-    slac_params.slac_folder = path_dataset + "slac/"
-    slac_params.voxel_size = config["voxel_size"]
-    slac_params.regularizer_weight = config["regularizer_weight"]
-    slac_params.distance_threshold = config["max_depth_diff"]
-    slac_params.fitness_threshold = config["min_depth"]
-    slac_params.max_iterations = config["max_iterations"]
-    slac_params.device = o3d.core.Device(str(config["device"]))
+    slac_params = o3d.t.pipelines.slac.slac_optimizer_params(
+        max_iterations=config["max_iterations"],
+        voxel_size=config["voxel_size"],
+        distance_threshold=config["max_depth_diff"],
+        fitness_threshold=config["min_depth"],
+        regularizer_weight=config["regularizer_weight"],
+        device=o3d.core.Device(str(config["device"])),
+        slac_folder=path_dataset + config["folder_slac"])
 
     debug_option = o3d.t.pipelines.slac.slac_debug_option(False, 0)
 
@@ -48,23 +48,23 @@ def run(config):
     value_tensor.save(slac_params.get_subfolder_name() + "/ctr_grid_values.npy")
 
     o3d.io.write_pose_graph(
-        slac_params.get_subfolder_name() + "/optimized_posegraph_" + "slac" +
-        ".json", pose_graph_updated)
+        join(config["subfolder_slac"],
+             config["template_optimized_posegraph_slac"]), pose_graph_updated)
 
-    folder_path = join(path_dataset, config["folder_fragment"])
+    fragment_folder = join(path_dataset, config["folder_fragment"])
     params = []
     for i in range(len(pose_graph_updated.nodes)):
         fragment_pose_graph = o3d.io.read_pose_graph(
-            join(folder_path, "fragment_optimized_%03d.json" % i))
+            join(fragment_folder, "fragment_optimized_%03d.json" % i))
         for node in fragment_pose_graph.nodes:
-            pose = pose_graph_updated.nodes[i].pose * node.pose
+            pose = np.dot(pose_graph_updated.nodes[i].pose, node.pose)
             param = o3d.camera.PinholeCameraParameters()
-            param.extrinsic = pose
+            param.extrinsic = np.linalg.inv(pose)
             params.append(param)
 
     trajectory = o3d.camera.PinholeCameraTrajectory()
     trajectory.parameters = params
 
-    # o3d.io.write_pinhole_camera_trajectory(
-    #     slac_params.get_subfolder_name() + "/optimized_trajectory_slac.log",
-    #     trajectory)
+    o3d.io.write_pinhole_camera_trajectory(
+        slac_params.get_subfolder_name() + "/optimized_trajectory_slac.log",
+        trajectory)
