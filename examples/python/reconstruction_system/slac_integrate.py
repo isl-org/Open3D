@@ -78,7 +78,7 @@ def run(config):
                                              config["depth_scale"],
                                              config["max_depth"])
             voxel_grid.integrate(rgbd_projected.depth, rgbd_projected.color,
-                                 intrinsic_t, extrinsic_local_t,
+                                 intrinsic_t, extrinsic_t,
                                  config["depth_scale"], config["max_depth"])
 
             k = k + 1
