@@ -28,8 +28,8 @@ def run(config):
     slac_params = o3d.t.pipelines.slac.slac_optimizer_params(
         max_iterations=config["max_iterations"],
         voxel_size=config["voxel_size"],
-        distance_threshold=config["max_depth_diff"],
-        fitness_threshold=config["min_depth"],
+        distance_threshold=config["distance_threshold"],
+        fitness_threshold=config["fitness_threshold"],
         regularizer_weight=config["regularizer_weight"],
         device=o3d.core.Device(str(config["device"])),
         slac_folder=path_dataset + config["folder_slac"])

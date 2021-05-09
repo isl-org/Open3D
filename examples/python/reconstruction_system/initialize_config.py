@@ -36,6 +36,8 @@ def initialize_config(config):
     set_default_value(config, "block_count", 40000)
     set_default_value(config, "regularizer_weight", 1)
     set_default_value(config, "max_iterations", 5)
+    set_default_value(config, "distance_threshold", 0.07)
+    set_default_value(config, "fitness_threshold", 0.3)
     set_default_value(config, "device", "CUDA:0")
 
     set_default_value(config, "folder_fragment", "fragments/")
