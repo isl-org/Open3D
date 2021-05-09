@@ -120,8 +120,7 @@ void pybind_slac_classes(py::module &m) {
             "FragmentOptimizer/OptApp.cpp "
             "http://vladlen.info/papers/elastic-fragments.pdf. ");
     py::detail::bind_copy_functions<ControlGrid>(control_grid);
-    py::detail::bind_default_constructor<ControlGrid>(control_grid);
-    control_grid
+    control_grid.def(py::init<>())
             .def(py::init<float, int64_t, const core::Device>(), "grid_size"_a,
                  "grid_count"_a = 1000, "device"_a = core::Device("CPU:0"))
             .def(py::init<float, core::Tensor, core::Tensor,
@@ -209,7 +208,12 @@ void pybind_slac_classes(py::module &m) {
             .def("get_curr_positions", &ControlGrid::GetCurrPositions,
                  "Get control grid shifted positions from tensor values "
                  "(optimized in-place)")
-            .def("get_hashmap", &ControlGrid::GetHashmap)
+            .def(
+                    "get_hashmap",
+                    [](ControlGrid &control_grid) {
+                        return *control_grid.GetHashmap();
+                    },
+                    "Get the control grid hashmap.")
             .def("size", &ControlGrid::Size)
             .def("get_device", &ControlGrid::GetDevice)
             .def("get_anchor_idx", &ControlGrid::GetAnchorIdx)
