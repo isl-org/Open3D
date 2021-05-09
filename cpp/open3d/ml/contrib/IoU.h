@@ -36,7 +36,6 @@ namespace contrib {
 /// \param iou (num_a, num_b) float32, output iou values.
 /// \param num_a Number of boxes in boxes_a.
 /// \param num_b Number of boxes in boxes_b.
-/// \param intersection_only If true returns intersection, else returns
 /// intersection over union.
 void IoUBevCUDAKernel(const float *boxes_a,
                       const float *boxes_b,
@@ -62,7 +61,6 @@ void IoU3dCUDAKernel(const float *boxes_a,
 /// \param iou (num_a, num_b) float32, output iou values.
 /// \param num_a Number of boxes in boxes_a.
 /// \param num_b Number of boxes in boxes_b.
-/// \param intersection_only If true returns intersection, else returns
 /// intersection over union.
 void IoUBevCPUKernel(const float *boxes_a,
                      const float *boxes_b,

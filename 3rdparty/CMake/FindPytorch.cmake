@@ -37,24 +37,25 @@ if(NOT Pytorch_FOUND)
     find_package(Torch REQUIRED PATHS "${Pytorch_ROOT}/share/cmake/Torch"
                  NO_DEFAULT_PATH)
 
-    # Note: older versions of PyTorch have hard-coded cuda library paths, see:
-    # https://github.com/pytorch/pytorch/issues/15476.
-    # This issue has been addressed but we observed for the conda packages for
-    # PyTorch 1.2.0 and 1.4.0 that there are still hardcoded paths in
-    #  ${TORCH_ROOT}/share/cmake/Caffe2/Caffe2Targets.cmake
-    # Try to fix those here
-    get_target_property( iface_link_libs torch INTERFACE_LINK_LIBRARIES )
-    string( REPLACE "/usr/local/cuda" "${CUDA_TOOLKIT_ROOT_DIR}" iface_link_libs "${iface_link_libs}" )
-    set_target_properties( torch PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
-    if( TARGET torch_cuda )
-        get_target_property( iface_link_libs torch_cuda INTERFACE_LINK_LIBRARIES )
-        string( REPLACE "/usr/local/cuda" "${CUDA_TOOLKIT_ROOT_DIR}" iface_link_libs "${iface_link_libs}" )
-        set_target_properties( torch_cuda PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
-    endif()
-    # if successful everything works :)
-    # if unsuccessful CMake will complain that there are no rules to make the targets with the hardcoded paths
+    if(BUILD_CUDA_MODULE)
+        # Note: older versions of PyTorch have hard-coded cuda library paths, see:
+        # https://github.com/pytorch/pytorch/issues/15476.
+        # This issue has been addressed but we observed for the conda packages for
+        # PyTorch 1.2.0 and 1.4.0 that there are still hardcoded paths in
+        #  ${TORCH_ROOT}/share/cmake/Caffe2/Caffe2Targets.cmake
+        # Try to fix those here
+        find_package(CUDAToolkit REQUIRED)
+        get_target_property( iface_link_libs torch INTERFACE_LINK_LIBRARIES )
+        string( REPLACE "/usr/local/cuda" "${CUDAToolkit_LIBRARY_ROOT}" iface_link_libs "${iface_link_libs}" )
+        set_target_properties( torch PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
+        if( TARGET torch_cuda )
+            get_target_property( iface_link_libs torch_cuda INTERFACE_LINK_LIBRARIES )
+            string( REPLACE "/usr/local/cuda" "${CUDAToolkit_LIBRARY_ROOT}" iface_link_libs "${iface_link_libs}" )
+            set_target_properties( torch_cuda PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
+        endif()
+        # if successful everything works :)
+        # if unsuccessful CMake will complain that there are no rules to make the targets with the hardcoded paths
 
-    if( BUILD_CUDA_MODULE )
         # remove flags that nvcc does not understand
         get_target_property( iface_compile_options torch INTERFACE_COMPILE_OPTIONS )
         set_target_properties( torch PROPERTIES INTERFACE_COMPILE_OPTIONS "" )

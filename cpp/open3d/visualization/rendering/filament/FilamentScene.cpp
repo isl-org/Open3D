@@ -882,9 +882,12 @@ void FilamentScene::UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi) {
 }
 
 void FilamentScene::UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi) {
+    float srgb = (geom_mi.properties.sRGB_vertex_color ? 1.f : 0.f);
+
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
             .SetParameter("pointSize", geom_mi.properties.point_size)
+            .SetParameter("srgbColor", srgb)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
             .Finish();

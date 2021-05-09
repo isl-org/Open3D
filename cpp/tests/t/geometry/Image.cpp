@@ -31,10 +31,28 @@
 #include "core/CoreTest.h"
 #include "open3d/core/TensorList.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/io/PinholeCameraTrajectoryIO.h"
+#include "open3d/t/io/ImageIO.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {
+
+static core::Tensor CreateIntrinsics(float down_factor = 1.0f) {
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    auto focal_length = intrinsic.GetFocalLength();
+    auto principal_point = intrinsic.GetPrincipalPoint();
+
+    return core::Tensor(
+            std::vector<double>({(focal_length.first / down_factor), 0,
+                                 (principal_point.first / down_factor), 0,
+                                 (focal_length.second / down_factor),
+                                 (principal_point.second / down_factor), 0, 0,
+                                 1}),
+            {3, 3}, core::Dtype::Float64);
+}
 
 class ImagePermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Image,
@@ -271,8 +289,6 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
             ASSERT_THROW(im.FilterBilateral(3, 5, 5), std::runtime_error);
         } else {
             im = im.FilterBilateral(3, 5, 5);
-            utility::LogInfo("{}", im.AsTensor().View({5, 5}).ToString());
-
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im.AsTensor().AllClose(
                         core::Tensor(output_ref_ipp, {5, 5, 1},
@@ -352,8 +368,6 @@ TEST_P(ImagePermuteDevices, FilterGaussian) {
             ASSERT_THROW(im.FilterGaussian(3), std::runtime_error);
         } else {
             im = im.FilterGaussian(3);
-            utility::LogInfo("{}", im.AsTensor().View({5, 5}).ToString());
-
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im.AsTensor().AllClose(
                         core::Tensor(output_ref_ipp, {5, 5, 1},
@@ -446,8 +460,6 @@ TEST_P(ImagePermuteDevices, Filter) {
             ASSERT_THROW(im.Filter(kernel), std::runtime_error);
         } else {
             im = im.Filter(kernel);
-            utility::LogInfo("{}", im.AsTensor().View({5, 5}).ToString());
-
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im.AsTensor().AllClose(
                         core::Tensor(output_ref_ipp, {5, 5, 1},
@@ -501,7 +513,6 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
                     output_dx_ref, {5, 5, 1}, core::Dtype::Float32, device)));
             EXPECT_TRUE(dy.AsTensor().AllClose(core::Tensor(
                     output_dy_ref, {5, 5, 1}, core::Dtype::Float32, device)));
-            utility::LogInfo("{}", dx.AsTensor().View({5, 5}).ToString());
         }
     }
 
@@ -526,7 +537,6 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
                     core::Tensor(output_dy_ref, {5, 5, 1}, core::Dtype::Float32,
                                  device)
                             .To(core::Dtype::Int16)));
-            utility::LogInfo("{}", dx.AsTensor().View({5, 5}).ToString());
         }
     }
 }
@@ -594,7 +604,8 @@ TEST_P(ImagePermuteDevices, Resize) {
         } else {
             t::geometry::Image im_low =
                     im.Resize(0.5, t::geometry::Image::InterpType::Super);
-            utility::LogInfo("{}", im_low.AsTensor().View({3, 3}).ToString());
+            utility::LogInfo("Super: {}",
+                             im_low.AsTensor().View({3, 3}).ToString());
 
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im_low.AsTensor().AllClose(
@@ -608,16 +619,16 @@ TEST_P(ImagePermuteDevices, Resize) {
                 // Check output in the CI to see if other inteprolations works
                 // with other platforms
                 im_low = im.Resize(0.5, t::geometry::Image::InterpType::Linear);
-                utility::LogInfo("Linear: {}",
+                utility::LogInfo("Linear(impl. dependent): {}",
                                  im_low.AsTensor().View({3, 3}).ToString());
 
                 im_low = im.Resize(0.5, t::geometry::Image::InterpType::Cubic);
-                utility::LogInfo("Cubic: {}",
+                utility::LogInfo("Cubic(impl. dependent): {}",
                                  im_low.AsTensor().View({3, 3}).ToString());
 
                 im_low =
                         im.Resize(0.5, t::geometry::Image::InterpType::Lanczos);
-                utility::LogInfo("Lanczos: {}",
+                utility::LogInfo("Lanczos(impl. dependent): {}",
                                  im_low.AsTensor().View({3, 3}).ToString());
             }
         }
@@ -686,8 +697,6 @@ TEST_P(ImagePermuteDevices, PyrDown) {
             ASSERT_THROW(im.PyrDown(), std::runtime_error);
         } else {
             im = im.PyrDown();
-            utility::LogInfo("{}", im.AsTensor().View({3, 3}).ToString());
-
             if (device.GetType() == core::Device::DeviceType::CPU) {
                 EXPECT_TRUE(im.AsTensor().AllClose(
                         core::Tensor(output_ref_ipp, {3, 3, 1},
@@ -808,5 +817,123 @@ TEST_P(ImagePermuteDevices, ToLegacyImage) {
                           *leg_im_3ch.PointerAt<uint16_t>(c, r, ch));
 }
 
+TEST_P(ImagePermuteDevices, DepthToVertexNormalMaps) {
+    core::Device device = GetParam();
+
+    // clang-format off
+    core::Tensor t_depth(std::vector<uint16_t>{
+        0, 1, 2, 1, 0,
+        0, 2, 4, 2, 0,
+        0, 3, 6, 3, 29,
+        0, 2, 4, 2, 0,
+        0, 1, 2, 1, 0}, {5, 5, 1}, core::Dtype::UInt16, device);
+    core::Tensor t_depth_clipped_ref(std::vector<float>{
+        0.0, 0.1, 0.2, 0.1, 0.0,
+        0.0, 0.2, 0.4, 0.2, 0.0,
+        0.0, 0.3, 0.6, 0.3, 0.0,
+        0.0, 0.2, 0.4, 0.2, 0.0,
+        0.0, 0.1, 0.2, 0.1, 0.0}, {5, 5, 1}, core::Dtype::Float32, device);
+    core::Tensor intrinsic(std::vector<double>{
+            1.f, 0.f, 2.f,
+            0.f, 1.f, 2.f,
+            0.f, 0.f, 1.f}, {3, 3}, core::Dtype::Float64, device);
+    core::Tensor t_vertex_ref(std::vector<float>{
+        0.0,0.0,0.0,  -0.1,-0.2,0.1,  0.0,-0.4,0.2,  0.1,-0.2,0.1,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  -0.2,-0.2,0.2,  0.0,-0.4,0.4,  0.2,-0.2,0.2,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  -0.3,0.0,0.3,   0.0,0.0,0.6,   0.3,0.0,0.3,   0.0,0.0,0.0,
+        0.0,0.0,0.0,  -0.2,0.2,0.2,   0.0,0.4,0.4,   0.2,0.2,0.2,   0.0,0.0,0.0,
+        0.0,0.0,0.0,  -0.1,0.2,0.1,   0.0,0.4,0.2,   0.1,0.2,0.1,   0.0,0.0,0.0
+        }, {5, 5, 3}, core::Dtype::Float32, device);
+    core::Tensor t_normal_ref(std::vector<float>{
+        0.0,0.0,0.0,  0.57735,0.57735,0.57735,      -0.894427,0.447214,0.0,         0.0,0.0,0.0,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  0.801784,0.534522,-0.267261,  -0.801784,0.267261,-0.534523,   0.0,0.0,0.0,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  0.57735,-0.57735,-0.57735,    -0.666667,-0.333333,-0.666667,  0.0,0.0,0.0,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  0.408248,-0.816497,0.408248,  -0.707107,-0.707107,-0.0,       0.0,0.0,0.0,  0.0,0.0,0.0,
+        0.0,0.0,0.0,  0.0,0.0,0.0,                   0.0,0.0,0.0,                   0.0,0.0,0.0,  0.0,0.0,0.0
+        }, {5, 5, 3}, core::Dtype::Float32, device);
+    // clang-format on
+    t::geometry::Image depth{t_depth};
+
+    float invalid_fill = 0.0f;
+    auto depth_clipped = depth.ClipTransform(10.0, 0.0, 2.5, invalid_fill);
+
+    EXPECT_TRUE(depth_clipped.AsTensor().AllClose(t_depth_clipped_ref));
+
+    auto vertex_map = depth_clipped.CreateVertexMap(intrinsic, invalid_fill);
+    EXPECT_TRUE(vertex_map.AsTensor().AllClose(t_vertex_ref));
+
+    auto normal_map = vertex_map.CreateNormalMap(invalid_fill);
+    EXPECT_TRUE(normal_map.AsTensor().AllClose(t_normal_ref));
+}
+
+TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
+    core::Device device = GetParam();
+
+    t::geometry::Image depth =
+            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
+                                                   std::string(TEST_DATA_DIR),
+                                                   1))
+                    ->To(device);
+
+    float invalid_fill = 0.0f;
+    auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, invalid_fill);
+
+    core::Tensor intrinsic_t = CreateIntrinsics();
+    auto vertex_map = depth_clipped.CreateVertexMap(intrinsic_t, invalid_fill);
+    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
+            vertex_map.ToLegacyImage())});
+}
+
+TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
+    core::Device device = GetParam();
+
+    t::geometry::Image depth =
+            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
+                                                   std::string(TEST_DATA_DIR),
+                                                   1))
+                    ->To(device);
+
+    float invalid_fill = 0.0f;
+    core::Tensor intrinsic_t = CreateIntrinsics();
+
+    // We have to apply a bilateral filter, otherwise normals would be too
+    // noisy.
+    auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, invalid_fill);
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {  // Not Implemented
+        ASSERT_THROW(depth_clipped.FilterBilateral(5, 5.0, 10.0),
+                     std::runtime_error);
+    } else {
+        auto depth_bilateral = depth_clipped.FilterBilateral(5, 5.0, 10.0);
+        auto vertex_map_for_normal =
+                depth_bilateral.CreateVertexMap(intrinsic_t, invalid_fill);
+        auto normal_map = vertex_map_for_normal.CreateNormalMap(invalid_fill);
+
+        // Use abs for better visualization
+        normal_map.AsTensor() = normal_map.AsTensor().Abs();
+        visualization::DrawGeometries(
+                {std::make_shared<open3d::geometry::Image>(
+                        normal_map.ToLegacyImage())});
+    }
+}
+
+TEST_P(ImagePermuteDevices, DISABLED_ColorizeDepth) {
+    core::Device device = GetParam();
+
+    t::geometry::Image depth =
+            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
+                                                   std::string(TEST_DATA_DIR),
+                                                   1))
+                    ->To(device);
+
+    auto color_depth = depth.ColorizeDepth(1000.0, 0.0, 3.0);
+    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
+            color_depth.ToLegacyImage())});
+
+    auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, 0.0);
+    auto color_depth_clipped = depth_clipped.ColorizeDepth(1.0, 0.0, 3.0);
+    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
+            color_depth_clipped.ToLegacyImage())});
+}
 }  // namespace tests
 }  // namespace open3d

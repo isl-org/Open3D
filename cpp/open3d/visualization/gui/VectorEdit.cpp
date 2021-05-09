@@ -28,8 +28,6 @@
 
 #include <imgui.h>
 
-#include <sstream>
-
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -49,8 +47,7 @@ struct VectorEdit::Impl {
 };
 
 VectorEdit::VectorEdit() : impl_(new VectorEdit::Impl()) {
-    std::stringstream s;
-    s << "##vectoredit" << g_next_vector_edit_id++ << std::endl;
+    impl_->id_ = "##vectoredit_" + std::to_string(g_next_vector_edit_id++);
 }
 
 VectorEdit::~VectorEdit() {}
@@ -70,7 +67,7 @@ void VectorEdit::SetOnValueChanged(
     impl_->on_changed_ = on_changed;
 }
 
-Size VectorEdit::CalcPreferredSize(const Theme& theme,
+Size VectorEdit::CalcPreferredSize(const LayoutContext& context,
                                    const Constraints& constraints) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
@@ -102,6 +99,7 @@ Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar();

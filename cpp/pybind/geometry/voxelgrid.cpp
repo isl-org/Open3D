@@ -118,8 +118,7 @@ void pybind_voxelgrid(py::module &m) {
                  "valid image location.")
             .def("to_octree", &VoxelGrid::ToOctree, "max_depth"_a,
                  "Convert to Octree.")
-            .def("create_from_octree", &VoxelGrid::CreateFromOctree,
-                 "octree"_a
+            .def("create_from_octree", &VoxelGrid::CreateFromOctree, "octree"_a,
                  "Convert from Octree.")
             .def_static("create_dense", &VoxelGrid::CreateDense,
                         "Creates a voxel grid where every voxel is set (hence "

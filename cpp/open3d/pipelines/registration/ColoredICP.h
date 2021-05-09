@@ -91,10 +91,11 @@ private:
 /// \param max_distance Maximum correspondence points-pair distance.
 /// \param init Initial transformation estimation.
 /// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
-/// [0., 0., 0., 1.]]). \param criteria  Convergence criteria. \param
+/// [0., 0., 0., 1.]]).
 /// \param estimation TransformationEstimationForColoredICP method. Can only
 /// change the lambda_geometric value and the robust kernel used in the
 /// optimization
+/// \param criteria  Convergence criteria.
 RegistrationResult RegistrationColoredICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

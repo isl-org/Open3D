@@ -28,6 +28,7 @@
 
 #include <pybind11/detail/common.h>
 
+#include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/utility/FileSystem.h"
@@ -106,19 +107,19 @@ public:
              int flags = 0)
         : Super(title, x, y, width, height, flags) {}
 
-    std::function<void(const Theme)> on_layout_;
+    std::function<void(const LayoutContext &)> on_layout_;
 
 protected:
-    void Layout(const Theme &theme) {
+    void Layout(const LayoutContext &context) {
         if (on_layout_) {
             // the Python callback sizes the children
-            on_layout_(theme);
+            on_layout_(context);
             // and then we need to layout the children
             for (auto child : GetChildren()) {
-                child->Layout(theme);
+                child->Layout(context);
             }
         } else {
-            Super::Layout(theme);
+            Super::Layout(context);
         }
     }
 };
@@ -351,6 +352,18 @@ void pybind_gui_classes(py::module &m) {
                                    "Returns a string with the path to the "
                                    "resources directory");
 
+    // ---- LayoutContext ----
+    py::class_<LayoutContext> lc(
+            m, "LayoutContext",
+            "Context passed to Window's on_layout callback");
+    //    lc.def_readonly("theme", &LayoutContext::theme);
+    // Pybind can't return a reference (since Theme is a unique_ptr), so
+    // return a copy instead.
+    lc.def_property_readonly("theme",
+                             [](const LayoutContext &context) -> Theme {
+                                 return context.theme;
+                             });
+
     // ---- Window ----
     // Pybind appears to need to know about the base class. It doesn't have
     // to be named the same as the C++ class, though. The holder object cannot
@@ -419,11 +432,13 @@ void pybind_gui_classes(py::module &m) {
                  "close")
             .def(
                     "set_on_layout",
-                    [](PyWindow *w, std::function<void(const Theme &)> f) {
+                    [](PyWindow *w,
+                       std::function<void(const LayoutContext &)> f) {
                         w->on_layout_ = f;
                     },
                     "Sets a callback function that manually sets the frames of "
-                    "children of the window")
+                    "children of the window. Callback function will be called "
+                    "with one argument: gui.LayoutContext")
             .def_property_readonly("theme", &PyWindow::GetTheme,
                                    "Get's window's theme info")
             .def(
@@ -561,6 +576,19 @@ void pybind_gui_classes(py::module &m) {
             .def_readwrite("width", &Size::width)
             .def_readwrite("height", &Size::height);
 
+    // ---- FontStyle ----
+    py::enum_<FontStyle> font_style(m, "FontStyle", "Font style");
+    font_style.value("NORMAL", FontStyle::NORMAL)
+            .value("BOLD", FontStyle::BOLD,
+                   "Not supported for CJK characters due to the large "
+                   "amounts of GPU memory required.")
+            .value("ITALIC", FontStyle::ITALIC,
+                   "Not supported for CJK characters due to the large "
+                   "amounts of GPU memory required.")
+            .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC,
+                   "Not supported for CJK characters due to the large "
+                   "amounts of GPU memory required.");
+
     // ---- Widget ----
     // The holder for Widget and all derived classes is UnownedPointer because
     // a Widget may own Filament resources, so we cannot have Python holding
@@ -625,6 +653,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property("background_color", &Widget::GetBackgroundColor,
                           &Widget::SetBackgroundColor,
                           "Background color of the widget")
+            .def_property("tooltip", &Widget::GetTooltip, &Widget::SetTooltip,
+                          "Widget's tooltip that is displayed on mouseover")
             .def("calc_preferred_size", &Widget::CalcPreferredSize,
                  "Returns the preferred size of the widget. This is intended "
                  "to be called only during layout, although it will also work "
@@ -812,7 +842,7 @@ void pybind_gui_classes(py::module &m) {
             .def("__repr__",
                  [](const ImageWidget &il) {
                      std::stringstream s;
-                     s << "ImageLabel (" << il.GetFrame().x << ", "
+                     s << "ImageWidget (" << il.GetFrame().x << ", "
                        << il.GetFrame().y << "), " << il.GetFrame().width
                        << " x " << il.GetFrame().height;
                      return s.str();
@@ -866,7 +896,11 @@ void pybind_gui_classes(py::module &m) {
                           "line breaks")
             .def_property("text_color", &Label::GetTextColor,
                           &Label::SetTextColor,
-                          "The color of the text (gui.Color)");
+                          "The color of the text (gui.Color)")
+            .def_property("font_style", &Label::GetFontStyle,
+                          &Label::SetFontStyle,
+                          "The style of the font: NORMAL, BOLD, ITALIC, "
+                          "BOLD_ITALIC");
 
     // ---- Label3D ----
     py::class_<Label3D, UnownedPointer<Label3D>> label3d(
@@ -1082,10 +1116,28 @@ void pybind_gui_classes(py::module &m) {
                  "Ensures scene redraws even when scene caching is enabled.")
             .def("set_view_controls", &PySceneWidget::SetViewControls,
                  "Sets mouse interaction, e.g. ROTATE_OBJ")
-            .def("setup_camera", &PySceneWidget::SetupCamera,
+            .def("setup_camera",
+                 py::overload_cast<float,
+                                   const geometry::AxisAlignedBoundingBox &,
+                                   const Eigen::Vector3f &>(
+                         &PySceneWidget::SetupCamera),
                  "Configure the camera: setup_camera(field_of_view, "
-                 "model_bounds, "
-                 "center_of_rotation)")
+                 "model_bounds, center_of_rotation)")
+            .def("setup_camera",
+                 py::overload_cast<const camera::PinholeCameraIntrinsic &,
+                                   const Eigen::Matrix4d &,
+                                   const geometry::AxisAlignedBoundingBox &>(
+                         &PySceneWidget::SetupCamera),
+                 "setup_camera(intrinsics, extrinsic_matrix, model_bounds): "
+                 "sets the camera view")
+            .def("setup_camera",
+                 py::overload_cast<const Eigen::Matrix3d &,
+                                   const Eigen::Matrix4d &, int, int,
+                                   const geometry::AxisAlignedBoundingBox &>(
+                         &PySceneWidget::SetupCamera),
+                 "setup_camera(intrinsic_matrix, extrinsic_matrix, "
+                 "intrinsic_width_px, intrinsic_height_px, model_bounds): "
+                 "sets the camera view")
             .def("look_at", &PySceneWidget::LookAt,
                  "look_at(center, eye, up): sets the "
                  "camera view so that the camera is located at 'eye', pointing "
@@ -1179,8 +1231,7 @@ void pybind_gui_classes(py::module &m) {
                         tabs.AddTab(name, TakeOwnership<Widget>(panel));
                     },
                     "Adds a tab. The first parameter is the title of the tab, "
-                    "and "
-                    "the second parameter is a widget--normally this is a "
+                    "and the second parameter is a widget--normally this is a "
                     "layout.")
             .def("set_on_selected_tab_changed",
                  &TabControl::SetOnSelectedTabChanged,
@@ -1249,8 +1300,7 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def("get_root_item", &TreeView::GetRootItem,
                  "Returns the root item. This item is invisible, so its child "
-                 "are "
-                 "the top-level items")
+                 "are the top-level items")
             .def(
                     "add_item",
                     [](TreeView &tree, TreeView::ItemId parent_id,
@@ -1480,7 +1530,10 @@ void pybind_gui_classes(py::module &m) {
                  "Window.SetNeedsLayout() afterwards, unless calling before "
                  "window is visible")
             .def("get_is_open", &CollapsableVert::GetIsOpen,
-                 "Check if widget is open.");
+                 "Check if widget is open.")
+            .def_property("font_style", &CollapsableVert::GetFontStyle,
+                          &CollapsableVert::SetFontStyle,
+                          "Sets the font style of the text");
 
     // ---- Horiz ----
     py::class_<Horiz, UnownedPointer<Horiz>, Layout1D> hlayout(

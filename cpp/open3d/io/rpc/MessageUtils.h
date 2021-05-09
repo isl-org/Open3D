@@ -51,7 +51,7 @@ struct Status;
 /// \param ok      Output variable which will be set to true if the unpacking
 /// was successful.
 ///
-/// \return The extracted Status message object. Check \param ok to see if the
+/// \return The extracted Status message object. Check \p ok to see if the
 /// returned object is valid.
 std::shared_ptr<messages::Status> UnpackStatusFromReply(
         const zmq::message_t& msg, size_t& offset, bool& ok);

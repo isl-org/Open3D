@@ -128,7 +128,7 @@ static TensorKey PyHandleToTensorKey(const py::handle& item) {
             utility::LogError("Cannot cast index to Tensor.");
         }
     } else {
-        utility::LogError("PyHandleToTensorKey has invlaid key type {}.",
+        utility::LogError("PyHandleToTensorKey has invalid key type {}.",
                           class_name);
     }
 }

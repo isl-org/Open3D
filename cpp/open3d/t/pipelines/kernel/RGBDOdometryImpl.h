@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 // Private header. Do not include in Open3d.h.
+#pragma once
 
 #include "open3d/core/Tensor.h"
 
@@ -34,112 +35,98 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-void PreprocessDepthCPU(const core::Tensor& depth,
-                        core::Tensor& depth_processed,
-                        float depth_scale,
-                        float depth_max);
+void ComputeOdometryResultPointToPlaneCPU(
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& target_vertex_map,
+        const core::Tensor& source_normal_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        core::Tensor& delta,
+        float& inlier_residual,
+        int& inlier_count,
+        const float depth_outlier_trunc,
+        const float depth_huber_delta);
 
-void PyrDownDepthCPU(const core::Tensor& depth,
-                     core::Tensor& depth_down,
-                     float depth_diff);
+void ComputeOdometryResultIntensityCPU(
+        const core::Tensor& source_depth,
+        const core::Tensor& target_depth,
+        const core::Tensor& source_intensity,
+        const core::Tensor& target_intensity,
+        const core::Tensor& target_intensity_dx,
+        const core::Tensor& target_intensity_dy,
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        core::Tensor& delta,
+        float& inlier_residual,
+        int& inlier_count,
+        const float depth_outlier_trunc,
+        const float intensity_huber_delta);
 
-void CreateVertexMapCPU(const core::Tensor& depth_map,
-                        const core::Tensor& intrinsics,
-                        core::Tensor& vertex_map);
-
-void CreateNormalMapCPU(const core::Tensor& vertex_map,
-                        core::Tensor& normal_map);
-
-void ComputePosePointToPlaneCPU(const core::Tensor& source_vertex_map,
-                                const core::Tensor& target_vertex_map,
-                                const core::Tensor& target_normal_map,
-                                const core::Tensor& intrinsics,
-                                const core::Tensor& init_source_to_target,
-                                core::Tensor& delta,
-                                core::Tensor& residual,
-                                float depth_diff);
-
-void ComputePoseIntensityCPU(const core::Tensor& source_depth,
-                             const core::Tensor& target_depth,
-                             const core::Tensor& source_intensity,
-                             const core::Tensor& target_intensity,
-                             const core::Tensor& target_intensity_dx,
-                             const core::Tensor& target_intensity_dy,
-                             const core::Tensor& source_vertex_map,
-                             const core::Tensor& intrinsics,
-                             const core::Tensor& init_source_to_target,
-                             core::Tensor& delta,
-                             core::Tensor& residual,
-                             float depth_diff);
-
-void ComputePoseHybridCPU(const core::Tensor& source_depth,
-                          const core::Tensor& target_depth,
-                          const core::Tensor& source_intensity,
-                          const core::Tensor& target_intensity,
-                          const core::Tensor& target_depth_dx,
-                          const core::Tensor& target_depth_dy,
-                          const core::Tensor& target_intensity_dx,
-                          const core::Tensor& target_intensity_dy,
-                          const core::Tensor& source_vertex_map,
-                          const core::Tensor& intrinsics,
-                          const core::Tensor& init_source_to_target,
-                          core::Tensor& delta,
-                          core::Tensor& residual,
-                          float depth_diff);
+void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
+                                    const core::Tensor& target_depth,
+                                    const core::Tensor& source_intensity,
+                                    const core::Tensor& target_intensity,
+                                    const core::Tensor& target_depth_dx,
+                                    const core::Tensor& target_depth_dy,
+                                    const core::Tensor& target_intensity_dx,
+                                    const core::Tensor& target_intensity_dy,
+                                    const core::Tensor& source_vertex_map,
+                                    const core::Tensor& intrinsics,
+                                    const core::Tensor& init_source_to_target,
+                                    core::Tensor& delta,
+                                    float& inlier_residual,
+                                    int& inlier_count,
+                                    float depth_outlier_trunc,
+                                    const float depth_huber_delta,
+                                    const float intensity_huber_delta);
 #ifdef BUILD_CUDA_MODULE
 
-void PreprocessDepthCUDA(const core::Tensor& depth,
-                         core::Tensor& depth_processed,
-                         float depth_scale,
-                         float depth_max);
+void ComputeOdometryResultPointToPlaneCUDA(
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& target_vertex_map,
+        const core::Tensor& source_normal_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        core::Tensor& delta,
+        float& inlier_residual,
+        int& inlier_count,
+        const float depth_outlier_trunc,
+        const float depth_huber_delta);
 
-void PyrDownDepthCUDA(const core::Tensor& depth,
-                      core::Tensor& depth_down,
-                      float depth_diff);
+void ComputeOdometryResultIntensityCUDA(
+        const core::Tensor& source_depth,
+        const core::Tensor& target_depth,
+        const core::Tensor& source_intensity,
+        const core::Tensor& target_intensity,
+        const core::Tensor& target_intensity_dx,
+        const core::Tensor& target_intensity_dy,
+        const core::Tensor& source_vertex_map,
+        const core::Tensor& intrinsics,
+        const core::Tensor& init_source_to_target,
+        core::Tensor& delta,
+        float& inlier_residual,
+        int& inlier_count,
+        const float depth_outlier_trunc,
+        const float intensity_huber_delta);
 
-void CreateVertexMapCUDA(const core::Tensor& depth_map,
-                         const core::Tensor& intrinsics,
-                         core::Tensor& vertex_map);
-
-void CreateNormalMapCUDA(const core::Tensor& vertex_map,
-                         core::Tensor& normal_map);
-
-void ComputePosePointToPlaneCUDA(const core::Tensor& source_vertex_map,
-                                 const core::Tensor& target_vertex_map,
-                                 const core::Tensor& source_normal_map,
-                                 const core::Tensor& intrinsics,
-                                 const core::Tensor& init_source_to_target,
-                                 core::Tensor& delta,
-                                 core::Tensor& residual,
-                                 float depth_diff);
-
-void ComputePoseIntensityCUDA(const core::Tensor& source_depth,
-                              const core::Tensor& target_depth,
-                              const core::Tensor& source_intensity,
-                              const core::Tensor& target_intensity,
-                              const core::Tensor& target_intensity_dx,
-                              const core::Tensor& target_intensity_dy,
-                              const core::Tensor& source_vertex_map,
-                              const core::Tensor& intrinsics,
-                              const core::Tensor& init_source_to_target,
-                              core::Tensor& delta,
-                              core::Tensor& residual,
-                              float depth_diff);
-
-void ComputePoseHybridCUDA(const core::Tensor& source_depth,
-                           const core::Tensor& target_depth,
-                           const core::Tensor& source_intensity,
-                           const core::Tensor& target_intensity,
-                           const core::Tensor& target_depth_dx,
-                           const core::Tensor& target_depth_dy,
-                           const core::Tensor& target_intensity_dx,
-                           const core::Tensor& target_intensity_dy,
-                           const core::Tensor& source_vertex_map,
-                           const core::Tensor& intrinsics,
-                           const core::Tensor& init_source_to_target,
-                           core::Tensor& delta,
-                           core::Tensor& residual,
-                           float depth_diff);
+void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
+                                     const core::Tensor& target_depth,
+                                     const core::Tensor& source_intensity,
+                                     const core::Tensor& target_intensity,
+                                     const core::Tensor& target_depth_dx,
+                                     const core::Tensor& target_depth_dy,
+                                     const core::Tensor& target_intensity_dx,
+                                     const core::Tensor& target_intensity_dy,
+                                     const core::Tensor& source_vertex_map,
+                                     const core::Tensor& intrinsics,
+                                     const core::Tensor& init_source_to_target,
+                                     core::Tensor& delta,
+                                     float& inlier_residual,
+                                     int& inlier_count,
+                                     const float depth_outlier_trunc,
+                                     const float depth_huber_delta,
+                                     const float intensity_huber_delta);
 #endif
 
 }  // namespace odometry

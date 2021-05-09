@@ -80,7 +80,7 @@ public:
     void SetScaling(Scaling scaling);
     Scaling GetScaling() const;
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Widget::Constraints& constraints) const;
 
     struct DrawParams {

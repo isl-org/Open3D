@@ -101,6 +101,13 @@ Tensor IntToTensor(int64_t scalar_value,
                    utility::optional<Dtype> dtype = utility::nullopt,
                    utility::optional<Device> device = utility::nullopt);
 
+/// Convert scalar bool value to Tensor.
+///
+/// The default dtype is Bool, unless specified.
+Tensor BoolToTensor(bool scalar_value,
+                    utility::optional<Dtype> dtype = utility::nullopt,
+                    utility::optional<Device> device = utility::nullopt);
+
 /// Convert supported python types to Tensor.
 ///
 /// Supported types:
