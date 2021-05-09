@@ -48,7 +48,7 @@ def run(config):
     value_tensor.save(slac_params.get_subfolder_name() + "/ctr_grid_values.npy")
 
     o3d.io.write_pose_graph(
-        join(config["subfolder_slac"],
+        join(slac_params.get_subfolder_name(),
              config["template_optimized_posegraph_slac"]), pose_graph_updated)
 
     fragment_folder = join(path_dataset, config["folder_fragment"])
