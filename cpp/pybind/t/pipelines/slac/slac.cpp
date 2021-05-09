@@ -255,16 +255,16 @@ void pybind_slac_methods(py::module &m) {
           "fragment_filenames"_a, "fragment_pose_graph"_a,
           "params"_a = SLACOptimizerParams(),
           "debug_option"_a = SLACDebugOption());
-    docstring::FunctionDocInject(m, "run_slac_optimize_for_fragments",
+    docstring::FunctionDocInject(m, "run_slac_optimizer_for_fragments",
                                  map_shared_argument_docstrings);
 
-    m.def("run_rigid_optimize_for_fragments", &RunRigidOptimizerForFragments,
+    m.def("run_rigid_optimizer_for_fragments", &RunRigidOptimizerForFragments,
           "Extended ICP to simultaneously align multiple point clouds with "
           "dense pairwise point-to-plane distances.",
           "fragment_filenames"_a, "fragment_pose_graph"_a,
           "params"_a = SLACOptimizerParams(),
           "debug_option"_a = SLACDebugOption());
-    docstring::FunctionDocInject(m, "run_rigid_optimize_for_fragments",
+    docstring::FunctionDocInject(m, "run_rigid_optimizer_for_fragments",
                                  map_shared_argument_docstrings);
 }
 
