@@ -68,7 +68,10 @@ public:
         widget3d_ = std::make_shared<gui::SceneWidget>();
         output_panel_ = std::make_shared<gui::Vert>(spacing, margins);
 
+        // For displaying pointcloud data.
         AddChild(widget3d_);
+
+        // For output text information, such as FPS and total number of points.
         AddChild(output_panel_);
 
         output_ = std::make_shared<gui::Label>("");
@@ -408,12 +411,13 @@ private:
 
         // The dataset might be too large for your memory. If that is the case,
         // one may directly read the pointcloud frame inside
-        if (end_index_ - start_index_ > 500) {
+        if (end_index_ - start_index_ > 500 &&
+            device_.GetType() == core::Device::DeviceType::CUDA) {
             utility::LogWarning(
-                    " The range might be too large range. Might exceed memory. "
-                    "To use large dataset, it is advised to avoid pre-fetching "
-                    "data to device, and read the pointcloud directly from "
-                    "inside computation loop.");
+                    "The range of data might exceed memory. "
+                    "You might want to avoid pre-fetching the data to your "
+                    "device, for large datasets. "
+                    "Refer the example's documentation.");
         }
         utility::LogInfo(" Range: {} to {} pointcloud files in sequence.",
                          start_index_, end_index_ - 1);
@@ -446,7 +450,7 @@ private:
             relative_fitness.size() != icp_scale_levels_ ||
             relative_rmse.size() != icp_scale_levels_) {
             utility::LogError(
-                    " Length of vector: voxel_sizes, search_sizes, "
+                    "Length of vector: voxel_sizes, search_sizes, "
                     "max_iterations, "
                     "relative_fitness, relative_rmse must be same.");
         }
@@ -576,15 +580,15 @@ private:
                                 voxel_sizes_[icp_scale_levels_ - 1]);
             }
             std::cout << std::endl;
-        } catch (...) {
+        } catch (const std::bad_alloc& e) {
             utility::LogError(
-                    " Failed to read pointcloud in sequence. Ensure pointcloud "
-                    "files are present in the given dataset path in continuous "
-                    "sequence from {} to {}. Also, in case of large range, the "
-                    "system might be going out-of-memory. ",
-                    start_index_, end_index_);
+                    "Memory allocation failed: {}"
+                    "\nTo use large dataset, it is advised to avoid "
+                    "pre-fetching data to device, and read the "
+                    "pointcloud directly from inside the computation "
+                    "loop. Please refer the example documentation. ",
+                    e.what());
         }
-
         return pointclouds_device;
     }
 
