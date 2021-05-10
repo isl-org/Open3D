@@ -73,6 +73,7 @@ if (BUILD_GUI)
     EXAMPLE_CPP(OffscreenRendering    ${CMAKE_PROJECT_NAME})
     EXAMPLE_CPP(TICPOdometry          ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(TICPReconstruction    ${CMAKE_PROJECT_NAME} Threads::Threads)
+    EXAMPLE_CPP(TICPRegistration      ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(VoxelHashingGUI       ${CMAKE_PROJECT_NAME} Threads::Threads)
 endif()
 

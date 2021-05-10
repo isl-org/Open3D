@@ -1,0 +1,105 @@
+# This is a config file for the ICP Odometry Examples.
+# When voxel_size is -1, no downsampling is performed.
+# To run DemoTICPOdom:
+# 1. Run script download_kitti_samples.sh.
+# 2. Go to build/bin/examples
+# 3. Run the following command:
+# ./DemoTICPOdom CPU:0 ../../../examples/cpp/registration_example_util/TICPOdomConfigKitti.txt
+# Change CPU:0 to CUDA:0 for running it on primary GPU.
+
+# option to turn ON / OFF visualization:
+visualization = ON
+visualization_min = -1.5
+visualization_max = 1.5
+
+# Verbosity can be Info, Debug.
+verbosity = Info
+
+# Path of the downloaded dataset containing frames in .pcd or .ply format.
+# dataset_path = /home/rey/Datasets/kitti_samples/
+dataset_path = /home/junha/Research/code/Open3D/examples/test_data/ICP/
+
+# Range of frames is start_index to end_index.
+start_index = 0
+end_index = 2
+
+# Registration method can be PointToPoint or PointToPlane.
+registration_method = PointToPoint
+
+# Multi-Scale ICP parameters:
+
+# Scale 1:
+ num_iterations = 2000
+ voxel_size = 0.001
+ search_radii = 0.02
+ criteria.relative_fitness = 1e-6
+ criteria.relative_rmse = 1e-6
+ criteria.max_iterations = 1
+
+# One can also add more scales ...
+# camera rotation
+camera = 1.0
+camera = 0.0
+camera = 0.0
+camera = 0.0
+camera = -1.0
+camera = 0.0
+camera = 0.0
+camera = 0.0
+camera = -1.0
+
+# trans init (http://www.open3d.org/docs/release/tutorial/pipelines/icp_registration.html)
+# trans_init = 0.862
+# trans_init = 0.011
+# trans_init = -0.507
+# trans_init = 0.5
+# trans_init = -0.139
+# trans_init = 0.967
+# trans_init = -0.215
+# trans_init = 0.7
+# trans_init = 0.487
+# trans_init = 0.255
+# trans_init = 0.835
+# trans_init = -1.4
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 1.0
+
+# trans init (reverse )
+trans_init = 0.86215506
+trans_init = -0.13845154
+trans_init = 0.48783896
+trans_init = 0.3488131
+trans_init = 0.01135849
+trans_init = 0.96655014
+trans_init = 0.2557689
+trans_init = -0.32418788
+trans_init = -0.5063065
+trans_init = -0.21442441
+trans_init = 0.83497168
+trans_init = 1.5722107
+trans_init = 0.0
+trans_init = 0.0
+trans_init = 0.0
+trans_init = 1.0
+
+# trans init (identity)
+# trans_init = 1.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 1.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 1.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 0.0
+# trans_init = 1.0
+
+# warmup = 1.0
