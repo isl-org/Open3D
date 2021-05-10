@@ -38,8 +38,8 @@ using namespace open3d;
 using namespace open3d::visualization;
 using namespace open3d::t::pipelines::registration;
 
-const int WIDTH = 1024;
-const int HEIGHT = 768;
+const int WIDTH = 1280;
+const int HEIGHT = 800;
 float verticalFoV = 25;
 
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);

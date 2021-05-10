@@ -163,7 +163,7 @@ public:
     ReconstructionWindow(const std::string& dataset_path,
                          const std::string& intrinsic_path,
                          const std::string& device)
-        : gui::Window("Open3D - Reconstruction", 1600, 900),
+        : gui::Window("Open3D - Reconstruction", 1280, 800),
           dataset_path_(dataset_path),
           intrinsic_path_(intrinsic_path),
           device_str_(device),
