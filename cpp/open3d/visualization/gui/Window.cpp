@@ -51,6 +51,10 @@
 #include "open3d/visualization/gui/WindowSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
+#ifdef BUILD_WEBRTC
+#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
+#endif
+
 // ----------------------------------------------------------------------------
 namespace open3d {
 namespace visualization {
@@ -227,7 +231,7 @@ const int Window::FLAG_HIDDEN = (1 << 0);
 const int Window::FLAG_TOPMOST = (1 << 1);
 
 struct Window::Impl {
-    Impl() : uid_(GenerateUID()) {}
+    Impl() {}
     ~Impl() {}
 
     WindowSystem::OSWindow window_ = nullptr;
@@ -268,13 +272,6 @@ struct Window::Impl {
     bool needs_redraw_ = true;  // set by PostRedraw to defer if already drawing
     bool is_resizing_ = false;
     bool is_drawing_ = false;
-    std::string uid_ = "";
-
-private:
-    std::string GenerateUID() {
-        static std::atomic<size_t> count{0};
-        return "window_" + std::to_string(count++);
-    }
 };
 
 Window::Window(const std::string& title, int flags /*= 0*/)
@@ -456,7 +453,18 @@ void Window::DestroyWindow() {
 
 int Window::GetMouseMods() const { return impl_->mouse_mods_; }
 
-std::string Window::GetUID() const { return impl_->uid_; }
+std::string Window::GetWebRTCUID() const {
+#ifdef BUILD_WEBRTC
+    if (auto* webrtc_ws = dynamic_cast<webrtc_server::WebRTCWindowSystem*>(
+                &Application::GetInstance().GetWindowSystem())) {
+        return webrtc_ws->GetWindowUID(impl_->window_);
+    } else {
+        return "window_undefined";
+    }
+#else
+    return "window_undefined";
+#endif
+}
 
 const std::vector<std::shared_ptr<Widget>>& Window::GetChildren() const {
     return impl_->children_;

@@ -50,11 +50,8 @@ class WebVisualizer(ipywidgets.DOMWidget):
         IPython.display.display(self)
 
     def _call_http_api(self, entry_point, query_string, data):
-        webrtc_server = o3d.visualization.webrtc_server.WebRTCServer.instance
+        webrtc_server = o3d.visualization.webrtc_server.WebRTCWindowSystem.instance
         result = webrtc_server.call_http_api(entry_point, query_string, data)
-        # print(
-        #     f"call_http_api({entry_point}, {query_string}, {query_string})"
-        #     f"->{result}")
         return result
 
     @traitlets.validate('window_uid')
@@ -71,7 +68,6 @@ class WebVisualizer(ipywidgets.DOMWidget):
             self.result_map = dict()
 
         jspy_message = change["new"]
-        # print(f"jspy_message received: {jspy_message}")
         try:
             jspy_requests = json.loads(jspy_message)
 
@@ -92,7 +88,6 @@ class WebVisualizer(ipywidgets.DOMWidget):
             print(
                 f"jspy_message is not a function call, ignored: {jspy_message}")
         else:
-            # print(f"pyjs_channel sending: {self.result_map}")
             self.pyjs_channel = json.dumps(self.result_map)
 
 

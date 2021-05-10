@@ -57,34 +57,43 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
+/// [Related classes]
+/// - VideoTrackSourceInterface: WebRTC expects a custom implementation
+///   of this class.
+/// - BitmapTrackSourceInterface: Used as the primary interface in
+///   PeerConnectionManager. It is almost the same as VideoTrackSourceInterface
+///   with an additional OnFrame function for triggering frame handlers.
+/// - BitmapTrackSource: Abstract class for bit map tracks.
+/// - ImageTrackSource: Captures frames from Open3D visualizer.
+/// - VideoFilter: Video frame processing, e.g. scaling.
+///
+/// [Class hierarchy]
+/// BitmapTrackSourceInterface --inherits--> webrtc::VideoTrackSourceInterface
+/// BitmapTrackSource --inherits--> webrtc::Notifier<BitmapTrackSourceInterface>
+/// ImageTrackSource  --inherits--> BitmapTrackSource
+/// ImageCapturer     --owned by--> ImageTrackSource
+/// VideoFilter       --inherits--> BitmapTrackSource
 class BitmapTrackSourceInterface : public webrtc::VideoTrackSourceInterface {
 public:
     virtual void OnFrame(const std::shared_ptr<core::Tensor>& frame) = 0;
 };
 
-// BitmapTrackSource is a convenience base class for implementations of
-// VideoTrackSourceInterface.
 class BitmapTrackSource : public webrtc::Notifier<BitmapTrackSourceInterface> {
 public:
     explicit BitmapTrackSource(bool remote);
     void SetState(webrtc::MediaSourceInterface::SourceState new_state);
-
     webrtc::MediaSourceInterface::SourceState state() const override {
         return state_;
     }
     bool remote() const override { return remote_; }
-
     bool is_screencast() const override { return false; }
     absl::optional<bool> needs_denoising() const override {
         return absl::nullopt;
     }
-
     bool GetStats(Stats* stats) override { return false; }
-
     void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                          const rtc::VideoSinkWants& wants) override;
     void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
-
     bool SupportsEncodedOutput() const override { return false; }
     void GenerateKeyFrame() override {}
     void AddEncodedSink(rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>*
@@ -93,11 +102,9 @@ public:
             rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink)
             override {}
 
-    // By default it does nothing (e.g. for VideoFilter).
-    // ImageTrackSource overrides this and this will be called by the
-    // BitmapWindowSystem when there's a new frame.
     virtual void OnFrame(const std::shared_ptr<core::Tensor>& frame) override {
-        utility::LogInfo("BitmapTrackSource::OnFrame called");
+        // Shall be implemented by child class.
+        utility::LogError("BitmapTrackSource::OnFrame called");
     }
 
 protected:

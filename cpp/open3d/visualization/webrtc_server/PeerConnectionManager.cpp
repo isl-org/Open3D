@@ -143,13 +143,11 @@ CreatePeerConnectionFactoryDependencies() {
 }
 
 PeerConnectionManager::PeerConnectionManager(
-        WebRTCServer *webrtc_server,
         const std::list<std::string> &ice_server_list,
         const Json::Value &config,
         const std::string &publish_filter,
         const std::string &webrtc_udp_port_range)
-    : webrtc_server_(webrtc_server),
-      task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
+    : task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
       peer_connection_factory_(webrtc::CreateModularPeerConnectionFactory(
               CreatePeerConnectionFactoryDependencies())),
       ice_server_list_(ice_server_list),
@@ -224,7 +222,8 @@ PeerConnectionManager::~PeerConnectionManager() {}
 const Json::Value PeerConnectionManager::GetMediaList() {
     Json::Value value(Json::arrayValue);
 
-    for (const std::string &window_uid : webrtc_server_->GetWindowUIDs()) {
+    for (const std::string &window_uid :
+         WebRTCWindowSystem::GetInstance()->GetWindowUIDs()) {
         Json::Value media;
         media["video"] = window_uid;
         value.append(media);
@@ -415,11 +414,9 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                 utility::LogError("Failed to create answer");
             }
 
-            // TODO: this is not the place to send SendInitFrames. Call
-            // SendInitFrames after the video stream is fully established. Send
-            //
-            // window_uid is window_uid.
-            webrtc_server_->SendInitFrames(window_uid);
+            // TODO (Yixing): this is not the place to send SendInitFrames. Call
+            // SendInitFrames after the video stream is fully established.
+            WebRTCWindowSystem::GetInstance()->SendInitFrames(window_uid);
         }
     }
     return answer;
@@ -561,9 +558,8 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
     utility::LogDebug("CreatePeerConnection webrtcPortRange: {}:{}.", min_port,
                       max_port);
     utility::LogDebug("CreatePeerConnection peerid: {}.", peerid);
-    PeerConnectionObserver *obs =
-            new PeerConnectionObserver(this->webrtc_server_, this, peerid,
-                                       config, std::move(port_allocator));
+    PeerConnectionObserver *obs = new PeerConnectionObserver(
+            this, peerid, config, std::move(port_allocator));
     if (!obs) {
         utility::LogError("CreatePeerConnection failed.");
     }

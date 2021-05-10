@@ -8,7 +8,6 @@ set(WEBRTC_STREAMER_SRC
     ImageCapturer.cpp
     HttpServerRequestHandler.cpp
     PeerConnectionManager.cpp
-    WebRTCServer.cpp
     WebRTCWindowSystem.cpp
 )
 

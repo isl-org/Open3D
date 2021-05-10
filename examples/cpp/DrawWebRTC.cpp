@@ -30,7 +30,7 @@
 #include "open3d/utility/FileSystem.h"
 
 // TODO: edit Open3D.h.in
-#include "open3d/visualization/webrtc_server/WebRTCServer.h"
+#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 
 using namespace open3d;
 
@@ -73,6 +73,8 @@ void AddDrawWindow(
     draw.reset();  // so we don't hold onto the pointer after Run() cleans up
 }
 
+// Create a window with an empty box and a custom action button for adding a
+// new visualization vindow.
 void EmptyBox() {
     const double pc_rad = 1.0;
     const double r = 0.4;
@@ -94,6 +96,7 @@ void EmptyBox() {
                   {{"Load example mesh", new_window_action}});
 }
 
+// Create a window with various geometry objects.
 void BoxWithObjects() {
     const double pc_rad = 1.0;
     const double r = 0.4;
@@ -135,7 +138,8 @@ int main(int argc, char **argv) {
                 "test_dir: {}",
                 TEST_DIR);
     }
-    visualization::webrtc_server::WebRTCServer::GetInstance().EnableWebRTC();
+    visualization::webrtc_server::WebRTCWindowSystem::GetInstance()
+            ->EnableWebRTC();
 
     // Uncomment this line to see more WebRTC loggings
     // utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);

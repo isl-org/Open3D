@@ -50,7 +50,7 @@
 
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
-#include "open3d/visualization/webrtc_server/WebRTCServer.h"
+#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 
 namespace open3d {
 namespace visualization {
@@ -174,9 +174,8 @@ class PeerConnectionManager {
     class DataChannelObserver : public webrtc::DataChannelObserver {
     public:
         DataChannelObserver(
-                WebRTCServer* webrtc_server,
                 rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel)
-            : webrtc_server_(webrtc_server), data_channel_(data_channel) {
+            : data_channel_(data_channel) {
             data_channel_->RegisterObserver(this);
         }
         virtual ~DataChannelObserver() { data_channel_->UnregisterObserver(); }
@@ -201,24 +200,21 @@ class PeerConnectionManager {
                             buffer.data.size());
             utility::LogDebug("DataChannelObserver::OnMessage: {}, msg: {}.",
                               data_channel_->label(), msg);
-            webrtc_server_->OnDataChannelMessage(msg);
+            WebRTCWindowSystem::GetInstance()->OnDataChannelMessage(msg);
         }
 
     protected:
-        WebRTCServer* webrtc_server_;
         rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
     };
 
     class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
     public:
         PeerConnectionObserver(
-                WebRTCServer* webrtc_server,
                 PeerConnectionManager* peer_connection_manager_,
                 const std::string& peerid,
                 const webrtc::PeerConnectionInterface::RTCConfiguration& config,
                 std::unique_ptr<cricket::PortAllocator> port_allocator)
-            : webrtc_server_(webrtc_server),
-              peer_connection_manager_(peer_connection_manager_),
+            : peer_connection_manager_(peer_connection_manager_),
               peerid_(peerid),
               local_channel_(nullptr),
               remote_channel_(nullptr),
@@ -232,8 +228,7 @@ class PeerConnectionManager {
             if (pc_.get()) {
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel =
                         pc_->CreateDataChannel("ServerDataChannel", nullptr);
-                local_channel_ =
-                        new DataChannelObserver(webrtc_server_, channel);
+                local_channel_ = new DataChannelObserver(channel);
             }
 
             stats_callback_ = new rtc::RefCountedObject<
@@ -285,7 +280,7 @@ class PeerConnectionManager {
         virtual void OnDataChannel(
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel) {
             utility::LogDebug("peerid: {}", peerid_);
-            remote_channel_ = new DataChannelObserver(webrtc_server_, channel);
+            remote_channel_ = new DataChannelObserver(channel);
         }
         virtual void OnRenegotiationNeeded() {
             utility::LogDebug("peerid: {}", peerid_);
@@ -316,7 +311,6 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface::IceGatheringState) {}
 
     private:
-        WebRTCServer* webrtc_server_ = nullptr;
         PeerConnectionManager* peer_connection_manager_;
         const std::string peerid_;
         rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
@@ -330,8 +324,7 @@ class PeerConnectionManager {
     };
 
 public:
-    PeerConnectionManager(WebRTCServer* webrtc_server,
-                          const std::list<std::string>& ice_server_list,
+    PeerConnectionManager(const std::list<std::string>& ice_server_list,
                           const Json::Value& config,
                           const std::string& publish_filter,
                           const std::string& webrtc_udp_port_range);
@@ -372,7 +365,6 @@ protected:
             const std::string& peerid);
 
 protected:
-    WebRTCServer* webrtc_server_ = nullptr;
     std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
             peer_connection_factory_;

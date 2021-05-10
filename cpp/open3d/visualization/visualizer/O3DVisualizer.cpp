@@ -1777,7 +1777,10 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     app_menu->AddItem("About", MENU_ABOUT);
     menu->AddMenu("Open3D", app_menu);
 #endif  // __APPLE__
-    if (Application::GetInstance().UsingNativeWindows()) {
+
+    // TODO: debug only, enabled the check later.
+    // if (Application::GetInstance().UsingNativeWindows()) {
+    if (true) {
         auto file_menu = std::make_shared<Menu>();
         file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
         file_menu->AddSeparator();

@@ -30,7 +30,7 @@
 #include "pybind/visualization/rendering/rendering.h"
 
 #ifdef BUILD_WEBRTC
-#include "pybind/visualization/webrtc_server/webrtc_server.h"
+#include "pybind/visualization/webrtc_server/webrtc_window_system.h"
 #endif
 
 namespace open3d {
