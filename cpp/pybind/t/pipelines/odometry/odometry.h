@@ -24,25 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/t/pipelines/pipelines.h"
+#pragma once
 
 #include "pybind/open3d_pybind.h"
-#include "pybind/t/pipelines/odometry/odometry.h"
-#include "pybind/t/pipelines/registration/registration.h"
-#include "pybind/t/pipelines/slac/slac.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
+namespace odometry {
 
-void pybind_pipelines(py::module& m) {
-    py::module m_pipelines = m.def_submodule(
-            "pipelines", "Tensor-based geometry processing pipelines.");
-    odometry::pybind_odometry(m_pipelines);
-    registration::pybind_registration(m_pipelines);
-    slac::pybind_slac(m_pipelines);
-}
+void pybind_odometry(py::module &m);
 
+}  // namespace odometry
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
