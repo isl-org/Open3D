@@ -259,8 +259,8 @@ where,
 :math:`D_q` denotes the depth pixel q in the target. 
 q is obtained by transforming p with init_source_to_target then 
 projecting with intrinsics. 
-Reference: 
-Colored ICP Revisited, ICCV 2017.)",
+Reference: J. Park, Q.Y. Zhou, and V. Koltun,
+Colored Point Cloud Registration Revisited, ICCV, 2017.)",
           "source_depth"_a, "target_depth"_a, "source_intensity"_a,
           "target_intensity"_a, "target_depth_dx"_a, "target_depth_dy"_a,
           "target_intensity_dx"_a, "target_intensity_dy"_a,
