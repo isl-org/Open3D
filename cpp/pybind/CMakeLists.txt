@@ -54,6 +54,7 @@ set(PY_ALL_SOURCE_FILES
     core/size_vector.cpp
     core/cuda_utils.cpp
     core/tensor.cpp
+    core/scalar.cpp
     core/nns/nearest_neighbor_search.cpp
     core/dtype.cpp
     docstring.cpp

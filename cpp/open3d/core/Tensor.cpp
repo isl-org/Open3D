@@ -988,14 +988,22 @@ Tensor Tensor::IsFinite() const {
     }
 }
 
-Tensor Tensor::Clip(double min_val, double max_val) const {
-    Tensor dst_tensor(shape_, dtype_, GetDevice());
-    utility::LogError("Not Implemented!");
-    return dst_tensor;
+Tensor Tensor::Clip(Scalar min_val, Scalar max_val) const {
+    Tensor dst_tensor = this->Clone();
+    return dst_tensor.Clip_(min_val, max_val);
 }
 
-Tensor Tensor::Clip_(double min_val, double max_val) {
-    utility::LogError("Not Implemented!");
+// TODO: Implement with kernel.
+Tensor Tensor::Clip_(Scalar min_val, Scalar max_val) {
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
+        scalar_t min_val_casted = min_val.To<scalar_t>();
+        this->SetItem(TensorKey::IndexTensor(this->Lt(min_val_casted)),
+                      Full({}, min_val_casted, dtype_, GetDevice()));
+
+        scalar_t max_val_casted = max_val.To<scalar_t>();
+        this->SetItem(TensorKey::IndexTensor(this->Gt(max_val_casted)),
+                      Full({}, max_val_casted, dtype_, GetDevice()));
+    });
     return *this;
 }
 

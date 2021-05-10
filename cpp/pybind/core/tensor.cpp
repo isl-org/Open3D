@@ -33,6 +33,7 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/Scalar.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/utility/Optional.h"
@@ -60,6 +61,51 @@
     tensor.def(#py_name, &Tensor::cpp_name<uint32_t>);                      \
     tensor.def(#py_name, &Tensor::cpp_name<uint64_t>);                      \
     tensor.def(#py_name, &Tensor::cpp_name<bool>);
+
+#define BIND_CLIP_SCALAR(py_name, cpp_name, self_const)                        \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, float min_v, float max_v) {         \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, double min_v, double max_v) {       \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, int8_t min_v, int8_t max_v) {       \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, int16_t min_v, int16_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, int32_t min_v, int32_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, int64_t min_v, int64_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint8_t min_v, uint8_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint16_t min_v, uint16_t max_v) {   \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint32_t min_v, uint32_t max_v) {   \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint64_t min_v, uint64_t max_v) {   \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name, [](self_const Tensor& self, bool min_v, bool max_v) { \
+        return self.cpp_name(min_v, max_v);                                    \
+    });
 
 #define BIND_BINARY_R_OP_ALL_DTYPES(py_name, cpp_name)                    \
     tensor.def(#py_name, [](const Tensor& self, float value) {            \
@@ -615,6 +661,9 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("trunc", &Tensor::Trunc);
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
+
+    BIND_CLIP_SCALAR(clip, Clip, CONST_ARG);
+    BIND_CLIP_SCALAR(clip_, Clip_, NON_CONST_ARG);
 
     // Boolean.
     tensor.def(
