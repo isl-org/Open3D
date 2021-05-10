@@ -44,7 +44,7 @@ def initialize_config(config):
     set_default_value(config, "regularizer_weight", 1)
     set_default_value(config, "method", "slac")
     set_default_value(config, "device", "CPU:0")
-    set_default_value(config, "save_output_as", "mesh")
+    set_default_value(config, "save_output_as", "pointcloud")
     set_default_value(config, "folder_slac", "slac/")
     set_default_value(config, "template_optimized_posegraph_slac",
                       "optimized_posegraph_slac.json")

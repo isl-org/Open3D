@@ -20,32 +20,37 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")
     parser.add_argument("config", help="path to the config file")
     parser.add_argument("--make",
-                        help="Step 1) make fragments from RGBD sequence",
+                        help="Step 1) make fragments from RGBD sequence.",
                         action="store_true")
     parser.add_argument(
         "--register",
-        help="Step 2) register all fragments to detect loop closure",
+        help="Step 2) register all fragments to detect loop closure.",
         action="store_true")
     parser.add_argument("--refine",
                         help="Step 3) refine rough registrations",
                         action="store_true")
     parser.add_argument(
         "--integrate",
-        help="Step 4) integrate the whole RGBD sequence to make final mesh",
+        help="Step 4) integrate the whole RGBD sequence to make final mesh.",
         action="store_true")
     parser.add_argument(
         "--slac",
-        help="Step 5) (optional) run slac optimisation for fragments.",
+        help="Step 5) (optional) run slac / rigid optimisation for fragments.",
         action="store_true")
     parser.add_argument(
         "--slac_integrate",
-        help=
-        "Step 6) (optional) integrate fragements using slac to make final mesh.",
+        help="Step 6) (optional) integrate fragements using slac to make final "
+        "pointcloud / mesh.",
         action="store_true")
     parser.add_argument("--debug_mode",
-                        help="turn on debug mode",
+                        help="turn on debug mode.",
                         action="store_true")
-    parser.add_argument('--device', type=str, default='cpu:0')
+    parser.add_argument(
+        '--device',
+        help="(optional) select processing device for slac and slac_integrate. "
+        "[example: cpu:0, cuda:0].",
+        type=str,
+        default='cpu:0')
 
     args = parser.parse_args()
 
