@@ -33,6 +33,7 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/Scalar.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/utility/Optional.h"
@@ -45,21 +46,88 @@
 #define CONST_ARG const
 #define NON_CONST_ARG
 
-#define BIND_BINARY_OP_ALL_DTYPES(py_name, cpp_name, self_const)            \
-    tensor.def(#py_name, [](self_const Tensor& self, const Tensor& other) { \
-        return self.cpp_name(other);                                        \
-    });                                                                     \
-    tensor.def(#py_name, &Tensor::cpp_name<float>);                         \
-    tensor.def(#py_name, &Tensor::cpp_name<double>);                        \
-    tensor.def(#py_name, &Tensor::cpp_name<int8_t>);                        \
-    tensor.def(#py_name, &Tensor::cpp_name<int16_t>);                       \
-    tensor.def(#py_name, &Tensor::cpp_name<int32_t>);                       \
-    tensor.def(#py_name, &Tensor::cpp_name<int64_t>);                       \
-    tensor.def(#py_name, &Tensor::cpp_name<uint8_t>);                       \
-    tensor.def(#py_name, &Tensor::cpp_name<uint16_t>);                      \
-    tensor.def(#py_name, &Tensor::cpp_name<uint32_t>);                      \
-    tensor.def(#py_name, &Tensor::cpp_name<uint64_t>);                      \
-    tensor.def(#py_name, &Tensor::cpp_name<bool>);
+#define BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(py_name, cpp_name, self_const) \
+    tensor.def(#py_name, [](self_const Tensor& self, const Tensor& other) {  \
+        return self.cpp_name(other);                                         \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, float value) {                     \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, double value) {                    \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, int8_t value) {                    \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, int16_t value) {                   \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, int32_t value) {                   \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, int64_t value) {                   \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint8_t value) {                   \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint16_t value) {                  \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint32_t value) {                  \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint64_t value) {                  \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, bool value) {                      \
+        return self.cpp_name(Scalar(value));                                 \
+    });
+
+#define BIND_CLIP_SCALAR(py_name, cpp_name, self_const)                        \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, float min_v, float max_v) {         \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, double min_v, double max_v) {       \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, int8_t min_v, int8_t max_v) {       \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, int16_t min_v, int16_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, int32_t min_v, int32_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, int64_t min_v, int64_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint8_t min_v, uint8_t max_v) {     \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint16_t min_v, uint16_t max_v) {   \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint32_t min_v, uint32_t max_v) {   \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name,                                                       \
+               [](self_const Tensor& self, uint64_t min_v, uint64_t max_v) {   \
+                   return self.cpp_name(min_v, max_v);                         \
+               });                                                             \
+    tensor.def(#py_name, [](self_const Tensor& self, bool min_v, bool max_v) { \
+        return self.cpp_name(min_v, max_v);                                    \
+    });
 
 #define BIND_BINARY_R_OP_ALL_DTYPES(py_name, cpp_name)                    \
     tensor.def(#py_name, [](const Tensor& self, float value) {            \
@@ -143,6 +211,13 @@
 namespace open3d {
 namespace core {
 
+const std::unordered_map<std::string, std::string> argument_docs = {
+        {"dtype", "Data type for the Tensor."},
+        {"device", "Compute device to store and operate on the Tensor."},
+        {"shape", "List of Tensor dimensions."},
+        {"fill_value", "Scalar value to initialize all elements with."},
+        {"scalar_value", "Initial value for the single element tensor."}};
+
 template <typename T>
 static std::vector<T> ToFlatVector(
         py::array_t<T, py::array::c_style | py::array::forcecast> np_array) {
@@ -152,7 +227,8 @@ static std::vector<T> ToFlatVector(
 }
 
 template <typename func_t>
-static void BindTensorCreation(py::class_<Tensor>& tensor,
+static void BindTensorCreation(py::module& m,
+                               py::class_<Tensor>& tensor,
                                const std::string& py_name,
                                func_t cpp_func) {
     tensor.def_static(
@@ -164,7 +240,8 @@ static void BindTensorCreation(py::class_<Tensor>& tensor,
                         dtype.has_value() ? dtype.value() : Dtype::Float32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
-            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "Create Tensor with a given shape.", "shape"_a,
+            "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static(
             py_name.c_str(),
             [cpp_func](const py::tuple& shape, utility::optional<Dtype> dtype,
@@ -174,7 +251,9 @@ static void BindTensorCreation(py::class_<Tensor>& tensor,
                         dtype.has_value() ? dtype.value() : Dtype::Float32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
-            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "Create Tensor with a given shape."
+            "shape"_a,
+            "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static(
             py_name.c_str(),
             [cpp_func](const py::list& shape, utility::optional<Dtype> dtype,
@@ -184,11 +263,15 @@ static void BindTensorCreation(py::class_<Tensor>& tensor,
                         dtype.has_value() ? dtype.value() : Dtype::Float32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
-            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "Create Tensor with a given shape."
+            "shape"_a,
+            "dtype"_a = py::none(), "device"_a = py::none());
+
+    docstring::ClassMethodDocInject(m, "Tensor", py_name, argument_docs);
 }
 
 template <typename T>
-static void BindTensorFullCreation(py::class_<Tensor>& tensor) {
+static void BindTensorFullCreation(py::module& m, py::class_<Tensor>& tensor) {
     tensor.def_static(
             "full",
             [](const SizeVector& shape, T fill_value,
@@ -245,7 +328,17 @@ void pybind_core_tensor(py::module& m) {
                    }
                    return t;
                }),
-               "np_array"_a, "dtype"_a = py::none(), "device"_a = py::none());
+               "Initialize Tensor from a Numpy array.", "np_array"_a,
+               "dtype"_a = py::none(), "device"_a = py::none());
+
+    // o3c.Tensor(True, dtype=None, device=None).
+    // Default to Bool, CPU:0.
+    tensor.def(py::init([](bool scalar_value, utility::optional<Dtype> dtype,
+                           utility::optional<Device> device) {
+                   return BoolToTensor(scalar_value, dtype, device);
+               }),
+               "scalar_value"_a, "dtype"_a = py::none(),
+               "device"_a = py::none());
 
     // o3c.Tensor(1, dtype=None, device=None).
     // Default to Int64, CPU:0.
@@ -271,7 +364,8 @@ void pybind_core_tensor(py::module& m) {
                         utility::optional<Device> device) {
                 return PyListToTensor(shape, dtype, device);
             }),
-            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "Initialize Tensor from a nested list.", "shape"_a,
+            "dtype"_a = py::none(), "device"_a = py::none());
 
     // o3c.Tensor(((0, 1, 2), (3, 4, 5)), dtype=None, device=None).
     tensor.def(
@@ -279,25 +373,30 @@ void pybind_core_tensor(py::module& m) {
                         utility::optional<Device> device) {
                 return PyTupleToTensor(shape, dtype, device);
             }),
-            "shape"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "Initialize Tensor from a nested tuple.", "shape"_a,
+            "dtype"_a = py::none(), "device"_a = py::none());
+
+    docstring::ClassMethodDocInject(m, "Tensor", "__init__", argument_docs);
 
     pybind_core_tensor_accessor(tensor);
 
     // Tensor creation API.
-    BindTensorCreation(tensor, "empty", Tensor::Empty);
-    BindTensorCreation(tensor, "zeros", Tensor::Zeros);
-    BindTensorCreation(tensor, "ones", Tensor::Ones);
-    BindTensorFullCreation<float>(tensor);
-    BindTensorFullCreation<double>(tensor);
-    BindTensorFullCreation<int8_t>(tensor);
-    BindTensorFullCreation<int16_t>(tensor);
-    BindTensorFullCreation<int32_t>(tensor);
-    BindTensorFullCreation<int64_t>(tensor);
-    BindTensorFullCreation<uint8_t>(tensor);
-    BindTensorFullCreation<uint16_t>(tensor);
-    BindTensorFullCreation<uint32_t>(tensor);
-    BindTensorFullCreation<uint64_t>(tensor);
-    BindTensorFullCreation<bool>(tensor);
+    BindTensorCreation(m, tensor, "empty", Tensor::Empty);
+    BindTensorCreation(m, tensor, "zeros", Tensor::Zeros);
+    BindTensorCreation(m, tensor, "ones", Tensor::Ones);
+    BindTensorFullCreation<float>(m, tensor);
+    BindTensorFullCreation<double>(m, tensor);
+    BindTensorFullCreation<int8_t>(m, tensor);
+    BindTensorFullCreation<int16_t>(m, tensor);
+    BindTensorFullCreation<int32_t>(m, tensor);
+    BindTensorFullCreation<int64_t>(m, tensor);
+    BindTensorFullCreation<uint8_t>(m, tensor);
+    BindTensorFullCreation<uint16_t>(m, tensor);
+    BindTensorFullCreation<uint32_t>(m, tensor);
+    BindTensorFullCreation<uint64_t>(m, tensor);
+    BindTensorFullCreation<bool>(m, tensor);
+    docstring::ClassMethodDocInject(m, "Tensor", "full", argument_docs);
+
     tensor.def_static(
             "eye",
             [](int64_t n, utility::optional<Dtype> dtype,
@@ -474,79 +573,83 @@ void pybind_core_tensor(py::module& m) {
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
     //
     // BinaryEW: add.
-    BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(add_, Add_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__add__, Add, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__iadd__, Add_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(add, Add, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(add_, Add_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__add__, Add, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__iadd__, Add_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__radd__, Add);
 
     // BinaryEW: sub.
-    BIND_BINARY_OP_ALL_DTYPES(sub, Sub, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(sub_, Sub_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__sub__, Sub, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__isub__, Sub_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(sub, Sub, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(sub_, Sub_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__sub__, Sub, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__isub__, Sub_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rsub__, Sub);
 
     // BinaryEW: mul.
-    BIND_BINARY_OP_ALL_DTYPES(mul, Mul, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(mul_, Mul_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__mul__, Mul, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__imul__, Mul_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(mul, Mul, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(mul_, Mul_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__mul__, Mul, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__imul__, Mul_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rmul__, Mul);
 
     // BinaryEW: div.
-    BIND_BINARY_OP_ALL_DTYPES(div, Div, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(div_, Div_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__div__, Div, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__idiv__, Div_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(div, Div, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(div_, Div_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__div__, Div, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__idiv__, Div_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rdiv__, Div);
-    BIND_BINARY_OP_ALL_DTYPES(__truediv__, Div, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__itruediv__, Div_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__truediv__, Div, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__itruediv__, Div_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rtruediv__, Div);
-    BIND_BINARY_OP_ALL_DTYPES(__floordiv__, Div, CONST_ARG);  // truediv only.
-    BIND_BINARY_OP_ALL_DTYPES(__ifloordiv__, Div_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__floordiv__, Div,
+                                          CONST_ARG);  // truediv only.
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ifloordiv__, Div_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rfloordiv__, Div);
 
     // BinaryEW: and.
-    BIND_BINARY_OP_ALL_DTYPES(logical_and, LogicalAnd, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(logical_and_, LogicalAnd_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__and__, LogicalAnd, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__iand__, LogicalAnd_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_and, LogicalAnd, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_and_, LogicalAnd_,
+                                          NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__and__, LogicalAnd, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__iand__, LogicalAnd_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rand__, LogicalAnd);
 
     // BinaryEW: or.
-    BIND_BINARY_OP_ALL_DTYPES(logical_or, LogicalOr, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(logical_or_, LogicalOr_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__or__, LogicalOr, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__ior__, LogicalOr_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_or, LogicalOr, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_or_, LogicalOr_,
+                                          NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__or__, LogicalOr, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ior__, LogicalOr_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__ror__, LogicalOr);
 
     // BinaryEW: xor.
-    BIND_BINARY_OP_ALL_DTYPES(logical_xor, LogicalXor, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(logical_xor_, LogicalXor_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__xor__, LogicalXor, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__ixor__, LogicalXor_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_xor, LogicalXor, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_xor_, LogicalXor_,
+                                          NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__xor__, LogicalXor, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ixor__, LogicalXor_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rxor__, LogicalXor);
 
     // BinaryEW: comparsion ops.
-    BIND_BINARY_OP_ALL_DTYPES(gt, Gt, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(gt_, Gt_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__gt__, Gt, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(lt, Lt, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(lt_, Lt_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__lt__, Lt, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(ge, Ge, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(ge_, Ge_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__ge__, Ge, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(le, Le, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(le_, Le_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__le__, Le, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(eq, Eq, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(eq_, Eq_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__eq__, Eq, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(ne, Ne, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(ne_, Ne_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__ne__, Ne, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(gt, Gt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(gt_, Gt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__gt__, Gt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(lt, Lt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(lt_, Lt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__lt__, Lt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(ge, Ge, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(ge_, Ge_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ge__, Ge, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(le, Le, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(le_, Le_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__le__, Le, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(eq, Eq, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(eq_, Eq_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__eq__, Eq, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(ne, Ne, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(ne_, Ne_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ne__, Ne, CONST_ARG);
 
     // Getters and setters as properties.
     tensor.def_property_readonly(
@@ -584,6 +687,9 @@ void pybind_core_tensor(py::module& m) {
     tensor.def("trunc", &Tensor::Trunc);
     tensor.def("logical_not", &Tensor::LogicalNot);
     tensor.def("logical_not_", &Tensor::LogicalNot_);
+
+    BIND_CLIP_SCALAR(clip, Clip, CONST_ARG);
+    BIND_CLIP_SCALAR(clip_, Clip_, NON_CONST_ARG);
 
     // Boolean.
     tensor.def(

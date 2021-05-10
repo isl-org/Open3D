@@ -90,6 +90,7 @@ class ContinuousConv(tf.keras.layers.Layer):
         coordinate_mapping: The mapping that is applied to the input coordinates.
           One of 'ball_to_cube_radial', 'ball_to_cube_volume_preserving',
           'identity'.
+
             * 'ball_to_cube_radial' uses radial stretching to map a sphere to
               a cube.
             * 'ball_to_cube_volume_preserving' is using a more expensive volume
@@ -251,7 +252,6 @@ class ContinuousConv(tf.keras.layers.Layer):
         """This function computes the output features.
 
         Arguments:
-
           inp_features: A 2D tensor which stores a feature vector for each input
             point. *This argument must be given as a positional argument!*
 
@@ -292,7 +292,6 @@ class ContinuousConv(tf.keras.layers.Layer):
         Returns:
           A tensor of shape [num output points, filters] with the output features.
         """
-
         offset = self.offset
 
         if inp_importance is None:
@@ -516,7 +515,6 @@ class SparseConv(tf.keras.layers.Layer):
         """This function computes the output features.
 
         Arguments:
-
           inp_features: A 2D tensor which stores a feature vector for each input
             point. *This argument must be given as a positional argument!*
 
@@ -539,7 +537,6 @@ class SparseConv(tf.keras.layers.Layer):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
-
         offset = self.offset
         voxel_size = tf.convert_to_tensor(voxel_size, dtype=inp_positions.dtype)
         if voxel_size.shape.rank != 0:
@@ -716,7 +713,6 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         """This function computes the output features.
 
         Arguments:
-
           inp_features: A 2D tensor which stores a feature vector for each input
             point. *This argument must be given as a positional argument!*
 
@@ -739,7 +735,6 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
-
         offset = self.offset
         voxel_size = tf.convert_to_tensor(voxel_size, dtype=inp_positions.dtype)
         if voxel_size.shape.rank != 0:

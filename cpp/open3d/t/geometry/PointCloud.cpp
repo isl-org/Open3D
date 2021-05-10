@@ -27,6 +27,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 
 #include <Eigen/Core>
+#include <limits>
 #include <string>
 #include <unordered_map>
 
@@ -45,9 +46,7 @@ namespace geometry {
 PointCloud::PointCloud(const core::Device &device)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
       device_(device),
-      point_attr_(TensorMap("points")) {
-    ;
-}
+      point_attr_(TensorMap("points")) {}
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDevice()) {
@@ -235,12 +234,93 @@ PointCloud PointCloud::VoxelDownSample(
     return pcd_down;
 }
 
+static PointCloud CreatePointCloudWithNormals(
+        const Image &depth_in, /* UInt16 or Float32 */
+        const Image &color_in, /* Float32 */
+        const core::Tensor &intrinsics_in,
+        const core::Tensor &extrinsics,
+        float depth_scale,
+        float depth_max,
+        int stride) {
+    using core::None;
+    using core::Tensor;
+    using core::TensorKey;
+    const float invalid_fill = NAN;
+    // Filter defaults for depth processing
+    const int bilateral_kernel_size =  // bilateral filter defaults for backends
+            depth_in.GetDevice().GetType() == core::Device::DeviceType::CUDA
+                    ? 3
+                    : 5;
+    const float depth_diff_threshold = 0.14f;
+    const float bilateral_value_sigma = 10.f;
+    const float bilateral_distance_sigma = 10.f;
+    if ((stride & (stride - 1)) != 0) {
+        utility::LogError(
+                "Only powers of 2 are supported for stride when "
+                "with_normals=true.");
+    }
+    if (color_in.GetRows() > 0 && (depth_in.GetRows() != color_in.GetRows() ||
+                                   depth_in.GetCols() != color_in.GetCols())) {
+        utility::LogError("Depth and color images have different sizes.");
+    }
+    auto depth =
+            depth_in.ClipTransform(depth_scale, 0.0f, depth_max, invalid_fill);
+    auto color = color_in;
+    auto intrinsics = intrinsics_in / stride;
+    intrinsics[-1][-1] = 1.f;
+    if (stride == 1) {
+        depth = depth.FilterBilateral(bilateral_kernel_size,
+                                      bilateral_value_sigma,
+                                      bilateral_distance_sigma);
+    } else {
+        for (; stride > 1; stride /= 2) {
+            depth = depth.PyrDownDepth(depth_diff_threshold, invalid_fill);
+            color = color.PyrDown();
+        }
+    }
+    const int64_t im_size = depth.GetRows() * depth.GetCols();
+    auto vertex_map = depth.CreateVertexMap(intrinsics, invalid_fill);
+    auto vertex_list = vertex_map.AsTensor().View({im_size, 3});
+    if (!extrinsics.AllClose(Tensor::Eye(4, extrinsics.GetDtype(),
+                                         extrinsics.GetDevice()))) {
+        auto cam_to_world = extrinsics.Inverse();
+        vertex_list.Mul_(cam_to_world.Slice(0, 0, 3, 1).Slice(1, 0, 3, 1))
+                .Add_(cam_to_world.Slice(0, 0, 3, 1).Slice(1, 3, 4, 1));
+    }
+    auto normal_map_t = vertex_map.CreateNormalMap(invalid_fill)
+                                .AsTensor()
+                                .View({im_size, 3});
+    // all columns are the same
+    auto valid_idx =
+            normal_map_t.Slice(1, 0, 1, 1)
+                    .IsFinite()
+                    .LogicalAnd(vertex_list.Slice(1, 0, 1, 1).IsFinite())
+                    .Reshape({im_size});
+
+    PointCloud pcd(
+            {{"points",
+              vertex_list.GetItem({TensorKey::IndexTensor(valid_idx),
+                                   TensorKey::Slice(None, None, None)})},
+             {"normals",
+              normal_map_t.GetItem({TensorKey::IndexTensor(valid_idx),
+                                    TensorKey::Slice(None, None, None)})}});
+    if (color.GetRows() > 0) {
+        pcd.SetPointColors(
+                color.AsTensor()
+                        .View({im_size, 3})
+                        .GetItem({TensorKey::IndexTensor(valid_idx),
+                                  TensorKey::Slice(None, None, None)}));
+    }
+    return pcd;
+}
+
 PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             const core::Tensor &intrinsics,
                                             const core::Tensor &extrinsics,
                                             float depth_scale,
                                             float depth_max,
-                                            int stride) {
+                                            int stride,
+                                            bool with_normals) {
     core::Dtype dtype = depth.AsTensor().GetDtype();
     if (dtype != core::Dtype::UInt16 && dtype != core::Dtype::Float32) {
         utility::LogError(
@@ -249,11 +329,17 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                 dtype.ToString());
     }
 
-    core::Tensor points;
-    kernel::pointcloud::Unproject(depth.AsTensor(), utility::nullopt, points,
-                                  utility::nullopt, intrinsics, extrinsics,
-                                  depth_scale, depth_max, stride);
-    return PointCloud(points);
+    if (with_normals) {
+        return CreatePointCloudWithNormals(depth, Image(), intrinsics,
+                                           extrinsics, depth_scale, depth_max,
+                                           stride);
+    } else {
+        core::Tensor points;
+        kernel::pointcloud::Unproject(
+                depth.AsTensor(), utility::nullopt, points, utility::nullopt,
+                intrinsics, extrinsics, depth_scale, depth_max, stride);
+        return PointCloud(points);
+    }
 }
 
 PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
@@ -261,7 +347,8 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
                                            const core::Tensor &extrinsics,
                                            float depth_scale,
                                            float depth_max,
-                                           int stride) {
+                                           int stride,
+                                           bool with_normals) {
     auto dtype = rgbd_image.depth_.AsTensor().GetDtype();
     if (dtype != core::Dtype::UInt16 && dtype != core::Dtype::Float32) {
         utility::LogError(
@@ -270,15 +357,57 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
                 dtype.ToString());
     }
 
-    core::Tensor image_colors =
-            rgbd_image.color_.To(core::Dtype::Float32, /*copy=*/false)
-                    .AsTensor();
+    Image image_colors =
+            rgbd_image.color_.To(core::Dtype::Float32, /*copy=*/false);
 
-    core::Tensor points, colors;
-    kernel::pointcloud::Unproject(rgbd_image.depth_.AsTensor(), image_colors,
-                                  points, colors, intrinsics, extrinsics,
-                                  depth_scale, depth_max, stride);
-    return PointCloud({{"points", points}, {"colors", colors}});
+    if (with_normals) {
+        return CreatePointCloudWithNormals(rgbd_image.depth_, image_colors,
+                                           intrinsics, extrinsics, depth_scale,
+                                           depth_max, stride);
+    } else {
+        core::Tensor points, colors, image_colors_t = image_colors.AsTensor();
+        kernel::pointcloud::Unproject(
+                rgbd_image.depth_.AsTensor(), image_colors_t, points, colors,
+                intrinsics, extrinsics, depth_scale, depth_max, stride);
+        return PointCloud({{"points", points}, {"colors", colors}});
+    }
+}
+
+geometry::Image PointCloud::ProjectToDepthImage(int width,
+                                                int height,
+                                                const core::Tensor &intrinsics,
+                                                const core::Tensor &extrinsics,
+                                                float depth_scale,
+                                                float depth_max) {
+    core::Tensor depth = core::Tensor::Zeros({height, width, 1},
+                                             core::Dtype::Float32, device_);
+    kernel::pointcloud::Project(depth, utility::nullopt, GetPoints(),
+                                utility::nullopt, intrinsics, extrinsics,
+                                depth_scale, depth_max);
+    return geometry::Image(depth);
+}
+
+geometry::RGBDImage PointCloud::ProjectToRGBDImage(
+        int width,
+        int height,
+        const core::Tensor &intrinsics,
+        const core::Tensor &extrinsics,
+        float depth_scale,
+        float depth_max) {
+    if (!HasPointColors()) {
+        utility::LogError(
+                "Unable to project to RGBD without the Color attribute in the "
+                "point cloud.");
+    }
+
+    core::Tensor depth = core::Tensor::Zeros({height, width, 1},
+                                             core::Dtype::Float32, device_);
+    core::Tensor color = core::Tensor::Zeros({height, width, 3},
+                                             core::Dtype::UInt8, device_);
+    kernel::pointcloud::Project(depth, color, GetPoints(), GetPointColors(),
+                                intrinsics, extrinsics, depth_scale, depth_max);
+
+    return geometry::RGBDImage(color, depth);
 }
 
 PointCloud PointCloud::FromLegacyPointCloud(
@@ -310,8 +439,43 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
                 core::eigen_converter::TensorToEigenVector3dVector(GetPoints());
     }
     if (HasPointColors()) {
-        pcd_legacy.colors_ = core::eigen_converter::TensorToEigenVector3dVector(
-                GetPointColors());
+        bool dtype_is_supported_for_conversion = true;
+        double normalization_factor = 1.0;
+        core::Dtype point_color_dtype = GetPointColors().GetDtype();
+
+        if (point_color_dtype == core::Dtype::UInt8) {
+            normalization_factor =
+                    1.0 /
+                    static_cast<double>(std::numeric_limits<uint8_t>::max());
+        } else if (point_color_dtype == core::Dtype::UInt16) {
+            normalization_factor =
+                    1.0 /
+                    static_cast<double>(std::numeric_limits<uint16_t>::max());
+        } else if (point_color_dtype != core::Dtype::Float32 &&
+                   point_color_dtype != core::Dtype::Float64) {
+            utility::LogWarning(
+                    "Dtype {} of color attribute is not supported for "
+                    "conversion to LegacyPointCloud and will be skipped. "
+                    "Supported dtypes include UInt8, UIn16, Float32, and "
+                    "Float64",
+                    point_color_dtype.ToString());
+            dtype_is_supported_for_conversion = false;
+        }
+
+        if (dtype_is_supported_for_conversion) {
+            if (normalization_factor != 1.0) {
+                core::Tensor rescaled_colors =
+                        GetPointColors().To(core::Dtype::Float64) *
+                        normalization_factor;
+                pcd_legacy.colors_ =
+                        core::eigen_converter::TensorToEigenVector3dVector(
+                                rescaled_colors);
+            } else {
+                pcd_legacy.colors_ =
+                        core::eigen_converter::TensorToEigenVector3dVector(
+                                GetPointColors());
+            }
+        }
     }
     if (HasPointNormals()) {
         pcd_legacy.normals_ =

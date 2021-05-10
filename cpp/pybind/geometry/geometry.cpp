@@ -171,12 +171,12 @@ void pybind_geometry_classes(py::module &m) {
             m, "Geometry3D", "scale",
             {{"scale",
               "The scale parameter that is multiplied to the points/vertices "
-              "of the geometry"},
-             {"center", "Scale center used for transformation"}});
+              "of the geometry."},
+             {"center", "Scale center used for transformation."}});
     docstring::ClassMethodDocInject(
             m, "Geometry3D", "rotate",
             {{"R", "The rotation matrix"},
-             {"center", "Rotation center used for transformation"}});
+             {"center", "Rotation center used for transformation."}});
 
     // open3d.geometry.Geometry2D
     py::class_<Geometry2D, PyGeometry2D<Geometry2D>,

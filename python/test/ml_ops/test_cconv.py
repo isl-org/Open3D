@@ -45,11 +45,22 @@ pytestmark = mltest.default_marks
                              ([5,5,5],            5,           3,               False,               True),
                         ])
 # yapf: enable
-@mltest.parametrize.ml
-@pytest.mark.parametrize('dtype', [np.float32])
-def test_compare_to_conv3d(ml, dtype, filter_size, out_channels, in_channels,
-                           with_inp_importance, with_normalization):
+@mltest.parametrize.ml_tf_only
+@pytest.mark.parametrize(
+    'feat_out_type',
+    [
+        ('float32', 'float32'),
+        # tf 2.3 did support bfloat16 on cpu but 2.4 does not.
+        # We deactivate the tests for this type for now.
+        #    ('bfloat16', 'float32'),
+        #    ('bfloat16', 'bfloat16')
+    ])
+@pytest.mark.parametrize('real_type', ['float32'])
+def test_compare_to_conv3d(ml, feat_out_type, real_type, filter_size,
+                           out_channels, in_channels, with_inp_importance,
+                           with_normalization):
     """Compares to the 3D convolution in tensorflow"""
+    feat_type, out_type = feat_out_type
 
     # This test requires tensorflow
     try:
@@ -57,6 +68,15 @@ def test_compare_to_conv3d(ml, dtype, filter_size, out_channels, in_channels,
     except ImportError:
         return
 
+    if ml.device_is_gpu and feat_type == 'bfloat16':
+        return
+
+    mltensor = mltest.MLTensor(ml.module)
+    np_real_type = getattr(np, real_type)
+    np_feat_type = getattr(tf, feat_type).as_numpy_dtype
+    np_out_type = getattr(tf, out_type).as_numpy_dtype
+
+    mltensor.set_seed(0)
     np.random.seed(0)
 
     conv_attrs = {
@@ -65,40 +85,45 @@ def test_compare_to_conv3d(ml, dtype, filter_size, out_channels, in_channels,
         'normalize': with_normalization,
         'interpolation': 'nearest_neighbor',
         'max_temp_mem_MB': 0,
+        'output_type': getattr(tf, out_type),
     }
 
-    filters = np.random.random(size=(*filter_size, in_channels,
-                                     out_channels)).astype(dtype)
+    filters = mltensor.random_uniform(size=(*filter_size, in_channels,
+                                            out_channels),
+                                      dtype=feat_type)
 
     max_grid_extent = 10
     inp_positions = np.unique(np.random.randint(0, max_grid_extent,
-                                                (256, 3)).astype(dtype),
+                                                (256, 3)).astype(np_real_type),
                               axis=0)
     inp_positions_int = inp_positions.astype(np.int32)
     if (with_inp_importance):
-        inp_importance = np.random.rand(
-            inp_positions.shape[0]).astype(dtype) - 0.5
+        inp_importance = mltensor.random_uniform(inp_positions.shape[0:1],
+                                                 dtype=feat_type,
+                                                 minval=-1,
+                                                 maxval=1)
     else:
-        inp_importance = np.empty((0,), dtype=dtype)
+        inp_importance = mltensor.empty((0,), dtype=feat_type)
     out_positions = np.unique(np.random.randint(
         np.max(filter_size) // 2, max_grid_extent - np.max(filter_size) // 2,
-        (5, 3)).astype(dtype),
+        (5, 3)).astype(np_real_type),
                               axis=0)
     out_positions_int = out_positions.astype(np.int32)
 
-    voxel_size = np.array([1, 1, 1], dtype=dtype)
+    voxel_size = np.array([1, 1, 1], dtype=np_real_type)
     extent = voxel_size[np.newaxis, :] * np.array(filter_size[::-1])
-    extent = extent.astype(np.float32)
-    offset = np.array([0.0, 0.0, 0.0], dtype=dtype)
+    extent = extent.astype(np_real_type)
+    offset = np.array([0.0, 0.0, 0.0], dtype=np_real_type)
 
-    inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
-                                     (in_channels,)).astype(dtype)
+    inp_features = mltensor.random_uniform(size=inp_positions.shape[0:1] +
+                                           (in_channels,),
+                                           dtype=feat_type)
     fixed_radius_search = ml.layers.FixedRadiusSearch(metric='Linf')
     neighbors_index, neighbors_row_splits, _ = mltest.run_op(
         ml, ml.device, False, fixed_radius_search, inp_positions / extent,
         out_positions / extent, voxel_size[0] / 2 + 0.01)
 
-    neighbors_importance = np.empty((0,), dtype=dtype)
+    neighbors_importance = mltensor.empty((0,), dtype=feat_type)
 
     y = mltest.run_op(ml, ml.device, True, ml.ops.continuous_conv, filters,
                       out_positions, extent, offset, inp_positions,
@@ -109,11 +134,14 @@ def test_compare_to_conv3d(ml, dtype, filter_size, out_channels, in_channels,
     # store features in a volume to use standard 3d convs
     inp_volume = np.zeros(
         (1, max_grid_extent, max_grid_extent, max_grid_extent, in_channels))
+    inp_volume = mltensor.zeros(
+        (1, max_grid_extent, max_grid_extent, max_grid_extent, in_channels),
+        dtype=feat_type).numpy()
 
     if with_inp_importance:
-        inp_features *= inp_importance[:, np.newaxis]
+        inp_features *= inp_importance[:, None]
     inp_volume[0, inp_positions_int[:, 2], inp_positions_int[:, 1],
-               inp_positions_int[:, 0], :] = inp_features
+               inp_positions_int[:, 0], :] = inp_features.numpy()
 
     y_conv3d = tf.nn.conv3d(
         inp_volume,
@@ -123,19 +151,30 @@ def test_compare_to_conv3d(ml, dtype, filter_size, out_channels, in_channels,
     ).numpy()
 
     # extract result at output positions
-    y_conv3d = np.ascontiguousarray(y_conv3d[0, out_positions_int[:, 2],
-                                             out_positions_int[:, 1],
-                                             out_positions_int[:, 0], :])
+    y_conv3d = np.ascontiguousarray(
+        y_conv3d[0, out_positions_int[:, 2], out_positions_int[:, 1],
+                 out_positions_int[:, 0], :]).astype(np_out_type)
 
     if with_normalization:
         for i, v in enumerate(y_conv3d):
             num_neighbors = neighbors_row_splits[i +
                                                  1] - neighbors_row_splits[i]
-            v /= dtype(num_neighbors)
+            v /= np_feat_type(int(num_neighbors))
 
-    np.testing.assert_allclose(y, y_conv3d, rtol=1e-5, atol=1e-8)
+    tol = {
+        'float32': {
+            'rtol': 1e-5,
+            'atol': 1e-8
+        },
+        'bfloat16': {
+            'rtol': 1e-2,
+            'atol': 1e-2
+        }
+    }
+    np.testing.assert_allclose(y, y_conv3d, **tol[feat_type])
 
 
+# @pytest.mark.skip()
 @mltest.parametrize.ml
 # yapf: disable
 @pytest.mark.parametrize("filter_size, out_channels, in_channels, with_inp_importance, with_neighbors_importance, with_individual_extent, with_normalization, align_corners, coordinate_mapping, interpolation",[

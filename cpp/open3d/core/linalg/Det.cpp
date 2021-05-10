@@ -26,7 +26,7 @@
 
 #include "open3d/core/linalg/Det.h"
 
-#include "open3d/core/CoreUtil.h"
+#include "open3d/core/Dispatch.h"
 #include "open3d/core/linalg/LU.h"
 
 namespace open3d {
@@ -42,7 +42,7 @@ double Det(const Tensor& A) {
     double det = 1.0;
     int n = A.GetShape()[0];
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(A.GetDtype(), [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(A.GetDtype(), [&]() {
         scalar_t* output_ptr = output_cpu.GetDataPtr<scalar_t>();
         int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
 

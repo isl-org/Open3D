@@ -44,14 +44,19 @@ static const std::unordered_map<std::string, std::string>
                  "The input RGBD image should have a uint16_t depth image and  "
                  "RGB image with any DType and the same size."},
                 {"depth", "The input depth image should be a uint16_t image."},
-                {"intrinsic", "Intrinsic parameters of the camera."},
-                {"extrinsic", "Extrinsic parameters of the camera."},
+                {"intrinsics", "Intrinsic parameters of the camera."},
+                {"extrinsics", "Extrinsic parameters of the camera."},
                 {"depth_scale", "The depth is scaled by 1 / depth_scale."},
                 {"depth_max", "Truncated at depth_max distance."},
                 {"stride",
                  "Sampling factor to support coarse point cloud extraction. "
-                 "There is no low pass filtering, so aliasing is possible for "
-                 "stride>1."}};
+                 "Unless normals are requested, there is no low pass "
+                 "filtering, so aliasing is possible for stride>1."},
+                {"with_normals",
+                 "Also compute normals for the point cloud. If True, the point "
+                 "cloud will only contain points with valid normals. If "
+                 "normals are requested, the depth map is first filtered to "
+                 "ensure smooth normals."}};
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
@@ -126,10 +131,11 @@ void pybind_pointcloud(py::module& m) {
             "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
                                                core::Device("CPU:0")),
             "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
+            "with_normals"_a = false,
             "Factory function to create a pointcloud (with only 'points') from "
             "a depth image and a camera model.\n\n Given depth value d at (u, "
             "v) image coordinate, the corresponding 3d point is:\n z = d / "
-            "depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z / fy");
+            "depth_scale\n\n x = (u - cx) * z / fx\n\n y = (v - cy) * z / fy");
     pointcloud.def_static(
             "create_from_rgbd_image", &PointCloud::CreateFromRGBDImage,
             py::call_guard<py::gil_scoped_release>(), "rgbd_image"_a,
@@ -137,11 +143,13 @@ void pybind_pointcloud(py::module& m) {
             "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
                                                core::Device("CPU:0")),
             "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
+            "with_normals"_a = false,
             "Factory function to create a pointcloud (with properties "
-            "{'points', 'colors'}) from an RGBD image and a camera model.\n\n "
+            "{'points', 'colors'}) from an RGBD image and a camera model.\n\n"
             "Given depth value d at (u, v) image coordinate, the corresponding "
-            "3d point is:\n z = d / depth_scale\n x = (u - cx) * z / fx\n y = "
-            "(v - cy) * z / fy");
+            "3d point is:\n\n z = d / depth_scale\n\n x = (u - cx) * z / "
+            "fx\n\n y "
+            "= (v - cy) * z / fy");
     pointcloud.def_static(
             "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
             "pcd_legacy"_a, "dtype"_a = core::Dtype::Float32,

@@ -1010,6 +1010,7 @@ void FilamentResourceManager::LoadDefaults() {
                                    default_color);
     unlit_mat->setDefaultParameter("pointSize", 3.f);
     unlit_mat->setDefaultParameter("albedo", texture, default_sampler);
+    unlit_mat->setDefaultParameter("srgbColor", 0.f);
     materials_[kDefaultUnlit] = BoxResource(unlit_mat, engine_);
 
     const auto unlit_trans_path =

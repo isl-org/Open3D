@@ -69,7 +69,7 @@ jobs:
 
 
   build-install-test:
-    name: Build and run on VM
+    name: Build and run
     runs-on: ubuntu-18.04
     needs: [skip-check, build-push-docker-image]
     if: needs.skip-check.outputs.skip == 'no'
@@ -108,14 +108,14 @@ jobs:
         run: ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh delete-vm
 
   cleanup:
-    name: Clean-up container image
+    name: Clean-up docker image
     runs-on: ubuntu-18.04
     needs: [skip-check, build-push-docker-image, build-install-test]
     if: always() && needs.skip-check.outputs.skip == 'no'
     strategy:
       fail-fast: false
       matrix:
-        UBUNTU_VERSION: ['bionic', 'focal']  # These configs have bionic and focal versions
+        UBUNTU_VERSION: ['bionic', 'focal']
     env:
       UBUNTU_VERSION: ${{ matrix.UBUNTU_VERSION }}
 

@@ -31,12 +31,13 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    TOdometryRGBD [src_depth] [dst_depth]");
-    utility::LogInfo("     Given two depth images, perform rgbd odometry");
+    utility::LogInfo(">    TOdometryRGBD [src_depth] [dst_depth] [src_color] [dst_color]");
+    utility::LogInfo("     Given two RGBD images, perform rgbd odometry and visualize results.");
     utility::LogInfo("     [options]");
     utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("     --depth_scale [=1000.0]");
     utility::LogInfo("     --depth_diff [=0.07]");
+    utility::LogInfo("     --method [=PointToPlane | Intensity | Hybrid]");
     utility::LogInfo("     --device [CPU:0]");
     // clang-format on
     utility::LogInfo("");
@@ -44,6 +45,10 @@ void PrintHelp() {
 
 int main(int argc, char **argv) {
     using namespace open3d;
+    using core::Tensor;
+    using t::geometry::PointCloud;
+    using t::geometry::RGBDImage;
+
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
@@ -72,15 +77,13 @@ int main(int argc, char **argv) {
     } else if (!io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
         utility::LogError("Unable to convert json to intrinsics.");
     }
+
     auto focal_length = intrinsic.GetFocalLength();
     auto principal_point = intrinsic.GetPrincipalPoint();
-    core::Tensor intrinsic_t = core::Tensor(
-            std::vector<float>({static_cast<float>(focal_length.first), 0,
-                                static_cast<float>(principal_point.first), 0,
-                                static_cast<float>(focal_length.second),
-                                static_cast<float>(principal_point.second), 0,
-                                0, 1}),
-            {3, 3}, core::Dtype::Float32);
+    Tensor intrinsic_t = Tensor::Init<double>(
+            {{focal_length.first, 0, principal_point.first},
+             {0, focal_length.second, principal_point.second},
+             {0, 0, 1}});
 
     // Parameters
     float depth_scale = static_cast<float>(utility::GetProgramOptionAsDouble(
@@ -96,29 +99,29 @@ int main(int argc, char **argv) {
     auto src_color = *t::io::CreateImageFromFile(src_color_path);
     auto dst_color = *t::io::CreateImageFromFile(dst_color_path);
 
-    t::geometry::RGBDImage src, dst;
+    RGBDImage src, dst;
     src.color_ = src_color.To(device);
     dst.color_ = dst_color.To(device);
     src.depth_ = src_depth.To(device);
     dst.depth_ = dst_depth.To(device);
 
-    core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float64, device);
+    Tensor trans = Tensor::Eye(4, core::Dtype::Float64, device);
 
     // Visualize before odometry
     auto source_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromDepthImage(
-                    src.depth_, intrinsic_t, trans, depth_scale)
+            PointCloud::CreateFromDepthImage(src.depth_, intrinsic_t, trans,
+                                             depth_scale)
                     .ToLegacyPointCloud());
     source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
     auto target_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromDepthImage(
-                    dst.depth_, intrinsic_t, trans, depth_scale)
+            PointCloud::CreateFromDepthImage(dst.depth_, intrinsic_t, trans,
+                                             depth_scale)
                     .ToLegacyPointCloud());
     target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 
+    // Decide method
     t::pipelines::odometry::Method odom_method;
-
     if (method == "PointToPlane") {
         odom_method = t::pipelines::odometry::Method::PointToPlane;
     } else if (method == "Hybrid") {
@@ -129,23 +132,26 @@ int main(int argc, char **argv) {
         utility::LogError("Unsupported method {}", method);
     }
 
-    trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, 3.0, depth_diff,
-            {10, 5, 3}, odom_method);
+    // Apply odometry
+    auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
+            src, dst, intrinsic_t, trans, depth_scale, 3.0,
+            std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
+                    20, 10, 5},
+            odom_method,
+            t::pipelines::odometry::OdometryLossParams(depth_diff));
 
     // Visualize after odometry
     source_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromRGBDImage(
-                    t::geometry::RGBDImage(src.color_, src.depth_), intrinsic_t,
-                    trans.Inverse(), depth_scale)
+            PointCloud::CreateFromRGBDImage(
+                    RGBDImage(src.color_, src.depth_), intrinsic_t,
+                    result.transformation_.Inverse(), depth_scale)
                     .ToLegacyPointCloud());
-    // source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
+    source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
     target_pcd = std::make_shared<open3d::geometry::PointCloud>(
-            t::geometry::PointCloud::CreateFromRGBDImage(
-                    t::geometry::RGBDImage(dst.color_, dst.depth_), intrinsic_t,
-                    core::Tensor::Eye(4, core::Dtype::Float32, device),
-                    depth_scale)
+            PointCloud::CreateFromRGBDImage(
+                    RGBDImage(dst.color_, dst.depth_), intrinsic_t,
+                    Tensor::Eye(4, core::Dtype::Float32, device), depth_scale)
                     .ToLegacyPointCloud());
-    // target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
+    target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 }

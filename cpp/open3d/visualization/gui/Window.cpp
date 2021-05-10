@@ -637,39 +637,26 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     impl_->active_dialog_ = dlg;
     dlg->OnWillShow();
 
-    auto context = GetLayoutContext();
-    auto content_rect = GetContentRect();
-    auto pref = dlg->CalcPreferredSize(context, Widget::Constraints());
-    int w = dlg->GetFrame().width;
-    int h = dlg->GetFrame().height;
-    if (w == 0) {
-        w = pref.width;
-    }
-    if (h == 0) {
-        h = pref.height;
-    }
-    w = std::min(w, int(std::round(0.8 * content_rect.width)));
-    h = std::min(h, int(std::round(0.8 * content_rect.height)));
-    dlg->SetFrame(gui::Rect((content_rect.width - w) / 2,
-                            (content_rect.height - h) / 2, w, h));
-    dlg->Layout(context);
-}
-
-// When scene caching is enabled on a SceneWidget the SceneWidget only redraws
-// when something in the scene has changed (e.g., camera change, material
-// change). However, the SceneWidget also needs to redraw if any part of it
-// becomes uncovered. Unfortunately, we do not have 'Expose' events to use for
-// that purpose. So, we manually force the redraw by calling
-// ForceRedrawSceneWidget when an event occurs that we know will expose the
-// SceneWidget. For example, submenu's of a menu bar opening/closing and dialog
-// boxes closing.
-void Window::ForceRedrawSceneWidget() {
-    std::for_each(impl_->children_.begin(), impl_->children_.end(), [](auto w) {
-        auto sw = std::dynamic_pointer_cast<SceneWidget>(w);
-        if (sw) {
-            sw->ForceRedraw();
+    auto deferred_layout = [this, dlg]() {
+        auto context = GetLayoutContext();
+        auto content_rect = GetContentRect();
+        auto pref = dlg->CalcPreferredSize(context, Widget::Constraints());
+        int w = dlg->GetFrame().width;
+        int h = dlg->GetFrame().height;
+        if (w == 0) {
+            w = pref.width;
         }
-    });
+        if (h == 0) {
+            h = pref.height;
+        }
+        w = std::min(w, int(std::round(0.8 * content_rect.width)));
+        h = std::min(h, int(std::round(0.8 * content_rect.height)));
+        dlg->SetFrame(gui::Rect((content_rect.width - w) / 2,
+                                (content_rect.height - h) / 2, w, h));
+        dlg->Layout(context);
+    };
+
+    impl_->deferred_until_draw_.push(deferred_layout);
 }
 
 void Window::CloseDialog() {
@@ -979,12 +966,8 @@ void Window::OnDraw() {
 void Window::OnResize() {
     impl_->needs_layout_ = true;
 
-#if __APPLE__
-    // We need to recreate the swap chain after resizing a window on macOS
-    // otherwise things look very wrong.
     Application::GetInstance().GetWindowSystem().ResizeRenderer(
             impl_->window_, impl_->renderer_);
-#endif  // __APPLE__
 
     impl_->imgui_.imgui_bridge->OnWindowResized(*this);
 

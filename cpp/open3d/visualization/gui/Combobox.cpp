@@ -30,7 +30,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
@@ -57,9 +56,7 @@ struct Combobox::Impl {
 };
 
 Combobox::Combobox() : impl_(new Combobox::Impl()) {
-    std::stringstream s;
-    s << "##combobox_" << g_next_combobox_id++;
-    impl_->imgui_id_ = s.str();
+    impl_->imgui_id_ = "##combobox_" + std::to_string(g_next_combobox_id++);
 }
 
 Combobox::Combobox(const std::vector<const char*>& items) : Combobox() {

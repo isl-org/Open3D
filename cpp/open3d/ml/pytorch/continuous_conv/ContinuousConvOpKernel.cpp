@@ -32,7 +32,7 @@
 
 using namespace open3d::ml::impl;
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 void ContinuousConvCPU(const torch::Tensor& filters,
                        const torch::Tensor& out_positions,
                        const torch::Tensor& extents,
@@ -55,23 +55,23 @@ void ContinuousConvCPU(const torch::Tensor& filters,
     for (auto d : filters.sizes()) {
         filter_dims.push_back(d);
     }
-    CConvComputeFeaturesCPU<TReal, TIndex>(
-            out_features.data_ptr<TReal>(), filter_dims,
-            filters.data_ptr<TReal>(), out_positions.size(0),
+    CConvComputeFeaturesCPU<TFeat, TOut, TReal, TIndex>(
+            out_features.data_ptr<TOut>(), filter_dims,
+            filters.data_ptr<TFeat>(), out_positions.size(0),
             out_positions.data_ptr<TReal>(), inp_positions.size(0),
-            inp_positions.data_ptr<TReal>(), inp_features.data_ptr<TReal>(),
-            inp_importance.size(0) ? inp_importance.data_ptr<TReal>() : nullptr,
+            inp_positions.data_ptr<TReal>(), inp_features.data_ptr<TFeat>(),
+            inp_importance.size(0) ? inp_importance.data_ptr<TFeat>() : nullptr,
             neighbors_index.size(0),
             (TIndex*)neighbors_index.data_ptr<TIndex>(),
             neighbors_importance.size(0)
-                    ? neighbors_importance.data_ptr<TReal>()
+                    ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
             neighbors_row_splits.data_ptr<int64_t>(), extents.data_ptr<TReal>(),
             offset.data_ptr<TReal>(), interpolation, coordinate_mapping,
             align_corners, individual_extents, isotropic_extents, normalize);
 }
-#define INSTANTIATE(TReal, TIndex)                                            \
-    template void ContinuousConvCPU<TReal, TIndex>(                           \
+#define INSTANTIATE(TFeat, TOut, TReal, TIndex)                               \
+    template void ContinuousConvCPU<TFeat, TOut, TReal, TIndex>(              \
             const torch::Tensor& filters, const torch::Tensor& out_positions, \
             const torch::Tensor& extents, const torch::Tensor& offset,        \
             const torch::Tensor& inp_positions,                               \
@@ -85,4 +85,4 @@ void ContinuousConvCPU(const torch::Tensor& filters,
             const InterpolationMode interpolation,                            \
             const int64_t max_temp_mem_MB, torch::Tensor& out_features);
 
-INSTANTIATE(float, int32_t)
+INSTANTIATE(float, float, float, int32_t)

@@ -37,11 +37,13 @@ namespace impl {
 /// Copies and transforms the features to a column, which can be multiplied
 /// with the filter matrix.
 ///
-/// \tparam TReal    Type for positions and features.
-/// \tparam TIndex    Type for addressing neighbors.
+/// \tparam TFeat    Type for the features
+/// \tparam TOut     Type for the output features
+/// \tparam TReal    Type for point positions and extents
+/// \tparam TIndex   Type for neighbor indexing
 ///
 /// \param columns    Output array with shape
-//         [num_out, spatial filter dims, in_channels].
+///        [num_out, spatial filter dims, in_channels].
 ///
 /// \param in_channels    Number of input channels.
 ///
@@ -110,9 +112,9 @@ namespace impl {
 ///        number of points (neighbors_importance is null) or by the sum of
 ///        the respective values in neighbors_importance.
 ///
-template <class TReal, class TIndex>
+template <class TFeat, class TReal, class TIndex>
 void FillColumn(const cudaStream_t& stream,
-                TReal* columns,
+                TFeat* columns,
                 int in_channels,
                 TIndex begin_idx,
                 TIndex end_idx,
@@ -120,11 +122,11 @@ void FillColumn(const cudaStream_t& stream,
                 const TReal* const __restrict__ out_positions,
                 TIndex num_inp,
                 const TReal* const __restrict__ inp_positions,
-                const TReal* const __restrict__ inp_features,
-                const TReal* const __restrict__ inp_importance,
+                const TFeat* const __restrict__ inp_features,
+                const TFeat* const __restrict__ inp_importance,
                 size_t neighbors_index_size,
                 const TIndex* const __restrict__ neighbors_index,
-                const TReal* const __restrict__ neighbors_importance,
+                const TFeat* const __restrict__ neighbors_importance,
                 const int64_t* const __restrict__ neighbors_row_splits,
                 const TReal* const __restrict__ extents,
                 const TReal* const __restrict__ offsets,
@@ -136,10 +138,10 @@ void FillColumn(const cudaStream_t& stream,
                 bool isotropic_extent,
                 bool normalize);
 
-template <class TReal, class TIndex>
+template <class TFeat, class TReal, class TIndex>
 void FillColumnTranspose(
         const cudaStream_t& stream,
-        TReal* columns,
+        TFeat* columns,
         int in_channels,
         TIndex begin_idx,
         TIndex end_idx,
@@ -147,12 +149,12 @@ void FillColumnTranspose(
         const TReal* const __restrict__ out_positions,
         TIndex num_inp,
         const TReal* const __restrict__ inp_positions,
-        const TReal* const __restrict__ inp_features,
-        const TReal* const __restrict__ inp_neighbors_importance_sum,
+        const TFeat* const __restrict__ inp_features,
+        const TFeat* const __restrict__ inp_neighbors_importance_sum,
         const int64_t* const __restrict__ inp_neighbors_prefix_sum,
         size_t neighbors_index_size,
         const TIndex* const __restrict__ neighbors_index,
-        const TReal* const __restrict__ neighbors_importance,
+        const TFeat* const __restrict__ neighbors_importance,
         const int64_t* const __restrict__ neighbors_row_splits,
         const TReal* const __restrict__ extents,
         const TReal* const __restrict__ offsets,
