@@ -509,7 +509,6 @@ private:
 
         // Sorting the filenames to get the data in sequence.
         std::sort(all_pcd_files.begin(), all_pcd_files.end());
-        utility::LogInfo(" Number of frames: {}", all_pcd_files.size());
 
         filenames_ =
                 std::vector<std::string>(all_pcd_files.begin() + start_index_,
