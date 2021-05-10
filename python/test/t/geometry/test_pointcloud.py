@@ -107,7 +107,7 @@ def test_member_functions(device):
     assert pcd.get_max_bound().allclose(o3c.Tensor([50, 60, 40], dtype, device))
     assert pcd.get_center().allclose(o3c.Tensor([27, 24, 21], dtype, device))
 
-    # add.
+    # append.
     pcd = o3d.t.geometry.PointCloud(device)
     pcd.point["points"] = o3c.Tensor.ones((2, 3), dtype, device)
     pcd.point["normals"] = o3c.Tensor.ones((2, 3), dtype, device)

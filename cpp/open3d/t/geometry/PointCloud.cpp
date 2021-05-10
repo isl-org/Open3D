@@ -87,12 +87,7 @@ PointCloud PointCloud::To(const core::Device &device, bool copy) const {
 
 PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
-PointCloud PointCloud::Add(const PointCloud &other) const {
-    // TODO:
-    // 1. Create Vertical and Horizontal stack op for Tensors.
-    // 2. Create Add operator in TensorMap.
-    // 3. Use this op in PointCloud and TriangleMesh for + and += op.
-
+PointCloud PointCloud::Append(const PointCloud &other) const {
     PointCloud pcd(GetDevice());
 
     int64_t length = GetPoints().GetLength();
@@ -111,7 +106,7 @@ PointCloud PointCloud::Add(const PointCloud &other) const {
             attr_shape[0] = combined_length;
             if (other_attr_shape != attr_shape) {
                 utility::LogError(
-                        " Shape mismatch. Shape {} for attribure {}, is not "
+                        "Shape mismatch. Attribure {}, shape {}, is not "
                         "compatible with {}.",
                         kv.first, other_attr.GetShape(), kv.second.GetShape());
             }
@@ -129,9 +124,10 @@ PointCloud PointCloud::Add(const PointCloud &other) const {
             pcd.SetPointAttr(kv.first, combined_attr.Clone());
         } else {
             utility::LogError(
-                    " The pointcloud is missing attribute {}. The pointcloud "
-                    "being added, must have all the attributes present in the "
-                    "pointcloud it is being added to.",
+                    "The pointcloud is missing attribute {}. The pointcloud "
+                    "being appended, must have all the attributes present in "
+                    "the "
+                    "pointcloud it is being appended to.",
                     kv.first);
         }
     }

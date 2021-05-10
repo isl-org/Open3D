@@ -263,10 +263,18 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
-    /// Adds a pointcloud and returns the resulting pointcloud.
-    PointCloud Add(const PointCloud &other) const;
+    /// Append a pointcloud and returns the resulting pointcloud.
+    ///
+    /// The pointcloud being appended, must have all the attributes
+    /// present in the pointcloud it is being appended to, with same
+    /// dtype, device and same shape other than the first dimension / length.
+    PointCloud Append(const PointCloud &other) const;
 
-    PointCloud operator+(const PointCloud &other) const { return Add(other); }
+    /// operator+ for t::PointCloud appends the compatible attributes to the
+    /// pointcloud.
+    PointCloud operator+(const PointCloud &other) const {
+        return Append(other);
+    }
 
     /// \brief Transforms the points and normals (if exist)
     /// of the PointCloud.

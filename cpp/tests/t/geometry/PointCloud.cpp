@@ -372,7 +372,7 @@ TEST_P(PointCloudPermuteDevices, Setters) {
     }
 }
 
-TEST_P(PointCloudPermuteDevices, Add) {
+TEST_P(PointCloudPermuteDevices, Append) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 

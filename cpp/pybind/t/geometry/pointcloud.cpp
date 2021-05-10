@@ -101,12 +101,13 @@ void pybind_pointcloud(py::module& m) {
     pointcloud.def("get_center", &PointCloud::GetCenter,
                    "Returns the center for point coordinates.");
 
-    pointcloud.def("add", [](const PointCloud& self, const PointCloud& other) {
-        return self.Add(other);
-    });
+    pointcloud.def("append",
+                   [](const PointCloud& self, const PointCloud& other) {
+                       return self.Append(other);
+                   });
     pointcloud.def("__add__",
                    [](const PointCloud& self, const PointCloud& other) {
-                       return self.Add(other);
+                       return self.Append(other);
                    });
 
     pointcloud.def("transform", &PointCloud::Transform, "transformation"_a,
