@@ -46,21 +46,43 @@
 #define CONST_ARG const
 #define NON_CONST_ARG
 
-#define BIND_BINARY_OP_ALL_DTYPES(py_name, cpp_name, self_const)            \
-    tensor.def(#py_name, [](self_const Tensor& self, const Tensor& other) { \
-        return self.cpp_name(other);                                        \
-    });                                                                     \
-    tensor.def(#py_name, &Tensor::cpp_name<float>);                         \
-    tensor.def(#py_name, &Tensor::cpp_name<double>);                        \
-    tensor.def(#py_name, &Tensor::cpp_name<int8_t>);                        \
-    tensor.def(#py_name, &Tensor::cpp_name<int16_t>);                       \
-    tensor.def(#py_name, &Tensor::cpp_name<int32_t>);                       \
-    tensor.def(#py_name, &Tensor::cpp_name<int64_t>);                       \
-    tensor.def(#py_name, &Tensor::cpp_name<uint8_t>);                       \
-    tensor.def(#py_name, &Tensor::cpp_name<uint16_t>);                      \
-    tensor.def(#py_name, &Tensor::cpp_name<uint32_t>);                      \
-    tensor.def(#py_name, &Tensor::cpp_name<uint64_t>);                      \
-    tensor.def(#py_name, &Tensor::cpp_name<bool>);
+#define BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(py_name, cpp_name, self_const) \
+    tensor.def(#py_name, [](self_const Tensor& self, const Tensor& other) {  \
+        return self.cpp_name(other);                                         \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, float value) {                     \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, double value) {                    \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, int8_t value) {                    \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, int16_t value) {                   \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, int32_t value) {                   \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, int64_t value) {                   \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint8_t value) {                   \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint16_t value) {                  \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint32_t value) {                  \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, uint64_t value) {                  \
+        return self.cpp_name(Scalar(value));                                 \
+    });                                                                      \
+    tensor.def(#py_name, [](Tensor& self, bool value) {                      \
+        return self.cpp_name(Scalar(value));                                 \
+    });
 
 #define BIND_CLIP_SCALAR(py_name, cpp_name, self_const)                        \
     tensor.def(#py_name,                                                       \
@@ -551,79 +573,83 @@ void pybind_core_tensor(py::module& m) {
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
     //
     // BinaryEW: add.
-    BIND_BINARY_OP_ALL_DTYPES(add, Add, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(add_, Add_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__add__, Add, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__iadd__, Add_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(add, Add, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(add_, Add_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__add__, Add, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__iadd__, Add_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__radd__, Add);
 
     // BinaryEW: sub.
-    BIND_BINARY_OP_ALL_DTYPES(sub, Sub, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(sub_, Sub_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__sub__, Sub, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__isub__, Sub_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(sub, Sub, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(sub_, Sub_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__sub__, Sub, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__isub__, Sub_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rsub__, Sub);
 
     // BinaryEW: mul.
-    BIND_BINARY_OP_ALL_DTYPES(mul, Mul, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(mul_, Mul_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__mul__, Mul, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__imul__, Mul_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(mul, Mul, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(mul_, Mul_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__mul__, Mul, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__imul__, Mul_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rmul__, Mul);
 
     // BinaryEW: div.
-    BIND_BINARY_OP_ALL_DTYPES(div, Div, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(div_, Div_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__div__, Div, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__idiv__, Div_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(div, Div, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(div_, Div_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__div__, Div, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__idiv__, Div_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rdiv__, Div);
-    BIND_BINARY_OP_ALL_DTYPES(__truediv__, Div, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__itruediv__, Div_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__truediv__, Div, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__itruediv__, Div_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rtruediv__, Div);
-    BIND_BINARY_OP_ALL_DTYPES(__floordiv__, Div, CONST_ARG);  // truediv only.
-    BIND_BINARY_OP_ALL_DTYPES(__ifloordiv__, Div_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__floordiv__, Div,
+                                          CONST_ARG);  // truediv only.
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ifloordiv__, Div_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rfloordiv__, Div);
 
     // BinaryEW: and.
-    BIND_BINARY_OP_ALL_DTYPES(logical_and, LogicalAnd, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(logical_and_, LogicalAnd_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__and__, LogicalAnd, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__iand__, LogicalAnd_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_and, LogicalAnd, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_and_, LogicalAnd_,
+                                          NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__and__, LogicalAnd, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__iand__, LogicalAnd_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rand__, LogicalAnd);
 
     // BinaryEW: or.
-    BIND_BINARY_OP_ALL_DTYPES(logical_or, LogicalOr, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(logical_or_, LogicalOr_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__or__, LogicalOr, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__ior__, LogicalOr_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_or, LogicalOr, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_or_, LogicalOr_,
+                                          NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__or__, LogicalOr, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ior__, LogicalOr_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__ror__, LogicalOr);
 
     // BinaryEW: xor.
-    BIND_BINARY_OP_ALL_DTYPES(logical_xor, LogicalXor, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(logical_xor_, LogicalXor_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__xor__, LogicalXor, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__ixor__, LogicalXor_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_xor, LogicalXor, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(logical_xor_, LogicalXor_,
+                                          NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__xor__, LogicalXor, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ixor__, LogicalXor_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rxor__, LogicalXor);
 
     // BinaryEW: comparsion ops.
-    BIND_BINARY_OP_ALL_DTYPES(gt, Gt, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(gt_, Gt_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__gt__, Gt, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(lt, Lt, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(lt_, Lt_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__lt__, Lt, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(ge, Ge, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(ge_, Ge_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__ge__, Ge, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(le, Le, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(le_, Le_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__le__, Le, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(eq, Eq, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(eq_, Eq_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__eq__, Eq, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(ne, Ne, CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(ne_, Ne_, NON_CONST_ARG);
-    BIND_BINARY_OP_ALL_DTYPES(__ne__, Ne, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(gt, Gt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(gt_, Gt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__gt__, Gt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(lt, Lt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(lt_, Lt_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__lt__, Lt, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(ge, Ge, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(ge_, Ge_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ge__, Ge, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(le, Le, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(le_, Le_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__le__, Le, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(eq, Eq, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(eq_, Eq_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__eq__, Eq, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(ne, Ne, CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(ne_, Ne_, NON_CONST_ARG);
+    BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ne__, Ne, CONST_ARG);
 
     // Getters and setters as properties.
     tensor.def_property_readonly(
