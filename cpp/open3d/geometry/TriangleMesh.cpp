@@ -1117,6 +1117,23 @@ bool TriangleMesh::IsOrientable() const {
     return OrientTriangleHelper(triangles_, NoOp);
 }
 
+bool TriangleMesh::IsOriented() const{
+    std::unordered_set<Eigen::Vector2i,
+                       utility::hash_eigen<Eigen::Vector2i>>
+            visited_edges;
+    for (auto triangle : triangles_) {
+        for (int i = 0; i < 3; i++) {
+            auto curr_edge = Eigen::Vector2i(triangle(i), triangle((i+1)%3));
+            if(visited_edges.find(curr_edge) == visited_edges.end()){
+                visited_edges.insert(curr_edge);
+            } else{
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 bool TriangleMesh::IsWatertight() const {
     return IsEdgeManifold(false) && IsVertexManifold() && !IsSelfIntersecting();
 }

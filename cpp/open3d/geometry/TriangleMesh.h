@@ -271,8 +271,13 @@ public:
 
     /// Function that tests if the given triangle mesh is orientable, i.e.
     /// the triangles can be oriented in such a way that all normals point
-    /// towards the outside.
+    /// towards the outside/inside.
     bool IsOrientable() const;
+
+    /// Function that tests if the given triangle mesh is oriented, i.e.
+    /// the triangles are oriented in such a way that all normals point
+    /// towards the outside/inside.
+    bool IsOriented() const;
 
     /// Function that tests if the given triangle mesh is watertight by
     /// checking if it is vertex manifold and edge-manifold with no boundary
