@@ -24,26 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/core/Scalar.h"
 
-#include "open3d/core/Tensor.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
 namespace core {
 
-void pybind_core(py::module& m);
-void pybind_cuda_utils(py::module& m);
-void pybind_core_blob(py::module& m);
-void pybind_core_dtype(py::module& m);
-void pybind_core_device(py::module& m);
-void pybind_core_size_vector(py::module& m);
-void pybind_core_tensor(py::module& m);
-void pybind_core_tensor_accessor(py::class_<Tensor>& t);
-void pybind_core_linalg(py::module& m);
-void pybind_core_kernel(py::module& m);
-void pybind_core_hashmap(py::module& m);
-void pybind_core_scalar(py::module& m);
+void pybind_core_scalar(py::module& m) {
+    py::class_<Scalar> scalar(
+            m, "Scalar", "A Scalar can store one of {double, int64, bool}.");
+
+    scalar.def(py::init([](float val) { return Scalar(val); }));
+    scalar.def(py::init([](double val) { return Scalar(val); }));
+    scalar.def(py::init([](int8_t val) { return Scalar(val); }));
+    scalar.def(py::init([](int16_t val) { return Scalar(val); }));
+    scalar.def(py::init([](int32_t val) { return Scalar(val); }));
+    scalar.def(py::init([](int64_t val) { return Scalar(val); }));
+    scalar.def(py::init([](uint8_t val) { return Scalar(val); }));
+    scalar.def(py::init([](uint16_t val) { return Scalar(val); }));
+    scalar.def(py::init([](uint32_t val) { return Scalar(val); }));
+    scalar.def(py::init([](uint64_t val) { return Scalar(val); }));
+    scalar.def(py::init([](bool val) { return Scalar(val); }));
+}
 
 }  // namespace core
 }  // namespace open3d
