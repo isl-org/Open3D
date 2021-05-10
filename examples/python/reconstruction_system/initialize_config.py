@@ -22,6 +22,8 @@ def initialize_config(config):
     set_default_value(config, "n_frames_per_fragment", 100)
     set_default_value(config, "n_keyframes_per_n_frame", 5)
     set_default_value(config, "min_depth", 0.3)
+    set_default_value(config, "max_depth", 3.0)
+    set_default_value(config, "voxel_size", 0.05)
     set_default_value(config, "max_depth_diff", 0.07)
     set_default_value(config, "depth_scale", 1000)
     set_default_value(config, "preference_loop_closure_odometry", 0.1)
@@ -30,28 +32,31 @@ def initialize_config(config):
     set_default_value(config, "icp_method", "color")
     set_default_value(config, "global_registration", "ransac")
     set_default_value(config, "python_multi_threading", True)
-    set_default_value(config, "voxel_size", 0.05)
-    set_default_value(config, "block_count", 40000)
-    set_default_value(config, "max_depth", 3.0)
+
+    # `slac` and `slac_integrate` related parameters.
+    # `voxel_size` and `min_depth` paramters from previous section,
+    # are also used in `slac` and `slac_integrate`.
+    set_default_value(config, "max_iterations", 5)
     set_default_value(config, "sdf_trunc", 0.04)
-    set_default_value(config, "regularizer_weight", 1)
+    set_default_value(config, "block_count", 40000)
     set_default_value(config, "distance_threshold", 0.07)
     set_default_value(config, "fitness_threshold", 0.3)
-    set_default_value(config, "max_iterations", 5)
+    set_default_value(config, "regularizer_weight", 1)
     set_default_value(config, "method", "slac")
     set_default_value(config, "device", "CPU:0")
     set_default_value(config, "save_output_as", "mesh")
-
-    set_default_value(config, "folder_fragment", "fragments/")
     set_default_value(config, "folder_slac", "slac/")
+    set_default_value(config, "template_optimized_posegraph_slac",
+                      "optimized_posegraph_slac.json")
+
+    # path related parameters.
+    set_default_value(config, "folder_fragment", "fragments/")
     set_default_value(config, "subfolder_slac",
                       "slac/%0.3f/" % config["voxel_size"])
     set_default_value(config, "template_fragment_posegraph",
                       "fragments/fragment_%03d.json")
     set_default_value(config, "template_fragment_posegraph_optimized",
                       "fragments/fragment_optimized_%03d.json")
-    set_default_value(config, "template_optimized_posegraph_slac",
-                      "optimized_posegraph_slac.json")
     set_default_value(config, "template_fragment_pointcloud",
                       "fragments/fragment_%03d.ply")
     set_default_value(config, "folder_scene", "scene/")

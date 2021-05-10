@@ -33,10 +33,14 @@ if __name__ == "__main__":
         "--integrate",
         help="Step 4) integrate the whole RGBD sequence to make final mesh",
         action="store_true")
-    parser.add_argument("--slac", help="Step 5) run slac.", action="store_true")
+    parser.add_argument(
+        "--slac",
+        help="Step 5) (optional) run slac optimisation for fragments.",
+        action="store_true")
     parser.add_argument(
         "--slac_integrate",
-        help="Step 6) integrate fragements using slac to make final mesh.",
+        help=
+        "Step 6) (optional) integrate fragements using slac to make final mesh.",
         action="store_true")
     parser.add_argument("--debug_mode",
                         help="turn on debug mode",
