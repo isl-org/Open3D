@@ -129,7 +129,7 @@ public:
         // only Float32 dtype pointcloud is supported by tensor registration
         // pipeline), estimates normals if required (PointToPlane Registration),
         // sets the "__visualization_scalar" parameter and its min max values.
-        pointclouds_device_ = LoadTensorPointClouds();
+        LoadTensorPointClouds();
 
         // Rendering Material used for `current frame`.
         mat_ = rendering::Material();
@@ -160,31 +160,31 @@ private:
         // Initialize visualizer.
         if (visualize_output_) {
             {
-                // lock to protect `src_pcd_` and `tar_pcd_` before modifying
+                // lock to protect `pcd_.curren_scan_` before modifying
                 // the value, ensuring the visualizer thread doesn't read the
                 // data, while we are modifying it.
-                std::lock_guard<std::mutex> lock(pcd_current_lock_);
+                std::lock_guard<std::mutex> lock(pcd_.lock_);
 
-                // Copying the pointcloud to pcd_current_ on the `main thread`
-                // on CPU, which is later passed to the visualizer for
+                // Copying the pointcloud to pcd_.current_scan_ on the `main
+                // thread` on CPU, which is later passed to the visualizer for
                 // rendering.
-                pcd_current_ = pointclouds_device_[0].CPU();
+                pcd_.current_scan_ = pointclouds_device_[0].CPU();
 
                 // Removing `normal` attribute before passing it to
                 // the visualizer might give us some performance benifits.
-                pcd_current_.RemovePointAttr("normals");
+                pcd_.current_scan_.RemovePointAttr("normals");
             }
 
             gui::Application::GetInstance().PostToMainThread(this, [&]() {
-                std::lock_guard<std::mutex> lock(pcd_current_lock_);
+                std::lock_guard<std::mutex> lock(pcd_.lock_);
 
                 // Setting background for the visualizer. [In this case: Black].
                 this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1.0});
 
                 // Adding the first frame of the sequence to the visualizer,
                 // and rendering it using the material set for `current scan`.
-                this->widget3d_->GetScene()->AddGeometry(filenames_[0],
-                                                         &pcd_current_, mat_);
+                this->widget3d_->GetScene()->AddGeometry(
+                        filenames_[0], &pcd_.current_scan_, mat_);
 
                 // Getting bounding box and center to setup camera view.
                 auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
@@ -263,25 +263,26 @@ private:
                 std::stringstream out_;
 
                 {
-                    // lock `pcd_current_` before modifying the value, to
+                    // lock `pcd_.current_scan_` before modifying the value, to
                     // protect the case, when visualizer is accessing it
                     // at the same time we are modifying it.
-                    std::lock_guard<std::mutex> lock(pcd_current_lock_);
+                    std::lock_guard<std::mutex> lock(pcd_.lock_);
 
                     // For visualization it is required that the pointcloud
                     // must be on CPU device.
                     // The `target` pointcloud is transformed to it's global
                     // position in the model by it's `frame to model transform`.
-                    pcd_current_ = target.Transform(cumulative_transform.To(
-                                                            device_, dtype_))
-                                           .CPU();
+                    pcd_.current_scan_ =
+                            target.Transform(cumulative_transform.To(device_,
+                                                                     dtype_))
+                                    .CPU();
 
                     total_points_in_frame +=
-                            pcd_current_.GetPoints().GetLength();
+                            pcd_.current_scan_.GetPoints().GetLength();
 
                     // Removing `normal` attribute before passing it to
                     // the visualizer might give us some performance benifits.
-                    pcd_current_.RemovePointAttr("normals");
+                    pcd_.current_scan_.RemovePointAttr("normals");
                 }
 
                 if (i != 0) {
@@ -304,7 +305,7 @@ private:
                             // so, we don't need to use locks for such cases.
                             this->SetOutput(out_);
 
-                            std::lock_guard<std::mutex> lock(pcd_current_lock_);
+                            std::lock_guard<std::mutex> lock(pcd_.lock_);
 
                             // We render the `source` or the previous
                             // "current scan" pointcloud by using the material
@@ -316,7 +317,8 @@ private:
                             // a different material. In next iteration we will
                             // change the material to the `model` material.
                             this->widget3d_->GetScene()->AddGeometry(
-                                    filenames_[i + 1], &pcd_current_, mat_);
+                                    filenames_[i + 1], &pcd_.current_scan_,
+                                    mat_);
 
                             // Bounding box and camera setup.
                             auto bbox = this->widget3d_->GetScene()
@@ -489,10 +491,11 @@ private:
     }
 
     // To perform required dtype conversion, normal estimation.
-    std::vector<t::geometry::PointCloud> LoadTensorPointClouds() {
+    void LoadTensorPointClouds() {
         // Reading all the filenames in the given dataset path
         // with supported extensions. [.ply and .pcd].
         std::vector<std::string> all_pcd_files;
+        
         utility::filesystem::ListFilesInDirectoryWithExtension(
                 path_dataset, "pcd", all_pcd_files);
         if (all_pcd_files.size() == 0) {
@@ -516,17 +519,17 @@ private:
         utility::LogInfo(" Number of frames: {}", filenames_.size());
 
         int total_frames = filenames_.size();
-        std::vector<t::geometry::PointCloud> pointclouds_device(
-                total_frames, t::geometry::PointCloud(device_));
+        pointclouds_device_.reserve(total_frames);
 
         try {
-            int i = 0;
             t::geometry::PointCloud pointcloud_local;
+            // counts frames loaded, to show the progress %.
+            int count = 0;
             for (auto& path : filenames_) {
                 std::cout << " \rPre-fetching Data... "
-                          << i * 100 / total_frames << "%"
+                          << count * 100 / total_frames << "%"
                           << " " << std::flush;
-
+                
                 t::io::ReadPointCloud(path, pointcloud_local,
                                       {"auto", false, false, true});
 
@@ -574,9 +577,11 @@ private:
                 // We save the pointcloud downsampled by the highest
                 // resolution voxel size, during data pre-fetching,
                 // to same memory.
-                pointclouds_device[i++] =
+                pointclouds_device_.push_back(
                         pointcloud_local.To(device_).VoxelDownSample(
-                                voxel_sizes_[icp_scale_levels_ - 1]);
+                                voxel_sizes_[icp_scale_levels_ - 1]));
+                
+                count = count + 1;
             }
             std::cout << std::endl;
         } catch (const std::bad_alloc& e) {
@@ -588,7 +593,6 @@ private:
                     "loop. Please refer the example documentation. ",
                     e.what());
         }
-        return pointclouds_device;
     }
 
     rendering::Material GetPointCloudMaterial() {
@@ -636,39 +640,54 @@ private:
     }
 
 private:
-    std::mutex pcd_current_lock_;
+    // lock to protect `pcd_.current_scan_` before modifying
+    // the value, ensuring the visualizer thread doesn't read the
+    // data, while we are modifying it.
+    struct {
+        // Mutex lock to protect data memeber current_scan_.
+        std::mutex lock_;
+        // Pointcloud to store the "current scan", used for visualization.
+        t::geometry::PointCloud current_scan_;
+    } pcd_;
 
+    // Checks if the GUI is closed, and if so, stop the code.
     std::atomic<bool> is_done_;
+
+    // Material for model pointcloud and current scan pointcloud.
     open3d::visualization::rendering::Material pointcloud_mat_;
     open3d::visualization::rendering::Material mat_;
 
+    // Stores the vector of pre-processed pointclouds on device.
     std::vector<open3d::t::geometry::PointCloud> pointclouds_device_;
-    t::geometry::PointCloud pcd_current_;
 
+    // Used for gradient shader color scaling.
     double min_visualization_scalar_;
     double max_visualization_scalar_;
 
 private:
+    // Path of the dataset having pointcloud frames.
     std::string path_dataset;
+    // Registration estimation method type. ["PointToPoint" or "PointToPlane"].
     std::string registration_method_;
+    // List of filenames of the pointcloud frames.
     std::vector<std::string> filenames_;
+    // Verbosity level ["Debug" or "Info"].
     utility::VerbosityLevel verbosity_;
+    // To set end index from the frame sequence.
     int end_index_;
+    // To set start index from the frame sequence.
     int start_index_;
+    // If `True` GUI is enabled.
     bool visualize_output_;
-    double visualization_min_;
-    double visualization_max_;
 
 private:
+    // RegistrationMultiScaleICP parameters.
     std::vector<double> voxel_sizes_;
     std::vector<double> search_radius_;
-    size_t icp_scale_levels_;
     std::vector<ICPConvergenceCriteria> criterias_;
     std::shared_ptr<TransformationEstimation> estimation_;
 
-private:
-    core::Tensor transformation_;
-    t::pipelines::registration::RegistrationResult result_;
+    size_t icp_scale_levels_;
 
 private:
     core::Device device_;

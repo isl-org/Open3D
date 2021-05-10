@@ -79,9 +79,7 @@ public:
     ExampleWindow(const std::string& path_config, const core::Device& device)
         : device_(device),
           host_(core::Device("CPU:0")),
-          dtype_(core::Dtype::Float32),
-          correspondence_src_pcd(host_),
-          correspondence_tar_pcd(host_) {
+          dtype_(core::Dtype::Float32) {
         ReadConfigFile(path_config);
         std::tie(source_, target_) = LoadTensorPointClouds();
 
@@ -143,27 +141,27 @@ private:
         // ------------------------ VISUALIZER ------------------------------
         // Intialize visualizer.
         {
-            // lock to protect `src_pcd_` and `tar_pcd_` before modifying the
+            // lock to protect `source_` and `target_` before modifying the
             // value, ensuring the visualizer thread doesn't read the data,
             // while we are modifying it.
-            std::lock_guard<std::mutex> lock(pcd_lock_);
+            std::lock_guard<std::mutex> lock(pcd_.lock_);
 
             // Copying the pointcloud on CPU, as required by the visualizer.
-            src_pcd_ = source_.CPU();
-            tar_pcd_ = target_.CPU();
+            pcd_.source_ = source_.CPU();
+            pcd_.target_ = target_.CPU();
         }
 
         gui::Application::GetInstance().PostToMainThread(this, [this]() {
-            // lock to protect `src_pcd_` and `tar_pcd_` before passing it
-            // to the visualizer, ensuring we don't modify the value,
-            // when visualizer is reading it.
-            std::lock_guard<std::mutex> lock(pcd_lock_);
+            // lock to protect `pcd_.source_` and `pcd.target_`
+            // before passing it to the visualizer, ensuring we don't
+            // modify the value, when visualizer is reading it.
+            std::lock_guard<std::mutex> lock(pcd_.lock_);
 
             // Setting the background.
             this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1});
 
             // Adding the target pointcloud.
-            this->widget3d_->GetScene()->AddGeometry(DST_CLOUD, &tar_pcd_,
+            this->widget3d_->GetScene()->AddGeometry(DST_CLOUD, &pcd_.target_,
                                                      tar_cloud_mat_);
 
             // Adding the source pointcloud, and correspondences pointclouds.
@@ -172,11 +170,11 @@ private:
             // efficient when the number of points in the updated pointcloud
             // are same or less than the geometry added initially.
             this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                    SRC_CLOUD, src_pcd_, src_cloud_mat_);
+                    SRC_CLOUD, pcd_.source_, src_cloud_mat_);
             this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                    SRC_CORRES, src_pcd_, src_corres_mat_);
+                    SRC_CORRES, pcd_.source_, src_corres_mat_);
             this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                    TAR_CORRES, src_pcd_, tar_corres_mat_);
+                    TAR_CORRES, pcd_.source_, tar_corres_mat_);
 
             // Getting bounding box and center to setup camera view.
             auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
@@ -256,8 +254,7 @@ private:
             if (max_correspondence_distances[i] <= 0.0) {
                 utility::LogError(
                         " Max correspondence distance must be greater than 0, "
-                        "but"
-                        " got {} in scale: {}.",
+                        "but got {} in scale: {}.",
                         max_correspondence_distances[i], i);
             }
         }
@@ -332,21 +329,21 @@ private:
 
                 // -------------------- VISUALIZER ----------------------
                 {
-                    std::lock_guard<std::mutex> lock(pcd_lock_);
-                    correspondence_src_pcd.SetPoints(
+                    std::lock_guard<std::mutex> lock(pcd_.lock_);
+                    pcd_.correspondence_src_.SetPoints(
                             source_down_pyramid[i]
                                     .GetPoints()
                                     .IndexGet(
                                             {result.correspondence_set_.first})
                                     .To(host_));
-                    correspondence_tar_pcd.SetPoints(
+                    pcd_.correspondence_tar_.SetPoints(
                             target_down_pyramid[i]
                                     .GetPoints()
                                     .IndexGet(
                                             {result.correspondence_set_.second})
                                     .To(host_));
 
-                    src_pcd_ = source_.Clone().Transform(
+                    pcd_.source_ = source_.Clone().Transform(
                             transformation.To(dtype_));
                 }
 
@@ -357,18 +354,20 @@ private:
                 // pointcloud using `UpdateGeometry`, then setup camera.
                 gui::Application::GetInstance().PostToMainThread(this, [this,
                                                                         i]() {
+                    // Locking to protect: pcd_.source_,
+                    // pcd_.correspondence_src_, pcd_correpondece_tar_.
                     std::lock_guard<std::mutex> lock(pcd_lock_);
 
                     this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
-                            SRC_CLOUD, src_pcd_,
+                            SRC_CLOUD, pcd_.source_,
                             rendering::Scene::kUpdatePointsFlag |
                                     rendering::Scene::kUpdateColorsFlag);
                     this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
-                            SRC_CORRES, correspondence_src_pcd,
+                            SRC_CORRES, pcd_.correspondence_src_,
                             rendering::Scene::kUpdatePointsFlag |
                                     rendering::Scene::kUpdateColorsFlag);
                     this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
-                            TAR_CORRES, correspondence_tar_pcd,
+                            TAR_CORRES, pcd_.correspondence_tar_,
                             rendering::Scene::kUpdatePointsFlag |
                                     rendering::Scene::kUpdateColorsFlag);
                 });
@@ -392,7 +391,9 @@ private:
         // Clearing up the correspondences representation,
         // after all the iterations are completed.
         gui::Application::GetInstance().PostToMainThread(this, [this]() {
-            std::lock_guard<std::mutex> lock(pcd_lock_);
+            // Locking before removing correspondence_src_ and
+            // correspondence_tar_.
+            std::lock_guard<std::mutex> lock(pcd_.lock_);
 
             this->widget3d_->GetScene()->GetScene()->RemoveGeometry(SRC_CORRES);
             this->widget3d_->GetScene()->GetScene()->RemoveGeometry(TAR_CORRES);
@@ -645,10 +646,16 @@ private:
     open3d::visualization::rendering::Material tar_corres_mat_;
 
     // For Visualization.
-    t::geometry::PointCloud correspondence_src_pcd;
-    t::geometry::PointCloud correspondence_tar_pcd;
-    t::geometry::PointCloud src_pcd_;
-    t::geometry::PointCloud tar_pcd_;
+    // The members of this structure can be protected by the mutex lock,
+    // to avoid the case, when we are trying to modify the values,
+    // while visualizer is tring to access it.
+    struct {
+        std::mutex lock_;
+        t::geometry::PointCloud correspondence_src_;
+        t::geometry::PointCloud correspondence_tar_;
+        t::geometry::PointCloud source_;
+        t::geometry::PointCloud target_;
+    } pcd_;
 
     t::geometry::PointCloud source_;
     t::geometry::PointCloud target_;
