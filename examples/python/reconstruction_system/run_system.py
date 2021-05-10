@@ -41,6 +41,8 @@ if __name__ == "__main__":
     parser.add_argument("--debug_mode",
                         help="turn on debug mode",
                         action="store_true")
+    parser.add_argument('--device', type=str, default='cpu:0')
+
     args = parser.parse_args()
 
     if not args.make and \
@@ -64,6 +66,8 @@ if __name__ == "__main__":
         config['debug_mode'] = True
     else:
         config['debug_mode'] = False
+
+    config['device'] = args.device
 
     print("====================================")
     print("Configuration")
