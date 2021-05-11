@@ -495,7 +495,7 @@ private:
         // Reading all the filenames in the given dataset path
         // with supported extensions. [.ply and .pcd].
         std::vector<std::string> all_pcd_files;
-        
+
         utility::filesystem::ListFilesInDirectoryWithExtension(
                 path_dataset, "pcd", all_pcd_files);
         if (all_pcd_files.size() == 0) {
@@ -529,7 +529,7 @@ private:
                 std::cout << " \rPre-fetching Data... "
                           << count * 100 / total_frames << "%"
                           << " " << std::flush;
-                
+
                 t::io::ReadPointCloud(path, pointcloud_local,
                                       {"auto", false, false, true});
 
@@ -580,7 +580,7 @@ private:
                 pointclouds_device_.push_back(
                         pointcloud_local.To(device_).VoxelDownSample(
                                 voxel_sizes_[icp_scale_levels_ - 1]));
-                
+
                 count = count + 1;
             }
             std::cout << std::endl;
