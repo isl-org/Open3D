@@ -108,6 +108,16 @@ void pybind_pointcloud(py::module& m) {
                    "Scale points.");
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
+    pointcloud.def("select_by_index", &PointCloud::SelectByIndex, "indices"_a,
+                   "invert"_a = false);
+    pointcloud.def(
+            "is_similar", &PointCloud::IsSimilar, "pointcloud"_a,
+            "search_distance"_a = 0.05, "inlier_fitness_threshold"_a = 0.99,
+            "inlier_rmse_threshold"_a = 0.0001,
+            "Returns true if two pointclouds are similar. "
+            "Two unorganised pointclouds are similar when, between the "
+            "correspondences of the two pointcloud the inliear fitness "
+            "is greater `AND` inlier rmse is smaller than the set threshold.");
     pointcloud.def(
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
@@ -116,6 +126,11 @@ void pybind_pointcloud(py::module& m) {
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
+    pointcloud.def(
+            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+            "nb_points"_a, "search_radius"_a,
+            "Function to remove points that have less than nb_points in a "
+            "sphere of a given radius.");
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,
             py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,

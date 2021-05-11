@@ -237,6 +237,13 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
     }
     core::nns::NearestNeighborSearch target_nns(this->GetPoints());
 
+    bool check = target_nns.FixedRadiusIndex(search_radius);
+    if (!check) {
+        utility::LogError(
+                "NearestNeighborSearch::FixedRadiusIndex "
+                "Index is not set.");
+    }
+
     core::Tensor indices, distance, row_splits;
     std::tie(indices, distance, row_splits) = target_nns.FixedRadiusSearch(
             this->GetPoints(), search_radius, false);
