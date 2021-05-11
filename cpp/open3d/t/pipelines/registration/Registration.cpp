@@ -129,12 +129,12 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
 RegistrationResult RegistrationICP(const geometry::PointCloud &source,
                                    const geometry::PointCloud &target,
                                    double max_correspondence_distance,
-                                   const core::Tensor &init,
+                                   const core::Tensor &init_source_to_target,
                                    const TransformationEstimation &estimation,
                                    const ICPConvergenceCriteria &criteria) {
     return RegistrationMultiScaleICP(source, target, {-1}, {criteria},
-                                     {max_correspondence_distance}, init,
-                                     estimation);
+                                     {max_correspondence_distance},
+                                     init_source_to_target, estimation);
 }
 
 RegistrationResult RegistrationMultiScaleICP(
@@ -143,7 +143,7 @@ RegistrationResult RegistrationMultiScaleICP(
         const std::vector<double> &voxel_sizes,
         const std::vector<ICPConvergenceCriteria> &criterias,
         const std::vector<double> &max_correspondence_distances,
-        const core::Tensor &init,
+        const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = core::Dtype::Float32;
@@ -201,10 +201,10 @@ RegistrationResult RegistrationMultiScaleICP(
         }
     }
 
-    init.AssertShape({4, 4});
+    init_source_to_target.AssertShape({4, 4});
 
-    core::Tensor transformation =
-            init.To(core::Device("CPU:0"), core::Dtype::Float64);
+    core::Tensor transformation = init_source_to_target.To(
+            core::Device("CPU:0"), core::Dtype::Float64);
 
     std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
     std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);

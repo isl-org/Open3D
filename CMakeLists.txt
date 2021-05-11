@@ -37,11 +37,9 @@ option(BUILD_GUI                  "Builds new GUI"                           ON 
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
-if (BUILD_SHARED_LIBS)
-    option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
-else()
-    option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
-endif()
+cmake_dependent_option(
+       STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON
+       "NOT BUILD_SHARED_LIBS"                                               OFF)
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
 if(UNIX AND NOT APPLE AND NOT LINUX_AARCH64)

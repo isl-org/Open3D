@@ -322,6 +322,43 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
     }
 }
 
+geometry::Image PointCloud::ProjectToDepthImage(int width,
+                                                int height,
+                                                const core::Tensor &intrinsics,
+                                                const core::Tensor &extrinsics,
+                                                float depth_scale,
+                                                float depth_max) {
+    core::Tensor depth = core::Tensor::Zeros({height, width, 1},
+                                             core::Dtype::Float32, device_);
+    kernel::pointcloud::Project(depth, utility::nullopt, GetPoints(),
+                                utility::nullopt, intrinsics, extrinsics,
+                                depth_scale, depth_max);
+    return geometry::Image(depth);
+}
+
+geometry::RGBDImage PointCloud::ProjectToRGBDImage(
+        int width,
+        int height,
+        const core::Tensor &intrinsics,
+        const core::Tensor &extrinsics,
+        float depth_scale,
+        float depth_max) {
+    if (!HasPointColors()) {
+        utility::LogError(
+                "Unable to project to RGBD without the Color attribute in the "
+                "point cloud.");
+    }
+
+    core::Tensor depth = core::Tensor::Zeros({height, width, 1},
+                                             core::Dtype::Float32, device_);
+    core::Tensor color = core::Tensor::Zeros({height, width, 3},
+                                             core::Dtype::UInt8, device_);
+    kernel::pointcloud::Project(depth, color, GetPoints(), GetPointColors(),
+                                intrinsics, extrinsics, depth_scale, depth_max);
+
+    return geometry::RGBDImage(color, depth);
+}
+
 PointCloud PointCloud::FromLegacyPointCloud(
         const open3d::geometry::PointCloud &pcd_legacy,
         core::Dtype dtype,

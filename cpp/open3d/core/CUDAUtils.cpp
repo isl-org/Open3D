@@ -26,6 +26,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 
+#include "open3d/Macro.h"
 #include "open3d/utility/Console.h"
 
 #ifdef BUILD_CUDA_MODULE
@@ -72,6 +73,6 @@ void ReleaseCache() {
 }  // namespace open3d
 
 // C interface to provide un-mangled function to Python ctypes
-extern "C" int open3d_core_cuda_device_count() {
+extern "C" OPEN3D_DLL_EXPORT int open3d_core_cuda_device_count() {
     return open3d::core::cuda::DeviceCount();
 }

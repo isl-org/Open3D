@@ -36,6 +36,8 @@ from open3d_test import list_devices
 np.random.seed(0)
 
 
+@pytest.mark.skipif(not o3d._build_config['WITH_FAISS'],
+                    reason="Need FAISS for nearest neighbors.")
 @pytest.mark.parametrize("device", list_devices())
 def test_knn_index(device):
     dtype = o3c.Dtype.Float32
@@ -51,6 +53,8 @@ def test_knn_index(device):
         assert nns.multi_radius_index()
 
 
+@pytest.mark.skipif(not o3d._build_config['WITH_FAISS'],
+                    reason="Need FAISS for nearest neighbors.")
 @pytest.mark.parametrize("device", list_devices())
 def test_knn_search(device):
     dtype = o3c.Dtype.Float32

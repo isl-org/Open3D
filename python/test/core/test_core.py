@@ -1055,6 +1055,17 @@ def test_scalar_op(device):
     a.ne_(0)
     np.testing.assert_equal(a.cpu().numpy(), np.array([True, False, True]))
 
+    # clip
+    dtype = o3d.core.Dtype.Int64
+    a = o3d.core.Tensor([2, -1, 1], dtype=dtype, device=device)
+    np.testing.assert_equal(a.clip(0, 1).cpu().numpy(), np.array([1, 0, 1]))
+    np.testing.assert_equal(a.clip(0.5, 1.2).cpu().numpy(), np.array([1, 0, 1]))
+
+    # clip_
+    a = o3d.core.Tensor([2, -1, 1], dtype=dtype, device=device)
+    a.clip_(0, 1)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([1, 0, 1]))
+
 
 @pytest.mark.parametrize("device", list_devices())
 def test_all_any(device):

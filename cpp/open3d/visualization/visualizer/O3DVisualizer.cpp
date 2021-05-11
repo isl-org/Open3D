@@ -834,6 +834,9 @@ struct O3DVisualizer::Impl {
         if (material) {
             mat = *material;
             is_default_color = false;
+            auto t_cloud =
+                    std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
+            valid_tpcd = t_cloud.get();
         } else {
             bool has_colors = false;
             bool has_normals = false;
@@ -940,7 +943,8 @@ struct O3DVisualizer::Impl {
             scene->AddGeometry(name, valid_tpcd, mat);
         } else {
             utility::LogWarning(
-                    "No valid geometry specified to O3DViewer. Only supported "
+                    "No valid geometry specified to O3DVisualizer. Only "
+                    "supported "
                     "geometries are Geometry3D and TGeometry PointClouds.");
         }
 

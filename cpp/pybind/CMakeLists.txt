@@ -54,6 +54,7 @@ set(PY_ALL_SOURCE_FILES
     core/size_vector.cpp
     core/cuda_utils.cpp
     core/tensor.cpp
+    core/scalar.cpp
     core/nns/nearest_neighbor_search.cpp
     core/dtype.cpp
     docstring.cpp
@@ -98,6 +99,8 @@ set(PY_ALL_SOURCE_FILES
     t/geometry/tensormap.cpp
     t/geometry/tsdf_voxelgrid.cpp
     t/pipelines/pipelines.cpp
+    t/pipelines/slac/slac.cpp
+    t/pipelines/odometry/odometry.cpp
     t/pipelines/registration/registration.cpp
     utility/console.cpp
     utility/eigen.cpp

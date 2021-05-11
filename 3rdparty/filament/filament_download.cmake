@@ -1,12 +1,6 @@
 include(FetchContent)
 
-set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl ibl image meshoptimizer smol-v utils)
-if(UNIX OR WIN32)
-    list(APPEND filament_LIBRARIES bluevk)
-endif()
-if(UNIX OR APPLE)
-    list(APPEND filament_LIBRARIES vkshaders)
-endif()
+set(filament_LIBRARIES filameshio filament filamat_lite filaflat filabridge geometry backend bluegl bluevk ibl image meshoptimizer smol-v utils vkshaders)
 
 if (FILAMENT_PRECOMPILED_ROOT)
     if (EXISTS "${FILAMENT_PRECOMPILED_ROOT}")
@@ -15,12 +9,24 @@ if (FILAMENT_PRECOMPILED_ROOT)
         message(FATAL_ERROR "Filament binaries not found in ${FILAMENT_PRECOMPILED_ROOT}")
     endif()
 else()
+    # Locate byproducts
     set(lib_dir lib)
     # Setup download links
     if(WIN32)
         set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.9.9/filament-v1.9.9-windows.tgz")
+        # Required for filament v1.9.9
+        # Older versions of filament do not contain vkshaders.
+        # They also have a different directory structure.
+        # Remove vkshaders here so we can use newer versions with FILAMENT_PRECOMPILED_ROOT.
+        list(REMOVE_ITEM filament_LIBRARIES vkshaders)
+        if (STATIC_WINDOWS_RUNTIME)
+            string(APPEND lib_dir /x86_64/mt)
+        else()
+            string(APPEND lib_dir /x86_64/md)
+        endif()
     elseif(APPLE)
         set(DOWNLOAD_URL_PRIMARY "https://github.com/google/filament/releases/download/v1.9.19/filament-v1.9.19-mac.tgz")
+        string(APPEND lib_dir /x86_64)
     else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
         execute_process(COMMAND ldd --version OUTPUT_VARIABLE ldd_version)
         string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
