@@ -15,7 +15,7 @@ on:
     types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
 
 env:
-  PIP_VER: "20.2.4"
+  PIP_VER: "21.1.1"
   WHEEL_VER: "0.35.1"
   STOOLS_VER: "50.3.2"
   PYTEST_VER: "6.0.1"
