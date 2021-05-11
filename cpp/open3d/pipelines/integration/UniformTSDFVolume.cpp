@@ -104,6 +104,12 @@ void UniformTSDFVolume::Integrate(
 std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
+
+#ifdef _MSC_VER
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(3) schedule(static)
+#endif
     for (int x = 1; x < resolution_ - 1; x++) {
         for (int y = 1; y < resolution_ - 1; y++) {
             for (int z = 1; z < resolution_ - 1; z++) {
@@ -170,6 +176,11 @@ UniformTSDFVolume::ExtractTriangleMesh() {
             Eigen::aligned_allocator<std::pair<const Eigen::Vector4i, int>>>
             edgeindex_to_vertexindex;
     int edge_to_index[12];
+#ifdef _MSC_VER
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(3) schedule(static)
+#endif
     for (int x = 0; x < resolution_ - 1; x++) {
         for (int y = 0; y < resolution_ - 1; y++) {
             for (int z = 0; z < resolution_ - 1; z++) {
@@ -247,9 +258,12 @@ std::shared_ptr<geometry::PointCloud>
 UniformTSDFVolume::ExtractVoxelPointCloud() const {
     auto voxel = std::make_shared<geometry::PointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
-    // const float *p_tsdf = (const float *)tsdf_.data();
-    // const float *p_weight = (const float *)weight_.data();
-    // const float *p_color = (const float *)color_.data();
+
+#ifdef _MSC_VER
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(3) schedule(static)
+#endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
@@ -276,6 +290,11 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_;
 
+#ifdef _MSC_VER
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(3) schedule(static)
+#endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
@@ -298,6 +317,11 @@ std::vector<Eigen::Vector2d> UniformTSDFVolume::ExtractVolumeTSDF() const {
     std::vector<Eigen::Vector2d> sharedvoxels_;
     sharedvoxels_.resize(voxel_num_);
 
+#ifdef _MSC_VER
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(3) schedule(static)
+#endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
@@ -315,6 +339,11 @@ std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor() const {
     std::vector<Eigen::Vector3d> sharedcolors_;
     sharedcolors_.resize(voxel_num_);
 
+#ifdef _MSC_VER
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(3) schedule(static)
+#endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
@@ -328,6 +357,11 @@ std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor() const {
 
 void UniformTSDFVolume::InjectVolumeTSDF(
         const std::vector<Eigen::Vector2d> &sharedvoxels) {
+#ifdef _MSC_VER
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(3) schedule(static)
+#endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
@@ -341,6 +375,11 @@ void UniformTSDFVolume::InjectVolumeTSDF(
 
 void UniformTSDFVolume::InjectVolumeColor(
         const std::vector<Eigen::Vector3d> &sharedcolors) {
+#ifdef _MSC_VER
+#pragma omp parallel for schedule(static)
+#else
+#pragma omp parallel for collapse(3) schedule(static)
+#endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
@@ -369,7 +408,7 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
     const float safe_width_f = intrinsic.width_ - 0.0001f;
     const float safe_height_f = intrinsic.height_ - 0.0001f;
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma omp parallel for schedule(static)
 #else
 #pragma omp parallel for collapse(2) schedule(static)
