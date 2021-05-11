@@ -234,6 +234,10 @@ if __name__ == '__main__':
     # get source path to raw dataset, and target path to processed dataset.
     if not os.path.exists(destination_path):
         os.makedirs(destination_path)
+    else:
+        for f in os.listdir(destination_path):
+            os.remove(os.path.join(destination_path, f))
+
     source_folder = join(download_dataset_path,
                          find_source_pcd_folder_path(args.dataset_name))
     print("Source raw kitti lidar data: ", source_folder)
