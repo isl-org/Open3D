@@ -294,6 +294,63 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     return voxel_grid;
 }
 
+std::vector<Eigen::Vector2d> UniformTSDFVolume::ExtractVolumeTSDF() const {
+    std::vector<Eigen::Vector2d> sharedvoxels_;
+    sharedvoxels_.resize(voxel_num_);
+
+    for (int x = 0; x < resolution_; x++) {
+        for (int y = 0; y < resolution_; y++) {
+            for (int z = 0; z < resolution_; z++) {
+                const int ind = IndexOf(x, y, z);
+                const float f = voxels_[ind].tsdf_;
+                const float w = voxels_[ind].weight_;
+                sharedvoxels_[ind] = Eigen::Vector2d(f, w);
+            }
+        }
+    }
+    return sharedvoxels_;
+}
+
+std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor() const {
+    std::vector<Eigen::Vector3d> sharedcolors_;
+    sharedcolors_.resize(voxel_num_);
+
+    for (int x = 0; x < resolution_; x++) {
+        for (int y = 0; y < resolution_; y++) {
+            for (int z = 0; z < resolution_; z++) {
+                const int ind = IndexOf(x, y, z);
+                sharedcolors_[ind] = voxels_[ind].color_;
+            }
+        }
+    }
+    return sharedcolors_;
+}
+
+void UniformTSDFVolume::InjectVolumeTSDF(
+        const std::vector<Eigen::Vector2d> &sharedvoxels) {
+    for (int x = 0; x < resolution_; x++) {
+        for (int y = 0; y < resolution_; y++) {
+            for (int z = 0; z < resolution_; z++) {
+                const int ind = IndexOf(x, y, z);
+                voxels_[ind].tsdf_ = sharedvoxels[ind](0);
+                voxels_[ind].weight_ = sharedvoxels[ind](1);
+            }
+        }
+    }
+}
+
+void UniformTSDFVolume::InjectVolumeColor(
+        const std::vector<Eigen::Vector3d> &sharedcolors) {
+    for (int x = 0; x < resolution_; x++) {
+        for (int y = 0; y < resolution_; y++) {
+            for (int z = 0; z < resolution_; z++) {
+                const int ind = IndexOf(x, y, z);
+                voxels_[ind].color_ = sharedcolors[ind];
+            }
+        }
+    }
+}
+
 void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
         const geometry::RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
