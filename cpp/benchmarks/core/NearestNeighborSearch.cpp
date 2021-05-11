@@ -92,7 +92,8 @@ static void BM_TestNNS_Hybrid(benchmark::State& state,
 }
 
 static void BM_TestNNS_Radius(benchmark::State& state,
-                              const core::Device& device) {
+                              const core::Device& device,
+                              bool sort) {
     // state.range(n) are arguments that are passed to us
     double radius = state.range(0) / 1000.0;
 
@@ -109,7 +110,7 @@ static void BM_TestNNS_Radius(benchmark::State& state,
     core::Tensor indices, distances, neighbors_row_splits;
     for (auto _ : state) {
         std::tie(indices, distances, neighbors_row_splits) =
-                nns.FixedRadiusSearch(query_points, radius);
+                nns.FixedRadiusSearch(query_points, radius, sort);
 #ifdef BUILD_CUDA_MODULE
         core::CudaDeviceSynchronize();
 #endif
@@ -123,7 +124,7 @@ BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, core::Device("CPU:0"))
         ->Args({200, 64})
         ->Args({200, 256})
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BM_TestNNS_Radius, CPU, core::Device("CPU:0"))
+BENCHMARK_CAPTURE(BM_TestNNS_Radius, CPU, core::Device("CPU:0"), true)
         ->Args({10})
         ->Args({50})
         ->Args({100})
@@ -138,7 +139,13 @@ BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, GPU, core::Device("CUDA:0"))
         ->Args({200, 64})
         ->Args({200, 256})
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU, core::Device("CUDA:0"))
+BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU_SORT, core::Device("CUDA:0"), true)
+        ->Args({10})
+        ->Args({50})
+        ->Args({100})
+        ->Args({200})
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU_UNSORT, core::Device("CUDA:0"), false)
         ->Args({10})
         ->Args({50})
         ->Args({100})
