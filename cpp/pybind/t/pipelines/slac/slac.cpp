@@ -69,6 +69,13 @@ void pybind_slac_classes(py::module &m) {
             .def_readwrite("slac_folder", &SLACOptimizerParams::slac_folder_,
                            "Relative directory to store SLAC results in the "
                            "dataset folder.")
+            .def(
+                    "get_subfolder_name",
+                    [](const SLACOptimizerParams &slac_optimizer_params) {
+                        return slac_optimizer_params.GetSubfolderName();
+                    },
+                    "Relative directory to store SLAC results in the dataset "
+                    "folder.")
             .def("__repr__", [](const SLACOptimizerParams &params) {
                 return fmt::format(
                         "SLACOptimizerParams[max_iterations={:d}, "
@@ -113,8 +120,7 @@ void pybind_slac_classes(py::module &m) {
             "FragmentOptimizer/OptApp.cpp "
             "http://vladlen.info/papers/elastic-fragments.pdf. ");
     py::detail::bind_copy_functions<ControlGrid>(control_grid);
-    py::detail::bind_default_constructor<ControlGrid>(control_grid);
-    control_grid
+    control_grid.def(py::init<>())
             .def(py::init<float, int64_t, const core::Device>(), "grid_size"_a,
                  "grid_count"_a = 1000, "device"_a = core::Device("CPU:0"))
             .def(py::init<float, core::Tensor, core::Tensor,
@@ -202,7 +208,12 @@ void pybind_slac_classes(py::module &m) {
             .def("get_curr_positions", &ControlGrid::GetCurrPositions,
                  "Get control grid shifted positions from tensor values "
                  "(optimized in-place)")
-            .def("get_hashmap", &ControlGrid::GetHashmap)
+            .def(
+                    "get_hashmap",
+                    [](ControlGrid &control_grid) {
+                        return *control_grid.GetHashmap();
+                    },
+                    "Get the control grid hashmap.")
             .def("size", &ControlGrid::Size)
             .def("get_device", &ControlGrid::GetDevice)
             .def("get_anchor_idx", &ControlGrid::GetAnchorIdx)
@@ -239,7 +250,7 @@ void pybind_slac_methods(py::module &m) {
     docstring::FunctionDocInject(m, "save_correspondences_for_pointclouds",
                                  map_shared_argument_docstrings);
 
-    m.def("run_slac_optimize_for_fragments", &RunSLACOptimizerForFragments,
+    m.def("run_slac_optimizer_for_fragments", &RunSLACOptimizerForFragments,
           "Simultaneous Localization and Calibration: Self-Calibration of "
           "Consumer Depth Cameras, CVPR 2014 Qian-Yi Zhou and Vladlen Koltun "
           "Estimate a shared control grid for all fragments for scene "
@@ -248,16 +259,16 @@ void pybind_slac_methods(py::module &m) {
           "fragment_filenames"_a, "fragment_pose_graph"_a,
           "params"_a = SLACOptimizerParams(),
           "debug_option"_a = SLACDebugOption());
-    docstring::FunctionDocInject(m, "run_slac_optimize_for_fragments",
+    docstring::FunctionDocInject(m, "run_slac_optimizer_for_fragments",
                                  map_shared_argument_docstrings);
 
-    m.def("run_rigid_optimize_for_fragments", &RunRigidOptimizerForFragments,
+    m.def("run_rigid_optimizer_for_fragments", &RunRigidOptimizerForFragments,
           "Extended ICP to simultaneously align multiple point clouds with "
           "dense pairwise point-to-plane distances.",
           "fragment_filenames"_a, "fragment_pose_graph"_a,
           "params"_a = SLACOptimizerParams(),
           "debug_option"_a = SLACDebugOption());
-    docstring::FunctionDocInject(m, "run_rigid_optimize_for_fragments",
+    docstring::FunctionDocInject(m, "run_rigid_optimizer_for_fragments",
                                  map_shared_argument_docstrings);
 }
 
