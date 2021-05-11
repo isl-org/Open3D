@@ -1226,10 +1226,11 @@ double TriangleMesh::GetVolume() const {
                 "The mesh is not watertight, and the volume cannot be "
                 "computed.");
     }
-    if (!IsOrientable()) {
+    if (!IsOriented()) {
         utility::LogError(
-                "The mesh is not orientable, and the volume cannot be "
-                "computed.");
+                "The mesh is not oriented, and the volume cannot be "
+                "computed. Consider using OrientTriangles in cpp or "
+                "orient_triangles in Python before calling this method");
     }
 
     double volume = 0;
