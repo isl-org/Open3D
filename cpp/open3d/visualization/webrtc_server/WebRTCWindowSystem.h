@@ -23,6 +23,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+/// \file WebRTCWindowSystem.h
+///
+/// The main header file for WebRTC visualizer.
 
 #pragma once
 
@@ -36,6 +39,22 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
+/// \brief WebRTCWindowSystem is a BitmapWindowSystem with a WebRTC server that
+/// sends video frames to remote clients for visualization.
+///
+/// WebRTCWindowSystem owns a PeerConnectionManager, which manages all things
+/// related to the WebRTC connections, e.g. get media lists, get and add ICE
+/// candidates, connect to a media and hangup.
+///
+/// When the client visit a Open3D visualizer's website for visualization
+/// (a.k.a. standalone mode), an HTTP handshake server will be used to serve the
+/// website and perform handshake to establish the WebRTC connection. In Jupyter
+/// mode, the HTTP handshake server is disabled and the handshake is done via
+/// Jupyter's JavaScript<->Python communication channel.
+///
+/// WebRTCWindowSystem shall be used as a global singleton. Both the
+/// PeerConnectionManager and the HTTP handshake server runs on different
+/// threads.
 class WebRTCWindowSystem : public gui::BitmapWindowSystem {
 public:
     static std::shared_ptr<WebRTCWindowSystem> GetInstance();
@@ -66,13 +85,14 @@ public:
     /// initial frames, new frames will only be sent at triggered events.
     void SendInitFrames(const std::string& window_uid);
 
-    /// Call PeerConnectionManager's web request API.
+    /// \brief Call PeerConnectionManager's web request API.
+    ///
     /// This function is called in JavaScript via Python binding to mimic the
     /// behavior of sending HTTP request via fetch() in JavaScript.
     ///
     /// With fetch:
     /// data = {method: "POST", body: JSON.stringify(candidate)};
-    /// fetch(this.srvurl + "/api/addIceCandidate?peerid=" + peerid, data);
+    /// fetch("/api/addIceCandidate?peerid=" + peerid, data);
     ///
     /// Now with CallHttpAPI:
     /// open3d.visualization.webrtc_server("/api/addIceCandidate",

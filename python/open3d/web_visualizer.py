@@ -102,8 +102,8 @@ class _AsyncEventLoop:
             _AsyncEventLoop._Task._g_next_id += 1
 
     def __init__(self):
-        # TODO: find a better solution. Currently py::print requires GIL which
-        # causes deadlock when AsyncEventLoop is used. By calling
+        # TODO (yixing): find a better solution. Currently py::print acquires
+        # GIL which causes deadlock when AsyncEventLoop is used. By calling
         # reset_print_function(), all C++ prints will be directed to the
         # terminal while python print will still remain in the cell.
         o3d.utility.reset_print_function()

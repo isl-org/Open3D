@@ -41,7 +41,6 @@
 #pragma once
 
 #include <absl/types/optional.h>
-#include <api/media_stream_interface.h>
 #include <api/notifier.h>
 #include <api/sequence_checker.h>
 #include <api/video/recordable_encoded_frame.h>

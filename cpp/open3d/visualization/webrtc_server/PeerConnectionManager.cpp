@@ -358,8 +358,9 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             webrtc::SessionDescriptionInterface *session_description(
                     webrtc::CreateSessionDescription(type, sdp, nullptr));
             if (!session_description) {
-                utility::LogWarning(
-                        "Can't parse received session description message.");
+                utility::LogError(
+                        "Can't parse received session description message. "
+                        "Cannot create session description.");
             } else {
                 std::promise<const webrtc::SessionDescriptionInterface *>
                         remote_promise;
@@ -374,7 +375,9 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                     std::future_status::ready) {
                     utility::LogDebug("remote_description is ready.");
                 } else {
-                    utility::LogWarning("remote_description is nullptr.");
+                    utility::LogError(
+                            "remote_description is nullptr. Setting remote "
+                            "description failed.");
                 }
             }
 

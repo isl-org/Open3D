@@ -102,6 +102,14 @@ if (BUILD_JUPYTER_EXTENSION)
         message(FATAL_ERROR "yarn not found. You may install yarm globally by"
                             "npm install -g yarn.")
     endif()
+
+    # Append requirements_jupyter.txt to requirements.txt
+    execute_process(COMMAND ${CMAKE_COMMAND} -E cat
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter.txt
+        OUTPUT_VARIABLE ALL_REQUIREMENTS
+    )
+    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt ${ALL_REQUIREMENTS})
 endif()
 
 if (BUILD_GUI)

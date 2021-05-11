@@ -34,9 +34,7 @@
 
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 
-#include <cstring>
 #include <functional>
-#include <list>
 
 #include "open3d/utility/Console.h"
 

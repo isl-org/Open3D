@@ -38,7 +38,6 @@
 #pragma once
 
 #include <api/peer_connection_interface.h>
-#include <rtc_base/logging.h>
 #include <rtc_base/strings/json.h>
 
 #include <future>
@@ -56,7 +55,40 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-// TODO (yixing): Use PImpl.
+/// PeerConnectionManager manages WebRTC signaling (i.e. handshake), data
+/// channel and video streams.
+///
+/// [Stage 1: Signaling]
+/// Signaling is the handshake process to establish a WebRTC connection. See
+/// https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Connectivity#signaling
+/// for more information. In PeerConnectionManager, a WebRTC client (e.g.
+/// JavaScript video player) calls the following HTTP APIs:
+/// - /api/getMediaList: Returns a list of active Open3D visualizer windows.
+/// - /api/getIceServers: Returns a list of ICE (STUN/TURN) servers. The ICE
+///   server is used to forward requests through the remote peer's NAT layer. We
+///   use publicly availble STUN servers. In certain network configurations
+///   (e.g. if the peers are behind certain type of firewalls), STUN server may
+///   fail to resolve and in this case, we'll need to implement and host a
+///   separate TURN server.
+/// - /api/call: Connect to a specific media (Open3D visualizer window).
+/// - /api/addIceCandidate (multiple calls): Client sends ICE candidate
+///   proposals.
+/// - /api/getIceCandidate: the client gets a list of ICE candidate
+///   associated with a PeerConnection.
+///
+/// [Stage 2: Sending video streams and send/recv with data channel]
+/// - PeerConnectionManager::OnFrame() shall be called when a frame is ready.
+///   This will send a video frame to all peers connected to the target window.
+/// - DataChannelObserver::OnMessage() will be called when the server receives
+///   a message from the data channel. The PeerConnectionManager then forwards
+///   the message to the correct event handler and eventually events (such as
+///   mouse click)can be triggered.
+///
+/// [Stage 3: Hangup]
+/// The client calls /api/hangup to close the WebRTC connection. This does not
+/// close the Open3D Window as a Window can be connected to 0 or more peers.
+///
+/// TODO (yixing): Use PImpl.
 class PeerConnectionManager {
     class VideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
     public:

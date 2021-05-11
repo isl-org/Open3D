@@ -51,6 +51,13 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
+// List of ICE servers. We only use publicly available STUN servers, which works
+// for most users. In certain network configurations (e.g. if the peers are
+// behind certain type of firewalls), STUN server may fail to resolve and in
+// this case, we'll need to implement and host a separate TURN server. If our
+// default list fails to connect, you may replace this with other STUN servers.
+static const std::list<std::string> ice_servers{"stun:stun.l.google.com:19302"};
+
 static std::string GetEnvWebRTCIP() {
     if (const char *env_p = std::getenv("WEBRTC_IP")) {
         return std::string(env_p);
@@ -58,20 +65,12 @@ static std::string GetEnvWebRTCIP() {
         return "localhost";
     }
 }
+
 static std::string GetEnvWebRTCPort() {
     if (const char *env_p = std::getenv("WEBRTC_PORT")) {
         return std::string(env_p);
     } else {
         return "8888";
-    }
-}
-static std::string GetEnvWebRTCWebRoot() {
-    if (const char *env_p = std::getenv("WEBRTC_WEB_ROOT")) {
-        return std::string(env_p);
-    } else {
-        std::string resource_path(
-                gui::Application::GetInstance().GetResourcePath());
-        return resource_path + "/html";
     }
 }
 
@@ -186,7 +185,9 @@ void WebRTCWindowSystem::StartWebRTCServer() {
     if (!impl_->sever_started_) {
         auto start_webrtc_thread = [this]() {
             // Ensure Application::Initialize() is called before this.
-            impl_->web_root_ = GetEnvWebRTCWebRoot();
+            std::string resource_path(
+                    gui::Application::GetInstance().GetResourcePath());
+            impl_->web_root_ = resource_path + "/html";
 
             // Logging settings.
             // src/rtc_base/logging.h: LS_VERBOSE, LS_ERROR
@@ -198,7 +199,6 @@ void WebRTCWindowSystem::StartWebRTCServer() {
             // PeerConnectionManager manages all WebRTC connections.
             rtc::Thread *thread = rtc::Thread::Current();
             rtc::InitializeSSL();
-            std::list<std::string> ice_servers{"stun:stun.l.google.com:19302"};
             Json::Value config;
             impl_->peer_connection_manager_ =
                     std::make_unique<PeerConnectionManager>(
@@ -212,23 +212,22 @@ void WebRTCWindowSystem::StartWebRTCServer() {
             // running in Jupyter.
             if (impl_->http_handshake_enabled_) {
                 utility::LogInfo("WebRTC HTTP server handshake mode enabled.");
-                std::vector<std::string> options;
-                options.push_back("document_root");
-                options.push_back(impl_->web_root_);
-                options.push_back("enable_directory_listing");
-                options.push_back("no");
-                options.push_back("additional_header");
-                options.push_back("X-Frame-Options: SAMEORIGIN");
-                options.push_back("access_control_allow_origin");
-                options.push_back("*");
-                options.push_back("listening_ports");
-                options.push_back(impl_->http_address_);
-                options.push_back("enable_keep_alive");
-                options.push_back("yes");
-                options.push_back("keep_alive_timeout_ms");
-                options.push_back("1000");
-                options.push_back("decode_url");
-                options.push_back("no");
+                std::vector<std::string> options{"document_root",
+                                                 impl_->web_root_,
+                                                 "enable_directory_listing",
+                                                 "no",
+                                                 "additional_header",
+                                                 "X-Frame-Options: SAMEORIGIN",
+                                                 "access_control_allow_origin",
+                                                 "*",
+                                                 "listening_ports",
+                                                 impl_->http_address_,
+                                                 "enable_keep_alive",
+                                                 "yes",
+                                                 "keep_alive_timeout_ms",
+                                                 "1000",
+                                                 "decode_url",
+                                                 "no"};
                 try {
                     // PeerConnectionManager provides callbacks for the Civet
                     // server.
@@ -265,18 +264,16 @@ void WebRTCWindowSystem::StartWebRTCServer() {
 void WebRTCWindowSystem::OnDataChannelMessage(const std::string &message) {
     utility::LogDebug("WebRTCWindowSystem::OnDataChannelMessage: {}", message);
     try {
-        Json::Value value = utility::StringToJson(message);
-        gui::MouseEvent me;
+        const Json::Value value = utility::StringToJson(message);
+        const std::string window_uid = value.get("window_uid", "").asString();
         if (value.get("class_name", "").asString() == "MouseEvent" &&
-            value.get("window_uid", "").asString() != "" &&
-            me.FromJson(value)) {
-            const std::string window_uid =
-                    value.get("window_uid", "").asString();
-            PostMouseEvent(GetOSWindowByUID(window_uid), me);
+            window_uid != "") {
+            gui::MouseEvent me;
+            if (me.FromJson(value)) {
+                PostMouseEvent(GetOSWindowByUID(window_uid), me);
+            }
         } else if (value.get("class_name", "").asString() == "ResizeEvent" &&
-                   value.get("window_uid", "").asString() != "") {
-            const std::string window_uid =
-                    value.get("window_uid", "").asString();
+                   window_uid != "") {
             const int height = value.get("height", 0).asInt();
             const int width = value.get("width", 0).asInt();
             if (height <= 0 || width <= 0) {
@@ -284,14 +281,14 @@ void WebRTCWindowSystem::OnDataChannelMessage(const std::string &message) {
                         "Invalid heigh {} or width {}, ResizeEvent ignored.",
                         height, width);
             }
-            utility::LogInfo("ResizeEvent {}: ({}, {})", window_uid, height,
-                             width);
+            utility::LogDebug("ResizeEvent {}: ({}, {})", window_uid, height,
+                              width);
             SetWindowSize(GetOSWindowByUID(window_uid), width, height);
         }
     } catch (...) {
         utility::LogInfo(
-                "WebRTCWindowSystem::OnDataChannelMessage: cannot parse {}, "
-                "ignored.",
+                "OnDataChannelMessage: {}. Message cannot be parsed, or "
+                "the target GUI event failed to execute.",
                 message);
     }
 }
@@ -302,19 +299,15 @@ void WebRTCWindowSystem::OnFrame(const std::string &window_uid,
 }
 
 void WebRTCWindowSystem::SendInitFrames(const std::string &window_uid) {
-    auto sender = [this, &window_uid]() {
-        utility::LogInfo("Sending init frames to {}.", window_uid);
-        static const int s_max_initial_frames = 5;
-        static const int s_sleep_between_frames_ms = 100;
-        for (int i = 0; i < s_max_initial_frames; ++i) {
-            PostRedrawEvent(GetOSWindowByUID(window_uid));
-            std::this_thread::sleep_for(
-                    std::chrono::milliseconds(s_sleep_between_frames_ms));
-            utility::LogDebug("Sent init frames #{} to {}.", i, window_uid);
-        }
-    };
-    std::thread thread(sender);
-    thread.join();
+    utility::LogInfo("Sending init frames to {}.", window_uid);
+    static const int s_max_initial_frames = 5;
+    static const int s_sleep_between_frames_ms = 100;
+    for (int i = 0; i < s_max_initial_frames; ++i) {
+        PostRedrawEvent(GetOSWindowByUID(window_uid));
+        std::this_thread::sleep_for(
+                std::chrono::milliseconds(s_sleep_between_frames_ms));
+        utility::LogDebug("Sent init frames #{} to {}.", i, window_uid);
+    }
 }
 
 std::string WebRTCWindowSystem::CallHttpAPI(const std::string &entry_point,

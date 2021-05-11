@@ -34,17 +34,10 @@
 #include <libyuv/video_common.h>
 #include <media/base/video_broadcaster.h>
 #include <media/base/video_common.h>
-#include <modules/desktop_capture/desktop_capture_options.h>
-#include <modules/desktop_capture/desktop_capturer.h>
-#include <pc/video_track_source.h>
-#include <rtc_base/logging.h>
 
-#include <chrono>
 #include <memory>
-#include <thread>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/t/io/ImageIO.h"
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 
