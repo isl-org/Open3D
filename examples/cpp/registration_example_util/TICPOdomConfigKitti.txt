@@ -1,9 +1,12 @@
 # This is a config file for the ICP Odometry Examples.
 # When voxel_size is -1, no downsampling is performed.
 # To run TICPOdometry:
-# 1. Download the kitti dataset convert it to .pcd or .ply format.
-# 2. Change the `dataset_path` acccordingly.
-# 3. Go to build/bin/examples
+# 1. Run the `download_kitti.py` script.
+#    python3 download_kitti.py 
+#    This will download a city sequence in examples/test_data/open3d_downloads/datasets/kitti_samples/
+#    if it does not exists, and save the processed frames in `/output/`.
+# 2. If you are downloading it anywhere else, change the `dataset_path` acccordingly.
+# 3. Go to build/bin/examples directory.
 # 4. Run the following command:
 # ./TICPOdometry CPU:0 ../../../examples/cpp/registration_example_util/TICPOdomConfigKitti.txt
 # Change CPU:0 to CUDA:0 for running it on primary GPU.
@@ -17,11 +20,11 @@ visualization_max = 1.5
 verbosity = Info
 
 # Path of the downloaded dataset containing frames in .pcd or .ply format.
- dataset_path = /home/rey/Datasets/kitti_samples/
+dataset_path = ../../../examples/test_data/open3d_downloads/datasets/kitti_samples/output/
 
 # Range of frames is start_index to end_index.
 start_index = 0
-end_index = 500
+end_index = 400
 
 # Registration method can be PointToPoint or PointToPlane.
 registration_method = PointToPlane
