@@ -107,6 +107,10 @@ inline int GetCUDACurrentDeviceTextureAlignment() {
     }
     return value;
 }
+
+inline void CudaDeviceSynchronize() {
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+}
 #endif
 
 namespace cuda {

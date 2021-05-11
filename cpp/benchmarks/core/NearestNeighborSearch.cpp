@@ -33,6 +33,7 @@
 #define TEST_DATA_DIR
 #endif
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/Console.h"
@@ -74,21 +75,20 @@ static void BM_TestNNS_Hybrid(benchmark::State& state,
     core::Tensor dataset_points, query_points;
     std::tie(dataset_points, query_points) =
             PrepareInput(device, core::Dtype::Float32);
-    int64_t num_query_points = query_points.GetShape()[0];
 
     // Setup NNS.
     core::nns::NearestNeighborSearch nns(dataset_points);
     nns.HybridIndex(radius);
 
     // Search.
-    float avg_num_neighbors;
     core::Tensor indices, distances;
     for (auto _ : state) {
         std::tie(indices, distances) =
                 nns.HybridSearch(query_points, radius, max_knn);
-        avg_num_neighbors = indices.GetShape()[0] / (float)num_query_points;
+#ifdef BUILD_CUDA_MODULE
+        core::CudaDeviceSynchronize();
+#endif
     }
-    utility::LogDebug("Avg num neighbors: {}", avg_num_neighbors);
 }
 
 static void BM_TestNNS_Radius(benchmark::State& state,
@@ -100,21 +100,20 @@ static void BM_TestNNS_Radius(benchmark::State& state,
     core::Tensor dataset_points, query_points;
     std::tie(dataset_points, query_points) =
             PrepareInput(device, core::Dtype::Float32);
-    int64_t num_query_points = query_points.GetShape()[0];
 
     // Setup NNS.
     core::nns::NearestNeighborSearch nns(dataset_points);
     nns.FixedRadiusIndex(radius);
 
     // Search.
-    float avg_num_neighbors;
     core::Tensor indices, distances, neighbors_row_splits;
     for (auto _ : state) {
         std::tie(indices, distances, neighbors_row_splits) =
                 nns.FixedRadiusSearch(query_points, radius);
-        avg_num_neighbors = indices.GetShape()[0] / (float)num_query_points;
+#ifdef BUILD_CUDA_MODULE
+        core::CudaDeviceSynchronize();
+#endif
     }
-    utility::LogDebug("Avg num neighbors: {}", avg_num_neighbors);
 }
 BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, core::Device("CPU:0"))
         ->Args({100, 1})
