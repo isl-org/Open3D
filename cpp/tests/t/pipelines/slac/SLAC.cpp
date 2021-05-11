@@ -57,7 +57,7 @@ INSTANTIATE_TEST_SUITE_P(
         SLACPermuteDevicePairs,
         testing::ValuesIn(SLACPermuteDevicePairs::TestCases()));
 
-// PointCloud is similar is fitness is higher and rmse is lower than tolerance
+// PointCloud is similar if fitness is higher and rmse is lower than tolerance
 // threshold.
 static bool IsPointCloudSimilar(t::geometry::PointCloud source,
                                 t::geometry::PointCloud target,

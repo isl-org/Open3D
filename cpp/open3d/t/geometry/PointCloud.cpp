@@ -213,7 +213,7 @@ static PointCloud CreatePointCloudWithNormals(
         utility::LogError("Depth and color images have different sizes.");
     }
     auto depth =
-            depth_in.ClipTransform(depth_scale, 0.0f, depth_max, invalid_fill);
+            depth_in.ClipTransform(depth_scale, 0.01f, depth_max, invalid_fill);
     auto color = color_in;
     auto intrinsics = intrinsics_in / stride;
     intrinsics[-1][-1] = 1.f;
