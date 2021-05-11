@@ -49,7 +49,8 @@ import open3d.visualization.rendering as rendering
 
 # Camera and processing
 class PipelineModel:
-    """Controls IO (camera, video file, recording, saving frames)."""
+    """Controls IO (camera, video file, recording, saving frames). Methods run
+    in worker threads."""
 
     def __init__(self,
                  update_view,
@@ -76,7 +77,7 @@ class PipelineModel:
         self.video = None
         self.camera = None
         self.flag_capture = False
-        self.cv_capture = threading.Condition()
+        self.cv_capture = threading.Condition()  # condition variable
         self.recording = False  # Are we currently recording
         self.flag_record = False  # Request to start/stop recording
         if rgbd_video:  # Video file
@@ -84,7 +85,7 @@ class PipelineModel:
             self.rgbd_metadata = self.video.metadata
             self.status_message = f"Video {rgbd_video} opened."
 
-        else:  # Depth camera
+        else:  # RGBD camera
             now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             filename = f"{now}.bag"
             self.camera = o3d.t.io.RealSenseSensor()
@@ -95,12 +96,10 @@ class PipelineModel:
                                             filename=filename)
             else:
                 self.camera.init_sensor(filename=filename)
-
             self.camera.start_capture(start_record=False)
             self.rgbd_metadata = self.camera.get_metadata()
             self.status_message = f"Camera {self.rgbd_metadata.serial_number} opened."
 
-        self.max_points = self.rgbd_metadata.width * self.rgbd_metadata.height
         log.info(self.rgbd_metadata)
 
         # RGBD -> PCD
@@ -117,20 +116,30 @@ class PipelineModel:
                                                1]]).astype(np.float32).T
         }
         self.depth_max = 3.0  # m
-        self.pcd_stride = 1  # downsample point cloud
+        self.pcd_stride = 1  # downsample point cloud, may increase frame rate
         self.flag_normals = False
+        self.flag_save_rgbd = False
+        self.flag_save_pcd = False
 
-        self.vfov = 1.25 * np.rad2deg(
-            2 * np.arctan(self.intrinsic_matrix[1, 2].item() /
-                          self.intrinsic_matrix[1, 1].item()))
         self.pcd_frame = None
         self.rgbd_frame = None
         self.executor = ThreadPoolExecutor(max_workers=3,
                                            thread_name_prefix='Capture-Save')
         self.flag_exit = False
 
+    @property
+    def max_points(self):
+        """Max points in one frame for the camera or RGBD video resolution."""
+        return self.rgbd_metadata.width * self.rgbd_metadata.height
+
+    @property
+    def vfov(self):
+        """Camera or RGBD video vertical field of view."""
+        return np.rad2deg(2 * np.arctan(self.intrinsic_matrix[1, 2].item() /
+                                        self.intrinsic_matrix[1, 1].item()))
+
     def run(self):
-        """Run pipeline"""
+        """Run pipeline."""
         n_pts = 0
         frame_id = 0
         t1 = time.perf_counter()
@@ -142,7 +151,8 @@ class PipelineModel:
 
         pcd_errors = 0
         while (not self.flag_exit and
-               (self.video is None or self.video and not self.video.is_eof())):
+               (self.video is None or  # Camera
+                (self.video and not self.video.is_eof()))):  # Video
             if self.video:
                 future_rgbd_frame = self.executor.submit(self.video.next_frame)
             else:
@@ -151,6 +161,9 @@ class PipelineModel:
                     wait=True,
                     align_depth_to_color=True)
 
+            if self.flag_save_pcd:
+                self.save_pcd()
+                self.flag_save_pcd = False
             try:
                 self.rgbd_frame = self.rgbd_frame.to(self.o3d_device)
                 self.pcd_frame = o3d.t.geometry.PointCloud.create_from_rgbd_image(
@@ -181,6 +194,9 @@ class PipelineModel:
             }
             self.update_view(frame_elements)
 
+            if self.flag_save_rgbd:
+                self.save_rgbd()
+                self.flag_save_rgbd = False
             self.rgbd_frame = future_rgbd_frame.result()
             with self.cv_capture:  # Wait for capture to be enabled
                 self.cv_capture.wait_for(
@@ -204,8 +220,8 @@ class PipelineModel:
                 self.camera.pause_record()
                 self.recording = False
 
-    def on_save_pcd(self):
-        """Callback to save current point cloud."""
+    def save_pcd(self):
+        """Save current point cloud."""
         now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = f"{self.rgbd_metadata.serial_number}_pcd_{now}.ply"
         # Convert colors to uint8 for compatibility
@@ -219,21 +235,21 @@ class PipelineModel:
                              print_progress=False)
         self.status_message = f"Saving point cloud to {filename}."
 
-    def on_save_rgbd(self):
-        """Callback to save current RGBD image pair."""
+    def save_rgbd(self):
+        """Save current RGBD image pair."""
         now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = f"{self.rgbd_metadata.serial_number}_color_{now}.jpg"
         self.executor.submit(o3d.t.io.write_image, filename,
-                             self.rgbd_frame.color)
+                             self.rgbd_frame.color.cpu())
         filename = f"{self.rgbd_metadata.serial_number}_depth_{now}.png"
         self.executor.submit(o3d.t.io.write_image, filename,
-                             self.rgbd_frame.depth)
+                             self.rgbd_frame.depth.cpu())
         self.status_message = (
             f"Saving RGBD images to {filename[:-3]}.{{jpg,png}}.")
 
 
 class PipelineView:
-    """Controls display and user interface. Must run in the main thread."""
+    """Controls display and user interface. All methods must run in the main thread."""
 
     def __init__(self, vfov=60, max_pcd_vertices=1 << 20, **callbacks):
         """Initialize.
@@ -251,7 +267,7 @@ class PipelineView:
 
         gui.Application.instance.initialize()
         self.window = gui.Application.instance.create_window(
-            "Open3D || Online Depth Video Processing", 1280, 960)
+            "Open3D || Online RGBD Video Processing", 1280, 960)
         # Called on window layout (eg: resize)
         self.window.set_on_layout(self.on_layout)
         self.window.set_on_close(callbacks['on_window_close'])
@@ -430,8 +446,8 @@ class PipelineView:
 
 class PipelineController:
     """Entry point for the app. Controls the PipelineModel object for IO and
-    processing  and the PipelineView object for display and UI. Operates on the
-    main thread.
+    processing  and the PipelineView object for display and UI. All methods
+    operate on the main thread.
     """
 
     def __init__(self, camera_config_file=None, rgbd_video=None, device=None):
@@ -448,10 +464,12 @@ class PipelineController:
                                             device)
 
         self.pipeline_view = PipelineView(
+            1.25 * self.pipeline_model.vfov,
+            self.pipeline_model.max_points,
             on_window_close=self.on_window_close,
             on_toggle_capture=self.on_toggle_capture,
-            on_save_pcd=self.pipeline_model.on_save_pcd,
-            on_save_rgbd=self.pipeline_model.on_save_rgbd,
+            on_save_pcd=self.on_save_pcd,
+            on_save_rgbd=self.on_save_rgbd,
             on_toggle_record=self.on_toggle_record
             if rgbd_video is None else None,
             on_toggle_normals=self.on_toggle_normals)
@@ -498,6 +516,14 @@ class PipelineController:
         with self.pipeline_model.cv_capture:
             self.pipeline_model.cv_capture.notify_all()
         return True  # OK to close window
+
+    def on_save_pcd(self):
+        """Callback to save current point cloud."""
+        self.pipeline_model.flag_save_pcd = True
+
+    def on_save_rgbd(self):
+        """Callback to save current RGBD image pair."""
+        self.pipeline_model.flag_save_rgbd = True
 
 
 if __name__ == "__main__":
