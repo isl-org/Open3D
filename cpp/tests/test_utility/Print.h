@@ -146,7 +146,7 @@ void Print(const T* const v, const size_t& size, const int& width = 12) {
         std::cout << std::setw(TAB_SIZE) << "";
 
         for (size_t c = 0; c < cols; c++) {
-            int i = r * cols + c;
+            size_t i = r * cols + c;
 
             std::cout << std::setw(width) << v[i];
 

@@ -32,6 +32,10 @@
 using namespace tensorflow;
 
 REGISTER_OP("Open3DContinuousConvBackpropFilter")
+        .Attr("TFeat: {float, double, bfloat16}")  // Type for features and
+                                                   // weights
+        .Attr("output_type: {float, double} = DT_FLOAT")  // Type for the output
+                                                          // features
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
         .Attr("align_corners: bool = true")
@@ -43,19 +47,19 @@ REGISTER_OP("Open3DContinuousConvBackpropFilter")
               "= 'linear'")
         .Attr("max_temp_mem_MB: int = 64")
         .Attr("debug: bool = false")
-        .Input("filters: TReal")        // [depth, height, width, in_ch, out_ch]
+        .Input("filters: TFeat")        // [depth, height, width, in_ch, out_ch]
         .Input("out_positions: TReal")  // [num_points_out, 3]
         .Input("extents: TReal")        // [num_points_out, 3]
         .Input("offset: TReal")         // [3]
         .Input("inp_positions: TReal")  // [num_points_in, 3]
-        .Input("inp_features: TReal")   // [num_points_in, in_ch]
-        .Input("inp_importance: TReal")         // [num_points_in]
-        .Input("neighbors_index: TIndex")       // [?]
-        .Input("neighbors_importance: TReal")   // [?]
-        .Input("neighbors_row_splits: int64")   // [num_points_out]
-        .Input("out_features_gradient: TReal")  // [num_points_out, out_ch]
-        .Output("filter_backprop : TReal")      // [depth, height, width, in_ch,
-                                                // out_ch]
+        .Input("inp_features: TFeat")   // [num_points_in, in_ch]
+        .Input("inp_importance: TFeat")           // [num_points_in]
+        .Input("neighbors_index: TIndex")         // [?]
+        .Input("neighbors_importance: TFeat")     // [?]
+        .Input("neighbors_row_splits: int64")     // [num_points_out]
+        .Input("out_features_gradient: TFeat")    // [num_points_out, out_ch]
+        .Output("filter_backprop : output_type")  // [depth, height, width,
+                                                  // in_ch, out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             ShapeHandle filters_shape, out_positions_shape, extents_shape,
@@ -256,6 +260,7 @@ neighbors_row_splits:
 out_features_gradient:
   A Tensor with the gradient for the outputs of the DCConv in the forward pass.
 
+output_type: The type for the output.
 
 filter_backprop:
   The gradients for the filter

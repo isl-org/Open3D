@@ -24,20 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-/// \file VoxelHashingRefact.cpp
-/// In the refactored system, after input, all the data are wrapped in the Frame
-/// container to be transported between modules, e.g. from RayCast to VO.
-/// Each step should be responsible for the data consistency.
-
-/// E.g. depth:
-/// Raw input: uint16, scaled (x1000)
-/// Integration input: uint16 or float, scaled (x1000)
-/// RayCast output: float, scaled (x1000 (or not?))
-/// VO input: float, unscaled and filled with nan
 #include "open3d/Open3D.h"
-
-using namespace open3d;
-using namespace open3d::core;
 
 void PrintHelp() {
     using namespace open3d;
@@ -45,29 +32,34 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    VoxelHashing [color_folder] [depth_folder] [options]");
-    utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud from color and depth images");
+    utility::LogInfo(">    VoxelHashing [color_folder] [depth_folder]");
+    utility::LogInfo("     Given an RGBD image sequence, perform frame-to-model tracking and mapping, and reconstruct the surface.");
     utility::LogInfo("     [options]");
-    utility::LogInfo("     --voxel_size [=0.0058 (m)]");
     utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
+    utility::LogInfo("     --voxel_size [=0.0058 (m)]");
     utility::LogInfo("     --depth_scale [=1000.0]");
     utility::LogInfo("     --max_depth [=3.0]");
     utility::LogInfo("     --sdf_trunc [=0.04]");
+    utility::LogInfo("     --block_count [=10000]");
     utility::LogInfo("     --device [CPU:0]");
-    utility::LogInfo("     --mesh");
     utility::LogInfo("     --pointcloud");
     // clang-format on
     utility::LogInfo("");
 }
 
 int main(int argc, char** argv) {
+    using namespace open3d;
+    using core::Tensor;
+    using t::geometry::Image;
+    using t::geometry::PointCloud;
+
     if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
         argc < 4) {
         PrintHelp();
         return 1;
     }
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     // Device
     std::string device_code = "CPU:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
@@ -94,16 +86,6 @@ int main(int argc, char** argv) {
     size_t iterations = static_cast<size_t>(
             utility::GetProgramOptionAsInt(argc, argv, "--iterations", n));
     iterations = std::min(n, iterations);
-
-    // GT trajectory for reference
-    std::string gt_trajectory_path = std::string(argv[3]);
-    auto gt_trajectory =
-            io::CreatePinholeCameraTrajectoryFromFile(gt_trajectory_path);
-    Eigen::Matrix4d src_pose_gt_eigen =
-            gt_trajectory->parameters_[0].extrinsic_.inverse().eval();
-    Tensor src_pose_gt =
-            core::eigen_converter::EigenMatrixToTensor(src_pose_gt_eigen);
-    Tensor T_frame_to_model = src_pose_gt;
 
     // Intrinsics
     std::string intrinsic_path = utility::GetProgramOptionAsString(
@@ -140,14 +122,16 @@ int main(int argc, char** argv) {
     float depth_diff = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--depth_diff", 0.07f));
 
-    // Initialize model
+    // Initialization
+    Tensor T_frame_to_model =
+            Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+
     t::pipelines::voxelhashing::Model model(voxel_size, sdf_trunc,
                                             block_resolution, block_count,
                                             T_frame_to_model, device);
 
     // Initialize frame
-    t::geometry::Image ref_depth =
-            *t::io::CreateImageFromFile(depth_filenames[0]);
+    Image ref_depth = *t::io::CreateImageFromFile(depth_filenames[0]);
     t::pipelines::voxelhashing::Frame input_frame(
             ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
     t::pipelines::voxelhashing::Frame raycast_frame(
@@ -155,34 +139,53 @@ int main(int argc, char** argv) {
 
     // Iterate over frames
     for (size_t i = 0; i < iterations; ++i) {
+        utility::LogInfo("Processing {}/{}...", i, iterations);
         // Load image into frame
-        t::geometry::Image input_depth =
-                *t::io::CreateImageFromFile(depth_filenames[i]);
-        t::geometry::Image input_color =
-                *t::io::CreateImageFromFile(color_filenames[i]);
+        Image input_depth = *t::io::CreateImageFromFile(depth_filenames[i]);
+        Image input_color = *t::io::CreateImageFromFile(color_filenames[i]);
         input_frame.SetDataFromImage("depth", input_depth);
         input_frame.SetDataFromImage("color", input_color);
 
+        bool tracking_success = true;
         if (i > 0) {
-            utility::LogInfo("Frame-to-model for the frame {}", i);
-
-            Tensor delta_frame_to_model =
+            auto result =
                     model.TrackFrameToModel(input_frame, raycast_frame,
                                             depth_scale, depth_max, depth_diff);
-            T_frame_to_model =
-                    T_frame_to_model.Matmul(delta_frame_to_model).Contiguous();
+
+            core::Tensor translation =
+                    result.transformation_.Slice(0, 0, 3).Slice(1, 3, 4);
+            double translation_norm = std::sqrt(
+                    (translation * translation).Sum({0, 1}).Item<double>());
+
+            // TODO(wei): more systematical failure check.
+            // If the overlap is too small or translation is too high between
+            // two consecutive frames, it is likely that the tracking failed.
+            if (result.fitness_ >= 0.1 && translation_norm < 0.15) {
+                T_frame_to_model =
+                        T_frame_to_model.Matmul(result.transformation_);
+            } else {  // Don't update
+                tracking_success = false;
+                utility::LogWarning(
+                        "Tracking failed for frame {}, fitness: {:.3f}, "
+                        "translation: {:.3f}. Using previous frame's "
+                        "pose.",
+                        i, result.fitness_, translation_norm);
+            }
         }
 
+        // Integrate
         model.UpdateFramePose(i, T_frame_to_model);
-        model.Integrate(input_frame, depth_scale, depth_max);
-        model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.3, depth_max);
+        if (tracking_success) {
+            model.Integrate(input_frame, depth_scale, depth_max);
+        }
+        model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--pointcloud",
                 "pcd_" + device.ToString() + ".ply");
-        auto pcd = model.ExtractPointCloud();
+        auto pcd = model.ExtractPointCloud(-1);
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
         open3d::io::WritePointCloud(filename, *pcd_legacy);

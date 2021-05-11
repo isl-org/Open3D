@@ -246,7 +246,6 @@ __global__ void CountNeighborsKernel(
         const T* const __restrict__ query_points,
         size_t num_queries,
         const T* const __restrict__ points,
-        size_t num_points,
         const T inv_voxel_size,
         const T radius,
         const T threshold) {
@@ -346,7 +345,6 @@ void CountNeighbors(const cudaStream_t& stream,
                     const T* const query_points,
                     size_t num_queries,
                     const T* const points,
-                    size_t num_points,
                     const T inv_voxel_size,
                     const T radius,
                     const Metric metric) {
@@ -362,7 +360,7 @@ void CountNeighbors(const cudaStream_t& stream,
 #define FN_PARAMETERS                                                   \
     neighbors_count, point_index_table, hash_table_cell_splits,         \
             hash_table_cell_splits_size - 1, query_points, num_queries, \
-            points, num_points, inv_voxel_size, radius, threshold
+            points, inv_voxel_size, radius, threshold
 
 #define CALL_TEMPLATE(METRIC)                                \
     if (METRIC == metric) {                                  \
@@ -391,7 +389,6 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
         const T* const __restrict__ query_points,
         size_t num_queries,
         const T* const __restrict__ points,
-        size_t num_points,
         const T inv_voxel_size,
         const T radius,
         const T threshold) {
@@ -506,7 +503,6 @@ void WriteNeighborsIndicesAndDistances(
         const T* const query_points,
         size_t num_queries,
         const T* const points,
-        size_t num_points,
         const T inv_voxel_size,
         const T radius,
         const Metric metric,
@@ -519,11 +515,11 @@ void WriteNeighborsIndicesAndDistances(
     grid.x = utility::DivUp(num_queries, block.x);
 
     if (grid.x) {
-#define FN_PARAMETERS                                                      \
-    indices, distances, neighbors_row_splits, point_index_table,           \
-            hash_table_cell_splits, hash_table_cell_splits_size - 1,       \
-            query_points, num_queries, points, num_points, inv_voxel_size, \
-            radius, threshold
+#define FN_PARAMETERS                                                  \
+    indices, distances, neighbors_row_splits, point_index_table,       \
+            hash_table_cell_splits, hash_table_cell_splits_size - 1,   \
+            query_points, num_queries, points, inv_voxel_size, radius, \
+            threshold
 
 #define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                              \
     if (METRIC == metric && RETURN_DISTANCES == return_distances) {          \
@@ -560,7 +556,6 @@ __global__ void WriteNeighborsHybridKernel(
         const T* const __restrict__ query_points,
         size_t num_queries,
         const T* const __restrict__ points,
-        size_t num_points,
         const T inv_voxel_size,
         const T radius,
         const T threshold,
@@ -717,7 +712,6 @@ void WriteNeighborsHybrid(const cudaStream_t& stream,
                           const T* const query_points,
                           size_t num_queries,
                           const T* const points,
-                          size_t num_points,
                           const T inv_voxel_size,
                           const T radius,
                           const int max_knn,
@@ -739,7 +733,7 @@ void WriteNeighborsHybrid(const cudaStream_t& stream,
 #define FN_PARAMETERS                                                       \
     indices, distances, point_index_table, hash_table_cell_splits,          \
             hash_table_cell_splits_size - 1, query_points, num_queries,     \
-            points, num_points, inv_voxel_size, radius, threshold, max_knn, \
+            points, inv_voxel_size, radius, threshold, max_knn, \
             shared_memory
 
 #define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                     \
@@ -947,7 +941,7 @@ void FixedRadiusSearchCUDA(void* temp,
                     stream, query_neighbors_count.first + queries_start_idx,
                     hash_table_index, hash_table_cell_splits + first_cell_idx,
                     hash_table_size + 1, queries_i, num_queries_i, points,
-                    num_points, inv_voxel_size, radius, metric);
+                    inv_voxel_size, radius, metric);
         }
     }
 
@@ -1012,7 +1006,7 @@ void FixedRadiusSearchCUDA(void* temp,
                     query_neighbors_row_splits + queries_row_splits[i],
                     hash_table_index, hash_table_cell_splits + first_cell_idx,
                     hash_table_size + 1, queries_i, num_queries_i, points,
-                    num_points, inv_voxel_size, radius, metric, true);
+                    inv_voxel_size, radius, metric, true);
         }
     }
 }
@@ -1072,8 +1066,8 @@ void HybridSearchCUDA(size_t num_points,
         WriteNeighborsHybrid(
                 stream, indices_ptr, distances_ptr, hash_table_index,
                 hash_table_cell_splits + first_cell_idx, hash_table_size + 1,
-                queries_i, num_queries_i, points, num_points, inv_voxel_size,
-                radius, max_knn, metric, true);
+                queries_i, num_queries_i, points, inv_voxel_size, radius,
+                max_knn, metric, true);
     }
 }
 ////

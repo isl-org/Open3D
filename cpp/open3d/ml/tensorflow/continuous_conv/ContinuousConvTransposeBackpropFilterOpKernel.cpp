@@ -32,7 +32,7 @@ using namespace open3d;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 class ContinuousConvTransposeBackpropFilterOpKernelCPU
     : public ContinuousConvTransposeBackpropFilterOpKernel<TIndex> {
 public:
@@ -60,39 +60,43 @@ public:
                 const bool point_importances,
                 const bool has_neighbors_importances,
                 tensorflow::Tensor& filter_backprop) {
-        CConvTransposeBackpropFilterCPU<TReal, TIndex>(
-                filter_backprop.flat<TReal>().data(), filter_dims,
+        CConvTransposeBackpropFilterCPU<TFeat, TOut, TReal, TIndex>(
+                filter_backprop.flat<TOut>().data(), filter_dims,
                 out_positions.shape().dim_size(0),
                 out_positions.flat<TReal>().data(),
-                point_importances ? out_importance.flat<TReal>().data()
+                point_importances ? out_importance.flat<TFeat>().data()
                                   : nullptr,
                 inp_positions.shape().dim_size(0),
                 inp_positions.flat<TReal>().data(),
-                inp_features.flat<TReal>().data(),
+                inp_features.flat<TFeat>().data(),
                 has_neighbors_importances
-                        ? inp_neighbors_importance_sum.flat<TReal>().data()
+                        ? inp_neighbors_importance_sum.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
                 extents.flat<TReal>().data(), offset.flat<TReal>().data(),
-                out_features_gradient.flat<TReal>().data(), this->interpolation,
+                out_features_gradient.flat<TFeat>().data(), this->interpolation,
                 this->coordinate_mapping, this->align_corners,
                 individual_extents, isotropic_extents, this->normalize);
     }
 };
 
-#define REG_KB(type, indextype)                                    \
-    REGISTER_KERNEL_BUILDER(                                       \
-            Name("Open3DContinuousConvTransposeBackpropFilter")    \
-                    .Device(DEVICE_CPU)                            \
-                    .TypeConstraint<type>("TReal")                 \
-                    .TypeConstraint<indextype>("TIndex"),          \
-            ContinuousConvTransposeBackpropFilterOpKernelCPU<type, \
-                                                             indextype>);
-REG_KB(float, int32)
+#define REG_KB(feattype, outtype, realtype, indextype)          \
+    REGISTER_KERNEL_BUILDER(                                    \
+            Name("Open3DContinuousConvTransposeBackpropFilter") \
+                    .Device(DEVICE_CPU)                         \
+                    .TypeConstraint<feattype>("TFeat")          \
+                    .TypeConstraint<outtype>("output_type")     \
+                    .TypeConstraint<realtype>("TReal")          \
+                    .TypeConstraint<indextype>("TIndex"),       \
+            ContinuousConvTransposeBackpropFilterOpKernelCPU<   \
+                    feattype, outtype, realtype, indextype>);
+REG_KB(float, float, float, int32)
+REG_KB(bfloat16, float, float, int32)
+REG_KB(bfloat16, bfloat16, float, int32)
 #undef REG_KB

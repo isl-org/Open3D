@@ -43,8 +43,8 @@ from open3d._build_config import _build_config
 if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
                                        _find_library('c++')):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
-        _CDLL(next((_Path(__file__).parent).glob('*c++abi.*')))
-        _CDLL(next((_Path(__file__).parent).glob('*c++.*')))
+        _CDLL(str(next((_Path(__file__).parent).glob('*c++abi.*'))))
+        _CDLL(str(next((_Path(__file__).parent).glob('*c++.*'))))
     except StopIteration:  # Not found: check system paths while loading
         pass
 
@@ -53,14 +53,14 @@ if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
     # Do this before loading the CUDA pybind dll to correctly resolve symbols
     try:  # StopIteration if cpu version not available
-        _CDLL(next((_Path(__file__).parent / 'cpu').glob('pybind*')))
+        _CDLL(str(next((_Path(__file__).parent / 'cpu').glob('pybind*'))))
     except StopIteration:
         pass
     try:
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
         _pybind_cuda = _CDLL(
-            next((_Path(__file__).parent / 'cuda').glob('pybind*')))
+            str(next((_Path(__file__).parent / 'cuda').glob('pybind*'))))
         if _pybind_cuda.open3d_core_cuda_device_count() > 0:
             from open3d.cuda.pybind import (camera, geometry, io, pipelines,
                                             utility, t)

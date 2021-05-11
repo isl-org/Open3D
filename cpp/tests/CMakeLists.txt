@@ -1,10 +1,3 @@
-
-cmake_minimum_required(VERSION 3.0)
-# Overide policy for hidden symbol visibility
-if(POLICY CMP0063)
-    cmake_policy(SET CMP0063 NEW)
-endif()
-
 include_directories(".")
 
 file(GLOB_RECURSE UNIT_TEST_SOURCE_FILES "*.cpp")
@@ -88,6 +81,8 @@ set(UNIT_TEST_SOURCE_FILES
     t/pipelines/odometry/RGBDOdometry.cpp
     t/pipelines/registration/Registration.cpp
     t/pipelines/registration/TransformationEstimation.cpp
+    t/pipelines/slac/ControlGrid.cpp
+    t/pipelines/slac/SLAC.cpp
     t/pipelines/TransformationConverter.cpp
     t/geometry/PointCloud.cpp
     t/geometry/TriangleMesh.cpp

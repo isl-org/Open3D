@@ -659,23 +659,6 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     impl_->deferred_until_draw_.push(deferred_layout);
 }
 
-// When scene caching is enabled on a SceneWidget the SceneWidget only redraws
-// when something in the scene has changed (e.g., camera change, material
-// change). However, the SceneWidget also needs to redraw if any part of it
-// becomes uncovered. Unfortunately, we do not have 'Expose' events to use for
-// that purpose. So, we manually force the redraw by calling
-// ForceRedrawSceneWidget when an event occurs that we know will expose the
-// SceneWidget. For example, submenu's of a menu bar opening/closing and dialog
-// boxes closing.
-void Window::ForceRedrawSceneWidget() {
-    std::for_each(impl_->children_.begin(), impl_->children_.end(), [](auto w) {
-        auto sw = std::dynamic_pointer_cast<SceneWidget>(w);
-        if (sw) {
-            sw->ForceRedraw();
-        }
-    });
-}
-
 void Window::CloseDialog() {
     if (impl_->focus_widget_ == impl_->active_dialog_.get()) {
         SetFocusWidget(nullptr);
@@ -983,12 +966,8 @@ void Window::OnDraw() {
 void Window::OnResize() {
     impl_->needs_layout_ = true;
 
-#if __APPLE__
-    // We need to recreate the swap chain after resizing a window on macOS
-    // otherwise things look very wrong.
     Application::GetInstance().GetWindowSystem().ResizeRenderer(
             impl_->window_, impl_->renderer_);
-#endif  // __APPLE__
 
     impl_->imgui_.imgui_bridge->OnWindowResized(*this);
 

@@ -56,7 +56,7 @@ O3DVisualizerSelections::~O3DVisualizerSelections() {}
 
 void O3DVisualizerSelections::NewSet() {
     auto name = std::string("__selection_") + std::to_string(next_id_++);
-    sets_.push_back({name});
+    sets_.push_back({name, {}});
     if (current_set_index_ < 0) {
         current_set_index_ = int(sets_.size()) - 1;
     }

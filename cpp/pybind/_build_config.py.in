@@ -17,4 +17,5 @@ _build_config = {
     "Tensorflow_VERSION" : "@Tensorflow_VERSION@",
     "Pytorch_VERSION" : "@Pytorch_VERSION@",
     "WITH_OPENMP" : $<IF:$<BOOL:@WITH_OPENMP@>,True,False>,
+    "WITH_FAISS" : $<IF:$<BOOL:@WITH_FAISS@>,True,False>
 }

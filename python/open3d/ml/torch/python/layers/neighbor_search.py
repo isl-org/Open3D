@@ -36,7 +36,6 @@ class FixedRadiusSearch(torch.nn.Module):
     This layer computes the neighbors for a fixed radius on a point cloud.
 
     Example:
-
       This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
@@ -53,7 +52,6 @@ class FixedRadiusSearch(torch.nn.Module):
 
 
     Arguments:
-
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of
@@ -164,7 +162,6 @@ class RadiusSearch(torch.nn.Module):
     having an individual radius.
 
     Example:
-
       This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
@@ -181,7 +178,6 @@ class RadiusSearch(torch.nn.Module):
 
 
     Arguments:
-
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of the
@@ -271,7 +267,6 @@ class KNNSearch(torch.nn.Module):
     This layer computes the k nearest neighbors for each query point.
 
     Example:
-
       This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
@@ -292,7 +287,6 @@ class KNNSearch(torch.nn.Module):
 
 
     Arguments:
-
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of the
@@ -322,7 +316,6 @@ class KNNSearch(torch.nn.Module):
         """This function computes the k nearest neighbors for each query point.
 
         Arguments:
-
           points: The 3D positions of the input points. *This argument must be
             given as a positional argument!*
 

@@ -200,18 +200,29 @@ double FilamentCamera::GetNear() const { return camera_->getNear(); }
 double FilamentCamera::GetFar() const { return camera_->getCullingFar(); }
 
 double FilamentCamera::GetFieldOfView() const {
-    if (projection_.is_ortho || projection_.is_intrinsic) {
+    if (projection_.is_ortho) {
         // technically orthographic projection is lim(fov->0) as dist->inf,
         // but it also serves as an obviously wrong value if you call
         // GetFieldOfView() after setting an orthographic projection
         return 0.0;
+    } else if (projection_.is_intrinsic) {
+        double fov_rad =
+                2.0 * std::atan(0.5 * projection_.proj.intrinsics.height /
+                                projection_.proj.intrinsics.fy);
+        return 180.0 / 3.141592 * fov_rad;
     } else {
         return projection_.proj.perspective.fov;
     }
 }
 
 Camera::FovType FilamentCamera::GetFieldOfViewType() const {
-    return projection_.proj.perspective.fov_type;
+    if (projection_.is_ortho) {
+        return Camera::FovType::Vertical;
+    } else if (projection_.is_intrinsic) {
+        return Camera::FovType::Vertical;
+    } else {
+        return projection_.proj.perspective.fov_type;
+    }
 }
 
 void FilamentCamera::LookAt(const Eigen::Vector3f& center,

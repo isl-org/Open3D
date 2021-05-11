@@ -138,7 +138,9 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
     Free();
     CUDACachedMemoryManager::ReleaseCache();
 
-    Allocate(buckets, int64_t(std::ceil(buckets * avg_capacity_per_bucket)));
+    Allocate(buckets,
+             std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
+                      active_keys.GetLength()));
 
     if (iterator_count > 0) {
         Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
@@ -285,7 +287,7 @@ std::vector<int64_t> SlabHashmap<Key, Hash>::BucketSizes() const {
     std::vector<int64_t> result(impl_.bucket_count_);
     thrust::copy(elems_per_bucket.begin(), elems_per_bucket.end(),
                  result.begin());
-    return std::move(result);
+    return result;
 }
 
 template <typename Key, typename Hash>
