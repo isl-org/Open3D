@@ -36,8 +36,10 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/linalg/Matmul.h"
+#include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
+#include "open3d/t/pipelines/registration/Registration.h"
 
 namespace open3d {
 namespace t {
@@ -154,6 +156,49 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
+PointCloud PointCloud::SelectByIndex(const core::Tensor &indices,
+                                     bool invert /* = false */) const {
+    int64_t length = this->GetPoints().GetLength();
+    indices.AssertShape({length});
+    indices.AssertDtype(core::Dtype::Bool);
+    indices.AssertDevice(GetDevice());
+
+    core::Tensor indices_local;
+    if (invert) {
+        indices_local = indices.LogicalNot();
+    } else {
+        indices_local = indices;
+    }
+
+    PointCloud pcd(GetDevice());
+    for (std::string attr : {"points", "colors", "normals"}) {
+        if (this->HasPointAttr(attr)) {
+            pcd.SetPointAttr(
+                    attr,
+                    this->GetPointAttr(attr).IndexGet({indices_local}).Clone());
+        }
+    }
+
+    utility::LogDebug("Pointcloud down sampled from {} points to {} points.",
+                      length, pcd.GetPoints().GetLength());
+    return pcd;
+}
+
+bool PointCloud::IsSimilar(const PointCloud &other,
+                           double search_distance,
+                           float inlier_fitness_threshold,
+                           float inlier_rmse_threshold) const {
+    auto result = t::pipelines::registration::EvaluateRegistration(
+            *this, other, search_distance,
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
+
+    if (result.fitness_ >= inlier_fitness_threshold &&
+        result.inlier_rmse_ <= inlier_rmse_threshold) {
+        return true;
+    }
+    return false;
+}
+
 PointCloud PointCloud::VoxelDownSample(
         double voxel_size, const core::HashmapBackend &backend) const {
     if (voxel_size <= 0) {
@@ -181,6 +226,29 @@ PointCloud PointCloud::VoxelDownSample(
     }
 
     return pcd_down;
+}
+
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
+        size_t nb_points, double search_radius) const {
+    if (nb_points < 1 || search_radius <= 0) {
+        utility::LogError(
+                "[RemoveRadiusOutliers] Illegal input parameters,"
+                "number of points and radius must be positive");
+    }
+    core::nns::NearestNeighborSearch target_nns(this->GetPoints());
+
+    core::Tensor indices, distance, row_splits;
+    std::tie(indices, distance, row_splits) = target_nns.FixedRadiusSearch(
+            this->GetPoints(), search_radius, false);
+
+    int64_t size = row_splits.GetLength();
+    core::Tensor num_neighbours =
+            row_splits.Slice(0, 1, size) - row_splits.Slice(0, 0, size - 1);
+
+    core::Tensor valid = num_neighbours.Ge(nb_points);
+    PointCloud pcd = this->SelectByIndex(valid);
+
+    return std::make_tuple(pcd, valid);
 }
 
 static PointCloud CreatePointCloudWithNormals(

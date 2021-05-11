@@ -195,6 +195,8 @@ public:
     ///
     /// \param nb_points Number of points within the radius.
     /// \param search_radius Radius of the sphere.
+    /// \return tuple of shared_ptr to filtered PointCloud and vector of
+    /// filtered indices.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
     RemoveRadiusOutliers(size_t nb_points, double search_radius) const;
 
@@ -203,6 +205,8 @@ public:
     ///
     /// \param nb_neighbors Number of neighbors around the target point.
     /// \param std_ratio Standard deviation ratio.
+    /// \return tuple of shared_ptr to filtered PointCloud and vector of
+    /// filtered indices.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
 

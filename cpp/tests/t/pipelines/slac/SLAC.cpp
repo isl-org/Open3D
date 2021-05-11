@@ -57,23 +57,6 @@ INSTANTIATE_TEST_SUITE_P(
         SLACPermuteDevicePairs,
         testing::ValuesIn(SLACPermuteDevicePairs::TestCases()));
 
-// PointCloud is similar if fitness is higher and rmse is lower than tolerance
-// threshold.
-static bool IsPointCloudSimilar(t::geometry::PointCloud source,
-                                t::geometry::PointCloud target,
-                                double voxel_size = 0.05,
-                                float inlier_fitness_threshold = 0.99,
-                                float inlier_rmse_threshold = 0.0001) {
-    auto result = t::pipelines::registration::EvaluateRegistration(
-            source, target, /*search_distance*/ voxel_size,
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
-    if (result.fitness_ >= inlier_fitness_threshold &&
-        result.inlier_rmse_ <= inlier_rmse_threshold) {
-        return true;
-    }
-    return false;
-}
-
 TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     core::Device device = GetParam();
 
@@ -299,7 +282,7 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
 
     test_pointcloud = test_pointcloud.To(device);
 
-    IsPointCloudSimilar(pcd, test_pointcloud, voxel_size, 0.98, 0.00004);
+    pcd.IsSimilar(test_pointcloud, voxel_size, 0.98, 0.00004);
 }
 
 }  // namespace tests
