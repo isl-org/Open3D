@@ -1009,28 +1009,27 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
 
 template <typename F>
 bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
-                          F &swap) {
-    std::unordered_map<Eigen::Vector2i, Eigen::Vector2i,
+                          F &swap,
+                          bool allow_flips) {
+    std::unordered_set<Eigen::Vector2i,
                        utility::hash_eigen<Eigen::Vector2i>>
-            edge_to_orientation;
+            visited_edges;
     std::unordered_set<int> unvisited_triangles;
     std::unordered_map<Eigen::Vector2i, std::unordered_set<int>,
                        utility::hash_eigen<Eigen::Vector2i>>
             adjacent_triangles;
     std::queue<int> triangle_queue;
 
-    auto VerifyAndAdd = [&](int vidx0, int vidx1) {
-        Eigen::Vector2i key = TriangleMesh::GetOrderedEdge(vidx0, vidx1);
-        if (edge_to_orientation.count(key) > 0) {
-            if (edge_to_orientation.at(key)(0) == vidx0) {
-                return false;
-            }
-        } else {
-            edge_to_orientation[key] = Eigen::Vector2i(vidx0, vidx1);
+    auto VerifyAndAdd = [&](const Eigen::Vector2i &edge) {
+        if(visited_edges.find(edge) != visited_edges.end()){
+            return false;
         }
+        visited_edges.insert(edge);
         return true;
     };
-    auto AddTriangleNbsToQueue = [&](const Eigen::Vector2i &edge) {
+
+    auto AddTriangleNbsToQueue = [&](Eigen::Vector2i &edge) {
+        edge = TriangleMesh::GetOrderedEdge(edge(0), edge(1));
         for (int nb_tidx : adjacent_triangles[edge]) {
             triangle_queue.push(nb_tidx);
         }
@@ -1068,70 +1067,56 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
         int vidx0 = triangle(0);
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
-        Eigen::Vector2i key01 = TriangleMesh::GetOrderedEdge(vidx0, vidx1);
-        Eigen::Vector2i key12 = TriangleMesh::GetOrderedEdge(vidx1, vidx2);
-        Eigen::Vector2i key20 = TriangleMesh::GetOrderedEdge(vidx2, vidx0);
-        bool exist01 = edge_to_orientation.count(key01) > 0;
-        bool exist12 = edge_to_orientation.count(key12) > 0;
-        bool exist20 = edge_to_orientation.count(key20) > 0;
 
-        if (!(exist01 || exist12 || exist20)) {
-            edge_to_orientation[key01] = Eigen::Vector2i(vidx0, vidx1);
-            edge_to_orientation[key12] = Eigen::Vector2i(vidx1, vidx2);
-            edge_to_orientation[key20] = Eigen::Vector2i(vidx2, vidx0);
-        } else {
+        auto edge01 = Eigen::Vector2i(vidx0, vidx1);
+        auto edge12 = Eigen::Vector2i(vidx1, vidx2);
+        auto edge20 = Eigen::Vector2i(vidx2, vidx0);
+
+        if (allow_flips){
             // one flip is allowed
-            if (exist01 && edge_to_orientation.at(key01)(0) == vidx0) {
+            bool exist01 = visited_edges.find(edge01) != visited_edges.end();
+            bool exist12 = visited_edges.find(edge12) != visited_edges.end();
+            bool exist20 = visited_edges.find(edge20) != visited_edges.end();
+
+            if (exist01) {
                 std::swap(vidx0, vidx1);
                 swap(tidx, 0, 1);
-            } else if (exist12 && edge_to_orientation.at(key12)(0) == vidx1) {
+            } else if (exist12) {
                 std::swap(vidx1, vidx2);
                 swap(tidx, 1, 2);
-            } else if (exist20 && edge_to_orientation.at(key20)(0) == vidx2) {
+            } else if (exist20) {
                 std::swap(vidx2, vidx0);
                 swap(tidx, 2, 0);
             }
-
-            // check if each edge looks in different direction compared to
-            // existing ones if not existend, add the edge to map
-            if (!VerifyAndAdd(vidx0, vidx1)) {
-                return false;
-            }
-            if (!VerifyAndAdd(vidx1, vidx2)) {
-                return false;
-            }
-            if (!VerifyAndAdd(vidx2, vidx0)) {
-                return false;
-            }
         }
 
-        AddTriangleNbsToQueue(key01);
-        AddTriangleNbsToQueue(key12);
-        AddTriangleNbsToQueue(key20);
+        // Check if it is the first time we see the directed edge, if it is add it
+        // to visited edges, if it is not, the mesh is not oriented/orientable.
+        if (!VerifyAndAdd(edge01)) {
+            return false;
+        }
+        if (!VerifyAndAdd(edge12)) {
+            return false;
+        }
+        if (!VerifyAndAdd(edge20)) {
+            return false;
+        }
+
+        AddTriangleNbsToQueue(edge01);
+        AddTriangleNbsToQueue(edge12);
+        AddTriangleNbsToQueue(edge20);
     }
     return true;
 }
 
 bool TriangleMesh::IsOrientable() const {
     auto NoOp = [](int, int, int) {};
-    return OrientTriangleHelper(triangles_, NoOp);
+    return OrientTriangleHelper(triangles_, NoOp, true);
 }
 
 bool TriangleMesh::IsOriented() const{
-    std::unordered_set<Eigen::Vector2i,
-                       utility::hash_eigen<Eigen::Vector2i>>
-            visited_edges;
-    for (auto triangle : triangles_) {
-        for (int i = 0; i < 3; i++) {
-            auto curr_edge = Eigen::Vector2i(triangle(i), triangle((i+1)%3));
-            if(visited_edges.find(curr_edge) == visited_edges.end()){
-                visited_edges.insert(curr_edge);
-            } else{
-                return false;
-            }
-        }
-    }
-    return true;
+    auto NoOp = [](int, int, int) {};
+    return OrientTriangleHelper(triangles_, NoOp, false);
 }
 
 bool TriangleMesh::IsWatertight() const {
@@ -1142,7 +1127,7 @@ bool TriangleMesh::OrientTriangles() {
     auto SwapTriangleOrder = [&](int tidx, int idx0, int idx1) {
         std::swap(triangles_[tidx](idx0), triangles_[tidx](idx1));
     };
-    return OrientTriangleHelper(triangles_, SwapTriangleOrder);
+    return OrientTriangleHelper(triangles_, SwapTriangleOrder, true);
 }
 
 std::unordered_map<Eigen::Vector2i,
