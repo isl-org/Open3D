@@ -1,3 +1,0 @@
-ipywidgets>=7.6.0
-jupyter_packaging~=0.10
-jupyterlab>=3.0.0,==3.*
