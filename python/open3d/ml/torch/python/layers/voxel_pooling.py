@@ -31,7 +31,7 @@ __all__ = ['VoxelPooling']
 
 
 class VoxelPooling(torch.nn.Module):
-    """Voxel pooling for 3D point clouds
+    """Voxel pooling for 3D point clouds.
 
     Spatial pooling for point clouds by combining points that fall into the same voxel bin.
 
@@ -93,7 +93,6 @@ class VoxelPooling(torch.nn.Module):
         """This function computes the pooled positions and features.
 
         Arguments:
-
           positions: The point positions with shape [N,3] with N as the number of points.
             *This argument must be given as a positional argument!*
 
@@ -102,7 +101,7 @@ class VoxelPooling(torch.nn.Module):
           voxel_size: The voxel size.
 
         Returns:
-          2 Tensors in the following order
+          2 Tensors in the following order:
 
           pooled_positions
             The output point positions with shape [M,3] and M <= N.

@@ -29,6 +29,11 @@
 #include <Eigen/Geometry>
 
 namespace open3d {
+
+namespace geometry {
+class AxisAlignedBoundingBox;
+}  // namespace geometry
+
 namespace visualization {
 namespace rendering {
 
@@ -86,6 +91,7 @@ public:
     virtual void LookAt(const Eigen::Vector3f& center,
                         const Eigen::Vector3f& eye,
                         const Eigen::Vector3f& up) = 0;
+    virtual void FromExtrinsics(const Eigen::Matrix4d& extrinsics);
 
     virtual void SetModelMatrix(const Transform& view) = 0;
     virtual void SetModelMatrix(const Eigen::Vector3f& forward,
@@ -155,6 +161,27 @@ public:
     virtual const ProjectionInfo& GetProjection() const = 0;
 
     virtual void CopyFrom(const Camera* camera) = 0;
+
+    /// Convenience function for configuring a camera as a pinhole camera.
+    /// Configures the projection using the intrinsics and bounds,
+    /// and the model matrix using the extrinsic matrix. Equivalent to calling
+    /// SetProjection() and FromExtrinsics().
+    static void SetupCameraAsPinholeCamera(
+            rendering::Camera& camera,
+            const Eigen::Matrix3d& intrinsic,
+            const Eigen::Matrix4d& extrinsic,
+            int intrinsic_width_px,
+            int intrinsic_height_px,
+            const geometry::AxisAlignedBoundingBox& scene_bounds);
+
+    /// Returns a good value for the near plane.
+    static float CalcNearPlane();
+
+    /// Returns a value for the far plane that ensures that the entire bounds
+    /// provided will not be clipped.
+    static float CalcFarPlane(
+            const rendering::Camera& camera,
+            const geometry::AxisAlignedBoundingBox& scene_bounds);
 };
 
 }  // namespace rendering

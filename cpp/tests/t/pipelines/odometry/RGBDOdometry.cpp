@@ -61,7 +61,7 @@ core::Tensor CreateIntrisicTensor() {
              {0, 0, 1}});
 }
 
-TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
+TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     core::Device device = GetParam();
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {
@@ -95,12 +95,11 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
     for (int i = 0; i < 20; ++i) {
-        core::Tensor delta_src_to_dst =
-                t::pipelines::odometry::ComputePosePointToPlane(
-                        src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
-                        src_normal_map.AsTensor(), intrinsic_t, trans,
-                        depth_diff);
-        trans = delta_src_to_dst.Matmul(trans).Contiguous();
+        auto result = t::pipelines::odometry::ComputeOdometryResultPointToPlane(
+                src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
+                src_normal_map.AsTensor(), intrinsic_t, trans, depth_diff,
+                depth_diff * 0.5);
+        trans = result.transformation_.Matmul(trans).Contiguous();
     }
 
     core::Device host("CPU:0");
@@ -129,7 +128,7 @@ TEST_P(OdometryPermuteDevices, ComputePosePointToPlane) {
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 3e-4);
 }
 
-TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScale) {
+TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     core::Device device = GetParam();
     if (!t::geometry::Image::HAVE_IPPICV &&
         device.GetType() == core::Device::DeviceType::CPU) {
@@ -155,12 +154,20 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScale) {
     src.depth_ = src_depth.To(device);
     dst.depth_ = dst_depth.To(device);
 
+    std::vector<t::pipelines::odometry::Method> methods{
+            t::pipelines::odometry::Method::PointToPlane,
+            t::pipelines::odometry::Method::Intensity,
+            t::pipelines::odometry::Method::Hybrid};
+
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor trans =
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
-    trans = t::pipelines::odometry::RGBDOdometryMultiScale(
-            src, dst, intrinsic_t, trans, depth_scale, depth_max, depth_diff,
-            {10, 5, 3});
+    auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
+            src, dst, intrinsic_t, trans, depth_scale, depth_max,
+            std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
+                    10, 5, 3},
+            t::pipelines::odometry::Method::PointToPlane,
+            t::pipelines::odometry::OdometryLossParams(depth_diff));
 
     core::Device host("CPU:0");
     core::Tensor T0 = core::Tensor::Init<double>(
@@ -183,10 +190,143 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScale) {
             host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
-            trans.To(host, core::Dtype::Float64).Inverse());
+            result.transformation_.To(host, core::Dtype::Float64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
 }
 
+TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
+    core::Device device = GetParam();
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {
+        return;
+    }
+
+    const float depth_scale = 1000.0;
+    const float depth_max = 3.0;
+    const float depth_diff = 0.07;
+
+    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
+    t::geometry::Image src_color = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/color/00000.jpg");
+    t::geometry::Image dst_color = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/color/00002.jpg");
+
+    t::geometry::RGBDImage src, dst;
+    src.color_ = src_color.To(device);
+    dst.color_ = dst_color.To(device);
+    src.depth_ = src_depth.To(device);
+    dst.depth_ = dst_depth.To(device);
+
+    std::vector<t::pipelines::odometry::Method> methods{
+            t::pipelines::odometry::Method::PointToPlane,
+            t::pipelines::odometry::Method::Intensity,
+            t::pipelines::odometry::Method::Hybrid};
+
+    core::Tensor intrinsic_t = CreateIntrisicTensor();
+    core::Tensor trans =
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+    auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
+            src, dst, intrinsic_t, trans, depth_scale, depth_max,
+            std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
+                    10, 5, 3},
+            t::pipelines::odometry::Method::Intensity,
+            t::pipelines::odometry::OdometryLossParams(depth_diff));
+
+    core::Device host("CPU:0");
+    core::Tensor T0 = core::Tensor::Init<double>(
+            {{-0.2739592186924325, 0.021819345900466677, -0.9614937663021573,
+              -0.31057997014702826},
+             {8.33962904204855e-19, -0.9997426093226981, -0.02268733357278151,
+              0.5730122438481298},
+             {-0.9617413095492113, -0.006215404179813816, 0.27388870414358013,
+              2.1264800183565487},
+             {0.0, 0.0, 0.0, 1.0}},
+            host);
+    core::Tensor T2 = core::Tensor::Init<double>(
+            {{-0.26535185454036697, 0.04522708142999141, -0.9630902888085378,
+              -0.3097373196756845},
+             {1.6706953334814538e-18, -0.9988991819470762,
+              -0.046908680491589354, 0.6204495589484211},
+             {-0.9641516443443884, -0.012447305362484767, 0.2650597504285121,
+              2.1247894438735306},
+             {0.0, 0.0, 0.0, 1.0}},
+            host);
+
+    core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
+            result.transformation_.To(host, core::Dtype::Float64).Inverse());
+    core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
+    EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
+}
+
+TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
+    core::Device device = GetParam();
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() == core::Device::DeviceType::CPU) {
+        return;
+    }
+
+    const float depth_scale = 1000.0;
+    const float depth_max = 3.0;
+    const float depth_diff = 0.07;
+
+    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
+    t::geometry::Image src_color = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/color/00000.jpg");
+    t::geometry::Image dst_color = *t::io::CreateImageFromFile(
+            std::string(TEST_DATA_DIR) + "/RGBD/color/00002.jpg");
+
+    t::geometry::RGBDImage src, dst;
+    src.color_ = src_color.To(device);
+    dst.color_ = dst_color.To(device);
+    src.depth_ = src_depth.To(device);
+    dst.depth_ = dst_depth.To(device);
+
+    std::vector<t::pipelines::odometry::Method> methods{
+            t::pipelines::odometry::Method::PointToPlane,
+            t::pipelines::odometry::Method::Intensity,
+            t::pipelines::odometry::Method::Hybrid};
+
+    core::Tensor intrinsic_t = CreateIntrisicTensor();
+    core::Tensor trans =
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+    auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
+            src, dst, intrinsic_t, trans, depth_scale, depth_max,
+            std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
+                    10, 5, 3},
+            t::pipelines::odometry::Method::Hybrid,
+            t::pipelines::odometry::OdometryLossParams(depth_diff));
+
+    core::Device host("CPU:0");
+    core::Tensor T0 = core::Tensor::Init<double>(
+            {{-0.2739592186924325, 0.021819345900466677, -0.9614937663021573,
+              -0.31057997014702826},
+             {8.33962904204855e-19, -0.9997426093226981, -0.02268733357278151,
+              0.5730122438481298},
+             {-0.9617413095492113, -0.006215404179813816, 0.27388870414358013,
+              2.1264800183565487},
+             {0.0, 0.0, 0.0, 1.0}},
+            host);
+    core::Tensor T2 = core::Tensor::Init<double>(
+            {{-0.26535185454036697, 0.04522708142999141, -0.9630902888085378,
+              -0.3097373196756845},
+             {1.6706953334814538e-18, -0.9988991819470762,
+              -0.046908680491589354, 0.6204495589484211},
+             {-0.9641516443443884, -0.012447305362484767, 0.2650597504285121,
+              2.1247894438735306},
+             {0.0, 0.0, 0.0, 1.0}},
+            host);
+
+    core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
+            result.transformation_.To(host, core::Dtype::Float64).Inverse());
+    core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
+    EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
+}
 }  // namespace tests
 }  // namespace open3d

@@ -4,6 +4,12 @@ set(REGISTRATION_SRC
     registration/TransformationEstimation.cpp
 )
 
+set (SLAC_SRC
+    slac/ControlGrid.cpp
+    slac/SLACOptimizer.cpp
+    slac/Visualization.cpp
+)
+
 set(ODOMETRY_SRC
     odometry/RGBDOdometry.cpp
 )
@@ -14,13 +20,17 @@ set(VOXELHASHING_SRC
 
 set(KERNEL_SRC
     kernel/TransformationConverter.cpp
+    kernel/FillInLinearSystem.cpp
+    kernel/FillInLinearSystemCPU.cpp
     kernel/ComputeTransform.cpp
     kernel/ComputeTransformCPU.cpp
     kernel/RGBDOdometry.cpp
     kernel/RGBDOdometryCPU.cpp
-    )
+)
 
 set(KERNEL_CUDA_SRC
+    kernel/TransformationConverter.cu
+    kernel/FillInLinearSystemCUDA.cu
     kernel/TransformationConverter.cu
     kernel/ComputeTransformCUDA.cu
     kernel/RGBDOdometryCUDA.cu
@@ -28,6 +38,7 @@ set(KERNEL_CUDA_SRC
 
 set(ALL_PIPELINE_SRC
     ${REGISTRATION_SRC}
+    ${SLAC_SRC}
     ${VOXELHASHING_SRC}
     ${ODOMETRY_SRC}
     ${KERNEL_SRC}

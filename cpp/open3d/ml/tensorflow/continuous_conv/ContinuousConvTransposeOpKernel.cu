@@ -34,7 +34,7 @@ using namespace open3d::ml;
 using namespace open3d::ml::impl;
 using namespace tensorflow;
 
-template <class TReal, class TIndex>
+template <class TFeat, class TOut, class TReal, class TIndex>
 class ContinuousConvTransposeOpKernelCUDA
     : public ContinuousConvTransposeOpKernel<TIndex> {
 public:
@@ -70,25 +70,25 @@ public:
         size_t max_temp_size = 0;
 
         // determine temp_size
-        CConvTransposeComputeFeaturesCUDA<TReal, TIndex>(
+        CConvTransposeComputeFeaturesCUDA<TFeat, TOut, TReal, TIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
-                texture_alignment, out_features.flat<TReal>().data(),
-                filter_dims, filter.flat<TReal>().data(),
+                texture_alignment, out_features.flat<TOut>().data(),
+                filter_dims, filter.flat<TFeat>().data(),
                 out_positions.shape().dim_size(0),
                 out_positions.flat<TReal>().data(),
-                point_importances ? out_importance.flat<TReal>().data()
+                point_importances ? out_importance.flat<TFeat>().data()
                                   : nullptr,
                 inp_positions.shape().dim_size(0),
                 inp_positions.flat<TReal>().data(),
-                inp_features.flat<TReal>().data(),
+                inp_features.flat<TFeat>().data(),
                 has_neighbors_importances
-                        ? inp_neighbors_importance_sum.flat<TReal>().data()
+                        ? inp_neighbors_importance_sum.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
                 extents.flat<TReal>().data(), offset.flat<TReal>().data(),
@@ -109,25 +109,25 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually run the operation
-        CConvTransposeComputeFeaturesCUDA<TReal, TIndex>(
+        CConvTransposeComputeFeaturesCUDA<TFeat, TOut, TReal, TIndex>(
                 device.stream(), temp_ptr, temp_size, max_temp_size,
-                texture_alignment, out_features.flat<TReal>().data(),
-                filter_dims, filter.flat<TReal>().data(),
+                texture_alignment, out_features.flat<TOut>().data(),
+                filter_dims, filter.flat<TFeat>().data(),
                 out_positions.shape().dim_size(0),
                 out_positions.flat<TReal>().data(),
-                point_importances ? out_importance.flat<TReal>().data()
+                point_importances ? out_importance.flat<TFeat>().data()
                                   : nullptr,
                 inp_positions.shape().dim_size(0),
                 inp_positions.flat<TReal>().data(),
-                inp_features.flat<TReal>().data(),
+                inp_features.flat<TFeat>().data(),
                 has_neighbors_importances
-                        ? inp_neighbors_importance_sum.flat<TReal>().data()
+                        ? inp_neighbors_importance_sum.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
                 neighbors_index.shape().dim_size(0),
                 (TIndex*)neighbors_index.flat<TIndex>().data(),
                 has_neighbors_importances
-                        ? neighbors_importance.flat<TReal>().data()
+                        ? neighbors_importance.flat<TFeat>().data()
                         : nullptr,
                 (int64_t*)neighbors_row_splits.flat<int64>().data(),
                 extents.flat<TReal>().data(), offset.flat<TReal>().data(),
@@ -140,12 +140,15 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type, indextype)                           \
-    REGISTER_KERNEL_BUILDER(                              \
-            Name("Open3DContinuousConvTranspose")         \
-                    .Device(DEVICE_GPU)                   \
-                    .TypeConstraint<type>("TReal")        \
-                    .TypeConstraint<indextype>("TIndex"), \
-            ContinuousConvTransposeOpKernelCUDA<type, indextype>);
-REG_KB(float, int32)
+#define REG_KB(feattype, outtype, realtype, indextype)                       \
+    REGISTER_KERNEL_BUILDER(                                                 \
+            Name("Open3DContinuousConvTranspose")                            \
+                    .Device(DEVICE_GPU)                                      \
+                    .TypeConstraint<feattype>("TFeat")                       \
+                    .TypeConstraint<outtype>("output_type")                  \
+                    .TypeConstraint<realtype>("TReal")                       \
+                    .TypeConstraint<indextype>("TIndex"),                    \
+            ContinuousConvTransposeOpKernelCUDA<feattype, outtype, realtype, \
+                                                indextype>);
+REG_KB(float, float, float, int32)
 #undef REG_KB

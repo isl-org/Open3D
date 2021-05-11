@@ -28,6 +28,7 @@
 
 #include <vector>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Console.h"
@@ -37,6 +38,7 @@ namespace t {
 namespace geometry {
 namespace kernel {
 namespace pointcloud {
+
 void Unproject(const core::Tensor& depth,
                utility::optional<std::reference_wrapper<const core::Tensor>>
                        image_colors,
@@ -66,16 +68,42 @@ void Unproject(const core::Tensor& depth,
         UnprojectCPU(depth, image_colors, points, colors, intrinsics_d,
                      extrinsics_d, depth_scale, depth_max, stride);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        UnprojectCUDA(depth, image_colors, points, colors, intrinsics_d,
-                      extrinsics_d, depth_scale, depth_max, stride);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(UnprojectCUDA, depth, image_colors, points, colors,
+                  intrinsics_d, extrinsics_d, depth_scale, depth_max, stride);
     } else {
         utility::LogError("Unimplemented device");
     }
 }
+
+void Project(
+        core::Tensor& depth,
+        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        const core::Tensor& points,
+        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max) {
+    if (image_colors.has_value() != colors.has_value()) {
+        utility::LogError(
+                "[Project] Both or none of image_colors and colors must have "
+                "values.");
+    }
+
+    core::Device device = depth.GetDevice();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        ProjectCPU(depth, image_colors, points, colors, intrinsics, extrinsics,
+                   depth_scale, depth_max);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(ProjectCUDA, depth, image_colors, points, colors, intrinsics,
+                  extrinsics, depth_scale, depth_max);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry

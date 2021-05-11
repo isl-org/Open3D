@@ -34,6 +34,10 @@
 
 namespace open3d {
 
+namespace camera {
+class PinholeCameraIntrinsic;
+}  // namespace camera
+
 namespace geometry {
 class AxisAlignedBoundingBox;
 class Geometry3D;
@@ -93,8 +97,16 @@ public:
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
-                     const geometry::AxisAlignedBoundingBox& geometry_bounds,
+                     const geometry::AxisAlignedBoundingBox& scene_bounds,
                      const Eigen::Vector3f& center_of_rotation);
+    void SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     const geometry::AxisAlignedBoundingBox& scene_bounds);
+    void SetupCamera(const Eigen::Matrix3d& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px,
+                     const geometry::AxisAlignedBoundingBox& scene_bounds);
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up);
