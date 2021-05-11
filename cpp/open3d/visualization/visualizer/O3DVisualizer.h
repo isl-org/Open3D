@@ -49,7 +49,7 @@ namespace visualization {
 
 namespace rendering {
 class Open3DScene;
-class TriangleMeshModel;
+struct TriangleMeshModel;
 }  // namespace rendering
 
 namespace visualizer {
