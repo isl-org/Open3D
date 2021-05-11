@@ -1068,15 +1068,14 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
 
-        auto edge01 = Eigen::Vector2i(vidx0, vidx1);
-        auto edge12 = Eigen::Vector2i(vidx1, vidx2);
-        auto edge20 = Eigen::Vector2i(vidx2, vidx0);
-
         if (allow_flips){
             // one flip is allowed
-            bool exist01 = visited_edges.find(edge01) != visited_edges.end();
-            bool exist12 = visited_edges.find(edge12) != visited_edges.end();
-            bool exist20 = visited_edges.find(edge20) != visited_edges.end();
+            bool exist01 = visited_edges.find(Eigen::Vector2i(vidx0, vidx1))
+                           != visited_edges.end();
+            bool exist12 = visited_edges.find(Eigen::Vector2i(vidx1, vidx2))
+                           != visited_edges.end();
+            bool exist20 = visited_edges.find(Eigen::Vector2i(vidx2, vidx0))
+                           != visited_edges.end();
 
             if (exist01) {
                 std::swap(vidx0, vidx1);
@@ -1089,6 +1088,10 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
                 swap(tidx, 2, 0);
             }
         }
+
+        auto edge01 = Eigen::Vector2i(vidx0, vidx1);
+        auto edge12 = Eigen::Vector2i(vidx1, vidx2);
+        auto edge20 = Eigen::Vector2i(vidx2, vidx0);
 
         // Check if it is the first time we see the directed edge, if it is add it
         // to visited edges, if it is not, the mesh is not oriented/orientable.
