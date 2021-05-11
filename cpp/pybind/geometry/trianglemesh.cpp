@@ -203,6 +203,8 @@ void pybind_trianglemesh(py::module &m) {
                  "triangle mesh.")
             .def("is_orientable", &TriangleMesh::IsOrientable,
                  "Tests if the triangle mesh is orientable.")
+            .def("is_oriented", &TriangleMesh::IsOriented,
+                 "Tests if the triangle mesh is oriented.")
             .def("is_watertight", &TriangleMesh::IsWatertight,
                  "Tests if the triangle mesh is watertight.")
             .def("orient_triangles", &TriangleMesh::OrientTriangles,
