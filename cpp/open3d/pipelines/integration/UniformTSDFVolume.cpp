@@ -294,8 +294,7 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     return voxel_grid;
 }
 
-std::vector<Eigen::Vector2d> UniformTSDFVolume::ExtractVolumeTSDF()
-        const {
+std::vector<Eigen::Vector2d> UniformTSDFVolume::ExtractVolumeTSDF() const {
     std::vector<Eigen::Vector2d> sharedvoxels_;
     sharedvoxels_.resize(voxel_num_);
 
@@ -312,8 +311,7 @@ std::vector<Eigen::Vector2d> UniformTSDFVolume::ExtractVolumeTSDF()
     return sharedvoxels_;
 }
 
-std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor()
-        const {
+std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor() const {
     std::vector<Eigen::Vector3d> sharedcolors_;
     sharedcolors_.resize(voxel_num_);
 
@@ -328,8 +326,8 @@ std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor()
     return sharedcolors_;
 }
 
-void UniformTSDFVolume::InjectVolumeTSDF(const std::vector<Eigen::Vector2d> &sharedvoxels)
-{
+void UniformTSDFVolume::InjectVolumeTSDF(
+        const std::vector<Eigen::Vector2d> &sharedvoxels) {
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {
@@ -341,8 +339,8 @@ void UniformTSDFVolume::InjectVolumeTSDF(const std::vector<Eigen::Vector2d> &sha
     }
 }
 
-void UniformTSDFVolume::InjectVolumeColor(const std::vector<Eigen::Vector3d> &sharedcolors)
-{
+void UniformTSDFVolume::InjectVolumeColor(
+        const std::vector<Eigen::Vector3d> &sharedcolors) {
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
             for (int z = 0; z < resolution_; z++) {

@@ -152,11 +152,9 @@ In SIGGRAPH, 1996)");
             .def("extract_volume_color", &UniformTSDFVolume::ExtractVolumeColor,
                  "Debug function to extract the volume color data.")
             .def("inject_volume_tsdf", &UniformTSDFVolume::InjectVolumeTSDF,
-                 "Debug function to inject the voxel TSDF data.",
-                 "tsdf"_a)
+                 "Debug function to inject the voxel TSDF data.", "tsdf"_a)
             .def("inject_volume_color", &UniformTSDFVolume::InjectVolumeColor,
-                 "Debug function to inject the voxel Color data.",
-                 "color"_a)
+                 "Debug function to inject the voxel Color data.", "color"_a)
             .def_readwrite("length", &UniformTSDFVolume::length_,
                            "Total length, where ``voxel_length = length / "
                            "resolution``.")
