@@ -148,6 +148,7 @@ install_python_dependencies() {
 
     # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
 
     echo
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
