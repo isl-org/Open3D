@@ -505,6 +505,12 @@ protected:
                                 core::Dtype::UInt8, core::Device("CPU:0")))
                         .ToLegacyImage());
 
+        // Add placeholder in case color raycast is disabled in the beginning.
+        raycast_frame.SetData(
+                "color", core::Tensor::Zeros(
+                                 {ref_depth.GetRows(), ref_depth.GetCols(), 3},
+                                 core::Dtype::UInt8, core::Device("CPU:0")));
+
         // Render once to refresh
         gui::Application::GetInstance().PostToMainThread(
                 this, [this, color, depth_colored, raycast_color,
@@ -528,7 +534,10 @@ protected:
 
         Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 
+        const int fps_interval_len = 30;
+        double time_interval = 0;
         size_t idx = 0;
+
         utility::Timer timer;
         timer.Start();
         while (!is_done_) {
@@ -540,10 +549,6 @@ protected:
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 continue;
             }
-
-            timer.Stop();
-            float elapsed_time = timer.GetDuration();
-            timer.Start();
 
             // Input
             t::geometry::Image input_depth =
@@ -594,19 +599,29 @@ protected:
             trajectory_->parameters_.push_back(traj_param);
 
             std::stringstream out;
-            out << fmt::format("Frame {}/{}\n", idx, rgb_files.size());
-            out << T_eigen.format(CleanFmt) << "\n";
+            out << fmt::format("Frame {}/{}\n\n", idx, rgb_files.size());
+
+            out << "Transformation:\n";
+            out << T_eigen.format(CleanFmt) << "\n\n";
+
             out << fmt::format("Active voxel blocks: {}/{}\n",
                                model_->GetHashmap().Size(),
                                model_->GetHashmap().GetCapacity());
+            if (idx % fps_interval_len == 0) {
+                timer.Stop();
+                time_interval = timer.GetDuration();
+                timer.Start();
+            }
             {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 int64_t len = surface_.pcd.HasPoints()
                                       ? surface_.pcd.GetPoints().GetLength()
                                       : 0;
                 out << fmt::format("Surface points: {}/{}\n", len,
-                                   prop_values_.pointcloud_size);
-                out << "FPS: " << 1000.0 / elapsed_time << "\n";
+                                   prop_values_.pointcloud_size)
+                    << "\n";
+                out << "Average FPS: "
+                    << 1000.0 / (time_interval / fps_interval_len) << "\n";
             }
 
             traj->points_.push_back(T_eigen.block<3, 1>(0, 3));
