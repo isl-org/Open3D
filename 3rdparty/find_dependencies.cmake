@@ -539,8 +539,29 @@ set(TRITRIINTERSECT_TARGET "3rdparty_tritriintersect")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TRITRIINTERSECT_TARGET}")
 
 # librealsense SDK
-# USE_SYSTEM_LIBREALSENSE is not supported due to a custom bug fix patch
 if (BUILD_LIBREALSENSE)
+    if(USE_SYSTEM_LIBREALSENSE AND NOT GLIBCXX_USE_CXX11_ABI)
+        # Turn off USE_SYSTEM_LIBREALSENSE.
+        # Because it is affected by libraries built with different CXX ABIs.
+        # See details: https://github.com/intel-isl/Open3D/pull/2876
+        message(STATUS "Set USE_SYSTEM_LIBREALSENSE=OFF, because GLIBCXX_USE_CXX11_ABI is OFF.")
+        set(USE_SYSTEM_LIBREALSENSE OFF)
+    endif()
+    if(USE_SYSTEM_LIBREALSENSE)
+        find_package(realsense2)
+        if(TARGET realsense2::realsense2)
+            message(STATUS "Using installed third-party library librealsense")
+            if(NOT BUILD_SHARED_LIBS)
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "realsense2")
+            endif()
+            set(LIBREALSENSE_TARGET  "realsense2::realsense2")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
+        else()
+            message(STATUS "Unable to find installed third-party library librealsense")
+            set(USE_SYSTEM_LIBREALSENSE OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_LIBREALSENSE)
     include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
     import_3rdparty_library(3rdparty_librealsense
         INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
@@ -554,6 +575,7 @@ if (BUILD_LIBREALSENSE)
         find_library(UDEV_LIBRARY udev REQUIRED
             DOC "Library provided by the deb package libudev-dev")
         target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
+    endif()
     endif()
 endif()
 

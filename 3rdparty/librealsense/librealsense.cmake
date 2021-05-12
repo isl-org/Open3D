@@ -1,19 +1,22 @@
 include(ExternalProject)
 
+set_local_or_remote_url(
+    LIBREALSENSE_URL
+    LOCAL_URL   "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense-v2.44.0.zip"
+    REMOTE_URLS "https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.44.0.zip"
+    )
+
 ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
-    GIT_REPOSITORY https://github.com/IntelRealSense/librealsense.git
-    GIT_TAG v2.42.0 #  2020 Feb 14
+    # 2020 Apr 1
+    URL ${LIBREALSENSE_URL}
+    URL_HASH SHA256=e1009e26b8f3428e03b7d0459436e1fe2e3bb8a78adb9ec7ea9d846e54a34a65
     UPDATE_COMMAND ""
     # Patch for libusb static build failure on Linux
-    PATCH_COMMAND git -C <SOURCE_DIR> reset --hard v2.42.0
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
-    <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
-    # Patch for libstdc++ regex bug
-    COMMAND git -C <SOURCE_DIR> apply
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/fix-2837.patch
+    PATCH_COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
+        <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -29,6 +32,7 @@ ExternalProject_Add(
         -DBUILD_PYTHON_BINDINGS=OFF
         -DBUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
         -DUSE_EXTERNAL_USB=ON
+        -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI}"
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>
