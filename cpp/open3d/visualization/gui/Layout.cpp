@@ -407,10 +407,10 @@ Size CollapsableVert::CalcPreferredSize(const LayoutContext& context,
     auto padding = ImGui::GetStyle().FramePadding;
     int text_height = int(
             std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
-    int text_width = int(std::ceil(
-            font->CalcTextSizeA(float(context.theme.font_size), FLT_MAX,
-                                FLT_MAX, impl_->text_.c_str())
-                    .x));
+    int text_width =
+            int(std::ceil(font->CalcTextSizeA(font->FontSize, FLT_MAX, FLT_MAX,
+                                              impl_->text_.c_str())
+                                  .x));
     ImGui::PopFont();  // back to default font for layout sizing
 
     auto pref = Super::CalcPreferredSize(context, constraints);

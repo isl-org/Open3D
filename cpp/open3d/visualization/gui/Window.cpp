@@ -139,15 +139,21 @@ struct ImguiWindowContext : public FontContext {
         ImFont* imfont = nullptr;
 
         ImGuiIO& io = ImGui::GetIO();
+        float point_size;
+        if (fd.point_size_ <= 0) {
+            point_size = float(this->theme->font_size);
+        } else {
+            point_size = this->scaling * float(fd.point_size_);
+        }
         // The first range should be "en" from
         // FontDescription::FontDescription()
         if (fd.ranges_.size() == 1) {
-            imfont = io.Fonts->AddFontFromFileTTF(
-                    fd.ranges_[0].path.c_str(), float(this->theme->font_size));
+            imfont = io.Fonts->AddFontFromFileTTF(fd.ranges_[0].path.c_str(),
+                                                  point_size);
         } else {
             imfont = io.Fonts->AddFontFromFileTTF(
-                    fd.ranges_[0].path.c_str(), float(this->theme->font_size),
-                    NULL, io.Fonts->GetGlyphRangesDefault());
+                    fd.ranges_[0].path.c_str(), point_size, NULL,
+                    io.Fonts->GetGlyphRangesDefault());
         }
 
         ImFontConfig config;
@@ -174,8 +180,7 @@ struct ImguiWindowContext : public FontContext {
                     range = io.Fonts->GetGlyphRangesCyrillic();
                 }
                 imfont = io.Fonts->AddFontFromFileTTF(
-                        r.path.c_str(), float(this->theme->font_size), &config,
-                        range);
+                        r.path.c_str(), point_size, &config, range);
             } else if (!r.code_points.empty()) {
                 // TODO: the ImGui docs say that this must exist until
                 // CreateAtlastTextureAlpha8().
@@ -186,8 +191,7 @@ struct ImguiWindowContext : public FontContext {
                 }
                 builder.BuildRanges(&range);
                 imfont = io.Fonts->AddFontFromFileTTF(
-                        r.path.c_str(), float(this->theme->font_size), &config,
-                        range.Data);
+                        r.path.c_str(), point_size, &config, range.Data);
             }
         }
 
@@ -302,6 +306,7 @@ Window::Window(const std::string& title,
     // like in Open3D's GUI library), and glfwGetWindowContentScale() returns
     // the appropriate scale factor for text and icons and such.
     float scaling = ws.GetUIScaleFactor(impl_->window_);
+    impl_->imgui_.scaling = scaling;
     impl_->theme_ = Application::GetInstance().GetTheme();
     impl_->theme_.font_size =
             int(std::round(impl_->theme_.font_size * scaling));

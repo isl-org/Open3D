@@ -415,6 +415,10 @@ void Application::SetFont(FontId id, const FontDescription &fd) {
             range.path = fallback;
         }
     }
+
+    if (id == DEFAULT_FONT_ID && fd.point_size_ > 0) {
+        impl_->theme_.font_size = fd.point_size_;
+    }
 }
 
 const std::vector<FontDescription> &Application::GetFontDescriptions() const {

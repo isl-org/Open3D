@@ -51,8 +51,12 @@ public:
     /// \param style Ignored if typeface is a file, but will be used to qualify
     ///              the font if a system font name is used. Will be applied to
     ///              any additional language or code point typefaces.
+    /// \param point_size The point size (NOT pixel size) of the font. Will be
+    ///                   applied to any additional language or code point
+    ///                   typefaces. A size of 0 indicates the default size.
     explicit FontDescription(const char *typeface,
-                             FontStyle style = FontStyle::NORMAL);
+                             FontStyle style = FontStyle::NORMAL,
+                             int point_size = 0);
 
     /// Adds code points outside Extended Latin from the specified typeface.
     /// Supported languages are:

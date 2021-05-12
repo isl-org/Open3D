@@ -85,22 +85,22 @@ Size Label::CalcPreferredSize(const LayoutContext& context,
                               const Constraints& constraints) const {
     ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
 
-    auto em = context.theme.font_size;
     auto padding = ImGui::GetStyle().FramePadding;
     auto* font = ImGui::GetFont();
     Size pref;
 
     if (impl_->is_single_line) {
         float wrap_width = float(constraints.width);
-        auto size = font->CalcTextSizeA(float(context.theme.font_size),
-                                        float(constraints.width), wrap_width,
-                                        impl_->text_.c_str());
+        auto size =
+                font->CalcTextSizeA(font->FontSize, float(constraints.width),
+                                    wrap_width, impl_->text_.c_str());
         pref = Size(int(std::ceil(size.x + 2.0f * padding.x)),
                     int(std::ceil(size.y + 2.0f * padding.y)));
     } else {
         ImVec2 size(0, 0);
         size_t line_start = 0;
         auto line_end = impl_->text_.find('\n');
+        auto em = int(std::round(font->FontSize));
         float wrap_width = float(
                 std::min(constraints.width, PREFERRED_WRAP_WIDTH_EM * em));
         float spacing = ImGui::GetTextLineHeightWithSpacing() -
@@ -108,13 +108,11 @@ Size Label::CalcPreferredSize(const LayoutContext& context,
         do {
             ImVec2 sz;
             if (line_end == std::string::npos) {
-                sz = font->CalcTextSizeA(float(context.theme.font_size),
-                                         FLT_MAX, wrap_width,
+                sz = font->CalcTextSizeA(font->FontSize, FLT_MAX, wrap_width,
                                          impl_->text_.c_str() + line_start);
                 line_start = line_end;
             } else {
-                sz = font->CalcTextSizeA(float(context.theme.font_size),
-                                         FLT_MAX, wrap_width,
+                sz = font->CalcTextSizeA(font->FontSize, FLT_MAX, wrap_width,
                                          impl_->text_.c_str() + line_start,
                                          impl_->text_.c_str() + line_end);
                 line_start = line_end + 1;

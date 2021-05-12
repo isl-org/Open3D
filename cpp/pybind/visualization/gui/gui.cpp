@@ -200,9 +200,9 @@ void pybind_gui_classes(py::module &m) {
                     "MONOSPACE", &FontDescription::MONOSPACE,
                     "Name of the default monospace font that comes "
                     "with Open3D")
-            .def(py::init<const char *, FontStyle>(),
+            .def(py::init<const char *, FontStyle, int>(),
                  "typeface"_a = FontDescription::SANS_SERIF,
-                 "style"_a = FontStyle::NORMAL,
+                 "style"_a = FontStyle::NORMAL, "point_size"_a = 0,
                  "Creates a FontDescription. 'typeface' is a path to a "
                  "TrueType (.ttf), TrueType Collection (.ttc), or "
                  "OpenType (.otf) file, or it is the name of the font, "

@@ -35,10 +35,11 @@ constexpr const char *FontDescription::SANS_SERIF;
 constexpr const char *FontDescription::MONOSPACE;
 
 FontDescription::FontDescription(const char *typeface,
-                                 FontStyle style /*= FontStyle::NORMAL*/) {
+                                 FontStyle style /*= FontStyle::NORMAL*/,
+                                 int point_size /*= 0*/) {
     ranges_.push_back({typeface, "en", {}});
     style_ = style;
-    point_size_ = 0;
+    point_size_ = point_size;
 }
 
 void FontDescription::AddTypefaceForLanguage(const char *typeface,
