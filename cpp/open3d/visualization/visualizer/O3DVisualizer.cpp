@@ -58,6 +58,7 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
+#include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
@@ -818,6 +819,7 @@ struct O3DVisualizer::Impl {
     void AddGeometry(const std::string &name,
                      std::shared_ptr<geometry::Geometry3D> geom,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
+                     std::shared_ptr<rendering::TriangleMeshModel> model,
                      const rendering::Material *material,
                      const std::string &group,
                      double time,
@@ -826,7 +828,7 @@ struct O3DVisualizer::Impl {
         if (group_name == "") {
             group_name = "default";
         }
-        bool is_default_color;
+        bool is_default_color = false;
         bool no_shadows = false;
         Material mat;
         t::geometry::PointCloud *valid_tpcd = nullptr;
@@ -837,7 +839,7 @@ struct O3DVisualizer::Impl {
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
             valid_tpcd = t_cloud.get();
-        } else {
+        } else if (!model) {  // branch only applies to geometries
             bool has_colors = false;
             bool has_normals = false;
 
@@ -931,16 +933,18 @@ struct O3DVisualizer::Impl {
             ShowSettings(true);
         }
 
-        objects_.push_back({name, geom, tgeom, mat, group_name, time,
+        objects_.push_back({name, geom, tgeom, model, mat, group_name, time,
                             is_visible, is_default_color});
         AddObjectToTree(objects_.back());
 
         auto scene = scene_->GetScene();
-        // Do we have a tgeometry or a geometry?
+        // Do we have a geometry, tgeometry or model?
         if (geom) {
             scene->AddGeometry(name, geom.get(), mat);
         } else if (tgeom && valid_tpcd) {
             scene->AddGeometry(name, valid_tpcd, mat);
+        } else if (model) {
+            scene->AddModel(name, *model);
         } else {
             utility::LogWarning(
                     "No valid geometry specified to O3DVisualizer. Only "
@@ -1588,6 +1592,7 @@ struct O3DVisualizer::Impl {
     void SelectSelectionSet(int index) {
         settings.selection_sets->SetSelectedIndex(index);
         selections_->SelectSet(index);
+        scene_->ForceRedraw();  // redraw with new selection highlighted
     }
 
     void UpdateSelectionSetList() {
@@ -1824,7 +1829,8 @@ void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
     auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
                               const std::string &path, int time,
                               const std::string &layer) {
-        impl_->AddGeometry(path, geom, nullptr, nullptr, layer, time, true);
+        impl_->AddGeometry(path, geom, nullptr, nullptr, nullptr, layer, time,
+                           true);
         if (impl_->objects_.size() == 1) {
             impl_->ResetCameraToDefault();
         }
@@ -1897,7 +1903,8 @@ void O3DVisualizer::AddGeometry(
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
-    impl_->AddGeometry(name, geom, nullptr, material, group, time, is_visible);
+    impl_->AddGeometry(name, geom, nullptr, nullptr, material, group, time,
+                       is_visible);
 }
 
 void O3DVisualizer::AddGeometry(
@@ -1907,7 +1914,19 @@ void O3DVisualizer::AddGeometry(
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
-    impl_->AddGeometry(name, nullptr, tgeom, material, group, time, is_visible);
+    impl_->AddGeometry(name, nullptr, tgeom, nullptr, material, group, time,
+                       is_visible);
+}
+
+void O3DVisualizer::AddGeometry(
+        const std::string &name,
+        std::shared_ptr<rendering::TriangleMeshModel> model,
+        const rendering::Material *material /*=nullptr*/,
+        const std::string &group /*= ""*/,
+        double time /*= 0.0*/,
+        bool is_visible /*= true*/) {
+    impl_->AddGeometry(name, nullptr, nullptr, model, material, group, time,
+                       is_visible);
 }
 
 void O3DVisualizer::Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
