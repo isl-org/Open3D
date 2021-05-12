@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -78,6 +78,18 @@ public:
                             std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
                     int)> f);
 
+    /// Calls the provided function when a "UI" needs to be drawn. This is
+    /// used for polygon picking to draw the polygon in progress.
+    /// will be passed
+    void SetOnUIChanged(
+            std::function<void(const std::vector<Eigen::Vector2i>&)>);
+
+    /// Calls the provided function when polygon picking is initiated
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick);
+
+    void DoPick();
+    void ClearPick();
+
     rendering::MatrixInteractorLogic& GetMatrixInteractor() override;
     void Mouse(const MouseEvent& e) override;
     void Key(const KeyEvent& e) override;
@@ -96,6 +108,8 @@ private:
                            std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
             int)>
             on_picked_;
+    std::function<void(const std::vector<Eigen::Vector2i>&)> on_ui_changed_;
+    std::function<void()> on_started_poly_pick_;
     int point_size_ = 3;
     rendering::MatrixInteractorLogic matrix_logic_;
     std::shared_ptr<rendering::Open3DScene> picking_scene_;
@@ -106,7 +120,7 @@ private:
     std::shared_ptr<geometry::Image> pick_image_;
     bool dirty_ = true;
     struct PickInfo {
-        gui::Rect rect;
+        std::vector<gui::Point> polygon;  // or point, if only one item
         int keymods;
     };
     std::queue<PickInfo> pending_;

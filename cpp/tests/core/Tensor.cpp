@@ -152,10 +152,6 @@ TEST_P(TensorPermuteDevices, WithInitList) {
     EXPECT_THROW(core::Tensor::Init<int>({{1, 2, 3}, {4, 5}}, device),
                  std::runtime_error);
 
-    // Check unsupported dtype.
-    EXPECT_THROW(core::Tensor::Init<uint64_t>({{1, 2, 3}, {4, 5, 6}}, device),
-                 std::exception);
-
     // Test shapes with 0-element.
     t = core::Tensor::Init<double>({}, device);
     EXPECT_EQ(t.GetShape(), core::SizeVector({0}));
@@ -2085,6 +2081,48 @@ TEST_P(TensorPermuteDevices, Abs) {
     EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
 }
 
+TEST_P(TensorPermuteDevices, IsNan) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isnan(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsNan();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, IsInf) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isinf(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsInf();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
+TEST_P(TensorPermuteDevices, IsFinite) {
+    core::Device device = GetParam();
+
+    std::vector<float> src_vals{-INFINITY, NAN, 0, NAN, 2, INFINITY};
+    std::vector<bool> dst_vals;
+    std::transform(src_vals.begin(), src_vals.end(),
+                   std::back_inserter(dst_vals),
+                   [](float v) -> bool { return std::isfinite(v); });
+
+    core::Tensor src(src_vals, {2, 3}, core::Dtype::Float32, device);
+    core::Tensor dst = src.IsFinite();
+    EXPECT_EQ(dst.ToFlatVector<bool>(), dst_vals);
+}
+
 TEST_P(TensorPermuteDevices, Floor) {
     core::Device device = GetParam();
 
@@ -2799,6 +2837,177 @@ TEST_P(TensorPermuteDevices, NumpyIO) {
 
     // Clean up.
     utility::filesystem::RemoveFile(file_name);
+}
+
+TEST_P(TensorPermuteDevices, RValueScalar) {
+    const core::Device &device = GetParam();
+    core::Tensor t, t_ref;
+
+    // Check with shape {}.
+    t = core::Tensor::Init<int32_t>(0, device);
+    t_ref = core::Tensor::Init<int32_t>(1000, device);
+    t.AsRvalue() = 1000;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {0}.
+    t = core::Tensor::Init<bool>({}, device);
+    t_ref = core::Tensor::Init<bool>({}, device);
+    t.AsRvalue() = 0;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {1, 0}.
+    t = core::Tensor::Init<int32_t>({{}}, device);
+    t_ref = core::Tensor::Init<int32_t>({{}}, device);
+    t.AsRvalue() = 10;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {1}.
+    t = core::Tensor::Init<float>({20.30}, device);
+    t_ref = core::Tensor::Init<float>({-10.10}, device);
+    t.AsRvalue() = -10.10;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {1, 1}.
+    t = core::Tensor::Init<uint8_t>({{20}}, device);
+    t_ref = core::Tensor::Init<uint8_t>({{10}}, device);
+    t.AsRvalue() = 10;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with shape {1, 2}.
+    t = core::Tensor::Init<uint8_t>({{20, 10}}, device);
+    t_ref = core::Tensor::Init<uint8_t>({{0, 0}}, device);
+    t.AsRvalue() = 0;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with indexing.
+    t = core::Tensor::Init<bool>({{true, true}, {true, true}}, device);
+    t_ref = core::Tensor::Init<bool>({{false, false}, {true, true}}, device);
+    t[0] = 0;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with implicit conversion.
+    t = core::Tensor::Init<int32_t>({{5, 6}, {7, 8}}, device);
+    t_ref = core::Tensor::Init<int32_t>({{10, 10}, {10, 10}}, device);
+    t.AsRvalue() = 10.2f;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with Slice.
+    t = core::Tensor::Init<uint8_t>({1}, device);
+    t_ref = core::Tensor::Init<uint8_t>({255}, device);
+    t.Slice(0, 0, 1) = 255;
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Datatype implicit conversion with Slice.
+    t = core::Tensor::Init<bool>({{false, false}}, device);
+    t_ref = core::Tensor::Init<bool>({{true, true}}, device);
+    t.Slice(1, 0, 2) = 1.0f;
+    EXPECT_TRUE(t.AllClose(t_ref));
+}
+
+TEST_P(TensorPermuteDevices, Clip) {
+    core::Device device = GetParam();
+    core::Tensor t, t_clip, t_ref;
+
+    // Check with float tensor.
+    t = core::Tensor::Init<float>({{0, -1, 1, 4, 1000}}, device);
+    t_ref = core::Tensor::Init<float>({{0, 0, 1, 4, 5.2}}, device);
+    t_clip = t.Clip(0, 5.2);
+    EXPECT_TRUE(t_clip.AllClose(t_ref));
+
+    // Check with uint8 tensor.
+    t = core::Tensor::Init<uint8_t>({{0, 255, 30, 49, 100}}, device);
+    t_ref = core::Tensor::Init<uint8_t>({{20, 40, 30, 40, 40}}, device);
+    t_clip = t.Clip(20, 40);
+    EXPECT_TRUE(t_clip.AllClose(t_ref));
+
+    // Check with uint8 tensor and min max values in float.
+    t = core::Tensor::Init<uint8_t>({{0, 255, 30, 49, 100}}, device);
+    t_ref = core::Tensor::Init<uint8_t>({{20, 40, 30, 40, 40}}, device);
+    t_clip = t.Clip(20.3, 40.6);
+    EXPECT_TRUE(t_clip.AllClose(t_ref));
+
+    // Check with Integer.
+    t = core::Tensor::Init<int32_t>({{0, 3000, 30, 49, 500}}, device);
+    t_ref = core::Tensor::Init<int32_t>({{21, 49, 30, 49, 49}}, device);
+    t_clip = t.Clip(21, 49);
+    EXPECT_TRUE(t_clip.AllClose(t_ref));
+
+    // Check with Integer and min max values in double.
+    t = core::Tensor::Init<int32_t>({{0, 3000, 30, 49, 500}}, device);
+    t_ref = core::Tensor::Init<int32_t>({{20, 49, 30, 49, 49}}, device);
+    t_clip = t.Clip(20.3, 49.01);
+    EXPECT_TRUE(t_clip.AllClose(t_ref));
+
+    // Check error with boolean tensor.
+    t = core::Tensor::Init<bool>({{false, true, true, false, false}}, device);
+    EXPECT_THROW(t_clip = t.Clip(1, 1.3), std::runtime_error);
+
+    // Check when min value is greater than max value.
+    t = core::Tensor::Init<float>({{0, -1, 1, 4, 1000}}, device);
+    t_ref = core::Tensor::Init<float>({{2.0, 2.0, 2.0, 2.0, 2.0}}, device);
+    t_clip = t.Clip(5.2, 2.0);
+    EXPECT_TRUE(t_clip.AllClose(t_ref));
+
+    // Check with large int64_t value.
+    t = core::Tensor::Init<int64_t>({{9223372036854775807, -1, 1, 4, 1000}},
+                                    device);
+    t_ref = core::Tensor::Init<int64_t>({{9223372036854775807, 5, 5, 5, 1000}},
+                                        device);
+    t_clip = t.Clip(5.2, 9223372036854775807);
+    EXPECT_TRUE(t_clip.AllClose(t_ref));
+}
+
+TEST_P(TensorPermuteDevices, Clip_) {
+    core::Device device = GetParam();
+    core::Tensor t, t_ref;
+
+    // Check with float tensor.
+    t = core::Tensor::Init<float>({{0, -1, 1, 4, 1000}}, device);
+    t_ref = core::Tensor::Init<float>({{0, 0, 1, 4, 5.2}}, device);
+    t.Clip_(0, 5.2);
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with uint8 tensor.
+    t = core::Tensor::Init<uint8_t>({{0, 255, 30, 49, 100}}, device);
+    t_ref = core::Tensor::Init<uint8_t>({{20, 40, 30, 40, 40}}, device);
+    t.Clip_(20, 40);
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with uint8 tensor and min max values in float.
+    t = core::Tensor::Init<uint8_t>({{0, 255, 30, 49, 100}}, device);
+    t_ref = core::Tensor::Init<uint8_t>({{20, 40, 30, 40, 40}}, device);
+    t.Clip_(20.3, 40.6);
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with Integer.
+    t = core::Tensor::Init<int32_t>({{0, 3000, 30, 49, 500}}, device);
+    t_ref = core::Tensor::Init<int32_t>({{21, 49, 30, 49, 49}}, device);
+    t.Clip_(21, 49);
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with Integer and min max values in double.
+    t = core::Tensor::Init<int32_t>({{0, 3000, 30, 49, 500}}, device);
+    t_ref = core::Tensor::Init<int32_t>({{20, 49, 30, 49, 49}}, device);
+    t.Clip_(20.3, 49.01);
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check error with boolean tensor.
+    t = core::Tensor::Init<bool>({{false, true, true, false, false}}, device);
+    EXPECT_THROW(t.Clip_(1, 1.3), std::runtime_error);
+
+    // Check when min value is greater than max value.
+    t = core::Tensor::Init<float>({{0, -1, 1, 4, 1000}}, device);
+    t_ref = core::Tensor::Init<float>({{2.0, 2.0, 2.0, 2.0, 2.0}}, device);
+    t.Clip_(5.2, 2.0);
+    EXPECT_TRUE(t.AllClose(t_ref));
+
+    // Check with large int64_t value.
+    t = core::Tensor::Init<int64_t>({{9223372036854775807, -1, 1, 4, 1000}},
+                                    device);
+    t_ref = core::Tensor::Init<int64_t>({{9223372036854775807, 5, 5, 5, 1000}},
+                                        device);
+    t.Clip_(5.2, 9223372036854775807);
+    EXPECT_TRUE(t.AllClose(t_ref));
 }
 
 }  // namespace tests

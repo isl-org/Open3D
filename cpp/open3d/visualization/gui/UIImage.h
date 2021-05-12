@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,21 @@
 
 #pragma once
 
+#include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 
 namespace open3d {
+
+namespace t {
+namespace geometry {
+class Image;
+}
+}
+
+namespace geometry {
+class Image;
+}  // namespace geometry
+
 namespace visualization {
 
 namespace rendering {
@@ -39,9 +51,9 @@ namespace gui {
 
 class UIImage {
 public:
-    /// Uses image from the specified path. Each ImageLabel will use one
-    /// draw call.
     explicit UIImage(const char* image_path);
+    explicit UIImage(std::shared_ptr<geometry::Image> image);
+    explicit UIImage(std::shared_ptr<t::geometry::Image> image);
     /// Uses an existing texture, using texture coordinates
     /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
     /// This is useful for using an icon atlas to reduce draw calls.
@@ -52,6 +64,14 @@ public:
                      float v1 = 1.0f);
     ~UIImage();
 
+    /// Updates the contents of the texture. If the image is a different
+    /// size from the original, a new texture will be created.
+    void UpdateImage(std::shared_ptr<geometry::Image> image);
+
+    /// Updates the contents of the texture. If the image is a different
+    /// size from the original, a new texture will be created.
+    void UpdateImage(std::shared_ptr<t::geometry::Image> image);
+
     enum class Scaling {
         NONE,   /// No scaling, fixed size
         ANY,    /// Scales to any size and aspect ratio
@@ -60,7 +80,8 @@ public:
     void SetScaling(Scaling scaling);
     Scaling GetScaling() const;
 
-    Size CalcPreferredSize(const Theme& theme) const;
+    Size CalcPreferredSize(const LayoutContext& context,
+                           const Widget::Constraints& constraints) const;
 
     struct DrawParams {
         // Default values are to make GCC happy and contented,
@@ -74,6 +95,7 @@ public:
         float u1 = 1.0f;
         float v1 = 1.0f;
         visualization::rendering::TextureHandle texture;
+        bool image_size_changed = false;
     };
     DrawParams CalcDrawParams(visualization::rendering::Renderer& renderer,
                               const Rect& frame) const;

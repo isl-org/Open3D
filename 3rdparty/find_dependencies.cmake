@@ -286,6 +286,12 @@ endfunction()
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
+# CUDAToolkit
+if(BUILD_CUDA_MODULE)
+    find_package(CUDAToolkit REQUIRED)
+    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
+endif()
+
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
@@ -885,6 +891,7 @@ endif()
 
 # Filament
 if(BUILD_GUI)
+    set(FILAMENT_RUNTIME_VER "")
     if(BUILD_FILAMENT_FROM_SOURCE)
         message(STATUS "Building third-party library Filament from source")
         if(MSVC OR (CMAKE_C_COMPILER_ID MATCHES ".*Clang" AND
@@ -921,33 +928,39 @@ if(BUILD_GUI)
                 endif()
             endif()
         endif()
-        # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
-        # libraries are located at /usr/lib/llvm-{version}/lib, and the default
-        # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
-        # /usr/lib/aarch64-linux-gnu.
-        # For aarch64, the symbolic link path may not work for CMake's
-        # find_library. Therefore, when compiling Filament from source, we
-        # explicitly find the corresponidng path based on the clang version.
-        execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
-        if(clang_version MATCHES "clang version ([0-9]+)")
-            set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+        if (UNIX AND NOT APPLE)
+            # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
+            # libraries are located at /usr/lib/llvm-{version}/lib, and the default
+            # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
+            # /usr/lib/aarch64-linux-gnu.
+            # For aarch64, the symbolic link path may not work for CMake's
+            # find_library. Therefore, when compiling Filament from source, we
+            # explicitly find the corresponidng path based on the clang version.
+            execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+            if(clang_version MATCHES "clang version ([0-9]+)")
+                set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+            endif()
         endif()
         include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
     else()
         message(STATUS "Using prebuilt third-party library Filament")
         include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
-    endif()
-    set(FILAMENT_RUNTIME_VER "")
-    if (WIN32)
-        if (STATIC_WINDOWS_RUNTIME)
-            set(FILAMENT_RUNTIME_VER "mt$<$<CONFIG:DEBUG>:d>")
-        else()
-            set(FILAMENT_RUNTIME_VER "md$<$<CONFIG:DEBUG>:d>")
+        # Set lib directory for filament v1.9.9 on Windows.
+        # Assume newer version if FILAMENT_PRECOMPILED_ROOT is set.
+        if (WIN32 AND NOT FILAMENT_PRECOMPILED_ROOT)
+            if (STATIC_WINDOWS_RUNTIME)
+                set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+            else()
+                set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
+            endif()
         endif()
+    endif()
+    if (APPLE)
+        set(FILAMENT_RUNTIME_VER x86_64)
     endif()
     import_3rdparty_library(3rdparty_filament HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
-        LIB_DIR ${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_RUNTIME_VER}
+        LIB_DIR ${FILAMENT_ROOT}/lib/${FILAMENT_RUNTIME_VER}
         LIBRARIES ${filament_LIBRARIES}
     )
     set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
@@ -1058,8 +1071,8 @@ if(USE_BLAS)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACK_LIBRARIES}")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACKE_LIBRARIES}")
         if(BUILD_CUDA_MODULE)
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUDA_cusolver_LIBRARY}")
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUDA_CUBLAS_LIBRARIES}")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cusolver)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cublas)
         endif()
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
@@ -1076,9 +1089,7 @@ if(USE_BLAS)
         add_dependencies(3rdparty_openblas ext_openblas)
         target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads gfortran)
         if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_openblas INTERFACE
-                                ${CUDA_cusolver_LIBRARY}
-                                ${CUDA_CUBLAS_LIBRARIES})
+            target_link_libraries(3rdparty_openblas INTERFACE CUDA::cusolver CUDA::cublas)
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${OPENBLAS_TARGET}")
     endif()
@@ -1100,16 +1111,13 @@ else()
     message(STATUS "STATIC_MKL_LIB_DIR: ${STATIC_MKL_LIB_DIR}")
     message(STATUS "STATIC_MKL_LIBRARIES: ${STATIC_MKL_LIBRARIES}")
     if(UNIX)
-        target_compile_options(3rdparty_mkl INTERFACE "-DMKL_ILP64 -m64")
+        target_compile_options(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
         target_link_libraries(3rdparty_mkl INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
-        # cuSOLVER and cuBLAS
-        if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_mkl INTERFACE
-                                ${CUDA_cusolver_LIBRARY}
-                                ${CUDA_CUBLAS_LIBRARIES})
-        endif()
-    elseif(MSVC)
-        target_compile_options(3rdparty_mkl INTERFACE "/DMKL_ILP64")
+    endif()
+    target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    # cuSOLVER and cuBLAS
+    if(BUILD_CUDA_MODULE)
+        target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver CUDA::cublas)
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${MKL_TARGET}")
 endif()
@@ -1150,11 +1158,9 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FAISS_TARGET}")
 # NPP
 if (BUILD_CUDA_MODULE)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
-    foreach(NPPLIB nppc nppi npp nppicc nppif nppig nppim nppial)
-        list(APPEND CUDA_NPP_LIBRARIES ${CUDA_${NPPLIB}_LIBRARY})
-    endforeach()
     add_library(3rdparty_CUDA_NPP INTERFACE)
-    target_link_libraries(3rdparty_CUDA_NPP INTERFACE ${CUDA_NPP_LIBRARIES})
+    target_link_libraries(3rdparty_CUDA_NPP INTERFACE CUDA::nppc CUDA::nppicc
+        CUDA::nppif CUDA::nppig CUDA::nppim CUDA::nppial)
     if(NOT BUILD_SHARED_LIBS)
         install(TARGETS 3rdparty_CUDA_NPP EXPORT ${PROJECT_NAME}Targets)
     endif()
@@ -1187,3 +1193,47 @@ if (WITH_IPPICV)
         endif()
     endif()
 endif ()
+
+# Stdgpu
+if (BUILD_CUDA_MODULE)
+    include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
+    import_3rdparty_library(3rdparty_stdgpu
+        INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
+        LIB_DIR      ${STDGPU_LIB_DIR}
+        LIBRARIES    ${STDGPU_LIBRARIES}
+    )
+    set(STDGPU_TARGET "3rdparty_stdgpu")
+    add_dependencies(3rdparty_stdgpu ext_stdgpu)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${STDGPU_TARGET}")
+endif ()
+
+# WebRTC
+if(BUILD_WEBRTC)
+    # WebRTC
+    if(BUILD_WEBRTC_FROM_SOURCE)
+        include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_build.cmake)
+    else()
+        include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_download.cmake)
+    endif()
+    import_3rdparty_library(3rdparty_webrtc
+        INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
+        LIB_DIR      ${WEBRTC_LIB_DIR}
+        LIBRARIES    ${WEBRTC_LIBRARIES}
+    )
+    set(WEBRTC_TARGET "3rdparty_webrtc")
+    add_dependencies(3rdparty_webrtc ext_webrtc_all)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${WEBRTC_TARGET}")
+    target_link_libraries(3rdparty_webrtc INTERFACE Threads::Threads dl)
+
+    # CivetWeb server
+    include(${Open3D_3RDPARTY_DIR}/civetweb/civetweb.cmake)
+    import_3rdparty_library(3rdparty_civetweb
+        INCLUDE_DIRS ${CIVETWEB_INCLUDE_DIRS}
+        LIB_DIR      ${CIVETWEB_LIB_DIR}
+        LIBRARIES    ${CIVETWEB_LIBRARIES}
+    )
+    set(CIVETWEB_TARGET "3rdparty_civetweb")
+    add_dependencies(3rdparty_civetweb ext_civetweb)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CIVETWEB_TARGET}")
+endif()
+

@@ -96,7 +96,6 @@ void Resize(const open3d::core::Tensor &src_im,
     if (it == type_dict.end()) {
         utility::LogError("Invalid interpolation type {}.", interp_type);
     }
-    utility::LogInfo("Interpolation type = {}", it->second);
 
     auto dtype = src_im.GetDtype();
 #define NPP_ARGS                                                       \

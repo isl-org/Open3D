@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,23 +46,24 @@ void StackedWidget::SetSelectedIndex(int index) {
 
 int StackedWidget::GetSelectedIndex() const { return impl_->selected_index_; }
 
-Size StackedWidget::CalcPreferredSize(const Theme& theme) const {
+Size StackedWidget::CalcPreferredSize(const LayoutContext& context,
+                                      const Constraints& constraints) const {
     Size size(0, 0);
     for (auto child : GetChildren()) {
-        auto sz = child->CalcPreferredSize(theme);
+        auto sz = child->CalcPreferredSize(context, constraints);
         size.width = std::max(size.width, sz.width);
         size.height = std::max(size.height, sz.height);
     }
     return size;
 }
 
-void StackedWidget::Layout(const Theme& theme) {
+void StackedWidget::Layout(const LayoutContext& context) {
     auto& frame = GetFrame();
     for (auto child : GetChildren()) {
         child->SetFrame(frame);
     }
 
-    Super::Layout(theme);
+    Super::Layout(context);
 }
 
 Widget::DrawResult StackedWidget::Draw(const DrawContext& context) {

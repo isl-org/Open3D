@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,28 @@ enum class KeyModifier {
 
 struct MouseEvent {
     enum Type { MOVE, BUTTON_DOWN, DRAG, BUTTON_UP, WHEEL };
+
+    static MouseEvent MakeMoveEvent(const Type type,
+                                    const int x,
+                                    const int y,
+                                    const int modifiers,
+                                    const int buttons);
+
+    static MouseEvent MakeButtonEvent(const Type type,
+                                      const int x,
+                                      const int y,
+                                      const int modifiers,
+                                      const MouseButton button,
+                                      const int count);
+
+    static MouseEvent MakeWheelEvent(const Type type,
+                                     const int x,
+                                     const int y,
+                                     const int modifiers,
+                                     const float dx,
+                                     const float dy,
+                                     const bool isTrackpad);
+
     Type type;
     int x;
     int y;
@@ -73,7 +95,9 @@ struct MouseEvent {
     };
 };
 
-struct TickEvent {};
+struct TickEvent {
+    double dt;
+};
 
 enum KeyName {
     KEY_NONE = 0,

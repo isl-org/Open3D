@@ -1,7 +1,5 @@
 #pragma once
 
-#include "open3d/ml/contrib/GroupPoints.cuh"
-
 namespace open3d {
 namespace ml {
 namespace contrib {

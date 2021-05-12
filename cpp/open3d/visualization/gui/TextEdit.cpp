@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@
 #include <imgui.h>
 
 #include <cmath>
-#include <sstream>
 #include <string>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -63,9 +62,7 @@ struct TextEdit::Impl {
 };
 
 TextEdit::TextEdit() : impl_(new TextEdit::Impl()) {
-    std::stringstream s;
-    s << "##textedit_" << g_next_text_edit_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = "##textedit_" + std::to_string(g_next_text_edit_id++);
     impl_->text_.reserve(1);
 }
 
@@ -95,10 +92,11 @@ void TextEdit::SetOnValueChanged(
 
 bool TextEdit::ValidateNewText(const char *text) { return true; }
 
-Size TextEdit::CalcPreferredSize(const Theme &theme) const {
+Size TextEdit::CalcPreferredSize(const LayoutContext &context,
+                                 const Constraints &constraints) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
-    return Size(Widget::DIM_GROW, int(std::ceil(em + 2.0f * padding.y)));
+    return Size(constraints.width, int(std::ceil(em + 2.0f * padding.y)));
 }
 
 Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
@@ -137,6 +135,7 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar();

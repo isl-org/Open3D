@@ -26,8 +26,12 @@
 
 #include "open3d/t/geometry/PointCloud.h"
 
+#include <gmock/gmock.h>
+
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/geometry/PointCloud.h"
+#include "open3d/io/PointCloudIO.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -368,6 +372,42 @@ TEST_P(PointCloudPermuteDevices, Setters) {
     }
 }
 
+TEST_P(PointCloudPermuteDevices, Append) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    core::Tensor points = core::Tensor::Ones({2, 3}, dtype, device);
+    core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, device);
+    core::Tensor labels = core::Tensor::Ones({2, 3}, dtype, device);
+
+    t::geometry::PointCloud pcd(device);
+
+    pcd.SetPoints(points);
+    pcd.SetPointColors(colors);
+
+    t::geometry::PointCloud pcd2(device);
+
+    pcd2 = pcd.Clone();
+    pcd2.SetPointAttr("labels", labels);
+
+    // Here pcd2 is being added to pcd, therefore it must have all the
+    // attributes present in pcd and the resulting pointcloud will contain the
+    // attributes of pcd only.
+    t::geometry::PointCloud pcd3(device);
+    pcd3 = pcd + pcd2;
+
+    EXPECT_TRUE(pcd3.GetPoints().AllClose(
+            core::Tensor::Ones({4, 3}, dtype, device)));
+    EXPECT_TRUE(pcd3.GetPointColors().AllClose(
+            core::Tensor::Ones({4, 3}, dtype, device)));
+
+    EXPECT_ANY_THROW(pcd3.GetPointAttr("labels"));
+
+    // pcd2 has an extra attribute "labels" which is missing in pcd, therefore
+    // adding pcd to pcd2 will throw an error for missing attribute "labels"
+    EXPECT_ANY_THROW(pcd2 + pcd);
+}
+
 TEST_P(PointCloudPermuteDevices, Has) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
@@ -387,6 +427,223 @@ TEST_P(PointCloudPermuteDevices, Has) {
     // Same size.
     pcd.SetPointColors(core::Tensor::Ones({10, 3}, dtype, device));
     EXPECT_TRUE(pcd.HasPointColors());
+}
+
+TEST_P(PointCloudPermuteDevices, RemovePointAttr) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    t::geometry::PointCloud pcd({
+            {"points", core::Tensor::Ones({2, 3}, dtype, device)},
+            {"colors", core::Tensor::Ones({2, 3}, dtype, device) * 2},
+            {"labels", core::Tensor::Ones({2, 3}, dtype, device) * 3},
+    });
+
+    EXPECT_NO_THROW(pcd.GetPointAttr("labels"));
+    pcd.RemovePointAttr("labels");
+    EXPECT_ANY_THROW(pcd.GetPointAttr("labels"));
+
+    // Not allowed to delete "points" attribute.
+    EXPECT_ANY_THROW(pcd.RemovePointAttr("points"));
+}
+
+TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
+    using ::testing::ElementsAre;
+    using ::testing::UnorderedElementsAreArray;
+
+    core::Device device = GetParam();
+    float depth_scale = 1000.f, depth_max = 3.f;
+    int stride = 1;
+    core::Tensor im_depth =
+            core::Tensor::Init<uint16_t>({{1000, 0}, {1000, 1000}}, device);
+    core::Tensor im_color =
+            core::Tensor::Init<float>({{{0.0, 0.0, 0.0}, {0.2, 0.2, 0.2}},
+                                       {{0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}}},
+                                      device);
+    core::Tensor intrinsics = core::Tensor::Init<float>(
+            {{10, 0, 1}, {0, 10, 1}, {0, 0, 1}}, device);
+    core::Tensor extrinsics =
+            core::Tensor::Eye(4, core::Dtype::Float32, device);
+    t::geometry::PointCloud pcd_ref(
+            {{"points",
+              core::Tensor::Init<float>(
+                      {{-0.1, -0.1, 1.0}, {0.0, -0.1, 1.0}, {0.0, 0.0, 1.0}},
+                      device)},
+             {"colors",
+              core::Tensor::Init<float>(
+                      {{0.0, 0.0, 0.0}, {0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}},
+                      device)},
+             {"normals",
+              core::Tensor::Init<float>(
+                      {{0.0, 0.0, 0.0}, {0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}},
+                      device)}});
+
+    // UnProject, no normals
+    const bool with_normals = false;
+    t::geometry::PointCloud pcd_out =
+            t::geometry::PointCloud::CreateFromRGBDImage(
+                    t::geometry::RGBDImage(im_color, im_depth), intrinsics,
+                    extrinsics, depth_scale, depth_max, stride, with_normals);
+
+    EXPECT_THAT(pcd_out.GetPoints().GetShape(), ElementsAre(3, 3));
+    // Unordered check since output point cloud order is non-deterministic
+    EXPECT_THAT(pcd_out.GetPoints().ToFlatVector<float>(),
+                UnorderedElementsAreArray(
+                        pcd_ref.GetPoints().ToFlatVector<float>()));
+    EXPECT_TRUE(pcd_out.HasPointColors());
+    EXPECT_THAT(pcd_out.GetPointColors().GetShape(), ElementsAre(3, 3));
+    EXPECT_THAT(pcd_out.GetPointColors().ToFlatVector<float>(),
+                UnorderedElementsAreArray(
+                        pcd_ref.GetPointColors().ToFlatVector<float>()));
+    EXPECT_FALSE(pcd_out.HasPointNormals());
+}
+
+TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
+    core::Device device = GetParam();
+
+    if (!t::geometry::Image::HAVE_IPPICV &&
+        device.GetType() ==
+                core::Device::DeviceType::CPU) {  // FilterBilateral on CPU
+                                                  // needs IPPICV
+        return;
+    }
+
+    core::Tensor extrinsics =
+            core::Tensor::Eye(4, core::Dtype::Float32, device);
+    int stride = 1;
+    float depth_scale = 10.f, depth_max = 2.5f;
+    // clang-format off
+    core::Tensor t_depth(std::vector<uint16_t>{
+        1, 2, 3, 2, 1,
+        1, 3, 5, 3, 1,
+        1, 4, 7, 4, 30,
+        1, 3, 5, 3, 1,
+        1, 2, 3, 2, 1},
+        {5, 5, 1}, core::Dtype::UInt16, device);
+    core::Tensor t_color(std::vector<float>{
+        0,0,0, 0.1,0.1,0.1, 0.2,0.2,0.2, 0.1,0.1,0.1, 0.0,0.0,0.0,
+        0,0,0, 0.2,0.2,0.2, 0.4,0.4,0.4, 0.2,0.2,0.2, 0.0,0.0,0.0,
+        0,0,0, 0.3,0.3,0.3, 0.6,0.6,0.6, 0.3,0.3,0.3, 0.9,0.9,0.9,
+        0,0,0, 0.2,0.2,0.2, 0.4,0.4,0.4, 0.2,0.2,0.2, 0.0,0.0,0.0,
+        0,0,0, 0.1,0.1,0.1, 0.2,0.2,0.2, 0.1,0.1,0.1, 0.0,0.0,0.0
+        }, {5, 5, 3}, core::Dtype::Float32, device);
+    core::Tensor intrinsics(std::vector<double>{
+        1.f, 0.f, 2.f,
+        0.f, 1.f, 2.f,
+        0.f, 0.f, 1.f}, {3, 3}, core::Dtype::Float64, device);
+    core::Tensor t_vertex_ref, t_color_ref, t_normal_ref;
+    // CUDA has slightly different output due to NPP vs IPP differences.
+    if (device.GetType()==core::Device::DeviceType::CUDA) {
+        t_vertex_ref = core::Tensor::Init<float>({
+            {-0.288695, -0.288695, 0.144348},
+            {-0.233266, -0.466531, 0.233266},
+            {0.0, -0.555697, 0.277849},
+            {-0.333081, -0.166541, 0.166541},
+            {-0.299973, -0.299973, 0.299973},
+            {-0.355337, 0.0, 0.177669},
+            {-0.33346, 0.0, 0.33346},
+            {-0.333081, 0.166541, 0.166541},
+            {-0.299973, 0.299973, 0.299973}}, device);
+    t_color_ref = core::Tensor::Init<float>({
+            {0.0, 0.0, 0.0},
+            {0.1, 0.1, 0.1},
+            {0.2, 0.2, 0.2},
+            {0.0, 0.0, 0.0},
+            {0.2, 0.2, 0.2},
+            {0.0, 0.0, 0.0},
+            {0.3, 0.3, 0.3},
+            {0.0, 0.0, 0.0},
+            {0.2, 0.2, 0.2}}, device);
+    t_normal_ref = core::Tensor::Init<float>({
+            {0.941573, 0.329163, 0.071364},
+            {0.333815, 0.462634, -0.821302},
+            {-0.318447, 0.404408, -0.857348},
+            {0.984687, 0.138649, -0.105676},
+            {0.24427, 0.134471, -0.960338},
+            {0.980499, -0.140229, -0.137689},
+            {0.226005, -0.132954, -0.965010},
+            {0.941147, -0.325299, 0.0917771},
+            {0.289271, -0.453489, -0.843012}}, device);
+    } else {
+        t_vertex_ref = core::Tensor::Init<float>({
+            {-0.292137, -0.292137, 0.146069},
+            {-0.230743, -0.461487, 0.230743},
+            {0.0, -0.569164, 0.284582},
+            {-0.353444, -0.176722, 0.176722},
+            {-0.277117, -0.277117, 0.277117},
+            {-0.399304, 0.0, 0.199652},
+            {-0.353444, 0.176722, 0.176722},
+            {-0.277117, 0.277117, 0.277117}}, device);
+        t_color_ref = core::Tensor::Init<float>({
+            {0.0, 0.0, 0.0},
+            {0.1, 0.1, 0.1},
+            {0.2, 0.2, 0.2},
+            {0.0, 0.0, 0.0},
+            {0.2, 0.2, 0.2},
+            {0.0, 0.0, 0.0},
+            {0.0, 0.0, 0.0},
+            {0.2, 0.2, 0.2}}, device);
+        t_normal_ref = core::Tensor::Init<float>({
+            {0.886676, 0.419108, 0.195331},
+            {0.351009, 0.310485, -0.883398},
+            {-0.303793, 0.183558, -0.934888},
+            {0.878084, 0.27837, -0.389203},
+            {0.209566, 0.0993332, -0.972736},
+            {0.687868, -0.266128, -0.675287},
+            {0.854888, -0.495199, -0.154739},
+            {0.238257, -0.29284, -0.926001}}, device);
+    }
+    // clang-format on
+    t::geometry::Image im_depth{t_depth}, im_color{t_color};
+
+    // with normals: go through CreateVertexMap() and CreateNormalMap()
+    const bool with_normals = true;
+    // test without color
+    t::geometry::PointCloud pcd_out =
+            t::geometry::PointCloud::CreateFromDepthImage(
+                    im_depth, intrinsics, extrinsics, depth_scale, depth_max,
+                    stride, with_normals);
+
+    EXPECT_TRUE(pcd_out.GetPoints().AllClose(t_vertex_ref));
+    EXPECT_TRUE(pcd_out.HasPointNormals());
+    EXPECT_TRUE(pcd_out.GetPointNormals().AllClose(t_normal_ref));
+    EXPECT_FALSE(pcd_out.HasPointColors());
+
+    // test with color
+    pcd_out = t::geometry::PointCloud::CreateFromRGBDImage(
+            t::geometry::RGBDImage(im_color, im_depth), intrinsics, extrinsics,
+            depth_scale, depth_max, stride, with_normals);
+
+    EXPECT_TRUE(pcd_out.GetPoints().AllClose(t_vertex_ref));
+    EXPECT_TRUE(pcd_out.HasPointColors());
+    EXPECT_TRUE(pcd_out.GetPointColors().AllClose(t_color_ref));
+    EXPECT_TRUE(pcd_out.HasPointNormals());
+    EXPECT_TRUE(pcd_out.GetPointNormals().AllClose(t_normal_ref));
+}
+
+TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
+    core::Device device = GetParam();
+
+    // Sanity test to visualize
+    t::geometry::PointCloud pcd =
+            t::geometry::PointCloud::FromLegacyPointCloud(
+                    *io::CreatePointCloudFromFile(std::string(TEST_DATA_DIR) +
+                                                  "/ICP/cloud_bin_2.pcd"))
+                    .To(device);
+    auto pcd_down = pcd.VoxelDownSample(0.1);
+    io::WritePointCloud(fmt::format("down_{}.pcd", device.ToString()),
+                        pcd_down.ToLegacyPointCloud());
+
+    // Value test
+    t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{0.1, 0.3, 0.9},
+                                       {0.9, 0.2, 0.4},
+                                       {0.3, 0.6, 0.8},
+                                       {0.2, 0.4, 0.2}},
+                                      device));
+    auto pcd_small_down = pcd_small.VoxelDownSample(1);
+    EXPECT_TRUE(pcd_small_down.GetPoints().AllClose(
+            core::Tensor::Init<float>({{0, 0, 0}}, device)));
 }
 
 }  // namespace tests

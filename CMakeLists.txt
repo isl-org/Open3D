@@ -10,6 +10,14 @@ set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
     "Minimum OS X deployment version" FORCE)
 endif()
 
+if(UNIX AND NOT APPLE)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(LINUX_AARCH64 TRUE)
+    endif()
+endif()
+
+include(CMakeDependentOption)
+
 # Open3D build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
 option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
@@ -17,15 +25,24 @@ option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
+option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
 option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
 option(BUILD_GUI                  "Builds new GUI"                           ON )
-option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
-option(STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON )
+cmake_dependent_option(
+       STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON
+       "NOT BUILD_SHARED_LIBS"                                               OFF)
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
+if(UNIX AND NOT APPLE AND NOT LINUX_AARCH64)
+    option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
+else()
+    option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
+endif()
+option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF)
+
 # 3rd-party build options
 option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"           OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
@@ -43,6 +60,7 @@ option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"           OFF
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
+option(BUILD_WEBRTC_FROM_SOURCE   "Build WebRTC from source"                 OFF)
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
 option(WITH_FAISS                 "Enable Faiss"                             ON )
 
@@ -50,17 +68,41 @@ option(WITH_FAISS                 "Enable Faiss"                             ON 
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
 option(USE_SYSTEM_LIBREALSENSE    "Use system pre-installed librealsense"    OFF)
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF)
+
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
+
+# Release build options
 option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )
+if (NOT DEVELOPER_BUILD)
+    if (NOT BUILD_COMMON_CUDA_ARCHS)
+        set(BUILD_COMMON_CUDA_ARCHS ON CACHE BOOL "Build for common CUDA GPUs (for release)" FORCE)
+        message(WARNING "Setting BUILD_COMMON_CUDA_ARCHS=ON since DEVELOPER_BUILD is OFF.")
+    endif()
+endif()
 
 # In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
 # first try to look for the required files in OPEN3D_THIRD_PARTY_DOWNLOAD_DIR, before
 # downloading it from the internet. The files inside OPEN3D_THIRD_PARTY_DOWNLOAD_DIR
 # are prepared manually by the user. This is only supported by limited 3rd party
 # libraries.
+
+# Default build type on single-config generators.
+# For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
+# will be set, and we don't specify a default CMAKE_BUILD_TYPE.
+# https://blog.kitware.com/cmake-and-the-default-build-type/
+if(NOT CMAKE_CONFIGURATION_TYPES)
+    if(NOT CMAKE_BUILD_TYPE)
+        message(STATUS "Setting build type to RelWithDebInfo as none was specified.")
+        set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build." FORCE)
+        # Set the possible values of build type for cmake-gui.
+        set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+                    "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+    endif()
+    message(STATUS "CMAKE_BUILD_TYPE is set to ${CMAKE_BUILD_TYPE}.")
+endif()
 
 find_program(CCACHE "ccache")
 if (CCACHE)
@@ -93,54 +135,46 @@ if (PREFER_OSX_HOMEBREW)
     set(CMAKE_FIND_APPBUNDLE LAST)
 endif()
 
-# Cache variables for specifying the GPU architectures
-set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
-one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures" )
-set_property(CACHE CUDA_ARCH PROPERTY STRINGS Auto BasicPTX User)
-set(CUDA_ARCH_USER "" CACHE STRING "User defined list of GPU architectures, e.g. 3.5 5.0+PTX Turing" )
-
-# Default build type
-if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No CMAKE_BUILD_TYPE specified, default to RelWithDebInfo")
-    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
-endif()
-
 # Set OpenGL policy
-if (POLICY CMP0072)
-    cmake_policy(SET CMP0072 NEW)
-    set(CMP0072_VALUE NEW)
-    if (NOT USE_SYSTEM_GLFW)
-        cmake_policy(SET CMP0072 OLD)
-        set(CMP0072_VALUE OLD)
+if(NOT USE_SYSTEM_GLFW)
+    cmake_policy(SET CMP0072 OLD)
+endif()
+cmake_policy(GET CMP0072 CMP0072_VALUE)
+
+# Set BLAS/LAPACK library preference.
+if(LINUX_AARCH64)
+    if(NOT USE_BLAS)
+        set(USE_BLAS ON)
+        message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
     endif()
-endif()
-
-# Set policy for hidden symbol visibility
-if(POLICY CMP0063)
-    cmake_policy(SET CMP0063 NEW)
-endif()
-
-# Set policy to enable MSVC_RUNTIME_LIBRARY property.
-if(POLICY CMP0091)
-    cmake_policy(SET CMP0091 NEW)
+    if(BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
+        set(BUILD_FILAMENT_FROM_SOURCE ON)
+        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
+    endif()
 endif()
 
 # Catch a few incompatible build options
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
-    message(STATUS "Headless rendering is not supported on Mac OS")
+    message(WARNING "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
 endif()
 if(ENABLE_HEADLESS_RENDERING AND BUILD_GUI)
-    message(STATUS "Headless rendering disables the Open3D GUI")
+    message(WARNING "Headless rendering disables the Open3D GUI")
     set(BUILD_GUI OFF)
 endif()
 if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
-    message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
+    message(WARNING "Headless rendering requires customized GLEW and GLFW builds")
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
 endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
+endif()
+if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_WEBRTC)
+    message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON, requires setting BUILD_WEBRTC=ON.")
+endif()
+if(BUILD_WEBRTC AND (APPLE OR WIN32 OR LINUX_AARCH64))
+    message(FATAL_ERROR "WebRTC visualizer is only supported on Linux (x86).")
 endif()
 
 # Parse Open3D version number
@@ -171,28 +205,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
-
-if(UNIX AND NOT APPLE)
-    execute_process(COMMAND uname -p
-        OUTPUT_VARIABLE PROCESSOR_ARCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
-        set(LINUX_AARCH64 TRUE)
-    endif()
-endif()
-
-# Set BLAS/LAPACK library preference.
-if(LINUX_AARCH64)
-    if(NOT USE_BLAS)
-        set(USE_BLAS ON)
-        message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
-    endif()
-    if(BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
-        set(BUILD_FILAMENT_FROM_SOURCE ON)
-        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
-    endif()
-endif()
 
 # CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
@@ -348,60 +360,72 @@ add_link_options(
     )
 
 # Build CUDA module by default if CUDA is available
-# Compatible with CMake 3.8+
-if (BUILD_CUDA_MODULE)
-    include(CheckLanguage)
-    check_language(CUDA)
-    message(STATUS "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}")
-    message(STATUS "CMAKE_CUDA_COMPILER_VERSION: ${CMAKE_CUDA_COMPILER_VERSION}")
-    if(CMAKE_CUDA_COMPILER)
-        find_package(CUDA REQUIRED) # required for cuda_select_nvcc_arch_flags
-        message(STATUS "Building CUDA enabled")
-        enable_language(CUDA)
-        # TODO: when CMake minimum version is 3.18+, switch to the NEW behavior
-        # of CMP0104 and replease CUDA_GENCODES with CUDA_ARCHITECTURES target
-        # properties. See https://cmake.org/cmake/help/v3.18/policy/CMP0104.html.
-        if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18.0")
-            cmake_policy(SET CMP0104 OLD)
-        endif()
-        # Get gencode flags
-        if("${CUDA_ARCH}" STREQUAL "User")
-            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
-        elseif("${CUDA_ARCH}" STREQUAL "BasicPTX")
-            # Include oldest and most recent PTX and rely on JIT compilation
-            set(CUDA_GENCODES "-gencode arch=compute_30,code=compute_30;-gencode arch=compute_75,code=compute_75")
+if(BUILD_CUDA_MODULE)
+    find_package(CUDAToolkit REQUIRED)
+
+    if(BUILD_COMMON_CUDA_ARCHS)
+        # Build with all known (and deprecated) architectures.
+        # See https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility.
+        if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
+                60-real 61-real 62-real 70-real 72-real 75-real 80-real 86)
+        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
+                60-real 61-real 62-real 70-real 72-real 75-real 80)
+        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "10.0")
+            set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real
+                52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
         else()
-            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH}")
+            message(STATUS "Old CUDA <10.0 detected. Falling back to CMake's default architectures.")
         endif()
-        # Make CUDA_GENCODES a string to avoid deduplication in target_compile_options
-        string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
-        message(STATUS "CUDA_GENCODES: ${CUDA_GENCODES}")
-        # Allows CUDA headers to be included as "system" headers for CMake prior
-        # to 3.17,
-        # https://gitlab.kitware.com/cmake/cmake/-/issues/20270
-        # https://github.com/intel-isl/Open3D/issues/2040
-        if(CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES)
-            list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES
-                ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-        endif()
-        message(STATUS "CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}")
-        message(STATUS "CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES: ${CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES}")
     else()
-        set(BUILD_CUDA_MODULE OFF)
-        message(STATUS "No CUDA support")
+        if(CMAKE_CUDA_ARCHITECTURES)
+            message(STATUS "Building with user-provided architectures")
+        else()
+            file(WRITE
+                "${CMAKE_CURRENT_BINARY_DIR}/cuda_architectures.c"
+                "
+                #include <stdio.h>
+                #include <cuda_runtime_api.h>
+                int main() {
+                    int n;
+                    if (cudaGetDeviceCount(&n) == cudaSuccess) {
+                        for (int i = 0; i < n; ++i) {
+                            int major, minor;
+                            if (cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor,
+                                                    i) == cudaSuccess &&
+                                cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor,
+                                                    i) == cudaSuccess) {
+                                if (i > 0) {
+                                    printf(\";\");
+                                }
+                                printf(\"%d%d-real\", major, minor);
+                            }
+                        }
+                    }
+                    return 0;
+                }
+                ")
+            try_run(
+                DETECTION_RETURN_VALUE DETECTION_COMPILED
+                "${CMAKE_CURRENT_BINARY_DIR}"
+                "${CMAKE_CURRENT_BINARY_DIR}/cuda_architectures.c"
+                LINK_LIBRARIES CUDA::cudart
+                RUN_OUTPUT_VARIABLE DETECTED_ARCHITECTURES)
+            if(DETECTED_ARCHITECTURES)
+                message(STATUS "Building with detected architectures.")
+                set(CMAKE_CUDA_ARCHITECTURES ${DETECTED_ARCHITECTURES})
+            else()
+                message(STATUS "Failed to detect architectures. Falling back to CMake's default architectures.")
+            endif()
+        endif()
     endif()
+
+    message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
+    enable_language(CUDA)
 endif ()
 
 # OS specific settings
-if(BUILD_GUI AND WIN32)
-    if(NOT COMMAND target_link_options)  # CMake 3.13+ required
-        # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
-        # Filament needs to link through bluegl.lib.
-        # See https://github.com/google/filament/issues/652
-        string(APPEND CMAKE_EXE_LINKER_FLAGS " /force:multiple")
-        string(APPEND CMAKE_SHARED_LINKER_FLAGS " /force:multiple")
-    endif()
-endif()
 if(WIN32)
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explictly export symbols.
@@ -415,13 +439,26 @@ if(WIN32)
         # verbose with inline members
         #
         # See: https://github.com/tensorflow/tensorflow/pull/10962
-        add_compile_options(/bigobj /Ob2)
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj;/Ob2>")
     endif()
     if (STATIC_WINDOWS_RUNTIME)
-        # This needs cmake_policy(SET CMP0091 NEW)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 endif()
+
+# Downloads files from https://github.com/intel-isl/open3d_downloads to
+# Open3D/examples/test_data/open3d_downloads.
+include(ExternalProject)
+ExternalProject_Add(
+    open3d_downloads
+    DOWNLOAD_COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.py
+    UPDATE_COMMAND   ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.py
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)
 
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -463,14 +500,7 @@ function(open3d_set_global_properties target)
         set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
     # Tell CMake we want a compiler that supports C++14 features
-    target_compile_features(${target} PUBLIC
-        cxx_variadic_templates
-        cxx_constexpr
-        cxx_override
-        cxx_static_assert
-        cxx_trailing_return_types
-        cxx_return_type_deduction
-    )
+    target_compile_features(${target} PUBLIC cxx_std_14)
     # Colorize GCC/Clang terminal outputs
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fdiagnostics-color=always>)
@@ -507,6 +537,9 @@ function(open3d_set_global_properties target)
     if(NOT WITH_OPENMP)
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
     endif()
+    if(BUILD_WEBRTC)
+        target_compile_definitions(${target} PRIVATE BUILD_WEBRTC)
+    endif()
     if(WIN32)
         target_compile_definitions(${target} PRIVATE
             WINDOWS
@@ -516,24 +549,22 @@ function(open3d_set_global_properties target)
         )
         if(MSVC)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
-            target_compile_options(${target} PRIVATE /EHsc /wd4522 /wd4190 /wd4819 /Wv:18 /WX)
+            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc /wd4996>)
             # Multi-thread compile, two ways to enable
             # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
-            target_compile_options(${target} PRIVATE /MP)
-            if(COMMAND target_link_options) # target_link_options add in 3.13
-                if(BUILD_GUI)
-                    # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
-                    # Filament needs to link through bluegl.lib.
-                    # See https://github.com/google/filament/issues/652
-                    target_link_options(${target} PRIVATE /force:multiple)
-                endif()
-                # The examples' .pdb files use up a lot of space and cause us to run
-                # out of space on Github Actions. Compressing gives us another couple of GB.
-                target_link_options(${target} PRIVATE /pdbcompress)
+            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
+            if(BUILD_GUI)
+                # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
+                # Filament needs to link through bluegl.lib.
+                # See https://github.com/google/filament/issues/652
+                target_link_options(${target} PRIVATE /force:multiple)
             endif()
+            # The examples' .pdb files use up a lot of space and cause us to run
+            # out of space on Github Actions. Compressing gives us another couple of GB.
+            target_link_options(${target} PRIVATE /pdbcompress)
         endif()
     elseif(APPLE)
         target_compile_definitions(${target} PRIVATE UNIX APPLE)
@@ -542,14 +573,15 @@ function(open3d_set_global_properties target)
         target_compile_definitions(${target} PRIVATE UNIX)
         target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations" "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-result>")
     endif()
-    # The SHELL: prefix requires CMake 3.12+
-    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>" "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_GENCODES}>")
+    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>")
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
     if(WITH_FAISS)
         target_compile_definitions(${target} PRIVATE WITH_FAISS)
     endif()
+    # Download test data files from open3d_downloads repo.
+    add_dependencies(${target} open3d_downloads)
 endfunction()
 
 macro(add_source_group module_name)
@@ -614,9 +646,9 @@ function(open3d_aligned_print first second)
     message(STATUS "  ${first} ${stars} ${second}")
 endfunction()
 
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Open3D ${PROJECT_VERSION} Configuration Summary")
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Enabled Features:")
 open3d_aligned_print("OpenMP" "${WITH_OPENMP}")
 open3d_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
@@ -626,7 +658,7 @@ open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
 open3d_aligned_print("Build GUI" "${BUILD_GUI}")
 open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
 if(WIN32)
-    open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
+   open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
 endif()
 open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
 open3d_aligned_print("Build Examples" "${BUILD_EXAMPLES}")
@@ -636,6 +668,25 @@ if(BUILD_PYTHON_MODULE)
 endif()
 open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
+if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
+    CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0" )
+    message( WARNING
+        "--------------------------------------------------------------------------------\n"
+        "                                                                                \n"
+        " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
+        " stability issues. See https://github.com/intel-isl/Open3D/issues/3324 and      \n"
+        " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
+        " problem.                                                                       \n"
+        "                                                                                \n"
+        " We recommend to compile PyTorch from source with compile flags                 \n"
+        "   '-Xcompiler -fno-gnu-unique'                                                 \n"
+        "                                                                                \n"
+        " or use the PyTorch wheels at                                                   \n"
+        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1        \n"
+        "                                                                                \n"
+        "--------------------------------------------------------------------------------\n"
+    )
+endif()
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
 open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
@@ -645,7 +696,7 @@ else()
     set(usage "0")
 endif()
 open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Third-Party Dependencies:")
 set(deps
     EIGEN3
@@ -687,4 +738,4 @@ foreach(dep IN ITEMS ${deps})
     endif()
     open3d_aligned_print("${dep}" "${usage}")
 endforeach()
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")

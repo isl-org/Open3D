@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,14 +38,21 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
+namespace {
+static int g_next_checkbox_id = 1;
+}
+
 struct Checkbox::Impl {
     std::string name_;
+    std::string id_;
     bool is_checked_ = false;
     std::function<void(bool)> on_checked_;
 };
 
 Checkbox::Checkbox(const char* name) : impl_(new Checkbox::Impl()) {
     impl_->name_ = name;
+    impl_->id_ =
+            impl_->name_ + "##checkbox_" + std::to_string(g_next_checkbox_id++);
 }
 
 Checkbox::~Checkbox() {}
@@ -58,11 +65,12 @@ void Checkbox::SetOnChecked(std::function<void(bool)> on_checked) {
     impl_->on_checked_ = on_checked;
 }
 
-Size Checkbox::CalcPreferredSize(const Theme& theme) const {
+Size Checkbox::CalcPreferredSize(const LayoutContext& context,
+                                 const Constraints& constraints) const {
     auto em = ImGui::GetTextLineHeight();
     auto padding = ImGui::GetStyle().FramePadding;
     auto text_size = ImGui::GetFont()->CalcTextSizeA(
-            float(theme.font_size), 10000, 10000, impl_->name_.c_str());
+            float(context.theme.font_size), 10000, 10000, impl_->name_.c_str());
     int height = int(std::ceil(em + 2.0f * padding.y));
     auto checkbox_width = height + padding.x;
     return Size(int(checkbox_width + std::ceil(text_size.x + 2.0f * padding.x)),
@@ -95,7 +103,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
 
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(float(GetFrame().width));
-    if (ImGui::Checkbox(impl_->name_.c_str(), &impl_->is_checked_)) {
+    if (ImGui::Checkbox(impl_->id_.c_str(), &impl_->is_checked_)) {
         if (impl_->on_checked_) {
             impl_->on_checked_(impl_->is_checked_);
         }
@@ -103,6 +111,7 @@ Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     ImGui::PopStyleColor(2);
 

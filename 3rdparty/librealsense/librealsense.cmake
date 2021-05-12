@@ -1,22 +1,18 @@
 include(ExternalProject)
 
-set_local_or_remote_url(
-    LIBREALSENSE_URL
-    LOCAL_URL   "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense-v2.44.0.zip"
-    REMOTE_URLS "https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.44.0.zip"
-    )
-
 ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
-    # 2020 Apr 1
-    URL ${LIBREALSENSE_URL}
-    URL_HASH SHA256=e1009e26b8f3428e03b7d0459436e1fe2e3bb8a78adb9ec7ea9d846e54a34a65
+    GIT_REPOSITORY https://github.com/IntelRealSense/librealsense.git
+    GIT_TAG v2.44.0 #  2020 Apr 1
     UPDATE_COMMAND ""
     # Patch for libusb static build failure on Linux
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
         <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
+    # Patch for CRT mismatch in CUDA code (Windows)
+    COMMAND git -C <SOURCE_DIR> apply
+        ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/fix-cudacrt.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}

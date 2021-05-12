@@ -26,6 +26,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 
+#include "open3d/Macro.h"
 #include "open3d/utility/Console.h"
 
 #ifdef BUILD_CUDA_MODULE
@@ -42,7 +43,7 @@ int DeviceCount() {
     try {
         std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
         return cuda_state->GetNumDevices();
-    } catch (const std::runtime_error& e) {  // GetInstance can throw
+    } catch (const std::runtime_error&) {  // GetInstance can throw
         return 0;
     }
 #else
@@ -72,6 +73,6 @@ void ReleaseCache() {
 }  // namespace open3d
 
 // C interface to provide un-mangled function to Python ctypes
-extern "C" int open3d_core_cuda_device_count() {
+extern "C" OPEN3D_DLL_EXPORT int open3d_core_cuda_device_count() {
     return open3d::core::cuda::DeviceCount();
 }

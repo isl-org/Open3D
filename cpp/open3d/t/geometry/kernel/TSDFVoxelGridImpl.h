@@ -25,17 +25,20 @@
 // ----------------------------------------------------------------------------
 
 #include <atomic>
+#include <cmath>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxel.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/utility/Console.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -43,7 +46,7 @@ namespace geometry {
 namespace kernel {
 namespace tsdf {
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 void IntegrateCUDA
 #else
 void IntegrateCPU
@@ -88,7 +91,7 @@ void IntegrateCPU
 
     int64_t n = indices.GetLength() * resolution3;
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
@@ -164,9 +167,12 @@ void IntegrateCPU
                     }
                 });
             });
+#if defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
 }
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
 void ExtractSurfacePointsCUDA
 #else
 void ExtractSurfacePointsCPU
@@ -177,11 +183,12 @@ void ExtractSurfacePointsCPU
          const core::Tensor& block_keys,
          const core::Tensor& block_values,
          core::Tensor& points,
-         core::Tensor& normals,
-         core::Tensor& colors,
+         utility::optional<std::reference_wrapper<core::Tensor>> normals,
+         utility::optional<std::reference_wrapper<core::Tensor>> colors,
          int64_t resolution,
          float voxel_size,
-         float weight_threshold) {
+         float weight_threshold,
+         int& valid_size) {
     // Parameters
     int64_t resolution3 = resolution * resolution * resolution;
 
@@ -202,8 +209,8 @@ void ExtractSurfacePointsCPU
     int64_t n = n_blocks * resolution3;
 
     // Output
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
+#if defined(__CUDACC__)
+    core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32,
                        block_values.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
@@ -211,98 +218,118 @@ void ExtractSurfacePointsCPU
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
 #endif
+    if (valid_size < 0) {
+        utility::LogWarning(
+                "No estimated max point cloud size provided, using a 2-pass "
+                "estimation. Surface extraction could be slow.");
+        // This pass determines valid number of points.
+        DISPATCH_BYTESIZE_TO_VOXEL(
+                voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                    launcher.LaunchGeneralKernel(
+                            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                                auto GetVoxelAt = [&] OPEN3D_DEVICE(
+                                                          int xo, int yo,
+                                                          int zo,
+                                                          int curr_block_idx)
+                                        -> voxel_t* {
+                                    return DeviceGetVoxelAt<voxel_t>(
+                                            xo, yo, zo, curr_block_idx,
+                                            static_cast<int>(resolution),
+                                            nb_block_masks_indexer,
+                                            nb_block_indices_indexer,
+                                            voxel_block_buffer_indexer);
+                                };
 
-    // This pass determines valid number of points.
-    DISPATCH_BYTESIZE_TO_VOXEL(
-            voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                        int64_t workload_idx) {
-                    auto GetVoxelAt = [&] OPEN3D_DEVICE(
-                                              int xo, int yo, int zo,
-                                              int curr_block_idx) -> voxel_t* {
-                        return DeviceGetVoxelAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx,
-                                static_cast<int>(resolution),
-                                nb_block_masks_indexer,
-                                nb_block_indices_indexer,
-                                voxel_block_buffer_indexer);
-                    };
+                                // Natural index (0, N) -> (block_idx,
+                                // voxel_idx)
+                                int64_t workload_block_idx =
+                                        workload_idx / resolution3;
+                                int64_t block_idx =
+                                        indices_ptr[workload_block_idx];
+                                int64_t voxel_idx = workload_idx % resolution3;
 
-                    // Natural index (0, N) -> (block_idx, voxel_idx)
-                    int64_t workload_block_idx = workload_idx / resolution3;
-                    int64_t block_idx = indices_ptr[workload_block_idx];
-                    int64_t voxel_idx = workload_idx % resolution3;
+                                // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                                int64_t xv, yv, zv;
+                                voxel_indexer.WorkloadToCoord(voxel_idx, &xv,
+                                                              &yv, &zv);
 
-                    // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-                    int64_t xv, yv, zv;
-                    voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+                                voxel_t* voxel_ptr =
+                                        voxel_block_buffer_indexer
+                                                .GetDataPtrFromCoord<voxel_t>(
+                                                        xv, yv, zv, block_idx);
+                                float tsdf_o = voxel_ptr->GetTSDF();
+                                float weight_o = voxel_ptr->GetWeight();
+                                if (weight_o <= weight_threshold) return;
 
-                    voxel_t* voxel_ptr = voxel_block_buffer_indexer
-                                                 .GetDataPtrFromCoord<voxel_t>(
-                                                         xv, yv, zv, block_idx);
-                    float tsdf_o = voxel_ptr->GetTSDF();
-                    float weight_o = voxel_ptr->GetWeight();
-                    if (weight_o <= weight_threshold) return;
+                                // Enumerate x-y-z directions
+                                for (int i = 0; i < 3; ++i) {
+                                    voxel_t* ptr = GetVoxelAt(
+                                            static_cast<int>(xv) + (i == 0),
+                                            static_cast<int>(yv) + (i == 1),
+                                            static_cast<int>(zv) + (i == 2),
+                                            static_cast<int>(
+                                                    workload_block_idx));
+                                    if (ptr == nullptr) continue;
 
-                    // Enumerate x-y-z directions
-                    for (int i = 0; i < 3; ++i) {
-                        voxel_t* ptr = GetVoxelAt(
-                                static_cast<int>(xv) + (i == 0),
-                                static_cast<int>(yv) + (i == 1),
-                                static_cast<int>(zv) + (i == 2),
-                                static_cast<int>(workload_block_idx));
-                        if (ptr == nullptr) continue;
+                                    float tsdf_i = ptr->GetTSDF();
+                                    float weight_i = ptr->GetWeight();
 
-                        float tsdf_i = ptr->GetTSDF();
-                        float weight_i = ptr->GetWeight();
-
-                        if (weight_i > weight_threshold &&
-                            tsdf_i * tsdf_o < 0) {
-                            OPEN3D_ATOMIC_ADD(count_ptr, 1);
-                        }
-                    }
+                                    if (weight_i > weight_threshold &&
+                                        tsdf_i * tsdf_o < 0) {
+                                        OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                                    }
+                                }
+                            });
                 });
-            });
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    int total_count = count.Item<int>();
+#if defined(__CUDACC__)
+        valid_size = count[0].Item<int>();
+        count[0] = 0;
 #else
-    int total_count = (*count_ptr).load();
+        valid_size = (*count_ptr).load();
+        (*count_ptr) = 0;
 #endif
-    utility::LogInfo("Total point count = {}", total_count);
+    }
 
-    points = core::Tensor({total_count, 3}, core::Dtype::Float32,
-                          block_values.GetDevice());
-    normals = core::Tensor({total_count, 3}, core::Dtype::Float32,
-                           block_values.GetDevice());
+    int max_count = valid_size;
+    if (points.GetLength() == 0) {
+        points = core::Tensor({max_count, 3}, core::Dtype::Float32,
+                              block_values.GetDevice());
+    }
     NDArrayIndexer point_indexer(points, 1);
-    NDArrayIndexer normal_indexer(normals, 1);
 
-    // Reset count
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
-                         block_values.GetDevice());
-    count_ptr = count.GetDataPtr<int>();
-#else
-    (*count_ptr) = 0;
-#endif
+    // Normals
+    bool extract_normal = false;
+    NDArrayIndexer normal_indexer;
+    if (normals.has_value()) {
+        extract_normal = true;
+        if (normals.value().get().GetLength() == 0) {
+            normals.value().get() =
+                    core::Tensor({max_count, 3}, core::Dtype::Float32,
+                                 block_values.GetDevice());
+        }
+        normal_indexer = NDArrayIndexer(normals.value().get(), 1);
+    }
 
     // This pass extracts exact surface points.
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                // Colors
                 bool extract_color = false;
                 NDArrayIndexer color_indexer;
-                if (voxel_t::HasColor()) {
+                if (voxel_t::HasColor() && colors.has_value()) {
                     extract_color = true;
-                    colors =
-                            core::Tensor({total_count, 3}, core::Dtype::Float32,
-                                         block_values.GetDevice());
-                    color_indexer = NDArrayIndexer(colors, 1);
+                    if (colors.value().get().GetLength() == 0) {
+                        colors.value().get() = core::Tensor(
+                                {max_count, 3}, core::Dtype::Float32,
+                                block_values.GetDevice());
+                    }
+                    color_indexer = NDArrayIndexer(colors.value().get(), 1);
                 }
 
                 launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
@@ -359,9 +386,11 @@ void ExtractSurfacePointsCPU
                     int64_t z = zb * resolution + zv;
 
                     float no[3] = {0}, ni[3] = {0};
-                    GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
-                                static_cast<int>(zv),
-                                static_cast<int>(workload_block_idx), no);
+                    if (extract_normal) {
+                        GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
+                                    static_cast<int>(zv),
+                                    static_cast<int>(workload_block_idx), no);
+                    }
 
                     // Enumerate x-y-z axis
                     for (int i = 0; i < 3; ++i) {
@@ -380,6 +409,12 @@ void ExtractSurfacePointsCPU
                             float ratio = (0 - tsdf_o) / (tsdf_i - tsdf_o);
 
                             int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                            if (idx >= valid_size) {
+                                printf("Point cloud size larger than "
+                                       "estimated, please increase the "
+                                       "estimation!\n");
+                                return;
+                            }
 
                             float* point_ptr =
                                     point_indexer.GetDataPtrFromCoord<float>(
@@ -390,23 +425,6 @@ void ExtractSurfacePointsCPU
                                     voxel_size * (y + ratio * int(i == 1));
                             point_ptr[2] =
                                     voxel_size * (z + ratio * int(i == 2));
-                            GetNormalAt(static_cast<int>(xv) + (i == 0),
-                                        static_cast<int>(yv) + (i == 1),
-                                        static_cast<int>(zv) + (i == 2),
-                                        static_cast<int>(workload_block_idx),
-                                        ni);
-
-                            float* normal_ptr =
-                                    normal_indexer.GetDataPtrFromCoord<float>(
-                                            idx);
-                            float nx = (1 - ratio) * no[0] + ratio * ni[0];
-                            float ny = (1 - ratio) * no[1] + ratio * ni[1];
-                            float nz = (1 - ratio) * no[2] + ratio * ni[2];
-                            float norm = static_cast<float>(
-                                    sqrt(nx * nx + ny * ny + nz * nz) + 1e-5);
-                            normal_ptr[0] = nx / norm;
-                            normal_ptr[1] = ny / norm;
-                            normal_ptr[2] = nz / norm;
 
                             if (extract_color) {
                                 float* color_ptr =
@@ -432,13 +450,48 @@ void ExtractSurfacePointsCPU
                                         ((1 - ratio) * b_o + ratio * b_i) /
                                         255.0f;
                             }
+
+                            if (extract_normal) {
+                                GetNormalAt(
+                                        static_cast<int>(xv) + (i == 0),
+                                        static_cast<int>(yv) + (i == 1),
+                                        static_cast<int>(zv) + (i == 2),
+                                        static_cast<int>(workload_block_idx),
+                                        ni);
+
+                                float* normal_ptr =
+                                        normal_indexer
+                                                .GetDataPtrFromCoord<float>(
+                                                        idx);
+                                float nx = (1 - ratio) * no[0] + ratio * ni[0];
+                                float ny = (1 - ratio) * no[1] + ratio * ni[1];
+                                float nz = (1 - ratio) * no[2] + ratio * ni[2];
+                                float norm = static_cast<float>(
+                                        sqrt(nx * nx + ny * ny + nz * nz) +
+                                        1e-5);
+                                normal_ptr[0] = nx / norm;
+                                normal_ptr[1] = ny / norm;
+                                normal_ptr[2] = nz / norm;
+                            }
                         }
                     }
                 });
             });
-}
+#if defined(__CUDACC__)
+    int total_count = count.Item<int>();
+#else
+    int total_count = (*count_ptr).load();
+#endif
+
+    utility::LogDebug("{} vertices extracted", total_count);
+    valid_size = total_count;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
+}
+
+#if defined(__CUDACC__)
 void ExtractSurfaceMeshCUDA
 #else
 void ExtractSurfaceMeshCPU
@@ -463,7 +516,7 @@ void ExtractSurfaceMeshCPU
     NDArrayIndexer voxel_indexer({resolution, resolution, resolution});
 
     // Output
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::CUDACachedMemoryManager::ReleaseCache();
 #endif
 
@@ -498,7 +551,7 @@ void ExtractSurfaceMeshCPU
 
     int64_t n = n_blocks * resolution3;
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher launcher;
 #else
     core::kernel::CPULauncher launcher;
@@ -589,7 +642,7 @@ void ExtractSurfaceMeshCPU
             });
 
     // Pass 1: determine valid number of vertices.
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::Tensor vtx_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                            block_values.GetDevice());
     int* vtx_count_ptr = vtx_count.GetDataPtr<int>();
@@ -598,7 +651,7 @@ void ExtractSurfaceMeshCPU
     std::atomic<int>* vtx_count_ptr = &vtx_count_atomic;
 #endif
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
@@ -634,7 +687,7 @@ void ExtractSurfaceMeshCPU
             });
 
     // Reset count_ptr
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     int total_vtx_count = vtx_count.Item<int>();
     vtx_count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
                              block_values.GetDevice());
@@ -644,7 +697,7 @@ void ExtractSurfaceMeshCPU
     (*vtx_count_ptr) = 0;
 #endif
 
-    utility::LogInfo("Total vertex count = {}", total_vtx_count);
+    utility::LogDebug("Total vertex count = {}", total_vtx_count);
     vertices = core::Tensor({total_vtx_count, 3}, core::Dtype::Float32,
                             block_values.GetDevice());
     normals = core::Tensor({total_vtx_count, 3}, core::Dtype::Float32,
@@ -797,7 +850,7 @@ void ExtractSurfaceMeshCPU
             });
 
     // Pass 3: connect vertices and form triangles.
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::Tensor triangle_count(std::vector<int>{0}, {}, core::Dtype::Int32,
                                 block_values.GetDevice());
     int* tri_count_ptr = triangle_count.GetDataPtr<int>();
@@ -810,7 +863,7 @@ void ExtractSurfaceMeshCPU
                              block_values.GetDevice());
     NDArrayIndexer triangle_indexer(triangles, 1);
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     core::kernel::CUDALauncher::LaunchGeneralKernel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
 #else
@@ -872,13 +925,641 @@ void ExtractSurfaceMeshCPU
                 }
             });
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(__CUDACC__)
     int total_tri_count = triangle_count.Item<int>();
 #else
     int total_tri_count = (*tri_count_ptr).load();
 #endif
-    utility::LogInfo("Total triangle count = {}", total_tri_count);
+    utility::LogDebug("Total triangle count = {}", total_tri_count);
     triangles = triangles.Slice(0, 0, total_tri_count);
+}
+
+#if defined(__CUDACC__)
+void EstimateRangeCUDA
+#else
+void EstimateRangeCPU
+#endif
+        (const core::Tensor& block_keys,
+         core::Tensor& range_minmax_map,
+         const core::Tensor& intrinsics,
+         const core::Tensor& extrinsics,
+         int h,
+         int w,
+         int down_factor,
+         int64_t block_resolution,
+         float voxel_size,
+         float depth_min,
+         float depth_max) {
+
+    // TODO(wei): reserve it in a reusable buffer
+
+    // Every 2 channels: (min, max)
+    int h_down = h / down_factor;
+    int w_down = w / down_factor;
+    range_minmax_map = core::Tensor({h_down, w_down, 2}, core::Dtype::Float32,
+                                    block_keys.GetDevice());
+    NDArrayIndexer range_map_indexer(range_minmax_map, 2);
+
+    // Every 6 channels: (v_min, u_min, v_max, u_max, z_min, z_max)
+    const int fragment_size = 16;
+    const int frag_buffer_size = 65535;
+
+    // TODO(wei): explicit buffer
+    core::Tensor fragment_buffer =
+            core::Tensor({frag_buffer_size, 6}, core::Dtype::Float32,
+                         block_keys.GetDevice());
+
+    NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
+    NDArrayIndexer block_keys_indexer(block_keys, 1);
+    TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
+#if defined(__CUDACC__)
+    core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32,
+                       block_keys.GetDevice());
+    int* count_ptr = count.GetDataPtr<int>();
+#else
+    std::atomic<int> count_atomic(0);
+    std::atomic<int>* count_ptr = &count_atomic;
+#endif
+#if defined(__CUDACC__)
+    core::kernel::CUDALauncher launcher;
+#else
+    core::kernel::CPULauncher launcher;
+    using std::max;
+    using std::min;
+#endif
+
+    // Pass 0: iterate over blocks, fill-in an rendering fragment array
+    launcher.LaunchGeneralKernel(
+            block_keys.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int* key = block_keys_indexer.GetDataPtrFromCoord<int>(
+                        workload_idx);
+
+                int u_min = w_down - 1, v_min = h_down - 1, u_max = 0,
+                    v_max = 0;
+                float z_min = depth_max, z_max = depth_min;
+
+                float xc, yc, zc, u, v;
+
+                // Project 8 corners to low-res image and form a rectangle
+                for (int i = 0; i < 8; ++i) {
+                    float xw = (key[0] + ((i & 1) > 0)) * block_resolution *
+                               voxel_size;
+                    float yw = (key[1] + ((i & 2) > 0)) * block_resolution *
+                               voxel_size;
+                    float zw = (key[2] + ((i & 4) > 0)) * block_resolution *
+                               voxel_size;
+
+                    w2c_transform_indexer.RigidTransform(xw, yw, zw, &xc, &yc,
+                                                         &zc);
+                    if (zc <= 0) continue;
+
+                    // Project to the down sampled image buffer
+                    w2c_transform_indexer.Project(xc, yc, zc, &u, &v);
+                    u /= down_factor;
+                    v /= down_factor;
+
+                    v_min = min(static_cast<int>(floorf(v)), v_min);
+                    v_max = max(static_cast<int>(ceilf(v)), v_max);
+
+                    u_min = min(static_cast<int>(floorf(u)), u_min);
+                    u_max = max(static_cast<int>(ceilf(u)), u_max);
+
+                    z_min = min(z_min, zc);
+                    z_max = max(z_max, zc);
+                }
+
+                v_min = max(0, v_min);
+                v_max = min(h_down - 1, v_max);
+
+                u_min = max(0, u_min);
+                u_max = min(w_down - 1, u_max);
+
+                if (v_min >= v_max || u_min >= u_max || z_min >= z_max) return;
+
+                // Divide the rectangle into small 16x16 fragments
+                int frag_v_count =
+                        ceilf(float(v_max - v_min + 1) / float(fragment_size));
+                int frag_u_count =
+                        ceilf(float(u_max - u_min + 1) / float(fragment_size));
+
+                int frag_count = frag_v_count * frag_u_count;
+                int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                int frag_count_end = frag_count_start + frag_count;
+                if (frag_count_end >= frag_buffer_size) {
+                    printf("Fragment count exceeding buffer size, abort!\n");
+                }
+
+                int offset = 0;
+                for (int frag_v = 0; frag_v < frag_v_count; ++frag_v) {
+                    for (int frag_u = 0; frag_u < frag_u_count;
+                         ++frag_u, ++offset) {
+                        float* frag_ptr =
+                                frag_buffer_indexer.GetDataPtrFromCoord<float>(
+                                        frag_count_start + offset);
+                        // zmin, zmax
+                        frag_ptr[0] = z_min;
+                        frag_ptr[1] = z_max;
+
+                        // vmin, umin
+                        frag_ptr[2] = v_min + frag_v * fragment_size;
+                        frag_ptr[3] = u_min + frag_u * fragment_size;
+
+                        // vmax, umax
+                        frag_ptr[4] = min(frag_ptr[2] + fragment_size - 1,
+                                          static_cast<float>(v_max));
+                        frag_ptr[5] = min(frag_ptr[3] + fragment_size - 1,
+                                          static_cast<float>(u_max));
+                    }
+                }
+            });
+#if defined(__CUDACC__)
+    int frag_count = count[0].Item<int>();
+#else
+    int frag_count = (*count_ptr).load();
+#endif
+
+    // Pass 0.5: Fill in range map to prepare for atomic min/max
+    launcher.LaunchGeneralKernel(
+            h_down * w_down, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int v = workload_idx / w_down;
+                int u = workload_idx % w_down;
+                float* range_ptr =
+                        range_map_indexer.GetDataPtrFromCoord<float>(u, v);
+                range_ptr[0] = depth_max;
+                range_ptr[1] = depth_min;
+            });
+
+    // Pass 1: iterate over rendering fragment array, fill-in range
+    launcher.LaunchGeneralKernel(
+            frag_count * fragment_size * fragment_size,
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int frag_idx = workload_idx / (fragment_size * fragment_size);
+                int local_idx = workload_idx % (fragment_size * fragment_size);
+                int dv = local_idx / fragment_size;
+                int du = local_idx % fragment_size;
+
+                float* frag_ptr =
+                        frag_buffer_indexer.GetDataPtrFromCoord<float>(
+                                frag_idx);
+                int v_min = static_cast<int>(frag_ptr[2]);
+                int u_min = static_cast<int>(frag_ptr[3]);
+                int v_max = static_cast<int>(frag_ptr[4]);
+                int u_max = static_cast<int>(frag_ptr[5]);
+
+                int v = v_min + dv;
+                int u = u_min + du;
+                if (v > v_max || u > u_max) return;
+
+                float z_min = frag_ptr[0];
+                float z_max = frag_ptr[1];
+                float* range_ptr =
+                        range_map_indexer.GetDataPtrFromCoord<float>(u, v);
+#ifdef __CUDACC__
+                atomicMinf(&(range_ptr[0]), z_min);
+                atomicMaxf(&(range_ptr[1]), z_max);
+#else
+#pragma omp critical
+                {
+                    range_ptr[0] = min(z_min, range_ptr[0]);
+                    range_ptr[1] = max(z_max, range_ptr[1]);
+                }
+#endif
+            });
+#if defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
+}
+
+struct BlockCache {
+    int x;
+    int y;
+    int z;
+    int block_idx;
+
+    inline int OPEN3D_DEVICE Check(int xin, int yin, int zin) {
+        return (xin == x && yin == y && zin == z) ? block_idx : -1;
+    }
+
+    inline void OPEN3D_DEVICE Update(int xin,
+                                     int yin,
+                                     int zin,
+                                     int block_idx_in) {
+        x = xin;
+        y = yin;
+        z = zin;
+        block_idx = block_idx_in;
+    }
+};
+
+#if defined(__CUDACC__)
+void RayCastCUDA
+#else
+void RayCastCPU
+#endif
+        (std::shared_ptr<core::DeviceHashmap>& hashmap,
+         const core::Tensor& block_values,
+         const core::Tensor& range_map,
+         core::Tensor& vertex_map,
+         core::Tensor& depth_map,
+         core::Tensor& color_map,
+         core::Tensor& normal_map,
+         const core::Tensor& intrinsics,
+         const core::Tensor& extrinsics,
+         int h,
+         int w,
+         int64_t block_resolution,
+         float voxel_size,
+         float sdf_trunc,
+         float depth_scale,
+         float depth_min,
+         float depth_max,
+         float weight_threshold) {
+    using Key = core::Block<int, 3>;
+    using Hash = core::BlockHash<int, 3>;
+
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    auto cuda_hashmap =
+            std::dynamic_pointer_cast<core::StdGPUHashmap<Key, Hash>>(hashmap);
+    if (cuda_hashmap == nullptr) {
+        utility::LogError(
+                "Unsupported backend: CUDA raycasting only supports STDGPU.");
+    }
+    auto hashmap_impl = cuda_hashmap->GetImpl();
+#else
+    auto cpu_hashmap =
+            std::dynamic_pointer_cast<core::TBBHashmap<Key, Hash>>(hashmap);
+    auto hashmap_impl = *cpu_hashmap->GetImpl();
+#endif
+
+    NDArrayIndexer voxel_block_buffer_indexer(block_values, 4);
+    NDArrayIndexer range_map_indexer(range_map, 2);
+
+    NDArrayIndexer vertex_map_indexer;
+    NDArrayIndexer depth_map_indexer;
+    NDArrayIndexer color_map_indexer;
+    NDArrayIndexer normal_map_indexer;
+
+    bool enable_vertex = (vertex_map.GetLength() != 0);
+    bool enable_depth = (depth_map.GetLength() != 0);
+    bool enable_color = (color_map.GetLength() != 0);
+    bool enable_normal = (normal_map.GetLength() != 0);
+    if (!enable_vertex && !enable_depth && !enable_color && !enable_normal) {
+        utility::LogWarning("No output specified for ray casting, exit.");
+        return;
+    }
+
+    if (enable_vertex) {
+        vertex_map_indexer = NDArrayIndexer(vertex_map, 2);
+    }
+    if (enable_depth) {
+        depth_map_indexer = NDArrayIndexer(depth_map, 2);
+    }
+    if (enable_color) {
+        color_map_indexer = NDArrayIndexer(color_map, 2);
+    }
+    if (enable_normal) {
+        normal_map_indexer = NDArrayIndexer(normal_map, 2);
+    }
+
+    TransformIndexer c2w_transform_indexer(
+            intrinsics, t::geometry::InverseTransformation(extrinsics));
+    TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
+
+    int64_t rows = h;
+    int64_t cols = w;
+
+    float block_size = voxel_size * block_resolution;
+#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+    core::kernel::CUDALauncher launcher;
+#else
+    core::kernel::CPULauncher launcher;
+    using std::max;
+#endif
+
+    DISPATCH_BYTESIZE_TO_VOXEL(voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+        launcher.LaunchGeneralKernel(
+                rows * cols, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    auto GetVoxelAtP = [&] OPEN3D_DEVICE(
+                                               int x_b, int y_b, int z_b,
+                                               int x_v, int y_v, int z_v,
+                                               core::addr_t block_addr,
+                                               BlockCache& cache) -> voxel_t* {
+                        int x_vn = (x_v + block_resolution) % block_resolution;
+                        int y_vn = (y_v + block_resolution) % block_resolution;
+                        int z_vn = (z_v + block_resolution) % block_resolution;
+
+                        int dx_b = Sign(x_v - x_vn);
+                        int dy_b = Sign(y_v - y_vn);
+                        int dz_b = Sign(z_v - z_vn);
+
+                        if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
+                            return voxel_block_buffer_indexer
+                                    .GetDataPtrFromCoord<voxel_t>(x_v, y_v, z_v,
+                                                                  block_addr);
+                        } else {
+                            Key key;
+                            key.Set(0, x_b + dx_b);
+                            key.Set(1, y_b + dy_b);
+                            key.Set(2, z_b + dz_b);
+
+                            int block_addr = cache.Check(key.Get(0), key.Get(1),
+                                                         key.Get(2));
+                            if (block_addr < 0) {
+                                auto iter = hashmap_impl.find(key);
+                                if (iter == hashmap_impl.end()) return nullptr;
+                                block_addr = iter->second;
+                                cache.Update(key.Get(0), key.Get(1), key.Get(2),
+                                             block_addr);
+                            }
+
+                            return voxel_block_buffer_indexer
+                                    .GetDataPtrFromCoord<voxel_t>(
+                                            x_vn, y_vn, z_vn, block_addr);
+                        }
+                    };
+
+                    auto GetVoxelAtT = [&] OPEN3D_DEVICE(
+                                               float x_o, float y_o, float z_o,
+                                               float x_d, float y_d, float z_d,
+                                               float t,
+                                               BlockCache& cache) -> voxel_t* {
+                        float x_g = x_o + t * x_d;
+                        float y_g = y_o + t * y_d;
+                        float z_g = z_o + t * z_d;
+
+                        // Block coordinate and look up
+                        int x_b = static_cast<int>(floorf(x_g / block_size));
+                        int y_b = static_cast<int>(floorf(y_g / block_size));
+                        int z_b = static_cast<int>(floorf(z_g / block_size));
+
+                        Key key;
+                        key.Set(0, x_b);
+                        key.Set(1, y_b);
+                        key.Set(2, z_b);
+
+                        int block_addr = cache.Check(x_b, y_b, z_b);
+                        if (block_addr < 0) {
+                            auto iter = hashmap_impl.find(key);
+                            if (iter == hashmap_impl.end()) return nullptr;
+                            block_addr = iter->second;
+                            cache.Update(x_b, y_b, z_b, block_addr);
+                        }
+
+                        // Voxel coordinate and look up
+                        int x_v = int((x_g - x_b * block_size) / voxel_size);
+                        int y_v = int((y_g - y_b * block_size) / voxel_size);
+                        int z_v = int((z_g - z_b * block_size) / voxel_size);
+                        return voxel_block_buffer_indexer
+                                .GetDataPtrFromCoord<voxel_t>(x_v, y_v, z_v,
+                                                              block_addr);
+                    };
+
+                    int64_t y = workload_idx / cols;
+                    int64_t x = workload_idx % cols;
+
+                    float *depth_ptr = nullptr, *vertex_ptr = nullptr,
+                          *normal_ptr = nullptr, *color_ptr = nullptr;
+                    if (enable_depth) {
+                        depth_ptr =
+                                depth_map_indexer.GetDataPtrFromCoord<float>(x,
+                                                                             y);
+                        *depth_ptr = 0;
+                    }
+                    if (enable_vertex) {
+                        vertex_ptr =
+                                vertex_map_indexer.GetDataPtrFromCoord<float>(
+                                        x, y);
+                        vertex_ptr[0] = 0;
+                        vertex_ptr[1] = 0;
+                        vertex_ptr[2] = 0;
+                    }
+                    if (enable_color) {
+                        color_ptr =
+                                color_map_indexer.GetDataPtrFromCoord<float>(x,
+                                                                             y);
+                        color_ptr[0] = 0;
+                        color_ptr[1] = 0;
+                        color_ptr[2] = 0;
+                    }
+                    if (enable_normal) {
+                        normal_ptr =
+                                normal_map_indexer.GetDataPtrFromCoord<float>(
+                                        x, y);
+                        normal_ptr[0] = 0;
+                        normal_ptr[1] = 0;
+                        normal_ptr[2] = 0;
+                    }
+
+                    const float* range =
+                            range_map_indexer.GetDataPtrFromCoord<float>(x / 8,
+                                                                         y / 8);
+                    float t = range[0];
+                    const float t_max = range[1];
+                    if (t >= t_max) return;
+
+                    // Coordinates in camera and global
+                    float x_c = 0, y_c = 0, z_c = 0;
+                    float x_g = 0, y_g = 0, z_g = 0;
+                    float x_o = 0, y_o = 0, z_o = 0;
+
+                    // Iterative ray intersection check
+                    float t_prev = t;
+
+                    float tsdf_prev = -1.0f;
+                    float tsdf = 1.0;
+                    float w = 0.0;
+
+                    // Camera origin
+                    c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o,
+                                                         &z_o);
+
+                    // Direction
+                    c2w_transform_indexer.Unproject(static_cast<float>(x),
+                                                    static_cast<float>(y), 1.0f,
+                                                    &x_c, &y_c, &z_c);
+                    c2w_transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g,
+                                                         &y_g, &z_g);
+                    float x_d = (x_g - x_o);
+                    float y_d = (y_g - y_o);
+                    float z_d = (z_g - z_o);
+
+                    BlockCache cache{0, 0, 0, -1};
+                    bool surface_found = false;
+                    while (t < t_max) {
+                        voxel_t* voxel_ptr = GetVoxelAtT(x_o, y_o, z_o, x_d,
+                                                         y_d, z_d, t, cache);
+
+                        if (!voxel_ptr) {
+                            t_prev = t;
+                            t += block_size;
+                        } else {
+                            tsdf_prev = tsdf;
+                            tsdf = voxel_ptr->GetTSDF();
+                            w = voxel_ptr->GetWeight();
+                            if (tsdf_prev > 0 && w >= weight_threshold &&
+                                tsdf <= 0) {
+                                surface_found = true;
+                                break;
+                            }
+                            t_prev = t;
+                            float delta = tsdf * sdf_trunc;
+                            t += delta < voxel_size ? voxel_size : delta;
+                        }
+                    }
+
+                    if (surface_found) {
+                        float t_intersect = (t * tsdf_prev - t_prev * tsdf) /
+                                            (tsdf_prev - tsdf);
+                        x_g = x_o + t_intersect * x_d;
+                        y_g = y_o + t_intersect * y_d;
+                        z_g = z_o + t_intersect * z_d;
+
+                        // Trivial vertex assignment
+                        if (enable_depth) {
+                            *depth_ptr = t_intersect * depth_scale;
+                        }
+                        if (enable_vertex) {
+                            w2c_transform_indexer.RigidTransform(
+                                    x_g, y_g, z_g, vertex_ptr + 0,
+                                    vertex_ptr + 1, vertex_ptr + 2);
+                        }
+
+                        // Trilinear interpolation
+                        // TODO(wei): simplify the flow by splitting the
+                        // functions given what is enabled
+                        if (enable_color || enable_normal) {
+                            int x_b =
+                                    static_cast<int>(floorf(x_g / block_size));
+                            int y_b =
+                                    static_cast<int>(floorf(y_g / block_size));
+                            int z_b =
+                                    static_cast<int>(floorf(z_g / block_size));
+                            float x_v = (x_g - float(x_b) * block_size) /
+                                        voxel_size;
+                            float y_v = (y_g - float(y_b) * block_size) /
+                                        voxel_size;
+                            float z_v = (z_g - float(z_b) * block_size) /
+                                        voxel_size;
+
+                            Key key;
+                            key.Set(0, x_b);
+                            key.Set(1, y_b);
+                            key.Set(2, z_b);
+
+                            int block_addr = cache.Check(x_b, y_b, z_b);
+                            if (block_addr < 0) {
+                                auto iter = hashmap_impl.find(key);
+                                if (iter == hashmap_impl.end()) return;
+                                block_addr = iter->second;
+                                cache.Update(x_b, y_b, z_b, block_addr);
+                            }
+
+                            int x_v_floor = static_cast<int>(floorf(x_v));
+                            int y_v_floor = static_cast<int>(floorf(y_v));
+                            int z_v_floor = static_cast<int>(floorf(z_v));
+
+                            float ratio_x = x_v - float(x_v_floor);
+                            float ratio_y = y_v - float(y_v_floor);
+                            float ratio_z = z_v - float(z_v_floor);
+
+                            float sum_weight_color = 0.0;
+                            float sum_weight_normal = 0.0;
+                            for (int k = 0; k < 8; ++k) {
+                                int dx_v = (k & 1) > 0 ? 1 : 0;
+                                int dy_v = (k & 2) > 0 ? 1 : 0;
+                                int dz_v = (k & 4) > 0 ? 1 : 0;
+                                float ratio = (dx_v * (ratio_x) +
+                                               (1 - dx_v) * (1 - ratio_x)) *
+                                              (dy_v * (ratio_y) +
+                                               (1 - dy_v) * (1 - ratio_y)) *
+                                              (dz_v * (ratio_z) +
+                                               (1 - dz_v) * (1 - ratio_z));
+
+                                voxel_t* voxel_ptr_k = GetVoxelAtP(
+                                        x_b, y_b, z_b, x_v_floor + dx_v,
+                                        y_v_floor + dy_v, z_v_floor + dz_v,
+                                        block_addr, cache);
+
+                                if (enable_color && voxel_ptr_k &&
+                                    voxel_ptr_k->GetWeight() > 0) {
+                                    sum_weight_color += ratio;
+                                    color_ptr[0] += ratio * voxel_ptr_k->GetR();
+                                    color_ptr[1] += ratio * voxel_ptr_k->GetG();
+                                    color_ptr[2] += ratio * voxel_ptr_k->GetB();
+                                }
+
+                                if (enable_normal) {
+                                    for (int dim = 0; dim < 3; ++dim) {
+                                        voxel_t* voxel_ptr_k_plus = GetVoxelAtP(
+                                                x_b, y_b, z_b,
+                                                x_v_floor + dx_v + (dim == 0),
+                                                y_v_floor + dy_v + (dim == 1),
+                                                z_v_floor + dz_v + (dim == 2),
+                                                block_addr, cache);
+                                        voxel_t* voxel_ptr_k_minus =
+                                                GetVoxelAtP(x_b, y_b, z_b,
+                                                            x_v_floor + dx_v -
+                                                                    (dim == 0),
+                                                            y_v_floor + dy_v -
+                                                                    (dim == 1),
+                                                            z_v_floor + dz_v -
+                                                                    (dim == 2),
+                                                            block_addr, cache);
+
+                                        bool valid = false;
+                                        if (voxel_ptr_k_plus &&
+                                            voxel_ptr_k_plus->GetWeight() > 0) {
+                                            normal_ptr[dim] +=
+                                                    ratio *
+                                                    voxel_ptr_k_plus
+                                                            ->GetTSDF() /
+                                                    (2 * voxel_size);
+                                            valid = true;
+                                        }
+
+                                        if (voxel_ptr_k_minus &&
+                                            voxel_ptr_k_minus->GetWeight() >
+                                                    0) {
+                                            normal_ptr[dim] -=
+                                                    ratio *
+                                                    voxel_ptr_k_minus
+                                                            ->GetTSDF() /
+                                                    (2 * voxel_size);
+                                            valid = true;
+                                        }
+                                        sum_weight_normal += valid ? ratio : 0;
+                                    }
+                                }  // if (enable_normal)
+                            }      // loop over 8 neighbors
+
+                            if (enable_color && sum_weight_color > 0) {
+                                sum_weight_color *= 255.0;
+                                color_ptr[0] /= sum_weight_color;
+                                color_ptr[1] /= sum_weight_color;
+                                color_ptr[2] /= sum_weight_color;
+                            }
+                            if (enable_normal && sum_weight_normal > 0) {
+                                normal_ptr[0] /= sum_weight_normal;
+                                normal_ptr[1] /= sum_weight_normal;
+                                normal_ptr[2] /= sum_weight_normal;
+                                float norm =
+                                        sqrt(normal_ptr[0] * normal_ptr[0] +
+                                             normal_ptr[1] * normal_ptr[1] +
+                                             normal_ptr[2] * normal_ptr[2]);
+                                w2c_transform_indexer.Rotate(
+                                        normal_ptr[0] / norm,
+                                        normal_ptr[1] / norm,
+                                        normal_ptr[2] / norm, normal_ptr + 0,
+                                        normal_ptr + 1, normal_ptr + 2);
+                            }
+                        }  // if (color or normal)
+                    }      // if (tsdf < 0)
+                });
+    });
+
+#if defined(__CUDACC__)
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
 }
 
 }  // namespace tsdf

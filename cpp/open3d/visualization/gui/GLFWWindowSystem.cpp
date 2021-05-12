@@ -105,6 +105,18 @@ int KeymodsFromGLFW(int glfw_mods) {
     return keymods;
 }
 
+float CallGLFWGetWindowContentScale(GLFWwindow* w) {
+    // Ubuntu 18.04 uses GLFW 3.1, which doesn't have this function
+#if (GLFW_VERSION_MAJOR > 3 || \
+     (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
+    float xscale, yscale;
+    glfwGetWindowContentScale(w, &xscale, &yscale);
+    return std::min(xscale, yscale);
+#else
+    return 1.0f;
+#endif  // GLFW version >= 3.3
+}
+
 }  // namespace
 
 GLFWWindowSystem::GLFWWindowSystem() {}
@@ -256,15 +268,24 @@ void GLFWWindowSystem::SetWindowSizePixels(OSWindow w, const Size& size) {
 }
 
 float GLFWWindowSystem::GetWindowScaleFactor(OSWindow w) const {
-// Ubuntu 18.04 uses GLFW 3.1, which doesn't have this function
-#if (GLFW_VERSION_MAJOR > 3 || \
-     (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 3))
-    float xscale, yscale;
-    glfwGetWindowContentScale((GLFWwindow*)w, &xscale, &yscale);
-    return std::min(xscale, yscale);
+    // This function returns the number of device pixels per OS distance-unit.
+    // Windows and Linux keep one pixel equal to one real pixel, whereas
+    // macOS keeps the unit of measurement the same (1 pt = 1/72 inch) and
+    // changes the number pixels in one "virtual pixel". This function returns
+    // the scale factor as macOS thinks of it. This function should be used
+    // in converting to/from OS coordinates (e.g. mouse events), but not for
+    // sizing user interface elements like fonts.
+#if __APPLE__
+    return CallGLFWGetWindowContentScale((GLFWwindow*)w);
 #else
     return 1.0f;
-#endif  // GLFW version >= 3.3
+#endif  // __APPLE__
+}
+
+float GLFWWindowSystem::GetUIScaleFactor(OSWindow w) const {
+    // This function returns the scale factor needed to have appropriately
+    // sized user interface elements.
+    return CallGLFWGetWindowContentScale((GLFWwindow*)w);
 }
 
 void GLFWWindowSystem::SetWindowTitle(OSWindow w, const char* title) {
@@ -338,13 +359,15 @@ void GLFWWindowSystem::MouseMoveCallback(GLFWwindow* window,
             buttons |= MouseButtonFromGLFW(b);
         }
     }
-    float scaling = w->GetScaling();
+    float scaling =
+            Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+                    window);
     int ix = int(std::ceil(x * scaling));
     int iy = int(std::ceil(y * scaling));
 
     auto type = (buttons == 0 ? MouseEvent::MOVE : MouseEvent::DRAG);
-    MouseEvent me = {type, ix, iy, w->GetMouseMods()};
-    me.button.button = MouseButton(buttons);
+    MouseEvent me = MouseEvent::MakeButtonEvent(type, ix, iy, w->GetMouseMods(),
+                                                MouseButton(buttons), 1);
 
     w->OnMouseEvent(me);
 }
@@ -359,13 +382,15 @@ void GLFWWindowSystem::MouseButtonCallback(GLFWwindow* window,
                                       : MouseEvent::BUTTON_UP);
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    float scaling = w->GetScaling();
+    float scaling =
+            Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+                    window);
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
 
-    MouseEvent me = {type, ix, iy, KeymodsFromGLFW(mods)};
-    me.button.button = MouseButton(MouseButtonFromGLFW(button));
-    me.button.count = 1;
+    MouseEvent me = MouseEvent::MakeButtonEvent(
+            type, ix, iy, KeymodsFromGLFW(mods),
+            MouseButton(MouseButtonFromGLFW(button)), 1);
 
     double now = Application::GetInstance().Now();
     if (g_last_button_down == me.button.button) {
@@ -388,26 +413,27 @@ void GLFWWindowSystem::MouseScrollCallback(GLFWwindow* window,
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    float scaling = w->GetScaling();
+    float scaling =
+            Application::GetInstance().GetWindowSystem().GetWindowScaleFactor(
+                    window);
     int ix = int(std::ceil(mx * scaling));
     int iy = int(std::ceil(my * scaling));
+
+    // GLFW doesn't give us any information about whether this scroll event
+    // came from a mousewheel or a trackpad two-finger scroll.
+#if __APPLE__
+    bool isTrackpad = true;
+#else
+    bool isTrackpad = false;
+#endif  // __APPLE__
 
     // Note that although pixels are integers, the trackpad value needs to
     // be a float, since macOS trackpads produce fractional values when
     // scrolling slowly. These fractional values need to be passed all the way
     // down to the MatrixInteractorLogic::Dolly() in order for dollying to
     // feel buttery smooth with the trackpad.
-    MouseEvent me = {MouseEvent::WHEEL, ix, iy, w->GetMouseMods()};
-    me.wheel.dx = dx;
-    me.wheel.dy = dy;
-
-    // GLFW doesn't give us any information about whether this scroll event
-    // came from a mousewheel or a trackpad two-finger scroll.
-#if __APPLE__
-    me.wheel.isTrackpad = true;
-#else
-    me.wheel.isTrackpad = false;
-#endif  // __APPLE__
+    MouseEvent me = MouseEvent::MakeWheelEvent(
+            MouseEvent::WHEEL, ix, iy, w->GetMouseMods(), dx, dy, isTrackpad);
 
     w->OnMouseEvent(me);
 }
@@ -520,7 +546,12 @@ rendering::FilamentRenderer* GLFWWindowSystem::CreateRenderer(OSWindow w) {
 
 void GLFWWindowSystem::ResizeRenderer(OSWindow w,
                                       rendering::FilamentRenderer* renderer) {
+#if __APPLE__
+    // We need to recreate the swap chain after resizing a window on macOS
+    // otherwise things look very wrong. SwapChain does not need to be resized
+    // on other platforms.
     renderer->UpdateSwapChain();
+#endif  // __APPLE__
 }
 
 MenuBase* GLFWWindowSystem::CreateOSMenu() {

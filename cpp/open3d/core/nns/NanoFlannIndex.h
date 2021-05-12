@@ -129,7 +129,7 @@ public:
 
     /// \brief Parameterized Constructor.
     ///
-    /// \param tensor Provides a set of data points as Tensor for KDTree
+    /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     NanoFlannIndex(const Tensor &dataset_points);
     ~NanoFlannIndex();

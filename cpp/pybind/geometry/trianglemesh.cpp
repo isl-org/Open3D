@@ -328,7 +328,7 @@ void pybind_trianglemesh(py::module &m) {
             .def_static("create_from_point_cloud_alpha_shape",
                         &TriangleMesh::CreateFromPointCloudAlphaShape,
                         "Alpha shapes are a generalization of the convex hull. "
-                        "With decreasing alpha value the shape schrinks and "
+                        "With decreasing alpha value the shape shrinks and "
                         "creates cavities. See Edelsbrunner and Muecke, "
                         "\"Three-Dimensional Alpha Shapes\", 1994.",
                         "pcd"_a, "alpha"_a, "tetra_mesh"_a, "pt_map"_a)
@@ -359,41 +359,45 @@ void pybind_trianglemesh(py::module &m) {
             .def_static("create_box", &TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
-                        "front will be placed at (0, 0, 0).",
-                        "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0)
+                        "front will be placed at (0, 0, 0), and default UV "
+                        "map, maps the entire texture to each face.",
+                        "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0,
+                        "create_uv_map"_a = false,
+                        "map_texture_to_each_face"_a = false)
             .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
                         "Factory function to create a tetrahedron. The "
                         "centroid of the mesh "
                         "will be placed at (0, 0, 0) and the vertices have a "
                         "distance of "
                         "radius to the center.",
-                        "radius"_a = 1.0)
+                        "radius"_a = 1.0, "create_uv_map"_a = false)
             .def_static("create_octahedron", &TriangleMesh::CreateOctahedron,
                         "Factory function to create a octahedron. The centroid "
                         "of the mesh "
                         "will be placed at (0, 0, 0) and the vertices have a "
                         "distance of "
                         "radius to the center.",
-                        "radius"_a = 1.0)
+                        "radius"_a = 1.0, "create_uv_map"_a = false)
             .def_static("create_icosahedron", &TriangleMesh::CreateIcosahedron,
                         "Factory function to create a icosahedron. The "
                         "centroid of the mesh "
                         "will be placed at (0, 0, 0) and the vertices have a "
                         "distance of "
                         "radius to the center.",
-                        "radius"_a = 1.0)
+                        "radius"_a = 1.0, "create_uv_map"_a = false)
             .def_static("create_sphere", &TriangleMesh::CreateSphere,
                         "Factory function to create a sphere mesh centered at "
                         "(0, 0, 0).",
-                        "radius"_a = 1.0, "resolution"_a = 20)
+                        "radius"_a = 1.0, "resolution"_a = 20,
+                        "create_uv_map"_a = false)
             .def_static("create_cylinder", &TriangleMesh::CreateCylinder,
                         "Factory function to create a cylinder mesh.",
                         "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
-                        "split"_a = 4)
+                        "split"_a = 4, "create_uv_map"_a = false)
             .def_static("create_cone", &TriangleMesh::CreateCone,
                         "Factory function to create a cone mesh.",
                         "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
-                        "split"_a = 1)
+                        "split"_a = 1, "create_uv_map"_a = false)
             .def_static("create_torus", &TriangleMesh::CreateTorus,
                         "Factory function to create a torus mesh.",
                         "torus_radius"_a = 1.0, "tube_radius"_a = 0.5,
@@ -654,7 +658,7 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_from_point_cloud_alpha_shape",
             {{"pcd",
-              "PointCloud from whicht the TriangleMesh surface is "
+              "PointCloud from which the TriangleMesh surface is "
               "reconstructed."},
              {"alpha",
               "Parameter to control the shape. A very big value will give a "
@@ -696,19 +700,25 @@ void pybind_trianglemesh(py::module &m) {
              {"n_threads",
               "Number of threads used for reconstruction. Set to -1 to "
               "automatically determine it."}});
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "create_box",
-                                    {{"width", "x-directional length."},
-                                     {"height", "y-directional length."},
-                                     {"depth", "z-directional length."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_box",
+            {{"width", "x-directional length."},
+             {"height", "y-directional length."},
+             {"depth", "z-directional length."},
+             {"create_uv_map", "Add default uv map to the mesh."},
+             {"map_texture_to_each_face", "Map entire texture to each face."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_tetrahedron",
-            {{"radius", "Distance from centroid to mesh vetices."}});
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_octahedron",
-            {{"radius", "Distance from centroid to mesh vetices."}});
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_icosahedron",
-            {{"radius", "Distance from centroid to mesh vetices."}});
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_sphere",
             {{"radius", "The radius of the sphere."},
@@ -717,7 +727,8 @@ void pybind_trianglemesh(py::module &m) {
               "``resolution`` segments (i.e. there are ``resolution + 1`` "
               "latitude lines including the north and south pole). The "
               "latitudes will be split into ```2 * resolution`` segments (i.e. "
-              "there are ``2 * resolution`` longitude lines.)"}});
+              "there are ``2 * resolution`` longitude lines.)"},
+             {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_cylinder",
             {{"radius", "The radius of the cylinder."},
@@ -726,8 +737,8 @@ void pybind_trianglemesh(py::module &m) {
               "from (0, 0, -height/2) to (0, 0, height/2)."},
              {"resolution",
               " The circle will be split into ``resolution`` segments"},
-             {"split",
-              "The ``height`` will be split into ``split`` segments."}});
+             {"split", "The ``height`` will be split into ``split`` segments."},
+             {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_cone",
             {{"radius", "The radius of the cone."},
@@ -736,8 +747,8 @@ void pybind_trianglemesh(py::module &m) {
               "0, 0) to (0, 0, height)."},
              {"resolution",
               "The circle will be split into ``resolution`` segments"},
-             {"split",
-              "The ``height`` will be split into ``split`` segments."}});
+             {"split", "The ``height`` will be split into ``split`` segments."},
+             {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_torus",
             {{"torus_radius",

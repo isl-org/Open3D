@@ -46,7 +46,7 @@ public:
 
     /// \brief Parameterized Constructor.
     ///
-    /// \param tensor Provides a set of data points as Tensor for KDTree
+    /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     FixedRadiusIndex(const Tensor& dataset_points, double radius);
     ~FixedRadiusIndex();

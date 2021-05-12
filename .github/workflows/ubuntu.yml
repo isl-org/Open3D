@@ -97,6 +97,7 @@ jobs:
 
     env:
       BUILD_CUDA_MODULE: ON
+      BUILD_COMMON_CUDA_ARCHS: ${{ matrix.is_master && 'ON' || 'OFF' }}
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:

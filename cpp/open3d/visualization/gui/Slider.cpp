@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 
@@ -55,9 +54,7 @@ struct Slider::Impl {
 };
 
 Slider::Slider(Type type) : impl_(new Slider::Impl()) {
-    std::stringstream s;
-    s << "##slider_" << g_next_slider_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = "##slider_" + std::to_string(g_next_slider_id++);
     impl_->type_ = type;
 }
 
@@ -93,7 +90,8 @@ void Slider::SetOnValueChanged(std::function<void(double)> on_value_changed) {
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size Slider::CalcPreferredSize(const Theme& theme) const {
+Size Slider::CalcPreferredSize(const LayoutContext& context,
+                               const Constraints& constraints) const {
     auto line_height = ImGui::GetTextLineHeight();
     auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;
 
@@ -120,6 +118,7 @@ Widget::DrawResult Slider::Draw(const DrawContext& context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     if (impl_->value_ != new_value) {
         impl_->value_ = new_value;

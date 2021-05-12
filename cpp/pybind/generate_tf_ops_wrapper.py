@@ -53,6 +53,8 @@ def main():
             if param.default != inspect.Parameter.empty:
                 if isinstance(param.default, str):
                     tmp += '="{}"'.format(str(param.default))
+                elif isinstance(param.default, type(tf.float32)):
+                    tmp += '=_tf.{}'.format(param.default.name)
                 else:
                     tmp += '={}'.format(str(param.default))
 

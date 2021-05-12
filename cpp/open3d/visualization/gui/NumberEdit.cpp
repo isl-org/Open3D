@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,6 @@
 
 #include <algorithm>  // for min, max
 #include <cmath>
-#include <sstream>
 #include <unordered_set>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -61,9 +60,7 @@ struct NumberEdit::Impl {
 
 NumberEdit::NumberEdit(Type type) : impl_(new NumberEdit::Impl()) {
     impl_->type_ = type;
-    std::stringstream s;
-    s << "##numedit" << g_next_number_edit_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = "##numedit" + std::to_string(g_next_number_edit_id++);
 }
 
 NumberEdit::~NumberEdit() {}
@@ -109,7 +106,8 @@ void NumberEdit::SetOnValueChanged(std::function<void(double)> on_changed) {
     impl_->on_changed_ = on_changed;
 }
 
-Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
+Size NumberEdit::CalcPreferredSize(const LayoutContext& context,
+                                   const Constraints& constraints) const {
     int num_min_digits =
             int(std::ceil(std::log10(std::abs(impl_->min_value_))));
     int num_max_digits =
@@ -127,15 +125,16 @@ Size NumberEdit::CalcPreferredSize(const Theme &theme) const {
         incdec_width = 2 * height + padding;
     }
 
-    int width = (num_digits * theme.font_size) / 2 + padding + incdec_width;
+    int width =
+            (num_digits * context.theme.font_size) / 2 + padding + incdec_width;
     if (impl_->preferred_width_ > 0) {
         width = impl_->preferred_width_;
     }
     return Size(width, height);
 }
 
-Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
-    auto &frame = GetFrame();
+Widget::DrawResult NumberEdit::Draw(const DrawContext& context) {
+    auto& frame = GetFrame();
     ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
@@ -186,6 +185,7 @@ Widget::DrawResult NumberEdit::Draw(const DrawContext &context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar();

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,21 +46,21 @@ public:
     /// Returns the index of the new item.
     int AddItem(const char* name);
 
-    /// Changes the item's text. \param index must be valid, otherwise
+    /// Changes the item's text. \p index must be valid, otherwise
     /// nothing will happen.
     void ChangeItem(int index, const char* name);
-    /// If an item exists with \param orig_name, it will be changed to
-    /// \param new_name.
+    /// If an item exists with \p orig_name, it will be changed to
+    /// \p new_name.
     void ChangeItem(const char* orig_name, const char* new_name);
 
     /// Removes the first item matching the given text.
     void RemoveItem(const char* name);
-    /// Removes the item at \param index.
+    /// Removes the item at \p index.
     void RemoveItem(int index);
 
     int GetNumberOfItems() const;
 
-    /// Returns the text of the item at \param index. \param index must be
+    /// Returns the text of the item at \p index. \p index must be
     /// valid.
     const char* GetItem(int index) const;
 
@@ -70,11 +70,12 @@ public:
     /// Sets the selected item by index. Does not call the onValueChanged
     /// callback.
     void SetSelectedIndex(int index);
-    /// Sets the selected item by value. Does nothing if \param value is not an
+    /// Sets the selected item by value. Does nothing if \p value is not an
     /// item, but will return false. Does not call the onValueChanged callback
     bool SetSelectedValue(const char* value);
 
-    Size CalcPreferredSize(const Theme& theme) const override;
+    Size CalcPreferredSize(const LayoutContext& context,
+                           const Constraints& constraints) const override;
 
     DrawResult Draw(const DrawContext& context) override;
 

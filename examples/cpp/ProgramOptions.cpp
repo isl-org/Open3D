@@ -52,10 +52,9 @@ int main(int argc, char *argv[]) {
                      utility::GetProgramOptionAsDouble(argc, argv, "--double"));
     utility::LogInfo("String is {}",
                      utility::GetProgramOptionAsString(argc, argv, "--string"));
-    std::vector<std::string> strs;
-    utility::SplitString(
-            strs, utility::GetProgramOptionAsString(argc, argv, "--string"),
-            ",.", true);
+    std::vector<std::string> strs = utility::SplitString(
+            utility::GetProgramOptionAsString(argc, argv, "--string"), ",.",
+            true);
     for (auto &str : strs) {
         utility::LogInfo("\tSubstring : {}", str);
     }
