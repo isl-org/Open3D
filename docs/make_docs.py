@@ -453,7 +453,8 @@ if __name__ == "__main__":
     # Build docs for release (version number will be used instead of git hash).
     $ python make_docs.py --is_release --sphinx --doxygen
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--clean_notebooks",
         action="store_true",

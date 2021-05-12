@@ -17,10 +17,12 @@ open3d.ml.tf.ops
     fixed_radius_search
     invert_neighbors_list
     knn_search
+    nms
     radius_search
     reduce_subarrays_sum
     voxel_pooling
     voxel_pooling_grad
+    voxelize
 
 
 .. toctree::
@@ -34,7 +36,9 @@ open3d.ml.tf.ops
     fixed_radius_search <open3d.ml.tf.ops.fixed_radius_search>
     invert_neighbors_list <open3d.ml.tf.ops.invert_neighbors_list>
     knn_search <open3d.ml.tf.ops.knn_search>
+    nms <open3d.ml.tf.ops.nms>
     radius_search <open3d.ml.tf.ops.radius_search>
     reduce_subarrays_sum <open3d.ml.tf.ops.reduce_subarrays_sum>
     voxel_pooling <open3d.ml.tf.ops.voxel_pooling>
     voxel_pooling_grad <open3d.ml.tf.ops.voxel_pooling_grad>
+    voxelize <open3d.ml.tf.ops.voxelize>
