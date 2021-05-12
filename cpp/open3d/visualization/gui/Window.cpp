@@ -89,10 +89,10 @@ struct ImguiWindowContext : public FontContext {
     const Theme* theme = nullptr;
     std::unique_ptr<ImguiFilamentBridge> imgui_bridge;
     ImGuiContext* context = nullptr;
-    std::map<FontStyle, ImFont*> fonts;  // references, not owned by us
+    std::vector<ImFont*> fonts;  // references, not owned by us
     float scaling = 1.0;
 
-    void* GetFont(FontStyle style) { return this->fonts[style]; }
+    void* GetFont(FontId font_id) { return this->fonts[font_id]; }
 
     void CreateFonts() {
         // ImGUI puts all fonts into one big texture atlas. However, there are
@@ -101,15 +101,11 @@ struct ImguiWindowContext : public FontContext {
         // to use must be loaded up front, which makes a large font selection
         // inconsistent with small memory footprint. Also, we might bump into
         // OpenGL texture size limitations.
-
-        this->fonts[FontStyle::NORMAL] =
-                AddFont(FontStyle::NORMAL, this->theme->font_path);
-        this->fonts[FontStyle::BOLD] =
-                AddFont(FontStyle::BOLD, this->theme->font_bold_path);
-        this->fonts[FontStyle::ITALIC] =
-                AddFont(FontStyle::ITALIC, this->theme->font_italic_path);
-        this->fonts[FontStyle::BOLD_ITALIC] = AddFont(
-                FontStyle::BOLD_ITALIC, this->theme->font_bold_italic_path);
+        auto& font_descs = Application::GetInstance().GetFontDescriptions();
+        this->fonts.reserve(font_descs.size());
+        for (auto& fd : font_descs) {
+            this->fonts.push_back(AddFont(fd));
+        }
 
         ImGuiIO& io = ImGui::GetIO();
         unsigned char* pixels;
@@ -123,97 +119,75 @@ struct ImguiWindowContext : public FontContext {
             utility::LogWarning(
                     "Got zero-byte font texture; ignoring custom fonts");
             io.Fonts->Clear();
-            this->fonts[FontStyle::NORMAL] =
+            this->fonts[0] =
                     io.Fonts->AddFontFromFileTTF(this->theme->font_path.c_str(),
                                                  float(this->theme->font_size));
-            this->fonts[FontStyle::BOLD] = this->fonts[FontStyle::NORMAL];
-            this->fonts[FontStyle::ITALIC] = this->fonts[FontStyle::NORMAL];
-            this->fonts[FontStyle::BOLD_ITALIC] =
-                    this->fonts[FontStyle::NORMAL];
+            for (unsigned int i = 1; i < font_descs.size(); ++i) {
+                this->fonts[i] = this->fonts[0];
+            }
             io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
                                          &bytesPerPx);
         }
         this->imgui_bridge->CreateAtlasTextureAlpha8(pixels, textureW, textureH,
                                                      bytesPerPx);
-        ImGui::SetCurrentFont(this->fonts[FontStyle::NORMAL]);
+        ImGui::SetCurrentFont(this->fonts[Application::DEFAULT_FONT_ID]);
     }
 
-    ImFont* AddFont(FontStyle style, const std::string& font_path) {
+    ImFont* AddFont(const FontDescription& fd) {
+        // We can assume that everything in the FontDescription is usable, since
+        // Application::SetFont() should have ensured that it is usable.
         ImFont* imfont = nullptr;
-        bool can_add_cjk = (style == FontStyle::NORMAL);
 
-        // If the given font path is invalid, ImGui will silently fall back to
-        // proggy, which is a tiny "pixel art" texture that is compiled into the
-        // library.
-        if (!font_path.empty()) {
-            ImGuiIO& io = ImGui::GetIO();
-            int en_fonts = 0;
-            for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
-                if (custom.lang == "en") {
-                    auto custom_path = FindFontPath(custom.path, style);
-                    if (custom_path == "") {
-                        // This should not fail, since we would have complained
-                        // about it in Application::SetFont...().
-                        custom_path =
-                                FindFontPath(custom.path, FontStyle::NORMAL);
-                    }
-                    imfont = io.Fonts->AddFontFromFileTTF(
-                            custom_path.c_str(), float(this->theme->font_size),
-                            NULL, io.Fonts->GetGlyphRangesDefault());
-                    en_fonts += 1;
+        ImGuiIO& io = ImGui::GetIO();
+        // The first range should be "en" from
+        // FontDescription::FontDescription()
+        if (fd.ranges_.size() == 1) {
+            imfont = io.Fonts->AddFontFromFileTTF(
+                    fd.ranges_[0].path.c_str(), float(this->theme->font_size));
+        } else {
+            imfont = io.Fonts->AddFontFromFileTTF(
+                    fd.ranges_[0].path.c_str(), float(this->theme->font_size),
+                    NULL, io.Fonts->GetGlyphRangesDefault());
+        }
+
+        ImFontConfig config;
+        config.MergeMode = true;
+        for (auto& r : fd.ranges_) {
+            if (!r.lang.empty()) {
+                const ImWchar* range;
+                if (r.lang == "en") {
+                    continue;  // added above, don't add cyrillic too
+                } else if (r.lang == "ja") {
+                    range = io.Fonts->GetGlyphRangesJapanese();
+                } else if (r.lang == "ko") {
+                    range = io.Fonts->GetGlyphRangesKorean();
+                } else if (r.lang == "th") {
+                    range = io.Fonts->GetGlyphRangesThai();
+                } else if (r.lang == "vi") {
+                    range = io.Fonts->GetGlyphRangesVietnamese();
+                } else if (r.lang == "zh") {
+                    range = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+                } else if (r.lang == "zh_all") {
+                    range = io.Fonts->GetGlyphRangesChineseFull();
+                } else {  // so many languages use Cyrillic it can be the
+                          // default
+                    range = io.Fonts->GetGlyphRangesCyrillic();
                 }
-            }
-            if (en_fonts == 0) {
                 imfont = io.Fonts->AddFontFromFileTTF(
-                        font_path.c_str(), float(this->theme->font_size));
-            }
-
-            ImFontConfig config;
-            config.MergeMode = true;
-            for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
-                auto custom_path = FindFontPath(custom.path, style);
-                if (custom_path == "") {
-                    // This should not fail, since we would have complained
-                    // about it in Application::SetFont...().
-                    custom_path = FindFontPath(custom.path, FontStyle::NORMAL);
+                        r.path.c_str(), float(this->theme->font_size), &config,
+                        range);
+            } else if (!r.code_points.empty()) {
+                // TODO: the ImGui docs say that this must exist until
+                // CreateAtlastTextureAlpha8().
+                ImVector<ImWchar> range;
+                ImFontGlyphRangesBuilder builder;
+                for (auto c : r.code_points) {
+                    builder.AddChar(c);
                 }
-                if (!custom.lang.empty()) {
-                    const ImWchar* range;
-                    if (custom.lang == "en") {
-                        continue;  // added above, don't want to add cyrillic
-                                   // too
-                    } else if (custom.lang == "ja" && can_add_cjk) {
-                        range = io.Fonts->GetGlyphRangesJapanese();
-                    } else if (custom.lang == "ko" && can_add_cjk) {
-                        range = io.Fonts->GetGlyphRangesKorean();
-                    } else if (custom.lang == "th") {
-                        range = io.Fonts->GetGlyphRangesThai();
-                    } else if (custom.lang == "vi") {
-                        range = io.Fonts->GetGlyphRangesVietnamese();
-                    } else if (custom.lang == "zh" && can_add_cjk) {
-                        range = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-                    } else if (custom.lang == "zh_all" && can_add_cjk) {
-                        range = io.Fonts->GetGlyphRangesChineseFull();
-                    } else {  // so many languages use Cyrillic it can be the
-                              // default
-                        range = io.Fonts->GetGlyphRangesCyrillic();
-                    }
-                    imfont = io.Fonts->AddFontFromFileTTF(
-                            custom_path.c_str(), float(this->theme->font_size),
-                            &config, range);
-                } else if (!custom.code_points.empty()) {
-                    // TODO: the ImGui docs say that this must exist until
-                    // CreateAtlastTextureAlpha8().
-                    ImVector<ImWchar> range;
-                    ImFontGlyphRangesBuilder builder;
-                    for (auto c : custom.code_points) {
-                        builder.AddChar(c);
-                    }
-                    builder.BuildRanges(&range);
-                    imfont = io.Fonts->AddFontFromFileTTF(
-                            custom_path.c_str(), float(this->theme->font_size),
-                            &config, range.Data);
-                }
+                builder.BuildRanges(&range);
+                imfont = io.Fonts->AddFontFromFileTTF(
+                        r.path.c_str(), float(this->theme->font_size), &config,
+                        range.Data);
             }
         }
 
@@ -830,7 +804,8 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     //    a key up event to process and erase the key down state from
     //    the ImGuiIO structure before we get a chance to draw/process it.
     ImGui::NewFrame();
-    ImGui::PushFont((ImFont*)impl_->imgui_.GetFont(FontStyle::NORMAL));
+    ImGui::PushFont(
+            (ImFont*)impl_->imgui_.GetFont(Application::DEFAULT_FONT_ID));
 
     // Run the deferred callbacks that need to happen inside a draw
     // In particular, text sizing with ImGUI seems to require being
@@ -993,7 +968,8 @@ void Window::OnResize() {
 
         if (impl_->wants_auto_size_) {
             ImGui::NewFrame();
-            ImGui::PushFont((ImFont*)impl_->imgui_.GetFont(FontStyle::NORMAL));
+            ImGui::PushFont((ImFont*)impl_->imgui_.GetFont(
+                    Application::DEFAULT_FONT_ID));
             auto pref = CalcPreferredSize();
             ImGui::PopFont();
             ImGui::EndFrame();

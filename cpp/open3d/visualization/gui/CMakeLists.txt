@@ -11,6 +11,7 @@ set(GUI_SOURCE_FILES
     Events.cpp
     FileDialog.cpp
     FileDialogNative.cpp
+    Font.cpp
     GLFWWindowSystem.cpp
     Gui.cpp
     ImageWidget.cpp

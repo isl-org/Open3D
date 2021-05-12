@@ -32,6 +32,7 @@
 #include <cmath>
 #include <string>
 
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -53,7 +54,7 @@ static const Color DEFAULT_COLOR(0, 0, 0, 0);
 struct Label::Impl {
     std::string text_;
     Color color_ = DEFAULT_COLOR;
-    FontStyle style_ = FontStyle::NORMAL;
+    FontId font_id_ = Application::DEFAULT_FONT_ID;
     bool is_single_line = true;
 };
 
@@ -76,13 +77,13 @@ Color Label::GetTextColor() const { return impl_->color_; }
 
 void Label::SetTextColor(const Color& color) { impl_->color_ = color; }
 
-FontStyle Label::GetFontStyle() const { return impl_->style_; }
+FontId Label::GetFontId() const { return impl_->font_id_; }
 
-void Label::SetFontStyle(const FontStyle style) { impl_->style_ = style; }
+void Label::SetFontId(const FontId font_id) { impl_->font_id_ = font_id; }
 
 Size Label::CalcPreferredSize(const LayoutContext& context,
                               const Constraints& constraints) const {
-    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
 
     auto em = context.theme.font_size;
     auto padding = ImGui::GetStyle().FramePadding;
@@ -140,7 +141,7 @@ Widget::DrawResult Label::Draw(const DrawContext& context) {
     if (!is_default_color) {
         ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(impl_->color_));
     }
-    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
 
     auto padding = ImGui::GetStyle().FramePadding;
     float wrapX = ImGui::GetCursorPos().x + frame.width - padding.x;

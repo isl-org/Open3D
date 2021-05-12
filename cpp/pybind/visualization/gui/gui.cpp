@@ -183,12 +183,66 @@ std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
 enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
 
 void pybind_gui_classes(py::module &m) {
+    // ---- FontStyle ----
+    py::enum_<FontStyle> font_style(m, "FontStyle", "Font style");
+    font_style.value("NORMAL", FontStyle::NORMAL)
+            .value("BOLD", FontStyle::BOLD)
+            .value("ITALIC", FontStyle::ITALIC)
+            .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC);
+
+    // ---- FontDescription ----
+    py::class_<FontDescription> fd(m, "FontDescription",
+                                   "Class to describe a custom font");
+    fd.def_readonly_static("SANS_SERIF", &FontDescription::SANS_SERIF,
+                           "Name of the default sans-serif font that comes "
+                           "with Open3D")
+            .def_readonly_static(
+                    "MONOSPACE", &FontDescription::MONOSPACE,
+                    "Name of the default monospace font that comes "
+                    "with Open3D")
+            .def(py::init<const char *, FontStyle>(),
+                 "typeface"_a = FontDescription::SANS_SERIF,
+                 "style"_a = FontStyle::NORMAL,
+                 "Creates a FontDescription. 'typeface' is a path to a "
+                 "TrueType (.ttf), TrueType Collection (.ttc), or "
+                 "OpenType (.otf) file, or it is the name of the font, "
+                 "in which case the system font paths will be searched "
+                 "to find the font file. This typeface will be used for "
+                 "roman characters (Extended Latin, that is, European "
+                 "languages")
+            .def("add_typeface_for_language",
+                 &FontDescription::AddTypefaceForLanguage,
+                 "Adds code points outside Extended Latin from the specified "
+                 "typeface. Supported languages are:\n"
+                 "   'ja' (Japanese)\n"
+                 "   'ko' (Korean)\n"
+                 "   'th' (Thai)\n"
+                 "   'vi' (Vietnamese)\n"
+                 "   'zh' (Chinese, 2500 most common characters, 50 MB per "
+                 "window)\n"
+                 "   'zh_all' (Chinese, all characters, ~200 MB per window)\n"
+                 "All other languages will be assumed to be Cyrillic. "
+                 "Note that generally fonts do not have CJK glyphs unless they "
+                 "are specifically a CJK font, although operating systems "
+                 "generally use a CJK font for you. We do not have the "
+                 "information necessary to do this, so you will need to "
+                 "provide a font that has the glyphs you need. In particular, "
+                 "common fonts like 'Arial', 'Helvetica', and SANS_SERIF do "
+                 "not contain CJK glyphs.")
+            .def("add_typeface_for_code_points",
+                 &FontDescription::AddTypefaceForCodePoints,
+                 "Adds specific code points from the typeface. This is useful "
+                 "for selectively adding glyphs, for example, from an icon "
+                 "font.");
+
     // ---- Application ----
     py::class_<Application> application(m, "Application",
                                         "Global application singleton. This "
                                         "owns the menubar, windows, and event "
                                         "loop");
     application
+            .def_readonly_static("DEFAULT_FONT_ID",
+                                 &Application::DEFAULT_FONT_ID)
             .def("__repr__",
                  [](const Application &app) {
                      return std::string("Application singleton instance");
@@ -221,27 +275,14 @@ void pybind_gui_classes(py::module &m) {
                     "provided by the caller. One of the `initialize` functions "
                     "_must_ be called prior to using anything in the gui "
                     "module")
-            .def("set_font_for_language", &Application::SetFontForLanguage,
-                 "set_font_for_language(font, language_code). The font can "
-                 "the path to a TrueType or OpenType font or it can be the "
-                 "name of the font, in which case the font will be located "
-                 "from the system directories. The language code must be "
-                 "two-letter, lowercase ISO 639-1 codes. Support is "
-                 "available for 'en' (English), 'ja' (Japanese), 'ko' "
-                 "(Korean), 'th' (Thai), 'vi' (Vietnamese), 'zh' (common "
-                 "Chinese characters), 'zh_all' (all Chinese characters; "
-                 "this creates a very large bitmap for each window). All "
-                 "other codes are assumed to by Cyrillic. Note that 'ja', "
-                 "'zh' will create a 50 MB bitmap, and 'zh_all' creates a "
-                 "200 MB bitmap")
-
-            .def("set_font_for_code_points", &Application::SetFontForCodePoints,
-                 "set_font_for_code_points(font, [unicode_code_points])."
-                 "The font can the path to a TrueType or OpenType font or "
-                 "it can be the name of the font, in which case the font "
-                 "will be located from the system directories. No error "
-                 "will be produced if the font does not contain glyphs "
-                 "for the specified components.")
+            .def("add_font", &Application::AddFont,
+                 "Adds a font. Must be called after initialize() and before "
+                 "a window is created. Returns the font id, which can be used "
+                 "to change the font in widgets such as Label which support "
+                 "custom fonts.")
+            .def("set_font", &Application::SetFont,
+                 "Changes the contents of an existing font, for instance, the "
+                 "default font.")
             .def(
                     "create_window",
                     [](Application &instance, const std::string &title,
@@ -576,19 +617,6 @@ void pybind_gui_classes(py::module &m) {
             .def_readwrite("width", &Size::width)
             .def_readwrite("height", &Size::height);
 
-    // ---- FontStyle ----
-    py::enum_<FontStyle> font_style(m, "FontStyle", "Font style");
-    font_style.value("NORMAL", FontStyle::NORMAL)
-            .value("BOLD", FontStyle::BOLD,
-                   "Not supported for CJK characters due to the large "
-                   "amounts of GPU memory required.")
-            .value("ITALIC", FontStyle::ITALIC,
-                   "Not supported for CJK characters due to the large "
-                   "amounts of GPU memory required.")
-            .value("BOLD_ITALIC", FontStyle::BOLD_ITALIC,
-                   "Not supported for CJK characters due to the large "
-                   "amounts of GPU memory required.");
-
     // ---- Widget ----
     // The holder for Widget and all derived classes is UnownedPointer because
     // a Widget may own Filament resources, so we cannot have Python holding
@@ -897,10 +925,9 @@ void pybind_gui_classes(py::module &m) {
             .def_property("text_color", &Label::GetTextColor,
                           &Label::SetTextColor,
                           "The color of the text (gui.Color)")
-            .def_property("font_style", &Label::GetFontStyle,
-                          &Label::SetFontStyle,
-                          "The style of the font: NORMAL, BOLD, ITALIC, "
-                          "BOLD_ITALIC");
+            .def_property("font_id", &Label::GetFontId, &Label::SetFontId,
+                          "Set the font using the FontId returned from "
+                          "Application.add_font()");
 
     // ---- Label3D ----
     py::class_<Label3D, UnownedPointer<Label3D>> label3d(
@@ -1531,9 +1558,10 @@ void pybind_gui_classes(py::module &m) {
                  "window is visible")
             .def("get_is_open", &CollapsableVert::GetIsOpen,
                  "Check if widget is open.")
-            .def_property("font_style", &CollapsableVert::GetFontStyle,
-                          &CollapsableVert::SetFontStyle,
-                          "Sets the font style of the text");
+            .def_property("font_id", &CollapsableVert::GetFontId,
+                          &CollapsableVert::SetFontId,
+                          "Set the font using the FontId returned from "
+                          "Application.add_font()");
 
     // ---- Horiz ----
     py::class_<Horiz, UnownedPointer<Horiz>, Layout1D> hlayout(

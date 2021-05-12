@@ -166,8 +166,8 @@ public:
     /// Returns true if open and false if collapsed.
     bool GetIsOpen();
 
-    FontStyle GetFontStyle() const;
-    void SetFontStyle(FontStyle style);
+    FontId GetFontId() const;
+    void SetFontId(FontId font_id);
 
     Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
