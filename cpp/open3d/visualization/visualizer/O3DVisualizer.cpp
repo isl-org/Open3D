@@ -1592,6 +1592,7 @@ struct O3DVisualizer::Impl {
     void SelectSelectionSet(int index) {
         settings.selection_sets->SetSelectedIndex(index);
         selections_->SelectSet(index);
+        scene_->ForceRedraw();  // redraw with new selection highlighted
     }
 
     void UpdateSelectionSetList() {
