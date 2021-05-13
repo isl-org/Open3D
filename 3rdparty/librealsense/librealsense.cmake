@@ -28,7 +28,9 @@ ExternalProject_Add(
         -DBUILD_PYTHON_BINDINGS=OFF
         -DBUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
         -DUSE_EXTERNAL_USB=ON
-        $<$<CXX_COMPILER_ID:GNU,Clang,Intel,NVIDIA>:-DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI}">
+        # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
+        # checking CXX_COMPILER_ID is not supported.
+        $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI}>
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>
