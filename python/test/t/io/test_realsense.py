@@ -82,7 +82,6 @@ def test_RSBagReader():
     n_frames = 0
     while not bag_reader.is_eof():
         n_frames = n_frames + 1
-        print(im_rgbd)
         im_rgbd = bag_reader.next_frame()
 
     bag_reader.close()
@@ -121,7 +120,6 @@ def test_RealSenseSensor():
         rs_cam.start_capture(True)  # true: start recording with capture
         im_rgbd = rs_cam.capture_frame(True,
                                        True)  # wait for frames and align them
-        print(im_rgbd)
         assert im_rgbd.depth.rows == im_rgbd.color.rows > 0
         assert im_rgbd.depth.columns == im_rgbd.color.columns > 0
         rs_cam.stop_capture()

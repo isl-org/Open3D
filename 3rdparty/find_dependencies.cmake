@@ -568,20 +568,20 @@ if (BUILD_LIBREALSENSE)
         endif()
     endif()
     if(NOT USE_SYSTEM_LIBREALSENSE)
-    include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
-    import_3rdparty_library(3rdparty_librealsense
-        INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
-        LIBRARIES    ${LIBREALSENSE_LIBRARIES}
-        LIB_DIR      ${LIBREALSENSE_LIB_DIR}
-    )
-    add_dependencies(3rdparty_librealsense ext_librealsense)
-    set(LIBREALSENSE_TARGET "3rdparty_librealsense")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
-    if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
-        find_library(UDEV_LIBRARY udev REQUIRED
-            DOC "Library provided by the deb package libudev-dev")
-        target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
-    endif()
+        include(${Open3D_3RDPARTY_DIR}/librealsense/librealsense.cmake)
+        import_3rdparty_library(3rdparty_librealsense
+            INCLUDE_DIRS ${LIBREALSENSE_INCLUDE_DIR}
+            LIBRARIES    ${LIBREALSENSE_LIBRARIES}
+            LIB_DIR      ${LIBREALSENSE_LIB_DIR}
+        )
+        add_dependencies(3rdparty_librealsense ext_librealsense)
+        set(LIBREALSENSE_TARGET "3rdparty_librealsense")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LIBREALSENSE_TARGET}")
+        if (UNIX AND NOT APPLE)    # Ubuntu dependency: libudev-dev
+            find_library(UDEV_LIBRARY udev REQUIRED
+                DOC "Library provided by the deb package libudev-dev")
+            target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
+        endif()
     endif()
 endif()
 
@@ -1236,4 +1236,3 @@ if(BUILD_WEBRTC)
     add_dependencies(3rdparty_civetweb ext_civetweb)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CIVETWEB_TARGET}")
 endif()
-
