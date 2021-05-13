@@ -342,8 +342,9 @@ bool WritePointCloudToPLY(const std::string &filename,
         return false;
     }
 
-    geometry::TensorMap t_map = pointcloud.GetPointAttr();
-    long num_points = static_cast<long>(pointcloud.GetPoints().GetLength());
+    const geometry::PointCloud pointcloud_cpu = pointcloud.CPU();
+    geometry::TensorMap t_map = pointcloud_cpu.GetPointAttr();
+    long num_points = static_cast<long>(pointcloud_cpu.GetPoints().GetLength());
 
     // Make sure all the attributes have same size.
     if (!t_map.IsSizeSynchronized()) {
@@ -371,14 +372,14 @@ bool WritePointCloudToPLY(const std::string &filename,
     ply_add_comment(ply_file, "Created by Open3D");
     ply_add_element(ply_file, "vertex", num_points);
 
-    e_ply_type pointType = GetPlyType(pointcloud.GetPoints().GetDtype());
+    e_ply_type pointType = GetPlyType(pointcloud_cpu.GetPoints().GetDtype());
     ply_add_property(ply_file, "x", pointType, pointType, pointType);
     ply_add_property(ply_file, "y", pointType, pointType, pointType);
     ply_add_property(ply_file, "z", pointType, pointType, pointType);
 
-    if (pointcloud.HasPointNormals()) {
+    if (pointcloud_cpu.HasPointNormals()) {
         e_ply_type pointNormalsType =
-                GetPlyType(pointcloud.GetPointNormals().GetDtype());
+                GetPlyType(pointcloud_cpu.GetPointNormals().GetDtype());
         ply_add_property(ply_file, "nx", pointNormalsType, pointNormalsType,
                          pointNormalsType);
         ply_add_property(ply_file, "ny", pointNormalsType, pointNormalsType,
@@ -387,9 +388,9 @@ bool WritePointCloudToPLY(const std::string &filename,
                          pointNormalsType);
     }
 
-    if (pointcloud.HasPointColors()) {
+    if (pointcloud_cpu.HasPointColors()) {
         e_ply_type pointColorType =
-                GetPlyType(pointcloud.GetPointColors().GetDtype());
+                GetPlyType(pointcloud_cpu.GetPointColors().GetDtype());
         ply_add_property(ply_file, "red", pointColorType, pointColorType,
                          pointColorType);
         ply_add_property(ply_file, "green", pointColorType, pointColorType,
@@ -418,28 +419,29 @@ bool WritePointCloudToPLY(const std::string &filename,
     reporter.SetTotal(num_points);
 
     for (int64_t i = 0; i < num_points; i++) {
-        DISPATCH_DTYPE_TO_TEMPLATE(pointcloud.GetPoints().GetDtype(), [&]() {
-            const scalar_t *data_ptr =
-                    GetValue<scalar_t>(pointcloud.GetPoints()[i], 0);
-            ply_write(ply_file, double(data_ptr[0]));
-            ply_write(ply_file, double(data_ptr[1]));
-            ply_write(ply_file, double(data_ptr[2]));
-        });
-        if (pointcloud.HasPointNormals()) {
+        DISPATCH_DTYPE_TO_TEMPLATE(
+                pointcloud_cpu.GetPoints().GetDtype(), [&]() {
+                    const scalar_t *data_ptr = GetValue<scalar_t>(
+                            pointcloud_cpu.GetPoints()[i], 0);
+                    ply_write(ply_file, double(data_ptr[0]));
+                    ply_write(ply_file, double(data_ptr[1]));
+                    ply_write(ply_file, double(data_ptr[2]));
+                });
+        if (pointcloud_cpu.HasPointNormals()) {
             DISPATCH_DTYPE_TO_TEMPLATE(
-                    pointcloud.GetPointNormals().GetDtype(), [&]() {
+                    pointcloud_cpu.GetPointNormals().GetDtype(), [&]() {
                         const scalar_t *data_ptr = GetValue<scalar_t>(
-                                pointcloud.GetPointNormals()[i], 0);
+                                pointcloud_cpu.GetPointNormals()[i], 0);
                         ply_write(ply_file, double(data_ptr[0]));
                         ply_write(ply_file, double(data_ptr[1]));
                         ply_write(ply_file, double(data_ptr[2]));
                     });
         }
-        if (pointcloud.HasPointColors()) {
+        if (pointcloud_cpu.HasPointColors()) {
             DISPATCH_DTYPE_TO_TEMPLATE(
-                    pointcloud.GetPointColors().GetDtype(), [&]() {
+                    pointcloud_cpu.GetPointColors().GetDtype(), [&]() {
                         const scalar_t *data_ptr = GetValue<scalar_t>(
-                                pointcloud.GetPointColors()[i], 0);
+                                pointcloud_cpu.GetPointColors()[i], 0);
                         ply_write(ply_file, double(data_ptr[0]));
                         ply_write(ply_file, double(data_ptr[1]));
                         ply_write(ply_file, double(data_ptr[2]));
@@ -470,3 +472,4 @@ bool WritePointCloudToPLY(const std::string &filename,
 }  // namespace io
 }  // namespace t
 }  // namespace open3d
+
