@@ -31,6 +31,7 @@
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/visualization/gui/Dialog.h"
 #include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "pybind/visualization/visualization.h"
 
@@ -200,6 +201,18 @@ void pybind_o3dvisualizer(py::module& m) {
                  "Adds a Tensor-based add_geometry: geometry(name, geometry, "
                  "material=None, "
                  "group='', time=0.0, is_visible=True). 'name' must be unique.")
+            .def("add_geometry",
+                 py::overload_cast<
+                         const std::string&,
+                         std::shared_ptr<rendering::TriangleMeshModel>,
+                         const rendering::Material*, const std::string&, double,
+                         bool>(&O3DVisualizer::AddGeometry),
+                 "name"_a, "model"_a, "material"_a = nullptr, "group"_a = "",
+                 "time"_a = 0.0, "is_visible"_a = true,
+                 "Adds a TriangleMeshModel: add_geometry(name, model, "
+                 "material=None, "
+                 "group='', time=0.0, is_visible=True). 'name' must be unique. "
+                 "'material' is ignored.")
             .def(
                     "add_geometry",
                     [](py::object dv, const py::dict& d) {
