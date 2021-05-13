@@ -406,7 +406,7 @@ class JupyterDocsBuilder:
 
         # Execute Jupyter notebooks
         for nb_path in nb_paths:
-            if nb_out_path.name in nb_direct_copy:
+            if nb_path.name in nb_direct_copy:
                 print("[Processing notebook {}, directly copied]".format(
                     nb_path.name))
                 continue
