@@ -472,4 +472,3 @@ bool WritePointCloudToPLY(const std::string &filename,
 }  // namespace io
 }  // namespace t
 }  // namespace open3d
-
