@@ -28,6 +28,7 @@
 
 #include <vector>
 
+#include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/visualizer/O3DVisualizer.h"
 
 namespace open3d {
@@ -37,6 +38,7 @@ struct DrawObject {
     std::string name;
     std::shared_ptr<geometry::Geometry3D> geometry;
     std::shared_ptr<t::geometry::Geometry> tgeometry;
+    std::shared_ptr<rendering::TriangleMeshModel> model;
     bool is_visible;
 
     DrawObject(const std::string &n,
@@ -44,6 +46,9 @@ struct DrawObject {
                bool vis = true);
     DrawObject(const std::string &n,
                std::shared_ptr<t::geometry::Geometry> tg,
+               bool vis = true);
+    DrawObject(const std::string &n,
+               std::shared_ptr<rendering::TriangleMeshModel> m,
                bool vis = true);
 };
 
@@ -64,6 +69,13 @@ void Draw(
         int width = 1024,
         int height = 768,
         const std::vector<DrawAction> &actions = {});
+
+void Draw(const std::vector<std::shared_ptr<rendering::TriangleMeshModel>>
+                  &models,
+          const std::string &window_name = "Open3D",
+          int width = 1024,
+          int height = 768,
+          const std::vector<DrawAction> &actions = {});
 
 void Draw(const std::vector<DrawObject> &objects,
           const std::string &window_name = "Open3D",

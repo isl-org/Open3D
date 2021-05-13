@@ -241,6 +241,7 @@ static const std::unordered_map<std::string, std::string>
 void pybind_slac_methods(py::module &m) {
     m.def("save_correspondences_for_pointclouds",
           &SaveCorrespondencesForPointClouds,
+          py::call_guard<py::gil_scoped_release>(),
           "Read pose graph containing loop closures and odometry to compute "
           "correspondences. Uses aggressive pruning -- reject any suspicious "
           "pair.",

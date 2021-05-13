@@ -115,10 +115,15 @@ public:
 ///
 /// \brief Class to compute Jacobian using hybrid term.
 ///
-/// Energy: (I_p-I_q)^2 + lambda(D_p-(D_q)')^2
-/// reference:
-/// J. Park, Q.-Y. Zhou, and V. Koltun
-/// anonymous submission.
+/// Energy: \f$(I_p - I_q)^2 + \lambda(D_p - (D_q)')^2\f$, where
+/// \f$ I_p \f$ denotes the intensity at pixel p in the source,
+/// \f$ I_q \f$ denotes the intensity at pixel q in the target.
+/// \f$ D_p \f$ denotes the depth pixel p in the source,
+/// \f$ D_q \f$ denotes the depth pixel q in the target.
+/// q is obtained by transforming p with extrinsic then
+/// projecting with intrinsics.
+/// Reference: J. Park, Q.Y. Zhou, and V. Koltun,
+/// Colored Point Cloud Registration Revisited, ICCV, 2017.
 class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
 public:
     /// \brief Default Constructor.

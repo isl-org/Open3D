@@ -56,10 +56,14 @@ REGISTER_OP("Open3DNms")
             return Status::OK();
         })
         .Doc(R"doc(
-Performs non-maximum suppression of bounding boxes and returns the selected box
-indices.
+Performs non-maximum suppression of bounding boxes. 
 
-  # TensorFlow example.
+This function performs non-maximum suppression for the input bounding boxes
+considering the the per-box score and overlaps. It returns the indices of the
+selected boxes.
+
+Minimal example::
+
   import open3d.ml.tf as ml3d
   import numpy as np
 
@@ -98,5 +102,5 @@ nms_overlap_thresh: float value between 0 and 1. When a high-score box is
   selected, other remaining boxes with IoU > nms_overlap_thresh will be discarded.
   A higher nms_overlap_thresh means more boxes will be kept.
 
-returns (M,) int64 tensor. The selected box indices.
+keep_indices: (M,) int64 tensor. The selected box indices.
 )doc");
