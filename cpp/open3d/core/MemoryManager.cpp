@@ -113,10 +113,7 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
             };
     if (map_device_type_to_memory_manager.find(device.GetType()) ==
         map_device_type_to_memory_manager.end()) {
-        utility::LogError(
-                "MemoryManager::GetDeviceMemoryManager: Unimplemented device "
-                "'{}'",
-                device.ToString());
+        utility::LogError("Unimplemented device '{}'.", device.ToString());
     }
     return map_device_type_to_memory_manager.at(device.GetType());
 }
