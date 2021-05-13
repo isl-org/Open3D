@@ -162,13 +162,15 @@ class ReconstructionWindow : public gui::Window {
 public:
     ReconstructionWindow(const std::string& dataset_path,
                          const std::string& intrinsic_path,
-                         const std::string& device)
+                         const std::string& device,
+                         gui::FontId monospace)
         : gui::Window("Open3D - Reconstruction", 1280, 800),
           dataset_path_(dataset_path),
           intrinsic_path_(intrinsic_path),
           device_str_(device),
           is_running_(false),
-          is_started_(false) {
+          is_started_(false),
+          monospace_(monospace) {
         ////////////////////////////////////////
         /// General layout
         auto& theme = GetTheme();
@@ -294,6 +296,7 @@ public:
         auto tab2 = std::make_shared<gui::Vert>(0, tab_margins);
 
         output_info_ = std::make_shared<gui::Label>("");
+        output_info_->SetFontId(monospace_);
         raycast_color_image_ = std::make_shared<gui::ImageWidget>();
         raycast_depth_image_ = std::make_shared<gui::ImageWidget>();
 
@@ -378,6 +381,7 @@ protected:
     std::atomic<bool> is_done_;
 
     // Panels and controls
+    gui::FontId monospace_;
     std::shared_ptr<gui::Vert> panel_;
     std::shared_ptr<gui::Label> output_info_;
     std::shared_ptr<PropertyPanel> fixed_props_;
@@ -833,7 +837,9 @@ int main(int argc, char** argv) {
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, const_cast<const char**>(argv));
+    auto mono =
+            app.AddFont(gui::FontDescription(gui::FontDescription::MONOSPACE));
     app.AddWindow(std::make_shared<ReconstructionWindow>(
-            dataset_path, intrinsic_path, device_code));
+            dataset_path, intrinsic_path, device_code, mono));
     app.Run();
 }
