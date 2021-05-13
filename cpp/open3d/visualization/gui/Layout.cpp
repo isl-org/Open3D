@@ -309,10 +309,9 @@ void Layout1D::Layout(const LayoutContext& context) {
             }
         }
     } else if (num_grow > 0 && frame_size < total) {
-        auto total_excess = total - (frame_size - impl_->margins_.GetVert() -
-                                     total_spacing);
+        auto total_excess = total - (frame_size - total_spacing);
         auto excess = total_excess / num_grow;
-        auto leftover = total_excess - excess * num_stretch;
+        auto leftover = total_excess - excess * num_grow;
         for (size_t i = 0; i < major.size(); ++i) {
             if (major[i] >= Widget::DIM_GROW) {
                 major[i] -= excess;
@@ -538,8 +537,11 @@ Size VGrid::CalcPreferredSize(const LayoutContext& context,
     for (size_t i = 0; i < column_sizes.size(); ++i) {
         auto& sz = column_sizes[i];
         width += sz.width;
-        auto v_spacing = (int(columns[i].size()) - 1) * impl_->spacing_;
-        height = std::max(height, sz.height) + v_spacing;
+        height = std::max(height, sz.height);
+        if (i < column_sizes.size() - 1) {
+            auto v_spacing = (int(columns[i].size()) - 1) * impl_->spacing_;
+            height += v_spacing;
+        }
     }
     width += (int(column_sizes.size()) - 1) * impl_->spacing_;
     width = std::max(width, 0);  // in case width or height has no items

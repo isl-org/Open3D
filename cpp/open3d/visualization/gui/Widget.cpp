@@ -31,6 +31,7 @@
 
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/Util.h"
 
 namespace open3d {
 namespace visualization {
@@ -87,7 +88,12 @@ void Widget::SetVisible(bool vis) { impl_->is_visible_ = vis; }
 
 bool Widget::IsEnabled() const { return impl_->is_enabled_; }
 
-void Widget::SetEnabled(bool enabled) { impl_->is_enabled_ = enabled; }
+void Widget::SetEnabled(bool enabled) {
+    impl_->is_enabled_ = enabled;
+    for (auto& child : impl_->children_) {
+        child->SetEnabled(enabled);
+    }
+}
 
 void Widget::SetTooltip(const char* text) { impl_->tooltip_ = text; }
 
@@ -108,6 +114,17 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
     if (!impl_->is_visible_) {
         return DrawResult::NONE;
     }
+
+    // --- debugging ---
+    /*if (!impl_->children_.empty()) {
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        auto r = GetFrame();
+        ImVec2 p = ImGui::GetCursorScreenPos();
+        draw_list->AddRect(ImVec2(p.x - 1.0f, p.y - 1.0f),
+                           ImVec2(p.x + r.width + 2.0f, p.y + r.height + 2.0f),
+                           colorToImguiRGBA(Color(0.0f, 1.0f, 0.0f, 1.0f)));
+    } */
+    // ---
 
     DrawResult result = DrawResult::NONE;
     for (auto& child : impl_->children_) {
@@ -160,14 +177,17 @@ void Widget::DrawImGuiTooltip() {
         float margin = 0.25f * ImGui::GetFont()->FontSize;
         float old_radius = ImGui::GetStyle().WindowRounding;
         ImVec2 old_padding = ImGui::GetStyle().WindowPadding;
+        auto old_bg = ImGui::GetStyle().Colors[ImGuiCol_PopupBg];
         ImGui::GetStyle().WindowPadding = ImVec2(2.0f * margin, margin);
         ImGui::GetStyle().WindowRounding = border_radius;
+        ImGui::GetStyle().Colors[ImGuiCol_PopupBg].w = 0.85f;
 
         ImGui::BeginTooltip();
         ImGui::Text("%s", impl_->tooltip_.c_str());
         ImGui::EndTooltip();
 
         // Pop
+        ImGui::GetStyle().Colors[ImGuiCol_PopupBg] = old_bg;
         ImGui::GetStyle().WindowPadding = old_padding;
         ImGui::GetStyle().WindowRounding = old_radius;
     }

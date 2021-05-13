@@ -50,7 +50,9 @@ struct TabControl::Impl {
     std::vector<std::string> tab_names_;
     std::string imgui_id_;
     int current_index_ = 0;
+    PreferredSize sizing_mode_ = PreferredSize::BIGGEST_TAB;
     std::function<void(int)> on_changed_;
+    bool draw_needs_to_resize = false;
 };
 
 TabControl::TabControl() : impl_(new TabControl::Impl()) {
@@ -66,17 +68,35 @@ void TabControl::AddTab(const char* name, std::shared_ptr<Widget> panel) {
     impl_->tab_names_.push_back(std::string(" ") + name + std::string(" "));
 }
 
+TabControl::PreferredSize TabControl::GetPreferredSizeMode() const {
+    return impl_->sizing_mode_;
+}
+
+void TabControl::SetPreferredSizeMode(PreferredSize mode) {
+    impl_->sizing_mode_ = mode;
+    impl_->draw_needs_to_resize = true;
+}
+
 void TabControl::SetOnSelectedTabChanged(std::function<void(int)> on_changed) {
     impl_->on_changed_ = on_changed;
 }
 
 Size TabControl::CalcPreferredSize(const LayoutContext& context,
                                    const Constraints& constraints) const {
-    int width = 0, height = 0;
-    for (auto& child : GetChildren()) {
-        auto size = child->CalcPreferredSize(context, constraints);
-        width = std::max(width, size.width);
-        height = std::max(height, size.height);
+    int width, height;
+    if (impl_->sizing_mode_ == PreferredSize::CURRENT_TAB) {
+        auto size = GetChildren()[impl_->current_index_]->CalcPreferredSize(
+                context, constraints);
+        width = size.width;
+        height = size.height;
+    } else {
+        width = 0;
+        height = 0;
+        for (auto& child : GetChildren()) {
+            auto size = child->CalcPreferredSize(context, constraints);
+            width = std::max(width, size.width);
+            height = std::max(height, size.height);
+        }
     }
 
     return Size(width, height + CalcTabHeight(context.theme) + 2);
@@ -96,17 +116,22 @@ void TabControl::Layout(const LayoutContext& context) {
 }
 
 TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
+    auto result = DrawResult::NONE;
+    if (impl_->draw_needs_to_resize) {
+        result = DrawResult::RELAYOUT;
+        impl_->draw_needs_to_resize = false;
+    }
+
     auto& frame = GetFrame();
     ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
 
-    auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(float(GetFrame().width));
     if (ImGui::BeginTabBar(impl_->imgui_id_.c_str())) {
         for (int i = 0; i < int(impl_->tab_names_.size()); ++i) {
             if (ImGui::BeginTabItem(impl_->tab_names_[i].c_str())) {
                 auto r = GetChildren()[i]->Draw(context);
-                if (r != Widget::DrawResult::NONE) {
+                if (r != DrawResult::NONE && result != DrawResult::RELAYOUT) {
                     result = r;
                 }
                 ImGui::EndTabItem();
@@ -115,6 +140,9 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
                     impl_->current_index_ = i;
                     if (impl_->on_changed_) {
                         impl_->on_changed_(i);
+                    }
+                    if (impl_->sizing_mode_ == PreferredSize::CURRENT_TAB) {
+                        result = DrawResult::RELAYOUT;
                     }
                 }
             }

@@ -43,13 +43,23 @@ public:
 
     void AddTab(const char* name, std::shared_ptr<Widget> panel);
 
+    enum PreferredSize { CURRENT_TAB, BIGGEST_TAB };
+    PreferredSize GetPreferredSizeMode() const;
+    /// Sets mode of calculating preferred size:
+    ///   CURRENT_TAB:  preferred size is the size of the current tab;
+    ///                 switching tabs may cause the control to resize.
+    ///   BIGGEST_TAB:  preferred size is the size of the biggest tab;
+    ///                 control will always stay the same size, but may
+    ///                 have extra spacing at the bottom on some tabs.
+    void SetPreferredSizeMode(PreferredSize mode);
+
+    void SetOnSelectedTabChanged(std::function<void(int)> on_changed);
+
     Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
     void Layout(const LayoutContext& context) override;
 
     DrawResult Draw(const DrawContext& context) override;
-
-    void SetOnSelectedTabChanged(std::function<void(int)> on_changed);
 
 private:
     struct Impl;

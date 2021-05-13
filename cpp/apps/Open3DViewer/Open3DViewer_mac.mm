@@ -26,6 +26,8 @@
 
 #ifdef __APPLE__
 
+#include <GL/glew.h>  // Make sure glew.h is included before gl.h
+
 #import <Cocoa/Cocoa.h>
 #import <CoreServices/CoreServices.h>
 
@@ -39,21 +41,27 @@
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/Theme.h"
-#include "open3d/visualization/visualizer/GuiVisualizer.h"
 
 // ----------------------------------------------------------------------------
 using namespace open3d::visualization::gui;
 
-class Open3DVisualizer : public open3d::visualization::GuiVisualizer {
-    using Super = GuiVisualizer;
+class MacOpen3DViewer : public Open3DViewer {
+    using Super = Open3DViewer;
 public:
-    Open3DVisualizer()
-        : open3d::visualization::GuiVisualizer("Open3D", WIDTH, HEIGHT) {
-        AddItemsToAppMenu({{"Make Default 3D Viewer", MAC_MAKE_DEFAULT_APP}});
+    MacOpen3DViewer() : Open3DViewer("Open3D", WIDTH, HEIGHT) {
+        auto &app_menu = GetAppMenu();
+        app_menu.menu->InsertSeparator(app_menu.insertion_idx++);
+        app_menu.menu->InsertItem(app_menu.insertion_idx++,
+                                  "Make Default 3D Viewer",
+                                  MAC_MAKE_DEFAULT_APP);
+        app_menu.menu->InsertSeparator(app_menu.insertion_idx++);
+        app_menu.menu->InsertItem(app_menu.insertion_idx++, "Quit",
+                                  MAC_APP_QUIT, KEY_Q);
     }
 
 protected:
-    static constexpr Menu::ItemId MAC_MAKE_DEFAULT_APP = 100;
+    static constexpr Menu::ItemId MAC_MAKE_DEFAULT_APP = 1000;
+    static constexpr Menu::ItemId MAC_APP_QUIT = 1001;
 
     void OnMenuItemSelected(Menu::ItemId item_id) override {
         if (item_id == MAC_MAKE_DEFAULT_APP) {
@@ -126,17 +134,20 @@ protected:
             vert->AddChild(buttons);
             dlg->AddChild(vert);
             ShowDialog(dlg);
+        } else if (item_id == MAC_APP_QUIT) {
+            Application::GetInstance().Quit();
         } else {
             Super::OnMenuItemSelected(item_id);
         }
     }
 };
 
-constexpr Menu::ItemId Open3DVisualizer::MAC_MAKE_DEFAULT_APP;  // for Xcode
+constexpr Menu::ItemId MacOpen3DViewer::MAC_MAKE_DEFAULT_APP;  // for Xcode
+constexpr Menu::ItemId MacOpen3DViewer::MAC_APP_QUIT;
 
 // ----------------------------------------------------------------------------
 static void LoadAndCreateWindow(const char *path) {
-    auto vis = std::make_shared<Open3DVisualizer>();
+    auto vis = std::make_shared<MacOpen3DViewer>();
     bool is_path_valid = (path && path[0] != '\0');
     if (is_path_valid) {
         vis->LoadGeometry(path);

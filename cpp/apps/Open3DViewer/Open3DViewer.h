@@ -24,18 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <memory>
+#include "open3d/visualization/visualizer/O3DVisualizer.h"
 
 namespace open3d {
-namespace geometry {
-class Geometry;
-}
-namespace visualizer {
-class GuiVisualizer;
-}
+namespace visualization {
+namespace gui {
+class Menu;
+}  // namespace gui
+}  // namespace visualization
 }  // namespace open3d
+
+class Open3DViewer : public open3d::visualization::visualizer::O3DVisualizer {
+    using Super = open3d::visualization::visualizer::O3DVisualizer;
+
+public:
+    Open3DViewer(const std::string& title, int width, int height);
+
+    void LoadGeometry(const std::string& path);
+
+    void OnFileOpen();
+    void OnDragDropped(const char* path) override;
+
+protected:
+    void OnMenuItemSelected(
+            open3d::visualization::gui::Menu::ItemId item_id) override;
+};
 
 #define WIDTH 1280
 #define HEIGHT 960
 
-int Run(int argc, const char *argv[]);
+int Run(int argc, const char* argv[]);

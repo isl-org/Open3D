@@ -54,6 +54,7 @@
 #include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
+#include "open3d/visualization/gui/StackedWidget.h"
 #include "open3d/visualization/gui/TabControl.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/TreeView.h"
@@ -82,7 +83,10 @@ static const std::string kShaderUnlitLines = "unlitLine";
 static const std::string kDefaultIBL = "default";
 
 enum MenuId {
-    MENU_ABOUT = 0,
+    MENU_HELP_ABOUT = 0,
+    MENU_HELP_CONTACT_US,
+    MENU_HELP_SHOW_CONTROLS,
+    MENU_HELP_SHOW_CAMERA_INFO,
     MENU_EXPORT_RGB,
     MENU_CLOSE,
     MENU_SETTINGS,
@@ -281,6 +285,63 @@ private:
     }
 };
 
+class CameraInfo : public VGrid {
+public:
+    CameraInfo(const Theme &theme) : VGrid(2, 0, Margins(theme.font_size)) {
+        SetBackgroundColor(Color(0, 0, 0, 0.5));
+
+        auto MakeLabel = [](const char *text) {
+            auto label = std::make_shared<Label>(text);
+            label->SetTextColor(Color(1, 1, 1));
+            return label;
+        };
+
+        position_ = MakeLabel("[0, 0, 0]");
+        forward_ = MakeLabel("[0, 0, 0]");
+        left_ = MakeLabel("[0, 0, 0]");
+        up_ = MakeLabel("[0, 0, 0]");
+
+        AddChild(MakeLabel("Position:"));
+        AddChild(position_);
+        AddChild(MakeLabel("Forward:"));
+        AddChild(forward_);
+        AddChild(MakeLabel("Left:"));
+        AddChild(left_);
+        AddChild(MakeLabel("Up:"));
+        AddChild(up_);
+
+        Eigen::Vector3f zero(0, 0, 0);
+        SetFromVectors(zero, zero, zero, zero);
+    }
+
+    void SetFromCamera(rendering::Camera *camera) {
+        SetFromVectors(camera->GetPosition(), camera->GetForwardVector(),
+                       camera->GetLeftVector(), camera->GetUpVector());
+    }
+
+    void SetFromVectors(const Eigen::Vector3f &position,
+                        const Eigen::Vector3f &forward,
+                        const Eigen::Vector3f &left,
+                        const Eigen::Vector3f &up) {
+        auto SetText = [](const Eigen::Vector3f &v,
+                          std::shared_ptr<Label> label) {
+            label->SetText(
+                    fmt::format("[{:.2f}, {:.2f}, {:.2f}]", v.x(), v.y(), v.z())
+                            .c_str());
+        };
+        SetText(position, position_);
+        SetText(forward, forward_);
+        SetText(left, left_);
+        SetText(up, up_);
+    }
+
+private:
+    std::shared_ptr<Label> position_;
+    std::shared_ptr<Label> forward_;
+    std::shared_ptr<Label> left_;
+    std::shared_ptr<Label> up_;
+};
+
 struct LightingProfile {
     std::string name;
     Open3DScene::LightingProfile profile;
@@ -293,6 +354,73 @@ static const std::vector<LightingProfile> gLightingProfiles = {
         {"Medium shadows", Open3DScene::LightingProfile::MED_SHADOWS},
         {"Soft shadows", Open3DScene::LightingProfile::SOFT_SHADOWS},
         {"No shadows", Open3DScene::LightingProfile::NO_SHADOWS}};
+
+struct MaterialProfile {
+    std::string name;
+    Material material;
+};
+std::vector<MaterialProfile> InitMaterialProfiles();
+
+static const std::vector<MaterialProfile> kMaterialProfiles =
+        InitMaterialProfiles();
+std::vector<MaterialProfile> InitMaterialProfiles() {
+    std::vector<MaterialProfile> profs;
+    profs.push_back({"Default", Material()});
+    profs.back().material.shader = "defaultLit";
+    profs.push_back({"Metal (rougher)", Material()});
+    profs.back().material.shader = "defaultLit";
+    profs.back().material.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
+    profs.back().material.base_metallic = 1.0f;
+    profs.back().material.base_roughness = 0.5;
+    profs.back().material.base_reflectance = 0.5f;
+    profs.back().material.base_clearcoat = 0.0f;
+    profs.back().material.base_clearcoat_roughness = 0.0f;
+    profs.back().material.base_anisotropy = 0.0f;
+    profs.push_back({"Metal (smoother)", Material()});
+    profs.back().material.shader = "defaultLit";
+    profs.back().material.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
+    profs.back().material.base_metallic = 1.0f;
+    profs.back().material.base_roughness = 0.2;
+    profs.back().material.base_reflectance = 0.5f;
+    profs.back().material.base_clearcoat = 0.0f;
+    profs.back().material.base_clearcoat_roughness = 0.0f;
+    profs.back().material.base_anisotropy = 0.0f;
+    profs.push_back({"Plastic", Material()});
+    profs.back().material.shader = "defaultLit";
+    profs.back().material.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
+    profs.back().material.base_metallic = 0.0f;
+    profs.back().material.base_roughness = 0.5;
+    profs.back().material.base_reflectance = 0.5f;
+    profs.back().material.base_clearcoat = 0.5f;
+    profs.back().material.base_clearcoat_roughness = 0.8f;
+    profs.back().material.base_anisotropy = 0.0f;
+    profs.push_back({"Glazed ceramic", Material()});
+    profs.back().material.shader = "defaultLit";
+    profs.back().material.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
+    profs.back().material.base_metallic = 0.0f;
+    profs.back().material.base_roughness = 0.5;
+    profs.back().material.base_reflectance = 0.5f;
+    profs.back().material.base_clearcoat = 1.0f;
+    profs.back().material.base_clearcoat_roughness = 0.2f;
+    profs.back().material.base_anisotropy = 0.0f;
+    profs.push_back({"Clay", Material()});
+    profs.back().material.shader = "defaultLit";
+    profs.back().material.base_color = {0.7725f, 0.7725f, 0.7725f, 1.0f};
+    profs.back().material.base_metallic = 0.0f;
+    profs.back().material.base_roughness = 1.0;
+    profs.back().material.base_reflectance = 0.35f;
+    profs.back().material.base_clearcoat = 0.0f;
+    profs.back().material.base_clearcoat_roughness = 0.f;
+    profs.back().material.base_anisotropy = 0.0f;
+    return profs;
+}
+
+struct PropertyPanel {
+    int panel_idx;
+    VGrid *panel;
+
+    void SetEnabled(bool enabled) { this->panel->SetEnabled(enabled); }
+};
 
 }  // namespace
 
@@ -316,16 +444,16 @@ struct O3DVisualizer::Impl {
     double next_animation_tick_clock_time_ = 0.0;
     double last_animation_tick_clock_time_ = 0.0;
 
+    MenuCustomization app_menu_;
+    MenuCustomization file_menu_;
+
     Window *window_ = nullptr;
-    SceneWidget *scene_ = nullptr;
+    SceneWidget *widget3d_ = nullptr;
 
     struct {
         // We only keep pointers here because that way we don't have to release
         // all the shared_ptrs at destruction just to ensure that the gui gets
         // destroyed before the Window, because the Window will do that for us.
-        Menu *actions_menu;
-        std::unordered_map<int, std::function<void(O3DVisualizer &)>>
-                menuid2action;
 
         Vert *panel;
         CollapsableVert *mouse_panel;
@@ -339,27 +467,71 @@ struct O3DVisualizer::Impl {
         Button *delete_selection_set;
         ListView *selection_sets;
 
-        CollapsableVert *scene_panel;
-        Checkbox *show_skybox;
-        Checkbox *show_axes;
-        Checkbox *show_ground;
-        Combobox *ground_plane;
-        ColorEdit *bg_color;
-        Slider *point_size;
-        Combobox *shader;
-        Combobox *lighting;
+        struct {
+            std::unordered_map<int, std::function<void(O3DVisualizer &)>>
+                    menuid2action;
 
-        CollapsableVert *light_panel;
-        Checkbox *use_ibl;
-        Checkbox *use_sun;
-        Combobox *ibl_names;
-        Slider *ibl_intensity;
-        Slider *sun_intensity;
-        VectorEdit *sun_dir;
-        ColorEdit *sun_color;
+            EmptyIfHiddenVert *panel;
+            Menu *menu;
+            ButtonList *buttons;
+        } actions;
 
-        CollapsableVert *geometries_panel;
-        TreeView *geometries;
+        struct {
+            CollapsableVert *panel;
+            ColorEdit *bg_color;
+            Slider *point_size;
+            Combobox *shader;
+            Combobox *lighting;
+        } global;
+
+        struct {
+            CollapsableVert *panel;
+            TreeView *entities;
+
+            std::unordered_map<TreeView::ItemId, int> id2panelidx;
+        } scene;
+
+        struct {
+            Checkbox *show;
+            struct : public PropertyPanel {
+            } properties;
+        } skybox;
+
+        struct {
+            Checkbox *show;
+            struct : public PropertyPanel {
+            } properties;
+        } axes;
+
+        struct {
+            Checkbox *show;
+            struct : public PropertyPanel {
+                Combobox *ground_plane;
+            } properties;
+        } ground;
+
+        struct {
+            Checkbox *show;
+            struct : public PropertyPanel {
+                Combobox *names;
+                Slider *intensity;
+            } properties;
+        } ibl;
+
+        struct {
+            Checkbox *show;
+            struct : public PropertyPanel {
+                Slider *intensity;
+                VectorEdit *dir;
+                ColorEdit *color;
+                Checkbox *follows_camera;
+            } properties;
+        } sun;
+
+        CollapsableVert *property_parent_panel;
+        StackedWidget *property_panels;
+        int empty_panel_idx;
+
 #if GROUPS_USE_TREE
         std::map<std::string, TreeView::ItemId> group2itemid;
 #endif  // GROUPS_USE_TREE
@@ -375,9 +547,16 @@ struct O3DVisualizer::Impl {
         NumberEdit *time_edit;
         SmallToggleButton *play;
 
-        EmptyIfHiddenVert *actions_panel;
-        ButtonList *actions;
+        struct : public PropertyPanel {
+            Label *info;
+            Combobox *shader;
+            Combobox *material;
+            ColorEdit *color;
+        } geom_properties;
     } settings;
+
+    Widget *controls_help_panel_;
+    CameraInfo *camera_info_panel_;
 
     void Construct(O3DVisualizer *w) {
         if (window_) {
@@ -385,11 +564,13 @@ struct O3DVisualizer::Impl {
         }
 
         window_ = w;
-        scene_ = new SceneWidget();
-        selections_ = std::make_shared<O3DVisualizerSelections>(*scene_);
-        scene_->SetScene(std::make_shared<Open3DScene>(w->GetRenderer()));
-        scene_->EnableSceneCaching(true);  // smoother UI with large geometry
-        scene_->SetOnPointsPicked(
+        widget3d_ = new SceneWidget();
+        selections_ = std::make_shared<O3DVisualizerSelections>(*widget3d_);
+        widget3d_->SetScene(std::make_shared<Open3DScene>(w->GetRenderer()));
+        widget3d_->EnableSceneCaching(true);  // smoother UI with large geometry
+        widget3d_->SetOnCameraChanged(
+                [this](rendering::Camera *cam) { this->OnCameraChanged(cam); });
+        widget3d_->SetOnPointsPicked(
                 [this](const std::map<
                                std::string,
                                std::vector<std::pair<size_t, Eigen::Vector3d>>>
@@ -403,10 +584,18 @@ struct O3DVisualizer::Impl {
                     }
                     polygon_selection_unselects_ = false;
                 });
-        w->AddChild(GiveOwnership(scene_));
+        w->AddChild(GiveOwnership(widget3d_));
 
-        auto o3dscene = scene_->GetScene();
+        auto o3dscene = widget3d_->GetScene();
         o3dscene->SetBackground(ui_state_.bg_color);
+
+        controls_help_panel_ = CreateControlsHelp();
+        controls_help_panel_->SetVisible(false);
+        window_->AddChild(GiveOwnership(controls_help_panel_));
+
+        camera_info_panel_ = new CameraInfo(window_->GetTheme());
+        camera_info_panel_->SetVisible(false);
+        window_->AddChild(GiveOwnership(camera_info_panel_));
 
         MakeSettingsUI();
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
@@ -419,17 +608,30 @@ struct O3DVisualizer::Impl {
         auto half_em = int(std::round(0.5f * float(em)));
         auto v_spacing = int(std::round(0.25 * float(em)));
 
-        settings.panel = new Vert(half_em);
+        settings.panel = new Vert(0.75 * em);
         window_->AddChild(GiveOwnership(settings.panel));
 
         Margins margins(em, 0, half_em, 0);
         Margins tabbed_margins(0, half_em, 0, 0);
 
+        // Custom actions
+        settings.actions.panel =
+                new EmptyIfHiddenVert("Custom Actions", v_spacing, margins);
+        settings.panel->AddChild(GiveOwnership(settings.actions.panel));
+        settings.actions.panel->SetVisible(false);
+
+        settings.actions.buttons = new ButtonList(v_spacing);
+        settings.actions.panel->AddChild(
+                GiveOwnership(settings.actions.buttons));
+
+        // Mouse countrols
         settings.mouse_panel =
                 new CollapsableVert("Mouse Controls", v_spacing, margins);
         settings.panel->AddChild(GiveOwnership(settings.mouse_panel));
 
         settings.mouse_tab = new TabControl();
+        settings.mouse_tab->SetPreferredSizeMode(
+                TabControl::PreferredSize::CURRENT_TAB);
         settings.mouse_panel->AddChild(GiveOwnership(settings.mouse_tab));
 
         settings.view_panel = new Vert(v_spacing, tabbed_margins);
@@ -445,7 +647,6 @@ struct O3DVisualizer::Impl {
             }
         });
 
-        // Mouse countrols
         auto MakeMouseButton = [this](const char *name,
                                       SceneWidget::Controls type) {
             auto button = new SmallToggleButton(name);
@@ -515,20 +716,20 @@ struct O3DVisualizer::Impl {
         h->AddStretch();
         auto b = std::make_shared<SmallButton>("Select");
         b->SetOnClicked([this]() {
-            scene_->DoPolygonPick(SceneWidget::PolygonPickAction::SELECT);
+            widget3d_->DoPolygonPick(SceneWidget::PolygonPickAction::SELECT);
             settings.polygon_selection_panel->SetVisible(false);
         });
         h->AddChild(b);
         b = std::make_shared<SmallButton>("Unselect");
         b->SetOnClicked([this]() {
             polygon_selection_unselects_ = true;
-            scene_->DoPolygonPick(SceneWidget::PolygonPickAction::SELECT);
+            widget3d_->DoPolygonPick(SceneWidget::PolygonPickAction::SELECT);
             settings.polygon_selection_panel->SetVisible(false);
         });
         h->AddChild(b);
         b = std::make_shared<SmallButton>("Cancel");
         b->SetOnClicked([this]() {
-            scene_->DoPolygonPick(SceneWidget::PolygonPickAction::CANCEL);
+            widget3d_->DoPolygonPick(SceneWidget::PolygonPickAction::CANCEL);
             settings.polygon_selection_panel->SetVisible(false);
         });
         h->AddChild(b);
@@ -544,219 +745,328 @@ struct O3DVisualizer::Impl {
         settings.pick_panel->AddChild(GiveOwnership(h));
         settings.pick_panel->AddChild(GiveOwnership(settings.selection_sets));
 
-        // Scene controls
-        settings.scene_panel = new CollapsableVert("Scene", v_spacing, margins);
-        settings.panel->AddChild(GiveOwnership(settings.scene_panel));
+        // Global scene settings
+        settings.global.panel =
+                new CollapsableVert("Global", v_spacing, margins);
+        settings.panel->AddChild(GiveOwnership(settings.global.panel));
 
-        settings.show_skybox = new Checkbox("Show Skybox");
-        settings.show_skybox->SetOnChecked(
-                [this](bool is_checked) { this->ShowSkybox(is_checked); });
-
-        settings.show_axes = new Checkbox("Show Axis");
-        settings.show_axes->SetOnChecked(
-                [this](bool is_checked) { this->ShowAxes(is_checked); });
-
-        settings.show_ground = new Checkbox("Show Ground");
-        settings.show_ground->SetOnChecked(
-                [this](bool is_checked) { this->ShowGround(is_checked); });
-
-        settings.ground_plane = new Combobox();
-        settings.ground_plane->AddItem("XZ");
-        settings.ground_plane->AddItem("XY");
-        settings.ground_plane->AddItem("YZ");
-        settings.ground_plane->SetOnValueChanged([this](const char *item,
-                                                        int idx) {
-            if (idx == 1) {
-                ui_state_.ground_plane = rendering::Scene::GroundPlane::XY;
-            } else if (idx == 2) {
-                ui_state_.ground_plane = rendering::Scene::GroundPlane::YZ;
-            } else {
-                ui_state_.ground_plane = rendering::Scene::GroundPlane::XZ;
-            }
-            this->ShowGround(ui_state_.show_ground);
-        });
-
-        h = new Horiz(v_spacing);
-        h->AddChild(GiveOwnership(settings.show_axes));
-        h->AddFixed(em);
-        h->AddChild(GiveOwnership(settings.show_skybox));
-        settings.scene_panel->AddChild(GiveOwnership(h));
-        settings.scene_panel->AddChild(GiveOwnership(settings.show_ground));
-        settings.scene_panel->AddChild(GiveOwnership(settings.ground_plane));
-
-        settings.bg_color = new ColorEdit();
-        settings.bg_color->SetValue(ui_state_.bg_color.x(),
-                                    ui_state_.bg_color.y(),
-                                    ui_state_.bg_color.z());
-        settings.bg_color->SetOnValueChanged([this](const Color &c) {
+        settings.global.bg_color = new ColorEdit();
+        settings.global.bg_color->SetValue(ui_state_.bg_color.x(),
+                                           ui_state_.bg_color.y(),
+                                           ui_state_.bg_color.z());
+        settings.global.bg_color->SetOnValueChanged([this](const Color &c) {
             this->SetBackground({c.GetRed(), c.GetGreen(), c.GetBlue(), 1.0f},
                                 nullptr);
         });
 
-        settings.point_size = new Slider(Slider::INT);
-        settings.point_size->SetLimits(1, 10);
-        settings.point_size->SetValue(ui_state_.point_size);
-        settings.point_size->SetOnValueChanged([this](const double newValue) {
-            this->SetPointSize(int(newValue));
-        });
+        settings.global.point_size = new Slider(Slider::INT);
+        settings.global.point_size->SetLimits(1, 10);
+        settings.global.point_size->SetValue(ui_state_.point_size);
+        settings.global.point_size->SetOnValueChanged(
+                [this](const double newValue) {
+                    this->SetPointSize(int(newValue));
+                });
 
-        settings.shader = new Combobox();
-        settings.shader->AddItem("Standard");
-        settings.shader->AddItem("Unlit");
-        settings.shader->AddItem("Normal Map");
-        settings.shader->AddItem("Depth");
-        settings.shader->SetOnValueChanged([this](const char *item, int idx) {
-            if (idx == 1) {
-                this->SetShader(O3DVisualizer::Shader::UNLIT);
-            } else if (idx == 2) {
-                this->SetShader(O3DVisualizer::Shader::NORMALS);
-            } else if (idx == 3) {
-                this->SetShader(O3DVisualizer::Shader::DEPTH);
-            } else {
-                this->SetShader(O3DVisualizer::Shader::STANDARD);
-            }
-        });
+        settings.global.shader = new Combobox();
+        settings.global.shader->AddItem("Standard");
+        settings.global.shader->AddItem("Unlit");
+        settings.global.shader->AddItem("Normal map");
+        settings.global.shader->AddItem("Depth");
+        settings.global.shader->SetOnValueChanged(
+                [this](const char *item, int idx) {
+                    if (idx == 1) {
+                        this->SetShader(O3DVisualizer::Shader::UNLIT);
+                    } else if (idx == 2) {
+                        this->SetShader(O3DVisualizer::Shader::NORMALS);
+                    } else if (idx == 3) {
+                        this->SetShader(O3DVisualizer::Shader::DEPTH);
+                    } else {
+                        this->SetShader(O3DVisualizer::Shader::STANDARD);
+                    }
+                });
 
-        settings.lighting = new Combobox();
+        settings.global.lighting = new Combobox();
         for (auto &profile : gLightingProfiles) {
-            settings.lighting->AddItem(profile.name.c_str());
+            settings.global.lighting->AddItem(profile.name.c_str());
         }
-        settings.lighting->AddItem(kCustomName);
-        settings.lighting->SetOnValueChanged([this](const char *, int index) {
-            if (index < int(gLightingProfiles.size())) {
-                this->SetLightingProfile(gLightingProfiles[index]);
-            }
-        });
+        settings.global.lighting->AddItem(kCustomName);
+        settings.global.lighting->SetOnValueChanged(
+                [this](const char *, int index) {
+                    if (index < int(gLightingProfiles.size())) {
+                        this->SetLightingProfile(gLightingProfiles[index]);
+                    }
+                });
 
         auto *grid = new VGrid(2, v_spacing);
-        settings.scene_panel->AddChild(GiveOwnership(grid));
+        settings.global.panel->AddChild(GiveOwnership(grid));
 
         grid->AddChild(std::make_shared<Label>("BG Color"));
-        grid->AddChild(GiveOwnership(settings.bg_color));
+        grid->AddChild(GiveOwnership(settings.global.bg_color));
         grid->AddChild(std::make_shared<Label>("PointSize"));
-        grid->AddChild(GiveOwnership(settings.point_size));
+        grid->AddChild(GiveOwnership(settings.global.point_size));
         grid->AddChild(std::make_shared<Label>("Shader"));
-        grid->AddChild(GiveOwnership(settings.shader));
+        grid->AddChild(GiveOwnership(settings.global.shader));
         grid->AddChild(std::make_shared<Label>("Lighting"));
-        grid->AddChild(GiveOwnership(settings.lighting));
+        grid->AddChild(GiveOwnership(settings.global.lighting));
 
-        // Light list
-        settings.light_panel = new CollapsableVert("Lighting", 0, margins);
-        settings.light_panel->SetIsOpen(false);
-        settings.panel->AddChild(GiveOwnership(settings.light_panel));
+        // Properties part 1: creation
+        settings.property_panels = new StackedWidget();
 
-        h = new Horiz(v_spacing);
-        settings.use_ibl = new Checkbox("HDR map");
-        settings.use_ibl->SetChecked(ui_state_.use_ibl);
-        settings.use_ibl->SetOnChecked([this](bool checked) {
-            this->ui_state_.use_ibl = checked;
-            this->SetUIState(ui_state_);
-            this->settings.lighting->SetSelectedValue(kCustomName);
-        });
+        settings.empty_panel_idx = 0;
+        auto *no_properties_panel = new VGrid(2);
+        settings.property_panels->AddChild(GiveOwnership(no_properties_panel));
 
-        settings.use_sun = new Checkbox("Sun");
-        settings.use_sun->SetChecked(settings.use_sun);
-        settings.use_sun->SetOnChecked([this](bool checked) {
-            this->ui_state_.use_sun = checked;
-            this->SetUIState(ui_state_);
-            this->settings.lighting->SetSelectedValue(kCustomName);
-        });
-
-        h->AddChild(GiveOwnership(settings.use_ibl));
-        h->AddFixed(int(std::round(
-                1.4 * em)));  // align with Show Skybox checkbox above
-        h->AddChild(GiveOwnership(settings.use_sun));
-
-        settings.light_panel->AddChild(
-                std::make_shared<Label>("Light sources"));
-        settings.light_panel->AddChild(GiveOwnership(h));
-        settings.light_panel->AddFixed(half_em);
+        // Geometry properties
+        settings.geom_properties.info = new Label("");
+        settings.geom_properties.shader =
+                new Combobox({"Lit", "Unlit", "Normal map", "Depth"});
+        settings.geom_properties.shader->SetOnValueChanged(
+                [this](const char *, int) {
+                    SetCurrentObjectToUserMaterial(kSetShader);
+                });
+        settings.geom_properties.material = new Combobox();
+        for (auto &m : kMaterialProfiles) {
+            settings.geom_properties.material->AddItem(m.name.c_str());
+        }
+        settings.geom_properties.material->SetOnValueChanged(
+                [this](const char *, int) {
+                    SetCurrentObjectToUserMaterial(kSetMaterial);
+                });
+        settings.geom_properties.color = new ColorEdit();
+        settings.geom_properties.color->SetOnValueChanged(
+                [this](const Color &) {
+                    SetCurrentObjectToUserMaterial(kSetColor);
+                });
 
         grid = new VGrid(2, v_spacing);
+        grid->AddChild(std::make_shared<Label>("Info"));
+        grid->AddChild(GiveOwnership(settings.geom_properties.info));
+        grid->AddChild(std::make_shared<Label>("Shader"));
+        grid->AddChild(GiveOwnership(settings.geom_properties.shader));
+        grid->AddChild(std::make_shared<Label>("Material"));
+        grid->AddChild(GiveOwnership(settings.geom_properties.material));
+        grid->AddChild(std::make_shared<Label>("Color"));
+        grid->AddChild(GiveOwnership(settings.geom_properties.color));
 
-        settings.ibl_names = new Combobox();
+        int panel_idx = int(settings.property_panels->GetChildren().size());
+        settings.geom_properties.panel_idx = panel_idx;
+        settings.geom_properties.panel = grid;
+        settings.property_panels->AddChild(GiveOwnership(grid));
+
+        // Scene tree
+        // All panels need to have an panel index registered, as panels without
+        // one will get the geometry panel.
+        settings.scene.panel = new CollapsableVert("Scene", v_spacing, margins);
+        settings.panel->AddChild(GiveOwnership(settings.scene.panel));
+        settings.scene.entities = new TreeView();
+        settings.scene.panel->AddChild(GiveOwnership(settings.scene.entities));
+
+        settings.scene.entities->SetOnSelectionChanged(
+                [this](TreeView::ItemId item_id) {
+                    UpdatePropertyPanel(item_id);
+                });
+
+        // ... local functions to add properties
+        auto add_no_properties = [this, no_properties_panel](
+                                         PropertyPanel &props,
+                                         TreeView::ItemId item_id) {
+            auto panel_idx = settings.empty_panel_idx;
+            props.panel_idx = panel_idx;
+            props.panel = no_properties_panel;
+            settings.scene.id2panelidx[item_id] = panel_idx;
+        };
+        auto add_properties = [this](PropertyPanel &props,
+                                     TreeView::ItemId item_id,
+                                     std::shared_ptr<VGrid> grid) {
+            auto panel_idx =
+                    int(settings.property_panels->GetChildren().size());
+            props.panel_idx = panel_idx;
+            props.panel = grid.get();                  // does not own
+            settings.property_panels->AddChild(grid);  // takes ownership
+            settings.scene.id2panelidx[item_id] = panel_idx;
+        };
+
+        auto root = settings.scene.entities->GetRootItem();
+        // ... skybox
+        auto scene_item = std::make_shared<CheckableTextTreeCell>(
+                "Skybox", false,
+                [this](bool is_checked) { this->ShowSkybox(is_checked); });
+        settings.skybox.show = scene_item->GetCheckbox().get();
+        auto item_id = settings.scene.entities->AddItem(root, scene_item);
+        add_no_properties(settings.skybox.properties, item_id);
+
+        // ... axes
+        scene_item = std::make_shared<CheckableTextTreeCell>(
+                "Axes", false,
+                [this](bool is_checked) { this->ShowAxes(is_checked); });
+        settings.axes.show = scene_item->GetCheckbox().get();
+        item_id = settings.scene.entities->AddItem(root, scene_item);
+        add_no_properties(settings.axes.properties, item_id);
+
+        // ... ground
+        scene_item = std::make_shared<CheckableTextTreeCell>(
+                "Ground", false,
+                [this](bool is_checked) { this->ShowGround(is_checked); });
+        settings.ground.show = scene_item->GetCheckbox().get();
+        item_id = settings.scene.entities->AddItem(root, scene_item);
+
+        // ... ground properties
+        settings.ground.properties.ground_plane = new Combobox();
+        settings.ground.properties.ground_plane->AddItem("XZ");
+        settings.ground.properties.ground_plane->AddItem("XY");
+        settings.ground.properties.ground_plane->AddItem("YZ");
+        settings.ground.properties.ground_plane->SetOnValueChanged(
+                [this](const char *item, int idx) {
+                    if (idx == 1) {
+                        ui_state_.ground_plane =
+                                rendering::Scene::GroundPlane::XY;
+                    } else if (idx == 2) {
+                        ui_state_.ground_plane =
+                                rendering::Scene::GroundPlane::YZ;
+                    } else {
+                        ui_state_.ground_plane =
+                                rendering::Scene::GroundPlane::XZ;
+                    }
+                    this->ShowGround(ui_state_.show_ground);
+                });
+
+        grid = new VGrid(2, v_spacing);
+        grid->AddChild(std::make_shared<Label>("Ground plane"));
+        grid->AddChild(GiveOwnership(settings.ground.properties.ground_plane));
+
+        add_properties(settings.ground.properties, item_id,
+                       GiveOwnership(grid));
+
+        // ... ibl
+        scene_item = std::make_shared<CheckableTextTreeCell>(
+                "Environmental/HDR lighting", false, [this](bool is_checked) {
+                    this->ui_state_.use_ibl = is_checked;
+                    this->SetUIState(ui_state_);
+                    this->settings.global.lighting->SetSelectedValue(
+                            kCustomName);
+                });
+        settings.ibl.show = scene_item->GetCheckbox().get();
+        settings.ibl.show->SetChecked(ui_state_.use_ibl);
+        item_id = settings.scene.entities->AddItem(root, scene_item);
+
+        // ... ibl properties
+        grid = new VGrid(2, v_spacing);
+
+        settings.ibl.properties.names = new Combobox();
         for (auto &name : GetListOfIBLs()) {
-            settings.ibl_names->AddItem(name.c_str());
+            settings.ibl.properties.names->AddItem(name.c_str());
         }
-        settings.ibl_names->SetSelectedValue(kDefaultIBL.c_str());
-        settings.ibl_names->SetOnValueChanged([this](const char *val, int idx) {
+        settings.ibl.properties.names->SetSelectedValue(kDefaultIBL.c_str());
+        settings.ibl.properties.names->SetOnValueChanged([this](const char *val,
+                                                                int idx) {
             std::string resource_path =
                     Application::GetInstance().GetResourcePath();
             this->SetIBL(resource_path + std::string("/") + std::string(val));
-            this->settings.lighting->SetSelectedValue(kCustomName);
+            this->settings.global.lighting->SetSelectedValue(kCustomName);
         });
         grid->AddChild(std::make_shared<Label>("HDR map"));
-        grid->AddChild(GiveOwnership(settings.ibl_names));
+        grid->AddChild(GiveOwnership(settings.ibl.properties.names));
 
-        settings.ibl_intensity = new Slider(Slider::INT);
-        settings.ibl_intensity->SetLimits(0.0, 150000.0);
-        settings.ibl_intensity->SetValue(ui_state_.ibl_intensity);
-        settings.ibl_intensity->SetOnValueChanged([this](double new_value) {
-            this->ui_state_.ibl_intensity = int(new_value);
-            this->SetUIState(ui_state_);
-            this->settings.lighting->SetSelectedValue(kCustomName);
-        });
+        settings.ibl.properties.intensity = new Slider(Slider::INT);
+        settings.ibl.properties.intensity->SetLimits(0.0, 150000.0);
+        settings.ibl.properties.intensity->SetValue(ui_state_.ibl_intensity);
+        settings.ibl.properties.intensity->SetOnValueChanged(
+                [this](double new_value) {
+                    this->ui_state_.ibl_intensity = int(new_value);
+                    this->SetUIState(ui_state_);
+                    this->settings.global.lighting->SetSelectedValue(
+                            kCustomName);
+                });
         grid->AddChild(std::make_shared<Label>("Intensity"));
-        grid->AddChild(GiveOwnership(settings.ibl_intensity));
+        grid->AddChild(GiveOwnership(settings.ibl.properties.intensity));
 
-        settings.light_panel->AddChild(std::make_shared<Label>("Environment"));
-        settings.light_panel->AddChild(GiveOwnership(grid));
-        settings.light_panel->AddFixed(half_em);
+        add_properties(settings.ibl.properties, item_id, GiveOwnership(grid));
 
+        // ... sun
+        scene_item = std::make_shared<CheckableTextTreeCell>(
+                "Sun (Directional lighting)", false, [this](bool is_checked) {
+                    this->ui_state_.use_sun = is_checked;
+                    this->SetUIState(ui_state_);
+                    this->settings.global.lighting->SetSelectedValue(
+                            kCustomName);
+                });
+        settings.sun.show = scene_item->GetCheckbox().get();
+        settings.sun.show->SetChecked(ui_state_.use_sun);
+        item_id = settings.scene.entities->AddItem(root, scene_item);
+
+        // ... sun properties
         grid = new VGrid(2, v_spacing);
 
-        settings.sun_intensity = new Slider(Slider::INT);
-        settings.sun_intensity->SetLimits(0.0, 150000.0);
-        settings.sun_intensity->SetValue(ui_state_.ibl_intensity);
-        settings.sun_intensity->SetOnValueChanged([this](double new_value) {
-            this->ui_state_.sun_intensity = int(new_value);
-            this->SetUIState(ui_state_);
-            this->settings.lighting->SetSelectedValue(kCustomName);
-        });
+        settings.sun.properties.intensity = new Slider(Slider::INT);
+        settings.sun.properties.intensity->SetLimits(0.0, 200000.0);
+        settings.sun.properties.intensity->SetValue(ui_state_.ibl_intensity);
+        settings.sun.properties.intensity->SetOnValueChanged(
+                [this](double new_value) {
+                    this->ui_state_.sun_intensity = int(new_value);
+                    this->SetUIState(ui_state_);
+                    this->settings.global.lighting->SetSelectedValue(
+                            kCustomName);
+                });
         grid->AddChild(std::make_shared<Label>("Intensity"));
-        grid->AddChild(GiveOwnership(settings.sun_intensity));
+        grid->AddChild(GiveOwnership(settings.sun.properties.intensity));
 
-        settings.sun_dir = new VectorEdit();
-        settings.sun_dir->SetValue(ui_state_.sun_dir);
-        settings.sun_dir->SetOnValueChanged([this](const Eigen::Vector3f &dir) {
-            this->ui_state_.sun_dir = dir;
-            this->SetUIState(ui_state_);
-            this->settings.lighting->SetSelectedValue(kCustomName);
-        });
-        scene_->SetOnSunDirectionChanged(
+        settings.sun.properties.dir = new VectorEdit();
+        settings.sun.properties.dir->SetValue(ui_state_.sun_dir);
+        settings.sun.properties.dir->SetOnValueChanged(
+                [this](const Eigen::Vector3f &dir) {
+                    this->ui_state_.sun_dir = dir;
+                    this->SetUIState(ui_state_);
+                    this->settings.global.lighting->SetSelectedValue(
+                            kCustomName);
+                });
+        widget3d_->SetOnSunDirectionChanged(
                 [this](const Eigen::Vector3f &new_dir) {
                     this->ui_state_.sun_dir = new_dir;
-                    this->settings.sun_dir->SetValue(new_dir);
+                    this->settings.sun.properties.dir->SetValue(new_dir);
                     // Don't need to call SetUIState(), the SceneWidget already
                     // modified the scene.
-                    this->settings.lighting->SetSelectedValue(kCustomName);
+                    this->settings.global.lighting->SetSelectedValue(
+                            kCustomName);
                 });
         grid->AddChild(std::make_shared<Label>("Direction"));
-        grid->AddChild(GiveOwnership(settings.sun_dir));
+        grid->AddChild(GiveOwnership(settings.sun.properties.dir));
 
-        settings.sun_color = new ColorEdit();
-        settings.sun_color->SetValue(ui_state_.sun_color);
-        settings.sun_color->SetOnValueChanged([this](const Color &new_color) {
-            this->ui_state_.sun_color = {new_color.GetRed(),
-                                         new_color.GetGreen(),
-                                         new_color.GetBlue()};
-            this->SetUIState(ui_state_);
-            this->settings.lighting->SetSelectedValue(kCustomName);
-        });
+        settings.sun.properties.follows_camera = new Checkbox("Follows camera");
+        settings.sun.properties.follows_camera->SetChecked(
+                ui_state_.sun_follows_camera);
+        settings.sun.properties.follows_camera->SetOnChecked(
+                [this](bool checked) {
+                    auto new_state =
+                            this->ui_state_;  // need to copy or SetUIState
+                    new_state.sun_follows_camera =
+                            checked;  // will detect a change
+                    this->SetUIState(new_state);
+                });
+        grid->AddChild(std::make_shared<Label>(" "));
+        grid->AddChild(GiveOwnership(settings.sun.properties.follows_camera));
+
+        settings.sun.properties.color = new ColorEdit();
+        settings.sun.properties.color->SetValue(ui_state_.sun_color);
+        settings.sun.properties.color->SetOnValueChanged(
+                [this](const Color &new_color) {
+                    this->ui_state_.sun_color = {new_color.GetRed(),
+                                                 new_color.GetGreen(),
+                                                 new_color.GetBlue()};
+                    this->SetUIState(ui_state_);
+                    this->settings.global.lighting->SetSelectedValue(
+                            kCustomName);
+                });
         grid->AddChild(std::make_shared<Label>("Color"));
-        grid->AddChild(GiveOwnership(settings.sun_color));
+        grid->AddChild(GiveOwnership(settings.sun.properties.color));
 
-        settings.light_panel->AddChild(
-                std::make_shared<Label>("Sun (Directional light)"));
-        settings.light_panel->AddChild(GiveOwnership(grid));
+        add_properties(settings.sun.properties, item_id, GiveOwnership(grid));
 
-        // Geometry list
-        settings.geometries_panel =
-                new CollapsableVert("Geometries", v_spacing, margins);
-        settings.panel->AddChild(GiveOwnership(settings.geometries_panel));
-
-        settings.geometries = new TreeView();
-        settings.geometries_panel->AddChild(GiveOwnership(settings.geometries));
+        // Properties part 2: add to the UI
+        settings.property_parent_panel =
+                new CollapsableVert("Properties", v_spacing, margins);
+        settings.property_parent_panel->AddChild(
+                GiveOwnership(settings.property_panels));
+        settings.panel->AddChild(GiveOwnership(settings.property_parent_panel));
 
 #if !GROUPS_USE_TREE
         // Groups
@@ -801,21 +1111,67 @@ struct O3DVisualizer::Impl {
         settings.time_panel->SetVisible(false);  // hide until we add a
                                                  // geometry with time
 
-        // Custom actions
-        settings.actions_panel =
-                new EmptyIfHiddenVert("Custom Actions", v_spacing, margins);
-        settings.panel->AddChild(GiveOwnership(settings.actions_panel));
-        settings.actions_panel->SetVisible(false);
-
-        settings.actions = new ButtonList(v_spacing);
-        settings.actions_panel->AddChild(GiveOwnership(settings.actions));
-
         // Picking callbacks
-        scene_->SetOnStartedPolygonPicking([this]() {
+        widget3d_->SetOnStartedPolygonPicking([this]() {
             settings.polygon_selection_panel->SetVisible(true);
         });
     }
 
+    void UpdatePropertyPanel(TreeView::ItemId selected_id) {
+        auto it = settings.scene.id2panelidx.find(selected_id);
+        if (it != settings.scene.id2panelidx.end()) {
+            settings.property_panels->SetSelectedIndex(it->second);
+            auto item = settings.scene.entities->GetItem(selected_id);
+            auto checkable =
+                    std::dynamic_pointer_cast<CheckableTextTreeCell>(item);
+            if (checkable) {
+                bool enabled = checkable->GetCheckbox()->IsChecked();
+                settings.property_panels->GetChildren()[it->second]->SetEnabled(
+                        enabled);
+            }
+        } else {
+            settings.property_panels->SetSelectedIndex(
+                    settings.geom_properties.panel_idx);
+            UpdateGeometryPropertyPanel();
+        }
+    }
+
+    void UpdatePropertyPanelEnabled(PropertyPanel &props, bool enabled) {
+        if (settings.property_panels->GetSelectedIndex() == props.panel_idx) {
+            // This property is currently showing, so updated enabledness
+            props.panel->SetEnabled(enabled);
+        }
+    }
+
+    /*    void AddModel(const std::string& model_name,
+                      std::shared_ptr<rendering::TriangleMeshModel> model,
+                      const std::string& group,
+                      double time,
+                      bool is_visible) {
+            std::string new_group;
+            if (model->meshes_.size() == 1) {
+                auto &m = model->meshes_[0];
+                auto debug = model->materials_[m.material_idx];
+                std::cout << "[o3d] shader: " << debug.shader << ", base_color:
+       {" << debug.base_color.x() << ", " << debug.base_color.y() << ", " <<
+       debug.base_color.z() << ", " << debug.base_color.w() << "}" << std::endl;
+                AddGeometry(model_name, m.mesh, nullptr,
+                            &model->materials_[m.material_idx], group, time,
+                            is_visible);
+            } else {
+                new_group = group;
+                if (!new_group.empty()) {
+                    new_group += "/";
+                }
+                new_group += model_name;
+                for (auto &m : model->meshes_) {
+                    AddGeometry(m.mesh_name, m.mesh, nullptr,
+                                &model->materials_[m.material_idx], new_group,
+       time, is_visible);
+                }
+            }
+        }
+    */
     void AddGeometry(const std::string &name,
                      std::shared_ptr<geometry::Geometry3D> geom,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
@@ -830,66 +1186,61 @@ struct O3DVisualizer::Impl {
         }
         bool is_default_color = false;
         bool no_shadows = false;
-        Material mat;
-        t::geometry::PointCloud *valid_tpcd = nullptr;
+        bool has_colors = false;
+        bool has_normals = false;
 
+        auto cloud = std::dynamic_pointer_cast<geometry::PointCloud>(geom);
+        auto lines = std::dynamic_pointer_cast<geometry::LineSet>(geom);
+        auto obb =
+                std::dynamic_pointer_cast<geometry::OrientedBoundingBox>(geom);
+        auto aabb = std::dynamic_pointer_cast<geometry::AxisAlignedBoundingBox>(
+                geom);
+        auto mesh = std::dynamic_pointer_cast<geometry::MeshBase>(geom);
+        auto voxel_grid = std::dynamic_pointer_cast<geometry::VoxelGrid>(geom);
+        auto octree = std::dynamic_pointer_cast<geometry::Octree>(geom);
+
+        auto t_cloud =
+                std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
+        auto t_mesh =
+                std::dynamic_pointer_cast<t::geometry::TriangleMesh>(tgeom);
+
+        if (cloud) {
+            has_colors = !cloud->colors_.empty();
+            has_normals = !cloud->normals_.empty();
+        } else if (t_cloud) {
+            has_colors = t_cloud->HasPointColors();
+            has_normals = t_cloud->HasPointNormals();
+        } else if (lines) {
+            has_colors = !lines->colors_.empty();
+            no_shadows = true;
+        } else if (obb) {
+            has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
+            no_shadows = true;
+        } else if (aabb) {
+            has_colors = (aabb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
+            no_shadows = true;
+        } else if (mesh) {
+            has_normals = !mesh->vertex_normals_.empty();
+            has_colors = true;  // always want base_color as white
+        } else if (t_mesh) {
+            has_normals = !t_mesh->HasVertexNormals();
+            has_colors = true;  // always want base_color as white
+        } else if (voxel_grid) {
+            has_normals = false;
+            has_colors = voxel_grid->HasColors();
+        } else if (octree) {
+            has_normals = false;
+            has_colors = true;
+        }
+
+        Material mat;
         if (material) {
             mat = *material;
             is_default_color = false;
-            auto t_cloud =
-                    std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
-            valid_tpcd = t_cloud.get();
-        } else if (!model) {  // branch only applies to geometries
-            bool has_colors = false;
-            bool has_normals = false;
-
-            auto cloud = std::dynamic_pointer_cast<geometry::PointCloud>(geom);
-            auto lines = std::dynamic_pointer_cast<geometry::LineSet>(geom);
-            auto obb = std::dynamic_pointer_cast<geometry::OrientedBoundingBox>(
-                    geom);
-            auto aabb =
-                    std::dynamic_pointer_cast<geometry::AxisAlignedBoundingBox>(
-                            geom);
-            auto mesh = std::dynamic_pointer_cast<geometry::MeshBase>(geom);
-            auto voxel_grid =
-                    std::dynamic_pointer_cast<geometry::VoxelGrid>(geom);
-            auto octree = std::dynamic_pointer_cast<geometry::Octree>(geom);
-
-            auto t_cloud =
-                    std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
-            auto t_mesh =
-                    std::dynamic_pointer_cast<t::geometry::TriangleMesh>(tgeom);
-
-            if (cloud) {
-                has_colors = !cloud->colors_.empty();
-                has_normals = !cloud->normals_.empty();
-            } else if (t_cloud) {
-                has_colors = t_cloud->HasPointColors();
-                has_normals = t_cloud->HasPointNormals();
-                valid_tpcd = t_cloud.get();
-            } else if (lines) {
-                has_colors = !lines->colors_.empty();
-                no_shadows = true;
-            } else if (obb) {
-                has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
-                no_shadows = true;
-            } else if (aabb) {
-                has_colors = (aabb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
-                no_shadows = true;
-            } else if (mesh) {
-                has_normals = !mesh->vertex_normals_.empty();
-                has_colors = true;  // always want base_color as white
-            } else if (t_mesh) {
-                has_normals = !t_mesh->HasVertexNormals();
-                has_colors = true;  // always want base_color as white
-            } else if (voxel_grid) {
-                has_normals = false;
-                has_colors = voxel_grid->HasColors();
-            } else if (octree) {
-                has_normals = false;
-                has_colors = true;
-            }
-
+            no_shadows = false;
+        } else if (model) {
+            mat.shader = "defaultLit";
+        } else {
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
             if (lines || obb || aabb) {
@@ -934,15 +1285,16 @@ struct O3DVisualizer::Impl {
         }
 
         objects_.push_back({name, geom, tgeom, model, mat, group_name, time,
-                            is_visible, is_default_color});
+                            is_visible, has_normals, has_colors,
+                            is_default_color});
         AddObjectToTree(objects_.back());
 
-        auto scene = scene_->GetScene();
+        auto scene = widget3d_->GetScene();
         // Do we have a geometry, tgeometry or model?
         if (geom) {
             scene->AddGeometry(name, geom.get(), mat);
-        } else if (tgeom && valid_tpcd) {
-            scene->AddGeometry(name, valid_tpcd, mat);
+        } else if (t_cloud) {
+            scene->AddGeometry(name, t_cloud.get(), mat);
         } else if (model) {
             scene->AddModel(name, *model);
         } else {
@@ -961,7 +1313,7 @@ struct O3DVisualizer::Impl {
         // depend on the bounds.
         SetPointSize(ui_state_.point_size);
 
-        scene_->ForceRedraw();
+        widget3d_->ForceRedraw();
     }
 
     void RemoveGeometry(const std::string &name) {
@@ -999,13 +1351,28 @@ struct O3DVisualizer::Impl {
         }
         ui_state_.enabled_groups = enabled;
         UpdateObjectTree();
-        scene_->GetScene()->RemoveGeometry(name);
+        widget3d_->GetScene()->RemoveGeometry(name);
 
         // Bounds have changed, so update the selection point size, since they
         // depend on the bounds.
         SetPointSize(ui_state_.point_size);
 
-        scene_->ForceRedraw();
+        widget3d_->ForceRedraw();
+    }
+
+    void ClearGeometry() {
+        widget3d_->GetScene()->ClearGeometry();
+        objects_.clear();
+        added_names_.clear();
+        added_groups_.clear();
+        ui_state_.enabled_groups.clear();
+        UpdateObjectTree();
+        SetAnimating(false);
+        UpdateTimeUIRange();
+        int nsets = selections_->GetNumberOfSets();
+        for (int i = 0; i < nsets; ++i) {
+            selections_->RemoveSet(nsets - 1 - i);
+        }
     }
 
     void ShowGeometry(const std::string &name, bool show) {
@@ -1015,13 +1382,14 @@ struct O3DVisualizer::Impl {
                     o.is_visible = show;
 
                     auto id = settings.object2itemid[o.name];
-                    auto cell = settings.geometries->GetItem(id);
+                    auto cell = settings.scene.entities->GetItem(id);
                     auto obj_cell =
                             std::dynamic_pointer_cast<DrawObjectTreeCell>(cell);
                     if (obj_cell) {
                         obj_cell->GetCheckbox()->SetChecked(show);
                     }
 
+                    UpdateGeometryPropertyPanel();
                     UpdateGeometryVisibility(o);  // calls ForceRedraw()
                     window_->PostRedraw();
 
@@ -1045,48 +1413,158 @@ struct O3DVisualizer::Impl {
         return DrawObject();
     }
 
-    void Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
-        scene_->AddLabel(pos, text);
+    enum SetMaterialMode { kSetShader, kSetMaterial, kSetColor };
+    void SetCurrentObjectToUserMaterial(SetMaterialMode mode) {
+        auto selected_id = settings.scene.entities->GetSelectedItemId();
+        auto cell = settings.scene.entities->GetItem(selected_id);
+        auto obj_cell = std::dynamic_pointer_cast<DrawObjectTreeCell>(cell);
+        if (!obj_cell) {
+            return;
+        }
+        auto obj_name = obj_cell->GetName()->GetText();
+        for (auto &o : objects_) {
+            if (o.name == obj_name) {
+                if (mode == kSetShader) {
+                    auto shader_idx =
+                            settings.geom_properties.shader->GetSelectedIndex();
+                    switch (shader_idx) {
+                        case 0:
+                            o.material.shader = "defaultLit";
+                            break;
+                        case 1:
+                        case 2:
+                        case 3:
+                            o.material.shader =
+                                    GetShaderString(Shader(shader_idx));
+                            break;
+                        default:
+                            break;
+                    }
+                } else if (mode == kSetMaterial) {
+                    int idx = settings.geom_properties.material
+                                      ->GetSelectedIndex();
+                    if (idx < 0 || size_t(idx) >= kMaterialProfiles.size()) {
+                        return;
+                    }
+                    o.material = kMaterialProfiles[idx].material;
+                    settings.geom_properties.color->SetValue(Color(
+                            o.material.base_color[0], o.material.base_color[1],
+                            o.material.base_color[2], 1.0f));
+                } else {
+                    auto c = settings.geom_properties.color->GetValue();
+                    o.material.base_color = {c.GetRed(), c.GetGreen(),
+                                             c.GetBlue(), 1.0f};
+                }
+                widget3d_->GetScene()->GetScene()->OverrideMaterial(obj_name,
+                                                                    o.material);
+                widget3d_->ForceRedraw();
+                break;
+            }
+        }
     }
 
-    void Clear3DLabels() { scene_->ClearLabels(); }
+    void UpdateGeometryPropertyPanel() {
+        auto selected_id = settings.scene.entities->GetSelectedItemId();
+        auto cell = settings.scene.entities->GetItem(selected_id);
+        auto obj_cell = std::dynamic_pointer_cast<DrawObjectTreeCell>(cell);
+        if (!obj_cell) {
+            return;
+        }
+        auto obj_name = obj_cell->GetName()->GetText();
+        for (auto &o : objects_) {
+            if (o.name == obj_name) {
+                if (o.model) {
+                    auto n_meshes = o.model->meshes_.size();
+                    auto info = std::string("Model with ") +
+                                std::to_string(n_meshes) + " mesh";
+                    if (n_meshes != 1) {
+                        info += "es";
+                    }
+                    settings.geom_properties.info->SetText(info.c_str());
+                } else {
+                    std::string info;
+                    if (o.has_normals) {
+                        info += "Has ";
+                    } else {
+                        info += "No ";
+                    }
+                    info += "normals, ";
+                    if (o.has_colors) {
+                        info += "has ";
+                    } else {
+                        info += "no ";
+                    }
+                    info += "colors";
+                    settings.geom_properties.info->SetText(info.c_str());
+                }
+
+                if (o.material.shader == "defaultLit") {
+                    settings.geom_properties.shader->SetSelectedIndex(0);
+                } else if (o.material.shader == "defaultUnlit") {
+                    settings.geom_properties.shader->SetSelectedIndex(1);
+                } else if (o.material.shader == "normals") {
+                    settings.geom_properties.shader->SetSelectedIndex(2);
+                } else if (o.material.shader == "depth") {
+                    settings.geom_properties.shader->SetSelectedIndex(3);
+                } else {
+                    utility::LogWarning("TODO: handle shaders like lines");
+                }
+                auto &c = o.material.base_color;
+                settings.geom_properties.color->SetValue(
+                        Color(c[0], c[1], c[2], 1.0f));
+                settings.geom_properties.panel->SetEnabled(o.is_visible);
+                // If the geometry has colors, setting the material modulates
+                // the vertex colors, which seems counter-intuitive.
+                settings.geom_properties.color->SetEnabled(!o.has_colors &&
+                                                           o.is_visible);
+                break;
+            }
+        }
+    }
+
+    void Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
+        widget3d_->AddLabel(pos, text);
+    }
+
+    void Clear3DLabels() { widget3d_->ClearLabels(); }
 
     void SetupCamera(float fov,
                      const Eigen::Vector3f &center,
                      const Eigen::Vector3f &eye,
                      const Eigen::Vector3f &up) {
-        scene_->LookAt(center, eye, up);
-        scene_->ForceRedraw();
+        widget3d_->LookAt(center, eye, up);
+        widget3d_->ForceRedraw();
     }
 
     void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
                      const Eigen::Matrix4d &extrinsic) {
-        scene_->SetupCamera(intrinsic, extrinsic,
-                            scene_->GetScene()->GetBoundingBox());
-        scene_->ForceRedraw();
+        widget3d_->SetupCamera(intrinsic, extrinsic,
+                               widget3d_->GetScene()->GetBoundingBox());
+        widget3d_->ForceRedraw();
     }
 
     void SetupCamera(const Eigen::Matrix3d &intrinsic,
                      const Eigen::Matrix4d &extrinsic,
                      int intrinsic_width_px,
                      int intrinsic_height_px) {
-        scene_->SetupCamera(intrinsic, extrinsic, intrinsic_width_px,
-                            intrinsic_height_px,
-                            scene_->GetScene()->GetBoundingBox());
-        scene_->ForceRedraw();
+        widget3d_->SetupCamera(intrinsic, extrinsic, intrinsic_width_px,
+                               intrinsic_height_px,
+                               widget3d_->GetScene()->GetBoundingBox());
+        widget3d_->ForceRedraw();
     }
 
     void ResetCameraToDefault() {
-        auto scene = scene_->GetScene();
-        scene_->SetupCamera(60.0f, scene->GetBoundingBox(), {0.0f, 0.0f, 0.0f});
-        scene_->ForceRedraw();
+        auto scene = widget3d_->GetScene();
+        widget3d_->SetupCamera(60.0f, scene->GetBoundingBox(),
+                               {0.0f, 0.0f, 0.0f});
+        widget3d_->ForceRedraw();
     }
 
     void SetBackground(const Eigen::Vector4f &bg_color,
                        std::shared_ptr<geometry::Image> bg_image) {
         auto old_default_color = CalcDefaultUnlitColor();
         ui_state_.bg_color = bg_color;
-        auto scene = scene_->GetScene();
+        auto scene = widget3d_->GetScene();
         scene->SetBackground(ui_state_.bg_color, bg_image);
 
         auto new_default_color = CalcDefaultUnlitColor();
@@ -1100,7 +1578,7 @@ struct O3DVisualizer::Impl {
             }
         }
 
-        scene_->ForceRedraw();
+        widget3d_->ForceRedraw();
     }
 
     void ShowSettings(bool show, bool cancel_auto_show = true) {
@@ -1118,51 +1596,55 @@ struct O3DVisualizer::Impl {
 
     void ShowSkybox(bool show) {
         ui_state_.show_skybox = show;
-        settings.show_skybox->SetChecked(show);  // in case called manually
-        scene_->GetScene()->ShowSkybox(show);
-        scene_->ForceRedraw();
+        settings.skybox.show->SetChecked(show);  // in case called manually
+        UpdatePropertyPanelEnabled(settings.skybox.properties, show);
+        widget3d_->GetScene()->ShowSkybox(show);
+        widget3d_->ForceRedraw();
     }
 
     void ShowAxes(bool show) {
         ui_state_.show_axes = show;
-        settings.show_axes->SetChecked(show);  // in case called manually
-        scene_->GetScene()->ShowAxes(show);
-        scene_->ForceRedraw();
+        settings.axes.show->SetChecked(show);  // in case called manually
+        UpdatePropertyPanelEnabled(settings.axes.properties, show);
+        widget3d_->GetScene()->ShowAxes(show);
+        widget3d_->ForceRedraw();
     }
 
     void ShowGround(bool show) {
         ui_state_.show_ground = show;
-        settings.show_ground->SetChecked(show);  // in case called manually
-        scene_->GetScene()->ShowGroundPlane(show, ui_state_.ground_plane);
-        scene_->ForceRedraw();
+        settings.ground.show->SetChecked(show);  // in case called manually
+        UpdatePropertyPanelEnabled(settings.ground.properties, show);
+        widget3d_->GetScene()->ShowGroundPlane(show, ui_state_.ground_plane);
+        widget3d_->ForceRedraw();
     }
 
     void SetGroundPlane(rendering::Scene::GroundPlane plane) {
         ui_state_.ground_plane = plane;
         if (plane == rendering::Scene::GroundPlane::XZ) {
-            settings.ground_plane->SetSelectedIndex(0);
+            settings.ground.properties.ground_plane->SetSelectedIndex(0);
         } else if (plane == rendering::Scene::GroundPlane::XY) {
-            settings.ground_plane->SetSelectedIndex(1);
+            settings.ground.properties.ground_plane->SetSelectedIndex(1);
         } else {
-            settings.ground_plane->SetSelectedIndex(2);
+            settings.ground.properties.ground_plane->SetSelectedIndex(2);
         }
         // Update ground plane if it is currently showing
         if (ui_state_.show_ground) {
-            scene_->GetScene()->ShowGroundPlane(ui_state_.show_ground, plane);
-            scene_->ForceRedraw();
+            widget3d_->GetScene()->ShowGroundPlane(ui_state_.show_ground,
+                                                   plane);
+            widget3d_->ForceRedraw();
         }
     }
 
     void SetPointSize(int px) {
         ui_state_.point_size = px;
-        settings.point_size->SetValue(double(px));
+        settings.global.point_size->SetValue(double(px));
 
         px = int(ConvertToScaledPixels(px));
         for (auto &o : objects_) {
             o.material.point_size = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
-        auto bbox = scene_->GetScene()->GetBoundingBox();
+        auto bbox = widget3d_->GetScene()->GetBoundingBox();
         auto xdim = bbox.max_bound_.x() - bbox.min_bound_.x();
         auto ydim = bbox.max_bound_.y() - bbox.min_bound_.z();
         auto zdim = bbox.max_bound_.z() - bbox.min_bound_.y();
@@ -1170,8 +1652,8 @@ struct O3DVisualizer::Impl {
                      std::max(xdim, std::max(ydim, zdim));
         selections_->SetPointSize(psize);
 
-        scene_->SetPickablePointSize(px);
-        scene_->ForceRedraw();
+        widget3d_->SetPickablePointSize(px);
+        widget3d_->ForceRedraw();
     }
 
     void SetLineWidth(int px) {
@@ -1182,7 +1664,7 @@ struct O3DVisualizer::Impl {
             o.material.line_width = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
-        scene_->ForceRedraw();
+        widget3d_->ForceRedraw();
     }
 
     void SetShader(O3DVisualizer::Shader shader) {
@@ -1190,14 +1672,14 @@ struct O3DVisualizer::Impl {
         for (auto &o : objects_) {
             OverrideMaterial(o.name, o.material, shader);
         }
-        scene_->ForceRedraw();
+        widget3d_->ForceRedraw();
     }
 
     void OverrideMaterial(const std::string &name,
                           const Material &original_material,
                           O3DVisualizer::Shader shader) {
         bool is_lines = (original_material.shader == "unlitLine");
-        auto scene = scene_->GetScene();
+        auto scene = widget3d_->GetScene();
         // Lines are already unlit, so keep using the original shader when in
         // unlit mode so that we can keep the wide lines.
         if (shader == Shader::STANDARD ||
@@ -1238,15 +1720,15 @@ struct O3DVisualizer::Impl {
                    std::string("/") + std::string(kDefaultIBL);
         }
         if (utility::filesystem::FileExists(path + "_ibl.ktx")) {
-            scene_->GetScene()->GetScene()->SetIndirectLight(path);
-            scene_->ForceRedraw();
+            widget3d_->GetScene()->GetScene()->SetIndirectLight(path);
+            widget3d_->ForceRedraw();
             ui_state_.ibl_path = path;
         } else if (utility::filesystem::FileExists(path)) {
             if (path.find("_ibl.ktx") == path.size() - 8) {
                 ui_state_.ibl_path = path.substr(0, path.size() - 8);
-                scene_->GetScene()->GetScene()->SetIndirectLight(
+                widget3d_->GetScene()->GetScene()->SetIndirectLight(
                         ui_state_.ibl_path);
-                scene_->ForceRedraw();
+                widget3d_->ForceRedraw();
             } else {
                 utility::LogWarning(
                         "Could not load IBL path. Filename must be of the form "
@@ -1257,7 +1739,7 @@ struct O3DVisualizer::Impl {
 
     void SetLightingProfile(const LightingProfile &profile) {
         Eigen::Vector3f sun_dir = {0.577f, -0.577f, -0.577f};
-        auto scene = scene_->GetScene();
+        auto scene = widget3d_->GetScene();
         scene->SetLighting(profile.profile, sun_dir);
         ui_state_.use_ibl =
                 (profile.profile != Open3DScene::LightingProfile::HARD_SHADOWS);
@@ -1271,7 +1753,7 @@ struct O3DVisualizer::Impl {
         ui_state_.sun_color = {1.0f, 1.0f, 1.0f};
         SetUIState(ui_state_);
         // SetUIState will set the combobox to "Custom", so undo that.
-        this->settings.lighting->SetSelectedValue(profile.name.c_str());
+        this->settings.global.lighting->SetSelectedValue(profile.name.c_str());
     }
 
     void SetMouseMode(SceneWidget::Controls mode) {
@@ -1279,7 +1761,7 @@ struct O3DVisualizer::Impl {
             selections_->MakeInactive();
         }
 
-        scene_->SetViewControls(mode);
+        widget3d_->SetViewControls(mode);
         ui_state_.mouse_mode = mode;
         settings.view_mouse_mode = mode;
         for (const auto &t_b : settings.mouse_buttons) {
@@ -1360,7 +1842,7 @@ struct O3DVisualizer::Impl {
                 auto result = cb(o3dvis, dt, total_time);
 
                 if (result == TickResult::REDRAW) {
-                    this->scene_->ForceRedraw();
+                    this->widget3d_->ForceRedraw();
                     return true;
                 } else {
                     return false;
@@ -1378,13 +1860,16 @@ struct O3DVisualizer::Impl {
         auto old_enabled_groups = ui_state_.enabled_groups;
         bool old_is_animating = ui_state_.is_animating;
         bool new_is_animating = new_state.is_animating;
+        bool sun_follows_cam_changed =
+                (new_state.sun_follows_camera != ui_state_.sun_follows_camera);
         bool is_new_lighting =
                 (ibl_path_changed || new_state.use_ibl != ui_state_.use_ibl ||
                  new_state.use_sun != ui_state_.use_sun ||
                  new_state.ibl_intensity != ui_state_.ibl_intensity ||
                  new_state.sun_intensity != ui_state_.sun_intensity ||
                  new_state.sun_dir != ui_state_.sun_dir ||
-                 new_state.sun_color != ui_state_.sun_color);
+                 new_state.sun_color != ui_state_.sun_color ||
+                 sun_follows_cam_changed);
 
         if (&new_state != &ui_state_) {
             ui_state_ = new_state;
@@ -1408,26 +1893,46 @@ struct O3DVisualizer::Impl {
             SetLineWidth(ui_state_.line_width);
         }
 
-        settings.use_ibl->SetChecked(ui_state_.use_ibl);
-        settings.use_sun->SetChecked(ui_state_.use_sun);
-        settings.ibl_intensity->SetValue(ui_state_.ibl_intensity);
-        settings.sun_intensity->SetValue(ui_state_.sun_intensity);
-        settings.sun_dir->SetValue(ui_state_.sun_dir);
-        settings.sun_color->SetValue(ui_state_.sun_color);
+        settings.ibl.show->SetChecked(ui_state_.use_ibl);
+        UpdatePropertyPanelEnabled(settings.ibl.properties, ui_state_.use_ibl);
+        settings.sun.show->SetChecked(ui_state_.use_sun);
+        UpdatePropertyPanelEnabled(settings.sun.properties, ui_state_.use_sun);
+        settings.ibl.properties.intensity->SetValue(ui_state_.ibl_intensity);
+        settings.sun.properties.intensity->SetValue(ui_state_.sun_intensity);
+        settings.sun.properties.dir->SetValue(ui_state_.sun_dir);
+        settings.sun.properties.color->SetValue(ui_state_.sun_color);
         // Re-assign intensity in case it was out of range.
-        ui_state_.ibl_intensity = settings.ibl_intensity->GetIntValue();
-        ui_state_.sun_intensity = settings.sun_intensity->GetIntValue();
+        ui_state_.ibl_intensity =
+                settings.ibl.properties.intensity->GetIntValue();
+        ui_state_.sun_intensity =
+                settings.sun.properties.intensity->GetIntValue();
 
         if (is_new_lighting) {
-            settings.lighting->SetSelectedValue(kCustomName);
+            settings.global.lighting->SetSelectedValue(kCustomName);
         }
 
-        auto *raw_scene = scene_->GetScene()->GetScene();
+        if (sun_follows_cam_changed) {
+            if (ui_state_.sun_follows_camera) {
+                if (settings.view_mouse_mode ==
+                    SceneWidget::Controls::ROTATE_SUN) {
+                    SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
+                }
+                auto cam = widget3d_->GetScene()->GetCamera();
+                auto rscene = widget3d_->GetScene()->GetScene();
+                rscene->SetSunLightDirection(cam->GetForwardVector());
+            }
+            settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]
+                    ->SetEnabled(!ui_state_.sun_follows_camera);
+        }
+
+        auto *raw_scene = widget3d_->GetScene()->GetScene();
         raw_scene->EnableIndirectLight(ui_state_.use_ibl);
         raw_scene->SetIndirectLightIntensity(float(ui_state_.ibl_intensity));
         raw_scene->EnableSunLight(ui_state_.use_sun);
-        raw_scene->SetSunLight(ui_state_.sun_dir, ui_state_.sun_color,
-                               float(ui_state_.sun_intensity));
+        if (!ui_state_.sun_follows_camera) {
+            raw_scene->SetSunLight(ui_state_.sun_dir, ui_state_.sun_color,
+                                   float(ui_state_.sun_intensity));
+        }
 
         if (old_enabled_groups != ui_state_.enabled_groups) {
             for (auto &group : added_groups_) {
@@ -1442,7 +1947,7 @@ struct O3DVisualizer::Impl {
             SetAnimating(new_is_animating);
         }
 
-        scene_->ForceRedraw();
+        widget3d_->ForceRedraw();
     }
 
     void AddGroup(const std::string &group) {
@@ -1476,7 +1981,7 @@ struct O3DVisualizer::Impl {
 #if GROUPS_USE_TREE
         auto group_it = settings.group2itemid.find(group);
         if (group_it != settings.group2itemid.end()) {
-            auto cell = settings.geometries->GetItem(group_it->second);
+            auto cell = settings.scene.entities->GetItem(group_it->second);
             auto group_cell =
                     std::dynamic_pointer_cast<CheckableTextTreeCell>(cell);
             if (group_cell) {
@@ -1495,7 +2000,7 @@ struct O3DVisualizer::Impl {
     }
 
     void AddObjectToTree(const DrawObject &o) {
-        TreeView::ItemId parent = settings.geometries->GetRootItem();
+        TreeView::ItemId parent = settings.scene.entities->GetRootItem();
 #if GROUPS_USE_TREE
         if (added_groups_.size() >= 2) {
             auto it = settings.group2itemid.find(o.group);
@@ -1507,7 +2012,7 @@ struct O3DVisualizer::Impl {
                         [this, group = o.group](bool is_on) {
                             this->EnableGroup(group, is_on);
                         });
-                parent = settings.geometries->AddItem(parent, cell);
+                parent = settings.scene.entities->AddItem(parent, cell);
                 settings.group2itemid[o.group] = parent;
             }
         }
@@ -1524,16 +2029,19 @@ struct O3DVisualizer::Impl {
                 [this, name = o.name](bool is_on) {
                     ShowGeometry(name, is_on);
                 });
-        auto id = settings.geometries->AddItem(parent, cell);
+        auto id = settings.scene.entities->AddItem(parent, cell);
         settings.object2itemid[o.name] = id;
     }
 
     void UpdateObjectTree() {
+        for (auto &kv : settings.object2itemid) {
+            settings.scene.entities->RemoveItem(kv.second);
+        }
+
 #if GROUPS_USE_TREE
         settings.group2itemid.clear();
 #endif  // GROUPS_USE_TREE
         settings.object2itemid.clear();
-        settings.geometries->Clear();
 
         for (auto &o : objects_) {
             AddObjectToTree(o);
@@ -1558,8 +2066,8 @@ struct O3DVisualizer::Impl {
     }
 
     void UpdateGeometryVisibility(const DrawObject &o) {
-        scene_->GetScene()->ShowGeometry(o.name, IsGeometryVisible(o));
-        scene_->ForceRedraw();
+        widget3d_->GetScene()->ShowGeometry(o.name, IsGeometryVisible(o));
+        widget3d_->ForceRedraw();
     }
 
     bool IsGeometryVisible(const DrawObject &o) {
@@ -1592,7 +2100,7 @@ struct O3DVisualizer::Impl {
     void SelectSelectionSet(int index) {
         settings.selection_sets->SetSelectedIndex(index);
         selections_->SelectSet(index);
-        scene_->ForceRedraw();  // redraw with new selection highlighted
+        widget3d_->ForceRedraw();  // redraw with new selection highlighted
     }
 
     void UpdateSelectionSetList() {
@@ -1625,6 +2133,16 @@ struct O3DVisualizer::Impl {
         selections_->SetSelectableGeometry(pickable);
     }
 
+    void OnCameraChanged(rendering::Camera *camera) {
+        if (ui_state_.sun_follows_camera) {
+            auto rendering_scene = widget3d_->GetScene()->GetScene();
+            rendering_scene->SetSunLightDirection(camera->GetForwardVector());
+        }
+        if (camera_info_panel_->IsVisible()) {
+            camera_info_panel_->SetFromCamera(camera);
+        }
+    }
+
     bool OnAnimationTick() {
         auto now = Application::GetInstance().Now();
         if (now >= next_animation_tick_clock_time_) {
@@ -1641,8 +2159,8 @@ struct O3DVisualizer::Impl {
     }
 
     void ExportCurrentImage(const std::string &path) {
-        scene_->EnableSceneCaching(false);
-        scene_->GetScene()->GetScene()->RenderToImage(
+        widget3d_->EnableSceneCaching(false);
+        widget3d_->GetScene()->GetScene()->RenderToImage(
                 [this, path](std::shared_ptr<geometry::Image> image) mutable {
                     if (!io::WriteImage(path, *image)) {
                         this->window_->ShowMessageBox(
@@ -1651,9 +2169,26 @@ struct O3DVisualizer::Impl {
                                  path + ".")
                                         .c_str());
                     }
-                    scene_->EnableSceneCaching(true);
+                    widget3d_->EnableSceneCaching(true);
                 });
     }
+
+    void OnExportRGB() {
+        auto dlg = std::make_shared<gui::FileDialog>(
+                gui::FileDialog::Mode::SAVE, "Save File", window_->GetTheme());
+        dlg->AddFilter(".png", "PNG images (.png)");
+        dlg->AddFilter("", "All files");
+        dlg->SetOnCancel([this]() { this->window_->CloseDialog(); });
+        dlg->SetOnDone([this](const char *path) {
+            this->window_->CloseDialog();
+            this->ExportCurrentImage(path);
+        });
+        window_->ShowDialog(dlg);
+    }
+
+    void OnClose() { window_->Close(); }
+
+    void OnToggleSettings() { ShowSettings(!ui_state_.show_settings); }
 
     void OnAbout() {
         auto &theme = window_->GetTheme();
@@ -1676,20 +2211,17 @@ struct O3DVisualizer::Impl {
                 "conditions:\n\n"
 
                 "The above copyright notice and this permission notice shall "
-                "be "
-                "included in all copies or substantial portions of the "
+                "be included in all copies or substantial portions of the "
                 "Software.\n\n"
 
                 "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY "
-                "KIND, "
-                "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE "
-                "WARRANTIES "
-                "OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND "
-                "NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT "
-                "HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, "
-                "WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING "
-                "FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR "
-                "OTHER DEALINGS IN THE SOFTWARE.");
+                "KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE "
+                "WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR "
+                "PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS "
+                "OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR "
+                "OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR "
+                "OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE "
+                "SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.");
         auto ok = std::make_shared<gui::Button>("OK");
         ok->SetOnClicked([this]() { this->window_->CloseDialog(); });
 
@@ -1705,22 +2237,118 @@ struct O3DVisualizer::Impl {
         window_->ShowDialog(dlg);
     }
 
-    void OnExportRGB() {
-        auto dlg = std::make_shared<gui::FileDialog>(
-                gui::FileDialog::Mode::SAVE, "Save File", window_->GetTheme());
-        dlg->AddFilter(".png", "PNG images (.png)");
-        dlg->AddFilter("", "All files");
-        dlg->SetOnCancel([this]() { this->window_->CloseDialog(); });
-        dlg->SetOnDone([this](const char *path) {
-            this->window_->CloseDialog();
-            this->ExportCurrentImage(path);
-        });
+    void OnContactUs() {
+        auto &theme = window_->GetTheme();
+        auto em = theme.font_size;
+        auto dlg = std::make_shared<gui::Dialog>("Contact Us");
+
+        auto title = std::make_shared<gui::Label>("Contact Us");
+        auto left_col = std::make_shared<gui::Label>(
+                "Web site:\n"
+                "Code:\n"
+                "Mailing list:\n"
+                "Discord channel:");
+        auto right_col = std::make_shared<gui::Label>(
+                "http://www.open3d.org\n"
+                "http://github.org/intel-isl/Open3D\n"
+                "http://www.open3d.org/index.php/subscribe/\n"
+                "https://discord.gg/D35BGvn");
+        auto ok = std::make_shared<gui::Button>("OK");
+        ok->SetOnClicked([this]() { window_->CloseDialog(); });
+
+        gui::Margins margins(em);
+        auto layout = std::make_shared<gui::Vert>(0, margins);
+        layout->AddChild(gui::Horiz::MakeCentered(title));
+        layout->AddFixed(em);
+
+        auto columns = std::make_shared<gui::Horiz>(em, gui::Margins());
+        columns->AddChild(left_col);
+        columns->AddChild(right_col);
+        layout->AddChild(columns);
+
+        layout->AddFixed(em);
+        layout->AddChild(gui::Horiz::MakeCentered(ok));
+        dlg->AddChild(layout);
+
         window_->ShowDialog(dlg);
     }
 
-    void OnClose() { window_->Close(); }
+    VGrid *CreateControlsHelp() {
+        auto &theme = window_->GetTheme();
 
-    void OnToggleSettings() { ShowSettings(!ui_state_.show_settings); }
+        gui::Margins margins(theme.font_size);
+        auto layout = new VGrid(2, 0, margins);
+        layout->SetBackgroundColor(gui::Color(0, 0, 0, 0.5));
+
+        auto AddLabel = [layout](const char *text) {
+            auto label = std::make_shared<gui::Label>(text);
+            label->SetTextColor(gui::Color(1, 1, 1));
+            layout->AddChild(label);
+        };
+        auto AddRow = [&AddLabel](const char *left, const char *right) {
+            AddLabel(left);
+            AddLabel(right);
+        };
+
+        AddRow("Arcball mode", " ");
+        AddRow("Left-drag", "Rotate camera");
+        AddRow("Shift + left-drag", "Forward/backward");
+
+#if defined(__APPLE__)
+        AddLabel("Cmd + left-drag");
+#else
+        AddLabel("Ctrl + left-drag");
+#endif  // __APPLE__
+        AddLabel("Pan camera");
+
+#if defined(__APPLE__)
+        AddLabel("Opt + left-drag (up/down)  ");
+#else
+        AddLabel("Win + left-drag (up/down)  ");
+#endif  // __APPLE__
+        AddLabel("Rotate around forward axis");
+
+        // GNOME3 uses Win/Meta as a shortcut to move windows around, so we
+        // need another way to rotate around the forward axis.
+        AddLabel("Ctrl + Shift + left-drag");
+        AddLabel("Rotate around forward axis");
+
+#if defined(__APPLE__)
+        AddLabel("Ctrl + left-drag");
+#else
+        AddLabel("Alt + left-drag");
+#endif  // __APPLE__
+        AddLabel("Rotate directional light");
+
+        AddRow("Right-drag", "Pan camera");
+        AddRow("Middle-drag", "Rotate directional light");
+        AddRow("Wheel", "Forward/backward");
+        AddRow("Shift + Wheel", "Change field of view");
+        AddRow("", "");
+
+        AddRow("Fly mode", " ");
+        AddRow("Left-drag", "Rotate camera");
+#if defined(__APPLE__)
+        AddLabel("Opt + left-drag");
+#else
+        AddLabel("Win + left-drag");
+#endif  // __APPLE__
+        AddLabel("Rotate around forward axis");
+        AddRow("W", "Forward");
+        AddRow("S", "Backward");
+        AddRow("A", "Step left");
+        AddRow("D", "Step right");
+        AddRow("Q", "Step up");
+        AddRow("Z", "Step down");
+        AddRow("E", "Roll left");
+        AddRow("R", "Roll right");
+        AddRow("Up", "Look up");
+        AddRow("Down", "Look down");
+        AddRow("Left", "Look left");
+        AddRow("Right", "Look right");
+
+        return layout;
+    }
 
     std::string UniquifyName(const std::string &name) {
         if (added_names_.find(name) == added_names_.end()) {
@@ -1783,11 +2411,15 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     // The first menu item to be added on macOS becomes the application
     // menu (no matter its name)
     auto app_menu = std::make_shared<Menu>();
-    app_menu->AddItem("About", MENU_ABOUT);
+    app_menu->AddItem("About...", MENU_HELP_ABOUT);
+    impl_->app_menu_.menu = app_menu.get();
+    impl_->app_menu_.insertion_idx = app_menu->GetNumberOfItems();
     menu->AddMenu("Open3D", app_menu);
 #endif  // __APPLE__
     if (Application::GetInstance().UsingNativeWindows()) {
         auto file_menu = std::make_shared<Menu>();
+        impl_->file_menu_.menu = file_menu.get();
+        impl_->file_menu_.insertion_idx = file_menu->GetNumberOfItems();
         file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
         file_menu->AddSeparator();
         file_menu->AddItem("Close Window", MENU_CLOSE, KeyName::KEY_W);
@@ -1798,30 +2430,88 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     actions_menu->AddItem("Show Settings", MENU_SETTINGS);
     actions_menu->SetChecked(MENU_SETTINGS, false);
     menu->AddMenu("Actions", actions_menu);
-    impl_->settings.actions_menu = actions_menu.get();
+    impl_->settings.actions.menu = actions_menu.get();
 
-#if !defined(__APPLE__)
     auto help_menu = std::make_shared<Menu>();
-    help_menu->AddItem("About", MENU_ABOUT);
-    menu->AddMenu("Help", help_menu);
-#endif  // !__APPLE__
+#if !defined(__APPLE__)
+    help_menu->AddItem("About...", MENU_HELP_ABOUT);  // in app menu on macOS
+#endif                                                // !__APPLE__
+    help_menu->AddItem("Contact Us...", MENU_HELP_CONTACT_US);
+    help_menu->AddSeparator();
+    help_menu->AddItem("Show Controls", MENU_HELP_SHOW_CONTROLS);
+    help_menu->AddItem("Show Camera Info", MENU_HELP_SHOW_CAMERA_INFO);
+    // macOS auto-creates a fancy help menu if a menu is named "Help", but we
+    // do not support all those features, so make it a string that looks the
+    // same but does not trigger the auto-creation.
+    menu->AddMenu("Help ", help_menu);
 
     Application::GetInstance().SetMenubar(menu);
 
-    SetOnMenuItemActivated(MENU_ABOUT, [this]() { this->impl_->OnAbout(); });
-    SetOnMenuItemActivated(MENU_EXPORT_RGB,
-                           [this]() { this->impl_->OnExportRGB(); });
-    SetOnMenuItemActivated(MENU_CLOSE, [this]() { this->impl_->OnClose(); });
+    SetOnMenuItemActivated(MENU_HELP_ABOUT,
+                           [this]() { this->impl_->OnAbout(); });
+    SetOnMenuItemActivated(MENU_HELP_CONTACT_US,
+                           [this]() { this->impl_->OnContactUs(); });
+    SetOnMenuItemActivated(MENU_HELP_SHOW_CONTROLS, [this]() {
+        bool vis = !this->impl_->controls_help_panel_->IsVisible();
+        impl_->controls_help_panel_->SetVisible(vis);
+        auto menubar = Application::GetInstance().GetMenubar();
+        if (menubar) {  // might not have been created yet
+            menubar->SetChecked(MENU_HELP_SHOW_CONTROLS, vis);
+        }
+    });
+    SetOnMenuItemActivated(MENU_HELP_SHOW_CAMERA_INFO, [this]() {
+        bool vis = !this->impl_->camera_info_panel_->IsVisible();
+        impl_->camera_info_panel_->SetVisible(vis);
+        if (vis) {
+            // Update to current camera info
+            impl_->OnCameraChanged(impl_->widget3d_->GetScene()->GetCamera());
+        }
+        auto menubar = Application::GetInstance().GetMenubar();
+        if (menubar) {  // might not have been created yet
+            menubar->SetChecked(MENU_HELP_SHOW_CAMERA_INFO, vis);
+        }
+    });
+    SetOnMenuItemActivated(MENU_EXPORT_RGB, [this]() { impl_->OnExportRGB(); });
+    SetOnMenuItemActivated(MENU_CLOSE, [this]() { impl_->OnClose(); });
     SetOnMenuItemActivated(MENU_SETTINGS,
-                           [this]() { this->impl_->OnToggleSettings(); });
+                           [this]() { impl_->OnToggleSettings(); });
 
     impl_->ShowSettings(false, false);
 }
 
 O3DVisualizer::~O3DVisualizer() {}
 
+/*void O3DVisualizer::AddItemsToAppMenu(
+        const std::vector<std::pair<std::string, gui::Menu::ItemId>> &items) {
+#if !defined(__APPLE__)
+    return;  // application menu only exists on macOS
+#endif
+
+    if (impl_->app_menu_ && impl_->app_menu_custom_items_index_ >= 0) {
+        impl_->app_menu_->InsertSeparator(impl_->app_menu_custom_items_index_++);
+        for (auto &it : items) {
+            if (it.first != "") {
+                impl_->app_menu_->InsertItem(impl_->app_menu_custom_items_index_++,
+                                             it.first.c_str(), it.second);
+            } else {
+                impl_->app_menu_->InsertSeparator(impl_->app_menu_custom_items_index_++);
+            }
+        }
+//        impl_->app_menu_->InsertSeparator(
+//                impl_->app_menu_custom_items_index_++);
+    }
+}
+*/
+O3DVisualizer::MenuCustomization &O3DVisualizer::GetAppMenu() {
+    return impl_->app_menu_;
+}
+
+O3DVisualizer::MenuCustomization &O3DVisualizer::GetFileMenu() {
+    return impl_->file_menu_;
+}
+
 Open3DScene *O3DVisualizer::GetScene() const {
-    return impl_->scene_->GetScene().get();
+    return impl_->widget3d_->GetScene().get();
 }
 
 void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
@@ -1867,24 +2557,25 @@ void O3DVisualizer::AddAction(const std::string &name,
     // Add button to the "Custom Actions" segment in the UI
     SmallButton *button = new SmallButton(name.c_str());
     button->SetOnClicked([this, callback]() { callback(*this); });
-    impl_->settings.actions->AddChild(GiveOwnership(button));
+    impl_->settings.actions.buttons->AddChild(GiveOwnership(button));
 
     SetNeedsLayout();
-    impl_->settings.actions_panel->SetVisible(true);
-    impl_->settings.actions_panel->SetIsOpen(true);
+    impl_->settings.actions.panel->SetVisible(true);
+    impl_->settings.actions.panel->SetIsOpen(true);
 
     if (impl_->can_auto_show_settings_ &&
-        impl_->settings.actions->size() == 1) {
+        impl_->settings.actions.buttons->size() == 1) {
         impl_->ShowSettings(true);
     }
 
     // Add menu item
-    if (impl_->settings.menuid2action.empty()) {
-        impl_->settings.actions_menu->AddSeparator();
+    if (impl_->settings.actions.menuid2action.empty()) {
+        impl_->settings.actions.menu->AddSeparator();
     }
-    int id = MENU_ACTIONS_BASE + int(impl_->settings.menuid2action.size());
-    impl_->settings.actions_menu->AddItem(name.c_str(), id);
-    impl_->settings.menuid2action[id] = callback;
+    int id = MENU_ACTIONS_BASE +
+             int(impl_->settings.actions.menuid2action.size());
+    impl_->settings.actions.menu->AddItem(name.c_str(), id);
+    impl_->settings.actions.menuid2action[id] = callback;
     SetOnMenuItemActivated(id, [this, callback]() { callback(*this); });
 }
 
@@ -1925,8 +2616,15 @@ void O3DVisualizer::AddGeometry(
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
-    impl_->AddGeometry(name, nullptr, nullptr, model, material, group, time,
-                       is_visible);
+    if (model->meshes_.size() == 1) {
+        auto &mesh = model->meshes_[0];
+        impl_->AddGeometry(name, mesh.mesh, nullptr, nullptr,
+                           &model->materials_[mesh.material_idx], group, time,
+                           is_visible);
+    } else {
+        impl_->AddGeometry(name, nullptr, nullptr, model, material, group, time,
+                           is_visible);
+    }
 }
 
 void O3DVisualizer::Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
@@ -1938,6 +2636,8 @@ void O3DVisualizer::Clear3DLabels() { impl_->Clear3DLabels(); }
 void O3DVisualizer::RemoveGeometry(const std::string &name) {
     return impl_->RemoveGeometry(name);
 }
+
+void O3DVisualizer::ClearGeometry() { return impl_->ClearGeometry(); }
 
 void O3DVisualizer::ShowGeometry(const std::string &name, bool show) {
     return impl_->ShowGeometry(name, show);
@@ -2081,18 +2781,30 @@ void O3DVisualizer::Layout(const gui::LayoutContext &context) {
     }
 
     auto f = GetContentRect();
-    impl_->settings.actions->SetWidth(settings_width -
-                                      int(std::round(1.5 * em)));
+    impl_->settings.actions.buttons->SetWidth(settings_width -
+                                              int(std::round(1.5 * em)));
     if (impl_->settings.panel->IsVisible()) {
-        impl_->scene_->SetFrame(
+        impl_->widget3d_->SetFrame(
                 Rect(f.x, f.y, f.width - settings_width, f.height));
         impl_->settings.panel->SetFrame(Rect(f.GetRight() - settings_width, f.y,
                                              settings_width, f.height));
     } else {
-        impl_->scene_->SetFrame(f);
+        impl_->widget3d_->SetFrame(f);
     }
 
+    // Controls help panel goes in upper left
+    auto pref = impl_->controls_help_panel_->CalcPreferredSize(
+            context, Widget::Constraints());
+    impl_->controls_help_panel_->SetFrame(
+            Rect(f.x, f.y, pref.width, pref.height));
+
     Super::Layout(context);
+
+    // Camera info panel goes in lower left
+    pref = impl_->camera_info_panel_->CalcPreferredSize(context,
+                                                        Widget::Constraints());
+    impl_->camera_info_panel_->SetFrame(
+            Rect(f.x, f.GetBottom() - pref.height, pref.width, pref.height));
 }
 
 }  // namespace visualizer

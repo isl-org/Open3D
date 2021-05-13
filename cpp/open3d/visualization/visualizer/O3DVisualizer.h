@@ -71,6 +71,8 @@ public:
         bool is_visible = true;
 
         // internal
+        bool has_normals = false;
+        bool has_colors = false;
         bool is_color_default = true;
     };
 
@@ -98,6 +100,7 @@ public:
         int sun_intensity = 100000;
         Eigen::Vector3f sun_dir = {0.577f, -0.577f, -0.577f};
         Eigen::Vector3f sun_color = {1.0f, 1.0f, 1.0f};
+        bool sun_follows_camera = false;
 
         double current_time = 0.0;   // seconds
         double time_step = 1.0;      // seconds
@@ -130,13 +133,14 @@ public:
                      bool is_visible = true);
 
     void AddGeometry(const std::string& name,
-                     std::shared_ptr<rendering::TriangleMeshModel> tgeom,
+                     std::shared_ptr<rendering::TriangleMeshModel> model,
                      const rendering::Material* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
     void RemoveGeometry(const std::string& name);
+    void ClearGeometry();
 
     void ShowGeometry(const std::string& name, bool show);
 
@@ -202,6 +206,14 @@ public:
     void StopRPCInterface();
 
 protected:
+    struct MenuCustomization {
+        gui::Menu* menu;
+        int insertion_idx;
+    };
+    // CreatingAppMenu() is only useful on macOS.
+    MenuCustomization& GetAppMenu();
+    MenuCustomization& GetFileMenu();
+
     void Layout(const gui::LayoutContext& context);
 
 private:

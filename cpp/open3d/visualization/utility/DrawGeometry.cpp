@@ -29,7 +29,6 @@
 #include <Eigen/Core>
 
 #include "open3d/visualization/gui/Application.h"
-#include "open3d/visualization/visualizer/GuiVisualizer.h"
 #include "open3d/visualization/visualizer/ViewControlWithCustomAnimation.h"
 #include "open3d/visualization/visualizer/ViewControlWithEditing.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
