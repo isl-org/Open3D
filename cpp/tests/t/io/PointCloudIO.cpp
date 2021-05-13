@@ -28,6 +28,7 @@
 
 #include <gtest/gtest.h>
 
+#include "core/CoreTest.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
@@ -40,6 +41,11 @@ namespace open3d {
 namespace tests {
 
 namespace {
+
+class PointCloudIOPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(PointCloudIO,
+                         PointCloudIOPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
 
 struct TensorCtorData {
     std::vector<double> values;
@@ -184,6 +190,16 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
             {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetLength(), 7);
     EXPECT_EQ(pcd.GetPointAttr("intensity").GetLength(), 7);
+}
+
+TEST_P(PointCloudIOPermuteDevices, WriteDeviceTestPLY) {
+    core::Device device = GetParam();
+    std::string filename = std::string(TEST_DATA_DIR) + "/test_write.ply";
+    core::Tensor points =
+            core::Tensor::Ones({10, 3}, core::Dtype::Float32, device);
+    t::geometry::PointCloud pcd(points);
+    EXPECT_TRUE(t::io::WritePointCloud(filename, pcd));
+    std::remove(filename.c_str());
 }
 
 }  // namespace tests
