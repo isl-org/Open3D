@@ -91,17 +91,13 @@ try:
                 plat = f'manylinux_{GLIBC_VER[0]}_{GLIBC_VER[1]}_x86_64'
             return python, abi, plat
 
+    cmdclass['bdist_wheel'] = bdist_wheel
+
 except ImportError:
     print(
         'Warning: cannot import "wheel" package to build platform-specific wheel'
     )
     print('Install the "wheel" package to fix this warning')
-    bdist_wheel = None
-
-    cmdclass['bdist_wheel'] = bdist_wheel
-except ImportError:
-    print("Warning: cannot import `wheel` to build platform-specific wheel. "
-          "Run `pip install wheel` to fix this warning.")
 
 # Read requirements.
 with open('requirements.txt', 'r') as f:
