@@ -1235,7 +1235,7 @@ struct O3DVisualizer::Impl {
             is_default_color = false;
             no_shadows = false;
         } else if (model) {
-            mat.shader = "defaultLit";
+            mat.shader = kShaderLit;
         } else {
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
@@ -1369,6 +1369,8 @@ struct O3DVisualizer::Impl {
         for (int i = 0; i < nsets; ++i) {
             selections_->RemoveSet(nsets - 1 - i);
         }
+        // Clear properties, in case a geometry was selected
+        settings.property_panels->SetSelectedIndex(settings.empty_panel_idx);
     }
 
     void ShowGeometry(const std::string &name, bool show) {
@@ -1425,13 +1427,19 @@ struct O3DVisualizer::Impl {
                             settings.geom_properties.shader->GetSelectedIndex();
                     switch (shader_idx) {
                         case 0:
-                            o.material.shader = "defaultLit";
+                            o.material.shader = kShaderLit;
+                            settings.geom_properties.material->SetEnabled(true);
+                            settings.geom_properties.color->SetEnabled(true);
                             break;
                         case 1:
                         case 2:
                         case 3:
                             o.material.shader =
                                     GetShaderString(Shader(shader_idx));
+                            settings.geom_properties.material->SetEnabled(
+                                    false);
+                            settings.geom_properties.color->SetEnabled(
+                                    shader_idx == 1);
                             break;
                         default:
                             break;
@@ -1494,25 +1502,34 @@ struct O3DVisualizer::Impl {
                     settings.geom_properties.info->SetText(info.c_str());
                 }
 
-                if (o.material.shader == "defaultLit") {
+                if (o.material.shader == kShaderLit) {
                     settings.geom_properties.shader->SetSelectedIndex(0);
-                } else if (o.material.shader == "defaultUnlit") {
+                } else if (o.material.shader == kShaderUnlit ||
+                           o.material.shader == kShaderUnlitLines) {
                     settings.geom_properties.shader->SetSelectedIndex(1);
                 } else if (o.material.shader == "normals") {
                     settings.geom_properties.shader->SetSelectedIndex(2);
                 } else if (o.material.shader == "depth") {
                     settings.geom_properties.shader->SetSelectedIndex(3);
                 } else {
-                    utility::LogWarning("TODO: handle shaders like lines");
+                    utility::LogWarning("TODO: handle other shaders");
                 }
+
+                bool isLit = (o.material.shader == kShaderLit);
+                bool isColorable = (o.material.shader == kShaderLit ||
+                                    o.material.shader == kShaderUnlit ||
+                                    o.material.shader == kShaderUnlitLines);
+
                 auto &c = o.material.base_color;
                 settings.geom_properties.color->SetValue(
                         Color(c[0], c[1], c[2], 1.0f));
                 settings.geom_properties.panel->SetEnabled(o.is_visible);
+                settings.geom_properties.material->SetEnabled(o.is_visible &&
+                                                              isLit);
                 // If the geometry has colors, setting the material modulates
                 // the vertex colors, which seems counter-intuitive.
-                settings.geom_properties.color->SetEnabled(!o.has_colors &&
-                                                           o.is_visible);
+                settings.geom_properties.color->SetEnabled(
+                        !o.has_colors && o.is_visible && isColorable);
                 break;
             }
         }
