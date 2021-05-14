@@ -123,6 +123,7 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
 
     SetLighting(LightingProfile::MED_SHADOWS, {0.577f, -0.577f, -0.577f});
+    SetModelUp(UpDir::PLUS_Y);
 
     RecreateAxis(scene, bounds_, false);
 }
@@ -179,9 +180,68 @@ const Eigen::Vector4f Open3DScene::GetBackgroundColor() const {
     return background_color;
 }
 
-void Open3DScene::ShowGroundPlane(bool enable, Scene::GroundPlane plane) {
+void Open3DScene::SetModelUp(UpDir dir) {
+    auto old_dir = up_dir_;
+    up_dir_ = dir;
+    // The whole point of a model up-direction is so that lighting can be
+    // easily oriented. So we need to alter the IBL and sun with respect to
+    // the new up-direction.
     auto scene = renderer_.GetScene(scene_);
-    scene->EnableGroundPlane(enable, plane);
+    Eigen::Vector3f sun_dir = scene->GetSunLightDirection();
+    auto ibl_rot = scene->GetIndirectLightRotation();
+    Eigen::Vector3f orig_sun_dir[4];
+    const float kInvRad3 = 1.0f / std::sqrt(3.0f);
+    // We cannot just figure out the rotation between the two up vectors,
+    // because the "front" of the models varies with respect to the non-up
+    // axes.. This table gives a nice sun direction from the upper left behind
+    // the viewer when facing the front of the model. (At least for +Y and +Z,
+    // the minus directions were a little harder to determine and may need
+    // some alteration.) Computing the rotation between the two ideal sun
+    // directions gives the proper rotation.
+    orig_sun_dir[int(UpDir::PLUS_Y)] = {kInvRad3, -kInvRad3, -kInvRad3};
+    orig_sun_dir[int(UpDir::MINUS_Y)] = {kInvRad3, kInvRad3, -kInvRad3};
+    orig_sun_dir[int(UpDir::PLUS_Z)] = {kInvRad3, kInvRad3, -kInvRad3};
+    orig_sun_dir[int(UpDir::MINUS_Z)] = {kInvRad3, kInvRad3, kInvRad3};
+    auto osd_old = orig_sun_dir[int(old_dir)];
+    auto osd_new = orig_sun_dir[int(dir)];
+    Eigen::Matrix3f R;
+    if (osd_new.dot(osd_old) < -0.999f) {
+        // (osd_old + osd_new) is the zero vector, so need general calculation
+        // will fail.
+        float x = (std::abs(osd_new.x()) > 0.001 ? -1.0f : 1.0f);
+        float y = (std::abs(osd_new.y()) > 0.001 ? -1.0f : 1.0f);
+        float z = (std::abs(osd_new.z()) > 0.001 ? -1.0f : 1.0f);
+        R << x, 0.0f, 0.0f,
+            0.0f, y, 0.0f,
+            0.0f, 0.0f, z;
+    }  else {
+        R = 2.0f * ((osd_old + osd_new) * (osd_old + osd_new).transpose()) / ((osd_old + osd_new).transpose() * (osd_old + osd_new)) - Eigen::Matrix3f::Identity();
+    }
+    sun_dir = R * sun_dir;
+    ibl_rot = ibl_rot * R;
+    scene->SetSunLightDirection(sun_dir);
+    scene->SetIndirectLightRotation(ibl_rot);
+
+    ShowGroundPlane(show_ground_);
+}
+
+Open3DScene::UpDir Open3DScene::GetModelUp() const {
+    return up_dir_;
+}
+
+void Open3DScene::ShowGroundPlane(bool enable) {
+    show_ground_ = enable;
+    auto scene = renderer_.GetScene(scene_);
+    switch (up_dir_) {
+        case UpDir::PLUS_Y:
+        case UpDir::MINUS_Y:
+            scene->EnableGroundPlane(enable, Scene::GroundPlane::XZ);
+            break;
+        case UpDir::PLUS_Z:
+        case UpDir::MINUS_Z:
+            scene->EnableGroundPlane(enable, Scene::GroundPlane::XY);
+            break;
+    }
 }
 
 void Open3DScene::SetLighting(LightingProfile profile,

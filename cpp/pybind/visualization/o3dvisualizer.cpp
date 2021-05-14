@@ -357,13 +357,6 @@ void pybind_o3dvisualizer(py::module& m) {
                     &O3DVisualizer::ShowGround,
                     "Gets/sets if ground plane is visible")
             .def_property(
-                    "ground_plane",
-                    [](const O3DVisualizer& dv) {
-                        return dv.GetUIState().ground_plane;
-                    },
-                    &O3DVisualizer::SetGroundPlane,
-                    "Sets the plane for ground plane, XZ, XY, or YZ")
-            .def_property(
                     "point_size",
                     [](const O3DVisualizer& dv) {
                         return dv.GetUIState().point_size;

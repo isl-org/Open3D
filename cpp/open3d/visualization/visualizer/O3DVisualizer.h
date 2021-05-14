@@ -29,6 +29,7 @@
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
 
@@ -48,7 +49,6 @@ class Geometry;
 namespace visualization {
 
 namespace rendering {
-class Open3DScene;
 struct TriangleMeshModel;
 }  // namespace rendering
 
@@ -84,8 +84,7 @@ public:
         bool show_skybox = false;
         bool show_axes = false;
         bool show_ground = false;
-        rendering::Scene::GroundPlane ground_plane =
-                rendering::Scene::GroundPlane::XZ;
+        rendering::Open3DScene::UpDir up_dir = rendering::Open3DScene::UpDir::PLUS_Y;
         bool is_animating = false;
         std::set<std::string> enabled_groups;
 
@@ -98,7 +97,7 @@ public:
         std::string ibl_path = "";  // "" is default path
         int ibl_intensity = 0;
         int sun_intensity = 100000;
-        Eigen::Vector3f sun_dir = {0.577f, -0.577f, -0.577f};
+        Eigen::Vector3f sun_dir = {0.0f, -1.0f, 0.0f};
         Eigen::Vector3f sun_color = {1.0f, 1.0f, 1.0f};
         bool sun_follows_camera = false;
 
@@ -117,6 +116,9 @@ public:
                        std::shared_ptr<geometry::Image> bg_image = nullptr);
 
     void SetShader(Shader shader);
+
+    void SetModelUp(rendering::Open3DScene::UpDir up_dir);
+    rendering::Open3DScene::UpDir GetModelUp() const;
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<geometry::Geometry3D> geom,
@@ -166,7 +168,6 @@ public:
     void ShowSkybox(bool show);
     void ShowAxes(bool show);
     void ShowGround(bool show);
-    void SetGroundPlane(rendering::Scene::GroundPlane plane);
     void SetPointSize(int point_size);
     void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);

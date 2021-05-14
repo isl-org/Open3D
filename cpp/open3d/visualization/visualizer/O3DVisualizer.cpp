@@ -482,6 +482,7 @@ struct O3DVisualizer::Impl {
             Slider *point_size;
             Combobox *shader;
             Combobox *lighting;
+            Combobox *model_up;
         } global;
 
         struct {
@@ -506,7 +507,6 @@ struct O3DVisualizer::Impl {
         struct {
             Checkbox *show;
             struct : public PropertyPanel {
-                Combobox *ground_plane;
             } properties;
         } ground;
 
@@ -797,17 +797,34 @@ struct O3DVisualizer::Impl {
                     }
                 });
 
+        settings.global.model_up = new Combobox();
+        settings.global.model_up->AddItem("+Y");
+        settings.global.model_up->AddItem("-Y");
+        settings.global.model_up->AddItem("+Z");
+        settings.global.model_up->AddItem("-Z");
+        settings.global.model_up->SetSelectedIndex(int(widget3d_->GetScene()->GetModelUp()));
+        settings.global.model_up->SetOnValueChanged(
+                [this](const char *, int index) {
+                    SetModelUp(Open3DScene::UpDir(index));
+                });
+
         auto *grid = new VGrid(2, v_spacing);
         settings.global.panel->AddChild(GiveOwnership(grid));
 
         grid->AddChild(std::make_shared<Label>("BG Color"));
         grid->AddChild(GiveOwnership(settings.global.bg_color));
-        grid->AddChild(std::make_shared<Label>("PointSize"));
+        grid->AddChild(std::make_shared<Label>("Point Size"));
         grid->AddChild(GiveOwnership(settings.global.point_size));
         grid->AddChild(std::make_shared<Label>("Shader"));
         grid->AddChild(GiveOwnership(settings.global.shader));
         grid->AddChild(std::make_shared<Label>("Lighting"));
         grid->AddChild(GiveOwnership(settings.global.lighting));
+        grid->AddChild(std::make_shared<Label>(""));
+        h = new Horiz(v_spacing);
+        h->AddChild(std::make_shared<Label>("Up Direction"));
+        h->AddStretch();
+        h->AddChild(GiveOwnership(settings.global.model_up));
+        grid->AddChild(GiveOwnership(h));
 
         // Properties part 1: creation
         settings.property_panels = new StackedWidget();
@@ -910,32 +927,7 @@ struct O3DVisualizer::Impl {
         settings.ground.show = scene_item->GetCheckbox().get();
         item_id = settings.scene.entities->AddItem(root, scene_item);
 
-        // ... ground properties
-        settings.ground.properties.ground_plane = new Combobox();
-        settings.ground.properties.ground_plane->AddItem("XZ");
-        settings.ground.properties.ground_plane->AddItem("XY");
-        settings.ground.properties.ground_plane->AddItem("YZ");
-        settings.ground.properties.ground_plane->SetOnValueChanged(
-                [this](const char *item, int idx) {
-                    if (idx == 1) {
-                        ui_state_.ground_plane =
-                                rendering::Scene::GroundPlane::XY;
-                    } else if (idx == 2) {
-                        ui_state_.ground_plane =
-                                rendering::Scene::GroundPlane::YZ;
-                    } else {
-                        ui_state_.ground_plane =
-                                rendering::Scene::GroundPlane::XZ;
-                    }
-                    this->ShowGround(ui_state_.show_ground);
-                });
-
-        grid = new VGrid(2, v_spacing);
-        grid->AddChild(std::make_shared<Label>("Ground plane"));
-        grid->AddChild(GiveOwnership(settings.ground.properties.ground_plane));
-
-        add_properties(settings.ground.properties, item_id,
-                       GiveOwnership(grid));
+        add_no_properties(settings.ground.properties, item_id);
 
         // ... ibl
         scene_item = std::make_shared<CheckableTextTreeCell>(
@@ -1560,6 +1552,18 @@ struct O3DVisualizer::Impl {
         widget3d_->ForceRedraw();
     }
 
+    void SetModelUp(Open3DScene::UpDir up_dir) {
+        ui_state_.up_dir = up_dir;
+        auto scene = widget3d_->GetScene();
+        scene->SetModelUp(up_dir);
+        widget3d_->ForceRedraw();
+        settings.sun.properties.dir->SetValue(scene->GetScene()->GetSunLightDirection());
+    }
+
+    Open3DScene::UpDir GetModelUp() const {
+        return ui_state_.up_dir;
+    }
+
     void SetBackground(const Eigen::Vector4f &bg_color,
                        std::shared_ptr<geometry::Image> bg_image) {
         auto old_default_color = CalcDefaultUnlitColor();
@@ -1614,25 +1618,8 @@ struct O3DVisualizer::Impl {
         ui_state_.show_ground = show;
         settings.ground.show->SetChecked(show);  // in case called manually
         UpdatePropertyPanelEnabled(settings.ground.properties, show);
-        widget3d_->GetScene()->ShowGroundPlane(show, ui_state_.ground_plane);
+        widget3d_->GetScene()->ShowGroundPlane(show);
         widget3d_->ForceRedraw();
-    }
-
-    void SetGroundPlane(rendering::Scene::GroundPlane plane) {
-        ui_state_.ground_plane = plane;
-        if (plane == rendering::Scene::GroundPlane::XZ) {
-            settings.ground.properties.ground_plane->SetSelectedIndex(0);
-        } else if (plane == rendering::Scene::GroundPlane::XY) {
-            settings.ground.properties.ground_plane->SetSelectedIndex(1);
-        } else {
-            settings.ground.properties.ground_plane->SetSelectedIndex(2);
-        }
-        // Update ground plane if it is currently showing
-        if (ui_state_.show_ground) {
-            widget3d_->GetScene()->ShowGroundPlane(ui_state_.show_ground,
-                                                   plane);
-            widget3d_->ForceRedraw();
-        }
     }
 
     void SetPointSize(int px) {
@@ -1854,8 +1841,9 @@ struct O3DVisualizer::Impl {
     }
 
     void SetUIState(const UIState &new_state) {
-        int point_size_changed = (new_state.point_size != ui_state_.point_size);
-        int line_width_changed = (new_state.line_width != ui_state_.line_width);
+        bool up_changed = (new_state.up_dir != ui_state_.up_dir);
+        bool point_size_changed = (new_state.point_size != ui_state_.point_size);
+        bool line_width_changed = (new_state.line_width != ui_state_.line_width);
         bool ibl_path_changed = (new_state.ibl_path != ui_state_.ibl_path);
         auto old_enabled_groups = ui_state_.enabled_groups;
         bool old_is_animating = ui_state_.is_animating;
@@ -1877,6 +1865,10 @@ struct O3DVisualizer::Impl {
 
         if (ibl_path_changed) {
             SetIBL(ui_state_.ibl_path);
+        }
+
+        if (up_changed) {
+            SetModelUp(new_state.up_dir);
         }
 
         ShowSettings(ui_state_.show_settings, false);
@@ -2585,6 +2577,14 @@ void O3DVisualizer::SetBackground(
     impl_->SetBackground(bg_color, bg_image);
 }
 
+void O3DVisualizer::SetModelUp(Open3DScene::UpDir up_dir) {
+    impl_->SetModelUp(up_dir);
+}
+
+Open3DScene::UpDir O3DVisualizer::GetModelUp() const {
+    return impl_->GetModelUp();
+}
+
 void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
 
 void O3DVisualizer::AddGeometry(
@@ -2655,10 +2655,6 @@ void O3DVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
 void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 
 void O3DVisualizer::ShowGround(bool show) { impl_->ShowGround(show); }
-
-void O3DVisualizer::SetGroundPlane(rendering::Scene::GroundPlane plane) {
-    impl_->SetGroundPlane(plane);
-}
 
 void O3DVisualizer::SetPointSize(int point_size) {
     impl_->SetPointSize(point_size);

@@ -71,7 +71,12 @@ public:
     void SetBackground(const Eigen::Vector4f& color,
                        std::shared_ptr<geometry::Image> image = nullptr);
     const Eigen::Vector4f GetBackgroundColor() const;
-    void ShowGroundPlane(bool enable, Scene::GroundPlane plane);
+
+    enum class UpDir { PLUS_Y = 0, MINUS_Y, PLUS_Z, MINUS_Z };
+    void SetModelUp(UpDir dir);
+    UpDir GetModelUp() const;
+
+    void ShowGroundPlane(bool enable);
 
     enum class LightingProfile {
         HARD_SHADOWS,
@@ -157,6 +162,8 @@ private:
     std::map<std::string, GeometryData> geometries_;  // name -> data
     geometry::AxisAlignedBoundingBox bounds_;
     size_t downsample_threshold_ = 6000000;
+    UpDir up_dir_ = UpDir::PLUS_Y;
+    bool show_ground_ = false;
 };
 
 }  // namespace rendering
