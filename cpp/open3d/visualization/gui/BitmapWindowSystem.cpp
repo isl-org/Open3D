@@ -125,7 +125,7 @@ BitmapWindowSystem::BitmapWindowSystem(Rendering mode /*= Rendering::NORMAL*/)
         rendering::EngineInstance::EnableHeadless();
 #else
         utility::LogWarning(
-                "BitmapWindowSystem(): HEADLESS is only supported on Linux");
+                "BitmapWindowSystem(): HEADLESS is only supported on Linux.");
 #endif
     }
 }
@@ -289,8 +289,7 @@ rendering::FilamentRenderer *BitmapWindowSystem::CreateRenderer(OSWindow w) {
         auto size = this->GetWindowSizePixels(w);
         Window *window = ((BitmapWindow *)w)->o3d_window;
 
-        auto on_pixels = [this,
-                          window](std::shared_ptr<geometry::Image> image) {
+        auto on_pixels = [this, window](std::shared_ptr<core::Tensor> image) {
             if (this->impl_->on_draw_) {
                 this->impl_->on_draw_(window, image);
             }

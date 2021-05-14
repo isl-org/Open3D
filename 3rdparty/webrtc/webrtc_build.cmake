@@ -63,7 +63,6 @@ ExternalProject_Add(
         ${WEBRTC_NINJA_ROOT}/args.gn
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
-    BUILD_ALWAYS ON
     BUILD_IN_SOURCE ON
     ${BUILD_BYPRODUCTS} ${EXTRA_WEBRTC_OBJS}
 )

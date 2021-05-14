@@ -39,7 +39,7 @@ set(GUI_SOURCE_FILES
     VectorEdit.cpp
     Widget.cpp
     Window.cpp
-    )
+)
 
 if (WIN32)
     list(APPEND GUI_SOURCE_FILES NativeWin32.cpp)

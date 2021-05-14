@@ -57,6 +57,7 @@
 #include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
+#include "open3d/visualization/utility/GLHelper.h"
 
 namespace {
 

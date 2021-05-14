@@ -2,7 +2,7 @@ function(open3d_show_and_abort_on_warning trgt)
 
     set(DISABLE_MSVC_WARNINGS
             /Wv:18         # ignore warnings introduced in Visual Studio 2015 and later.
-            /wd4201        # non-standard extention nameless struct (filament includes)
+            /wd4201        # non-standard extension nameless struct (filament includes)
             /wd4310        # cast truncates const value (filament)
             /wd4505        # unreferenced local function has been removed (dirent)
             /wd4127        # conditional expression is const (Eigen)
