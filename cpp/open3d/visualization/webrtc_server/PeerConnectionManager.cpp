@@ -416,10 +416,6 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             } else {
                 utility::LogError("Failed to create answer");
             }
-
-            // TODO (Yixing): this is not the place to send SendInitFrames. Call
-            // SendInitFrames after the video stream is fully established.
-            WebRTCWindowSystem::GetInstance()->SendInitFrames(window_uid);
         }
     }
     return answer;
@@ -714,6 +710,12 @@ PeerConnectionManager::GetVideoTrackSource(const std::string &window_uid) {
             return window_uid_to_track_source_.at(window_uid);
         }
     }
+}
+
+void PeerConnectionManager::SendInitFramesToPeer(const std::string &peerid) {
+    std::lock_guard<std::mutex> mutex_lock(window_uid_to_peerids_mutex_);
+    const std::string window_uid = peerid_to_window_uid_.at(peerid);
+    WebRTCWindowSystem::GetInstance()->SendInitFrames(window_uid);
 }
 
 void PeerConnectionManager::CloseWindowConnections(

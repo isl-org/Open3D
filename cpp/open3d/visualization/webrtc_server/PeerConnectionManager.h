@@ -206,8 +206,12 @@ class PeerConnectionManager {
     class DataChannelObserver : public webrtc::DataChannelObserver {
     public:
         DataChannelObserver(
-                rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel)
-            : data_channel_(data_channel) {
+                PeerConnectionManager* peer_connection_manager,
+                rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
+                const std::string& peerid)
+            : peer_connection_manager_(peer_connection_manager),
+              data_channel_(data_channel),
+              peerid_(peerid) {
             data_channel_->RegisterObserver(this);
         }
         virtual ~DataChannelObserver() { data_channel_->UnregisterObserver(); }
@@ -215,17 +219,24 @@ class PeerConnectionManager {
         // DataChannelObserver interface
         virtual void OnStateChange() {
             // Useful to know when the data channel is established.
-            utility::LogInfo(
-                    "DataChannelObserver::OnStateChange channel: {}, state: "
-                    "{}.",
-                    data_channel_->label(),
+            const std::string label = data_channel_->label();
+            const std::string state =
                     webrtc::DataChannelInterface::DataStateString(
-                            data_channel_->state()));
-            std::string msg(data_channel_->label() + " " +
-                            webrtc::DataChannelInterface::DataStateString(
-                                    data_channel_->state()));
+                            data_channel_->state());
+            utility::LogInfo(
+                    "DataChannelObserver::OnStateChange label: {}, state: {}, "
+                    "peerid: {}",
+                    label, state, peerid_);
+            std::string msg(label + " " + state);
             webrtc::DataBuffer buffer(msg);
             data_channel_->Send(buffer);
+            // ClientDataChannel is established after ServerDataChannel. Once
+            // ClientDataChannel is established, we need to send initial frames
+            // to the client such that the video is not empty. Afterwards,
+            // video frames will only be sent when the GUI redraws.
+            if (label == "ClientDataChannel" && state == "open") {
+                peer_connection_manager_->SendInitFramesToPeer(peerid_);
+            }
         }
         virtual void OnMessage(const webrtc::DataBuffer& buffer) {
             std::string msg((const char*)buffer.data.data(),
@@ -236,17 +247,19 @@ class PeerConnectionManager {
         }
 
     protected:
+        PeerConnectionManager* peer_connection_manager_;
         rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
+        const std::string peerid_;
     };
 
     class PeerConnectionObserver : public webrtc::PeerConnectionObserver {
     public:
         PeerConnectionObserver(
-                PeerConnectionManager* peer_connection_manager_,
+                PeerConnectionManager* peer_connection_manager,
                 const std::string& peerid,
                 const webrtc::PeerConnectionInterface::RTCConfiguration& config,
                 std::unique_ptr<cricket::PortAllocator> port_allocator)
-            : peer_connection_manager_(peer_connection_manager_),
+            : peer_connection_manager_(peer_connection_manager),
               peerid_(peerid),
               local_channel_(nullptr),
               remote_channel_(nullptr),
@@ -260,7 +273,8 @@ class PeerConnectionManager {
             if (pc_.get()) {
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel =
                         pc_->CreateDataChannel("ServerDataChannel", nullptr);
-                local_channel_ = new DataChannelObserver(channel);
+                local_channel_ = new DataChannelObserver(
+                        peer_connection_manager_, channel, peerid_);
             }
 
             stats_callback_ = new rtc::RefCountedObject<
@@ -311,11 +325,16 @@ class PeerConnectionManager {
         }
         virtual void OnDataChannel(
                 rtc::scoped_refptr<webrtc::DataChannelInterface> channel) {
-            utility::LogDebug("peerid: {}", peerid_);
-            remote_channel_ = new DataChannelObserver(channel);
+            utility::LogDebug(
+                    "PeerConnectionObserver::OnDataChannel peerid: {}",
+                    peerid_);
+            remote_channel_ = new DataChannelObserver(peer_connection_manager_,
+                                                      channel, peerid_);
         }
         virtual void OnRenegotiationNeeded() {
-            utility::LogDebug("peerid: {}", peerid_);
+            utility::LogDebug(
+                    "PeerConnectionObserver::OnRenegotiationNeeded peerid: {}",
+                    peerid_);
         }
         virtual void OnIceCandidate(
                 const webrtc::IceCandidateInterface* candidate);
@@ -376,6 +395,8 @@ public:
                            const std::string& options,
                            const Json::Value& json_message);
     const Json::Value GetIceServers();
+
+    void SendInitFramesToPeer(const std::string& peerid);
 
     void CloseWindowConnections(const std::string& window_uid);
 
