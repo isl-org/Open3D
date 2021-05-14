@@ -15,7 +15,7 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
 
     set(DEPENDENCIES "${ARGN}")
     foreach(DEPENDENCY IN LISTS DEPENDENCIES)
-        target_link_libraries(${EXAMPLE_CPP_NAME} ${DEPENDENCY})
+        target_link_libraries(${EXAMPLE_CPP_NAME} PRIVATE ${DEPENDENCY})
     endforeach()
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
@@ -52,21 +52,28 @@ EXAMPLE_CPP(PointCloud                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(PoseGraph                 ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(ProgramOptions            ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(RegistrationRANSAC        ${CMAKE_PROJECT_NAME})
+EXAMPLE_CPP(RegistrationColoredICP    ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(RGBDOdometry              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(TriangleMesh              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(TIntegrateRGBD            ${CMAKE_PROJECT_NAME})
+EXAMPLE_CPP(SLAC                      ${CMAKE_PROJECT_NAME})
+EXAMPLE_CPP(SLACIntegrate             ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(TOdometryRGBD             ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(EvaluateFeatureMatch      ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET} ${FLANN_TARGET})
 EXAMPLE_CPP(ViewDistances             ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(ViewPCDMatch              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Visualizer                ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(Voxelization              ${CMAKE_PROJECT_NAME})
+EXAMPLE_CPP(VoxelHashing              ${CMAKE_PROJECT_NAME})
 EXAMPLE_CPP(OpenMP                    ${CMAKE_PROJECT_NAME} ${OPENMP_TARGET})
 
 if (BUILD_GUI)
     EXAMPLE_CPP(Draw                  ${CMAKE_PROJECT_NAME})
     EXAMPLE_CPP(MultipleWindows       ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(OffscreenRendering    ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(TICPOdometry          ${CMAKE_PROJECT_NAME} Threads::Threads)
+    EXAMPLE_CPP(TICPReconstruction    ${CMAKE_PROJECT_NAME} Threads::Threads)
+    EXAMPLE_CPP(VoxelHashingGUI       ${CMAKE_PROJECT_NAME} Threads::Threads)
 endif()
 
 if(BUILD_LIBREALSENSE)
@@ -85,7 +92,7 @@ add_custom_target(build-examples-iteratively
     -DEXAMPLE_TARGETS="${EXAMPLE_TARGETS}"
     -DCMAKE_BINARY_DIR="${CMAKE_BINARY_DIR}"
     -DEXAMPLE_BIN_DIR="${EXAMPLE_BIN_DIR}"
-    -DCMAKE_BUILD_TYPE="$<$<CONFIG:Release>:Release>$<$<CONFIG:Debug>:Debug>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>$<$<CONFIG:MinSizeRel>:MinSizeRel>"
+    -DCMAKE_BUILD_TYPE="$<CONFIG>"
     -DNPROC="${NPROC}"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/iterative_build_examples.cmake
 )

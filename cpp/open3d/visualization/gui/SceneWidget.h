@@ -34,6 +34,10 @@
 
 namespace open3d {
 
+namespace camera {
+class PinholeCameraIntrinsic;
+}  // namespace camera
+
 namespace geometry {
 class AxisAlignedBoundingBox;
 class Geometry3D;
@@ -93,8 +97,16 @@ public:
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
-                     const geometry::AxisAlignedBoundingBox& geometry_bounds,
+                     const geometry::AxisAlignedBoundingBox& scene_bounds,
                      const Eigen::Vector3f& center_of_rotation);
+    void SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     const geometry::AxisAlignedBoundingBox& scene_bounds);
+    void SetupCamera(const Eigen::Matrix3d& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px,
+                     const geometry::AxisAlignedBoundingBox& scene_bounds);
     void LookAt(const Eigen::Vector3f& center,
                 const Eigen::Vector3f& eye,
                 const Eigen::Vector3f& up);
@@ -167,6 +179,9 @@ public:
                             std::string,
                             std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
                     int)> on_picked);
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick);
+    enum class PolygonPickAction { CANCEL = 0, SELECT };
+    void DoPolygonPick(PolygonPickAction action);
 
     // 3D Labels
     std::shared_ptr<Label3D> AddLabel(const Eigen::Vector3f& pos,
@@ -174,7 +189,6 @@ public:
     void RemoveLabel(std::shared_ptr<Label3D> label);
     void ClearLabels();
 
-    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;

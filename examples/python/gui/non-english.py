@@ -42,32 +42,39 @@ else:
 def main():
     gui.Application.instance.initialize()
 
-    # Font selection must be done after initialization but before creating
+    # Font changes must be done after initialization but before creating
     # a window.
 
     # MODE_SERIF changes the English font; Chinese will not be displayed
+    font = None
     if mode == MODE_SERIF:
-        gui.Application.instance.set_font_for_language(serif, "en")
+        font = gui.FontDescription(serif)
     # MODE_COMMON_HANYU uses the default English font and adds common Chinese
     elif mode == MODE_COMMON_HANYU:
-        gui.Application.instance.set_font_for_language(hanzi, "zh")
+        font = gui.FontDescription()
+        font.add_typeface_for_language(hanzi, "zh")
     # MODE_SERIF_AND_COMMON_HANYU uses a serif English font and adds common
     # Chinese characters
     elif mode == MODE_SERIF_AND_COMMON_HANYU:
-        gui.Application.instance.set_font_for_language(serif, "en")
-        gui.Application.instance.set_font_for_language(hanzi, "zh")
+        font = gui.FontDescription(serif)
+        font.add_typeface_for_language(hanzi, "zh")
     # MODE_COMMON_HANYU_EN the Chinese font for both English and the common
     # characters
     elif mode == MODE_COMMON_HANYU_EN:
-        gui.Application.instance.set_font_for_language(hanzi, "en")
-        gui.Application.instance.set_font_for_language(hanzi, "zh")
+        font = gui.FontDescription(hanzi)
+        font.add_typeface_for_language(hanzi, "zh")
     # MODE_ALL_HANYU uses the default English font but includes all the Chinese
     # characters (which uses a substantial amount of memory)
     elif mode == MODE_ALL_HANYU:
-        gui.Application.instance.set_font_for_language(hanzi, "zh_all")
+        font = gui.FontDescription()
+        font.add_typeface_for_language(hanzi, "zh_all")
     elif mode == MODE_CUSTOM_CHARS:
         range = [0x2654, 0x2655, 0x2656, 0x2657, 0x2658, 0x2659]
-        gui.Application.instance.set_font_for_code_points(chess, range)
+        font = gui.FontDescription()
+        font.add_typeface_for_code_points(chess, range)
+
+    if font is not None:
+        gui.Application.instance.set_font(gui.Application.DEFAULT_FONT_ID, font)
 
     w = ExampleWindow()
     gui.Application.instance.run()
@@ -186,7 +193,7 @@ class ExampleWindow:
         collapse.add_child(combo)
 
         # Add a simple image
-        logo = gui.ImageLabel(basedir + "/icon-32.png")
+        logo = gui.ImageWidget(basedir + "/icon-32.png")
         collapse.add_child(logo)
 
         # Add a list of items

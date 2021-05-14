@@ -74,9 +74,9 @@ class VideoWindow:
         self.is_done = False
         threading.Thread(target=self._update_thread).start()
 
-    def _on_layout(self, theme):
+    def _on_layout(self, layout_context):
         contentRect = self.window.content_rect
-        panel_width = 15 * theme.font_size  # 15 ems wide
+        panel_width = 15 * layout_context.theme.font_size  # 15 ems wide
         self.widget3d.frame = gui.Rect(contentRect.x, contentRect.y,
                                        contentRect.width - panel_width,
                                        contentRect.height)

@@ -26,81 +26,129 @@
 
 #include "open3d/t/pipelines/kernel/RGBDOdometry.h"
 
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-void CreateVertexMap(const core::Tensor &depth_map,
-                     const core::Tensor &intrinsics,
-                     core::Tensor &vertex_map,
-                     float depth_scale,
-                     float depth_max) {
-    core::Device device = depth_map.GetDevice();
-    if (device != intrinsics.GetDevice()) {
-        utility::LogError(
-                "Inconsistent device between depth_map ({}) vs intrinsics ({})",
-                device.ToString(), intrinsics.GetDevice().ToString());
-    }
-
-    if (device.GetType() == core::Device::DeviceType::CPU) {
-        CreateVertexMapCPU(depth_map, intrinsics, vertex_map, depth_scale,
-                           depth_max);
-    } else if (device.GetType() == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        CreateVertexMapCUDA(depth_map, intrinsics, vertex_map, depth_scale,
-                            depth_max);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
-    } else {
-        utility::LogError("Unimplemented device.");
-    }
-}
-
-void CreateNormalMap(const core::Tensor &vertex_map, core::Tensor &normal_map) {
-    core::Device device = vertex_map.GetDevice();
-
-    if (device.GetType() == core::Device::DeviceType::CPU) {
-        CreateNormalMapCPU(vertex_map, normal_map);
-    } else if (device.GetType() == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        CreateNormalMapCUDA(vertex_map, normal_map);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
-    } else {
-        utility::LogError("Unimplemented device.");
-    }
-}
-
-void ComputePosePointToPlane(const core::Tensor &source_vertex_map,
-                             const core::Tensor &target_vertex_map,
-                             const core::Tensor &source_normal_map,
-                             const core::Tensor &intrinsics,
-                             const core::Tensor &init_source_to_target,
-                             core::Tensor &delta,
-                             core::Tensor &residual,
-                             float depth_diff) {
+void ComputeOdometryResultPointToPlane(
+        const core::Tensor &source_vertex_map,
+        const core::Tensor &target_vertex_map,
+        const core::Tensor &target_normal_map,
+        const core::Tensor &intrinsics,
+        const core::Tensor &init_source_to_target,
+        core::Tensor &delta,
+        float &inlier_residual,
+        int &inlier_count,
+        const float depth_outlier_trunc,
+        const float depth_huber_delta) {
     core::Device device = source_vertex_map.GetDevice();
 
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d =
+            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor trans_d =
+            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+
     if (device.GetType() == core::Device::DeviceType::CPU) {
-        ComputePosePointToPlaneCPU(
-                source_vertex_map, target_vertex_map, source_normal_map,
-                intrinsics, init_source_to_target, delta, residual, depth_diff);
+        ComputeOdometryResultPointToPlaneCPU(
+                source_vertex_map, target_vertex_map, target_normal_map,
+                intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
+                depth_outlier_trunc, depth_huber_delta);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        ComputePosePointToPlaneCUDA(
-                source_vertex_map, target_vertex_map, source_normal_map,
-                intrinsics, init_source_to_target, delta, residual, depth_diff);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(ComputeOdometryResultPointToPlaneCUDA, source_vertex_map,
+                  target_vertex_map, target_normal_map, intrinsics_d, trans_d,
+                  delta, inlier_residual, inlier_count, depth_outlier_trunc,
+                  depth_huber_delta);
     } else {
         utility::LogError("Unimplemented device.");
     }
 }
+void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
+                                    const core::Tensor &target_depth,
+                                    const core::Tensor &source_intensity,
+                                    const core::Tensor &target_intensity,
+                                    const core::Tensor &target_intensity_dx,
+                                    const core::Tensor &target_intensity_dy,
+                                    const core::Tensor &source_vertex_map,
+                                    const core::Tensor &intrinsics,
+                                    const core::Tensor &init_source_to_target,
+                                    core::Tensor &delta,
+                                    float &inlier_residual,
+                                    int &inlier_count,
+                                    const float depth_outlier_trunc,
+                                    const float intensity_huber_delta) {
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d =
+            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor trans_d =
+            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+
+    core::Device device = source_vertex_map.GetDevice();
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        ComputeOdometryResultIntensityCPU(
+                source_depth, target_depth, source_intensity, target_intensity,
+                target_intensity_dx, target_intensity_dy, source_vertex_map,
+                intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
+                depth_outlier_trunc, intensity_huber_delta);
+    } else if (device.GetType() == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(ComputeOdometryResultIntensityCUDA, source_depth,
+                  target_depth, source_intensity, target_intensity,
+                  target_intensity_dx, target_intensity_dy, source_vertex_map,
+                  intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
+                  depth_outlier_trunc, intensity_huber_delta);
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+}
+
+void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
+                                 const core::Tensor &target_depth,
+                                 const core::Tensor &source_intensity,
+                                 const core::Tensor &target_intensity,
+                                 const core::Tensor &target_depth_dx,
+                                 const core::Tensor &target_depth_dy,
+                                 const core::Tensor &target_intensity_dx,
+                                 const core::Tensor &target_intensity_dy,
+                                 const core::Tensor &source_vertex_map,
+                                 const core::Tensor &intrinsics,
+                                 const core::Tensor &init_source_to_target,
+                                 core::Tensor &delta,
+                                 float &inlier_residual,
+                                 int &inlier_count,
+                                 const float depth_outlier_trunc,
+                                 const float depth_huber_delta,
+                                 const float intensity_huber_delta) {
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d =
+            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor trans_d =
+            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+
+    core::Device device = source_vertex_map.GetDevice();
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        ComputeOdometryResultHybridCPU(
+                source_depth, target_depth, source_intensity, target_intensity,
+                target_depth_dx, target_depth_dy, target_intensity_dx,
+                target_intensity_dy, source_vertex_map, intrinsics_d, trans_d,
+                delta, inlier_residual, inlier_count, depth_outlier_trunc,
+                depth_huber_delta, intensity_huber_delta);
+    } else if (device.GetType() == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(ComputeOdometryResultHybridCUDA, source_depth, target_depth,
+                  source_intensity, target_intensity, target_depth_dx,
+                  target_depth_dy, target_intensity_dx, target_intensity_dy,
+                  source_vertex_map, intrinsics_d, trans_d, delta,
+                  inlier_residual, inlier_count, depth_outlier_trunc,
+                  depth_huber_delta, intensity_huber_delta);
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+}
+
 }  // namespace odometry
 }  // namespace kernel
 }  // namespace pipelines

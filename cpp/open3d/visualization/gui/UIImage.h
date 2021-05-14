@@ -31,6 +31,12 @@
 
 namespace open3d {
 
+namespace t {
+namespace geometry {
+class Image;
+}
+}
+
 namespace geometry {
 class Image;
 }  // namespace geometry
@@ -47,6 +53,7 @@ class UIImage {
 public:
     explicit UIImage(const char* image_path);
     explicit UIImage(std::shared_ptr<geometry::Image> image);
+    explicit UIImage(std::shared_ptr<t::geometry::Image> image);
     /// Uses an existing texture, using texture coordinates
     /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
     /// This is useful for using an icon atlas to reduce draw calls.
@@ -61,6 +68,10 @@ public:
     /// size from the original, a new texture will be created.
     void UpdateImage(std::shared_ptr<geometry::Image> image);
 
+    /// Updates the contents of the texture. If the image is a different
+    /// size from the original, a new texture will be created.
+    void UpdateImage(std::shared_ptr<t::geometry::Image> image);
+
     enum class Scaling {
         NONE,   /// No scaling, fixed size
         ANY,    /// Scales to any size and aspect ratio
@@ -69,7 +80,7 @@ public:
     void SetScaling(Scaling scaling);
     Scaling GetScaling() const;
 
-    Size CalcPreferredSize(const Theme& theme,
+    Size CalcPreferredSize(const LayoutContext& context,
                            const Widget::Constraints& constraints) const;
 
     struct DrawParams {

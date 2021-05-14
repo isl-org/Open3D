@@ -28,5 +28,10 @@
         "url": "https://github.com/intel-isl/open3d_downloads/raw/master/tests/point_cloud_sample2.pts",
         "path": "tests/point_cloud_sample2.pts",
         "sha256": "59e8b0daee0b009f56fc19cf0a17a6c7bed0dc852845e31cc85911db24c3d1a4"
+    },
+    "tests/cube.obj": {
+        "url": "https://github.com/intel-isl/open3d_downloads/raw/master/tests/cube.obj",
+        "path": "tests/cube.obj",
+        "sha256": "a72ae892b566c1204cfaaf676884c763442fce9f9c5be97017e7e7ffcd3c7066"
     }
 }

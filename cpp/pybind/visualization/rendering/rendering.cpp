@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/ColorGrading.h"
 #include "open3d/visualization/rendering/Gradient.h"
@@ -77,6 +78,37 @@ public:
         return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
     }
 
+    void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
+                     const Eigen::Matrix4d &extrinsic) {
+        SetupCamera(intrinsic.intrinsic_matrix_, extrinsic, intrinsic.width_,
+                    intrinsic.height_);
+    }
+
+    void SetupCamera(const Eigen::Matrix3d &intrinsic,
+                     const Eigen::Matrix4d &extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px) {
+        Camera::SetupCameraAsPinholeCamera(
+                *scene_->GetCamera(), intrinsic, extrinsic, intrinsic_width_px,
+                intrinsic_height_px, scene_->GetBoundingBox());
+    }
+
+    void SetupCamera(float verticalFoV,
+                     const Eigen::Vector3f &center,
+                     const Eigen::Vector3f &eye,
+                     const Eigen::Vector3f &up) {
+        float aspect = 1.0f;
+        if (height_ > 0) {
+            aspect = float(width_) / float(height_);
+        }
+        auto *camera = scene_->GetCamera();
+        auto far_plane =
+                Camera::CalcFarPlane(*camera, scene_->GetBoundingBox());
+        camera->SetProjection(verticalFoV, aspect, Camera::CalcNearPlane(),
+                              far_plane, rendering::Camera::FovType::Vertical);
+        camera->LookAt(center, eye, up);
+    }
+
 private:
     int width_;
     int height_;
@@ -104,10 +136,11 @@ void pybind_rendering_classes(py::module &m) {
                  "is True if the image is in the sRGB colorspace and False "
                  "otherwise")
             .def("update_texture",
-                 (TextureHandle(Renderer::*)(
-                         const std::shared_ptr<geometry::Image>, bool)) &
+                 (bool (Renderer::*)(TextureHandle,
+                                     const std::shared_ptr<geometry::Image>,
+                                     bool)) &
                          Renderer::UpdateTexture,
-                 "image"_a, "is_sRGB"_a = false,
+                 "texture"_a, "image"_a, "is_sRGB"_a = false,
                  "Updates the contents of the texture to be the new image, or "
                  "returns False and does nothing if the image is a different "
                  "size. It is more efficient to call update_texture() rather "
@@ -147,6 +180,26 @@ void pybind_rendering_classes(py::module &m) {
                     "Returns the Open3DScene for this renderer. This scene is "
                     "destroyed when the renderer is destroyed and should not "
                     "be accessed after that point.")
+            .def("setup_camera",
+                 py::overload_cast<float, const Eigen::Vector3f &,
+                                   const Eigen::Vector3f &,
+                                   const Eigen::Vector3f &>(
+                         &PyOffscreenRenderer::SetupCamera),
+                 "setup_camera(vertical_field_of_view, center, eye, up): "
+                 "sets camera view using bounding box of current geometry")
+            .def("setup_camera",
+                 py::overload_cast<const camera::PinholeCameraIntrinsic &,
+                                   const Eigen::Matrix4d &>(
+                         &PyOffscreenRenderer::SetupCamera),
+                 "setup_camera(intrinsics, extrinsic_matrix): "
+                 "sets the camera view using bounding box of current geometry")
+            .def("setup_camera",
+                 py::overload_cast<const Eigen::Matrix3d &,
+                                   const Eigen::Matrix4d &, int, int>(
+                         &PyOffscreenRenderer::SetupCamera),
+                 "setup_camera(intrinsic_matrix, extrinsic_matrix, "
+                 "intrinsic_width_px, intrinsic_height_px): "
+                 "sets the camera view using bounding box of current geometry")
             .def("render_to_image", &PyOffscreenRenderer::RenderToImage,
                  "Renders scene to an image, blocking until the image is "
                  "returned")
@@ -325,7 +378,7 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("shader", &Material::shader);
 
     // ---- TriangleMeshModel ----
-    py::class_<TriangleMeshModel> tri_model(
+    py::class_<TriangleMeshModel, std::shared_ptr<TriangleMeshModel>> tri_model(
             m, "TriangleMeshModel",
             "A list of geometry.TriangleMesh and Material that can describe a "
             "complex model with multiple meshes, such as might be stored in an "

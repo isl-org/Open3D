@@ -143,19 +143,16 @@ void pybind_pointcloud(py::module &m) {
             .def("compute_point_cloud_distance",
                  &PointCloud::ComputePointCloudDistance,
                  "For each point in the source point cloud, compute the "
-                 "distance to "
-                 "the target point cloud.",
+                 "distance to the target point cloud.",
                  "target"_a)
             .def("compute_mean_and_covariance",
                  &PointCloud::ComputeMeanAndCovariance,
                  "Function to compute the mean and covariance matrix of a "
-                 "point "
-                 "cloud.")
+                 "point cloud.")
             .def("compute_mahalanobis_distance",
                  &PointCloud::ComputeMahalanobisDistance,
                  "Function to compute the Mahalanobis distance for points in a "
-                 "point "
-                 "cloud. See: "
+                 "point cloud. See: "
                  "https://en.wikipedia.org/wiki/Mahalanobis_distance.")
             .def("compute_nearest_neighbor_distance",
                  &PointCloud::ComputeNearestNeighborDistance,
@@ -185,28 +182,26 @@ void pybind_pointcloud(py::module &m) {
                     "create_from_depth_image",
                     &PointCloud::CreateFromDepthImage,
                     R"(Factory function to create a pointcloud from a depth image and a
-        camera. Given depth value d at (u, v) image coordinate, the corresponding 3d
-        point is:
+camera. Given depth value d at (u, v) image coordinate, the corresponding 3d point is:
 
-              - z = d / depth_scale
-              - x = (u - cx) * z / fx
-              - y = (v - cy) * z / fy
-        )",
+    - z = d / depth_scale
+    - x = (u - cx) * z / fx
+    - y = (v - cy) * z / fy)",
                     "depth"_a, "intrinsic"_a,
                     "extrinsic"_a = Eigen::Matrix4d::Identity(),
                     "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0,
                     "stride"_a = 1, "project_valid_depth_only"_a = true)
-            .def_static("create_from_rgbd_image",
-                        &PointCloud::CreateFromRGBDImage,
-                        "Factory function to create a pointcloud from an RGB-D "
-                        "image and a        camera. Given depth value d at (u, "
-                        "v) image coordinate, the corresponding 3d point is: "
-                        R"(- z = d / depth_scale
-              - x = (u - cx) * z / fx
-              - y = (v - cy) * z / fy)",
-                        "image"_a, "intrinsic"_a,
-                        "extrinsic"_a = Eigen::Matrix4d::Identity(),
-                        "project_valid_depth_only"_a = true)
+            .def_static(
+                    "create_from_rgbd_image", &PointCloud::CreateFromRGBDImage,
+                    "Factory function to create a pointcloud from an RGB-D "
+                    "image and a camera. Given depth value d at (u, "
+                    "v) image coordinate, the corresponding 3d point is:\n\n"
+                    R"(    - z = d / depth_scale
+    - x = (u - cx) * z / fx
+    - y = (v - cy) * z / fy)",
+                    "image"_a, "intrinsic"_a,
+                    "extrinsic"_a = Eigen::Matrix4d::Identity(),
+                    "project_valid_depth_only"_a = true)
             .def_readwrite("points", &PointCloud::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "

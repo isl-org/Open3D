@@ -40,6 +40,10 @@ struct Theme {
     Color background_color;
 
     std::string font_path;
+    std::string font_bold_path;
+    std::string font_italic_path;
+    std::string font_bold_italic_path;
+    std::string font_mono_path;
     int font_size;
     int default_margin;
     int default_layout_spacing;

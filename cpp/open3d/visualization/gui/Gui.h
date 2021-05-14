@@ -84,6 +84,22 @@ constexpr Alignment operator|(Alignment x, Alignment y) {
     return Alignment((unsigned int)(x) | (unsigned int)(y));
 }
 
+using FontId = unsigned int;
+
+enum class FontStyle {
+    NORMAL = 0,
+    BOLD = 1,
+    ITALIC = 2,
+    BOLD_ITALIC = 3  /// BOLD | ITALIC
+};
+
+class FontContext {
+public:
+    virtual ~FontContext(){};
+
+    virtual void* GetFont(FontId font_id) = 0;
+};
+
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

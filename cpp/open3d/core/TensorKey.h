@@ -46,18 +46,22 @@ class TensorKey {
 public:
     /// Instantiates a TensorKey with single index mode.
     ///
+    /// \code
     /// t[0]   : t.GetItem({TensorKey::Index(0)})
     /// t[2]   : t.GetItem({TensorKey::Index(2)})
     /// t[2, 3]: t.GetItem({TensorKey::Index(2), TensorKey::Index(3)})
+    /// \endcode
     ///
     /// \param index: Index to the tensor.
     static TensorKey Index(int64_t index);
 
     /// Instantiates a TensorKey with slice mode.
     ///
+    /// \code
     /// t[0:10:2]: t.GetItem({TensorKey::Slice(0    , 10  , 2   )})
     /// t[:-1]   : t.Getitem({TensorKey::Slice(None , None, -1  )})
     /// t[3:]    : t.GetItem({TensorKey::Slice(3    , None, None)})
+    /// \endcode
     ///
     /// \param start: Start index. None means starting from the 0-th element.
     /// \param stop: Stop index. None means stopping at the last element.
@@ -68,11 +72,13 @@ public:
 
     /// Instantiates a TensorKey with tensor-index (advanced indexing) mode.
     ///
-    /// t[[1, 2], [3:]]: advanced indexing on dim-0, slicing on dim-1.
+    /// \code
+    /// [[1, 2], [3:]]: advanced indexing on dim-0, slicing on dim-1.
     /// t.GetItem({
     ///     TensorKey::IndexTensor(Tensor::Init<int64_t>({1, 2}, device),
     ///     TensorKey::Slice(3, None, None),
     /// });
+    /// \endcode
     ///
     /// \param index_tensor: Indexing tensor of dtype int64_t or bool.
     static TensorKey IndexTensor(const Tensor& index_tensor);
@@ -105,12 +111,14 @@ public:
 
     /// When dim_size is know, conver the None values in start, stop, step with
     /// to concrete values and returns a new TensorKey.
+    /// \code
     /// E.g. if t.shape == (5,), t[:4]:
     ///      before compute: Slice(None,    4, None)
     ///      after compute : Slice(   0,    4,    1)
     /// E.g. if t.shape == (5,), t[1:]:
     ///      before compute: Slice(   1, None, None)
     ///      after compute : Slice(   1,    5,    1)
+    /// \endcode
     /// For TensorKeyMode::Slice only.
     TensorKey InstantiateDimSize(int64_t dim_size) const;
 

@@ -62,7 +62,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "nbsphinx",
-    'm2r',
+    'm2r2',
 ]
 
 if os.environ["skip_notebooks"] == "true":

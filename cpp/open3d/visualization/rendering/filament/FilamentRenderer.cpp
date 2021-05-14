@@ -331,6 +331,12 @@ bool FilamentRenderer::UpdateTexture(
     return resource_mgr_.UpdateTexture(texture, image, srgb);
 }
 
+bool FilamentRenderer::UpdateTexture(TextureHandle texture,
+                                     const t::geometry::Image& image,
+                                     bool srgb) {
+    return resource_mgr_.UpdateTexture(texture, image, srgb);
+}
+
 void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
     resource_mgr_.Destroy(id);
 }
@@ -367,7 +373,7 @@ void FilamentRenderer::RemoveSkybox(const SkyboxHandle& id) {
 std::shared_ptr<RenderToBuffer> FilamentRenderer::CreateBufferRenderer() {
     auto renderer = std::make_shared<FilamentRenderToBuffer>(engine_);
     buffer_renderers_.insert(renderer);
-    return std::move(renderer);
+    return renderer;
 }
 
 void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
@@ -386,6 +392,11 @@ void FilamentRenderer::ConvertToGuiScene(const SceneHandle& id) {
 
 TextureHandle FilamentRenderer::AddTexture(
         const std::shared_ptr<geometry::Image> image, bool srgb) {
+    return resource_mgr_.CreateTexture(image, srgb);
+}
+
+TextureHandle FilamentRenderer::AddTexture(const t::geometry::Image& image,
+                                           bool srgb) {
     return resource_mgr_.CreateTexture(image, srgb);
 }
 

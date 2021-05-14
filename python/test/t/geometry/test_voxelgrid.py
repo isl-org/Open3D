@@ -103,17 +103,6 @@ def test_integration(device):
         extrinsic = o3d.core.Tensor(np.linalg.inv(camera_poses[i].pose),
                                     o3d.core.Dtype.Float32, device)
         volume.integrate(depth, color, intrinsic, extrinsic, 1000.0, 3.0)
-        if i == len(camera_poses) - 1:
-            vertexmap, _, _ = volume.raycast(intrinsic, extrinsic,
-                                             depth.columns, depth.rows, 50, 0.1,
-                                             3.0, min(i * 1.0, 3.0))
-            vertexmap_gt = np.load(
-                test_data_path +
-                "open3d_downloads/RGBD/raycast_vtx_{:03d}.npy".format(i))
-            discrepancy_count = ((vertexmap.cpu().numpy() - vertexmap_gt) >
-                                 1e-5).sum()
-            # Be tolerant to numerical differences
-            assert discrepancy_count / vertexmap_gt.size < 1e-3
 
     pcd = volume.extract_surface_points().to_legacy_pointcloud()
     pcd_gt = o3d.io.read_point_cloud(test_data_path +
@@ -127,3 +116,56 @@ def test_integration(device):
         pcd, pcd_gt, voxel_size, np.identity(4))
     assert result.fitness > 1 - 1e-5
     assert result.inlier_rmse < 1e-5
+
+
+@pytest.mark.skip(
+    reason="raycasting is subject to changes and test data not up-to-date")
+def test_raycast(device):
+    voxel_size = 3.0 / 512  # voxel resolution in meter
+    sdf_trunc = 0.04  # truncation distance in meter
+    block_resolution = 16  # 16^3 voxel blocks
+    initial_block_count = 1000  # initially allocated number of voxel blocks
+
+    volume = o3d.t.geometry.TSDFVoxelGrid(
+        {
+            'tsdf': o3d.core.Dtype.Float32,
+            'weight': o3d.core.Dtype.UInt16,
+            'color': o3d.core.Dtype.UInt16
+        },
+        voxel_size=voxel_size,
+        sdf_trunc=sdf_trunc,
+        block_resolution=block_resolution,
+        block_count=initial_block_count,
+        device=device)
+
+    intrinsic = o3d.camera.PinholeCameraIntrinsic(
+        o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+
+    intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix,
+                                o3d.core.Dtype.Float32, device)
+
+    camera_poses = read_trajectory(test_data_path + "RGBD/odometry.log")
+
+    for i in range(len(camera_poses)):
+        color = o3d.io.read_image(test_data_path +
+                                  "RGBD/color/{:05d}.jpg".format(i))
+        color = o3d.t.geometry.Image.from_legacy_image(color, device=device)
+
+        depth = o3d.io.read_image(test_data_path +
+                                  "RGBD/depth/{:05d}.png".format(i))
+        depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
+
+        extrinsic = o3d.core.Tensor(np.linalg.inv(camera_poses[i].pose),
+                                    o3d.core.Dtype.Float32, device)
+        volume.integrate(depth, color, intrinsic, extrinsic, 1000.0, 3.0)
+        if i == len(camera_poses) - 1:
+            vertexmap, _, _ = volume.raycast(intrinsic, extrinsic,
+                                             depth.columns, depth.rows, 50, 0.1,
+                                             3.0, min(i * 1.0, 3.0))
+            vertexmap_gt = np.load(
+                test_data_path +
+                "open3d_downloads/RGBD/raycast_vtx_{:03d}.npy".format(i))
+            discrepancy_count = ((vertexmap.cpu().numpy() - vertexmap_gt) >
+                                 1e-5).sum()
+            # Be tolerant to numerical differences
+            assert discrepancy_count / vertexmap_gt.size < 1e-3

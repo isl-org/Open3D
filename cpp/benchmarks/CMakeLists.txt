@@ -1,9 +1,3 @@
-cmake_minimum_required(VERSION 3.0)
-# Overide policy for hidden symbol visibility
-if(POLICY CMP0063)
-    cmake_policy(SET CMP0063 NEW)
-endif()
-
 ################################################################################
 #
 # build benchmark dependency here so we can pass the _GLIBCXX_USE_CXX11_ABI
@@ -38,8 +32,9 @@ mark_as_advanced(
 
 
 set(BENCHMARK_SOURCE_FILES
-    core/Reduction.cpp
     core/Hashmap.cpp
+    core/Reduction.cpp
+    core/Zeros.cpp
     geometry/KDTreeFlann.cpp
     geometry/SamplePoints.cpp
     io/PointCloudIO.cpp

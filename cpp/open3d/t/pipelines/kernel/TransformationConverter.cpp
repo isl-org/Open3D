@@ -28,7 +28,7 @@
 
 #include <cmath>
 
-#include "open3d/core/CoreUtil.h"
+#include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
 #include "open3d/utility/Console.h"
@@ -106,7 +106,7 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     transformation = transformation.Contiguous();
     core::Tensor pose_ = pose.Contiguous();
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         core::Device::DeviceType device_type = device.GetType();
         PoseToTransformationDevice<scalar_t>(transformation, pose_,
                                              device_type);
@@ -119,6 +119,43 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     // Scale [assumed to be 1].
     transformation[3][3] = 1;
     return transformation;
+}
+
+void DecodeAndSolve6x6(const core::Tensor &A_reduction,
+                       core::Tensor &delta,
+                       float &inlier_residual,
+                       int &inlier_count) {
+    const core::Device host(core::Device("CPU:0"));
+    core::Tensor A_1x29_host = A_reduction.To(host, core::Dtype::Float64);
+    double *A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
+
+    core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
+    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float64, host);
+
+    double *AtA_local_ptr = AtA.GetDataPtr<double>();
+    double *Atb_local_ptr = Atb.GetDataPtr<double>();
+
+    for (int j = 0; j < 6; j++) {
+        Atb_local_ptr[j] = A_1x29_ptr[21 + j];
+        const int64_t reduction_idx = ((j * (j + 1)) / 2);
+        for (int k = 0; k <= j; k++) {
+            AtA_local_ptr[j * 6 + k] = A_1x29_ptr[reduction_idx + k];
+            AtA_local_ptr[k * 6 + j] = A_1x29_ptr[reduction_idx + k];
+        }
+    }
+
+    // Solve on CPU with double to ensure precision.
+    try {
+        delta = AtA.Solve(Atb.Neg());
+        inlier_residual = A_1x29_ptr[27];
+        inlier_count = static_cast<int>(A_1x29_ptr[28]);
+    } catch (const std::runtime_error &) {
+        utility::LogError(
+                "Singular 6x6 linear system detected, tracking failed.");
+        delta.Fill(0);
+        inlier_residual = 0;
+        inlier_count = 0;
+    }
 }
 
 }  // namespace kernel

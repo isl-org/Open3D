@@ -39,17 +39,18 @@ core::Tensor ComputePosePointToPlane(
         const core::Tensor &target_normals,
         const pipelines::registration::CorrespondenceSet &corres) {
     // Get dtype and device.
-    core::Dtype dtype = source_points.GetDtype();
+    core::Dtype dtype = core::Dtype::Float32;
     core::Device device = source_points.GetDevice();
 
     // Checks.
+    source_points.AssertDtype(dtype);
     target_points.AssertDtype(dtype);
     target_normals.AssertDtype(dtype);
     target_points.AssertDevice(device);
     target_normals.AssertDevice(device);
 
     // Pose {6,} tensor [ouput].
-    core::Tensor pose = core::Tensor::Empty({6}, dtype, device);
+    core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
     // Number of correspondences.
     int n = corres.first.GetLength();
 
@@ -76,13 +77,9 @@ core::Tensor ComputePosePointToPlane(
                                    target_normals_ptr, corres_first,
                                    corres_second, n, pose, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        ComputePosePointToPlaneCUDA(source_points_ptr, target_points_ptr,
-                                    target_normals_ptr, corres_first,
-                                    corres_second, n, pose, dtype, device);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(ComputePosePointToPlaneCUDA, source_points_ptr,
+                  target_points_ptr, target_normals_ptr, corres_first,
+                  corres_second, n, pose, dtype, device);
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -94,12 +91,15 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &target_points,
         const pipelines::registration::CorrespondenceSet &corres) {
     // Get dtype and device.
-    core::Dtype dtype = source_points.GetDtype();
+    core::Dtype dtype = core::Dtype::Float32;
     core::Device device = source_points.GetDevice();
+
     // Checks.
+    source_points.AssertDtype(dtype);
     target_points.AssertDtype(dtype);
     target_points.AssertDevice(device);
-    // [Output] Rotation and translation tensor.
+
+    // [Output] Rotation and translation tensor of type Float64.
     core::Tensor R;
     core::Tensor t;
 
@@ -135,14 +135,21 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         // https://ieeexplore.ieee.org/document/88573
         core::Tensor mean_s = source_select.Mean({0}, true);
         core::Tensor mean_t = target_select.Mean({0}, true);
+
+        // Compute linear system on CPU as Float64.
+        core::Device host("CPU:0");
         core::Tensor Sxy = (target_select - mean_t)
                                    .T()
                                    .Matmul(source_select - mean_s)
-                                   .Div_(static_cast<float>(n));
+                                   .Div_(static_cast<float>(n))
+                                   .To(host, core::Dtype::Float64);
+
+        mean_s = mean_s.To(host, core::Dtype::Float64);
+        mean_t = mean_t.To(host, core::Dtype::Float64);
 
         core::Tensor U, D, VT;
         std::tie(U, D, VT) = Sxy.SVD();
-        core::Tensor S = core::Tensor::Eye(3, dtype, device);
+        core::Tensor S = core::Tensor::Eye(3, core::Dtype::Float64, host);
         if (U.Det() * (VT.T()).Det() < 0) {
             S[-1][-1] = -1;
         }

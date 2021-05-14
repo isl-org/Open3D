@@ -8,8 +8,10 @@ set(GUI_SOURCE_FILES
     ColorEdit.cpp
     Combobox.cpp
     Dialog.cpp
+    Events.cpp
     FileDialog.cpp
     FileDialogNative.cpp
+    Font.cpp
     GLFWWindowSystem.cpp
     Gui.cpp
     ImageWidget.cpp

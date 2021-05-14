@@ -52,6 +52,74 @@
 namespace open3d {
 namespace core {
 
+static DLDataTypeCode DtypeToDLDataTypeCode(const Dtype& dtype) {
+    if (dtype == Dtype::Float32) return DLDataTypeCode::kDLFloat;
+    if (dtype == Dtype::Float64) return DLDataTypeCode::kDLFloat;
+    if (dtype == Dtype::Int8) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::Int16) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::Int32) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::Int64) return DLDataTypeCode::kDLInt;
+    if (dtype == Dtype::UInt8) return DLDataTypeCode::kDLUInt;
+    if (dtype == Dtype::UInt16) return DLDataTypeCode::kDLUInt;
+    if (dtype == Dtype::UInt32) return DLDataTypeCode::kDLUInt;
+    if (dtype == Dtype::UInt64) return DLDataTypeCode::kDLUInt;
+    utility::LogError("Unsupported data type");
+    return DLDataTypeCode();
+}
+
+static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
+    if (dltype.lanes != 1) {
+        utility::LogError("Only supports lanes == 1, but lanes == {}",
+                          dltype.lanes);
+    }
+    switch (dltype.code) {
+        case DLDataTypeCode::kDLUInt:
+            switch (dltype.bits) {
+                case 8:
+                    return Dtype::UInt8;
+                case 16:
+                    return Dtype::UInt16;
+                case 32:
+                    return Dtype::UInt32;
+                case 64:
+                    return Dtype::UInt64;
+                default:
+                    utility::LogError("Unsupported kDLUInt bits {}",
+                                      dltype.bits);
+            }
+            break;
+        case DLDataTypeCode::kDLInt:
+            switch (dltype.bits) {
+                case 8:
+                    return Dtype::Int8;
+                case 16:
+                    return Dtype::Int16;
+                case 32:
+                    return Dtype::Int32;
+                case 64:
+                    return Dtype::Int64;
+                default:
+                    utility::LogError("Unsupported kDLInt bits {}",
+                                      dltype.bits);
+            }
+            break;
+        case DLDataTypeCode::kDLFloat:
+            switch (dltype.bits) {
+                case 32:
+                    return Dtype::Float32;
+                case 64:
+                    return Dtype::Float64;
+                default:
+                    utility::LogError("Unsupported kDLFloat bits {}",
+                                      dltype.bits);
+            }
+            break;
+        default:
+            utility::LogError("Unsupported dtype code {}", dltype.code);
+    }
+    return Dtype::Undefined;
+}
+
 /// Open3D DLPack Tensor manager.
 class Open3DDLManagedTensor {
 private:
@@ -82,24 +150,7 @@ private:
         DLDataType dl_data_type;
         Dtype dtype = o3d_tensor_.GetDtype();
 
-        if (dtype == Dtype::Float32) {
-            dl_data_type.code = DLDataTypeCode::kDLFloat;
-        } else if (dtype == Dtype::Float64) {
-            dl_data_type.code = DLDataTypeCode::kDLFloat;
-        } else if (dtype == Dtype::Int16) {
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-        } else if (dtype == Dtype::Int32) {
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-        } else if (dtype == Dtype::Int64) {
-            dl_data_type.code = DLDataTypeCode::kDLInt;
-        } else if (dtype == Dtype::UInt8) {
-            dl_data_type.code = DLDataTypeCode::kDLUInt;
-        } else if (dtype == Dtype::UInt16) {
-            dl_data_type.code = DLDataTypeCode::kDLUInt;
-        } else {
-            utility::LogError("Unsupported data type");
-        }
-
+        dl_data_type.code = DtypeToDLDataTypeCode(dtype);
         dl_data_type.bits = static_cast<uint8_t>(dtype.ByteSize() * 8);
         dl_data_type.lanes = 1;
 
@@ -740,8 +791,24 @@ Tensor Tensor::Add(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Add(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = Add(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Add_(const Tensor& value) {
     kernel::Add(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Add_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Add_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -752,8 +819,24 @@ Tensor Tensor::Sub(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Sub(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = Sub(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Sub_(const Tensor& value) {
     kernel::Sub(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Sub_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Sub_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -764,8 +847,24 @@ Tensor Tensor::Mul(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Mul(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = Mul(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Mul_(const Tensor& value) {
     kernel::Mul(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Mul_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Mul_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -776,8 +875,24 @@ Tensor Tensor::Div(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Div(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = Div(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Div_(const Tensor& value) {
     kernel::Div(*this, value, *this);
+    return *this;
+}
+
+Tensor Tensor::Div_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Div_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -907,14 +1022,52 @@ Tensor Tensor::Abs_() {
     return *this;
 }
 
-Tensor Tensor::Clip(double min_val, double max_val) const {
-    Tensor dst_tensor(shape_, dtype_, GetDevice());
-    utility::LogError("Not Implemented!");
-    return dst_tensor;
+Tensor Tensor::IsNan() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsNan);
+        return dst_tensor;
+    } else {
+        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
+    }
 }
 
-Tensor Tensor::Clip_(double min_val, double max_val) {
-    utility::LogError("Not Implemented!");
+Tensor Tensor::IsInf() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsInf);
+        return dst_tensor;
+    } else {
+        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
+Tensor Tensor::IsFinite() const {
+    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
+        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+        kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsFinite);
+        return dst_tensor;
+    } else {
+        return Tensor::Ones(shape_, Dtype::Bool, GetDevice());
+    }
+}
+
+Tensor Tensor::Clip(Scalar min_val, Scalar max_val) const {
+    Tensor dst_tensor = this->Clone();
+    return dst_tensor.Clip_(min_val, max_val);
+}
+
+// TODO: Implement with kernel.
+Tensor Tensor::Clip_(Scalar min_val, Scalar max_val) {
+    DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
+        scalar_t min_val_casted = min_val.To<scalar_t>();
+        this->SetItem(TensorKey::IndexTensor(this->Lt(min_val_casted)),
+                      Full({}, min_val_casted, dtype_, GetDevice()));
+
+        scalar_t max_val_casted = max_val.To<scalar_t>();
+        this->SetItem(TensorKey::IndexTensor(this->Gt(max_val_casted)),
+                      Full({}, max_val_casted, dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -968,8 +1121,25 @@ Tensor Tensor::LogicalAnd(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::LogicalAnd(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = LogicalAnd(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::LogicalAnd_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalAnd);
+    return *this;
+}
+
+Tensor Tensor::LogicalAnd_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        LogicalAnd_(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -981,8 +1151,24 @@ Tensor Tensor::LogicalOr(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::LogicalOr(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = LogicalOr(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::LogicalOr_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalOr);
+    return *this;
+}
+
+Tensor Tensor::LogicalOr_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        LogicalOr_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -994,8 +1180,25 @@ Tensor Tensor::LogicalXor(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::LogicalXor(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor = LogicalXor(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::LogicalXor_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalXor);
+    return *this;
+}
+
+Tensor Tensor::LogicalXor_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        LogicalXor_(
+                Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1006,8 +1209,24 @@ Tensor Tensor::Gt(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Gt(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Gt(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Gt_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Gt);
+    return *this;
+}
+
+Tensor Tensor::Gt_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Gt_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1018,8 +1237,24 @@ Tensor Tensor::Lt(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Lt(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Lt(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Lt_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Lt);
+    return *this;
+}
+
+Tensor Tensor::Lt_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Lt_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1030,8 +1265,24 @@ Tensor Tensor::Ge(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Ge(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Ge(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Ge_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ge);
+    return *this;
+}
+
+Tensor Tensor::Ge_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Ge_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1042,8 +1293,24 @@ Tensor Tensor::Le(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Le(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Le(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Le_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Le);
+    return *this;
+}
+
+Tensor Tensor::Le_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Le_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1054,8 +1321,24 @@ Tensor Tensor::Eq(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Eq(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Eq(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Eq_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Eq);
+    return *this;
+}
+
+Tensor Tensor::Eq_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Eq_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1066,8 +1349,24 @@ Tensor Tensor::Ne(const Tensor& value) const {
     return dst_tensor;
 }
 
+Tensor Tensor::Ne(Scalar value) const {
+    Tensor dst_tensor;
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        dst_tensor =
+                Ne(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
+    return dst_tensor;
+}
+
 Tensor Tensor::Ne_(const Tensor& value) {
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ne);
+    return *this;
+}
+
+Tensor Tensor::Ne_(Scalar value) {
+    DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype_, [&]() {
+        Ne_(Tensor::Full({}, value.To<scalar_t>(), dtype_, GetDevice()));
+    });
     return *this;
 }
 
@@ -1127,58 +1426,7 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
                               src->dl_tensor.ctx.device_type);
     }
 
-    Dtype dtype;
-    if (src->dl_tensor.dtype.lanes != 1) {
-        utility::LogError("Only supports lanes == 1, but lanes == {}",
-                          src->dl_tensor.dtype.lanes);
-    }
-    switch (src->dl_tensor.dtype.code) {
-        case DLDataTypeCode::kDLUInt:
-            switch (src->dl_tensor.dtype.bits) {
-                case 8:
-                    dtype = Dtype::UInt8;
-                    break;
-                case 16:
-                    dtype = Dtype::UInt16;
-                    break;
-                default:
-                    utility::LogError("Unsupported kDLUInt bits {}",
-                                      src->dl_tensor.dtype.bits);
-            }
-            break;
-        case DLDataTypeCode::kDLInt:
-            switch (src->dl_tensor.dtype.bits) {
-                case 16:
-                    dtype = Dtype::Int16;
-                    break;
-                case 32:
-                    dtype = Dtype::Int32;
-                    break;
-                case 64:
-                    dtype = Dtype::Int64;
-                    break;
-                default:
-                    utility::LogError("Unsupported kDLInt bits {}",
-                                      src->dl_tensor.dtype.bits);
-            }
-            break;
-        case DLDataTypeCode::kDLFloat:
-            switch (src->dl_tensor.dtype.bits) {
-                case 32:
-                    dtype = Dtype::Float32;
-                    break;
-                case 64:
-                    dtype = Dtype::Float64;
-                    break;
-                default:
-                    utility::LogError("Unsupported kDLFloat bits {}",
-                                      src->dl_tensor.dtype.bits);
-            }
-            break;
-        default:
-            utility::LogError("Unsupported dtype code {}",
-                              src->dl_tensor.dtype.code);
-    }
+    Dtype dtype = DLDataTypeToDtype(src->dl_tensor.dtype);
 
     // Open3D Blob's expects an std::function<void(void*)> deleter.
     auto deleter = [src](void* dummy) -> void {

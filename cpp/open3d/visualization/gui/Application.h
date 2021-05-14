@@ -32,6 +32,7 @@
 #include <string>
 #include <vector>
 
+#include "open3d/visualization/gui/Font.h"
 #include "open3d/visualization/gui/Menu.h"
 
 namespace open3d {
@@ -71,28 +72,14 @@ public:
     /// Initializes the application, with a specific path to the resources.
     void Initialize(const char *resource_path);
 
-    /// Sets the font for the character range in language specified two-letter
-    /// lowercase ISO 639-1 codes. The font can be a path to a TrueType (.ttf),
-    /// TrueType Collection (.ttc), or OpenType (.otf) file, or it can be the
-    /// name of the font, in which case the system font paths will be searched
-    /// from the file. Supported languages are:
-    ///   "en" (English)
-    ///   "ja" (Japanese)
-    ///   "ko" (Korean)
-    ///   "th" (Thai)
-    ///   "vi" (Vietnamese)
-    ///   "zh" (Chinese, 2500 most common characters, 50 MB per window)
-    ///   "zh_all" (Chinese, all characters, ~200 MB per window)
-    //  All other languages will be assumed to be Cyrillic.
-    void SetFontForLanguage(const char *font, const char *lang_code);
-
-    /// Sets the font for the specified code points. The font can be a path to
-    /// a TrueType (.ttf), TrueType Collection (.ttc), or OpenType (.otf) file,
-    /// or it can be the name of the font, in which case the system font paths
-    /// will be searched. The font is assumed to contain the code points;
-    /// if it does not no error will be produced.
-    void SetFontForCodePoints(const char *font,
-                              const std::vector<uint32_t> &code_points);
+    /// Identifier for font used by default for all UI elements
+    static constexpr FontId DEFAULT_FONT_ID = 0;
+    /// Adds a font. Must be called after Initialize() and before a window is
+    /// created.
+    FontId AddFont(const FontDescription &fd);
+    /// Replaces font. Must be called after Initialize() and before a window is
+    /// created.
+    void SetFont(FontId id, const FontDescription &fd);
 
     /// Does not return until the UI is completely finished.
     void Run();
@@ -107,8 +94,8 @@ public:
     /// using lambdas, capture by copy and make sure whatever you use will
     /// still be alive).
     void RunInThread(std::function<void()> f);
-    /// Runs \param f on the main thread at some point in the near future.
-    /// Proper context will be setup for \param window. \p f will block the
+    /// Runs \p f on the main thread at some point in the near future.
+    /// Proper context will be setup for \p window. \p f will block the
     /// UI, so it should run quickly. If you need to do something slow
     /// (e.g. load a file) consider using RunInThread() and have the function
     /// pass off UI calls to PostToMainThread().
@@ -178,13 +165,21 @@ public:
     bool RunOneTick(EnvUnlocker &unlocker, bool cleanup_if_no_windows = true);
 
     /// Sets the WindowSystem to given object. Can be used to override the
-    /// default GLFWWindowSystem (e.g. HeadlessWindowSystem). Must be called
+    /// default GLFWWindowSystem (e.g. BitmapWindowSystem). Must be called
     /// before creating any Windows.
     void SetWindowSystem(std::shared_ptr<WindowSystem> ws);
+
+    /// Returns true if using the native OS window system, false otherwise.
+    /// This is useful for choosing to display some features that are only
+    /// useful with native windows. For instance, when embedded in a Jupyter
+    /// notebook, a "Close Window" menu item is not necessary.
+    bool UsingNativeWindows() const;
 
     /// Verifies that Initialize() has been called, printing out an error and
     /// exiting if not.
     void VerifyIsInitialized();
+
+    const std::vector<FontDescription> &GetFontDescriptions() const;
 
     /// Returns the scene rendered to an image. This MUST NOT be called while
     /// in Run(). It is intended for use when no windows are shown. If you
@@ -203,13 +198,6 @@ public:
             rendering::Scene *scene,
             int width,
             int height);
-
-    struct UserFontInfo {
-        std::string path;
-        std::string lang;
-        std::vector<uint32_t> code_points;
-    };
-    const std::vector<UserFontInfo> &GetUserFontInfo() const;
 
 private:
     Application();

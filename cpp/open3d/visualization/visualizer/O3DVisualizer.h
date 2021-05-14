@@ -49,6 +49,7 @@ namespace visualization {
 
 namespace rendering {
 class Open3DScene;
+struct TriangleMeshModel;
 }  // namespace rendering
 
 namespace visualizer {
@@ -63,6 +64,7 @@ public:
         std::string name;
         std::shared_ptr<geometry::Geometry3D> geometry;
         std::shared_ptr<t::geometry::Geometry> tgeometry;
+        std::shared_ptr<rendering::TriangleMeshModel> model;
         rendering::Material material;
         std::string group;
         double time = 0.0;
@@ -127,6 +129,13 @@ public:
                      double time = 0.0,
                      bool is_visible = true);
 
+    void AddGeometry(const std::string& name,
+                     std::shared_ptr<rendering::TriangleMeshModel> tgeom,
+                     const rendering::Material* material = nullptr,
+                     const std::string& group = "",
+                     double time = 0.0,
+                     bool is_visible = true);
+
     void RemoveGeometry(const std::string& name);
 
     void ShowGeometry(const std::string& name, bool show);
@@ -140,6 +149,13 @@ public:
                      const Eigen::Vector3f& center,
                      const Eigen::Vector3f& eye,
                      const Eigen::Vector3f& up);
+    void SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
+                     const Eigen::Matrix4d& extrinsic);
+    void SetupCamera(const Eigen::Matrix3d& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px);
+
     void ResetCameraToDefault();
 
     void ShowSettings(bool show);
@@ -186,7 +202,7 @@ public:
     void StopRPCInterface();
 
 protected:
-    void Layout(const gui::Theme& theme);
+    void Layout(const gui::LayoutContext& context);
 
 private:
     struct Impl;

@@ -85,6 +85,120 @@ void ChangeAllRenderQuality(
     }
 }
 
+struct ImguiWindowContext : public FontContext {
+    const Theme* theme = nullptr;
+    std::unique_ptr<ImguiFilamentBridge> imgui_bridge;
+    ImGuiContext* context = nullptr;
+    std::vector<ImFont*> fonts;  // references, not owned by us
+    float scaling = 1.0;
+
+    void* GetFont(FontId font_id) { return this->fonts[font_id]; }
+
+    void CreateFonts() {
+        // ImGUI puts all fonts into one big texture atlas. However, there are
+        // separate ImFont* pointers for each conceptual font. This means that
+        // while we can have many fonts, all the fonts that we are ever going
+        // to use must be loaded up front, which makes a large font selection
+        // inconsistent with small memory footprint. Also, we might bump into
+        // OpenGL texture size limitations.
+        auto& font_descs = Application::GetInstance().GetFontDescriptions();
+        this->fonts.reserve(font_descs.size());
+        for (auto& fd : font_descs) {
+            this->fonts.push_back(AddFont(fd));
+        }
+
+        ImGuiIO& io = ImGui::GetIO();
+        unsigned char* pixels;
+        int textureW, textureH, bytesPerPx;
+        io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
+                                     &bytesPerPx);
+        // Some fonts seem to result in 0x0 textures (maybe if the font does
+        // not contain any of the code points?), which cause Filament to
+        // panic. Handle this gracefully.
+        if (textureW == 0 || textureH == 0) {
+            utility::LogWarning(
+                    "Got zero-byte font texture; ignoring custom fonts");
+            io.Fonts->Clear();
+            this->fonts[0] =
+                    io.Fonts->AddFontFromFileTTF(this->theme->font_path.c_str(),
+                                                 float(this->theme->font_size));
+            for (unsigned int i = 1; i < font_descs.size(); ++i) {
+                this->fonts[i] = this->fonts[0];
+            }
+            io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
+                                         &bytesPerPx);
+        }
+        this->imgui_bridge->CreateAtlasTextureAlpha8(pixels, textureW, textureH,
+                                                     bytesPerPx);
+        ImGui::SetCurrentFont(this->fonts[Application::DEFAULT_FONT_ID]);
+    }
+
+    ImFont* AddFont(const FontDescription& fd) {
+        // We can assume that everything in the FontDescription is usable, since
+        // Application::SetFont() should have ensured that it is usable.
+        ImFont* imfont = nullptr;
+
+        ImGuiIO& io = ImGui::GetIO();
+        float point_size;
+        if (fd.point_size_ <= 0) {
+            point_size = float(this->theme->font_size);
+        } else {
+            point_size = this->scaling * float(fd.point_size_);
+        }
+        // The first range should be "en" from
+        // FontDescription::FontDescription()
+        if (fd.ranges_.size() == 1) {
+            imfont = io.Fonts->AddFontFromFileTTF(fd.ranges_[0].path.c_str(),
+                                                  point_size);
+        } else {
+            imfont = io.Fonts->AddFontFromFileTTF(
+                    fd.ranges_[0].path.c_str(), point_size, NULL,
+                    io.Fonts->GetGlyphRangesDefault());
+        }
+
+        ImFontConfig config;
+        config.MergeMode = true;
+        for (auto& r : fd.ranges_) {
+            if (!r.lang.empty()) {
+                const ImWchar* range;
+                if (r.lang == "en") {
+                    continue;  // added above, don't add cyrillic too
+                } else if (r.lang == "ja") {
+                    range = io.Fonts->GetGlyphRangesJapanese();
+                } else if (r.lang == "ko") {
+                    range = io.Fonts->GetGlyphRangesKorean();
+                } else if (r.lang == "th") {
+                    range = io.Fonts->GetGlyphRangesThai();
+                } else if (r.lang == "vi") {
+                    range = io.Fonts->GetGlyphRangesVietnamese();
+                } else if (r.lang == "zh") {
+                    range = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+                } else if (r.lang == "zh_all") {
+                    range = io.Fonts->GetGlyphRangesChineseFull();
+                } else {  // so many languages use Cyrillic it can be the
+                          // default
+                    range = io.Fonts->GetGlyphRangesCyrillic();
+                }
+                imfont = io.Fonts->AddFontFromFileTTF(
+                        r.path.c_str(), point_size, &config, range);
+            } else if (!r.code_points.empty()) {
+                // TODO: the ImGui docs say that this must exist until
+                // CreateAtlastTextureAlpha8().
+                ImVector<ImWchar> range;
+                ImFontGlyphRangesBuilder builder;
+                for (auto c : r.code_points) {
+                    builder.AddChar(c);
+                }
+                builder.BuildRanges(&range);
+                imfont = io.Fonts->AddFontFromFileTTF(
+                        r.path.c_str(), point_size, &config, range.Data);
+            }
+        }
+
+        return imfont;
+    }
+};
+
 }  // namespace
 
 const int Window::FLAG_HIDDEN = (1 << 0);
@@ -107,12 +221,7 @@ struct Window::Impl {
 
     Theme theme_;  // so that the font size can be different based on scaling
     visualization::rendering::FilamentRenderer* renderer_;
-    struct {
-        std::unique_ptr<ImguiFilamentBridge> imgui_bridge;
-        ImGuiContext* context = nullptr;
-        ImFont* system_font = nullptr;  // reference; owned by imguiContext
-        float scaling = 1.0;
-    } imgui_;
+    ImguiWindowContext imgui_;
     std::vector<std::shared_ptr<Widget>> children_;
 
     // Active dialog is owned here. It is not put in the children because
@@ -197,6 +306,7 @@ Window::Window(const std::string& title,
     // like in Open3D's GUI library), and glfwGetWindowContentScale() returns
     // the appropriate scale factor for text and icons and such.
     float scaling = ws.GetUIScaleFactor(impl_->window_);
+    impl_->imgui_.scaling = scaling;
     impl_->theme_ = Application::GetInstance().GetTheme();
     impl_->theme_.font_size =
             int(std::round(impl_->theme_.font_size * scaling));
@@ -291,86 +401,8 @@ void Window::CreateRenderer() {
 
     impl_->imgui_.imgui_bridge =
             std::make_unique<ImguiFilamentBridge>(impl_->renderer_, GetSize());
-
-    // If the given font path is invalid, ImGui will silently fall back to
-    // proggy, which is a tiny "pixel art" texture that is compiled into the
-    // library.
-    auto& theme = GetTheme();
-    if (!theme.font_path.empty()) {
-        ImGuiIO& io = ImGui::GetIO();
-        int en_fonts = 0;
-        for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
-            if (custom.lang == "en") {
-                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                        custom.path.c_str(), float(theme.font_size), NULL,
-                        io.Fonts->GetGlyphRangesDefault());
-                en_fonts += 1;
-            }
-        }
-        if (en_fonts == 0) {
-            impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                    theme.font_path.c_str(), float(theme.font_size));
-        }
-
-        ImFontConfig config;
-        config.MergeMode = true;
-        for (auto& custom : Application::GetInstance().GetUserFontInfo()) {
-            if (!custom.lang.empty()) {
-                const ImWchar* range;
-                if (custom.lang == "en") {
-                    continue;  // added above, don't want to add cyrillic too
-                } else if (custom.lang == "ja") {
-                    range = io.Fonts->GetGlyphRangesJapanese();
-                } else if (custom.lang == "ko") {
-                    range = io.Fonts->GetGlyphRangesKorean();
-                } else if (custom.lang == "th") {
-                    range = io.Fonts->GetGlyphRangesThai();
-                } else if (custom.lang == "vi") {
-                    range = io.Fonts->GetGlyphRangesVietnamese();
-                } else if (custom.lang == "zh") {
-                    range = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
-                } else if (custom.lang == "zh_all") {
-                    range = io.Fonts->GetGlyphRangesChineseFull();
-                } else {  // so many languages use Cyrillic it can be the
-                          // default
-                    range = io.Fonts->GetGlyphRangesCyrillic();
-                }
-                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                        custom.path.c_str(), float(theme.font_size), &config,
-                        range);
-            } else if (!custom.code_points.empty()) {
-                ImVector<ImWchar> range;
-                ImFontGlyphRangesBuilder builder;
-                for (auto c : custom.code_points) {
-                    builder.AddChar(c);
-                }
-                builder.BuildRanges(&range);
-                impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                        custom.path.c_str(), float(theme.font_size), &config,
-                        range.Data);
-            }
-        }
-
-        /*static*/ unsigned char* pixels;
-        int textureW, textureH, bytesPerPx;
-        io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
-                                     &bytesPerPx);
-        // Some fonts seem to result in 0x0 textures (maybe if the font does
-        // not contain any of the code points?), which cause Filament to
-        // panic. Handle this gracefully.
-        if (textureW == 0 || textureH == 0) {
-            utility::LogWarning(
-                    "Got zero-byte font texture; ignoring custom fonts");
-            io.Fonts->Clear();
-            impl_->imgui_.system_font = io.Fonts->AddFontFromFileTTF(
-                    theme.font_path.c_str(), float(theme.font_size));
-            io.Fonts->GetTexDataAsAlpha8(&pixels, &textureW, &textureH,
-                                         &bytesPerPx);
-        }
-        impl_->imgui_.imgui_bridge->CreateAtlasTextureAlpha8(
-                pixels, textureW, textureH, bytesPerPx);
-        ImGui::SetCurrentFont(impl_->imgui_.system_font);
-    }
+    impl_->imgui_.theme = &impl_->theme_;
+    impl_->imgui_.CreateFonts();
 
     RestoreDrawContext(old_context);
 }
@@ -449,7 +481,8 @@ Size Window::CalcPreferredSize() {
 
     Rect bbox(0, 0, 0, 0);
     for (auto& child : impl_->children_) {
-        auto pref = child->CalcPreferredSize(GetTheme(), Widget::Constraints());
+        auto pref = child->CalcPreferredSize(GetLayoutContext(),
+                                             Widget::Constraints());
         Rect r(child->GetFrame().x, child->GetFrame().y, pref.width,
                pref.height);
         bbox = bbox.UnionedWith(r);
@@ -583,38 +616,26 @@ void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     impl_->active_dialog_ = dlg;
     dlg->OnWillShow();
 
-    auto content_rect = GetContentRect();
-    auto pref = dlg->CalcPreferredSize(GetTheme(), Widget::Constraints());
-    int w = dlg->GetFrame().width;
-    int h = dlg->GetFrame().height;
-    if (w == 0) {
-        w = pref.width;
-    }
-    if (h == 0) {
-        h = pref.height;
-    }
-    w = std::min(w, int(std::round(0.8 * content_rect.width)));
-    h = std::min(h, int(std::round(0.8 * content_rect.height)));
-    dlg->SetFrame(gui::Rect((content_rect.width - w) / 2,
-                            (content_rect.height - h) / 2, w, h));
-    dlg->Layout(GetTheme());
-}
-
-// When scene caching is enabled on a SceneWidget the SceneWidget only redraws
-// when something in the scene has changed (e.g., camera change, material
-// change). However, the SceneWidget also needs to redraw if any part of it
-// becomes uncovered. Unfortunately, we do not have 'Expose' events to use for
-// that purpose. So, we manually force the redraw by calling
-// ForceRedrawSceneWidget when an event occurs that we know will expose the
-// SceneWidget. For example, submenu's of a menu bar opening/closing and dialog
-// boxes closing.
-void Window::ForceRedrawSceneWidget() {
-    std::for_each(impl_->children_.begin(), impl_->children_.end(), [](auto w) {
-        auto sw = std::dynamic_pointer_cast<SceneWidget>(w);
-        if (sw) {
-            sw->ForceRedraw();
+    auto deferred_layout = [this, dlg]() {
+        auto context = GetLayoutContext();
+        auto content_rect = GetContentRect();
+        auto pref = dlg->CalcPreferredSize(context, Widget::Constraints());
+        int w = dlg->GetFrame().width;
+        int h = dlg->GetFrame().height;
+        if (w == 0) {
+            w = pref.width;
         }
-    });
+        if (h == 0) {
+            h = pref.height;
+        }
+        w = std::min(w, int(std::round(0.8 * content_rect.width)));
+        h = std::min(h, int(std::round(0.8 * content_rect.height)));
+        dlg->SetFrame(gui::Rect((content_rect.width - w) / 2,
+                                (content_rect.height - h) / 2, w, h));
+        dlg->Layout(context);
+    };
+
+    impl_->deferred_until_draw_.push(deferred_layout);
 }
 
 void Window::CloseDialog() {
@@ -645,14 +666,16 @@ void Window::ShowMessageBox(const char* title, const char* message) {
 
 void Window::ShowMenu(bool show) { impl_->draw_menu_ = show; }
 
-void Window::Layout(const Theme& theme) {
+LayoutContext Window::GetLayoutContext() { return {GetTheme(), impl_->imgui_}; }
+
+void Window::Layout(const LayoutContext& context) {
     if (impl_->children_.size() == 1) {
         auto r = GetContentRect();
         impl_->children_[0]->SetFrame(r);
-        impl_->children_[0]->Layout(theme);
+        impl_->children_[0]->Layout(context);
     } else {
         for (auto& child : impl_->children_) {
-            child->Layout(theme);
+            child->Layout(context);
         }
     }
 }
@@ -786,7 +809,8 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     //    a key up event to process and erase the key down state from
     //    the ImGuiIO structure before we get a chance to draw/process it.
     ImGui::NewFrame();
-    ImGui::PushFont(impl_->imgui_.system_font);
+    ImGui::PushFont(
+            (ImFont*)impl_->imgui_.GetFont(Application::DEFAULT_FONT_ID));
 
     // Run the deferred callbacks that need to happen inside a draw
     // In particular, text sizing with ImGUI seems to require being
@@ -800,14 +824,21 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
     // can query font information.
     auto& theme = impl_->theme_;
     if (impl_->needs_layout_) {
-        Layout(theme);
+        Layout(GetLayoutContext());
         impl_->needs_layout_ = false;
     }
 
     auto size = GetSize();
     int em = theme.font_size;  // em = font size in digital type (see Wikipedia)
-    DrawContext dc{theme,      *impl_->renderer_, 0,  0,
-                   size.width, size.height,       em, float(dt_sec)};
+    DrawContext dc{theme,
+                   *impl_->renderer_,
+                   impl_->imgui_,
+                   0,
+                   0,
+                   size.width,
+                   size.height,
+                   em,
+                   float(dt_sec)};
 
     // Draw all the widgets. These will get recorded by ImGui.
     size_t win_idx = 0;
@@ -915,12 +946,8 @@ void Window::OnDraw() {
 void Window::OnResize() {
     impl_->needs_layout_ = true;
 
-#if __APPLE__
-    // We need to recreate the swap chain after resizing a window on macOS
-    // otherwise things look very wrong.
     Application::GetInstance().GetWindowSystem().ResizeRenderer(
             impl_->window_, impl_->renderer_);
-#endif  // __APPLE__
 
     impl_->imgui_.imgui_bridge->OnWindowResized(*this);
 
@@ -946,7 +973,8 @@ void Window::OnResize() {
 
         if (impl_->wants_auto_size_) {
             ImGui::NewFrame();
-            ImGui::PushFont(impl_->imgui_.system_font);
+            ImGui::PushFont((ImFont*)impl_->imgui_.GetFont(
+                    Application::DEFAULT_FONT_ID));
             auto pref = CalcPreferredSize();
             ImGui::PopFont();
             ImGui::EndFrame();

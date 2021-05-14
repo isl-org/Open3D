@@ -503,6 +503,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
                         color = mesh.vertex_colors_[vi];
                         break;
                     }
+                    // fallthrough
                 case RenderOption::MeshColorOption::Default:
                 default:
                     color = option.default_mesh_color_;
@@ -584,6 +585,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
                     voxel_color = voxel.color_;
                     break;
                 }
+                // fallthrough
             case RenderOption::MeshColorOption::Default:
             default:
                 voxel_color = option.default_mesh_color_;
@@ -674,6 +676,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
                     voxel_color = voxel.color_;
                     break;
                 }
+                // fallthrough
             case RenderOption::MeshColorOption::Default:
             default:
                 voxel_color = option.default_mesh_color_;
