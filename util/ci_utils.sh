@@ -149,6 +149,7 @@ install_python_dependencies() {
 
     # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
 
     echo
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
@@ -462,6 +463,8 @@ install_docs_dependencies() {
         "m2r2==$M2R2_VER" \
         "jinja2==$JINJA2_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
     echo
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
