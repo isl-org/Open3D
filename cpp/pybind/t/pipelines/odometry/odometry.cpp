@@ -192,6 +192,7 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_odometry_methods(py::module &m) {
     m.def("rgbd_odometry_multi_scale", &RGBDOdometryMultiScale,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for Multi Scale RGBD odometry.", "source"_a, "target"_a,
           "intrinsics"_a,
           "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
@@ -205,6 +206,7 @@ void pybind_odometry_methods(py::module &m) {
 
     m.def("compute_odometry_result_point_to_plane",
           &ComputeOdometryResultPointToPlane,
+          py::call_guard<py::gil_scoped_release>(),
           R"(Estimates the OdometryResult (4x4 rigid transformation T from 
 source to target, with inlier rmse and fitness). Performs one 
 iteration of RGBD odometry using 
@@ -223,6 +225,7 @@ Reference: KinectFusion, ISMAR 2011.)",
                                  map_shared_argument_docstrings);
 
     m.def("compute_odometry_result_intensity", &ComputeOdometryResultIntensity,
+          py::call_guard<py::gil_scoped_release>(),
           R"(Estimates the OdometryResult (4x4 rigid transformation T from 
 source to target, with inlier rmse and fitness). Performs one 
 iteration of RGBD odometry using 
@@ -244,6 +247,7 @@ ICCV Workshops, 2017.)",
                                  map_shared_argument_docstrings);
 
     m.def("compute_odometry_result_hybrid", &ComputeOdometryResultHybrid,
+          py::call_guard<py::gil_scoped_release>(),
           R"(Estimates the OdometryResult (4x4 rigid transformation T from 
 source to target, with inlier rmse and fitness). Performs one 
 iteration of RGBD odometry using 
@@ -255,8 +259,8 @@ where,
 :math:`D_q` denotes the depth pixel q in the target. 
 q is obtained by transforming p with init_source_to_target then 
 projecting with intrinsics. 
-Reference: 
-Colored ICP Revisited, ICCV 2017.)",
+Reference: J. Park, Q.Y. Zhou, and V. Koltun,
+Colored Point Cloud Registration Revisited, ICCV, 2017.)",
           "source_depth"_a, "target_depth"_a, "source_intensity"_a,
           "target_intensity"_a, "target_depth_dx"_a, "target_depth_dy"_a,
           "target_intensity_dx"_a, "target_intensity_dy"_a,

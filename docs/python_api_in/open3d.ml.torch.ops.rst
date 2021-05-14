@@ -15,9 +15,11 @@ open3d.ml.torch.ops
     fixed_radius_search
     invert_neighbors_list
     knn_search
+    nms
     radius_search
     reduce_subarrays_sum
     voxel_pooling
+    voxelize
 
 
 .. toctree::
@@ -29,6 +31,8 @@ open3d.ml.torch.ops
     fixed_radius_search <open3d.ml.torch.ops.fixed_radius_search>
     invert_neighbors_list <open3d.ml.torch.ops.invert_neighbors_list>
     knn_search <open3d.ml.torch.ops.knn_search>
+    nms <open3d.ml.torch.ops.nms>
     radius_search <open3d.ml.torch.ops.radius_search>
     reduce_subarrays_sum <open3d.ml.torch.ops.reduce_subarrays_sum>
     voxel_pooling <open3d.ml.torch.ops.voxel_pooling>
+    voxelize <open3d.ml.torch.ops.voxelize>

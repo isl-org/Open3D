@@ -162,13 +162,15 @@ class ReconstructionWindow : public gui::Window {
 public:
     ReconstructionWindow(const std::string& dataset_path,
                          const std::string& intrinsic_path,
-                         const std::string& device)
+                         const std::string& device,
+                         gui::FontId monospace)
         : gui::Window("Open3D - Reconstruction", 1280, 800),
           dataset_path_(dataset_path),
           intrinsic_path_(intrinsic_path),
           device_str_(device),
           is_running_(false),
-          is_started_(false) {
+          is_started_(false),
+          monospace_(monospace) {
         ////////////////////////////////////////
         /// General layout
         auto& theme = GetTheme();
@@ -179,8 +181,11 @@ public:
         gui::Margins margins(int(std::round(0.5f * float(em))));
         panel_ = std::make_shared<gui::Vert>(spacing, margins);
         widget3d_ = std::make_shared<gui::SceneWidget>();
+        fps_panel_ = std::make_shared<gui::Vert>(spacing, margins);
+
         AddChild(panel_);
         AddChild(widget3d_);
+        AddChild(fps_panel_);
 
         ////////////////////////////////////////
         /// Property panels
@@ -231,7 +236,6 @@ public:
         panel_->AddChild(
                 std::make_shared<gui::Label>("Reconstruction settings"));
         panel_->AddChild(adjustable_props_);
-        // panel_->SetEnabled(false);
 
         auto b = std::make_shared<gui::ToggleSwitch>("Resume/Pause");
         b->SetOnClicked([b, this](bool is_on) {
@@ -290,7 +294,9 @@ public:
         tabs->AddTab("Input images", tab1);
 
         auto tab2 = std::make_shared<gui::Vert>(0, tab_margins);
-        output_ = std::make_shared<gui::Label>("");
+
+        output_info_ = std::make_shared<gui::Label>("");
+        output_info_->SetFontId(monospace_);
         raycast_color_image_ = std::make_shared<gui::ImageWidget>();
         raycast_depth_image_ = std::make_shared<gui::ImageWidget>();
 
@@ -300,10 +306,14 @@ public:
         tabs->AddTab("Raycast images", tab2);
 
         auto tab3 = std::make_shared<gui::Vert>(0, tab_margins);
-        tab3->AddChild(output_);
+        tab3->AddChild(output_info_);
         tabs->AddTab("Info", tab3);
+
         widget3d_->SetScene(
                 std::make_shared<rendering::Open3DScene>(GetRenderer()));
+
+        output_fps_ = std::make_shared<gui::Label>("FPS: 0.0");
+        fps_panel_->AddChild(output_fps_);
 
         is_done_ = false;
         SetOnClose([this]() {
@@ -342,13 +352,22 @@ public:
                                       content_rect.GetRight() - x,
                                       content_rect.height));
 
+        int fps_panel_width = 7 * em;
+        int fps_panel_height = 2 * em;
+        fps_panel_->SetFrame(
+                gui::Rect(content_rect.GetRight() - fps_panel_width,
+                          content_rect.y, fps_panel_width, fps_panel_height));
+
         // Now that all the children are sized correctly, we can super to
         // layout all their children.
         Super::Layout(context);
     }
 
-    void SetOutput(const std::string& output) {
-        output_->SetText(output.c_str());
+    void SetInfo(const std::string& output) {
+        output_info_->SetText(output.c_str());
+    }
+    void SetFPS(const std::string& output) {
+        output_fps_->SetText(output.c_str());
     }
 
 protected:
@@ -362,11 +381,16 @@ protected:
     std::atomic<bool> is_done_;
 
     // Panels and controls
+    gui::FontId monospace_;
     std::shared_ptr<gui::Vert> panel_;
-    std::shared_ptr<gui::Label> output_;
-    std::shared_ptr<gui::SceneWidget> widget3d_;
+    std::shared_ptr<gui::Label> output_info_;
     std::shared_ptr<PropertyPanel> fixed_props_;
     std::shared_ptr<PropertyPanel> adjustable_props_;
+
+    std::shared_ptr<gui::SceneWidget> widget3d_;
+
+    std::shared_ptr<gui::Vert> fps_panel_;
+    std::shared_ptr<gui::Label> output_fps_;
 
     // Images
     std::shared_ptr<gui::ImageWidget> input_color_image_;
@@ -624,31 +648,35 @@ protected:
             traj_param.extrinsic_ = T_eigen;
             trajectory_->parameters_.push_back(traj_param);
 
-            std::stringstream out;
-            out << fmt::format("Frame {}/{}\n\n", idx, rgb_files.size());
+            std::stringstream info, fps;
+            info << fmt::format("Frame {}/{}\n\n", idx, rgb_files.size());
 
-            out << "Transformation:\n";
-            out << T_eigen.format(CleanFmt) << "\n\n";
+            info << "Transformation:\n";
+            info << T_eigen.format(CleanFmt) << "\n\n";
 
-            out << fmt::format("Active voxel blocks: {}/{}\n",
-                               model_->GetHashmap().Size(),
-                               model_->GetHashmap().GetCapacity());
-            if (idx % fps_interval_len == 0) {
-                timer.Stop();
-                time_interval = timer.GetDuration();
-                timer.Start();
-            }
+            info << fmt::format("Active voxel blocks: {}/{}\n",
+                                model_->GetHashmap().Size(),
+                                model_->GetHashmap().GetCapacity());
             {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 int64_t len = surface_.pcd.HasPoints()
                                       ? surface_.pcd.GetPoints().GetLength()
                                       : 0;
-                out << fmt::format("Surface points: {}/{}\n", len,
-                                   prop_values_.pointcloud_size)
-                    << "\n";
-                out << "Average FPS: "
-                    << 1000.0 / (time_interval / fps_interval_len) << "\n";
+                info << fmt::format("Surface points: {}/{}\n", len,
+                                    prop_values_.pointcloud_size)
+                     << "\n";
             }
+
+            if (idx % fps_interval_len == 0) {
+                timer.Stop();
+                time_interval = timer.GetDuration();
+                timer.Start();
+            }
+            std::string fps_str =
+                    fmt::format("FPS: {:.3f}\n",
+                                1000.0 / (time_interval / fps_interval_len));
+            info << fps_str;
+            fps << fps_str;
 
             traj->points_.push_back(T_eigen.block<3, 1>(0, 3));
             if (traj->points_.size() > 1) {
@@ -698,16 +726,17 @@ protected:
             }
 
             gui::Application::GetInstance().PostToMainThread(
-                    this,
-                    [this, color, depth_colored, raycast_color,
-                     raycast_depth_colored, traj, frustum, out = out.str()]() {
+                    this, [this, color, depth_colored, raycast_color,
+                           raycast_depth_colored, traj, frustum,
+                           info = info.str(), fps = fps.str()]() {
                         // Disable depth_scale and pcd buffer size change
                         this->fixed_props_->SetEnabled(false);
 
                         this->raycast_color_image_->SetVisible(
                                 this->prop_values_.raycast_color);
 
-                        this->SetOutput(out);
+                        this->SetInfo(info);
+                        this->SetFPS(fps);
                         this->input_color_image_->UpdateImage(color);
                         this->input_depth_image_->UpdateImage(depth_colored);
 
@@ -808,7 +837,9 @@ int main(int argc, char** argv) {
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, const_cast<const char**>(argv));
+    auto mono =
+            app.AddFont(gui::FontDescription(gui::FontDescription::MONOSPACE));
     app.AddWindow(std::make_shared<ReconstructionWindow>(
-            dataset_path, intrinsic_path, device_code));
+            dataset_path, intrinsic_path, device_code, mono));
     app.Run();
 }

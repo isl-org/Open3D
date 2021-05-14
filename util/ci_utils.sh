@@ -36,7 +36,7 @@ TORCH_CPU_GLNX_VER="1.7.1+cpu"
 TORCH_MACOS_VER="1.7.1"
 # Python
 CONDA_BUILD_VER="3.20.0"
-PIP_VER="20.2.4"
+PIP_VER="21.1.1"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
@@ -49,6 +49,7 @@ SPHINX_RTD_VER=0.5.1
 NBSPHINX_VER=0.8.3
 MATPLOTLIB_VER=3.3.3
 M2R2_VER=0.2.7
+JINJA2_VER=2.11.3 # jinja2 3.x is not compatible with this sphinx version
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -455,7 +456,8 @@ install_docs_dependencies() {
         "sphinx==$SPHINX_VER" \
         "sphinx-rtd-theme==$SPHINX_RTD_VER" \
         "nbsphinx==$NBSPHINX_VER" \
-        "m2r2==$M2R2_VER"
+        "m2r2==$M2R2_VER" \
+        "jinja2==$JINJA2_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
     echo
     if [[ -d "$1" ]]; then
