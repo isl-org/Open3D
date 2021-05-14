@@ -1181,6 +1181,7 @@ struct O3DVisualizer::Impl {
         bool no_shadows = false;
         bool has_colors = false;
         bool has_normals = false;
+        bool want_white = false;
 
         auto cloud = std::dynamic_pointer_cast<geometry::PointCloud>(geom);
         auto lines = std::dynamic_pointer_cast<geometry::LineSet>(geom);
@@ -1213,11 +1214,13 @@ struct O3DVisualizer::Impl {
             has_colors = (aabb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
             no_shadows = true;
         } else if (mesh) {
-            has_normals = !mesh->vertex_normals_.empty();
-            has_colors = true;  // always want base_color as white
+            has_normals = mesh->HasVertexNormals();
+            has_colors = mesh->HasVertexColors();
+            want_white = true;  // always want base_color as white
         } else if (t_mesh) {
-            has_normals = !t_mesh->HasVertexNormals();
-            has_colors = true;  // always want base_color as white
+            has_normals = t_mesh->HasVertexNormals();
+            has_colors = t_mesh->HasVertexColors();
+            want_white = true;  // always want base_color as white
         } else if (voxel_grid) {
             has_normals = false;
             has_colors = voxel_grid->HasColors();
@@ -1241,7 +1244,7 @@ struct O3DVisualizer::Impl {
                 mat.line_width = ui_state_.line_width * window_->GetScaling();
             }
             is_default_color = true;
-            if (has_colors) {
+            if (has_colors || want_white) {
                 mat.base_color = {1.0f, 1.0f, 1.0f, 1.0f};
                 is_default_color = false;
             }
