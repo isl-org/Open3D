@@ -798,10 +798,10 @@ struct O3DVisualizer::Impl {
                 });
 
         settings.global.model_up = new Combobox();
-        settings.global.model_up->AddItem("+Y");
-        settings.global.model_up->AddItem("-Y");
-        settings.global.model_up->AddItem("+Z");
-        settings.global.model_up->AddItem("-Z");
+        settings.global.model_up->AddItem(" +Y ");
+        settings.global.model_up->AddItem(" -Y ");
+        settings.global.model_up->AddItem(" +Z ");
+        settings.global.model_up->AddItem(" -Z ");
         settings.global.model_up->SetSelectedIndex(
                 int(widget3d_->GetScene()->GetModelUp()));
         settings.global.model_up->SetOnValueChanged(
