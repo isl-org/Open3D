@@ -211,11 +211,11 @@ void Open3DScene::SetModelUp(UpDir dir) {
         float x = (std::abs(osd_new.x()) > 0.001 ? -1.0f : 1.0f);
         float y = (std::abs(osd_new.y()) > 0.001 ? -1.0f : 1.0f);
         float z = (std::abs(osd_new.z()) > 0.001 ? -1.0f : 1.0f);
-        R << x, 0.0f, 0.0f,
-            0.0f, y, 0.0f,
-            0.0f, 0.0f, z;
-    }  else {
-        R = 2.0f * ((osd_old + osd_new) * (osd_old + osd_new).transpose()) / ((osd_old + osd_new).transpose() * (osd_old + osd_new)) - Eigen::Matrix3f::Identity();
+        R << x, 0.0f, 0.0f, 0.0f, y, 0.0f, 0.0f, 0.0f, z;
+    } else {
+        R = 2.0f * ((osd_old + osd_new) * (osd_old + osd_new).transpose()) /
+                    ((osd_old + osd_new).transpose() * (osd_old + osd_new)) -
+            Eigen::Matrix3f::Identity();
     }
     sun_dir = R * sun_dir;
     ibl_rot = ibl_rot * R;
@@ -225,9 +225,7 @@ void Open3DScene::SetModelUp(UpDir dir) {
     ShowGroundPlane(show_ground_);
 }
 
-Open3DScene::UpDir Open3DScene::GetModelUp() const {
-    return up_dir_;
-}
+Open3DScene::UpDir Open3DScene::GetModelUp() const { return up_dir_; }
 
 void Open3DScene::ShowGroundPlane(bool enable) {
     show_ground_ = enable;

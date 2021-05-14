@@ -84,7 +84,8 @@ public:
         bool show_skybox = false;
         bool show_axes = false;
         bool show_ground = false;
-        rendering::Open3DScene::UpDir up_dir = rendering::Open3DScene::UpDir::PLUS_Y;
+        rendering::Open3DScene::UpDir up_dir =
+                rendering::Open3DScene::UpDir::PLUS_Y;
         bool is_animating = false;
         std::set<std::string> enabled_groups;
 

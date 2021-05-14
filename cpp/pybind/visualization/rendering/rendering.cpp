@@ -551,7 +551,8 @@ void pybind_rendering_classes(py::module &m) {
     py::enum_<Open3DScene::LightingProfile> lighting(
             o3dscene, "LightingProfile", py::arithmetic(),
             "Enum for conveniently setting lighting");
-    py::enum_<Open3DScene::UpDir> updir(o3dscene, "UpDir", py::arithmetic(),
+    py::enum_<Open3DScene::UpDir> updir(
+            o3dscene, "UpDir", py::arithmetic(),
             "Enum for specifying the up-direction of the model");
     lighting.value("HARD_SHADOWS", Open3DScene::LightingProfile::HARD_SHADOWS)
             .value("DARK_SHADOWS", Open3DScene::LightingProfile::DARK_SHADOWS)
@@ -560,9 +561,9 @@ void pybind_rendering_classes(py::module &m) {
             .value("NO_SHADOWS", Open3DScene::LightingProfile::NO_SHADOWS)
             .export_values();
     updir.value("PLUS_Y", Open3DScene::UpDir::PLUS_Y)
-         .value("MINUS_Y", Open3DScene::UpDir::MINUS_Y)
-         .value("PLUS_Z", Open3DScene::UpDir::PLUS_Z)
-         .value("MINUS_Z", Open3DScene::UpDir::MINUS_Z);
+            .value("MINUS_Y", Open3DScene::UpDir::MINUS_Y)
+            .value("PLUS_Z", Open3DScene::UpDir::PLUS_Z)
+            .value("MINUS_Z", Open3DScene::UpDir::MINUS_Z);
 
     o3dscene.def(py::init<Renderer &>())
             .def("show_skybox", &Open3DScene::ShowSkybox,

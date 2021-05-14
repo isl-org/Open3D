@@ -802,7 +802,8 @@ struct O3DVisualizer::Impl {
         settings.global.model_up->AddItem("-Y");
         settings.global.model_up->AddItem("+Z");
         settings.global.model_up->AddItem("-Z");
-        settings.global.model_up->SetSelectedIndex(int(widget3d_->GetScene()->GetModelUp()));
+        settings.global.model_up->SetSelectedIndex(
+                int(widget3d_->GetScene()->GetModelUp()));
         settings.global.model_up->SetOnValueChanged(
                 [this](const char *, int index) {
                     SetModelUp(Open3DScene::UpDir(index));
@@ -1557,12 +1558,11 @@ struct O3DVisualizer::Impl {
         auto scene = widget3d_->GetScene();
         scene->SetModelUp(up_dir);
         widget3d_->ForceRedraw();
-        settings.sun.properties.dir->SetValue(scene->GetScene()->GetSunLightDirection());
+        settings.sun.properties.dir->SetValue(
+                scene->GetScene()->GetSunLightDirection());
     }
 
-    Open3DScene::UpDir GetModelUp() const {
-        return ui_state_.up_dir;
-    }
+    Open3DScene::UpDir GetModelUp() const { return ui_state_.up_dir; }
 
     void SetBackground(const Eigen::Vector4f &bg_color,
                        std::shared_ptr<geometry::Image> bg_image) {
@@ -1842,8 +1842,10 @@ struct O3DVisualizer::Impl {
 
     void SetUIState(const UIState &new_state) {
         bool up_changed = (new_state.up_dir != ui_state_.up_dir);
-        bool point_size_changed = (new_state.point_size != ui_state_.point_size);
-        bool line_width_changed = (new_state.line_width != ui_state_.line_width);
+        bool point_size_changed =
+                (new_state.point_size != ui_state_.point_size);
+        bool line_width_changed =
+                (new_state.line_width != ui_state_.line_width);
         bool ibl_path_changed = (new_state.ibl_path != ui_state_.ibl_path);
         auto old_enabled_groups = ui_state_.enabled_groups;
         bool old_is_animating = ui_state_.is_animating;
