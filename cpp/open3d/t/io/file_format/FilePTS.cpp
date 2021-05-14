@@ -197,12 +197,7 @@ core::Tensor ConvertColorTensorToUint8(const core::Tensor &color_in) {
     core::Tensor color_values;
     if (color_in.GetDtype() == core::Dtype::Float32 ||
         color_in.GetDtype() == core::Dtype::Float64) {
-        // TODO: Replace this by tensor Clip operation once it is functional.
-        core::Tensor color_clip_max =
-                ((color_in - 1) * (color_in).Le(1).To(color_in.GetDtype())) + 1;
-        core::Tensor color_clip_min =
-                (color_clip_max * color_clip_max.Ge(0).To(color_in.GetDtype()));
-        color_values = color_clip_min.Mul(255).Round();
+        color_values = color_in.Clip(0, 1).Mul(255).Round();
     } else if (color_in.GetDtype() == core::Dtype::Bool) {
         color_values = color_in.To(core::Dtype::UInt8) * 255;
     } else {
@@ -229,30 +224,17 @@ bool WritePointCloudToPTS(const std::string &filename,
             num_points = pointcloud.GetPoints().GetLength();
         }
 
-        const double *points_ptr = nullptr;
+        // Assert attribute shapes.
         if (pointcloud.HasPoints()) {
             pointcloud.GetPoints().AssertShape(core::SizeVector{num_points, 3});
-            points_ptr = pointcloud.GetPoints()
-                                 .To(core::Dtype::Float64)
-                                 .GetDataPtr<double>();
         }
-
-        const double *intensities_ptr = nullptr;
-        if (pointcloud.HasPointAttr("intensities")) {
-            pointcloud.GetPointAttr("intensities")
-                    .AssertShape(core::SizeVector{num_points, 1});
-            intensities_ptr = pointcloud.GetPointAttr("intensities")
-                                      .To(core::Dtype::Float64)
-                                      .GetDataPtr<double>();
-        }
-        // Color conversion to uint8 is done before write.
-        const uint8_t *colors_ptr = nullptr;
-        core::Tensor colors;
         if (pointcloud.HasPointColors()) {
             pointcloud.GetPointColors().AssertShape(
                     core::SizeVector{num_points, 3});
-            colors = ConvertColorTensorToUint8(pointcloud.GetPointColors());
-            colors_ptr = colors.GetDataPtr<uint8_t>();
+        }
+        if (pointcloud.HasPointAttr("intensities")) {
+            pointcloud.GetPointAttr("intensities")
+                    .AssertShape(core::SizeVector{num_points, 1});
         }
 
         reporter.SetTotal(num_points);
@@ -262,9 +244,26 @@ bool WritePointCloudToPTS(const std::string &filename,
                                 filename);
             return false;
         }
+
+        const double *points_ptr = nullptr;
+        const double *intensities_ptr = nullptr;
+        const uint8_t *colors_ptr = nullptr;
+        core::Tensor colors;
+
+        if (num_points > 0) {
+            points_ptr = pointcloud.GetPoints()
+                                 .To(core::Dtype::Float64)
+                                 .GetDataPtr<double>();
+        }
+
         // X Y Z I R G B.
         if (pointcloud.HasPointColors() &&
             pointcloud.HasPointAttr("intensities")) {
+            colors = ConvertColorTensorToUint8(pointcloud.GetPointColors());
+            colors_ptr = colors.GetDataPtr<uint8_t>();
+            intensities_ptr = pointcloud.GetPointAttr("intensities")
+                                      .To(core::Dtype::Float64)
+                                      .GetDataPtr<double>();
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(),
                             "%.10f %.10f %.10f %.10f %d %d %d\r\n",
@@ -285,6 +284,8 @@ bool WritePointCloudToPTS(const std::string &filename,
         }
         // X Y Z R G B.
         else if (pointcloud.HasPointColors()) {
+            colors = ConvertColorTensorToUint8(pointcloud.GetPointColors());
+            colors_ptr = colors.GetDataPtr<uint8_t>();
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %d %d %d\r\n",
                             points_ptr[3 * i + 0], points_ptr[3 * i + 1],
@@ -303,6 +304,9 @@ bool WritePointCloudToPTS(const std::string &filename,
         }
         // X Y Z I.
         else if (pointcloud.HasPointAttr("intensities")) {
+            intensities_ptr = pointcloud.GetPointAttr("intensities")
+                                      .To(core::Dtype::Float64)
+                                      .GetDataPtr<double>();
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\r\n",
                             points_ptr[3 * i + 0], points_ptr[3 * i + 1],
