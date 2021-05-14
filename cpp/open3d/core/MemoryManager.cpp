@@ -81,7 +81,7 @@ void MemoryManager::MemcpyFromHost(void* dst_ptr,
                                    const Device& dst_device,
                                    const void* host_ptr,
                                    size_t num_bytes) {
-    // Currenlty default host is CPU:0
+    // Currently default host is CPU:0
     Memcpy(dst_ptr, dst_device, host_ptr, Device("CPU:0"), num_bytes);
 }
 
@@ -89,7 +89,7 @@ void MemoryManager::MemcpyToHost(void* host_ptr,
                                  const void* src_ptr,
                                  const Device& src_device,
                                  size_t num_bytes) {
-    // Currenlty default host is CPU:0
+    // Currently default host is CPU:0
     Memcpy(host_ptr, Device("CPU:0"), src_ptr, src_device, num_bytes);
 }
 
@@ -113,8 +113,7 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
             };
     if (map_device_type_to_memory_manager.find(device.GetType()) ==
         map_device_type_to_memory_manager.end()) {
-        utility::LogError(
-                "MemoryManager::GetDeviceMemoryManager: Unimplemented device");
+        utility::LogError("Unimplemented device '{}'.", device.ToString());
     }
     return map_device_type_to_memory_manager.at(device.GetType());
 }
