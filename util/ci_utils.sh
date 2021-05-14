@@ -49,6 +49,7 @@ SPHINX_RTD_VER=0.5.1
 NBSPHINX_VER=0.8.3
 MATPLOTLIB_VER=3.3.3
 M2R2_VER=0.2.7
+JINJA2_VER=2.11.3 # jinja2 3.x is not compatible with this sphinx version
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -458,7 +459,8 @@ install_docs_dependencies() {
         "sphinx==$SPHINX_VER" \
         "sphinx-rtd-theme==$SPHINX_RTD_VER" \
         "nbsphinx==$NBSPHINX_VER" \
-        "m2r2==$M2R2_VER"
+        "m2r2==$M2R2_VER" \
+        "jinja2==$JINJA2_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
     echo
     if [[ -d "$1" ]]; then

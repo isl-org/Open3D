@@ -32,6 +32,7 @@
 #include <cmath>
 #include <iostream>
 
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -371,7 +372,7 @@ void Vert::SetPreferredWidth(int w) { SetMinorAxisPreferredSize(w); }
 struct CollapsableVert::Impl {
     std::string id_;
     std::string text_;
-    FontStyle style_ = FontStyle::NORMAL;
+    FontId font_id_ = Application::DEFAULT_FONT_ID;
     bool is_open_ = true;
 };
 
@@ -394,22 +395,22 @@ void CollapsableVert::SetIsOpen(bool is_open) { impl_->is_open_ = is_open; }
 
 bool CollapsableVert::GetIsOpen() { return impl_->is_open_; }
 
-FontStyle CollapsableVert::GetFontStyle() const { return impl_->style_; }
+FontId CollapsableVert::GetFontId() const { return impl_->font_id_; }
 
-void CollapsableVert::SetFontStyle(FontStyle style) { impl_->style_ = style; }
+void CollapsableVert::SetFontId(FontId font_id) { impl_->font_id_ = font_id; }
 
 Size CollapsableVert::CalcPreferredSize(const LayoutContext& context,
                                         const Constraints& constraints) const {
     // Only push the font for the label
-    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
     auto* font = ImGui::GetFont();
     auto padding = ImGui::GetStyle().FramePadding;
     int text_height = int(
             std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
-    int text_width = int(std::ceil(
-            font->CalcTextSizeA(float(context.theme.font_size), FLT_MAX,
-                                FLT_MAX, impl_->text_.c_str())
-                    .x));
+    int text_width =
+            int(std::ceil(font->CalcTextSizeA(font->FontSize, FLT_MAX, FLT_MAX,
+                                              impl_->text_.c_str())
+                                  .x));
     ImGui::PopFont();  // back to default font for layout sizing
 
     auto pref = Super::CalcPreferredSize(context, constraints);
@@ -423,7 +424,7 @@ Size CollapsableVert::CalcPreferredSize(const LayoutContext& context,
 }
 
 void CollapsableVert::Layout(const LayoutContext& context) {
-    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
     auto padding = ImGui::GetStyle().FramePadding;
     int text_height = int(
             std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
@@ -453,7 +454,7 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
                           colorToImgui(context.theme.button_active_color));
 
     ImGui::SetNextTreeNodeOpen(impl_->is_open_);
-    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
     bool node_clicked = ImGui::TreeNode(impl_->id_.c_str());
     ImGui::PopFont();
     if (node_clicked) {
