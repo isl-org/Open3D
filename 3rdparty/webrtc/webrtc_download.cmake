@@ -1,10 +1,10 @@
 include(ExternalProject)
 
 if(GLIBCXX_USE_CXX11_ABI)
-    set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_60e6748_cxx-abi-1.tar.gz)
+    set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc-v2/webrtc_60e6748_cxx-abi-1.tar.gz)
     set(WEBRTC_SHA256 02035b4676db776974a7fa9b6dd6df73b7f1011f2a600555429dc42163cba517)
 else()
-    set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_60e6748_cxx-abi-0.tar.gz)
+    set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc-v2/webrtc_60e6748_cxx-abi-0.tar.gz)
     set(WEBRTC_SHA256 486d805957f513ed85488a62aa5b95b068a1d401489103e3a1a293d0b62b4a9d)
 endif()
 
