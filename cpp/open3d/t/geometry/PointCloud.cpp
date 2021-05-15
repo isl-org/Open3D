@@ -68,6 +68,25 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
                             map_keys_to_tensors.end());
 }
 
+std::string PointCloud::ToString() const {
+    if (point_attr_.size() == 0)
+        return fmt::format("PointCloud on {} [0 points ()] Attributes: None.",
+                           GetDevice().ToString());
+    auto str = fmt::format("PointCloud on {} [{} points ({})] Attributes:",
+                           GetDevice().ToString(), GetPoints().GetShape(0),
+                           GetPoints().GetDtype().ToString());
+    if (point_attr_.size() == 1) return str + " None.";
+    for (const auto &keyval : point_attr_) {
+        if (keyval.first != "points") {
+            str += fmt::format(" {} ({}, {}),", keyval.first,
+                               keyval.second.GetDtype().ToString(),
+                               keyval.second.GetShape(1));
+        }
+    }
+    str[str.size() - 1] = '.';
+    return str;
+}
+
 core::Tensor PointCloud::GetMinBound() const { return GetPoints().Min({0}); }
 
 core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
@@ -280,8 +299,14 @@ static PointCloud CreatePointCloudWithNormals(
     if (!extrinsics.AllClose(Tensor::Eye(4, extrinsics.GetDtype(),
                                          extrinsics.GetDevice()))) {
         auto cam_to_world = extrinsics.Inverse();
-        vertex_list.Mul_(cam_to_world.Slice(0, 0, 3, 1).Slice(1, 0, 3, 1))
-                .Add_(cam_to_world.Slice(0, 0, 3, 1).Slice(1, 3, 4, 1));
+        vertex_list = vertex_list
+                              .Matmul(cam_to_world.Slice(0, 0, 3, 1)
+                                              .Slice(1, 0, 3, 1))
+                              .Add_(cam_to_world.Slice(0, 0, 3, 1)
+                                            .Slice(1, 3, 4, 1)
+                                            .T());
+        vertex_map = Image(vertex_list.View(vertex_map.AsTensor().GetShape())
+                                   .Contiguous());
     }
     auto normal_map_t = vertex_map.CreateNormalMap(invalid_fill)
                                 .AsTensor()
@@ -292,7 +317,6 @@ static PointCloud CreatePointCloudWithNormals(
                     .IsFinite()
                     .LogicalAnd(vertex_list.Slice(1, 0, 1, 1).IsFinite())
                     .Reshape({im_size});
-
     PointCloud pcd(
             {{"points",
               vertex_list.GetItem({TensorKey::IndexTensor(valid_idx),

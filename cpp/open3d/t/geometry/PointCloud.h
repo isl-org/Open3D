@@ -118,6 +118,9 @@ public:
 
     virtual ~PointCloud() override {}
 
+    /// \brief Text description.
+    std::string ToString() const;
+
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
 

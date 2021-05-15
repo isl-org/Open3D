@@ -69,7 +69,8 @@ void pybind_pointcloud(py::module& m) {
             .def(py::init<const core::Tensor&>(), "points"_a)
             .def(py::init<const std::unordered_map<std::string,
                                                    core::Tensor>&>(),
-                 "map_keys_to_tensors"_a);
+                 "map_keys_to_tensors"_a)
+            .def("__repr__", &PointCloud::ToString);
 
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced
