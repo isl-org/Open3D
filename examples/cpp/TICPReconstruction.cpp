@@ -27,6 +27,8 @@
 #include <atomic>
 #include <chrono>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <mutex>
 #include <random>
 #include <sstream>
@@ -56,28 +58,133 @@ std::vector<double> initial_transform_flat = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
                                               0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
                                               0.0, 0.0, 0.0, 1.0};
 
+//------------------------------------------------------------------------------
+class PropertyPanel : public gui::VGrid {
+    using Super = gui::VGrid;
+
+public:
+    PropertyPanel(int spacing, int left_margin)
+        : gui::VGrid(2, spacing, gui::Margins(left_margin, 0, 0, 0)) {
+        default_label_color_ =
+                std::make_shared<gui::Label>("temp")->GetTextColor();
+    }
+
+    void AddBool(const std::string& name,
+                 std::atomic<bool>* bool_addr,
+                 bool default_val,
+                 const std::string& tooltip = "") {
+        auto cb = std::make_shared<gui::Checkbox>("");
+        cb->SetChecked(default_val);
+        *bool_addr = default_val;
+        cb->SetOnChecked([bool_addr, this](bool is_checked) {
+            *bool_addr = is_checked;
+            this->NotifyChanged();
+        });
+        auto label = std::make_shared<gui::Label>(name.c_str());
+        label->SetTooltip(tooltip.c_str());
+        AddChild(label);
+        AddChild(cb);
+    }
+
+    void AddFloatSlider(const std::string& name,
+                        std::atomic<double>* num_addr,
+                        double default_val,
+                        double min_val,
+                        double max_val,
+                        const std::string& tooltip = "") {
+        auto s = std::make_shared<gui::Slider>(gui::Slider::DOUBLE);
+        s->SetLimits(min_val, max_val);
+        s->SetValue(default_val);
+        *num_addr = default_val;
+        s->SetOnValueChanged([num_addr, this](double new_val) {
+            *num_addr = new_val;
+            this->NotifyChanged();
+        });
+        auto label = std::make_shared<gui::Label>(name.c_str());
+        label->SetTooltip(tooltip.c_str());
+        AddChild(label);
+        AddChild(s);
+    }
+
+    void AddIntSlider(const std::string& name,
+                      std::atomic<int>* num_addr,
+                      int default_val,
+                      int min_val,
+                      int max_val,
+                      const std::string& tooltip = "") {
+        auto s = std::make_shared<gui::Slider>(gui::Slider::INT);
+        s->SetLimits(min_val, max_val);
+        s->SetValue(default_val);
+        *num_addr = default_val;
+        s->SetOnValueChanged([num_addr, this](int new_val) {
+            *num_addr = new_val;
+            this->NotifyChanged();
+        });
+        auto label = std::make_shared<gui::Label>(name.c_str());
+        label->SetTooltip(tooltip.c_str());
+        AddChild(label);
+        AddChild(s);
+    }
+
+    void AddValues(const std::string& name,
+                   std::atomic<int>* idx_addr,
+                   int default_idx,
+                   std::vector<std::string> values,
+                   const std::string& tooltip = "") {
+        auto combo = std::make_shared<gui::Combobox>();
+        for (auto& v : values) {
+            combo->AddItem(v.c_str());
+        }
+        combo->SetSelectedIndex(default_idx);
+        *idx_addr = default_idx;
+        combo->SetOnValueChanged(
+                [idx_addr, this](const char* new_value, int new_idx) {
+                    *idx_addr = new_idx;
+                    this->NotifyChanged();
+                });
+        auto label = std::make_shared<gui::Label>(name.c_str());
+        label->SetTooltip(tooltip.c_str());
+        AddChild(label);
+        AddChild(combo);
+    }
+
+    void SetEnabled(bool enable) override {
+        Super::SetEnabled(enable);
+        for (auto child : GetChildren()) {
+            child->SetEnabled(enable);
+            auto label = std::dynamic_pointer_cast<gui::Label>(child);
+            if (label) {
+                if (enable) {
+                    label->SetTextColor(default_label_color_);
+                } else {
+                    label->SetTextColor(gui::Color(0.5f, 0.5f, 0.5f, 1.0f));
+                }
+            }
+        }
+    }
+
+    void SetOnChanged(std::function<void()> f) { on_changed_ = f; }
+
+private:
+    gui::Color default_label_color_;
+    std::function<void()> on_changed_;
+
+    void NotifyChanged() {
+        if (on_changed_) {
+            on_changed_();
+        }
+    }
+};
+
+//------------------------------------------------------------------------------
 class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow() : gui::Window("Open3D - Reconstruction", 1600, 900) {
-        widget3d_ = std::make_shared<gui::SceneWidget>();
-        AddChild(widget3d_);
-        widget3d_->SetScene(
-                std::make_shared<rendering::Open3DScene>(GetRenderer()));
-    }
-
-    ~ReconstructionWindow() {}
-
-protected:
-    std::shared_ptr<gui::SceneWidget> widget3d_;
-};
-
-//------------------------------------------------------------------------------
-class ExampleWindow : public ReconstructionWindow {
-public:
-    ExampleWindow(const std::string& path_config, const core::Device& device)
-        : device_(device),
+    ReconstructionWindow(const std::string& path_config,
+                         const core::Device& device)
+        : gui::Window("Open3D - Reconstruction", 1600, 900),
+          device_(device),
           host_(core::Device("CPU:0")),
           dtype_(core::Dtype::Float32) {
         ReadConfigFile(path_config);
@@ -104,21 +211,21 @@ public:
 
         src_cloud_mat_ = rendering::Material();
         src_cloud_mat_.shader = "defaultUnlit";
-        // src_cloud_mat_.base_color = Eigen::Vector4f(0.5f, 0.5f, 0.5f, 1.0f);
+        src_cloud_mat_.base_color = Eigen::Vector4f(0.5f, 0.5f, 0.5f, 1.0f);
 
         tar_cloud_mat_ = rendering::Material();
         tar_cloud_mat_.shader = "defaultUnlit";
-        // tar_cloud_mat_.base_color = Eigen::Vector4f(0.7f, 0.7f, 0.7f, 1.0f);
+        tar_cloud_mat_.base_color = Eigen::Vector4f(0.7f, 0.7f, 0.7f, 1.0f);
 
         src_corres_mat_ = rendering::Material();
         src_corres_mat_.shader = "defaultUnlit";
         src_corres_mat_.base_color = Eigen::Vector4f(0.f, 1.0f, 0.0f, 1.0f);
-        src_corres_mat_.point_size = 3.0f;
+        src_corres_mat_.point_size = 5.0f;
 
         tar_corres_mat_ = rendering::Material();
         tar_corres_mat_.shader = "defaultUnlit";
         tar_corres_mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
-        tar_corres_mat_.point_size = 3.0f;
+        tar_corres_mat_.point_size = 5.0f;
         // ------------------------------------------------------
 
         SetOnClose([this]() {
@@ -126,64 +233,156 @@ public:
             return true;  // false would cancel the close
         });
         update_thread_ = std::thread([this]() { this->UpdateMain(); });
+
+        auto& theme = GetTheme();
+        int em = theme.font_size;
+        int left_margin = em;
+        int vspacing = int(std::round(1.0f * float(em)));
+        int spacing = int(std::round(0.5f * float(em)));
+        gui::Margins margins(int(std::round(0.5f * float(em))));
+
+        widget3d_ = std::make_shared<gui::SceneWidget>();
+        AddChild(widget3d_);
+
+        panel_ = std::make_shared<gui::Vert>(spacing, margins);
+        AddChild(panel_);
+
+        auto b = std::make_shared<gui::ToggleSwitch>(" Resume/Pause");
+        b->SetOnClicked([b, this](bool is_on) {
+            if (!this->is_started_) {
+                // ----------------- VISUALIZER -----------------
+                // Intialize visualizer.
+                {
+                    // lock to protect `source_` and `target_`
+                    // before modifying the value, ensuring the
+                    // visualizer thread doesn't read the data,
+                    // while we are modifying it.
+                    std::lock_guard<std::mutex> lock(pcd_.lock_);
+
+                    // Copying the pointcloud on CPU, as required by
+                    // the visualizer.
+                    pcd_.source_ = source_.CPU();
+                    pcd_.target_ = target_.CPU();
+                }
+
+                gui::Application::GetInstance().PostToMainThread(
+                        this, [this]() {
+                            // lock to protect `pcd_.source_` and
+                            // `pcd.target_` before passing it to
+                            // the visualizer, ensuring we don't
+                            // modify the value, when visualizer is
+                            // reading it.
+                            std::lock_guard<std::mutex> lock(pcd_.lock_);
+
+                            // Setting the background.
+                            this->widget3d_->GetScene()->SetBackground(
+                                    {0, 0, 0, 1});
+
+                            // Adding the target pointcloud.
+                            this->widget3d_->GetScene()->AddGeometry(
+                                    DST_CLOUD, &pcd_.target_, tar_cloud_mat_);
+
+                            // Adding the source pointcloud, and
+                            // correspondences pointclouds. This
+                            // works as a pointcloud container, i.e.
+                            // reserves the resources. Later we will
+                            // just use `UpdateGeometry` which is
+                            // efficient when the number of points
+                            // in the updated pointcloud are same or
+                            // less than the geometry added
+                            // initially.
+                            this->widget3d_->GetScene()
+                                    ->GetScene()
+                                    ->AddGeometry(SRC_CLOUD, pcd_.source_,
+                                                  src_cloud_mat_);
+                            this->widget3d_->GetScene()
+                                    ->GetScene()
+                                    ->AddGeometry(SRC_CORRES, pcd_.source_,
+                                                  src_corres_mat_);
+                            this->widget3d_->GetScene()
+                                    ->GetScene()
+                                    ->AddGeometry(TAR_CORRES, pcd_.source_,
+                                                  tar_corres_mat_);
+
+                            // Getting bounding box and center to
+                            // setup camera view.
+                            auto bbox = this->widget3d_->GetScene()
+                                                ->GetBoundingBox();
+                            auto center = bbox.GetCenter().cast<float>();
+                            this->widget3d_->SetupCamera(18, bbox, center);
+                            this->widget3d_->LookAt(
+                                    center, center - Eigen::Vector3f{-10, 5, 8},
+                                    {0.0f, -1.0f, 0.0f});
+                        });
+                // -----------------------------------------------------
+
+                this->is_started_ = true;
+            }
+            this->is_running_ = !(this->is_running_);
+            this->adjustable_props_->SetEnabled(true);
+        });
+        panel_->AddChild(b);
+        panel_->AddFixed(vspacing);
+
+        adjustable_props_ =
+                std::make_shared<PropertyPanel>(spacing, left_margin);
+        adjustable_props_->AddIntSlider(" Delay (ms)", &delay_, 100, 10, 500,
+                                        "Time delay between ICP iterations.");
+        panel_->AddChild(adjustable_props_);
+        panel_->AddFixed(vspacing);
+
+        output_ = std::make_shared<gui::Label>("");
+        panel_->AddChild(std::make_shared<gui::Label>("Output"));
+        panel_->AddChild(output_);
+
+        widget3d_->SetScene(
+                std::make_shared<rendering::Open3DScene>(GetRenderer()));
     }
 
-    ~ExampleWindow() { update_thread_.join(); }
+    ~ReconstructionWindow() { update_thread_.join(); }
 
-private:
+    void Layout(const gui::LayoutContext& context) override {
+        int em = context.theme.font_size;
+        int panel_width = 20 * em;
+        // int panel_height = 500;
+        // The usable part of the window may not be the full size if there
+        // is a menu.
+        auto content_rect = GetContentRect();
+
+        panel_->SetFrame(gui::Rect(content_rect.x, content_rect.y, panel_width,
+                                   content_rect.height));
+        int x = panel_->GetFrame().GetRight();
+        widget3d_->SetFrame(gui::Rect(x, content_rect.y,
+                                      content_rect.GetRight() - x,
+                                      content_rect.height));
+
+        Super::Layout(context);
+    }
+
+protected:
+    std::shared_ptr<gui::Vert> panel_;
+    std::shared_ptr<gui::Label> output_;
+    std::shared_ptr<gui::SceneWidget> widget3d_;
+
+    std::shared_ptr<PropertyPanel> adjustable_props_;
+
+    std::atomic<int> delay_;
+
+    // General logic
+    std::atomic<bool> is_running_;
+    std::atomic<bool> is_started_;
+    std::atomic<bool> is_done_;
+
     std::thread update_thread_;
+
+    void SetOutput(const std::string& output) {
+        output_->SetText(output.c_str());
+    }
 
     void UpdateMain() {
         core::Tensor initial_transform = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
         core::Tensor cumulative_transform = initial_transform.Clone();
-
-        // ------------------------ VISUALIZER ------------------------------
-        // Intialize visualizer.
-        {
-            // lock to protect `source_` and `target_` before modifying the
-            // value, ensuring the visualizer thread doesn't read the data,
-            // while we are modifying it.
-            std::lock_guard<std::mutex> lock(pcd_.lock_);
-
-            // Copying the pointcloud on CPU, as required by the visualizer.
-            pcd_.source_ = source_.CPU();
-            pcd_.target_ = target_.CPU();
-        }
-
-        gui::Application::GetInstance().PostToMainThread(this, [this]() {
-            // lock to protect `pcd_.source_` and `pcd.target_`
-            // before passing it to the visualizer, ensuring we don't
-            // modify the value, when visualizer is reading it.
-            std::lock_guard<std::mutex> lock(pcd_.lock_);
-
-            // Setting the background.
-            this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1});
-
-            // Adding the target pointcloud.
-            this->widget3d_->GetScene()->AddGeometry(DST_CLOUD, &pcd_.target_,
-                                                     tar_cloud_mat_);
-
-            // Adding the source pointcloud, and correspondences pointclouds.
-            // This works as a pointcloud container, i.e. reserves the
-            // resources. Later we will just use `UpdateGeometry` which is
-            // efficient when the number of points in the updated pointcloud
-            // are same or less than the geometry added initially.
-            this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                    SRC_CLOUD, pcd_.source_, src_cloud_mat_);
-            this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                    SRC_CORRES, pcd_.source_, src_corres_mat_);
-            this->widget3d_->GetScene()->GetScene()->AddGeometry(
-                    TAR_CORRES, pcd_.source_, tar_corres_mat_);
-
-            // Getting bounding box and center to setup camera view.
-            auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
-            auto center = bbox.GetCenter().cast<float>();
-            this->widget3d_->SetupCamera(18, bbox, center);
-            this->widget3d_->LookAt(center, center - Eigen::Vector3f{-10, 5, 8},
-                                    {0.0f, -1.0f, 0.0f});
-        });
-        // -----------------------------------------------------
 
         // ----- Class members passed to function arguments
         // ----- in t::pipeline::registration::RegistrationMultiScaleICP
@@ -222,8 +421,8 @@ private:
               criterias.size() == max_correspondence_distances.size())) {
             utility::LogError(
                     " [RegistrationMultiScaleICP]: Size of criterias, "
-                    "voxel_size,"
-                    " max_correspondence_distances vectors must be same.");
+                    "voxel_size, max_correspondence_distances vectors "
+                    "must be same.");
         }
 
         if ((estimation.GetTransformationEstimationType() ==
@@ -307,6 +506,12 @@ private:
                         "{:.4f}",
                         i + 1, j, result.fitness_, result.inlier_rmse_);
 
+                while (!is_started_ || !is_running_) {
+                    // If we aren't running, sleep a little bit so that we don't
+                    // use 100% of the CPU just checking if we need to run.
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                }
+
                 // ComputeTransformation returns transformation matrix of
                 // dtype Float64.
                 core::Tensor update = estimation.ComputeTransformation(
@@ -347,30 +552,50 @@ private:
                             transformation.To(dtype_));
                 }
 
+                std::stringstream out_;
+                out_ << " RMSE: " << std::setprecision(4) << result.inlier_rmse_
+                     << std::endl;
+
                 // To update visualizer, we go to the `main thread`,
                 // bring the data on the `main thread`, ensure there is no race
                 // condition with the data, and pass it to the visualizer for
                 // rendering, using `AddGeometry`, or update an existing
                 // pointcloud using `UpdateGeometry`, then setup camera.
-                gui::Application::GetInstance().PostToMainThread(this, [this,
-                                                                        i]() {
-                    // Locking to protect: pcd_.source_,
-                    // pcd_.correspondence_src_, pcd_correpondece_tar_.
-                    std::lock_guard<std::mutex> lock(pcd_lock_);
+                gui::Application::GetInstance().PostToMainThread(
+                        this, [this, i, out_ = out_.str()]() {
+                            this->SetOutput(out_);
 
-                    this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
-                            SRC_CLOUD, pcd_.source_,
-                            rendering::Scene::kUpdatePointsFlag |
-                                    rendering::Scene::kUpdateColorsFlag);
-                    this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
-                            SRC_CORRES, pcd_.correspondence_src_,
-                            rendering::Scene::kUpdatePointsFlag |
-                                    rendering::Scene::kUpdateColorsFlag);
-                    this->widget3d_->GetScene()->GetScene()->UpdateGeometry(
-                            TAR_CORRES, pcd_.correspondence_tar_,
-                            rendering::Scene::kUpdatePointsFlag |
-                                    rendering::Scene::kUpdateColorsFlag);
-                });
+                            // Locking to protect: pcd_.source_,
+                            // pcd_.correspondence_src_, pcd_correpondece_tar_.
+                            std::lock_guard<std::mutex> lock(pcd_lock_);
+
+                            this->widget3d_->GetScene()
+                                    ->GetScene()
+                                    ->UpdateGeometry(
+                                            SRC_CLOUD, pcd_.source_,
+                                            rendering::Scene::
+                                                            kUpdatePointsFlag |
+                                                    rendering::Scene::
+                                                            kUpdateColorsFlag);
+                            this->widget3d_->GetScene()
+                                    ->GetScene()
+                                    ->UpdateGeometry(
+                                            SRC_CORRES,
+                                            pcd_.correspondence_src_,
+                                            rendering::Scene::
+                                                            kUpdatePointsFlag |
+                                                    rendering::Scene::
+                                                            kUpdateColorsFlag);
+                            this->widget3d_->GetScene()
+                                    ->GetScene()
+                                    ->UpdateGeometry(
+                                            TAR_CORRES,
+                                            pcd_.correspondence_tar_,
+                                            rendering::Scene::
+                                                            kUpdatePointsFlag |
+                                                    rendering::Scene::
+                                                            kUpdateColorsFlag);
+                        });
                 // -------------------------------------------------------
 
                 // ICPConvergenceCriteria, to terminate iteration.
@@ -384,7 +609,8 @@ private:
 
                 // Delays each iteration to allow clear visualization of
                 // each iteration.
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(
+                        ReconstructionWindow::delay_));
             }
         }
         // ------------------ VISUALIZER ----------------------------
@@ -547,6 +773,9 @@ private:
             }
         }
 
+        source.RemovePointAttr("colors");
+        target.RemovePointAttr("colors");
+
         // Normals are required for `PointToPlane` type registration method.
         // Currenly Normal Estimation is not supported by Tensor Pointcloud.
         if (registration_method_ == "PointToPlane" &&
@@ -639,7 +868,6 @@ private:
 private:
     std::mutex pcd_lock_;
 
-    std::atomic<bool> is_done_;
     open3d::visualization::rendering::Material src_cloud_mat_;
     open3d::visualization::rendering::Material tar_cloud_mat_;
     open3d::visualization::rendering::Material src_corres_mat_;
@@ -689,8 +917,8 @@ int main(int argc, const char* argv[]) {
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
-    app.AddWindow(std::make_shared<ExampleWindow>(path_config,
-                                                  core::Device(argv[1])));
+    app.AddWindow(std::make_shared<ReconstructionWindow>(
+            path_config, core::Device(argv[1])));
     app.Run();
     return 0;
 }
