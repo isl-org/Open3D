@@ -49,7 +49,7 @@ function(get_webrtc_args WEBRTC_ARGS)
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
 
     # Use clang for compilation
-    set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
 
     # Use ccache if available, not recommended inside Docker
     find_program(CCACHE_BIN "ccache")
