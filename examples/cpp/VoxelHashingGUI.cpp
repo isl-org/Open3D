@@ -582,7 +582,8 @@ protected:
                                             {0.0f, -1.0f, 0.0f});
                 });
 
-        Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+        Eigen::IOFormat CleanFmt(Eigen::StreamPrecision, 0, ", ", "\n", "[",
+                                 "]");
 
         const int fps_interval_len = 30;
         double time_interval = 0;
@@ -649,6 +650,8 @@ protected:
             trajectory_->parameters_.push_back(traj_param);
 
             std::stringstream info, fps;
+            info.setf(std::ios::fixed, std::ios::floatfield);
+            info.precision(4);
             info << fmt::format("Frame {}/{}\n\n", idx, rgb_files.size());
 
             info << "Transformation:\n";
