@@ -609,10 +609,9 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             const size_t normal_array_size = n_vertices * 4 * sizeof(float);
             const auto& normals = point_cloud.GetPointNormals();
 
-            // // Converting normals to Filament type - quaternions
+            // Converting normals to Filament type - quaternions
             auto float4v_tangents = static_cast<filament::math::quatf*>(
                     malloc(normal_array_size));
-            memset(float4v_tangents, 0x0, normal_array_size);
             auto orientation = filament::geometry::SurfaceOrientation::Builder()
                                        .vertexCount(n_vertices)
                                        .normals(reinterpret_cast<
