@@ -4,7 +4,7 @@
 # The MIT License (MIT)
 #
 # Open3D: www.open3d.org
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -103,20 +103,15 @@ class PipelineModel:
         log.info(self.rgbd_metadata)
 
         # RGBD -> PCD
-        self.extrinsics = o3d.core.Tensor.eye(4, dtype=o3d.core.Dtype.Float32)
+        self.extrinsics = o3d.core.Tensor.eye(4,
+                                              dtype=o3d.core.Dtype.Float32,
+                                              device=self.o3d_device)
         self.intrinsic_matrix = o3d.core.Tensor(
             self.rgbd_metadata.intrinsics.intrinsic_matrix,
-            dtype=o3d.core.Dtype.Float32)
-        self.calib = {
-            'world_cam':
-                self.extrinsics.numpy().astype(np.float32),
-            'cam_img':
-                np.block([[self.intrinsic_matrix.numpy(),
-                           np.zeros((3, 1))], [np.zeros((1, 3)),
-                                               1]]).astype(np.float32).T
-        }
+            dtype=o3d.core.Dtype.Float32,
+            device=self.o3d_device)
         self.depth_max = 3.0  # m
-        self.pcd_stride = 1  # downsample point cloud, may increase frame rate
+        self.pcd_stride = 2  # downsample point cloud, may increase frame rate
         self.flag_normals = False
         self.flag_save_rgbd = False
         self.flag_save_pcd = False
