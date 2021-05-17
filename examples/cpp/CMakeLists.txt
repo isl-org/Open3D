@@ -71,7 +71,13 @@ if (BUILD_GUI)
     EXAMPLE_CPP(Draw                  ${CMAKE_PROJECT_NAME})
     EXAMPLE_CPP(MultipleWindows       ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(OffscreenRendering    ${CMAKE_PROJECT_NAME})
+    EXAMPLE_CPP(TICPOdometry          ${CMAKE_PROJECT_NAME} Threads::Threads)
+    EXAMPLE_CPP(TICPReconstruction    ${CMAKE_PROJECT_NAME} Threads::Threads)
     EXAMPLE_CPP(VoxelHashingGUI       ${CMAKE_PROJECT_NAME} Threads::Threads)
+endif()
+
+if(BUILD_WEBRTC)
+    EXAMPLE_CPP(DrawWebRTC            ${CMAKE_PROJECT_NAME})
 endif()
 
 if(BUILD_LIBREALSENSE)
