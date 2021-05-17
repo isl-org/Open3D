@@ -42,8 +42,8 @@ using namespace open3d::t::pipelines::registration;
 
 #define DONT_RESAMPLE -1
 
-const int WIDTH = 1280;
-const int HEIGHT = 800;
+const int WIDTH = 1600;
+const int HEIGHT = 900;
 float verticalFoV = 25;
 
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);
@@ -187,9 +187,9 @@ private:
                         filenames_[0], &pcd_.current_scan_, mat_);
 
                 // Getting bounding box and center to setup camera view.
-                auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
-                auto center = bbox.GetCenter().cast<float>();
-                this->widget3d_->SetupCamera(verticalFoV, bbox, center);
+                pcd_.bbox_ = this->widget3d_->GetScene()->GetBoundingBox();
+                auto center = pcd_.bbox_.GetCenter().cast<float>();
+                this->widget3d_->SetupCamera(verticalFoV, pcd_.bbox_, center);
             });
         }
         // ------------------------------------------------------------------
@@ -276,6 +276,12 @@ private:
                             target.Transform(cumulative_transform.To(device_,
                                                                      dtype_))
                                     .CPU();
+                    pcd_.bbox_ = pcd_.bbox_.Translate(
+                            core::eigen_converter::TensorToEigenMatrixXd(
+                                    cumulative_transform.Clone()
+                                            .Slice(0, 0, 3)
+                                            .Slice(1, 3, 4)),
+                            false);
 
                     total_points_in_frame +=
                             pcd_.current_scan_.GetPoints().GetLength();
@@ -321,11 +327,11 @@ private:
                                     mat_);
 
                             // Bounding box and camera setup.
-                            auto bbox = this->widget3d_->GetScene()
-                                                ->GetBoundingBox();
-                            auto center = bbox.GetCenter().cast<float>();
-                            this->widget3d_->SetupCamera(verticalFoV, bbox,
-                                                         center);
+                            // auto bbox = this->widget3d_->GetScene()
+                            //                     ->GetBoundingBox();
+                            auto center = pcd_.bbox_.GetCenter().cast<float>();
+                            this->widget3d_->SetupCamera(verticalFoV,
+                                                         pcd_.bbox_, center);
                         });
             }
             // --------------------------------------------------------------
@@ -533,8 +539,6 @@ private:
                 t::io::ReadPointCloud(path, pointcloud_local,
                                       {"auto", false, false, true});
 
-                // Cpnverting attributes to Floar32 and currently only
-                // Float32 pointcloud is supported by the tensor
                 // registration module.
                 for (std::string attr : {"points", "colors", "normals"}) {
                     if (pointcloud_local.HasPointAttr(attr)) {
@@ -555,7 +559,7 @@ private:
                                               pointcloud_local.GetPoints()
                                                       .Slice(0, 0, -1)
                                                       .Slice(1, 2, 3)
-                                                      .To(dtype_, true));
+                                                      .To(dtype_, false));
 
                 // Normals are required by `PointToPlane` registration method.
                 // Currenly Normal Estimation is not supported by
@@ -648,6 +652,8 @@ private:
         std::mutex lock_;
         // Pointcloud to store the "current scan", used for visualization.
         t::geometry::PointCloud current_scan_;
+
+        geometry::AxisAlignedBoundingBox bbox_;
     } pcd_;
 
     // Checks if the GUI is closed, and if so, stop the code.
