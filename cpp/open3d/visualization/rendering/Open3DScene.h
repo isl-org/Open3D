@@ -86,7 +86,10 @@ public:
         NO_SHADOWS
     };
 
-    void SetLighting(LightingProfile profile, const Eigen::Vector3f& sun_dir);
+    /// Sets a lighting profile. The sun direction is set to be from the
+    /// upper left behind the viewer when facing the "front" of the model
+    /// (as deterimined be the model up-direction).
+    void SetLighting(LightingProfile profile);
 
     /// Sets the maximum number of points before AddGeometry also adds a
     /// downsampled point cloud with number of points, used when rendering

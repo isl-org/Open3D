@@ -503,6 +503,8 @@ void pybind_rendering_classes(py::module &m) {
             .def("set_sun_light", &Scene::SetSunLight,
                  "Sets the parameters of the sun light: direction, "
                  "color, intensity")
+            .def("set_sun_light_direction", &Scene::SetSunLightDirection,
+                 "Sets the sunlight direction.")
             .def("add_point_light", &Scene::AddPointLight,
                  "Adds a point light to the scene: add_point_light(name, "
                  "color, position, intensity, falloff, cast_shadows)")
@@ -573,10 +575,9 @@ void pybind_rendering_classes(py::module &m) {
             .def("show_ground_plane", &Open3DScene::ShowGroundPlane,
                  "Toggles display of ground plane")
             .def("set_lighting", &Open3DScene::SetLighting,
-                 "Sets a simple lighting model. set_lighting(profile, "
-                 "sun_dir). The default value is "
-                 "set_lighting(Open3DScene.LightingProfile.MED_SHADOWS, "
-                 "(0.577, -0.577, -0.577))")
+                 "Sets a simple lighting model. set_lighting(profile). "
+                 "The default value is "
+                 "Open3DScene.LightingProfile.MED_SHADOWS.")
             .def(
                     "set_background_color",
                     [](Open3DScene &scene, const Eigen::Vector4f &color) {

@@ -285,7 +285,8 @@ class PipelineView:
         self.pcdview.scene = rendering.Open3DScene(self.window.renderer)
         self.pcdview.scene.set_background([1, 1, 1, 1])  # White background
         self.pcdview.scene.set_lighting(
-            rendering.Open3DScene.LightingProfile.SOFT_SHADOWS, [0, -6, 0])
+            rendering.Open3DScene.LightingProfile.SOFT_SHADOWS)
+        self.pcdview.scene.scene.set_sun_light_direction([0, -1, ])
         self.pcdview.scene.show_axes(True)
         # Point cloud bounds, depends on the sensor range
         self.pcd_bounds = o3d.geometry.AxisAlignedBoundingBox([-3, -3, 0],

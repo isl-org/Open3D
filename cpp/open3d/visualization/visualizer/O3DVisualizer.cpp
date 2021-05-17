@@ -1459,8 +1459,8 @@ struct O3DVisualizer::Impl {
                     o.material.base_color = {c.GetRed(), c.GetGreen(),
                                              c.GetBlue(), 1.0f};
                 }
-                widget3d_->GetScene()->GetScene()->OverrideMaterial(obj_name,
-                                                                    o.material);
+                widget3d_->GetScene()->ModifyGeometryMaterial(obj_name,
+                                                              o.material);
                 widget3d_->ForceRedraw();
                 break;
             }
@@ -1576,10 +1576,12 @@ struct O3DVisualizer::Impl {
     void SetModelUp(Open3DScene::UpDir up_dir) {
         ui_state_.up_dir = up_dir;
         auto scene = widget3d_->GetScene();
-        scene->SetModelUp(up_dir);
+        scene->SetModelUp(up_dir);  // note: changes ibl and sun direction
         widget3d_->ForceRedraw();
+        ui_state_.sun_dir = scene->GetScene()->GetSunLightDirection();
         settings.sun.properties.dir->SetValue(
                 scene->GetScene()->GetSunLightDirection());
+        settings.global.model_up->SetSelectedIndex(int(up_dir));
     }
 
     Open3DScene::UpDir GetModelUp() const { return ui_state_.up_dir; }
@@ -1745,9 +1747,8 @@ struct O3DVisualizer::Impl {
     }
 
     void SetLightingProfile(const LightingProfile &profile) {
-        Eigen::Vector3f sun_dir = {0.577f, -0.577f, -0.577f};
         auto scene = widget3d_->GetScene();
-        scene->SetLighting(profile.profile, sun_dir);
+        scene->SetLighting(profile.profile);
         ui_state_.use_ibl =
                 (profile.profile != Open3DScene::LightingProfile::HARD_SHADOWS);
         ui_state_.use_sun =
@@ -1756,11 +1757,14 @@ struct O3DVisualizer::Impl {
                 int(scene->GetScene()->GetIndirectLightIntensity());
         ui_state_.sun_intensity =
                 int(scene->GetScene()->GetSunLightIntensity());
-        ui_state_.sun_dir = sun_dir;
+        ui_state_.sun_dir = scene->GetScene()->GetSunLightDirection();
         ui_state_.sun_color = {1.0f, 1.0f, 1.0f};
         SetUIState(ui_state_);
         // SetUIState will set the combobox to "Custom", so undo that.
         this->settings.global.lighting->SetSelectedValue(profile.name.c_str());
+        // Update sun properties
+        this->settings.sun.properties.dir->SetValue(ui_state_.sun_dir);
+        this->settings.sun.properties.color->SetValue(ui_state_.sun_color);
     }
 
     void SetMouseMode(SceneWidget::Controls mode) {
@@ -2591,6 +2595,13 @@ void O3DVisualizer::AddAction(const std::string &name,
     impl_->settings.actions.menu->AddItem(name.c_str(), id);
     impl_->settings.actions.menuid2action[id] = callback;
     SetOnMenuItemActivated(id, [this, callback]() { callback(*this); });
+}
+
+void O3DVisualizer::SetLightingProfile(Open3DScene::LightingProfile profile) {
+    int index = int(profile);
+    if (index < int(gLightingProfiles.size())) {
+        impl_->SetLightingProfile(gLightingProfiles[index]);
+    }
 }
 
 void O3DVisualizer::SetBackground(

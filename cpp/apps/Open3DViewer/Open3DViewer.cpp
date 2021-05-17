@@ -39,6 +39,28 @@ using namespace open3d::visualization;
 namespace {
 static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
 static const int FILE_OPEN = 100;
+
+bool ColorArrayIsUniform(const std::vector<Eigen::Vector3d> &colors) {
+    static const double e = 1.0 / 255.0;
+    static const double SQ_EPSILON = Eigen::Vector3d(e, e, e).squaredNorm();
+    const auto &color = colors[0];
+
+    for (const auto &c : colors) {
+        if ((color - c).squaredNorm() > SQ_EPSILON) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool PointCloudHasUniformColor(const geometry::PointCloud &pcd) {
+    if (!pcd.HasColors()) {
+        return true;
+    }
+    return ColorArrayIsUniform(pcd.colors_);
+};
+
 }  // namespace
 
 Open3DViewer::Open3DViewer(const std::string &title, int width, int height)
@@ -134,10 +156,35 @@ void Open3DViewer::LoadGeometry(const std::string &path) {
                     this, [this, path, model_success, model, geometry]() {
                         auto model_name = utility::filesystem::
                                 GetFileNameWithoutDirectory(path);
+                        auto scene = GetScene();
+                        scene->ClearGeometry();
+                        SetModelUp(rendering::Open3DScene::UpDir::PLUS_Y);
                         if (model_success) {
                             AddGeometry(model_name, model);
                         } else {
-                            AddGeometry(model_name, geometry);
+                            // If a point cloud has colors, assume that these
+                            // colors are the lit values (since they probably
+                            // come from an actual photograph), and make this
+                            // unlit so that we don't re-light pixels. (Note
+                            // that 'geometry' should always be a point cloud
+                            // here.) But if the vertices are all white, use the
+                            // normals if they exist, otherwise the cloud will
+                            // be white on white and effectively invisible.
+                            auto cloud = std::dynamic_pointer_cast<
+                                    geometry::PointCloud>(geometry);
+                            if (cloud && cloud->HasNormals() &&
+                                !PointCloudHasUniformColor(*cloud)) {
+                                rendering::Material mat;
+                                mat.shader = "defaultUnlit";
+                                AddGeometry(model_name, cloud, &mat);
+                            } else {
+                                AddGeometry(model_name, geometry);
+                            }
+                            if (cloud) {
+                                SetLightingProfile(
+                                        rendering::Open3DScene::
+                                                LightingProfile::NO_SHADOWS);
+                            }
                         }
                         ResetCameraToDefault();
                         CloseDialog();
@@ -229,3 +276,21 @@ int Run(int argc, const char *argv[]) {
 #else
 int main(int argc, const char *argv[]) { return Run(argc, argv); }
 #endif  // __APPLE__
+
+// Testing:
+// There is a fair a number of different outcomes that are expected, based on
+// the mesh type:
+//
+// Point clouds:
+// - has colors: unlit (assumes lighting is backed into vertex colors),
+//               low contrast lighting. [caterpillar.ply]
+// - no colors: lit, low contrast lighting. [office.ply]
+//
+// Triangle meshes
+// - normals, no colors:  lit, automatically colored white
+// - normals, colors: lit
+//
+// Stanford meshs:
+//   fountain.ply, cactusgarden.ply, readingroom.ply, stonewall.ply
+//   These should "look good" be default. The difficulty is that the up
+//   direction is -y, which few other meshes seem to have.

@@ -122,7 +122,7 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     view_ = scene->AddView(0, 0, 1, 1);
     SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
 
-    SetLighting(LightingProfile::MED_SHADOWS, {0.577f, -0.577f, -0.577f});
+    SetLighting(LightingProfile::MED_SHADOWS);
     SetModelUp(UpDir::PLUS_Y);
 
     RecreateAxis(scene, bounds_, false);
@@ -238,8 +238,7 @@ void Open3DScene::ShowGroundPlane(bool enable) {
     }
 }
 
-void Open3DScene::SetLighting(LightingProfile profile,
-                              const Eigen::Vector3f& sun_dir) {
+void Open3DScene::SetLighting(LightingProfile profile) {
     auto scene = renderer_.GetScene(scene_);
 
     if (profile != LightingProfile::HARD_SHADOWS) {
@@ -250,6 +249,7 @@ void Open3DScene::SetLighting(LightingProfile profile,
     }
 
     Eigen::Vector3f sun_color(1.0f, 1.0f, 1.0f);
+    Eigen::Vector3f sun_dir(0.577f, 0.577f, 0.577f);  // dummy value
 
     // These intensities have been chosen so that a white object on a white
     // background is clearly visible even when the highlight is next to the
@@ -286,6 +286,9 @@ void Open3DScene::SetLighting(LightingProfile profile,
             scene->EnableSunLight(false);
             break;
     }
+    // We set the sun color and intensity above, now we need to set the
+    // correct direction.
+    SetModelUp(up_dir_);
 }
 
 void Open3DScene::ClearGeometry() {

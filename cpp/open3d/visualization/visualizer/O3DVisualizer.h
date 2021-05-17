@@ -216,6 +216,8 @@ protected:
     MenuCustomization& GetAppMenu();
     MenuCustomization& GetFileMenu();
 
+    void SetLightingProfile(rendering::Open3DScene::LightingProfile profile);
+
     void Layout(const gui::LayoutContext& context);
 
 private:
