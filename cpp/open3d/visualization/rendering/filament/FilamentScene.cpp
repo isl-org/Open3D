@@ -560,12 +560,6 @@ bool FilamentScene::HasGeometry(const std::string& object_name) const {
     return (geom_entry != geometries_.end());
 }
 
-static void deallocate_vertex_buffer(void* buffer,
-                                     size_t size,
-                                     void* user_ptr) {
-    free(buffer);
-}
-
 void FilamentScene::UpdateGeometry(const std::string& object_name,
                                    const t::geometry::PointCloud& point_cloud,
                                    uint32_t update_flags) {
@@ -626,9 +620,9 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                                        .build();
             orientation->getQuats(float4v_tangents, n_vertices);
             filament::VertexBuffer::BufferDescriptor normals_descriptor(
-                    float4v_tangents, normal_array_size,
-                    deallocate_vertex_buffer);
+                    float4v_tangents, normal_array_size, DeallocateBuffer);
             vbuf->setBufferAt(engine_, 2, std::move(normals_descriptor));
+            delete orientation;
         }
 
         if (update_flags & kUpdateUv0Flag) {

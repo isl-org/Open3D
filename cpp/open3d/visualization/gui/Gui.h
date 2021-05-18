@@ -84,9 +84,8 @@ constexpr Alignment operator|(Alignment x, Alignment y) {
     return Alignment((unsigned int)(x) | (unsigned int)(y));
 }
 
-/// BOLD, ITALIC, and BOLD_ITALIC are not supported for CJK characters
-/// due to the large of amount of GPU memory it would take, and also because
-/// these styles offer limited utility for CJK characters.
+using FontId = unsigned int;
+
 enum class FontStyle {
     NORMAL = 0,
     BOLD = 1,
@@ -98,7 +97,7 @@ class FontContext {
 public:
     virtual ~FontContext(){};
 
-    virtual void* GetFont(FontStyle style) = 0;
+    virtual void* GetFont(FontId font_id) = 0;
 };
 
 }  // namespace gui

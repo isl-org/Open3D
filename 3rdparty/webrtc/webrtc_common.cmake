@@ -49,7 +49,7 @@ function(get_webrtc_args WEBRTC_ARGS)
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
 
     # Use clang for compilation
-    set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
 
     # Use ccache if available, not recommended inside Docker
     find_program(CCACHE_BIN "ccache")
@@ -83,8 +83,5 @@ set(EXTRA_WEBRTC_OBJS
     ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_writer.o
     ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/stun_server.o
     ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/turn_server.o
-    ${WEBRTC_NINJA_ROOT}/obj/api/task_queue/default_task_queue_factory/default_task_queue_factory_stdlib.o
-    ${WEBRTC_NINJA_ROOT}/obj/api/task_queue/task_queue/task_queue_base.o
-    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_task_queue_stdlib/task_queue_stdlib.o
     ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_json/json.o
 )
