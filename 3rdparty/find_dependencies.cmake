@@ -1236,4 +1236,3 @@ if(BUILD_WEBRTC)
     add_dependencies(3rdparty_civetweb ext_civetweb)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CIVETWEB_TARGET}")
 endif()
-

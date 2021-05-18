@@ -6,7 +6,7 @@ ExternalProject_Add(
     URL https://github.com/civetweb/civetweb/archive/refs/tags/v1.14.tar.gz
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        -DCIVETWEB_BUILD_TESTING=ON
+        -DCIVETWEB_BUILD_TESTING=OFF
         -DCIVETWEB_ENABLE_CXX=ON
         -DCIVETWEB_SSL_OPENSSL_API_1_0=OFF
         -DCIVETWEB_SSL_OPENSSL_API_1_1=ON

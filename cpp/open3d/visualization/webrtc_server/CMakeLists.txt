@@ -15,7 +15,9 @@ add_library(webrtc_server OBJECT
     ${WEBRTC_STREAMER_SRC}
 )
 target_compile_definitions(webrtc_server PRIVATE
-    WEBRTC_POSIX
+    $<$<PLATFORM_ID:Linux,Darwin>:WEBRTC_POSIX>
+    $<$<PLATFORM_ID:Darwin>:WEBRTC_MAC>
+    $<$<PLATFORM_ID:Windows>:WEBRTC_WIN>
     _FILE_OFFSET_BITS=64 # for civetweb
     _LARGEFILE_SOURCE=1  # for civetweb
 )

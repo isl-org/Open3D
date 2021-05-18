@@ -29,7 +29,9 @@
 
 include(ExternalProject)
 
-option(WEBRTC_IS_DEBUG "WebRTC Debug buid" OFF)
+# Force WEBRTC_IS_DEBUG to ON if WIN32 Debug, else allow user setting.
+cmake_dependent_option(WEBRTC_IS_DEBUG "WebRTC Debug build" OFF
+    "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 
 # Set paths
 set(WEBRTC_ROOT ${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc)
@@ -56,8 +58,8 @@ endif()
 ExternalProject_Add(
     ext_webrtc
     PREFIX webrtc
-    DOWNLOAD_COMMAND rm -rf ext_webrtc
-    COMMAND cp -ar ${PROJECT_SOURCE_DIR}/../webrtc ext_webrtc
+    DOWNLOAD_COMMAND ${CMAKE_COMMAND} -E rm -rf ext_webrtc
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/../webrtc ext_webrtc
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/args.gn
         ${WEBRTC_NINJA_ROOT}/args.gn

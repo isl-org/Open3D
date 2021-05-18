@@ -1,0 +1,140 @@
+name: WebRTC build
+
+on:
+  workflow_dispatch:
+    inputs:
+      webrtc_commit:
+        description: 'Specify WebRTC commit to build.'
+        required: false
+        default: 60e674842ebae283cc6b2627f4b6f2f8186f3317  # Date: Wed Apr 7 19:12:13 2021 +0200
+
+env:
+  NPROC: 2
+  WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit}}
+
+jobs:
+
+  Unix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04, macos-10.15]
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        if: ${{ matrix.os == 'ubuntu-18.04' }}
+        run: |
+          source 3rdparty/webrtc/webrtc_build.sh.sh
+          install_dependencies_ubuntu
+
+      - name: Download WebRTC sources
+        run: |
+          source 3rdparty/webrtc/webrtc_build.sh.sh
+          download_webrtc_sources
+
+      - name: Build WebRTC
+        run: |
+          source 3rdparty/webrtc/webrtc_build.sh.sh
+          build_webrtc
+
+      - name: Upload WebRTC
+        uses: actions/upload-artifact@v2
+        with:
+          name: webrtc_release
+          path: ../webrtc_*.tar.gz
+          if-no-files-found: error
+
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        CONFIG: [Release, Debug]
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Download WebRTC sources
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          echo "Get depot_tools"
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          $env:Path = (Get-Item depot_tools).FullName + $env:Path
+          command -V fetch
+
+          echo "Get WebRTC"
+          mkdir webrtc
+          cd webrtc
+          fetch webrtc
+
+          # Checkout to a specific version
+          # Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
+          # FIXME: This should be before fetch webrtc
+          cd ../depot_tools
+          git checkout $env:DEPOT_TOOLS_COMMIT
+          cd ../webrtc/src
+          git checkout $env:WEBRTC_COMMIT
+          git submodule update --init --recursive
+          cd ..
+          echo "gclient sync"
+          gclient sync -D --force --reset
+          cd ..
+          echo "random.org"
+          curl "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" -o skipcache
+
+      - name: Build WebRTC
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:OPEN3D_DIR = "$env:PWD"
+          echo "Apply patches"
+          git -C ../webrtc/src reset --hard $env:WEBRTC_COMMIT
+          cp 3rdparty/webrtc/CMakeLists.txt ../webrtc
+          cp 3rdparty/webrtc/webrtc_common.cmake ../webrtc
+          git -C ../webrtc/src apply \
+            "$env:OPEN3D_DIR"/3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch
+          git -C ../webrtc/src/build apply \
+            "$env:OPEN3D_DIR"/3rdparty/webrtc/0001-build-enable-rtc_use_cxx11_abi-option.patch
+          git -C ../webrtc/src/third_party apply \
+            "$env:OPEN3D_DIR"/3rdparty/webrtc/0001-third_party-enable-rtc_use_cxx11_abi-option.patch
+          $env:WEBRTC_COMMIT_SHORT = (git -C ../webrtc/src rev-parse --short=7 HEAD)
+
+          echo "Build WebRTC"
+          mkdir ../webrtc/build
+          cd ../webrtc/build
+          cmake -G "Visual Studio 16 2019" -A x64 `
+            -DCMAKE_INSTALL_PREFIX=../../webrtc_release ..
+          cmake --build . --parallel ${{ env.NPROC }} --config  `
+            ${{ matrix.CONFIG }} --target INSTALL
+
+          cd ../..
+          echo "Package WebRTC"
+          cmake -E tar cv webrtc_${env:WEBRTC_COMMIT_SHORT}_win_${{ matrix.CONFIG }}.zip`
+            --format=zip -- webrtc_release
+
+      - name: Upload WebRTC
+        uses: actions/upload-artifact@v2
+        with:
+          name: webrtc_release
+          path: ../webrtc_*.zip
+          if-no-files-found: error
