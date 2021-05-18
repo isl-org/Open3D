@@ -21,7 +21,7 @@ dataset_path = ../../../examples/test_data/open3d_downloads/datasets/lyft_sample
 
 # Range of frames is start_index to end_index.
 start_index = 0
-end_index = 400
+end_index = 500
 
 # Registration method can be PointToPoint or PointToPlane.
 registration_method = PointToPlane
