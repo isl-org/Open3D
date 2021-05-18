@@ -149,9 +149,8 @@ jobs:
             --format=zip -- webrtc_release
 
       - name: Upload WebRTC
-        working-directory: ${{ env.WORK_DIR }}
         uses: actions/upload-artifact@v2
         with:
           name: webrtc_release
-          path: webrtc_*.zip
+          path: ${{ env.WORK_DIR }}/webrtc_*.zip
           if-no-files-found: error
