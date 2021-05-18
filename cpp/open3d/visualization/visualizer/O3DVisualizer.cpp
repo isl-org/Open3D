@@ -911,7 +911,7 @@ struct O3DVisualizer::Impl {
             // Finally assign material properties if geometry is a triangle mesh
             auto tmesh =
                     std::dynamic_pointer_cast<geometry::TriangleMesh>(geom);
-            if (tmesh) {
+            if (tmesh && tmesh->materials_.size() > 0) {
                 // Only a single material is supported for TriangleMesh so we
                 // just grab the first one we find. Users should be using
                 // TriangleMeshModel if they have a model with multiple
