@@ -7,10 +7,15 @@ on:
         description: 'Specify WebRTC commit to build.'
         required: false
         default: 60e674842ebae283cc6b2627f4b6f2f8186f3317  # Date: Wed Apr 7 19:12:13 2021 +0200
+      depot_tools_commit:
+        description: 'Specify Depot Tools commit to to use for the build.'
+        required: false
+        default: e1a98941d3ab10549be6d82d0686bb0fb91ec903 # Date: Wed Apr 7 21:35:29 2021 +0000
 
 env:
   NPROC: 2
-  WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit}}
+  WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit }}
+  DEPOT_TOOLS_COMMIT: ${{ github.event.inputs.depot_tools_commit }}
 
 jobs:
 
@@ -35,17 +40,17 @@ jobs:
       - name: Install dependencies
         if: ${{ matrix.os == 'ubuntu-18.04' }}
         run: |
-          source 3rdparty/webrtc/webrtc_build.sh.sh
+          source 3rdparty/webrtc/webrtc_build.sh
           install_dependencies_ubuntu
 
       - name: Download WebRTC sources
         run: |
-          source 3rdparty/webrtc/webrtc_build.sh.sh
+          source 3rdparty/webrtc/webrtc_build.sh
           download_webrtc_sources
 
       - name: Build WebRTC
         run: |
-          source 3rdparty/webrtc/webrtc_build.sh.sh
+          source 3rdparty/webrtc/webrtc_build.sh
           build_webrtc
 
       - name: Upload WebRTC
@@ -80,8 +85,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           echo "Get depot_tools"
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          $env:Path = (Get-Item depot_tools).FullName + $env:Path
-          command -V fetch
+          $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
 
           echo "Get WebRTC"
           mkdir webrtc
@@ -106,6 +110,7 @@ jobs:
       - name: Build WebRTC
         run: |
           $ErrorActionPreference = 'Stop'
+          $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
           $env:OPEN3D_DIR = "$env:PWD"
           echo "Apply patches"
           git -C ../webrtc/src reset --hard $env:WEBRTC_COMMIT
