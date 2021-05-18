@@ -62,8 +62,9 @@ def preprocess_and_save(source_folder,
     # get all files from the folder, and sort by name.
     filenames = get_file_list(source_folder, ".bin")
 
-    print("Converting .bin to .ply files and pre-processing from frame " +
-          str(start_idx) + " to index " + str(end_idx))
+    print(
+        "Converting .bin to .ply files and pre-processing from frame {} to index {}"
+        .format(start_idx, end_idx))
 
     if (end_idx < start_idx):
         raise RuntimeError("End index must be smaller than start index.")
@@ -149,8 +150,8 @@ def get_kitti_sample_dataset(dataset_path, dataset_name):
         print("")
     else:
         print(
-            "The folder: %s, already exists. To re-download, kindly delete the folder and re-run this script."
-            % path)
+            "The folder: {}, already exists. To re-download, kindly delete the folder and re-run this script."
+            .format(path))
 
 
 def find_source_pcd_folder_path(dataset_name):

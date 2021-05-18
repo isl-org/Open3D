@@ -67,43 +67,6 @@ public:
                 std::make_shared<gui::Label>("temp")->GetTextColor();
     }
 
-    void AddBool(const std::string& name,
-                 std::atomic<bool>* bool_addr,
-                 bool default_val,
-                 const std::string& tooltip = "") {
-        auto cb = std::make_shared<gui::Checkbox>("");
-        cb->SetChecked(default_val);
-        *bool_addr = default_val;
-        cb->SetOnChecked([bool_addr, this](bool is_checked) {
-            *bool_addr = is_checked;
-            this->NotifyChanged();
-        });
-        auto label = std::make_shared<gui::Label>(name.c_str());
-        label->SetTooltip(tooltip.c_str());
-        AddChild(label);
-        AddChild(cb);
-    }
-
-    void AddFloatSlider(const std::string& name,
-                        std::atomic<double>* num_addr,
-                        double default_val,
-                        double min_val,
-                        double max_val,
-                        const std::string& tooltip = "") {
-        auto s = std::make_shared<gui::Slider>(gui::Slider::DOUBLE);
-        s->SetLimits(min_val, max_val);
-        s->SetValue(default_val);
-        *num_addr = default_val;
-        s->SetOnValueChanged([num_addr, this](double new_val) {
-            *num_addr = new_val;
-            this->NotifyChanged();
-        });
-        auto label = std::make_shared<gui::Label>(name.c_str());
-        label->SetTooltip(tooltip.c_str());
-        AddChild(label);
-        AddChild(s);
-    }
-
     void AddIntSlider(const std::string& name,
                       std::atomic<int>* num_addr,
                       int default_val,
@@ -124,28 +87,6 @@ public:
         AddChild(s);
     }
 
-    void AddValues(const std::string& name,
-                   std::atomic<int>* idx_addr,
-                   int default_idx,
-                   std::vector<std::string> values,
-                   const std::string& tooltip = "") {
-        auto combo = std::make_shared<gui::Combobox>();
-        for (auto& v : values) {
-            combo->AddItem(v.c_str());
-        }
-        combo->SetSelectedIndex(default_idx);
-        *idx_addr = default_idx;
-        combo->SetOnValueChanged(
-                [idx_addr, this](const char* new_value, int new_idx) {
-                    *idx_addr = new_idx;
-                    this->NotifyChanged();
-                });
-        auto label = std::make_shared<gui::Label>(name.c_str());
-        label->SetTooltip(tooltip.c_str());
-        AddChild(label);
-        AddChild(combo);
-    }
-
     void SetEnabled(bool enable) override {
         Super::SetEnabled(enable);
         for (auto child : GetChildren()) {
@@ -160,8 +101,6 @@ public:
             }
         }
     }
-
-    void SetOnChanged(std::function<void()> f) { on_changed_ = f; }
 
 private:
     gui::Color default_label_color_;
@@ -209,21 +148,21 @@ public:
 
         src_cloud_mat_ = rendering::Material();
         src_cloud_mat_.shader = "defaultUnlit";
-        src_cloud_mat_.base_color = Eigen::Vector4f(0.5f, 0.5f, 0.5f, 1.0f);
+        // src_cloud_mat_.base_color = Eigen::Vector4f(0.5f, 0.5f, 0.5f, 1.0f);
 
         tar_cloud_mat_ = rendering::Material();
         tar_cloud_mat_.shader = "defaultUnlit";
-        tar_cloud_mat_.base_color = Eigen::Vector4f(0.7f, 0.7f, 0.7f, 1.0f);
+        // tar_cloud_mat_.base_color = Eigen::Vector4f(0.7f, 0.7f, 0.7f, 1.0f);
 
         src_corres_mat_ = rendering::Material();
         src_corres_mat_.shader = "defaultUnlit";
         src_corres_mat_.base_color = Eigen::Vector4f(0.f, 1.0f, 0.0f, 1.0f);
-        src_corres_mat_.point_size = 5.0f;
+        src_corres_mat_.point_size = 3.0f;
 
         tar_corres_mat_ = rendering::Material();
         tar_corres_mat_.shader = "defaultUnlit";
         tar_corres_mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
-        tar_corres_mat_.point_size = 5.0f;
+        tar_corres_mat_.point_size = 3.0f;
         // ------------------------------------------------------
 
         SetOnClose([this]() {
@@ -324,8 +263,9 @@ public:
 
         adjustable_props_ =
                 std::make_shared<PropertyPanel>(spacing, left_margin);
-        adjustable_props_->AddIntSlider(" Delay (ms)", &delay_, 100, 10, 500,
-                                        "Time delay between ICP iterations.");
+        adjustable_props_->AddIntSlider(
+                "Animation Delay (ms)", &delay_, 100, 10, 500,
+                "Animation interval between ICP iterations.");
         panel_->AddChild(adjustable_props_);
         panel_->AddFixed(vspacing);
 
@@ -771,8 +711,9 @@ private:
             }
         }
 
-        source.RemovePointAttr("colors");
-        target.RemovePointAttr("colors");
+        // Uncomment to remove the pointcloud color attribute.
+        // source.RemovePointAttr("colors");
+        // target.RemovePointAttr("colors");
 
         // Normals are required for `PointToPlane` type registration method.
         // Currenly Normal Estimation is not supported by Tensor Pointcloud.
