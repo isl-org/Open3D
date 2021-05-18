@@ -42,8 +42,8 @@ using namespace open3d::t::pipelines::registration;
 
 #define DONT_RESAMPLE -1
 
-const int WIDTH = 1600;
-const int HEIGHT = 900;
+const int WIDTH = 1280;
+const int HEIGHT = 800;
 float verticalFoV = 25;
 
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);

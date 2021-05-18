@@ -181,7 +181,7 @@ class ReconstructionWindow : public gui::Window {
 public:
     ReconstructionWindow(const std::string& path_config,
                          const core::Device& device)
-        : gui::Window("Open3D - Reconstruction", 1600, 900),
+        : gui::Window("Open3D - Reconstruction", 1280, 800),
           device_(device),
           host_(core::Device("CPU:0")),
           dtype_(core::Dtype::Float32) {
