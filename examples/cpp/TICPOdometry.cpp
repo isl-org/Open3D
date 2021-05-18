@@ -276,12 +276,15 @@ private:
                             target.Transform(cumulative_transform.To(device_,
                                                                      dtype_))
                                     .CPU();
+
+                    // Translate bounding box to current scan frame to model
+                    // transform.
                     pcd_.bbox_ = pcd_.bbox_.Translate(
                             core::eigen_converter::TensorToEigenMatrixXd(
                                     cumulative_transform.Clone()
                                             .Slice(0, 0, 3)
                                             .Slice(1, 3, 4)),
-                            false);
+                            /*relative = */ false);
 
                     total_points_in_frame +=
                             pcd_.current_scan_.GetPoints().GetLength();
@@ -326,9 +329,7 @@ private:
                                     filenames_[i + 1], &pcd_.current_scan_,
                                     mat_);
 
-                            // Bounding box and camera setup.
-                            // auto bbox = this->widget3d_->GetScene()
-                            //                     ->GetBoundingBox();
+                            // Setup camera.
                             auto center = pcd_.bbox_.GetCenter().cast<float>();
                             this->widget3d_->SetupCamera(verticalFoV,
                                                          pcd_.bbox_, center);
