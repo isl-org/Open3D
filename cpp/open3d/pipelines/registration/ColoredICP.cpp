@@ -134,6 +134,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
     if (!source.HasColors()) {
         utility::LogError(
                 "ColoredICP requires source pointcloud to have colors.");
+    }
 
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
     double lambda_photometric = 1.0 - lambda_geometric_;
