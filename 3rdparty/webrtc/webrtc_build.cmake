@@ -16,6 +16,19 @@
 #    └── webrtc
 #        ├── .gclient
 #        └── src
+#    Example commands:
+#    ```bash
+#    # You're in Open3D
+#    cd ..
+#    git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+#    export PATH=$PATH:`realpath depot_tools`
+#    mkdir webrtc
+#    cd webrtc
+#    fetch --no-history webrtc
+#    cd ../Open3D
+#    ```
+#    You may also want to checkout a specific commit for depot_tools and webrtc.
+#    See Dockerfile.webrtc on how to do that.
 #
 # 2) depot_tools and webrtc have compatible versions, see:
 #    https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md

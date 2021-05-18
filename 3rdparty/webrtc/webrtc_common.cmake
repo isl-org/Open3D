@@ -48,8 +48,13 @@ function(get_webrtc_args WEBRTC_ARGS)
     set(WEBRTC_ARGS rtc_include_pulse_audio=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
 
-    # Use clang (from depot_tools) for compilation
-    set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+    if (APPLE OR WIN32)  # WebRTC default
+        set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+    else()
+        # Do not use Google clang for compilation due to LTO error when Open3D
+        # is built with gcc on Ubuntu 20.04.
+        set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
+    endif()
 
     # Use ccache if available, not recommended inside Docker
     find_program(CCACHE_BIN "ccache")

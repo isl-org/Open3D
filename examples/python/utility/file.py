@@ -36,7 +36,9 @@ def add_if_exists(path_dataset, folder_names):
     for folder_name in folder_names:
         if exists(join(path_dataset, folder_name)):
             path = join(path_dataset, folder_name)
-    return path
+            return path
+    raise FileNotFoundError(
+        f"None of the folders {folder_names} found in {path_dataset}")
 
 
 def get_rgbd_folders(path_dataset):

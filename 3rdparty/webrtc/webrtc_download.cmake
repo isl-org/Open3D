@@ -2,16 +2,16 @@ include(ExternalProject)
 
 if (APPLE)
     set(WEBRTC_URL
-        ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/webrtc_60e6748_macosx.tar.gz)
+        ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/webrtc_60e6748_macos.tar.gz)
     set(WEBRTC_SHA256 09f750f11fe4ad5a1309aa7558e9b59e3e780096adf8dcf1e4aa1d526561058e)
 elseif (WIN32)
 else()  # Linux
     if(GLIBCXX_USE_CXX11_ABI)
-        set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_60e6748_cxx-abi-1.tar.gz)
-        set(WEBRTC_SHA256 02035b4676db776974a7fa9b6dd6df73b7f1011f2a600555429dc42163cba517)
+        set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc-v3/webrtc_60e6748_cxx-abi-1.tar.gz)
+        set(WEBRTC_SHA256 0d98ddbc4164b9e7bfc50b7d4eaa912a753dabde0847d85a64f93a062ae4c335)
     else()
-        set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_60e6748_cxx-abi-0.tar.gz)
-        set(WEBRTC_SHA256 486d805957f513ed85488a62aa5b95b068a1d401489103e3a1a293d0b62b4a9d)
+        set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc-v3/webrtc_60e6748_cxx-abi-0.tar.gz)
+        set(WEBRTC_SHA256 2a3714713908f84079f1fbce8594c9b7010846b5db74b086f7bf30f22f1f5835)
     endif()
 endif()
 

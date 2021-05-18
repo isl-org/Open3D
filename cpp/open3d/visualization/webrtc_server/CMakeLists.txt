@@ -21,6 +21,7 @@ target_compile_definitions(webrtc_server PRIVATE
     _FILE_OFFSET_BITS=64 # for civetweb
     _LARGEFILE_SOURCE=1  # for civetweb
 )
+add_dependencies(webrtc_server trigger_copy_html)
 
 open3d_show_and_abort_on_warning(webrtc_server)
 open3d_set_global_properties(webrtc_server)
@@ -32,11 +33,11 @@ file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
 
 # Force update ${GUI_RESOURCE_DIR}/html every time.
 # https://stackoverflow.com/a/32062884/1255535
-add_custom_target(dummy_target ALL
-    DEPENDS custom_output
+add_custom_target(trigger_copy_html ALL
+    DEPENDS copy_html
 )
 add_custom_command(
-    OUTPUT custom_output
+    OUTPUT copy_html
     COMMAND ${CMAKE_COMMAND} -E rm -rf
         ${GUI_RESOURCE_DIR}/html
     COMMAND ${CMAKE_COMMAND} -E copy_directory
