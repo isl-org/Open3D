@@ -31,7 +31,7 @@ DEPOT_TOOLS_COMMIT=${DEPOT_TOOLS_COMMIT:-e1a98941d3ab10549be6d82d0686bb0fb91ec90
 GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI:-0}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 SUDO=${SUDO:-sudo}                           # Set to command if running inside docker
-export PATH="$PWD/depot_tools":${PATH}
+export PATH="$PWD/../depot_tools":${PATH}    # $(basename $PWD) == Open3D
 export DEPOT_TOOLS_UPDATE=0
 
 install_dependencies_ubuntu() {
@@ -73,6 +73,7 @@ download_webrtc_sources() {
     pushd ..
     echo Get depot_tools
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+    git -C depot_tools checkout ${DEPOT_TOOLS_COMMIT}
     command -V fetch
 
     echo Get WebRTC
@@ -82,13 +83,8 @@ download_webrtc_sources() {
 
     # Checkout to a specific version
     # Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
-    # FIXME: This should be before fetch webrtc
-    cd ../depot_tools
-    git checkout ${DEPOT_TOOLS_COMMIT}
-    cd ../webrtc/src
-    git checkout ${WEBRTC_COMMIT}
-    git submodule update --init --recursive
-    cd ..
+    git -C src checkout ${WEBRTC_COMMIT}
+    git -C src submodule update --init --recursive
     echo gclient sync
     gclient sync -D --force --reset
     cd ..
@@ -101,7 +97,6 @@ build_webrtc() {
     # PWD=Open3D
     OPEN3D_DIR="$PWD"
     echo Apply patches
-    git -C ../webrtc/src reset --hard ${WEBRTC_COMMIT}
     cp 3rdparty/webrtc/{CMakeLists.txt,webrtc_common.cmake} ../webrtc
     git -C ../webrtc/src apply \
         "$OPEN3D_DIR"/3rdparty/webrtc/0001-src-enable-rtc_use_cxx11_abi-option.patch
@@ -127,10 +122,13 @@ build_webrtc() {
         tar -czf \
             webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz \
             ../webrtc_release
+		cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
+				tee checksum_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.txt
     elif [[ $(uname -s) == 'Darwin' ]]; then
         tar -czf \
             webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz \
             ../webrtc_release
+		cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
+			   	tee checksum_macos.txt
     fi
-    ls -alh webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz
 }
