@@ -178,6 +178,7 @@ Anonymous submission.)");
 
 void pybind_odometry_methods(py::module &m) {
     m.def("compute_rgbd_odometry", &ComputeRGBDOdometry,
+          py::call_guard<py::gil_scoped_release>(),
           "Function to estimate 6D rigid motion from two RGBD image pairs. "
           "Output: (is_success, 4x4 motion matrix, 6x6 information matrix).",
           "rgbd_source"_a, "rgbd_target"_a,

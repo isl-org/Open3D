@@ -76,7 +76,7 @@ public:
     void Draw() override;
     void RequestReadPixels(int width,
                            int height,
-                           std::function<void(std::shared_ptr<geometry::Image>)>
+                           std::function<void(std::shared_ptr<core::Tensor>)>
                                    callback) override;
     void EndFrame() override;
 

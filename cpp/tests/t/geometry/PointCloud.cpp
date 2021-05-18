@@ -372,6 +372,42 @@ TEST_P(PointCloudPermuteDevices, Setters) {
     }
 }
 
+TEST_P(PointCloudPermuteDevices, Append) {
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Dtype::Float32;
+
+    core::Tensor points = core::Tensor::Ones({2, 3}, dtype, device);
+    core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, device);
+    core::Tensor labels = core::Tensor::Ones({2, 3}, dtype, device);
+
+    t::geometry::PointCloud pcd(device);
+
+    pcd.SetPoints(points);
+    pcd.SetPointColors(colors);
+
+    t::geometry::PointCloud pcd2(device);
+
+    pcd2 = pcd.Clone();
+    pcd2.SetPointAttr("labels", labels);
+
+    // Here pcd2 is being added to pcd, therefore it must have all the
+    // attributes present in pcd and the resulting pointcloud will contain the
+    // attributes of pcd only.
+    t::geometry::PointCloud pcd3(device);
+    pcd3 = pcd + pcd2;
+
+    EXPECT_TRUE(pcd3.GetPoints().AllClose(
+            core::Tensor::Ones({4, 3}, dtype, device)));
+    EXPECT_TRUE(pcd3.GetPointColors().AllClose(
+            core::Tensor::Ones({4, 3}, dtype, device)));
+
+    EXPECT_ANY_THROW(pcd3.GetPointAttr("labels"));
+
+    // pcd2 has an extra attribute "labels" which is missing in pcd, therefore
+    // adding pcd to pcd2 will throw an error for missing attribute "labels"
+    EXPECT_ANY_THROW(pcd2 + pcd);
+}
+
 TEST_P(PointCloudPermuteDevices, Has) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;

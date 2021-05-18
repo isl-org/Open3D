@@ -30,8 +30,26 @@
 
 #include <string>
 
+#include "open3d/utility/Console.h"
+
 namespace open3d {
 namespace utility {
+
+Json::Value StringToJson(const std::string &json_str) {
+    Json::Value json;
+    std::string err;
+    Json::CharReaderBuilder builder;
+    const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+    if (!reader->parse(json_str.c_str(), json_str.c_str() + json_str.length(),
+                       &json, &err)) {
+        utility::LogError("Failed to parse string to json, error: {}", err);
+    }
+    return json;
+}
+
+std::string JsonToString(const Json::Value json) {
+    return Json::writeString(Json::StreamWriterBuilder(), json);
+}
 
 std::string IJsonConvertible::ToString() const {
     Json::Value val;
