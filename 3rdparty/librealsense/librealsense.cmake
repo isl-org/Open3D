@@ -4,19 +4,15 @@ ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
     GIT_REPOSITORY https://github.com/IntelRealSense/librealsense.git
-    GIT_TAG v2.40.0 # 18 Nov 2020
+    GIT_TAG v2.44.0 #  2020 Apr 1
     UPDATE_COMMAND ""
     # Patch for libusb static build failure on Linux
-    PATCH_COMMAND git -C <SOURCE_DIR> reset --hard v2.40.0
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
-    <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
-    # Patch for libstdc++ regex bug
-    COMMAND git -C <SOURCE_DIR> apply
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/fix-2837.patch
+    PATCH_COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
+        <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
     # Patch for CRT mismatch in CUDA code (Windows)
     COMMAND git -C <SOURCE_DIR> apply
-    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/fix-cudacrt.patch
+        ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/fix-cudacrt.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -31,8 +27,10 @@ ExternalProject_Add(
         -DBUILD_GRAPHICAL_EXAMPLES=OFF
         -DBUILD_PYTHON_BINDINGS=OFF
         -DBUILD_WITH_CUDA=${BUILD_CUDA_MODULE}
-        -DFORCE_RSUSB_BACKEND=$<IF:$<PLATFORM_ID:Linux>,ON,OFF>      # https://github.com/IntelRealSense/librealsense/wiki/Release-Notes#release-2400
         -DUSE_EXTERNAL_USB=ON
+        # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
+        # checking CXX_COMPILER_ID is not supported.
+        $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI}>
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>

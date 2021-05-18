@@ -56,7 +56,6 @@ if ( NOT BUILD_RPC_INTERFACE )
         list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*Receiver.cpp)
 endif()
 
-
 # create object library
 add_library(visualization OBJECT
             ${SHADER_FILES}

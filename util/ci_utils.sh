@@ -147,6 +147,10 @@ install_python_dependencies() {
         TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
     fi
 
+    # TODO: modify other locations to use requirements.txt
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
+
     echo
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
         # TF happily installs both CPU and GPU versions at the same time, so remove the other
@@ -459,6 +463,8 @@ install_docs_dependencies() {
         "m2r2==$M2R2_VER" \
         "jinja2==$JINJA2_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
     echo
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
@@ -493,7 +499,6 @@ build_docs() {
     fi
     cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
-        "-DBUILD_JUPYTER_EXTENSION=ON"
         "-DWITH_OPENMP=ON"
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=ON"
@@ -504,6 +509,7 @@ build_docs() {
     )
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
+        -DBUILD_JUPYTER_EXTENSION=OFF \
         -DENABLE_HEADLESS_RENDERING=ON \
         -DBUILD_GUI=OFF \
         ..
@@ -521,6 +527,7 @@ build_docs() {
     echo
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
+        -DBUILD_JUPYTER_EXTENSION=ON \
         -DENABLE_HEADLESS_RENDERING=OFF \
         -DBUILD_GUI=ON \
         ..

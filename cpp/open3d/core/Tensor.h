@@ -157,7 +157,7 @@ public:
     }
 
     /// Assign an object to a tensor. The tensor being assigned to must be a
-    /// scalr tensor of shape {}. The element byte size of the tensor must be
+    /// scalar tensor of shape {}. The element byte size of the tensor must be
     /// the same as the size of the object. The object must be a POD.
     template <typename Object>
     Tensor& AssignObject(const Object& v) && {
@@ -173,7 +173,7 @@ public:
     }
 
     /// \brief Fill the whole Tensor with a scalar value, the scalar will be
-    /// casted to the Tensor's dtype.
+    /// casted to the Tensor's Dtype.
     template <typename S>
     void Fill(S v);
 
@@ -185,7 +185,7 @@ public:
                         Dtype dtype,
                         const Device& device = Device("CPU:0"));
 
-    /// Create a tensor with uninitialized values with the same dtype and device
+    /// Create a tensor with uninitialized values with the same Dtype and Device
     /// as the other tensor.
     static Tensor EmptyLike(const Tensor& other) {
         return Tensor::Empty(other.shape_, other.dtype_, other.GetDevice());
@@ -249,7 +249,7 @@ public:
         return InitWithInitializerList<T, 3>(in_list, device);
     }
 
-    /// Create a identity matrix of size n x n.
+    /// Create an identity matrix of size n x n.
     static Tensor Eye(int64_t n, Dtype dtype, const Device& device);
 
     /// Create a square matrix with specified diagonal elements in input.
@@ -364,9 +364,10 @@ public:
     /// without copying, but you should not depend on the copying vs. viewing
     /// behavior.
     ///
-    /// Ref: https://pytorch.org/docs/stable/tensors.html
-    ///      aten/src/ATen/native/TensorShape.cpp
-    ///      aten/src/ATen/TensorUtils.cpp
+    /// Ref:
+    /// - https://pytorch.org/docs/stable/tensors.html
+    /// - aten/src/ATen/native/TensorShape.cpp
+    /// - aten/src/ATen/TensorUtils.cpp
     Tensor Reshape(const SizeVector& dst_shape) const;
 
     /// Returns a new tensor view with the same data but of a different shape.
@@ -379,13 +380,14 @@ public:
     /// d+kd,d+1, ..., d+k that satisfy the following contiguity-like condition
     /// that for all i = 0, ..., k-1, strides[i] = stride[i + 1] * shape[i + 1].
     ///
-    /// Otherwise, contiguous() needs to be called before the tensor can be
-    /// viewed. See also: reshape(), which returns a view if the shapes are
-    /// compatible, and copies (equivalent to calling contiguous()) otherwise.
+    /// Otherwise, Contiguous() needs to be called before the tensor can be
+    /// viewed. See also: Reshape(), which returns a view if the shapes are
+    /// compatible, and copies (equivalent to calling Contiguous()) otherwise.
     ///
-    /// Ref: https://pytorch.org/docs/stable/tensors.html
-    ///      aten/src/ATen/native/TensorShape.cpp
-    ///      aten/src/ATen/TensorUtils.cpp
+    /// Ref:
+    /// - https://pytorch.org/docs/stable/tensors.html
+    /// - aten/src/ATen/native/TensorShape.cpp
+    /// - aten/src/ATen/TensorUtils.cpp
     Tensor View(const SizeVector& dst_shape) const;
 
     /// Copy Tensor to the same device.
@@ -397,7 +399,7 @@ public:
     /// Returns a tensor with the specified \p dtype.
     /// \param dtype The targeted dtype to convert to.
     /// \param copy If true, a new tensor is always created; if false, the copy
-    /// is avoided when the original tensor already have the targeted dtype.
+    /// is avoided when the original tensor already has the targeted dtype.
     Tensor To(Dtype dtype, bool copy = false) const;
 
     /// Returns a tensor with the specified \p device.
@@ -488,7 +490,7 @@ public:
     double Det() const;
 
     /// Helper function to return scalar value of a scalar Tensor, the Tensor
-    /// mush have empty shape ()
+    /// must have empty shape.
     template <typename T>
     T Item() const {
         if (shape_.NumElements() != 1) {
@@ -823,12 +825,12 @@ public:
 
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is apply to all dimensions.
+    /// the reduction is applied to all dimensions.
     bool All() const;
 
     /// Returns true if any elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is apply to all dimensions.
+    /// the reduction is applied to all dimensions.
     bool Any() const;
 
     /// Returns true if the two tensors are element-wise equal within a
@@ -839,8 +841,8 @@ public:
     /// - If the shape is not the same: returns false.
     /// - Returns true if: abs(self - other) <= (atol + rtol * abs(other)).
     ///
-    /// The equation is not symmetrial, i.e. a.AllClose(b) might not be the same
-    /// as b.AllClose(a). Also see Numpy's documentation:
+    /// The equation is not symmetrical, i.e. a.AllClose(b) might not be the
+    /// same as b.AllClose(a). Also see Numpy's documentation:
     /// https://numpy.org/doc/stable/reference/generated/numpy.allclose.html.
     ///
     /// TODO: support nan
@@ -852,7 +854,7 @@ public:
                   double rtol = 1e-5,
                   double atol = 1e-8) const;
 
-    /// Element-wise version of Tensor::AllClose.
+    /// Element-wise version of Tensor::AllClose().
     ///
     /// - If the device is not the same: throws exception.
     /// - If the dtype is not the same: throws exception.
@@ -869,7 +871,7 @@ public:
     /// \param other The other tensor to compare with.
     /// \param rtol Relative tolerance.
     /// \param atol Absolute tolerance.
-    /// \return A boolean tensor indicating whether the tensor is close.
+    /// \return A boolean tensor indicating where the tensor is close.
     Tensor IsClose(const Tensor& other,
                    double rtol = 1e-5,
                    double atol = 1e-8) const;
