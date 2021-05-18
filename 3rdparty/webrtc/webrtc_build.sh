@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
+# This script builds WebRTC for Open3D for Ubuntu and macOS. For Windows, see
+# .github/workflows/webrtc.yml
+#
+# Procedure:
+#
 # 1) Download depot_tools, webrtc to following directories:
 #    ├── Oepn3D
 #    ├── depot_tools
@@ -34,7 +39,8 @@ install_dependencies_ubuntu() {
     # Dependencies
     # python*       : resolve ImportError: No module named pkg_resources
     # libglib2.0-dev: resolve pkg_config("glib")
-    $SUDO apt-get update && apt-get install -y \
+    $SUDO apt-get update
+    $SUDO apt-get install -y \
         apt-transport-https \
         build-essential \
         ca-certificates \

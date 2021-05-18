@@ -22,10 +22,10 @@ env:
   SCIPY_VER: "1.5.4"
   JEDI_VER: "0.17.2" # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8" # https://github.com/psf/requests/issues/5710
-  NPROC: 2
   CONDA_BUILD_VER: "3.20.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
+  NPROC: 2
 
 jobs:
   windows:
