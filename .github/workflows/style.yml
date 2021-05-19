@@ -15,7 +15,6 @@ on:
 env:
   WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit }}
   DEPOT_TOOLS_COMMIT: ${{ github.event.inputs.depot_tools_commit }}
-  NPROC: 2
 
 jobs:
 
@@ -81,6 +80,7 @@ jobs:
       OPEN3D_DIR: "D:\\a\\open3d\\open3d"
       DEPOT_TOOLS_UPDATE: 1   # Fix cannot find python3_bin_reldir.txt
       DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+      NPROC: 2
 
     steps:
       - name: Checkout source code
@@ -127,9 +127,8 @@ jobs:
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
-          cp "$env:OPEN3D_DIR/3rdparty/webrtc/CMakeLists.txt" ../webrtc
-          cp "$env:OPEN3D_DIR/3rdparty/webrtc/webrtc_common.cmake" ../webrtc
+          cp "$env:OPEN3D_DIR/3rdparty/webrtc/CMakeLists.txt" webrtc/
+          cp "$env:OPEN3D_DIR/3rdparty/webrtc/webrtc_common.cmake" webrtc/
 
       - name: Build WebRTC
         working-directory: ${{ env.WORK_DIR }}
@@ -138,7 +137,8 @@ jobs:
           $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
           mkdir webrtc/build
           cd webrtc/build
-          cmake -DCMAKE_INSTALL_PREFIX=../../webrtc_release ..
+          cmake -G "Visual Studio 16 2019" -A x64 `
+            -DCMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release ..
           cmake --build . --parallel ${{ env.NPROC }} --config  `
             ${{ matrix.CONFIG }} --target INSTALL
 
@@ -146,7 +146,7 @@ jobs:
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $env:WEBRTC_COMMIT_SHORT = (git -C ../webrtc/src rev-parse --short=7 HEAD)
+          $env:WEBRTC_COMMIT_SHORT = (git -C webrtc/src rev-parse --short=7 HEAD)
           cmake -E tar cv webrtc_${env:WEBRTC_COMMIT_SHORT}_win_${{ matrix.CONFIG }}.zip`
             --format=zip -- webrtc_release
           cmake -E sha256sum webrtc_*.tar.gz | Tee-Object -FilePath checksum_${{ matrix.CONFIG }}.txt

@@ -73,7 +73,7 @@ download_webrtc_sources() {
     pushd ..
     echo Get depot_tools
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-    git -C depot_tools checkout ${DEPOT_TOOLS_COMMIT}
+    git -C depot_tools checkout $DEPOT_TOOLS_COMMIT
     command -V fetch
 
     echo Get WebRTC
@@ -83,7 +83,7 @@ download_webrtc_sources() {
 
     # Checkout to a specific version
     # Ref: https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
-    git -C src checkout ${WEBRTC_COMMIT}
+    git -C src checkout $WEBRTC_COMMIT
     git -C src submodule update --init --recursive
     echo gclient sync
     gclient sync -D --force --reset
@@ -122,13 +122,13 @@ build_webrtc() {
         tar -czf \
             webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz \
             ../webrtc_release
-		cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
-				tee checksum_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.txt
+        cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
+            tee checksum_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.txt
     elif [[ $(uname -s) == 'Darwin' ]]; then
         tar -czf \
             webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz \
             ../webrtc_release
-		cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
-			   	tee checksum_macos.txt
+        cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
+            tee checksum_macos.txt
     fi
 }
