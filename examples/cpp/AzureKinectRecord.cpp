@@ -14,30 +14,29 @@
 
 using namespace open3d;
 
-void PrintUsage() {
+void PrintHelp() {
+    using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage: ");
-    utility::LogInfo("Options: ");
-    utility::LogInfo("--config  Config .json file (default: none)");
-    utility::LogInfo("--list    List the currently connected K4A devices");
-    utility::LogInfo("--device  Specify the device index to use (default: 0)");
-    utility::LogInfo("--output  Output mkv file name (default: current_time.mkv)");
-    utility::LogInfo("-a        Align depth with color image (default: disabled)");
-    utility::LogInfo("-h        Print this helper");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > AzureKinectRecord [options]");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --help, -h                : Print help information.");
+    utility::LogInfo("    --config                  : Config .json file (default: none)");
+    utility::LogInfo("    --list                    : List the currently connected K4A devices");
+    utility::LogInfo("    --device                  : Specify the device index to use (default: 0)");
+    utility::LogInfo("    --output                  : Output mkv file name (default: current_time.mkv)");
+    utility::LogInfo("    -a                        : Align depth with color image (default: disabled)");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char **argv) {
-    if (argc < 2) {
-        PrintUsage();
-        return 0;
-    }
-
-    // Parse arguments
-    if (utility::ProgramOptionExists(argc, argv, "-h")) {
-        PrintUsage();
-        return 0;
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--list")) {
@@ -123,7 +122,7 @@ int main(int argc, char **argv) {
             });
 
     utility::LogInfo(
-            "In the visulizer window, "
+            "In the visualizer window, "
             "press [SPACE] to start recording, "
             "press [ESC] to exit.");
 

@@ -28,6 +28,7 @@
 
 void PrintHelp() {
     using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
@@ -43,16 +44,20 @@ void PrintHelp() {
     utility::LogInfo("    --write_color_back        : Write color back to source_file.");
     utility::LogInfo("    --without_gui             : Without GUI.");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        utility::ProgramOptionExists(argc, argv, "-h")) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
+
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     double max_distance = utility::GetProgramOptionAsDouble(

@@ -78,21 +78,27 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
     return value;
 }
 
-void PrintUsage() {
+void PrintHelp() {
+    using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]");
+    utility::LogInfo("    > AzureKinectMKVReader --input input.mkv [--output] [path]");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char **argv) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (!utility::ProgramOptionExists(argc, argv, "--input")) {
-        PrintUsage();
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        !utility::ProgramOptionExists(argc, argv, "--input")) {
+        PrintHelp();
         return 1;
     }
+
     std::string mkv_filename =
             utility::GetProgramOptionAsString(argc, argv, "--input");
 

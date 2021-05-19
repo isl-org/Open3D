@@ -34,28 +34,33 @@ using namespace open3d;
 namespace tio = open3d::t::io;
 namespace sc = std::chrono;
 
-void PrintUsage() {
+void PrintHelp() {
+    using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RealSenseRecorder [-V] [-l|--list-devices] [--align] [--record rgbd_video_file.bag] [-c|--config rs-config.json]");
     utility::LogInfo(
             "Open a RealSense camera and display live color and depth streams. You can set\n"
             "frame sizes and frame rates for each stream and the depth stream can be\n"
             "optionally aligned to the color stream. NOTE: An error of 'UNKNOWN: Couldn't\n"
             "resolve requests' implies  unsupported stream format settings.");
     // clang-format on
-    utility::LogInfo("Usage:");
-    utility::LogInfo(
-            "RealSenseRecorder [-h|--help] [-V] [-l|--list-devices] [--align]\n"
-            "[--record rgbd_video_file.bag] [-c|--config rs-config.json]");
+    utility::LogInfo("");
 }
 
-int main(int argc, char **argv) {
-    // Parse command line arguments
-    if (utility::ProgramOptionExists(argc, argv, "--help") ||
-        utility::ProgramOptionExists(argc, argv, "-h")) {
-        PrintUsage();
-        return 0;
+int main(int argc, char *argv[]) {
+    using namespace open3d;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
     }
+
     if (utility::ProgramOptionExists(argc, argv, "--list-devices") ||
         utility::ProgramOptionExists(argc, argv, "-l")) {
         tio::RealSenseSensor::ListDevices();

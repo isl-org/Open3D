@@ -30,16 +30,24 @@
 
 void PrintHelp() {
     using namespace open3d;
-    utility::LogInfo("Usage :");
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
     utility::LogInfo("    > FileDialog [save|load]");
+    // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
-    if (argc == 1) {
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        argc != 2) {
         PrintHelp();
         return 1;
     }
+
     std::string option(argv[1]);
     char const *pattern = "*.*";
     if (option == "load") {
