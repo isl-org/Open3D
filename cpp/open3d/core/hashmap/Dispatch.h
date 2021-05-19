@@ -71,6 +71,28 @@ namespace core {
 template <typename T, size_t N>
 class Block {
 public:
+    Block() = default;
+
+    OPEN3D_HOST_DEVICE Block(const Block<T, N>& other) {
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+        for (size_t i = 0; i < N; ++i) {
+            data_[i] = other.data_[i];
+        }
+    }
+
+    Block<T, N>& OPEN3D_HOST_DEVICE operator=(const Block<T, N>& other) {
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+        for (size_t i = 0; i < N; ++i) {
+            data_[i] = other.data_[i];
+        }
+
+        return *this;
+    }
+
     bool OPEN3D_HOST_DEVICE operator==(const Block<T, N>& other) const {
         bool is_eq = true;
 #if defined(__CUDA_ARCH__)
@@ -80,15 +102,6 @@ public:
             is_eq = is_eq && (data_[i] == other.data_[i]);
         }
         return is_eq;
-    }
-
-    void OPEN3D_HOST_DEVICE operator=(const Block<T, N>& other) {
-#if defined(__CUDA_ARCH__)
-#pragma unroll
-#endif
-        for (size_t i = 0; i < N; ++i) {
-            data_[i] = other.data_[i];
-        }
     }
 
     T OPEN3D_HOST_DEVICE Get(size_t i) const { return data_[i]; }
