@@ -817,14 +817,14 @@ def test_boolean_advanced_indexing(device):
     np.testing.assert_equal(np_y, o3_y.cpu().numpy())
 
     o3_a = o3d.core.Tensor(1, device=device)
-    o3_i = o3d.core.Tensor(False, device=device)
     np_a = np.array(1)
-    np_a = np.array(False)
+    o3_i = o3d.core.Tensor(False, device=device)
+    np_i = np.array(False)
     o3_a[o3_i] = 2
     np_a[np_i] = 2
     np.testing.assert_equal(np_a, o3_a.cpu().numpy())
     o3_i = o3d.core.Tensor(True, device=device)
-    np_a = np.array(True)
+    np_i = np.array(True)
     o3_a[o3_i] = 2
     np_a[np_i] = 2
     np.testing.assert_equal(np_a, o3_a.cpu().numpy())
