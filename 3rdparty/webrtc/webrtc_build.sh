@@ -115,21 +115,23 @@ build_webrtc() {
     make -j$NPROC
     make install
     popd # PWD=Open3D
-    tree -L 2 ../webrtc_release || ls ../webrtc_release/*
+    pushd ..
+    tree -L 2 webrtc_release || ls webrtc_release/*
 
     echo Package WebRTC
     if [[ $(uname -s) == 'Linux' ]]; then
         tar -czf \
-            webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz \
-            ../webrtc_release
+            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz" \
+            webrtc_release
         cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
             tee checksum_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.txt
     elif [[ $(uname -s) == 'Darwin' ]]; then
         tar -czf \
-            webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz \
-            ../webrtc_release
+            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz" \
+            webrtc_release
         cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
             tee checksum_macos.txt
     fi
     ls -alh webrtc_*.tar.gz
+    popd # PWD=Open3D
 }

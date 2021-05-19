@@ -23,7 +23,10 @@
 cmake_minimum_required(VERSION 3.18)
 project(webrtc CXX)
 
-option(WEBRTC_IS_DEBUG       "WebRTC Debug buid"              OFF)
+include(CMakeDependentOption)
+# Force WEBRTC_IS_DEBUG to ON if WIN32 Debug, else allow user setting.
+cmake_dependent_option(WEBRTC_IS_DEBUG "WebRTC Debug build" OFF
+    "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" OFF)
 
 # Set paths
@@ -60,7 +63,7 @@ endif()
 add_custom_target(webrtc
     ALL
     COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
-    COMMAND ${DEPOT_TOOLS_ROOT}/ninja ${NINJA_TARGETS}
+    COMMAND ${DEPOT_TOOLS_ROOT}/ninja -v ${NINJA_TARGETS}
     WORKING_DIRECTORY ${WEBRTC_NINJA_ROOT}
     BYPRODUCTS ${EXTRA_WEBRTC_OBJS}
 )
@@ -91,7 +94,7 @@ install(DIRECTORY
     FILES_MATCHING PATTERN "*.h"
 )
 install(FILES
-    ${WEBRTC_NINJA_ROOT}/obj/libwebrtc.a
-    ${WEBRTC_NINJA_ROOT}/obj/libwebrtc_extra.a
+    ${WEBRTC_NINJA_ROOT}/obj/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}
+    ${WEBRTC_NINJA_ROOT}/obj/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}
     DESTINATION lib
 )

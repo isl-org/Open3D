@@ -18,18 +18,13 @@ function(get_webrtc_args WEBRTC_ARGS)
         endif()
     endif()
 
-    set(WEBRTC_ARGS rtc_include_tests=false\n${WEBRTC_ARGS})
-    set(WEBRTC_ARGS rtc_enable_protobuf=false\n${WEBRTC_ARGS})
-    set(WEBRTC_ARGS rtc_build_examples=false\n${WEBRTC_ARGS})
-    set(WEBRTC_ARGS rtc_build_tools=false\n${WEBRTC_ARGS})
-    set(WEBRTC_ARGS treat_warnings_as_errors=false\n${WEBRTC_ARGS})
-    set(WEBRTC_ARGS rtc_enable_libevent=false\n${WEBRTC_ARGS})
-    set(WEBRTC_ARGS rtc_build_libevent=false\n${WEBRTC_ARGS})
-    set(WEBRTC_ARGS use_sysroot=false\n${WEBRTC_ARGS})
-
-    # Disable screen capturing
-    set(WEBRTC_ARGS rtc_use_x11=false\n${WEBRTC_ARGS})
-    set(WEBRTC_ARGS rtc_use_pipewire=false\n${WEBRTC_ARGS})
+    if (APPLE)  # WebRTC default
+        set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
+    else()
+        # Do not use Google clang for compilation due to LTO error when Open3D
+        # is built with gcc on Ubuntu 20.04.
+        set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
+    endif()
 
     # Don't use libc++ (Clang), use libstdc++ (GNU)
     # https://stackoverflow.com/a/47384787/1255535
@@ -46,17 +41,22 @@ function(get_webrtc_args WEBRTC_ARGS)
     # H264 support
     set(WEBRTC_ARGS is_chrome_branded=true\n${WEBRTC_ARGS})
 
+    set(WEBRTC_ARGS rtc_include_tests=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS rtc_enable_protobuf=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS rtc_build_examples=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS rtc_build_tools=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS treat_warnings_as_errors=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS rtc_enable_libevent=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS rtc_build_libevent=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS use_sysroot=false\n${WEBRTC_ARGS})
+
+    # Disable screen capturing
+    set(WEBRTC_ARGS rtc_use_x11=false\n${WEBRTC_ARGS})
+    set(WEBRTC_ARGS rtc_use_pipewire=false\n${WEBRTC_ARGS})
+
     # Disable sound support
     set(WEBRTC_ARGS rtc_include_pulse_audio=false\n${WEBRTC_ARGS})
     set(WEBRTC_ARGS rtc_include_internal_audio_device=false\n${WEBRTC_ARGS})
-
-    if (APPLE OR WIN32)  # WebRTC default
-        set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
-    else()
-        # Do not use Google clang for compilation due to LTO error when Open3D
-        # is built with gcc on Ubuntu 20.04.
-        set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
-    endif()
 
     # Use ccache if available, not recommended inside Docker
     find_program(CCACHE_BIN "ccache")
@@ -85,10 +85,10 @@ if(NOT WEBRTC_NINJA_ROOT)
     message(FATAL_ERROR "Please define WEBRTC_NINJA_ROOT before including webrtc_common.cmake")
 endif()
 set(EXTRA_WEBRTC_OBJS
-    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_reader.o
-    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_value.o
-    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_writer.o
-    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/stun_server.o
-    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/turn_server.o
-    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_json/json.o
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_reader${CMAKE_C_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_value${CMAKE_C_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_writer${CMAKE_C_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/stun_server${CMAKE_C_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/turn_server${CMAKE_C_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_json/json${CMAKE_C_OUTPUT_EXTENSION}
 )

@@ -42,6 +42,7 @@
 
 include(ExternalProject)
 
+include(CMakeDependentOption)
 # Force WEBRTC_IS_DEBUG to ON if WIN32 Debug, else allow user setting.
 cmake_dependent_option(WEBRTC_IS_DEBUG "WebRTC Debug build" OFF
     "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
