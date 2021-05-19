@@ -241,7 +241,7 @@ RegistrationResult RegistrationColoredICP(
         double max_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
         const TransformationEstimationForColoredICP &estimation
-        /*TransformationEstimationForColoredICP()*/,
+        /* = TransformationEstimationForColoredICP()*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
     if (!target.HasNormals()) {
