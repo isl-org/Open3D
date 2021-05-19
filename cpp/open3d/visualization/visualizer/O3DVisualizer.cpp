@@ -2099,7 +2099,7 @@ void O3DVisualizer::ExportCurrentImage(const std::string &path) {
 
 void O3DVisualizer::Layout(const gui::LayoutContext &context) {
     auto em = context.theme.font_size;
-    int settings_width = 15 * context.theme.font_size;
+    int settings_width = 16 * context.theme.font_size;
 #if !GROUPS_USE_TREE
     if (impl_->added_groups_.size() >= 2) {
         settings_width += 5 * context.theme.font_size;
