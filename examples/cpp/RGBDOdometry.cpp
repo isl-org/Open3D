@@ -73,9 +73,8 @@ int main(int argc, char* argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc == 1 ||
-        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
-        argc != 5) {
+    if (argc != 5 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }

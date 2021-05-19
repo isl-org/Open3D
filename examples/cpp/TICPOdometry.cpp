@@ -709,9 +709,8 @@ void PrintHelp() {
 int main(int argc, char* argv[]) {
     using namespace open3d;
 
-    if (argc == 1 ||
-        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
-        argc != 3) {
+    if (argc != 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }

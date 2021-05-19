@@ -46,9 +46,8 @@ void PrintHelp() {
 int main(int argc, char *argv[]) {
     using namespace open3d;
     using namespace open3d::utility::filesystem;
-    if (argc == 1 ||
-        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
-        !(argc == 2 || argc == 3)) {
+    if (!(argc == 2 || argc == 3) ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
