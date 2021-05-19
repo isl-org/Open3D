@@ -63,8 +63,8 @@ jobs:
         with:
           name: webrtc_release
           path: |
-                 ../webrtc_*.tar.gz
-                 ${{ env.WORK_DIR }}/checksum_*.txt
+                 webrtc_*.tar.gz
+                 checksum_*.txt
           if-no-files-found: error
 
 

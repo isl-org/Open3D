@@ -9,11 +9,13 @@
 function(get_webrtc_args WEBRTC_ARGS)
     set(WEBRTC_ARGS "")
 
-    # ABI selection
-    if(GLIBCXX_USE_CXX11_ABI)
-        set(WEBRTC_ARGS rtc_use_cxx11_abi=true\n${WEBRTC_ARGS})
-    else()
-        set(WEBRTC_ARGS rtc_use_cxx11_abi=false\n${WEBRTC_ARGS})
+    if(NOT MSVC)
+        # ABI selection
+        if(GLIBCXX_USE_CXX11_ABI)
+            set(WEBRTC_ARGS rtc_use_cxx11_abi=true\n${WEBRTC_ARGS})
+        else()
+            set(WEBRTC_ARGS rtc_use_cxx11_abi=false\n${WEBRTC_ARGS})
+        endif()
     endif()
 
     set(WEBRTC_ARGS rtc_include_tests=false\n${WEBRTC_ARGS})

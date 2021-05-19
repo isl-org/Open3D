@@ -115,7 +115,7 @@ build_webrtc() {
     make -j$NPROC
     make install
     popd # PWD=Open3D
-    tree -L 2 ../webrtc_release
+    tree -L 2 ../webrtc_release || ls ../webrtc_release/*
 
     echo Package WebRTC
     if [[ $(uname -s) == 'Linux' ]]; then
@@ -131,4 +131,5 @@ build_webrtc() {
         cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
             tee checksum_macos.txt
     fi
+    ls -alh webrtc_*.tar.gz
 }
