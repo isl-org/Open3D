@@ -907,6 +907,37 @@ struct O3DVisualizer::Impl {
                 is_default_color = false;
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
+
+            // Finally assign material properties if geometry is a triangle mesh
+            auto tmesh =
+                    std::dynamic_pointer_cast<geometry::TriangleMesh>(geom);
+            if (tmesh && tmesh->materials_.size() > 0) {
+                // Only a single material is supported for TriangleMesh so we
+                // just grab the first one we find. Users should be using
+                // TriangleMeshModel if they have a model with multiple
+                // materials.
+                auto &mesh_material = tmesh->materials_.begin()->second;
+                mat.base_color = {mesh_material.baseColor.r(),
+                                  mesh_material.baseColor.g(),
+                                  mesh_material.baseColor.b(),
+                                  mesh_material.baseColor.a()};
+                mat.base_metallic = mesh_material.baseMetallic;
+                mat.base_roughness = mesh_material.baseRoughness;
+                mat.base_reflectance = mesh_material.baseReflectance;
+                mat.base_clearcoat = mesh_material.baseClearCoat;
+                mat.base_clearcoat_roughness =
+                        mesh_material.baseClearCoatRoughness;
+                mat.base_anisotropy = mesh_material.baseAnisotropy;
+                mat.albedo_img = mesh_material.albedo;
+                mat.normal_img = mesh_material.normalMap;
+                mat.ao_img = mesh_material.ambientOcclusion;
+                mat.metallic_img = mesh_material.metallic;
+                mat.roughness_img = mesh_material.roughness;
+                mat.reflectance_img = mesh_material.reflectance;
+                mat.clearcoat_img = mesh_material.clearCoat;
+                mat.clearcoat_roughness_img = mesh_material.clearCoatRoughness;
+                mat.anisotropy_img = mesh_material.anisotropy;
+            }
         }
 
         // We assume that the caller isn't setting a group or time (and in any

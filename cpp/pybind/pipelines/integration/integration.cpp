@@ -147,6 +147,14 @@ In SIGGRAPH, 1996)");
                  "Debug function to extract the voxel data into a point cloud.")
             .def("extract_voxel_grid", &UniformTSDFVolume::ExtractVoxelGrid,
                  "Debug function to extract the voxel data VoxelGrid.")
+            .def("extract_volume_tsdf", &UniformTSDFVolume::ExtractVolumeTSDF,
+                 "Debug function to extract the volume TSDF data.")
+            .def("extract_volume_color", &UniformTSDFVolume::ExtractVolumeColor,
+                 "Debug function to extract the volume color data.")
+            .def("inject_volume_tsdf", &UniformTSDFVolume::InjectVolumeTSDF,
+                 "Debug function to inject the voxel TSDF data.", "tsdf"_a)
+            .def("inject_volume_color", &UniformTSDFVolume::InjectVolumeColor,
+                 "Debug function to inject the voxel Color data.", "color"_a)
             .def_readwrite("length", &UniformTSDFVolume::length_,
                            "Total length, where ``voxel_length = length / "
                            "resolution``.")

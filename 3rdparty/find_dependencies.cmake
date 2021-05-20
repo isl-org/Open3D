@@ -1209,6 +1209,9 @@ endif ()
 
 # WebRTC
 if(BUILD_WEBRTC)
+    # Build WebRTC from source for advanced users.
+    option(BUILD_WEBRTC_FROM_SOURCE "Build WebRTC from source" OFF)
+
     # WebRTC
     if(BUILD_WEBRTC_FROM_SOURCE)
         include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_build.cmake)

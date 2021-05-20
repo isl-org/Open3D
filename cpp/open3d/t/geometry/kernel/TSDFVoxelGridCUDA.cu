@@ -47,7 +47,7 @@ namespace kernel {
 namespace tsdf {
 struct Coord3i {
     OPEN3D_HOST_DEVICE Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
-    bool OPEN3D_HOST_DEVICE operator==(const Coord3i& other) const {
+    OPEN3D_HOST_DEVICE bool operator==(const Coord3i& other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
 
