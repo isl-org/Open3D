@@ -1011,8 +1011,7 @@ template <typename F>
 bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
                           F &swap,
                           bool allow_flips) {
-    std::unordered_set<Eigen::Vector2i,
-                       utility::hash_eigen<Eigen::Vector2i>>
+    std::unordered_set<Eigen::Vector2i, utility::hash_eigen<Eigen::Vector2i>>
             visited_edges;
     std::unordered_set<int> unvisited_triangles;
     std::unordered_map<Eigen::Vector2i, std::unordered_set<int>,
@@ -1021,7 +1020,7 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
     std::queue<int> triangle_queue;
 
     auto VerifyAndAdd = [&](const Eigen::Vector2i &edge) {
-        if(visited_edges.find(edge) != visited_edges.end()){
+        if (visited_edges.find(edge) != visited_edges.end()) {
             return false;
         }
         visited_edges.insert(edge);
@@ -1068,14 +1067,14 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
         int vidx1 = triangle(1);
         int vidx2 = triangle(2);
 
-        if (allow_flips){
+        if (allow_flips) {
             // one flip is allowed
-            bool exist01 = visited_edges.find(Eigen::Vector2i(vidx0, vidx1))
-                           != visited_edges.end();
-            bool exist12 = visited_edges.find(Eigen::Vector2i(vidx1, vidx2))
-                           != visited_edges.end();
-            bool exist20 = visited_edges.find(Eigen::Vector2i(vidx2, vidx0))
-                           != visited_edges.end();
+            bool exist01 = visited_edges.find(Eigen::Vector2i(vidx0, vidx1)) !=
+                           visited_edges.end();
+            bool exist12 = visited_edges.find(Eigen::Vector2i(vidx1, vidx2)) !=
+                           visited_edges.end();
+            bool exist20 = visited_edges.find(Eigen::Vector2i(vidx2, vidx0)) !=
+                           visited_edges.end();
 
             if (exist01) {
                 std::swap(vidx0, vidx1);
@@ -1093,8 +1092,9 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
         auto edge12 = Eigen::Vector2i(vidx1, vidx2);
         auto edge20 = Eigen::Vector2i(vidx2, vidx0);
 
-        // Check if it is the first time we see the directed edge, if it is add it
-        // to visited edges, if it is not, the mesh is not oriented/orientable.
+        // Check if it is the first time we see the directed edge, if it is add
+        // it to visited edges, if it is not, the mesh is not
+        // oriented/orientable.
         if (!VerifyAndAdd(edge01)) {
             return false;
         }
@@ -1117,7 +1117,7 @@ bool TriangleMesh::IsOrientable() const {
     return OrientTriangleHelper(triangles_, NoOp, true);
 }
 
-bool TriangleMesh::IsOriented() const{
+bool TriangleMesh::IsOriented() const {
     auto NoOp = [](int, int, int) {};
     return OrientTriangleHelper(triangles_, NoOp, false);
 }
@@ -1230,7 +1230,7 @@ double TriangleMesh::GetVolume() const {
         utility::LogError(
                 "The mesh is not oriented, and the volume cannot be "
                 "computed. Consider using OrientTriangles in cpp or "
-                "orient_triangles in Python before calling this method");
+                "orient_triangles in Python before calling this method.");
     }
 
     double volume = 0;
