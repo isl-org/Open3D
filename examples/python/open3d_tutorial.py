@@ -124,7 +124,7 @@ def download_fountain_dataset():
     fountain_zip_path = _relative_path("../test_data/fountain.zip")
     if not os.path.exists(fountain_path):
         print("downloading fountain dataset")
-        url = "https://storage.googleapis.com/isl-datasets/open3d-dev/fountain.zip"
+        url = "https://github.com/intel-isl/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
         urllib.request.urlretrieve(url, fountain_zip_path)
         print("extract fountain dataset")
         with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:
@@ -261,7 +261,7 @@ def get_eagle_pcd():
     path = _relative_path("../test_data/eagle.ply")
     if not os.path.exists(path):
         print("downloading eagle pcl")
-        url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"
+        url = "https://github.com/intel-isl/open3d_downloads/releases/download/open3d_tutorial/eagle.points.ply"
         urllib.request.urlretrieve(url, path)
     pcd = o3d.io.read_point_cloud(path)
     return pcd
