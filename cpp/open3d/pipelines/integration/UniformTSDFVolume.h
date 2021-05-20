@@ -76,6 +76,14 @@ public:
     std::shared_ptr<geometry::PointCloud> ExtractVoxelPointCloud() const;
     /// Debug function to extract the voxel data VoxelGrid
     std::shared_ptr<geometry::VoxelGrid> ExtractVoxelGrid() const;
+    /// Debug function to extract the volume TSDF data into a vector array
+    std::vector<Eigen::Vector2d> ExtractVolumeTSDF() const;
+    /// Debug function to extract the volume color data into a vector array
+    std::vector<Eigen::Vector3d> ExtractVolumeColor() const;
+    /// Debug function to inject voxel TSDF data into the volume
+    void InjectVolumeTSDF(const std::vector<Eigen::Vector2d> &sharedvoxels);
+    /// Debug function to inject voxel Color data into the volume
+    void InjectVolumeColor(const std::vector<Eigen::Vector3d> &sharedcolors);
 
     /// Faster Integrate function that uses depth_to_camera_distance_multiplier
     /// precomputed from camera intrinsic
