@@ -29,6 +29,10 @@
 #include "pybind/visualization/gui/gui.h"
 #include "pybind/visualization/rendering/rendering.h"
 
+#ifdef BUILD_WEBRTC
+#include "pybind/visualization/webrtc_server/webrtc_window_system.h"
+#endif
+
 namespace open3d {
 namespace visualization {
 
@@ -47,6 +51,10 @@ void pybind_visualization(py::module &m) {
     rendering::pybind_rendering(m_visualization);
     gui::pybind_gui(m_visualization);
     pybind_o3dvisualizer(m_visualization);
+#endif
+
+#ifdef BUILD_WEBRTC
+    webrtc_server::pybind_webrtc_server(m_visualization);
 #endif
 }
 

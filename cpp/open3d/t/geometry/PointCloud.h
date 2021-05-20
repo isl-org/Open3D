@@ -118,6 +118,9 @@ public:
 
     virtual ~PointCloud() override {}
 
+    /// \brief Text description.
+    std::string ToString() const;
+
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
 
@@ -262,6 +265,19 @@ public:
 
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
+
+    /// Append a pointcloud and returns the resulting pointcloud.
+    ///
+    /// The pointcloud being appended, must have all the attributes
+    /// present in the pointcloud it is being appended to, with same
+    /// dtype, device and same shape other than the first dimension / length.
+    PointCloud Append(const PointCloud &other) const;
+
+    /// operator+ for t::PointCloud appends the compatible attributes to the
+    /// pointcloud.
+    PointCloud operator+(const PointCloud &other) const {
+        return Append(other);
+    }
 
     /// \brief Transforms the points and normals (if exist)
     /// of the PointCloud.

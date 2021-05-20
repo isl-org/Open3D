@@ -54,6 +54,7 @@ set(PY_ALL_SOURCE_FILES
     core/size_vector.cpp
     core/cuda_utils.cpp
     core/tensor.cpp
+    core/scalar.cpp
     core/nns/nearest_neighbor_search.cpp
     core/dtype.cpp
     docstring.cpp
@@ -118,6 +119,12 @@ if (BUILD_GUI)
         visualization/rendering/rendering.cpp
         visualization/o3dvisualizer.cpp
         )
+endif()
+
+if (BUILD_WEBRTC)
+    list(APPEND PY_ALL_SOURCE_FILES
+        visualization/webrtc_server/webrtc_window_system.cpp
+    )
 endif()
 
 if (BUILD_AZURE_KINECT)

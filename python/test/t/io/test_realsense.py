@@ -37,8 +37,10 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import test_data_dir
 
 
-# @pytest.mark.skipif(not hasattr(o3d.t.io, 'RSBagReader'))
-@pytest.mark.skip(reason="Hangs in Github Actions, but succeeds locally")
+@pytest.mark.skipif(os.getenv('GITHUB_SHA') is not None or
+                    not hasattr(o3d.t.io, 'RSBagReader'),
+                    reason="Hangs in Github Actions, but succeeds locally or "
+                    "not built with librealsense")
 def test_RSBagReader():
 
     shutil.unpack_archive(test_data_dir +
@@ -80,7 +82,6 @@ def test_RSBagReader():
     n_frames = 0
     while not bag_reader.is_eof():
         n_frames = n_frames + 1
-        print(im_rgbd)
         im_rgbd = bag_reader.next_frame()
 
     bag_reader.close()
@@ -102,7 +103,8 @@ def test_RSBagReader():
     }.issubset(os.listdir('L515_test_s/color'))
 
     shutil.rmtree("L515_test_s")
-    # os.remove("L515_test_s.bag")  # Permission error in Windows
+    if os.name != 'nt':  # Permission error in Windows
+        os.remove("L515_test_s.bag")
 
 
 # Test recording from a RealSense camera, if one is connected
@@ -118,8 +120,8 @@ def test_RealSenseSensor():
         rs_cam.start_capture(True)  # true: start recording with capture
         im_rgbd = rs_cam.capture_frame(True,
                                        True)  # wait for frames and align them
-        assert im_rgbd.depth.rows == im_rgbd.color.rows
-        assert im_rgbd.depth.columns == im_rgbd.color.columns
+        assert im_rgbd.depth.rows == im_rgbd.color.rows > 0
+        assert im_rgbd.depth.columns == im_rgbd.color.columns > 0
         rs_cam.stop_capture()
         assert os.path.exists(bag_filename)
         os.remove(bag_filename)

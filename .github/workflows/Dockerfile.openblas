@@ -61,13 +61,12 @@ RUN ln -s /usr/bin/python3 /usr/local/bin/python \
 
 # Python dependencies
 RUN python -m pip install -U \
-    pip=="20.2.4" \
+    pip=="21.1.1" \
     wheel=="0.35.1" \
     setuptools=="50.3.2" \
     yapf=="0.30.0" \
     pytest=="6.0.1" \
-    scipy=="1.5.4" \
-    wheel=="0.35.1"
+    scipy=="1.5.4"
 
 # CMake
 # PWD is /, camke will be installed to /root/${CMAKE_VER}/bin/cmake
@@ -105,6 +104,7 @@ RUN mkdir build \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=ON \
     -DBUILD_GUI=ON \
+    -DBUILD_WEBRTC=OFF \
     -DCMAKE_C_COMPILER=gcc \
     -DCMAKE_CXX_COMPILER=g++ \
     -DBUILD_FILAMENT_FROM_SOURCE=ON \

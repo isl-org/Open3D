@@ -219,5 +219,13 @@ TEST(UniformTSDFVolume, DISABLED_GetNormalAt) {}
 
 TEST(UniformTSDFVolume, DISABLED_GetTSDFAt) {}
 
+TEST(UniformTSDFVolume, DISABLED_ExtractVolumeTSDF) {}
+
+TEST(UniformTSDFVolume, DISABLED_ExtractVolumeColor) {}
+
+TEST(UniformTSDFVolume, DISABLED_InjectVolumeTSDF) {}
+
+TEST(UniformTSDFVolume, DISABLED_InjectVolumeColor) {}
+
 }  // namespace tests
 }  // namespace open3d

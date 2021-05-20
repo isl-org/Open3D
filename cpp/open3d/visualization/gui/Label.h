@@ -47,8 +47,8 @@ public:
     Color GetTextColor() const;
     void SetTextColor(const Color& color);
 
-    FontStyle GetFontStyle() const;
-    void SetFontStyle(const FontStyle style);
+    FontId GetFontId() const;
+    void SetFontId(const FontId font_id);
 
     Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
