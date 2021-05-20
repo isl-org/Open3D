@@ -130,6 +130,9 @@ void GLFWWindowSystem::Initialize() {
     MacTransformIntoApp();
 
     glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);  // no auto-create menubar
+    // Don't change directory to resource directory in bundle (which is awkward
+    // if using a framework version of Python).
+    glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
     glfwInit();
 }
