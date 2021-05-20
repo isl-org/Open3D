@@ -53,7 +53,7 @@ public:
 private:
     Scene* scene_;
     Camera* camera_;
-    bool skybox_is_normally_on_ = false;
+    bool skybox_currently_visible_ = false;
     Camera::Transform ibl_rotation_at_mouse_down_;
 
     void ClearUI();

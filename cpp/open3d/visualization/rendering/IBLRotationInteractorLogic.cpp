@@ -58,8 +58,8 @@ void IBLRotationInteractorLogic::StartMouseDrag() {
     auto identity = Camera::Transform::Identity();
     Super::SetMouseDownInfo(identity, {0.0f, 0.0f, 0.0f});
 
-    skybox_is_normally_on_ = scene_->GetSkyboxVisible();
-    if (!skybox_is_normally_on_) {
+    skybox_currently_visible_ = scene_->GetSkyboxVisible();
+    if (!skybox_currently_visible_) {
         scene_->ShowSkybox(true);
     }
 
@@ -72,7 +72,7 @@ void IBLRotationInteractorLogic::UpdateMouseDragUI() {}
 
 void IBLRotationInteractorLogic::EndMouseDrag() {
     ClearUI();
-    if (!skybox_is_normally_on_) {
+    if (!skybox_currently_visible_) {
         scene_->ShowSkybox(false);
     }
 }
