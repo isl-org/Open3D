@@ -3,7 +3,7 @@ include(ExternalProject)
 if (APPLE)
     set(WEBRTC_URL
         https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_60e6748_macos.tar.gz)
-    set(WEBRTC_SHA256 09f750f11fe4ad5a1309aa7558e9b59e3e780096adf8dcf1e4aa1d526561058e)
+    set(WEBRTC_SHA256 32c6b494fb3e353598d6e87d0d5f498399764a014997ae2162c4b5f0bb79448f)
 elseif (WIN32)
     set(WEBRTC_URL
         https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_60e6748_win.zip)

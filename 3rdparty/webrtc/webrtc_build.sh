@@ -130,6 +130,6 @@ build_webrtc() {
     fi
     popd # PWD=Open3D
     webrtc_package=$(ls webrtc_*.tar.gz)
-    cmake -E sha256sum "$webrtc_package" | tee "${webrtc_package%%.*}_checksum.txt"
+    cmake -E sha256sum "$webrtc_package" | tee "checksum_${webrtc_package%%.*}.txt"
     ls -alh "$webrtc_package"
 }

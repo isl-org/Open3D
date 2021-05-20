@@ -42,7 +42,7 @@ cmake_dependent_option(
        "NOT BUILD_SHARED_LIBS"                                               OFF)
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
-if(UNIX AND NOT LINUX_AARCH64 OR MSVC)
+if(UNIX AND NOT LINUX_AARCH64)
     cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
 else()
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
