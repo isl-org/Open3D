@@ -420,7 +420,6 @@ struct GuiVisualizer::Impl {
         } else {
             scene_wgt_->GetScene()->ShowSkybox(false);
         }
-        scene_wgt_->ShowSkybox(settings_.model_.GetShowSkybox());
 
         scene_wgt_->GetScene()->ShowAxes(settings_.model_.GetShowAxes());
         scene_wgt_->GetScene()->ShowGroundPlane(
@@ -667,7 +666,6 @@ void GuiVisualizer::Init() {
     auto ibl_path = resource_path + "/default";
     auto *render_scene = impl_->scene_wgt_->GetScene()->GetScene();
     render_scene->SetIndirectLight(ibl_path);
-    impl_->scene_wgt_->ShowSkybox(settings.model_.GetShowSkybox());
 
     // Create materials
     impl_->InitializeMaterials(GetRenderer(), resource_path);

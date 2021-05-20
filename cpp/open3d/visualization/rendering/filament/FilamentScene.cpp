@@ -1623,6 +1623,10 @@ void FilamentScene::ShowSkybox(bool show) {
     }
 }
 
+bool FilamentScene::GetSkyboxVisible() const {
+    return (scene_->getSkybox() != nullptr);
+}
+
 void FilamentScene::CreateBackgroundGeometry() {
     if (!HasGeometry(kBackgroundName)) {
         geometry::TriangleMesh quad;

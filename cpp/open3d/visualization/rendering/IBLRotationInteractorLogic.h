@@ -44,8 +44,6 @@ public:
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
 
-    void ShowSkybox(bool is_on);
-
     void StartMouseDrag();
     void UpdateMouseDragUI();
     void EndMouseDrag();
