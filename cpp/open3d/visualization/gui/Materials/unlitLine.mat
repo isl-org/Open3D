@@ -22,16 +22,15 @@ vertex {
         float4 resolution = getResolution();
         float aspect = resolution.x / resolution.y;
         float4 pos = getPosition();
+        // next.xyz is the position of the end of the line used to compute the direction of
+        // the line.
+        // next.w is the sign of the direction perpendicular to the line along which the
+        // vertex will be moved to create the line's width.
         float4 next = getCustom0();
-        // next.w encodes the sign of the direction along the line perpendicular
-        // to the direction of the line itself (that it, the thickness direction)
-        float thickness_sign = next.w;  // 1.0 or -1.0, along
-        // Fix next.w so that it is a proper coordinate in the model space
-        next.w = 1.0;
 
         // Project current vertex and next vertex to screen
         float4 world_pos = getWorldFromModelMatrix() * pos;
-        float4 world_pos_next = getWorldFromModelMatrix() * next;
+        float4 world_pos_next = getWorldFromModelMatrix() * float4(next.xyz, 1.0);
         float4 projected_pos = getClipFromWorldMatrix() * world_pos;
         float4 projected_next = getClipFromWorldMatrix() * world_pos_next;
         float2 screen_pos = projected_pos.xy / projected_pos.w;
@@ -45,7 +44,7 @@ vertex {
         normal.xy *= projected_pos.w;
 
         // Now project back to World space since Filament requires it for 'world' vertexDomain
-        projected_pos.xy += normal.xy * thickness_sign;
+        projected_pos.xy += normal.xy * next.w;
         material.worldPosition = getWorldFromClipMatrix() * projected_pos;
     }
 }
