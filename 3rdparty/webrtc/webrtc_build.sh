@@ -123,15 +123,13 @@ build_webrtc() {
         tar -czf \
             "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.tar.gz" \
             webrtc_release
-        cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
-            tee checksum_linux_cxx-abi-${GLIBCXX_USE_CXX11_ABI}.txt
     elif [[ $(uname -s) == 'Darwin' ]]; then
         tar -czf \
             "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz" \
             webrtc_release
-        cmake -E sha256sum webrtc_${WEBRTC_COMMIT_SHORT}_*.tar.gz |
-            tee checksum_macos.txt
     fi
-    ls -alh webrtc_*.tar.gz
     popd # PWD=Open3D
+    webrtc_package=$(ls webrtc_*.tar.gz)
+    cmake -E sha256sum "$webrtc_package" | tee "${webrtc_package%%.*}_checksum.txt"
+    ls -alh "$webrtc_package"
 }

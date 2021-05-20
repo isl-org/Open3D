@@ -94,7 +94,9 @@ ExternalProject_Add_Step(ext_webrtc build_webrtc
 
 # libwebrtc_extra.a
 add_library(webrtc_extra STATIC ${EXTRA_WEBRTC_OBJS})
-set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES 
+	GENERATED TRUE
+	EXTERNAL_OBJECT TRUE)
 add_dependencies(webrtc_extra ext_webrtc)
 set_target_properties(webrtc_extra PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(webrtc_extra PROPERTIES

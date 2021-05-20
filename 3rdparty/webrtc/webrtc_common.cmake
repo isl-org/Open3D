@@ -85,10 +85,10 @@ if(NOT WEBRTC_NINJA_ROOT)
     message(FATAL_ERROR "Please define WEBRTC_NINJA_ROOT before including webrtc_common.cmake")
 endif()
 set(EXTRA_WEBRTC_OBJS
-    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_reader${CMAKE_C_OUTPUT_EXTENSION}
-    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_value${CMAKE_C_OUTPUT_EXTENSION}
-    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_writer${CMAKE_C_OUTPUT_EXTENSION}
-    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/stun_server${CMAKE_C_OUTPUT_EXTENSION}
-    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/turn_server${CMAKE_C_OUTPUT_EXTENSION}
-    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_json/json${CMAKE_C_OUTPUT_EXTENSION}
-)
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_reader${CMAKE_CXX_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_value${CMAKE_CXX_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/third_party/jsoncpp/jsoncpp/json_writer${CMAKE_CXX_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/stun_server${CMAKE_CXX_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/p2p/p2p_server_utils/turn_server${CMAKE_CXX_OUTPUT_EXTENSION}
+    ${WEBRTC_NINJA_ROOT}/obj/rtc_base/rtc_json/json${CMAKE_CXX_OUTPUT_EXTENSION}
+    )

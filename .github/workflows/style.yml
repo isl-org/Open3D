@@ -98,6 +98,11 @@ jobs:
           Get-PSDrive
           mkdir "$env:WORK_DIR"
 
+      - name: Setup PATH for Visual Studio # Required for Ninja
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Download WebRTC sources
         shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
@@ -130,26 +135,41 @@ jobs:
           cp "$env:OPEN3D_DIR/3rdparty/webrtc/CMakeLists.txt" webrtc/
           cp "$env:OPEN3D_DIR/3rdparty/webrtc/webrtc_common.cmake" webrtc/
 
-      - name: Build WebRTC
+      - name: Build WebRTC (Release)
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
           mkdir webrtc/build
           cd webrtc/build
-          cmake -G "Visual Studio 16 2019" -A x64 `
-            -DCMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release ..
-          cmake --build . --parallel ${{ env.NPROC }} --config  `
-            ${{ matrix.CONFIG }} --target INSTALL
+          cmake -G Ninja -D CMAKE_BUILD_TYPE=Release `
+                -D CMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release/Release `
+                ..
+          ninja install
+          echo "Cleanup build folder for next config build"
+          cd ..
+          rm -rf build
+
+      - name: Build WebRTC (Debug)
+        working-directory: ${{ env.WORK_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
+          mkdir webrtc/build
+          cd webrtc/build
+          cmake -G Ninja -D CMAKE_BUILD_TYPE=Debug `
+                -D CMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release/Debug `
+                ..
+          ninja install
 
       - name: Package WebRTC
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           $env:WEBRTC_COMMIT_SHORT = (git -C webrtc/src rev-parse --short=7 HEAD)
-          cmake -E tar cv webrtc_${env:WEBRTC_COMMIT_SHORT}_win_${{ matrix.CONFIG }}.zip`
+          cmake -E tar cv webrtc_${env:WEBRTC_COMMIT_SHORT}_win.zip`
             --format=zip -- webrtc_release
-          cmake -E sha256sum webrtc_*.tar.gz | Tee-Object -FilePath checksum_${{ matrix.CONFIG }}.txt
+          cmake -E sha256sum webrtc_*.zip | Tee-Object -FilePath checksum_win.txt
 
       - name: Upload WebRTC
         uses: actions/upload-artifact@v2

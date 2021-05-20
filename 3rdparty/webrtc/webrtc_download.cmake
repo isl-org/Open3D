@@ -2,9 +2,12 @@ include(ExternalProject)
 
 if (APPLE)
     set(WEBRTC_URL
-        ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/webrtc_60e6748_macos.tar.gz)
+        https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_60e6748_macos.tar.gz)
     set(WEBRTC_SHA256 09f750f11fe4ad5a1309aa7558e9b59e3e780096adf8dcf1e4aa1d526561058e)
 elseif (WIN32)
+    set(WEBRTC_URL
+        https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_60e6748_win.zip)
+    set(WEBRTC_SHA256 5885f079e10bab26ded223f958f51e761c2a7f8e7ce72f259ef47d0243ff2b1d)
 else()  # Linux
     if(GLIBCXX_USE_CXX11_ABI)
         set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc-v3/webrtc_60e6748_cxx-abi-1.tar.gz)
@@ -28,6 +31,9 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_webrtc SOURCE_DIR)
+if (WIN32)
+    set(SOURCE_DIR "${SOURCE_DIR}/$<CONFIG>/")
+endif()
 set(LIBPNG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(LIBPNG_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(LIBPNG_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
