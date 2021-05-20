@@ -71,10 +71,6 @@ jobs:
   Windows:
     # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        CONFIG: [Release, Debug]
     env:
       WORK_DIR: "C:\\WebRTC"  # Not enough space in D:
       OPEN3D_DIR: "D:\\a\\open3d\\open3d"
@@ -148,7 +144,7 @@ jobs:
           ninja install
           echo "Cleanup build folder for next config build"
           cd ..
-          rm -rf build
+          rm -r build
 
       - name: Build WebRTC (Debug)
         working-directory: ${{ env.WORK_DIR }}
