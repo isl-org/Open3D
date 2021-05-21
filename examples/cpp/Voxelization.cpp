@@ -38,26 +38,35 @@ void PrintVoxelGridInformation(const geometry::VoxelGrid& voxel_grid) {
     return;
 }
 
-int main(int argc, char** args) {
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > Voxelization [pointcloud_filename] [voxel_filename_ply]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char* argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    if (argc < 3) {
-        PrintOpen3DVersion();
-        // clang-format off
-        utility::LogInfo("Usage:");
-        utility::LogInfo("    > Voxelization [pointcloud_filename] [voxel_filename_ply]");
-        // clang-format on
+
+    if (argc != 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
-    auto pcd = io::CreatePointCloudFromFile(args[1]);
+    auto pcd = io::CreatePointCloudFromFile(argv[1]);
     auto voxel = geometry::VoxelGrid::CreateFromPointCloud(*pcd, 0.05);
     PrintVoxelGridInformation(*voxel);
     visualization::DrawGeometries({pcd, voxel});
-    io::WriteVoxelGrid(args[2], *voxel, true);
+    io::WriteVoxelGrid(argv[2], *voxel, true);
 
-    auto voxel_read = io::CreateVoxelGridFromFile(args[2]);
+    auto voxel_read = io::CreateVoxelGridFromFile(argv[2]);
     PrintVoxelGridInformation(*voxel_read);
     visualization::DrawGeometries({pcd, voxel_read});
 }

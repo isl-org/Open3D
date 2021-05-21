@@ -802,17 +802,22 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("     VoxelHashingGUI [dataset_path]");
-    utility::LogInfo("     Given a sequence of RGBD images, reconstruct point cloud from color and depth images");
-    utility::LogInfo("     [options]");
-    utility::LogInfo("     --voxel_size [=0.0058 (m)]");
-    utility::LogInfo("     --intrinsic_path [camera_intrinsic.json]");
-    utility::LogInfo("     --device [CUDA:0]");
+    utility::LogInfo("    > VoxelHashingGUI [dataset_path]");
+    utility::LogInfo("      Given a sequence of RGBD images, reconstruct point cloud from color and depth images");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --voxel_size [=0.0058 (m)]");
+    utility::LogInfo("    --intrinsic_path [camera_intrinsic.json]");
+    utility::LogInfo("    --device [CUDA:0]");
     // clang-format on
+    utility::LogInfo("");
 }
 
-int main(int argc, char** argv) {
-    if (argc < 2) {
+int main(int argc, char* argv[]) {
+    using namespace open3d;
+
+    if (argc < 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
