@@ -312,8 +312,7 @@ class PeerConnectionManager {
         virtual void OnAddStream(
                 rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
             utility::LogDebug("[{}] GetVideoTracks().size(): {}.",
-                              __FN__,
-                              stream->GetVideoTracks().size());
+                              __FN__, stream->GetVideoTracks().size());
             webrtc::VideoTrackVector videoTracks = stream->GetVideoTracks();
             if (videoTracks.size() > 0) {
                 video_sink_.reset(new VideoSink(videoTracks.at(0)));

@@ -163,7 +163,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $env:WEBRTC_COMMIT_SHORT = (git -C webrtc/src rev-parse --short=7 HEAD)
-          cmake -E tar cv webrtc_${env:WEBRTC_COMMIT_SHORT}_win.zip`
+          cmake -E tar cv webrtc_${env:WEBRTC_COMMIT_SHORT}_win.zip `
             --format=zip -- webrtc_release
           cmake -E sha256sum webrtc_*.zip | Tee-Object -FilePath checksum_win.txt
 
