@@ -1563,6 +1563,27 @@ void pybind_gui_classes(py::module &m) {
                           "Set the font using the FontId returned from "
                           "Application.add_font()");
 
+    // ---- ScrollableVert ----
+    py::class_<ScrollableVert, UnownedPointer<ScrollableVert>, Vert> slayout(
+            m, "ScrollableVert", "Scrollable vertical layout");
+    slayout.def(py::init([](int spacing, const Margins &margins) {
+                    return new ScrollableVert(spacing, margins);
+                }),
+                "spacing"_a = 0, "margins"_a = Margins(),
+                "Creates a layout that arranges widgets vertically, top to "
+                "bottom, making their width equal to the layout's width. First "
+                "argument is the spacing between widgets, the second is the "
+                "margins. Both default to 0.")
+            .def(py::init([](float spacing, const Margins &margins) {
+                     return new ScrollableVert(int(std::round(spacing)),
+                                               margins);
+                 }),
+                 "spacing"_a = 0.0f, "margins"_a = Margins(),
+                 "Creates a layout that arranges widgets vertically, top to "
+                 "bottom, making their width equal to the layout's width. "
+                 "First argument is the spacing between widgets, the second "
+                 "is the margins. Both default to 0.");
+
     // ---- Horiz ----
     py::class_<Horiz, UnownedPointer<Horiz>, Layout1D> hlayout(
             m, "Horiz", "Horizontal layout");

@@ -179,6 +179,25 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
+/// This a vertical layout that scrolls if it is smaller than its contents
+class ScrollableVert : public Vert {
+    using Super = Vert;
+
+public:
+    ScrollableVert();
+    ScrollableVert(int spacing, const Margins& margins = Margins());
+    ScrollableVert(int spacing,
+                   const Margins& margins,
+                   const std::vector<std::shared_ptr<Widget>>& children);
+    virtual ~ScrollableVert();
+
+    Widget::DrawResult Draw(const DrawContext& context) override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
 /// Lays out widgets horizontally.
 class Horiz : public Layout1D {
 public:
