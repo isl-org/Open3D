@@ -60,6 +60,12 @@ public:
 
     static int InitGLFW() {
         GLFWEnvironmentSingleton::GetInstance();
+#if defined(__APPLE__)
+        // On macOS, GLFW changes the directory to the resource directory,
+        // which will cause an unexpected change of directory if using a
+        // framework build version of Python.
+        glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
+#endif
         return glfwInit();
     }
 

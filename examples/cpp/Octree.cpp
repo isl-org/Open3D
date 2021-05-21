@@ -63,20 +63,29 @@ bool f_traverse(const std::shared_ptr<geometry::OctreeNode>& node,
     return false;
 }
 
-int main(int argc, char** args) {
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > Octree [pointcloud_filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char* argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    if (argc < 2) {
-        PrintOpen3DVersion();
-        // clang-format off
-        utility::LogInfo("Usage:");
-        utility::LogInfo("    > Octree [pointcloud_filename]");
-        // clang-format on
+
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
-    auto pcd = io::CreatePointCloudFromFile(args[1]);
+    auto pcd = io::CreatePointCloudFromFile(argv[1]);
     constexpr int max_depth = 3;
     auto octree = std::make_shared<geometry::Octree>(max_depth);
     octree->ConvertFromPointCloud(*pcd);

@@ -309,17 +309,29 @@ void Layout1D::Layout(const LayoutContext& context) {
                 }
             }
         }
-    } else if (num_grow > 0 && frame_size < total) {
-        auto total_excess = total - (frame_size - impl_->margins_.GetVert() -
-                                     total_spacing);
-        auto excess = total_excess / num_grow;
-        auto leftover = total_excess - excess * num_stretch;
-        for (size_t i = 0; i < major.size(); ++i) {
-            if (major[i] >= Widget::DIM_GROW) {
-                major[i] -= excess;
-                if (leftover > 0) {
-                    major[i] -= 1;
-                    leftover -= 1;
+    } else if (frame_size < total) {
+        int n_shrinkable = num_grow;
+        if (impl_->dir_ == VERT) {
+            for (auto child : GetChildren()) {
+                if (std::dynamic_pointer_cast<ScrollableVert>(child)) {
+                    n_shrinkable++;
+                }
+            }
+        }
+        if (n_shrinkable > 0) {
+            auto total_excess = total - (frame_size - total_spacing);
+            auto excess = total_excess / n_shrinkable;
+            auto leftover = total_excess - excess * num_stretch;
+            for (size_t i = 0; i < major.size(); ++i) {
+                if (major[i] >= Widget::DIM_GROW ||
+                    (impl_->dir_ == VERT &&
+                     std::dynamic_pointer_cast<ScrollableVert>(
+                             GetChildren()[i]) != nullptr)) {
+                    major[i] -= excess;
+                    if (leftover > 0) {
+                        major[i] -= 1;
+                        leftover -= 1;
+                    }
                 }
             }
         }
@@ -330,7 +342,9 @@ void Layout1D::Layout(const LayoutContext& context) {
     if (impl_->dir_ == VERT) {
         int minor = frame.width - impl_->margins_.GetHoriz();
         for (size_t i = 0; i < children.size(); ++i) {
-            children[i]->SetFrame(Rect(x, y, minor, major[i]));
+            int h = std::max(children[i]->CalcMinimumSize(context).height,
+                             major[i]);
+            children[i]->SetFrame(Rect(x, y, minor, h));
             y += major[i] + impl_->spacing_;
         }
     } else {
@@ -443,7 +457,8 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     bool was_open = impl_->is_open_;
 
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
     ImGui::PushItemWidth(float(frame.width));
 
     auto padding = ImGui::GetStyle().FramePadding;
@@ -474,6 +489,49 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     }
     return result;
 }
+
+// ----------------------------------------------------------------------------
+struct ScrollableVert::Impl {
+    ImGuiID id_;
+};
+
+ScrollableVert::ScrollableVert() : ScrollableVert(0, Margins(), {}) {}
+
+ScrollableVert::ScrollableVert(int spacing /*= 0*/,
+                               const Margins& margins /*= Margins()*/)
+    : ScrollableVert(spacing, margins, {}) {}
+
+ScrollableVert::ScrollableVert(
+        int spacing,
+        const Margins& margins,
+        const std::vector<std::shared_ptr<Widget>>& children)
+    : Vert(spacing, margins, children), impl_(new ScrollableVert::Impl) {
+    static int g_next_id = 1;
+    impl_->id_ = g_next_id++;
+}
+
+ScrollableVert::~ScrollableVert() {}
+
+Widget::DrawResult ScrollableVert::Draw(const DrawContext& context) {
+    auto& frame = GetFrame();
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,
+                          ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+    ImGui::PushStyleColor(ImGuiCol_Border,
+                          colorToImgui(Color(0.0f, 0.0f, 0.0f, 0.0f)));
+    ImGui::PushStyleColor(ImGuiCol_BorderShadow,
+                          colorToImgui(Color(0.0f, 0.0f, 0.0f, 0.0f)));
+
+    ImGui::BeginChildFrame(impl_->id_, ImVec2(frame.width, frame.height));
+    auto result = Super::Draw(context);
+    ImGui::EndChildFrame();
+
+    ImGui::PopStyleColor(3);
+
+    return result;
+}
+
 // ----------------------------------------------------------------------------
 std::shared_ptr<Layout1D::Fixed> Horiz::MakeFixed(int size) {
     return std::make_shared<Layout1D::Fixed>(size, HORIZ);

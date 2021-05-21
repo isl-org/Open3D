@@ -97,7 +97,8 @@ void TabControl::Layout(const LayoutContext& context) {
 
 TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();

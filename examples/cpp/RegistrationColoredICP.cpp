@@ -32,17 +32,6 @@
 
 using namespace open3d;
 
-void PrintHelp() {
-    using namespace open3d;
-
-    PrintOpen3DVersion();
-    // clang-format off
-    utility::LogInfo("Usage:");
-    utility::LogInfo(">    RegistrationColoredICP source_pcd target_pcd [--visualize]");
-    // clang-format on
-    utility::LogInfo("");
-}
-
 void VisualizeRegistration(const open3d::geometry::PointCloud &source,
                            const open3d::geometry::PointCloud &target,
                            const Eigen::Matrix4d &Transformation) {
@@ -56,12 +45,24 @@ void VisualizeRegistration(const open3d::geometry::PointCloud &source,
                                   "Registration result");
 }
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RegistrationColoredICP source_pcd target_pcd [--visualize]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 3) {
+    if (argc < 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }

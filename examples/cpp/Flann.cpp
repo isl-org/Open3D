@@ -30,14 +30,23 @@
 
 #include "open3d/Open3D.h"
 
-int main(int argc, char **argv) {
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > Flann [filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char *argv[]) {
     using namespace open3d;
     using namespace flann;
-
-    if (argc < 2) {
-        PrintOpen3DVersion();
-        utility::LogInfo("Usage:");
-        utility::LogInfo("    > Flann [filename]");
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 

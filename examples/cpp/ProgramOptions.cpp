@@ -28,16 +28,20 @@
 
 void PrintHelp() {
     using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
-    utility::LogInfo("Usage :");
-    utility::LogInfo("    > ProgramOptions [--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > ProgramOptions [-h|--help] [--switch] [--int i] [--double d] [--string str] [--vector (x,y,z,...)]");
     // clang-format on
+    utility::LogInfo("");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     using namespace open3d;
-    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help")) {
+
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
@@ -55,7 +59,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> strs = utility::SplitString(
             utility::GetProgramOptionAsString(argc, argv, "--string"), ",.",
             true);
-    for (auto &str : strs) {
+    for (auto& str : strs) {
         utility::LogInfo("\tSubstring : {}", str);
     }
     Eigen::VectorXd vec =
