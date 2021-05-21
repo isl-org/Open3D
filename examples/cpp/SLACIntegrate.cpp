@@ -36,26 +36,32 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    SLACIntegrate [dataset_folder] [slac_folder] [options]");
-    utility::LogInfo("     --color_subfolder [default: color, rgb, image]");
-    utility::LogInfo("     --depth_subfolder [default: depth]");
-    utility::LogInfo("     --voxel_size [=0.0058 (m)]");
-    utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
-    utility::LogInfo("     --block_count [=40000]");
-    utility::LogInfo("     --depth_scale [=1000.0]");
-    utility::LogInfo("     --max_depth [=3.0]");
-    utility::LogInfo("     --sdf_trunc [=0.04]");
-    utility::LogInfo("     --device [CPU:0]");
-    utility::LogInfo("     --mesh");
-    utility::LogInfo("     --pointcloud");
-    utility::LogInfo("--debug");
+    utility::LogInfo("    > SLACIntegrate [dataset_folder] [slac_folder] [options]");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --color_subfolder [default: color, rgb, image]");
+    utility::LogInfo("    --depth_subfolder [default: depth]");
+    utility::LogInfo("    --voxel_size [=0.0058 (m)]");
+    utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
+    utility::LogInfo("    --block_count [=40000]");
+    utility::LogInfo("    --depth_scale [=1000.0]");
+    utility::LogInfo("    --max_depth [=3.0]");
+    utility::LogInfo("    --sdf_trunc [=0.04]");
+    utility::LogInfo("    --device [CPU:0]");
+    utility::LogInfo("    --mesh");
+    utility::LogInfo("    --pointcloud");
+    utility::LogInfo("    --debug");
     // clang-format on
     utility::LogInfo("");
 }
 
-int main(int argc, char** argv) {
-    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc < 3) {
+int main(int argc, char* argv[]) {
+    using namespace open3d;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc < 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }

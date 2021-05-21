@@ -28,14 +28,6 @@
 
 #include "open3d/Open3D.h"
 
-void PrintHelp() {
-    using namespace open3d;
-    utility::LogInfo("Usage :");
-    utility::LogInfo("    > TriangleMesh sphere");
-    utility::LogInfo("    > TriangleMesh merge <file1> <file2>");
-    utility::LogInfo("    > TriangleMesh normal <file1> <file2>");
-}
-
 void PaintMesh(open3d::geometry::TriangleMesh &mesh,
                const Eigen::Vector3d &color) {
     mesh.vertex_colors_.resize(mesh.vertices_.size());
@@ -44,12 +36,26 @@ void PaintMesh(open3d::geometry::TriangleMesh &mesh,
     }
 }
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > TriangleMesh sphere");
+    utility::LogInfo("    > TriangleMesh merge [file1] [file2]");
+    utility::LogInfo("    > TriangleMesh normal [file1] [file2]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 2) {
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }

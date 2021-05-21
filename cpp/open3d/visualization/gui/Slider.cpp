@@ -100,7 +100,8 @@ Size Slider::CalcPreferredSize(const LayoutContext& context,
 
 Widget::DrawResult Slider::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     auto new_value = impl_->value_;
     DrawImGuiPushEnabledState();

@@ -707,11 +707,26 @@ private:
     core::Dtype dtype_;
 };
 
-//------------------------------------------------------------------------------
-int main(int argc, const char* argv[]) {
-    if (argc < 3) {
-        utility::LogError("Expected [device] and [config file path] as input");
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > TICPOdometry [device] [config_file_path]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char* argv[]) {
+    using namespace open3d;
+
+    if (argc != 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
     }
+
     const std::string path_config = std::string(argv[2]);
 
     device_string = std::string(argv[1]);
@@ -719,7 +734,7 @@ int main(int argc, const char* argv[]) {
     widget_string = widget_string + device_string;
 
     auto& app = gui::Application::GetInstance();
-    app.Initialize(argc, argv);
+    app.Initialize(argc, (const char**)argv);
     app.AddWindow(std::make_shared<ExampleWindow>(path_config,
                                                   core::Device(device_string)));
     app.Run();

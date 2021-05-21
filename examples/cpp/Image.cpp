@@ -28,24 +28,32 @@
 
 #include "open3d/Open3D.h"
 
-int main(int argc, char **argv) {
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > Image [image filename] [depth filename]");
+    utility::LogInfo("    The program will :");
+    utility::LogInfo("    1) Read 8bit RGB and 16bit depth image");
+    utility::LogInfo("    2) Convert RGB image to single channel float image");
+    utility::LogInfo("    3) 3x3, 5x5, 7x7 Gaussian filters are applied");
+    utility::LogInfo("    4) 3x3 Sobel filter for x-and-y-directions are applied");
+    utility::LogInfo("    5) Make image pyramid that includes Gaussian blur and downsampling");
+    utility::LogInfo("    6) Will save all the layers in the image pyramid");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char *argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc != 3) {
-        PrintOpen3DVersion();
-        // clang-format off
-        utility::LogInfo("Usage:");
-        utility::LogInfo("    > Image [image filename] [depth filename]");
-        utility::LogInfo("    The program will :");
-        utility::LogInfo("    1) Read 8bit RGB and 16bit depth image");
-        utility::LogInfo("    2) Convert RGB image to single channel float image");
-        utility::LogInfo("    3) 3x3, 5x5, 7x7 Gaussian filters are applied");
-        utility::LogInfo("    4) 3x3 Sobel filter for x-and-y-directions are applied");
-        utility::LogInfo("    5) Make image pyramid that includes Gaussian blur and downsampling");
-        utility::LogInfo("    6) Will save all the layers in the image pyramid");
-        // clang-format on
+    if (argc != 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 

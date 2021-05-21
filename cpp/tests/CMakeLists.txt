@@ -22,6 +22,7 @@ set(UNIT_TEST_SOURCE_FILES
     core/Tensor.cpp
     core/SizeVector.cpp
     core/EigenConverter.cpp
+    geometry/AxisAlignedBoundingBox.cpp
     geometry/PointCloud.cpp
     geometry/TriangleMesh.cpp
     geometry/VoxelGrid.cpp

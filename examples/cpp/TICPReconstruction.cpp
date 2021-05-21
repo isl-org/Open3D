@@ -844,19 +844,38 @@ private:
     t::pipelines::registration::RegistrationResult result_;
 };
 
-//------------------------------------------------------------------------------
-int main(int argc, const char* argv[]) {
-    if (argc < 3) {
-        utility::LogError("Expected dataset path as input");
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > TICPReconstruction [device] [config_file_path]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char* argv[]) {
+    using namespace open3d;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc != 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
     }
+
     const std::string path_config = std::string(argv[2]);
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     auto& app = gui::Application::GetInstance();
+
     app.Initialize(argc, argv);
     app.AddWindow(std::make_shared<ReconstructionWindow>(
             path_config, core::Device(argv[1])));
+
     app.Run();
     return 0;
 }

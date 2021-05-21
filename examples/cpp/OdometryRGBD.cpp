@@ -35,13 +35,14 @@ void PrintHelp(char* argv[]) {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    OdometryRGBD [color_source] [depth_source] [color_target] [depth_target] [options]");
-    utility::LogInfo("     Given RGBD image pair, estimate 6D odometry.");
-    utility::LogInfo("     [options]");
-    utility::LogInfo("     --camera_intrinsic [intrinsic_path]");
-    utility::LogInfo("     --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)");
-    utility::LogInfo("     --verbose : indicate this to display detailed information");
-    utility::LogInfo("     --hybrid : compute odometry using hybrid objective");
+    utility::LogInfo("    > OdometryRGBD [color_source] [depth_source] [color_target] [depth_target] [options]");
+    utility::LogInfo("      Given RGBD image pair, estimate 6D odometry.");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --camera_intrinsic [intrinsic_path]");
+    utility::LogInfo("    --rgbd_type [number] (0:Redwood, 1:TUM, 2:SUN, 3:NYU)");
+    utility::LogInfo("    --verbose : indicate this to display detailed information");
+    utility::LogInfo("    --hybrid : compute odometry using hybrid objective");
     // clang-NewPormat on
     utility::LogInfo("");
 }

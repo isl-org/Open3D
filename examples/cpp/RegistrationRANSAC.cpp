@@ -57,16 +57,25 @@ void VisualizeRegistration(const open3d::geometry::PointCloud &source,
                                   "Registration result");
 }
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RegistrationRANSAC source_pcd target_pcd [--method=feature_matching] [--mutual_filter] [--visualize]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 3 || argc > 7) {
-        utility::LogInfo(
-                "Usage : RegistrationRANSAC path_to_first_point_cloud "
-                "path_to_second_point_cloud [--method=feature_matching] "
-                "[--mutual_filter] [--visualize]");
+    if (argc < 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
@@ -85,7 +94,8 @@ int main(int argc, char *argv[]) {
     }
     if (method != kMethodFeature && method != kMethodCorres) {
         utility::LogInfo(
-                "--method must be \'feature_matching\' or \'correspondence\'");
+                "--method must be \'feature_matching\' or "
+                "\'correspondence\'");
         return 1;
     }
 
