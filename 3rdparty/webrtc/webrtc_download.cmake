@@ -7,7 +7,7 @@ if (APPLE)
 elseif (WIN32)
     set(WEBRTC_URL
         https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_60e6748_win.zip)
-    set(WEBRTC_SHA256 5885f079e10bab26ded223f958f51e761c2a7f8e7ce72f259ef47d0243ff2b1d)
+    set(WEBRTC_SHA256 0c40a19ea4feb77edca31392f3ac117097b8811dc4e3da938c1a74b76f59cd01)
 else()  # Linux
     if(GLIBCXX_USE_CXX11_ABI)
         set(WEBRTC_URL https://github.com/intel-isl/open3d_downloads/releases/download/webrtc-v3/webrtc_60e6748_cxx-abi-1.tar.gz)
