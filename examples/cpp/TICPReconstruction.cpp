@@ -715,15 +715,17 @@ private:
         }
 
         // Color may be of Float32, Float64, UInt8, UInt16.
-        // We only want to convert color of Float64 type to Float32.
         if (source.HasPointColors()) {
+            // UInt8 scale is [0, 255], while Float scale is [0.0, 1.0].
             if (source.GetPointColors().GetDtype() == core::Dtype::UInt8) {
-                source.SetPointColors(
-                        source.GetPointColors().To(dtype_).Div(255.0));
+                source.SetPointColors(source.GetPointColors().To(dtype_).Div(
+                        static_cast<double>(
+                                std::numeric_limits<uint8_t>::max())));
             } else if (source.GetPointColors().GetDtype() ==
                        core::Dtype::UInt16) {
-                source.SetPointColors(
-                        source.GetPointColors().To(dtype_).Div(255.0));
+                source.SetPointColors(source.GetPointColors().To(dtype_).Div(
+                        static_cast<double>(
+                                std::numeric_limits<uint16_t>::max())));
             } else if (source.GetPointColors().GetDtype() ==
                        core::Dtype::Float64) {
                 source.SetPointColors(source.GetPointColors().To(dtype_));
@@ -736,12 +738,14 @@ private:
         }
         if (target.HasPointColors()) {
             if (target.GetPointColors().GetDtype() == core::Dtype::UInt8) {
-                target.SetPointColors(
-                        target.GetPointColors().To(dtype_).Div(255.0));
+                target.SetPointColors(target.GetPointColors().To(dtype_).Div(
+                        static_cast<double>(
+                                std::numeric_limits<uint8_t>::max())));
             } else if (target.GetPointColors().GetDtype() ==
                        core::Dtype::UInt16) {
-                target.SetPointColors(
-                        target.GetPointColors().To(dtype_).Div(255.0));
+                target.SetPointColors(target.GetPointColors().To(dtype_).Div(
+                        static_cast<double>(
+                                std::numeric_limits<uint16_t>::max())));
             } else if (target.GetPointColors().GetDtype() ==
                        core::Dtype::Float64) {
                 target.SetPointColors(target.GetPointColors().To(dtype_));
