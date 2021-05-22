@@ -102,6 +102,7 @@ void PlanarPatch::OrientNormalToAlignWithDirection(
         /* = Eigen::Vector3d(0.0, 0.0, 1.0)*/) {
     if (normal_.dot(orientation_reference) < 0.0) {
         normal_ *= -1.0;
+        dist_from_origin_ *= -1.0;
     }
 }
 
