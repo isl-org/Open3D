@@ -43,7 +43,7 @@ using namespace open3d::t::pipelines::registration;
 float verticalFoV = 25;
 
 const Eigen::Vector3f CENTER_OFFSET(-10.0f, 0.0f, 30.0f);
-// const Eigen::Vector3f CENTER_OFFSET(0.5f, -0.5f, -5.0f);
+
 const std::string CLOUD_NAME = "points";
 
 const std::string SRC_CLOUD = "source_pointcloud";
@@ -148,21 +148,19 @@ public:
 
         src_cloud_mat_ = rendering::Material();
         src_cloud_mat_.shader = "defaultUnlit";
-        // src_cloud_mat_.base_color = Eigen::Vector4f(0.5f, 0.5f, 0.5f, 1.0f);
 
         tar_cloud_mat_ = rendering::Material();
         tar_cloud_mat_.shader = "defaultUnlit";
-        // tar_cloud_mat_.base_color = Eigen::Vector4f(0.7f, 0.7f, 0.7f, 1.0f);
 
         src_corres_mat_ = rendering::Material();
         src_corres_mat_.shader = "defaultUnlit";
         src_corres_mat_.base_color = Eigen::Vector4f(0.f, 1.0f, 0.0f, 1.0f);
-        src_corres_mat_.point_size = 3.0f;
+        src_corres_mat_.point_size = 4.0f;
 
         tar_corres_mat_ = rendering::Material();
         tar_corres_mat_.shader = "defaultUnlit";
         tar_corres_mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
-        tar_corres_mat_.point_size = 3.0f;
+        tar_corres_mat_.point_size = 4.0f;
         // ------------------------------------------------------
 
         SetOnClose([this]() {
@@ -238,7 +236,7 @@ public:
                                                   src_corres_mat_);
                             this->widget3d_->GetScene()
                                     ->GetScene()
-                                    ->AddGeometry(TAR_CORRES, pcd_.source_,
+                                    ->AddGeometry(TAR_CORRES, pcd_.target_,
                                                   tar_corres_mat_);
 
                             // Getting bounding box and center to
@@ -264,7 +262,7 @@ public:
         adjustable_props_ =
                 std::make_shared<PropertyPanel>(spacing, left_margin);
         adjustable_props_->AddIntSlider(
-                "Animation Delay (ms)", &delay_, 100, 10, 500,
+                "Animation Delay (ms)", &delay_, 100, 100, 500,
                 "Animation interval between ICP iterations.");
         panel_->AddChild(adjustable_props_);
         panel_->AddFixed(vspacing);
@@ -447,7 +445,7 @@ protected:
                 while (!is_started_ || !is_running_) {
                     // If we aren't running, sleep a little bit so that we don't
                     // use 100% of the CPU just checking if we need to run.
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 }
 
                 // ComputeTransformation returns transformation matrix of
@@ -486,8 +484,8 @@ protected:
                                             {result.correspondence_set_.second})
                                     .To(host_));
 
-                    pcd_.source_ = source_.Clone().Transform(
-                            transformation.To(dtype_));
+                    pcd_.source_ =
+                            source_.CPU().Transform(transformation.To(dtype_));
                 }
 
                 std::stringstream out_;
@@ -505,7 +503,7 @@ protected:
 
                             // Locking to protect: pcd_.source_,
                             // pcd_.correspondence_src_, pcd_correpondece_tar_.
-                            std::lock_guard<std::mutex> lock(pcd_lock_);
+                            std::lock_guard<std::mutex> lock(pcd_.lock_);
 
                             this->widget3d_->GetScene()
                                     ->GetScene()
@@ -698,22 +696,62 @@ private:
         t::io::ReadPointCloud(path_target_, target,
                               {"auto", false, false, true});
 
-        // Cpnverting attributes to Floar32 and currently only
+        // First perform device transfer, as all attributes must be on same
+        // device.
+        source = source.To(device_, false);
+        target = target.To(device_, false);
+
+        // Converting point and normals attributes to Floar32 and currently only
         // Float32 pointcloud is supported by the tensor registration module.
-        for (std::string attr : {"points", "colors", "normals"}) {
-            if (source.HasPointAttr(attr)) {
-                source.SetPointAttr(attr, source.GetPointAttr(attr).To(dtype_));
-            }
+        source.SetPoints(source.GetPoints().To(dtype_));
+        if (source.HasPointNormals()) {
+            source.SetPointNormals(source.GetPointNormals().To(dtype_));
         }
-        for (std::string attr : {"points", "colors", "normals"}) {
-            if (target.HasPointAttr(attr)) {
-                target.SetPointAttr(attr, target.GetPointAttr(attr).To(dtype_));
-            }
+        // Converting attributes to Floar32 and currently only
+        // Float32 pointcloud is supported by the tensor registration module.
+        target.SetPoints(target.GetPoints().To(dtype_));
+        if (target.HasPointNormals()) {
+            target.SetPointNormals(target.GetPointNormals().To(dtype_));
         }
 
-        // Uncomment to remove the pointcloud color attribute.
-        // source.RemovePointAttr("colors");
-        // target.RemovePointAttr("colors");
+        // Color may be of Float32, Float64, UInt8, UInt16.
+        // We only want to convert color of Float64 type to Float32.
+        if (source.HasPointColors()) {
+            if (source.GetPointColors().GetDtype() == core::Dtype::UInt8) {
+                source.SetPointColors(
+                        source.GetPointColors().To(dtype_).Div(255.0));
+            } else if (source.GetPointColors().GetDtype() ==
+                       core::Dtype::UInt16) {
+                source.SetPointColors(
+                        source.GetPointColors().To(dtype_).Div(255.0));
+            } else if (source.GetPointColors().GetDtype() ==
+                       core::Dtype::Float64) {
+                source.SetPointColors(source.GetPointColors().To(dtype_));
+            } else if (source.GetPointColors().GetDtype() !=
+                       core::Dtype::Float32) {
+                utility::LogError(
+                        " Unsupported dtype for color attribute. Supported "
+                        "dtypes include Float32, Float64, UInt8 and UInt16.");
+            }
+        }
+        if (target.HasPointColors()) {
+            if (target.GetPointColors().GetDtype() == core::Dtype::UInt8) {
+                target.SetPointColors(
+                        target.GetPointColors().To(dtype_).Div(255.0));
+            } else if (target.GetPointColors().GetDtype() ==
+                       core::Dtype::UInt16) {
+                target.SetPointColors(
+                        target.GetPointColors().To(dtype_).Div(255.0));
+            } else if (target.GetPointColors().GetDtype() ==
+                       core::Dtype::Float64) {
+                target.SetPointColors(target.GetPointColors().To(dtype_));
+            } else if (target.GetPointColors().GetDtype() !=
+                       core::Dtype::Float32) {
+                utility::LogError(
+                        " Unsupported dtype for color attribute. Supported "
+                        "dtypes include Float32, Float64, UInt8 and UInt16.");
+            }
+        }
 
         // Normals are required for `PointToPlane` type registration method.
         // Currenly Normal Estimation is not supported by Tensor Pointcloud.
@@ -725,7 +763,7 @@ private:
             core::Tensor target_normals =
                     t::geometry::PointCloud::FromLegacyPointCloud(target_legacy)
                             .GetPointNormals()
-                            .To(dtype_);
+                            .To(device_, dtype_);
             target.SetPointNormals(target_normals);
         }
 
@@ -805,8 +843,6 @@ private:
     core::Dtype dtype_;
 
 private:
-    std::mutex pcd_lock_;
-
     open3d::visualization::rendering::Material src_cloud_mat_;
     open3d::visualization::rendering::Material tar_cloud_mat_;
     open3d::visualization::rendering::Material src_corres_mat_;
@@ -872,7 +908,7 @@ int main(int argc, char* argv[]) {
 
     auto& app = gui::Application::GetInstance();
 
-    app.Initialize(argc, argv);
+    app.Initialize(argc, (const char**)argv);
     app.AddWindow(std::make_shared<ReconstructionWindow>(
             path_config, core::Device(argv[1])));
 
