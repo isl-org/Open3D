@@ -130,17 +130,6 @@ public:
         transformation_ = core::Tensor(initial_transform_flat, {4, 4},
                                        core::Dtype::Float64, host_);
 
-        // Warm Up.
-        std::vector<ICPConvergenceCriteria> warm_up_criteria = {
-                ICPConvergenceCriteria(0.01, 0.01, 1)};
-        result_ = RegistrationMultiScaleICP(
-                source_.To(device_), target_.To(device_), {1.0},
-                warm_up_criteria, {1.5},
-                core::Tensor::Eye(4, core::Dtype::Float64, host_),
-                *estimation_);
-
-        std::cout << " [Debug] Warm up transformation: "
-                  << result_.transformation_.ToString() << std::endl;
         is_done_ = false;
 
         // --------------------- VISUALIZER ---------------------
@@ -316,10 +305,6 @@ protected:
     }
 
     void UpdateMain() {
-        core::Tensor initial_transform = core::Tensor::Eye(
-                4, core::Dtype::Float64, core::Device("CPU:0"));
-        core::Tensor cumulative_transform = initial_transform.Clone();
-
         // ----- Class members passed to function arguments
         // ----- in t::pipeline::registration::RegistrationMultiScaleICP
         const t::geometry::PointCloud source = source_.To(device_);
