@@ -57,8 +57,8 @@ void pybind_planarpatch(py::module &m) {
                            "``float64`` array of shape ``(3, )``")
             .def_readwrite("normal", &PlanarPatch::normal_,
                            "``float64`` array of shape ``(3, )``")
-            .def_readwrite("dist_from_origin", &PlanarPatch::dist_from_origin_,
-                           "``float64`` scalar")
+            .def_readonly("dist_from_origin", &PlanarPatch::dist_from_origin_,
+                          "``float64`` scalar")
             .def_readwrite("basis_x", &PlanarPatch::basis_x_,
                            "``float64`` array of shape ``(3, )``")
             .def_readwrite("basis_y", &PlanarPatch::basis_y_,
