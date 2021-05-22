@@ -54,17 +54,33 @@ def bin_to_pcd(binFileName):
 
 
 # preprocess and save in .ply format.
-def preprocess_and_save(source_folder, destination_folder, voxel_size=0.02):
+def preprocess_and_save(source_folder,
+                        destination_folder,
+                        voxel_size=0.05,
+                        start_idx=0,
+                        end_idx=1000):
     # get all files from the folder, and sort by name.
     filenames = get_file_list(source_folder, ".bin")
 
-    print("Converting .bin to .ply files and pre-processing.")
+    print(
+        "Converting .bin to .ply files and pre-processing from frame {} to index {}"
+        .format(start_idx, end_idx))
+
+    if (end_idx < start_idx):
+        raise RuntimeError("End index must be smaller than start index.")
+    if (end_idx > len(filenames)):
+        end_idx = len(filenames)
+        print(
+            "WARNING: End index is greater than total file length, taking file length as end index."
+        )
+
+    filenames = filenames[start_idx:end_idx]
     for path in filenames:
         # convert kitti bin format to pcd format.
         pcd = bin_to_pcd(path)
 
         # downsample and estimate normals.
-        voxel_down_pcd = pcd.voxel_down_sample(voxel_size=0.02)
+        voxel_down_pcd = pcd.voxel_down_sample(voxel_size=0.05)
         voxel_down_pcd.estimate_normals(
             search_param=o3d.geometry.KDTreeSearchParamKNN(),
             fast_normal_computation=False)
@@ -134,8 +150,8 @@ def get_kitti_sample_dataset(dataset_path, dataset_name):
         print("")
     else:
         print(
-            "The folder: %s, already exists. To re-download, kindly delete the folder and re-run this script."
-            % path)
+            "The folder: {}, already exists. To re-download, kindly delete the folder and re-run this script."
+            .format(path))
 
 
 def find_source_pcd_folder_path(dataset_name):
@@ -148,58 +164,8 @@ def find_source_pcd_folder_path(dataset_name):
 
 
 valid_dataset_list = [
-    "2011_09_26_drive_0001", "2011_09_26_drive_0002", "2011_09_26_drive_0005",
-    "2011_09_26_drive_0009", "2011_09_26_drive_0011", "2011_09_26_drive_0013",
-    "2011_09_26_drive_0014", "2011_09_26_drive_0015", "2011_09_26_drive_0017",
-    "2011_09_26_drive_0018", "2011_09_26_drive_0019", "2011_09_26_drive_0020",
-    "2011_09_26_drive_0022", "2011_09_26_drive_0023", "2011_09_26_drive_0027",
-    "2011_09_26_drive_0028", "2011_09_26_drive_0029", "2011_09_26_drive_0032",
-    "2011_09_26_drive_0035", "2011_09_26_drive_0036", "2011_09_26_drive_0039",
-    "2011_09_26_drive_0046", "2011_09_26_drive_0048", "2011_09_26_drive_0051",
-    "2011_09_26_drive_0052", "2011_09_26_drive_0056", "2011_09_26_drive_0057",
-    "2011_09_26_drive_0059", "2011_09_26_drive_0060", "2011_09_26_drive_0061",
-    "2011_09_26_drive_0064", "2011_09_26_drive_0070", "2011_09_26_drive_0079",
-    "2011_09_26_drive_0084", "2011_09_26_drive_0086", "2011_09_26_drive_0087",
-    "2011_09_26_drive_0091", "2011_09_26_drive_0093", "2011_09_26_drive_0095",
-    "2011_09_26_drive_0096", "2011_09_26_drive_0101", "2011_09_26_drive_0104",
-    "2011_09_26_drive_0106", "2011_09_26_drive_0113", "2011_09_26_drive_0117",
-    "2011_09_26_drive_0119", "2011_09_28_drive_0001", "2011_09_28_drive_0002",
-    "2011_09_28_drive_0016", "2011_09_28_drive_0021", "2011_09_28_drive_0034",
-    "2011_09_28_drive_0035", "2011_09_28_drive_0037", "2011_09_28_drive_0038",
-    "2011_09_28_drive_0039", "2011_09_28_drive_0043", "2011_09_28_drive_0045",
-    "2011_09_28_drive_0047", "2011_09_28_drive_0053", "2011_09_28_drive_0054",
-    "2011_09_28_drive_0057", "2011_09_28_drive_0065", "2011_09_28_drive_0066",
-    "2011_09_28_drive_0068", "2011_09_28_drive_0070", "2011_09_28_drive_0071",
-    "2011_09_28_drive_0075", "2011_09_28_drive_0077", "2011_09_28_drive_0078",
-    "2011_09_28_drive_0080", "2011_09_28_drive_0082", "2011_09_28_drive_0086",
-    "2011_09_28_drive_0087", "2011_09_28_drive_0089", "2011_09_28_drive_0090",
-    "2011_09_28_drive_0094", "2011_09_28_drive_0095", "2011_09_28_drive_0096",
-    "2011_09_28_drive_0098", "2011_09_28_drive_0100", "2011_09_28_drive_0102",
-    "2011_09_28_drive_0103", "2011_09_28_drive_0104", "2011_09_28_drive_0106",
-    "2011_09_28_drive_0108", "2011_09_28_drive_0110", "2011_09_28_drive_0113",
-    "2011_09_28_drive_0117", "2011_09_28_drive_0119", "2011_09_28_drive_0121",
-    "2011_09_28_drive_0122", "2011_09_28_drive_0125", "2011_09_28_drive_0126",
-    "2011_09_28_drive_0128", "2011_09_28_drive_0132", "2011_09_28_drive_0134",
-    "2011_09_28_drive_0135", "2011_09_28_drive_0136", "2011_09_28_drive_0138",
-    "2011_09_28_drive_0141", "2011_09_28_drive_0143", "2011_09_28_drive_0145",
-    "2011_09_28_drive_0146", "2011_09_28_drive_0149", "2011_09_28_drive_0153",
-    "2011_09_28_drive_0154", "2011_09_28_drive_0155", "2011_09_28_drive_0156",
-    "2011_09_28_drive_0160", "2011_09_28_drive_0161", "2011_09_28_drive_0162",
-    "2011_09_28_drive_0165", "2011_09_28_drive_0166", "2011_09_28_drive_0167",
-    "2011_09_28_drive_0168", "2011_09_28_drive_0171", "2011_09_28_drive_0174",
-    "2011_09_28_drive_0177", "2011_09_28_drive_0179", "2011_09_28_drive_0183",
-    "2011_09_28_drive_0184", "2011_09_28_drive_0185", "2011_09_28_drive_0186",
-    "2011_09_28_drive_0187", "2011_09_28_drive_0191", "2011_09_28_drive_0192",
-    "2011_09_28_drive_0195", "2011_09_28_drive_0198", "2011_09_28_drive_0199",
-    "2011_09_28_drive_0201", "2011_09_28_drive_0204", "2011_09_28_drive_0205",
-    "2011_09_28_drive_0208", "2011_09_28_drive_0209", "2011_09_28_drive_0214",
-    "2011_09_28_drive_0216", "2011_09_28_drive_0220", "2011_09_28_drive_0222",
-    "2011_09_28_drive_0225", "2011_09_29_drive_0004", "2011_09_29_drive_0026",
-    "2011_09_29_drive_0071", "2011_09_29_drive_0108", "2011_09_30_drive_0016",
-    "2011_09_30_drive_0018", "2011_09_30_drive_0020", "2011_09_30_drive_0027",
-    "2011_09_30_drive_0028", "2011_09_30_drive_0033", "2011_09_30_drive_0034",
-    "2011_09_30_drive_0072", "2011_10_03_drive_0027", "2011_10_03_drive_0034",
-    "2011_10_03_drive_0042", "2011_10_03_drive_0047", "2011_10_03_drive_0058"
+    "2011_09_26_drive_0009", "2011_09_30_drive_0018", "2011_09_30_drive_0027",
+    "2011_09_30_drive_0028", "2011_10_03_drive_0027", "2011_10_03_drive_0034"
 ]
 
 if __name__ == '__main__':
@@ -207,11 +173,23 @@ if __name__ == '__main__':
     parser.add_argument(
         '--dataset_name',
         type=str,
-        default="2011_09_26_drive_0009",
+        default="2011_09_30_drive_0028",
         help='Kitti city sequence name [Example: "2011_09_26_drive_0009"].')
     parser.add_argument('--print_available_datasets',
                         action='store_true',
                         help='visualize ray casting every 100 frames')
+    parser.add_argument('--voxel_size',
+                        type=float,
+                        default=0.05,
+                        help='voxel size of the pointcloud.')
+    parser.add_argument('--start_index',
+                        type=int,
+                        default=0,
+                        help='start index of the dataset frame.')
+    parser.add_argument('--end_index',
+                        type=int,
+                        default=1000,
+                        help='maximum end index of the dataset frame.')
 
     args = parser.parse_args()
 
@@ -243,7 +221,8 @@ if __name__ == '__main__':
     print("Source raw kitti lidar data: ", source_folder)
 
     # convert bin to pcd, pre-process and save.
-    preprocess_and_save(source_folder, destination_path, 0.02)
+    preprocess_and_save(source_folder, destination_path, args.voxel_size,
+                        args.start_index, args.end_index)
 
     print("Data fetching completed. Output pointcloud frames: ",
           destination_path)
