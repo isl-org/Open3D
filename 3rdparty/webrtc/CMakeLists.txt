@@ -63,14 +63,14 @@ endif()
 add_custom_target(webrtc
     ALL
     COMMAND ${DEPOT_TOOLS_ROOT}/gn gen .
-    COMMAND ${DEPOT_TOOLS_ROOT}/ninja -v ${NINJA_TARGETS}
+    COMMAND ${DEPOT_TOOLS_ROOT}/ninja ${NINJA_TARGETS}
     WORKING_DIRECTORY ${WEBRTC_NINJA_ROOT}
     BYPRODUCTS ${EXTRA_WEBRTC_OBJS}
 )
 
 # libwebrtc_extra.a
 add_library(webrtc_extra STATIC ${EXTRA_WEBRTC_OBJS})
-set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES 
+set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES
 	GENERATED TRUE
 	EXTERNAL_OBJECT TRUE)
 add_dependencies(webrtc_extra webrtc)

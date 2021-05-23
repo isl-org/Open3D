@@ -34,6 +34,11 @@ function(get_webrtc_args WEBRTC_ARGS)
     # Debug/Release
     if(WEBRTC_IS_DEBUG)
         set(WEBRTC_ARGS is_debug=true\n${WEBRTC_ARGS})
+        if (MSVC)
+        # WebRTC default is false in Debug due to a performance penalty, but this would disable
+        # iterator debugging for Open3D and any user code as well with MSVC.
+            set(WEBRTC_ARGS enable_iterator_debugging=true\n${WEBRTC_ARGS})
+        endif()
     else()
         set(WEBRTC_ARGS is_debug=false\n${WEBRTC_ARGS})
     endif()
