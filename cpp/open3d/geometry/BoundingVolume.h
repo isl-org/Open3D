@@ -199,7 +199,22 @@ public:
     virtual AxisAlignedBoundingBox& Rotate(
             const Eigen::Matrix3d& R, const Eigen::Vector3d& center) override;
 
+    /// \brief Adds another AxisAlignedBoundingBox in place, such that the
+    /// current object becomes the union of both boxes. However, if this
+    /// AxisAlignedBoundingBox is empty (has a volume of 0), this object will
+    /// assume the bounds of the other box, regardless of any non-empty
+    /// dimensions. For a simpler union behavior that ignores the box volume use
+    /// the Join(...) method.
+    /// \param other an AxisAlignedBoundingBox to join with this one
+    /// \return a reference to this AxisAlignedBoundingBox
     AxisAlignedBoundingBox& operator+=(const AxisAlignedBoundingBox& other);
+
+    /// \brief Adds another AxisAlignedBoundingBox in place, such that the
+    /// current object becomes the union of both boxes. Does not consider the
+    /// box volume like the += operator does.
+    /// \param other an AxisAlignedBoundingBox to join with this one
+    /// \return a reference to this AxisAlignedBoundingBox
+    AxisAlignedBoundingBox& Join(const AxisAlignedBoundingBox& other);
 
     /// Get the extent/length of the bounding box in x, y, and z dimension.
     Eigen::Vector3d GetExtent() const { return (max_bound_ - min_bound_); }

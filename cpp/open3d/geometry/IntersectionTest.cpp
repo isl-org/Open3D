@@ -50,6 +50,75 @@ bool IntersectionTest::AABBAABB(const Eigen::Vector3d& min0,
     return true;
 }
 
+bool IntersectionTest::AABBAABB(const AxisAlignedBoundingBox& box0,
+                                const AxisAlignedBoundingBox& box1) {
+    return AABBAABB(box0.min_bound_, box0.max_bound_, box1.min_bound_,
+                    box1.max_bound_);
+}
+
+bool IntersectionTest::PlaneAABB(const Eigen::Hyperplane<double, 3>& plane,
+                                 const AxisAlignedBoundingBox& box) {
+    // This test is based off of
+    // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
+    // and consists of projecting the extent onto the plane normal and checking
+    // the length
+
+    auto e = box.GetHalfExtent();
+    auto r = e.x() * std::abs(plane.normal().x()) +
+             e.y() * std::abs(plane.normal().y()) +
+             e.z() * std::abs(plane.normal().z());
+
+    auto s = plane.normal().dot(box.GetCenter()) - plane.offset();
+    return std::abs(s) <= r;
+}
+
+Eigen::Vector3d IntersectionTest::ClosestPointAABB(
+        const Eigen::Vector3d& point, const AxisAlignedBoundingBox& box) {
+    // The closest point within an axis aligned bounding box to another point in
+    // space can be found by clamping the test point to the AABB's bounds.
+    double x = std::min(std::max(point.x(), box.min_bound_.x()),
+                        box.max_bound_.x());
+    double y = std::min(std::max(point.y(), box.min_bound_.y()),
+                        box.max_bound_.y());
+    double z = std::min(std::max(point.z(), box.min_bound_.z()),
+                        box.max_bound_.z());
+    return {x, y, z};
+}
+
+Eigen::Vector3d IntersectionTest::FarthestPointAABB(
+        const Eigen::Vector3d& point, const AxisAlignedBoundingBox& box) {
+    // Each dimension of the farthest point will lie on either the maximum or
+    // minimum bound for that dimension.  The farthest point can be found by
+    // choosing the bound for each dimension which maximizes the distance to the
+    // test point dimension.
+    double x = std::abs(point.x() - box.min_bound_.x()) >
+                               std::abs(point.x() - box.max_bound_.x())
+                       ? box.min_bound_.x()
+                       : box.max_bound_.x();
+
+    double y = std::abs(point.y() - box.min_bound_.y()) >
+                               std::abs(point.y() - box.max_bound_.y())
+                       ? box.min_bound_.y()
+                       : box.max_bound_.y();
+
+    double z = std::abs(point.z() - box.min_bound_.z()) >
+                               std::abs(point.z() - box.max_bound_.z())
+                       ? box.min_bound_.z()
+                       : box.max_bound_.z();
+
+    return {x, y, z};
+}
+
+double IntersectionTest::ClosestDistanceAABB(
+        const Eigen::Vector3d& point, const AxisAlignedBoundingBox& box) {
+    return (ClosestPointAABB(point, box) - point).norm();
+}
+
+double IntersectionTest::FarthestDistanceAABB(
+        const Eigen::Vector3d& point, const AxisAlignedBoundingBox& box) {
+    return (FarthestPointAABB(point, box) - point).norm();
+}
+
 bool IntersectionTest::TriangleTriangle3d(const Eigen::Vector3d& p0,
                                           const Eigen::Vector3d& p1,
                                           const Eigen::Vector3d& p2,
@@ -216,6 +285,5 @@ double IntersectionTest::LineSegmentsMinimumDistance(
     double dist = (p - q).norm();
     return dist;
 }
-
 }  // namespace geometry
 }  // namespace open3d

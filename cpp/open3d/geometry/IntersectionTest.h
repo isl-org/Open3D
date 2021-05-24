@@ -36,10 +36,75 @@ namespace geometry {
 
 class IntersectionTest {
 public:
+    /// Computes whether or not there is an intersection between two axis
+    /// aligned bounding boxes, represented by four points specifying the
+    /// upper and lower bounds of each box. The arguments given must represent
+    /// valid AABBs where no minimum bound dimension is greater than its maximum
+    /// bound dimension, or the result will not be correct.
+    /// \param min0 the minimum bound of box 0
+    /// \param max0 the maximum bound of box 0
+    /// \param min1 the minimum bound of box 1
+    /// \param max1 the maximum bound of box 1
+    /// \return true if the boxes intersect, false if they do not
     static bool AABBAABB(const Eigen::Vector3d& min0,
                          const Eigen::Vector3d& max0,
                          const Eigen::Vector3d& min1,
                          const Eigen::Vector3d& max1);
+
+    /// Computes whether or not there is an intersection between two axis
+    /// aligned bounding boxes.
+    /// \param box0 The first box
+    /// \param box1 The second box
+    /// \return true if the boxes intersect, false if they do not
+    static bool AABBAABB(const AxisAlignedBoundingBox& box0,
+                         const AxisAlignedBoundingBox& box1);
+
+    /// Computes whether or not there is an intersection between a plane and an
+    /// axis aligned bounding box. Will test positive even if a single corner of
+    /// the box lies in the plane.
+    /// \param plane The test plane
+    /// \param box The axis aligned bounding box to check against the plane
+    /// \return true if the plane intersects the box, false if not
+    static bool PlaneAABB(const Eigen::Hyperplane<double, 3>& plane,
+                          const AxisAlignedBoundingBox& box);
+
+    /// Returns the closest point contained in an axis aligned bounding box to
+    /// a test point.
+    /// \param point The test point to find the closest point to
+    /// \param box The box which defines the region to search for the closest
+    /// point
+    /// \return A Vector3d containing the minimum distance point to the test
+    /// point contained by the box
+    static Eigen::Vector3d ClosestPointAABB(const Eigen::Vector3d& point,
+                                            const AxisAlignedBoundingBox& box);
+
+    /// Returns the farthest point contained in an axis aligned bounding box
+    /// from a test point.
+    /// \param point The test point to find the farthest point from
+    /// \param box The box which defines the region to search for the farthest
+    /// point
+    /// \return A Vector3d containing the maximum distance point to the test
+    /// point contained by the box
+    static Eigen::Vector3d FarthestPointAABB(const Eigen::Vector3d& point,
+                                             const AxisAlignedBoundingBox& box);
+
+    /// Returns the closest distance to an axis aligned bounding box from a test
+    /// point.
+    /// \param point The test point to find the closest distance to
+    /// \param box The box which defines the region to search for the closest
+    /// distance
+    /// \return the minimum linear distance from the test point to the AABB
+    static double ClosestDistanceAABB(const Eigen::Vector3d& point,
+                                      const AxisAlignedBoundingBox& box);
+
+    /// Returns the farthest distance to an axis aligned bounding box from a
+    /// test point.
+    /// \param point The test point to find the farthest distance to
+    /// \param box The box which defines the region to search for the farthest
+    /// distance
+    /// \return the maximum linear distance from the test point to the AABB
+    static double FarthestDistanceAABB(const Eigen::Vector3d& point,
+                                       const AxisAlignedBoundingBox& box);
 
     static bool TriangleTriangle3d(const Eigen::Vector3d& p0,
                                    const Eigen::Vector3d& p1,

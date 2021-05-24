@@ -28,6 +28,15 @@
 
 #include "tests/UnitTest.h"
 
+using namespace open3d::geometry;
+using namespace ::testing;
+using Eigen::Vector3d;
+
+using pnt_t = std::tuple<Vector3d, Vector3d>;
+using pln_t = std::tuple<Vector3d, Vector3d, bool>;
+#define ROOT2 1.0 / sqrt(2.0)
+#define ROOT3 1.0 / sqrt(3.0)
+
 namespace open3d {
 namespace tests {
 
@@ -85,6 +94,137 @@ TEST(IntersectionTest, LineSegmentsMinimumDistance) {
                                                                       q0, q1),
               1.);
 }
+
+TEST(IntersectionTest, ClosestDistanceAABBPoint) {
+    // Tests the closest distance from a point to an AABB. This single test is
+    // adequate under the assumption that the ClosestDistanceAABB uses the
+    // ClosestPointAABB method under the hood, and the parameterized tests
+    // in ClosestPointAABBTests pass.
+    AxisAlignedBoundingBox box{{0, 0, 0}, {1, 1, 1}};
+    auto value = IntersectionTest::ClosestDistanceAABB({4, 0.5, 0.5}, box);
+    EXPECT_DOUBLE_EQ(3.0, value);
+}
+
+// Closest point to AABB tests
+class ClosestPointAABBTests : public TestWithParam<pnt_t> {};
+
+TEST_P(ClosestPointAABBTests, CheckClosestPoints) {
+    AxisAlignedBoundingBox box{{0, 0, 0}, {1, 1, 1}};
+    auto test = std::get<0>(GetParam());
+    auto expected = std::get<1>(GetParam());
+
+    auto closest = IntersectionTest::ClosestPointAABB(test, box);
+    ExpectEQ(expected, closest);
+}
+
+INSTANTIATE_TEST_CASE_P(IntersectionTest,
+                        ClosestPointAABBTests,
+                        Values(  // Faces
+                                pnt_t({-1, 0.5, 0.5}, {0, 0.5, 0.5}),
+                                pnt_t({2, 0.5, 0.5}, {1, 0.5, 0.5}),
+                                pnt_t({0.5, -1, 0.5}, {0.5, 0, 0.5}),
+                                pnt_t({0.5, 2, 0.5}, {0.5, 1, 0.5}),
+                                pnt_t({0.5, 0.5, -1}, {0.5, 0.5, 0}),
+                                pnt_t({0.5, 0.5, 2}, {0.5, 0.5, 1}),
+
+                                // Edges
+                                pnt_t({0.5, -1, -1}, {0.5, 0, 0}),
+                                pnt_t({0.5, 2, 2}, {0.5, 1, 1}),
+                                pnt_t({-1, 0.5, -1}, {0, 0.5, 0}),
+                                pnt_t({2, 0.5, 2}, {1, 0.5, 1}),
+                                pnt_t({-1, -1, 0.5}, {0, 0, 0.5}),
+                                pnt_t({2, 2, 0.5}, {1, 1, 0.5}),
+
+                                // Corners
+                                pnt_t({-1, -1, -1}, {0, 0, 0}),
+                                pnt_t({2, 2, 2}, {1, 1, 1}),
+
+                                // Points already inside the AABB
+                                pnt_t({0, 1, 1}, {0, 1, 1}),
+                                pnt_t({0.5, 0.5, 0.5}, {0.5, 0.5, 0.5})));
+
+// Farthest point to AABB tests
+class FarthestPointAABBTests : public TestWithParam<pnt_t> {};
+
+TEST_P(FarthestPointAABBTests, CheckFarthestPoints) {
+    AxisAlignedBoundingBox box{{-1, -1, -1}, {1, 1, 1}};
+    auto test = std::get<0>(GetParam());
+    auto expected = std::get<1>(GetParam());
+
+    auto closest = IntersectionTest::FarthestPointAABB(test, box);
+    ExpectEQ(expected, closest);
+}
+
+INSTANTIATE_TEST_CASE_P(IntersectionTest,
+                        FarthestPointAABBTests,
+                        Values(  // Inside
+                                pnt_t({0.5, 0.5, 0.5}, {-1, -1, -1}),
+                                pnt_t({-0.5, 0.5, 0.5}, {1, -1, -1}),
+                                pnt_t({0.5, -0.5, 0.5}, {-1, 1, -1}),
+                                pnt_t({0.5, 0.5, -0.5}, {-1, -1, 1}),
+                                pnt_t({-0.5, -0.5, 0.5}, {1, 1, -1}),
+                                pnt_t({0.5, -0.5, -0.5}, {-1, 1, 1}),
+                                pnt_t({-0.5, 0.5, -0.5}, {1, -1, 1}),
+                                pnt_t({-0.5, -0.5, -0.5}, {1, 1, 1}),
+
+                                // Outside
+                                pnt_t({3, 3, 3}, {-1, -1, -1}),
+                                pnt_t({-3, 3, 3}, {1, -1, -1}),
+                                pnt_t({3, -3, 3}, {-1, 1, -1}),
+                                pnt_t({3, 3, -3}, {-1, -1, 1}),
+                                pnt_t({-3, -3, 3}, {1, 1, -1}),
+                                pnt_t({3, -3, -3}, {-1, 1, 1}),
+                                pnt_t({-3, 3, -3}, {1, -1, 1}),
+                                pnt_t({-3, -3, -3}, {1, 1, 1})));
+
+// Hyperplane to AABB Intersection Tests
+class PlaneAABBTests : public TestWithParam<pln_t> {};
+
+TEST_P(PlaneAABBTests, CheckFarthestPoints) {
+    AxisAlignedBoundingBox box{{-1, -1, -1}, {1, 1, 1}};
+    auto point = std::get<0>(GetParam());
+    auto normal = std::get<1>(GetParam());
+    auto expected = std::get<2>(GetParam());
+
+    Eigen::Hyperplane<double, 3> plane(normal, point);
+    auto intersects = IntersectionTest::PlaneAABB(plane, box);
+    EXPECT_EQ(expected, intersects);
+}
+
+INSTANTIATE_TEST_CASE_P(
+        IntersectionTest,
+        PlaneAABBTests,
+        Values(pln_t({2, 0, 0}, {1, 0, 0}, false),
+               pln_t({-2, 0, 0}, {1, 0, 0}, false),
+               pln_t({2, 0, 0}, {-1, 0, 0}, false),
+               pln_t({-2, 0, 0}, {-1, 0, 0}, false),
+               pln_t({0, 2, 0}, {0, 1, 0}, false),
+               pln_t({0, -2, 0}, {0, 1, 0}, false),
+               pln_t({0, 0, 2}, {0, 0, 1}, false),
+               pln_t({0, 0, -2}, {0, 0, 1}, false),
+               pln_t({2, 2, 2}, {ROOT3, ROOT3, ROOT3}, false),
+               pln_t({-2, 2, 2}, {-ROOT3, ROOT3, ROOT3}, false),
+               pln_t({2, -2, 2}, {ROOT3, -ROOT3, ROOT3}, false),
+               pln_t({2, 2, -2}, {ROOT3, ROOT3, -ROOT3}, false),
+               pln_t({-2, -2, -2}, {ROOT3, ROOT3, ROOT3}, false),
+
+               pln_t({0, 0, 0}, {1, 0, 0}, true),
+               pln_t({0, 0, 0}, {-1, 0, 0}, true),
+               pln_t({0, 0, 0}, {0, 1, 0}, true),
+               pln_t({0, 0, 0}, {0, -1, 0}, true),
+               pln_t({0, 0, 0}, {0, 0, 1}, true),
+               pln_t({0, 0, 0}, {0, 0, -1}, true),
+
+               pln_t({1, 0, 0}, {1, 0, 0}, true),
+               pln_t({0, 1, 0}, {0, 1, 0}, true),
+               pln_t({0, 0, 1}, {0, 0, 1}, true),
+
+               pln_t({2, 2, 2}, {-ROOT2, ROOT2, 0}, true),
+               pln_t({-1, -1, -1}, {-ROOT3, -ROOT3, -ROOT3}, true),
+               pln_t({1, -1, -1}, {ROOT3, -ROOT3, -ROOT3}, true),
+               pln_t({-1, 1, -1}, {-ROOT3, ROOT3, -ROOT3}, true),
+               pln_t({-1, -1, 1}, {-ROOT3, -ROOT3, ROOT3}, true),
+               pln_t({1, 1, 1}, {ROOT3, ROOT3, ROOT3}, true)));
 
 }  // namespace tests
 }  // namespace open3d
