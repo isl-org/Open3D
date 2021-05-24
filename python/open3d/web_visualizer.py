@@ -6,6 +6,12 @@ import threading
 import functools
 import open3d as o3d
 
+from open3d._build_config import _build_config
+if not _build_config["BUILD_JUPYTER_EXTENSION"]:
+    raise RuntimeError(
+        "Open3D WebVisualizer Jupyter extension is not available. To use "
+        "WebVisualizer, build Open3D with -DBUILD_JUPYTER_EXTENSION=ON.")
+
 
 @ipywidgets.register
 class WebVisualizer(ipywidgets.DOMWidget):

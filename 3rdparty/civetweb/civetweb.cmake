@@ -1,9 +1,15 @@
 include(ExternalProject)
 
+set_local_or_remote_url(CIVETWEB_URL
+    LOCAL_URL "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/civetweb-1.14.tar.gz"
+    REMOTE_URLS https://github.com/civetweb/civetweb/archive/refs/tags/v1.14.tar.gz
+    )
+
 ExternalProject_Add(
     ext_civetweb
     PREFIX civetweb
-    URL https://github.com/civetweb/civetweb/archive/refs/tags/v1.14.tar.gz
+    URL "${CIVETWEB_URL}"
+    URL_HASH SHA256=d02d7ab091c8b4edf21fc13a03c6db08a8a8b8605e35e0073251b9d88443c653
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCIVETWEB_BUILD_TESTING=OFF
@@ -13,6 +19,7 @@ ExternalProject_Add(
         -DCIVETWEB_ENABLE_SERVER_EXECUTABLE=OFF
         -DCIVETWEB_ENABLE_ASAN=OFF
         -DCIVETWEB_ENABLE_DEBUG_TOOLS=OFF
+        -DCIVETWEB_DISABLE_CGI=ON
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW

@@ -110,7 +110,9 @@ void Logger::VError [[noreturn]] (const char *file_name,
     err_msg = fmt::format("[Open3D Error] ({}) {}:{}: {}\n", function_name,
                           file_name, line_number, err_msg);
     err_msg = impl_->ColorString(err_msg, TextColor::Red, 1);
-
+#ifdef _MSC_VER  // Uncaught exception error messages not shown in Windows
+    std::cerr << err_msg << std::endl;
+#endif
     throw std::runtime_error(err_msg);
 }
 
