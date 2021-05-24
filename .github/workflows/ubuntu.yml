@@ -151,7 +151,7 @@ jobs:
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
           echo
           echo "Installing CPU versions of packages"
-          install_python_dependencies with-conda
+          install_python_dependencies with-conda with-jupyter
           echo
           echo -n "Using conda"
           conda info

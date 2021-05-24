@@ -22,6 +22,7 @@ env:
   SCIPY_VER: "1.5.4"
   JEDI_VER: "0.17.2" # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8" # https://github.com/psf/requests/issues/5710
+  YARN_VER: "1.22.10"
   CONDA_BUILD_VER: "3.20.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
@@ -43,6 +44,8 @@ jobs:
         include:
           - BUILD_CUDA: ON
             CUDA_VERSION: 11.0.3
+    env:
+      BUILD_WEBRTC: ${{ ( matrix.SHARED == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
 
     steps:
       - name: Cancel outdated
@@ -106,6 +109,7 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_RPC_INTERFACE=ON `
             -DBUILD_LIBREALSENSE=ON `
+            .DBUILD_WEBRTC=${{ env:BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA }} `
             ${{ env.SRC_DIR }}
@@ -185,6 +189,12 @@ jobs:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
 
+      - name: Install Python wheel dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm install -g yarn@${env:YARN_VER}
+
       - name: Config
         shell: pwsh
         run: |
@@ -195,13 +205,14 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
-            -DBUILD_AZURE_KINECT=ON `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_RPC_INTERFACE=ON `
+            -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
-            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DBUILD_JUPYTER_EXTENSION=ON `
             ${{ env.SRC_DIR }}
 
       - name: Build Python package

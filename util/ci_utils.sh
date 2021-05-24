@@ -42,6 +42,8 @@ STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
 SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
+# Node (Jupyter)
+YARN_VER="1.22.10"
 
 # Documentation
 SPHINX_VER=3.5.4
@@ -149,7 +151,10 @@ install_python_dependencies() {
 
     # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
+    if [[ "with-jupyter" =~ ^($options)$ ]]; then
+        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
+        npm install -g yarn@${YARN_VER}
+    endif
 
     echo
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
@@ -282,11 +287,6 @@ build_pip_conda_package() {
     echo Building with CPU only...
     mkdir -p build
     cd build # PWD=Open3D/build
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        BUILD_JUPYTER_EXTENSION=ON
-    else
-        BUILD_JUPYTER_EXTENSION=OFF
-    fi
     cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
@@ -295,7 +295,7 @@ build_pip_conda_package() {
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUILD_RPC_INTERFACE=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
-        "-DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}"
+        "-DBUILD_JUPYTER_EXTENSION=ON"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
         "-DPYTHON_EXECUTABLE=$(command -v python)"
         "-DCMAKE_BUILD_TYPE=Release"
