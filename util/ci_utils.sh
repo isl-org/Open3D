@@ -29,10 +29,10 @@ CUDNN_MAJOR_VERSION=8
 CUDNN_VERSION="8.0.5.39-1+cuda11.0"
 # ML
 TENSORFLOW_VER="2.4.1"
-TORCH_CUDA_GLNX_VER="1.7.1+cu110"
+# TORCH_CUDA_GLNX_VER="1.7.1+cu110"
+# TORCH_CPU_GLNX_VER="1.7.1+cpu"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_CPU_GLNX_VER="1.7.1+cpu"
 TORCH_MACOS_VER="1.7.1"
 # Python
 CONDA_BUILD_VER="3.20.0"
@@ -142,11 +142,11 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow-gpu
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        TORCH_ARCH_GLNX_VER="$TORCH_CUDA_GLNX_VER"
+        # TORCH_ARCH_GLNX_VER="$TORCH_CUDA_GLNX_VER"
     else
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
-        TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
+        # TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
     fi
 
     # TODO: modify other locations to use requirements.txt
@@ -154,7 +154,7 @@ install_python_dependencies() {
     if [[ "with-jupyter" =~ ^($options)$ ]]; then
         python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
         npm install -g yarn@${YARN_VER}
-    endif
+    fi
 
     echo
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
@@ -286,7 +286,7 @@ build_pip_conda_package() {
     echo
     echo Building with CPU only...
     mkdir -p build
-    cd build # PWD=Open3D/build
+    pushd build # PWD=Open3D/build
     cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
@@ -337,7 +337,7 @@ build_pip_conda_package() {
         echo "Packaging Open3D pip and conda package..."
         make VERBOSE=1 -j"$NPROC" pip-conda-package
     fi
-    cd .. # PWD=Open3D
+    popd # PWD=Open3D
 }
 
 # Test wheel in blank virtual environment
