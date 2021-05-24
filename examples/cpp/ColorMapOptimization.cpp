@@ -57,6 +57,9 @@ int main(int argc, char *argv[]) {
     ListFilesInDirectoryWithExtension(data_path + "/image/", "jpg",
                                       color_filenames);
     assert(depth_filenames.size() == color_filenames.size());
+    std::sort(depth_filenames.begin(), depth_filenames.end());
+    std::sort(color_filenames.begin(), color_filenames.end());
+
     std::vector<geometry::RGBDImage> rgbd_images;
     for (size_t i = 0; i < depth_filenames.size(); i++) {
         utility::LogDebug("reading {}...", depth_filenames[i]);

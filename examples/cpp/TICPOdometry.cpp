@@ -160,23 +160,23 @@ private:
         // Initialize visualizer.
         if (visualize_output_) {
             {
-                // lock to protect `pcd_.curren_scan_` before modifying
+                // lock to protect `curren_scan_` and `bbox_` before modifying
                 // the value, ensuring the visualizer thread doesn't read the
                 // data, while we are modifying it.
-                std::lock_guard<std::mutex> lock(pcd_.lock_);
+                std::lock_guard<std::mutex> lock(pcd_and_bbox_.lock_);
 
-                // Copying the pointcloud to pcd_.current_scan_ on the `main
-                // thread` on CPU, which is later passed to the visualizer for
-                // rendering.
-                pcd_.current_scan_ = pointclouds_device_[0].CPU();
+                // Copying the pointcloud to pcd_and_bbox_.current_scan_ on the
+                // `main thread` on CPU, which is later passed to the visualizer
+                // for rendering.
+                pcd_and_bbox_.current_scan_ = pointclouds_device_[0].CPU();
 
                 // Removing `normal` attribute before passing it to
                 // the visualizer might give us some performance benifits.
-                pcd_.current_scan_.RemovePointAttr("normals");
+                pcd_and_bbox_.current_scan_.RemovePointAttr("normals");
             }
 
             gui::Application::GetInstance().PostToMainThread(this, [&]() {
-                std::lock_guard<std::mutex> lock(pcd_.lock_);
+                std::lock_guard<std::mutex> lock(pcd_and_bbox_.lock_);
 
                 // Setting background for the visualizer. [In this case: Black].
                 this->widget3d_->GetScene()->SetBackground({0, 0, 0, 1.0});
@@ -184,12 +184,14 @@ private:
                 // Adding the first frame of the sequence to the visualizer,
                 // and rendering it using the material set for `current scan`.
                 this->widget3d_->GetScene()->AddGeometry(
-                        filenames_[0], &pcd_.current_scan_, mat_);
+                        filenames_[0], &pcd_and_bbox_.current_scan_, mat_);
 
                 // Getting bounding box and center to setup camera view.
-                auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
-                auto center = bbox.GetCenter().cast<float>();
-                this->widget3d_->SetupCamera(verticalFoV, bbox, center);
+                pcd_and_bbox_.bbox_ =
+                        this->widget3d_->GetScene()->GetBoundingBox();
+                auto center = pcd_and_bbox_.bbox_.GetCenter().cast<float>();
+                this->widget3d_->SetupCamera(verticalFoV, pcd_and_bbox_.bbox_,
+                                             center);
             });
         }
         // ------------------------------------------------------------------
@@ -263,26 +265,35 @@ private:
                 std::stringstream out_;
 
                 {
-                    // lock `pcd_.current_scan_` before modifying the value, to
-                    // protect the case, when visualizer is accessing it
-                    // at the same time we are modifying it.
-                    std::lock_guard<std::mutex> lock(pcd_.lock_);
+                    // lock `current_scan_` and `bbox_` before modifying the
+                    // value, to protect the case, when visualizer is accessing
+                    // it at the same time we are modifying it.
+                    std::lock_guard<std::mutex> lock(pcd_and_bbox_.lock_);
 
                     // For visualization it is required that the pointcloud
                     // must be on CPU device.
                     // The `target` pointcloud is transformed to it's global
                     // position in the model by it's `frame to model transform`.
-                    pcd_.current_scan_ =
+                    pcd_and_bbox_.current_scan_ =
                             target.Transform(cumulative_transform.To(device_,
                                                                      dtype_))
                                     .CPU();
 
+                    // Translate bounding box to current scan frame to model
+                    // transform.
+                    pcd_and_bbox_.bbox_ = pcd_and_bbox_.bbox_.Translate(
+                            core::eigen_converter::TensorToEigenMatrixXd(
+                                    cumulative_transform.Clone()
+                                            .Slice(0, 0, 3)
+                                            .Slice(1, 3, 4)),
+                            /*relative = */ false);
+
                     total_points_in_frame +=
-                            pcd_.current_scan_.GetPoints().GetLength();
+                            pcd_and_bbox_.current_scan_.GetPoints().GetLength();
 
                     // Removing `normal` attribute before passing it to
                     // the visualizer might give us some performance benifits.
-                    pcd_.current_scan_.RemovePointAttr("normals");
+                    pcd_and_bbox_.current_scan_.RemovePointAttr("normals");
                 }
 
                 if (i != 0) {
@@ -305,7 +316,8 @@ private:
                             // so, we don't need to use locks for such cases.
                             this->SetOutput(out_);
 
-                            std::lock_guard<std::mutex> lock(pcd_.lock_);
+                            std::lock_guard<std::mutex> lock(
+                                    pcd_and_bbox_.lock_);
 
                             // We render the `source` or the previous
                             // "current scan" pointcloud by using the material
@@ -317,15 +329,14 @@ private:
                             // a different material. In next iteration we will
                             // change the material to the `model` material.
                             this->widget3d_->GetScene()->AddGeometry(
-                                    filenames_[i + 1], &pcd_.current_scan_,
-                                    mat_);
+                                    filenames_[i + 1],
+                                    &pcd_and_bbox_.current_scan_, mat_);
 
-                            // Bounding box and camera setup.
-                            auto bbox = this->widget3d_->GetScene()
-                                                ->GetBoundingBox();
-                            auto center = bbox.GetCenter().cast<float>();
-                            this->widget3d_->SetupCamera(verticalFoV, bbox,
-                                                         center);
+                            // Setup camera.
+                            auto center = pcd_and_bbox_.bbox_.GetCenter()
+                                                  .cast<float>();
+                            this->widget3d_->SetupCamera(
+                                    verticalFoV, pcd_and_bbox_.bbox_, center);
                         });
             }
             // --------------------------------------------------------------
@@ -533,8 +544,6 @@ private:
                 t::io::ReadPointCloud(path, pointcloud_local,
                                       {"auto", false, false, true});
 
-                // Cpnverting attributes to Floar32 and currently only
-                // Float32 pointcloud is supported by the tensor
                 // registration module.
                 for (std::string attr : {"points", "colors", "normals"}) {
                     if (pointcloud_local.HasPointAttr(attr)) {
@@ -555,7 +564,7 @@ private:
                                               pointcloud_local.GetPoints()
                                                       .Slice(0, 0, -1)
                                                       .Slice(1, 2, 3)
-                                                      .To(dtype_, true));
+                                                      .To(dtype_, false));
 
                 // Normals are required by `PointToPlane` registration method.
                 // Currenly Normal Estimation is not supported by
@@ -640,7 +649,7 @@ private:
     }
 
 private:
-    // lock to protect `pcd_.current_scan_` before modifying
+    // lock to protect `current_scan_` and  `bbox_` before modifying
     // the value, ensuring the visualizer thread doesn't read the
     // data, while we are modifying it.
     struct {
@@ -648,7 +657,10 @@ private:
         std::mutex lock_;
         // Pointcloud to store the "current scan", used for visualization.
         t::geometry::PointCloud current_scan_;
-    } pcd_;
+        // Bounding box. It is translated by the translation component of the
+        // cumulative transformation.
+        geometry::AxisAlignedBoundingBox bbox_;
+    } pcd_and_bbox_;
 
     // Checks if the GUI is closed, and if so, stop the code.
     std::atomic<bool> is_done_;
