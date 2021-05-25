@@ -1,33 +1,38 @@
-# Create object library
-set(T_GEOMETRY_SRC
-    kernel/Image.cpp
-    kernel/ImageCPU.cpp
-    kernel/PointCloud.cpp
-    kernel/PointCloudCPU.cpp
-    kernel/TSDFVoxelGrid.cpp
-    kernel/TSDFVoxelGridCPU.cpp
-    PointCloud.cpp
+add_library(tgeometry OBJECT)
+
+target_sources(tgeometry PRIVATE
     Image.cpp
+    PointCloud.cpp
     RGBDImage.cpp
     TensorMap.cpp
     TriangleMesh.cpp
     TSDFVoxelGrid.cpp
 )
 
+target_sources(tgeometry PRIVATE
+    kernel/Image.cpp
+    kernel/ImageCPU.cpp
+    kernel/PointCloud.cpp
+    kernel/PointCloudCPU.cpp
+    kernel/TSDFVoxelGrid.cpp
+    kernel/TSDFVoxelGridCPU.cpp
+)
+
 if (BUILD_CUDA_MODULE)
-    list(APPEND T_GEOMETRY_SRC
+    target_sources(tgeometry PRIVATE
         kernel/ImageCUDA.cu
+        kernel/NPPImage.cpp
         kernel/PointCloudCUDA.cu
         kernel/TSDFVoxelGridCUDA.cu
-        kernel/NPPImage.cpp
-        )
+    )
 endif()
 
 if (WITH_IPPICV)
-    list(APPEND T_GEOMETRY_SRC kernel/IPPImage.cpp)
+    target_sources(tgeometry PRIVATE
+        kernel/IPPImage.cpp
+    )
 endif()
 
-add_library(tgeometry OBJECT ${T_GEOMETRY_SRC})
 open3d_show_and_abort_on_warning(tgeometry)
 open3d_set_global_properties(tgeometry)
 open3d_set_open3d_lib_properties(tgeometry)
