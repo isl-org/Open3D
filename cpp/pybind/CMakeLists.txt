@@ -2,19 +2,6 @@ if (NOT PYTHON_EXECUTABLE)
     message(FATAL_ERROR "PYTHON_EXECUTABLE should be set in top level CMakeLists.txt")
 endif()
 
-# Detect whether `npm` is installed. Jupyter support will only be enabled if
-# `npm` is found.
-find_program(NPM "npm")
-if (BUILD_JUPYTER_EXTENSION)
-    if (NOT NPM)
-        message(WARNING "Cannot find npm. Jupyter support will be disabled.")
-        set(BUILD_JUPYTER_EXTENSION OFF)
-    else()
-        message(STATUS "npm found at: ${NPM}. Jupyter support will be enabled.")
-    endif()
-endif()
-message(STATUS "BUILD_JUPYTER_EXTENSION is set to ${BUILD_JUPYTER_EXTENSION}")
-
 # We need to get python version to configure some meta files
 execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d.%d' % (sys.version_info.major, sys.version_info.minor))"
