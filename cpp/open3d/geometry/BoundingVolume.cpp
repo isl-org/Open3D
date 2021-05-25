@@ -29,12 +29,11 @@
 #include <Eigen/Eigenvalues>
 #include <numeric>
 
+#include "BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Console.h"
-#include "BoundingVolume.h"
-
 
 namespace open3d {
 namespace geometry {
