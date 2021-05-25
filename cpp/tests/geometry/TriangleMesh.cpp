@@ -2233,5 +2233,23 @@ TEST(TriangleMesh, IsOriented) {
     EXPECT_TRUE(tm.IsOriented());
 }
 
+TEST(TriangleMesh, IsOrientable) {
+    EXPECT_TRUE(geometry::TriangleMesh::CreateSphere()->IsOrientable());
+    EXPECT_FALSE(geometry::TriangleMesh::CreateMoebius()->IsOrientable());
+    EXPECT_TRUE(geometry::TriangleMesh::CreateTorus()->IsOrientable());
+
+    // A non-manifold edge mesh
+    Eigen::Vector3d A(0, 0, 0);   // 0
+    Eigen::Vector3d B(1, 0, 0);   // 1
+    Eigen::Vector3d C(0, 1, 0);   // 2
+    Eigen::Vector3d D(0, 0, 1);   // 3
+    Eigen::Vector3d E(0, 0, -1);  // 4
+    geometry::TriangleMesh tm;
+    tm.vertices_ = {A, B, C, D, E};
+    tm.triangles_ = {Eigen::Vector3i(0, 1, 2), Eigen::Vector3i(0, 1, 3),
+                     Eigen::Vector3i(0, 1, 4)};
+    EXPECT_FALSE(tm.IsOrientable());
+}
+
 }  // namespace tests
 }  // namespace open3d

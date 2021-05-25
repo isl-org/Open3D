@@ -45,3 +45,22 @@ def test_is_oriented():
     triangles = np.array([[0, 1, 3], [0, 2, 1], [3, 1, 2], [2, 0, 3]])
     mesh.triangles = o3d.utility.Vector3iVector(triangles)
     assert mesh.is_oriented()
+
+
+def test_is_orientable():
+    mesh = o3d.geometry.TriangleMesh().create_sphere()
+    assert mesh.is_orientable()
+
+    mesh = o3d.geometry.TriangleMesh().create_moebius()
+    assert not mesh.is_orientable()
+
+    mesh = o3d.geometry.TriangleMesh().create_torus()
+    assert mesh.is_orientable()
+
+    # A non-manifold edge mesh
+    xyz = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, -1]])
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(xyz)
+    triangles = np.array([[0, 1, 2], [0, 1, 3], [0, 1, 4]])
+    mesh.triangles = o3d.utility.Vector3iVector(triangles)
+    assert not mesh.is_orientable()
