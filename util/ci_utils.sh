@@ -42,8 +42,6 @@ STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
 SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
-# Node (Jupyter)
-YARN_VER="1.22.10"
 
 # Documentation
 SPHINX_VER=3.5.4
@@ -153,7 +151,6 @@ install_python_dependencies() {
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
     if [[ "with-jupyter" =~ ^($options)$ ]]; then
         python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
-        npm install -g yarn@${YARN_VER}
     fi
 
     echo
