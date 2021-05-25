@@ -3,9 +3,11 @@ include(ExternalProject)
 set(WEBRTC_VER 60e6748)
 if (APPLE)
     set_local_or_remote_url(WEBRTC_URL
-        LOCAL_URL "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/webrtc_${WEBRTC_VER}_macos.tar.gz"
-        REMOTE_URLS https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_${WEBRTC_VER}_macos.tar.gz)
-    set(WEBRTC_SHA256 32c6b494fb3e353598d6e87d0d5f498399764a014997ae2162c4b5f0bb79448f)
+        LOCAL_URL
+        "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/webrtc_${WEBRTC_VER}_macos_10.14.tar.gz"
+        REMOTE_URLS
+        https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_${WEBRTC_VER}_macos_10.14.tar.gz)
+    set(WEBRTC_SHA256 e9d1f4e4fefb2e28ef4f16cf4a4f0008baf4fe638ca3ad329e82e7fd0ce87f56)
 elseif (WIN32)
     set_local_or_remote_url(WEBRTC_URL
         LOCAL_URL "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/webrtc_${WEBRTC_VER}_win.zip"
