@@ -4,6 +4,17 @@ set -euox pipefail
 # This script builds WebRTC for Open3D for Ubuntu and macOS. For Windows, see
 # .github/workflows/webrtc.yml
 #
+# Usage:
+# $ bash # Start a new shell
+# Specify custom configuration by exporting environment variables
+# GLIBCXX_USE_CXX11_ABI, WEBRTC_COMMIT and DEPOT_TOOLS_COMMIT, if required.
+# $ source 3rdparty/webrtc/webrtc_build.sh
+# $ install_dependencies_ubuntu   # Ubuntu only
+# $ download_webrtc_sources
+# $ build_webrtc
+# A webrtc_<commit>_platform.tar.gz file will be created that can be used to
+# build Open3D with WebRTC support.
+#
 # Procedure:
 #
 # 1) Download depot_tools, webrtc to following directories:

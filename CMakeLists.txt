@@ -176,7 +176,7 @@ if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
 if(BUILD_WEBRTC AND LINUX_AARCH64)
-	message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
+    message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
 endif()
 if(BUILD_WEBRTC AND MSVC AND (BUILD_SHARED OR NOT STATIC_WINDOWS_RUNTIME))
     message(FATAL_ERROR "Please use STATIC_WINDOWS_RUNTIME=ON and "

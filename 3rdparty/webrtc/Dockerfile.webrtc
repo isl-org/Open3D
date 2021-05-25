@@ -17,6 +17,6 @@ FROM ubuntu:18.04
 
 ARG SUDO=command
 COPY 3rdparty/webrtc 3rdparty/webrtc
-RUN bash -c "source 3rdparty/webrtc/webrtc_build.sh && install_dependencies_ubuntu purge_cache"
+RUN bash -c "source 3rdparty/webrtc/webrtc_build.sh && install_dependencies_ubuntu purge-cache"
 RUN bash -c "source 3rdparty/webrtc/webrtc_build.sh && download_webrtc_sources"
 RUN bash -c "source 3rdparty/webrtc/webrtc_build.sh && build_webrtc"

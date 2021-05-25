@@ -25,7 +25,10 @@ project(webrtc CXX)
 
 include(CMakeDependentOption)
 # Force WEBRTC_IS_DEBUG to ON if WIN32 Debug, else allow user setting.
-cmake_dependent_option(WEBRTC_IS_DEBUG "WebRTC Debug build" OFF
+# Warning: MSBuild multi-config may override this, but generator expressions are
+# not supported here for forcing the correct option.
+cmake_dependent_option(WEBRTC_IS_DEBUG
+    "WebRTC Debug build. Use ON for Win32 Open3D Debug." OFF
     "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" OFF)
 
@@ -71,8 +74,8 @@ add_custom_target(webrtc
 # libwebrtc_extra.a
 add_library(webrtc_extra STATIC ${EXTRA_WEBRTC_OBJS})
 set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES
-	GENERATED TRUE
-	EXTERNAL_OBJECT TRUE)
+    GENERATED TRUE
+    EXTERNAL_OBJECT TRUE)
 add_dependencies(webrtc_extra webrtc)
 set_target_properties(webrtc_extra PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(webrtc_extra PROPERTIES
