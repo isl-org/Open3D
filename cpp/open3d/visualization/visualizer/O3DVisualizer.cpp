@@ -938,6 +938,10 @@ struct O3DVisualizer::Impl {
                 mat.clearcoat_roughness_img = mesh_material.clearCoatRoughness;
                 mat.anisotropy_img = mesh_material.anisotropy;
             }
+        } else {
+            // Adding a triangle mesh model. Shader needs to be set to
+            // defaultLit for O3D shader handling logic to work.
+            mat.shader = kShaderLit;
         }
 
         // We assume that the caller isn't setting a group or time (and in any
