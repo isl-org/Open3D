@@ -1,8 +1,3 @@
-add_custom_target(copy_html_dir
-    COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_BINARY_DIR}/html
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/html ${CMAKE_BINARY_DIR}/html
-)
-
 set(WEBRTC_STREAMER_SRC
     BitmapTrackSource.cpp
     ImageCapturer.cpp
