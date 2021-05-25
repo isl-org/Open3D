@@ -839,7 +839,11 @@ struct O3DVisualizer::Impl {
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
             valid_tpcd = t_cloud.get();
-        } else if (!model) {  // branch only applies to geometries
+        } else if (model) {
+            // Adding a triangle mesh model. Shader needs to be set to
+            // defaultLit for O3D shader handling logic to work.
+            mat.shader = kShaderLit;
+        } else {  // branch only applies to geometries
             bool has_colors = false;
             bool has_normals = false;
 
@@ -938,10 +942,6 @@ struct O3DVisualizer::Impl {
                 mat.clearcoat_roughness_img = mesh_material.clearCoatRoughness;
                 mat.anisotropy_img = mesh_material.anisotropy;
             }
-        } else {
-            // Adding a triangle mesh model. Shader needs to be set to
-            // defaultLit for O3D shader handling logic to work.
-            mat.shader = kShaderLit;
         }
 
         // We assume that the caller isn't setting a group or time (and in any
