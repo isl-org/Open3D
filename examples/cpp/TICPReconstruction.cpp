@@ -483,7 +483,7 @@ protected:
                 // rendering, using `AddGeometry`, or update an existing
                 // pointcloud using `UpdateGeometry`, then setup camera.
                 gui::Application::GetInstance().PostToMainThread(
-                        this, [this, i, out_ = out_.str()]() {
+                        this, [this, out_ = out_.str()]() {
                             this->SetOutput(out_);
 
                             // Locking to protect: pcd_.source_,
