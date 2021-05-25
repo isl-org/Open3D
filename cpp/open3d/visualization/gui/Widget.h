@@ -107,6 +107,8 @@ public:
     virtual Size CalcPreferredSize(const LayoutContext& context,
                                    const Constraints& constraints) const;
 
+    virtual Size CalcMinimumSize(const LayoutContext& context) const;
+
     virtual void Layout(const LayoutContext& context);
 
     enum class DrawResult { NONE, REDRAW, RELAYOUT };

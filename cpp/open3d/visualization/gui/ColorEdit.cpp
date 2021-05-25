@@ -75,7 +75,8 @@ Size ColorEdit::CalcPreferredSize(const LayoutContext& context,
 
 ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     auto new_value = impl_->value_;
     DrawImGuiPushEnabledState();

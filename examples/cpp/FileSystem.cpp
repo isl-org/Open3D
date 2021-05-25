@@ -30,28 +30,34 @@
 
 void PrintHelp() {
     using namespace open3d;
-    utility::LogInfo("Usage :");
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
     utility::LogInfo("    > FileSystem ls [dir]");
     utility::LogInfo("    > FileSystem mkdir [dir]");
     utility::LogInfo("    > FileSystem rmdir [dir]");
     utility::LogInfo("    > FileSystem rmfile [file]");
     utility::LogInfo("    > FileSystem fileexists [file]");
+    // clang-format on
+    utility::LogInfo("");
 }
 
-int main(int argc, char **args) {
+int main(int argc, char *argv[]) {
+    using namespace open3d;
     using namespace open3d::utility::filesystem;
+    if (!(argc == 2 || argc == 3) ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
+    }
 
     std::string directory, function;
-    if (argc <= 1) {
-        PrintHelp();
-        return 0;
+    function = std::string(argv[1]);
+    if (argc == 2) {
+        directory = ".";
     } else {
-        function = std::string(args[1]);
-        if (argc <= 2) {
-            directory = ".";
-        } else {
-            directory = std::string(args[2]);
-        }
+        directory = std::string(argv[2]);
     }
 
     if (function == "ls") {

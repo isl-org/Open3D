@@ -36,23 +36,27 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    SLAC [dataset_folder] [options]");
-    utility::LogInfo("--method [default: rigid, optional: slac]");
-    utility::LogInfo("--voxel_size [default: 0.05]");
-    utility::LogInfo("--weight [default: 1]");
-    utility::LogInfo("--distance_threshold [default: 0.07]");
-    utility::LogInfo("--fitness_threshold [default: 0.3]");
-    utility::LogInfo("--iterations [default: 5]");
-    utility::LogInfo("--device [default: CPU:0]");
-    utility::LogInfo("--debug");
-    utility::LogInfo("--debug_node [default: 0]");
+    utility::LogInfo("    > SLAC [dataset_folder] [options]");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --method [default: rigid, optional: slac]");
+    utility::LogInfo("    --voxel_size [default: 0.05]");
+    utility::LogInfo("    --weight [default: 1]");
+    utility::LogInfo("    --distance_threshold [default: 0.07]");
+    utility::LogInfo("    --fitness_threshold [default: 0.3]");
+    utility::LogInfo("    --iterations [default: 5]");
+    utility::LogInfo("    --device [default: CPU:0]");
+    utility::LogInfo("    --debug");
+    utility::LogInfo("    --debug_node [default: 0]");
     // clang-format on
     utility::LogInfo("");
 }
 
-int main(int argc, char** argv) {
-    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc < 2) {
+int main(int argc, char* argv[]) {
+    using namespace open3d;
+
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }

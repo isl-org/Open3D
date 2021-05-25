@@ -79,7 +79,8 @@ Size Checkbox::CalcPreferredSize(const LayoutContext& context,
 
 Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
     auto result = Widget::DrawResult::NONE;
 
     // ImGUI doesn't offer styling specific to checkboxes other than the

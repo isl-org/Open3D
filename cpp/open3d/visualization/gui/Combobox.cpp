@@ -170,7 +170,8 @@ Combobox::DrawResult Combobox::Draw(const DrawContext& context) {
     bool did_open = false;
 
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     ImGui::PushStyleColor(
             ImGuiCol_Button,

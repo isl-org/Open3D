@@ -84,12 +84,22 @@ protected:
     }
 };
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > DepthCapture  [filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    if (argc < 2) {
-        PrintOpen3DVersion();
-        utility::LogInfo("Usage:");
-        utility::LogInfo("    > DepthCapture  [filename]");
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 

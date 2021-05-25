@@ -35,14 +35,25 @@
 
 #include "open3d/Open3D.h"
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > ISSKeypoints [mesh|pointcloud] [filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    if (argc < 3) {
-        utility::LogInfo("Open3D {}", OPEN3D_VERSION);
-        utility::LogInfo("Usage:");
-        utility::LogInfo("\t> {} [mesh|pointcloud] [filename] ...\n", argv[0]);
+
+    if (argc != 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 

@@ -28,14 +28,25 @@
 
 #include "open3d/Open3D.h"
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo(">    ColorMapOptimization [data_dir]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     using namespace open3d;
     using namespace open3d::utility::filesystem;
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc != 2) {
-        utility::LogInfo("Usage :");
-        utility::LogInfo(">    ColorMapOptimization data_dir");
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
     // Read RGBD images
@@ -46,6 +57,9 @@ int main(int argc, char *argv[]) {
     ListFilesInDirectoryWithExtension(data_path + "/image/", "jpg",
                                       color_filenames);
     assert(depth_filenames.size() == color_filenames.size());
+    std::sort(depth_filenames.begin(), depth_filenames.end());
+    std::sort(color_filenames.begin(), color_filenames.end());
+
     std::vector<geometry::RGBDImage> rgbd_images;
     for (size_t i = 0; i < depth_filenames.size(); i++) {
         utility::LogDebug("reading {}...", depth_filenames[i]);

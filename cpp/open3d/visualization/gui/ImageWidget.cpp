@@ -120,13 +120,16 @@ Widget::DrawResult ImageWidget::Draw(const DrawContext& context) {
     if (params.texture != visualization::rendering::TextureHandle::kBad) {
         ImTextureID image_id =
                 reinterpret_cast<ImTextureID>(params.texture.GetId());
-        ImGui::SetCursorScreenPos(ImVec2(params.pos_x, params.pos_y));
+        ImGui::SetCursorScreenPos(
+                ImVec2(params.pos_x, params.pos_y - ImGui::GetScrollY()));
         ImGui::Image(image_id, ImVec2(params.width, params.height),
                      ImVec2(params.u0, params.v0),
                      ImVec2(params.u1, params.v1));
     } else {
         // Draw error message if we don't have an image, instead of
         // quietly failing or something.
+        Rect frame = GetFrame();         // hide reference with a copy...
+        frame.y -= ImGui::GetScrollY();  // ... so we can adjust for scrolling
         const char* error_text = "  Error\nloading\n image";
         Color fg(1.0, 1.0, 1.0);
         ImGui::GetWindowDrawList()->AddRectFilled(
