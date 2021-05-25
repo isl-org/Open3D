@@ -108,7 +108,7 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_RPC_INTERFACE=ON `
             -DBUILD_LIBREALSENSE=ON `
-            .DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
+            -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA }} `
             ${{ env.SRC_DIR }}
@@ -188,6 +188,14 @@ jobs:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
 
+      - name: Install Python dependencies
+        shell: pwsh
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install -r python/requirements.txt
+          python -m pip install -r python/requirements_jupyter.txt
+
       - name: Config
         shell: pwsh
         run: |
@@ -205,6 +213,7 @@ jobs:
             -DBUILD_RPC_INTERFACE=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
             ${{ env.SRC_DIR }}
 
