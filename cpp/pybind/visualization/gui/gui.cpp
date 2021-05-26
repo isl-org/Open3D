@@ -493,6 +493,10 @@ void pybind_gui_classes(py::module &m) {
             .def("show_message_box", &PyWindow::ShowMessageBox,
                  "Displays a simple dialog with a title and message and okay "
                  "button")
+            .def("show_menu", &O3DVisualizer::ShowMenu,
+                 "show_menu(show): shows or hides the menu in the window, "
+                 "except on macOS since the menubar is not in the window "
+                 "and all applications must have a menubar.")
             .def_property_readonly(
                     "renderer", &PyWindow::GetRenderer,
                     "Gets the rendering.Renderer object for the Window");
