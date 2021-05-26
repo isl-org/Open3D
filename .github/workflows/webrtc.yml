@@ -23,6 +23,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # macOS 10.15 build does not work on macOS 10.14 due to this issue:
+        # https://openradar.appspot.com/FB7647406
+        # macOS 10.14 build works on both 10.14 and 10.15
         os: [ubuntu-18.04, macos-10.15]
         GLIBCXX_USE_CXX11_ABI: [0, 1]
         exclude:
