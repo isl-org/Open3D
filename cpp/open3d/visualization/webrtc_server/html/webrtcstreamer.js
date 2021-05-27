@@ -275,7 +275,7 @@ var WebRtcStreamer = (function () {
           y: event.offsetY,
           modifiers: WebRtcStreamer._getModifiers(event),
           button: {
-            button: o3dmouseButtons[event.button], // "LEFT", // Fix me.
+            button: o3dmouseButtons[event.button],
             count: 1,
           },
         };
@@ -292,7 +292,7 @@ var WebRtcStreamer = (function () {
           y: Math.round(event.targetTouches[0].pageY - rect.top),
           modifiers: 0,
           button: {
-            button: o3dmouseButtons[event.button], // "LEFT", // Fix me.
+            button: o3dmouseButtons[event.button],
             count: 1,
           },
         };
@@ -308,7 +308,7 @@ var WebRtcStreamer = (function () {
           y: event.offsetY,
           modifiers: WebRtcStreamer._getModifiers(event),
           button: {
-            button: o3dmouseButtons[event.button], // "LEFT", // Fix me.
+            button: o3dmouseButtons[event.button],
             count: 1,
           },
         };
@@ -325,7 +325,7 @@ var WebRtcStreamer = (function () {
           y: Math.round(event.targetTouches[0].pageY - rect.top),
           modifiers: 0,
           button: {
-            button: o3dmouseButtons[event.button], // "LEFT", // Fix me.
+            button: o3dmouseButtons[event.button],
             count: 1,
           },
         };
@@ -377,7 +377,7 @@ var WebRtcStreamer = (function () {
           y: event.offsetY,
           modifiers: WebRtcStreamer._getModifiers(event),
           button: {
-            button: o3dmouseButtons[event.button], // "LEFT", // Fix me.
+            button: o3dmouseButtons[event.button],
             count: 1,
           },
         };
