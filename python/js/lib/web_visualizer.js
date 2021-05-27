@@ -209,7 +209,7 @@ let WebVisualizerView = widgets.DOMWidgetView.extend({
     // Create WebRTC stream.
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
-      location.protocol + "//" + window.location.hostname + ":" + 8888,
+      "",
       onClose,
       this.commsCall.bind(this)
     );
