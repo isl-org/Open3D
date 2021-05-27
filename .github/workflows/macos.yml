@@ -15,7 +15,8 @@ on:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
 env:
-  NPROC: 2
+  # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+  NPROC: 3
 
 jobs:
   MacOS:
@@ -126,7 +127,7 @@ jobs:
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           echo
           source util/ci_utils.sh
-          install_python_dependencies with-conda
+          install_python_dependencies with-conda with-jupyter
           echo
           echo -n "Using conda"
           conda info

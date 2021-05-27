@@ -278,7 +278,7 @@ Open3D-ML from GitHub during the build with
     with compile flags ``-Xcompiler -fno-gnu-unique`` or use the `PyTorch
     wheels from Open3D.
     <https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1>`_
-    To reproduce the Open3D PyTorch wheels see the builder repository `here. 
+    To reproduce the Open3D PyTorch wheels see the builder repository `here.
     <https://github.com/intel-isl/pytorch_builder>`_
 
 
@@ -345,6 +345,28 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
     by following the `official
     documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
 
+WebRTC remote visualization
+```````````````````````````
+
+We provide pre-built binaries of the `WebRTC library <https://webrtc.org/>`_ to
+build Open3D with remote visualization. Currently, Linux, macOS and Windows are
+supported for ``x86_64`` architecture. If you wish to use a different version of
+WebRTC or build for a different configuration or platform, please see the
+`official WebRTC documentation
+<https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/index.md>`_
+and the Open3D build scripts.
+
+Linux and macOS
+"""""""""""""""
+Please see the build script ``3rdparty/webrtc/webrtc_build.sh``. For Linux, you
+can also use the provided ``3rdparty/webrtc/Dockerfile.webrtc`` for building.
+
+Windows
+"""""""
+We provide Windows MSVC static libraries built in Release and Debug mode built with
+the static Windows runtime. This corresponds to building with the ``/MT`` and
+``/MTd`` options respectively. For the build procedure, please see
+``.github/workflows/webrtc.yml``. Other configrations are not supported.
 
 Unit test
 ---------

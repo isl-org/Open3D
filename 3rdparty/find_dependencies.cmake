@@ -1211,6 +1211,7 @@ endif ()
 if(BUILD_WEBRTC)
     # Build WebRTC from source for advanced users.
     option(BUILD_WEBRTC_FROM_SOURCE "Build WebRTC from source" OFF)
+    mark_as_advanced(BUILD_WEBRTC_FROM_SOURCE)
 
     # WebRTC
     if(BUILD_WEBRTC_FROM_SOURCE)
@@ -1226,7 +1227,10 @@ if(BUILD_WEBRTC)
     set(WEBRTC_TARGET "3rdparty_webrtc")
     add_dependencies(3rdparty_webrtc ext_webrtc_all)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${WEBRTC_TARGET}")
-    target_link_libraries(3rdparty_webrtc INTERFACE Threads::Threads dl)
+    target_link_libraries(3rdparty_webrtc INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+    if (MSVC) # https://github.com/iimachines/webrtc-build/issues/2#issuecomment-503535704
+        target_link_libraries(3rdparty_webrtc INTERFACE secur32 winmm dmoguids wmcodecdspuuid msdmo strmiids)
+    endif()
 
     # CivetWeb server
     include(${Open3D_3RDPARTY_DIR}/civetweb/civetweb.cmake)

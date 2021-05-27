@@ -201,6 +201,7 @@ let WebVisualizerView = widgets.DOMWidgetView.extend({
     this.videoElt.muted = true;
     this.videoElt.controls = false;
     this.videoElt.playsinline = true;
+    this.videoElt.innerText = "Your browser does not support HTML5 video.";
 
     // this.el is the DOM element associated with the view.
     this.el.appendChild(this.videoElt);
