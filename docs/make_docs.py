@@ -296,6 +296,8 @@ class SphinxDocsBuilder:
 
             cmd = [
                 "sphinx-build",
+                "-j",
+                "16",
                 "-b",
                 "html",
                 "-D",
@@ -308,6 +310,8 @@ class SphinxDocsBuilder:
         else:
             cmd = [
                 "sphinx-build",
+                "-j",
+                "16",
                 "-b",
                 "html",
                 ".",
