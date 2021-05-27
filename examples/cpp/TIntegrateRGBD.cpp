@@ -173,15 +173,14 @@ int main(int argc, char* argv[]) {
             auto result = voxel_grid.RayCast(
                     intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
                     depth_scale, 0.1, depth_max, std::min(i * 1.0f, 3.0f),
-                    MaskCode::DepthMap | MaskCode::VertexMap |
-                            MaskCode::ColorMap | MaskCode::NormalMap);
+                    MaskCode::DepthMap);
             ray_timer.Stop();
 
             utility::LogInfo("{}: Raycast takes {}", i,
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
-            if (i % 20 == 0) {
+            if (false) {
                 core::Tensor range_map = result[MaskCode::RangeMap];
                 t::geometry::Image im_near(
                         range_map.Slice(2, 0, 1).Contiguous() / depth_max);
