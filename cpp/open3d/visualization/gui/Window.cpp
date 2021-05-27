@@ -685,7 +685,10 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     ShowDialog(dlg);
 }
 
-void Window::ShowMenu(bool show) { impl_->draw_menu_ = show; }
+void Window::ShowMenu(bool show) {
+    impl_->draw_menu_ = show;
+    SetNeedsLayout();
+}
 
 LayoutContext Window::GetLayoutContext() { return {GetTheme(), impl_->imgui_}; }
 
