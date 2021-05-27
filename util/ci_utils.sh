@@ -278,6 +278,13 @@ build_pip_conda_package() {
         echo "Azure Kinect disabled in Python wheel."
         BUILD_AZURE_KINECT=OFF
     fi
+    if [[ "build_jupyter" =~ ^($options)$ ]]; then
+        echo "Building Jupyter extension in Python wheel."
+        BUILD_JUPYTER_EXTENSION=ON
+    else
+        echo "Jupyter extension disabled in Python wheel."
+        BUILD_JUPYTER_EXTENSION=OFF
+    fi
     set -u
 
     echo
@@ -292,7 +299,7 @@ build_pip_conda_package() {
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUILD_RPC_INTERFACE=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
-        "-DBUILD_JUPYTER_EXTENSION=ON"
+        "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
         "-DPYTHON_EXECUTABLE=$(command -v python)"
         "-DCMAKE_BUILD_TYPE=Release"
