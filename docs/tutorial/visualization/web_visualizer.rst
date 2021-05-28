@@ -22,6 +22,9 @@ In this tutorial, we cover two common use cases:
   both the Python Jupyter notebook and Jupyter lab environments. You'll need
   to modify your code to use the non-blocking APIs and wrappers.
 
+.. image:: ../../_static/visualization/webrtc_visualizer.gif
+    :width: 960px
+
 As of release ``0.13``, Open3D web visualizer is supported on the following
 platforms:
 
