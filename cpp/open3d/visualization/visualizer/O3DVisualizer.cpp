@@ -1221,6 +1221,9 @@ struct O3DVisualizer::Impl {
     }
 
     void SetShader(O3DVisualizer::Shader shader) {
+        // Don't force material override if no change
+        if (ui_state_.scene_shader == shader) return;
+
         ui_state_.scene_shader = shader;
         for (auto &o : objects_) {
             OverrideMaterial(o.name, o.material, shader);
