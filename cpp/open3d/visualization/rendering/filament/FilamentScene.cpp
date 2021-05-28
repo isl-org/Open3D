@@ -33,6 +33,7 @@
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
 #include <unordered_set>
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293 4305)
@@ -88,7 +89,7 @@
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
 
-void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
+static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
     free(buffer);
 }
 
@@ -594,26 +595,58 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         }
 
         bool geometry_update_needed = n_vertices != vbuf->getVertexCount();
+        bool pcloud_is_gpu =
+                points.GetDevice().GetType() == core::Device::DeviceType::CUDA;
+        t::geometry::PointCloud cpu_pcloud;
+        if (pcloud_is_gpu) {
+            cpu_pcloud = point_cloud.CPU();
+        }
 
         // Update the each of the attribute requested
         if (update_flags & kUpdatePointsFlag) {
-            filament::VertexBuffer::BufferDescriptor pts_descriptor(
-                    points.GetDataPtr(), n_vertices * 3 * sizeof(float));
-            vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
+            const size_t vertex_array_size = n_vertices * 3 * sizeof(float);
+            if (pcloud_is_gpu) {
+                auto vertex_data =
+                        static_cast<float*>(malloc(vertex_array_size));
+                memcpy(vertex_data, cpu_pcloud.GetPoints().GetDataPtr(),
+                       vertex_array_size);
+                filament::VertexBuffer::BufferDescriptor pts_descriptor(
+                        vertex_data, vertex_array_size, DeallocateBuffer);
+                vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
+            } else {
+                filament::VertexBuffer::BufferDescriptor pts_descriptor(
+                        points.GetDataPtr(), vertex_array_size);
+                vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
+            }
         }
 
         if (update_flags & kUpdateColorsFlag && point_cloud.HasPointColors()) {
             const size_t color_array_size = n_vertices * 3 * sizeof(float);
-            filament::VertexBuffer::BufferDescriptor color_descriptor(
-                    point_cloud.GetPointColors().GetDataPtr(),
-                    color_array_size);
-            vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
+            if (pcloud_is_gpu) {
+                auto color_data = static_cast<float*>(malloc(color_array_size));
+                memcpy(color_data, cpu_pcloud.GetPoints().GetDataPtr(),
+                       color_array_size);
+                filament::VertexBuffer::BufferDescriptor color_descriptor(
+                        color_data, color_array_size, DeallocateBuffer);
+                vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
+            } else {
+                filament::VertexBuffer::BufferDescriptor color_descriptor(
+                        point_cloud.GetPointColors().GetDataPtr(),
+                        color_array_size);
+                vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
+            }
         }
 
         if (update_flags & kUpdateNormalsFlag &&
             point_cloud.HasPointNormals()) {
             const size_t normal_array_size = n_vertices * 4 * sizeof(float);
-            const auto& normals = point_cloud.GetPointNormals();
+            const void* normal_data = nullptr;
+            if (pcloud_is_gpu) {
+                const auto& normals = point_cloud.GetPointNormals();
+                normal_data = normals.GetDataPtr();
+            } else {
+                normal_data = cpu_pcloud.GetPointNormals().GetDataPtr();
+            }
 
             // Converting normals to Filament type - quaternions
             auto float4v_tangents = static_cast<filament::math::quatf*>(
@@ -622,7 +655,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                                        .vertexCount(n_vertices)
                                        .normals(reinterpret_cast<
                                                 const filament::math::float3*>(
-                                               normals.GetDataPtr()))
+                                               normal_data))
                                        .build();
             orientation->getQuats(float4v_tangents, n_vertices);
             filament::VertexBuffer::BufferDescriptor normals_descriptor(
