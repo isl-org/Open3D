@@ -208,17 +208,43 @@ void Hashmap::Save(const std::string& filename) const {
     values.IndexGet({active_indices}).Save(filename + ".value.npy");
 }
 
-void Hashmap::Load(const std::string& filename) {
-    Clear();
-
+Hashmap Hashmap::Load(const std::string& filename,
+                      const core::Device& device,
+                      const core::HashmapBackend& backend) {
     core::Tensor keys = core::Tensor::Load(fmt::format("{}.key.npy", filename));
     core::Tensor values =
             core::Tensor::Load(fmt::format("{}.value.npy", filename));
 
+    core::Dtype dtype_key = keys.GetDtype();
+    core::Dtype dtype_value = values.GetDtype();
+
+    int length_key = keys.GetLength();
+    int length_value = values.GetLength();
+    if (length_key != length_value) {
+        utility::LogError("Incompatible key value length.");
+    }
+    int init_capacity = length_key * 1.5;
+
+    core::SizeVector shape_key = keys.GetShape();
+    core::SizeVector shape_value = values.GetShape();
+    if (shape_key.size() < 2 || shape_value.size() < 2) {
+        utility::LogError("key value element shape must be larger than 1 dim");
+    }
+    core::SizeVector element_shape_key =
+            SizeVector(shape_key.begin() + 1, shape_key.end());
+    core::SizeVector element_shape_value =
+            SizeVector(shape_value.begin() + 1, shape_value.end());
+
+    auto hashmap =
+            Hashmap(init_capacity, dtype_key, dtype_value, element_shape_key,
+                    element_shape_value, device, backend);
+
     /// This may fail due to CUDA out-of-memory, as it requires both the value
     /// buffer tensor and the values to be inserted on device.
     core::Tensor masks, addrs;
-    Insert(keys.To(GetDevice()), values.To(GetDevice()), masks, addrs);
+    hashmap.Insert(keys.To(device), values.To(device), masks, addrs);
+
+    return hashmap;
 }
 
 Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }

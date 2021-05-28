@@ -363,14 +363,6 @@ TSDFVoxelGrid TSDFVoxelGrid::To(const core::Device &device, bool copy) const {
     return device_tsdf_voxelgrid;
 }
 
-void TSDFVoxelGrid::Save(const std::string &filename) const {
-    block_hashmap_->Save(filename);
-}
-
-void TSDFVoxelGrid::Load(const std::string &filename) {
-    block_hashmap_->Load(filename);
-}
-
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
         const core::Tensor &active_addrs) {
     // Fixed radius search for spatially hashed voxel blocks.

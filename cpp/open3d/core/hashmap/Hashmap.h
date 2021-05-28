@@ -111,7 +111,10 @@ public:
 
     /// Load the keys and values from
     /// '{filename}.key.npy', '{filename}.value.npy'.
-    void Load(const std::string& filename);
+    static Hashmap Load(const std::string& filename,
+                        const core::Device& device = core::Device("CPU:0"),
+                        const core::HashmapBackend& backend =
+                                core::HashmapBackend::Default);
 
     Hashmap Clone() const;
     Hashmap To(const Device& device, bool copy = false) const;

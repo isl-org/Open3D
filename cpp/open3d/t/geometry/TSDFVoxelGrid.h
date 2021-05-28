@@ -155,16 +155,6 @@ public:
 
     std::shared_ptr<core::Hashmap> GetBlockHashmap() { return block_hashmap_; }
 
-    /// TODO(wei): save and load metadata in a json file and support create from
-    /// filename.
-    /// Save a TSDF's key (3D coordinates) and value (N^3 voxel
-    /// blocks) into 'filename.key.npy' and 'filename.value.npy'.
-    void Save(const std::string &filename) const;
-
-    /// Load a TSDF's key values from 'filename.key.npy' and
-    /// 'filename.value.npy', assuming a compatible metadata.
-    void Load(const std::string &filename);
-
 protected:
     /// Return  addrs and masks for radius (3) neighbor entries.
     /// We first find all active entries in the hashmap with there coordinates.

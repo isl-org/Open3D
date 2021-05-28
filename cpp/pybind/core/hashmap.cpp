@@ -93,6 +93,14 @@ void pybind_core_hashmap(py::module& m) {
         return addrs;
     });
 
+    hashmap.def("save", &Hashmap::Save);
+    hashmap.def_static(
+            "load",
+            [](const std::string& filename, const Device& device) {
+                return Hashmap::Load(filename, device);
+            },
+            "filename"_a, "device"_a = core::Device("CPU:0"));
+
     hashmap.def("get_key_buffer", &Hashmap::GetKeyBuffer);
     hashmap.def("get_value_buffer", &Hashmap::GetValueBuffer);
 
