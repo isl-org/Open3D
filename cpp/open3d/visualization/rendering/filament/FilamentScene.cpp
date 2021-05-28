@@ -412,18 +412,24 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         return false;
     }
     const auto& points = point_cloud.GetPoints();
-    if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
-        utility::LogWarning(
-                "GPU resident tensor point clouds are not supported at this "
-                "time");
-        return false;
-    }
     if (points.GetDtype() != core::Dtype::Float32) {
         utility::LogWarning("tensor point cloud must have Dtype of Float32");
         return false;
     }
 
-    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(point_cloud);
+    t::geometry::PointCloud cpu_pcloud;
+    std::unique_ptr<GeometryBuffersBuilder> buffer_builder;
+    if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        utility::LogWarning(
+                "GPU resident tensor point clouds are not supported at this "
+                "time for direct visualization. Copying point cloud to CPU.");
+        cpu_pcloud = point_cloud.CPU();
+        buffer_builder = GeometryBuffersBuilder::GetBuilder(cpu_pcloud);
+    } else {
+        cpu_pcloud = point_cloud;
+        buffer_builder = GeometryBuffersBuilder::GetBuilder(point_cloud);
+    }
+
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
@@ -432,7 +438,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    filament::Box aabb = ComputeAABB(point_cloud);
+    filament::Box aabb = ComputeAABB(cpu_pcloud);
     bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
                                               aabb, vb, ib, material);
     if (success && ib_downsampled) {
