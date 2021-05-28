@@ -76,18 +76,23 @@ void Integrate(const core::Tensor& depth,
                float depth_max) {
     core::Device device = depth.GetDevice();
 
-    if (color.GetDevice() != device) {
-        utility::LogError("Incompatible color device type for depth and color");
+    core::Tensor depthf32 = depth.To(core::Dtype::Float32);
+    core::Tensor colorf32;
+
+    if (color.NumElements() != 0) {
+        if (color.GetDevice() != device) {
+            utility::LogError(
+                    "Incompatible color device type for depth and color");
+        }
+        colorf32 = color.To(core::Dtype::Float32);
     }
+
     if (block_indices.GetDevice() != device ||
         block_keys.GetDevice() != device ||
         block_values.GetDevice() != device) {
         utility::LogError(
                 "Incompatible device type for depth and TSDF voxel grid");
     }
-
-    core::Tensor depthf32 = depth.To(core::Dtype::Float32);
-    core::Tensor colorf32 = color.To(core::Dtype::Float32);
 
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =

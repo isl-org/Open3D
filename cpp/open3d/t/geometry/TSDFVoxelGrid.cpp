@@ -188,10 +188,9 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     } else if (color.GetRows() == depth.GetRows() &&
                color.GetCols() == depth.GetCols() && color.GetChannels() == 3) {
         if (attr_dtype_map_.count("color") != 0) {
-            color_tensor =
-                    color.AsTensor().To(core::Dtype::Float32).Contiguous();
+            color_tensor = color.AsTensor().Contiguous();
         } else {
-            utility::LogWarning(
+            utility::LogDebug(
                     "[TSDFIntegrate] color image is ignored since voxels do "
                     "not contain colors.");
         }
@@ -204,8 +203,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     core::Tensor dst = block_hashmap_->GetValueTensor();
 
     // TODO(wei): use a fixed buffer.
-    kernel::tsdf::Integrate(depth_tensor, color_tensor,
-                            addrs.To(core::Dtype::Int64).IndexGet({masks}),
+    kernel::tsdf::Integrate(depth_tensor, color_tensor, addrs,
                             block_hashmap_->GetKeyTensor(), dst, intrinsics,
                             extrinsics, block_resolution_, voxel_size_,
                             sdf_trunc_, depth_scale, depth_max);
@@ -306,10 +304,12 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints(int estimated_number,
             block_resolution_, voxel_size_, weight_threshold, estimated_number);
 
     auto pcd = PointCloud(points.Slice(0, 0, estimated_number));
-    if (surface_mask & SurfaceMaskCode::ColorMap) {
+    if ((surface_mask & SurfaceMaskCode::ColorMap) &&
+        colors.GetLength() == points.GetLength()) {
         pcd.SetPointColors(colors.Slice(0, 0, estimated_number));
     }
-    if (surface_mask & SurfaceMaskCode::NormalMap) {
+    if ((surface_mask & SurfaceMaskCode::NormalMap) &&
+        normals.GetLength() == points.GetLength()) {
         pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
     }
 

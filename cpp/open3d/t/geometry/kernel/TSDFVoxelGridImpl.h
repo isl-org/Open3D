@@ -86,8 +86,7 @@ void IntegrateCPU
     }
 
     // Plain arrays that does not require indexers
-    const int64_t* indices_ptr =
-            static_cast<const int64_t*>(indices.GetDataPtr());
+    const int* indices_ptr = indices.GetDataPtr<int>();
 
     int64_t n = indices.GetLength() * resolution3;
 
@@ -102,8 +101,8 @@ void IntegrateCPU
                 launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
                                                         int64_t workload_idx) {
                     // Natural index (0, N) -> (block_idx, voxel_idx)
-                    int64_t block_idx = indices_ptr[workload_idx / resolution3];
-                    int64_t voxel_idx = workload_idx % resolution3;
+                    int block_idx = indices_ptr[workload_idx / resolution3];
+                    int voxel_idx = workload_idx % resolution3;
 
                     /// Coordinate transform
                     // block_idx -> (x_block, y_block, z_block)
@@ -200,8 +199,7 @@ void ExtractSurfacePointsCPU
     NDArrayIndexer nb_block_indices_indexer(nb_indices, 2);
 
     // Plain arrays that does not require indexers
-    const int64_t* indices_ptr =
-            static_cast<const int64_t*>(indices.GetDataPtr());
+    const int64_t* indices_ptr = indices.GetDataPtr<int64_t>();
 
     int64_t n_blocks = indices.GetLength();
     int64_t n = n_blocks * resolution3;

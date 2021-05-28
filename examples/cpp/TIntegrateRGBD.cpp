@@ -124,11 +124,9 @@ int main(int argc, char* argv[]) {
     }
     core::Device device(device_code);
     utility::LogInfo("Using device: {}", device.ToString());
-    t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
-                                           {"weight", core::Dtype::UInt16},
-                                           {"color", core::Dtype::UInt16}},
-                                          voxel_size, sdf_trunc, 16,
-                                          block_count, device);
+    t::geometry::TSDFVoxelGrid voxel_grid(
+            {{"tsdf", core::Dtype::Float32}, {"weight", core::Dtype::Float32}},
+            voxel_size, sdf_trunc, 16, block_count, device);
 
     double time_total = 0;
     double time_int = 0;
@@ -173,7 +171,7 @@ int main(int argc, char* argv[]) {
             auto result = voxel_grid.RayCast(
                     intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
                     depth_scale, 0.1, depth_max, std::min(i * 1.0f, 3.0f),
-                    MaskCode::DepthMap);
+                    MaskCode::DepthMap | MaskCode::ColorMap);
             ray_timer.Stop();
 
             utility::LogInfo("{}: Raycast takes {}", i,
@@ -195,15 +193,16 @@ int main(int argc, char* argv[]) {
                 t::geometry::Image depth(result[MaskCode::DepthMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                depth.ToLegacyImage())});
-                t::geometry::Image vertex(result[MaskCode::VertexMap]);
-                visualization::DrawGeometries(
-                        {std::make_shared<open3d::geometry::Image>(
-                                vertex.ToLegacyImage())});
-                t::geometry::Image normal(result[MaskCode::NormalMap]);
-                visualization::DrawGeometries(
-                        {std::make_shared<open3d::geometry::Image>(
-                                normal.ToLegacyImage())});
+                                depth.ColorizeDepth(depth_scale, 0.1, depth_max)
+                                        .ToLegacyImage())});
+                // t::geometry::Image vertex(result[MaskCode::VertexMap]);
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 vertex.ToLegacyImage())});
+                // t::geometry::Image normal(result[MaskCode::NormalMap]);
+                // visualization::DrawGeometries(
+                //         {std::make_shared<open3d::geometry::Image>(
+                //                 normal.ToLegacyImage())});
                 t::geometry::Image color(result[MaskCode::ColorMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
