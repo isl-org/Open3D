@@ -254,6 +254,7 @@ build_pip_conda_package() {
     #   build_pip_conda_package pip        # Build pip only
     #   build_pip_conda_package conda      # Build conda only
     echo "Building Open3D wheel"
+    options="$(echo "$@" | tr ' ' '|')"
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
     set +u

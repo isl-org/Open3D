@@ -29,9 +29,6 @@
 #include "open3d/Open3D.h"
 #include "open3d/utility/FileSystem.h"
 
-// TODO: edit Open3D.h.in
-#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
-
 using namespace open3d;
 
 // TODO: remove hard-coded path.

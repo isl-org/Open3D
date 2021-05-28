@@ -1209,6 +1209,9 @@ endif ()
 
 # WebRTC
 if(BUILD_WEBRTC)
+    # Incude WebRTC headers in Open3D.h.
+    set(BUILD_WEBRTC_COMMENT "")
+
     # Build WebRTC from source for advanced users.
     option(BUILD_WEBRTC_FROM_SOURCE "Build WebRTC from source" OFF)
     mark_as_advanced(BUILD_WEBRTC_FROM_SOURCE)
@@ -1242,4 +1245,7 @@ if(BUILD_WEBRTC)
     set(CIVETWEB_TARGET "3rdparty_civetweb")
     add_dependencies(3rdparty_civetweb ext_civetweb)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CIVETWEB_TARGET}")
+else()
+    # Don't incude WebRTC headers in Open3D.h.
+    set(BUILD_WEBRTC_COMMENT "//")
 endif()
