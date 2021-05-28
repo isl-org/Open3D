@@ -261,7 +261,7 @@ def get_eagle_pcd():
     path = _relative_path("../test_data/eagle.ply")
     if not os.path.exists(path):
         print("downloading eagle pcl")
-        url = "https://github.com/intel-isl/open3d_downloads/releases/download/open3d_tutorial/eagle.points.ply"
+        url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"
         urllib.request.urlretrieve(url, path)
     pcd = o3d.io.read_point_cloud(path)
     return pcd
