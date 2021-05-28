@@ -30,13 +30,25 @@
 
 #include "open3d/Open3D.h"
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo(">    CameraPoseTrajectory [trajectory_file] [pcds_dir]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     using namespace open3d;
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc != 3) {
-        utility::LogInfo("Usage :");
-        utility::LogInfo(">    CameraPoseTrajectory trajectory_file pcds_dir");
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        argc != 3) {
+        PrintHelp();
         return 1;
     }
     const int NUM_OF_COLOR_PALETTE = 5;

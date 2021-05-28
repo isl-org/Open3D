@@ -142,6 +142,7 @@ public:
 
     Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
+    Size CalcMinimumSize(const LayoutContext& context) const override;
 
     void Layout(const LayoutContext& context) override;
 

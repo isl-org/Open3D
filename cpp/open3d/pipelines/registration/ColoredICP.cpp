@@ -118,9 +118,22 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || !target.HasNormals() || !target.HasColors() ||
-        !source.HasColors()) {
-        return Eigen::Matrix4d::Identity();
+    if (corres.empty()) {
+        utility::LogError(
+                "No correspondences found between source and target "
+                "pointcloud.");
+    }
+    if (!target.HasNormals()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have normals.");
+    }
+    if (!target.HasColors()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have colors.");
+    }
+    if (!source.HasColors()) {
+        utility::LogError(
+                "ColoredICP requires source pointcloud to have colors.");
     }
 
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
@@ -228,9 +241,22 @@ RegistrationResult RegistrationColoredICP(
         double max_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
         const TransformationEstimationForColoredICP &estimation
-        /*TransformationEstimationForColoredICP()*/,
+        /* = TransformationEstimationForColoredICP()*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
+    if (!target.HasNormals()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have normals.");
+    }
+    if (!target.HasColors()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have colors.");
+    }
+    if (!source.HasColors()) {
+        utility::LogError(
+                "ColoredICP requires source pointcloud to have colors.");
+    }
+
     auto target_c = InitializePointCloudForColoredICP(
             target, geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30));
     return RegistrationICP(source, *target_c, max_distance, init, estimation,

@@ -203,7 +203,12 @@ def test_tensor_constructor(dtype, device):
     # 2D list, inconsistent length
     li_t = [[0, 1, 2], [3, 4]]
     with pytest.raises(Exception):
-        o3_t = o3d.core.Tensor(li_t, dtype, device)
+        # Suppress inconsistent length warning as this check is intentional
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                                    category=VisibleDeprecationWarning)
+            o3_t = o3d.core.Tensor(li_t, dtype, device)
 
     # Automatic casting
     np_t_double = np.array([[0., 1.5, 2.], [3., 4., 5.]])
@@ -1094,6 +1099,17 @@ def test_scalar_op(device):
     a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
     a.ne_(0)
     np.testing.assert_equal(a.cpu().numpy(), np.array([True, False, True]))
+
+    # clip
+    dtype = o3d.core.Dtype.Int64
+    a = o3d.core.Tensor([2, -1, 1], dtype=dtype, device=device)
+    np.testing.assert_equal(a.clip(0, 1).cpu().numpy(), np.array([1, 0, 1]))
+    np.testing.assert_equal(a.clip(0.5, 1.2).cpu().numpy(), np.array([1, 0, 1]))
+
+    # clip_
+    a = o3d.core.Tensor([2, -1, 1], dtype=dtype, device=device)
+    a.clip_(0, 1)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([1, 0, 1]))
 
 
 @pytest.mark.parametrize("device", list_devices())

@@ -891,6 +891,7 @@ endif()
 
 # Filament
 if(BUILD_GUI)
+    set(FILAMENT_RUNTIME_VER "")
     if(BUILD_FILAMENT_FROM_SOURCE)
         message(STATUS "Building third-party library Filament from source")
         if(MSVC OR (CMAKE_C_COMPILER_ID MATCHES ".*Clang" AND
@@ -927,28 +928,31 @@ if(BUILD_GUI)
                 endif()
             endif()
         endif()
-        # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
-        # libraries are located at /usr/lib/llvm-{version}/lib, and the default
-        # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
-        # /usr/lib/aarch64-linux-gnu.
-        # For aarch64, the symbolic link path may not work for CMake's
-        # find_library. Therefore, when compiling Filament from source, we
-        # explicitly find the corresponidng path based on the clang version.
-        execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
-        if(clang_version MATCHES "clang version ([0-9]+)")
-            set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+        if (UNIX AND NOT APPLE)
+            # Find corresponding libc++ and libc++abi libraries. On Ubuntu, clang
+            # libraries are located at /usr/lib/llvm-{version}/lib, and the default
+            # version will have a sybolic link at /usr/lib/x86_64-linux-gnu/ or
+            # /usr/lib/aarch64-linux-gnu.
+            # For aarch64, the symbolic link path may not work for CMake's
+            # find_library. Therefore, when compiling Filament from source, we
+            # explicitly find the corresponidng path based on the clang version.
+            execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+            if(clang_version MATCHES "clang version ([0-9]+)")
+                set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+            endif()
         endif()
         include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
     else()
         message(STATUS "Using prebuilt third-party library Filament")
         include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
-    endif()
-    set(FILAMENT_RUNTIME_VER "")
-    if (WIN32)
-        if (STATIC_WINDOWS_RUNTIME)
-            set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
-        else()
-            set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
+        # Set lib directory for filament v1.9.9 on Windows.
+        # Assume newer version if FILAMENT_PRECOMPILED_ROOT is set.
+        if (WIN32 AND NOT FILAMENT_PRECOMPILED_ROOT)
+            if (STATIC_WINDOWS_RUNTIME)
+                set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+            else()
+                set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
+            endif()
         endif()
     endif()
     if (APPLE)
@@ -1205,6 +1209,13 @@ endif ()
 
 # WebRTC
 if(BUILD_WEBRTC)
+    # Incude WebRTC headers in Open3D.h.
+    set(BUILD_WEBRTC_COMMENT "")
+
+    # Build WebRTC from source for advanced users.
+    option(BUILD_WEBRTC_FROM_SOURCE "Build WebRTC from source" OFF)
+    mark_as_advanced(BUILD_WEBRTC_FROM_SOURCE)
+
     # WebRTC
     if(BUILD_WEBRTC_FROM_SOURCE)
         include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_build.cmake)
@@ -1219,7 +1230,10 @@ if(BUILD_WEBRTC)
     set(WEBRTC_TARGET "3rdparty_webrtc")
     add_dependencies(3rdparty_webrtc ext_webrtc_all)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${WEBRTC_TARGET}")
-    target_link_libraries(3rdparty_webrtc INTERFACE Threads::Threads dl)
+    target_link_libraries(3rdparty_webrtc INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
+    if (MSVC) # https://github.com/iimachines/webrtc-build/issues/2#issuecomment-503535704
+        target_link_libraries(3rdparty_webrtc INTERFACE secur32 winmm dmoguids wmcodecdspuuid msdmo strmiids)
+    endif()
 
     # CivetWeb server
     include(${Open3D_3RDPARTY_DIR}/civetweb/civetweb.cmake)
@@ -1231,5 +1245,7 @@ if(BUILD_WEBRTC)
     set(CIVETWEB_TARGET "3rdparty_civetweb")
     add_dependencies(3rdparty_civetweb ext_civetweb)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CIVETWEB_TARGET}")
+else()
+    # Don't incude WebRTC headers in Open3D.h.
+    set(BUILD_WEBRTC_COMMENT "//")
 endif()
-

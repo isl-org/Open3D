@@ -34,25 +34,28 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
-    utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud from color and depth images");
-    utility::LogInfo("     [options]");
-    utility::LogInfo("     --voxel_size [=0.0058 (m)]");
-    utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
-    utility::LogInfo("     --depth_scale [=1000.0]");
-    utility::LogInfo("     --depth_max [=3.0]");
-    utility::LogInfo("     --sdf_trunc [=0.04]");
-    utility::LogInfo("     --device [CPU:0]");
-    utility::LogInfo("     --raycast");
-    utility::LogInfo("     --mesh");
-    utility::LogInfo("     --pointcloud");
+    utility::LogInfo("    > TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
+    utility::LogInfo("      Given RGBD images, reconstruct mesh or point cloud from color and depth images");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --voxel_size [=0.0058 (m)]");
+    utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
+    utility::LogInfo("    --depth_scale [=1000.0]");
+    utility::LogInfo("    --depth_max [=3.0]");
+    utility::LogInfo("    --sdf_trunc [=0.04]");
+    utility::LogInfo("    --device [CPU:0]");
+    utility::LogInfo("    --raycast");
+    utility::LogInfo("    --mesh");
+    utility::LogInfo("    --pointcloud");
     // clang-format on
     utility::LogInfo("");
 }
 
-int main(int argc, char** argv) {
-    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc < 4) {
+int main(int argc, char* argv[]) {
+    using namespace open3d;
+
+    if (argc < 4 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }

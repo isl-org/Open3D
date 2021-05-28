@@ -28,11 +28,12 @@
 
 void PrintHelp() {
     using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > TrimMeshBasedOnPointCloud [options]");
-    utility::LogInfo("      Trim a mesh baesd on distance to a point cloud.");
+    utility::LogInfo("      Trim a mesh based on distance to a point cloud.");
     utility::LogInfo("");
     utility::LogInfo("Basic options:");
     utility::LogInfo("    --help, -h                : Print help information.");
@@ -41,17 +42,19 @@ void PrintHelp() {
     utility::LogInfo("    --out_mesh mesh_file      : Output mesh file. MUST HAVE.");
     utility::LogInfo("    --pointcloud pcd_file     : Reference pointcloud file. MUST HAVE.");
     utility::LogInfo("    --distance d              : Maximum distance. MUST HAVE.");
-    // clang-format on
+    // clang-format onZ
+    utility::LogInfo("");
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     using namespace open3d;
 
-    if (argc < 4 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        utility::ProgramOptionExists(argc, argv, "-h")) {
+    if (argc < 4 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ) {
         PrintHelp();
         return 1;
     }
+
     int verbose = utility::GetProgramOptionAsInt(argc, argv, "--verbose", 5);
     utility::SetVerbosityLevel((utility::VerbosityLevel)verbose);
     auto in_mesh_file =

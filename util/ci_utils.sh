@@ -29,14 +29,14 @@ CUDNN_MAJOR_VERSION=8
 CUDNN_VERSION="8.0.5.39-1+cuda11.0"
 # ML
 TENSORFLOW_VER="2.4.1"
-TORCH_CUDA_GLNX_VER="1.7.1+cu110"
+# TORCH_CUDA_GLNX_VER="1.7.1+cu110"
+# TORCH_CPU_GLNX_VER="1.7.1+cpu"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_CPU_GLNX_VER="1.7.1+cpu"
 TORCH_MACOS_VER="1.7.1"
 # Python
 CONDA_BUILD_VER="3.20.0"
-PIP_VER="20.2.4"
+PIP_VER="21.1.1"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
@@ -49,6 +49,7 @@ SPHINX_RTD_VER=0.5.1
 NBSPHINX_VER=0.8.3
 MATPLOTLIB_VER=3.3.3
 M2R2_VER=0.2.7
+JINJA2_VER=2.11.3 # jinja2 3.x is not compatible with this sphinx version
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -139,11 +140,17 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow-gpu
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        TORCH_ARCH_GLNX_VER="$TORCH_CUDA_GLNX_VER"
+        # TORCH_ARCH_GLNX_VER="$TORCH_CUDA_GLNX_VER"
     else
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
-        TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
+        # TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
+    fi
+
+    # TODO: modify other locations to use requirements.txt
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    if [[ "with-jupyter" =~ ^($options)$ ]]; then
+        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
     fi
 
     echo
@@ -247,6 +254,7 @@ build_pip_conda_package() {
     #   build_pip_conda_package pip        # Build pip only
     #   build_pip_conda_package conda      # Build conda only
     echo "Building Open3D wheel"
+    options="$(echo "$@" | tr ' ' '|')"
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
     set +u
@@ -271,17 +279,19 @@ build_pip_conda_package() {
         echo "Azure Kinect disabled in Python wheel."
         BUILD_AZURE_KINECT=OFF
     fi
+    if [[ "build_jupyter" =~ ^($options)$ ]]; then
+        echo "Building Jupyter extension in Python wheel."
+        BUILD_JUPYTER_EXTENSION=ON
+    else
+        echo "Jupyter extension disabled in Python wheel."
+        BUILD_JUPYTER_EXTENSION=OFF
+    fi
     set -u
 
     echo
     echo Building with CPU only...
     mkdir -p build
-    cd build # PWD=Open3D/build
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        BUILD_JUPYTER_EXTENSION=ON
-    else
-        BUILD_JUPYTER_EXTENSION=OFF
-    fi
+    pushd build # PWD=Open3D/build
     cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
@@ -290,7 +300,7 @@ build_pip_conda_package() {
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUILD_RPC_INTERFACE=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
-        "-DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}"
+        "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
         "-DPYTHON_EXECUTABLE=$(command -v python)"
         "-DCMAKE_BUILD_TYPE=Release"
@@ -332,7 +342,7 @@ build_pip_conda_package() {
         echo "Packaging Open3D pip and conda package..."
         make VERBOSE=1 -j"$NPROC" pip-conda-package
     fi
-    cd .. # PWD=Open3D
+    popd # PWD=Open3D
 }
 
 # Test wheel in blank virtual environment
@@ -455,8 +465,11 @@ install_docs_dependencies() {
         "sphinx==$SPHINX_VER" \
         "sphinx-rtd-theme==$SPHINX_RTD_VER" \
         "nbsphinx==$NBSPHINX_VER" \
-        "m2r2==$M2R2_VER"
+        "m2r2==$M2R2_VER" \
+        "jinja2==$JINJA2_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
     echo
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
@@ -491,7 +504,6 @@ build_docs() {
     fi
     cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DCMAKE_BUILD_TYPE=Release"
-        "-DBUILD_JUPYTER_EXTENSION=ON"
         "-DWITH_OPENMP=ON"
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=ON"
@@ -502,6 +514,7 @@ build_docs() {
     )
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
+        -DBUILD_JUPYTER_EXTENSION=OFF \
         -DENABLE_HEADLESS_RENDERING=ON \
         -DBUILD_GUI=OFF \
         ..
@@ -519,6 +532,7 @@ build_docs() {
     echo
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
+        -DBUILD_JUPYTER_EXTENSION=ON \
         -DENABLE_HEADLESS_RENDERING=OFF \
         -DBUILD_GUI=ON \
         ..

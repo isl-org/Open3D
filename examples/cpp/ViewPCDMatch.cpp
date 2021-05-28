@@ -88,6 +88,7 @@ bool ReadLogFile(const std::string &filename,
 
 void PrintHelp() {
     using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
@@ -100,16 +101,20 @@ void PrintHelp() {
     utility::LogInfo("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.");
     utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        utility::ProgramOptionExists(argc, argv, "-h")) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
+
     const int NUM_OF_COLOR_PALETTE = 5;
     Eigen::Vector3d color_palette[NUM_OF_COLOR_PALETTE] = {
             Eigen::Vector3d(255, 180, 0) / 255.0,

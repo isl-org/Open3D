@@ -124,7 +124,7 @@ def download_fountain_dataset():
     fountain_zip_path = _relative_path("../test_data/fountain.zip")
     if not os.path.exists(fountain_path):
         print("downloading fountain dataset")
-        url = "https://storage.googleapis.com/isl-datasets/open3d-dev/fountain.zip"
+        url = "https://github.com/intel-isl/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
         urllib.request.urlretrieve(url, fountain_zip_path)
         print("extract fountain dataset")
         with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:

@@ -2,19 +2,6 @@ if (NOT PYTHON_EXECUTABLE)
     message(FATAL_ERROR "PYTHON_EXECUTABLE should be set in top level CMakeLists.txt")
 endif()
 
-# Detect whether `npm` is installed. Jupyter support will only be enabled if
-# `npm` is found.
-find_program(NPM "npm")
-if (BUILD_JUPYTER_EXTENSION)
-    if (NOT NPM)
-        message(WARNING "Cannot find npm. Jupyter support will be disabled.")
-        set(BUILD_JUPYTER_EXTENSION OFF)
-    else()
-        message(STATUS "npm found at: ${NPM}. Jupyter support will be enabled.")
-    endif()
-endif()
-message(STATUS "BUILD_JUPYTER_EXTENSION is set to ${BUILD_JUPYTER_EXTENSION}")
-
 # We need to get python version to configure some meta files
 execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d.%d' % (sys.version_info.major, sys.version_info.minor))"
@@ -54,6 +41,7 @@ set(PY_ALL_SOURCE_FILES
     core/size_vector.cpp
     core/cuda_utils.cpp
     core/tensor.cpp
+    core/scalar.cpp
     core/nns/nearest_neighbor_search.cpp
     core/dtype.cpp
     docstring.cpp
@@ -99,6 +87,7 @@ set(PY_ALL_SOURCE_FILES
     t/geometry/tsdf_voxelgrid.cpp
     t/pipelines/pipelines.cpp
     t/pipelines/slac/slac.cpp
+    t/pipelines/odometry/odometry.cpp
     t/pipelines/registration/registration.cpp
     utility/console.cpp
     utility/eigen.cpp
@@ -117,6 +106,12 @@ if (BUILD_GUI)
         visualization/rendering/rendering.cpp
         visualization/o3dvisualizer.cpp
         )
+endif()
+
+if (BUILD_WEBRTC)
+    list(APPEND PY_ALL_SOURCE_FILES
+        visualization/webrtc_server/webrtc_window_system.cpp
+    )
 endif()
 
 if (BUILD_AZURE_KINECT)

@@ -378,7 +378,7 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("shader", &Material::shader);
 
     // ---- TriangleMeshModel ----
-    py::class_<TriangleMeshModel> tri_model(
+    py::class_<TriangleMeshModel, std::shared_ptr<TriangleMeshModel>> tri_model(
             m, "TriangleMeshModel",
             "A list of geometry.TriangleMesh and Material that can describe a "
             "complex model with multiple meshes, such as might be stored in an "

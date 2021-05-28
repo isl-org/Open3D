@@ -76,8 +76,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
                       &T_source_to_target_v[2]);
     ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
                T_source_to_target_v[2], &u, &v);
-    u = round(u);
-    v = round(v);
+    u = roundf(u);
+    v = roundf(v);
 
     if (T_source_to_target_v[2] < 0 ||
         !target_vertex_indexer.InBoundary(u, v)) {
@@ -140,8 +140,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
                       &T_source_to_target_v[2]);
     ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
                T_source_to_target_v[2], &u_tf, &v_tf);
-    int u_t = int(round(u_tf));
-    int v_t = int(round(v_tf));
+    int u_t = int(roundf(u_tf));
+    int v_t = int(roundf(v_tf));
 
     if (T_source_to_target_v[2] < 0 ||
         !target_depth_indexer.InBoundary(u_t, v_t)) {
@@ -220,8 +220,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
                       &T_source_to_target_v[2]);
     ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
                T_source_to_target_v[2], &u_tf, &v_tf);
-    int u_t = int(round(u_tf));
-    int v_t = int(round(v_tf));
+    int u_t = int(roundf(u_tf));
+    int v_t = int(roundf(v_tf));
 
     if (T_source_to_target_v[2] < 0 ||
         !target_depth_indexer.InBoundary(u_t, v_t)) {

@@ -58,6 +58,7 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
+#include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
@@ -818,6 +819,7 @@ struct O3DVisualizer::Impl {
     void AddGeometry(const std::string &name,
                      std::shared_ptr<geometry::Geometry3D> geom,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
+                     std::shared_ptr<rendering::TriangleMeshModel> model,
                      const rendering::Material *material,
                      const std::string &group,
                      double time,
@@ -826,7 +828,7 @@ struct O3DVisualizer::Impl {
         if (group_name == "") {
             group_name = "default";
         }
-        bool is_default_color;
+        bool is_default_color = false;
         bool no_shadows = false;
         Material mat;
         t::geometry::PointCloud *valid_tpcd = nullptr;
@@ -834,7 +836,14 @@ struct O3DVisualizer::Impl {
         if (material) {
             mat = *material;
             is_default_color = false;
-        } else {
+            auto t_cloud =
+                    std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
+            valid_tpcd = t_cloud.get();
+        } else if (model) {
+            // Adding a triangle mesh model. Shader needs to be set to
+            // defaultLit for O3D shader handling logic to work.
+            mat.shader = kShaderLit;
+        } else {  // branch only applies to geometries
             bool has_colors = false;
             bool has_normals = false;
 
@@ -902,6 +911,37 @@ struct O3DVisualizer::Impl {
                 is_default_color = false;
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
+
+            // Finally assign material properties if geometry is a triangle mesh
+            auto tmesh =
+                    std::dynamic_pointer_cast<geometry::TriangleMesh>(geom);
+            if (tmesh && tmesh->materials_.size() > 0) {
+                // Only a single material is supported for TriangleMesh so we
+                // just grab the first one we find. Users should be using
+                // TriangleMeshModel if they have a model with multiple
+                // materials.
+                auto &mesh_material = tmesh->materials_.begin()->second;
+                mat.base_color = {mesh_material.baseColor.r(),
+                                  mesh_material.baseColor.g(),
+                                  mesh_material.baseColor.b(),
+                                  mesh_material.baseColor.a()};
+                mat.base_metallic = mesh_material.baseMetallic;
+                mat.base_roughness = mesh_material.baseRoughness;
+                mat.base_reflectance = mesh_material.baseReflectance;
+                mat.base_clearcoat = mesh_material.baseClearCoat;
+                mat.base_clearcoat_roughness =
+                        mesh_material.baseClearCoatRoughness;
+                mat.base_anisotropy = mesh_material.baseAnisotropy;
+                mat.albedo_img = mesh_material.albedo;
+                mat.normal_img = mesh_material.normalMap;
+                mat.ao_img = mesh_material.ambientOcclusion;
+                mat.metallic_img = mesh_material.metallic;
+                mat.roughness_img = mesh_material.roughness;
+                mat.reflectance_img = mesh_material.reflectance;
+                mat.clearcoat_img = mesh_material.clearCoat;
+                mat.clearcoat_roughness_img = mesh_material.clearCoatRoughness;
+                mat.anisotropy_img = mesh_material.anisotropy;
+            }
         }
 
         // We assume that the caller isn't setting a group or time (and in any
@@ -928,19 +968,22 @@ struct O3DVisualizer::Impl {
             ShowSettings(true);
         }
 
-        objects_.push_back({name, geom, tgeom, mat, group_name, time,
+        objects_.push_back({name, geom, tgeom, model, mat, group_name, time,
                             is_visible, is_default_color});
         AddObjectToTree(objects_.back());
 
         auto scene = scene_->GetScene();
-        // Do we have a tgeometry or a geometry?
+        // Do we have a geometry, tgeometry or model?
         if (geom) {
             scene->AddGeometry(name, geom.get(), mat);
         } else if (tgeom && valid_tpcd) {
             scene->AddGeometry(name, valid_tpcd, mat);
+        } else if (model) {
+            scene->AddModel(name, *model);
         } else {
             utility::LogWarning(
-                    "No valid geometry specified to O3DViewer. Only supported "
+                    "No valid geometry specified to O3DVisualizer. Only "
+                    "supported "
                     "geometries are Geometry3D and TGeometry PointClouds.");
         }
 
@@ -1584,6 +1627,7 @@ struct O3DVisualizer::Impl {
     void SelectSelectionSet(int index) {
         settings.selection_sets->SetSelectedIndex(index);
         selections_->SelectSet(index);
+        scene_->ForceRedraw();  // redraw with new selection highlighted
     }
 
     void UpdateSelectionSetList() {
@@ -1626,7 +1670,6 @@ struct O3DVisualizer::Impl {
         }
         return false;
     }
-
     void UpdateAnimationTickClockTime(double now) {
         next_animation_tick_clock_time_ = now + ui_state_.frame_delay;
     }
@@ -1654,33 +1697,29 @@ struct O3DVisualizer::Impl {
                 (std::string("Open3D ") + OPEN3D_VERSION).c_str());
         auto text = std::make_shared<gui::Label>(
                 "The MIT License (MIT)\n"
-                "Copyright (c) 2018 - 2020 www.open3d.org\n\n"
+                "Copyright (c) 2018 - 2021 www.open3d.org\n\n"
 
                 "Permission is hereby granted, free of charge, to any person "
                 "obtaining a copy of this software and associated "
-                "documentation "
-                "files (the \"Software\"), to deal in the Software without "
-                "restriction, including without limitation the rights to use, "
-                "copy, modify, merge, publish, distribute, sublicense, and/or "
-                "sell copies of the Software, and to permit persons to whom "
-                "the Software is furnished to do so, subject to the following "
-                "conditions:\n\n"
+                "documentation files (the \"Software\"), to deal in the "
+                "Software without restriction, including without limitation "
+                "the rights to use, copy, modify, merge, publish, distribute, "
+                "sublicense, and/or sell copies of the Software, and to "
+                "permit persons to whom the Software is furnished to do so, "
+                "subject to the following conditions:\n\n"
 
                 "The above copyright notice and this permission notice shall "
-                "be "
-                "included in all copies or substantial portions of the "
+                "be included in all copies or substantial portions of the "
                 "Software.\n\n"
 
                 "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY "
-                "KIND, "
-                "EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE "
-                "WARRANTIES "
-                "OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND "
-                "NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT "
-                "HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, "
-                "WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING "
-                "FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR "
-                "OTHER DEALINGS IN THE SOFTWARE.");
+                "KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE "
+                "WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR "
+                "PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR "
+                "COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER "
+                "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR "
+                "OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE "
+                "SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.");
         auto ok = std::make_shared<gui::Button>("OK");
         ok->SetOnClicked([this]() { this->window_->CloseDialog(); });
 
@@ -1688,7 +1727,9 @@ struct O3DVisualizer::Impl {
         auto layout = std::make_shared<gui::Vert>(0, margins);
         layout->AddChild(gui::Horiz::MakeCentered(title));
         layout->AddFixed(theme.font_size);
-        layout->AddChild(text);
+        auto v = std::make_shared<gui::ScrollableVert>(0);
+        v->AddChild(text);
+        layout->AddChild(v);
         layout->AddFixed(theme.font_size);
         layout->AddChild(gui::Horiz::MakeCentered(ok));
         dlg->AddChild(layout);
@@ -1777,6 +1818,7 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     app_menu->AddItem("About", MENU_ABOUT);
     menu->AddMenu("Open3D", app_menu);
 #endif  // __APPLE__
+
     if (Application::GetInstance().UsingNativeWindows()) {
         auto file_menu = std::make_shared<Menu>();
         file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
@@ -1820,7 +1862,8 @@ void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
     auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
                               const std::string &path, int time,
                               const std::string &layer) {
-        impl_->AddGeometry(path, geom, nullptr, nullptr, layer, time, true);
+        impl_->AddGeometry(path, geom, nullptr, nullptr, nullptr, layer, time,
+                           true);
         if (impl_->objects_.size() == 1) {
             impl_->ResetCameraToDefault();
         }
@@ -1893,7 +1936,8 @@ void O3DVisualizer::AddGeometry(
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
-    impl_->AddGeometry(name, geom, nullptr, material, group, time, is_visible);
+    impl_->AddGeometry(name, geom, nullptr, nullptr, material, group, time,
+                       is_visible);
 }
 
 void O3DVisualizer::AddGeometry(
@@ -1903,7 +1947,19 @@ void O3DVisualizer::AddGeometry(
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
-    impl_->AddGeometry(name, nullptr, tgeom, material, group, time, is_visible);
+    impl_->AddGeometry(name, nullptr, tgeom, nullptr, material, group, time,
+                       is_visible);
+}
+
+void O3DVisualizer::AddGeometry(
+        const std::string &name,
+        std::shared_ptr<rendering::TriangleMeshModel> model,
+        const rendering::Material *material /*=nullptr*/,
+        const std::string &group /*= ""*/,
+        double time /*= 0.0*/,
+        bool is_visible /*= true*/) {
+    impl_->AddGeometry(name, nullptr, nullptr, model, material, group, time,
+                       is_visible);
 }
 
 void O3DVisualizer::Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
@@ -2047,7 +2103,7 @@ void O3DVisualizer::ExportCurrentImage(const std::string &path) {
 
 void O3DVisualizer::Layout(const gui::LayoutContext &context) {
     auto em = context.theme.font_size;
-    int settings_width = 15 * context.theme.font_size;
+    int settings_width = 16 * context.theme.font_size;
 #if !GROUPS_USE_TREE
     if (impl_->added_groups_.size() >= 2) {
         settings_width += 5 * context.theme.font_size;
