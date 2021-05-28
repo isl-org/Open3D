@@ -192,4 +192,13 @@ int main(int argc, char* argv[]) {
                 pcd.ToLegacyPointCloud());
         open3d::io::WritePointCloud(filename, *pcd_legacy);
     }
+
+    if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
+        std::string filename = utility::GetProgramOptionAsString(
+                argc, argv, "--mesh", "mesh_" + device.ToString() + ".ply");
+        auto mesh = model.ExtractTriangleMesh(-1);
+        auto mesh_legacy = std::make_shared<open3d::geometry::TriangleMesh>(
+                mesh.ToLegacyTriangleMesh());
+        open3d::io::WriteTriangleMesh(filename, *mesh_legacy);
+    }
 }

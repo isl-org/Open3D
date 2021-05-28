@@ -80,7 +80,7 @@ void ProjectCUDA(
                     return;
                 }
 
-                float* depth_ptr = depth_indexer.GetDataPtrFromCoord<float>(
+                float* depth_ptr = depth_indexer.GetDataPtr<float>(
                         static_cast<int64_t>(u), static_cast<int64_t>(v));
                 float d = zc * depth_scale;
                 float d_old = atomicExch(depth_ptr, d);
@@ -111,14 +111,12 @@ void ProjectCUDA(
                     return;
                 }
 
-                float dmap = *depth_indexer.GetDataPtrFromCoord<float>(
+                float dmap = *depth_indexer.GetDataPtr<float>(
                         static_cast<int64_t>(u), static_cast<int64_t>(v));
                 float d = zc * depth_scale;
                 if (d < dmap + precision_bound) {
-                    uint8_t* color_ptr =
-                            color_indexer.GetDataPtrFromCoord<uint8_t>(
-                                    static_cast<int64_t>(u),
-                                    static_cast<int64_t>(v));
+                    uint8_t* color_ptr = color_indexer.GetDataPtr<uint8_t>(
+                            static_cast<int64_t>(u), static_cast<int64_t>(v));
                     color_ptr[0] = static_cast<uint8_t>(
                             point_colors_ptr[3 * workload_idx + 0] * 255.0);
                     color_ptr[1] = static_cast<uint8_t>(

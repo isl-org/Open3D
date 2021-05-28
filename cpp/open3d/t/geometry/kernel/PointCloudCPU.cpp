@@ -84,7 +84,7 @@ void ProjectCPU(
                     return;
                 }
 
-                float* depth_ptr = depth_indexer.GetDataPtrFromCoord<float>(
+                float* depth_ptr = depth_indexer.GetDataPtr<float>(
                         static_cast<int64_t>(u), static_cast<int64_t>(v));
                 float d = zc * depth_scale;
 #pragma omp critical
@@ -94,7 +94,7 @@ void ProjectCPU(
 
                         if (has_colors) {
                             uint8_t* color_ptr =
-                                    color_indexer.GetDataPtrFromCoord<uint8_t>(
+                                    color_indexer.GetDataPtr<uint8_t>(
                                             static_cast<int64_t>(u),
                                             static_cast<int64_t>(v));
 
