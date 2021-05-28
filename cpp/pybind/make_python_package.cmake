@@ -79,12 +79,10 @@ endif()
 
 # Build Jupyter plugin.
 if (BUILD_JUPYTER_EXTENSION)
-    if(UNIX AND NOT APPLE)
+    if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
         message(STATUS "Jupyter support is enabled, building Jupyter plugin now.")
     else()
-        message(FATAL_ERROR "Jupyter plugin is only supported on Linux. You may"
-                "build and start the Jupyter server on Linux and view the "
-                "Jupyter webpage in any OS with modern WebRTC-enabled browsers.")
+        message(FATAL_ERROR "Jupyter plugin is not supported on ARM.")
     endif()
 
     find_program(NPM npm)
@@ -99,7 +97,7 @@ if (BUILD_JUPYTER_EXTENSION)
     if(YARN)
         message(STATUS "YARN found at: ${YARN}")
     else()
-        message(FATAL_ERROR "yarn not found. You may install yarm globally by"
+        message(FATAL_ERROR "yarn not found. You may install yarm globally by "
                             "npm install -g yarn.")
     endif()
 

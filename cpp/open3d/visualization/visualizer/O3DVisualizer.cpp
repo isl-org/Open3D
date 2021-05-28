@@ -1235,6 +1235,8 @@ struct O3DVisualizer::Impl {
             is_default_color = false;
             no_shadows = false;
         } else if (model) {
+            // Adding a triangle mesh model. Shader needs to be set to
+            // defaultLit for O3D shader handling logic to work.
             mat.shader = kShaderLit;
         } else {
             mat.base_color = CalcDefaultUnlitColor();
@@ -1708,6 +1710,9 @@ struct O3DVisualizer::Impl {
     }
 
     void SetShader(O3DVisualizer::Shader shader) {
+        // Don't force material override if no change
+        if (ui_state_.scene_shader == shader) return;
+
         ui_state_.scene_shader = shader;
         for (auto &o : objects_) {
             OverrideMaterial(o.name, o.material, shader);
@@ -2202,7 +2207,6 @@ struct O3DVisualizer::Impl {
         }
         return false;
     }
-
     void UpdateAnimationTickClockTime(double now) {
         next_animation_tick_clock_time_ = now + ui_state_.frame_delay;
     }
@@ -2247,17 +2251,16 @@ struct O3DVisualizer::Impl {
                 (std::string("Open3D ") + OPEN3D_VERSION).c_str());
         auto text = std::make_shared<gui::Label>(
                 "The MIT License (MIT)\n"
-                "Copyright (c) 2018 - 2020 www.open3d.org\n\n"
+                "Copyright (c) 2018 - 2021 www.open3d.org\n\n"
 
                 "Permission is hereby granted, free of charge, to any person "
                 "obtaining a copy of this software and associated "
-                "documentation "
-                "files (the \"Software\"), to deal in the Software without "
-                "restriction, including without limitation the rights to use, "
-                "copy, modify, merge, publish, distribute, sublicense, and/or "
-                "sell copies of the Software, and to permit persons to whom "
-                "the Software is furnished to do so, subject to the following "
-                "conditions:\n\n"
+                "documentation files (the \"Software\"), to deal in the "
+                "Software without restriction, including without limitation "
+                "the rights to use, copy, modify, merge, publish, distribute, "
+                "sublicense, and/or sell copies of the Software, and to "
+                "permit persons to whom the Software is furnished to do so, "
+                "subject to the following conditions:\n\n"
 
                 "The above copyright notice and this permission notice shall "
                 "be included in all copies or substantial portions of the "
@@ -2266,9 +2269,9 @@ struct O3DVisualizer::Impl {
                 "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY "
                 "KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE "
                 "WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR "
-                "PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS "
-                "OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR "
-                "OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR "
+                "PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR "
+                "COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER "
+                "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR "
                 "OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE "
                 "SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.");
         auto ok = std::make_shared<gui::Button>("OK");
@@ -2278,7 +2281,9 @@ struct O3DVisualizer::Impl {
         auto layout = std::make_shared<gui::Vert>(0, margins);
         layout->AddChild(gui::Horiz::MakeCentered(title));
         layout->AddFixed(theme.font_size);
-        layout->AddChild(text);
+        auto v = std::make_shared<gui::ScrollableVert>(0);
+        v->AddChild(text);
+        layout->AddChild(v);
         layout->AddFixed(theme.font_size);
         layout->AddChild(gui::Horiz::MakeCentered(ok));
         dlg->AddChild(layout);
@@ -2831,7 +2836,7 @@ void O3DVisualizer::ExportCurrentImage(const std::string &path) {
 
 void O3DVisualizer::Layout(const gui::LayoutContext &context) {
     auto em = context.theme.font_size;
-    int settings_width = 15 * context.theme.font_size;
+    int settings_width = 16 * context.theme.font_size;
 #if !GROUPS_USE_TREE
     if (impl_->added_groups_.size() >= 2) {
         settings_width += 5 * context.theme.font_size;

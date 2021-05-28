@@ -85,11 +85,12 @@ if int(sys.version_info[0]) < 3:
 
 if _build_config["BUILD_JUPYTER_EXTENSION"]:
     import platform
-    if platform.system() == "Linux":
+    if not (platform.machine().startswith("arm") or
+            platform.machine().startswith("aarch")):
         try:
             shell = get_ipython().__class__.__name__
             if shell == 'ZMQInteractiveShell':
-                print("Jupyter environment detected."
+                print("Jupyter environment detected. "
                       "Enabling Open3D WebVisualizer.")
                 # Set default window system.
                 open3d.visualization.webrtc_server.enable_webrtc()
@@ -99,7 +100,7 @@ if _build_config["BUILD_JUPYTER_EXTENSION"]:
         except NameError:
             pass
     else:
-        print("Open3D WebVisualizer is only supported on Linux for now.")
+        print("Open3D WebVisualizer is not supported on ARM for now.")
         pass
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.

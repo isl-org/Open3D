@@ -175,16 +175,15 @@ class PipelineModel:
                 continue
 
             n_pts += self.pcd_frame.point['points'].shape[0]
-            if frame_id % 60 == 0:
+            if frame_id % 60 == 0 and frame_id > 0:
                 t0, t1 = t1, time.perf_counter()
-                self.status_message = f"FPS: {60./(t1-t0):0.2f}"
                 log.debug(f"\nframe_id = {frame_id}, \t {(t1-t0)*1000./60:0.2f}"
                           f"ms/frame \t {(t1-t0)*1e9/n_pts} ms/Mp\t")
                 n_pts = 0
             frame_elements = {
-                'color': self.rgbd_frame.color,
-                'depth': depth_in_color,
-                'pcd': self.pcd_frame,
+                'color': self.rgbd_frame.color.cpu(),
+                'depth': depth_in_color.cpu(),
+                'pcd': self.pcd_frame.cpu(),
                 'status_message': self.status_message
             }
             self.update_view(frame_elements)
@@ -224,7 +223,7 @@ class PipelineModel:
                                           255).to(o3d.core.Dtype.UInt8)
         self.executor.submit(o3d.t.io.write_point_cloud,
                              filename,
-                             self.pcd_frame.cpu(),
+                             self.pcd_frame,
                              write_ascii=False,
                              compressed=True,
                              print_progress=False)
@@ -235,10 +234,10 @@ class PipelineModel:
         now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = f"{self.rgbd_metadata.serial_number}_color_{now}.jpg"
         self.executor.submit(o3d.t.io.write_image, filename,
-                             self.rgbd_frame.color.cpu())
+                             self.rgbd_frame.color)
         filename = f"{self.rgbd_metadata.serial_number}_depth_{now}.png"
         self.executor.submit(o3d.t.io.write_image, filename,
-                             self.rgbd_frame.depth.cpu())
+                             self.rgbd_frame.depth)
         self.status_message = (
             f"Saving RGBD images to {filename[:-3]}.{{jpg,png}}.")
 
@@ -280,9 +279,7 @@ class PipelineView:
         self.pcdview.scene = rendering.Open3DScene(self.window.renderer)
         self.pcdview.scene.set_background([1, 1, 1, 1])  # White background
         self.pcdview.scene.set_lighting(
-            rendering.Open3DScene.LightingProfile.SOFT_SHADOWS)
-        self.pcdview.scene.scene.set_sun_light_direction([0, -1, ])
-        self.pcdview.scene.show_axes(True)
+            rendering.Open3DScene.LightingProfile.SOFT_SHADOWS, [0, -1, 0])
         # Point cloud bounds, depends on the sensor range
         self.pcd_bounds = o3d.geometry.AxisAlignedBoundingBox([-3, -3, 0],
                                                               [3, 3, 6])
@@ -291,6 +288,7 @@ class PipelineView:
 
         # Options panel
         self.panel = gui.Vert(em, gui.Margins(em, em, em, em))
+        self.panel.preferred_width = int(360 * self.window.scaling)
         self.window.add_child(self.panel)
         toggles = gui.Horiz(em)
         self.panel.add_child(toggles)
@@ -342,8 +340,6 @@ class PipelineView:
         save_buttons.add_stretch()  # for centering
 
         video_size = (240, 320, 3)
-        self.constraints = gui.Widget.Constraints()
-        self.constraints.height, self.constraints.width = video_size[:2]
         self.show_color = gui.CollapsableVert("Color image")
         self.show_color.set_is_open(False)
         self.panel.add_child(self.show_color)
@@ -400,16 +396,14 @@ class PipelineView:
             rendering.Scene.UPDATE_POINTS_FLAG |
             rendering.Scene.UPDATE_COLORS_FLAG |
             (rendering.Scene.UPDATE_NORMALS_FLAG if self.flag_normals else 0))
-        self.pcdview.scene.scene.update_geometry('pcd',
-                                                 frame_elements['pcd'].cpu(),
+        self.pcdview.scene.scene.update_geometry('pcd', frame_elements['pcd'],
                                                  update_flags)
 
         # Update color and depth images
         if self.show_color.get_is_open() and 'color' in frame_elements:
-            self.color_video.update_image(frame_elements['color'].cpu())
-            # to(o3d.core.Device('cpu:0'), copy=True))
+            self.color_video.update_image(frame_elements['color'])
         if self.show_depth.get_is_open() and 'depth' in frame_elements:
-            self.depth_video.update_image(frame_elements['depth'].cpu())
+            self.depth_video.update_image(frame_elements['depth'])
 
         if 'status_message' in frame_elements:
             self.status_message.text = frame_elements["status_message"]
@@ -429,15 +423,17 @@ class PipelineView:
         self.pcdview.scene.camera.look_at([0, 0, 1.5], [0, 3, 1.5], [0, -1, 0])
 
     def on_layout(self, layout_context):
+        # The on_layout callback should set the frame (position + size) of every
+        # child correctly. After the callback is done the window will layout
+        # the grandchildren.
         """Callback on window initialize / resize"""
         frame = self.window.content_rect
-        em = layout_context.theme.font_size
-        panel_size = self.panel.calc_preferred_size(layout_context,
-                                                    self.constraints)
-        panel_rect = gui.Rect(frame.get_right() - panel_size.width, frame.y,
-                              panel_size.width, panel_size.height)
-        self.panel.frame = panel_rect
         self.pcdview.frame = frame
+        panel_size = self.panel.calc_preferred_size(layout_context,
+                                                    self.panel.Constraints())
+        self.panel.frame = gui.Rect(frame.get_right() - panel_size.width,
+                                    frame.y, panel_size.width,
+                                    panel_size.height)
 
 
 class PipelineController:

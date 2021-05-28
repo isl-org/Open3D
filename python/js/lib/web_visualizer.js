@@ -201,6 +201,7 @@ let WebVisualizerView = widgets.DOMWidgetView.extend({
     this.videoElt.muted = true;
     this.videoElt.controls = false;
     this.videoElt.playsinline = true;
+    this.videoElt.innerText = "Your browser does not support HTML5 video.";
 
     // this.el is the DOM element associated with the view.
     this.el.appendChild(this.videoElt);
@@ -208,7 +209,7 @@ let WebVisualizerView = widgets.DOMWidgetView.extend({
     // Create WebRTC stream.
     this.webRtcClient = new WebRtcStreamer(
       this.videoElt,
-      location.protocol + "//" + window.location.hostname + ":" + 8888,
+      "",
       onClose,
       this.commsCall.bind(this)
     );

@@ -30,26 +30,34 @@
 
 #include "open3d/Open3D.h"
 
-int main(int argc, char **argv) {
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > LineSet [filename]");
+    utility::LogInfo("    The program will :");
+    utility::LogInfo("    1. load the pointcloud in [filename].");
+    utility::LogInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.");
+    utility::LogInfo("    3. convert the correspondences to LineSet and render it.");
+    utility::LogInfo("    4. rotate the point cloud slightly to get another point cloud.");
+    utility::LogInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.");
+    utility::LogInfo("    6. convert to LineSet and render it.");
+    utility::LogInfo("    7. distance below 0.05 are rendered as red, others as black.");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char *argv[]) {
     using namespace open3d;
     using namespace flann;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 2) {
-        PrintOpen3DVersion();
-        // clang-format off
-        utility::LogInfo("Usage:");
-        utility::LogInfo("    > LineSet [filename]");
-        utility::LogInfo("    The program will :");
-        utility::LogInfo("    1. load the pointcloud in [filename].");
-        utility::LogInfo("    2. use KDTreeFlann to compute 50 nearest neighbors of point0.");
-        utility::LogInfo("    3. convert the correspondences to LineSet and render it.");
-        utility::LogInfo("    4. rotate the point cloud slightly to get another point cloud.");
-        utility::LogInfo("    5. find closest point of the original point cloud on the new point cloud, mark as correspondences.");
-        utility::LogInfo("    6. convert to LineSet and render it.");
-        utility::LogInfo("    7. distance below 0.05 are rendered as red, others as black.");
-        // clang-format on
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 

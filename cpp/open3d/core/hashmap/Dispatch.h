@@ -71,7 +71,29 @@ namespace core {
 template <typename T, size_t N>
 class Block {
 public:
-    bool OPEN3D_HOST_DEVICE operator==(const Block<T, N>& other) const {
+    Block() = default;
+
+    OPEN3D_HOST_DEVICE Block(const Block<T, N>& other) {
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+        for (size_t i = 0; i < N; ++i) {
+            data_[i] = other.data_[i];
+        }
+    }
+
+    OPEN3D_HOST_DEVICE Block<T, N>& operator=(const Block<T, N>& other) {
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+        for (size_t i = 0; i < N; ++i) {
+            data_[i] = other.data_[i];
+        }
+
+        return *this;
+    }
+
+    OPEN3D_HOST_DEVICE bool operator==(const Block<T, N>& other) const {
         bool is_eq = true;
 #if defined(__CUDA_ARCH__)
 #pragma unroll
@@ -82,17 +104,8 @@ public:
         return is_eq;
     }
 
-    void OPEN3D_HOST_DEVICE operator=(const Block<T, N>& other) {
-#if defined(__CUDA_ARCH__)
-#pragma unroll
-#endif
-        for (size_t i = 0; i < N; ++i) {
-            data_[i] = other.data_[i];
-        }
-    }
-
-    T OPEN3D_HOST_DEVICE Get(size_t i) const { return data_[i]; }
-    void OPEN3D_HOST_DEVICE Set(size_t i, const T& value) { data_[i] = value; }
+    OPEN3D_HOST_DEVICE T Get(size_t i) const { return data_[i]; }
+    OPEN3D_HOST_DEVICE void Set(size_t i, const T& value) { data_[i] = value; }
 
 private:
     T data_[N];
@@ -101,7 +114,7 @@ private:
 template <typename T, size_t N>
 struct BlockHash {
 public:
-    uint64_t OPEN3D_HOST_DEVICE operator()(const Block<T, N>& key) const {
+    OPEN3D_HOST_DEVICE uint64_t operator()(const Block<T, N>& key) const {
         uint64_t hash = UINT64_C(14695981039346656037);
 #if defined(__CUDA_ARCH__)
 #pragma unroll

@@ -130,7 +130,12 @@ public:
     /// where we assume a reliable surface point comes from the fusion of at
     /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
     /// observations.
-    TriangleMesh ExtractSurfaceMesh(float weight_threshold = 3.0f);
+    TriangleMesh ExtractSurfaceMesh(
+            int estimate_vertices = -1,
+            float weight_threshold = 3.0f,
+            int surface_mask = SurfaceMaskCode::VertexMap |
+                               SurfaceMaskCode::NormalMap |
+                               SurfaceMaskCode::ColorMap);
 
     /// Convert TSDFVoxelGrid to the target device.
     /// \param device The targeted device to convert to.

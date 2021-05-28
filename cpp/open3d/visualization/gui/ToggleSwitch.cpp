@@ -80,7 +80,8 @@ Size ToggleSwitch::CalcPreferredSize(const LayoutContext& context,
 Widget::DrawResult ToggleSwitch::Draw(const DrawContext& context) {
     auto& theme = context.theme;
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
     auto result = Widget::DrawResult::NONE;
 
     DrawImGuiPushEnabledState();

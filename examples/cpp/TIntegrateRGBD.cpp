@@ -34,25 +34,28 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
-    utility::LogInfo("     Given RGBD images, reconstruct mesh or point cloud from color and depth images");
-    utility::LogInfo("     [options]");
-    utility::LogInfo("     --voxel_size [=0.0058 (m)]");
-    utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
-    utility::LogInfo("     --depth_scale [=1000.0]");
-    utility::LogInfo("     --depth_max [=3.0]");
-    utility::LogInfo("     --sdf_trunc [=0.04]");
-    utility::LogInfo("     --device [CPU:0]");
-    utility::LogInfo("     --raycast");
-    utility::LogInfo("     --mesh");
-    utility::LogInfo("     --pointcloud");
+    utility::LogInfo("    > TIntegrateRGBD [color_folder] [depth_folder] [trajectory] [options]");
+    utility::LogInfo("      Given RGBD images, reconstruct mesh or point cloud from color and depth images");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --voxel_size [=0.0058 (m)]");
+    utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
+    utility::LogInfo("    --depth_scale [=1000.0]");
+    utility::LogInfo("    --depth_max [=3.0]");
+    utility::LogInfo("    --sdf_trunc [=0.04]");
+    utility::LogInfo("    --device [CPU:0]");
+    utility::LogInfo("    --raycast");
+    utility::LogInfo("    --mesh");
+    utility::LogInfo("    --pointcloud");
     // clang-format on
     utility::LogInfo("");
 }
 
-int main(int argc, char** argv) {
-    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc < 4) {
+int main(int argc, char* argv[]) {
+    using namespace open3d;
+
+    if (argc < 4 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
@@ -113,6 +116,7 @@ int main(int argc, char** argv) {
             argc, argv, "--sdf_trunc", 0.04f));
 
     bool enable_raycast = utility::ProgramOptionExists(argc, argv, "--raycast");
+    bool debug = utility::ProgramOptionExists(argc, argv, "--debug");
 
     // Device
     std::string device_code = "CPU:0";
@@ -170,15 +174,14 @@ int main(int argc, char** argv) {
             auto result = voxel_grid.RayCast(
                     intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
                     depth_scale, 0.1, depth_max, std::min(i * 1.0f, 3.0f),
-                    MaskCode::DepthMap | MaskCode::VertexMap |
-                            MaskCode::ColorMap | MaskCode::NormalMap);
+                    MaskCode::DepthMap | MaskCode::ColorMap);
             ray_timer.Stop();
 
             utility::LogInfo("{}: Raycast takes {}", i,
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
-            if (i % 20 == 0) {
+            if (debug) {
                 core::Tensor range_map = result[MaskCode::RangeMap];
                 t::geometry::Image im_near(
                         range_map.Slice(2, 0, 1).Contiguous() / depth_max);
@@ -190,22 +193,17 @@ int main(int argc, char** argv) {
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 im_far.ToLegacyImage())});
-                t::geometry::Image depth(result[MaskCode::DepthMap]);
+                t::geometry::Image depth_raycast(result[MaskCode::DepthMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                depth.ToLegacyImage())});
-                t::geometry::Image vertex(result[MaskCode::VertexMap]);
+                                depth_raycast
+                                        .ColorizeDepth(depth_scale, 0.1,
+                                                       depth_max)
+                                        .ToLegacyImage())});
+                t::geometry::Image color_raycast(result[MaskCode::ColorMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                vertex.ToLegacyImage())});
-                t::geometry::Image normal(result[MaskCode::NormalMap]);
-                visualization::DrawGeometries(
-                        {std::make_shared<open3d::geometry::Image>(
-                                normal.ToLegacyImage())});
-                t::geometry::Image color(result[MaskCode::ColorMap]);
-                visualization::DrawGeometries(
-                        {std::make_shared<open3d::geometry::Image>(
-                                color.ToLegacyImage())});
+                                color_raycast.ToLegacyImage())});
             }
         }
 

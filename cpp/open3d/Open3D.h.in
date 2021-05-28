@@ -150,3 +150,5 @@
 
 @BUILD_LIBREALSENSE_COMMENT@#include "open3d/t/io/sensor/realsense/RSBagReader.h"
 @BUILD_LIBREALSENSE_COMMENT@#include "open3d/t/io/sensor/realsense/RealSenseSensor.h"
+
+@BUILD_WEBRTC_COMMENT@#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"

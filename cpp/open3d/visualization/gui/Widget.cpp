@@ -104,6 +104,10 @@ Size Widget::CalcPreferredSize(const LayoutContext&,
     return Size(DIM_GROW, DIM_GROW);
 }
 
+Size Widget::CalcMinimumSize(const LayoutContext& context) const {
+    return Size(0, 0);
+}
+
 void Widget::Layout(const LayoutContext& context) {
     for (auto& child : impl_->children_) {
         child->Layout(context);
