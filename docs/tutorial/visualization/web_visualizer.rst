@@ -40,7 +40,6 @@ platforms:
 
 Additional notes on compatibility:
 
-- Web visualizer servers are not supported on the ARM64 platform.
 - On Ubuntu, web visualizer server runs on EGL. This is supported in most
   machines as long as the it has graphics capabilities (either via integrated
   graphics or discrete GPU). A discrete GPU will be required if the CPU does not
@@ -48,13 +47,14 @@ Additional notes on compatibility:
   Intel XEON processors without integrated graphics. You'll need to add a
   discrete GPU to the instance and install the graphics driver to enable the web
   visualizer.
+- Web visualizer servers are not supported on the ARM6 platform.
 
 2. Standalone mode
 ------------------
 
 In standalone mode, Open3D web visualizer server runs as a standalone
-application. It supports both C++ and Python. You'll only need make very minimal
-change to your code to enable the server.
+application. It supports both C++ and Python. You'll only need to make very
+minimal changes to your code to enable the server.
 
 C++ server
 ::::::::::
@@ -124,6 +124,15 @@ internal IP and port, enable the corresponding port in the firewall rules and
 enable HTTP traffic. Finally, we start the web visualizer server and visit the
 external IP address from the browser.
 
+.. warning::
+
+    Although the WebRTC traffic is encrypted, the web server uses HTTP by
+    default which is not encrypted and is suitable only for local access. If
+    used for remote visualization, the web page will be visible and controllable
+    by any one with network access. For sensitive or confidential data, please
+    rebuild with `appropriate web server configuration and SSL certificates
+    <https://github.com/civetweb/civetweb/blob/master/docs/OpenSSL.md>`_.
+
 
 3. Jupyter mode
 ---------------
@@ -145,10 +154,15 @@ or, you may also install JupyterLab instead:
 Then, run the example in
 ``examples/python/visualization/jupyter_visualization.ipynb``.
 
+.. warning::
+
+    For remote visualization, please use a `secure Jupyter server
+    <https://jupyter-notebook.readthedocs.io/en/stable/public_server.html>`_.
+
 Non-blocking functions
 ::::::::::::::::::::::
 
-In Jupyter mode, we need to avoid avoid blocking visualization API calls.
+In Jupyter mode, we need to avoid blocking visualization API calls.
 Otherwise, running visualization in one cell will block the execution of the
 next cell. We provide Jupyter-specific helper functions to achieve non-blocking
 visualization. For instance, ``open3d.web_visualizer.draw`` is used instead of
@@ -162,7 +176,7 @@ the implementation of ``open3d.web_visualizer.draw`` as and example.
 Build Jupyter package from source
 :::::::::::::::::::::::::::::::::
 
-Open3D official Python wheels comes with Jupyter web visualizer support.
+Open3D official Python wheels come with Jupyter web visualizer support.
 To build Open3D Python package from source with Jupyter web visualizer, you'll
 need to :
 
@@ -189,8 +203,8 @@ need to :
 ------------------------------------------------
 
 When the computer has no active network interfaces (e.g. Wi-Fi is turned off and
-ethernet is unplugged, the machine only has the loopback `lo` interface),
-WebRTC may failed to work. In this case, we need to create a dummy interface.
+ethernet is unplugged, the machine only has the loopback ``lo`` interface),
+WebRTC may fail to work. In this case, we need to create a dummy interface.
 The workaround is tested on Ubuntu.
 
 
@@ -224,8 +238,9 @@ or `TURN <https://developer.mozilla.org/en-US/docs/Glossary/TURN>`_ servers.
 In most scenarios, a STUN server is sufficient to figure out the traffic
 routing. In certain network configurations (e.g. behind a NAT or firewall),
 a TURN server is required to forward WebRTC traffic. You may add your custom
-TURN server by setting the ``WEBRTC_STUN_SERVER`` environment variable. If you
-have more than one TURN servers, separate them with ``;``. For instance:
+TURN server (video traffic relay) by setting the ``WEBRTC_STUN_SERVER``
+environment variable. If you have more than one TURN servers, separate them
+with ``;``. For instance:
 
 .. code-block:: sh
 
@@ -235,3 +250,22 @@ have more than one TURN servers, separate them with ``;``. For instance:
     WEBRTC_STUN_SERVER="turn:user:password@my_tcp_turn_server.com:3478?transport=tcp"
     # UDP and TCP (more than one TURN servers)
     WEBRTC_STUN_SERVER="turn:user:password@my_turn_server.com:3478;turn:user:password@my_tcp_turn_server.com:3478?transport=tcp"
+
+
+6. Advanced topic: debugging network issues
+-------------------------------------------
+
+You may face issues such as failure to connect, lag or low visualization quality
+in specific network configurations (e.g. NAT, network proxy, VPN configurations).
+Here are some ideas to debug network issues:
+
+- Make sure localhost works before trying to host a remote server. Make sure
+  standalone mode works before trying the Jupyter mode.
+- Test both client and server machines for connectivity and throughput at
+  `https://test.webrtc.org/ <https://test.webrtc.org/>`_.
+- If you face control lag, try switching from TCP to UDP connection or switching
+  to a closer TURN server.
+- If the visualization video has compression artifacts, you may be using a TURN
+  server (video traffic relay) with insufficient bandwidth. Try disabling TURN
+  servers or switching to a server with higher bandwidth or closer to your
+  location.
