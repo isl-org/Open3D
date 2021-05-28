@@ -116,6 +116,7 @@ int main(int argc, char* argv[]) {
             argc, argv, "--sdf_trunc", 0.04f));
 
     bool enable_raycast = utility::ProgramOptionExists(argc, argv, "--raycast");
+    bool debug = utility::ProgramOptionExists(argc, argv, "--debug");
 
     // Device
     std::string device_code = "CPU:0";
@@ -124,9 +125,11 @@ int main(int argc, char* argv[]) {
     }
     core::Device device(device_code);
     utility::LogInfo("Using device: {}", device.ToString());
-    t::geometry::TSDFVoxelGrid voxel_grid(
-            {{"tsdf", core::Dtype::Float32}, {"weight", core::Dtype::Float32}},
-            voxel_size, sdf_trunc, 16, block_count, device);
+    t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
+                                           {"weight", core::Dtype::UInt16},
+                                           {"color", core::Dtype::UInt16}},
+                                          voxel_size, sdf_trunc, 16,
+                                          block_count, device);
 
     double time_total = 0;
     double time_int = 0;
@@ -178,7 +181,7 @@ int main(int argc, char* argv[]) {
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
-            if (false) {
+            if (debug) {
                 core::Tensor range_map = result[MaskCode::RangeMap];
                 t::geometry::Image im_near(
                         range_map.Slice(2, 0, 1).Contiguous() / depth_max);
@@ -190,23 +193,17 @@ int main(int argc, char* argv[]) {
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 im_far.ToLegacyImage())});
-                t::geometry::Image depth(result[MaskCode::DepthMap]);
+                t::geometry::Image depth_raycast(result[MaskCode::DepthMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                depth.ColorizeDepth(depth_scale, 0.1, depth_max)
+                                depth_raycast
+                                        .ColorizeDepth(depth_scale, 0.1,
+                                                       depth_max)
                                         .ToLegacyImage())});
-                // t::geometry::Image vertex(result[MaskCode::VertexMap]);
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 vertex.ToLegacyImage())});
-                // t::geometry::Image normal(result[MaskCode::NormalMap]);
-                // visualization::DrawGeometries(
-                //         {std::make_shared<open3d::geometry::Image>(
-                //                 normal.ToLegacyImage())});
-                t::geometry::Image color(result[MaskCode::ColorMap]);
+                t::geometry::Image color_raycast(result[MaskCode::ColorMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                color.ToLegacyImage())});
+                                color_raycast.ToLegacyImage())});
             }
         }
 
