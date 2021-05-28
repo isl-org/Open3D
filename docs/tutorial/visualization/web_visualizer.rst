@@ -50,7 +50,7 @@ Additional notes on compatibility:
   Intel XEON processors without integrated graphics. You'll need to add a
   discrete GPU to the instance and install the graphics driver to enable the web
   visualizer.
-- Web visualizer servers are not supported on the ARM6 platform.
+- Web visualizer servers are not supported on the ARM platform.
 
 2. Standalone mode
 ------------------
