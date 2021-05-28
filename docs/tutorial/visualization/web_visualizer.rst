@@ -267,8 +267,7 @@ Here are some ideas to debug network issues:
 - Test both client and server machines for connectivity and throughput at
   `https://test.webrtc.org/ <https://test.webrtc.org/>`_.
 - If you face control lag, try switching from TCP to UDP connection or switching
-  to a closer TURN server.
+  to a closer TURN (video traffic relay) server.
 - If the visualization video has compression artifacts, you may be using a TURN
-  server (video traffic relay) with insufficient bandwidth. Try disabling TURN
-  servers or switching to a server with higher bandwidth or closer to your
-  location.
+  server with insufficient bandwidth. Try switching to a TURN server with higher
+  bandwidth or closer to your location.
