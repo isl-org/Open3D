@@ -194,6 +194,33 @@ void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
 
 void Hashmap::Clear() { device_hashmap_->Clear(); }
 
+void Hashmap::Save(const std::string& filename) const {
+    core::Device host("CPU:0");
+
+    core::Tensor keys = GetKeyTensor().To(host);
+    core::Tensor values = GetValueTensor().To(host);
+
+    core::Tensor active_addrs;
+    GetActiveIndices(active_addrs);
+    core::Tensor active_indices = active_addrs.To(host, core::Dtype::Int64);
+
+    keys.IndexGet({active_indices}).Save(filename + ".key.npy");
+    values.IndexGet({active_indices}).Save(filename + ".value.npy");
+}
+
+void Hashmap::Load(const std::string& filename) {
+    Clear();
+
+    core::Tensor keys = core::Tensor::Load(fmt::format("{}.key.npy", filename));
+    core::Tensor values =
+            core::Tensor::Load(fmt::format("{}.value.npy", filename));
+
+    /// This may fail due to CUDA out-of-memory, as it requires both the value
+    /// buffer tensor and the values to be inserted on device.
+    core::Tensor masks, addrs;
+    Insert(keys.To(GetDevice()), values.To(GetDevice()), masks, addrs);
+}
+
 Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
 Hashmap Hashmap::To(const Device& device, bool copy) const {

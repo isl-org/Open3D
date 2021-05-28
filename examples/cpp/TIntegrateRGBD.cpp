@@ -221,6 +221,12 @@ int main(int argc, char* argv[]) {
     utility::LogInfo("per frame: {}, ray cating: {}, integration: {}",
                      time_total / n, time_raycasting / n, time_int / n);
 
+    utility::LogInfo("Saving");
+    voxel_grid.Save("tsdf");
+
+    utility::LogInfo("Loading");
+    voxel_grid.Load("tsdf");
+
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh = voxel_grid.ExtractSurfaceMesh();
         auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(

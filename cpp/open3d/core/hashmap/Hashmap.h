@@ -105,6 +105,14 @@ public:
     /// Clear stored map without reallocating memory.
     void Clear();
 
+    /// Save the keys and values in the form of
+    /// '{filename}.key.npy', '{filename}.value.npy'.
+    void Save(const std::string& filename) const;
+
+    /// Load the keys and values from
+    /// '{filename}.key.npy', '{filename}.value.npy'.
+    void Load(const std::string& filename);
+
     Hashmap Clone() const;
     Hashmap To(const Device& device, bool copy = false) const;
     Hashmap CPU() const;
