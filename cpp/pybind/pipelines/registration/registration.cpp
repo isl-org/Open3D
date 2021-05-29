@@ -30,7 +30,6 @@
 #include <utility>
 
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 #include "open3d/pipelines/registration/Feature.h"
@@ -577,16 +576,6 @@ void pybind_registration_methods(py::module &m) {
           "estimation_method"_a = TransformationEstimationPointToPoint(false),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_icp",
-                                 map_shared_argument_docstrings);
-
-    m.def("registration_colored_icp", &RegistrationColoredICP,
-          py::call_guard<py::gil_scoped_release>(),
-          "Function for Colored ICP registration", "source"_a, "target"_a,
-          "max_correspondence_distance"_a,
-          "init"_a = Eigen::Matrix4d::Identity(),
-          "estimation_method"_a = TransformationEstimationForColoredICP(),
-          "criteria"_a = ICPConvergenceCriteria());
-    docstring::FunctionDocInject(m, "registration_colored_icp",
                                  map_shared_argument_docstrings);
 
     m.def("registration_ransac_based_on_correspondence",

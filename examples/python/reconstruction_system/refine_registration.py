@@ -76,7 +76,7 @@ def multiscale_icp(source,
                     o3d.pipelines.registration.ICPConvergenceCriteria(
                         max_iteration=iter))
             if config["icp_method"] == "color":
-                result_icp = o3d.pipelines.registration.registration_colored_icp(
+                result_icp = o3d.pipelines.registration.registration_icp(
                     source_down, target_down, distance_threshold,
                     current_transformation,
                     o3d.pipelines.registration.

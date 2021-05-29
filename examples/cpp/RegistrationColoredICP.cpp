@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
         target_down->EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(
                 voxel_size * 2.0, 30));
 
-        auto result = pipelines::registration::RegistrationColoredICP(
+        auto result = pipelines::registration::RegistrationICP(
                 *source_down, *target_down, 0.07, trans,
                 pipelines::registration::
                         TransformationEstimationForColoredICP(),

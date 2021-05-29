@@ -115,6 +115,72 @@ static RegistrationResult EvaluateRANSACBasedOnCorrespondence(
     return result;
 }
 
+// For ColoredICP.
+static std::shared_ptr<geometry::PointCloud> InitializePointCloudForColoredICP(
+        const geometry::PointCloud &target,
+        const geometry::KDTreeSearchParamHybrid &search_param) {
+    utility::LogDebug("InitializePointCloudForColoredICP");
+
+    geometry::KDTreeFlann tree;
+    tree.SetGeometry(target);
+
+    auto output = std::make_shared<geometry::PointCloud>();
+    output->colors_ = target.colors_;
+    output->normals_ = target.normals_;
+    output->points_ = target.points_;
+
+    size_t n_points = output->points_.size();
+    output->color_gradient_.resize(n_points, Eigen::Vector3d::Zero());
+
+    for (size_t k = 0; k < n_points; k++) {
+        const Eigen::Vector3d &vt = output->points_[k];
+        const Eigen::Vector3d &nt = output->normals_[k];
+        double it = (output->colors_[k](0) + output->colors_[k](1) +
+                     output->colors_[k](2)) /
+                    3.0;
+
+        std::vector<int> point_idx;
+        std::vector<double> point_squared_distance;
+
+        if (tree.SearchHybrid(vt, search_param.radius_, search_param.max_nn_,
+                              point_idx, point_squared_distance) >= 4) {
+            // approximate image gradient of vt's tangential plane
+            size_t nn = point_idx.size();
+            Eigen::MatrixXd A(nn, 3);
+            Eigen::MatrixXd b(nn, 1);
+            A.setZero();
+            b.setZero();
+            for (size_t i = 1; i < nn; i++) {
+                int P_adj_idx = point_idx[i];
+                Eigen::Vector3d vt_adj = output->points_[P_adj_idx];
+                Eigen::Vector3d vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
+                double it_adj = (output->colors_[P_adj_idx](0) +
+                                 output->colors_[P_adj_idx](1) +
+                                 output->colors_[P_adj_idx](2)) /
+                                3.0;
+                A(i - 1, 0) = (vt_proj(0) - vt(0));
+                A(i - 1, 1) = (vt_proj(1) - vt(1));
+                A(i - 1, 2) = (vt_proj(2) - vt(2));
+                b(i - 1, 0) = (it_adj - it);
+            }
+            // adds orthogonal constraint
+            A(nn - 1, 0) = (nn - 1) * nt(0);
+            A(nn - 1, 1) = (nn - 1) * nt(1);
+            A(nn - 1, 2) = (nn - 1) * nt(2);
+            b(nn - 1, 0) = 0;
+            // solving linear equation
+            bool is_success = false;
+            Eigen::MatrixXd x;
+            std::tie(is_success, x) = utility::SolveLinearSystemPSD(
+                    A.transpose() * A, A.transpose() * b);
+            if (is_success) {
+                output->color_gradient_[k] = x;
+            }
+        }
+    }
+    return output;
+}
+
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -143,37 +209,61 @@ RegistrationResult RegistrationICP(
     if (max_correspondence_distance <= 0.0) {
         utility::LogError("Invalid max_correspondence_distance.");
     }
-    if ((estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::PointToPlane ||
-         estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::ColoredICP) &&
+
+    auto target_ptr = std::make_shared<geometry::PointCloud>();
+
+    if (estimation.GetTransformationEstimationType() ==
+                TransformationEstimationType::PointToPlane &&
         (!target.HasNormals())) {
         utility::LogError(
-                "TransformationEstimationPointToPlane and "
-                "TransformationEstimationColoredICP "
-                "require pre-computed normal vectors for target PointCloud.");
+                "TransformationEstimationPointToPlane require pre-computed "
+                "normal vectors for target PointCloud.");
+    }
+
+    // ColoredICP requires pre-computed color_gradients for target points.
+    if (estimation.GetTransformationEstimationType() ==
+        TransformationEstimationType::ColoredICP) {
+        if (!target.HasNormals()) {
+            utility::LogError(
+                    "ColoredICP requires target pointcloud to have normals.");
+        }
+        if (!target.HasColors()) {
+            utility::LogError(
+                    "ColoredICP requires target pointcloud to have colors.");
+        }
+        if (!source.HasColors()) {
+            utility::LogError(
+                    "ColoredICP requires source pointcloud to have colors.");
+        }
+
+        target_ptr = InitializePointCloudForColoredICP(
+                target, geometry::KDTreeSearchParamHybrid(
+                                max_correspondence_distance * 2.0, 30));
+    } else {
+        target_ptr = std::make_shared<geometry::PointCloud>(target);
     }
 
     Eigen::Matrix4d transformation = init;
     geometry::KDTreeFlann kdtree;
-    kdtree.SetGeometry(target);
+    kdtree.SetGeometry(*target_ptr);
     geometry::PointCloud pcd = source;
     if (!init.isIdentity()) {
         pcd.Transform(init);
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
+            pcd, *target_ptr, kdtree, max_correspondence_distance,
+            transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
-                pcd, target, result.correspondence_set_);
+                pcd, *target_ptr, result.correspondence_set_);
         transformation = update * transformation;
         pcd.Transform(update);
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
-                pcd, target, kdtree, max_correspondence_distance,
+                pcd, *target_ptr, kdtree, max_correspondence_distance,
                 transformation);
 
         if (std::abs(backup.fitness_ - result.fitness_) <

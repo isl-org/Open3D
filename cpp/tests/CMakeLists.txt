@@ -63,7 +63,6 @@ set(UNIT_TEST_SOURCE_FILES
     pipelines/registration/GlobalOptimization.cpp
     pipelines/registration/Registration.cpp
     pipelines/registration/FastGlobalRegistration.cpp
-    pipelines/registration/ColoredICP.cpp
     pipelines/registration/PoseGraph.cpp
     pipelines/registration/TransformationEstimation.cpp
     pipelines/registration/CorrespondenceChecker.cpp

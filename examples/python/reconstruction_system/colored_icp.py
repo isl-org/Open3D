@@ -30,7 +30,7 @@ def multiscale_icp(source,
         target_down.estimate_normals(
             o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] * 2.0,
                                                  max_nn=30))
-        result_icp = o3d.pipelines.registration.registration_colored_icp(
+        result_icp = o3d.pipelines.registration.registration_icp(
             source_down, target_down, distance_threshold,
             current_transformation,
             o3d.pipelines.registration.TransformationEstimationForColoredICP(),

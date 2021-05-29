@@ -11,7 +11,6 @@ set(ALL_SOURCE_FILES
     registration/RobustKernel.cpp
     registration/Registration.cpp
     registration/FastGlobalRegistration.cpp
-    registration/ColoredICP.cpp
     registration/PoseGraph.cpp
     registration/TransformationEstimation.cpp
     registration/CorrespondenceChecker.cpp

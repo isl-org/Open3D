@@ -378,6 +378,8 @@ public:
     std::vector<Eigen::Vector3d> normals_;
     /// RGB colors of points.
     std::vector<Eigen::Vector3d> colors_;
+    /// Color gradient of points, required for Colored Registration.
+    std::vector<Eigen::Vector3d> color_gradient_;
 };
 
 }  // namespace geometry
