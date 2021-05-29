@@ -127,7 +127,7 @@ jobs:
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           echo
           source util/ci_utils.sh
-          install_python_dependencies with-conda with-jupyter
+          install_python_dependencies with-conda
           echo
           echo -n "Using conda"
           conda info

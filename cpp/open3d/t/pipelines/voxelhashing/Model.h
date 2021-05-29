@@ -98,7 +98,7 @@ public:
                    float depth_scale,
                    float depth_max);
 
-    /// Extract surface point cloud for visualization.
+    /// Extract surface point cloud for visualization / model saving.
     /// \param estimated_number Estimation of the point cloud size, helpful for
     /// real-time visualization.
     /// \param weight_threshold Weight threshold of the TSDF voxels to prune
@@ -106,6 +106,15 @@ public:
     /// \return Extracted point cloud.
     t::geometry::PointCloud ExtractPointCloud(int estimated_number = -1,
                                               float weight_threshold = 3.0f);
+
+    /// Extract surface triangle mesh for visualization / model saving.
+    /// \param estimated_number Estimation of the point cloud size, helpful for
+    /// real-time visualization.
+    /// \param weight_threshold Weight threshold of the TSDF voxels to prune
+    /// noise.
+    /// \return Extracted point cloud.
+    t::geometry::TriangleMesh ExtractTriangleMesh(
+            int estimated_number = -1, float weight_threshold = 3.0f);
 
     /// Get block hashmap int the TSDFVoxelGrid.
     core::Hashmap GetHashmap();
