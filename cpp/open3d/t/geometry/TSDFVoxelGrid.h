@@ -42,6 +42,11 @@
 
 namespace open3d {
 namespace t {
+
+namespace io {
+class TSDFVoxelGridMetadata;
+}
+
 namespace geometry {
 
 /// Scalable voxel grid specialized for TSDF integration.
@@ -154,6 +159,11 @@ public:
     core::Device GetDevice() const { return device_; }
 
     std::shared_ptr<core::Hashmap> GetBlockHashmap() { return block_hashmap_; }
+    std::shared_ptr<core::Hashmap> GetBlockHashmap() const {
+        return block_hashmap_;
+    }
+
+    friend class io::TSDFVoxelGridMetadata;
 
 protected:
     /// Return  addrs and masks for radius (3) neighbor entries.

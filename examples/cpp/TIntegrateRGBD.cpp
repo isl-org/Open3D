@@ -133,7 +133,8 @@ int main(int argc, char* argv[]) {
     double time_total = 0;
     double time_int = 0;
     double time_raycasting = 0;
-    for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
+    for (size_t i = 0; i < 10; ++i) {
+        // trajectory->parameters_.size(); ++i) {
         utility::Timer timer;
         timer.Start();
 
@@ -220,6 +221,18 @@ int main(int argc, char* argv[]) {
     size_t n = trajectory->parameters_.size();
     utility::LogInfo("per frame: {}, ray cating: {}, integration: {}",
                      time_total / n, time_raycasting / n, time_int / n);
+
+    open3d::t::io::WriteTSDFVoxelGrid("tsdf.json", voxel_grid);
+
+    t::geometry::TSDFVoxelGrid new_voxel_grid;
+    open3d::t::io::ReadTSDFVoxelGrid("tsdf.json", new_voxel_grid);
+
+    auto pcd = new_voxel_grid.ExtractSurfacePoints(
+            -1, 3.0f,
+            MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);
+    auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+            pcd.ToLegacyPointCloud());
+    open3d::io::WritePointCloud("new_pcd.ply", *pcd_legacy);
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh = voxel_grid.ExtractSurfaceMesh();
