@@ -51,6 +51,8 @@ Additional notes on compatibility:
   discrete GPU to the instance and install the graphics driver to enable the web
   visualizer.
 - Web visualizer servers are not supported on the ARM platform.
+- Google Colab and Kaggle notebook are not supported. You'll need to run you own
+  Jupyter or JupyterLab server.
 
 2. Standalone mode
 ------------------
