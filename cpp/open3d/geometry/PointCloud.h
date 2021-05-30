@@ -94,6 +94,11 @@ public:
         return points_.size() > 0 && colors_.size() == points_.size();
     }
 
+    /// Returns `true` if the point cloud contains point colors.
+    bool HasColorGradients() const {
+        return points_.size() > 0 && color_gradients_.size() == points_.size();
+    }
+
     /// Normalize point normals to length 1.
     PointCloud &NormalizeNormals() {
         for (size_t i = 0; i < normals_.size(); i++) {
@@ -205,6 +210,9 @@ public:
     /// \param std_ratio Standard deviation ratio.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
+
+    void EstimateColorGradients(const KDTreeSearchParamHybrid &search_param =
+                                        KDTreeSearchParamHybrid(0.5, 30));
 
     /// \brief Function to compute the normals of a point cloud.
     ///
@@ -378,8 +386,8 @@ public:
     std::vector<Eigen::Vector3d> normals_;
     /// RGB colors of points.
     std::vector<Eigen::Vector3d> colors_;
-    /// Color gradient of points, required for Colored Registration.
-    std::vector<Eigen::Vector3d> color_gradient_;
+    /// Color gradients of points, required for Colored Registration.
+    std::vector<Eigen::Vector3d> color_gradients_;
 };
 
 }  // namespace geometry

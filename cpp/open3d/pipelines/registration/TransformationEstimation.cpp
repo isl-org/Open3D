@@ -131,7 +131,7 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
         double it = (target.colors_[ct](0) + target.colors_[ct](1) +
                      target.colors_[ct](2)) /
                     3.0;
-        const Eigen::Vector3d &dit = target.color_gradient_[ct];
+        const Eigen::Vector3d &dit = target.color_gradients_[ct];
         double is0_proj = (dit.dot(vs_proj - vt)) + it;
         double residual_geometric = sqrt_lambda_geometric * (vs - vt).dot(nt);
         double residual_photometric = sqrt_lambda_photometric * (is - is0_proj);
@@ -194,7 +194,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
                 double it = (target.colors_[ct](0) + target.colors_[ct](1) +
                              target.colors_[ct](2)) /
                             3.0;
-                const Eigen::Vector3d &dit = target.color_gradient_[ct];
+                const Eigen::Vector3d &dit = target.color_gradients_[ct];
                 double is0_proj = (dit.dot(vs_proj - vt)) + it;
 
                 const Eigen::Matrix3d M =
