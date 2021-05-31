@@ -593,7 +593,7 @@ void PointCloud::EstimateColorGradients(
     this->color_gradients_.resize(n_points, Eigen::Vector3d::Zero());
 
 #pragma omp parallel for schedule(static)
-    for (int k = 0; k < n_points; k++) {
+    for (int k = 0; k < static_cast<int>(n_points); k++) {
         const Eigen::Vector3d &vt = this->points_[k];
         const Eigen::Vector3d &nt = this->normals_[k];
         double it = (this->colors_[k](0) + this->colors_[k](1) +
