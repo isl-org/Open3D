@@ -50,7 +50,9 @@ Additional notes on compatibility:
   Intel XEON processors without integrated graphics. You'll need to add a
   discrete GPU to the instance and install the graphics driver to enable the web
   visualizer.
-- Web visualizer servers are not supported on the ARM platform.
+- Web visualizer servers are not supported on the ARM platform yet. To get the
+  web visualizer working on ARM, you'll need to compile the WebRTC library from
+  source for ARM. See the ``3rdparty/webrtc`` folder for more details.
 - Google Colab and Kaggle notebook are not supported. You'll need to run you own
   Jupyter or JupyterLab server.
 
@@ -83,7 +85,7 @@ Example:
     ./DrawWebRTC
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
-Checkout `DrawWebRTC.cpp <https://github.com/intel-isl/Open3D/blob/master/examples/cpp/DrawWebRTC.cpp>`_
+Checkout `examples/cpp/DrawWebRTC.cp <https://github.com/intel-isl/Open3D/blob/master/examples/cpp/DrawWebRTC.cpp>`_
 for the complete source code.
 
 Python server
@@ -103,7 +105,7 @@ Example:
     python examples/python/gui/draw_webrtc.py
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
-Checkout `draw_webrtc.py <https://github.com/intel-isl/Open3D/blob/master/examples/python/gui/draw_webrtc.py>`_
+Checkout `examples/python/gui/draw_webrtc.py <https://github.com/intel-isl/Open3D/blob/master/examples/python/gui/draw_webrtc.py>`_
 for the complete source code.
 
 IP/port binding
@@ -161,8 +163,8 @@ or, you may also install JupyterLab instead:
     pip install jupyterlab
     jupyter-lab
 
-Then, run the example in
-``examples/python/visualization/jupyter_visualization.ipynb``.
+Then, run the example notebook
+`examples/python/visualization/jupyter_visualization.ipynb <https://github.com/intel-isl/Open3D/blob/master/examples/python/visualization/jupyter_visualization.ipynb>`_.
 
 Unlike standalone mode, ``WEBRTC_IP`` and ``WEBRTC_PORT`` are not used in
 Jupyter mode. However, you might want to
