@@ -376,7 +376,7 @@ To build and run C++ unit tests:
 .. code-block:: bash
 
     cmake -DBUILD_UNIT_TESTS=ON ..
-    make -j
+    make -j$(nproc)
     ./bin/tests
 
 
@@ -386,5 +386,5 @@ To run Python unit tests:
 
     # Activate virtualenv first
     pip install pytest
-    make install-pip-package
+    make install-pip-package -j$(nproc)
     pytest ../python/test
