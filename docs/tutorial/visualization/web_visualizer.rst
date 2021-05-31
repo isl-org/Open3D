@@ -3,7 +3,7 @@
 Web visualizer and Jupyter
 ==========================
 
-1. Introduction
+Introduction
 ---------------
 
 Open3D web visualizer enables advanced rendering and visualization of 3D models
@@ -54,7 +54,7 @@ Additional notes on compatibility:
 - Google Colab and Kaggle notebook are not supported. You'll need to run you own
   Jupyter or JupyterLab server.
 
-2. Standalone mode
+Standalone mode
 ------------------
 
 In standalone mode, Open3D web visualizer server runs as a standalone
@@ -83,6 +83,9 @@ Example:
     ./DrawWebRTC
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
+Checkout `DrawWebRTC.cpp <https://github.com/intel-isl/Open3D/blob/master/examples/cpp/DrawWebRTC.cpp>`_
+for the complete source code.
+
 Python server
 :::::::::::::
 
@@ -100,6 +103,8 @@ Example:
     python examples/python/gui/draw_webrtc.py
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
+Checkout `draw_webrtc.py <https://github.com/intel-isl/Open3D/blob/master/examples/python/gui/draw_webrtc.py>`_
+for the complete source code.
 
 IP/port binding
 :::::::::::::::
@@ -139,8 +144,8 @@ external IP address from the browser.
     <https://github.com/civetweb/civetweb/blob/master/docs/OpenSSL.md>`_.
 
 
-3. Jupyter mode
----------------
+Jupyter mode
+------------
 
 Install Jupyter with:
 
@@ -159,6 +164,10 @@ or, you may also install JupyterLab instead:
 Then, run the example in
 ``examples/python/visualization/jupyter_visualization.ipynb``.
 
+Unlike standalone mode, ``WEBRTC_IP`` and ``WEBRTC_PORT`` are not used in
+Jupyter mode. However, you might want to
+`specify IP and port for Jupyter <https://stackoverflow.com/q/31270570/1255535>`_.
+
 .. warning::
 
     For remote visualization, please use a `secure Jupyter server
@@ -176,7 +185,7 @@ the regular ``open3d.visualization.draw`` in the example notebook above.
 Besides ``draw``, you may also create your own non-blocking visualization helper
 functions with the ``_AsyncEventLoop`` class. See
 ``python/open3d/web_visualizer.py`` for the  ``_AsyncEventLoop`` class and
-the implementation of ``open3d.web_visualizer.draw`` as and example.
+the implementation of ``open3d.web_visualizer.draw`` as an example.
 
 Build Jupyter package from source
 :::::::::::::::::::::::::::::::::
@@ -204,7 +213,7 @@ need to :
      make install-pip-package -j$(nproc)
 
 
-4. Advanced topic: local server in airplane mode
+Advanced topic: local server in airplane mode
 ------------------------------------------------
 
 When the computer has no active network interfaces (e.g. Wi-Fi is turned off and
@@ -232,7 +241,7 @@ The workaround is tested on Ubuntu.
     sudo ip link delete dummy0
 
 
-5. Advanced topic: TURN server
+Advanced topic: TURN server
 ------------------------------
 
 WebRTC's `ICE <https://developer.mozilla.org/en-US/docs/Glossary/ICE>`_
@@ -257,7 +266,7 @@ with ``;``. For instance:
     WEBRTC_STUN_SERVER="turn:user:password@my_turn_server.com:3478;turn:user:password@my_tcp_turn_server.com:3478?transport=tcp"
 
 
-6. Advanced topic: debugging network issues
+Advanced topic: debugging network issues
 -------------------------------------------
 
 You may face issues such as failure to connect, lag or low visualization quality
