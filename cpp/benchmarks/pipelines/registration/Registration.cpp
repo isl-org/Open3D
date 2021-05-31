@@ -33,7 +33,6 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
-#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Console.h"
 
@@ -147,7 +146,7 @@ static void BenchmarkRegistrationColoredICPLegacy(benchmark::State& state,
     target.EstimateNormals(
             open3d::geometry::KDTreeSearchParamHybrid(voxel_size * 2.0, 30));
     for (auto _ : state) {
-        auto result = pipelines::registration::RegistrationColoredICP(
+        auto result = pipelines::registration::RegistrationICP(
                 source, target, 0.07, trans,
                 pipelines::registration::
                         TransformationEstimationForColoredICP(),
