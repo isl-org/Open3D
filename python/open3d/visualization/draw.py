@@ -21,9 +21,14 @@ def draw(geometry=None,
          on_init=None,
          on_animation_frame=None,
          on_animation_tick=None):
+    """
+    Documentation try 1234
+    """    
     gui.Application.instance.initialize()
     w = O3DVisualizer(title, width, height)
     w.set_background(bg_color, bg_image)
+
+
 
     if actions is not None:
         for a in actions:
