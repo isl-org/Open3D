@@ -580,12 +580,19 @@ void PointCloud::EstimateColorGradients(
                 &search_param /*= KDTreeSearchParamHybrid(0.5, 30)*/) {
     utility::LogDebug("Estimating Color Gradients.");
 
+    if (!this->HasColors() || !this->HasNormals()) {
+        utility::LogError(
+                "PointCloud must have colors and normals attribute "
+                "to compute color gradients.");
+    }
+
     geometry::KDTreeFlann tree;
     tree.SetGeometry(*this);
 
     size_t n_points = this->points_.size();
     this->color_gradients_.resize(n_points, Eigen::Vector3d::Zero());
 
+#pragma omp parallel for schedule(static)
     for (size_t k = 0; k < n_points; k++) {
         const Eigen::Vector3d &vt = this->points_[k];
         const Eigen::Vector3d &nt = this->normals_[k];
@@ -604,6 +611,7 @@ void PointCloud::EstimateColorGradients(
             Eigen::MatrixXd b(nn, 1);
             A.setZero();
             b.setZero();
+
             for (size_t i = 1; i < nn; i++) {
                 int P_adj_idx = point_idx[i];
                 Eigen::Vector3d vt_adj = this->points_[P_adj_idx];
