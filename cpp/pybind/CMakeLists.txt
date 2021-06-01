@@ -304,6 +304,7 @@ add_custom_target(pip-package
 add_custom_target(install-pip-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
+            -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_install_pip_package.cmake
     DEPENDS pip-package
 )
