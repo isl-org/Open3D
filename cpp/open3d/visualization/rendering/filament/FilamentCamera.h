@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <utils/Entity.h>
+
 #include "open3d/visualization/rendering/Camera.h"
 
 /// @cond
@@ -33,7 +35,6 @@ namespace filament {
 class Camera;
 class Engine;
 }  // namespace filament
-/// @endcond
 
 namespace open3d {
 namespace visualization {
@@ -104,6 +105,7 @@ public:
 
 private:
     filament::Camera* camera_ = nullptr;
+    utils::Entity camera_entity_;
     filament::Engine& engine_;
     Camera::ProjectionInfo projection_;
 };
