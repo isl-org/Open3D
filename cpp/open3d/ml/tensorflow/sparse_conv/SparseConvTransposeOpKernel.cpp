@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "SparseConvTransposeOpKernel.h"
+
 #include "open3d/ml/impl/sparse_conv/SparseConvTranspose.h"
 
 using namespace open3d;

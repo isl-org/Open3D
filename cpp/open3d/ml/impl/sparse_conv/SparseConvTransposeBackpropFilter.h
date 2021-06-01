@@ -27,8 +27,8 @@
 #pragma once
 #include <mutex>
 
-#include "tbb/parallel_for.h"
 #include "Eigen/Core"
+#include "tbb/parallel_for.h"
 
 namespace open3d {
 namespace ml {

@@ -36,15 +36,15 @@ using namespace open3d::ml::impl;
 
 template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 void SparseConvCUDA(const torch::Tensor& filters,
-        const torch::Tensor& inp_features,
-        const torch::Tensor& inp_importance,
-        const torch::Tensor& neighbors_index,
-        const torch::Tensor& neighbors_kernel_index,
-        const torch::Tensor& neighbors_importance,
-        const torch::Tensor& neighbors_row_splits,
-        const bool normalize,
-        const int64_t max_temp_mem_MB,
-        torch::Tensor& out_features) {
+                    const torch::Tensor& inp_features,
+                    const torch::Tensor& inp_importance,
+                    const torch::Tensor& neighbors_index,
+                    const torch::Tensor& neighbors_kernel_index,
+                    const torch::Tensor& neighbors_importance,
+                    const torch::Tensor& neighbors_row_splits,
+                    const bool normalize,
+                    const int64_t max_temp_mem_MB,
+                    torch::Tensor& out_features) {
     std::vector<int> filter_dims;
     for (auto d : filters.sizes()) {
         filter_dims.push_back(d);
@@ -64,18 +64,15 @@ void SparseConvCUDA(const torch::Tensor& filters,
     SparseConvComputeFeaturesCUDA<TFeat, TOut, TIndex, TKernelIndex>(
             stream, temp_ptr, temp_size, max_temp_size, texture_alignment,
             out_features.data_ptr<TOut>(), filter_dims,
-            filters.data_ptr<TFeat>(), 
-            neighbors_row_splits.size(0) - 1, 
-            inp_features.size(0), 
-            inp_features.data_ptr<TFeat>(),
+            filters.data_ptr<TFeat>(), neighbors_row_splits.size(0) - 1,
+            inp_features.size(0), inp_features.data_ptr<TFeat>(),
             inp_importance.size(0) ? inp_importance.data_ptr<TFeat>() : nullptr,
             neighbors_index.size(0), neighbors_index.data_ptr<TIndex>(),
-        neighbors_kernel_index.data_ptr<TKernelIndex>(),
+            neighbors_kernel_index.data_ptr<TKernelIndex>(),
             neighbors_importance.size(0)
                     ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
-            neighbors_row_splits.data_ptr<int64_t>(), 
-            normalize);
+            neighbors_row_splits.data_ptr<int64_t>(), normalize);
 
     temp_size = std::max(
             std::min(size_t(max_temp_mem_MB) * 1024 * 1024, max_temp_size),
@@ -87,30 +84,24 @@ void SparseConvCUDA(const torch::Tensor& filters,
     SparseConvComputeFeaturesCUDA<TFeat, TOut, TIndex, TKernelIndex>(
             stream, temp_ptr, temp_size, max_temp_size, texture_alignment,
             out_features.data_ptr<TOut>(), filter_dims,
-            filters.data_ptr<TFeat>(), 
-            neighbors_row_splits.size(0) - 1, 
-            inp_features.size(0), 
-            inp_features.data_ptr<TFeat>(),
+            filters.data_ptr<TFeat>(), neighbors_row_splits.size(0) - 1,
+            inp_features.size(0), inp_features.data_ptr<TFeat>(),
             inp_importance.size(0) ? inp_importance.data_ptr<TFeat>() : nullptr,
             neighbors_index.size(0), neighbors_index.data_ptr<TIndex>(),
-        neighbors_kernel_index.data_ptr<TKernelIndex>(),
+            neighbors_kernel_index.data_ptr<TKernelIndex>(),
             neighbors_importance.size(0)
                     ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
-            neighbors_row_splits.data_ptr<int64_t>(), 
-            normalize);
-
+            neighbors_row_splits.data_ptr<int64_t>(), normalize);
 }
-#define INSTANTIATE(TFeat, TOut, TReal, TIndex)                               \
-    template void SparseConvCUDA<TFeat, TOut, TReal, TIndex>(             \
-            const torch::Tensor& filters, \
-            const torch::Tensor& inp_features,                                \
-            const torch::Tensor& inp_importance,                              \
-            const torch::Tensor& neighbors_index,                             \
-            const torch::Tensor& neighbors_kernel_index,\
-            const torch::Tensor& neighbors_importance,                        \
-            const torch::Tensor& neighbors_row_splits,                        \
-            const bool normalize, \
+#define INSTANTIATE(TFeat, TOut, TReal, TIndex)                              \
+    template void SparseConvCUDA<TFeat, TOut, TReal, TIndex>(                \
+            const torch::Tensor& filters, const torch::Tensor& inp_features, \
+            const torch::Tensor& inp_importance,                             \
+            const torch::Tensor& neighbors_index,                            \
+            const torch::Tensor& neighbors_kernel_index,                     \
+            const torch::Tensor& neighbors_importance,                       \
+            const torch::Tensor& neighbors_row_splits, const bool normalize, \
             const int64_t max_temp_mem_MB, torch::Tensor& out_features);
 
 INSTANTIATE(float, float, int32_t, uint8_t)

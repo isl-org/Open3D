@@ -28,11 +28,11 @@
 #include <vector>
 
 #include "open3d/ml/pytorch/TorchHelper.h"
+#include "open3d/ml/pytorch/misc/InvertNeighborsListOps.h"
+#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOps.h"
 #include "open3d/ml/pytorch/sparse_conv/SparseConvOpKernel.h"
 #include "open3d/ml/pytorch/sparse_conv/SparseConvTransposeBackpropFilterOpKernel.h"
 #include "open3d/ml/pytorch/sparse_conv/SparseConvTransposeOpKernel.h"
-#include "open3d/ml/pytorch/misc/InvertNeighborsListOps.h"
-#include "open3d/ml/pytorch/misc/ReduceSubarraysSumOps.h"
 #include "torch/script.h"
 
 using torch::autograd::AutogradContext;
@@ -56,12 +56,11 @@ public:
                             Variable neighbors_row_splits,
                             const bool normalize,
                             const int64_t max_temp_mem_MB) {
-
         CHECK_TYPE(neighbors_row_splits, kInt64);
         CHECK_TYPE(inp_neighbors_row_splits, kInt64);
         CHECK_SAME_DTYPE(neighbors_index, inp_neighbors_index);
-        CHECK_SAME_DTYPE(filters, 
-                         inp_features, out_importance, neighbors_importance);
+        CHECK_SAME_DTYPE(filters, inp_features, out_importance,
+                         neighbors_importance);
         CHECK_SAME_DEVICE_TYPE(filters, inp_features, out_importance);
 
         filters = filters.contiguous();
@@ -110,11 +109,11 @@ public:
         ctx->saved_data["normalize"] = normalize;
         ctx->saved_data["max_temp_mem_MB"] = max_temp_mem_MB;
 
-        ctx->save_for_backward({filters, out_importance, 
-                                inp_features,
+        ctx->save_for_backward({filters, out_importance, inp_features,
                                 inp_neighbors_importance_sum,
-                                inp_neighbors_row_splits, neighbors_index, neighbors_kernel_index,
-                                neighbors_importance, neighbors_row_splits});
+                                inp_neighbors_row_splits, neighbors_index,
+                                neighbors_kernel_index, neighbors_importance,
+                                neighbors_row_splits});
 
         const auto& feat_dtype = filters.dtype();
         const auto& index_dtype = neighbors_index.dtype();
@@ -123,19 +122,18 @@ public:
         torch::Tensor out_features =
                 torch::empty({num_out.value(), out_channels.value()},
                              torch::dtype(feat_dtype).device(device));
-#define FN_PARAMETERS                                                        \
-    filters, out_importance, \
-            inp_features, inp_neighbors_index, inp_neighbors_importance_sum, \
-            inp_neighbors_row_splits, neighbors_index, neighbors_kernel_index, neighbors_importance, \
-            neighbors_row_splits, \
-            normalize, max_temp_mem_MB, out_features
+#define FN_PARAMETERS                                                      \
+    filters, out_importance, inp_features, inp_neighbors_index,            \
+            inp_neighbors_importance_sum, inp_neighbors_row_splits,        \
+            neighbors_index, neighbors_kernel_index, neighbors_importance, \
+            neighbors_row_splits, normalize, max_temp_mem_MB, out_features
 
 #define CALL(feat_t, out_t, index_t, kernel_index_t, fn)           \
-    if (CompareTorchDtype<feat_t>(feat_dtype) &&           \
-        CompareTorchDtype<index_t>(index_dtype) && \
-        CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {         \
+    if (CompareTorchDtype<feat_t>(feat_dtype) &&                   \
+        CompareTorchDtype<index_t>(index_dtype) &&                 \
+        CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {   \
         fn<feat_t, out_t, index_t, kernel_index_t>(FN_PARAMETERS); \
-        return out_features;                               \
+        return out_features;                                       \
     }
 
         if (inp_features.is_cuda()) {
@@ -189,46 +187,43 @@ public:
         torch::Tensor filters_backprop;
         torch::Tensor inp_features_backprop;
 
-#define CALL(feat_t, out_t, index_t, kernel_index_t, fn_suffix)                       \
-    if (CompareTorchDtype<feat_t>(feat_dtype) &&                              \
-        CompareTorchDtype<index_t>(index_dtype) &&                              \
-        CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {                            \
-        filters_backprop = torch::empty(                                      \
-                filters.sizes(), torch::dtype(feat_dtype).device(device));    \
-        SparseConvTransposeBackpropFilter##fn_suffix<feat_t, out_t,       \
-                                                         index_t, kernel_index_t>(    \
-                filters, out_importance, \
-                inp_features, inp_neighbors_importance_sum,    \
-                inp_neighbors_row_splits, neighbors_index,                    \
-                neighbors_kernel_index, neighbors_importance, neighbors_row_splits,                   \
-                out_features_gradient, \
-                normalize, max_temp_mem_MB, filters_backprop); \
-                                                                              \
-        torch::Tensor inv_neighbors_index, _inv_neighbors_row_splits,         \
-                inv_neighbors_importance, inv_arange;                                     \
-        torch::Tensor arange = torch::arange(neighbors_index.size(0));            \
-        std::tie(inv_neighbors_index, _inv_neighbors_row_splits,              \
-                 inv_arange) =                                  \
-                InvertNeighborsList(inp_features.size(0), neighbors_index,   \
-                                    neighbors_row_splits,                     \
-                                    arange);                    \
-        torch::Tensor inv_neighbors_kernel_index = neighbors_kernel_index.index(inv_arange).contiguous();\
-        if( neighbors_importance.size(0) > 0 ){\
-                inv_neighbors_importance = neighbors_importance.index(inv_arange).contiguous();\
-         }\
-        inp_features_backprop =                                               \
-                torch::ones(inp_features.sizes(),                             \
-                            torch::dtype(feat_dtype).device(device));         \
-        auto filters_transposed = filters.transpose(3, 4).contiguous();       \
-                                                                              \
-        SparseConv##fn_suffix<feat_t, out_t, index_t, kernel_index_t>(            \
-                filters_transposed,            \
-                out_features_gradient, out_importance,         \
-                inv_neighbors_index, inv_neighbors_kernel_index, inv_neighbors_importance,                \
-                inp_neighbors_row_splits, \
-                normalize, max_temp_mem_MB,                    \
-                inp_features_backprop);                                       \
-        dispatch_success = true;                                              \
+#define CALL(feat_t, out_t, index_t, kernel_index_t, fn_suffix)                \
+    if (CompareTorchDtype<feat_t>(feat_dtype) &&                               \
+        CompareTorchDtype<index_t>(index_dtype) &&                             \
+        CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {               \
+        filters_backprop = torch::empty(                                       \
+                filters.sizes(), torch::dtype(feat_dtype).device(device));     \
+        SparseConvTransposeBackpropFilter##fn_suffix<feat_t, out_t, index_t,   \
+                                                     kernel_index_t>(          \
+                filters, out_importance, inp_features,                         \
+                inp_neighbors_importance_sum, inp_neighbors_row_splits,        \
+                neighbors_index, neighbors_kernel_index, neighbors_importance, \
+                neighbors_row_splits, out_features_gradient, normalize,        \
+                max_temp_mem_MB, filters_backprop);                            \
+                                                                               \
+        torch::Tensor inv_neighbors_index, _inv_neighbors_row_splits,          \
+                inv_neighbors_importance, inv_arange;                          \
+        torch::Tensor arange = torch::arange(neighbors_index.size(0));         \
+        std::tie(inv_neighbors_index, _inv_neighbors_row_splits, inv_arange) = \
+                InvertNeighborsList(inp_features.size(0), neighbors_index,     \
+                                    neighbors_row_splits, arange);             \
+        torch::Tensor inv_neighbors_kernel_index =                             \
+                neighbors_kernel_index.index(inv_arange).contiguous();         \
+        if (neighbors_importance.size(0) > 0) {                                \
+            inv_neighbors_importance =                                         \
+                    neighbors_importance.index(inv_arange).contiguous();       \
+        }                                                                      \
+        inp_features_backprop =                                                \
+                torch::ones(inp_features.sizes(),                              \
+                            torch::dtype(feat_dtype).device(device));          \
+        auto filters_transposed = filters.transpose(3, 4).contiguous();        \
+                                                                               \
+        SparseConv##fn_suffix<feat_t, out_t, index_t, kernel_index_t>(         \
+                filters_transposed, out_features_gradient, out_importance,     \
+                inv_neighbors_index, inv_neighbors_kernel_index,               \
+                inv_neighbors_importance, inp_neighbors_row_splits, normalize, \
+                max_temp_mem_MB, inp_features_backprop);                       \
+        dispatch_success = true;                                               \
     }
 
         bool dispatch_success = false;
@@ -250,18 +245,10 @@ public:
                             neighbors_index.toString() +
                             " as input for neighbors_index")
 
-        return {filters_backprop,
-                Variable(),
-                inp_features_backprop,
-                Variable(),
-                Variable(),
-                Variable(),
-                Variable(),
-                Variable(),
-                Variable(),
-                Variable(),
-                Variable(),
-                Variable()};
+        return {filters_backprop, Variable(), inp_features_backprop,
+                Variable(),       Variable(), Variable(),
+                Variable(),       Variable(), Variable(),
+                Variable(),       Variable(), Variable()};
     }
 };
 torch::Tensor SparseConvTranspose(
@@ -278,15 +265,18 @@ torch::Tensor SparseConvTranspose(
         const bool normalize,
         const int64_t max_temp_mem_MB) {
     auto ans = SparseConvTransposeFunction::apply(
-            filters, out_importance, 
-            inp_features, inp_neighbors_index,
+            filters, out_importance, inp_features, inp_neighbors_index,
             inp_neighbors_importance_sum, inp_neighbors_row_splits,
-            neighbors_index, neighbors_kernel_index, neighbors_importance, neighbors_row_splits,
-            normalize,
-            max_temp_mem_MB);
+            neighbors_index, neighbors_kernel_index, neighbors_importance,
+            neighbors_row_splits, normalize, max_temp_mem_MB);
     return ans;
 }
 
 static auto registry = torch::RegisterOperators(
-        "open3d::sparse_conv_transpose(Tensor filters, Tensor out_importance, Tensor inp_features, Tensor inp_neighbors_index, Tensor inp_neighbors_importance_sum, Tensor inp_neighbors_row_splits, Tensor neighbors_index, Tensor neighbors_importance, Tensor neighbors_row_splits, bool normalize=False, int max_temp_mem_MB=64) -> Tensor",
+        "open3d::sparse_conv_transpose(Tensor filters, Tensor out_importance, "
+        "Tensor inp_features, Tensor inp_neighbors_index, Tensor "
+        "inp_neighbors_importance_sum, Tensor inp_neighbors_row_splits, Tensor "
+        "neighbors_index, Tensor neighbors_importance, Tensor "
+        "neighbors_row_splits, bool normalize=False, int max_temp_mem_MB=64) "
+        "-> Tensor",
         &::SparseConvTranspose);

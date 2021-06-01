@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "SparseConvBackpropFilterOpKernel.h"
+
 #include "open3d/ml/impl/sparse_conv/SparseConvBackpropFilter.h"
 
 using namespace open3d;
