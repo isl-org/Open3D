@@ -23,6 +23,21 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import logging as _log
+from ctypes import util as _util
+from ctypes import CDLL as _cdll
+_EGL_AVAILABLE = False
+try:
+    _egl_name = _util.find_library("EGL")
+    if _egl_name is not None:
+        _egl = _cdll(_egl_name)
+        _EGL_AVAILABLE = bool(_egl.eglInitialize(_egl.eglGetDisplay()))
+except OSError:  # Broken OpenGL
+    pass
+
+if not _EGL_AVAILABLE:
+    _log.debug("EGL not available. Please check your graphics setup.")
+
 import open3d
 if open3d.__DEVICE_API__ == 'cuda':
     if "@BUILD_GUI@" == "ON":

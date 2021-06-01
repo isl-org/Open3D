@@ -12,6 +12,13 @@ if not _build_config["BUILD_JUPYTER_EXTENSION"]:
         "Open3D WebVisualizer Jupyter extension is not available. To use "
         "WebVisualizer, build Open3D with -DBUILD_JUPYTER_EXTENSION=ON.")
 
+if not o3d.visualization._EGL_AVAILABLE:
+    raise RuntimeError(
+        "Web Visualizer requires EGL, which is not available. "
+        "This can happen if there is no GPU available in the system, or the "
+        "available GPU does not have graphics capability enabled. Please check "
+        "your graphics setup.")
+
 
 @ipywidgets.register
 class WebVisualizer(ipywidgets.DOMWidget):
