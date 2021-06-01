@@ -42,6 +42,12 @@ set(TORCH_OPS_SOURCES
     "pointnet/BallQueryOps.cpp"
     "pointnet/InterpolateOps.cpp"
     "pointnet/SamplingOps.cpp"
+    "sparse_conv/SparseConvBackpropFilterOpKernel.cpp"
+    "sparse_conv/SparseConvOpKernel.cpp"
+    "sparse_conv/SparseConvOps.cpp"
+    "sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cpp"
+    "sparse_conv/SparseConvTransposeOpKernel.cpp"
+    "sparse_conv/SparseConvTransposeOps.cpp"
     "../contrib/Nms.cpp"
 )
 
@@ -64,6 +70,10 @@ set(TORCH_OPS_CUDA_SOURCES
     "pointnet/BallQueryKernel.cu"
     "pointnet/InterpolateKernel.cu"
     "pointnet/SamplingKernel.cu"
+    "sparse_conv/SparseConvBackpropFilterOpKernel.cu"
+    "sparse_conv/SparseConvOpKernel.cu"
+    "sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cu"
+    "sparse_conv/SparseConvTransposeOpKernel.cu"
 )
 
 if(BUILD_CUDA_MODULE)

@@ -26,6 +26,7 @@
 
 #pragma once
 #include "tbb/parallel_for.h"
+#include "Eigen/Core"
 
 namespace open3d {
 namespace ml {
