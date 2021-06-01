@@ -171,6 +171,11 @@ public:
 
     int GetMouseMods() const;  // internal, for WindowSystem
 
+    /// Returns the window's unique identifier when WebRTCWindowSystem is in
+    /// use. Returns "window_undefined" if the window system is not
+    /// WebRTCWindowSystem.
+    std::string GetWebRTCUID() const;
+
 protected:
     /// Returns the preferred size of the window. The window is not
     /// obligated to honor this size. If all children of the window
@@ -202,7 +207,6 @@ public:
 private:
     void CreateRenderer();
     Widget::DrawResult DrawOnce(bool is_layout_pass);
-    void ForceRedrawSceneWidget();
     void* MakeDrawContextCurrent() const;
     void RestoreDrawContext(void* old_context) const;
 

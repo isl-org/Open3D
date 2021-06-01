@@ -31,8 +31,8 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <sstream>
 
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -309,17 +309,29 @@ void Layout1D::Layout(const LayoutContext& context) {
                 }
             }
         }
-    } else if (num_grow > 0 && frame_size < total) {
-        auto total_excess = total - (frame_size - impl_->margins_.GetVert() -
-                                     total_spacing);
-        auto excess = total_excess / num_grow;
-        auto leftover = total_excess - excess * num_stretch;
-        for (size_t i = 0; i < major.size(); ++i) {
-            if (major[i] >= Widget::DIM_GROW) {
-                major[i] -= excess;
-                if (leftover > 0) {
-                    major[i] -= 1;
-                    leftover -= 1;
+    } else if (frame_size < total) {
+        int n_shrinkable = num_grow;
+        if (impl_->dir_ == VERT) {
+            for (auto child : GetChildren()) {
+                if (std::dynamic_pointer_cast<ScrollableVert>(child)) {
+                    n_shrinkable++;
+                }
+            }
+        }
+        if (n_shrinkable > 0) {
+            auto total_excess = total - (frame_size - total_spacing);
+            auto excess = total_excess / n_shrinkable;
+            auto leftover = total_excess - excess * num_stretch;
+            for (size_t i = 0; i < major.size(); ++i) {
+                if (major[i] >= Widget::DIM_GROW ||
+                    (impl_->dir_ == VERT &&
+                     std::dynamic_pointer_cast<ScrollableVert>(
+                             GetChildren()[i]) != nullptr)) {
+                    major[i] -= excess;
+                    if (leftover > 0) {
+                        major[i] -= 1;
+                        leftover -= 1;
+                    }
                 }
             }
         }
@@ -330,7 +342,9 @@ void Layout1D::Layout(const LayoutContext& context) {
     if (impl_->dir_ == VERT) {
         int minor = frame.width - impl_->margins_.GetHoriz();
         for (size_t i = 0; i < children.size(); ++i) {
-            children[i]->SetFrame(Rect(x, y, minor, major[i]));
+            int h = std::max(children[i]->CalcMinimumSize(context).height,
+                             major[i]);
+            children[i]->SetFrame(Rect(x, y, minor, h));
             y += major[i] + impl_->spacing_;
         }
     } else {
@@ -372,7 +386,7 @@ void Vert::SetPreferredWidth(int w) { SetMinorAxisPreferredSize(w); }
 struct CollapsableVert::Impl {
     std::string id_;
     std::string text_;
-    FontStyle style_ = FontStyle::NORMAL;
+    FontId font_id_ = Application::DEFAULT_FONT_ID;
     bool is_open_ = true;
 };
 
@@ -386,10 +400,7 @@ CollapsableVert::CollapsableVert(const char* text,
     static int g_next_id = 1;
 
     impl_->text_ = text;
-
-    std::stringstream s;
-    s << text << "##collapsing" << g_next_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = impl_->text_ + "##collapsing_" + std::to_string(g_next_id++);
 }
 
 CollapsableVert::~CollapsableVert() {}
@@ -398,22 +409,22 @@ void CollapsableVert::SetIsOpen(bool is_open) { impl_->is_open_ = is_open; }
 
 bool CollapsableVert::GetIsOpen() { return impl_->is_open_; }
 
-FontStyle CollapsableVert::GetFontStyle() const { return impl_->style_; }
+FontId CollapsableVert::GetFontId() const { return impl_->font_id_; }
 
-void CollapsableVert::SetFontStyle(FontStyle style) { impl_->style_ = style; }
+void CollapsableVert::SetFontId(FontId font_id) { impl_->font_id_ = font_id; }
 
 Size CollapsableVert::CalcPreferredSize(const LayoutContext& context,
                                         const Constraints& constraints) const {
     // Only push the font for the label
-    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
     auto* font = ImGui::GetFont();
     auto padding = ImGui::GetStyle().FramePadding;
     int text_height = int(
             std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
-    int text_width = int(std::ceil(
-            font->CalcTextSizeA(float(context.theme.font_size), FLT_MAX,
-                                FLT_MAX, impl_->text_.c_str())
-                    .x));
+    int text_width =
+            int(std::ceil(font->CalcTextSizeA(font->FontSize, FLT_MAX, FLT_MAX,
+                                              impl_->text_.c_str())
+                                  .x));
     ImGui::PopFont();  // back to default font for layout sizing
 
     auto pref = Super::CalcPreferredSize(context, constraints);
@@ -427,7 +438,7 @@ Size CollapsableVert::CalcPreferredSize(const LayoutContext& context,
 }
 
 void CollapsableVert::Layout(const LayoutContext& context) {
-    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
     auto padding = ImGui::GetStyle().FramePadding;
     int text_height = int(
             std::ceil(ImGui::GetTextLineHeightWithSpacing() + 2 * padding.y));
@@ -446,7 +457,8 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     bool was_open = impl_->is_open_;
 
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
     ImGui::PushItemWidth(float(frame.width));
 
     auto padding = ImGui::GetStyle().FramePadding;
@@ -457,7 +469,7 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
                           colorToImgui(context.theme.button_active_color));
 
     ImGui::SetNextTreeNodeOpen(impl_->is_open_);
-    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->style_));
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
     bool node_clicked = ImGui::TreeNode(impl_->id_.c_str());
     ImGui::PopFont();
     if (node_clicked) {
@@ -477,6 +489,49 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     }
     return result;
 }
+
+// ----------------------------------------------------------------------------
+struct ScrollableVert::Impl {
+    ImGuiID id_;
+};
+
+ScrollableVert::ScrollableVert() : ScrollableVert(0, Margins(), {}) {}
+
+ScrollableVert::ScrollableVert(int spacing /*= 0*/,
+                               const Margins& margins /*= Margins()*/)
+    : ScrollableVert(spacing, margins, {}) {}
+
+ScrollableVert::ScrollableVert(
+        int spacing,
+        const Margins& margins,
+        const std::vector<std::shared_ptr<Widget>>& children)
+    : Vert(spacing, margins, children), impl_(new ScrollableVert::Impl) {
+    static int g_next_id = 1;
+    impl_->id_ = g_next_id++;
+}
+
+ScrollableVert::~ScrollableVert() {}
+
+Widget::DrawResult ScrollableVert::Draw(const DrawContext& context) {
+    auto& frame = GetFrame();
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,
+                          ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+    ImGui::PushStyleColor(ImGuiCol_Border,
+                          colorToImgui(Color(0.0f, 0.0f, 0.0f, 0.0f)));
+    ImGui::PushStyleColor(ImGuiCol_BorderShadow,
+                          colorToImgui(Color(0.0f, 0.0f, 0.0f, 0.0f)));
+
+    ImGui::BeginChildFrame(impl_->id_, ImVec2(frame.width, frame.height));
+    auto result = Super::Draw(context);
+    ImGui::EndChildFrame();
+
+    ImGui::PopStyleColor(3);
+
+    return result;
+}
+
 // ----------------------------------------------------------------------------
 std::shared_ptr<Layout1D::Fixed> Horiz::MakeFixed(int size) {
     return std::make_shared<Layout1D::Fixed>(size, HORIZ);

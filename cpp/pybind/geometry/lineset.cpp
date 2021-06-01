@@ -26,6 +26,7 @@
 
 #include "open3d/geometry/LineSet.h"
 
+#include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/PointCloud.h"
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
@@ -89,6 +90,23 @@ void pybind_lineset(py::module &m) {
                         "Factory function to create a LineSet from edges of a "
                         "tetra mesh.",
                         "mesh"_a)
+            .def_static("create_camera_visualization",
+                        &LineSet::CreateCameraVisualization,
+                        "Factory function to create a LineSet from intrinsic "
+                        "and extrinsic camera matrices",
+                        "view_width_px"_a, "view_height_px"_a, "intrinsic"_a,
+                        "extrinsic"_a, "scale"_a = 1.0)
+            .def_static(
+                    "create_camera_visualization",
+                    [](const camera::PinholeCameraIntrinsic &intrinsic,
+                       const Eigen::Matrix4d &extrinsic, double scale) {
+                        return LineSet::CreateCameraVisualization(
+                                intrinsic.width_, intrinsic.height_,
+                                intrinsic.intrinsic_matrix_, extrinsic, scale);
+                    },
+                    "Factory function to create a LineSet from intrinsic "
+                    "and extrinsic camera matrices",
+                    "intrinsic"_a, "extrinsic"_a, "scale"_a = 1.0)
             .def_readwrite("points", &LineSet::points_,
                            "``float64`` array of shape ``(num_points, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "

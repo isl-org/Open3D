@@ -38,16 +38,20 @@ namespace gui {
 namespace {
 float CalcSwitchWidth(float height) { return height * 1.55f; }
 
+static int g_next_toggle_id = 1;
 }  // namespace
 
 struct ToggleSwitch::Impl {
     std::string name_;
+    std::string id_;
     bool is_on_ = false;
     std::function<void(bool)> on_clicked_;
 };
 
 ToggleSwitch::ToggleSwitch(const char* name) : impl_(new ToggleSwitch::Impl()) {
     impl_->name_ = name;
+    impl_->id_ =
+            impl_->name_ + "##toggle_" + std::to_string(g_next_toggle_id++);
 }
 
 ToggleSwitch::~ToggleSwitch() {}
@@ -76,7 +80,8 @@ Size ToggleSwitch::CalcPreferredSize(const LayoutContext& context,
 Widget::DrawResult ToggleSwitch::Draw(const DrawContext& context) {
     auto& theme = context.theme;
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
     auto result = Widget::DrawResult::NONE;
 
     DrawImGuiPushEnabledState();

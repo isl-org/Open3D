@@ -97,6 +97,7 @@ jobs:
 
     env:
       BUILD_CUDA_MODULE: ON
+      BUILD_COMMON_CUDA_ARCHS: ${{ matrix.is_master && 'ON' || 'OFF' }}
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
@@ -150,7 +151,7 @@ jobs:
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
           echo
           echo "Installing CPU versions of packages"
-          install_python_dependencies with-conda
+          install_python_dependencies with-conda with-jupyter
           echo
           echo -n "Using conda"
           conda info
@@ -167,7 +168,7 @@ jobs:
           PATH=/usr/lib/ccache:$PATH
           ccache -s
           source util/ci_utils.sh
-          build_pip_conda_package build_azure_kinect
+          build_pip_conda_package build_azure_kinect build_jupyter
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV

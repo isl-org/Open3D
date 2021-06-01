@@ -8,9 +8,12 @@ Build from source
 System requirements
 -------------------
 
-* Ubuntu 18.04+: GCC 5+, Clang 7+
-* macOS 10.14+: XCode 8.0+
-* Windows 10 (64-bit): Visual Studio 2019+
+* C++14 compiler:
+
+  * Ubuntu 18.04+: GCC 5+, Clang 7+
+  * macOS 10.14+: XCode 8.0+
+  * Windows 10 (64-bit): Visual Studio 2019+
+
 * CMake: 3.18+
 
   * Ubuntu (18.04 / 20.04):
@@ -22,8 +25,12 @@ System requirements
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-* CUDA 10.1 (optional): Open3D supports GPU acceleration of an increasing number
-  of operations through CUDA on Linux. Please see the `official documentation
+* CUDA (optional): Open3D supports GPU acceleration of an increasing number
+  of operations through CUDA on Linux. We recommend using CUDA 11.0 for the
+  best compatibility with recent GPUs and optional external dependencies such
+  as Tensorflow or PyTorch.
+
+  Please see the `official documentation
   <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
   install the CUDA toolkit from Nvidia.
 
@@ -62,7 +69,7 @@ Ubuntu/macOS
 2. Setup Python environments
 ````````````````````````````
 
-Activate the python ``virtualenv`` or Conda ``virtualenv```. Check
+Activate the python ``virtualenv`` or Conda environment. Check
 ``which python`` to ensure that it shows the desired Python executable.
 Alternatively, set the CMake flag ``-DPYTHON_EXECUTABLE=/path/to/python``
 to specify the python executable.
@@ -237,6 +244,19 @@ directory, run
     GLFW included in ``3rdparty``.
     Make sure Open3D is linked against GLFW installed on the OS.
 
+Filament
+````````
+
+The visualization module depends on the Filament rendering engine and, by default,
+Open3D uses a prebuilt version of it. You can also build Filament from source
+by setting ``BUILD_FILAMENT_FROM_SOURCE=ON``.
+
+.. note::
+    Whereas Open3D only requires a C++14 compiler, Filament needs a C++17 compiler
+    and only supports Clang 7+, the most recent version of Xcode, and Visual Studio 2019,
+    see `their building instructions <https://github.com/google/filament/blob/main/BUILDING.md>`_.
+    Make sure to use one of these compiler if you build Open3D with ``BUILD_FILAMENT_FROM_SOURCE=ON``.
+
 ML Module
 `````````
 
@@ -248,6 +268,19 @@ pipelines from Open3D-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
 ``OPEN3D_ML_ROOT`` to the Open3D-ML repository. You can directly download
 Open3D-ML from GitHub during the build with
 ``OPEN3D_ML_ROOT=https://github.com/intel-isl/Open3D-ML.git``.
+
+.. warning:: Compiling PyTorch ops with CUDA 11 may have stability issues. See
+    `Open3D issue #3324 <https://github.com/intel-isl/Open3D/issues/3324>`_ and
+    `PyTorch issue #52663 <https://github.com/pytorch/pytorch/issues/52663>`_ for
+    more information on this problem.
+
+    We recommend to compile Pytorch from source
+    with compile flags ``-Xcompiler -fno-gnu-unique`` or use the `PyTorch
+    wheels from Open3D.
+    <https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1>`_
+    To reproduce the Open3D PyTorch wheels see the builder repository `here.
+    <https://github.com/intel-isl/pytorch_builder>`_
+
 
 The following example shows the command for building the ops with GPU support
 for all supported ML frameworks and bundling the high level Open3D-ML code.
@@ -312,6 +345,28 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
     by following the `official
     documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
 
+WebRTC remote visualization
+```````````````````````````
+
+We provide pre-built binaries of the `WebRTC library <https://webrtc.org/>`_ to
+build Open3D with remote visualization. Currently, Linux, macOS and Windows are
+supported for ``x86_64`` architecture. If you wish to use a different version of
+WebRTC or build for a different configuration or platform, please see the
+`official WebRTC documentation
+<https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/index.md>`_
+and the Open3D build scripts.
+
+Linux and macOS
+"""""""""""""""
+Please see the build script ``3rdparty/webrtc/webrtc_build.sh``. For Linux, you
+can also use the provided ``3rdparty/webrtc/Dockerfile.webrtc`` for building.
+
+Windows
+"""""""
+We provide Windows MSVC static libraries built in Release and Debug mode built with
+the static Windows runtime. This corresponds to building with the ``/MT`` and
+``/MTd`` options respectively. For the build procedure, please see
+``.github/workflows/webrtc.yml``. Other configrations are not supported.
 
 Unit test
 ---------
@@ -321,7 +376,7 @@ To build and run C++ unit tests:
 .. code-block:: bash
 
     cmake -DBUILD_UNIT_TESTS=ON ..
-    make -j
+    make -j$(nproc)
     ./bin/tests
 
 
@@ -331,5 +386,5 @@ To run Python unit tests:
 
     # Activate virtualenv first
     pip install pytest
-    make install-pip-package
+    make install-pip-package -j$(nproc)
     pytest ../python/test

@@ -29,7 +29,6 @@
 #include <imgui.h>
 
 #include <cmath>
-#include <sstream>
 #include <string>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -63,9 +62,7 @@ struct TextEdit::Impl {
 };
 
 TextEdit::TextEdit() : impl_(new TextEdit::Impl()) {
-    std::stringstream s;
-    s << "##textedit_" << g_next_text_edit_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = "##textedit_" + std::to_string(g_next_text_edit_id++);
     impl_->text_.reserve(1);
 }
 
@@ -104,7 +101,8 @@ Size TextEdit::CalcPreferredSize(const LayoutContext &context,
 
 Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) + ImGui::GetScrollY()));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text editing

@@ -8,8 +8,10 @@ set(GUI_SOURCE_FILES
     ColorEdit.cpp
     Combobox.cpp
     Dialog.cpp
+    Events.cpp
     FileDialog.cpp
     FileDialogNative.cpp
+    Font.cpp
     GLFWWindowSystem.cpp
     Gui.cpp
     ImageWidget.cpp
@@ -37,7 +39,7 @@ set(GUI_SOURCE_FILES
     VectorEdit.cpp
     Widget.cpp
     Window.cpp
-    )
+)
 
 if (WIN32)
     list(APPEND GUI_SOURCE_FILES NativeWin32.cpp)

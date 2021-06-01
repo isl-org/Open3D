@@ -31,7 +31,6 @@
 
 #include <algorithm>  // for min, max
 #include <cmath>
-#include <sstream>
 #include <unordered_set>
 
 #include "open3d/visualization/gui/Theme.h"
@@ -61,9 +60,7 @@ struct NumberEdit::Impl {
 
 NumberEdit::NumberEdit(Type type) : impl_(new NumberEdit::Impl()) {
     impl_->type_ = type;
-    std::stringstream s;
-    s << "##numedit" << g_next_number_edit_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = "##numedit" + std::to_string(g_next_number_edit_id++);
 }
 
 NumberEdit::~NumberEdit() {}
@@ -138,7 +135,8 @@ Size NumberEdit::CalcPreferredSize(const LayoutContext& context,
 
 Widget::DrawResult NumberEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text edit borders

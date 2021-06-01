@@ -25,44 +25,123 @@
 # ----------------------------------------------------------------------------
 
 from setuptools import setup, find_packages
+from setuptools.command.install import install as _install
+import os
 import glob
+import ctypes
 
-# Force platform specific wheel
+data_files_spec = [
+    ('share/jupyter/nbextensions/open3d', 'open3d/nbextension', '*.*'),
+    ('share/jupyter/labextensions/open3d', 'open3d/labextension', '**'),
+    ('share/jupyter/labextensions/open3d', '.', 'install.json'),
+    ('etc/jupyter/nbconfig/notebook.d', '.', 'open3d.json'),
+]
+
+if "@BUILD_JUPYTER_EXTENSION@" == "ON":
+    try:
+        from jupyter_packaging import (
+            create_cmdclass,
+            install_npm,
+            ensure_targets,
+            combine_commands,
+        )
+
+        # ipywidgets and jupyterlab are required to package JS code properly. They
+        # are not used in setup.py.
+        import ipywidgets
+        import jupyterlab
+    except ImportError as error:
+        print(error.__class__.__name__ + ": " + error.message)
+        print("Run `pip install jupyter_packaging ipywidgets jupyterlab`.")
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    js_dir = os.path.join(here, 'js')
+
+    # Representative files that should exist after a successful build.
+    js_targets = [
+        os.path.join(js_dir, 'dist', 'index.js'),
+    ]
+
+    cmdclass = create_cmdclass('jsdeps', data_files_spec=data_files_spec)
+    cmdclass['jsdeps'] = combine_commands(
+        install_npm(js_dir, npm=['yarn'], build_cmd='build:prod'),
+        ensure_targets(js_targets),
+    )
+else:
+    cmdclass = dict()
+
+# Force platform specific wheel.
+# https://stackoverflow.com/a/45150383/1255535
 try:
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
-    # https://stackoverflow.com/a/45150383/1255535
     class bdist_wheel(_bdist_wheel):
 
         def finalize_options(self):
             _bdist_wheel.finalize_options(self)
             self.root_is_pure = False
+
+        # https://github.com/Yelp/dumb-init/blob/57f7eebef694d780c1013acd410f2f0d3c79f6c6/setup.py#L25
+        def get_tag(self):
+            python, abi, plat = _bdist_wheel.get_tag(self)
+            if plat == 'linux_x86_64':
+                libc = ctypes.CDLL('libc.so.6')
+                libc.gnu_get_libc_version.restype = ctypes.c_char_p
+                GLIBC_VER = libc.gnu_get_libc_version().decode('utf8').split(
+                    '.')
+                plat = f'manylinux_{GLIBC_VER[0]}_{GLIBC_VER[1]}_x86_64'
+            return python, abi, plat
+
+    cmdclass['bdist_wheel'] = bdist_wheel
+
 except ImportError:
     print(
         'Warning: cannot import "wheel" package to build platform-specific wheel'
     )
     print('Install the "wheel" package to fix this warning')
-    bdist_wheel = None
 
-cmdclass = {'bdist_wheel': bdist_wheel} if bdist_wheel is not None else dict()
 
-# Read requirements.txt
+# Force use of "platlib" dir for auditwheel to recognize this is a non-pure
+# build
+# http://lxr.yanyahua.com/source/llvmlite/setup.py
+class install(_install):
+
+    def finalize_options(self):
+        _install.finalize_options(self)
+        self.install_libbase = self.install_platlib
+        self.install_lib = self.install_platlib
+
+
+cmdclass['install'] = install
+
+# Read requirements.
 with open('requirements.txt', 'r') as f:
     install_requires = [line.strip() for line in f.readlines() if line]
-# Read requirements for ML
+
+# Read requirements for ML.
 if '@BUNDLE_OPEN3D_ML@' == 'ON':
     with open('@OPEN3D_ML_ROOT@/requirements.txt', 'r') as f:
         install_requires += [line.strip() for line in f.readlines() if line]
 
-# Data files for packaging
-data_files = [
-    ('share/jupyter/nbextensions/open3d', glob.glob('open3d/static/*')),
-    ('etc/jupyter/nbconfig/notebook.d', ['enable_jupyter_extension.json'])
-]
-
-setup(
+setup_args = dict(
+    name="@PYPI_PACKAGE_NAME@",
+    version='@PROJECT_VERSION@',
+    python_requires='>=3.6',
+    include_package_data=True,
+    install_requires=install_requires,
+    packages=find_packages(),
+    zip_safe=False,
+    cmdclass=cmdclass,
     author='Open3D Team',
     author_email='@PROJECT_EMAIL@',
+    url="@PROJECT_HOME@",
+    project_urls={
+        'Documentation': '@PROJECT_DOCS@',
+        'Source code': '@PROJECT_CODE@',
+        'Issues': '@PROJECT_ISSUES@',
+    },
+    keywords="3D reconstruction point cloud mesh RGB-D visualization",
+    license="MIT",
     classifiers=[
         # https://pypi.org/pypi?%3Aaction=list_classifiers
         "Development Status :: 3 - Alpha",
@@ -94,31 +173,9 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Utilities",
     ],
-    description=[
-        "Open3D is an open-source library that supports rapid development of software that deals with 3D data."
-    ],
-    cmdclass=cmdclass,
-    install_requires=install_requires,
-    include_package_data=True,
-    data_files=data_files,
-    keywords="3D reconstruction point cloud mesh RGB-D visualization",
-    license="MIT",
+    description='Open3D: A Modern Library for 3D Data Processing.',
     long_description=open('README.rst').read(),
     long_description_content_type='text/x-rst',
-    # Name of the package on PyPI
-    name="@PYPI_PACKAGE_NAME@",
-    packages=[
-        'open3d',
-        'open3d.visualization',
-        'open3d.visualization.rendering',
-        'open3d.visualization.gui',
-    ],
-    url="@PROJECT_HOME@",
-    project_urls={
-        'Documentation': '@PROJECT_DOCS@',
-        'Source code': '@PROJECT_CODE@',
-        'Issues': '@PROJECT_ISSUES@',
-    },
-    version='@PROJECT_VERSION@',
-    zip_safe=False,
 )
+
+setup(**setup_args)

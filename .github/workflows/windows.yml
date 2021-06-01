@@ -4,27 +4,28 @@ on:
   workflow_dispatch:
     inputs:
       developer_build:
-        description: 'Set to OFF for Release wheels'
+        description: "Set to OFF for Release wheels"
         required: false
-        default: 'ON'
+        default: "ON"
 
   push:
     branches:
       - master
   pull_request:
-    types: [opened, reopened, synchronize]    # Rebuild on new pushes to PR
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
 env:
-  PIP_VER: "20.2.4"
+  PIP_VER: "21.1.1"
   WHEEL_VER: "0.35.1"
   STOOLS_VER: "50.3.2"
   PYTEST_VER: "6.0.1"
   SCIPY_VER: "1.5.4"
-  JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
-  NPROC: 2
+  JEDI_VER: "0.17.2" # https://github.com/ipython/ipython/issues/12740
+  IDNA_VER: "2.8" # https://github.com/psf/requests/issues/5710
   CONDA_BUILD_VER: "3.20.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
+  NPROC: 2
 
 jobs:
   windows:
@@ -34,7 +35,16 @@ jobs:
       matrix:
         SHARED: [ON, OFF]
         STATIC_RUNTIME: [ON, OFF]
+        BUILD_CUDA: [ON, OFF]
         CONFIG: [Release, Debug]
+        exclude:
+          - SHARED: ON
+            STATIC_RUNTIME: ON
+        include:
+          - BUILD_CUDA: ON
+            CUDA_VERSION: 11.0.3
+    env:
+      BUILD_WEBRTC: ${{ ( matrix.SHARED == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
 
     steps:
       - name: Cancel outdated
@@ -45,6 +55,38 @@ jobs:
       - name: Disk space used
         run: Get-PSDrive
 
+      - name: Install CUDA
+        if: ${{ matrix.BUILD_CUDA == 'ON' }}
+        run: |
+          # Define variables
+          $CUDA_VER_FULL = "${{ matrix.CUDA_VERSION }}"
+          $CUDA_VER_ARR = $CUDA_VER_FULL.Split(".")
+          $CUDA_VER = "$($CUDA_VER_ARR[0]).$($CUDA_VER_ARR[1])"
+          $CUDA_VER_ID = "$($CUDA_VER_ARR[0])_$($CUDA_VER_ARR[1])"
+          # Installer url
+          if ( $CUDA_VER_ARR[0] -ge 11 ) {
+            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER_FULL/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
+          } else {
+            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER/Prod/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
+          }
+          # Installer arguments
+          $CUDA_INSTALL_ARGS = "-s"
+          # Required packages
+          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "npp", "npp_dev"
+          $CUDA_PACKAGES.ForEach({ $CUDA_INSTALL_ARGS += " $($_)_$($CUDA_VER)" })
+          # Download and install CUDA
+          echo "Downloading CUDA installer from $CUDA_URL"
+          Invoke-WebRequest $CUDA_URL -OutFile cuda.exe
+          echo "Installing CUDA..."
+          Start-Process -Wait -FilePath .\cuda.exe -ArgumentList "$CUDA_INSTALL_ARGS"
+          if ( !$? ) {
+            exit 1
+          }
+          # Add CUDA environment variables.
+          $CUDA_PATH = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v$CUDA_VER"
+          echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
@@ -66,7 +108,9 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_RPC_INTERFACE=ON `
             -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
+            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA }} `
             ${{ env.SRC_DIR }}
       - name: Build
         working-directory: ${{ env.BUILD_DIR }}
@@ -77,7 +121,7 @@ jobs:
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
       - name: Run C++ unit tests
-        if: ${{ matrix.SHARED == 'OFF' || matrix.STATIC_RUNTIME == 'OFF' }}
+        if: ${{ matrix.BUILD_CUDA == 'OFF' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
@@ -102,11 +146,12 @@ jobs:
           python -m pip install --upgrade pip==${{ env.PIP_VER }} `
             wheel==${{ env.WHEEL_VER }} `
             setuptools==${{ env.STOOLS_VER }} `
-            jedi==${{ env.JEDI_VER }}
+            jedi==${{ env.JEDI_VER }} `
+            idna==${{ env.IDNA_VER }}
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If SHARED == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.SHARED == 'OFF' }}
+        if: ${{ matrix.SHARED == 'OFF' && matrix.BUILD_CUDA == 'OFF' }}
         run: |
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
@@ -143,6 +188,14 @@ jobs:
           auto-update-conda: false
           python-version: ${{ matrix.python_version }}
 
+      - name: Install Python dependencies
+        shell: pwsh
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install -r python/requirements.txt
+          python -m pip install -r python/requirements_jupyter.txt
+
       - name: Config
         shell: pwsh
         run: |
@@ -153,13 +206,15 @@ jobs:
             ${env:DEVELOPER_BUILD}="ON"
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
-            -DBUILD_AZURE_KINECT=ON `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_RPC_INTERFACE=ON `
+            -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
-            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DBUILD_WEBRTC=ON `
+            -DBUILD_JUPYTER_EXTENSION=ON `
             ${{ env.SRC_DIR }}
 
       - name: Build Python package

@@ -28,8 +28,6 @@
 
 #include <imgui.h>
 
-#include <sstream>
-
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -49,8 +47,7 @@ struct VectorEdit::Impl {
 };
 
 VectorEdit::VectorEdit() : impl_(new VectorEdit::Impl()) {
-    std::stringstream s;
-    s << "##vectoredit" << g_next_vector_edit_id++ << std::endl;
+    impl_->id_ = "##vectoredit_" + std::to_string(g_next_vector_edit_id++);
 }
 
 VectorEdit::~VectorEdit() {}
@@ -79,7 +76,8 @@ Size VectorEdit::CalcPreferredSize(const LayoutContext& context,
 
 Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text editing

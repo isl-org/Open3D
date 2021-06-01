@@ -50,15 +50,16 @@ public:
     }
     double ComputeRMSE(const t::geometry::PointCloud &source,
                        const t::geometry::PointCloud &target,
-                       const CorrespondenceSet &corres) const {
+                       const CorrespondenceSet &correspondences) const {
         PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase, source,
-                               target, corres);
+                               target, correspondences);
     }
-    core::Tensor ComputeTransformation(const t::geometry::PointCloud &source,
-                                       const t::geometry::PointCloud &target,
-                                       const CorrespondenceSet &corres) const {
+    core::Tensor ComputeTransformation(
+            const t::geometry::PointCloud &source,
+            const t::geometry::PointCloud &target,
+            const CorrespondenceSet &correspondences) const {
         PYBIND11_OVERLOAD_PURE(core::Tensor, TransformationEstimationBase,
-                               source, target, corres);
+                               source, target, correspondences);
     }
 };
 
@@ -66,7 +67,7 @@ void pybind_registration_classes(py::module &m) {
     // open3d.t.pipelines.registration.ICPConvergenceCriteria
     py::class_<ICPConvergenceCriteria> convergence_criteria(
             m, "ICPConvergenceCriteria",
-            "Class that defines the convergence criteria of ICP. "
+            "Convergence criteria of ICP. "
             "ICP algorithm stops if the relative change of fitness and rmse "
             "hit ``relative_fitness`` and ``relative_rmse`` individually, "
             "or the iteration number exceeds ``max_iteration``.");
@@ -89,11 +90,47 @@ void pybind_registration_classes(py::module &m) {
                            "Maximum iteration before iteration stops.")
             .def("__repr__", [](const ICPConvergenceCriteria &c) {
                 return fmt::format(
-                        "ICPConvergenceCriteria class "
-                        "with relative_fitness={:e}, relative_rmse={:e}, "
-                        "and max_iteration={:d}",
+                        "ICPConvergenceCriteria[relative_fitness_={:e}, "
+                        "relative_rmse={:e}, max_iteration_={:d}].",
                         c.relative_fitness_, c.relative_rmse_,
                         c.max_iteration_);
+            });
+
+    // open3d.t.pipelines.registration.RegistrationResult
+    py::class_<RegistrationResult> registration_result(m, "RegistrationResult",
+                                                       "Registration results.");
+    py::detail::bind_default_constructor<RegistrationResult>(
+            registration_result);
+    py::detail::bind_copy_functions<RegistrationResult>(registration_result);
+    registration_result
+            .def_readwrite("transformation",
+                           &RegistrationResult::transformation_,
+                           "``4 x 4`` float64 tensor on CPU: The estimated "
+                           "transformation matrix.")
+            .def_readwrite(
+                    "correspondence_set",
+                    &RegistrationResult::correspondence_set_,
+                    "Correspondence set between source and target point cloud. "
+                    "It is a pair of ``Int64`` ``{C,}`` tensor, where C is "
+                    "the number of good correspondences between source and "
+                    "target pointcloud. The first tensor is the source "
+                    "indices, and the second tensor is corresponding target "
+                    "indices. Such that, source[correspondence.first] and "
+                    "target[correspondence.second] is a correspondence pair.")
+            .def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_,
+                           "float: RMSE of all inlier correspondences. Lower "
+                           "is better.")
+            .def_readwrite(
+                    "fitness", &RegistrationResult::fitness_,
+                    "float: The overlapping area (# of inlier correspondences "
+                    "/ # of points in target). Higher is better.")
+            .def("__repr__", [](const RegistrationResult &rr) {
+                return fmt::format(
+                        "RegistrationResult[fitness_={:e}, "
+                        "inlier_rmse={:e}, correspondences={:d}]."
+                        "\nAccess transformation to get result.",
+                        rr.fitness_, rr.inlier_rmse_,
+                        rr.correspondence_set_.second.GetLength());
             });
 
     // open3d.t.pipelines.registration.TransformationEstimation
@@ -104,25 +141,25 @@ void pybind_registration_classes(py::module &m) {
                "clouds. The virtual function ComputeTransformation() must be "
                "implemented in subclasses.");
     te.def("compute_rmse", &TransformationEstimation::ComputeRMSE, "source"_a,
-           "target"_a, "corres"_a,
+           "target"_a, "correspondences"_a,
            "Compute RMSE between source and target points cloud given "
            "correspondences.");
     te.def("compute_transformation",
            &TransformationEstimation::ComputeTransformation, "source"_a,
-           "target"_a, "corres"_a,
+           "target"_a, "correspondences"_a,
            "Compute transformation from source to target point cloud given "
            "correspondences.");
     docstring::ClassMethodDocInject(
             m, "TransformationEstimation", "compute_rmse",
             {{"source", "Source point cloud."},
              {"target", "Target point cloud."},
-             {"corres",
+             {"correspondences",
               "Correspondence set between source and target point cloud."}});
     docstring::ClassMethodDocInject(
             m, "TransformationEstimation", "compute_transformation",
             {{"source", "Source point cloud."},
              {"target", "Target point cloud."},
-             {"corres",
+             {"correspondences",
               "Correspondence set between source and target point cloud."}});
 
     // open3d.t.pipelines.registration.TransformationEstimationPointToPoint
@@ -159,62 +196,23 @@ void pybind_registration_classes(py::module &m) {
                  [](const TransformationEstimationPointToPlane &te) {
                      return std::string("TransformationEstimationPointToPlane");
                  });
-
-    // open3d.t.pipelines.registration.RegistrationResult
-    py::class_<RegistrationResult> registration_result(
-            m, "RegistrationResult",
-            "Class that contains the registration results.");
-    py::detail::bind_default_constructor<RegistrationResult>(
-            registration_result);
-    py::detail::bind_copy_functions<RegistrationResult>(registration_result);
-    registration_result
-            .def_readwrite("transformation",
-                           &RegistrationResult::transformation_,
-                           "``4 x 4`` float64 tensor: The estimated "
-                           "transformation matrix.")
-            .def_readwrite(
-                    "correspondence_set",
-                    &RegistrationResult::correspondence_set_,
-                    "Correspondence set between source and target point cloud. "
-                    "It is a pair of ``Int64`` ``{C,}`` tensor, where C is "
-                    "the number of good correspondences between source and "
-                    "target pointcloud. The first tensor is the source "
-                    "indices, and the second tensor is corresponding target "
-                    "indices. Such that, source[correspondence.first] and "
-                    "target[correspondence.second] is a correspondence pair.")
-            .def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_,
-                           "float: RMSE of all inlier correspondences. Lower "
-                           "is better.")
-            .def_readwrite(
-                    "fitness", &RegistrationResult::fitness_,
-                    "float: The overlapping area (# of inlier correspondences "
-                    "/ # of points in target). Higher is better.")
-            .def("__repr__", [](const RegistrationResult &rr) {
-                return fmt::format(
-                        "RegistrationResult with "
-                        "fitness={:e}"
-                        ", inlier_rmse={:e}"
-                        ", and correspondence_set size of {:d}"
-                        "\nAccess transformation to get result.",
-                        rr.fitness_, rr.inlier_rmse_,
-                        rr.correspondence_set_.second.GetLength());
-            });
 }
 
 // Registration functions have similar arguments, sharing arg docstrings.
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
-                {"corres",
+                {"correspondences",
                  "pair of Tensors that stores indices of "
                  "corresponding point or feature arrays."},
                 {"criteria", "Convergence criteria"},
-                {"criterias",
-                 "List of Convergence criteria for multi-scale icp."},
+                {"criteria_list",
+                 "List of Convergence criteria for each scale of multi-scale "
+                 "icp."},
                 {"estimation_method",
                  "Estimation method. One of "
                  "(``TransformationEstimationPointToPoint``, "
                  "``TransformationEstimationPointToPlane``)"},
-                {"init", "Initial transformation estimation"},
+                {"init_source_to_target", "Initial transformation estimation"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},
                 {"max_correspondence_distances",
@@ -232,6 +230,7 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for evaluating registration between point clouds",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
           "transformation"_a = core::Tensor::Eye(4, core::Dtype::Float64,
@@ -239,20 +238,23 @@ void pybind_registration_methods(py::module &m) {
     docstring::FunctionDocInject(m, "evaluate_registration",
                                  map_shared_argument_docstrings);
 
-    m.def("registration_icp", &RegistrationICP, "Function for ICP registration",
-          "source"_a, "target"_a, "max_correspondence_distance"_a,
-          "init"_a = core::Tensor::Eye(4, core::Dtype::Float64,
-                                       core::Device("CPU:0")),
+    m.def("registration_icp", &RegistrationICP,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
+          "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
+                                                        core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint(),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_icp",
                                  map_shared_argument_docstrings);
 
     m.def("registration_multi_scale_icp", &RegistrationMultiScaleICP,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
-          "voxel_sizes"_a, "criterias"_a, "max_correspondence_distances"_a,
-          "init"_a = core::Tensor::Eye(4, core::Dtype::Float64,
-                                       core::Device("CPU:0")),
+          "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
+          "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
+                                                        core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint());
     docstring::FunctionDocInject(m, "registration_multi_scale_icp",
                                  map_shared_argument_docstrings);

@@ -29,7 +29,6 @@
 #include <imgui.h>
 
 #include <cmath>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 
@@ -48,9 +47,7 @@ struct ColorEdit::Impl {
 };
 
 ColorEdit::ColorEdit() : impl_(new ColorEdit::Impl()) {
-    std::stringstream s;
-    s << "##colorEdit_" << g_next_color_edit_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = "##coloredit_" + std::to_string(g_next_color_edit_id++);
 }
 
 ColorEdit::~ColorEdit() {}
@@ -78,7 +75,8 @@ Size ColorEdit::CalcPreferredSize(const LayoutContext& context,
 
 ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     auto new_value = impl_->value_;
     DrawImGuiPushEnabledState();

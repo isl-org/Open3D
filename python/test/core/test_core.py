@@ -203,7 +203,12 @@ def test_tensor_constructor(dtype, device):
     # 2D list, inconsistent length
     li_t = [[0, 1, 2], [3, 4]]
     with pytest.raises(Exception):
-        o3_t = o3d.core.Tensor(li_t, dtype, device)
+        # Suppress inconsistent length warning as this check is intentional
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                                    category=VisibleDeprecationWarning)
+            o3_t = o3d.core.Tensor(li_t, dtype, device)
 
     # Automatic casting
     np_t_double = np.array([[0., 1.5, 2.], [3., 4., 5.]])
@@ -221,6 +226,13 @@ def test_tensor_constructor(dtype, device):
     o3_t = o3d.core.Tensor([True, False, True], o3d.core.Dtype.Bool, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
     o3_t = o3d.core.Tensor(np_t, o3d.core.Dtype.Bool, device)
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+
+    # Scalar Boolean
+    np_t = np.array(True)
+    o3_t = o3d.core.Tensor(True, dtype=None, device=device)
+    np.testing.assert_equal(np_t, o3_t.cpu().numpy())
+    o3_t = o3d.core.Tensor(True, dtype=o3d.core.Dtype.Bool, device=device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
@@ -545,6 +557,13 @@ def test_setitem(device):
     o3_fill_t = o3d.core.Tensor(np_fill_t, device=device)
     np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = np_fill_t
     o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3] = o3_fill_t
+    np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
+
+    # Scalar boolean set item
+    np_t = np.eye(4, dtype=np.bool8)
+    o3_t = o3d.core.Tensor.eye(4, dtype=o3d.core.Dtype.Bool)
+    np_t[2, 2] = False
+    o3_t[2, 2] = False
     np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
 
 
@@ -1040,6 +1059,17 @@ def test_scalar_op(device):
     a = o3d.core.Tensor([-1, 0, 1], dtype=dtype, device=device)
     a.ne_(0)
     np.testing.assert_equal(a.cpu().numpy(), np.array([True, False, True]))
+
+    # clip
+    dtype = o3d.core.Dtype.Int64
+    a = o3d.core.Tensor([2, -1, 1], dtype=dtype, device=device)
+    np.testing.assert_equal(a.clip(0, 1).cpu().numpy(), np.array([1, 0, 1]))
+    np.testing.assert_equal(a.clip(0.5, 1.2).cpu().numpy(), np.array([1, 0, 1]))
+
+    # clip_
+    a = o3d.core.Tensor([2, -1, 1], dtype=dtype, device=device)
+    a.clip_(0, 1)
+    np.testing.assert_equal(a.cpu().numpy(), np.array([1, 0, 1]))
 
 
 @pytest.mark.parametrize("device", list_devices())

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,9 @@
 
 #include "open3d/Open3D.h"
 
-void PrintUsage() {
+void PrintHelp() {
     using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
@@ -39,13 +40,17 @@ void PrintUsage() {
     utility::LogInfo("    > Visualizer [animation] [filename] [trajectoryfile]");
     utility::LogInfo("    > Visualizer [rgbd] [color] [depth] [--rgbd_type]");
     // clang-format on
+    utility::LogInfo("");
 }
+
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    if (argc < 3) {
-        PrintUsage();
+
+    if (argc < 3 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 
@@ -160,7 +165,7 @@ int main(int argc, char *argv[]) {
                                       image_ptr->height_);
     } else if (option == "rgbd") {
         if (argc < 4) {
-            PrintUsage();
+            PrintHelp();
             return 1;
         }
 

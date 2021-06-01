@@ -81,22 +81,25 @@ public:
     ///
     /// \param source Source point cloud of type Float32.
     /// \param target Target point cloud of type Float32.
-    /// \param corres Correspondence set between source and target point cloud.
-    virtual double ComputeRMSE(const geometry::PointCloud &source,
-                               const geometry::PointCloud &target,
-                               const CorrespondenceSet &corres) const = 0;
+    /// \param correspondences Correspondence set between source and target
+    /// point cloud.
+    virtual double ComputeRMSE(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const CorrespondenceSet &correspondences) const = 0;
     /// Compute transformation from source to target point cloud given
     /// correspondences.
     ///
     /// \param source Source point cloud of type Float32.
     /// \param target Target point cloud of type Float32.
-    /// \param corres Correspondence set between source and target point cloud.
-    /// \return transformation between source to target, a tensor of shape {4,
-    /// 4}, type Float64 on CPU device.
+    /// \param correspondences Correspondence set between source and target
+    /// point cloud.
+    /// \return transformation between source to target, a tensor of shape
+    /// {4, 4}, type Float64 on CPU device.
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const CorrespondenceSet &corres) const = 0;
+            const CorrespondenceSet &correspondences) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -119,24 +122,26 @@ public:
     ///
     /// \param source Source pointcloud of dtype Float32.
     /// \param source Target pointcloud of dtype Float32. It must contain
-    /// normals. \param corres CorrespondenceSet: a pair of Int64 {C,} shape
-    /// tensor.
+    /// normals.
+    /// \param correspondences CorrespondenceSet: a pair of Int64 {C,}
+    /// shape tensor.
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       const CorrespondenceSet &corres) const override;
+                       const CorrespondenceSet &correspondences) const override;
 
     /// \brief Estimates the transformation matrix for PointToPoint method,
     /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
     ///
     /// \param source Source pointcloud of dtype Float32.
     /// \param source Target pointcloud of dtype Float32.
-    /// \param corres CorrespondenceSet: a pair of Int64 {C,} shape tensor.
-    /// \return transformation between source to target, a tensor of shape {4,
-    /// 4}, type Float64 on CPU device.
+    /// \param correspondences CorrespondenceSet: a pair of Int64 {C,} shape
+    /// tensor.
+    /// \return transformation between source to target, a tensor of
+    /// shape {4, 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const CorrespondenceSet &corres) const override;
+            const CorrespondenceSet &correspondences) const override;
 
 private:
     const TransformationEstimationType type_ =
@@ -163,25 +168,27 @@ public:
     ///
     /// \param source Source pointcloud of dtype Float32.
     /// \param source Target pointcloud of dtype Float32. It must contain
-    /// normals. \param corres CorrespondenceSet: a pair of Int64 {C,} shape
-    /// tensor.
+    /// normals.
+    /// \param correspondences CorrespondenceSet: a pair of Int64 {C,}
+    /// shape tensor.
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       const CorrespondenceSet &corres) const override;
+                       const CorrespondenceSet &correspondences) const override;
 
     /// \brief Estimates the transformation matrix for PointToPlane method,
     /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
     ///
     /// \param source Source pointcloud of dtype Float32.
     /// \param source Target pointcloud of dtype Float32. It must contain
-    /// normals. \param corres CorrespondenceSet: a pair of Int64 {C,} shape
-    /// tensor.
-    /// \return transformation between source to target, a tensor of shape {4,
-    /// 4}, type Float64 on CPU device.
+    /// normals.
+    /// \param correspondences CorrespondenceSet: a pair of Int64 {C,}
+    /// shape tensor.
+    /// \return transformation between source to target, a tensor
+    /// of shape {4, 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const CorrespondenceSet &corres) const override;
+            const CorrespondenceSet &correspondences) const override;
 
 private:
     const TransformationEstimationType type_ =

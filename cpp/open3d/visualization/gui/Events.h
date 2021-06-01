@@ -27,6 +27,16 @@
 #pragma once
 
 #include <cstdint>
+#include <sstream>
+#include <string>
+
+#include "open3d/utility/IJsonConvertible.h"
+
+/// @cond
+namespace Json {
+class Value;
+}  // namespace Json
+/// @endcond
 
 namespace open3d {
 namespace visualization {
@@ -53,6 +63,28 @@ enum class KeyModifier {
 
 struct MouseEvent {
     enum Type { MOVE, BUTTON_DOWN, DRAG, BUTTON_UP, WHEEL };
+
+    static MouseEvent MakeMoveEvent(const Type type,
+                                    const int x,
+                                    const int y,
+                                    const int modifiers,
+                                    const int buttons);
+
+    static MouseEvent MakeButtonEvent(const Type type,
+                                      const int x,
+                                      const int y,
+                                      const int modifiers,
+                                      const MouseButton button,
+                                      const int count);
+
+    static MouseEvent MakeWheelEvent(const Type type,
+                                     const int x,
+                                     const int y,
+                                     const int modifiers,
+                                     const float dx,
+                                     const float dy,
+                                     const bool isTrackpad);
+
     Type type;
     int x;
     int y;
@@ -71,6 +103,9 @@ struct MouseEvent {
             bool isTrackpad;
         } wheel;
     };
+
+    bool FromJson(const Json::Value &value);
+    std::string ToString() const;
 };
 
 struct TickEvent {

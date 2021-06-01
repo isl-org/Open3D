@@ -10,6 +10,20 @@ set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
     "Minimum OS X deployment version" FORCE)
 endif()
 
+if(UNIX AND NOT APPLE)
+    # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
+    # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
+    execute_process(COMMAND uname -p
+        OUTPUT_VARIABLE PROCESSOR_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(PROCESSOR_ARCH STREQUAL "aarch64")
+        set(LINUX_AARCH64 TRUE)
+    endif()
+endif()
+
+include(CMakeDependentOption)
+
 # Open3D build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
 option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
@@ -20,17 +34,20 @@ option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
 option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
 option(BUILD_GUI                  "Builds new GUI"                           ON )
-option(BUILD_JUPYTER_EXTENSION    "Enable Jupyter support for Open3D"        OFF)
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
-if (BUILD_SHARED_LIBS)
-    option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
-else()
-    option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
-endif()
+cmake_dependent_option(
+       STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON
+       "NOT BUILD_SHARED_LIBS"                                               OFF)
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
+if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
+    cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
+else()
+    option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
+endif()
+option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF)
 
 # 3rd-party build options
 option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"           OFF)
@@ -129,22 +146,51 @@ if(NOT USE_SYSTEM_GLFW)
 endif()
 cmake_policy(GET CMP0072 CMP0072_VALUE)
 
+# Set BLAS/LAPACK library preference.
+if(LINUX_AARCH64)
+    if(NOT USE_BLAS)
+        set(USE_BLAS ON)
+        message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
+    endif()
+    if(BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
+        set(BUILD_FILAMENT_FROM_SOURCE ON)
+        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
+    endif()
+endif()
+
 # Catch a few incompatible build options
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
-    message(STATUS "Headless rendering is not supported on Mac OS")
+    message(WARNING "Headless rendering is not supported on Mac OS")
     set(ENABLE_HEADLESS_RENDERING OFF)
 endif()
 if(ENABLE_HEADLESS_RENDERING AND BUILD_GUI)
-    message(STATUS "Headless rendering disables the Open3D GUI")
+    message(WARNING "Headless rendering disables the Open3D GUI")
     set(BUILD_GUI OFF)
 endif()
 if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
-    message(STATUS "Headless rendering requires customized GLEW and GLFW builds")
+    message(WARNING "Headless rendering requires customized GLEW and GLFW builds")
     set(USE_SYSTEM_GLEW OFF)
     set(USE_SYSTEM_GLFW OFF)
 endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
+endif()
+if(BUILD_WEBRTC AND LINUX_AARCH64)
+    message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
+endif()
+if(BUILD_WEBRTC AND MSVC AND (BUILD_SHARED OR NOT STATIC_WINDOWS_RUNTIME))
+    message(FATAL_ERROR "Please use STATIC_WINDOWS_RUNTIME=ON and "
+    "BUILD_SHARED=OFF to build WebRTC with MSVC")
+endif()
+if(BUILD_WEBRTC AND NOT BUILD_GUI)
+    message(FATAL_ERROR "BUILD_WEBRTC=ON requires BUILD_GUI=ON")
+endif()
+if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_WEBRTC)
+    # BUILD_JUPYTER_EXTENSION transitively depends on BUILD_GUI
+    message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_WEBRTC=ON")
+endif()
+if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
+    message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
 
 # Parse Open3D version number
@@ -175,28 +221,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
-
-if(UNIX AND NOT APPLE)
-    execute_process(COMMAND uname -p
-        OUTPUT_VARIABLE PROCESSOR_ARCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
-        set(LINUX_AARCH64 TRUE)
-    endif()
-endif()
-
-# Set BLAS/LAPACK library preference.
-if(LINUX_AARCH64)
-    if(NOT USE_BLAS)
-        set(USE_BLAS ON)
-        message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
-    endif()
-    if(BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
-        set(BUILD_FILAMENT_FROM_SOURCE ON)
-        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
-    endif()
-endif()
 
 # CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/3rdparty/CMake)
@@ -359,11 +383,14 @@ if(BUILD_CUDA_MODULE)
         # Build with all known (and deprecated) architectures.
         # See https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility.
         if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
-            set(CMAKE_CUDA_ARCHITECTURES                 35-real 37-real 50-real 52-real 53-real 60-real 61-real 62-real 70-real 72-real 75-real 80-real 86)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
+                60-real 61-real 62-real 70-real 72-real 75-real 80-real 86)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-            set(CMAKE_CUDA_ARCHITECTURES                 35-real 37-real 50-real 52-real 53-real 60-real 61-real 62-real 70-real 72-real 75-real 80)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
+                60-real 61-real 62-real 70-real 72-real 75-real 80)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "10.0")
-            set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real 52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
+            set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real
+                52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
         else()
             message(STATUS "Old CUDA <10.0 detected. Falling back to CMake's default architectures.")
         endif()
@@ -526,6 +553,9 @@ function(open3d_set_global_properties target)
     if(NOT WITH_OPENMP)
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
     endif()
+    if(BUILD_WEBRTC)
+        target_compile_definitions(${target} PRIVATE BUILD_WEBRTC)
+    endif()
     if(WIN32)
         target_compile_definitions(${target} PRIVATE
             WINDOWS
@@ -632,9 +662,9 @@ function(open3d_aligned_print first second)
     message(STATUS "  ${first} ${stars} ${second}")
 endfunction()
 
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Open3D ${PROJECT_VERSION} Configuration Summary")
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Enabled Features:")
 open3d_aligned_print("OpenMP" "${WITH_OPENMP}")
 open3d_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
@@ -642,18 +672,36 @@ open3d_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
 open3d_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
 open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
 open3d_aligned_print("Build GUI" "${BUILD_GUI}")
+open3d_aligned_print("Build WebRTC visualizer" "${BUILD_WEBRTC}")
 open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
 if(WIN32)
-    open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
+   open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
 endif()
 open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
 open3d_aligned_print("Build Examples" "${BUILD_EXAMPLES}")
 open3d_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")
-if(BUILD_PYTHON_MODULE)
-    open3d_aligned_print("- with Jupyter Notebook Support" "${BUILD_JUPYTER_EXTENSION}")
-endif()
+open3d_aligned_print("Build Jupyter Extension" "${BUILD_JUPYTER_EXTENSION}")
 open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
 open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
+if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
+    CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0" )
+    message( WARNING
+        "--------------------------------------------------------------------------------\n"
+        "                                                                                \n"
+        " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
+        " stability issues. See https://github.com/intel-isl/Open3D/issues/3324 and      \n"
+        " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
+        " problem.                                                                       \n"
+        "                                                                                \n"
+        " We recommend to compile PyTorch from source with compile flags                 \n"
+        "   '-Xcompiler -fno-gnu-unique'                                                 \n"
+        "                                                                                \n"
+        " or use the PyTorch wheels at                                                   \n"
+        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1        \n"
+        "                                                                                \n"
+        "--------------------------------------------------------------------------------\n"
+    )
+endif()
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
 open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
@@ -663,7 +711,7 @@ else()
     set(usage "0")
 endif()
 open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")
 message(STATUS "Third-Party Dependencies:")
 set(deps
     EIGEN3
@@ -687,6 +735,7 @@ set(deps
     TINYFILEDIALOGS
     TINYGLTF
     TINYOBJLOADER
+    WEBRTC
 )
 foreach(dep IN ITEMS ${deps})
     if(${dep}_TARGET)
@@ -705,4 +754,4 @@ foreach(dep IN ITEMS ${deps})
     endif()
     open3d_aligned_print("${dep}" "${usage}")
 endforeach()
-message(STATUS "========================================================================")
+message(STATUS "================================================================================")

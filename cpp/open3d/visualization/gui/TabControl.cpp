@@ -30,7 +30,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 
@@ -39,7 +38,7 @@ namespace visualization {
 namespace gui {
 
 namespace {
-static int g_next_tab_control_id_ = 1;
+static int g_next_tab_control_id = 1;
 
 int CalcTabHeight(const Theme& theme) {
     auto em = std::ceil(ImGui::GetTextLineHeight());
@@ -55,9 +54,8 @@ struct TabControl::Impl {
 };
 
 TabControl::TabControl() : impl_(new TabControl::Impl()) {
-    std::stringstream s;
-    s << "tabcontrol_" << g_next_tab_control_id_++;
-    impl_->imgui_id_ = s.str();
+    impl_->imgui_id_ =
+            "##tabcontrol_" + std::to_string(g_next_tab_control_id++);
 }
 
 TabControl::~TabControl() {}
@@ -99,7 +97,8 @@ void TabControl::Layout(const LayoutContext& context) {
 
 TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();

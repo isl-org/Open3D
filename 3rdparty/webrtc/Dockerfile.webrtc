@@ -1,0 +1,22 @@
+# Run from the root Open3D directory:
+# GLIBCXX_USE_CXX11_ABI, WEBRTC_COMMIT abd DEPOT_TOOLS_COMMIT are accepted as
+# build-args. e.g.:
+#
+# > GLIBCXX_USE_CXX11_ABI=0
+#   - docker build --build-arg GLIBCXX_USE_CXX11_ABI=0 -t open3d-webrtc:abi0 \
+#       -f 3rdparty/webrtc/Dockerfile.webrtc .
+#   - docker run --rm --entrypoint cat open3d-webrtc:abi0 \
+#       webrtc_60e6748_cxx-abi-0.tar.gz > webrtc_60e6748_cxx-abi-0.tar.gz
+# > GLIBCXX_USE_CXX11_ABI=1
+#   - docker build --build-arg GLIBCXX_USE_CXX11_ABI=1 -t open3d-webrtc:abi1 \
+#       -f 3rdparty/webrtc/Dockerfile.webrtc .
+#   - docker run --rm --entrypoint cat open3d-webrtc:abi1 \
+#       webrtc_60e6748_cxx-abi-1.tar.gz > webrtc_60e6748_cxx-abi-1.tar.gz
+
+FROM ubuntu:18.04
+
+ARG SUDO=command
+COPY 3rdparty/webrtc 3rdparty/webrtc
+RUN bash -c "source 3rdparty/webrtc/webrtc_build.sh && install_dependencies_ubuntu purge-cache"
+RUN bash -c "source 3rdparty/webrtc/webrtc_build.sh && download_webrtc_sources"
+RUN bash -c "source 3rdparty/webrtc/webrtc_build.sh && build_webrtc"

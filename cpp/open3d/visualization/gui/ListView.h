@@ -54,6 +54,8 @@ public:
     Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
 
+    Size CalcMinimumSize(const LayoutContext& context) const override;
+
     DrawResult Draw(const DrawContext& context) override;
 
     /// Calls onValueChanged(const char *selectedText, bool isDoubleClick)

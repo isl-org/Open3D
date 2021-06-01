@@ -30,6 +30,7 @@
 
 #include "open3d/utility/Console.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/rendering/Model.h"
 
 namespace open3d {
 namespace visualization {
@@ -47,6 +48,14 @@ DrawObject::DrawObject(const std::string &n,
                        bool vis /*= true*/) {
     this->name = n;
     this->tgeometry = tg;
+    this->is_visible = vis;
+}
+
+DrawObject::DrawObject(const std::string &n,
+                       std::shared_ptr<rendering::TriangleMeshModel> m,
+                       bool vis /*= true*/) {
+    this->name = n;
+    this->model = m;
     this->is_visible = vis;
 }
 
@@ -82,6 +91,22 @@ void Draw(
     Draw(objs, window_name, width, height, actions);
 }
 
+void Draw(const std::vector<std::shared_ptr<rendering::TriangleMeshModel>>
+                  &models,
+          const std::string &window_name /*= "Open3D"*/,
+          int width /*= 1024*/,
+          int height /*= 768*/,
+          const std::vector<DrawAction> &actions /*= {}*/) {
+    std::vector<DrawObject> objs;
+    objs.reserve(models.size());
+    for (size_t i = 0; i < models.size(); ++i) {
+        std::stringstream name;
+        name << "Object " << (i + 1);
+        objs.emplace_back(name.str(), models[i]);
+    }
+    Draw(objs, window_name, width, height, actions);
+}
+
 void Draw(const std::vector<DrawObject> &objects,
           const std::string &window_name /*= "Open3D"*/,
           int width /*= 1024*/,
@@ -93,8 +118,12 @@ void Draw(const std::vector<DrawObject> &objects,
     for (auto &o : objects) {
         if (o.geometry) {
             draw->AddGeometry(o.name, o.geometry);
-        } else {
+        } else if (o.tgeometry) {
             draw->AddGeometry(o.name, o.tgeometry);
+        } else if (o.model) {
+            draw->AddGeometry(o.name, o.model);
+        } else {
+            utility::LogWarning("Invalid object passed to Draw");
         }
         draw->ShowGeometry(o.name, o.is_visible);
     }

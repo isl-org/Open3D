@@ -406,7 +406,7 @@ class JupyterDocsBuilder:
 
         # Execute Jupyter notebooks
         for nb_path in nb_paths:
-            if nb_out_path.name in nb_direct_copy:
+            if nb_path.name in nb_direct_copy:
                 print("[Processing notebook {}, directly copied]".format(
                     nb_path.name))
                 continue
@@ -453,7 +453,8 @@ if __name__ == "__main__":
     # Build docs for release (version number will be used instead of git hash).
     $ python make_docs.py --is_release --sphinx --doxygen
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--clean_notebooks",
         action="store_true",

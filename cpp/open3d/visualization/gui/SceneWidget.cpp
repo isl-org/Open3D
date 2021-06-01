@@ -32,6 +32,7 @@
 #include <set>
 #include <unordered_set>
 
+#include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/visualization/gui/Application.h"
@@ -55,7 +56,6 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-static const double NEAR_PLANE = 0.1;
 static const double MIN_FAR_PLANE = 1.0;
 
 static const double DELAY_FOR_BEST_RENDERING_SECS = 0.2;  // seconds
@@ -121,8 +121,6 @@ public:
     rendering::MatrixInteractorLogic& GetMatrixInteractor() override {
         return *ibl_.get();
     }
-
-    void ShowSkybox(bool is_on) { ibl_->ShowSkybox(is_on); }
 
     void SetOnChanged(std::function<void(const rendering::Camera::Transform&)>
                               on_changed) {
@@ -629,8 +627,6 @@ public:
         sun_->SetOnSunLightChanged(onChanged);
     }
 
-    void ShowSkybox(bool isOn) { ibl_->ShowSkybox(isOn); }
-
     void SetSunInteractorEnabled(bool enable) {
         sun_interactor_enabled_ = enable;
     }
@@ -778,26 +774,41 @@ struct SceneWidget::Impl {
     SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
     bool scene_caching_enabled_ = false;
     std::vector<Eigen::Vector2i> ui_lines_;
-
     std::unordered_set<std::shared_ptr<Label3D>> labels_3d_;
+    struct {
+        Eigen::Matrix3d matrix;
+        float width = 1.0f;
+        float height = 1.0f;
+        bool is_using = false;
+    } intrinsics_;
+
+    void UpdateFromIntrinsicMatrix(const Rect& frame) {
+        float orig_aspect = intrinsics_.width / intrinsics_.height;
+        float aspect = float(frame.width) / float(frame.height);
+        Eigen::Matrix3d scale;
+        if (aspect < 1.0f) {
+            scale << 1.0, 0.0, 0.0, 0.0, (aspect / orig_aspect), 0.0, 0.0, 0.0,
+                    1.0;
+        } else {
+            scale << (orig_aspect / aspect), 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+                    1.0;
+        }
+        Eigen::Matrix3d m = intrinsics_.matrix * scale;
+        auto* camera = scene_->GetCamera();
+        camera->SetProjection(m, rendering::Camera::CalcNearPlane(),
+                              rendering::Camera::CalcFarPlane(*camera, bounds_),
+                              intrinsics_.width, intrinsics_.height);
+    }
 
     void UpdateFarPlane(const Rect& frame, float verticalFoV) {
         float aspect = 1.0f;
         if (frame.height > 0) {
             aspect = float(frame.width) / float(frame.height);
         }
-        // The far plane needs to be the max absolute distance, not just the
-        // max extent, so that axes are visible if requested.
-        // See also RotationInteractorLogic::UpdateCameraFarPlane().
         auto* camera = scene_->GetCamera();
-        auto far1 = bounds_.GetMinBound().norm();
-        auto far2 = bounds_.GetMaxBound().norm();
-        auto far3 =
-                camera->GetModelMatrix().translation().cast<double>().norm();
-        auto model_size = 2.0 * bounds_.GetExtent().norm();
-        auto far = std::max(MIN_FAR_PLANE,
-                            std::max(std::max(far1, far2), far3) + model_size);
-        camera->SetProjection(verticalFoV, aspect, NEAR_PLANE, far,
+        auto far = rendering::Camera::CalcFarPlane(*camera, bounds_);
+        camera->SetProjection(verticalFoV, aspect,
+                              rendering::Camera::CalcNearPlane(), far,
                               rendering::Camera::FovType::Vertical);
     }
 };
@@ -829,15 +840,53 @@ void SceneWidget::SetFrame(const Rect& f) {
 
 void SceneWidget::SetupCamera(
         float verticalFoV,
-        const geometry::AxisAlignedBoundingBox& geometry_bounds,
+        const geometry::AxisAlignedBoundingBox& scene_bounds,
         const Eigen::Vector3f& center_of_rotation) {
-    impl_->bounds_ = geometry_bounds;
-    impl_->controls_->SetBoundingBox(geometry_bounds);
+    impl_->intrinsics_.is_using = false;
+    impl_->bounds_ = scene_bounds;
+    impl_->controls_->SetBoundingBox(scene_bounds);
     impl_->controls_->SetCenterOfRotation(center_of_rotation);
 
     GoToCameraPreset(CameraPreset::PLUS_Z);  // default OpenGL view
 
     impl_->UpdateFarPlane(GetFrame(), verticalFoV);
+}
+
+void SceneWidget::SetupCamera(
+        const camera::PinholeCameraIntrinsic& intrinsic,
+        const Eigen::Matrix4d& extrinsic,
+        const geometry::AxisAlignedBoundingBox& scene_bounds) {
+    SetupCamera(intrinsic.intrinsic_matrix_, extrinsic, intrinsic.width_,
+                intrinsic.height_, scene_bounds);
+}
+
+void SceneWidget::SetupCamera(
+        const Eigen::Matrix3d& intrinsic,
+        const Eigen::Matrix4d& extrinsic,
+        int intrinsic_width_px,
+        int intrinsic_height_px,
+        const geometry::AxisAlignedBoundingBox& scene_bounds) {
+    impl_->intrinsics_.is_using = true;
+    impl_->intrinsics_.matrix = intrinsic;
+    impl_->intrinsics_.width = intrinsic_width_px;
+    impl_->intrinsics_.height = intrinsic_height_px;
+    impl_->bounds_ = scene_bounds;
+    impl_->controls_->SetBoundingBox(scene_bounds);
+
+    auto* camera = GetCamera();
+    rendering::Camera::SetupCameraAsPinholeCamera(
+            *camera, intrinsic, extrinsic, intrinsic_width_px,
+            intrinsic_height_px, scene_bounds);
+
+    // We need to calculate the center of rotation (rather than specifying it
+    // because the intrinsic/extrinsic matrices define a position for the camera
+    // and the center of rotation needs to be visually consistent.
+    Eigen::Vector3f forward = camera->GetForwardVector();
+    Eigen::Vector3f pos = camera->GetPosition();
+    Eigen::Vector3f toCenter = scene_bounds.GetCenter().cast<float>() - pos;
+    float dist = toCenter.dot(forward);
+    Eigen::Vector3f cor = pos + dist * forward;
+    impl_->controls_->SetCenterOfRotation(cor);
 }
 
 void SceneWidget::LookAt(const Eigen::Vector3f& center,
@@ -870,10 +919,6 @@ void SceneWidget::SetOnSunDirectionChanged(
             impl_->on_light_dir_changed_(dir);
         }
     });
-}
-
-void SceneWidget::ShowSkybox(bool is_on) {
-    impl_->controls_->ShowSkybox(is_on);
 }
 
 void SceneWidget::SetSunInteractorEnabled(bool enable) {
@@ -1070,16 +1115,23 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 
         impl_->scene_->SetViewport(f.x, y, f.width, f.height);
 
-        auto* camera = GetCamera();
-        float aspect = 1.0f;
-        if (f.height > 0) {
-            aspect = float(f.width) / float(f.height);
+        if (impl_->intrinsics_.is_using) {
+            if (f.height > 0) {
+                impl_->UpdateFromIntrinsicMatrix(f);
+            }
+        } else {
+            float aspect = 1.0f;
+            if (f.height > 0) {
+                aspect = float(f.width) / float(f.height);
+            }
+            auto* camera = GetCamera();
+            camera->SetProjection(camera->GetFieldOfView(), aspect,
+                                  camera->GetNear(), camera->GetFar(),
+                                  camera->GetFieldOfViewType());
         }
-        GetCamera()->SetProjection(camera->GetFieldOfView(), aspect,
-                                   camera->GetNear(), camera->GetFar(),
-                                   camera->GetFieldOfViewType());
 
         impl_->controls_->SetPickNeedsRedraw();
+        ForceRedraw();
     }
 
     // The scene will be rendered to texture, so all we need to do is

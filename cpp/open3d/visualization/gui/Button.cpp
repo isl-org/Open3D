@@ -135,7 +135,8 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     auto result = Widget::DrawResult::NONE;
 
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     bool was_on = impl_->is_on_;
     if (was_on) {

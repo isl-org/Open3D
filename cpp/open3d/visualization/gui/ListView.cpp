@@ -30,7 +30,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
@@ -52,9 +51,7 @@ struct ListView::Impl {
 };
 
 ListView::ListView() : impl_(new ListView::Impl()) {
-    std::stringstream s;
-    s << "##listview_" << g_next_list_box_id++;
-    impl_->imgui_id_ = s.str();
+    impl_->imgui_id_ = "##listview_" + std::to_string(g_next_list_box_id++);
 }
 
 ListView::~ListView() {}
@@ -100,9 +97,14 @@ Size ListView::CalcPreferredSize(const LayoutContext &context,
     return Size(int(std::ceil(size.x + 2.0f * padding.x)), Widget::DIM_GROW);
 }
 
+Size ListView::CalcMinimumSize(const LayoutContext &context) const {
+    return Size(0, 3 * context.theme.font_size);
+}
+
 Widget::DrawResult ListView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) + ImGui::GetScrollY()));
     ImGui::PushItemWidth(float(frame.width));
 
     ImGui::PushStyleColor(ImGuiCol_FrameBg,

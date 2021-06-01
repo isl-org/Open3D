@@ -166,6 +166,9 @@ public:
     /// input and returns nothing.
     void SetPrintFunction(std::function<void(const std::string &)> print_fcn);
 
+    /// Reset the print function to the default one (print to console).
+    void ResetPrintFunction();
+
     /// Set global verbosity level of Open3D.
     ///
     /// \param verbosity_level Messages with equal or less than verbosity_level

@@ -35,6 +35,16 @@ namespace t {
 namespace geometry {
 
 void pybind_tsdf_voxelgrid(py::module& m) {
+    py::enum_<TSDFVoxelGrid::SurfaceMaskCode>(
+            m, "SurfaceMaskCode",
+            "Mask code for surface extraction used in raycasting and surface "
+            "extraction.")
+            .value("VertexMap", TSDFVoxelGrid::SurfaceMaskCode::VertexMap)
+            .value("DepthMap", TSDFVoxelGrid::SurfaceMaskCode::DepthMap)
+            .value("ColorMap", TSDFVoxelGrid::SurfaceMaskCode::ColorMap)
+            .value("NormalMap", TSDFVoxelGrid::SurfaceMaskCode::NormalMap)
+            .export_values();
+
     py::class_<TSDFVoxelGrid> tsdf_voxelgrid(
             m, "TSDFVoxelGrid",
             "A voxel grid for TSDF and/or color integration.");
@@ -68,22 +78,32 @@ void pybind_tsdf_voxelgrid(py::module& m) {
             "depth"_a, "color"_a, "intrinsics"_a, "extrinsics"_a,
             "depth_scale"_a, "depth_max"_a);
 
-    tsdf_voxelgrid.def("raycast", &TSDFVoxelGrid::RayCast, "intrinsics"_a,
-                       "extrinsics"_a, "width"_a, "height"_a,
-                       "max_steps"_a = 50, "depth_min"_a = 0.1f,
-                       "depth_max"_a = 3.0f, "weight_threshold"_a = 3.0f);
-    tsdf_voxelgrid.def("extract_surface_points",
-                       &TSDFVoxelGrid::ExtractSurfacePoints,
-                       "weight_threshold"_a = 3.0f);
-    tsdf_voxelgrid.def("extract_surface_mesh",
-                       &TSDFVoxelGrid::ExtractSurfaceMesh,
-                       "weight_threshold"_a = 3.0f);
+    // TODO(wei): expose mask code as a python class
+    tsdf_voxelgrid.def(
+            "raycast", &TSDFVoxelGrid::RayCast, "intrinsics"_a, "extrinsics"_a,
+            "width"_a, "height"_a, "depth_scale"_a = 1000.0,
+            "depth_min"_a = 0.1f, "depth_max"_a = 3.0f,
+            "weight_threshold"_a = 3.0f,
+            "raycast_result_mask"_a = TSDFVoxelGrid::SurfaceMaskCode::DepthMap |
+                                      TSDFVoxelGrid::SurfaceMaskCode::ColorMap);
+    tsdf_voxelgrid.def(
+            "extract_surface_points", &TSDFVoxelGrid::ExtractSurfacePoints,
+            "estimate_number"_a = -1, "weight_threshold"_a = 3.0f,
+            "surface_mask"_a = TSDFVoxelGrid::SurfaceMaskCode::VertexMap |
+                               TSDFVoxelGrid::SurfaceMaskCode::ColorMap);
+    tsdf_voxelgrid.def(
+            "extract_surface_mesh", &TSDFVoxelGrid::ExtractSurfaceMesh,
+            "estimate_number"_a = -1, "weight_threshold"_a = 3.0f,
+            "surface_mask"_a = TSDFVoxelGrid::SurfaceMaskCode::VertexMap |
+                               TSDFVoxelGrid::SurfaceMaskCode::ColorMap |
+                               TSDFVoxelGrid::SurfaceMaskCode::NormalMap);
 
     tsdf_voxelgrid.def("to", &TSDFVoxelGrid::To, "device"_a, "copy"_a = false);
     tsdf_voxelgrid.def("clone", &TSDFVoxelGrid::Clone);
     tsdf_voxelgrid.def("cpu", &TSDFVoxelGrid::CPU);
     tsdf_voxelgrid.def("cuda", &TSDFVoxelGrid::CUDA, "device_id"_a);
 
+    tsdf_voxelgrid.def("get_block_hashmap", &TSDFVoxelGrid::GetBlockHashmap);
     tsdf_voxelgrid.def("get_device", &TSDFVoxelGrid::GetDevice);
 }
 }  // namespace geometry

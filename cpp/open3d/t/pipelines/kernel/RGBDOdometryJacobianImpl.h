@@ -36,22 +36,35 @@ namespace pipelines {
 namespace kernel {
 namespace odometry {
 
-using NDArrayIndexer = t::geometry::kernel::NDArrayIndexer;
+using t::geometry::kernel::NDArrayIndexer;
+using t::geometry::kernel::TransformIndexer;
+
+#ifndef __CUDACC__
+using std::abs;
+using std::max;
+#endif
+
+inline OPEN3D_HOST_DEVICE float HuberDeriv(float r, float delta) {
+    float abs_r = abs(r);
+    return abs_r < delta ? r : delta * Sign(r);
+}
+
+inline OPEN3D_HOST_DEVICE float HuberLoss(float r, float delta) {
+    float abs_r = abs(r);
+    return abs_r < delta ? 0.5 * r * r : delta * abs_r - 0.5 * delta * delta;
+}
 
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
-        int64_t workload_idx,
-        int64_t cols,
-        float depth_diff,
+        int x,
+        int y,
+        const float depth_outlier_trunc,
         const NDArrayIndexer& source_vertex_indexer,
         const NDArrayIndexer& target_vertex_indexer,
         const NDArrayIndexer& target_normal_indexer,
-        const t::geometry::kernel::TransformIndexer& ti,
+        const TransformIndexer& ti,
         float* J_ij,
         float& r) {
-    int64_t y = workload_idx / cols;
-    int64_t x = workload_idx % cols;
-
-    float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+    float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
     if (ISNAN(source_v[0])) {
         return false;
     }
@@ -63,18 +76,18 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
                       &T_source_to_target_v[2]);
     ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
                T_source_to_target_v[2], &u, &v);
-    u = round(u);
-    v = round(v);
+    u = roundf(u);
+    v = roundf(v);
 
     if (T_source_to_target_v[2] < 0 ||
         !target_vertex_indexer.InBoundary(u, v)) {
         return false;
     }
 
-    int64_t ui = static_cast<int64_t>(u);
-    int64_t vi = static_cast<int64_t>(v);
-    float* target_v = target_vertex_indexer.GetDataPtrFromCoord<float>(ui, vi);
-    float* target_n = target_normal_indexer.GetDataPtrFromCoord<float>(ui, vi);
+    int ui = static_cast<int>(u);
+    int vi = static_cast<int>(v);
+    float* target_v = target_vertex_indexer.GetDataPtr<float>(ui, vi);
+    float* target_n = target_normal_indexer.GetDataPtr<float>(ui, vi);
     if (ISNAN(target_v[0]) || ISNAN(target_n[0])) {
         return false;
     }
@@ -82,7 +95,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
     r = (T_source_to_target_v[0] - target_v[0]) * target_n[0] +
         (T_source_to_target_v[1] - target_v[1]) * target_n[1] +
         (T_source_to_target_v[2] - target_v[2]) * target_n[2];
-    if (abs(r) > depth_diff) {
+    if (abs(r) > depth_outlier_trunc) {
         return false;
     }
 
@@ -100,9 +113,9 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
 }
 
 OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
-        int64_t workload_idx,
-        int64_t cols,
-        float depth_diff,
+        int x,
+        int y,
+        const float depth_outlier_trunc,
         const NDArrayIndexer& source_depth_indexer,
         const NDArrayIndexer& target_depth_indexer,
         const NDArrayIndexer& source_intensity_indexer,
@@ -110,15 +123,12 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
         const NDArrayIndexer& target_intensity_dx_indexer,
         const NDArrayIndexer& target_intensity_dy_indexer,
         const NDArrayIndexer& source_vertex_indexer,
-        const t::geometry::kernel::TransformIndexer& ti,
+        const TransformIndexer& ti,
         float* J_I,
         float& r_I) {
     const float sobel_scale = 0.125;
 
-    int y = workload_idx / cols;
-    int x = workload_idx % cols;
-
-    float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+    float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
     if (ISNAN(source_v[0])) {
         return false;
     }
@@ -130,8 +140,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
                       &T_source_to_target_v[2]);
     ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
                T_source_to_target_v[2], &u_tf, &v_tf);
-    int u_t = int(round(u_tf));
-    int v_t = int(round(v_tf));
+    int u_t = int(roundf(u_tf));
+    int v_t = int(roundf(v_tf));
 
     if (T_source_to_target_v[2] < 0 ||
         !target_depth_indexer.InBoundary(u_t, v_t)) {
@@ -141,21 +151,18 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
     float fx, fy;
     ti.GetFocalLength(&fx, &fy);
 
-    float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
+    float depth_t = *target_depth_indexer.GetDataPtr<float>(u_t, v_t);
     float diff_D = depth_t - T_source_to_target_v[2];
-    if (ISNAN(depth_t) || abs(diff_D) > depth_diff) {
+    if (ISNAN(depth_t) || abs(diff_D) > depth_outlier_trunc) {
         return false;
     }
 
-    float diff_I =
-            *target_intensity_indexer.GetDataPtrFromCoord<float>(u_t, v_t) -
-            *source_intensity_indexer.GetDataPtrFromCoord<float>(x, y);
-    float dIdx =
-            sobel_scale *
-            (*target_intensity_dx_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
-    float dIdy =
-            sobel_scale *
-            (*target_intensity_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
+    float diff_I = *target_intensity_indexer.GetDataPtr<float>(u_t, v_t) -
+                   *source_intensity_indexer.GetDataPtr<float>(x, y);
+    float dIdx = sobel_scale *
+                 (*target_intensity_dx_indexer.GetDataPtr<float>(u_t, v_t));
+    float dIdy = sobel_scale *
+                 (*target_intensity_dy_indexer.GetDataPtr<float>(u_t, v_t));
 
     float invz = 1 / T_source_to_target_v[2];
     float c0 = dIdx * fx * invz;
@@ -175,9 +182,9 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
 }
 
 OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
-        int64_t workload_idx,
-        int64_t cols,
-        float depth_diff,
+        int x,
+        int y,
+        const float depth_outlier_trunc,
         const NDArrayIndexer& source_depth_indexer,
         const NDArrayIndexer& target_depth_indexer,
         const NDArrayIndexer& source_intensity_indexer,
@@ -187,7 +194,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
         const NDArrayIndexer& target_intensity_dx_indexer,
         const NDArrayIndexer& target_intensity_dy_indexer,
         const NDArrayIndexer& source_vertex_indexer,
-        const t::geometry::kernel::TransformIndexer& ti,
+        const TransformIndexer& ti,
         float* J_I,
         float* J_D,
         float& r_I,
@@ -198,10 +205,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     const float sqrt_lambda_depth = 0.707;
     const float sobel_scale = 0.125;
 
-    int y = workload_idx / cols;
-    int x = workload_idx % cols;
-
-    float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+    float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
     if (ISNAN(source_v[0])) {
         return false;
     }
@@ -213,8 +217,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
                       &T_source_to_target_v[2]);
     ti.Project(T_source_to_target_v[0], T_source_to_target_v[1],
                T_source_to_target_v[2], &u_tf, &v_tf);
-    int u_t = int(round(u_tf));
-    int v_t = int(round(v_tf));
+    int u_t = int(roundf(u_tf));
+    int v_t = int(roundf(v_tf));
 
     if (T_source_to_target_v[2] < 0 ||
         !target_depth_indexer.InBoundary(u_t, v_t)) {
@@ -224,31 +228,26 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     float fx, fy;
     ti.GetFocalLength(&fx, &fy);
 
-    float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
+    float depth_t = *target_depth_indexer.GetDataPtr<float>(u_t, v_t);
     float diff_D = depth_t - T_source_to_target_v[2];
-    if (ISNAN(depth_t) || abs(diff_D) > depth_diff) {
+    if (ISNAN(depth_t) || abs(diff_D) > depth_outlier_trunc) {
         return false;
     }
 
-    float dDdx =
-            sobel_scale *
-            (*target_depth_dx_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
-    float dDdy =
-            sobel_scale *
-            (*target_depth_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
+    float dDdx = sobel_scale *
+                 (*target_depth_dx_indexer.GetDataPtr<float>(u_t, v_t));
+    float dDdy = sobel_scale *
+                 (*target_depth_dy_indexer.GetDataPtr<float>(u_t, v_t));
     if (ISNAN(dDdx) || ISNAN(dDdy)) {
         return false;
     }
 
-    float diff_I =
-            *target_intensity_indexer.GetDataPtrFromCoord<float>(u_t, v_t) -
-            *source_intensity_indexer.GetDataPtrFromCoord<float>(x, y);
-    float dIdx =
-            sobel_scale *
-            (*target_intensity_dx_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
-    float dIdy =
-            sobel_scale *
-            (*target_intensity_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
+    float diff_I = *target_intensity_indexer.GetDataPtr<float>(u_t, v_t) -
+                   *source_intensity_indexer.GetDataPtr<float>(x, y);
+    float dIdx = sobel_scale *
+                 (*target_intensity_dx_indexer.GetDataPtr<float>(u_t, v_t));
+    float dIdy = sobel_scale *
+                 (*target_intensity_dy_indexer.GetDataPtr<float>(u_t, v_t));
 
     float invz = 1 / T_source_to_target_v[2];
     float c0 = dIdx * fx * invz;
