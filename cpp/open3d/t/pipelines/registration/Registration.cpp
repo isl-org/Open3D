@@ -32,6 +32,8 @@
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 
+#define LOG(msg) utility::LogInfo(" DEBUG: {}", msg)
+
 namespace open3d {
 namespace t {
 namespace pipelines {
@@ -146,15 +148,13 @@ RegistrationResult RegistrationMultiScaleICP(
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = source.GetPoints().GetDtype();
 
-    source.GetPoints().AssertDtype(dtype,
-                                   " RegistrationICP: Only Float32 Point cloud "
-                                   "are supported currently.");
-    target.GetPoints().AssertDtype(dtype,
-                                   " RegistrationICP: Only Float32 Point cloud "
-                                   "are supported currently.");
-
+    if (target.GetPoints().GetDtype() != dtype) {
+        utility::LogError(
+                "Target Pointcloud dtype {} != Source Pointcloud's dtype {}.",
+                target.GetPoints().GetDtype().ToString(), dtype.ToString());
+    }
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -233,9 +233,13 @@ RegistrationResult RegistrationMultiScaleICP(
 
     for (int64_t i = 0; i < num_iterations; i++) {
         source_down_pyramid[i].Transform(transformation.To(device, dtype));
-
         core::nns::NearestNeighborSearch target_nns(
                 target_down_pyramid[i].GetPoints());
+        bool check = target_nns.HybridIndex(max_correspondence_distances[i]);
+        if (!check) {
+            utility::LogError(
+                    "NearestNeighborSearch::HybridSearch: Index is not set.");
+        }
 
         core::Tensor distances;
 
@@ -246,18 +250,24 @@ RegistrationResult RegistrationMultiScaleICP(
 
             // ComputeTransformation returns transformation matrix of
             // dtype Float64.
-            core::Tensor update = estimation.ComputeTransformation(
-                    source_down_pyramid[i], target_down_pyramid[i],
-                    result.correspondences_, inlier_count);
+            core::Tensor update =
+                    estimation
+                            .ComputeTransformation(source_down_pyramid[i],
+                                                   target_down_pyramid[i],
+                                                   result.correspondences_,
+                                                   inlier_count)
+                            .To(core::Dtype::Float64);
 
             // Multiply the transform to the cumulative transformation (update).
             transformation = update.Matmul(transformation);
+
             // Apply the transform on source pointcloud.
             source_down_pyramid[i].Transform(update.To(device, dtype));
 
             // Reduction sum of "distances" for error.
             double squared_error =
-                    static_cast<double>(distances.Sum({0}).Item<float>());
+                    distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
+
             result.fitness_ =
                     static_cast<double>(inlier_count) /
                     static_cast<double>(source.GetPoints().GetLength());

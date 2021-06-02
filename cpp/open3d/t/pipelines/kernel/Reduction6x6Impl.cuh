@@ -99,8 +99,8 @@ __device__ inline void BlockReduceSum(const int tid,
     }
 
     if (tid < 32) {
-        WarpReduceSum<float>(local_sum0, tid);
-        WarpReduceSum<float>(local_sum1, tid);
+        WarpReduceSum<T>(local_sum0, tid);
+        WarpReduceSum<T>(local_sum1, tid);
     }
 }
 
@@ -137,9 +137,9 @@ __device__ inline void BlockReduceSum(const int tid,
     }
 
     if (tid < 32) {
-        WarpReduceSum<float>(local_sum0, tid);
-        WarpReduceSum<float>(local_sum1, tid);
-        WarpReduceSum<float>(local_sum2, tid);
+        WarpReduceSum<T>(local_sum0, tid);
+        WarpReduceSum<T>(local_sum1, tid);
+        WarpReduceSum<T>(local_sum2, tid);
     }
 }
 
@@ -158,8 +158,7 @@ __device__ inline void ReduceSum6x6LinearSystem(const int tid,
         local_sum2[tid] = valid ? reduction[i + 2] : 0;
         __syncthreads();
 
-        BlockReduceSum<float, BLOCK_SIZE>(tid, local_sum0, local_sum1,
-                                          local_sum2);
+        BlockReduceSum<T, BLOCK_SIZE>(tid, local_sum0, local_sum1, local_sum2);
 
         if (tid == 0) {
             atomicAdd(&global_sum[i + 0], local_sum0[0]);
@@ -175,7 +174,7 @@ __device__ inline void ReduceSum6x6LinearSystem(const int tid,
         local_sum1[tid] = valid ? reduction[28] : 0;
         __syncthreads();
 
-        BlockReduceSum<float, BLOCK_SIZE>(tid, local_sum0, local_sum1);
+        BlockReduceSum<T, BLOCK_SIZE>(tid, local_sum0, local_sum1);
         if (tid == 0) {
             atomicAdd(&global_sum[27], local_sum0[0]);
             atomicAdd(&global_sum[28], local_sum1[0]);

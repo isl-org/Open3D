@@ -69,9 +69,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const core::Tensor &correspondences,
         int &inlier_cout) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
+
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -123,9 +121,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const core::Tensor &correspondences,
         int &inlier_cout) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
+
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",

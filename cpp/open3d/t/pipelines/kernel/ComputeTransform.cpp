@@ -39,15 +39,8 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &correspondence_indices,
                                      int &inlier_count) {
     // Get dtype and device.
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();
-
-    // Checks.
-    source_points.AssertDtype(dtype);
-    target_points.AssertDtype(dtype);
-    target_normals.AssertDtype(dtype);
-    target_points.AssertDevice(device);
-    target_normals.AssertDevice(device);
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
@@ -58,20 +51,19 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     core::Tensor source_points_contiguous = source_points.Contiguous();
     core::Tensor target_points_contiguous = target_points.Contiguous();
     core::Tensor target_normals_contiguous = target_normals.Contiguous();
-    core::Tensor correspondence_indices_contiguous =
-            correspondence_indices.Contiguous();
+    core::Tensor corres_contiguous = correspondence_indices.Contiguous();
 
     float residual = 0;
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ComputePosePointToPlaneCPU(
-                source_points_contiguous, target_points_contiguous,
-                target_normals_contiguous, correspondence_indices, pose,
-                residual, inlier_count, dtype, device);
+        ComputePosePointToPlaneCPU(source_points_contiguous,
+                                   target_points_contiguous,
+                                   target_normals_contiguous, corres_contiguous,
+                                   pose, residual, inlier_count, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
         CUDA_CALL(ComputePosePointToPlaneCUDA, source_points_contiguous,
                   target_points_contiguous, target_normals_contiguous,
-                  correspondence_indices, pose, residual, inlier_count, dtype,
+                  corres_contiguous, pose, residual, inlier_count, dtype,
                   device);
     } else {
         utility::LogError("Unimplemented device.");
@@ -85,13 +77,8 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &correspondence_indices,
         int &inlier_count) {
     // Get dtype and device.
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();
-
-    // Checks.
-    source_points.AssertDtype(dtype);
-    target_points.AssertDtype(dtype);
-    target_points.AssertDevice(device);
 
     // [Output] Rotation and translation tensor of type Float64.
     core::Tensor R;
