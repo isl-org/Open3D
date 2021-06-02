@@ -68,25 +68,30 @@ public:
     virtual TransformationEstimationType GetTransformationEstimationType()
             const = 0;
 
-    // /// Compute RMSE between source and target points cloud given
-    // /// correspondences.
-    // ///
-    // /// \param source Source point cloud of type Float32.
-    // /// \param target Target point cloud of type Float32.
-    // /// \param correspondences TODO.
-    // virtual double ComputeRMSE(const geometry::PointCloud &source,
-    //                            const geometry::PointCloud &target,
-    //                            const core::Tensor &correspondences) const =
-    //                            0;
+    /// Compute RMSE between source and target points cloud given
+    /// correspondences.
+    ///
+    /// \param source Source point cloud of type Float32.
+    /// \param target Target point cloud of type Float32.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    virtual double ComputeRMSE(const geometry::PointCloud &source,
+                               const geometry::PointCloud &target,
+                               const core::Tensor &correspondences) const = 0;
     /// Compute transformation from source to target point cloud given
     /// correspondences.
     ///
     /// \param source Source point cloud of type Float32.
     /// \param target Target point cloud of type Float32.
-    /// \param correspondences TODO.
-    /// \param inlier_count TODO.
-    /// \return transformation between source to target, a tensor of shape
-    /// {4, 4}, type Float64 on CPU device.
+    /// \param correspondences tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    /// \param inlier_count Number of valid correspondences.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
@@ -109,24 +114,30 @@ public:
             const override {
         return type_;
     };
-    // /// \brief Computes RMSE (double) for PointToPoint method, between two
-    // /// pointclouds of type Float32, given core::Tensor.
-    // ///
-    // /// \param source Source pointcloud of dtype Float32.
-    // /// \param target Target pointcloud of dtype Float32. It must contain
-    // /// normals.
-    // /// \param correspondences TODO.
-    // double ComputeRMSE(const geometry::PointCloud &source,
-    //                    const geometry::PointCloud &target,
-    //                    const core::Tensor &correspondences) const override;
+    /// \brief Computes RMSE (double) for PointToPoint method, between two
+    /// pointclouds of type Float32, given core::Tensor.
+    ///
+    /// \param source Source pointcloud of dtype Float32.
+    /// \param target Target pointcloud of dtype Float32. It must contain
+    /// normals.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const core::Tensor &correspondences) const override;
 
     /// \brief Estimates the transformation matrix for PointToPoint method,
     /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
     ///
     /// \param source Source pointcloud of dtype Float32.
     /// \param target Target pointcloud of dtype Float32.
-    /// \param correspondences TODO.
-    /// \param inlier_count TODO.
+    /// \param correspondences tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    /// \param inlier_count Number of valid correspondences.
     /// \return transformation between source to target, a tensor of
     /// shape {4, 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(const geometry::PointCloud &source,
@@ -154,16 +165,19 @@ public:
             const override {
         return type_;
     };
-    // /// \brief Computes RMSE (double) for PointToPlane method, between two
-    // /// pointclouds of type Float32, given correspondences.
-    // ///
-    // /// \param source Source pointcloud of dtype Float32.
-    // /// \param target Target pointcloud of dtype Float32. It must contain
-    // /// normals.
-    // /// \param correspondences TODO.
-    // double ComputeRMSE(const geometry::PointCloud &source,
-    //                    const geometry::PointCloud &target,
-    //                    const core::Tensor &correspondences) const override;
+    /// \brief Computes RMSE (double) for PointToPlane method, between two
+    /// pointclouds of type Float32, given correspondences.
+    ///
+    /// \param source Source pointcloud of dtype Float32.
+    /// \param target Target pointcloud of dtype Float32. It must contain
+    /// normals.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const core::Tensor &correspondences) const override;
 
     /// \brief Estimates the transformation matrix for PointToPlane method,
     /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
@@ -171,8 +185,11 @@ public:
     /// \param source Source pointcloud of dtype Float32.
     /// \param target Target pointcloud of dtype Float32. It must contain
     /// normals.
-    /// \param correspondences TODO.
-    /// \param inlier_count TODO.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    /// \param inlier_count Number of valid correspondences.
     /// \return transformation between source to target, a tensor
     /// of shape {4, 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(const geometry::PointCloud &source,
