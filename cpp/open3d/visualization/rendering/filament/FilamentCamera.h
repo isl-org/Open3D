@@ -35,6 +35,7 @@ namespace filament {
 class Camera;
 class Engine;
 }  // namespace filament
+/// @endcond
 
 namespace open3d {
 namespace visualization {
