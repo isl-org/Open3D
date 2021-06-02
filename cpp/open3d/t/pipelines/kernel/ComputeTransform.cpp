@@ -52,7 +52,7 @@ core::Tensor ComputePosePointToPlane(
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
     // Number of correspondences.
-    int n = corres.first.GetLength();
+    // int n = corres.first.GetLength();
 
     // Pointer to point cloud data - indexed according to correspondences.
     core::Tensor source_points_contiguous = source_points.Contiguous();
@@ -61,25 +61,30 @@ core::Tensor ComputePosePointToPlane(
     core::Tensor corres_first_contiguous = corres.first.Contiguous();
     core::Tensor corres_second_contiguous = corres.second.Contiguous();
 
-    const float *source_points_ptr =
-            source_points_contiguous.GetDataPtr<float>();
-    const float *target_points_ptr =
-            target_points_contiguous.GetDataPtr<float>();
-    const float *target_normals_ptr =
-            target_normals_contiguous.GetDataPtr<float>();
-    const int64_t *corres_first = corres_first_contiguous.GetDataPtr<int64_t>();
-    const int64_t *corres_second =
-            corres_second_contiguous.GetDataPtr<int64_t>();
+    //     const float *source_points_ptr =
+    //             source_points_contiguous.GetDataPtr<float>();
+    //     const float *target_points_ptr =
+    //             target_points_contiguous.GetDataPtr<float>();
+    //     const float *target_normals_ptr =
+    //             target_normals_contiguous.GetDataPtr<float>();
+    //     const int64_t *corres_first =
+    //     corres_first_contiguous.GetDataPtr<int64_t>(); const int64_t
+    //     *corres_second =
+    //             corres_second_contiguous.GetDataPtr<int64_t>();
 
+    float residual = 0;
+    int inlier_count = 0;
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ComputePosePointToPlaneCPU(source_points_ptr, target_points_ptr,
-                                   target_normals_ptr, corres_first,
-                                   corres_second, n, pose, dtype, device);
+        ComputePosePointToPlaneCPU(
+                source_points_contiguous, target_points_contiguous,
+                target_normals_contiguous, corres_second_contiguous, pose,
+                residual, inlier_count, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(ComputePosePointToPlaneCUDA, source_points_ptr,
-                  target_points_ptr, target_normals_ptr, corres_first,
-                  corres_second, n, pose, dtype, device);
+        CUDA_CALL(ComputePosePointToPlaneCUDA, source_points_contiguous,
+                  target_points_contiguous, target_normals_contiguous,
+                  corres_second_contiguous, pose, residual, inlier_count, dtype,
+                  device);
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -114,18 +119,19 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         core::Tensor corres_first_contiguous = corres.first.Contiguous();
         core::Tensor corres_second_contiguous = corres.second.Contiguous();
 
-        const float *source_points_ptr =
-                source_points_contiguous.GetDataPtr<float>();
-        const float *target_points_ptr =
-                target_points_contiguous.GetDataPtr<float>();
-        const int64_t *corres_first =
-                corres_first_contiguous.GetDataPtr<int64_t>();
-        const int64_t *corres_second =
-                corres_second_contiguous.GetDataPtr<int64_t>();
+        // const float *source_points_ptr =
+        //         source_points_contiguous.GetDataPtr<float>();
+        // const float *target_points_ptr =
+        //         target_points_contiguous.GetDataPtr<float>();
+        // const int64_t *corres_first =
+        //         corres_first_contiguous.GetDataPtr<int64_t>();
+        // const int64_t *corres_second =
+        //         corres_second_contiguous.GetDataPtr<int64_t>();
 
-        ComputeRtPointToPointCPU(source_points_ptr, target_points_ptr,
-                                 corres_first, corres_second, n, R, t, dtype,
-                                 device);
+        int inlier_count = 0;
+        ComputeRtPointToPointCPU(
+                source_points_contiguous, target_points_contiguous,
+                corres_second_contiguous, R, t, inlier_count, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         // TODO: Implement optimised CUDA reduction kernel.

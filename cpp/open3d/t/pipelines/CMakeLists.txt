@@ -24,6 +24,7 @@ set(KERNEL_SRC
     kernel/FillInLinearSystemCPU.cpp
     kernel/ComputeTransform.cpp
     kernel/ComputeTransformCPU.cpp
+    kernel/Common.cpp
     kernel/RGBDOdometry.cpp
     kernel/RGBDOdometryCPU.cpp
 )
