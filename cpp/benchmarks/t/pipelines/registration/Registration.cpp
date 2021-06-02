@@ -143,9 +143,6 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
                       target.GetPoints().GetShape().ToString());
     utility::LogDebug(" Max iterations: {}, Max_correspondence_distance : {}",
                       max_iterations, max_correspondence_distance);
-    utility::LogDebug(" Correspondences: {}, Fitness: {}, Inlier RMSE: {}",
-                      reg_result.correspondence_set_.first.GetLength(),
-                      reg_result.fitness_, reg_result.inlier_rmse_);
 }
 
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,

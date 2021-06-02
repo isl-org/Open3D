@@ -72,23 +72,23 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
 
     core::Tensor distances;
-    std::tie(result.correspondence_set_.second, distances) =
-            target_nns.HybridSearch(source.GetPoints(),
-                                    max_correspondence_distance, 1);
+    std::tie(result.correspondences_, distances) = target_nns.HybridSearch(
+            source.GetPoints(), max_correspondence_distance, 1);
 
-    core::Tensor valid = result.correspondence_set_.second.Ne(-1).Reshape({-1});
+    core::Tensor valid = result.correspondences_.Ne(-1).Reshape({-1});
     // correpondence_set : (i, corres[i]).
     // source[i] and target[corres[i]] is a correspondence.
-    result.correspondence_set_.first =
+
+    core::Tensor source_indices =
             core::Tensor::Arange(0, source.GetPoints().GetShape()[0], 1,
                                  core::Dtype::Int64, device)
                     .IndexGet({valid});
     // Only take valid indices.
-    result.correspondence_set_.second =
-            result.correspondence_set_.second.IndexGet({valid}).Reshape({-1});
+    result.correspondences_ =
+            result.correspondences_.IndexGet({valid}).Reshape({-1});
 
     // Number of good correspondences (C).
-    int num_correspondences = result.correspondence_set_.first.GetLength();
+    int num_correspondences = source_indices.GetLength();
 
     // Reduction sum of "distances" for error.
     double squared_error =
@@ -227,6 +227,9 @@ RegistrationResult RegistrationMultiScaleICP(
     }
 
     RegistrationResult result(transformation);
+    int inlier_count = 0;
+    double prev_fitness = 0;
+    double prev_inlier_rmse = 0;
 
     for (int64_t i = 0; i < num_iterations; i++) {
         source_down_pyramid[i].Transform(transformation.To(device, dtype));
@@ -234,42 +237,49 @@ RegistrationResult RegistrationMultiScaleICP(
         core::nns::NearestNeighborSearch target_nns(
                 target_down_pyramid[i].GetPoints());
 
-        result = GetRegistrationResultAndCorrespondences(
-                source_down_pyramid[i], target_down_pyramid[i], target_nns,
-                max_correspondence_distances[i], transformation);
+        core::Tensor distances;
 
         for (int j = 0; j < criterias[i].max_iteration_; j++) {
-            utility::LogDebug(
-                    " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, RMSE "
-                    "{:.4f}",
-                    i + 1, j, result.fitness_, result.inlier_rmse_);
+            std::tie(result.correspondences_, distances) =
+                    target_nns.HybridSearch(source_down_pyramid[i].GetPoints(),
+                                            max_correspondence_distances[i], 1);
 
             // ComputeTransformation returns transformation matrix of
             // dtype Float64.
             core::Tensor update = estimation.ComputeTransformation(
                     source_down_pyramid[i], target_down_pyramid[i],
-                    result.correspondence_set_);
+                    result.correspondences_, inlier_count);
 
             // Multiply the transform to the cumulative transformation (update).
             transformation = update.Matmul(transformation);
             // Apply the transform on source pointcloud.
             source_down_pyramid[i].Transform(update.To(device, dtype));
 
-            double prev_fitness_ = result.fitness_;
-            double prev_inliner_rmse_ = result.inlier_rmse_;
+            // Reduction sum of "distances" for error.
+            double squared_error =
+                    static_cast<double>(distances.Sum({0}).Item<float>());
+            result.fitness_ =
+                    static_cast<double>(inlier_count) /
+                    static_cast<double>(source.GetPoints().GetLength());
+            result.inlier_rmse_ = std::sqrt(squared_error /
+                                            static_cast<double>(inlier_count));
 
-            result = GetRegistrationResultAndCorrespondences(
-                    source_down_pyramid[i], target_down_pyramid[i], target_nns,
-                    max_correspondence_distances[i], transformation);
+            utility::LogDebug(
+                    " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, RMSE "
+                    "{:.4f}",
+                    i + 1, j, result.fitness_, result.inlier_rmse_);
 
             // ICPConvergenceCriteria, to terminate iteration.
             if (j != 0 &&
-                std::abs(prev_fitness_ - result.fitness_) <
+                std::abs(prev_fitness - result.fitness_) <
                         criterias[i].relative_fitness_ &&
-                std::abs(prev_inliner_rmse_ - result.inlier_rmse_) <
+                std::abs(prev_inlier_rmse - result.inlier_rmse_) <
                         criterias[i].relative_rmse_) {
                 break;
             }
+
+            prev_fitness = result.fitness_;
+            prev_inlier_rmse = result.inlier_rmse_;
         }
     }
     return result;

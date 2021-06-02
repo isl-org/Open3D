@@ -48,16 +48,17 @@ public:
         PYBIND11_OVERLOAD_PURE(TransformationEstimationType,
                                TransformationEstimationBase, void);
     }
-    double ComputeRMSE(const t::geometry::PointCloud &source,
-                       const t::geometry::PointCloud &target,
-                       const CorrespondenceSet &correspondences) const {
-        PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase, source,
-                               target, correspondences);
-    }
-    core::Tensor ComputeTransformation(
-            const t::geometry::PointCloud &source,
-            const t::geometry::PointCloud &target,
-            const CorrespondenceSet &correspondences) const {
+    //     double ComputeRMSE(const t::geometry::PointCloud &source,
+    //                        const t::geometry::PointCloud &target,
+    //                        const core::Tensor &correspondences) const {
+    //         PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase,
+    //         source,
+    //                                target, correspondences);
+    //     }
+    core::Tensor ComputeTransformation(const t::geometry::PointCloud &source,
+                                       const t::geometry::PointCloud &target,
+                                       const core::Tensor &correspondences,
+                                       int &inlier_count) const {
         PYBIND11_OVERLOAD_PURE(core::Tensor, TransformationEstimationBase,
                                source, target, correspondences);
     }
@@ -107,16 +108,8 @@ void pybind_registration_classes(py::module &m) {
                            &RegistrationResult::transformation_,
                            "``4 x 4`` float64 tensor on CPU: The estimated "
                            "transformation matrix.")
-            .def_readwrite(
-                    "correspondence_set",
-                    &RegistrationResult::correspondence_set_,
-                    "Correspondence set between source and target point cloud. "
-                    "It is a pair of ``Int64`` ``{C,}`` tensor, where C is "
-                    "the number of good correspondences between source and "
-                    "target pointcloud. The first tensor is the source "
-                    "indices, and the second tensor is corresponding target "
-                    "indices. Such that, source[correspondence.first] and "
-                    "target[correspondence.second] is a correspondence pair.")
+            .def_readwrite("correspondence_set",
+                           &RegistrationResult::correspondences_, "TODO.")
             .def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_,
                            "float: RMSE of all inlier correspondences. Lower "
                            "is better.")
@@ -130,7 +123,7 @@ void pybind_registration_classes(py::module &m) {
                         "inlier_rmse={:e}, correspondences={:d}]."
                         "\nAccess transformation to get result.",
                         rr.fitness_, rr.inlier_rmse_,
-                        rr.correspondence_set_.second.GetLength());
+                        rr.fitness_ * rr.correspondences_.GetLength());
             });
 
     // open3d.t.pipelines.registration.TransformationEstimation
@@ -140,27 +133,29 @@ void pybind_registration_classes(py::module &m) {
                "Base class that estimates a transformation between two point "
                "clouds. The virtual function ComputeTransformation() must be "
                "implemented in subclasses.");
-    te.def("compute_rmse", &TransformationEstimation::ComputeRMSE, "source"_a,
-           "target"_a, "correspondences"_a,
-           "Compute RMSE between source and target points cloud given "
-           "correspondences.");
+    //     te.def("compute_rmse", &TransformationEstimation::ComputeRMSE,
+    //     "source"_a,
+    //            "target"_a, "correspondences"_a,
+    //            "Compute RMSE between source and target points cloud given "
+    //            "correspondences.");
     te.def("compute_transformation",
            &TransformationEstimation::ComputeTransformation, "source"_a,
-           "target"_a, "correspondences"_a,
+           "target"_a, "correspondences"_a, "inlier_count"_a,
            "Compute transformation from source to target point cloud given "
            "correspondences.");
-    docstring::ClassMethodDocInject(
-            m, "TransformationEstimation", "compute_rmse",
-            {{"source", "Source point cloud."},
-             {"target", "Target point cloud."},
-             {"correspondences",
-              "Correspondence set between source and target point cloud."}});
+    //     docstring::ClassMethodDocInject(
+    //             m, "TransformationEstimation", "compute_rmse",
+    //             {{"source", "Source point cloud."},
+    //              {"target", "Target point cloud."},
+    //              {"correspondences",
+    //               "Correspondence set between source and target point
+    //               cloud."}});
     docstring::ClassMethodDocInject(
             m, "TransformationEstimation", "compute_transformation",
             {{"source", "Source point cloud."},
              {"target", "Target point cloud."},
-             {"correspondences",
-              "Correspondence set between source and target point cloud."}});
+             {"correspondences", "TODO."},
+             {"inlier_count", "Number of valid correspondences."}});
 
     // open3d.t.pipelines.registration.TransformationEstimationPointToPoint
     // TransformationEstimation
