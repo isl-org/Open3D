@@ -61,7 +61,7 @@ public:
         inp_features = inp_features.contiguous();
         inp_importance = inp_importance.contiguous();
         neighbors_index = neighbors_index.contiguous();
-        neighbors_kernel_index = neighbors_index.contiguous();
+        neighbors_kernel_index = neighbors_kernel_index.contiguous();
         neighbors_importance = neighbors_importance.contiguous();
         neighbors_row_splits = neighbors_row_splits.contiguous();
 
@@ -86,7 +86,7 @@ public:
         // make sure that these are on the same device as the filters and feats
         auto device = inp_features.device();
         neighbors_index = neighbors_index.to(device);
-        neighbors_kernel_index = neighbors_index.to(device);
+        neighbors_kernel_index = neighbors_kernel_index.to(device);
         neighbors_importance = neighbors_importance.to(device);
         neighbors_row_splits = neighbors_row_splits.to(device);
 
@@ -131,9 +131,11 @@ public:
 
         TORCH_CHECK(false, "SparseConv does not support " +
                                    inp_features.toString() +
-                                   " as input for inp_features and " +
+                                   " as input for inp_features, and " +
                                    neighbors_index.toString() +
-                                   " as input for neighbors_index")
+                                   " as input for neighbors_index, and " +
+                                   neighbors_kernel_index.toString() + 
+                                   " as input for neighbors_kernel_indexcgcgcc")
         return torch::Tensor();
     }
 
@@ -179,7 +181,7 @@ public:
                                                                               \
         torch::Tensor inv_neighbors_index, inv_neighbors_row_splits,          \
                 inv_neighbors_importance, inv_arange;                         \
-        torch::Tensor arange = torch::arange(neighbors_index.size(0));        \
+        torch::Tensor arange = torch::arange(neighbors_index.size(0),torch::device(device) );        \
         std::tie(inv_neighbors_index, inv_neighbors_row_splits, inv_arange) = \
                 InvertNeighborsList(inp_features.size(0), neighbors_index,    \
                                     neighbors_row_splits, arange);            \
@@ -189,18 +191,21 @@ public:
             inv_neighbors_importance =                                        \
                     neighbors_importance.index(inv_arange).contiguous();      \
         }                                                                     \
+        else { \
+            inv_neighbors_importance = torch::empty({0},torch::dtype(feat_dtype).device(device)); \
+        }\
                                                                               \
         auto neighbors_importance_sum = ReduceSubarraysSum(                   \
                 neighbors_importance, neighbors_row_splits);                  \
         inp_features_backprop =                                               \
                 torch::ones(inp_features.sizes(),                             \
                             torch::dtype(feat_dtype).device(device));         \
-        auto filters_transposed = filters.transpose(3, 4).contiguous();       \
+        auto filters_transposed = filters.transpose(-2, -1).contiguous();       \
                                                                               \
         SparseConvTranspose##fn_suffix<feat_t, out_t, index_t,                \
                                        kernel_index_t>(                       \
                 filters_transposed, inp_importance, out_features_gradient,    \
-                neighbors_index, neighbors_importance_sum,                    \
+                neighbors_importance_sum,                    \
                 neighbors_row_splits, inv_neighbors_index,                    \
                 inv_neighbors_kernel_index, inv_neighbors_importance,         \
                 inv_neighbors_row_splits, normalize, max_temp_mem_MB,         \
@@ -214,18 +219,20 @@ public:
             CALL(float, float, int32_t, uint8_t, CUDA)
 #else
             TORCH_CHECK(false,
-                        "ContinuousConv backward was not compiled "
+                        "SparseConv backward was not compiled "
                         "with CUDA support")
 #endif
         } else {
             CALL(float, float, int32_t, uint8_t, CPU)
         }
         TORCH_CHECK(dispatch_success,
-                    "ContinuousConv backward does not support " +
+                    "SparseConv backward does not support " +
                             inp_features.toString() +
-                            " as input for inp_features and " +
+                            " as input for inp_features, and " +
                             neighbors_index.toString() +
-                            " as input for neighbors_index")
+                            " as input for neighbors_index, and " +
+                            neighbors_kernel_index.toString() +
+                            " as input for neighbors_kernel_index")
 
         return {filters_backprop, inp_features_backprop,
                 Variable(),       Variable(),

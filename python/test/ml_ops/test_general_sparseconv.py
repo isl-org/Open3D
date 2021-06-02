@@ -45,7 +45,7 @@ pytestmark = mltest.default_marks
                              (33,           3,           4,               False,                      True,              False),
                         ])
 # yapf: enable
-@mltest.parametrize.ml_tf_only
+@mltest.parametrize.ml
 @pytest.mark.parametrize('dtype', [np.float32])
 def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
                              with_inp_importance, with_neighbors_importance,
@@ -72,7 +72,7 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
     if (with_inp_importance):
         inp_importance = rng.random(num_inp).astype(dtype)
     else:
-        inp_importance = np.empty((0,))
+        inp_importance = np.empty((0,)).astype(dtype)
 
     neighbors_row_splits = np.zeros((num_out + 1,), dtype=np.int64)
 
@@ -82,7 +82,7 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
 
     neighbors_index = np.zeros((neighbors_row_splits[-1],), dtype=np.int32)
     neighbors_kernel_index = np.zeros((neighbors_row_splits[-1],),
-                                      dtype=np.int16)
+                                      dtype=np.uint8)
     for i in range(num_out):
         start = neighbors_row_splits[i]
         end = neighbors_row_splits[i + 1]
@@ -98,7 +98,6 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
         neighbors_index, neighbors_row_splits, arange)
 
     inv_neighbors_kernel_index = neighbors_kernel_index[inv_arange]
-
     if with_neighbors_importance:
         neighbors_importance = rng.random(
             neighbors_index.shape[0]).astype(dtype) - 0.5
@@ -143,15 +142,6 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
                                   neighbors_importance=neighbors_importance,
                                   neighbors_row_splits=neighbors_row_splits,
                                   **conv_attrs)
-        # x = tf.constant(filters)
-        # with tf.GradientTape() as tape:
-        # tape.watch(x)
-        # y = ml3d.ops.sparse_conv(x, inp_features, inp_importance,
-        # neighbors_index, neighbors_kernel_index,
-        # neighbors_importance, neighbors_row_splits,
-        # **conv_attrs)
-        # dy_dx = tape.gradient(y, x, out_features_gradient)
-        # return dy_dx.numpy()
 
     def sparse_conv_infeat_backprop(out_features_gradient, inp_features):
         return mltest.run_op_grad(ml,
@@ -169,15 +159,6 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
                                   neighbors_importance=neighbors_importance,
                                   neighbors_row_splits=neighbors_row_splits,
                                   **conv_attrs)
-        # x = tf.constant(inp_features)
-        # with tf.GradientTape() as tape:
-        # tape.watch(x)
-        # y = ml3d.ops.sparse_conv(filters, x, inp_importance,
-        # neighbors_index, neighbors_kernel_index,
-        # neighbors_importance, neighbors_row_splits,
-        # **conv_attrs)
-        # dy_dx = tape.gradient(y, x, out_features_gradient)
-        # return dy_dx.numpy()
 
     def sparse_conv_transpose_filter(filters):
         return mltest.run_op(ml, ml.device, True, ml.ops.sparse_conv_transpose,
@@ -217,18 +198,6 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
             neighbors_row_splits=inv_neighbors_row_splits,
             **conv_attrs)
 
-        # x = tf.constant(filters)
-        # with tf.GradientTape() as tape:
-        # tape.watch(x)
-        # y = ml3d.ops.sparse_conv_transpose(
-        # x, inp_importance, y_arr, neighbors_index,
-        # neighbors_importance_sum, neighbors_row_splits,
-        # inv_neighbors_index, inv_neighbors_kernel_index,
-        # inv_neighbors_importance, inv_neighbors_row_splits,
-        # **conv_attrs)
-        # dy_dx = tape.gradient(y, x, out_features_gradient)
-        # return dy_dx.numpy()
-
     def sparse_conv_transpose_infeat_backprop(out_features_gradient,
                                               inp_features):
         return mltest.run_op_grad(
@@ -250,18 +219,6 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
             neighbors_importance=inv_neighbors_importance,
             neighbors_row_splits=inv_neighbors_row_splits,
             **conv_attrs)
-
-        # x = tf.constant(inp_features)
-        # with tf.GradientTape() as tape:
-        # tape.watch(x)
-        # y = ml3d.ops.sparse_conv_transpose(
-        # filters.transpose([0, 2, 1]), inp_importance, x,
-        # neighbors_index, neighbors_importance_sum, neighbors_row_splits,
-        # inv_neighbors_index, inv_neighbors_kernel_index,
-        # inv_neighbors_importance, inv_neighbors_row_splits,
-        # **conv_attrs)
-        # dy_dx = tape.gradient(y, x, out_features_gradient)
-        # return dy_dx.numpy()
 
     y_arr = sparse_conv_infeats(inp_features)
 

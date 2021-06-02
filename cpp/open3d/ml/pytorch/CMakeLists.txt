@@ -63,6 +63,7 @@ set(TORCH_OPS_CUDA_SOURCES
     "misc/RaggedToDenseOpKernel.cu"
     "misc/VoxelizeOpKernel.cu"
     "../impl/continuous_conv/ContinuousConvCUDAKernels.cu"
+    "../impl/sparse_conv/SparseConvCUDAKernels.cu"
     "../contrib/Nms.cu"
     "../contrib/RoiPoolKernel.cu"
     "../contrib/BallQuery.cu"
