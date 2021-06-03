@@ -29,18 +29,25 @@
 #define OPEN3D_CONCATENATE_IMPL(s1, s2) s1##s2
 #define OPEN3D_CONCATENATE(s1, s2) OPEN3D_CONCATENATE_IMPL(s1, s2)
 
+// https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define OPEN3D_DLL_IMPORT __declspec(dllimport)
 #define OPEN3D_DLL_EXPORT __declspec(dllexport)
+#define OPEN3D_DLL_LOCAL
 #else
-#define OPEN3D_DLL_IMPORT
-#define OPEN3D_DLL_EXPORT
+#define OPEN3D_DLL_IMPORT [[gnu::visibility("default")]]
+#define OPEN3D_DLL_EXPORT [[gnu::visibility("default")]]
+#define OPEN3D_DLL_LOCAL [[gnu::visibility("hidden")]]
 #endif
 
 #ifdef OPEN3D_STATIC
 #define OPEN3D_API
-#elif defined(OPEN3D_ENABLE_DLL_EXPORTS)
+#define OPEN3D_LOCAL
+#else
+#define OPEN3D_LOCAL OPEN3D_DLL_LOCAL
+#if defined(OPEN3D_ENABLE_DLL_EXPORTS)
 #define OPEN3D_API OPEN3D_DLL_EXPORT
 #else
 #define OPEN3D_API OPEN3D_DLL_IMPORT
+#endif
 #endif

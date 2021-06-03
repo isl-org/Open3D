@@ -307,8 +307,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         list(APPEND HARDENING_LDFLAGS -fsanitize=safe-stack)  # only static libraries supported
     endif()
     if(NOT DEVELOPER_BUILD)
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)     # Strip debug symbols
+        list(APPEND HARDENING_LDFLAGS -Wl,-S)     # Strip debug symbols
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
@@ -320,8 +319,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         # -pie Position independent execution is default on macOSX 10.6+
         CACHE STRING "Linker flags for security hardening")
     if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)
+        list(APPEND HARDENING_LDFLAGS -Wl,-S)
     endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
@@ -335,8 +333,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         -pie                 # Position independent executable
         CACHE STRING "Linker flags for security hardening")
     if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -strip-debug)
+        list(APPEND HARDENING_LDFLAGS -Wl,--strip-debug)
     endif()
 else()
     message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "
