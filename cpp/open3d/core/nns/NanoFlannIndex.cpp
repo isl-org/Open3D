@@ -232,45 +232,6 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     return result;
 };
 
-namespace {
-template <typename scalar_t>
-inline void HybridSearchKernel(
-        const Tensor &query_points,
-        int64_t *indices_ptr,
-        scalar_t *distances_ptr,
-        core::nns::NanoFlannIndexHolder<L2, scalar_t> *holder,
-        int64_t &num_query_points,
-        double radius_squared,
-        int max_knn) {
-    nanoflann::SearchParams params;
-#pragma omp parallel for schedule(static)
-    for (int workload_idx = 0; workload_idx < num_query_points;
-         ++workload_idx) {
-        std::vector<std::pair<int64_t, scalar_t>> ret_matches;
-        int64_t result_idx = workload_idx * max_knn;
-
-        size_t num_results = holder->index_->radiusSearch(
-                query_points[workload_idx].GetDataPtr<scalar_t>(),
-                radius_squared, ret_matches, params);
-        ret_matches.resize(num_results);
-
-        int neighbour_idx = 0;
-        for (auto it = ret_matches.begin();
-             it < ret_matches.end() && neighbour_idx < max_knn;
-             it++, neighbour_idx++) {
-            indices_ptr[result_idx + neighbour_idx] = it->first;
-            distances_ptr[result_idx + neighbour_idx] = it->second;
-        }
-
-        while (neighbour_idx < max_knn) {
-            indices_ptr[result_idx + neighbour_idx] = -1;
-            distances_ptr[result_idx + neighbour_idx] = 0;
-            neighbour_idx += 1;
-        }
-    }
-}
-}  // namespace
-
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
     query_points.AssertDtype(GetDtype());
@@ -301,9 +262,40 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
                 holder_.get());
 
-        HybridSearchKernel<scalar_t>(query_points, indices_ptr, distances_ptr,
-                                     holder, num_query_points, radius_squared,
-                                     max_knn);
+        nanoflann::SearchParams params;
+
+        // Parallel search.
+        tbb::parallel_for(
+                tbb::blocked_range<size_t>(0, num_query_points),
+                [&](const tbb::blocked_range<size_t> &r) {
+                    std::vector<std::pair<int64_t, scalar_t>> ret_matches;
+                    for (size_t workload_idx = r.begin();
+                         workload_idx != r.end(); ++workload_idx) {
+                        int64_t result_idx = workload_idx * max_knn;
+
+                        size_t num_results = holder->index_->radiusSearch(
+                                static_cast<scalar_t *>(
+                                        query_points[workload_idx]
+                                                .GetDataPtr()),
+                                radius_squared, ret_matches, params);
+                        ret_matches.resize(num_results);
+
+                        int neighbour_idx = 0;
+                        for (auto it = ret_matches.begin();
+                             it < ret_matches.end() && neighbour_idx < max_knn;
+                             it++, neighbour_idx++) {
+                            indices_ptr[result_idx + neighbour_idx] = it->first;
+                            distances_ptr[result_idx + neighbour_idx] =
+                                    it->second;
+                        }
+
+                        while (neighbour_idx < max_knn) {
+                            indices_ptr[result_idx + neighbour_idx] = -1;
+                            distances_ptr[result_idx + neighbour_idx] = 0;
+                            neighbour_idx += 1;
+                        }
+                    }
+                });
     });
     return std::make_pair(indices, distances);
 }
