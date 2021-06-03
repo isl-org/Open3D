@@ -117,10 +117,10 @@ void pybind_registration_classes(py::module &m) {
             .def_readwrite("inlier_rmse", &RegistrationResult::inlier_rmse_,
                            "float: RMSE of all inlier correspondences. Lower "
                            "is better.")
-            .def_readwrite(
-                    "fitness", &RegistrationResult::fitness_,
-                    "float: The overlapping area (# of inlier correspondences "
-                    "/ # of points in target). Higher is better.")
+            .def_readwrite("fitness", &RegistrationResult::fitness_,
+                           "float: The overlapping area (# of inlier "
+                           "correspondences "
+                           "/ # of points in target). Higher is better.")
             .def("__repr__", [](const RegistrationResult &rr) {
                 return fmt::format(
                         "RegistrationResult[fitness_={:e}, "
@@ -134,8 +134,10 @@ void pybind_registration_classes(py::module &m) {
     py::class_<TransformationEstimation,
                PyTransformationEstimation<TransformationEstimation>>
             te(m, "TransformationEstimation",
-               "Base class that estimates a transformation between two point "
-               "clouds. The virtual function ComputeTransformation() must be "
+               "Base class that estimates a transformation between two "
+               "point "
+               "clouds. The virtual function ComputeTransformation() must "
+               "be "
                "implemented in subclasses.");
     te.def("compute_rmse", &TransformationEstimation::ComputeRMSE, "source"_a,
            "target"_a, "correspondences"_a,
@@ -146,23 +148,29 @@ void pybind_registration_classes(py::module &m) {
            "target"_a, "correspondences"_a, "inlier_count"_a,
            "Compute transformation from source to target point cloud given "
            "correspondences.");
-    docstring::ClassMethodDocInject(
-            m, "TransformationEstimation", "compute_rmse",
-            {{"source", "Source point cloud."},
-             {"target", "Target point cloud."},
-             {"correspondences",
-              "Tensor of type Int64 containing indices of corresponding target "
-              "points, where the value is the target index and the index of "
-              "the value itself is the source index. It contains -1 as value "
-              "at index with no correspondence."}});
+    docstring::ClassMethodDocInject(m, "TransformationEstimation",
+                                    "compute_rmse",
+                                    {{"source", "Source point cloud."},
+                                     {"target", "Target point cloud."},
+                                     {"correspondences",
+                                      "Tensor of type Int64 containing "
+                                      "indices of corresponding target "
+                                      "points, where the value is the "
+                                      "target index and the index of "
+                                      "the value itself is the source "
+                                      "index. It contains -1 as value "
+                                      "at index with no correspondence."}});
     docstring::ClassMethodDocInject(
             m, "TransformationEstimation", "compute_transformation",
             {{"source", "Source point cloud."},
              {"target", "Target point cloud."},
              {"correspondences",
-              "Tensor of type Int64 containing indices of corresponding target "
-              "points, where the value is the target index and the index of "
-              "the value itself is the source index. It contains -1 as value "
+              "Tensor of type Int64 containing indices of corresponding "
+              "target "
+              "points, where the value is the target index and the index "
+              "of "
+              "the value itself is the source index. It contains -1 as "
+              "value "
               "at index with no correspondence."},
              {"inlier_count", "Number of valid correspondences."}});
 
