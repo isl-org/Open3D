@@ -47,8 +47,8 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         double max_correspondence_distance,
         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
+    core::Dtype dtype = source.GetPoints().GetDtype();
+
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
         utility::LogError(
@@ -62,44 +62,34 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
 
     RegistrationResult result(transformation_host);
     if (max_correspondence_distance <= 0.0) {
-        return result;
+        utility::LogError(
+                "Max correspondence distance must be a positive value.");
     }
 
     bool check = target_nns.HybridIndex(max_correspondence_distance);
     if (!check) {
-        utility::LogError(
-                "[Tensor: EvaluateRegistration: "
-                "GetRegistrationResultAndCorrespondences: "
-                "NearestNeighborSearch::HybridSearch] "
-                "Index is not set.");
+        utility::LogError("HybridSearch Index is not set.");
     }
 
     core::Tensor distances;
     std::tie(result.correspondences_, distances) = target_nns.HybridSearch(
             source.GetPoints(), max_correspondence_distance, 1);
 
-    core::Tensor valid = result.correspondences_.Ne(-1).Reshape({-1});
-    // correpondence_set : (i, corres[i]).
-    // source[i] and target[corres[i]] is a correspondence.
-
-    core::Tensor source_indices =
-            core::Tensor::Arange(0, source.GetPoints().GetShape()[0], 1,
-                                 core::Dtype::Int64, device)
-                    .IndexGet({valid});
-    // Only take valid indices.
-    result.correspondences_ =
-            result.correspondences_.IndexGet({valid}).Reshape({-1});
-
-    // Number of good correspondences (C).
-    int num_correspondences = source_indices.GetLength();
+    // Counting the numbers of non -1 values in the correspondence
+    // tensor returned by NNS.
+    double num_correspondences =
+            static_cast<double>(result.correspondences_.Ne(-1)
+                                        .To(core::Dtype::Int32)
+                                        .Sum({0})
+                                        .Item<int>());
 
     // Reduction sum of "distances" for error.
     double squared_error =
-            static_cast<double>(distances.Sum({0}).Item<float>());
-    result.fitness_ = static_cast<double>(num_correspondences) /
+            distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
+
+    result.fitness_ = num_correspondences /
                       static_cast<double>(source.GetPoints().GetLength());
-    result.inlier_rmse_ =
-            std::sqrt(squared_error / static_cast<double>(num_correspondences));
+    result.inlier_rmse_ = std::sqrt(squared_error / num_correspondences);
 
     return result;
 }
@@ -110,14 +100,6 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                                         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = source.GetPoints().GetDtype();
-
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
-    transformation.AssertShape({4, 4});
 
     geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation.To(device, dtype));
@@ -302,34 +284,17 @@ RegistrationResult RegistrationMultiScaleICP(
 
         // To calculate the `fitness` and `inlier_rmse` for the current
         // `transformation` stored in `result`.
-        // NOTE FOR DEVELOPERS:
-        // For extremely performance crucial applications, developers may
-        // comment out this section, to avoid extra computation for getting the
-        // latest `fitness` and `inlier_rmse` stored in the result.
         if (i == num_iterations - 1) {
-            result.transformation_ = transformation;
-
-            core::Tensor distances;
-            std::tie(result.correspondences_, distances) =
-                    target_nns.HybridSearch(source_down_pyramid[i].GetPoints(),
-                                            max_correspondence_distances[i], 1);
-            // Counting the numbers of non -1 values in the correspondence
-            // tensor returned by NNS.
-            double num_correspondences =
-                    static_cast<double>(result.correspondences_.Ne(-1)
-                                                .To(core::Dtype::Int32)
-                                                .Sum({0})
-                                                .Item<int>());
-            // Reduction sum of "distances" for error.
-            double squared_error =
-                    distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
-
-            result.fitness_ =
-                    num_correspondences /
-                    static_cast<double>(
-                            source_down_pyramid[i].GetPoints().GetLength());
-            result.inlier_rmse_ =
-                    std::sqrt(squared_error / num_correspondences);
+            // ################################################################
+            // NOTE FOR DEVELOPERS:
+            // For performance crucial applications, developers may remove the
+            // following section, to avoid extra computation for getting the
+            // latest `fitness` and `inlier_rmse` stored in the result.
+            // ################################################################
+			
+            result = GetRegistrationResultAndCorrespondences(
+                    source_down_pyramid[i], target_down_pyramid[i], target_nns,
+                    max_correspondence_distances[i], transformation);
         }
     }
     // ---- Iterating over different resolution scale END ---------------------
