@@ -321,7 +321,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         CACHE STRING "Linker flags for security hardening")
     if(NOT DEVELOPER_BUILD)     # Strip debug symbols
         list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)
+        # list(APPEND HARDENING_LDFLAGS -S) # Causing link error for EncodeShader
     endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
