@@ -1221,6 +1221,9 @@ struct O3DVisualizer::Impl {
     }
 
     void SetShader(O3DVisualizer::Shader shader) {
+        // Don't force material override if no change
+        if (ui_state_.scene_shader == shader) return;
+
         ui_state_.scene_shader = shader;
         for (auto &o : objects_) {
             OverrideMaterial(o.name, o.material, shader);
@@ -1237,11 +1240,11 @@ struct O3DVisualizer::Impl {
         // unlit mode so that we can keep the wide lines.
         if (shader == Shader::STANDARD ||
             (shader == Shader::UNLIT && is_lines)) {
-            scene->GetScene()->OverrideMaterial(name, original_material);
+            scene->ModifyGeometryMaterial(name, original_material);
         } else {
             Material m = original_material;
             m.shader = GetShaderString(shader);
-            scene->GetScene()->OverrideMaterial(name, m);
+            scene->ModifyGeometryMaterial(name, m);
         }
     }
 

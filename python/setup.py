@@ -25,6 +25,7 @@
 # ----------------------------------------------------------------------------
 
 from setuptools import setup, find_packages
+from setuptools.command.install import install as _install
 import os
 import glob
 import ctypes
@@ -98,6 +99,20 @@ except ImportError:
         'Warning: cannot import "wheel" package to build platform-specific wheel'
     )
     print('Install the "wheel" package to fix this warning')
+
+
+# Force use of "platlib" dir for auditwheel to recognize this is a non-pure
+# build
+# http://lxr.yanyahua.com/source/llvmlite/setup.py
+class install(_install):
+
+    def finalize_options(self):
+        _install.finalize_options(self)
+        self.install_libbase = self.install_platlib
+        self.install_lib = self.install_platlib
+
+
+cmdclass['install'] = install
 
 # Read requirements.
 with open('requirements.txt', 'r') as f:
