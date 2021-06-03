@@ -31,9 +31,6 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
-#include "open3d/utility/Timer.h"
-
-#define LOG(msg) utility::LogInfo(" DEBUG: {}", msg)
 
 namespace open3d {
 namespace t {
@@ -282,16 +279,9 @@ RegistrationResult RegistrationMultiScaleICP(
         }
         // ---- ICP iterations END --------------------------------------------
 
-        // To calculate the `fitness` and `inlier_rmse` for the current
+        // To calculate final `fitness` and `inlier_rmse` for the current
         // `transformation` stored in `result`.
         if (i == num_iterations - 1) {
-            // ################################################################
-            // NOTE FOR DEVELOPERS:
-            // For performance crucial applications, developers may remove the
-            // following section, to avoid extra computation for getting the
-            // latest `fitness` and `inlier_rmse` stored in the result.
-            // ################################################################
-			
             result = GetRegistrationResultAndCorrespondences(
                     source_down_pyramid[i], target_down_pyramid[i], target_nns,
                     max_correspondence_distances[i], transformation);
