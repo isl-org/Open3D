@@ -241,7 +241,11 @@ inline void HybridSearchKernel(
         core::nns::NanoFlannIndexHolder<L2, scalar_t> *holder,
         int64_t &num_query_points,
         double radius_squared,
-        int max_knn) {}
+        int max_knn) {
+    utility::LogError(
+            "Only Float32 and Float64 dtypes are supported, but got {}.",
+            query_points.GetDtype());
+}
 
 template <>
 inline void HybridSearchKernel<float>(
