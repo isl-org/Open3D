@@ -232,17 +232,19 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     return result;
 };
 
+namespace {
 template <typename scalar_t>
-void HybridSearchKernel(const Tensor &query_points,
-                        int64_t *indices_ptr,
-                        scalar_t *distances_ptr,
-                        core::nns::NanoFlannIndexHolder<L2, scalar_t> *holder,
-                        int64_t &num_query_points,
-                        double radius_squared,
-                        int max_knn) {}
+inline void HybridSearchKernel(
+        const Tensor &query_points,
+        int64_t *indices_ptr,
+        scalar_t *distances_ptr,
+        core::nns::NanoFlannIndexHolder<L2, scalar_t> *holder,
+        int64_t &num_query_points,
+        double radius_squared,
+        int max_knn) {}
 
 template <>
-void HybridSearchKernel<float>(
+inline void HybridSearchKernel<float>(
         const Tensor &query_points,
         int64_t *indices_ptr,
         float *distances_ptr,
@@ -279,7 +281,7 @@ void HybridSearchKernel<float>(
 }
 
 template <>
-void HybridSearchKernel<double>(
+inline void HybridSearchKernel<double>(
         const Tensor &query_points,
         int64_t *indices_ptr,
         double *distances_ptr,
@@ -314,6 +316,7 @@ void HybridSearchKernel<double>(
         }
     }
 }
+}  // namespace
 
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {

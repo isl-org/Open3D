@@ -68,7 +68,7 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
                      workload_idx++) {
 #else
     float *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(dynamic)
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(auto)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     float J_ij[6];
@@ -117,7 +117,7 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<float> a, std::vector<float> b) {
+            [&](std::vector<float> &a, std::vector<float> &b) {
                 std::vector<float> result(29);
                 for (int j = 0; j < 29; j++) {
                     result[j] = a[j] + b[j];
@@ -149,7 +149,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
                      workload_idx++) {
 #else
     double *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(dynamic)
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(auto)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     double J_ij[6];
@@ -198,7 +198,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<double> a, std::vector<double> b) {
+            [&](std::vector<double> &a, std::vector<double> &b) {
                 std::vector<double> result(29);
                 for (int j = 0; j < 29; j++) {
                     result[j] = a[j] + b[j];

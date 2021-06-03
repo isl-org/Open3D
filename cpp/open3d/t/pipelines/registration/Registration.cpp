@@ -31,6 +31,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Timer.h"
 
 #define LOG(msg) utility::LogInfo(" DEBUG: {}", msg)
 
@@ -163,6 +164,11 @@ RegistrationResult RegistrationMultiScaleICP(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
+    if (dtype == core::Dtype::Float64 &&
+        device.GetType() == core::Device::DeviceType::CUDA) {
+        utility::LogDebug("Use Float32 pointcloud for best performance.");
+    }
+
     if (!(criterias.size() == voxel_sizes.size() &&
           criterias.size() == max_correspondence_distances.size())) {
         utility::LogError(
@@ -299,7 +305,7 @@ RegistrationResult RegistrationMultiScaleICP(
         // NOTE FOR DEVELOPERS:
         // For extremely performance crucial applications, developers may
         // comment out this section, to avoid extra computation for getting the
-        // latest `fitness` and `inlier_rmse` stored in result.
+        // latest `fitness` and `inlier_rmse` stored in the result.
         if (i == num_iterations - 1) {
             result.transformation_ = transformation;
 

@@ -27,6 +27,7 @@
 #include "open3d/t/pipelines/kernel/ComputeTransform.h"
 
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -68,6 +69,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     } else {
         utility::LogError("Unimplemented device.");
     }
+
     return pose;
 }
 

@@ -32,6 +32,7 @@
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -73,25 +74,27 @@ __global__ void ComputePosePointToPlaneCUDAKernel<float>(
 
     if (workload_idx >= n) return;
 
-    float J[6] = {0}, reduction[21 + 6 + 2];
+    float J[6] = {0}, reduction[29] = {0};
     float r = 0;
 
     bool valid = GetJacobianPointToPlane<float>(
             workload_idx, source_points_ptr, target_points_ptr,
             target_normals_ptr, correspondences_second, J, r);
 
-    // Dump J, r into JtJ and Jtr
-    int offset = 0;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j <= i; ++j) {
-            reduction[offset++] = J[i] * J[j];
+    if (valid) {
+        // Dump J, r into JtJ and Jtr
+        int offset = 0;
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j <= i; ++j) {
+                reduction[offset++] = J[i] * J[j];
+            }
         }
+        for (int i = 0; i < 6; ++i) {
+            reduction[offset++] = J[i] * r;
+        }
+        reduction[offset++] = r * r;
+        reduction[offset++] = valid;
     }
-    for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * r;
-    }
-    reduction[offset++] = r * r;
-    reduction[offset++] = valid;
 
     ReduceSum6x6LinearSystem<float, kThread1DUnit>(tid, valid, reduction,
                                                    local_sum0, local_sum1,
@@ -120,25 +123,27 @@ __global__ void ComputePosePointToPlaneCUDAKernel<double>(
 
     if (workload_idx >= n) return;
 
-    double J[6] = {0}, reduction[21 + 6 + 2];
+    double J[6] = {0}, reduction[29] = {0};
     double r = 0;
 
     bool valid = GetJacobianPointToPlane<double>(
             workload_idx, source_points_ptr, target_points_ptr,
             target_normals_ptr, correspondences_second, J, r);
 
-    // Dump J, r into JtJ and Jtr
-    int offset = 0;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j <= i; ++j) {
-            reduction[offset++] = J[i] * J[j];
+    if (valid) {
+        // Dump J, r into JtJ and Jtr
+        int offset = 0;
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j <= i; ++j) {
+                reduction[offset++] = J[i] * J[j];
+            }
         }
+        for (int i = 0; i < 6; ++i) {
+            reduction[offset++] = J[i] * r;
+        }
+        reduction[offset++] = r * r;
+        reduction[offset++] = valid;
     }
-    for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * r;
-    }
-    reduction[offset++] = r * r;
-    reduction[offset++] = valid;
 
     ReduceSum6x6LinearSystem<double, kThread1DUnit>(tid, valid, reduction,
                                                     local_sum0, local_sum1,
