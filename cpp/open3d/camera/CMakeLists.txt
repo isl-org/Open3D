@@ -1,12 +1,11 @@
-# build
-set(ALL_SOURCE_FILES
-    PinholeCameraTrajectory.cpp
-    PinholeCameraParameters.cpp
-    PinholeCameraIntrinsic.cpp
-    )
+add_library(camera OBJECT)
 
-# create object library
-add_library(camera OBJECT ${ALL_SOURCE_FILES})
+target_sources(camera PRIVATE
+    PinholeCameraIntrinsic.cpp
+    PinholeCameraParameters.cpp
+    PinholeCameraTrajectory.cpp
+)
+
 open3d_show_and_abort_on_warning(camera)
 open3d_set_global_properties(camera)
 open3d_set_open3d_lib_properties(camera)
