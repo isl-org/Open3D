@@ -583,7 +583,7 @@ function(open3d_set_global_properties target)
         )
         if(MSVC)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
-            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc /wd4996>)
+            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
             # Multi-thread compile, two ways to enable
             # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
@@ -602,10 +602,8 @@ function(open3d_set_global_properties target)
         endif()
     elseif(APPLE)
         target_compile_definitions(${target} PRIVATE UNIX APPLE)
-        target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations")
     elseif(UNIX)
         target_compile_definitions(${target} PRIVATE UNIX)
-        target_compile_options(${target} PRIVATE "-Wno-deprecated-declarations" "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-result>")
     endif()
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>")
 

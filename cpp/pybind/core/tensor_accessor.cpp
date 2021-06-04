@@ -108,7 +108,7 @@ static TensorKey ToTensorKey(const Tensor& key_tensor) {
 static TensorKey PyHandleToTensorKey(const py::handle& item) {
     // Infer types from type name and dynamic casting.
     // See: https://github.com/pybind/pybind11/issues/84.
-    std::string class_name(item.get_type().str());
+    std::string class_name(py::str(item.get_type()));
     if (class_name == "<class 'int'>") {
         return ToTensorKey(static_cast<int64_t>(item.cast<py::int_>()));
     } else if (class_name == "<class 'slice'>") {
