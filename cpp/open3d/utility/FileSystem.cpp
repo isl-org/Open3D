@@ -103,7 +103,8 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 
 std::string GetWorkingDirectory() {
     char buff[PATH_MAX + 1];
-    getcwd(buff, PATH_MAX + 1);
+    auto ignored = getcwd(buff, PATH_MAX + 1);
+    (void)ignored;
     return std::string(buff);
 }
 

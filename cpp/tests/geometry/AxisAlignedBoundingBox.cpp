@@ -252,12 +252,12 @@ TEST_P(IsEmptyTests, CheckBoxEmpty) {
     EXPECT_EQ(std::get<2>(GetParam()), box.IsEmpty());
 }
 
-INSTANTIATE_TEST_CASE_P(AABBTests,
-                        IsEmptyTests,
-                        Values(emp_t{{4, 2, 3}, {4, 5, 6}, true},
-                               emp_t{{1, 5, 3}, {4, 5, 6}, true},
-                               emp_t{{1, 2, 6}, {4, 5, 6}, true},
-                               emp_t{{1, 2, 3}, {4, 5, 6}, false}));
+INSTANTIATE_TEST_SUITE_P(AABBTests,
+                         IsEmptyTests,
+                         Values(emp_t{{4, 2, 3}, {4, 5, 6}, true},
+                                emp_t{{1, 5, 3}, {4, 5, 6}, true},
+                                emp_t{{1, 2, 6}, {4, 5, 6}, true},
+                                emp_t{{1, 2, 3}, {4, 5, 6}, false}));
 
 // Get Max Extent
 class MaxExtentTests : public TestWithParam<dbl_t> {};
@@ -268,11 +268,11 @@ TEST_P(MaxExtentTests, CheckMaxExtent) {
     EXPECT_DOUBLE_EQ(std::get<2>(GetParam()), box.GetMaxExtent());
 }
 
-INSTANTIATE_TEST_CASE_P(AABBTests,
-                        MaxExtentTests,
-                        Values(dbl_t{{-1, -2, -3}, {1, 2, 10}, 13},
-                               dbl_t{{-1, -2, -3}, {10, 2, 3}, 11},
-                               dbl_t{{-1, -2, -3}, {1, 10, 3}, 12}));
+INSTANTIATE_TEST_SUITE_P(AABBTests,
+                         MaxExtentTests,
+                         Values(dbl_t{{-1, -2, -3}, {1, 2, 10}, 13},
+                                dbl_t{{-1, -2, -3}, {10, 2, 3}, 11},
+                                dbl_t{{-1, -2, -3}, {1, 10, 3}, 12}));
 
 // Volume
 class VolumeTests : public TestWithParam<dbl_t> {};
@@ -283,13 +283,13 @@ TEST_P(VolumeTests, CheckMaxExtent) {
     EXPECT_DOUBLE_EQ(std::get<2>(GetParam()), box.Volume());
 }
 
-INSTANTIATE_TEST_CASE_P(AABBTests,
-                        VolumeTests,
-                        Values(dbl_t{{-1, -2, -3}, {1, 2, 3}, 2 * 4 * 6},
-                               dbl_t{{0, 0, 0}, {1, 1, 1}, 1},
-                               dbl_t{{0, 0, 0}, {3, 1, 1}, 3},
-                               dbl_t{{0, 0, 0}, {1, 4, 1}, 4},
-                               dbl_t{{0, 0, 0}, {1, 1, 5}, 5}));
+INSTANTIATE_TEST_SUITE_P(AABBTests,
+                         VolumeTests,
+                         Values(dbl_t{{-1, -2, -3}, {1, 2, 3}, 2 * 4 * 6},
+                                dbl_t{{0, 0, 0}, {1, 1, 1}, 1},
+                                dbl_t{{0, 0, 0}, {3, 1, 1}, 3},
+                                dbl_t{{0, 0, 0}, {1, 4, 1}, 4},
+                                dbl_t{{0, 0, 0}, {1, 1, 5}, 5}));
 
 }  // namespace tests
 }  // namespace open3d
