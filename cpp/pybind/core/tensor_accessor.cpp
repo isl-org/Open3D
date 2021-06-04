@@ -134,6 +134,10 @@ static TensorKey PyHandleToTensorKey(const py::handle& item) {
 }
 
 static void pybind_getitem(py::class_<Tensor>& tensor) {
+    tensor.def("__getitem__", [](const Tensor& tensor, bool key) {
+        return tensor.GetItem(ToTensorKey(Tensor::Init(key)));
+    });
+
     tensor.def("__getitem__", [](const Tensor& tensor, int key) {
         return tensor.GetItem(ToTensorKey(key));
     });
@@ -172,6 +176,14 @@ static void pybind_getitem(py::class_<Tensor>& tensor) {
 }
 
 static void pybind_setitem(py::class_<Tensor>& tensor) {
+    tensor.def("__setitem__", [](Tensor& tensor, bool key,
+                                 const py::handle& value) {
+        return tensor.SetItem(
+                ToTensorKey(Tensor::Init(key)),
+                PyHandleToTensor(value, tensor.GetDtype(), tensor.GetDevice(),
+                                 /*force_copy=*/false));
+    });
+
     tensor.def("__setitem__", [](Tensor& tensor, int key,
                                  const py::handle& value) {
         return tensor.SetItem(

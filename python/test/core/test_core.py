@@ -821,6 +821,15 @@ def test_boolean_advanced_indexing(device):
     o3_y = o3_x[o3_row_sum <= 2, :]
     np.testing.assert_equal(np_y, o3_y.cpu().numpy())
 
+    o3_a = o3d.core.Tensor(5.2, device=device)
+    np_a = np.array(5.2)
+    o3_a[False] = 2.2
+    np_a[False] = 2.2
+    np.testing.assert_equal(np_a, o3_a.cpu().numpy())
+    o3_a[True] = 2.2
+    np_a[True] = 2.2
+    np.testing.assert_equal(np_a, o3_a.cpu().numpy())
+
     o3_a = o3d.core.Tensor(1, device=device)
     np_a = np.array(1)
     o3_i = o3d.core.Tensor(False, device=device)

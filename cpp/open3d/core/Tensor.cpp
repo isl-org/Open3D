@@ -720,6 +720,7 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
     AdvancedIndexPreprocessor aip(*this, index_tensors);
     Tensor dst = Tensor(aip.GetOutputShape(), dtype_, GetDevice());
+
     kernel::IndexGet(aip.GetTensor(), dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 
@@ -753,6 +754,7 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
 
     AdvancedIndexPreprocessor aip(*this, index_tensors);
     Tensor pre_processed_dst = aip.GetTensor();
+
     kernel::IndexSet(src_tensor, pre_processed_dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 }
