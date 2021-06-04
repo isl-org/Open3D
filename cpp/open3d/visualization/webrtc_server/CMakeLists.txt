@@ -1,14 +1,13 @@
-set(WEBRTC_STREAMER_SRC
+add_library(webrtc_server OBJECT)
+
+target_sources(webrtc_server PRIVATE
     BitmapTrackSource.cpp
-    ImageCapturer.cpp
     HttpServerRequestHandler.cpp
+    ImageCapturer.cpp
     PeerConnectionManager.cpp
     WebRTCWindowSystem.cpp
 )
 
-add_library(webrtc_server OBJECT
-    ${WEBRTC_STREAMER_SRC}
-)
 target_compile_definitions(webrtc_server PRIVATE
     $<$<PLATFORM_ID:Linux,Darwin>:WEBRTC_POSIX>
     $<$<PLATFORM_ID:Darwin>:WEBRTC_MAC>
@@ -23,6 +22,10 @@ open3d_set_global_properties(webrtc_server)
 open3d_set_open3d_lib_properties(webrtc_server)
 open3d_link_3rdparty_libraries(webrtc_server)
 
+
+if (NOT GUI_RESOURCE_DIR)
+    message(FATAL_ERROR "GUI_RESOURCE_DIR is not defined.")
+endif()
 message(STATUS "Copying ${CMAKE_CURRENT_SOURCE_DIR}/html to ${GUI_RESOURCE_DIR}.")
 file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
 

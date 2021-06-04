@@ -26,151 +26,57 @@ if (${PYTHON_VERSION_MAJOR} EQUAL 2)
             (3) add Python 3 to the PATH environment variable.")
 endif()
 
-set(PACKAGE_NAME pybind)
-
-set(PY_ALL_SOURCE_FILES
-    camera/camera.cpp
-    core/hashmap.cpp
-    core/tensor_converter.cpp
-    core/linalg.cpp
-    core/kernel.cpp
-    core/core.cpp
-    core/tensor_accessor.cpp
-    core/blob.cpp
-    core/device.cpp
-    core/size_vector.cpp
-    core/cuda_utils.cpp
-    core/tensor.cpp
-    core/scalar.cpp
-    core/nns/nearest_neighbor_search.cpp
-    core/dtype.cpp
-    docstring.cpp
-    geometry/pointcloud.cpp
-    geometry/trianglemesh.cpp
-    geometry/voxelgrid.cpp
-    geometry/tetramesh.cpp
-    geometry/geometry.cpp
-    geometry/image.cpp
-    geometry/keypoint.cpp
-    geometry/kdtreeflann.cpp
-    geometry/lineset.cpp
-    geometry/boundingvolume.cpp
-    geometry/octree.cpp
-    geometry/meshbase.cpp
-    geometry/halfedgetrianglemesh.cpp
-    io/io.cpp
-    io/class_io.cpp
-    ml/ml.cpp
-    ml/contrib/contrib.cpp
-    ml/contrib/iou.cpp
-    ml/contrib/contrib_subsample.cpp
-    ml/contrib/contrib_nns.cpp
-    open3d_pybind.cpp
-    pipelines/registration/registration.cpp
-    pipelines/registration/global_optimization.cpp
-    pipelines/registration/robust_kernels.cpp
-    pipelines/registration/feature.cpp
-    pipelines/pipelines.cpp
-    pipelines/integration/integration.cpp
-    pipelines/color_map/color_map.cpp
-    pipelines/odometry/odometry.cpp
-    pybind_utils.cpp
-    t/t.cpp
-    t/io/io.cpp
-    t/io/sensor.cpp
-    t/io/class_io.cpp
-    t/geometry/pointcloud.cpp
-    t/geometry/trianglemesh.cpp
-    t/geometry/geometry.cpp
-    t/geometry/image.cpp
-    t/geometry/tensormap.cpp
-    t/geometry/tsdf_voxelgrid.cpp
-    t/pipelines/pipelines.cpp
-    t/pipelines/slac/slac.cpp
-    t/pipelines/odometry/odometry.cpp
-    t/pipelines/registration/registration.cpp
-    utility/console.cpp
-    utility/eigen.cpp
-    utility/utility.cpp
-    visualization/visualizer.cpp
-    visualization/visualization.cpp
-    visualization/renderoption.cpp
-    visualization/viewcontrol.cpp
-    visualization/utility.cpp
-    )
-
-if (BUILD_GUI)
-    list(APPEND PY_ALL_SOURCE_FILES
-        visualization/gui/gui.cpp
-        visualization/gui/events.cpp
-        visualization/rendering/rendering.cpp
-        visualization/o3dvisualizer.cpp
-        )
-endif()
-
-if (BUILD_WEBRTC)
-    list(APPEND PY_ALL_SOURCE_FILES
-        visualization/webrtc_server/webrtc_window_system.cpp
-    )
-endif()
-
-if (BUILD_AZURE_KINECT)
-    list(APPEND PY_ALL_SOURCE_FILES io/sensor.cpp)
-endif()
-
-if (BUILD_RPC_INTERFACE)
-    list(APPEND PY_ALL_SOURCE_FILES io/rpc.cpp)
-endif()
 
 # NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
-if ( CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0" )
-    pybind11_add_module(${PACKAGE_NAME} NO_EXTRAS
-        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
-    )
-else ()
-    pybind11_add_module(${PACKAGE_NAME}
-        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
-    )
-endif ()
+if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0")
+    pybind11_add_module(pybind NO_EXTRAS)
+else()
+    pybind11_add_module(pybind)
+endif()
+
+add_subdirectory(camera)
+add_subdirectory(core)
+add_subdirectory(geometry)
+add_subdirectory(io)
+add_subdirectory(ml)
+add_subdirectory(pipelines)
+add_subdirectory(t)
+add_subdirectory(t/geometry)
+add_subdirectory(t/io)
+add_subdirectory(t/pipelines)
+add_subdirectory(utility)
+add_subdirectory(visualization)
+
+target_sources(pybind PRIVATE
+    docstring.cpp
+    open3d_pybind.cpp
+    pybind_utils.cpp
+)
 
 # Include with `#include "pybind/geometry/xxx.h`
-target_include_directories(${PACKAGE_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
+target_include_directories(pybind PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
 # Suppress Pybind11 warnings
-target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
+target_include_directories(pybind SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
-open3d_set_global_properties(${PACKAGE_NAME})
+open3d_set_global_properties(pybind)
 
-# The Python headers won't be included outside the project, so it is okay to
-# use the target_compile_definitions approach. Otherwise, use configure_file.
-if (BUILD_AZURE_KINECT)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_AZURE_KINECT)
-endif()
-if (BUILD_LIBREALSENSE)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_LIBREALSENSE)
-endif()
-if (BUILD_GUI)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_GUI)
-endif()
-if (WITH_FAISS)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE WITH_FAISS)
-endif()
-
-target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 if (WIN32)
-    target_link_options(${PACKAGE_NAME} PUBLIC "/force:multiple")
+    target_link_options(pybind PUBLIC "/force:multiple")
 endif()
+
+target_link_libraries(pybind PRIVATE Open3D::Open3D)
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
 # `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
 set(PYTHON_COMPILED_MODULE_DIR
     "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
-set_target_properties(${PACKAGE_NAME} PROPERTIES
+set_target_properties(pybind PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
                       ARCHIVE_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}")
@@ -194,12 +100,12 @@ message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 
 
 # add the open3d python module first
-set( COMPILED_MODULE_PATH_LIST $<TARGET_FILE:${PACKAGE_NAME}> )
+set(COMPILED_MODULE_PATH_LIST $<TARGET_FILE:pybind>)
 
 set(GENERATED_OUTPUTS "")
 
 # add additional optional compiled modules
-if ( BUILD_TENSORFLOW_OPS )
+if (BUILD_TENSORFLOW_OPS)
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
             COMMAND ${PYTHON_EXECUTABLE} generate_tf_ops_wrapper.py --input "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/tf/python/ops/ops.py.in" --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops>
@@ -210,10 +116,10 @@ if ( BUILD_TENSORFLOW_OPS )
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py")
     # find tensorflow to get some info for the _build_config.py
     find_package(Tensorflow)
-endif ()
+endif()
 
 # add additional optional compiled modules
-if ( BUILD_PYTORCH_OPS )
+if (BUILD_PYTORCH_OPS)
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
             COMMAND ${PYTHON_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow"
@@ -228,10 +134,9 @@ if ( BUILD_PYTORCH_OPS )
         COMMAND ${PYTHON_EXECUTABLE} "-c"
                 "import torch; print(torch.__version__, end='')"
         OUTPUT_VARIABLE Pytorch_VERSION)
-endif ()
+endif()
 
-if ( BUNDLE_OPEN3D_ML )
-
+if (BUNDLE_OPEN3D_ML)
     find_path(
         OPEN3D_ML_ROOT
         NAMES set_open3d_ml_root.sh
@@ -253,15 +158,15 @@ if ( BUNDLE_OPEN3D_ML )
         # do not install
         INSTALL_COMMAND ""
         )
-    list(APPEND GENERATED_OUTPUTS open3d_ml )
-endif ()
+    list(APPEND GENERATED_OUTPUTS open3d_ml)
+endif()
 
 configure_file("_build_config.py.in"
                "${CMAKE_BINARY_DIR}/lib/_build_config.py.in")
 file(GENERATE
     OUTPUT "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
     INPUT "${CMAKE_BINARY_DIR}/lib/_build_config.py.in"
-    )
+)
 
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
