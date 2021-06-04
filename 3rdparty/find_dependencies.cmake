@@ -104,6 +104,14 @@ function(build_3rdparty_library name)
         set_target_properties(${name} PROPERTIES
             OUTPUT_NAME "${PROJECT_NAME}_${name}"
         )
+        # Do not export symbols from 3rd party libraries outside the Open3D DSO.
+        if(NOT arg_PUBLIC AND NOT arg_HEADER AND NOT arg_VISIBLE)
+            set_target_properties(${name} PROPERTIES
+                CXX_VISIBILITY_PRESET hidden
+                C_VISIBILITY_PRESET hidden
+                VISIBILITY_INLINES_HIDDEN ON
+                )
+        endif()
         if(arg_LIBS)
             target_link_libraries(${name} PRIVATE ${arg_LIBS})
         endif()
@@ -122,14 +130,6 @@ function(build_3rdparty_library name)
         target_include_directories(${name} INTERFACE
             $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>
         )
-    endif()
-    # Do not export symbols from 3rd party libraries outside the Open3D DSO.
-    if(NOT arg_PUBLIC AND NOT arg_HEADER AND NOT arg_VISIBLE)
-        set_target_properties(${name} PROPERTIES
-            CXX_VISIBILITY_PRESET hidden
-            C_VISIBILITY_PRESET hidden
-            VISIBILITY_INLINES_HIDDEN ON
-            )
     endif()
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets
@@ -223,11 +223,6 @@ endfunction()
 #    HEADER
 #        the library headers belong to the public interface and will be
 #        installed, but the library is linked privately.
-#    HIDDEN
-#         Symbols from this library will not be exported to client code. This
-#         is the opposite of the VISIBLE option in build_3rdparty_library.
-#         Since this works only with the GNU linker, prefer hiding symbols
-#         during building 3rd party libraries.
 #    INCLUDE_DIRS
 #        the temporary location where the library headers have been installed.
 #        Trailing slashes have the same meaning as with install(DIRECTORY).
@@ -244,7 +239,7 @@ endfunction()
 #        CMAKE_ARCHIVE_OUTPUT_DIRECTORY.
 #
 function(import_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;HIDDEN" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
@@ -285,11 +280,6 @@ function(import_3rdparty_library name)
                     RENAME ${installed_library_filename}
                 )
                 target_link_libraries(${name} INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${installed_library_filename}>)
-            endif()
-            if (arg_HIDDEN AND NOT arg_PUBLIC AND NOT arg_HEADER)
-                target_link_libraries(${name} INTERFACE
-                    $<BUILD_INTERFACE:$<$<CXX_COMPILER_ID:GNU>:-Wl,--exclude-libs,${arg_LIB_DIR}/${library_filename}>>)
-                message(STATUS "${name}: $<BUILD_INTERFACE:$<$<CXX_COMPILER_ID:GNU>:-Wl,--exclude-libs,${arg_LIB_DIR}/${library_filename}>>")
             endif()
         endforeach()
     endif()
@@ -654,6 +644,7 @@ if(NOT USE_SYSTEM_PNG)
     import_3rdparty_library(3rdparty_zlib
         INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
         LIB_DIR      ${ZLIB_LIB_DIR}
+        LIBRARIES    ${ZLIB_LIBRARIES}
     )
     set(ZLIB_TARGET "3rdparty_zlib")
     add_dependencies(3rdparty_zlib ext_zlib)
@@ -1140,7 +1131,6 @@ else()
     # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
     message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
     import_3rdparty_library(3rdparty_mkl
-        HIDDEN
         INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
         LIB_DIR      ${STATIC_MKL_LIB_DIR}
         LIBRARIES    ${STATIC_MKL_LIBRARIES}
@@ -1222,7 +1212,6 @@ if (WITH_IPPICV)
         if (WITH_IPPICV)
             message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
             import_3rdparty_library(3rdparty_ippicv
-                HIDDEN
                 INCLUDE_DIRS "${IPPICV_INCLUDE_DIR}"
                 LIBRARIES     ${IPPICV_LIBRARIES}
                 LIB_DIR      "${IPPICV_LIB_DIR}"
