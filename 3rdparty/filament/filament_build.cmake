@@ -64,8 +64,5 @@ ExternalProject_Add(
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-        -DCMAKE_CXX_VISIBILITY_PRESET=hidden
-        -DCMAKE_C_VISIBILITY_PRESET=hidden
-        -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON
     BUILD_BYPRODUCTS ${lib_byproducts}
 )
