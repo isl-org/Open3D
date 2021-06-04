@@ -85,7 +85,7 @@ def test_compute_rmse_point_to_point(device):
         p2p_rmse = estimation_p2p.compute_rmse(source_t, target_t,
                                                correspondences)
 
-        np.testing.assert_allclose(p2p_rmse, 0.579129, 0.0001)
+        np.testing.assert_allclose(p2p_rmse, 0.706437, 0.0001)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -107,7 +107,7 @@ def test_compute_transformation_point_to_point(device):
         p2p_rmse = estimation_p2p.compute_rmse(source_transformed_p2p, target_t,
                                                correspondences)
 
-        np.testing.assert_allclose(p2p_rmse, 0.467302, 0.0001)
+        np.testing.assert_allclose(p2p_rmse, 0.578255, 0.0001)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -123,7 +123,7 @@ def test_compute_rmse_point_to_plane(device):
         p2l_rmse = estimation_p2l.compute_rmse(source_t, target_t,
                                                correspondences)
 
-        np.testing.assert_allclose(p2l_rmse, 0.24967, 0.0001)
+        np.testing.assert_allclose(p2l_rmse, 0.335499, 0.0001)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -146,4 +146,4 @@ def test_compute_transformation_point_to_plane(device):
         p2l_rmse = estimation_p2l.compute_rmse(source_transformed_p2l, target_t,
                                                correspondences)
 
-        np.testing.assert_allclose(p2l_rmse, 0.41425, 0.0001)
+        np.testing.assert_allclose(p2l_rmse, 0.601422, 0.0001)
