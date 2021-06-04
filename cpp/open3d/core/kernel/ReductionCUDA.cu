@@ -408,7 +408,7 @@ OPEN3D_DEVICE void StridedIterate(func_t f,
     }
 }
 
-/// Combime() and Reduce() are the same for regular reduction ops.
+/// Combine() and Reduce() are the same for regular reduction ops.
 template <typename out_scalar_t, typename func_t>
 class RegularReduceOps {
     using arg_t = typename BinaryFunctionTraits<func_t>::arg0_t;
