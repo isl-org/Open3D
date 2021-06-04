@@ -45,9 +45,9 @@ torch::Tensor ball_query(torch::Tensor xyz,
             torch::zeros({batch_size, ball_num, nsample},
                          torch::dtype(ToTorchDtype<int>()).device(device));
 
-    const float *center_data = center.data<float>();
-    const float *xyz_data = xyz.data<float>();
-    int *idx = out.data<int>();
+    const float *center_data = center.data_ptr<float>();
+    const float *xyz_data = xyz.data_ptr<float>();
+    int *idx = out.data_ptr<int>();
 
     ball_query_launcher(batch_size, pts_num, ball_num, radius, nsample,
                         center_data, xyz_data, idx);

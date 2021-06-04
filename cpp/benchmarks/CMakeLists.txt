@@ -1,3 +1,31 @@
+add_executable(benchmarks)
+
+add_subdirectory(core)
+add_subdirectory(geometry)
+add_subdirectory(io)
+add_subdirectory(pipelines)
+add_subdirectory(t/geometry)
+add_subdirectory(t/pipelines)
+
+target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
+target_compile_definitions(benchmarks PRIVATE BENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
+
+target_link_libraries(benchmarks PRIVATE Open3D::Open3D)
+open3d_show_and_abort_on_warning(benchmarks)
+open3d_set_global_properties(benchmarks)
+open3d_link_3rdparty_libraries(benchmarks)
+
+if (BUILD_CUDA_MODULE)
+    target_include_directories(benchmarks SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+endif()
+
+if (WITH_IPPICV)
+    target_compile_definitions(benchmarks PRIVATE IPP_CONDITIONAL_TEST_STR=) # Empty string (test not disabled)
+else()
+    target_compile_definitions(benchmarks PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
+endif()
+
+
 ################################################################################
 #
 # build benchmark dependency here so we can pass the _GLIBCXX_USE_CXX11_ABI
@@ -30,36 +58,5 @@ mark_as_advanced(
 )
 ################################################################################
 
+target_link_libraries(benchmarks PRIVATE benchmark::benchmark benchmark::benchmark_main)
 
-set(BENCHMARK_SOURCE_FILES
-    core/Hashmap.cpp
-    core/Reduction.cpp
-    core/Zeros.cpp
-    geometry/KDTreeFlann.cpp
-    geometry/SamplePoints.cpp
-    io/PointCloudIO.cpp
-    pipelines/registration/Registration.cpp
-    t/geometry/PointCloud.cpp
-    t/pipelines/odometry/RGBDOdometry.cpp
-    t/pipelines/registration/Registration.cpp
-)
-
-add_executable(benchmarks ${BENCHMARK_SOURCE_FILES})
-target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
-target_compile_definitions(benchmarks PRIVATE BENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
-
-target_link_libraries(benchmarks PRIVATE ${CMAKE_PROJECT_NAME} benchmark::benchmark benchmark::benchmark_main)
-open3d_show_and_abort_on_warning(benchmarks)
-open3d_set_global_properties(benchmarks)
-open3d_link_3rdparty_libraries(benchmarks)
-
-if (BUILD_CUDA_MODULE)
-    target_include_directories(benchmarks SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-endif()
-
-if (WITH_IPPICV)
-    target_compile_definitions(benchmarks PRIVATE WITH_IPPICV
-        IPP_CONDITIONAL_TEST_STR=) # Empty string (test not disabled)
-else()
-    target_compile_definitions(benchmarks PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
-endif()
