@@ -239,7 +239,7 @@ endfunction()
 #        CMAKE_ARCHIVE_OUTPUT_DIRECTORY.
 #
 function(import_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;HIDDEN" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
@@ -280,6 +280,10 @@ function(import_3rdparty_library name)
                     RENAME ${installed_library_filename}
                 )
                 target_link_libraries(${name} INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${installed_library_filename}>)
+            endif()
+            if (arg_HIDDEN AND NOT arg_PUBLIC AND NOT arg_HEADER)
+                target_link_options(${name} INTERFACE
+                    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:LINKER:--exclude-libs,${library_filename}>)
             endif()
         endforeach()
     endif()
@@ -642,6 +646,7 @@ endif()
 if(NOT USE_SYSTEM_PNG)
     include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
     import_3rdparty_library(3rdparty_zlib
+        HIDDEN
         INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
         LIB_DIR      ${ZLIB_LIB_DIR}
         LIBRARIES    ${ZLIB_LIBRARIES}
@@ -1054,6 +1059,7 @@ if(BUILD_RPC_INTERFACE)
     # zeromq
     include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
     import_3rdparty_library(3rdparty_zeromq
+        HIDDEN
         INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS}
         LIB_DIR ${ZEROMQ_LIB_DIR}
         LIBRARIES ${ZEROMQ_LIBRARIES}
@@ -1112,6 +1118,7 @@ if(USE_BLAS)
 
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         import_3rdparty_library(3rdparty_openblas
+            HIDDEN
             INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
             LIB_DIR      ${OPENBLAS_LIB_DIR}
             LIBRARIES    ${OPENBLAS_LIBRARIES}
@@ -1131,6 +1138,7 @@ else()
     # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
     message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
     import_3rdparty_library(3rdparty_mkl
+        HIDDEN
         INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
         LIB_DIR      ${STATIC_MKL_LIB_DIR}
         LIBRARIES    ${STATIC_MKL_LIBRARIES}
@@ -1212,6 +1220,7 @@ if (WITH_IPPICV)
         if (WITH_IPPICV)
             message(STATUS "IPP-ICV ${IPPICV_VERSION_STRING} available. Building interface wrappers IPP-IW.")
             import_3rdparty_library(3rdparty_ippicv
+                HIDDEN
                 INCLUDE_DIRS "${IPPICV_INCLUDE_DIR}"
                 LIBRARIES     ${IPPICV_LIBRARIES}
                 LIB_DIR      "${IPPICV_LIB_DIR}"
@@ -1254,6 +1263,7 @@ if(BUILD_WEBRTC)
         include(${Open3D_3RDPARTY_DIR}/webrtc/webrtc_download.cmake)
     endif()
     import_3rdparty_library(3rdparty_webrtc
+        HIDDEN
         INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
         LIB_DIR      ${WEBRTC_LIB_DIR}
         LIBRARIES    ${WEBRTC_LIBRARIES}
