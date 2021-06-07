@@ -301,13 +301,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         -fsanitize=safe-stack       # Stack execution protection
         -Wl,-z,relro,-z,now         # Data relocation protection
         -pie                        # Position independent executable
+        $<$<CONFIG:Release>:LINKER:-S>
         CACHE STRING "Linker flags for security hardening")
     if(NOT BUILD_SHARED_LIBS AND NOT BUILD_PYTHON_MODULE)
         list(APPEND HARDENING_CFLAGS -fsanitize=safe-stack)   # Stack execution protection
         list(APPEND HARDENING_LDFLAGS -fsanitize=safe-stack)  # only static libraries supported
-    endif()
-    if(NOT DEVELOPER_BUILD)
-        list(APPEND HARDENING_LDFLAGS -Wl,-S)     # Strip debug symbols
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
@@ -317,10 +315,8 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         CACHE STRING "Compiler flags for security hardening")
     set(HARDENING_LDFLAGS  ""
         # -pie Position independent execution is default on macOSX 10.6+
+        $<$<CONFIG:Release>:LINKER:-S>
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_LDFLAGS -Wl,-S)
-    endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
@@ -331,10 +327,8 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         -Wl,-z,noexecstack   # Stack execution protection
         -Wl,-z,relro,-z,now  # Data relocation protection
         -pie                 # Position independent executable
+        $<$<CONFIG:Release>:LINKER:--strip-debug>
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_LDFLAGS -Wl,--strip-debug)
-    endif()
 else()
     message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "
     "flags set")
@@ -610,6 +604,23 @@ function(open3d_set_global_properties target)
 
     # Download test data files from open3d_downloads repo.
     add_dependencies(${target} open3d_downloads)
+
+    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
+    # (from pybind11)
+    # macOS: -x: strip local symbols
+    # Linux: defaults
+    if(UNIX AND CMAKE_STRIP)
+        get_target_property(target_type ${target} TYPE)
+        if(target_type MATCHES
+                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND
+                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
+                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
+                COMMAND_EXPAND_LISTS)
+        endif()
+    endif()
+
 endfunction()
 
 macro(add_source_group module_name)

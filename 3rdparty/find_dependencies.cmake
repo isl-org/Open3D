@@ -108,6 +108,7 @@ function(build_3rdparty_library name)
         if(NOT arg_PUBLIC AND NOT arg_HEADER AND NOT arg_VISIBLE)
             set_target_properties(${name} PROPERTIES
                 CXX_VISIBILITY_PRESET hidden
+                CUDA_VISIBILITY_PRESET hidden
                 C_VISIBILITY_PRESET hidden
                 VISIBILITY_INLINES_HIDDEN ON
                 )
@@ -177,6 +178,7 @@ set(ExternalProject_CMAKE_ARGS_hidden
     ${ExternalProject_CMAKE_ARGS}
     -DCMAKE_POLICY_DEFAULT_CMP0063:STRING=NEW
     -DCMAKE_CXX_VISIBILITY_PRESET=hidden
+    -DCMAKE_CUDA_VISIBILITY_PRESET=hidden
     -DCMAKE_C_VISIBILITY_PRESET=hidden
     -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON
     )
@@ -283,7 +285,7 @@ function(import_3rdparty_library name)
             endif()
             if (arg_HIDDEN AND NOT arg_PUBLIC AND NOT arg_HEADER)
                 target_link_options(${name} INTERFACE
-                    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:LINKER:--exclude-libs,${library_filename}>)
+                    $<$<CXX_COMPILER_ID:GNU>:LINKER:--exclude-libs,${library_filename}>)
             endif()
         endforeach()
     endif()

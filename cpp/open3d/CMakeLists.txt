@@ -16,6 +16,7 @@ function(open3d_set_open3d_lib_properties target)
     else ()
         target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
     endif()
+
 endfunction()
 
 # Configure a header file to pass the version settings to the source code
