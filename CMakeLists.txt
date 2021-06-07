@@ -301,7 +301,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         -fsanitize=safe-stack       # Stack execution protection
         -Wl,-z,relro,-z,now         # Data relocation protection
         -pie                        # Position independent executable
-        $<$<CONFIG:Release>:LINKER:-S>
+        $<$<CONFIG:Release>:LINKER:-S>  # Exclude debug info
         CACHE STRING "Linker flags for security hardening")
     if(NOT BUILD_SHARED_LIBS AND NOT BUILD_PYTHON_MODULE)
         list(APPEND HARDENING_CFLAGS -fsanitize=safe-stack)   # Stack execution protection
@@ -313,9 +313,10 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         -fstack-protector               # Stack-based buffer overrun detection
         -Wformat -Wformat-security      # Format string vulnerability
         CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS  ""
-        # -pie Position independent execution is default on macOSX 10.6+
-        $<$<CONFIG:Release>:LINKER:-S>
+    set(HARDENING_LDFLAGS
+        # -pie Position independent executable is default on macOSX 10.6+
+        LINKER:-dead_strip    # Remove unreachable code
+        $<$<CONFIG:Release>:LINKER:-S,-x>  # Exclude debug info, non-global symbols
         CACHE STRING "Linker flags for security hardening")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
@@ -327,7 +328,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         -Wl,-z,noexecstack   # Stack execution protection
         -Wl,-z,relro,-z,now  # Data relocation protection
         -pie                 # Position independent executable
-        $<$<CONFIG:Release>:LINKER:--strip-debug>
+        $<$<CONFIG:Release>:LINKER:--strip-debug>  # Exclude debug info
         CACHE STRING "Linker flags for security hardening")
 else()
     message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "

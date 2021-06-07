@@ -63,7 +63,7 @@ cmake_policy(SET CMP0063 NEW)
 #        All sources must be relative to the library source directory.
 #    LIBS <target> [<target> ...]
 #        extra link dependencies
-
+#
 function(build_3rdparty_library name)
     cmake_parse_arguments(arg "PUBLIC;HEADER;INCLUDE_ALL;VISIBLE" "DIRECTORY" "INCLUDE_DIRS;SOURCES;LIBS" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
@@ -168,7 +168,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    $<$<PLATFORM_ID:Windows>:-DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW>
+    -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
     $<$<PLATFORM_ID:Windows>:-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}>
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
     )
@@ -214,7 +214,10 @@ function(pkg_config_3rdparty_library name)
     endif()
 endfunction()
 
-#
+# List of linker options for libOpen3D client binaries (eg: pybind) to hide Open3D 3rd
+# party dependencies.
+set(OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS)
+
 # import_3rdparty_library(name ...)
 #
 # Imports a third-party library that has been built independently in a sub project.
@@ -286,6 +289,9 @@ function(import_3rdparty_library name)
             if (arg_HIDDEN AND NOT arg_PUBLIC AND NOT arg_HEADER)
                 target_link_options(${name} INTERFACE
                     $<$<CXX_COMPILER_ID:GNU>:LINKER:--exclude-libs,${library_filename}>)
+                list(APPEND OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS $<$<CXX_COMPILER_ID:GNU>:LINKER:--exclude-libs,${library_filename}>)
+                set(OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS
+                    ${OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS} PARENT_SCOPE)
             endif()
         endforeach()
     endif()

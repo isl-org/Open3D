@@ -17,6 +17,6 @@ open3d_set_open3d_lib_properties(tgeometry)
 open3d_link_3rdparty_libraries(tgeometry)
 
 if(BUILD_CUDA_MODULE)
-  target_include_directories(tgeometry SYSTEM
-                             PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_include_directories(tgeometry SYSTEM PRIVATE
+        ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()

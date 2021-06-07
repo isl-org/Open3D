@@ -96,6 +96,12 @@ open3d_set_global_properties(Open3D)
 open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
 
+# If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
+# libraries that are not hidden during compilation. Don't propagate beyond
+# direct consumers of libOpen3D.a
+target_link_options(Open3D INTERFACE
+    $<$<STREQUAL:$<TARGET_PROPERTY:Open3D,TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
+
 if (X11_TARGET)
     target_link_libraries(Open3D PRIVATE ${X11_TARGET})
 endif()
