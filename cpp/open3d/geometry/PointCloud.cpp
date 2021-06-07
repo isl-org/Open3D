@@ -98,37 +98,42 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     // We do not use std::vector::insert to combine std::vector because it will
     // crash if the pointcloud is added to itself.
     if (cloud.IsEmpty()) return (*this);
-    size_t old_vert_num = points_.size();
-    size_t add_vert_num = cloud.points_.size();
-    size_t new_vert_num = old_vert_num + add_vert_num;
+    int old_vert_num = static_cast<int>(points_.size());
+    int add_vert_num = static_cast<int>(cloud.points_.size());
+    int new_vert_num = old_vert_num + add_vert_num;
     if ((!HasPoints() || HasNormals()) && cloud.HasNormals()) {
         normals_.resize(new_vert_num);
 #pragma omp parallel for schedule(static)
-        for (size_t i = 0; i < add_vert_num; i++)
+        for (int i = 0; i < add_vert_num; i++) {
             normals_[old_vert_num + i] = cloud.normals_[i];
+        }
     } else {
         normals_.clear();
     }
     if ((!HasPoints() || HasColors()) && cloud.HasColors()) {
         colors_.resize(new_vert_num);
 #pragma omp parallel for schedule(static)
-        for (size_t i = 0; i < add_vert_num; i++)
+        for (int i = 0; i < add_vert_num; i++) {
             colors_[old_vert_num + i] = cloud.colors_[i];
+        }
     } else {
         colors_.clear();
     }
     if ((!HasPoints() || HasColorGradients()) && cloud.HasColorGradients()) {
         colors_.resize(new_vert_num);
 #pragma omp parallel for schedule(static)
-        for (size_t i = 0; i < add_vert_num; i++)
+        for (int i = 0; i < add_vert_num; i++) {
             color_gradients_[old_vert_num + i] = cloud.color_gradients_[i];
+        }
     } else {
         color_gradients_.clear();
     }
     points_.resize(new_vert_num);
 #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < add_vert_num; i++)
+    for (int i = 0; i < add_vert_num; i++) {
         points_[old_vert_num + i] = cloud.points_[i];
+    }
+
     return (*this);
 }
 
@@ -392,7 +397,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
             voxelindex_to_accpoint;
     int cid_temp[3] = {1, 2, 4};
 #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < points_.size(); i++) {
+    for (int i = 0; i < static_cast<int>(points_.size()); i++) {
         auto ref_coord = (points_[i] - voxel_min_bound) / voxel_size;
         auto voxel_index = Eigen::Vector3i(int(floor(ref_coord(0))),
                                            int(floor(ref_coord(1))),
@@ -403,8 +408,8 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
                 cid += cid_temp[c];
             }
         }
-        voxelindex_to_accpoint[voxel_index].AddPoint(*this, i, cid,
-                                                     approximate_class);
+        voxelindex_to_accpoint[voxel_index].AddPoint(
+                *this, static_cast<size_t>(i), cid, approximate_class);
     }
 
     int cnt = 0;
