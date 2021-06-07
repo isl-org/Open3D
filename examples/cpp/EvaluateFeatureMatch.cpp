@@ -38,15 +38,17 @@ public:
 public:
     bool LoadFromFile(const std::string &filename) {
         FILE *fid = open3d::utility::filesystem::FOpen(filename, "rb");
-        fread(&dataset_size_, sizeof(int), 1, fid);
-        fread(&dimension_, sizeof(int), 1, fid);
+        size_t read_count;
+        read_count = fread(&dataset_size_, sizeof(int), 1, fid);
+        read_count = fread(&dimension_, sizeof(int), 1, fid);
         data_.resize(dataset_size_ * dimension_);
         for (int i = 0; i < dataset_size_; i++) {
             Eigen::Vector3f pts;
-            fread(&pts(0), sizeof(float), 3, fid);
-            fread(((float *)data_.data()) + i * dimension_, sizeof(float),
-                  dimension_, fid);
+            read_count = fread(&pts(0), sizeof(float), 3, fid);
+            read_count = fread(((float *)data_.data()) + i * dimension_,
+                               sizeof(float), dimension_, fid);
         }
+        (void)read_count;  // Assume correct dataset format
         flann_dataset_.reset(new flann::Matrix<float>(
                 (float *)data_.data(), dataset_size_, dimension_));
         flann_index_.reset(new flann::Index<flann::L2<float>>(

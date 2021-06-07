@@ -1,13 +1,14 @@
-# build
-set(ALL_SOURCE_FILES
+add_library(geometry OBJECT)
+
+target_sources(geometry PRIVATE
     BoundingVolume.cpp
     EstimateNormals.cpp
     Geometry3D.cpp
     HalfEdgeTriangleMesh.cpp
-    ISSKeypoints.cpp
     Image.cpp
     ImageFactory.cpp
     IntersectionTest.cpp
+    ISSKeypoints.cpp
     KDTreeFlann.cpp
     Line3D.cpp
     LineSet.cpp
@@ -33,10 +34,8 @@ set(ALL_SOURCE_FILES
     TriangleMeshSubdivide.cpp
     VoxelGrid.cpp
     VoxelGridFactory.cpp
-    )
+)
 
-# create object library
-add_library(geometry OBJECT ${ALL_SOURCE_FILES})
 open3d_show_and_abort_on_warning(geometry)
 open3d_set_global_properties(geometry)
 open3d_set_open3d_lib_properties(geometry)

@@ -1,22 +1,33 @@
-set(ALL_SOURCE_FILES
-    color_map/NonRigidOptimizer.cpp
-    color_map/ImageWarpingField.cpp
+add_library(pipelines OBJECT)
+
+target_sources(pipelines PRIVATE
     color_map/ColorMapUtils.cpp
+    color_map/ImageWarpingField.cpp
+    color_map/NonRigidOptimizer.cpp
     color_map/RigidOptimizer.cpp
-    integration/UniformTSDFVolume.cpp
+)
+
+target_sources(pipelines PRIVATE
     integration/ScalableTSDFVolume.cpp
+    integration/UniformTSDFVolume.cpp
+)
+
+target_sources(pipelines PRIVATE
     odometry/Odometry.cpp
     odometry/RGBDOdometryJacobian.cpp
-    registration/GlobalOptimization.cpp
-    registration/RobustKernel.cpp
-    registration/Registration.cpp
-    registration/FastGlobalRegistration.cpp
-    registration/PoseGraph.cpp
-    registration/TransformationEstimation.cpp
+)
+
+target_sources(pipelines PRIVATE
     registration/CorrespondenceChecker.cpp
+    registration/FastGlobalRegistration.cpp
     registration/Feature.cpp
-    )
-add_library(pipelines OBJECT ${ALL_SOURCE_FILES})
+    registration/GlobalOptimization.cpp
+    registration/PoseGraph.cpp
+    registration/Registration.cpp
+    registration/RobustKernel.cpp
+    registration/TransformationEstimation.cpp
+)
+
 open3d_show_and_abort_on_warning(pipelines)
 open3d_set_global_properties(pipelines)
 open3d_set_open3d_lib_properties(pipelines)
