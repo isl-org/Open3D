@@ -27,8 +27,19 @@
 #pragma once
 
 namespace open3d {
+namespace t {
 namespace pipelines {
 namespace registration {
+
+enum class RobustKernelMethod {
+    L2Loss = 0,
+    L1Loss = 1,
+    HuberLoss = 2,
+    CauchyLoss = 3,
+    GMLoss = 4,
+    TukeyLoss = 5,
+    GeneralizedLoss = 6,
+};
 
 /// \class RobustKernel
 ///
@@ -57,156 +68,23 @@ namespace registration {
 /// order derivate.
 class RobustKernel {
 public:
-    virtual ~RobustKernel() = default;
-    /// Obtain the weight for the given residual according to the robust kernel
-    /// model. This method must be implemented in the derived classes that model
-    /// the different robust kernels.
-    ///
-    /// \param residual Residual value obtained during the optimization step.
-    virtual double Weight(double residual) const = 0;
-};
+    RobustKernel(const RobustKernelMethod type,
+                 const double& scaling_parameter,
+                 const double& shape_parameter)
+        : type_(type), k_(scaling_parameter), c_(shape_parameter){};
 
-/// \class L2Loss
-///
-/// Classical loss function used for outlier rejection.
-///
-/// The loss p(r) for a given residual 'r' is computed as follow:
-///    p(r) = r^2 / 2
-class L2Loss : public RobustKernel {
-public:
-    /// The weight w(r) for a given residual 'r' is computed as follow:
-    ///   w(r) = 1.0, for all r
-    ///
-    /// \param residual [ingored]
-    double Weight(double residual) const override;
-};
-
-/// \class L1Loss
-///
-/// L1 loss function used for outlier rejection.
-///
-/// The loss p(r) for a given residual 'r' is computed as follow:
-//    p(r) = abs(r)
-class L1Loss : public RobustKernel {
-public:
-    /// The weight w(r) for a given residual 'r' is computed as follow:
-    ///   w(r) = 1.0 / abs(r), for all r
-    ///
-    /// \param residual Residual value obtained during the optimization step.
-    double Weight(double residual) const override;
-};
-
-/// \class HuberLoss
-///
-/// HuberLoss loss function used for outlier rejection.
-///
-/// The loss p(r) for a given residual 'r' is computed as follow:
-///   p(r) = r^2                   for abs(r) <= k,
-///   p(r) = k^2 * (abs(r) - k/2)  for abs(r) > k
-///
-/// For more information: http://en.wikipedia.org/wiki/Huber_Loss_Function
-class HuberLoss : public RobustKernel {
-public:
-    /// \brief Parametrized Constructor.
-    ///
-    /// \param k Is the scaling paramter of the huber loss function. 'k'
-    /// corresponds to 'delta' on this page:
-    /// http://en.wikipedia.org/wiki/Huber_Loss_Function
-    explicit HuberLoss(double k) : k_(k) {}
-
-    /// The weight w(r) for a given residual 'r' is computed as follow:
-    ///   w(r) = 1.0         for abs(r) <= k,
-    ///   w(r) = k / abs(r)  for abs(r) > k
-    /// Where k Is the scaling paramter of the loss function.
-    ///
-    /// \param residual Residual value obtained during the optimization step.
-    double Weight(double residual) const override;
+    ~RobustKernel() = default;
 
 public:
-    /// Scaling paramter.
+    /// Loss type.
+    RobustKernelMethod type_ = RobustKernelMethod::TukeyLoss;
+    /// Scaling parameter.
     double k_;
-};
-
-/// \class CauchyLoss
-///
-/// CauchyLoss loss function used for outlier rejection.
-///
-/// The loss p(r) for a given residual 'r' is computed as follow:
-///   p(r) = (k^2 / 2) * log(1 + (r / k)^2), for all r
-class CauchyLoss : public RobustKernel {
-public:
-    /// \brief Parametrized Constructor.
-    ///
-    /// \param k Is the scaling paramter of the loss function.
-    explicit CauchyLoss(double k) : k_(k) {}
-
-    /// The weight w(r) for a given residual 'r' is computed as follow:
-    ///   w(r) = 1 / (1 + (r / k)^2)
-    /// Where k Is the scaling paramter of the loss function.
-    ///
-    /// \param residual Residual value obtained during the optimization step.
-    double Weight(double residual) const override;
-
-public:
-    /// Scaling paramter.
-    double k_;
-};
-
-/// \class GMLoss
-///
-/// German-McClure loss function used for outlier rejection.
-///
-/// The loss p(r) for a given residual 'r' is computed as follow:
-///   p(r) = (r^2 / 2) / (1 + (r / k)^2), for all r
-class GMLoss : public RobustKernel {
-public:
-    /// \brief Parametrized Constructor.
-    ///
-    /// \param k Is the scaling paramter of the loss function.
-    explicit GMLoss(double k) : k_(k) {}
-
-    /// The weight w(r) for a given residual 'r' is computed as follow:
-    ///   w(r) = k / (k + r^2)^2, for all r
-    /// Where k Is the scaling paramter of the loss function.
-    ///
-    /// \param residual Residual value obtained during the optimization step.
-    double Weight(double residual) const override;
-
-public:
-    /// Scaling paramter.
-    double k_;
-};
-
-/// \class TukeyLoss
-///
-/// This is the so called Tukey loss function which aggressively attempts to
-/// suppress large errors.
-///
-/// The loss p(r) for a given residual 'r' is computed as follow:
-///
-///   p(r) = k^2 * (1 - (1 - r / k^2)^3 ) / 2   for abs(r) <= k,
-///   p(r) = k^2 / 2                            for abs(r) >  k.
-///
-class TukeyLoss : public RobustKernel {
-public:
-    /// \brief Parametrized Constructor.
-    ///
-    /// \param k Is a tunning constant for the Tukey Loss function.
-    explicit TukeyLoss(double k) : k_(k) {}
-
-public:
-    /// The weight w(r) for a given residual 'r' is computed as follow:
-    ///   p(r) = (1 - (r / k)^2 )^2  for abs(r) <= k,
-    ///   p(r) = 0.0                 for abs(r) >  k.
-    /// Where k Is the scaling paramter of the loss function.
-    ///
-    /// \param residual Residual value obtained during the optimization step.
-    double Weight(double residual) const override;
-
-public:
-    double k_;
+    /// Shape parameter.
+    double c_;
 };
 
 }  // namespace registration
 }  // namespace pipelines
+}  // namespace t
 }  // namespace open3d

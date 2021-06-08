@@ -32,6 +32,8 @@
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
+#include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 #include "open3d/utility/Timer.h"
 
 namespace open3d {
@@ -73,26 +75,26 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
 
     scalar_t w = op(r);
 
-    printf(" residual: %lf, weight: %lf", (double)r, (double)w);
+    // printf(" residual: %lf, weight: %lf", (double)r, (double)w);
 
     if (valid) {
         // Dump J, r into JtJ and Jtr
         int offset = 0;
         for (int i = 0; i < 6; ++i) {
             for (int j = 0; j <= i; ++j) {
-                reduction[offset++] = J[i] * J[j];
+                reduction[offset++] = J[i] * w * J[j];
             }
         }
         for (int i = 0; i < 6; ++i) {
-            reduction[offset++] = J[i] * r;
+            reduction[offset++] = J[i] * w * r;
         }
-        reduction[offset++] = r * r;
+        reduction[offset++] = r * w * r;
         reduction[offset++] = valid;
     }
 
     ReduceSum6x6LinearSystem<scalar_t, kThread1DUnit>(tid, valid, reduction,
-                                                   local_sum0, local_sum1,
-                                                   local_sum2, global_sum);
+                                                      local_sum0, local_sum1,
+                                                      local_sum2, global_sum);
 }
 
 void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
@@ -106,25 +108,23 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
                                  const core::Device &device) {
     int n = source_points.GetLength();
 
-
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-
-        auto robust_kernel = [=] OPEN3D_HOST_DEVICE(scalar_t r) -> scalar_t {
-            return 2 * r;
-        };
-
         core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
 
         const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
         const dim3 threads(kThread1DUnit);
 
-        ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
-                source_points.GetDataPtr<scalar_t>(),
-                target_points.GetDataPtr<scalar_t>(),
-                target_normals.GetDataPtr<scalar_t>(),
-                correspondence_indices.GetDataPtr<int64_t>(), n, global_sum_ptr,
-                robust_kernel);
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                pipelines::registration::RobustKernelMethod::TukeyLoss,
+                scalar_t, 0.1, 1.0, [&]() {
+                    ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
+                            source_points.GetDataPtr<scalar_t>(),
+                            target_points.GetDataPtr<scalar_t>(),
+                            target_normals.GetDataPtr<scalar_t>(),
+                            correspondence_indices.GetDataPtr<int64_t>(), n,
+                            global_sum_ptr, func_t);
+                });
 
         OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 

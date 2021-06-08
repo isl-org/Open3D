@@ -26,13 +26,58 @@
 
 #pragma once
 
-namespace open3d {
-namespace t {
-namespace pipelines {
-namespace registration {
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
 
+#define O3D_ABS(a) (a < 0 ? -a : a)
+#define O3D_MAX(a, b) (a > b ? a : b)
+#define O3D_MIN(a, b) (a < b ? a : b)
+#define O3D_SQUARE(a) ((a) * (a))
 
-}  // namespace registration
-}  // namespace pipelines
-}  // namespace t
-}  // namespace open3d
+#define DISPATCH_ROBUST_KERNEL_FUNCTION(METHOD, T, k, c, ...)                 \
+    [&] {                                                                     \
+        if (METHOD ==                                                         \
+            open3d::t::pipelines::registration::RobustKernelMethod::L2Loss) { \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T { return 1.0; };   \
+            return __VA_ARGS__();                                             \
+        } else if (METHOD == open3d::t::pipelines::registration::             \
+                                     RobustKernelMethod::L1Loss) {            \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
+                return 1.0 / O3D_ABS(r);                                      \
+            };                                                                \
+            return __VA_ARGS__();                                             \
+        } else if (METHOD == open3d::t::pipelines::registration::             \
+                                     RobustKernelMethod::HuberLoss) {         \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
+                return k / O3D_MAX(O3D_ABS(r), k);                            \
+            };                                                                \
+            return __VA_ARGS__();                                             \
+        } else if (METHOD == open3d::t::pipelines::registration::             \
+                                     RobustKernelMethod::CauchyLoss) {        \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
+                return 1.0 / (1.0 + O3D_SQUARE(r / k));                       \
+            };                                                                \
+            return __VA_ARGS__();                                             \
+        } else if (METHOD == open3d::t::pipelines::registration::             \
+                                     RobustKernelMethod::GMLoss) {            \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
+                return k / O3D_SQUARE(k + O3D_SQUARE(r));                     \
+            };                                                                \
+            return __VA_ARGS__();                                             \
+        } else if (METHOD == open3d::t::pipelines::registration::             \
+                                     RobustKernelMethod::TukeyLoss) {         \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
+                return O3D_SQUARE(1.0 -                                       \
+                                  O3D_SQUARE(O3D_MIN(1.0, O3D_ABS(r) / k)));  \
+            };                                                                \
+            return __VA_ARGS__();                                             \
+        } else if (METHOD == open3d::t::pipelines::registration::             \
+                                     RobustKernelMethod::GeneralizedLoss) {   \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
+                return 1.0 / O3D_ABS(r);                                      \
+            };                                                                \
+            return __VA_ARGS__();                                             \
+        } else {                                                              \
+            utility::LogError("Unsupported method.");                         \
+        }                                                                     \
+    }()
