@@ -136,6 +136,7 @@ static void BenchmarkRegistrationColoredICPLegacy(benchmark::State& state,
             LoadPointCloud(source_colored_pcd_filename,
                            target_colored_pcd_filename, voxel_size);
 
+    // TODO (@rishabh) Add MultiScale ColoredICP to Benchmarks.
     // std::vector<double> voxel_sizes = {0.05, 0.05 / 2, 0.05 / 4};
     // std::vector<int> iterations = {50, 30, 14};
     Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
