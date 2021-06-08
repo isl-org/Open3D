@@ -53,12 +53,12 @@ function(open3d_add_encoded_shader target)
     file(RELATIVE_PATH OUTPUT_RELATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}" "${OUTPUT_FULL_PATH}")
 
     add_custom_command(
-            OUTPUT ${OUTPUT_FULL_PATH}
-            COMMAND ShaderLinker ${OUTPUT_FULL_PATH} ${ENCODED_SHADERS}
-            COMMENT "Linking Encoded Shader header ${OUTPUT_RELATIVE_PATH}"
-            DEPENDS ${ENCODED_SHADERS} ShaderLinker
-            VERBATIM
-        )
+        OUTPUT ${OUTPUT_FULL_PATH}
+        COMMAND ShaderLinker ${OUTPUT_FULL_PATH} ${ENCODED_SHADERS}
+        COMMENT "Linking Encoded Shader header ${OUTPUT_RELATIVE_PATH}"
+        DEPENDS ${ENCODED_SHADERS} ShaderLinker
+        VERBATIM
+    )
 
     add_custom_target(${target} ALL
         DEPENDS "${OUTPUT_FULL_PATH}"

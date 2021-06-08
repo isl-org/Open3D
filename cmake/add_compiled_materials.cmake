@@ -34,7 +34,7 @@ function(open3d_add_compiled_materials target)
     # Determine material compiler flags
     if (IOS OR ANDROID)
         set(FILAMENT_MATC_ARGS "--platform=mobile")
-    elseif (NOT WIN32)
+    else()
         set(FILAMENT_MATC_ARGS "--platform=desktop")
     endif()
 
