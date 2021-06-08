@@ -63,6 +63,8 @@ target_include_directories(pybind SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
+
+open3d_show_and_abort_on_warning(pybind)
 open3d_set_global_properties(pybind)
 
 if (WIN32)
