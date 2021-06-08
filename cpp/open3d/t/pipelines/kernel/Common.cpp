@@ -72,12 +72,14 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     float J_ij[6];
-                    float r;
+                    float r = 0;
 
                     bool valid = kernel::GetJacobianPointToPlane<float>(
                             workload_idx, source_points_ptr, target_points_ptr,
                             target_normals_ptr, correspondence_indices, J_ij,
                             r);
+
+                    // float w = r == 0 ? 1.0 : op(r);
 
                     if (valid) {
                         A_reduction[0] += J_ij[0] * J_ij[0];
@@ -106,10 +108,10 @@ core::Tensor Get6x6CompressedLinearTensor<float>(
                         A_reduction[22] += J_ij[1] * r;
                         A_reduction[23] += J_ij[2] * r;
                         A_reduction[24] += J_ij[3] * r;
-                        A_reduction[25] += J_ij[4] * r;
                         A_reduction[26] += J_ij[5] * r;
+                        A_reduction[25] += J_ij[4] * r;
 
-                        A_reduction[27] += r;
+                        A_reduction[27] += r * r;
                         A_reduction[28] += 1;
                     }
                 }
@@ -153,12 +155,14 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     double J_ij[6];
-                    double r;
+                    double r = 0;
 
                     bool valid = kernel::GetJacobianPointToPlane<double>(
                             workload_idx, source_points_ptr, target_points_ptr,
                             target_normals_ptr, correspondence_indices, J_ij,
                             r);
+
+                    // float w = r == 0 ? 1.0 : op(r);
 
                     if (valid) {
                         A_reduction[0] += J_ij[0] * J_ij[0];
@@ -190,7 +194,7 @@ core::Tensor Get6x6CompressedLinearTensor<double>(
                         A_reduction[25] += J_ij[4] * r;
                         A_reduction[26] += J_ij[5] * r;
 
-                        A_reduction[27] += r;
+                        A_reduction[27] += r * r;
                         A_reduction[28] += 1;
                     }
                 }

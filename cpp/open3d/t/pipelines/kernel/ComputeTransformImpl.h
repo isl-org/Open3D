@@ -106,6 +106,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane<float>(
     const float &nz = target_normals_ptr[target_idx + 2];
 
     r = (sx - tx) * nx + (sy - ty) * ny + (sz - tz) * nz;
+
     J_ij[0] = nz * sy - ny * sz;
     J_ij[1] = nx * sz - nz * sx;
     J_ij[2] = ny * sx - nx * sy;
@@ -143,6 +144,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane<double>(
     const double &nz = target_normals_ptr[target_idx + 2];
 
     r = (sx - tx) * nx + (sy - ty) * ny + (sz - tz) * nz;
+
     J_ij[0] = nz * sy - ny * sz;
     J_ij[1] = nx * sz - nz * sx;
     J_ij[2] = ny * sx - nx * sy;
