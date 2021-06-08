@@ -127,6 +127,10 @@ void pybind_pointcloud(py::module &m) {
                  "normals exist",
                  "search_param"_a = KDTreeSearchParamKNN(),
                  "fast_normal_computation"_a = true)
+            .def("estimate_color_gradients",
+                 &PointCloud::EstimateColorGradients,
+                 "Function to compute the color gradients of a point cloud.",
+                 "search_param"_a = KDTreeSearchParamHybrid(0.5, 30))
             .def("orient_normals_to_align_with_direction",
                  &PointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",

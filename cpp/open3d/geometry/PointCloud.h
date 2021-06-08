@@ -211,6 +211,11 @@ public:
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
 
+    /// \brief Function to compute the color_gradients of a point cloud.
+    /// Ref: This function is used in ColoredICP.
+    ///
+    /// \param search_param The KDTree search parameters for `hybrid`
+    /// neighborhood search.
     void EstimateColorGradients(const KDTreeSearchParamHybrid &search_param =
                                         KDTreeSearchParamHybrid(0.5, 30));
 
