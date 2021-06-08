@@ -29,9 +29,6 @@ set(Open3D_3RDPARTY_PRIVATE_TARGETS)
 
 find_package(PkgConfig QUIET)
 
-# Apply LANG_VISIBILITY_PRESET to static libraries and archives as well
-cmake_policy(SET CMP0063 NEW)
-
 # build_3rdparty_library(name ...)
 #
 # Builds a third-party library from source
@@ -169,14 +166,13 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
-    $<$<PLATFORM_ID:Windows>:-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}>
+    -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
     )
 # Keep 3rd party symbols hidden from Open3D user code. Do not use if 3rd party
 # libraries throw exceptions that escape Open3D.
 set(ExternalProject_CMAKE_ARGS_hidden
     ${ExternalProject_CMAKE_ARGS}
-    -DCMAKE_POLICY_DEFAULT_CMP0063:STRING=NEW
     -DCMAKE_CXX_VISIBILITY_PRESET=hidden
     -DCMAKE_CUDA_VISIBILITY_PRESET=hidden
     -DCMAKE_C_VISIBILITY_PRESET=hidden
@@ -215,7 +211,7 @@ function(pkg_config_3rdparty_library name)
 endfunction()
 
 # List of linker options for libOpen3D client binaries (eg: pybind) to hide Open3D 3rd
-# party dependencies.
+# party dependencies. Only needed with GCC, not AppleClang.
 set(OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS)
 
 # import_3rdparty_library(name ...)
@@ -271,6 +267,11 @@ function(import_3rdparty_library name)
     endif()
     if(arg_LIBRARIES)
         list(LENGTH arg_LIBRARIES libcount)
+        if(arg_HIDDEN AND NOT arg_PUBLIC AND NOT arg_HEADER)
+            set(HIDDEN 1)
+        else()
+            set(HIDDEN 0)
+        endif()
         foreach(arg_LIBRARY IN LISTS arg_LIBRARIES)
             set(library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
             if(libcount EQUAL 1)
@@ -278,7 +279,9 @@ function(import_3rdparty_library name)
             else()
                 set(installed_library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_${name}_${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
             endif()
-            target_link_libraries(${name} INTERFACE $<BUILD_INTERFACE:${arg_LIB_DIR}/${library_filename}>)
+            # Apple compiler ld
+            target_link_libraries(${name} INTERFACE
+                "$<BUILD_INTERFACE:$<$<AND:${HIDDEN},$<CXX_COMPILER_ID:AppleClang>>:-load_hidden >${arg_LIB_DIR}/${library_filename}>")
             if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
                 install(FILES ${arg_LIB_DIR}/${library_filename}
                     DESTINATION ${Open3D_INSTALL_LIB_DIR}
@@ -286,7 +289,8 @@ function(import_3rdparty_library name)
                 )
                 target_link_libraries(${name} INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${installed_library_filename}>)
             endif()
-            if (arg_HIDDEN AND NOT arg_PUBLIC AND NOT arg_HEADER)
+            if (HIDDEN)
+                # GNU compiler ld
                 target_link_options(${name} INTERFACE
                     $<$<CXX_COMPILER_ID:GNU>:LINKER:--exclude-libs,${library_filename}>)
                 list(APPEND OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS $<$<CXX_COMPILER_ID:GNU>:LINKER:--exclude-libs,${library_filename}>)
