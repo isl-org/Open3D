@@ -197,8 +197,10 @@ endif()
 # Set Python executable
 find_package(Python3 COMPONENTS Interpreter)
 if (Python3_FOUND)
-    # Setup PYTHON_EXECUTABLE for modules using the deprecated find_package(PythonInterp)
-    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE STRING "Path to the Python executable" FORCE)
+    # Setup PYTHON_EXECUTABLE for 3rdparty modules
+    # which still use the deprecated find_package(PythonInterp)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE STRING
+        "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
 else()
     if (BUILD_PYTHON_MODULE)
         message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires the Python executable")
@@ -650,19 +652,19 @@ add_subdirectory(examples)
 install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})
 export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
 
-if (PYTHON_EXECUTABLE)
+if (Python3_EXECUTABLE)
     # `make check-style` checks style for c++/cuda/python/ipynb files
     add_custom_target(check-style
-        COMMAND ${PYTHON_EXECUTABLE}
+        COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py
-        COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
+        COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
     )
 
     # `make apply-style` applies style for c++/cuda/python/ipynb files
     add_custom_target(apply-style
-        COMMAND ${PYTHON_EXECUTABLE}
+        COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
-        COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
+        COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
     )
 endif()
 
