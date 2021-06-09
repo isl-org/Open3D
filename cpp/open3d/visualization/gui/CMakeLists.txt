@@ -64,7 +64,19 @@ open3d_link_3rdparty_libraries(GUI)
 # --- build resources ----
 file(GLOB GUI_RESOURCE_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
 
-set(GUI_MATERIAL_SOURCE_FILES
+# copy GUI/Resources -> <output>/resources
+set(GUI_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
+file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
+file(COPY ${GUI_RESOURCE_SOURCE_FILES}
+     DESTINATION ${GUI_RESOURCE_DIR})
+
+
+include(add_compiled_materials)
+
+open3d_add_compiled_materials(materials
+    OUTPUT_DIRECTORY
+    ${GUI_RESOURCE_DIR}
+    SOURCES
     Materials/colorMap.mat
     Materials/defaultLit.mat
     Materials/defaultLitSSR.mat
@@ -85,39 +97,12 @@ set(GUI_MATERIAL_SOURCE_FILES
     Materials/unlitSolidColor.mat
 )
 
-# copy GUI/Resources -> <output>/resources
-set(GUI_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
-file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
-file(COPY ${GUI_RESOURCE_SOURCE_FILES}
-     DESTINATION ${GUI_RESOURCE_DIR})
-
-# Compile .mat files and copy to resources directory in output directory
-if (IOS OR ANDROID)
-    set(GUI_MATC_ARGS --platform mobile)
-elseif (NOT WIN32)
-    set(GUI_MATC_ARGS --platform desktop)
-endif()
-
-set(GUI_MATERIAL_COMPILED_FILES "")
-foreach(GUI_MAT_FILE ${GUI_MATERIAL_SOURCE_FILES})
-    get_filename_component(GUI_MAT_NAME ${GUI_MAT_FILE} NAME_WE)
-    set(GUI_MAT_SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${GUI_MAT_FILE}")
-    set(GUI_MAT_OUTPUT_FILE "${GUI_RESOURCE_DIR}/${GUI_MAT_NAME}.filamat")
-
-    add_custom_command(
-        OUTPUT "${GUI_MAT_OUTPUT_FILE}"
-        COMMAND ${FILAMENT_MATC} ${GUI_MATC_ARGS} -o "${GUI_MAT_OUTPUT_FILE}" "${GUI_MAT_SOURCE_FILE}"
-        MAIN_DEPENDENCY ${GUI_MAT_FILE} DEPENDS ${FILAMENT_TARGET}
-    )
-
-    list(APPEND GUI_MATERIAL_COMPILED_FILES ${GUI_MAT_OUTPUT_FILE})
-endforeach()
-
-add_custom_target(materials ALL
-    DEPENDS ${GUI_MATERIAL_COMPILED_FILES}
-)
+# Source group for Visual Studio
+add_source_group(Materials)
 
 add_dependencies(GUI materials)
+
+get_target_property(GUI_MATERIAL_COMPILED_FILES materials COMPILED_MATERIALS)
 
 # Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
 set(GUI_RESOURCE_FILES
