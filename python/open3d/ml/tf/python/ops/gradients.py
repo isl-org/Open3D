@@ -235,7 +235,6 @@ def _sparse_conv_transpose_grad(op, grad):
     filters = op.inputs[0]
     out_importance = op.inputs[1]
     inp_features = op.inputs[2]
-    inp_neighbors_index = op.inputs[3]
     inp_neighbors_importance_sum = op.inputs[4]
     inp_neighbors_row_splits = op.inputs[5]
     neighbors_index = op.inputs[6]
@@ -261,7 +260,7 @@ def _sparse_conv_transpose_grad(op, grad):
     # invert the neighbors list
     num_points = _tf.shape(inp_features, out_type=_tf.int64)[0]
     arange = _tf.range(0, _tf.shape(neighbors_index)[0])
-    inv_neighbors_index, inv_neighbors_row_splits, inv_arange = _lib.open3d_invert_neighbors_list(
+    inv_neighbors_index, _, inv_arange = _lib.open3d_invert_neighbors_list(
         num_points, neighbors_index, neighbors_row_splits, arange)
 
     inv_neighbors_kernel_index = _tf.gather(neighbors_kernel_index, inv_arange)
