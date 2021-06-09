@@ -224,6 +224,11 @@ set(OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS)
 #    HEADER
 #        the library headers belong to the public interface and will be
 #        installed, but the library is linked privately.
+#    HIDDEN
+#         Symbols from this library will not be exported to client code during
+#         linking with Open3D. This is the opposite of the VISIBLE option in
+#         build_3rdparty_library.  Prefer hiding symbols during building 3rd
+#         party libraries, since this option is not supported by the MSVC linker.
 #    INCLUDE_DIRS
 #        the temporary location where the library headers have been installed.
 #        Trailing slashes have the same meaning as with install(DIRECTORY).
@@ -658,6 +663,7 @@ endif()
 if(NOT USE_SYSTEM_PNG)
     include(${Open3D_3RDPARTY_DIR}/zlib/zlib.cmake)
     import_3rdparty_library(3rdparty_zlib
+        HIDDEN
         INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS}
         LIB_DIR      ${ZLIB_LIB_DIR}
         LIBRARIES    ${ZLIB_LIBRARIES}
