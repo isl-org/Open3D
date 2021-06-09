@@ -87,7 +87,53 @@ REGISTER_OP("Open3DSparseConv")
             return Status::OK();
         })
         .Doc(R"doc(
-Sparse convolution of two pointclouds.
+General sparse convolution.
+
+This op computes the features for the forwad pass.
+This example shows how to use this op::
+
+  import tensorflow as tf
+  import open3d.ml.tf as ml3d
+
+  # This filter has 3 "spatial" elements with 8 input and 16 output channels 
+  filters = tf.random.normal([3,8,16]) 
+
+  inp_features = tf.random.normal([5,8])
+
+
+  out_features = ml3d.ops.sparse_conv(
+      filters,
+      inp_features=inp_features,
+      inp_importance=[],
+      neighbors_index=[0,1,2, 1,2,3, 2,3,4],
+      # neighbors_kernel_index defines which of the "spatial"
+      # elements of the filter to use
+      neighbors_kernel_index=tf.convert_to_tensor([0,1,2, 0,1,2, 0,1,2], dtype=tf.uint8),
+      neighbors_importance=[],
+      neighbors_row_splits=[0,3,6,9]
+  )                  
+
+  # or with pytorch
+  import torch
+  import open3d.ml.torch as ml3d
+
+  # This filter has 3 "spatial" elements with 8 input and 16 output channels 
+  filters = torch.randn([3,8,16]) 
+
+  inp_features = torch.randn([5,8])
+
+
+  out_features = ml3d.ops.sparse_conv(
+      filters,
+      inp_features=inp_features,
+      inp_importance=torch.FloatTensor([]),
+      neighbors_index=torch.IntTensor([0,1,2, 1,2,3, 2,3,4]),
+      # neighbors_kernel_index defines which of the "spatial"
+      # elements of the filter to use
+      neighbors_kernel_index=torch.ByteTensor([0,1,2, 0,1,2, 0,1,2]),
+      neighbors_importance=torch.FloatTensor([]),
+      neighbors_row_splits=torch.LongTensor([0,3,6,9])
+  )                  
 
 normalize:
   If True the output feature values will be normalized using the sum for 

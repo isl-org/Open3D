@@ -40,7 +40,6 @@ using torch::autograd::Function;
 using torch::autograd::Variable;
 using torch::autograd::variable_list;
 
-
 class SparseConvTransposeFunction
     : public Function<SparseConvTransposeFunction> {
 public:
@@ -123,11 +122,11 @@ public:
         torch::Tensor out_features =
                 torch::empty({num_out.value(), out_channels.value()},
                              torch::dtype(feat_dtype).device(device));
-#define FN_PARAMETERS                                                      \
-    filters, out_importance, inp_features,             \
-            inp_neighbors_importance_sum, inp_neighbors_row_splits,        \
-            neighbors_index, neighbors_kernel_index, neighbors_importance, \
-            neighbors_row_splits, normalize, max_temp_mem_MB, out_features
+#define FN_PARAMETERS                                                          \
+    filters, out_importance, inp_features, inp_neighbors_importance_sum,       \
+            inp_neighbors_row_splits, neighbors_index, neighbors_kernel_index, \
+            neighbors_importance, neighbors_row_splits, normalize,             \
+            max_temp_mem_MB, out_features
 
 #define CALL(feat_t, out_t, index_t, kernel_index_t, fn)           \
     if (CompareTorchDtype<feat_t>(feat_dtype) &&                   \
@@ -204,7 +203,8 @@ public:
                                                                                \
         torch::Tensor inv_neighbors_index, _inv_neighbors_row_splits,          \
                 inv_neighbors_importance, inv_arange;                          \
-        torch::Tensor arange = torch::arange(neighbors_index.size(0), torch::device(device));         \
+        torch::Tensor arange =                                                 \
+                torch::arange(neighbors_index.size(0), torch::device(device)); \
         std::tie(inv_neighbors_index, _inv_neighbors_row_splits, inv_arange) = \
                 InvertNeighborsList(inp_features.size(0), neighbors_index,     \
                                     neighbors_row_splits, arange);             \
@@ -213,14 +213,14 @@ public:
         if (neighbors_importance.size(0) > 0) {                                \
             inv_neighbors_importance =                                         \
                     neighbors_importance.index(inv_arange).contiguous();       \
+        } else {                                                               \
+            inv_neighbors_importance = torch::empty(                           \
+                    {0}, torch::dtype(feat_dtype).device(device));             \
         }                                                                      \
-        else {\
-            inv_neighbors_importance = torch::empty({0},torch::dtype(feat_dtype).device(device)); \
-        }\
         inp_features_backprop =                                                \
                 torch::ones(inp_features.sizes(),                              \
                             torch::dtype(feat_dtype).device(device));          \
-        auto filters_transposed = filters.transpose(-2, -1).contiguous();        \
+        auto filters_transposed = filters.transpose(-2, -1).contiguous();      \
                                                                                \
         SparseConv##fn_suffix<feat_t, out_t, index_t, kernel_index_t>(         \
                 filters_transposed, out_features_gradient, out_importance,     \
@@ -280,7 +280,8 @@ static auto registry = torch::RegisterOperators(
         "open3d::sparse_conv_transpose(Tensor filters, Tensor out_importance, "
         "Tensor inp_features, Tensor inp_neighbors_index, Tensor "
         "inp_neighbors_importance_sum, Tensor inp_neighbors_row_splits, Tensor "
-        "neighbors_index, Tensor neighbors_kernel_index, Tensor neighbors_importance, Tensor "
+        "neighbors_index, Tensor neighbors_kernel_index, Tensor "
+        "neighbors_importance, Tensor "
         "neighbors_row_splits, bool normalize=False, int max_temp_mem_MB=64) "
         "-> Tensor",
         &::SparseConvTranspose);
