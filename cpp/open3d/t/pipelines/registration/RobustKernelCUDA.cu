@@ -24,5 +24,5 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
+#include "open3d/t/pipelines/registration/RobustKernelImpl.h"

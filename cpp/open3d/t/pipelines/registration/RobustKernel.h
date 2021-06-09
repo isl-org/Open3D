@@ -79,9 +79,9 @@ public:
     /// Loss type.
     RobustKernelMethod type_ = RobustKernelMethod::TukeyLoss;
     /// Scaling parameter.
-    double k_;
+    double k_ = 1.0;
     /// Shape parameter.
-    double c_;
+    double c_ = 1.0;
 };
 
 }  // namespace registration

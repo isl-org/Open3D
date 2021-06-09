@@ -38,15 +38,14 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_points,
                                      const core::Tensor &target_normals,
                                      const core::Tensor &correspondence_indices,
-                                     int &inlier_count) {
+                                     int &inlier_count,
+                                     const registration::RobustKernel &kernel) {
     // Get dtype and device.
     core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
-    // Number of correspondences.
-    // int n = corres.first.GetLength();
 
     // Pointer to point cloud data - indexed according to correspondences.
     core::Tensor source_points_contiguous = source_points.Contiguous();
@@ -54,22 +53,18 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     core::Tensor target_normals_contiguous = target_normals.Contiguous();
     core::Tensor corres_contiguous = correspondence_indices.Contiguous();
 
-    // auto op = [&] OPEN3D_HOST_DEVICE(float r) -> float {
-    //     return 1.0 / r;
-    // };
-
     float residual = 0;
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         ComputePosePointToPlaneCPU(
                 source_points_contiguous, target_points_contiguous,
                 target_normals_contiguous, corres_contiguous, pose, residual,
-                inlier_count, dtype, device);
+                inlier_count, dtype, device, kernel);
     } else if (device_type == core::Device::DeviceType::CUDA) {
         CUDA_CALL(ComputePosePointToPlaneCUDA, source_points_contiguous,
                   target_points_contiguous, target_normals_contiguous,
                   corres_contiguous, pose, residual, inlier_count, dtype,
-                  device);
+                  device, kernel);
     } else {
         utility::LogError("Unimplemented device.");
     }

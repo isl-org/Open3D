@@ -32,9 +32,9 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
 
 namespace open3d {
 
@@ -89,7 +89,7 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
-    /// \param inlier_count Number of valid correspondences.
+    /// \param inlier_count [Ouput] Number of valid correspondences.
     /// \return transformation between source to target, a tensor of shape {4,
     /// 4}, type Float64 on CPU device.
     virtual core::Tensor ComputeTransformation(
@@ -137,7 +137,7 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
-    /// \param inlier_count Number of valid correspondences.
+    /// \param inlier_count [Ouput] Number of valid correspondences.
     /// \return transformation between source to target, a tensor of
     /// shape {4, 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(const geometry::PointCloud &source,
@@ -160,11 +160,19 @@ public:
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
+    /// \brief Constructor that takes as input a RobustKernel
+    ///
+    /// \param kernel Any of the implemented statistical robust kernel for
+    /// outlier rejection.
+    explicit TransformationEstimationPointToPlane(const RobustKernel &kernel)
+        : kernel_(kernel) {}
+
 public:
     TransformationEstimationType GetTransformationEstimationType()
             const override {
         return type_;
     };
+
     /// \brief Computes RMSE (double) for PointToPlane method, between two
     /// pointclouds of type Float32, given correspondences.
     ///
@@ -189,13 +197,17 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
-    /// \param inlier_count Number of valid correspondences.
+    /// \param inlier_count [Ouput] Number of valid correspondences.
     /// \return transformation between source to target, a tensor
     /// of shape {4, 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(const geometry::PointCloud &source,
                                        const geometry::PointCloud &target,
                                        const core::Tensor &correspondences,
                                        int &inlier_count) const override;
+
+public:
+    /// RobustKernel for outlier rejection.
+    RobustKernel kernel_ = RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
 
 private:
     const TransformationEstimationType type_ =

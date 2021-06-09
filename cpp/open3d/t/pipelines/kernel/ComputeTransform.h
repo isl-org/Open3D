@@ -28,6 +28,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/t/pipelines/registration/Registration.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
 
 namespace open3d {
 namespace t {
@@ -45,7 +46,8 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_points,
                                      const core::Tensor &target_normals,
                                      const core::Tensor &correspondence_indices,
-                                     int &inlier_count);
+                                     int &inlier_count,
+                                     const registration::RobustKernel &kernel);
 
 /// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
 /// for point to point registration method.

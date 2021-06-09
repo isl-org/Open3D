@@ -30,6 +30,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
 
 namespace open3d {
 namespace t {
@@ -44,7 +45,8 @@ void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
                                 float &residual,
                                 int &inlier_count,
                                 const core::Dtype &dtype,
-                                const core::Device &device);
+                                const core::Device &device,
+                                const registration::RobustKernel &kernel);
 
 #ifdef BUILD_CUDA_MODULE
 void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
@@ -55,7 +57,8 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
                                  float &residual,
                                  int &inlier_count,
                                  const core::Dtype &dtype,
-                                 const core::Device &device);
+                                 const core::Device &device,
+                                 const registration::RobustKernel &kernel);
 #endif
 
 void ComputeRtPointToPointCPU(const core::Tensor &source_points,

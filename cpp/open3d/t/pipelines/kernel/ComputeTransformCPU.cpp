@@ -34,42 +34,134 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
-#include "open3d/t/pipelines/kernel/Common.h"
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 
+template <typename scalar_t, typename funct_t>
+static void ComputePosePointToPlaneKernelCPU(
+        const scalar_t *source_points_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *target_normals_ptr,
+        const int64_t *correspondence_indices,
+        const int n,
+        scalar_t *global_sum,
+        funct_t op) {
+    // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
+    // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
+    // with [0:21] elements as ATA and [21:27] elements as ATB.
+    std::vector<scalar_t> A_1x29(29, 0.0);
+
+#ifdef _WIN32
+    std::vector<scalar_t> zeros_29(29, 0.0);
+    A_1x29 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), zeros_29,
+            [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     workload_idx++) {
+#else
+    scalar_t *A_reduction = A_1x29.data();
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(auto)
+    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+#endif
+                    scalar_t J_ij[6];
+                    scalar_t r = 0;
+
+                    bool valid = kernel::GetJacobianPointToPlane<scalar_t>(
+                            workload_idx, source_points_ptr, target_points_ptr,
+                            target_normals_ptr, correspondence_indices, J_ij,
+                            r);
+
+                    // float w = r == 0 ? 1.0 : op(r);
+                    scalar_t w = op(r);
+
+                    if (valid) {
+                        A_reduction[0] += J_ij[0] * w * J_ij[0];
+                        A_reduction[1] += J_ij[1] * w * J_ij[0];
+                        A_reduction[2] += J_ij[1] * w * J_ij[1];
+                        A_reduction[3] += J_ij[2] * w * J_ij[0];
+                        A_reduction[4] += J_ij[2] * w * J_ij[1];
+                        A_reduction[5] += J_ij[2] * w * J_ij[2];
+                        A_reduction[6] += J_ij[3] * w * J_ij[0];
+                        A_reduction[7] += J_ij[3] * w * J_ij[1];
+                        A_reduction[8] += J_ij[3] * w * J_ij[2];
+                        A_reduction[9] += J_ij[3] * w * J_ij[3];
+                        A_reduction[10] += J_ij[4] * w * J_ij[0];
+                        A_reduction[11] += J_ij[4] * w * J_ij[1];
+                        A_reduction[12] += J_ij[4] * w * J_ij[2];
+                        A_reduction[13] += J_ij[4] * w * J_ij[3];
+                        A_reduction[14] += J_ij[4] * w * J_ij[4];
+                        A_reduction[15] += J_ij[5] * w * J_ij[0];
+                        A_reduction[16] += J_ij[5] * w * J_ij[1];
+                        A_reduction[17] += J_ij[5] * w * J_ij[2];
+                        A_reduction[18] += J_ij[5] * w * J_ij[3];
+                        A_reduction[19] += J_ij[5] * w * J_ij[4];
+                        A_reduction[20] += J_ij[5] * w * J_ij[5];
+
+                        A_reduction[21] += J_ij[0] * w * r;
+                        A_reduction[22] += J_ij[1] * w * r;
+                        A_reduction[23] += J_ij[2] * w * r;
+                        A_reduction[24] += J_ij[3] * w * r;
+                        A_reduction[26] += J_ij[5] * w * r;
+                        A_reduction[25] += J_ij[4] * w * r;
+
+                        A_reduction[27] += r * r;
+                        A_reduction[28] += 1;
+                    }
+                }
+#ifdef _WIN32
+                return A_reduction;
+            },
+            // TBB: Defining reduction operation.
+            [&](std::vector<scalar_t> &a, std::vector<scalar_t> &b) {
+                std::vector<scalar_t> result(29);
+                for (int j = 0; j < 29; j++) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
+#endif
+
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < 29; i++) {
+        global_sum[i] = A_reduction[i];
+    }
+}
+
 void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
                                 const core::Tensor &target_points,
                                 const core::Tensor &target_normals,
-                                const core::Tensor &corres,
+                                const core::Tensor &correspondence_indices,
                                 core::Tensor &pose,
                                 float &residual,
-                                int &count,
+                                int &inlier_count,
                                 const core::Dtype &dtype,
-                                const core::Device &device) {
+                                const core::Device &device,
+                                const registration::RobustKernel &kernel) {
+    int n = source_points.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
+
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        const scalar_t *source_points_ptr =
-                source_points.GetDataPtr<scalar_t>();
-        const scalar_t *target_points_ptr =
-                target_points.GetDataPtr<scalar_t>();
-        const scalar_t *target_normals_ptr =
-                target_normals.GetDataPtr<scalar_t>();
-        const int64_t *correspondence_indices = corres.GetDataPtr<int64_t>();
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
 
-        int n = corres.GetLength();
-
-        core::Tensor A_reduction =
-                kernel::Get6x6CompressedLinearTensor<scalar_t>(
-                        source_points_ptr, target_points_ptr,
-                        target_normals_ptr, correspondence_indices, n);
-
-        DecodeAndSolve6x6(A_reduction, pose, residual, count);
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                kernel.type_, scalar_t, kernel.k_, kernel.c_, [&]() {
+                    kernel::ComputePosePointToPlaneKernelCPU(
+                            source_points.GetDataPtr<scalar_t>(),
+                            target_points.GetDataPtr<scalar_t>(),
+                            target_normals.GetDataPtr<scalar_t>(),
+                            correspondence_indices.GetDataPtr<int64_t>(), n,
+                            global_sum_ptr, func_t);
+                });
     });
+
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
 
 template <typename scalar_t>
@@ -82,7 +174,7 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                                   core::Tensor &Sxy,
                                   core::Tensor &mean_t,
                                   core::Tensor &mean_s,
-                                  int &count) {
+                                  int &inlier_count) {
     // Calculating mean_s and mean_t, which are mean(x, y, z) of source and
     // target points respectively.
     std::vector<double> mean_1x7(7, 0.0);
@@ -185,7 +277,7 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
         mean_t_ptr[j] = mean_1x7[j + 3];
     }
 
-    count = static_cast<int64_t>(mean_1x7[6]);
+    inlier_count = static_cast<int64_t>(mean_1x7[6]);
 }
 
 void ComputeRtPointToPointCPU(const core::Tensor &source_points,
@@ -193,7 +285,7 @@ void ComputeRtPointToPointCPU(const core::Tensor &source_points,
                               const core::Tensor &corres,
                               core::Tensor &R,
                               core::Tensor &t,
-                              int &count,
+                              int &inlier_count,
                               const core::Dtype &dtype,
                               const core::Device &device) {
     core::Tensor Sxy, mean_t, mean_s;
@@ -209,7 +301,7 @@ void ComputeRtPointToPointCPU(const core::Tensor &source_points,
 
         Get3x3SxyLinearSystem(source_points_ptr, target_points_ptr,
                               correspondence_indices, n, dtype, device, Sxy,
-                              mean_t, mean_s, count);
+                              mean_t, mean_s, inlier_count);
     });
 
     core::Tensor U, D, VT;

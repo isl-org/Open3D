@@ -43,12 +43,12 @@ namespace kernel {
 
 const int kThread1DUnit = 256;
 
-template <typename scalar_t, class funct_t>
-__global__ void ComputePosePointToPlaneCUDAKernel(
+template <typename scalar_t, typename funct_t>
+__global__ void ComputePosePointToPlaneKernelCUDA(
         const scalar_t *source_points_ptr,
         const scalar_t *target_points_ptr,
         const scalar_t *target_normals_ptr,
-        const int64_t *correspondences_second,
+        const int64_t *correspondence_indices,
         const int n,
         scalar_t *global_sum,
         funct_t op) {
@@ -66,30 +66,48 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
 
     if (workload_idx >= n) return;
 
-    scalar_t J[6] = {0}, reduction[29] = {0};
+    scalar_t J_ij[6] = {0}, reduction[29] = {0};
     scalar_t r = 0;
 
     bool valid = GetJacobianPointToPlane<scalar_t>(
             workload_idx, source_points_ptr, target_points_ptr,
-            target_normals_ptr, correspondences_second, J, r);
+            target_normals_ptr, correspondence_indices, J_ij, r);
 
     scalar_t w = op(r);
 
-    // printf(" residual: %lf, weight: %lf", (double)r, (double)w);
-
     if (valid) {
         // Dump J, r into JtJ and Jtr
-        int offset = 0;
-        for (int i = 0; i < 6; ++i) {
-            for (int j = 0; j <= i; ++j) {
-                reduction[offset++] = J[i] * w * J[j];
-            }
-        }
-        for (int i = 0; i < 6; ++i) {
-            reduction[offset++] = J[i] * w * r;
-        }
-        reduction[offset++] = r * w * r;
-        reduction[offset++] = valid;
+        reduction[0] += J_ij[0] * w * J_ij[0];
+        reduction[1] += J_ij[1] * w * J_ij[0];
+        reduction[2] += J_ij[1] * w * J_ij[1];
+        reduction[3] += J_ij[2] * w * J_ij[0];
+        reduction[4] += J_ij[2] * w * J_ij[1];
+        reduction[5] += J_ij[2] * w * J_ij[2];
+        reduction[6] += J_ij[3] * w * J_ij[0];
+        reduction[7] += J_ij[3] * w * J_ij[1];
+        reduction[8] += J_ij[3] * w * J_ij[2];
+        reduction[9] += J_ij[3] * w * J_ij[3];
+        reduction[10] += J_ij[4] * w * J_ij[0];
+        reduction[11] += J_ij[4] * w * J_ij[1];
+        reduction[12] += J_ij[4] * w * J_ij[2];
+        reduction[13] += J_ij[4] * w * J_ij[3];
+        reduction[14] += J_ij[4] * w * J_ij[4];
+        reduction[15] += J_ij[5] * w * J_ij[0];
+        reduction[16] += J_ij[5] * w * J_ij[1];
+        reduction[17] += J_ij[5] * w * J_ij[2];
+        reduction[18] += J_ij[5] * w * J_ij[3];
+        reduction[19] += J_ij[5] * w * J_ij[4];
+        reduction[20] += J_ij[5] * w * J_ij[5];
+
+        reduction[21] += J_ij[0] * w * r;
+        reduction[22] += J_ij[1] * w * r;
+        reduction[23] += J_ij[2] * w * r;
+        reduction[24] += J_ij[3] * w * r;
+        reduction[26] += J_ij[5] * w * r;
+        reduction[25] += J_ij[4] * w * r;
+
+        reduction[27] += r * r;
+        reduction[28] += 1;
     }
 
     ReduceSum6x6LinearSystem<scalar_t, kThread1DUnit>(tid, valid, reduction,
@@ -105,31 +123,31 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
                                  float &residual,
                                  int &inlier_count,
                                  const core::Dtype &dtype,
-                                 const core::Device &device) {
+                                 const core::Device &device,
+                                 const registration::RobustKernel &kernel) {
     int n = source_points.GetLength();
 
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
+    const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
+    const dim3 threads(kThread1DUnit);
+
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
 
-        const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
-        const dim3 threads(kThread1DUnit);
-
         DISPATCH_ROBUST_KERNEL_FUNCTION(
-                pipelines::registration::RobustKernelMethod::TukeyLoss,
-                scalar_t, 0.1, 1.0, [&]() {
-                    ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
+                kernel.type_, scalar_t, kernel.k_, kernel.c_, [&]() {
+                    ComputePosePointToPlaneKernelCUDA<<<blocks, threads>>>(
                             source_points.GetDataPtr<scalar_t>(),
                             target_points.GetDataPtr<scalar_t>(),
                             target_normals.GetDataPtr<scalar_t>(),
                             correspondence_indices.GetDataPtr<int64_t>(), n,
                             global_sum_ptr, func_t);
                 });
-
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-
-        DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
     });
+
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
 
 }  // namespace kernel

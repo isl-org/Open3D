@@ -3,7 +3,6 @@ add_library(tpipelines OBJECT)
 target_sources(tpipelines PRIVATE
     kernel/ComputeTransform.cpp
     kernel/ComputeTransformCPU.cpp
-    kernel/Common.cpp
     kernel/FillInLinearSystem.cpp
     kernel/FillInLinearSystemCPU.cpp
     kernel/RGBDOdometry.cpp

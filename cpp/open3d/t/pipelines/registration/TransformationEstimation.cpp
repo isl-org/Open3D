@@ -132,7 +132,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     // target point cloud.
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
             source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
-            correspondences, inlier_cout);
+            correspondences, inlier_cout, this->kernel_);
 
     // Get transformation {4,4} of type Float64 from pose {6}.
     return pipelines::kernel::PoseToTransformation(pose);
