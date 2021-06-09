@@ -16,7 +16,9 @@
 
 if(NOT Pytorch_FOUND)
     # Searching for pytorch requires the python executable
-    find_package(PythonExecutable REQUIRED)
+    if (NOT PYTHON_EXECUTABLE)
+        message(FATAL_ERROR "PYTHON_EXECUTABLE should be set in top level CMakeLists.txt")
+    endif()
 
     message(STATUS "Getting PyTorch properties ...")
 

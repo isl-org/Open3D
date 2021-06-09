@@ -14,7 +14,7 @@ System requirements
   * macOS 10.14+: XCode 8.0+
   * Windows 10 (64-bit): Visual Studio 2019+
 
-* CMake: 3.18+
+* CMake: 3.19+
 
   * Ubuntu (18.04 / 20.04):
 

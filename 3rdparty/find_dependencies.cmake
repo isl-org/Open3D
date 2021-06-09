@@ -773,16 +773,18 @@ if(NOT USE_SYSTEM_FMT)
 endif()
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${FMT_TARGET}")
 
-# Pybind11
-if(USE_SYSTEM_PYBIND11)
-    find_package(pybind11)
-endif()
-if (NOT USE_SYSTEM_PYBIND11 OR NOT TARGET pybind11::module)
-    set(USE_SYSTEM_PYBIND11 OFF)
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/pybind11)
-endif()
-if(TARGET pybind11::module)
-    set(PYBIND11_TARGET "pybind11::module")
+if (BUILD_PYTHON_MODULE)
+    # Pybind11
+    if(USE_SYSTEM_PYBIND11)
+        find_package(pybind11)
+    endif()
+    if (NOT USE_SYSTEM_PYBIND11 OR NOT TARGET pybind11::module)
+        set(USE_SYSTEM_PYBIND11 OFF)
+        add_subdirectory(${Open3D_3RDPARTY_DIR}/pybind11)
+    endif()
+    if(TARGET pybind11::module)
+        set(PYBIND11_TARGET "pybind11::module")
+    endif()
 endif()
 
 # Azure Kinect

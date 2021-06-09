@@ -9,7 +9,9 @@
 
 if(NOT Tensorflow_FOUND)
     # Searching for tensorflow requires the python executable
-    find_package(PythonExecutable REQUIRED)
+    if (NOT PYTHON_EXECUTABLE)
+        message(FATAL_ERROR "PYTHON_EXECUTABLE should be set in top level CMakeLists.txt")
+    endif()
 
     message(STATUS "Getting TensorFlow properties ...")
 
