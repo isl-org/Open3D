@@ -194,19 +194,6 @@ if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
 
-# Set Python executable
-find_package(Python3 COMPONENTS Interpreter)
-if (Python3_FOUND)
-    # Setup PYTHON_EXECUTABLE for 3rdparty modules
-    # which still use the deprecated find_package(PythonInterp)
-    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE STRING
-        "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
-else()
-    if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires the Python executable")
-    endif()
-endif()
-
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
 foreach(ver ${OPEN3D_VERSION_READ})
@@ -238,6 +225,21 @@ message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
+
+# Set Python executable
+find_package(Python3 3.6...<3.9
+             COMPONENTS Interpreter Development
+)
+if (Python3_FOUND)
+    # Setup PYTHON_EXECUTABLE for 3rdparty modules
+    # which still use the deprecated find_package(PythonInterp)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE STRING
+        "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
+else()
+    if (BUILD_PYTHON_MODULE)
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires the Python executable")
+    endif()
+endif()
 
 # npm version has to be MAJOR.MINOR.PATCH
 string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
