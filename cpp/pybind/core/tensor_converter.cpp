@@ -217,7 +217,7 @@ Tensor PyHandleToTensor(const py::handle& handle,
     // 5) tuple
     // 6) numpy.ndarray (value will be copied)
     // 7) Tensor (value will be copied)
-    std::string class_name(handle.get_type().str());
+    std::string class_name(py::str(handle.get_type()));
     if (class_name == "<class 'bool'>") {
         return BoolToTensor(static_cast<bool>(handle.cast<py::bool_>()), dtype,
                             device);
@@ -255,8 +255,8 @@ Tensor PyHandleToTensor(const py::handle& handle,
 
 SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
     SizeVector shape;
-    for (const py::handle& item : tuple) {
-        if (std::string(item.get_type().str()) == "<class 'int'>") {
+    for (const py::handle item : tuple) {
+        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
             utility::LogError(
@@ -269,8 +269,8 @@ SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
 
 SizeVector PyListToSizeVector(const py::list& list) {
     SizeVector shape;
-    for (const py::handle& item : list) {
-        if (std::string(item.get_type().str()) == "<class 'int'>") {
+    for (const py::handle item : list) {
+        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
             utility::LogError(
@@ -282,7 +282,7 @@ SizeVector PyListToSizeVector(const py::list& list) {
 }
 
 SizeVector PyHandleToSizeVector(const py::handle& handle) {
-    std::string class_name(handle.get_type().str());
+    std::string class_name(py::str(handle.get_type()));
     if (class_name == "<class 'int'>") {
         return SizeVector{static_cast<int64_t>(handle.cast<py::int_>())};
     } else if (class_name == "<class 'list'>") {
