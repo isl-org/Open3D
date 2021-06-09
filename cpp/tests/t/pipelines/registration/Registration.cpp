@@ -29,8 +29,13 @@
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/pipelines/registration/Registration.h"
+#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/io/PointCloudIO.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "tests/UnitTest.h"
+
+namespace t_reg = open3d::t::pipelines::registration;
+namespace l_reg = open3d::pipelines::registration;
 
 namespace open3d {
 namespace tests {
@@ -48,7 +53,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
     // Constructor.
-    t::pipelines::registration::ICPConvergenceCriteria convergence_criteria;
+    t_reg::ICPConvergenceCriteria convergence_criteria;
     // Default values.
     EXPECT_EQ(convergence_criteria.max_iteration_, 30);
     EXPECT_DOUBLE_EQ(convergence_criteria.relative_fitness_, 1e-6);
@@ -62,7 +67,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
     // Initial transformation input for tensor implementation.
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
-    t::pipelines::registration::RegistrationResult reg_result(init_trans_t);
+    t_reg::RegistrationResult reg_result(init_trans_t);
 
     EXPECT_DOUBLE_EQ(reg_result.inlier_rmse_, 0.0);
     EXPECT_DOUBLE_EQ(reg_result.fitness_, 0.0);
@@ -149,16 +154,14 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
         double max_correspondence_dist = 1.25;
 
         // Tensor evaluation.
-        t::pipelines::registration::RegistrationResult evaluation_t =
-                open3d::t::pipelines::registration::EvaluateRegistration(
-                        source_tpcd, target_tpcd, max_correspondence_dist,
-                        initial_transform_t);
+        t_reg::RegistrationResult evaluation_t = t_reg::EvaluateRegistration(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                initial_transform_t);
 
         // Legacy evaluation.
-        open3d::pipelines::registration::RegistrationResult evaluation_l =
-                open3d::pipelines::registration::EvaluateRegistration(
-                        source_lpcd, target_lpcd, max_correspondence_dist,
-                        initial_transform_l);
+        l_reg::RegistrationResult evaluation_l = l_reg::EvaluateRegistration(
+                source_lpcd, target_lpcd, max_correspondence_dist,
+                initial_transform_l);
 
         EXPECT_NEAR(evaluation_t.fitness_, evaluation_l.fitness_, 0.0005);
         EXPECT_NEAR(evaluation_t.inlier_rmse_, evaluation_l.inlier_rmse_,
@@ -192,27 +195,20 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
         int max_iterations = 2;
 
         // PointToPoint - Tensor.
-        t::pipelines::registration::RegistrationResult reg_p2p_t =
-                open3d::t::pipelines::registration::RegistrationICP(
-                        source_tpcd, target_tpcd, max_correspondence_dist,
-                        initial_transform_t,
-                        open3d::t::pipelines::registration::
-                                TransformationEstimationPointToPoint(),
-                        open3d::t::pipelines::registration::
-                                ICPConvergenceCriteria(relative_fitness,
-                                                       relative_rmse,
-                                                       max_iterations));
+        t_reg::RegistrationResult reg_p2p_t = t_reg::RegistrationICP(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                initial_transform_t,
+                t_reg::TransformationEstimationPointToPoint(),
+                t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
 
         // PointToPoint - Legacy.
-        pipelines::registration::RegistrationResult reg_p2p_l =
-                open3d::pipelines::registration::RegistrationICP(
-                        source_lpcd, target_lpcd, max_correspondence_dist,
-                        initial_transform_l,
-                        open3d::pipelines::registration::
-                                TransformationEstimationPointToPoint(),
-                        open3d::pipelines::registration::ICPConvergenceCriteria(
-                                relative_fitness, relative_rmse,
-                                max_iterations));
+        l_reg::RegistrationResult reg_p2p_l = l_reg::RegistrationICP(
+                source_lpcd, target_lpcd, max_correspondence_dist,
+                initial_transform_l,
+                l_reg::TransformationEstimationPointToPoint(),
+                l_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
 
         EXPECT_NEAR(reg_p2p_t.fitness_, reg_p2p_l.fitness_, 0.0005);
         EXPECT_NEAR(reg_p2p_t.inlier_rmse_, reg_p2p_l.inlier_rmse_, 0.0005);
@@ -245,27 +241,24 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
         int max_iterations = 2;
 
         // PointToPlane - Tensor.
-        t::pipelines::registration::RegistrationResult reg_p2plane_t =
-                open3d::t::pipelines::registration::RegistrationICP(
-                        source_tpcd, target_tpcd, max_correspondence_dist,
-                        initial_transform_t,
-                        open3d::t::pipelines::registration::
-                                TransformationEstimationPointToPlane(),
-                        open3d::t::pipelines::registration::
-                                ICPConvergenceCriteria(relative_fitness,
-                                                       relative_rmse,
-                                                       max_iterations));
+        t_reg::RegistrationResult reg_p2plane_t = t_reg::RegistrationICP(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                initial_transform_t,
+                t_reg::TransformationEstimationPointToPlane(
+                        t_reg::RobustKernel(t_reg::RobustKernelMethod::L1Loss,
+                                            /*scale parameter =*/1.0,
+                                            /*shape parameter =*/1.0)),
+                t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
 
         // PointToPlane - Legacy.
-        pipelines::registration::RegistrationResult reg_p2plane_l =
-                open3d::pipelines::registration::RegistrationICP(
-                        source_lpcd, target_lpcd, max_correspondence_dist,
-                        initial_transform_l,
-                        open3d::pipelines::registration::
-                                TransformationEstimationPointToPlane(),
-                        open3d::pipelines::registration::ICPConvergenceCriteria(
-                                relative_fitness, relative_rmse,
-                                max_iterations));
+        l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationICP(
+                source_lpcd, target_lpcd, max_correspondence_dist,
+                initial_transform_l,
+                l_reg::TransformationEstimationPointToPlane(
+                        std::make_shared<l_reg::L1Loss>()),
+                l_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
 
         EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.0005);
         EXPECT_NEAR(reg_p2plane_t.inlier_rmse_, reg_p2plane_l.inlier_rmse_,

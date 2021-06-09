@@ -151,7 +151,8 @@ void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
 
         DISPATCH_ROBUST_KERNEL_FUNCTION(
-                kernel.type_, scalar_t, kernel.k_, kernel.c_, [&]() {
+                kernel.type_, scalar_t, kernel.scaling_parameter_,
+                kernel.shape_parameter_, [&]() {
                     kernel::ComputePosePointToPlaneKernelCPU(
                             source_points.GetDataPtr<scalar_t>(),
                             target_points.GetDataPtr<scalar_t>(),

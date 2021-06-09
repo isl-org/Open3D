@@ -68,20 +68,22 @@ enum class RobustKernelMethod {
 /// order derivate.
 class RobustKernel {
 public:
-    RobustKernel(const RobustKernelMethod type,
-                 const double& scaling_parameter,
-                 const double& shape_parameter)
-        : type_(type), k_(scaling_parameter), c_(shape_parameter){};
+    RobustKernel(const RobustKernelMethod type = RobustKernelMethod::HuberLoss,
+                 const double& scaling_parameter = 1.0,
+                 const double& shape_parameter = 1.0)
+        : type_(type),
+          scaling_parameter_(scaling_parameter),
+          shape_parameter_(shape_parameter){};
 
     ~RobustKernel() = default;
 
 public:
     /// Loss type.
-    RobustKernelMethod type_ = RobustKernelMethod::TukeyLoss;
+    RobustKernelMethod type_ = RobustKernelMethod::HuberLoss;
     /// Scaling parameter.
-    double k_ = 1.0;
+    double scaling_parameter_ = 1.0;
     /// Shape parameter.
-    double c_ = 1.0;
+    double shape_parameter_ = 1.0;
 };
 
 }  // namespace registration

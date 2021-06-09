@@ -29,55 +29,72 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 
+namespace {
 #define O3D_ABS(a) (a < 0 ? -a : a)
 #define O3D_MAX(a, b) (a > b ? a : b)
 #define O3D_MIN(a, b) (a < b ? a : b)
 #define O3D_SQUARE(a) ((a) * (a))
+}  // namespace
 
-#define DISPATCH_ROBUST_KERNEL_FUNCTION(METHOD, T, k, c, ...)                 \
-    [&] {                                                                     \
-        if (METHOD ==                                                         \
-            open3d::t::pipelines::registration::RobustKernelMethod::L2Loss) { \
-            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T { return 1.0; };   \
-            return __VA_ARGS__();                                             \
-        } else if (METHOD == open3d::t::pipelines::registration::             \
-                                     RobustKernelMethod::L1Loss) {            \
-            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
-                return 1.0 / O3D_ABS(r);                                      \
-            };                                                                \
-            return __VA_ARGS__();                                             \
-        } else if (METHOD == open3d::t::pipelines::registration::             \
-                                     RobustKernelMethod::HuberLoss) {         \
-            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
-                return k / O3D_MAX(O3D_ABS(r), k);                            \
-            };                                                                \
-            return __VA_ARGS__();                                             \
-        } else if (METHOD == open3d::t::pipelines::registration::             \
-                                     RobustKernelMethod::CauchyLoss) {        \
-            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
-                return 1.0 / (1.0 + O3D_SQUARE(r / k));                       \
-            };                                                                \
-            return __VA_ARGS__();                                             \
-        } else if (METHOD == open3d::t::pipelines::registration::             \
-                                     RobustKernelMethod::GMLoss) {            \
-            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
-                return k / O3D_SQUARE(k + O3D_SQUARE(r));                     \
-            };                                                                \
-            return __VA_ARGS__();                                             \
-        } else if (METHOD == open3d::t::pipelines::registration::             \
-                                     RobustKernelMethod::TukeyLoss) {         \
-            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
-                return O3D_SQUARE(1.0 -                                       \
-                                  O3D_SQUARE(O3D_MIN(1.0, O3D_ABS(r) / k)));  \
-            };                                                                \
-            return __VA_ARGS__();                                             \
-        } else if (METHOD == open3d::t::pipelines::registration::             \
-                                     RobustKernelMethod::GeneralizedLoss) {   \
-            auto func_t = [=] OPEN3D_HOST_DEVICE(T r) -> T {                  \
-                return 1.0 / O3D_ABS(r);                                      \
-            };                                                                \
-            return __VA_ARGS__();                                             \
-        } else {                                                              \
-            utility::LogError("Unsupported method.");                         \
-        }                                                                     \
+/// To use `Robust Kernel` functions please refer
+/// `t::pipelines::kernel::ComputePosePointToPlaneCUDA` and
+/// `t::pipelines::kernel::ComputePosePointToPlaneCPU` use cases.
+///
+/// \param METHOD registration::RobustKernelMethod Loss type.
+/// \param T type: float / double.
+/// \param scaling_parameter Scaling parameter for loss fine-tuning.
+/// \param shape_parameter Shape parameter for Generalized Loss method.
+#define DISPATCH_ROBUST_KERNEL_FUNCTION(METHOD, T, scaling_parameter,          \
+                                        shape_parameter, ...)                  \
+    [&] {                                                                      \
+        if (METHOD ==                                                          \
+            open3d::t::pipelines::registration::RobustKernelMethod::L2Loss) {  \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {            \
+                return 1.0;                                                    \
+            };                                                                 \
+            return __VA_ARGS__();                                              \
+        } else if (METHOD == open3d::t::pipelines::registration::              \
+                                     RobustKernelMethod::L1Loss) {             \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {            \
+                return 1.0 / O3D_ABS(residual);                                \
+            };                                                                 \
+            return __VA_ARGS__();                                              \
+        } else if (METHOD == open3d::t::pipelines::registration::              \
+                                     RobustKernelMethod::HuberLoss) {          \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {            \
+                return scaling_parameter /                                     \
+                       O3D_MAX(O3D_ABS(residual), scaling_parameter);          \
+            };                                                                 \
+            return __VA_ARGS__();                                              \
+        } else if (METHOD == open3d::t::pipelines::registration::              \
+                                     RobustKernelMethod::CauchyLoss) {         \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {            \
+                return 1.0 / (1.0 + O3D_SQUARE(residual / scaling_parameter)); \
+            };                                                                 \
+            return __VA_ARGS__();                                              \
+        } else if (METHOD == open3d::t::pipelines::registration::              \
+                                     RobustKernelMethod::GMLoss) {             \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {            \
+                return scaling_parameter /                                     \
+                       O3D_SQUARE(scaling_parameter + O3D_SQUARE(residual));   \
+            };                                                                 \
+            return __VA_ARGS__();                                              \
+        } else if (METHOD == open3d::t::pipelines::registration::              \
+                                     RobustKernelMethod::TukeyLoss) {          \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {            \
+                return O3D_SQUARE(                                             \
+                        1.0 -                                                  \
+                        O3D_SQUARE(O3D_MIN(                                    \
+                                1.0, O3D_ABS(residual) / scaling_parameter))); \
+            };                                                                 \
+            return __VA_ARGS__();                                              \
+        } else if (METHOD == open3d::t::pipelines::registration::              \
+                                     RobustKernelMethod::GeneralizedLoss) {    \
+            auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {            \
+                return 1.0 / O3D_ABS(residual);                                \
+            };                                                                 \
+            return __VA_ARGS__();                                              \
+        } else {                                                               \
+            utility::LogError("Unsupported method.");                          \
+        }                                                                      \
     }()
