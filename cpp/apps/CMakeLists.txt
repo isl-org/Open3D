@@ -5,7 +5,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     file(GLOB SOURCE_FILES "${SOURCE_DIR}/*.cpp")
     file(GLOB HEADER_FILES "${SOURCE_DIR}/*.h")
 
-    if (APPLE AND IS_DESKTOP_APP)
+    if (APPLE)
         file(GLOB OBJC_FILES "${SOURCE_DIR}/*.mm")
         set(SOURCE_FILES ${SOURCE_FILES} ${OBJC_FILES})
         set(ICON_FILE "${SOURCE_DIR}/AppIcon.icns")
