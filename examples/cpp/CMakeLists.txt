@@ -68,7 +68,6 @@ if (BUILD_GUI)
     open3d_add_example(OffscreenRendering)
     open3d_add_example(TICPOdometry          Threads::Threads)
     open3d_add_example(TICPReconstruction    Threads::Threads)
-    open3d_add_example(VoxelHashingGUI       Threads::Threads)
 endif()
 
 if(BUILD_WEBRTC)

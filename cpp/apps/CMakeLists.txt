@@ -5,7 +5,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     file(GLOB SOURCE_FILES "${SOURCE_DIR}/*.cpp")
     file(GLOB HEADER_FILES "${SOURCE_DIR}/*.h")
 
-    if (APPLE)
+    if (APPLE AND IS_DESKTOP_APP)
         file(GLOB OBJC_FILES "${SOURCE_DIR}/*.mm")
         set(SOURCE_FILES ${SOURCE_FILES} ${OBJC_FILES})
         set(ICON_FILE "${SOURCE_DIR}/AppIcon.icns")
@@ -118,6 +118,27 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     endif()
 endmacro()
 
+
+macro(open3d_add_demo_app SRC_DIR APP_NAME)
+    file(GLOB SRC_FILES "${SRC_DIR}/*.cpp")
+    message(STATUS ${SRC_FILES})
+    add_executable(${APP_NAME} ${SRC_FILES})
+    target_link_libraries(${APP_NAME} PRIVATE Open3D::Open3D ${ARGN})
+
+    open3d_show_and_abort_on_warning(${APP_NAME})
+    open3d_set_global_properties(${APP_NAME})
+
+    install(TARGETS ${APP_NAME}
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+            )
+endmacro()
+
+
 if (BUILD_GUI)
     open3d_add_app(Open3DViewer Open3D Open3DViewer)
+
+    if (BUILD_SLAM_APP)
+       open3d_add_demo_app(Open3DDenseSLAM Open3DDenseSLAM)
+    endif()
 endif()
+

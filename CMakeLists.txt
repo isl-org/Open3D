@@ -34,6 +34,7 @@ option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
 option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
 option(BUILD_GUI                  "Builds new GUI"                           ON )
+option(BUILD_SLAM_APP             "Builds RGBD Dense SLAM GUI"               ON )
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
