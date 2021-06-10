@@ -217,18 +217,6 @@ int main(int argc, char* argv[]) {
     utility::LogInfo("per frame: {}, ray cating: {}, integration: {}",
                      time_total / n, time_raycasting / n, time_int / n);
 
-    open3d::t::io::WriteTSDFVoxelGrid("tsdf.json", voxel_grid);
-
-    t::geometry::TSDFVoxelGrid new_voxel_grid;
-    open3d::t::io::ReadTSDFVoxelGrid("tsdf.json", new_voxel_grid);
-
-    auto pcd = new_voxel_grid.ExtractSurfacePoints(
-            -1, 3.0f,
-            MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);
-    auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-            pcd.ToLegacyPointCloud());
-    open3d::io::WritePointCloud("new_pcd.ply", *pcd_legacy);
-
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh = voxel_grid.ExtractSurfaceMesh();
         auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
@@ -246,4 +234,16 @@ int main(int argc, char* argv[]) {
         open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
                                     *pcd_legacy);
     }
+
+    open3d::t::io::WriteTSDFVoxelGrid("tsdf.json", voxel_grid);
+
+    auto loaded_voxel_grid =
+            open3d::t::io::CreateTSDFVoxelGridFromFile("tsdf.json");
+
+    auto pcd = loaded_voxel_grid->ExtractSurfacePoints(
+            -1, 3.0f,
+            MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);
+    auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
+            pcd.ToLegacyPointCloud());
+    open3d::io::WritePointCloud("new_pcd.ply", *pcd_legacy);
 }

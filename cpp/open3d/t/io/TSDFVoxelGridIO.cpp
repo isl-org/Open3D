@@ -105,7 +105,9 @@ public:
 
 std::shared_ptr<geometry::TSDFVoxelGrid> CreateTSDFVoxelGridFromFile(
         const std::string &filename) {
-    return nullptr;
+    auto voxel_grid_ptr = std::make_shared<geometry::TSDFVoxelGrid>();
+    ReadTSDFVoxelGrid(filename, *voxel_grid_ptr);
+    return voxel_grid_ptr;
 }
 
 bool ReadTSDFVoxelGrid(const std::string &filename,
