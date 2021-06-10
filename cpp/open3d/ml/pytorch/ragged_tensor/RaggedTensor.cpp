@@ -51,17 +51,23 @@ c10::intrusive_ptr<RaggedTensor> RaggedTensor::FromRowSplits(
             .toCustomClass<RaggedTensor>();
 }
 
-torch::Tensor RaggedTensor::GetValues() { return _values; }
-torch::Tensor RaggedTensor::GetRowSplits() { return _row_splits; }
+torch::Tensor RaggedTensor::GetValues() const { return _values; }
+torch::Tensor RaggedTensor::GetRowSplits() const { return _row_splits; }
 
-std::string RaggedTensor::ToString() {
+std::string RaggedTensor::ToString() const {
     std::ostringstream ss;
-    ss << "RaggedTensor(valu es=" << _values.toString()
+    ss << "RaggedTensor(values=" << _values.toString()
        << ", row_splits=" << _row_splits.toString() << ")";
     return ss.str();
 }
 
-torch::Tensor RaggedTensor::GetItem(int key) {
+torch::Tensor RaggedTensor::GetItem(int key) const {
     return _values.slice(0, _row_splits[key].item<int64_t>(),
                          _row_splits[key + 1].item<int64_t>());
+}
+
+int64_t RaggedTensor::Len() const { return _row_splits.sizes().vec()[0] - 1; }
+
+c10::intrusive_ptr<RaggedTensor> RaggedTensor::Clone() {
+    return c10::make_intrusive<RaggedTensor>(_values, _row_splits);
 }

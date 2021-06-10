@@ -54,13 +54,28 @@ public:
                                                    torch::Tensor row_splits);
 
     /// Returns _values tensor.
-    torch::Tensor GetValues();
+    torch::Tensor GetValues() const;
 
     /// Returns _row_splits tensor.
-    torch::Tensor GetRowSplits();
-    std::string ToString();
+    torch::Tensor GetRowSplits() const;
 
-    torch::Tensor GetItem(int key);
+    /// Returns string representation.
+    std::string ToString() const;
+
+    /// Pythonic __getitem__ for RaggedTensor.
+    ///
+    /// Returns a slice of values based on row_splits. It can be
+    /// used to retrieve i'th batch element. Currently it
+    /// only supports a single integer index.
+    torch::Tensor GetItem(int key) const;
+
+    /// Pythonic __len__ for RaggedTensor.
+    ///
+    /// Returns number of batch elements.
+    int64_t Len() const;
+
+    /// Copy Tensor to the same device.
+    c10::intrusive_ptr<RaggedTensor> Clone();
 
 private:
     torch::Tensor _values, _row_splits;
@@ -82,4 +97,6 @@ static auto registry =
                      })
                 .def("__getitem__",
                      [](const c10::intrusive_ptr<RaggedTensor>& self,
-                        int64_t key) { return self->GetItem(key); });
+                        int64_t key) { return self->GetItem(key); })
+                .def("__len__", &RaggedTensor::Len)
+                .def("clone", &RaggedTensor::Clone);

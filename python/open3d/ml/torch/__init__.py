@@ -98,6 +98,7 @@ _loaded = False
 for _lp in _lib_path:
     try:
         _torch.ops.load_library(_lp)
+        _torch.classes.load_library(_lp)
         _loaded = True
         break
     except Exception as ex:
@@ -112,6 +113,7 @@ if not _loaded:
 
 from . import layers
 from . import ops
+from . import classes
 
 # put framework independent modules here for convenience
 from . import configs
