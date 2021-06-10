@@ -138,7 +138,7 @@ if (BUILD_GUI)
     open3d_add_app(Open3DViewer Open3D Open3DViewer)
 
     if (BUILD_SLAM_APP)
-       open3d_add_demo_app(Open3DDenseSLAM Open3DDenseSLAM)
+       open3d_add_demo_app(Open3DDenseSLAM Open3DDenseSLAM Threads::Threads)
     endif()
 endif()
 
