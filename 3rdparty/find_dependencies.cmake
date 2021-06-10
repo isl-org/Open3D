@@ -173,6 +173,8 @@ set(ExternalProject_CMAKE_ARGS
 # libraries throw exceptions that escape Open3D.
 set(ExternalProject_CMAKE_ARGS_hidden
     ${ExternalProject_CMAKE_ARGS}
+    # Apply LANG_VISIBILITY_PRESET to static libraries and archives as well
+    -DCMAKE_POLICY_DEFAULT_CMP0063:STRING=NEW
     -DCMAKE_CXX_VISIBILITY_PRESET=hidden
     -DCMAKE_CUDA_VISIBILITY_PRESET=hidden
     -DCMAKE_C_VISIBILITY_PRESET=hidden
