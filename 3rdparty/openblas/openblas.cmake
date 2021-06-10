@@ -16,6 +16,7 @@ ExternalProject_Add(
     PREFIX openblas
     GIT_REPOSITORY https://github.com/xianyi/OpenBLAS.git
     GIT_TAG v0.3.10
+    GIT_SHALLOW ON
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
     BUILD_COMMAND $(MAKE) TARGET=${OPENBLAS_TARGET} NO_SHARED=1 LIBNAME=CUSTOM_LIB_NAME

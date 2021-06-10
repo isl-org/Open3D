@@ -10,6 +10,7 @@ ExternalProject_Add(
     PREFIX faiss
     GIT_REPOSITORY https://github.com/intel-isl/faiss.git
     GIT_TAG open3d_patch
+    GIT_SHALLOW ON
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}

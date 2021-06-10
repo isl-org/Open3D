@@ -5,6 +5,7 @@ ExternalProject_Add(
     PREFIX librealsense
     GIT_REPOSITORY https://github.com/IntelRealSense/librealsense.git
     GIT_TAG v2.44.0 #  2020 Apr 1
+    GIT_SHALLOW ON
     UPDATE_COMMAND ""
     # Patch for libusb static build failure on Linux
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy

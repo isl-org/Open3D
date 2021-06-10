@@ -11,6 +11,7 @@ ExternalProject_Add(
     PREFIX zlib
     GIT_REPOSITORY https://github.com/madler/zlib.git
     GIT_TAG v1.2.11
+    GIT_SHALLOW ON
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>

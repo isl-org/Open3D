@@ -9,6 +9,7 @@ ExternalProject_Add(
     PREFIX stdgpu
     GIT_REPOSITORY https://github.com/stotko/stdgpu.git
     GIT_TAG 6005da976fe97c035909da6ea64cd7420949002a
+    GIT_SHALLOW OFF # Does not work with commit hashes
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>

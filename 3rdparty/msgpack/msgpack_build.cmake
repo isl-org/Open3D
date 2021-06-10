@@ -5,6 +5,7 @@ ExternalProject_Add(
         PREFIX msgpack-c
         URL https://github.com/msgpack/msgpack-c/releases/download/cpp-3.3.0/msgpack-3.3.0.tar.gz
         URL_HASH MD5=e676575d52caae974e579c3d5f0ba6a2
+        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/msgpack"
         # do not configure
         CONFIGURE_COMMAND ""
         # do not build

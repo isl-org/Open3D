@@ -88,12 +88,6 @@ if (NOT DEVELOPER_BUILD)
     endif()
 endif()
 
-# In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
-# first try to look for the required files in OPEN3D_THIRD_PARTY_DOWNLOAD_DIR, before
-# downloading it from the internet. The files inside OPEN3D_THIRD_PARTY_DOWNLOAD_DIR
-# are prepared manually by the user. This is only supported by limited 3rd party
-# libraries.
-
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
 # will be set, and we don't specify a default CMAKE_BUILD_TYPE.
@@ -119,18 +113,29 @@ if (CCACHE)
     endif()
 endif()
 
-set(THIRD_PARTY_FROM "cmake options")
-if(DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} AND
-        IS_DIRECTORY "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" AND
-        NOT OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
-    set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
-    set(THIRD_PARTY_FROM "the environment")
+# In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# use this directory to cache downloaded 3rd party dependencies and automatically skip
+# downloading from the Internet if the files are available. This is only supported by
+# a limited number of 3rd party libraries.
+set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR_FOUND FALSE)
+if (DEFINED OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
+    get_filename_component(OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" ABSOLUTE)
+    if (IS_DIRECTORY ${OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR})
+        set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR ${OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR})
+        set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR_FOUND TRUE)
+        message(STATUS "Downloading using OPEN3D_THIRD_PARTY_DOWNLOAD_DIR from CMake options: ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
+    endif()
+elseif (DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR})
+    get_filename_component(OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" ABSOLUTE)
+    if (IS_DIRECTORY ${OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR})
+        set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR ${OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR})
+        set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR_FOUND TRUE)
+        message(STATUS "Downloading using OPEN3D_THIRD_PARTY_DOWNLOAD_DIR from the environment: ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
+    endif()
 endif()
-if(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
-    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is set to "
-    "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} from ${THIRD_PARTY_FROM}.")
-else()
-    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
+if(NOT OPEN3D_THIRD_PARTY_DOWNLOAD_DIR_FOUND)
+    set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/3rdparty_downloads")
+    message(STATUS "Downloading directly without OPEN3D_THIRD_PARTY_DOWNLOAD_DIR")
 endif()
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")

@@ -252,37 +252,6 @@ function(import_3rdparty_library name)
     add_library(${PROJECT_NAME}::${name} ALIAS ${name})
 endfunction()
 
-#
-# set_local_or_remote_url(url ...)
-#
-# If LOCAL_URL exists, set URL to LOCAL_URL, otherwise set URL to REMOTE_URLS.
-# This function is needed since CMake does not allow specifying remote URL(s) if
-# a local URL is specified.
-#
-# Valid options:
-#    LOCAL_URL
-#        local url to a file. Optional parameter. If the file does not exist,
-#        LOCAL_URL will be ignored. If the file exists, REMOTE URLS will be
-#        ignored. CMake only allows setting single LOCAL_URL for external
-#        projects.
-#    REMOTE_URLS
-#        remote url(s) to download a file. CMake will try to download the file
-#        in the specified order.
-#
-function(set_local_or_remote_url URL)
-    cmake_parse_arguments(arg "" "LOCAL_URL" "REMOTE_URLS" ${ARGN})
-    if(arg_UNPARSED_ARGUMENTS)
-        message(FATAL_ERROR "Invalid syntax: set_local_or_remote_url(${name} ${ARGN})")
-    endif()
-    if(arg_LOCAL_URL AND (EXISTS ${arg_LOCAL_URL}))
-        message(STATUS "Using local url: ${arg_LOCAL_URL}")
-        set(${URL} "${arg_LOCAL_URL}" PARENT_SCOPE)
-    else()
-        message(STATUS "Using remote url(s): ${arg_REMOTE_URLS}")
-        set(${URL} "${arg_REMOTE_URLS}" PARENT_SCOPE)
-    endif()
-endfunction()
-
 include(ProcessorCount)
 ProcessorCount(NPROC)
 

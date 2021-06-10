@@ -47,6 +47,7 @@ ExternalProject_Add(
     PREFIX filament
     GIT_REPOSITORY ${FILAMENT_GIT_REPOSITORY}
     GIT_TAG ${FILAMENT_GIT_TAG}
+    GIT_SHALLOW OFF # Does not work with commit hashes
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=${FILAMENT_BUILD_TYPE}

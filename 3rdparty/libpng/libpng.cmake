@@ -11,6 +11,7 @@ ExternalProject_Add(
     PREFIX libpng
     GIT_REPOSITORY https://github.com/glennrp/libpng.git
     GIT_TAG v1.6.37
+    GIT_SHALLOW ON
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>

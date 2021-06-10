@@ -2,6 +2,7 @@
 # Downloads IPPICV libraries from the OpenCV 3rd party repo
 
 include(ExternalProject)
+
 # Commit SHA in the opencv_3rdparty repo
 set(IPPICV_COMMIT "a56b6ac6f030c312b2dce17430eef13aed9af274")
 # Check in order APPLE -> WIN32 -> UNIX, since UNIX may be defined on APPLE /
@@ -27,12 +28,6 @@ else()
     return()
 endif()
 
-set_local_or_remote_url(
-    IPPICV_URL
-    LOCAL_URL "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/${OPENCV_ICV_NAME}"
-    REMOTE_URLS "https://raw.githubusercontent.com/opencv/opencv_3rdparty/${IPPICV_COMMIT}/ippicv/${OPENCV_ICV_NAME}"
-    )
-
 if(WIN32)
     set(lib_name ippicvmt)
 else()
@@ -41,8 +36,9 @@ endif()
 
 ExternalProject_Add(ext_ippicv
     PREFIX ippicv
-    URL "${IPPICV_URL}"
+    URL https://raw.githubusercontent.com/opencv/opencv_3rdparty/${IPPICV_COMMIT}/ippicv/${OPENCV_ICV_NAME}
     URL_HASH MD5=${OPENCV_ICV_HASH}
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/ippicv"
     UPDATE_COMMAND ""
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/ippicv/CMakeLists.txt <SOURCE_DIR>
