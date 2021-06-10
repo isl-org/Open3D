@@ -69,7 +69,7 @@ Ubuntu/macOS
 2. Setup Python environments
 ````````````````````````````
 
-Activate the python ``virtualenv`` or Conda ``virtualenv```. Check
+Activate the python ``virtualenv`` or Conda environment. Check
 ``which python`` to ensure that it shows the desired Python executable.
 Alternatively, set the CMake flag ``-DPYTHON_EXECUTABLE=/path/to/python``
 to specify the python executable.
@@ -376,7 +376,7 @@ To build and run C++ unit tests:
 .. code-block:: bash
 
     cmake -DBUILD_UNIT_TESTS=ON ..
-    make -j
+    make -j$(nproc)
     ./bin/tests
 
 
@@ -386,5 +386,5 @@ To run Python unit tests:
 
     # Activate virtualenv first
     pip install pytest
-    make install-pip-package
+    make install-pip-package -j$(nproc)
     pytest ../python/test

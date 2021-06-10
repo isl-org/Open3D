@@ -191,7 +191,8 @@ const py::tuple SubsampleBatch(py::array points,
     // Wrap result subsampled_classes. Data will be copied.
     core::Tensor subsampled_classes_t;
     if (classes.has_value()) {
-        if (subsampled_classes.size() != num_subsampled_points) {
+        if (static_cast<int64_t>(subsampled_classes.size()) !=
+            num_subsampled_points) {
             utility::LogError(
                     "Error: subsampled_classes.size() {} != "
                     "num_subsampled_points {}.",
@@ -338,7 +339,8 @@ const py::object Subsample(py::array points,
     // Wrap result subsampled_classes. Data will be copied.
     core::Tensor subsampled_classes_t;
     if (classes.has_value()) {
-        if (subsampled_classes.size() != num_subsampled_points) {
+        if (static_cast<int64_t>(subsampled_classes.size()) !=
+            num_subsampled_points) {
             utility::LogError(
                     "Error: subsampled_classes.size() {} != "
                     "num_subsampled_points {}.",

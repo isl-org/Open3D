@@ -48,11 +48,11 @@ std::tuple<torch::Tensor, torch::Tensor> roi_pool(
             torch::zeros({batch_size, boxes_num},
                          torch::dtype(ToTorchDtype<int>()).device(device));
 
-    const float *xyz_data = xyz.data<float>();
-    const float *boxes3d_data = boxes3d.data<float>();
-    const float *pts_feature_data = pts_feature.data<float>();
-    float *pooled_features_data = features.data<float>();
-    int *pooled_empty_flag_data = empty_flag.data<int>();
+    const float *xyz_data = xyz.data_ptr<float>();
+    const float *boxes3d_data = boxes3d.data_ptr<float>();
+    const float *pts_feature_data = pts_feature.data_ptr<float>();
+    float *pooled_features_data = features.data_ptr<float>();
+    int *pooled_empty_flag_data = empty_flag.data_ptr<int>();
 
     open3d::ml::contrib::roipool3dLauncher(
             batch_size, pts_num, boxes_num, feature_in_len, sampled_pts_num,

@@ -108,7 +108,7 @@ static TensorKey ToTensorKey(const Tensor& key_tensor) {
 static TensorKey PyHandleToTensorKey(const py::handle& item) {
     // Infer types from type name and dynamic casting.
     // See: https://github.com/pybind/pybind11/issues/84.
-    std::string class_name(item.get_type().str());
+    std::string class_name(py::str(item.get_type()));
     if (class_name == "<class 'int'>") {
         return ToTensorKey(static_cast<int64_t>(item.cast<py::int_>()));
     } else if (class_name == "<class 'slice'>") {
@@ -164,7 +164,7 @@ static void pybind_getitem(py::class_<Tensor>& tensor) {
     // E.g. a[1:2, [3, 4, 5], 3:10] results in a tuple of size 3.
     tensor.def("__getitem__", [](const Tensor& tensor, const py::tuple& key) {
         std::vector<TensorKey> tks;
-        for (const py::handle& item : key) {
+        for (const py::handle item : key) {
             tks.push_back(PyHandleToTensorKey(item));
         }
         return tensor.GetItem(tks);
@@ -223,7 +223,7 @@ static void pybind_setitem(py::class_<Tensor>& tensor) {
     tensor.def("__setitem__", [](Tensor& tensor, const py::tuple& key,
                                  const py::handle& value) {
         std::vector<TensorKey> tks;
-        for (const py::handle& item : key) {
+        for (const py::handle item : key) {
             tks.push_back(PyHandleToTensorKey(item));
         }
         return tensor.SetItem(tks, PyHandleToTensor(value, tensor.GetDtype(),
