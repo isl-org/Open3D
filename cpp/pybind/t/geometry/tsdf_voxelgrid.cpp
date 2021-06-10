@@ -103,7 +103,10 @@ void pybind_tsdf_voxelgrid(py::module& m) {
     tsdf_voxelgrid.def("cpu", &TSDFVoxelGrid::CPU);
     tsdf_voxelgrid.def("cuda", &TSDFVoxelGrid::CUDA, "device_id"_a);
 
-    tsdf_voxelgrid.def("get_block_hashmap", &TSDFVoxelGrid::GetBlockHashmap);
+    tsdf_voxelgrid.def("get_block_hashmap",
+                       [](const geometry::TSDFVoxelGrid& voxelgrid) {
+                           return voxelgrid.GetBlockHashmap();
+                       });
     tsdf_voxelgrid.def("get_device", &TSDFVoxelGrid::GetDevice);
 }
 }  // namespace geometry
