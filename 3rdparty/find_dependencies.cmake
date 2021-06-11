@@ -217,14 +217,16 @@ endfunction()
 set(OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL AppleClang)
-    find_library(LexLIB libl.a)    # test archive
+    find_library(LexLIB libl.a)    # test archive in macOS
     if (LexLIB)
         include(CheckCXXSourceCompiles)
         set(CMAKE_REQUIRED_LINK_OPTIONS -load_hidden ${LexLIB})
         check_cxx_source_compiles("int main() {return 0;}" FLAG_load_hidden)
-    else()
-        set(FLAG_load_hidden 0 CACHE)
+        unset(CMAKE_REQUIRED_LINK_OPTIONS)
     endif()
+endif()
+if (NOT FLAG_load_hidden)
+    set(FLAG_load_hidden 0)
 endif()
 
 # import_3rdparty_library(name ...)
