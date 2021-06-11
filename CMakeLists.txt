@@ -380,11 +380,9 @@ if(BUILD_CUDA_MODULE)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
             set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
                 60-real 61-real 62-real 70-real 72-real 75-real 80)
-        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "10.0")
+        else()
             set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real
                 52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
-        else()
-            message(STATUS "Old CUDA <10.0 detected. Falling back to CMake's default architectures.")
         endif()
     else()
         if(CMAKE_CUDA_ARCHITECTURES)
@@ -431,6 +429,10 @@ if(BUILD_CUDA_MODULE)
 
     message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
+
+    if (CMAKE_CUDA_COMPILER MATCHES "NVCC" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
+        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    endif()
 endif ()
 
 # OS specific settings

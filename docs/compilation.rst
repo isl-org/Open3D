@@ -25,7 +25,7 @@ System requirements
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-* CUDA (optional): Open3D supports GPU acceleration of an increasing number
+* CUDA 10.1+ (optional): Open3D supports GPU acceleration of an increasing number
   of operations through CUDA on Linux. We recommend using CUDA 11.0 for the
   best compatibility with recent GPUs and optional external dependencies such
   as Tensorflow or PyTorch.
