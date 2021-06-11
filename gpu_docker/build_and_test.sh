@@ -2,7 +2,7 @@
 set -euo pipefail
 
 pushd /root/Open3D
-mkdir build
+mkdir -p build
 pushd build
 
 # Configure
