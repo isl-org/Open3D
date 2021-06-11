@@ -71,7 +71,7 @@ Ubuntu/macOS
 
 Activate the Python ``virtualenv`` or Conda environment. Check
 ``which python`` to ensure that it shows the desired Python executable.
-Alternatively, set the CMake flag ``-DPython3_ROOT_DIR=/path/to/python``
+Alternatively, set the CMake flag ``-DPython3_ROOT=/path/to/python``
 to specify the path to the Python installation.
 
 If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=OFF``.

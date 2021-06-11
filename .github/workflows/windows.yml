@@ -101,7 +101,9 @@ jobs:
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
+          $Python3_ROOT=(python -c "import sys, os; print(os.path.split(os.path.split(sys.executable)[0])[0])")
           cmake -G "Visual Studio 16 2019" -A x64 `
+            -DPython3_ROOT=$Python3_ROOT `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
