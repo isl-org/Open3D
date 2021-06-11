@@ -30,7 +30,7 @@
 #include <vector>
 
 c10::intrusive_ptr<RaggedTensor> RaggedTensor::FromRowSplits(
-        torch::Tensor values, torch::Tensor row_splits) {
+        torch::Tensor values, torch::Tensor row_splits) const {
     CHECK_TYPE(row_splits, kInt64);
     values = values.contiguous();
     row_splits = row_splits.contiguous();
