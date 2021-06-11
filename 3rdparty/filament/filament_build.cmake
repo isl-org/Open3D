@@ -2,9 +2,6 @@ include(ExternalProject)
 
 set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
 
-set(FILAMENT_GIT_REPOSITORY "https://github.com/intel-isl/filament.git")
-set(FILAMENT_GIT_TAG "d1d873d27f43ba0cee1674a555cc0f18daac3008")
-
 # Handle build type for single and multi-config generators.
 get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 set(FILAMENT_BUILD_TYPE ${CMAKE_BUILD_TYPE})
@@ -45,8 +42,8 @@ list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
 ExternalProject_Add(
     ext_filament
     PREFIX filament
-    GIT_REPOSITORY ${FILAMENT_GIT_REPOSITORY}
-    GIT_TAG ${FILAMENT_GIT_TAG}
+    GIT_REPOSITORY https://github.com/intel-isl/filament.git
+    GIT_TAG d1d873d27f43ba0cee1674a555cc0f18daac3008
     GIT_SHALLOW OFF # Does not work with commit hashes
     UPDATE_COMMAND ""
     CMAKE_ARGS
