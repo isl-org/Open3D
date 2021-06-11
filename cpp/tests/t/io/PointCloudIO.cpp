@@ -221,8 +221,6 @@ TEST(TPointCloudIO, ReadWritePTS) {
     EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
     EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
                                       {"auto", false, false, true}));
-    utility::LogWarning("orig->{}", pcd.GetPoints().ToString());
-    utility::LogWarning("read->{}", pcd_read.GetPoints().ToString());
     EXPECT_TRUE(pcd.GetPoints().AllClose(pcd_read.GetPoints()));
     EXPECT_TRUE(pcd.GetPointColors().AllClose(pcd_read.GetPointColors()));
     EXPECT_TRUE(pcd.GetPointAttr("intensities")
