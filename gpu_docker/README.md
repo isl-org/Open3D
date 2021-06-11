@@ -4,7 +4,9 @@
 # First, cd to the top Open3D directory
 
 # 1. Build image
-docker build -t open3d-gpu-ci:latest -f gpu_docker/Dockerfile .
+docker build --build-arg BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04 -t open3d-gpu-ci:latest -f gpu_docker/Dockerfile .
+docker build --build-arg BASE_IMAGE=nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04 -t open3d-gpu-ci:latest -f gpu_docker/Dockerfile .
+docker build --build-arg BASE_IMAGE=nvidia/cuda:10.1-cudnn8-devel-ubuntu18.04 -t open3d-gpu-ci:latest -f gpu_docker/Dockerfile .
 
 # 2. Run in detached mode
 # You'll need to mkdir -p ~/.docker_ccache in host
