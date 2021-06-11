@@ -75,7 +75,10 @@ public:
     int64_t Len() const;
 
     /// Copy Tensor to the same device.
-    c10::intrusive_ptr<RaggedTensor> Clone();
+    c10::intrusive_ptr<RaggedTensor> Clone() const;
+
+    c10::intrusive_ptr<RaggedTensor> Concat(
+            c10::intrusive_ptr<RaggedTensor> r_tensor, int64_t axis) const;
 
     template <typename T>
     c10::intrusive_ptr<RaggedTensor> Add(T value) const {
@@ -144,6 +147,7 @@ static auto registry =
                         int64_t key) { return self->GetItem(key); })
                 .def("__len__", &RaggedTensor::Len)
                 .def("clone", &RaggedTensor::Clone)
+                .def("concat", &RaggedTensor::Concat)
 
                 .def("add",
                      [](const c10::intrusive_ptr<RaggedTensor>& self,
@@ -207,6 +211,4 @@ static auto registry =
                         torch::Tensor value) { return self->Div(value); })
                 .def("__ifloordiv__",
                      [](const c10::intrusive_ptr<RaggedTensor>& self,
-                        torch::Tensor value) { return self->Div_(value); })
-
-        ;
+                        torch::Tensor value) { return self->Div_(value); });

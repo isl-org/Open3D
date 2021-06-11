@@ -68,6 +68,13 @@ torch::Tensor RaggedTensor::GetItem(int key) const {
 
 int64_t RaggedTensor::Len() const { return _row_splits.sizes().vec()[0] - 1; }
 
-c10::intrusive_ptr<RaggedTensor> RaggedTensor::Clone() {
-    return c10::make_intrusive<RaggedTensor>(_values, _row_splits);
+c10::intrusive_ptr<RaggedTensor> RaggedTensor::Clone() const {
+    return c10::make_intrusive<RaggedTensor>(_values.clone(), _row_splits);
+}
+
+c10::intrusive_ptr<RaggedTensor> RaggedTensor::Concat(
+        c10::intrusive_ptr<RaggedTensor> r_tensor, int64_t axis) const {
+    // TODO : Change splits for axis == 0
+    return c10::make_intrusive<RaggedTensor>(
+            torch::cat({_values, r_tensor->GetValues()}, axis), _row_splits);
 }
