@@ -46,7 +46,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
         // Get num_points.
         utility::filesystem::CFile file;
-        if (!file.Open(filename, "r")) {
+        if (!file.Open(filename, "rb")) {
             utility::LogWarning("Read PTS failed: unable to open file: {}",
                                 filename);
             return false;
@@ -138,7 +138,6 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         while (idx < num_points && (line_buffer = file.ReadLine())) {
             double x, y, z, i;
             int r, g, b;
-            utility::LogWarning("buffer->{}", line_buffer);
             // X Y Z I R G B.
             if (num_fields == 7 &&
                 (sscanf(line_buffer, "%lf %lf %lf %lf %d %d %d", &x, &y, &z, &i,
