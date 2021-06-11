@@ -546,10 +546,11 @@ class SparseConv(tf.keras.layers.Layer):
             inp_importance = tf.ones((0,), dtype=tf.float32)
 
         if isinstance(inp_features, tf.RaggedTensor):
-            assert (
-                isinstance(inp_positions, tf.RaggedTensor) and
-                isinstance(out_positions, tf.RaggedTensor)
-            ), "All of inp_positions, inp_features and out_positions must be tf.Tensor, or tf.RaggedTensor"
+            if not (isinstance(inp_positions, tf.RaggedTensor) and
+                    isinstance(out_positions, tf.RaggedTensor)):
+                raise Exception(
+                    "All of inp_positions, inp_features and out_positions must be tf.Tensor, or tf.RaggedTensor"
+                )
 
         hash_table_size_factor = 1 / 64
         self.nns = self.fixed_radius_search(
@@ -763,10 +764,11 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         empty_vec = tf.ones((0,), dtype=tf.float32)
 
         if isinstance(inp_features, tf.RaggedTensor):
-            assert (
-                isinstance(inp_positions, tf.RaggedTensor) and
-                isinstance(out_positions, tf.RaggedTensor)
-            ), "All of inp_positions, inp_features and out_positions must be tf.Tensor, or tf.RaggedTensor"
+            if not (isinstance(inp_positions, tf.RaggedTensor) and
+                    isinstance(out_positions, tf.RaggedTensor)):
+                raise Exception(
+                    "All of inp_positions, inp_features and out_positions must be tf.Tensor, or tf.RaggedTensor"
+                )
 
         hash_table_size_factor = 1 / 64
         self.nns_inp = self.fixed_radius_search(
