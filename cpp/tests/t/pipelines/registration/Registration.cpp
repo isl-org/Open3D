@@ -75,8 +75,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
 }
 
 static std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
-GetTestPointCloudsAndCorrespondences(const core::Dtype& dtype,
-                                     const core::Device& device) {
+GetTestPointClouds(const core::Dtype& dtype, const core::Device& device) {
     core::Tensor source_points =
             core::Tensor::Init<double>({{1.15495, 2.40671, 1.15061},
                                         {1.81481, 2.06281, 1.71927},
@@ -135,8 +134,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
 
     for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
         t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
-        std::tie(source_tpcd, target_tpcd) =
-                GetTestPointCloudsAndCorrespondences(dtype, device);
+        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
         open3d::geometry::PointCloud source_lpcd =
                 source_tpcd.ToLegacyPointCloud();
@@ -174,8 +172,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
 
     for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
         t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
-        std::tie(source_tpcd, target_tpcd) =
-                GetTestPointCloudsAndCorrespondences(dtype, device);
+        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
         open3d::geometry::PointCloud source_lpcd =
                 source_tpcd.ToLegacyPointCloud();
@@ -220,8 +217,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
 
     for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
         t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
-        std::tie(source_tpcd, target_tpcd) =
-                GetTestPointCloudsAndCorrespondences(dtype, device);
+        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
         open3d::geometry::PointCloud source_lpcd =
                 source_tpcd.ToLegacyPointCloud();
