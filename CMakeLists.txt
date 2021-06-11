@@ -226,7 +226,11 @@ message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
 
-# Set Python executable
+# Setup Python executable
+if(NOT DEFINED Python3_FIND_REGISTRY)
+    # Only consider PATH variable on Windows by default
+    set(Python3_FIND_REGISTRY NEVER)
+endif()
 find_package(Python3 3.6...<3.9
              COMPONENTS Interpreter Development
 )

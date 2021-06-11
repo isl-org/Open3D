@@ -102,7 +102,6 @@ jobs:
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
           cmake -G "Visual Studio 16 2019" -A x64 `
-            -DPython3_FIND_REGISTRY=LAST `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
