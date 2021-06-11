@@ -138,17 +138,11 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         while (idx < num_points && (line_buffer = file.ReadLine())) {
             double x, y, z, i;
             int r, g, b;
+            utility::LogWarning("buffer->{}", line_buffer);
             // X Y Z I R G B.
             if (num_fields == 7 &&
                 (sscanf(line_buffer, "%lf %lf %lf %lf %d %d %d", &x, &y, &z, &i,
                         &r, &g, &b) == 7)) {
-                utility::LogWarning("x->{}", x);
-                utility::LogWarning("y->{}", x);
-                utility::LogWarning("z->{}", x);
-                utility::LogWarning("i->{}", x);
-                utility::LogWarning("r->{}", x);
-                utility::LogWarning("g->{}", x);
-                utility::LogWarning("b->{}", x);
                 points_ptr[3 * idx + 0] = x;
                 points_ptr[3 * idx + 1] = y;
                 points_ptr[3 * idx + 2] = z;
@@ -156,13 +150,6 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 colors_ptr[3 * idx + 0] = r;
                 colors_ptr[3 * idx + 1] = g;
                 colors_ptr[3 * idx + 2] = b;
-                utility::LogWarning("px->{}", points_ptr[3 * idx + 0]);
-                utility::LogWarning("py->{}", points_ptr[3 * idx + 1]);
-                utility::LogWarning("pz->{}", points_ptr[3 * idx + 2]);
-                utility::LogWarning("pi->{}", intensities_ptr[idx]);
-                utility::LogWarning("pr->{}", colors_ptr[3 * idx + 0]);
-                utility::LogWarning("pg->{}", colors_ptr[3 * idx + 1]);
-                utility::LogWarning("pb->{}", colors_ptr[3 * idx + 2]);
             }
             // X Y Z R G B.
             else if (num_fields == 6 &&
