@@ -52,10 +52,10 @@ std::tuple<torch::Tensor, torch::Tensor> three_nn(torch::Tensor query_pts,
             torch::zeros({batch_size, pts_num_out, 3},
                          torch::dtype(ToTorchDtype<float>()).device(device));
 
-    const float *pts_out = query_pts.data<float>();
-    const float *pts_in = data_pts.data<float>();
-    float *dist2 = out_dist2.data<float>();
-    int *idx = out_idx.data<int>();
+    const float *pts_out = query_pts.data_ptr<float>();
+    const float *pts_in = data_pts.data_ptr<float>();
+    float *dist2 = out_dist2.data_ptr<float>();
+    int *idx = out_idx.data_ptr<int>();
 
     three_nn_launcher(batch_size, pts_num_out, pts_num_in, pts_out, pts_in,
                       dist2, idx);
@@ -76,10 +76,10 @@ torch::Tensor three_interpolate(torch::Tensor points,
             torch::zeros({batch_size, C, N},
                          torch::dtype(ToTorchDtype<float>()).device(device));
 
-    const float *points_data = points.data<float>();
-    const float *weights_data = weights.data<float>();
-    const int *idx_data = idx.data<int>();
-    float *out_data = out.data<float>();
+    const float *points_data = points.data_ptr<float>();
+    const float *weights_data = weights.data_ptr<float>();
+    const int *idx_data = idx.data_ptr<int>();
+    float *out_data = out.data_ptr<float>();
 
     three_interpolate_launcher(batch_size, C, M, N, points_data, idx_data,
                                weights_data, out_data);
@@ -100,11 +100,11 @@ torch::Tensor three_interpolate_grad(torch::Tensor grad_out,
             torch::zeros({batch_size, C, M},
                          torch::dtype(ToTorchDtype<float>()).device(device));
 
-    const float *grad_out_data = grad_out.data<float>();
-    const float *weights_data = weights.data<float>();
-    const int *idx_data = idx.data<int>();
+    const float *grad_out_data = grad_out.data_ptr<float>();
+    const float *weights_data = weights.data_ptr<float>();
+    const int *idx_data = idx.data_ptr<int>();
 
-    float *out_data = out.data<float>();
+    float *out_data = out.data_ptr<float>();
 
     three_interpolate_grad_launcher(batch_size, C, N, M, grad_out_data,
                                     idx_data, weights_data, out_data);

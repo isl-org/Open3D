@@ -1,5 +1,6 @@
-# build
-set(GUI_SOURCE_FILES
+add_library(GUI OBJECT)
+
+target_sources(GUI PRIVATE
     Application.cpp
     BitmapWindowSystem.cpp
     Button.cpp
@@ -42,51 +43,66 @@ set(GUI_SOURCE_FILES
 )
 
 if (WIN32)
-    list(APPEND GUI_SOURCE_FILES NativeWin32.cpp)
+    target_sources(GUI PRIVATE
+        NativeWin32.cpp
+    )
 elseif (APPLE)
-    list(APPEND GUI_SOURCE_FILES NativeMacOS.mm)
-    list(APPEND GUI_HEADER_FILES MenuMacOS.h)
-    list(APPEND GUI_SOURCE_FILES MenuMacOS.mm)
-else ()
-    list(APPEND GUI_SOURCE_FILES NativeLinux.cpp)
+    target_sources(GUI PRIVATE
+        NativeMacOS.mm
+        MenuMacOS.mm
+    )
+else()
+    target_sources(GUI PRIVATE
+        NativeLinux.cpp
+    )
 endif()
 
-# create object library
-add_library(GUI OBJECT ${GUI_SOURCE_FILES})
 open3d_show_and_abort_on_warning(GUI)
 open3d_set_global_properties(GUI)
 open3d_link_3rdparty_libraries(GUI)
 
 # --- build resources ----
-file(GLOB GUI_RESOURCE_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Resources/*)
-file(GLOB GUI_MATERIAL_SOURCE_FILES "Materials/*.mat")
+file(GLOB GUI_RESOURCE_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
 
 # copy GUI/Resources -> <output>/resources
-set(GUI_RESOURCE_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources)
+set(GUI_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
 file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
 file(COPY ${GUI_RESOURCE_SOURCE_FILES}
      DESTINATION ${GUI_RESOURCE_DIR})
 
-# Compile .mat files and copy to resources directory in output directory
-if (IOS OR ANDROID)
-    set(GUI_MATC_ARGS --platform mobile)
-elseif (NOT WIN32)
-    set(GUI_MATC_ARGS --platform desktop)
-endif()
 
-set(GUI_MATERIAL_COMPILED_FILES "")
-foreach(matsrc IN ITEMS ${GUI_MATERIAL_SOURCE_FILES})
-    string(REGEX REPLACE "\\.[^.]*$" ".filamat" matdest ${matsrc})
-    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/Materials/" "${GUI_RESOURCE_DIR}/" matdest ${matdest})
-    list(APPEND GUI_MATERIAL_COMPILED_FILES ${matdest})
-    add_custom_command(OUTPUT ${matdest}
-                       COMMAND ${FILAMENT_MATC} ${GUI_MATC_ARGS} -o ${matdest} ${matsrc}
-		       MAIN_DEPENDENCY ${matsrc} DEPENDS ${FILAMENT_TARGET})
-endforeach()
+include(add_compiled_materials)
 
-add_custom_target(GuiResources
-                  DEPENDS ${GUI_MATERIAL_COMPILED_FILES})
-add_dependencies(GUI GuiResources)
+open3d_add_compiled_materials(materials
+    OUTPUT_DIRECTORY
+    ${GUI_RESOURCE_DIR}
+    SOURCES
+    Materials/colorMap.mat
+    Materials/defaultLit.mat
+    Materials/defaultLitSSR.mat
+    Materials/defaultLitTransparency.mat
+    Materials/defaultUnlit.mat
+    Materials/defaultUnlitTransparency.mat
+    Materials/depth_value.mat
+    Materials/depth.mat
+    Materials/img_blit.mat
+    Materials/infiniteGroundPlane.mat
+    Materials/normals.mat
+    Materials/pointcloud.mat
+    Materials/ui_blit.mat
+    Materials/unlitBackground.mat
+    Materials/unlitGradient.mat
+    Materials/unlitLine.mat
+    Materials/unlitPolygonOffset.mat
+    Materials/unlitSolidColor.mat
+)
+
+# Source group for Visual Studio
+add_source_group(Materials)
+
+add_dependencies(GUI materials)
+
+get_target_property(GUI_MATERIAL_COMPILED_FILES materials COMPILED_MATERIALS)
 
 # Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
 set(GUI_RESOURCE_FILES
