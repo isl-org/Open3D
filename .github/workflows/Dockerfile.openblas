@@ -91,6 +91,9 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && ccache -s
 ENV PATH=/usr/lib/ccache:${PATH}
 
+# Disable cache from this step
+ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+
 # `docker build` should be executed in the Open3D root dir
 COPY . /root/Open3D
 
