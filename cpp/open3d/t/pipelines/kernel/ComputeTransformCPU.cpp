@@ -52,9 +52,10 @@ static void ComputePosePointToPlaneKernelCPU(
         const int n,
         scalar_t *global_sum,
         funct_t op) {
-    // As, ATA is a symmetric matrix, we only need 21 elements instead of 36.
-    // ATB is of shape {6,1}. Combining both, A_1x27 is a temp. storage
-    // with [0:21] elements as ATA and [21:27] elements as ATB.
+    // As, AtA is a symmetric matrix, we only need 21 elements instead of 36.
+    // Atb is of shape {6,1}. Combining both, A_1x29 is a temp. storage
+    // with [0:21] elements as AtA, [21:27] elements as Atb, 27th as residual
+    // and 28th as inlier_count.
     std::vector<scalar_t> A_1x29(29, 0.0);
 
 #ifdef _WIN32
@@ -66,7 +67,7 @@ static void ComputePosePointToPlaneKernelCPU(
                      workload_idx++) {
 #else
     scalar_t *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(auto)
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     scalar_t J_ij[6];
@@ -118,7 +119,7 @@ static void ComputePosePointToPlaneKernelCPU(
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<scalar_t> &a, std::vector<scalar_t> &b) {
+            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
                 std::vector<scalar_t> result(29);
                 for (int j = 0; j < 29; j++) {
                     result[j] = a[j] + b[j];
@@ -129,7 +130,7 @@ static void ComputePosePointToPlaneKernelCPU(
 
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < 29; i++) {
-        global_sum[i] = A_reduction[i];
+        global_sum[i] = A_1x29[i];
     }
 }
 

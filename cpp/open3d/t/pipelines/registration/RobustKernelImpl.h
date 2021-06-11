@@ -34,6 +34,11 @@ namespace {
 #define O3D_MAX(a, b) (a > b ? a : b)
 #define O3D_MIN(a, b) (a < b ? a : b)
 #define O3D_SQUARE(a) ((a) * (a))
+
+#define O3D_EXP(a) exp(a)
+#define O3D_POW(a, b) pow(a, b)
+
+#define isEqual(a, b) (a > 0.99998 * b && a < 1.00002 * b ? true : false)
 }  // namespace
 
 /// To use `Robust Kernel` functions please refer
@@ -90,10 +95,35 @@ namespace {
             return __VA_ARGS__();                                              \
         } else if (METHOD == open3d::t::pipelines::registration::              \
                                      RobustKernelMethod::GeneralizedLoss) {    \
-            auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {            \
-                return 1.0 / O3D_ABS(residual);                                \
-            };                                                                 \
-            return __VA_ARGS__();                                              \
+            if (isEqual(shape_parameter, 2.0)) {                               \
+                auto const_val = 1.0 / O3D_SQUARE(scaling_parameter);          \
+                auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {        \
+                    return const_val;                                          \
+                };                                                             \
+                return __VA_ARGS__();                                          \
+            } else if (isEqual(shape_parameter, 0.0)) {                        \
+                auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {        \
+                    return 2.0 / (O3D_SQUARE(residual) +                       \
+                                  2 * O3D_SQUARE(scaling_parameter));          \
+                };                                                             \
+                return __VA_ARGS__();                                          \
+            } else if (shape_parameter < -1e7) {                               \
+                auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {        \
+                    return O3D_EXP(O3D_SQUARE(residual / scaling_parameter) /  \
+                                   (-2.0)) /                                   \
+                           O3D_SQUARE(scaling_parameter);                      \
+                };                                                             \
+                return __VA_ARGS__();                                          \
+            } else {                                                           \
+                auto func_t = [=] OPEN3D_HOST_DEVICE(T residual) -> T {        \
+                    return O3D_POW((O3D_SQUARE(residual / scaling_parameter) / \
+                                            O3D_ABS(shape_parameter - 2.0) +   \
+                                    1),                                        \
+                                   ((shape_parameter / 2.0) - 1.0)) /          \
+                           O3D_SQUARE(scaling_parameter);                      \
+                };                                                             \
+                return __VA_ARGS__();                                          \
+            }                                                                  \
         } else {                                                               \
             utility::LogError("Unsupported method.");                          \
         }                                                                      \
