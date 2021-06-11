@@ -222,6 +222,23 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
+# FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
+if (BUILD_CUDA_MODULE
+    AND CMAKE_CXX_COMPILER MATCHES "MSVC"
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
+)
+    # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD 17)
+    # Suppress warnings for deprecated C++17 functions
+    add_compile_options(
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd4996>"
+        "$<$<COMPILE_LANGUAGE:CXX>:/wd4996>">
+    )
+    message(WARNING "Visual Studio 16.10 introduced a compiler bug when compiling CUDA code with C++14. "
+        "Workaround this bug by setting the CUDA standard to C++17.")
+endif()
+
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
 
