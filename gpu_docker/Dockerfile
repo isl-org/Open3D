@@ -61,8 +61,8 @@ RUN ln -s /usr/bin/python3 /usr/local/bin/python \
 # No virtual environment is needed, default to python 3.6
 RUN python -m pip install -U pip=="20.2.4" wheel=="0.35.1" setuptools=="50.3.2" yapf=="0.30.0"
 RUN python -m pip install -U pytest=="6.0.1" scipy=="1.4.1"
-RUN python -m pip install -U tensorflow=="2.4.1"
-RUN python -m pip install -U torch=="1.7.1+cu110" -f https://download.pytorch.org/whl/torch_stable.html
+# RUN python -m pip install -U tensorflow=="2.4.1"
+# RUN python -m pip install -U torch=="1.7.1+cu110" -f https://download.pytorch.org/whl/torch_stable.html
 
 COPY . /root/Open3D
 
