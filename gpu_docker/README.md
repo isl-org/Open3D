@@ -14,8 +14,10 @@ mkdir -p ~/.docker_ccache
 docker run -d -it --rm --gpus all -v ~/.docker_ccache:/root/.cache/ccache --name ci open3d-gpu-ci:latest
 # 2.2 Mount without ccache volume
 docker run -d -it --rm --gpus all -v --name ci open3d-gpu-ci:latest
-# 2.3 Expose the Open3D folder as well
-docker run -d -it --rm --gpus all -v ~/.docker_ccache:/root/.cache/ccache -v ~/repo/DockerOpen3D:/root/Open3D --name ci open3d-gpu-ci:latest
+# 2.3 Expose the Open3D folder as well.
+docker run -d -it --rm --gpus all -v ~/.docker_ccache:/root/.cache/ccache -v ~/repo/Open3D:/root/HostOpen3D --name ci open3d-gpu-ci:latest
+# 2.3.1 Run this inside docker to update source code
+rm -rf /root/Open3D && cp -ar /root/HostOpen3D /root/Open3D
 
 # 3. Attach to container
 docker exec -it ci /bin/bash
