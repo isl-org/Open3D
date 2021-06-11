@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
     libxi-dev \
     ninja-build \
     python3-dev \
+    rsync \
     software-properties-common \
     wget \
     xorg-dev \
