@@ -82,19 +82,26 @@ struct BlockComparator {
     }
 };
 
-// Singleton cacher.
-// To improve performance, the cacher will not release cuda memory when Free is
-// called. Instead, it will cache these memory in trees' nodes, and reuse them
-// in following Malloc calls via size queries. Each node can be split to smaller
-// nodes upon malloc requests, and merged when they are all freed.
-// To clear the cache, use cuda::ReleaseCache().
+/// \class Per-device CUDA memory cacher. Each CUDA device has exactly one
+/// singleton instance of CUDACacher.
+///
+///
+/// To improve performance, the cacher will not release CUDA memory when Free is
+/// called. Instead, it will cache these memory in trees' nodes, and reuse them
+/// in following Malloc calls via size queries. Each node can be split to
+/// smaller nodes upon malloc requests, and merged when they are all freed.
+///
+/// To clear the cache, use CUDACacher::ReleaseCache().
 class CUDACacher {
 public:
-    static std::shared_ptr<CUDACacher> GetInstance() {
-        if (instance_ == nullptr) {
-            instance_ = std::make_shared<CUDACacher>();
+    static std::shared_ptr<CUDACacher> GetInstance(const Device& device) {
+        static std::unordered_map<Device, std::shared_ptr<CUDACacher>,
+                                  Device::Hash>
+                device_to_cacher = InitializeCachers(device);
+        if (device.GetType() != Device::DeviceType::CUDA) {
+            utility::LogError("Invalid device {}.", device.ToString());
         }
-        return instance_;
+        return device_to_cacher.at(device);
     }
 
 public:
@@ -110,7 +117,7 @@ public:
         return ((byte_size + alignment - 1) / alignment) * alignment;
     }
 
-    CUDACacher() {
+    CUDACacher(const Device& device) : device_(device) {
         small_block_pool_ = std::make_shared<BlockPool>();
         large_block_pool_ = std::make_shared<BlockPool>();
     }
@@ -123,7 +130,8 @@ public:
         ReleaseCache();
     }
 
-    void* Malloc(size_t byte_size, const Device& device) {
+    void* Malloc(size_t byte_size) {
+        CUDADeviceSwitcher switcher(device_);
         auto find_free_block = [&](BlockPtr query_block) -> BlockPtr {
             auto pool = get_pool(query_block->size_);
             auto it = pool->lower_bound(query_block);
@@ -137,13 +145,13 @@ public:
 
         void* ptr;
         size_t alloc_size = align_bytes(byte_size);
-        Block query_block = Block(device.GetID(), alloc_size);
+        Block query_block = Block(device_.GetID(), alloc_size);
         BlockPtr found_block = find_free_block(&query_block);
 
         if (found_block == nullptr) {
             // Allocate a new block and insert it to the allocated pool
             OPEN3D_CUDA_CHECK(cudaMalloc(&ptr, alloc_size));
-            BlockPtr new_block = new Block(device.GetID(), alloc_size, ptr);
+            BlockPtr new_block = new Block(device_.GetID(), alloc_size, ptr);
             new_block->in_use_ = true;
             allocated_blocks_.insert({ptr, new_block});
         } else {
@@ -155,7 +163,7 @@ public:
                 // found_block <-> remain_block <-> found_block->next_
                 BlockPtr next_block = found_block->next_;
                 BlockPtr remain_block =
-                        new Block(device.GetID(), remain_size,
+                        new Block(device_.GetID(), remain_size,
                                   static_cast<char*>(ptr) + alloc_size,
                                   found_block, next_block);
                 found_block->next_ = remain_block;
@@ -175,7 +183,8 @@ public:
         return ptr;
     }
 
-    void Free(void* ptr, const Device& device) {
+    void Free(void* ptr) {
+        CUDADeviceSwitcher switcher(device_);
         auto release_block = [&](BlockPtr block) {
             auto block_pool = get_pool(block->size_);
             auto it = block_pool->find(block);
@@ -258,6 +267,7 @@ public:
     }
 
     void ReleaseCache() {
+        CUDADeviceSwitcher switcher(device_);
         size_t total_bytes = 0;
         // Reference:
         // https://stackoverflow.com/questions/2874441/deleting-elements-from-stdset-while-iterating
@@ -284,15 +294,22 @@ public:
     }
 
 private:
+    static std::unordered_map<Device, std::shared_ptr<CUDACacher>, Device::Hash>
+    InitializeCachers(const Device& device) {
+        std::unordered_map<Device, std::shared_ptr<CUDACacher>, Device::Hash>
+                device_to_cacher;
+        for (int i = 0; i < CUDAState::GetInstance()->GetNumDevices(); i++) {
+            Device device("CUDA", i);
+            device_to_cacher[device] = std::make_shared<CUDACacher>(device);
+        }
+        return device_to_cacher;
+    }
+
+    Device device_;
     std::unordered_map<void*, BlockPtr> allocated_blocks_;
     std::shared_ptr<BlockPool> small_block_pool_;
     std::shared_ptr<BlockPool> large_block_pool_;
-
-    static std::shared_ptr<CUDACacher> instance_;
 };
-
-// Create instance on intialization to avoid 'cuda error driver shutdown'
-std::shared_ptr<CUDACacher> CUDACacher::instance_ = CUDACacher::GetInstance();
 
 CUDACachedMemoryManager::CUDACachedMemoryManager() {}
 
@@ -302,8 +319,8 @@ void* CUDACachedMemoryManager::Malloc(size_t byte_size, const Device& device) {
     CUDADeviceSwitcher switcher(device);
 
     if (device.GetType() == Device::DeviceType::CUDA) {
-        std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
-        return instance->Malloc(byte_size, device);
+        std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance(device);
+        return instance->Malloc(byte_size);
     } else {
         utility::LogError(
                 "[CUDACachedMemoryManager] Malloc: Unimplemented device.");
@@ -320,8 +337,9 @@ void CUDACachedMemoryManager::Free(void* ptr, const Device& device) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
         if (ptr && IsCUDAPointer(ptr)) {
-            std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
-            instance->Free(ptr, device);
+            std::shared_ptr<CUDACacher> instance =
+                    CUDACacher::GetInstance(device);
+            instance->Free(ptr);
         } else {
             utility::LogError(
                     "[CUDACachedMemoryManager] Free: Invalid pointer.");
@@ -398,8 +416,9 @@ bool CUDACachedMemoryManager::IsCUDAPointer(const void* ptr) {
 }
 
 void CUDACachedMemoryManager::ReleaseCache() {
-    std::shared_ptr<CUDACacher> instance = CUDACacher::GetInstance();
-    instance->ReleaseCache();
+    for (int i = 0; i < CUDAState::GetInstance()->GetNumDevices(); i++) {
+        CUDACacher::GetInstance(Device("CUDA", i))->ReleaseCache();
+    }
 }
 
 }  // namespace core

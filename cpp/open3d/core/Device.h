@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -89,6 +91,12 @@ public:
     DeviceType GetType() const { return device_type_; }
 
     int GetID() const { return device_id_; }
+
+    struct Hash {
+        std::size_t operator()(const open3d::core::Device& device) const {
+            return std::hash<std::string>{}(device.ToString());
+        }
+    };
 
 protected:
     void AssertCPUDeviceIDIsZero() {
