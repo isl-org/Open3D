@@ -216,6 +216,19 @@ endfunction()
 # party dependencies. Only needed with GCC, not AppleClang.
 set(OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS)
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL AppleClang)
+    find_library(LexLIB libl.a)    # test archive in macOS
+    if (LexLIB)
+        include(CheckCXXSourceCompiles)
+        set(CMAKE_REQUIRED_LINK_OPTIONS -load_hidden ${LexLIB})
+        check_cxx_source_compiles("int main() {return 0;}" FLAG_load_hidden)
+        unset(CMAKE_REQUIRED_LINK_OPTIONS)
+    endif()
+endif()
+if (NOT FLAG_load_hidden)
+    set(FLAG_load_hidden 0)
+endif()
+
 # import_3rdparty_library(name ...)
 #
 # Imports a third-party library that has been built independently in a sub project.
@@ -288,7 +301,7 @@ function(import_3rdparty_library name)
             endif()
             # Apple compiler ld
             target_link_libraries(${name} INTERFACE
-                "$<BUILD_INTERFACE:$<$<AND:${HIDDEN},$<CXX_COMPILER_ID:AppleClang>>:-load_hidden >${arg_LIB_DIR}/${library_filename}>")
+                "$<BUILD_INTERFACE:$<$<AND:${HIDDEN},${FLAG_load_hidden}>:-load_hidden >${arg_LIB_DIR}/${library_filename}>")
             if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
                 install(FILES ${arg_LIB_DIR}/${library_filename}
                     DESTINATION ${Open3D_INSTALL_LIB_DIR}
