@@ -301,14 +301,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         -fsanitize=safe-stack       # Stack execution protection
         -Wl,-z,relro,-z,now         # Data relocation protection
         -pie                        # Position independent executable
+        $<$<CONFIG:Release>:LINKER:-S>  # Exclude debug info
         CACHE STRING "Linker flags for security hardening")
     if(NOT BUILD_SHARED_LIBS AND NOT BUILD_PYTHON_MODULE)
         list(APPEND HARDENING_CFLAGS -fsanitize=safe-stack)   # Stack execution protection
         list(APPEND HARDENING_LDFLAGS -fsanitize=safe-stack)  # only static libraries supported
-    endif()
-    if(NOT DEVELOPER_BUILD)
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)     # Strip debug symbols
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
@@ -316,13 +313,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         -fstack-protector               # Stack-based buffer overrun detection
         -Wformat -Wformat-security      # Format string vulnerability
         CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS  ""
-        # -pie Position independent execution is default on macOSX 10.6+
+    set(HARDENING_LDFLAGS
+        # -pie Position independent executable is default on macOSX 10.6+
+        LINKER:-dead_strip    # Remove unreachable code
+        $<$<CONFIG:Release>:LINKER:-S,-x>  # Exclude debug info, non-global symbols
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        # list(APPEND HARDENING_LDFLAGS -S) # Causing link error for EncodeShader
-    endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
@@ -333,11 +328,8 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         -Wl,-z,noexecstack   # Stack execution protection
         -Wl,-z,relro,-z,now  # Data relocation protection
         -pie                 # Position independent executable
+        $<$<CONFIG:Release>:LINKER:--strip-debug>  # Exclude debug info
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -strip-debug)
-    endif()
 else()
     message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "
     "flags set")
@@ -388,11 +380,9 @@ if(BUILD_CUDA_MODULE)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
             set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
                 60-real 61-real 62-real 70-real 72-real 75-real 80)
-        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "10.0")
+        else()
             set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real
                 52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
-        else()
-            message(STATUS "Old CUDA <10.0 detected. Falling back to CMake's default architectures.")
         endif()
     else()
         if(CMAKE_CUDA_ARCHITECTURES)
@@ -439,6 +429,10 @@ if(BUILD_CUDA_MODULE)
 
     message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
+
+    if (CMAKE_CUDA_COMPILER MATCHES "NVCC" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
+        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    endif()
 endif ()
 
 # OS specific settings
@@ -613,6 +607,23 @@ function(open3d_set_global_properties target)
 
     # Download test data files from open3d_downloads repo.
     add_dependencies(${target} open3d_downloads)
+
+    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
+    # (from pybind11)
+    # macOS: -x: strip local symbols
+    # Linux: defaults
+    if(UNIX AND CMAKE_STRIP)
+        get_target_property(target_type ${target} TYPE)
+        if(target_type MATCHES
+                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND
+                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
+                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
+                COMMAND_EXPAND_LISTS)
+        endif()
+    endif()
+
 endfunction()
 
 macro(add_source_group module_name)

@@ -545,6 +545,13 @@ class SparseConv(tf.keras.layers.Layer):
         if inp_importance is None:
             inp_importance = tf.ones((0,), dtype=tf.float32)
 
+        if isinstance(inp_features, tf.RaggedTensor):
+            if not (isinstance(inp_positions, tf.RaggedTensor) and
+                    isinstance(out_positions, tf.RaggedTensor)):
+                raise Exception(
+                    "All of inp_positions, inp_features and out_positions must be tf.Tensor, or tf.RaggedTensor"
+                )
+
         hash_table_size_factor = 1 / 64
         self.nns = self.fixed_radius_search(
             inp_positions,
@@ -552,6 +559,13 @@ class SparseConv(tf.keras.layers.Layer):
             radius=self.kernel_size[0] * voxel_size * 0.51,
             hash_table_size_factor=hash_table_size_factor,
             hash_table=fixed_radius_search_hash_table)
+
+        out_positions_split = None
+        if isinstance(inp_positions, tf.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
 
         # for stats and debugging
         num_pairs = tf.shape(self.nns.neighbors_index)[0]
@@ -583,6 +597,10 @@ class SparseConv(tf.keras.layers.Layer):
         if self.use_bias:
             out_features += self.bias
         out_features = self.activation(out_features)
+
+        if out_positions_split is not None:
+            out_features = tf.RaggedTensor.from_row_splits(
+                values=out_features, row_splits=out_positions_split)
 
         return out_features
 
@@ -745,6 +763,13 @@ class SparseConvTranspose(tf.keras.layers.Layer):
 
         empty_vec = tf.ones((0,), dtype=tf.float32)
 
+        if isinstance(inp_features, tf.RaggedTensor):
+            if not (isinstance(inp_positions, tf.RaggedTensor) and
+                    isinstance(out_positions, tf.RaggedTensor)):
+                raise Exception(
+                    "All of inp_positions, inp_features and out_positions must be tf.Tensor, or tf.RaggedTensor"
+                )
+
         hash_table_size_factor = 1 / 64
         self.nns_inp = self.fixed_radius_search(
             out_positions,
@@ -752,6 +777,13 @@ class SparseConvTranspose(tf.keras.layers.Layer):
             radius=self.kernel_size[0] * voxel_size * 0.51,
             hash_table_size_factor=hash_table_size_factor,
             hash_table=fixed_radius_search_hash_table)
+
+        out_positions_split = None
+        if isinstance(inp_positions, tf.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
 
         num_out = tf.shape(out_positions, out_type=tf.int64)[0]
 
@@ -792,6 +824,10 @@ class SparseConvTranspose(tf.keras.layers.Layer):
         if self.use_bias:
             out_features += self.bias
         out_features = self.activation(out_features)
+
+        if out_positions_split is not None:
+            out_features = tf.RaggedTensor.from_row_splits(
+                values=out_features, row_splits=out_positions_split)
 
         return out_features
 
