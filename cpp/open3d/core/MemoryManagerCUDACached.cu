@@ -125,7 +125,9 @@ public:
     ~CUDACacher() {
         if (!allocated_blocks_.empty()) {
             // Should never reach here
-            utility::LogError("[CUDACacher] Memory leak in destructor.");
+            utility::LogError(
+                    "[CUDACacher] Memory leak in destructor for device {}.",
+                    device_.ToString());
         }
         ReleaseCache();
     }

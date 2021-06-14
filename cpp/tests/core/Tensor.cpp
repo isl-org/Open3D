@@ -1185,6 +1185,8 @@ TEST_P(TensorPermuteDevices, T) {
 
 TEST_P(TensorPermuteDevices, Det) {
     core::Device device = GetParam();
+    utility::LogInfo("Using device {}", device.ToString());
+
     // Det supports both Float32 and Float64.
     core::Dtype dtype = core::Dtype::Float32;
 
