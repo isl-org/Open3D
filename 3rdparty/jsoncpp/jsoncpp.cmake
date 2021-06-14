@@ -10,7 +10,8 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/jsoncpp"
     UPDATE_COMMAND ""
     PATCH_COMMAND ${GIT_EXECUTABLE} init
-    COMMAND ${GIT_EXECUTABLE} apply ${CMAKE_CURRENT_LIST_DIR}/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
+    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+        ${CMAKE_CURRENT_LIST_DIR}/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=OFF
