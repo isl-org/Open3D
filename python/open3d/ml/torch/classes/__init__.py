@@ -28,5 +28,5 @@ import torch as _torch
 
 try:
     RaggedTensor = _torch.classes.my_classes.RaggedTensor
-except:
+except RuntimeError:
     pass
