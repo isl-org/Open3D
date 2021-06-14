@@ -63,11 +63,6 @@ case "$1" in
 gcloud-setup)
     gcloud auth configure-docker
     gcloud info
-    # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
-    for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do
-        echo "Removing ssh key"
-        gcloud compute os-login ssh-keys remove --key $i || true
-    done
     ;;
 
     # Build the Docker image
@@ -126,6 +121,7 @@ create-vm)
             --zone="${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
             --accelerator="$GCE_GPU" \
             --maintenance-policy=TERMINATE \
+            --metadata enable-oslogin=TRUE \
             --machine-type=$GCE_INSTANCE_TYPE \
             --boot-disk-size=$GCE_BOOT_DISK_SIZE \
             --boot-disk-type=$GCE_BOOT_DISK_TYPE \
