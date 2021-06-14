@@ -26,7 +26,7 @@ if (WIN32)
         ext_k4a
         PREFIX k4a
         URL https://www.nuget.org/api/v2/package/Microsoft.Azure.Kinect.Sensor/1.4.1
-        URL_HASH MD5=4a6cd4ffcaab8c332d8842c94bc17c35
+        URL_HASH SHA256=6c512a20c4a82b80e02b0f6d4a6cda51e88d4893cd47ab85c7bca37cd364c976
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/k4a"
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
@@ -40,7 +40,7 @@ else()
         ext_k4a
         PREFIX k4a
         URL https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_1.4.1_amd64.deb
-        URL_HASH MD5=0ee7ba01198759dcd148dc15bb7d43e8
+        URL_HASH SHA256=08303094b9ad36ea74c19bc8b8950c97055e73dd2e8bd18e2af5e165a2289cd2
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/k4a"
         UPDATE_COMMAND ${CMAKE_COMMAND} -E tar xvf data.tar.gz
         CONFIGURE_COMMAND ""
