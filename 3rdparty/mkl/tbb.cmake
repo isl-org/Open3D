@@ -26,15 +26,16 @@ set(STATIC_TBB_LIBRARIES tbb_static tbbmalloc_static)
 # 2. Make changes, commit
 # 3. git format-patch master
 # 4. Copy the new patch file back to Open3d.
+find_package(Git QUIET REQUIRED)
+
 ExternalProject_Add(
     ext_tbb
     PREFIX tbb
-    GIT_REPOSITORY https://github.com/wjakob/tbb.git
-    GIT_TAG 141b0e310e1fb552bdca887542c9c1a8544d6503 # Sept 2020
-    GIT_SHALLOW OFF # Does not work with commit hashes
+    URL https://github.com/wjakob/tbb/archive/141b0e310e1fb552bdca887542c9c1a8544d6503.tar.gz # Sept 2020
+    URL_HASH SHA256=bb29b76eabf7549660e3dba2feb86ab501469432a15fb0bf2c21e24d6fbc4c72
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/tbb"
     UPDATE_COMMAND ""
-    PATCH_COMMAND git checkout -f 141b0e310e1fb552bdca887542c9c1a8544d6503
-    COMMAND git apply ${Open3D_3RDPARTY_DIR}/mkl/0001-Allow-selecttion-of-static-dynamic-MSVC-runtime.patch
+    PATCH_COMMAND ${GIT_EXECUTABLE} apply ${CMAKE_CURRENT_LIST_DIR}/0001-Allow-selecttion-of-static-dynamic-MSVC-runtime.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}
         -DSTATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}

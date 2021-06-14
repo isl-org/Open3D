@@ -1,13 +1,15 @@
 include(ExternalProject)
 
+find_package(Git QUIET REQUIRED)
+
 ExternalProject_Add(
     ext_jsoncpp
     PREFIX jsoncpp
-    GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp.git
-    GIT_TAG 1.9.4
-    GIT_SHALLOW ON  # Do not download the history.
+    URL https://github.com/open-source-parsers/jsoncpp/archive/refs/tags/1.9.4.tar.gz
+    URL_HASH SHA256=e34a628a8142643b976c7233ef381457efad79468c67cb1ae0b83a33d7493999
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/jsoncpp"
     UPDATE_COMMAND ""
-    PATCH_COMMAND git apply ${Open3D_3RDPARTY_DIR}/jsoncpp/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
+    PATCH_COMMAND ${GIT_EXECUTABLE} apply ${CMAKE_CURRENT_LIST_DIR}/0001-optional-CXX11-ABI-and-MSVC-runtime.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=OFF

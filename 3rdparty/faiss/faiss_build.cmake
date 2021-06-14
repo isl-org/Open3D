@@ -8,9 +8,9 @@ set(MKL_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/mkl_install)
 ExternalProject_Add(
     ext_faiss
     PREFIX faiss
-    GIT_REPOSITORY https://github.com/intel-isl/faiss.git
-    GIT_TAG open3d_patch
-    GIT_SHALLOW ON
+    URL https://github.com/intel-isl/faiss/archive/28ef0e0fa5b99dabb371df9016a7df3e836a31f4.tar.gz # open3d_patch branch
+    URL_HASH SHA256=22d64aed0e6ee1ae60da2adf5746eb45802464f25965549cb47ce860bdb1f906
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/faiss"
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${MKL_INSTALL_PREFIX}

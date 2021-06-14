@@ -117,26 +117,8 @@ endif()
 # use this directory to cache downloaded 3rd party dependencies and automatically skip
 # downloading from the Internet if the files are available. This is only supported by
 # a limited number of 3rd party libraries.
-set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR_FOUND FALSE)
-if (DEFINED OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
-    get_filename_component(OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" ABSOLUTE)
-    if (IS_DIRECTORY ${OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR})
-        set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR ${OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR})
-        set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR_FOUND TRUE)
-        message(STATUS "Downloading using OPEN3D_THIRD_PARTY_DOWNLOAD_DIR from CMake options: ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
-    endif()
-elseif (DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR})
-    get_filename_component(OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" ABSOLUTE)
-    if (IS_DIRECTORY ${OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR})
-        set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR ${OPEN3D_THIRD_PARTY_DOWNLOAD_FULL_DIR})
-        set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR_FOUND TRUE)
-        message(STATUS "Downloading using OPEN3D_THIRD_PARTY_DOWNLOAD_DIR from the environment: ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
-    endif()
-endif()
-if(NOT OPEN3D_THIRD_PARTY_DOWNLOAD_DIR_FOUND)
-    set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/3rdparty_downloads")
-    message(STATUS "Downloading directly without OPEN3D_THIRD_PARTY_DOWNLOAD_DIR")
-endif()
+set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads")
+message(STATUS "Downloading 3rdparty dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 
