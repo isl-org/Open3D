@@ -483,14 +483,9 @@ endif()
 
 # Downloads files from https://github.com/intel-isl/open3d_downloads to
 # Open3D/examples/test_data/open3d_downloads.
-include(ExternalProject)
-ExternalProject_Add(
-    open3d_downloads
-    DOWNLOAD_COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
-    UPDATE_COMMAND   ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
+add_custom_target(open3d_downloads
+    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
+    COMMENT ""
 )
 
 # Folder view for project files

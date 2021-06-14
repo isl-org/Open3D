@@ -773,8 +773,8 @@ if(NOT USE_SYSTEM_FMT)
 endif()
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${FMT_TARGET}")
 
+# Pybind11
 if (BUILD_PYTHON_MODULE)
-    # Pybind11
     if(USE_SYSTEM_PYBIND11)
         find_package(pybind11)
     endif()

@@ -23,11 +23,13 @@ function(download_dataset_file dataset_url dataset_path dataset_sha256)
     get_filename_component(DATASET_DIRECTORY "${DATASET_FULL_PATH}" DIRECTORY)
     file(MAKE_DIRECTORY "${DATASET_DIRECTORY}")
 
+    if (NOT EXISTS "${DATASET_FULL_PATH}")
+        message(STATUS "Downloading ${dataset_url} to ${DATASET_FULL_PATH}")
+    endif()
     # Already downloaded files from previous are automatically ignored.
     file(DOWNLOAD "${dataset_url}" "${DATASET_FULL_PATH}"
         SHOW_PROGRESS
         EXPECTED_HASH SHA256=${dataset_sha256})
-    message(STATUS "Downloaded ${dataset_url} to ${DATASET_FULL_PATH}")
 endfunction()
 
 
