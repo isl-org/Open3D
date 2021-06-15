@@ -25,11 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+#include <torch/script.h>
+
 #include <sstream>
 #include <type_traits>
 
 #include "open3d/ml/ShapeChecking.h"
-#include "torch/script.h"
 
 // Macros for checking tensor properties
 #define CHECK_CUDA(x)                                         \

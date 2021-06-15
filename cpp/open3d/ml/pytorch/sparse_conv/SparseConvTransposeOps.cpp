@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 //
 
+#include <torch/script.h>
+
 #include <vector>
 
 #include "open3d/ml/pytorch/TorchHelper.h"
@@ -33,7 +35,6 @@
 #include "open3d/ml/pytorch/sparse_conv/SparseConvOpKernel.h"
 #include "open3d/ml/pytorch/sparse_conv/SparseConvTransposeBackpropFilterOpKernel.h"
 #include "open3d/ml/pytorch/sparse_conv/SparseConvTransposeOpKernel.h"
-#include "torch/script.h"
 
 using torch::autograd::AutogradContext;
 using torch::autograd::Function;

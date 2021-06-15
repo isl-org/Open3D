@@ -25,10 +25,10 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include <mutex>
+#include <tbb/parallel_for.h>
 
-#include "Eigen/Core"
-#include "tbb/parallel_for.h"
+#include <Eigen/Core>
+#include <mutex>
 
 namespace open3d {
 namespace ml {

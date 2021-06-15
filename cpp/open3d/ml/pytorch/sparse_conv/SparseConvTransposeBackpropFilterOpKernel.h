@@ -26,9 +26,9 @@
 //
 #pragma once
 
-#include <vector>
+#include <torch/script.h>
 
-#include "torch/script.h"
+#include <vector>
 
 template <class TFeat, class TOut, class TIndex, class TKernelIndex>
 void SparseConvTransposeBackpropFilterCPU(

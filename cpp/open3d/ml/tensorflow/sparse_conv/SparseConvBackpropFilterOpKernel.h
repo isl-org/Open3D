@@ -22,10 +22,11 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
+#include <tensorflow/core/framework/op.h>
+#include <tensorflow/core/framework/op_kernel.h>
+#include <tensorflow/core/lib/core/errors.h>
+
 #include "open3d/ml/tensorflow/TensorFlowHelper.h"
-#include "tensorflow/core/framework/op.h"
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow/core/lib/core/errors.h"
 
 template <class TIndex>
 class SparseConvBackpropFilterOpKernel : public tensorflow::OpKernel {

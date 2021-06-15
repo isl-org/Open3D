@@ -25,10 +25,11 @@
 // ----------------------------------------------------------------------------
 //
 
+#include <torch/script.h>
+
 #include <vector>
 
 #include "open3d/ml/impl/sparse_conv/SparseConvTransposeBackpropFilter.h"
-#include "torch/script.h"
 
 using namespace open3d::ml::impl;
 
