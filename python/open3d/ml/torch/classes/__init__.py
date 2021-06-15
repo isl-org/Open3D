@@ -24,9 +24,4 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 """Torch specific machine learning classes."""
-import torch as _torch
-
-try:
-    RaggedTensor = _torch.classes.my_classes.RaggedTensor
-except RuntimeError:
-    pass
+from .ragged_tensor import *
