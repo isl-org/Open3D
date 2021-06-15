@@ -50,8 +50,9 @@ public:
     /// result = [values[row_splits[i]:row_splits[i + 1]]
     ///           for i in range(len(row_splits) - 1)]
     /// ```
-    c10::intrusive_ptr<RaggedTensor> FromRowSplits(
-            torch::Tensor values, torch::Tensor row_splits) const;
+    c10::intrusive_ptr<RaggedTensor> FromRowSplits(torch::Tensor values,
+                                                   torch::Tensor row_splits,
+                                                   bool validate = true) const;
 
     /// Returns _values tensor.
     torch::Tensor GetValues() const;
@@ -82,7 +83,7 @@ public:
 
     template <typename T>
     c10::intrusive_ptr<RaggedTensor> Add(T value) const {
-        return FromRowSplits(_values + value, _row_splits);
+        return FromRowSplits(_values + value, _row_splits, false);
     }
 
     template <typename T>
@@ -93,7 +94,7 @@ public:
 
     template <typename T>
     c10::intrusive_ptr<RaggedTensor> Sub(T value) const {
-        return FromRowSplits(_values - value, _row_splits);
+        return FromRowSplits(_values - value, _row_splits, false);
     }
 
     template <typename T>
@@ -104,7 +105,7 @@ public:
 
     template <typename T>
     c10::intrusive_ptr<RaggedTensor> Mul(T value) const {
-        return FromRowSplits(_values * value, _row_splits);
+        return FromRowSplits(_values * value, _row_splits, false);
     }
 
     template <typename T>
@@ -115,7 +116,7 @@ public:
 
     template <typename T>
     c10::intrusive_ptr<RaggedTensor> Div(T value) const {
-        return FromRowSplits(_values / value, _row_splits);
+        return FromRowSplits(_values / value, _row_splits, false);
     }
 
     template <typename T>

@@ -25,6 +25,7 @@ open3d.ml.tf.pipelines
 open3d.ml.torch
 open3d.ml.torch.layers
 open3d.ml.torch.ops
+open3d.ml.torch.classes
 open3d.ml.torch.configs
 open3d.ml.torch.datasets
 open3d.ml.torch.utils
