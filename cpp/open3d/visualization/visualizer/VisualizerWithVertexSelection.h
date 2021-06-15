@@ -109,7 +109,7 @@ protected:
     SelectionMode selection_mode_ = SelectionMode::None;
     Eigen::Vector2d mouse_down_pos_;
     std::vector<int> points_in_rect_;
-    float drag_depth_;
+    float drag_depth_ = 0.0f;
 
     std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
     std::shared_ptr<glsl::PointCloudPickerRenderer>

@@ -50,7 +50,8 @@ struct Point {
     OPEN3D_HOST_DEVICE Point operator-(const Point &b) const {
         return Point(x_ - b.x_, y_ - b.y_);
     }
-    float x_, y_;
+    float x_ = 0.0f;
+    float y_ = 0.0f;
 };
 
 OPEN3D_HOST_DEVICE inline float Cross(const Point &a, const Point &b) {

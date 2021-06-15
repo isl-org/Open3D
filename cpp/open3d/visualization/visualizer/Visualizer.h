@@ -284,13 +284,13 @@ protected:
     MouseControl mouse_control_;
     bool is_redraw_required_ = true;
     bool is_initialized_ = false;
-    GLuint vao_id_;
+    GLuint vao_id_ = 0;
 
     // render targets for "capture_screen_float_buffer" and
     // "capture_screen_image" in offscreen render mode
-    unsigned int render_fbo_;
-    unsigned int render_rgb_tex_;
-    unsigned int render_depth_stencil_rbo_;
+    GLuint render_fbo_ = 0;
+    GLuint render_rgb_tex_ = 0;
+    GLuint render_depth_stencil_rbo_ = 0;
 
     // view control
     std::unique_ptr<ViewControl> view_control_ptr_;

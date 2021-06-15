@@ -466,7 +466,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
     // find start node for tree traversal
     // init with node that maximizes z
     double max_z = std::numeric_limits<double>::lowest();
-    size_t v0;
+    size_t v0 = 0;
     for (size_t vidx = 0; vidx < points_.size(); ++vidx) {
         const Eigen::Vector3d &v = points_[vidx];
         if (v(2) > max_z) {
