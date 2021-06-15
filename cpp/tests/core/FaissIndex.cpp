@@ -124,6 +124,8 @@ TEST_P(FaissPermuteDevices, HybridSearch) {
 
     ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
     ExpectEQ(distances.ToFlatVector<float>(), std::vector<float>({0.00626358}));
+    ExpectEQ(counts.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
+
     // Fails on double type.
     EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Dtype::Float64)),
                  std::runtime_error);

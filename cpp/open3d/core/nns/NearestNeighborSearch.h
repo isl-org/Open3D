@@ -124,6 +124,8 @@ public:
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distainces: Tensor of shape {n, knn}, with same dtype with
     /// query_points. The distances are squared L2 distances.
+    /// - neighbour_counts: Counts of neighbour for each query points. [Tensor
+    /// of shape {n}, with dtype Int64].
     std::tuple<Tensor, Tensor, Tensor> HybridSearch(const Tensor &query_points,
                                                     double radius,
                                                     int max_knn);
