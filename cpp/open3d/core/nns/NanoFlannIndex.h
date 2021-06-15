@@ -157,9 +157,9 @@ public:
             double radius,
             bool sort = true) const override;
 
-    std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                           double radius,
-                                           int max_knn) const override;
+    std::tuple<Tensor, Tensor, Tensor> SearchHybrid(const Tensor &query_points,
+                                                    double radius,
+                                                    int max_knn) const override;
 
 protected:
     // Tensor dataset_points_;

@@ -124,9 +124,8 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
     return std::make_pair(indices, distances);
 }
 
-std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
-                                                   double radius,
-                                                   int max_knn) const {
+std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
+        const Tensor &query_points, double radius, int max_knn) const {
     // Check dtype.
     query_points.AssertDtype(Dtype::Float32);
 
@@ -144,6 +143,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
 
     Tensor indices;
     Tensor distances;
+    Tensor neighbour_counts;
 
     std::tie(indices, distances) = SearchKnn(query_points, max_knn);
 
@@ -156,7 +156,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
     indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
     distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);
 
-    return std::make_pair(indices, distances);
+    return std::make_tuple(indices, distances, neighbour_counts);
 }
 
 }  // namespace nns

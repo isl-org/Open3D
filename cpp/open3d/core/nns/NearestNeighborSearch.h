@@ -120,13 +120,13 @@ public:
     /// d}.
     /// \param radius Radius.
     /// \param max_knn Maximum number of neighbor to search per query.
-    /// \return Pair of Tensors, (indices, distances):
+    /// \return Tuple of Tensors, (indices, distances, neighbour_counts):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distainces: Tensor of shape {n, knn}, with same dtype with
     /// query_points. The distances are squared L2 distances.
-    std::pair<Tensor, Tensor> HybridSearch(const Tensor &query_points,
-                                           double radius,
-                                           int max_knn);
+    std::tuple<Tensor, Tensor, Tensor> HybridSearch(const Tensor &query_points,
+                                                    double radius,
+                                                    int max_knn);
 
 private:
     bool SetIndex();

@@ -195,14 +195,14 @@ TEST_P(NNSPermuteDevicesWithFaiss, HybridSearch) {
     core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
                        {1, 3}, core::Dtype::Float32, device);
 
-    std::pair<core::Tensor, core::Tensor> result =
+    core::Tensor indices, distances, counts;
+    std::tie(indices, distances, counts) =
             nns.HybridSearch(query, radius, max_knn);
 
-    core::Tensor indices = result.first;
-    core::Tensor distainces = result.second;
     ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4, -1}));
-    ExpectEQ(distainces.ToFlatVector<float>(),
+    ExpectEQ(distances.ToFlatVector<float>(),
              std::vector<float>({0.00626358, 0.00747938, 0}));
+    ExpectEQ(counts.ToFlatVector<int64_t>(), std::vector<int64_t>({2}));
 }
 
 }  // namespace tests

@@ -86,9 +86,9 @@ public:
     }
 
     // query_points must be float32.
-    std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                           double radius,
-                                           int max_knn) const override;
+    std::tuple<Tensor, Tensor, Tensor> SearchHybrid(const Tensor &query_points,
+                                                    double radius,
+                                                    int max_knn) const override;
 
 protected:
     std::unique_ptr<faiss::Index> index;

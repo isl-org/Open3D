@@ -794,8 +794,8 @@ private:
                     "Index is not set.");
         }
 
-        core::Tensor distances;
-        std::tie(result.correspondence_set_.second, distances) =
+        core::Tensor distances, counts;
+        std::tie(result.correspondence_set_.second, distances, counts) =
                 target_nns.HybridSearch(source.GetPoints(),
                                         max_correspondence_distance, 1);
 
