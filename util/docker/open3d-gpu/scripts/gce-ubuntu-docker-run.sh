@@ -121,7 +121,6 @@ create-vm)
             --zone="${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
             --accelerator="$GCE_GPU" \
             --maintenance-policy=TERMINATE \
-            --metadata enable-oslogin=TRUE \
             --machine-type=$GCE_INSTANCE_TYPE \
             --boot-disk-size=$GCE_BOOT_DISK_SIZE \
             --boot-disk-type=$GCE_BOOT_DISK_TYPE \
@@ -158,6 +157,8 @@ delete-image)
 
 delete-vm)
     gcloud compute instances delete "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}"
+    # Remove ssh key to prevent metadata buildup in login profile
+    gcloud compute os-login ssh-keys remove --key-file "${HOME}"/.ssh/google_compute_engine.pub
     ;;
 
 ssh-vm)
