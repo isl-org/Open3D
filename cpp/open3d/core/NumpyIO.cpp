@@ -287,7 +287,8 @@ Tensor NumpyArray::ToTensor() const {
 NumpyArray NumpyArray::Load(const std::string& file_name) {
     FILE* fp = fopen(file_name.c_str(), "rb");
     if (!fp) {
-        utility::LogError("NumpyLoad: Unable to open file {}.", file_name);
+        utility::LogError("Load: Unable to open file {}.", file_name);
+        return NumpyArray(Tensor());
     }
     SizeVector shape;
     int64_t word_size;
@@ -298,7 +299,7 @@ NumpyArray NumpyArray::Load(const std::string& file_name) {
     size_t nread = fread(arr.GetDataPtr<char>(), 1,
                          static_cast<size_t>(arr.NumBytes()), fp);
     if (nread != static_cast<size_t>(arr.NumBytes())) {
-        utility::LogError("LoadTheNumpyFile: failed fread");
+        utility::LogError("Load: failed fread");
     }
     fclose(fp);
     return arr;
@@ -306,6 +307,10 @@ NumpyArray NumpyArray::Load(const std::string& file_name) {
 
 void NumpyArray::Save(std::string file_name) const {
     FILE* fp = fopen(file_name.c_str(), "wb");
+    if (!fp) {
+        utility::LogError("Save: Unable to open file {}.", file_name);
+        return;
+    }
     std::vector<char> header = CreateNumpyHeader(shape_, GetDtype());
     fseek(fp, 0, SEEK_SET);
     fwrite(&header[0], sizeof(char), header.size(), fp);

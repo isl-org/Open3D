@@ -70,33 +70,38 @@ public:
           start_(start),
           stop_(stop),
           step_(step) {}
+
     std::shared_ptr<SliceImpl> InstantiateDimSize(int64_t dim_size) const {
         return std::make_shared<SliceImpl>(
                 start_.has_value() ? start_.value() : 0,
                 stop_.has_value() ? stop_.value() : dim_size,
                 step_.has_value() ? step_.value() : 1);
     }
+
     int64_t GetStart() const {
         if (start_.has_value()) {
             return start_.value();
-        } else {
-            utility::LogError("TensorKeyMode::Slice: start is None.");
         }
+        utility::LogError("TensorKeyMode::Slice: start is None.");
+        return -1;
     }
+
     int64_t GetStop() const {
         if (stop_.has_value()) {
             return stop_.value();
-        } else {
-            utility::LogError("TensorKeyMode::Slice: stop is None.");
         }
+        utility::LogError("TensorKeyMode::Slice: stop is None.");
+        return -1;
     }
+
     int64_t GetStep() const {
         if (step_.has_value()) {
             return step_.value();
-        } else {
-            utility::LogError("TensorKeyMode::Slice: step is None.");
         }
+        utility::LogError("TensorKeyMode::Slice: step is None.");
+        return -1;
     }
+
     std::string ToString() const override {
         std::stringstream ss;
         ss << "TensorKey::Slice(";
@@ -166,49 +171,49 @@ TensorKey TensorKey::IndexTensor(const Tensor& index_tensor) {
 int64_t TensorKey::GetIndex() const {
     if (auto index_impl = std::dynamic_pointer_cast<IndexImpl>(impl_)) {
         return index_impl->GetIndex();
-    } else {
-        utility::LogError("GetIndex() failed: the impl is not IndexImpl.");
     }
+    utility::LogError("GetIndex() failed: the impl is not IndexImpl.");
+    return -1;
 }
 
 int64_t TensorKey::GetStart() const {
     if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
         return slice_impl->GetStart();
-    } else {
-        utility::LogError("GetStart() failed: the impl is not SliceImpl.");
     }
+    utility::LogError("GetStart() failed: the impl is not SliceImpl.");
+    return -1;
 }
 int64_t TensorKey::GetStop() const {
     if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
         return slice_impl->GetStop();
-    } else {
-        utility::LogError("GetStop() failed: the impl is not SliceImpl.");
     }
+    utility::LogError("GetStop() failed: the impl is not SliceImpl.");
+    return -1;
 }
 int64_t TensorKey::GetStep() const {
     if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
         return slice_impl->GetStep();
-    } else {
-        utility::LogError("GetStep() failed: the impl is not SliceImpl.");
     }
+    utility::LogError("GetStep() failed: the impl is not SliceImpl.");
+    return -1;
 }
 TensorKey TensorKey::InstantiateDimSize(int64_t dim_size) const {
     if (auto slice_impl = std::dynamic_pointer_cast<SliceImpl>(impl_)) {
         return TensorKey(slice_impl->InstantiateDimSize(dim_size));
-    } else {
-        utility::LogError(
-                "InstantiateDimSize() failed: the impl is not SliceImpl.");
     }
+    utility::LogError(
+            "InstantiateDimSize() failed: the impl is not SliceImpl.");
+    return TensorKey(nullptr);
 }
 
 Tensor TensorKey::GetIndexTensor() const {
     if (auto index_tensor_impl =
                 std::dynamic_pointer_cast<IndexTensorImpl>(impl_)) {
         return index_tensor_impl->GetIndexTensor();
-    } else {
-        utility::LogError(
-                "GetIndexTensor() failed: the impl is not IndexTensorImpl.");
     }
+    utility::LogError(
+            "GetIndexTensor() failed: the impl is not IndexTensorImpl.");
+    return Tensor();
 }
 
 }  // namespace core

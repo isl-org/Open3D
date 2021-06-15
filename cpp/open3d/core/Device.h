@@ -99,30 +99,27 @@ protected:
     }
 
     static DeviceType StringToDeviceType(const std::string& type_colon_id) {
+        DeviceType default_type = DeviceType::CPU;
         std::vector<std::string> tokens =
                 utility::SplitString(type_colon_id, ":", true);
         if (tokens.size() == 2) {
             std::string device_name_lower = utility::ToLower(tokens[0]);
-            if (device_name_lower == "cpu") {
-                return DeviceType::CPU;
-            } else if (device_name_lower == "cuda") {
-                return DeviceType::CUDA;
-            } else {
-                utility::LogError("Invalid device string {}.", type_colon_id);
-            }
-        } else {
-            utility::LogError("Invalid device string {}.", type_colon_id);
+            if (device_name_lower == "cpu") return DeviceType::CPU;
+            if (device_name_lower == "cuda") return DeviceType::CUDA;
         }
+        utility::LogError("Invalid device string {}.", type_colon_id);
+        return default_type;
     }
 
     static int StringToDeviceId(const std::string& type_colon_id) {
+        int default_id = 0;
         std::vector<std::string> tokens =
                 utility::SplitString(type_colon_id, ":", true);
         if (tokens.size() == 2) {
             return std::stoi(tokens[1]);
-        } else {
-            utility::LogError("Invalid device string {}.", type_colon_id);
         }
+        utility::LogError("Invalid device string {}.", type_colon_id);
+        return default_id;
     }
 
 protected:

@@ -106,6 +106,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     utility::LogError(
             "FixedRadiusIndex::SetTensorData BUILD_CUDA_MODULE is OFF. Please "
             "compile Open3d with BUILD_CUDA_MODULE=ON.");
+    return false;
 #endif
 };
 
@@ -219,6 +220,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     utility::LogError(
             "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. Please "
             "compile Open3d with BUILD_CUDA_MODULE=ON.");
+    return std::make_tuple(Tensor(), Tensor(), Tensor());
 #endif
 };
 
@@ -271,6 +273,7 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     utility::LogError(
             "FixedRadiusIndex::SearchHybrid BUILD_CUDA_MODULE is OFF. Please "
             "compile Open3d with BUILD_CUDA_MODULE=ON.");
+    return std::make_tuple(Tensor(), Tensor());
 #endif
 }
 }  // namespace nns

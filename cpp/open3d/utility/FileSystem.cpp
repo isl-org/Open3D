@@ -460,6 +460,7 @@ void CFile::Close() {
 int64_t CFile::CurPos() {
     if (!file_) {
         utility::LogError("CFile::CurPos() called on a closed file");
+        return -1;
     }
     int64_t pos = ftell(file_);
     if (pos < 0) {
@@ -472,6 +473,7 @@ int64_t CFile::CurPos() {
 int64_t CFile::GetFileSize() {
     if (!file_) {
         utility::LogError("CFile::GetFileSize() called on a closed file");
+        return -1;
     }
     fpos_t prevpos;
     if (fgetpos(file_, &prevpos)) {
@@ -493,6 +495,7 @@ int64_t CFile::GetFileSize() {
 int64_t CFile::GetNumLines() {
     if (!file_) {
         utility::LogError("CFile::GetNumLines() called on a closed file");
+        return -1;
     }
     fpos_t prevpos;
     if (fgetpos(file_, &prevpos)) {
@@ -520,6 +523,7 @@ int64_t CFile::GetNumLines() {
 const char *CFile::ReadLine() {
     if (!file_) {
         utility::LogError("CFile::ReadLine() called on a closed file");
+        return nullptr;
     }
     if (line_buffer_.size() == 0) {
         line_buffer_.resize(DEFAULT_IO_BUFFER_SIZE);
@@ -547,6 +551,7 @@ const char *CFile::ReadLine() {
 size_t CFile::ReadData(void *data, size_t elem_size, size_t num_elems) {
     if (!file_) {
         utility::LogError("CFile::ReadData() called on a closed file");
+        return 0;
     }
     size_t elems = fread(data, elem_size, num_elems, file_);
     if (ferror(file_)) {
