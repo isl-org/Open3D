@@ -126,13 +126,13 @@ public:
                                 neighbors_index, neighbors_importance,
                                 neighbors_row_splits});
 
-        const auto& feat_dtype = inp_positions.dtype();
-        const auto& real_dtype = filters.dtype();
+        const auto& feat_dtype = filters.dtype();
+        const auto& real_dtype = inp_positions.dtype();
         const auto& index_dtype = neighbors_index.dtype();
 
         torch::Tensor out_features =
                 torch::empty({num_out_points.value(), out_channels.value()},
-                             torch::dtype(real_dtype).device(device));
+                             torch::dtype(feat_dtype).device(device));
 #define FN_PARAMETERS                                                     \
     filters, out_positions, extents, offset, inp_positions, inp_features, \
             inp_importance, neighbors_index, neighbors_importance,        \
