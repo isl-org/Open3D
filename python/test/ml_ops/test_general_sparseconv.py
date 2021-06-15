@@ -23,7 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-"""Tests the reference python implementation of the continuous conv"""
+"""Tests the implementation of the general sparse convolution ops"""
 
 import open3d as o3d
 import numpy as np
