@@ -216,6 +216,8 @@ OPEN3D_HOST_DEVICE inline float BoxOverlap(const float *box_a,
         }
     }
 
+    assert(cnt != 0 && "Invaid value: cnt==0.");
+
     poly_center.x_ /= cnt;
     poly_center.y_ /= cnt;
 

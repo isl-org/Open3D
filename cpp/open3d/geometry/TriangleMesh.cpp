@@ -453,6 +453,11 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         double surface_area,
         bool use_triangle_normal,
         int seed) {
+    if (surface_area <= 0) {
+        utility::LogError("Invalid surface area {}, it must be > 0.",
+                          surface_area);
+    }
+
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
