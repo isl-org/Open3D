@@ -56,7 +56,12 @@ int main(int argc, char *argv[]) {
                                       depth_filenames);
     ListFilesInDirectoryWithExtension(data_path + "/image/", "jpg",
                                       color_filenames);
-    assert(depth_filenames.size() == color_filenames.size());
+    if (depth_filenames.size() != color_filenames.size()) {
+        utility::LogError(
+                "The number of depth images {} does not match the number of "
+                "color images {}.",
+                depth_filenames.size(), color_filenames.size());
+    }
     std::sort(depth_filenames.begin(), depth_filenames.end());
     std::sort(color_filenames.begin(), color_filenames.end());
 

@@ -202,8 +202,8 @@ public:
         for (int64_t i = 0; i < num_indices_; ++i) {
             int64_t index = *(reinterpret_cast<int64_t*>(
                     indexer_.GetInputPtr(i + 1, workload_idx)));
-            assert(index >= -indexed_shape_[i] && index < indexed_shape_[i] &&
-                   "Index out of bounds");
+            OPEN3D_ASSERT(index >= -indexed_shape_[i] &&
+                          index < indexed_shape_[i] && "Index out of bounds.");
             index += indexed_shape_[i] * (index < 0);
             offset += index * indexed_strides_[i];
         }
