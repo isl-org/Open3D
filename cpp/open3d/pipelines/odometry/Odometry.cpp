@@ -39,19 +39,18 @@ namespace open3d {
 namespace pipelines {
 namespace odometry {
 
-static std::tuple<std::shared_ptr<geometry::Image>,
-                  std::shared_ptr<geometry::Image>>
-InitializeCorrespondenceMap(int width, int height) {
+static std::tuple<geometry::Image, geometry::Image> InitializeCorrespondenceMap(
+        int width, int height) {
     // initialization: filling with any (u,v) to (-1,-1)
-    auto correspondence_map = std::make_shared<geometry::Image>();
-    auto depth_buffer = std::make_shared<geometry::Image>();
-    correspondence_map->Prepare(width, height, 2, 4);
-    depth_buffer->Prepare(width, height, 1, 4);
-    for (int v = 0; v < correspondence_map->height_; v++) {
-        for (int u = 0; u < correspondence_map->width_; u++) {
-            *correspondence_map->PointerAt<int>(u, v, 0) = -1;
-            *correspondence_map->PointerAt<int>(u, v, 1) = -1;
-            *depth_buffer->PointerAt<float>(u, v, 0) = -1.0f;
+    geometry::Image correspondence_map;
+    geometry::Image depth_buffer;
+    correspondence_map.Prepare(width, height, 2, 4);
+    depth_buffer.Prepare(width, height, 1, 4);
+    for (int v = 0; v < correspondence_map.height_; v++) {
+        for (int u = 0; u < correspondence_map.width_; u++) {
+            *correspondence_map.PointerAt<int>(u, v, 0) = -1;
+            *correspondence_map.PointerAt<int>(u, v, 1) = -1;
+            *depth_buffer.PointerAt<float>(u, v, 0) = -1.0f;
         }
     }
     return std::make_tuple(correspondence_map, depth_buffer);
@@ -129,15 +128,15 @@ static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
     const Eigen::Matrix3d KRK_inv = K * R * K_inv;
     Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
 
-    std::shared_ptr<geometry::Image> correspondence_map;
-    std::shared_ptr<geometry::Image> depth_buffer;
+    geometry::Image correspondence_map;
+    geometry::Image depth_buffer;
     std::tie(correspondence_map, depth_buffer) =
             InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
 
 #pragma omp parallel
     {
-        std::shared_ptr<geometry::Image> correspondence_map_private;
-        std::shared_ptr<geometry::Image> depth_buffer_private;
+        geometry::Image correspondence_map_private;
+        geometry::Image depth_buffer_private;
         std::tie(correspondence_map_private, depth_buffer_private) =
                 InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
 #pragma omp for nowait
@@ -157,8 +156,8 @@ static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
                             std::abs(transformed_d_s - d_t) <=
                                     option.max_depth_diff_) {
                             AddElementToCorrespondenceMap(
-                                    *correspondence_map_private,
-                                    *depth_buffer_private, u_s, v_s, u_t, v_t,
+                                    correspondence_map_private,
+                                    depth_buffer_private, u_s, v_s, u_t, v_t,
                                     (float)d_s);
                         }
                     }
@@ -167,21 +166,21 @@ static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
         }
 #pragma omp critical
         {
-            MergeCorrespondenceMaps(*correspondence_map, *depth_buffer,
-                                    *correspondence_map_private,
-                                    *depth_buffer_private);
+            MergeCorrespondenceMaps(correspondence_map, depth_buffer,
+                                    correspondence_map_private,
+                                    depth_buffer_private);
 
         }  //    omp critical
     }      //    omp parallel
 
     auto correspondence = std::make_shared<CorrespondenceSetPixelWise>();
-    int correspondence_count = CountCorrespondence(*correspondence_map);
+    int correspondence_count = CountCorrespondence(correspondence_map);
     correspondence->resize(correspondence_count);
     int cnt = 0;
-    for (int v_s = 0; v_s < correspondence_map->height_; v_s++) {
-        for (int u_s = 0; u_s < correspondence_map->width_; u_s++) {
-            int u_t = *correspondence_map->PointerAt<int>(u_s, v_s, 0);
-            int v_t = *correspondence_map->PointerAt<int>(u_s, v_s, 1);
+    for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
+        for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
+            int u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
+            int v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
             if (u_t != -1 && v_t != -1) {
                 Eigen::Vector4i pixel_correspondence(u_s, v_s, u_t, v_t);
                 (*correspondence)[cnt] = pixel_correspondence;
