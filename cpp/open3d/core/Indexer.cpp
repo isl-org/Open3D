@@ -349,7 +349,7 @@ Indexer Indexer::GetPerOutputIndexer(int64_t output_idx) const {
 
 void Indexer::ShrinkDim(int64_t dim, int64_t start, int64_t size) {
     // inputs_ and output_'s shapes are not important.
-    if (dim < 0 && dim > ndims_) {
+    if (dim < 0 && dim >= ndims_) {
         utility::LogError("0 <= dim < {} required, but got {}.", ndims_, dim);
     }
     if (size <= 0) {
