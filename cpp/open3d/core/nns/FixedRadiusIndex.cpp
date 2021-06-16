@@ -273,7 +273,7 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     utility::LogError(
             "FixedRadiusIndex::SearchHybrid BUILD_CUDA_MODULE is OFF. Please "
             "compile Open3d with BUILD_CUDA_MODULE=ON.");
-    return std::make_tuple(Tensor(), Tensor());
+    return std::make_pair(Tensor(), Tensor());
 #endif
 }
 }  // namespace nns
