@@ -25,6 +25,7 @@
 # ----------------------------------------------------------------------------
 
 import torch
+import numpy as np
 
 __all__ = ['RaggedTensor']
 
@@ -83,6 +84,21 @@ class RaggedTensor:
         <RaggedTensor [[3, 1, 4, 1], [], [5, 9, 2], [6], []]>
 
         """
+        if isinstance(values, list):
+            values = torch.tensor(values, dtype=torch.float64)
+        elif isinstance(values, np.ndarray):
+            values = torch.from_numpy(values)
+        elif isinstance(values, torch.Tensor):
+            values = values.clone()
+
+        if isinstance(row_splits, list):
+            row_splits = torch.tensor(row_splits, dtype=torch.int64)
+        elif isinstance(row_splits, np.ndarray):
+            row_splits = torch.from_numpy(row_splits)
+        elif isinstance(row_splits, torch.Tensor):
+            row_splits = row_splits.clone()
+
+        row_splits = row_splits.to(torch.int64)
         r_tensor = torch.classes.my_classes.RaggedTensor().from_row_splits(
             values, row_splits, validate)
         return cls(r_tensor, internal=True)
@@ -111,6 +127,22 @@ class RaggedTensor:
     def shape(self):
         """The statically known shape of this ragged tensor."""
         return [len(self.r_tensor), None, *self.values.shape[1:]]
+
+    @property
+    def requires_grad(self):
+        return self.values.requires_grad
+
+    @requires_grad.setter
+    def requires_grad(self, value):
+        self.values.requires_grad = value
+
+    def clone(self):
+        """Returns a clone of object."""
+        return RaggedTensor(self.r_tensor.clone(), True)
+
+    def to_list(self):
+        """Returns a list of tensors"""
+        return [tensor for tensor in self.r_tensor]
 
     def __getitem__(self, idx):
         return self.r_tensor[idx]
