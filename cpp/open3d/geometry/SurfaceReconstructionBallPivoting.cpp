@@ -120,16 +120,19 @@ void BallPivotingEdge::AddAdjacentTriangle(BallPivotingTrianglePtr triangle) {
             triangle0_ = triangle;
             type_ = Type::Front;
             // update orientation
-            BallPivotingVertexPtr opp = GetOppositeVertex();
-            Eigen::Vector3d tr_norm =
-                    (target_->point_ - source_->point_)
-                            .cross(opp->point_ - source_->point_);
-            tr_norm /= tr_norm.norm();
-            Eigen::Vector3d pt_norm =
-                    source_->normal_ + target_->normal_ + opp->normal_;
-            pt_norm /= pt_norm.norm();
-            if (pt_norm.dot(tr_norm) < 0) {
-                std::swap(target_, source_);
+            if (BallPivotingVertexPtr opp = GetOppositeVertex()) {
+                Eigen::Vector3d tr_norm =
+                        (target_->point_ - source_->point_)
+                                .cross(opp->point_ - source_->point_);
+                tr_norm /= tr_norm.norm();
+                Eigen::Vector3d pt_norm =
+                        source_->normal_ + target_->normal_ + opp->normal_;
+                pt_norm /= pt_norm.norm();
+                if (pt_norm.dot(tr_norm) < 0) {
+                    std::swap(target_, source_);
+                }
+            } else {
+                utility::LogError("GetOppositeVertex() returns nullptr.");
             }
         } else if (triangle1_ == nullptr) {
             triangle1_ = triangle;
@@ -331,6 +334,10 @@ public:
         BallPivotingVertexPtr tgt = edge->target_;
 
         const BallPivotingVertexPtr opp = edge->GetOppositeVertex();
+        if (opp == nullptr) {
+            utility::LogError("edge->GetOppositeVertex() returns nullptr.");
+            return nullptr;
+        }
         utility::LogDebug("[FindCandidateVertex] edge=({}, {}), opp={}",
                           src->idx_, tgt->idx_, opp->idx_);
         utility::LogDebug("[FindCandidateVertex] src={} => {}", src->idx_,

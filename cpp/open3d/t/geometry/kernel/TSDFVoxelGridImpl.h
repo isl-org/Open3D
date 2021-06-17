@@ -776,6 +776,8 @@ void ExtractSurfaceMeshCPU
                                    static_cast<int>(yv) + (e == 1),
                                    static_cast<int>(zv) + (e == 2),
                                    static_cast<int>(workload_block_idx));
+                OPEN3D_ASSERT(voxel_ptr_e != nullptr &&
+                              "Internal error GetVoxelAt returns nullptr.");
                 float tsdf_e = voxel_ptr_e->GetTSDF();
                 float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 

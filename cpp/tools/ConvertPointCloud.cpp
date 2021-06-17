@@ -72,6 +72,10 @@ void convert(int argc,
     using namespace open3d;
     using namespace open3d::utility::filesystem;
     auto pointcloud_ptr = io::CreatePointCloudFromFile(file_in.c_str());
+    if (!pointcloud_ptr) {
+        utility::LogError("Failed to create point cloud from {}.", file_in);
+        return;
+    }
     size_t point_num_in = pointcloud_ptr->points_.size();
     bool processed = false;
 

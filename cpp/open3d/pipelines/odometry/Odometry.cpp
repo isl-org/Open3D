@@ -116,7 +116,7 @@ static int CountCorrespondence(const geometry::Image &correspondence_map) {
     return correspondence_count;
 }
 
-static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
+static CorrespondenceSetPixelWise ComputeCorrespondence(
         const Eigen::Matrix3d intrinsic_matrix,
         const Eigen::Matrix4d &extrinsic,
         const geometry::Image &depth_s,
@@ -173,9 +173,9 @@ static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
         }  //    omp critical
     }      //    omp parallel
 
-    auto correspondence = std::make_shared<CorrespondenceSetPixelWise>();
+    CorrespondenceSetPixelWise correspondence;
     int correspondence_count = CountCorrespondence(correspondence_map);
-    correspondence->resize(correspondence_count);
+    correspondence.resize(correspondence_count);
     int cnt = 0;
     for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
         for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
@@ -183,7 +183,7 @@ static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
             int v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
             if (u_t != -1 && v_t != -1) {
                 Eigen::Vector4i pixel_correspondence(u_s, v_s, u_t, v_t);
-                (*correspondence)[cnt] = pixel_correspondence;
+                correspondence[cnt] = pixel_correspondence;
                 cnt++;
             }
         }
@@ -241,7 +241,7 @@ static Eigen::Matrix6d CreateInformationMatrix(
         const geometry::Image &depth_s,
         const geometry::Image &depth_t,
         const OdometryOption &option) {
-    auto correspondence =
+    CorrespondenceSetPixelWise correspondence =
             ComputeCorrespondence(pinhole_camera_intrinsic.intrinsic_matrix_,
                                   extrinsic, depth_s, depth_t, option);
 
@@ -257,9 +257,9 @@ static Eigen::Matrix6d CreateInformationMatrix(
         Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
         Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
 #pragma omp for nowait
-        for (int row = 0; row < int(correspondence->size()); row++) {
-            int u_t = (*correspondence)[row](2);
-            int v_t = (*correspondence)[row](3);
+        for (int row = 0; row < int(correspondence.size()); row++) {
+            int u_t = correspondence[row](2);
+            int v_t = correspondence[row](3);
             double x = *xyz_t->PointerAt<float>(u_t, v_t, 0);
             double y = *xyz_t->PointerAt<float>(u_t, v_t, 1);
             double z = *xyz_t->PointerAt<float>(u_t, v_t, 2);
@@ -285,9 +285,10 @@ static Eigen::Matrix6d CreateInformationMatrix(
     return GTG;
 }
 
-static void NormalizeIntensity(geometry::Image &image_s,
-                               geometry::Image &image_t,
-                               CorrespondenceSetPixelWise &correspondence) {
+static void NormalizeIntensity(
+        geometry::Image &image_s,
+        geometry::Image &image_t,
+        const CorrespondenceSetPixelWise &correspondence) {
     if (image_s.width_ != image_t.width_ ||
         image_s.height_ != image_t.height_) {
         utility::LogError(
@@ -403,10 +404,10 @@ InitializeRGBDOdometry(
     auto target_depth = target_depth_preprocessed->Filter(
             geometry::Image::FilterType::Gaussian3);
 
-    auto correspondence = ComputeCorrespondence(
+    CorrespondenceSetPixelWise correspondence = ComputeCorrespondence(
             pinhole_camera_intrinsic.intrinsic_matrix_, odo_init, *source_depth,
             *target_depth, option);
-    NormalizeIntensity(*source_gray, *target_gray, *correspondence);
+    NormalizeIntensity(*source_gray, *target_gray, correspondence);
 
     auto source_out = PackRGBDImage(*source_gray, *source_depth);
     auto target_out = PackRGBDImage(*target_gray, *target_depth);
@@ -425,9 +426,9 @@ static std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
         const Eigen::Matrix4d &extrinsic_initial,
         const RGBDOdometryJacobian &jacobian_method,
         const OdometryOption &option) {
-    auto correspondence = ComputeCorrespondence(
+    CorrespondenceSetPixelWise correspondence = ComputeCorrespondence(
             intrinsic, extrinsic_initial, source.depth_, target.depth_, option);
-    int corresps_count = (int)correspondence->size();
+    int corresps_count = (int)correspondence.size();
 
     auto f_lambda =
             [&](int i,
@@ -436,7 +437,7 @@ static std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
                 jacobian_method.ComputeJacobianAndResidual(
                         i, J_r, r, w, source, target, source_xyz, target_dx,
                         target_dy, intrinsic, extrinsic_initial,
-                        *correspondence);
+                        correspondence);
             };
     utility::LogDebug("Iter : {:d}, Level : {:d}, ", iter, level);
     Eigen::Matrix6d JTJ;

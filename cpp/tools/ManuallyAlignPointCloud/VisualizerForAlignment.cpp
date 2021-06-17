@@ -203,9 +203,18 @@ void VisualizerForAlignment::KeyPressCallback(
             case GLFW_KEY_K: {
                 if (!utility::filesystem::FileExists(polygon_filename_)) {
                     if (use_dialog_) {
-                        polygon_filename_ = tinyfd_openFileDialog(
-                                "Bounding polygon", "polygon.json", 0, NULL,
-                                NULL, 0);
+                        if (const char *polygon_filename_chars_ =
+                                    tinyfd_openFileDialog("Bounding polygon",
+                                                          "polygon.json", 0,
+                                                          NULL, NULL, 0)) {
+                            polygon_filename_ =
+                                    std::string(polygon_filename_chars_);
+                        } else {
+                            utility::LogError(
+                                    "Internal error: tinyfd_openFileDialog "
+                                    "returned nullptr.");
+                            return;
+                        }
                     } else {
                         polygon_filename_ = "polygon.json";
                     }

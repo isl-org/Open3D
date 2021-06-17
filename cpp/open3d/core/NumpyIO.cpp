@@ -166,7 +166,12 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     if (res != 11) {
         utility::LogError("ParseNumpyHeader: failed fread");
     }
-    std::string header = fgets(buffer, 256, fp);
+    std::string header;
+    if (const char* header_chars = fgets(buffer, 256, fp)) {
+        header = std::string(header_chars);
+    } else {
+        utility::LogError("ParseNumpyHeader: header is nullptr.");
+    }
     if (header[header.size() - 1] != '\n') {
         utility::LogError("ParseNumpyHeader: the last char must be '\n'");
     }
