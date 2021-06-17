@@ -364,15 +364,19 @@ void ImguiFilamentBridge::Update(ImDrawData* imgui_data) {
                 auto skey =
                         ScissorRectKey(fbheight, pcmd.ClipRect, pcmd.TextureId);
                 auto miter = scissor_rects.find(skey);
-                assert(miter != scissor_rects.end());
-                rbuilder.geometry(prim_index,
-                                  RenderableManager::PrimitiveType::TRIANGLES,
-                                  impl_->vertex_buffers_[buffer_index],
-                                  impl_->index_buffers_[buffer_index],
-                                  indexOffset, pcmd.ElemCount)
-                        .blendOrder(prim_index, prim_index)
-                        .material(prim_index, miter->second);
-                prim_index++;
+                if (miter != scissor_rects.end()) {
+                    rbuilder.geometry(
+                                    prim_index,
+                                    RenderableManager::PrimitiveType::TRIANGLES,
+                                    impl_->vertex_buffers_[buffer_index],
+                                    impl_->index_buffers_[buffer_index],
+                                    indexOffset, pcmd.ElemCount)
+                            .blendOrder(prim_index, prim_index)
+                            .material(prim_index, miter->second);
+                    prim_index++;
+                } else {
+                    utility::LogError("Internal error: material not found.");
+                }
             }
             indexOffset += pcmd.ElemCount;
         }

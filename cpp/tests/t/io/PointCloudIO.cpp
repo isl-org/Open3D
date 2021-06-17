@@ -215,6 +215,12 @@ TEST(TPointCloudIO, ReadWritePTS) {
     EXPECT_EQ(pcd.GetPointColors().GetLength(), 10);
     EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
     EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
+    EXPECT_TRUE(pcd.GetPoints()[0].AllClose(
+            core::Tensor::Init<double>({4.24644, -6.42662, -50.2146})));
+    EXPECT_TRUE(pcd.GetPointColors()[0].AllClose(
+            core::Tensor::Init<uint8_t>({66, 50, 83})));
+    EXPECT_TRUE(pcd.GetPointAttr("intensities")[0].AllClose(
+            core::Tensor::Init<double>({10})));
 
     // Write pointcloud and match it after read.
     std::string file_name = std::string(TEST_DATA_DIR) + "/test_read.pts";

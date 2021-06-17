@@ -46,7 +46,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
         // Get num_points.
         utility::filesystem::CFile file;
-        if (!file.Open(filename, "r")) {
+        if (!file.Open(filename, "rb")) {
             utility::LogWarning("Read PTS failed: unable to open file: {}",
                                 filename);
             return false;

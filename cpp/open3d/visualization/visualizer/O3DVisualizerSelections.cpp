@@ -178,7 +178,9 @@ void O3DVisualizerSelections::SetPointSize(double radius_world) {
 }
 
 void O3DVisualizerSelections::MakeActive() {
-    assert(!is_active_);
+    if (is_active_) {
+        utility::LogError("Already active.");
+    }
 
     is_active_ = true;
     widget3d_.SetViewControls(gui::SceneWidget::Controls::PICK_POINTS);

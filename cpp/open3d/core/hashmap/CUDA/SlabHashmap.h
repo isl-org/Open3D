@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <memory>
 
 #include "open3d/core/CUDAUtils.h"

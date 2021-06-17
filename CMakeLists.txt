@@ -88,12 +88,6 @@ if (NOT DEVELOPER_BUILD)
     endif()
 endif()
 
-# In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
-# first try to look for the required files in OPEN3D_THIRD_PARTY_DOWNLOAD_DIR, before
-# downloading it from the internet. The files inside OPEN3D_THIRD_PARTY_DOWNLOAD_DIR
-# are prepared manually by the user. This is only supported by limited 3rd party
-# libraries.
-
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
 # will be set, and we don't specify a default CMAKE_BUILD_TYPE.
@@ -119,19 +113,12 @@ if (CCACHE)
     endif()
 endif()
 
-set(THIRD_PARTY_FROM "cmake options")
-if(DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} AND
-        IS_DIRECTORY "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" AND
-        NOT OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
-    set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
-    set(THIRD_PARTY_FROM "the environment")
-endif()
-if(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
-    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is set to "
-    "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} from ${THIRD_PARTY_FROM}.")
-else()
-    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
-endif()
+# In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# use this directory to cache downloaded 3rd party dependencies and automatically skip
+# downloading from the Internet if the files are available. This is only supported by
+# a limited number of 3rd party libraries.
+set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads")
+message(STATUS "Downloading 3rdparty dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 
@@ -222,6 +209,20 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
+# FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
+if (BUILD_CUDA_MODULE
+    AND CMAKE_CXX_COMPILER MATCHES "MSVC"
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
+)
+    # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD 17)
+    # Suppress warnings for deprecated C++17 functions.
+    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
+    message(WARNING "Visual Studio 16.10 (MSVC 19.29) introduced a compiler bug when compiling CUDA code with C++14. "
+        "Workaround this bug by setting the CUDA standard to C++17.")
+endif()
+
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
 
@@ -301,14 +302,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         -fsanitize=safe-stack       # Stack execution protection
         -Wl,-z,relro,-z,now         # Data relocation protection
         -pie                        # Position independent executable
+        $<$<CONFIG:Release>:LINKER:-S>  # Exclude debug info
         CACHE STRING "Linker flags for security hardening")
     if(NOT BUILD_SHARED_LIBS AND NOT BUILD_PYTHON_MODULE)
         list(APPEND HARDENING_CFLAGS -fsanitize=safe-stack)   # Stack execution protection
         list(APPEND HARDENING_LDFLAGS -fsanitize=safe-stack)  # only static libraries supported
-    endif()
-    if(NOT DEVELOPER_BUILD)
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)     # Strip debug symbols
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
@@ -316,13 +314,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         -fstack-protector               # Stack-based buffer overrun detection
         -Wformat -Wformat-security      # Format string vulnerability
         CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS  ""
-        # -pie Position independent execution is default on macOSX 10.6+
+    set(HARDENING_LDFLAGS
+        # -pie Position independent executable is default on macOSX 10.6+
+        LINKER:-dead_strip    # Remove unreachable code
+        $<$<CONFIG:Release>:LINKER:-S,-x>  # Exclude debug info, non-global symbols
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        # list(APPEND HARDENING_LDFLAGS -S) # Causing link error for EncodeShader
-    endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
@@ -333,11 +329,8 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         -Wl,-z,noexecstack   # Stack execution protection
         -Wl,-z,relro,-z,now  # Data relocation protection
         -pie                 # Position independent executable
+        $<$<CONFIG:Release>:LINKER:--strip-debug>  # Exclude debug info
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -strip-debug)
-    endif()
 else()
     message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "
     "flags set")
@@ -388,11 +381,9 @@ if(BUILD_CUDA_MODULE)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
             set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
                 60-real 61-real 62-real 70-real 72-real 75-real 80)
-        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "10.0")
+        else()
             set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real
                 52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
-        else()
-            message(STATUS "Old CUDA <10.0 detected. Falling back to CMake's default architectures.")
         endif()
     else()
         if(CMAKE_CUDA_ARCHITECTURES)
@@ -439,6 +430,10 @@ if(BUILD_CUDA_MODULE)
 
     message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
+
+    if (CMAKE_CUDA_COMPILER MATCHES "NVCC" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
+        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    endif()
 endif ()
 
 # OS specific settings
@@ -613,6 +608,23 @@ function(open3d_set_global_properties target)
 
     # Download test data files from open3d_downloads repo.
     add_dependencies(${target} open3d_downloads)
+
+    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
+    # (from pybind11)
+    # macOS: -x: strip local symbols
+    # Linux: defaults
+    if(UNIX AND CMAKE_STRIP)
+        get_target_property(target_type ${target} TYPE)
+        if(target_type MATCHES
+                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND
+                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
+                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
+                COMMAND_EXPAND_LISTS)
+        endif()
+    endif()
+
 endfunction()
 
 macro(add_source_group module_name)

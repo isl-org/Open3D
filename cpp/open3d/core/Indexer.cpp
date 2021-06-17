@@ -261,9 +261,21 @@ std::unique_ptr<Indexer> Indexer::SplitLargestDim() {
             }
         }
     }
-    assert(max_extent >= 0);
-    assert(dim_to_split >= 0 && dim_to_split < ndims_ &&
-           master_shape_[dim_to_split] >= 2);
+    if (max_extent < 0) {
+        utility::LogError(
+                "Internal error: max_extent must be >= 0, but got {}.",
+                max_extent);
+    }
+    if (!(dim_to_split >= 0 && dim_to_split < ndims_)) {
+        utility::LogError(
+                "Internal error: 0 <= dim_to_split < {} required, but got {}.",
+                ndims_, dim_to_split);
+    }
+    if (master_shape_[dim_to_split] < 2) {
+        utility::LogError(
+                "Internal error: cannot split dimension size {}, must be >= 2.",
+                master_shape_[dim_to_split]);
+    }
 
     std::unique_ptr<Indexer> copy(new Indexer(*this));
     bool overlaps = IsReductionDim(dim_to_split);
@@ -337,7 +349,12 @@ Indexer Indexer::GetPerOutputIndexer(int64_t output_idx) const {
 
 void Indexer::ShrinkDim(int64_t dim, int64_t start, int64_t size) {
     // inputs_ and output_'s shapes are not important.
-    assert(dim >= 0 && dim < ndims_ && size > 0);
+    if (!(dim >= 0 && dim < ndims_)) {
+        utility::LogError("0 <= dim < {} required, but got {}.", ndims_, dim);
+    }
+    if (size <= 0) {
+        utility::LogError("Invalid size {}, must be > 0.", size);
+    }
     // Inputs
     for (int64_t i = 0; i < num_inputs_; ++i) {
         inputs_[i].data_ptr_ = static_cast<char*>(inputs_[i].data_ptr_) +
