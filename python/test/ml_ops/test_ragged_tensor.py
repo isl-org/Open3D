@@ -49,15 +49,15 @@ def test_creation(dtype, ml):
 
     # From numpy arrays
     r_tensor = ml.classes.RaggedTensor.from_row_splits(values, row_splits)
-    for i in range(len(r_tensor)):
-        np.testing.assert_equal(mltest.to_numpy(r_tensor[i]),
+    for i, tensor in enumerate(r_tensor):
+        np.testing.assert_equal(mltest.to_numpy(tensor),
                                 values[row_splits[i]:row_splits[i + 1]])
 
     # From List
     r_tensor = ml.classes.RaggedTensor.from_row_splits(list(values),
                                                        list(row_splits))
-    for i in range(len(r_tensor)):
-        np.testing.assert_equal(mltest.to_numpy(r_tensor[i]),
+    for i, tensor in enumerate(r_tensor):
+        np.testing.assert_equal(mltest.to_numpy(tensor),
                                 values[row_splits[i]:row_splits[i + 1]])
 
 
@@ -72,15 +72,15 @@ def test_creation_more_dims(dtype, ml):
 
     # From numpy arrays
     r_tensor = ml.classes.RaggedTensor.from_row_splits(values, row_splits)
-    for i in range(len(r_tensor)):
-        np.testing.assert_equal(mltest.to_numpy(r_tensor[i]),
+    for i, tensor in enumerate(r_tensor):
+        np.testing.assert_equal(mltest.to_numpy(tensor),
                                 values[row_splits[i]:row_splits[i + 1]])
 
     # From List
     r_tensor = ml.classes.RaggedTensor.from_row_splits(list(values),
                                                        list(row_splits))
-    for i in range(len(r_tensor)):
-        np.testing.assert_equal(mltest.to_numpy(r_tensor[i]),
+    for i, tensor in enumerate(r_tensor):
+        np.testing.assert_equal(mltest.to_numpy(tensor),
                                 values[row_splits[i]:row_splits[i + 1]])
 
 

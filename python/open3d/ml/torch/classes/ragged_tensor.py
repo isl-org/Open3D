@@ -130,6 +130,7 @@ class RaggedTensor:
 
     @property
     def requires_grad(self):
+        """Read/writeble `requires_grad` for values."""
         return self.values.requires_grad
 
     @requires_grad.setter
@@ -196,6 +197,7 @@ class RaggedTensor:
         return self
 
     def convert_to_tensor(self, value):
+        """Converts scalar/tensor/RaggedTensor to torch.Tensor"""
         if isinstance(value, RaggedTensor):
             return value.values
         elif isinstance(value, torch.Tensor):
