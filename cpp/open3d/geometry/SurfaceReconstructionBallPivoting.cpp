@@ -336,7 +336,6 @@ public:
         const BallPivotingVertexPtr opp = edge->GetOppositeVertex();
         if (opp == nullptr) {
             utility::LogError("edge->GetOppositeVertex() returns nullptr.");
-            return nullptr;
         }
         utility::LogDebug("[FindCandidateVertex] edge=({}, {}), opp={}",
                           src->idx_, tgt->idx_, opp->idx_);

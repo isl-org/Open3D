@@ -213,7 +213,6 @@ void VisualizerForAlignment::KeyPressCallback(
                             utility::LogError(
                                     "Internal error: tinyfd_openFileDialog "
                                     "returned nullptr.");
-                            return;
                         }
                     } else {
                         polygon_filename_ = "polygon.json";

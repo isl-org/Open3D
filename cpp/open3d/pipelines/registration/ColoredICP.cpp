@@ -266,7 +266,6 @@ RegistrationResult RegistrationColoredICP(
         utility::LogError(
                 "Internal error: InitializePointCloudForColoredICP returns "
                 "nullptr.");
-        return RegistrationResult();
     };
 }
 

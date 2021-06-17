@@ -60,7 +60,6 @@ static std::vector<std::string> PreprocessPointClouds(
         auto pcd = io::CreatePointCloudFromFile(fname);
         if (pcd == nullptr) {
             utility::LogError("Internal error: pcd is nullptr.");
-            return {};
         }
 
         // Pre-processing input pointcloud.

@@ -123,7 +123,6 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);
     if (spfh == nullptr) {
         utility::LogError("Internal error: SPFH feature is nullptr.");
-        return nullptr;
     }
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int)input.points_.size(); i++) {
