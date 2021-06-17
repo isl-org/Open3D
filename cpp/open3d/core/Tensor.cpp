@@ -307,16 +307,14 @@ Tensor Tensor::Reverse() const {
 Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());
-    }
-    if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+    } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
         TensorKey tk_new = tk.InstantiateDimSize(shape_[0]);
         return Slice(0, tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
-    }
-    if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
+    } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
         return IndexGet({tk.GetIndexTensor()});
+    } else {
+        utility::LogError("Internal error: wrong TensorKeyMode.");
     }
-    utility::LogError("Internal error: wrong TensorKeyMode.");
-    return Tensor();
 }
 
 Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
@@ -530,13 +528,13 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
             shape_util::Restride(shape_, strides_, inferred_dst_shape);
     if (can_restride) {
         return AsStrided(inferred_dst_shape, new_strides);
+    } else {
+        utility::LogError(
+                "View shape {} is not compatible with Tensor's size {} and "
+                "sride {}, at least one dimension spacs across two contiguous "
+                "subspaces. Use Reshape() instead.",
+                dst_shape, shape_, strides_);
     }
-    utility::LogError(
-            "View shape {} is not compatible with Tensor's size {} and "
-            "sride {}, at least one dimension spacs across two contiguous "
-            "subspaces. Use Reshape() instead.",
-            dst_shape, shape_, strides_);
-    return Tensor();
 }
 
 Tensor Tensor::To(Dtype dtype, bool copy) const {
@@ -775,14 +773,13 @@ Tensor Tensor::T() const {
     int64_t n_dims = NumDims();
     if (n_dims <= 1) {
         return *this;
-    }
-    if (n_dims == 2) {
+    } else if (n_dims == 2) {
         return Transpose(0, 1);
+    } else {
+        utility::LogError(
+                "Tensor::T() expects a Tensor with <= 2 dimensions, but the "
+                "Tensor as {} dimensions.");
     }
-    utility::LogError(
-            "Tensor::T() expects a Tensor with <= 2 dimensions, but the "
-            "Tensor as {} dimensions.");
-    return Tensor();
 }
 
 double Tensor::Det() const { return core::Det(*this); }

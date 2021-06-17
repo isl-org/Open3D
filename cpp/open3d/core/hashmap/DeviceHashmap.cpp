@@ -47,15 +47,15 @@ std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
                                 backend);
     }
 #if defined(BUILD_CUDA_MODULE)
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    else if (device.GetType() == Device::DeviceType::CUDA) {
         return CreateCUDAHashmap(init_capacity, dtype_key, dtype_value,
                                  element_shape_key, element_shape_value, device,
                                  backend);
     }
 #endif
-
-    utility::LogError("[CreateDeviceHashmap]: Unimplemented device");
-    return nullptr;
+    else {
+        utility::LogError("[CreateDeviceHashmap]: Unimplemented device");
+    }
 }
 
 }  // namespace core

@@ -213,7 +213,6 @@ SizeVector InferShape(SizeVector shape, int64_t num_elements) {
 
     utility::LogError("Shape {} is invalid for {} number of elements.", shape,
                       num_elements);
-    return SizeVector();
 }
 
 SizeVector Concat(const SizeVector& l_shape, const SizeVector& r_shape) {

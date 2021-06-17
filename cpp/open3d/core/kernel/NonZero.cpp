@@ -38,17 +38,15 @@ Tensor NonZero(const Tensor& src) {
     Device::DeviceType device_type = src.GetDevice().GetType();
     if (device_type == Device::DeviceType::CPU) {
         return NonZeroCPU(src);
-    }
-    if (device_type == Device::DeviceType::CUDA) {
+    } else if (device_type == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         return NonZeroCUDA(src);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-        return Tensor();
 #endif
+    } else {
+        utility::LogError("NonZero: Unimplemented device");
     }
-    utility::LogError("NonZero: Unimplemented device");
-    return Tensor();
 }
 
 }  // namespace kernel
