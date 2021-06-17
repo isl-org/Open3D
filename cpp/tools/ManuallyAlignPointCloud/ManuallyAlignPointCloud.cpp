@@ -102,7 +102,8 @@ int main(int argc, char **argv) {
 
     auto source_ptr = io::CreatePointCloudFromFile(argv[1]);
     auto target_ptr = io::CreatePointCloudFromFile(argv[2]);
-    if (source_ptr->IsEmpty() || target_ptr->IsEmpty()) {
+    if (source_ptr == nullptr || target_ptr == nullptr ||
+        source_ptr->IsEmpty() || target_ptr->IsEmpty()) {
         utility::LogWarning("Failed to read one of the point clouds.");
         return 1;
     }
