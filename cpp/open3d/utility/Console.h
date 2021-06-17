@@ -225,12 +225,12 @@ public:
 
 private:
     Logger();
-    [[noreturn]] void VError(const char *file_name,
-                             int line_number,
-                             const char *function_name,
-                             bool force_console_log,
-                             const char *format,
-                             fmt::format_args args) const;
+    void VError [[noreturn]] (const char *file_name,
+                              int line_number,
+                              const char *function_name,
+                              bool force_console_log,
+                              const char *format,
+                              fmt::format_args args) const;
     void VWarning(const char *file_name,
                   int line_number,
                   const char *function_name,
