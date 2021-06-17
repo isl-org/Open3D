@@ -479,19 +479,16 @@ class SparseConv(torch.nn.Module):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
-        if str(inp_features)[:12] == "RaggedTensor":
-            if str(inp_positions)[:12] != "RaggedTensor" or str(
-                    out_positions)[:12] != "RaggedTensor":
+        if isinstance(inp_features, classes.RaggedTensor):
+            if not (isinstance(inp_positions, classes.RaggedTensor) and
+                    isinstance(out_positions, classes.RaggedTensor)):
                 raise Exception(
                     "All of inp_positions, inp_features and out_positions must be torch.Tensor, or ml3d.classes.RaggedTensor"
                 )
-            dtype = inp_positions.get_values().dtype
-        else:
-            dtype = inp_positions.dtype
 
         offset = self.offset
         if isinstance(voxel_size, (float, int)):
-            voxel_size = torch.tensor(voxel_size, dtype=dtype)
+            voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
         if len(voxel_size.shape) != 0:
             raise Exception("voxel_size must be a scalar")
 
@@ -509,11 +506,11 @@ class SparseConv(torch.nn.Module):
             hash_table=fixed_radius_search_hash_table)
 
         out_positions_split = None
-        if str(inp_positions)[:12] == "RaggedTensor":
-            inp_positions = inp_positions.get_values()
-            inp_features = inp_features.get_values()
-            out_positions_split = out_positions.get_row_splits()
-            out_positions = out_positions.get_values()
+        if isinstance(inp_positions, classes.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
 
         # for stats and debugging
         num_pairs = self.nns.neighbors_index.shape[0]
@@ -548,8 +545,8 @@ class SparseConv(torch.nn.Module):
             out_features = self.activation(out_features)
 
         if out_positions_split is not None:
-            out_features = classes.RaggedTensor().from_row_splits(
-                out_features, out_positions_split)
+            out_features = classes.RaggedTensor.from_row_splits(
+                out_features, out_positions_split, validate=False)
 
         return out_features
 
@@ -677,19 +674,16 @@ class SparseConvTranspose(torch.nn.Module):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
-        if str(inp_features)[:12] == "RaggedTensor":
-            if str(inp_positions)[:12] != "RaggedTensor" or str(
-                    out_positions)[:12] != "RaggedTensor":
+        if isinstance(inp_features, classes.RaggedTensor):
+            if not (isinstance(inp_positions, classes.RaggedTensor) and
+                    isinstance(out_positions, classes.RaggedTensor)):
                 raise Exception(
                     "All of inp_positions, inp_features and out_positions must be torch.Tensor, or ml3d.classes.RaggedTensor"
                 )
-            dtype = inp_positions.get_values().dtype
-        else:
-            dtype = inp_positions.dtype
 
         offset = self.offset
         if isinstance(voxel_size, (float, int)):
-            voxel_size = torch.tensor(voxel_size, dtype=dtype)
+            voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
         if len(voxel_size.shape) != 0:
             raise Exception("voxel_size must be a scalar")
 
@@ -711,11 +705,11 @@ class SparseConvTranspose(torch.nn.Module):
             hash_table=fixed_radius_search_hash_table)
 
         out_positions_split = None
-        if str(inp_positions)[:12] == "RaggedTensor":
-            inp_positions = inp_positions.get_values()
-            inp_features = inp_features.get_values()
-            out_positions_split = out_positions.get_row_splits()
-            out_positions = out_positions.get_values()
+        if isinstance(inp_positions, classes.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
 
         num_out = out_positions.shape[0]
 
@@ -759,7 +753,7 @@ class SparseConvTranspose(torch.nn.Module):
             out_features = self.activation(out_features)
 
         if out_positions_split is not None:
-            out_features = classes.RaggedTensor().from_row_splits(
+            out_features = classes.RaggedTensor.from_row_splits(
                 out_features, out_positions_split)
 
         return out_features
