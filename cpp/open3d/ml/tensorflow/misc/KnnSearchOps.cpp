@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 - 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -91,9 +91,9 @@ REGISTER_OP("Open3DKnnSearch")
 Computes the indices of k nearest neighbors.
 
 This op computes the neighborhood for each query point and returns the indices
-of the neighbors. The output format is compatible with the radius_search and 
+of the neighbors. The output format is compatible with the radius_search and
 fixed_radius_search ops and supports returning less than k neighbors if there
-are less than k points or ignore_query_point is enabled and the **queries** and 
+are less than k points or ignore_query_point is enabled and the **queries** and
 **points** arrays are the same point cloud. The following example shows the usual
 case where the outputs can be reshaped to a [num_queries, k] tensor::
 
@@ -101,8 +101,8 @@ case where the outputs can be reshaped to a [num_queries, k] tensor::
   import open3d.ml.tf as ml3d
 
   points = [
-    [0.1,0.1,0.1], 
-    [0.5,0.5,0.5], 
+    [0.1,0.1,0.1],
+    [0.5,0.5,0.5],
     [1.7,1.7,1.7],
     [1.8,1.8,1.8],
     [0.3,2.4,1.4]]
@@ -113,14 +113,14 @@ case where the outputs can be reshaped to a [num_queries, k] tensor::
       [0.5,2.1,2.2],
   ]
 
-  ans = ml3d.ops.knn_search(points, queries, k=2, 
-                      points_row_splits=[0,5], 
-                      queries_row_splits=[0,3], 
+  ans = ml3d.ops.knn_search(points, queries, k=2,
+                      points_row_splits=[0,5],
+                      queries_row_splits=[0,3],
                       return_distances=True)
   # returns ans.neighbors_index      = [1, 2, 4, 2, 4, 2]
   #         ans.neighbors_row_splits = [0, 2, 4, 6]
   #         ans.neighbors_distance   = [0.75 , 1.47, 0.56, 1.62, 0.77, 1.85]
-  # Since there are more than k points and we do not ignore any points we can 
+  # Since there are more than k points and we do not ignore any points we can
   # reshape the output to [num_queries, k] with
   neighbors_index = tf.reshape(ans.neighbors_index, [3,2])
   neighbors_distance = tf.reshape(ans.neighbors_distance, [3,2])
@@ -131,8 +131,8 @@ case where the outputs can be reshaped to a [num_queries, k] tensor::
   import open3d.ml.torch as ml3d
 
   points = torch.Tensor([
-    [0.1,0.1,0.1], 
-    [0.5,0.5,0.5], 
+    [0.1,0.1,0.1],
+    [0.5,0.5,0.5],
     [1.7,1.7,1.7],
     [1.8,1.8,1.8],
     [0.3,2.4,1.4]])
@@ -145,26 +145,26 @@ case where the outputs can be reshaped to a [num_queries, k] tensor::
 
   radii = torch.Tensor([1.0,1.0,1.0])
 
-  ans = ml3d.ops.knn_search(points, queries, k=2, 
-                            points_row_splits=torch.LongTensor([0,5]), 
-                            queries_row_splits=torch.LongTensor([0,3]), 
+  ans = ml3d.ops.knn_search(points, queries, k=2,
+                            points_row_splits=torch.LongTensor([0,5]),
+                            queries_row_splits=torch.LongTensor([0,3]),
                             return_distances=True)
   # returns ans.neighbors_index      = [1, 2, 4, 2, 4, 2]
   #         ans.neighbors_row_splits = [0, 2, 4, 6]
   #         ans.neighbors_distance   = [0.75 , 1.47, 0.56, 1.62, 0.77, 1.85]
-  # Since there are more than k points and we do not ignore any points we can 
+  # Since there are more than k points and we do not ignore any points we can
   # reshape the output to [num_queries, k] with
   neighbors_index = ans.neighbors_index.reshape(3,2)
   neighbors_distance = ans.neighbors_distance.reshape(3,2)
 
 metric: Either L1 or L2. Default is L2
 
-ignore_query_point: If true the points that coincide with the center of the 
+ignore_query_point: If true the points that coincide with the center of the
   search window will be ignored. This excludes the query point if **queries** and
  **points** are the same point cloud.
 
-return_distances: If True the distances for each neighbor will be returned in 
-  the output tensor **neighbors_distances**. If False a zero length Tensor will 
+return_distances: If True the distances for each neighbor will be returned in
+  the output tensor **neighbors_distances**. If False a zero length Tensor will
   be returned for **neighbors_distances**.
 
 points: The 3D positions of the input points.
@@ -173,15 +173,15 @@ queries: The 3D positions of the query points.
 
 k: The number of nearest neighbors to search.
 
-points_row_splits: 1D vector with the row splits information if points is 
+points_row_splits: 1D vector with the row splits information if points is
   batched. This vector is [0, num_points] if there is only 1 batch item.
 
 queries_row_splits: 1D vector with the row splits information if queries is
   batched. This vector is [0, num_queries] if there is only 1 batch item.
 
-neighbors_index: The compact list of indices of the neighbors. The 
-  corresponding query point can be inferred from the 
-  **neighbor_count_prefix_sum** vector. Neighbors for the same point are sorted 
+neighbors_index: The compact list of indices of the neighbors. The
+  corresponding query point can be inferred from the
+  **neighbor_count_prefix_sum** vector. Neighbors for the same point are sorted
   with respect to the distance.
 
   Note that there is no guarantee that there will be exactly k neighbors in some cases.
@@ -190,7 +190,7 @@ neighbors_index: The compact list of indices of the neighbors. The
     * **ignore_query_point** is True and there are multiple points with the same position.
 
 neighbors_row_splits: The exclusive prefix sum of the neighbor count for the
-  query points including the total neighbor count as the last element. The 
+  query points including the total neighbor count as the last element. The
   size of this array is the number of queries + 1.
 
 neighbors_distance: Stores the distance to each neighbor if **return_distances**

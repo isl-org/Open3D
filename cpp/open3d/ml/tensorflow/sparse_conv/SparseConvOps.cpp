@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 - 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -96,8 +96,8 @@ This example shows how to use this op::
   import tensorflow as tf
   import open3d.ml.tf as ml3d
 
-  # This filter has 3 "spatial" elements with 8 input and 16 output channels 
-  filters = tf.random.normal([3,8,16]) 
+  # This filter has 3 "spatial" elements with 8 input and 16 output channels
+  filters = tf.random.normal([3,8,16])
 
   inp_features = tf.random.normal([5,8])
 
@@ -112,14 +112,14 @@ This example shows how to use this op::
       neighbors_kernel_index=tf.convert_to_tensor([0,1,2, 0,1,2, 0,1,2], dtype=tf.uint8),
       neighbors_importance=[],
       neighbors_row_splits=[0,3,6,9]
-  )                  
+  )
 
   # or with pytorch
   import torch
   import open3d.ml.torch as ml3d
 
-  # This filter has 3 "spatial" elements with 8 input and 16 output channels 
-  filters = torch.randn([3,8,16]) 
+  # This filter has 3 "spatial" elements with 8 input and 16 output channels
+  filters = torch.randn([3,8,16])
 
   inp_features = torch.randn([5,8])
 
@@ -134,27 +134,27 @@ This example shows how to use this op::
       neighbors_kernel_index=torch.ByteTensor([0,1,2, 0,1,2, 0,1,2]),
       neighbors_importance=torch.FloatTensor([]),
       neighbors_row_splits=torch.LongTensor([0,3,6,9])
-  )                  
+  )
 
 normalize:
-  If True the output feature values will be normalized using the sum for 
-  'neighbors_importance' for each output point.  
+  If True the output feature values will be normalized using the sum for
+  'neighbors_importance' for each output point.
 
 
 max_temp_mem_MB:
-  Defines the maximum temporary memory in megabytes to be used for the GPU 
-  implementation. More memory means fewer kernel invocations. Note that the 
+  Defines the maximum temporary memory in megabytes to be used for the GPU
+  implementation. More memory means fewer kernel invocations. Note that the
   a minimum amount of temp memory will always be allocated even if this
   variable is set to 0.
 
 
 filters:
-  The filter parameters. 
+  The filter parameters.
   The shape of the filter is [depth, height, width, in_ch, out_ch].
   The dimensions 'depth', 'height', 'width' define the spatial resolution of
   the filter. The spatial size of the filter is defined by the parameter
   'extents'.
-    
+
 
 inp_features:
   A 2D tensor which stores a feature vector for each input point.
@@ -171,7 +171,7 @@ neighbors_index:
   The start and end of each list can be computed using 'neighbors_row_splits'.
 
 
-neighbors_kernel_index:   
+neighbors_kernel_index:
   Defines which kernel element to use for each neighbor. This array has the same length as neighbors_index.
 
 
@@ -183,7 +183,7 @@ neighbors_importance:
 
 neighbors_row_splits:
   The exclusive prefix sum of the neighbor count for the output points including
-  the total neighbor count as the last element. The size of this array is the 
+  the total neighbor count as the last element. The size of this array is the
   number of output points + 1.
 
 output_type: The type for the output.

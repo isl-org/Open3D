@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 - 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,7 @@ Zero length subarrays are allowed as shown in the following example::
   # or with pytorch
   import torch
   import open3d.ml.torch as ml3d
-  
+
   ml3d.ops.reduce_subarrays_sum(
     values = torch.Tensor([1,2,3,4]),
     row_splits=torch.LongTensor([0,2,2,4]) # defines 3 subarrays with starts and ends 0-2,2-2,2-4

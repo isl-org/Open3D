@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 - 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -179,12 +179,12 @@ This example shows how to use this op::
   radius = 1.2
   neighbors = nsearch(inp_positions, out_positions, radius)
 
-  ml3d.ops.continuous_conv(filters, 
-                           out_positions, 
-                           extents=[[2*radius]], 
-                           offset=[0,0,0], 
-                           inp_positions=inp_positions, 
-                           inp_features=inp_features, 
+  ml3d.ops.continuous_conv(filters,
+                           out_positions,
+                           extents=[[2*radius]],
+                           offset=[0,0,0],
+                           inp_positions=inp_positions,
+                           inp_features=inp_features,
                            inp_importance=[],
                            neighbors_index=neighbors.neighbors_index,
                            neighbors_row_splits=neighbors.neighbors_row_splits,
@@ -205,12 +205,12 @@ This example shows how to use this op::
   radius = 1.2
   neighbors = nsearch(inp_positions, out_positions, radius)
 
-  ml3d.ops.continuous_conv(filters, 
-                           out_positions, 
-                           extents=torch.FloatTensor([[2*radius]]), 
-                           offset=torch.FloatTensor([0,0,0]), 
-                           inp_positions=inp_positions, 
-                           inp_features=inp_features, 
+  ml3d.ops.continuous_conv(filters,
+                           out_positions,
+                           extents=torch.FloatTensor([[2*radius]]),
+                           offset=torch.FloatTensor([0,0,0]),
+                           inp_positions=inp_positions,
+                           inp_features=inp_features,
                            inp_importance=torch.FloatTensor([]),
                            neighbors_index=neighbors.neighbors_index,
                            neighbors_row_splits=neighbors.neighbors_row_splits,
@@ -233,24 +233,24 @@ coordinate_mapping: Defines how the relative positions of the neighbors are
   and "identiy" for a rectangular filter window.
 
 
-normalize: If True the output feature values will be normalized using the sum 
+normalize: If True the output feature values will be normalized using the sum
   for **neighbors_importance** for each output point.
 
 
 interpolation: If interpolation is "linear" then each filter value lookup is a
   trilinear interpolation. If interpolation is "nearest_neighbor" only the
-  spatially closest value is considered. This makes the filter and therefore 
+  spatially closest value is considered. This makes the filter and therefore
   the convolution discontinuous.
 
 
 max_temp_mem_MB: Defines the maximum temporary memory in megabytes to be used
   for the GPU implementation. More memory means fewer kernel invocations. Note
-  that the a minimum amount of temp memory will always be allocated even if 
+  that the a minimum amount of temp memory will always be allocated even if
   this variable is set to 0.
 
 
-filters: The filter parameters. The shape of the filter is 
-  [depth, height, width, in_ch, out_ch]. The dimensions 'depth', 'height', 
+filters: The filter parameters. The shape of the filter is
+  [depth, height, width, in_ch, out_ch]. The dimensions 'depth', 'height',
   'width' define the spatial resolution of the filter. The spatial size of the
   filter is defined by the parameter 'extents'.
 
@@ -289,7 +289,7 @@ neighbors_index: The neighbors_index stores a list of indices of neighbors for
 
 
 neighbors_importance: Tensor of the same shape as 'neighbors_index' with a
-  scalar value that is used to scale the features of each neighbor. Use a 
+  scalar value that is used to scale the features of each neighbor. Use a
   zero length Tensor to weigh each neighbor with 1.
 
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 - 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -100,19 +100,19 @@ normalize:
 
 
 max_temp_mem_MB:
-  Defines the maximum temporary memory in megabytes to be used for the GPU 
-  implementation. More memory means fewer kernel invocations. Note that the 
+  Defines the maximum temporary memory in megabytes to be used for the GPU
+  implementation. More memory means fewer kernel invocations. Note that the
   a minimum amount of temp memory will always be allocated even if this
   variable is set to 0.
 
 
 filters:
-  The filter parameters. 
+  The filter parameters.
   The shape of the filter is [depth, height, width, in_ch, out_ch].
   The dimensions 'depth', 'height', 'width' define the spatial resolution of
   the filter. The spatial size of the filter is defined by the parameter
   'extents'.
-    
+
 
 inp_features:
   A 2D tensor which stores a feature vector for each input point.
@@ -127,7 +127,7 @@ neighbors_index:
   The start and end of each list can be computed using 'neighbors_row_splits'.
 
 
-neighbors_kernel_index:   
+neighbors_kernel_index:
   Defines which kernel element to use for each neighbor. This array has the same length as neighbors_index.
 
 

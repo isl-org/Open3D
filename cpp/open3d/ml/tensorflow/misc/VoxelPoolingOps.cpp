@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 - 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -77,15 +77,15 @@ REGISTER_OP("Open3DVoxelPooling")
         .Doc(R"doc(
 Spatial pooling for point clouds by combining points that fall into the same voxel bin.
 
-The voxel grid used for pooling is always aligned to the origin (0,0,0) to 
+The voxel grid used for pooling is always aligned to the origin (0,0,0) to
 simplify building voxel grid hierarchies. The order of the returned voxels is
 not defined as can be seen in the following example::
 
   import open3d.ml.tf as ml3d
 
   positions = [
-      [0.1,0.1,0.1], 
-      [0.5,0.5,0.5], 
+      [0.1,0.1,0.1],
+      [0.5,0.5,0.5],
       [1.7,1.7,1.7],
       [1.8,1.8,1.8],
       [0.3,2.4,1.4]]
@@ -96,7 +96,7 @@ not defined as can be seen in the following example::
               [1.3,3.4],
               [2.3,1.9]]
 
-  ml3d.ops.voxel_pooling(positions, features, 1.0, 
+  ml3d.ops.voxel_pooling(positions, features, 1.0,
                          position_fn='center', feature_fn='max')
 
   # or with pytorch
@@ -104,8 +104,8 @@ not defined as can be seen in the following example::
   import open3d.ml.torch as ml3d
 
   positions = torch.Tensor([
-      [0.1,0.1,0.1], 
-      [0.5,0.5,0.5], 
+      [0.1,0.1,0.1],
+      [0.5,0.5,0.5],
       [1.7,1.7,1.7],
       [1.8,1.8,1.8],
       [0.3,2.4,1.4]])
@@ -117,7 +117,7 @@ not defined as can be seen in the following example::
               [1.3,3.4],
               [2.3,1.9]])
 
-  ml3d.ops.voxel_pooling(positions, features, 1.0, 
+  ml3d.ops.voxel_pooling(positions, features, 1.0,
                          position_fn='center', feature_fn='max')
 
   # returns the voxel centers  [[0.5, 2.5, 1.5],
