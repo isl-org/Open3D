@@ -152,8 +152,11 @@ void PyrDownDepthCPU
             }
         }
 
-        // This can be part of a CUDA kernel. Proceed if w_sum==0.
-        if (w_sum != 0) {
+        // It is completely possible that v_sum == 0 && w_sum == 0.
+        // We simply set the value to 0 if v_sum == 0 || w_sum == 0.
+        if (v_sum == 0 || w_sum == 0) {
+            *dst_indexer.GetDataPtr<float>(x, y) = 0;
+        } else {
             *dst_indexer.GetDataPtr<float>(x, y) = v_sum / w_sum;
         }
     });
