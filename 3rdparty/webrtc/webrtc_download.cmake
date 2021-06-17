@@ -7,6 +7,13 @@ if (APPLE)
     )
     set(WEBRTC_SHA256 e9d1f4e4fefb2e28ef4f16cf4a4f0008baf4fe638ca3ad329e82e7fd0ce87f56)
 elseif (WIN32)
+    if (BUILD_SHARED_LIBS OR NOT STATIC_WINDOWS_RUNTIME)
+        message(FATAL_ERROR "Pre-built WebRTC binaries are not available for "
+            "BUILD_SHARED_LIBS=ON or STATIC_WINDOWS_RUNTIME=OFF. Please use "
+            "(a) BUILD_WEBRTC=OFF or "
+            "(b) BUILD_SHARED_LIBS=OFF and STATIC_WINDOWS_RUNTIME=ON or "
+            "(c) BUILD_WEBRTC_FROM_SOURCE=ON")
+    endif()
     set(WEBRTC_URL
         https://github.com/intel-isl/open3d_downloads/releases/download/webrtc/webrtc_${WEBRTC_VER}_win.zip
     )
