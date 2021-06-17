@@ -42,7 +42,6 @@
 
 #include <thrust/device_vector.h>
 
-#include <cassert>
 #include <memory>
 #include <random>
 
