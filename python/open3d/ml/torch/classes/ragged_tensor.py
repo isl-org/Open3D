@@ -59,7 +59,7 @@ class RaggedTensor:
         self.r_tensor = r_tensor
 
     @classmethod
-    def from_row_splits(cls, values, row_splits, validate=True):
+    def from_row_splits(cls, values, row_splits, validate=True, copy=True):
         """Creates a RaggedTensor with rows partitioned by row_splits.
 
         The returned `RaggedTensor` corresponds with the python list defined by::
@@ -72,6 +72,10 @@ class RaggedTensor:
             row_splits: A 1-D integer tensor with shape `[N+1]`. Must not be
                 empty, and must be stored in ascending order. `row_splits[0]` must
                 be zero and `row_splits[-1]` must be `N`.
+            validate: Verify that `row_splits` are compatible with `values`.
+                Set it to False to avoid expensive checks.
+            copy: Whether to do a deep copy for `values` and `row_splits`.
+                Set it to False to save memory for short term usage.
 
         Returns:
             A `RaggedTensor` container.
@@ -88,14 +92,14 @@ class RaggedTensor:
             values = torch.tensor(values, dtype=torch.float64)
         elif isinstance(values, np.ndarray):
             values = torch.from_numpy(values)
-        elif isinstance(values, torch.Tensor):
+        elif isinstance(values, torch.Tensor) and copy:
             values = values.clone()
 
         if isinstance(row_splits, list):
             row_splits = torch.tensor(row_splits, dtype=torch.int64)
         elif isinstance(row_splits, np.ndarray):
             row_splits = torch.from_numpy(row_splits)
-        elif isinstance(row_splits, torch.Tensor):
+        elif isinstance(row_splits, torch.Tensor) and copy:
             row_splits = row_splits.clone()
 
         row_splits = row_splits.to(torch.int64)
