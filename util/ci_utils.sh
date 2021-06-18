@@ -28,10 +28,14 @@ CUDA_VERSION=("11-0" "11.0")
 CUDNN_MAJOR_VERSION=8
 CUDNN_VERSION="8.0.5.39-1+cuda11.0"
 # ML
-TENSORFLOW_VER="2.4.1"
 # TORCH_CUDA_GLNX_VER="1.7.1+cu110"
 # TORCH_CPU_GLNX_VER="1.7.1+cpu"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
+if [[ $PYTHON_VER == "cp39-cp39" ]]; then
+    TENSORFLOW_VER="2.5.0" # TF 2.4.x does not support Python 3.9
+else
+    TENSORFLOW_VER="2.4.1"
+fi
 TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_MACOS_VER="1.7.1"
 # Python
@@ -476,7 +480,9 @@ install_docs_dependencies() {
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-torch.txt"
-        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt"
+        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt" ||
+            python -m pip install tensorflow # FIXME: Remove after Open3D-ML update
+        updated
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
     fi
