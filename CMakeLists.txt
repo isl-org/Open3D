@@ -373,17 +373,19 @@ if(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
 
     if(BUILD_COMMON_CUDA_ARCHS)
-        # Build with all known (and deprecated) architectures.
+        # Build with all supported architectures for previous 2 generations and
+        # M0 (minor=0) architectures for previous generations (inluding
+        # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
+        # This is a tradeoff between binary size / build time and runtime on
+        # older architectures.
         # See https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility.
+        # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
         if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
-            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
-                60-real 61-real 62-real 70-real 72-real 75-real 80-real 86)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 50-real 60-real 70-real 72-real 75-real 80-real 86)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
-                60-real 61-real 62-real 70-real 72-real 75-real 80)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 50-real 60-real 70-real 72-real 75-real 80)
         else()
-            set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real
-                52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
+            set(CMAKE_CUDA_ARCHITECTURES 30-real 50-real 60-real 70-real 72-real 75)
         endif()
     else()
         if(CMAKE_CUDA_ARCHITECTURES)
