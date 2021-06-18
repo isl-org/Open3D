@@ -326,7 +326,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
             result.transformation_.To(host, core::Dtype::Float64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
-    EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-4);
+    EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
 }
 }  // namespace tests
 }  // namespace open3d
