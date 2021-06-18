@@ -39,7 +39,7 @@ fi
 TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_MACOS_VER="1.7.1"
 # Python
-CONDA_BUILD_VER="3.20.0"
+CONDA_BUILD_VER="3.21.4"
 PIP_VER="21.1.1"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
