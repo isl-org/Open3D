@@ -79,7 +79,5 @@ c10::intrusive_ptr<RaggedTensor> RaggedTensor::Clone() const {
 
 c10::intrusive_ptr<RaggedTensor> RaggedTensor::Concat(
         c10::intrusive_ptr<RaggedTensor> r_tensor, int64_t axis) const {
-    // TODO : Change splits for axis == 0
-    return c10::make_intrusive<RaggedTensor>(
-            torch::cat({_values, r_tensor->GetValues()}, axis), _row_splits);
+    throw std::logic_error{"Function not yet Implemented."};
 }

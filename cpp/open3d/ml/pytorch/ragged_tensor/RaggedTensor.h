@@ -125,6 +125,17 @@ public:
         return c10::make_intrusive<RaggedTensor>(_values, _row_splits);
     }
 
+    template <typename T>
+    c10::intrusive_ptr<RaggedTensor> FloorDiv(T value) const {
+        return FromRowSplits(_values.floor_divide(value), _row_splits, false);
+    }
+
+    template <typename T>
+    c10::intrusive_ptr<RaggedTensor> FloorDiv_(T value) {
+        _values.floor_divide_(value);
+        return c10::make_intrusive<RaggedTensor>(_values, _row_splits);
+    }
+
 private:
     torch::Tensor _values, _row_splits;
 };
@@ -195,12 +206,6 @@ static auto registry =
                 .def("div_",
                      [](const c10::intrusive_ptr<RaggedTensor>& self,
                         torch::Tensor value) { return self->Div_(value); })
-                .def("__div__",
-                     [](const c10::intrusive_ptr<RaggedTensor>& self,
-                        torch::Tensor value) { return self->Div(value); })
-                .def("__idiv__",
-                     [](const c10::intrusive_ptr<RaggedTensor>& self,
-                        torch::Tensor value) { return self->Div_(value); })
                 .def("__truediv__",
                      [](const c10::intrusive_ptr<RaggedTensor>& self,
                         torch::Tensor value) { return self->Div(value); })
@@ -209,7 +214,9 @@ static auto registry =
                         torch::Tensor value) { return self->Div_(value); })
                 .def("__floordiv__",
                      [](const c10::intrusive_ptr<RaggedTensor>& self,
-                        torch::Tensor value) { return self->Div(value); })
+                        torch::Tensor value) { return self->FloorDiv(value); })
                 .def("__ifloordiv__",
                      [](const c10::intrusive_ptr<RaggedTensor>& self,
-                        torch::Tensor value) { return self->Div_(value); });
+                        torch::Tensor value) {
+                         return self->FloorDiv_(value);
+                     });

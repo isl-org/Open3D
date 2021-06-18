@@ -115,3 +115,56 @@ def test_backprop(ml):
 
     np.testing.assert_equal(mltest.to_numpy(t_1.grad),
                             mltest.to_numpy(r_1.values.grad))
+
+
+@dtypes
+@mltest.parametrize.ml_torch_only
+def test_binary_ew_ops(dtype, ml):
+    t_1 = torch.from_numpy(
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                 dtype=dtype)).to(ml.device)
+    t_2 = torch.from_numpy(
+        np.array([2, 3, 6, 3, 11, 3, 43, 12, 8, 15, 12, 87, 45],
+                 dtype=dtype)).to(ml.device)
+    row_splits = torch.from_numpy(
+        np.array([0, 2, 4, 4, 5, 12, 13], dtype=np.int64)).to(ml.device)
+
+    a = ml.classes.RaggedTensor.from_row_splits(t_1, row_splits)
+    b = ml.classes.RaggedTensor.from_row_splits(t_2, row_splits)
+
+    np.testing.assert_equal(
+        (a + b).values.cpu().numpy(),
+        np.array([2, 4, 8, 6, 15, 8, 49, 19, 16, 24, 22, 98, 57]))
+    np.testing.assert_equal(
+        (a - b).values.cpu().numpy(),
+        np.array([-2, -2, -4, 0, -7, 2, -37, -5, 0, -6, -2, -76, -33]))
+    np.testing.assert_equal(
+        (a * b).values.cpu().numpy(),
+        np.array([0, 3, 12, 9, 44, 15, 258, 84, 64, 135, 120, 957, 540]))
+    np.testing.assert_equal((a / b).values.cpu().numpy(),
+                            (t_1 / t_2).cpu().numpy())
+    np.testing.assert_equal((a // b).values.cpu().numpy(),
+                            np.array([0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0]))
+
+    a = ml.classes.RaggedTensor.from_row_splits(t_1, row_splits)
+    a += b
+    np.testing.assert_equal(
+        a.values.cpu().numpy(),
+        np.array([2, 4, 8, 6, 15, 8, 49, 19, 16, 24, 22, 98, 57]))
+
+    a = ml.classes.RaggedTensor.from_row_splits(t_1, row_splits)
+    a -= b
+    np.testing.assert_equal(
+        a.values.cpu().numpy(),
+        np.array([-2, -2, -4, 0, -7, 2, -37, -5, 0, -6, -2, -76, -33]))
+
+    a = ml.classes.RaggedTensor.from_row_splits(t_1, row_splits)
+    a *= b
+    np.testing.assert_equal(
+        a.values.cpu().numpy(),
+        np.array([0, 3, 12, 9, 44, 15, 258, 84, 64, 135, 120, 957, 540]))
+
+    a = ml.classes.RaggedTensor.from_row_splits(t_1, row_splits)
+    a //= b
+    np.testing.assert_equal(a.values.cpu().numpy(),
+                            np.array([0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0]))

@@ -546,7 +546,7 @@ class SparseConv(torch.nn.Module):
 
         if out_positions_split is not None:
             out_features = classes.RaggedTensor.from_row_splits(
-                out_features, out_positions_split, validate=False)
+                out_features, out_positions_split, validate=False, copy=False)
 
         return out_features
 
@@ -754,6 +754,6 @@ class SparseConvTranspose(torch.nn.Module):
 
         if out_positions_split is not None:
             out_features = classes.RaggedTensor.from_row_splits(
-                out_features, out_positions_split)
+                out_features, out_positions_split, validate=False, copy=False)
 
         return out_features

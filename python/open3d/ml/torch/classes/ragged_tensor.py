@@ -179,13 +179,6 @@ class RaggedTensor:
         self.r_tensor *= self.convert_to_tensor(other)
         return self
 
-    def __div__(self, other):
-        return RaggedTensor(self.r_tensor / self.convert_to_tensor(other), True)
-
-    def __idiv__(self, other):
-        self.r_tensor /= self.convert_to_tensor(other)
-        return self
-
     def __truediv__(self, other):
         return RaggedTensor(self.r_tensor / self.convert_to_tensor(other), True)
 
@@ -194,10 +187,11 @@ class RaggedTensor:
         return self
 
     def __floordiv__(self, other):
-        return RaggedTensor(self.r_tensor / self.convert_to_tensor(other), True)
+        return RaggedTensor(self.r_tensor // self.convert_to_tensor(other),
+                            True)
 
     def __ifloordiv__(self, other):
-        self.r_tensor /= self.convert_to_tensor(other)
+        self.r_tensor //= self.convert_to_tensor(other)
         return self
 
     def convert_to_tensor(self, value):
