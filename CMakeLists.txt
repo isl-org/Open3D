@@ -505,12 +505,6 @@ int main() { return _GLIBCXX_USE_CXX11_ABI; }" HAS_GLIBCXX_USE_CXX11_ABI)
 
 # Convenience function to set important target properties
 function(open3d_set_global_properties target)
-    # Libraries need to be compiled with position independent code
-    get_target_property(target_type ${target} TYPE)
-    if (NOT target_type STREQUAL "EXECUTABLE")
-        set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    endif()
-
     # Tell CMake we want a compiler that supports C++14 features
     target_compile_features(${target} PUBLIC cxx_std_14)
 
