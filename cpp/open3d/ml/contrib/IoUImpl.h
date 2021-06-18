@@ -28,6 +28,7 @@
 
 #include <math.h>
 
+#include "open3d/Macro.h"
 #include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
@@ -216,7 +217,7 @@ OPEN3D_HOST_DEVICE inline float BoxOverlap(const float *box_a,
         }
     }
 
-    assert(cnt != 0 && "Invaid value: cnt==0.");
+    OPEN3D_ASSERT(cnt != 0 && "Invaid value: cnt==0.");
 
     poly_center.x_ /= cnt;
     poly_center.y_ /= cnt;

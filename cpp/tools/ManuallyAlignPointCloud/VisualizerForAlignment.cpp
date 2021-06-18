@@ -203,12 +203,12 @@ void VisualizerForAlignment::KeyPressCallback(
             case GLFW_KEY_K: {
                 if (!utility::filesystem::FileExists(polygon_filename_)) {
                     if (use_dialog_) {
-                        if (const char *polygon_filename_chars_ =
+                        if (const char *polygon_filename_chars =
                                     tinyfd_openFileDialog("Bounding polygon",
                                                           "polygon.json", 0,
                                                           NULL, NULL, 0)) {
                             polygon_filename_ =
-                                    std::string(polygon_filename_chars_);
+                                    std::string(polygon_filename_chars);
                         } else {
                             utility::LogError(
                                     "Internal error: tinyfd_openFileDialog "
