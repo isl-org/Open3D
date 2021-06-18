@@ -153,7 +153,9 @@ void PyrDownDepthCPU
         }
 
         // This can be part of a CUDA kernel. Proceed if w_sum==0.
-        if (w_sum != 0) {
+        if (w_sum == 0) {
+            *dst_indexer.GetDataPtr<float>(x, y) = invalid_fill;
+        } else {
             *dst_indexer.GetDataPtr<float>(x, y) = v_sum / w_sum;
         }
     });
