@@ -440,8 +440,7 @@ protected:
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 }
 
-                // ---- NNS Search: Getting Correspondences, Inlier Fitness and
-                // RMSE
+                // NNS Search: Getting Correspondences, Inlier Fitness and RMSE.
                 core::Tensor distances, counts;
                 std::tie(result.correspondences_, distances, counts) =
                         target_nns.HybridSearch(
@@ -460,12 +459,13 @@ protected:
                         static_cast<double>(source.GetPoints().GetLength());
                 result.inlier_rmse_ =
                         std::sqrt(squared_error / num_correspondences);
-                // --- NNS End
+                // ---- NNS End ----
 
-                // ---- Computing Transform between source and target, given
+                // ----
+                // Computing Transform between source and target, given
                 // correspondences. ComputeTransformation returns {4,4} shaped
                 // Float64 transformation tensor on CPU device.
-                // -------------------
+                // ----
                 core::Tensor update =
                         estimation
                                 .ComputeTransformation(source_down_pyramid[i],

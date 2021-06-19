@@ -54,7 +54,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
 
     float residual = 0;
     int inlier_count = 0;
-
+    
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         ComputePosePointToPlaneCPU(
