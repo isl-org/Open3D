@@ -140,50 +140,155 @@ RegistrationResult RegistrationICP(
         /* = TransformationEstimationPointToPoint(false)*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    if (max_correspondence_distance <= 0.0) {
-        utility::LogError("Invalid max_correspondence_distance.");
+    return RegistrationMultiScaleICP(source, target, {-1}, {criteria},
+                                     {max_correspondence_distance}, init,
+                                     estimation);
+}
+
+RegistrationResult RegistrationMultiScaleICP(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const std::vector<double> &voxel_sizes,
+        const std::vector<ICPConvergenceCriteria> &criterias,
+        const std::vector<double> &max_correspondence_distances,
+        const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
+        const TransformationEstimation &estimation
+        /* = TransformationEstimationPointToPoint(false)*/) {
+    int64_t num_iterations = int64_t(criterias.size());
+    if (!(criterias.size() == voxel_sizes.size() &&
+          criterias.size() == max_correspondence_distances.size())) {
+        utility::LogError(
+                " [RegistrationMultiScaleICP]: Size of ICPConvergenceCriteria,"
+                " voxel_size, max_correspondence_distances vectors must be "
+                "same.");
     }
-    if ((estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::PointToPlane ||
-         estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::ColoredICP) &&
+
+    auto target_ptr = std::make_shared<geometry::PointCloud>();
+
+    if (estimation.GetTransformationEstimationType() ==
+                TransformationEstimationType::PointToPlane &&
         (!target.HasNormals())) {
         utility::LogError(
-                "TransformationEstimationPointToPlane and "
-                "TransformationEstimationColoredICP "
-                "require pre-computed normal vectors for target PointCloud.");
+                "TransformationEstimationPointToPlane require pre-computed "
+                "normal vectors for target PointCloud.");
+    }
+
+    // ColoredICP requires pre-computed color_gradients for target points.
+    if (estimation.GetTransformationEstimationType() ==
+        TransformationEstimationType::ColoredICP) {
+        if (!target.HasNormals()) {
+            utility::LogError(
+                    "ColoredICP requires target pointcloud to have normals.");
+        }
+        if (!target.HasColors()) {
+            utility::LogError(
+                    "ColoredICP requires target pointcloud to have colors.");
+        }
+        if (!source.HasColors()) {
+            utility::LogError(
+                    "ColoredICP requires source pointcloud to have colors.");
+        }
+
+        auto target_copy = target;
+        target_copy.EstimateColorGradients(geometry::KDTreeSearchParamHybrid(
+                max_correspondence_distances[num_iterations - 1] * 2.0, 30));
+        target_ptr = std::make_shared<geometry::PointCloud>(target_copy);
+    } else {
+        target_ptr = std::make_shared<geometry::PointCloud>(target);
+    }
+
+    for (int64_t i = 1; i < num_iterations; i++) {
+        if (voxel_sizes[i] >= voxel_sizes[i - 1]) {
+            utility::LogError(
+                    " [MultiScaleICP] Voxel sizes must be in strictly "
+                    "decreasing order.");
+        }
+        if (max_correspondence_distances[i] <= 0.0) {
+            utility::LogError(
+                    " Max correspondence distance must be greater than 0, but"
+                    " got {} in scale: {}.",
+                    max_correspondence_distances[i], i);
+        }
     }
 
     Eigen::Matrix4d transformation = init;
-    geometry::KDTreeFlann kdtree;
-    kdtree.SetGeometry(target);
-    geometry::PointCloud pcd = source;
-    if (!init.isIdentity()) {
-        pcd.Transform(init);
-    }
-    RegistrationResult result;
-    result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
-    for (int i = 0; i < criteria.max_iteration_; i++) {
-        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
-                          result.fitness_, result.inlier_rmse_);
-        Eigen::Matrix4d update = estimation.ComputeTransformation(
-                pcd, target, result.correspondence_set_);
-        transformation = update * transformation;
-        pcd.Transform(update);
-        RegistrationResult backup = result;
-        result = GetRegistrationResultAndCorrespondences(
-                pcd, target, kdtree, max_correspondence_distance,
-                transformation);
 
-        if (std::abs(backup.fitness_ - result.fitness_) <
-                    criteria.relative_fitness_ &&
-            std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
-                    criteria.relative_rmse_) {
-            break;
+    std::vector<geometry::PointCloud> source_down_pyramid(num_iterations);
+    std::vector<geometry::PointCloud> target_down_pyramid(num_iterations);
+
+    if (voxel_sizes[num_iterations - 1] == -1) {
+        source_down_pyramid[num_iterations - 1] = source;
+        target_down_pyramid[num_iterations - 1] = *target_ptr;
+    } else {
+        source_down_pyramid[num_iterations - 1] =
+                *source.VoxelDownSample(voxel_sizes[num_iterations - 1]);
+        target_down_pyramid[num_iterations - 1] =
+                *target_ptr->VoxelDownSample(voxel_sizes[num_iterations - 1]);
+    }
+
+    for (int k = num_iterations - 2; k >= 0; k--) {
+        source_down_pyramid[k] =
+                *source_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
+        target_down_pyramid[k] =
+                *target_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
+    }
+
+    RegistrationResult result;
+
+    for (int64_t i = 0; i < num_iterations; i++) {
+        source_down_pyramid[i].Transform(transformation);
+
+        geometry::KDTreeFlann kdtree;
+        kdtree.SetGeometry(target_down_pyramid[i]);
+
+        result = GetRegistrationResultAndCorrespondences(
+                source_down_pyramid[i], target_down_pyramid[i], kdtree,
+                max_correspondence_distances[i], transformation);
+
+        for (int j = 0; j < criterias[i].max_iteration_; j++) {
+            utility::LogDebug(
+                    "ICP Scale#{:d}: Iteration #{:d}: Fitness {:.4f}, RMSE "
+                    "{:.4f}",
+                    i + 1, j, result.fitness_, result.inlier_rmse_);
+
+            Eigen::Matrix4d update = estimation.ComputeTransformation(
+                    source_down_pyramid[i], target_down_pyramid[i],
+                    result.correspondence_set_);
+
+            transformation = update * transformation;
+            source_down_pyramid[i].Transform(update);
+
+            RegistrationResult backup = result;
+
+            result = GetRegistrationResultAndCorrespondences(
+                    source_down_pyramid[i], target_down_pyramid[i], kdtree,
+                    max_correspondence_distances[i], transformation);
+
+            if (std::abs(backup.fitness_ - result.fitness_) <
+                        criterias[i].relative_fitness_ &&
+                std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
+                        criterias[i].relative_rmse_) {
+                break;
+            }
         }
     }
     return result;
+}
+
+RegistrationResult RegistrationColoredICP(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        double max_distance,
+        const Eigen::Matrix4d &init /*= Eigen::Matrix4d::Identity()*/,
+        const TransformationEstimationForColoredICP &estimation
+        /*= TransformationEstimationForColoredICP()*/,
+        const ICPConvergenceCriteria &criteria /*= ICPConvergenceCriteria()*/) {
+    utility::LogWarning(
+            "[Depreciated Function] Use `RegistationMultiScaleICP` or "
+            "`RegistrationICP` directly with "
+            "`TransformationEstimationForColoredICP`.");
+    return RegistrationMultiScaleICP(source, target, {-1}, {criteria},
+                                     {max_distance}, init, estimation);
 }
 
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(

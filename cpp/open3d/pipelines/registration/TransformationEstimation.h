@@ -164,6 +164,42 @@ private:
             TransformationEstimationType::PointToPlane;
 };
 
+class TransformationEstimationForColoredICP : public TransformationEstimation {
+public:
+    ~TransformationEstimationForColoredICP() override{};
+
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return type_;
+    };
+    explicit TransformationEstimationForColoredICP(
+            double lambda_geometric = 0.968,
+            std::shared_ptr<RobustKernel> kernel = std::make_shared<L2Loss>())
+        : lambda_geometric_(lambda_geometric), kernel_(std::move(kernel)) {
+        if (lambda_geometric_ < 0 || lambda_geometric_ > 1.0) {
+            lambda_geometric_ = 0.968;
+        }
+    }
+
+public:
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const CorrespondenceSet &corres) const override;
+    Eigen::Matrix4d ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const CorrespondenceSet &corres) const override;
+
+public:
+    double lambda_geometric_ = 0.968;
+    /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.
+    std::shared_ptr<RobustKernel> kernel_ = std::make_shared<L2Loss>();
+
+private:
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::ColoredICP;
+};
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace open3d
