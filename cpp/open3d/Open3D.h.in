@@ -74,7 +74,6 @@
 #include "open3d/pipelines/integration/TSDFVolume.h"
 #include "open3d/pipelines/integration/UniformTSDFVolume.h"
 #include "open3d/pipelines/odometry/Odometry.h"
-#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"

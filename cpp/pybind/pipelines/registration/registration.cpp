@@ -30,7 +30,6 @@
 #include <utility>
 
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 #include "open3d/pipelines/registration/Feature.h"
@@ -534,19 +533,22 @@ static const std::unordered_map<std::string, std::string>
                  "o3d.utility.Vector2iVector that stores indices of "
                  "corresponding point or feature arrays."},
                 {"criteria", "Convergence criteria"},
+                {"criteria_list",
+                 "List of Convergence criteria for each scale of multi-scale "
+                 "icp."},
                 {"estimation_method",
                  "Estimation method. One of "
-                 "(``"
-                 "TransformationEstimationPointToPoint``, "
-                 "``"
-                 "TransformationEstimationPointToPlane``, "
-                 "``"
-                 "TransformationEstimationForColoredICP``)"},
-                {"init", "Initial transformation estimation"},
+                 "(``TransformationEstimationPointToPoint``, "
+                 "``TransformationEstimationPointToPlane``, "
+                 "``TransformationEstimationForColoredICP``)"},
+                {"init_source_to_target", "Initial transformation estimation"},
                 {"lambda_geometric", "lambda_geometric value"},
                 {"kernel", "Robust Kernel used in the Optimization"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},
+                {"max_correspondence_distances",
+                 "o3d.utility.DoubleVector of maximum correspondence "
+                 "points-pair distances for multi-scale icp."},
                 {"mutual_filter",
                  "Enables mutual filter such that the correspondence of the "
                  "source point's correspondence is itself."},
@@ -558,7 +560,10 @@ static const std::unordered_map<std::string, std::string>
                 {"target", "The target point cloud."},
                 {"transformation",
                  "The 4x4 transformation matrix to transform ``source`` to "
-                 "``target``"}};
+                 "``target``"},
+                {"voxel_sizes",
+                 "o3d.utility.DoubleVector of voxel sizes in strictly "
+                 "decreasing order, for multi-scale icp."}};
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
@@ -573,17 +578,26 @@ void pybind_registration_methods(py::module &m) {
           py::call_guard<py::gil_scoped_release>(),
           "Function for ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
-          "init"_a = Eigen::Matrix4d::Identity(),
+          "init_source_to_target"_a = Eigen::Matrix4d::Identity(),
           "estimation_method"_a = TransformationEstimationPointToPoint(false),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_icp",
                                  map_shared_argument_docstrings);
 
+    m.def("registration_multi_scale_icp", &RegistrationMultiScaleICP,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
+          "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
+          "init_source_to_target"_a = Eigen::Matrix4d::Identity(),
+          "estimation_method"_a = TransformationEstimationPointToPoint(false));
+    docstring::FunctionDocInject(m, "registration_multi_scale_icp",
+                                 map_shared_argument_docstrings);
+
     m.def("registration_colored_icp", &RegistrationColoredICP,
           py::call_guard<py::gil_scoped_release>(),
-          "Function for Colored ICP registration", "source"_a, "target"_a,
-          "max_correspondence_distance"_a,
-          "init"_a = Eigen::Matrix4d::Identity(),
+          "[Depreciated Function] Colored ICP registration", "source"_a,
+          "target"_a, "max_correspondence_distance"_a,
+          "init_source_to_target"_a = Eigen::Matrix4d::Identity(),
           "estimation_method"_a = TransformationEstimationForColoredICP(),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_colored_icp",

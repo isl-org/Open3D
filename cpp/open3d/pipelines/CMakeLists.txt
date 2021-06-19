@@ -18,7 +18,6 @@ target_sources(pipelines PRIVATE
 )
 
 target_sources(pipelines PRIVATE
-    registration/ColoredICP.cpp
     registration/CorrespondenceChecker.cpp
     registration/FastGlobalRegistration.cpp
     registration/Feature.cpp

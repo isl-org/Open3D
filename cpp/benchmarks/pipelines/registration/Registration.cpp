@@ -43,6 +43,11 @@ static const std::string source_pointcloud_filename =
 static const std::string target_pointcloud_filename =
         TEST_DATA_DIR "/ICP/cloud_bin_1.pcd";
 
+static const std::string source_colored_pcd_filename =
+        TEST_DATA_DIR "/ColoredICP/frag_115.ply";
+static const std::string target_colored_pcd_filename =
+        TEST_DATA_DIR "/ColoredICP/frag_116.ply";
+
 static const double voxel_downsampling_factor = 0.05;
 
 // ICP ConvergenceCriteria.
@@ -60,7 +65,7 @@ namespace registration {
 static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
         const std::string& source_filename,
         const std::string& target_filename,
-        const double voxel_downsample_factor) {
+        const double voxel_downsample_factor = -1) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
@@ -121,14 +126,51 @@ static void BenchmarkRegistrationICPLegacy(
                       reg_result.inlier_rmse_);
 }
 
+static void BenchmarkRegistrationColoredICPLegacy(benchmark::State& state,
+                                                  double voxel_size,
+                                                  double iterations) {
+    geometry::PointCloud source;
+    geometry::PointCloud target;
+
+    std::tie(source, target) =
+            LoadPointCloud(source_colored_pcd_filename,
+                           target_colored_pcd_filename, voxel_size);
+
+    // TODO (@rishabh) Add MultiScale ColoredICP to Benchmarks.
+    // std::vector<double> voxel_sizes = {0.05, 0.05 / 2, 0.05 / 4};
+    // std::vector<int> iterations = {50, 30, 14};
+    Eigen::Matrix4d trans = Eigen::Matrix4d::Identity();
+
+    source.EstimateNormals(
+            open3d::geometry::KDTreeSearchParamHybrid(voxel_size * 2.0, 30));
+
+    target.EstimateNormals(
+            open3d::geometry::KDTreeSearchParamHybrid(voxel_size * 2.0, 30));
+    for (auto _ : state) {
+        auto result = pipelines::registration::RegistrationICP(
+                source, target, 0.07, trans,
+                pipelines::registration::
+                        TransformationEstimationForColoredICP(),
+                pipelines::registration::ICPConvergenceCriteria(1e-6, 1e-6,
+                                                                iterations));
+        trans = result.transformation_;
+    }
+}
+
 BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
-                  PointToPlane / CPU,
+                  PointToPlane / Legacy,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
-                  PointToPoint / CPU,
+                  PointToPoint / Legacy,
                   TransformationEstimationType::PointToPoint)
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(BenchmarkRegistrationColoredICPLegacy,
+                  ColoredICP / Legacy,
+                  0.0125,
+                  20)
         ->Unit(benchmark::kMillisecond);
 
 }  // namespace registration

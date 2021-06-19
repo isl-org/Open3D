@@ -12,7 +12,6 @@ target_sources(tests PRIVATE
 )
 
 target_sources(tests PRIVATE
-    registration/ColoredICP.cpp
     registration/CorrespondenceChecker.cpp
     registration/FastGlobalRegistration.cpp
     registration/Feature.cpp

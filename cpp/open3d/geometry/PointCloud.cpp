@@ -45,6 +45,7 @@ PointCloud &PointCloud::Clear() {
     points_.clear();
     normals_.clear();
     colors_.clear();
+    color_gradients_.clear();
     return *this;
 }
 
@@ -97,26 +98,42 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     // We do not use std::vector::insert to combine std::vector because it will
     // crash if the pointcloud is added to itself.
     if (cloud.IsEmpty()) return (*this);
-    size_t old_vert_num = points_.size();
-    size_t add_vert_num = cloud.points_.size();
-    size_t new_vert_num = old_vert_num + add_vert_num;
+    int old_vert_num = static_cast<int>(points_.size());
+    int add_vert_num = static_cast<int>(cloud.points_.size());
+    int new_vert_num = old_vert_num + add_vert_num;
     if ((!HasPoints() || HasNormals()) && cloud.HasNormals()) {
         normals_.resize(new_vert_num);
-        for (size_t i = 0; i < add_vert_num; i++)
+#pragma omp parallel for schedule(static)
+        for (int i = 0; i < add_vert_num; i++) {
             normals_[old_vert_num + i] = cloud.normals_[i];
+        }
     } else {
         normals_.clear();
     }
     if ((!HasPoints() || HasColors()) && cloud.HasColors()) {
         colors_.resize(new_vert_num);
-        for (size_t i = 0; i < add_vert_num; i++)
+#pragma omp parallel for schedule(static)
+        for (int i = 0; i < add_vert_num; i++) {
             colors_[old_vert_num + i] = cloud.colors_[i];
+        }
     } else {
         colors_.clear();
     }
+    if ((!HasPoints() || HasColorGradients()) && cloud.HasColorGradients()) {
+        colors_.resize(new_vert_num);
+#pragma omp parallel for schedule(static)
+        for (int i = 0; i < add_vert_num; i++) {
+            color_gradients_[old_vert_num + i] = cloud.color_gradients_[i];
+        }
+    } else {
+        color_gradients_.clear();
+    }
     points_.resize(new_vert_num);
-    for (size_t i = 0; i < add_vert_num; i++)
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < add_vert_num; i++) {
         points_[old_vert_num + i] = cloud.points_[i];
+    }
+
     return (*this);
 }
 
@@ -149,6 +166,7 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                               bool remove_infinite) {
     bool has_normal = HasNormals();
     bool has_color = HasColors();
+    bool has_color_gradient = HasColorGradients();
     size_t old_point_num = points_.size();
     size_t k = 0;                                 // new index
     for (size_t i = 0; i < old_point_num; i++) {  // old index
@@ -162,6 +180,7 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
             points_[k] = points_[i];
             if (has_normal) normals_[k] = normals_[i];
             if (has_color) colors_[k] = colors_[i];
+            if (has_color_gradient) color_gradients_[k] = color_gradients_[i];
             k++;
         }
     }
@@ -179,6 +198,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
     auto output = std::make_shared<PointCloud>();
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
+    bool has_color_gradient = HasColorGradients();
 
     std::vector<bool> mask = std::vector<bool>(points_.size(), invert);
     for (size_t i : indices) {
@@ -190,6 +210,8 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
             output->points_.push_back(points_[i]);
             if (has_normals) output->normals_.push_back(normals_[i]);
             if (has_colors) output->colors_.push_back(colors_[i]);
+            if (has_color_gradient)
+                output->color_gradients_.push_back(color_gradients_[i]);
         }
     }
     utility::LogDebug(
@@ -202,13 +224,6 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
 namespace {
 class AccumulatedPoint {
 public:
-    AccumulatedPoint()
-        : num_of_points_(0),
-          point_(0.0, 0.0, 0.0),
-          normal_(0.0, 0.0, 0.0),
-          color_(0.0, 0.0, 0.0) {}
-
-public:
     void AddPoint(const PointCloud &cloud, int index) {
         point_ += cloud.points_[index];
         if (cloud.HasNormals()) {
@@ -220,6 +235,9 @@ public:
         }
         if (cloud.HasColors()) {
             color_ += cloud.colors_[index];
+        }
+        if (cloud.HasColorGradients()) {
+            color_gradient_ += cloud.color_gradients_[index];
         }
         num_of_points_++;
     }
@@ -237,11 +255,16 @@ public:
         return color_ / double(num_of_points_);
     }
 
+    Eigen::Vector3d GetAverageColorGradient() const {
+        return color_gradient_ / double(num_of_points_);
+    }
+
 public:
-    int num_of_points_;
-    Eigen::Vector3d point_;
-    Eigen::Vector3d normal_;
-    Eigen::Vector3d color_;
+    int num_of_points_ = 0;
+    Eigen::Vector3d point_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d color_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d color_gradient_ = Eigen::Vector3d::Zero();
 };
 
 class point_cubic_id {
@@ -329,15 +352,18 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                 int(floor(ref_coord(2)));
         voxelindex_to_accpoint[voxel_index].AddPoint(*this, i);
     }
-    bool has_normals = HasNormals();
-    bool has_colors = HasColors();
+
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
-        if (has_normals) {
+        if (HasNormals()) {
             output->normals_.push_back(accpoint.second.GetAverageNormal());
         }
-        if (has_colors) {
+        if (HasColors()) {
             output->colors_.push_back(accpoint.second.GetAverageColor());
+        }
+        if (HasColorGradients()) {
+            output->color_gradients_.push_back(
+                    accpoint.second.GetAverageColorGradient());
         }
     }
     utility::LogDebug(
@@ -370,7 +396,8 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
                        utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
     int cid_temp[3] = {1, 2, 4};
-    for (size_t i = 0; i < points_.size(); i++) {
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < static_cast<int>(points_.size()); i++) {
         auto ref_coord = (points_[i] - voxel_min_bound) / voxel_size;
         auto voxel_index = Eigen::Vector3i(int(floor(ref_coord(0))),
                                            int(floor(ref_coord(1))),
@@ -381,11 +408,10 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
                 cid += cid_temp[c];
             }
         }
-        voxelindex_to_accpoint[voxel_index].AddPoint(*this, i, cid,
-                                                     approximate_class);
+        voxelindex_to_accpoint[voxel_index].AddPoint(
+                *this, static_cast<size_t>(i), cid, approximate_class);
     }
-    bool has_normals = HasNormals();
-    bool has_colors = HasColors();
+
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
@@ -393,15 +419,19 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
             voxelindex_to_accpoint.size());
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
-        if (has_normals) {
+        if (HasNormals()) {
             output->normals_.push_back(accpoint.second.GetAverageNormal());
         }
-        if (has_colors) {
+        if (HasColors()) {
             if (approximate_class) {
                 output->colors_.push_back(accpoint.second.GetMaxClass());
             } else {
                 output->colors_.push_back(accpoint.second.GetAverageColor());
             }
+        }
+        if (HasColorGradients()) {
+            output->color_gradients_.push_back(
+                    accpoint.second.GetAverageColorGradient());
         }
         auto original_id = accpoint.second.GetOriginalID();
         for (int i = 0; i < (int)original_id.size(); i++) {
@@ -547,6 +577,74 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
         }
     }
     return std::make_tuple(SelectByIndex(indices), indices);
+}
+
+// For ColoredICP.
+void PointCloud::EstimateColorGradients(
+        const KDTreeSearchParamHybrid
+                &search_param /*= KDTreeSearchParamHybrid(0.5, 30)*/) {
+    utility::LogDebug("Estimating Color Gradients.");
+
+    if (!this->HasColors() || !this->HasNormals()) {
+        utility::LogError(
+                "PointCloud must have colors and normals attribute "
+                "to compute color gradients.");
+    }
+
+    geometry::KDTreeFlann tree;
+    tree.SetGeometry(*this);
+
+    size_t n_points = this->points_.size();
+    this->color_gradients_.resize(n_points, Eigen::Vector3d::Zero());
+
+#pragma omp parallel for schedule(static)
+    for (int k = 0; k < static_cast<int>(n_points); k++) {
+        const Eigen::Vector3d &vt = this->points_[k];
+        const Eigen::Vector3d &nt = this->normals_[k];
+        double it = (this->colors_[k](0) + this->colors_[k](1) +
+                     this->colors_[k](2)) /
+                    3.0;
+
+        std::vector<int> point_idx;
+        std::vector<double> point_squared_distance;
+
+        if (tree.SearchHybrid(vt, search_param.radius_, search_param.max_nn_,
+                              point_idx, point_squared_distance) >= 4) {
+            // approximate image gradient of vt's tangential plane
+            size_t nn = point_idx.size();
+            Eigen::MatrixXd A(nn, 3);
+            Eigen::MatrixXd b(nn, 1);
+            A.setZero();
+            b.setZero();
+
+            for (size_t i = 1; i < nn; i++) {
+                int P_adj_idx = point_idx[i];
+                Eigen::Vector3d vt_adj = this->points_[P_adj_idx];
+                Eigen::Vector3d vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
+                double it_adj = (this->colors_[P_adj_idx](0) +
+                                 this->colors_[P_adj_idx](1) +
+                                 this->colors_[P_adj_idx](2)) /
+                                3.0;
+                A(i - 1, 0) = (vt_proj(0) - vt(0));
+                A(i - 1, 1) = (vt_proj(1) - vt(1));
+                A(i - 1, 2) = (vt_proj(2) - vt(2));
+                b(i - 1, 0) = (it_adj - it);
+            }
+            // adds orthogonal constraint
+            A(nn - 1, 0) = (nn - 1) * nt(0);
+            A(nn - 1, 1) = (nn - 1) * nt(1);
+            A(nn - 1, 2) = (nn - 1) * nt(2);
+            b(nn - 1, 0) = 0;
+            // solving linear equation
+            bool is_success = false;
+            Eigen::MatrixXd x;
+            std::tie(is_success, x) = utility::SolveLinearSystemPSD(
+                    A.transpose() * A, A.transpose() * b);
+            if (is_success) {
+                this->color_gradients_[k] = x;
+            }
+        }
+    }
 }
 
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
