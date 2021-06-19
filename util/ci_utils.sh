@@ -482,7 +482,6 @@ install_docs_dependencies() {
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-torch.txt"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt" ||
             python -m pip install tensorflow # FIXME: Remove after Open3D-ML update
-        updated
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
     fi
