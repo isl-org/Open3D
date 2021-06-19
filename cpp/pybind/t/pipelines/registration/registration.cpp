@@ -54,10 +54,10 @@ public:
         PYBIND11_OVERLOAD_PURE(double, TransformationEstimationBase, source,
                                target, correspondences);
     }
-    core::Tensor ComputeTransformation(const t::geometry::PointCloud &source,
-                                       const t::geometry::PointCloud &target,
-                                       const core::Tensor &correspondences,
-                                       int &inlier_count) const {
+    core::Tensor ComputeTransformation(
+            const t::geometry::PointCloud &source,
+            const t::geometry::PointCloud &target,
+            const core::Tensor &correspondences) const {
         PYBIND11_OVERLOAD_PURE(core::Tensor, TransformationEstimationBase,
                                source, target, correspondences);
     }
@@ -83,7 +83,7 @@ void pybind_registration_classes(py::module &m) {
                     "than ``relative_fitness``, the iteration stops.")
             .def_readwrite(
                     "relative_rmse", &ICPConvergenceCriteria::relative_rmse_,
-                    "If relative change (difference) of inliner RMSE score is "
+                    "If relative change (difference) of inlier RMSE score is "
                     "lower than ``relative_rmse``, the iteration stops.")
             .def_readwrite("max_iteration",
                            &ICPConvergenceCriteria::max_iteration_,
@@ -145,7 +145,7 @@ void pybind_registration_classes(py::module &m) {
            "correspondences.");
     te.def("compute_transformation",
            &TransformationEstimation::ComputeTransformation, "source"_a,
-           "target"_a, "correspondences"_a, "inlier_count"_a,
+           "target"_a, "correspondences"_a,
            "Compute transformation from source to target point cloud given "
            "correspondences.");
     docstring::ClassMethodDocInject(m, "TransformationEstimation",
@@ -165,14 +165,10 @@ void pybind_registration_classes(py::module &m) {
             {{"source", "Source point cloud."},
              {"target", "Target point cloud."},
              {"correspondences",
-              "Tensor of type Int64 containing indices of corresponding "
-              "target "
-              "points, where the value is the target index and the index "
-              "of "
-              "the value itself is the source index. It contains -1 as "
-              "value "
-              "at index with no correspondence."},
-             {"inlier_count", "Number of valid correspondences."}});
+              "Tensor of type Int64 containing indices of corresponding target "
+              "points, where the value is the target index and the index of "
+              "the value itself is the source index. It contains -1 as value "
+              "at index with no correspondence."}});
 
     // open3d.t.pipelines.registration.TransformationEstimationPointToPoint
     // TransformationEstimation

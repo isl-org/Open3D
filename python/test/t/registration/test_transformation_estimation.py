@@ -99,9 +99,8 @@ def test_compute_transformation_point_to_point(device):
         estimation_p2p = o3d.t.pipelines.registration.TransformationEstimationPointToPoint(
         )
 
-        inlier_count = int()
         transformation_p2p = estimation_p2p.compute_transformation(
-            source_t, target_t, correspondences, inlier_count)
+            source_t, target_t, correspondences)
         source_transformed_p2p = source_t.transform(
             transformation_p2p.to(device, dtype))
         p2p_rmse = estimation_p2p.compute_rmse(source_transformed_p2p, target_t,
@@ -137,9 +136,8 @@ def test_compute_transformation_point_to_plane(device):
         estimation_p2l = o3d.t.pipelines.registration.TransformationEstimationPointToPlane(
         )
 
-        inlier_count = int()
         transformation_p2l = estimation_p2l.compute_transformation(
-            source_t, target_t, correspondences, inlier_count)
+            source_t, target_t, correspondences)
         source_transformed_p2l = source_t.transform(
             transformation_p2l.to(device, dtype))
 

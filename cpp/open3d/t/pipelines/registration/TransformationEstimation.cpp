@@ -65,8 +65,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &correspondences,
-        int &inlier_cout) const {
+        const core::Tensor &correspondences) const {
     core::Device device = source.GetDevice();
 
     if (target.GetDevice() != device) {
@@ -77,8 +76,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
 
     core::Tensor R, t;
     std::tie(R, t) = pipelines::kernel::ComputeRtPointToPoint(
-            source.GetPoints(), target.GetPoints(), correspondences,
-            inlier_cout);
+            source.GetPoints(), target.GetPoints(), correspondences);
 
     return t::pipelines::kernel::RtToTransformation(R, t);
 }
@@ -118,8 +116,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &correspondences,
-        int &inlier_cout) const {
+        const core::Tensor &correspondences) const {
     core::Device device = source.GetDevice();
 
     if (target.GetDevice() != device) {
@@ -132,7 +129,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     // target point cloud.
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
             source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
-            correspondences, inlier_cout, this->kernel_);
+            correspondences, this->kernel_);
 
     // Get transformation {4,4} of type Float64 from pose {6}.
     return pipelines::kernel::PoseToTransformation(pose);
