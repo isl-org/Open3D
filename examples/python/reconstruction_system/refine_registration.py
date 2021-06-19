@@ -4,14 +4,14 @@
 
 # examples/python/reconstruction_system/refine_registration.py
 
+from optimize_posegraph import optimize_posegraph_for_refined_scene
+from visualization import draw_registration_result_original_color
+from file import join, get_file_list, write_poses_to_log
 import numpy as np
 import open3d as o3d
 import sys
 sys.path.append("../utility")
-from file import join, get_file_list, write_poses_to_log
-from visualization import draw_registration_result_original_color
 sys.path.append(".")
-from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
 def update_posegraph_for_scene(s, t, transformation, information, odometry,
@@ -37,71 +37,60 @@ def update_posegraph_for_scene(s, t, transformation, information, odometry,
     return (odometry, pose_graph)
 
 
-def multiscale_icp(source,
-                   target,
-                   voxel_size,
-                   max_iter,
-                   config,
-                   init_transformation=np.identity(4)):
-    current_transformation = init_transformation
-    for i, scale in enumerate(range(len(max_iter))):  # multi-scale approach
-        iter = max_iter[scale]
-        distance_threshold = config["voxel_size"] * 1.4
-        print("voxel_size {}".format(voxel_size[scale]))
-        source_down = source.voxel_down_sample(voxel_size[scale])
-        target_down = target.voxel_down_sample(voxel_size[scale])
-        if config["icp_method"] == "point_to_point":
-            result_icp = o3d.pipelines.registration.registration_icp(
-                source_down, target_down, distance_threshold,
-                current_transformation,
-                o3d.pipelines.registration.TransformationEstimationPointToPoint(
-                ),
-                o3d.pipelines.registration.ICPConvergenceCriteria(
-                    max_iteration=iter))
-        else:
-            source_down.estimate_normals(
-                o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
-                                                     2.0,
-                                                     max_nn=30))
-            target_down.estimate_normals(
-                o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size[scale] *
-                                                     2.0,
-                                                     max_nn=30))
-            if config["icp_method"] == "point_to_plane":
-                result_icp = o3d.pipelines.registration.registration_icp(
-                    source_down, target_down, distance_threshold,
-                    current_transformation,
-                    o3d.pipelines.registration.
-                    TransformationEstimationPointToPlane(),
-                    o3d.pipelines.registration.ICPConvergenceCriteria(
-                        max_iteration=iter))
-            if config["icp_method"] == "color":
-                result_icp = o3d.pipelines.registration.registration_colored_icp(
-                    source_down, target_down, distance_threshold,
-                    current_transformation,
-                    o3d.pipelines.registration.
-                    TransformationEstimationForColoredICP(),
-                    o3d.pipelines.registration.ICPConvergenceCriteria(
-                        relative_fitness=1e-6,
-                        relative_rmse=1e-6,
-                        max_iteration=iter))
-        current_transformation = result_icp.transformation
-        if i == len(max_iter) - 1:
-            information_matrix = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
-                source_down, target_down, voxel_size[scale] * 1.4,
-                result_icp.transformation)
-
-    return (result_icp.transformation, information_matrix)
-
-
 def local_refinement(source, target, transformation_init, config):
     voxel_size = config["voxel_size"]
-    (transformation, information) = \
-            multiscale_icp(
-            source, target,
-            [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
-            config, transformation_init)
-    return (transformation, information)
+
+    voxel_radius = o3d.utility.DoubleVector(
+        [voxel_size, voxel_size / 2.0, voxel_size / 4.0])
+    distance_threshold = o3d.utility.DoubleVector(
+        [voxel_size * 1.4, voxel_size * 1.4 / 2.0, voxel_size * 1.4 / 4.0])
+
+    criteria_list = [
+        o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-3,
+                                                          relative_rmse=1e-3,
+                                                          max_iteration=50),
+        o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-4,
+                                                          relative_rmse=1e-4,
+                                                          max_iteration=30),
+        o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6,
+                                                          relative_rmse=1e-6,
+                                                          max_iteration=14)
+    ]
+
+    result_icp = o3d.pipelines.registration.registration_result()
+
+    if config["icp_method"] == "point_to_point":
+        result_icp = o3d.pipelines.registration.registration_multi_scale_icp(
+            source, target, voxel_radius, criteria_list, distance_threshold,
+            transformation_init,
+            o3d.pipelines.registration.TransformationEstimationPointToPoint())
+    else:
+        source.estimate_normals(
+            o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_radius[2] * 2.0,
+                                                 max_nn=30))
+        target.estimate_normals(
+            o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_radius[2] * 2.0,
+                                                 max_nn=30))
+
+        if config["icp_method"] == "point_to_plane":
+            result_icp = o3d.pipelines.registration.registration_multi_scale_icp(
+                source, target, voxel_radius, criteria_list, distance_threshold,
+                transformation_init,
+                o3d.pipelines.registration.TransformationEstimationPointToPlane(
+                ))
+        elif config["icp_method"] == "color":
+            result_icp = o3d.pipelines.registration.registration_multi_scale_icp(
+                source, target, voxel_radius, criteria_list, distance_threshold,
+                transformation_init,
+                o3d.pipelines.registration.
+                TransformationEstimationForColoredICP())
+
+    information_matrix = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
+        source.voxel_down_sample(voxel_radius[2]),
+        target.voxel_down_sample(voxel_radius[2]), voxel_radius[2] * 1.4,
+        result_icp.transformation)
+
+    return (result_icp.transformation, information_matrix)
 
 
 def register_point_cloud_pair(ply_file_names, s, t, transformation_init,
@@ -168,10 +157,10 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
     else:
         for r in matching_results:
             (matching_results[r].transformation,
-                    matching_results[r].information) = \
-                    register_point_cloud_pair(ply_file_names,
-                    matching_results[r].s, matching_results[r].t,
-                    matching_results[r].transformation, config)
+             matching_results[r].information) = \
+                register_point_cloud_pair(ply_file_names,
+                                          matching_results[r].s, matching_results[r].t,
+                                          matching_results[r].transformation, config)
 
     pose_graph_new = o3d.pipelines.registration.PoseGraph()
     odometry = np.identity(4)
@@ -209,7 +198,7 @@ def run(config):
                  config["template_fragment_posegraph_optimized"] % fragment_id))
         for frame_id in range(len(pose_graph_rgbd.nodes)):
             frame_id_abs = fragment_id * \
-                    config['n_frames_per_fragment'] + frame_id
+                config['n_frames_per_fragment'] + frame_id
             pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
                           pose_graph_rgbd.nodes[frame_id].pose)
             poses.append(pose)
