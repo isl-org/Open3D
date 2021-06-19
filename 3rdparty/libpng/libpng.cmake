@@ -9,8 +9,9 @@ endif()
 ExternalProject_Add(
     ext_libpng
     PREFIX libpng
-    GIT_REPOSITORY https://github.com/glennrp/libpng.git
-    GIT_TAG v1.6.37
+    URL https://github.com/glennrp/libpng/archive/refs/tags/v1.6.37.tar.gz
+    URL_HASH SHA256=ca74a0dace179a8422187671aee97dd3892b53e168627145271cad5b5ac81307
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/libpng"
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>

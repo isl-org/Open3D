@@ -216,6 +216,19 @@ endfunction()
 # party dependencies. Only needed with GCC, not AppleClang.
 set(OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS)
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL AppleClang)
+    find_library(LexLIB libl.a)    # test archive in macOS
+    if (LexLIB)
+        include(CheckCXXSourceCompiles)
+        set(CMAKE_REQUIRED_LINK_OPTIONS -load_hidden ${LexLIB})
+        check_cxx_source_compiles("int main() {return 0;}" FLAG_load_hidden)
+        unset(CMAKE_REQUIRED_LINK_OPTIONS)
+    endif()
+endif()
+if (NOT FLAG_load_hidden)
+    set(FLAG_load_hidden 0)
+endif()
+
 # import_3rdparty_library(name ...)
 #
 # Imports a third-party library that has been built independently in a sub project.
@@ -288,7 +301,7 @@ function(import_3rdparty_library name)
             endif()
             # Apple compiler ld
             target_link_libraries(${name} INTERFACE
-                "$<BUILD_INTERFACE:$<$<AND:${HIDDEN},$<CXX_COMPILER_ID:AppleClang>>:-load_hidden >${arg_LIB_DIR}/${library_filename}>")
+                "$<BUILD_INTERFACE:$<$<AND:${HIDDEN},${FLAG_load_hidden}>:-load_hidden >${arg_LIB_DIR}/${library_filename}>")
             if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
                 install(FILES ${arg_LIB_DIR}/${library_filename}
                     DESTINATION ${Open3D_INSTALL_LIB_DIR}
@@ -310,37 +323,6 @@ function(import_3rdparty_library name)
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
     endif()
     add_library(${PROJECT_NAME}::${name} ALIAS ${name})
-endfunction()
-
-#
-# set_local_or_remote_url(url ...)
-#
-# If LOCAL_URL exists, set URL to LOCAL_URL, otherwise set URL to REMOTE_URLS.
-# This function is needed since CMake does not allow specifying remote URL(s) if
-# a local URL is specified.
-#
-# Valid options:
-#    LOCAL_URL
-#        local url to a file. Optional parameter. If the file does not exist,
-#        LOCAL_URL will be ignored. If the file exists, REMOTE URLS will be
-#        ignored. CMake only allows setting single LOCAL_URL for external
-#        projects.
-#    REMOTE_URLS
-#        remote url(s) to download a file. CMake will try to download the file
-#        in the specified order.
-#
-function(set_local_or_remote_url URL)
-    cmake_parse_arguments(arg "" "LOCAL_URL" "REMOTE_URLS" ${ARGN})
-    if(arg_UNPARSED_ARGUMENTS)
-        message(FATAL_ERROR "Invalid syntax: set_local_or_remote_url(${name} ${ARGN})")
-    endif()
-    if(arg_LOCAL_URL AND (EXISTS ${arg_LOCAL_URL}))
-        message(STATUS "Using local url: ${arg_LOCAL_URL}")
-        set(${URL} "${arg_LOCAL_URL}" PARENT_SCOPE)
-    else()
-        message(STATUS "Using remote url(s): ${arg_REMOTE_URLS}")
-        set(${URL} "${arg_REMOTE_URLS}" PARENT_SCOPE)
-    endif()
 endfunction()
 
 include(ProcessorCount)
