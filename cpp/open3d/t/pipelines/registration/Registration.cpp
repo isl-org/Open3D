@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,17 +68,13 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         utility::LogError("HybridSearch Index is not set.");
     }
 
-    core::Tensor distances;
-    std::tie(result.correspondences_, distances) = target_nns.HybridSearch(
-            source.GetPoints(), max_correspondence_distance, 1);
+    core::Tensor distances, counts;
+    std::tie(result.correspondences_, distances, counts) =
+            target_nns.HybridSearch(source.GetPoints(),
+                                    max_correspondence_distance, 1);
 
-    // Counting the numbers of non -1 values in the correspondence
-    // tensor returned by NNS.
     double num_correspondences =
-            static_cast<double>(result.correspondences_.Ne(-1)
-                                        .To(core::Dtype::Int32)
-                                        .Sum({0})
-                                        .Item<int>());
+            counts.Sum({0}).To(core::Dtype::Float64).Item<double>();
 
     // Reduction sum of "distances" for error.
     double squared_error =
@@ -147,23 +143,25 @@ RegistrationResult RegistrationMultiScaleICP(
         device.GetType() == core::Device::DeviceType::CUDA) {
         utility::LogDebug("Use Float32 pointcloud for best performance.");
     }
-
     if (!(criterias.size() == voxel_sizes.size() &&
           criterias.size() == max_correspondence_distances.size())) {
         utility::LogError(
                 " [RegistrationMultiScaleICP]: Size of criterias, voxel_size,"
                 " max_correspondence_distances vectors must be same.");
     }
-    if ((estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::PointToPlane ||
-         estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::ColoredICP) &&
+    if (estimation.GetTransformationEstimationType() ==
+                TransformationEstimationType::PointToPlane &&
         (!target.HasPointNormals())) {
         utility::LogError(
-                "TransformationEstimationPointToPlane and "
-                "TransformationEstimationColoredICP "
-                "require pre-computed normal vectors for target PointCloud.");
+                "TransformationEstimationPointToPlane require pre-computed "
+                "normal vectors for target PointCloud.");
     }
+
+    if (estimation.GetTransformationEstimationType() ==
+        TransformationEstimationType::ColoredICP) {
+        utility::LogError("Tensor PointCloud ColoredICP is not Implemented.");
+    }
+
     if (max_correspondence_distances[0] <= 0.0) {
         utility::LogError(
                 " Max correspondence distance must be greater than 0, but"
@@ -172,6 +170,7 @@ RegistrationResult RegistrationMultiScaleICP(
     }
 
     int64_t num_iterations = int64_t(criterias.size());
+
     for (int64_t i = 1; i < num_iterations; i++) {
         if (voxel_sizes[i] >= voxel_sizes[i - 1]) {
             utility::LogError(
@@ -196,9 +195,9 @@ RegistrationResult RegistrationMultiScaleICP(
         target_down_pyramid[num_iterations - 1] = target;
     } else {
         source_down_pyramid[num_iterations - 1] =
-                source.Clone().VoxelDownSample(voxel_sizes[num_iterations - 1]);
+                source.VoxelDownSample(voxel_sizes[num_iterations - 1]);
         target_down_pyramid[num_iterations - 1] =
-                target.Clone().VoxelDownSample(voxel_sizes[num_iterations - 1]);
+                target.VoxelDownSample(voxel_sizes[num_iterations - 1]);
     }
 
     for (int k = num_iterations - 2; k >= 0; k--) {
@@ -213,7 +212,7 @@ RegistrationResult RegistrationMultiScaleICP(
     core::Tensor transformation = init_source_to_target.To(
             core::Device("CPU:0"), core::Dtype::Float64);
     RegistrationResult result(transformation);
-    int inlier_count = 0;
+
     double prev_fitness = 0;
     double prev_inlier_rmse = 0;
 
@@ -230,18 +229,33 @@ RegistrationResult RegistrationMultiScaleICP(
 
         // ---- ICP iterations START ------------------------------------------
         for (int j = 0; j < criterias[i].max_iteration_; j++) {
-            core::Tensor distances;
-            std::tie(result.correspondences_, distances) =
+            // ---- NNS Search: Getting Correspondences, Inlier Fitness and RMSE
+            core::Tensor distances, counts;
+            std::tie(result.correspondences_, distances, counts) =
                     target_nns.HybridSearch(source_down_pyramid[i].GetPoints(),
                                             max_correspondence_distances[i], 1);
+            double num_correspondences =
+                    counts.Sum({0}).To(core::Dtype::Float64).Item<double>();
 
-            // ComputeTransformation returns transformation tensor.
+            // Reduction sum of "distances" for error.
+            double squared_error =
+                    distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
+
+            result.fitness_ =
+                    num_correspondences /
+                    static_cast<double>(source.GetPoints().GetLength());
+            result.inlier_rmse_ =
+                    std::sqrt(squared_error / num_correspondences);
+            // --- NNS End ----------------------------------------------------
+
+            // ---- Computing Transform between source and target, given
+            // correspondences. ComputeTransformation returns {4,4} shaped
+            // Float64 transformation tensor on CPU device. -------------------
             core::Tensor update =
                     estimation
                             .ComputeTransformation(source_down_pyramid[i],
                                                    target_down_pyramid[i],
-                                                   result.correspondences_,
-                                                   inlier_count)
+                                                   result.correspondences_)
                             .To(core::Dtype::Float64);
 
             // Multiply the transform to the cumulative transformation (update).
@@ -249,16 +263,6 @@ RegistrationResult RegistrationMultiScaleICP(
 
             // Apply the transform on source pointcloud.
             source_down_pyramid[i].Transform(update.To(device, dtype));
-
-            // Reduction sum of "distances" for error.
-            double squared_error =
-                    distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
-
-            result.fitness_ =
-                    static_cast<double>(inlier_count) /
-                    static_cast<double>(source.GetPoints().GetLength());
-            result.inlier_rmse_ = std::sqrt(squared_error /
-                                            static_cast<double>(inlier_count));
 
             utility::LogDebug(
                     " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, RMSE "
