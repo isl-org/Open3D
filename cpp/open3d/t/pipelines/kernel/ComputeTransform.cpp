@@ -38,7 +38,6 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_points,
                                      const core::Tensor &target_normals,
                                      const core::Tensor &correspondence_indices,
-                                     int &inlier_count,
                                      const registration::RobustKernel &kernel) {
     // Get dtype and device.
     core::Dtype dtype = source_points.GetDtype();
@@ -54,6 +53,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     core::Tensor corres_contiguous = correspondence_indices.Contiguous();
 
     float residual = 0;
+    int inlier_count = 0;
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         ComputePosePointToPlaneCPU(
@@ -75,8 +75,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
-        const core::Tensor &correspondence_indices,
-        int &inlier_count) {
+        const core::Tensor &correspondence_indices) {
     // Get dtype and device.
     core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();
@@ -85,8 +84,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     core::Tensor R;
     core::Tensor t;
 
-    // // Number of correspondences.
-    // int n = corres.first.GetLength();
+    int inlier_count = 0;
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {

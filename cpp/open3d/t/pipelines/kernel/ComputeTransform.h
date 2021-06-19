@@ -46,7 +46,6 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_points,
                                      const core::Tensor &target_normals,
                                      const core::Tensor &correspondence_indices,
-                                     int &inlier_count,
                                      const registration::RobustKernel &kernel);
 
 /// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
@@ -58,8 +57,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
-        const core::Tensor &correspondence_indices,
-        int &inlier_count);
+        const core::Tensor &correspondence_indices);
 
 }  // namespace kernel
 }  // namespace pipelines

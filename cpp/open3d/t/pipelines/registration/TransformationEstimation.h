@@ -89,14 +89,12 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
-    /// \param inlier_count [Ouput] Number of valid correspondences.
     /// \return transformation between source to target, a tensor of shape {4,
     /// 4}, type Float64 on CPU device.
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const core::Tensor &correspondences,
-            int &inlier_count) const = 0;
+            const core::Tensor &correspondences) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -137,13 +135,12 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
-    /// \param inlier_count [Ouput] Number of valid correspondences.
     /// \return transformation between source to target, a tensor of
     /// shape {4, 4}, type Float64 on CPU device.
-    core::Tensor ComputeTransformation(const geometry::PointCloud &source,
-                                       const geometry::PointCloud &target,
-                                       const core::Tensor &correspondences,
-                                       int &inlier_count) const override;
+    core::Tensor ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const core::Tensor &correspondences) const override;
 
 private:
     const TransformationEstimationType type_ =
@@ -197,13 +194,12 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
-    /// \param inlier_count [Ouput] Number of valid correspondences.
     /// \return transformation between source to target, a tensor
     /// of shape {4, 4}, type Float64 on CPU device.
-    core::Tensor ComputeTransformation(const geometry::PointCloud &source,
-                                       const geometry::PointCloud &target,
-                                       const core::Tensor &correspondences,
-                                       int &inlier_count) const override;
+    core::Tensor ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const core::Tensor &correspondences) const override;
 
 public:
     /// RobustKernel for outlier rejection.

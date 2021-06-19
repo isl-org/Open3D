@@ -68,17 +68,13 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         utility::LogError("HybridSearch Index is not set.");
     }
 
-    core::Tensor distances;
-    std::tie(result.correspondences_, distances) = target_nns.HybridSearch(
-            source.GetPoints(), max_correspondence_distance, 1);
+    core::Tensor distances, counts;
+    std::tie(result.correspondences_, distances, counts) =
+            target_nns.HybridSearch(source.GetPoints(),
+                                    max_correspondence_distance, 1);
 
-    // Counting the numbers of non -1 values in the correspondence
-    // tensor returned by NNS.
     double num_correspondences =
-            static_cast<double>(result.correspondences_.Ne(-1)
-                                        .To(core::Dtype::Int32)
-                                        .Sum({0})
-                                        .Item<int>());
+            counts.Sum({0}).To(core::Dtype::Float64).Item<double>();
 
     // Reduction sum of "distances" for error.
     double squared_error =
@@ -213,7 +209,7 @@ RegistrationResult RegistrationMultiScaleICP(
     core::Tensor transformation = init_source_to_target.To(
             core::Device("CPU:0"), core::Dtype::Float64);
     RegistrationResult result(transformation);
-    int inlier_count = 0;
+
     double prev_fitness = 0;
     double prev_inlier_rmse = 0;
 
@@ -230,18 +226,33 @@ RegistrationResult RegistrationMultiScaleICP(
 
         // ---- ICP iterations START ------------------------------------------
         for (int j = 0; j < criterias[i].max_iteration_; j++) {
-            core::Tensor distances;
-            std::tie(result.correspondences_, distances) =
+            // ---- NNS Search: Getting Correspondences, Inlier Fitness and RMSE
+            core::Tensor distances, counts;
+            std::tie(result.correspondences_, distances, counts) =
                     target_nns.HybridSearch(source_down_pyramid[i].GetPoints(),
                                             max_correspondence_distances[i], 1);
+            double num_correspondences =
+                    counts.Sum({0}).To(core::Dtype::Float64).Item<double>();
 
-            // ComputeTransformation returns transformation tensor.
+            // Reduction sum of "distances" for error.
+            double squared_error =
+                    distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
+
+            result.fitness_ =
+                    num_correspondences /
+                    static_cast<double>(source.GetPoints().GetLength());
+            result.inlier_rmse_ =
+                    std::sqrt(squared_error / num_correspondences);
+            // --- NNS End ----------------------------------------------------
+
+            // ---- Computing Transform between source and target, given
+            // correspondences. ComputeTransformation returns {4,4} shaped
+            // Float64 transformation tensor on CPU device. -------------------
             core::Tensor update =
                     estimation
                             .ComputeTransformation(source_down_pyramid[i],
                                                    target_down_pyramid[i],
-                                                   result.correspondences_,
-                                                   inlier_count)
+                                                   result.correspondences_)
                             .To(core::Dtype::Float64);
 
             // Multiply the transform to the cumulative transformation (update).
@@ -249,16 +260,6 @@ RegistrationResult RegistrationMultiScaleICP(
 
             // Apply the transform on source pointcloud.
             source_down_pyramid[i].Transform(update.To(device, dtype));
-
-            // Reduction sum of "distances" for error.
-            double squared_error =
-                    distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
-
-            result.fitness_ =
-                    static_cast<double>(inlier_count) /
-                    static_cast<double>(source.GetPoints().GetLength());
-            result.inlier_rmse_ = std::sqrt(squared_error /
-                                            static_cast<double>(inlier_count));
 
             utility::LogDebug(
                     " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, RMSE "
