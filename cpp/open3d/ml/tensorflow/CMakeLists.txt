@@ -28,6 +28,17 @@ target_sources(open3d_tf_ops PRIVATE
 )
 
 target_sources(open3d_tf_ops PRIVATE
+    sparse_conv/SparseConvBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvOpKernel.cpp
+    sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvTransposeOpKernel.cpp
+    sparse_conv/SparseConvBackpropFilterOps.cpp
+    sparse_conv/SparseConvOps.cpp
+    sparse_conv/SparseConvTransposeBackpropFilterOps.cpp
+    sparse_conv/SparseConvTransposeOps.cpp
+)
+
+target_sources(open3d_tf_ops PRIVATE
     misc/BuildSpatialHashTableOpKernel.cpp
     misc/BuildSpatialHashTableOps.cpp
     misc/FixedRadiusSearchOpKernel.cpp
@@ -82,6 +93,13 @@ if (BUILD_CUDA_MODULE)
     )
 
     target_sources(open3d_tf_ops PRIVATE
+        sparse_conv/SparseConvBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvOpKernel.cu
+        sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvTransposeOpKernel.cu
+    )
+
+    target_sources(open3d_tf_ops PRIVATE
         misc/BuildSpatialHashTableOpKernel.cu
         misc/FixedRadiusSearchOpKernel.cu
         misc/InvertNeighborsListOpKernel.cu
@@ -99,6 +117,7 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(open3d_tf_ops PRIVATE
         ../impl/continuous_conv/ContinuousConvCUDAKernels.cu
+        ../impl/sparse_conv/SparseConvCUDAKernels.cu
     )
 
     target_sources(open3d_tf_ops PRIVATE

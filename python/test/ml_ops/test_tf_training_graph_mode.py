@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ and using cmake 3.13.2. The child commit 14c4815d does not show the problem when
 linking the main lib. For cmake 3.18.2 and cmake 3.19 we cannot reproduce the
 bug with 125458ad . Further the diff between both commits does not show changes
 related to the problem. Since we know that the problem can be resolved by using
-cmake >= 3.18.2, we think that the way cmake generates the link command may 
+cmake >= 3.18.2, we think that the way cmake generates the link command may
 cause the problem.
 
 Some more info about the systems on which the problem was discovered:

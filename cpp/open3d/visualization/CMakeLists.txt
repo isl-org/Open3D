@@ -96,8 +96,12 @@ if (BUILD_RPC_INTERFACE)
 endif()
 
 
-# some black magic to automatically create a header file from shader files
-set(SHADER_FILES
+include(add_encoded_shader)
+
+open3d_add_encoded_shader(shader
+    OUTPUT_HEADER
+    shader/Shader.h
+    SOURCES
     shader/glsl/ImageFragmentShader.glsl
     shader/glsl/ImageMaskFragmentShader.glsl
     shader/glsl/ImageMaskVertexShader.glsl
@@ -121,27 +125,8 @@ set(SHADER_FILES
     shader/glsl/TextureSimpleVertexShader.glsl
 )
 
-add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/shader/Shader.h"
-    COMMAND EncodeShader "${CMAKE_CURRENT_SOURCE_DIR}/shader/Shader.h"
-    DEPENDS ${SHADER_FILES} EncodeShader
-)
-
-foreach(SHADER ${SHADER_FILES})
-    add_custom_command(
-        OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/shader/Shader.h"
-        COMMAND EncodeShader "${CMAKE_CURRENT_SOURCE_DIR}/shader/Shader.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}"
-        DEPENDS ${SHADER_FILES} EncodeShader
-        APPEND
-    )
-endforeach()
-
-add_custom_target(shader ALL
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shader/Shader.h"
-)
-set_target_properties(shader PROPERTIES FOLDER "Custom")
-
-source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
+# Source group for Visual Studio
+add_source_group(shader/glsl)
 
 add_dependencies(visualization shader)
 

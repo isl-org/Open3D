@@ -1,27 +1,24 @@
 include(ExternalProject)
 
+find_package(Git QUIET REQUIRED)
+
 ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
-    GIT_REPOSITORY https://github.com/IntelRealSense/librealsense.git
-    GIT_TAG v2.44.0 #  2020 Apr 1
+    URL https://github.com/IntelRealSense/librealsense/archive/refs/tags/v2.44.0.tar.gz #  2020 Apr 1
+    URL_HASH SHA256=5b0158592646984f0f7348da3783e2fb49e99308a97f2348fe3cc82c770c6dde
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
     UPDATE_COMMAND ""
     # Patch for libusb static build failure on Linux
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/libusb-CMakeLists.txt
         <SOURCE_DIR>/third-party/libusb/CMakeLists.txt
     # Patch for CRT mismatch in CUDA code (Windows)
-    COMMAND git -C <SOURCE_DIR> apply
-        ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librealsense/fix-cudacrt.patch
+    COMMAND ${GIT_EXECUTABLE} init
+    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+        ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-        -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
-        -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-        -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-        -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
         -DBUILD_SHARED_LIBS=OFF
         -DBUILD_EXAMPLES=OFF
         -DBUILD_UNIT_TESTS=OFF
@@ -36,6 +33,7 @@ ExternalProject_Add(
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>
+        ${ExternalProject_CMAKE_ARGS_hidden}
     CMAKE_CACHE_ARGS    # Lists must be passed via CMAKE_CACHE_ARGS
         -DCMAKE_CUDA_ARCHITECTURES:STRING=${CMAKE_CUDA_ARCHITECTURES}
     BUILD_BYPRODUCTS

@@ -2,9 +2,6 @@ include(ExternalProject)
 
 set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
 
-set(FILAMENT_GIT_REPOSITORY "https://github.com/intel-isl/filament.git")
-set(FILAMENT_GIT_TAG "d1d873d27f43ba0cee1674a555cc0f18daac3008")
-
 # Handle build type for single and multi-config generators.
 get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 set(FILAMENT_BUILD_TYPE ${CMAKE_BUILD_TYPE})
@@ -45,8 +42,9 @@ list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
 ExternalProject_Add(
     ext_filament
     PREFIX filament
-    GIT_REPOSITORY ${FILAMENT_GIT_REPOSITORY}
-    GIT_TAG ${FILAMENT_GIT_TAG}
+    URL https://github.com/intel-isl/filament/archive/d1d873d27f43ba0cee1674a555cc0f18daac3008.tar.gz
+    URL_HASH SHA256=00c3f41af0fcfb2df904e1f77934f2678d943ddac5eb889788a5e22590e497bd
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=${FILAMENT_BUILD_TYPE}

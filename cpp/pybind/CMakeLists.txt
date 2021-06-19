@@ -27,12 +27,7 @@ if (${PYTHON_VERSION_MAJOR} EQUAL 2)
 endif()
 
 
-# NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
-if (CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0")
-    pybind11_add_module(pybind NO_EXTRAS)
-else()
-    pybind11_add_module(pybind)
-endif()
+pybind11_add_module(pybind)
 
 add_subdirectory(camera)
 add_subdirectory(core)
@@ -63,6 +58,8 @@ target_include_directories(pybind SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
+
+open3d_show_and_abort_on_warning(pybind)
 open3d_set_global_properties(pybind)
 
 if (WIN32)

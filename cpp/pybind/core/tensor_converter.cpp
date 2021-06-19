@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -255,7 +255,7 @@ Tensor PyHandleToTensor(const py::handle& handle,
 
 SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
     SizeVector shape;
-    for (const py::handle& item : tuple) {
+    for (const py::handle item : tuple) {
         if (std::string(py::str(item.get_type())) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
@@ -269,7 +269,7 @@ SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
 
 SizeVector PyListToSizeVector(const py::list& list) {
     SizeVector shape;
-    for (const py::handle& item : list) {
+    for (const py::handle item : list) {
         if (std::string(py::str(item.get_type())) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
