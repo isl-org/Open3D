@@ -7,8 +7,9 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
-    GIT_REPOSITORY https://github.com/stotko/stdgpu.git
-    GIT_TAG 6005da976fe97c035909da6ea64cd7420949002a
+    URL https://github.com/stotko/stdgpu/archive/6005da976fe97c035909da6ea64cd7420949002a.tar.gz
+    URL_HASH SHA256=fe173abe4b91d1b0197590ccb67da5bf80e1ba538955b872a52f8db46ea051e1
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/stdgpu"
     UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>

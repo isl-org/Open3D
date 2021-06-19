@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,12 @@ int main(int argc, char *argv[]) {
                                       depth_filenames);
     ListFilesInDirectoryWithExtension(data_path + "/image/", "jpg",
                                       color_filenames);
-    assert(depth_filenames.size() == color_filenames.size());
+    if (depth_filenames.size() != color_filenames.size()) {
+        utility::LogError(
+                "The number of depth images {} does not match the number of "
+                "color images {}.",
+                depth_filenames.size(), color_filenames.size());
+    }
     std::sort(depth_filenames.begin(), depth_filenames.end());
     std::sort(color_filenames.begin(), color_filenames.end());
 

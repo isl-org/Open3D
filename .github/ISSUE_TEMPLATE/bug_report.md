@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Create a report to help us improve Open3D.
 title: ''
 labels: bug
 assignees: ''
@@ -8,6 +8,11 @@ assignees: ''
 ---
 
 **IMPORTANT: Please use the following template to report the bug.**
+
+Before submitting:
+
+1. Search for [similar issues](https://github.com/intel-isl/Open3D/issues).
+2. For Python issues, please test with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip). It may be already fixed!
 _____
 
 **Describe the bug**

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -121,6 +121,9 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     }
     geometry::KDTreeFlann kdtree(input);
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);
+    if (spfh == nullptr) {
+        utility::LogError("Internal error: SPFH feature is nullptr.");
+    }
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int)input.points_.size(); i++) {
         const auto &point = input.points_[i];

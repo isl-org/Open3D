@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -164,11 +164,18 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     char buffer[256];
     size_t res = fread(buffer, sizeof(char), 11, fp);
     if (res != 11) {
-        utility::LogError("ParseNumpyHeader: failed fread");
+        utility::LogError("Failed fread.");
     }
-    std::string header = fgets(buffer, 256, fp);
+    std::string header;
+    if (const char* header_chars = fgets(buffer, 256, fp)) {
+        header = std::string(header_chars);
+    } else {
+        utility::LogError(
+                "Numpy file header could not be read. "
+                "Possibly the file is corrupted.");
+    }
     if (header[header.size() - 1] != '\n') {
-        utility::LogError("ParseNumpyHeader: the last char must be '\n'");
+        utility::LogError("The last char must be '\n'.");
     }
 
     size_t loc1, loc2;
@@ -176,9 +183,7 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     // Fortran order.
     loc1 = header.find("fortran_order");
     if (loc1 == std::string::npos) {
-        utility::LogError(
-                "ParseNumpyHeader: failed to find header keyword: "
-                "'fortran_order'");
+        utility::LogError("Failed to find header keyword: 'fortran_order'");
     }
 
     loc1 += 16;
@@ -188,9 +193,7 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     loc1 = header.find("(");
     loc2 = header.find(")");
     if (loc1 == std::string::npos || loc2 == std::string::npos) {
-        utility::LogError(
-                "ParseNumpyHeader: failed to find header keyword: '(' or "
-                "')'");
+        utility::LogError("Failed to find header keyword: '(' or ')'");
     }
 
     std::regex num_regex("[0-9][0-9]*");
@@ -208,8 +211,7 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     // not sure when this applies except for byte array.
     loc1 = header.find("descr");
     if (loc1 == std::string::npos) {
-        utility::LogError(
-                "ParseNumpyHeader: failed to find header keyword: 'descr'");
+        utility::LogError("Failed to find header keyword: 'descr'");
     }
 
     loc1 += 9;
@@ -287,7 +289,7 @@ Tensor NumpyArray::ToTensor() const {
 NumpyArray NumpyArray::Load(const std::string& file_name) {
     FILE* fp = fopen(file_name.c_str(), "rb");
     if (!fp) {
-        utility::LogError("NumpyLoad: Unable to open file {}.", file_name);
+        utility::LogError("Load: Unable to open file {}.", file_name);
     }
     SizeVector shape;
     int64_t word_size;
@@ -298,7 +300,7 @@ NumpyArray NumpyArray::Load(const std::string& file_name) {
     size_t nread = fread(arr.GetDataPtr<char>(), 1,
                          static_cast<size_t>(arr.NumBytes()), fp);
     if (nread != static_cast<size_t>(arr.NumBytes())) {
-        utility::LogError("LoadTheNumpyFile: failed fread");
+        utility::LogError("Load: failed fread");
     }
     fclose(fp);
     return arr;
@@ -306,6 +308,9 @@ NumpyArray NumpyArray::Load(const std::string& file_name) {
 
 void NumpyArray::Save(std::string file_name) const {
     FILE* fp = fopen(file_name.c_str(), "wb");
+    if (!fp) {
+        utility::LogError("Save: Unable to open file {}.", file_name);
+    }
     std::vector<char> header = CreateNumpyHeader(shape_, GetDtype());
     fseek(fp, 0, SEEK_SET);
     fwrite(&header[0], sizeof(char), header.size(), fp);

@@ -14,6 +14,7 @@ util/pip_package/setup.py
 CMakeSettings.json
 
 # Temp directories
+3rdparty_downloads
 build*/
 cmake-build-debug/
 cmake-build-release/

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
         // Get num_points.
         utility::filesystem::CFile file;
-        if (!file.Open(filename, "r")) {
+        if (!file.Open(filename, "rb")) {
             utility::LogWarning("Read PTS failed: unable to open file: {}",
                                 filename);
             return false;

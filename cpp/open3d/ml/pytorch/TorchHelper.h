@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+#include <torch/script.h>
+
 #include <sstream>
 #include <type_traits>
 
 #include "open3d/ml/ShapeChecking.h"
-#include "torch/script.h"
 
 // Macros for checking tensor properties
 #define CHECK_CUDA(x)                                         \
