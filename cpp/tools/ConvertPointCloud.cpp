@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,6 +72,9 @@ void convert(int argc,
     using namespace open3d;
     using namespace open3d::utility::filesystem;
     auto pointcloud_ptr = io::CreatePointCloudFromFile(file_in.c_str());
+    if (!pointcloud_ptr) {
+        utility::LogError("Failed to create point cloud from {}.", file_in);
+    }
     size_t point_num_in = pointcloud_ptr->points_.size();
     bool processed = false;
 

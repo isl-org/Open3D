@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -699,7 +699,7 @@ public:
             out_scalar_t*,
             arg_t,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        assert(false);  // can't use AT_ASSERT in Cuda.
+        OPEN3D_ASSERT(false);
         return arg_t{};
     }
 
@@ -708,7 +708,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<can_acc>::type* = nullptr) const {
-        assert(!final_output_);
+        OPEN3D_ASSERT(!final_output_);
         return (out_scalar_t)value;
     }
 
@@ -720,7 +720,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        assert(false);
+        OPEN3D_ASSERT(false);
         return *out;
     }
 
@@ -732,7 +732,7 @@ public:
 
     OPEN3D_DEVICE void SetResultsToOutput(arg_t value,
                                           index_t base_offset) const {
-        assert(final_output_);
+        OPEN3D_ASSERT(final_output_);
         SetResults(ops_.Project(value), base_offset);
     }
 
@@ -985,7 +985,7 @@ private:
                     cudaMemset(semaphores, 0, config.SemaphoreSize()));
         }
 
-        assert(can_use_32bit_indexing);
+        OPEN3D_ASSERT(can_use_32bit_indexing);
         const char* in_data = (char*)indexer.GetInput(0).data_ptr_;
         char* out_data = (char*)indexer.GetOutput().data_ptr_;
         char* acc_data = acc_buf_ptr->GetAccSlice(out_data);

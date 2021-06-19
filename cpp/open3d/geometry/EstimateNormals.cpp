@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -466,7 +466,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
     // find start node for tree traversal
     // init with node that maximizes z
     double max_z = std::numeric_limits<double>::lowest();
-    size_t v0;
+    size_t v0 = 0;
     for (size_t vidx = 0; vidx < points_.size(); ++vidx) {
         const Eigen::Vector3d &v = points_[vidx];
         if (v(2) > max_z) {
