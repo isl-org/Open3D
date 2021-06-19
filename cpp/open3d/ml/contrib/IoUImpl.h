@@ -28,6 +28,7 @@
 
 #include <math.h>
 
+#include "open3d/Macro.h"
 #include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
@@ -50,7 +51,8 @@ struct Point {
     OPEN3D_HOST_DEVICE Point operator-(const Point &b) const {
         return Point(x_ - b.x_, y_ - b.y_);
     }
-    float x_, y_;
+    float x_ = 0.0f;
+    float y_ = 0.0f;
 };
 
 OPEN3D_HOST_DEVICE inline float Cross(const Point &a, const Point &b) {
@@ -214,6 +216,8 @@ OPEN3D_HOST_DEVICE inline float BoxOverlap(const float *box_a,
             cnt++;
         }
     }
+
+    OPEN3D_ASSERT(cnt != 0 && "Invalid value: cnt==0.");
 
     poly_center.x_ /= cnt;
     poly_center.y_ /= cnt;

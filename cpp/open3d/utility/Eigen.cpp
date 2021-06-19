@@ -179,7 +179,8 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         JTJ_private.setZero();
         JTr_private.setZero();
         VecType J_r;
-        double r;
+        J_r.setZero();
+        double r = 0.0;
         double w = 0.0;
 #pragma omp for nowait
         for (int i = 0; i < iteration_num; i++) {

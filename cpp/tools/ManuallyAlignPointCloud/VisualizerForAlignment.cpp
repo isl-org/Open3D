@@ -203,9 +203,17 @@ void VisualizerForAlignment::KeyPressCallback(
             case GLFW_KEY_K: {
                 if (!utility::filesystem::FileExists(polygon_filename_)) {
                     if (use_dialog_) {
-                        polygon_filename_ = tinyfd_openFileDialog(
-                                "Bounding polygon", "polygon.json", 0, NULL,
-                                NULL, 0);
+                        if (const char *polygon_filename_chars =
+                                    tinyfd_openFileDialog("Bounding polygon",
+                                                          "polygon.json", 0,
+                                                          NULL, NULL, 0)) {
+                            polygon_filename_ =
+                                    std::string(polygon_filename_chars);
+                        } else {
+                            utility::LogError(
+                                    "Internal error: tinyfd_openFileDialog "
+                                    "returned nullptr.");
+                        }
                     } else {
                         polygon_filename_ = "polygon.json";
                     }
@@ -342,12 +350,20 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
     auto source_dis =
             source_copy_ptr_->ComputePointCloudDistance(*target_copy_ptr_);
     f = utility::filesystem::FOpen(source_binname, "wb");
+    if (!f) {
+        utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",
+                          source_binname);
+    }
     fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
     fclose(f);
     io::WritePointCloud(target_filename, *target_copy_ptr_);
     auto target_dis =
             target_copy_ptr_->ComputePointCloudDistance(*source_copy_ptr_);
     f = utility::filesystem::FOpen(target_binname, "wb");
+    if (!f) {
+        utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",
+                          target_binname);
+    }
     fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
     fclose(f);
 }

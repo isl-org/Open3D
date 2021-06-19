@@ -219,6 +219,10 @@ NormalizePointCloud(std::vector<geometry::PointCloud>& point_cloud_vec,
         scale_start = 1.0;
     }
     utility::LogDebug("normalize points :: global scale : {:f}", scale_global);
+    if (scale_global <= 0) {
+        utility::LogError("Invalid scale_global: {}, it must be > 0.",
+                          scale_global);
+    }
 
     for (int i = 0; i < num; ++i) {
         int npti = static_cast<int>(point_cloud_vec[i].points_.size());

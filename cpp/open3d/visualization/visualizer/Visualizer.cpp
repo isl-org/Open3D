@@ -462,9 +462,13 @@ void Visualizer::SetFullScreen(bool fullscreen) {
                           &saved_window_size_(1));
         glfwGetWindowPos(window_, &saved_window_pos_(0), &saved_window_pos_(1));
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-        glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width, mode->height,
-                             mode->refreshRate);
+        if (const GLFWvidmode *mode = glfwGetVideoMode(monitor)) {
+            glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width,
+                                 mode->height, mode->refreshRate);
+        } else {
+            utility::LogError(
+                    "Internal error: glfwGetVideoMode returns nullptr.");
+        }
     }
 }
 
