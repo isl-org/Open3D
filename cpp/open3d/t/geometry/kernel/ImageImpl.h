@@ -152,11 +152,8 @@ void PyrDownDepthCPU
             }
         }
 
-        if (w_sum == 0) {
-            *dst_indexer.GetDataPtr<float>(x, y) = invalid_fill;
-        } else {
-            *dst_indexer.GetDataPtr<float>(x, y) = v_sum / w_sum;
-        }
+        *dst_indexer.GetDataPtr<float>(x, y) =
+                w_sum == 0 ? invalid_fill : v_sum / w_sum;
     });
 }
 

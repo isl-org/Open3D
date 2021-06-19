@@ -164,16 +164,18 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     char buffer[256];
     size_t res = fread(buffer, sizeof(char), 11, fp);
     if (res != 11) {
-        utility::LogError("ParseNumpyHeader: failed fread");
+        utility::LogError("Failed fread.");
     }
     std::string header;
     if (const char* header_chars = fgets(buffer, 256, fp)) {
         header = std::string(header_chars);
     } else {
-        utility::LogError("ParseNumpyHeader: header is nullptr.");
+        utility::LogError(
+                "Numpy file header could not be read. "
+                "Possibly the file is corrupted.");
     }
     if (header[header.size() - 1] != '\n') {
-        utility::LogError("ParseNumpyHeader: the last char must be '\n'");
+        utility::LogError("The last char must be '\n'.");
     }
 
     size_t loc1, loc2;
@@ -181,9 +183,7 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     // Fortran order.
     loc1 = header.find("fortran_order");
     if (loc1 == std::string::npos) {
-        utility::LogError(
-                "ParseNumpyHeader: failed to find header keyword: "
-                "'fortran_order'");
+        utility::LogError("Failed to find header keyword: 'fortran_order'");
     }
 
     loc1 += 16;
@@ -193,9 +193,7 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     loc1 = header.find("(");
     loc2 = header.find(")");
     if (loc1 == std::string::npos || loc2 == std::string::npos) {
-        utility::LogError(
-                "ParseNumpyHeader: failed to find header keyword: '(' or "
-                "')'");
+        utility::LogError("Failed to find header keyword: '(' or ')'");
     }
 
     std::regex num_regex("[0-9][0-9]*");
@@ -213,8 +211,7 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     // not sure when this applies except for byte array.
     loc1 = header.find("descr");
     if (loc1 == std::string::npos) {
-        utility::LogError(
-                "ParseNumpyHeader: failed to find header keyword: 'descr'");
+        utility::LogError("Failed to find header keyword: 'descr'");
     }
 
     loc1 += 9;
