@@ -31,7 +31,7 @@
 
 #include "open3d/geometry/KDTreeFlann.h"
 
-#include <flann/flann.hpp>
+#include <nanoflann.hpp>
 
 #include "open3d/geometry/HalfEdgeTriangleMesh.h"
 #include "open3d/geometry/PointCloud.h"
@@ -120,15 +120,14 @@ int KDTreeFlann::SearchKNN(const T &query,
         size_t(query.rows()) != dimension_ || knn < 0) {
         return -1;
     }
-    flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);
     indices.resize(knn);
     distance2.resize(knn);
-    flann::Matrix<int> indices_flann(indices.data(), query_flann.rows, knn);
-    flann::Matrix<double> dists_flann(distance2.data(), query_flann.rows, knn);
-    int k = flann_index_->knnSearch(query_flann, indices_flann, dists_flann,
-                                    knn, flann::SearchParams(-1, 0.0));
+    std::vector<Eigen::Index> indices_eigen(knn);
+    int k = nanoflann_index_->index->knnSearch(
+            query.data(), knn, indices_eigen.data(), distance2.data());
     indices.resize(k);
     distance2.resize(k);
+    std::copy_n(indices_eigen.begin(), k, indices.begin());
     return k;
 }
 
@@ -145,15 +144,16 @@ int KDTreeFlann::SearchRadius(const T &query,
         size_t(query.rows()) != dimension_) {
         return -1;
     }
-    flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);
-    flann::SearchParams param(-1, 0.0);
-    param.max_neighbors = -1;
-    std::vector<std::vector<int>> indices_vec(1);
-    std::vector<std::vector<double>> dists_vec(1);
-    int k = flann_index_->radiusSearch(query_flann, indices_vec, dists_vec,
-                                       float(radius * radius), param);
-    indices = indices_vec[0];
-    distance2 = dists_vec[0];
+    std::vector<std::pair<Eigen::Index, double>> indices_dists;
+    int k = nanoflann_index_->index->radiusSearch(
+            query.data(), radius * radius, indices_dists,
+            nanoflann::SearchParams(-1, 0.0));
+    indices.resize(k);
+    distance2.resize(k);
+    for (int i = 0; i < k; ++i) {
+        indices[i] = indices_dists[i].first;
+        distance2[i] = indices_dists[i].second;
+    }
     return k;
 }
 
@@ -171,18 +171,18 @@ int KDTreeFlann::SearchHybrid(const T &query,
         size_t(query.rows()) != dimension_ || max_nn < 0) {
         return -1;
     }
-    flann::Matrix<double> query_flann((double *)query.data(), 1, dimension_);
-    flann::SearchParams param(-1, 0.0);
-    param.max_neighbors = max_nn;
-    indices.resize(max_nn);
-    distance2.resize(max_nn);
-    flann::Matrix<int> indices_flann(indices.data(), query_flann.rows, max_nn);
-    flann::Matrix<double> dists_flann(distance2.data(), query_flann.rows,
-                                      max_nn);
-    int k = flann_index_->radiusSearch(query_flann, indices_flann, dists_flann,
-                                       float(radius * radius), param);
+    std::vector<std::pair<Eigen::Index, double>> indices_dists;
+    int k = nanoflann_index_->index->radiusSearch(
+            query.data(), radius * radius, indices_dists,
+            nanoflann::SearchParams(-1, 0.0));
+    k = std::min(k, max_nn);
     indices.resize(k);
     distance2.resize(k);
+    for (int i = 0; i < k; ++i) {
+        indices[i] = indices_dists[i].first;
+        distance2[i] = indices_dists[i].second;
+    }
+
     return k;
 }
 
@@ -196,11 +196,10 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data) {
     data_.resize(dataset_size_ * dimension_);
     memcpy(data_.data(), data.data(),
            dataset_size_ * dimension_ * sizeof(double));
-    flann_dataset_.reset(new flann::Matrix<double>((double *)data_.data(),
-                                                   dataset_size_, dimension_));
-    flann_index_.reset(new flann::Index<flann::L2<double>>(
-            *flann_dataset_, flann::KDTreeSingleIndexParams(15)));
-    flann_index_->buildIndex();
+    data_interface_.reset(new Eigen::Map<const Eigen::MatrixXd>(data));
+    nanoflann_index_.reset(
+            new KDTree_t(dimension_, std::cref(*data_interface_), 15));
+    nanoflann_index_->index->buildIndex();
     return true;
 }
 
