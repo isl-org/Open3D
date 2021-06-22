@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/utility/Logging.h"
+
 #include <algorithm>
 #include <cerrno>
 #include <climits>
@@ -35,8 +37,6 @@
 #include <ctime>
 #include <sstream>
 #include <string>
-
-#include "open3d/utility/Logging.h"
 
 #ifdef _WIN32
 #include <windows.h>
