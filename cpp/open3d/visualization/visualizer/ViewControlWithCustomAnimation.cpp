@@ -27,6 +27,7 @@
 #include "open3d/visualization/visualizer/ViewControlWithCustomAnimation.h"
 
 #include "open3d/io/IJsonConvertibleIO.h"
+#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {

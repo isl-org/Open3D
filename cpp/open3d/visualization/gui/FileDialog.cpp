@@ -405,7 +405,7 @@ void FileDialog::OnDone() {
                 }
             }
         }
-        std::cout << "[o3d] name: '" << name << "'" << std::endl;
+        utility::LogInfo("[o3d] name: {}.", name);
         this->impl_->on_done_((dir + "/" + name).c_str());
     } else {
         utility::LogError("FileDialog: need to call SetOnDone()");

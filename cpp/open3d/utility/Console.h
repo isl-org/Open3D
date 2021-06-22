@@ -26,30 +26,39 @@
 
 #pragma once
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include <Eigen/Core>
+#include <string>
+#include <vector>
 
 namespace open3d {
-namespace core {
-namespace kernel {
+namespace utility {
 
-inline int GetMaxThreads() {
-#ifdef _OPENMP
-    return omp_get_max_threads();
-#else
-    return 1;
-#endif
-}
+std::string GetProgramOptionAsString(int argc,
+                                     char **argv,
+                                     const std::string &option,
+                                     const std::string &default_value = "");
 
-inline bool InParallel() {
-#ifdef _OPENMP
-    return omp_in_parallel();
-#else
-    return false;
-#endif
-}
+int GetProgramOptionAsInt(int argc,
+                          char **argv,
+                          const std::string &option,
+                          const int default_value = 0);
 
-}  // namespace kernel
-}  // namespace core
+double GetProgramOptionAsDouble(int argc,
+                                char **argv,
+                                const std::string &option,
+                                const double default_value = 0.0);
+
+Eigen::VectorXd GetProgramOptionAsEigenVectorXd(
+        int argc,
+        char **argv,
+        const std::string &option,
+        const Eigen::VectorXd default_value = Eigen::VectorXd::Zero(0));
+
+bool ProgramOptionExists(int argc, char **argv, const std::string &option);
+
+bool ProgramOptionExistsAny(int argc,
+                            char **argv,
+                            const std::vector<std::string> &options);
+
+}  // namespace utility
 }  // namespace open3d

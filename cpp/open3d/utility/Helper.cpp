@@ -26,6 +26,8 @@
 
 #include "open3d/utility/Helper.h"
 
+#include <fmt/chrono.h>
+
 #include <algorithm>
 #include <cctype>
 #include <random>
@@ -118,6 +120,11 @@ int UniformRandInt(const int min, const int max) {
     static thread_local std::mt19937 generator(std::random_device{}());
     std::uniform_int_distribution<int> distribution(min, max);
     return distribution(generator);
+}
+
+std::string GetCurrentTimeStamp() {
+    std::time_t t = std::time(nullptr);
+    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
 }
 
 }  // namespace utility
