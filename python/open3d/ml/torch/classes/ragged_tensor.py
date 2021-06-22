@@ -102,7 +102,6 @@ class RaggedTensor:
         elif isinstance(row_splits, torch.Tensor) and copy:
             row_splits = row_splits.clone()
 
-        row_splits = row_splits.to(torch.int64)
         r_tensor = torch.classes.my_classes.RaggedTensor().from_row_splits(
             values, row_splits, validate)
         return cls(r_tensor, internal=True)
@@ -197,6 +196,11 @@ class RaggedTensor:
     def convert_to_tensor(self, value):
         """Converts scalar/tensor/RaggedTensor to torch.Tensor"""
         if isinstance(value, RaggedTensor):
+            if self.row_splits.shape != value.row_splits.shape or torch.any(
+                    self.row_splits != value.row_splits).item():
+                raise ValueError(
+                    f"Incompatible shape : {self.row_splits} and {value.row_splits}"
+                )
             return value.values
         elif isinstance(value, torch.Tensor):
             return value

@@ -38,7 +38,7 @@ pytestmark = mltest.default_marks
 dtypes = pytest.mark.parametrize('dtype',
                                  [np.int32, np.int64, np.float32, np.float64])
 
-# this op is only available for torch
+# this class is only available for torch
 
 
 @dtypes
@@ -59,6 +59,27 @@ def test_creation(dtype, ml):
     for i, tensor in enumerate(r_tensor):
         np.testing.assert_equal(mltest.to_numpy(tensor),
                                 values[row_splits[i]:row_splits[i + 1]])
+
+    # Incompatible tensors.
+    # Non zero first element.
+    row_splits = np.array([1, 2, 4, 4, 5, 12, 13], dtype=np.int64)
+    with np.testing.assert_raises(RuntimeError):
+        ml.classes.RaggedTensor.from_row_splits(values, row_splits)
+
+    # Rank > 1.
+    row_splits = np.array([[0, 2, 4, 4, 5, 12, 13]], dtype=np.int64)
+    with np.testing.assert_raises(RuntimeError):
+        ml.classes.RaggedTensor.from_row_splits(values, row_splits)
+
+    # Not increasing monotonically.
+    row_splits = np.array([[0, 2, 4, 6, 5, 12, 13]], dtype=np.int64)
+    with np.testing.assert_raises(RuntimeError):
+        ml.classes.RaggedTensor.from_row_splits(values, row_splits)
+
+    # Wrong dtype.
+    row_splits = np.array([0, 2, 4, 4, 5, 12, 13], dtype=np.float32)
+    with np.testing.assert_raises(RuntimeError):
+        ml.classes.RaggedTensor.from_row_splits(values, row_splits)
 
 
 # test with more dimensions
@@ -120,6 +141,7 @@ def test_backprop(ml):
 @dtypes
 @mltest.parametrize.ml_torch_only
 def test_binary_ew_ops(dtype, ml):
+    # Binary Ops.
     t_1 = torch.from_numpy(
         np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                  dtype=dtype)).to(ml.device)
@@ -146,6 +168,7 @@ def test_binary_ew_ops(dtype, ml):
     np.testing.assert_equal((a // b).values.cpu().numpy(),
                             np.array([0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0]))
 
+    # Assignment Ops.
     a = ml.classes.RaggedTensor.from_row_splits(t_1, row_splits)
     a += b
     np.testing.assert_equal(
@@ -168,3 +191,26 @@ def test_binary_ew_ops(dtype, ml):
     a //= b
     np.testing.assert_equal(a.values.cpu().numpy(),
                             np.array([0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0]))
+
+    # Failure cases with incompatible shape.
+    # Different row_splits.
+    row_splits = [0, 4, 5, 13]
+    a = ml.classes.RaggedTensor.from_row_splits(t_1, row_splits)
+    row_splits = [0, 4, 6, 13]
+    b = ml.classes.RaggedTensor.from_row_splits(t_2, row_splits)
+
+    with np.testing.assert_raises(ValueError):
+        c = a + b
+    with np.testing.assert_raises(ValueError):
+        a += b
+
+    # Different length
+    row_splits = [0, 4, 5, 13]
+    a = ml.classes.RaggedTensor.from_row_splits(t_1, row_splits)
+    row_splits = [0, 4, 13]
+    b = ml.classes.RaggedTensor.from_row_splits(t_2, row_splits)
+
+    with np.testing.assert_raises(ValueError):
+        c = a + b
+    with np.testing.assert_raises(ValueError):
+        a += b
