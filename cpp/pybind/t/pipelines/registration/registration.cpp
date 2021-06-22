@@ -31,7 +31,7 @@
 
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
 #include "pybind/t/pipelines/registration/registration.h"
 

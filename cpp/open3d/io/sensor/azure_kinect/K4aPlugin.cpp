@@ -42,8 +42,8 @@
 
 #include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
 #include "open3d/io/sensor/azure_kinect/PluginMacros.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace io {

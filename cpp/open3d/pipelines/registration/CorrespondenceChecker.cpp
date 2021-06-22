@@ -29,7 +29,7 @@
 #include <Eigen/Dense>
 
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace pipelines {

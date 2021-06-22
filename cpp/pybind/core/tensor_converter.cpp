@@ -27,7 +27,7 @@
 #include "pybind/core/tensor_converter.h"
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif

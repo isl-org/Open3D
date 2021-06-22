@@ -27,7 +27,7 @@
 #include "pybind/core/core.h"
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/core/nns/nearest_neighbor_search.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"

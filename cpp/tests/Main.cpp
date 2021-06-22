@@ -34,7 +34,7 @@
 #include "open3d/core/CUDAState.cuh"
 #endif
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "tests/UnitTest.h"
 
 #ifdef BUILD_CUDA_MODULE

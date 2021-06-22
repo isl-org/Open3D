@@ -30,8 +30,8 @@
 
 #include "open3d/camera/PinholeCameraTrajectory.h"
 #include "open3d/io/IJsonConvertibleIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/visualizer/ViewControlWithCustomAnimation.h"
 
 namespace open3d {

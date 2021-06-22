@@ -28,8 +28,8 @@
 
 #include <cmath>
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Checkbox.h"
 #include "open3d/visualization/gui/ColorEdit.h"
 #include "open3d/visualization/gui/Combobox.h"

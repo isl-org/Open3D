@@ -27,7 +27,7 @@
 #pragma once
 
 #include "open3d/core/Dtype.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 // TODO: dispatch more combinations.
 #define DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(DTYPE, DIM, ...)                  \
