@@ -42,8 +42,6 @@ else()
 endif()
 message(STATUS "libturbojpeg: WITH_CRT_DLL=${WITH_CRT_DLL}")
 
-set(JPEG_TURBO_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libjpeg-turbo-install)
-
 # If MSVC, the OUTPUT_NAME was set to turbojpeg-static
 if(MSVC)
     set(lib_name "turbojpeg-static")
@@ -54,21 +52,22 @@ endif()
 ExternalProject_Add(
     ext_turbojpeg
     PREFIX turbojpeg
-    SOURCE_DIR ${Open3D_3RDPARTY_DIR}/libjpeg-turbo/libjpeg-turbo
+    URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/2.0.6.tar.gz
+    URL_HASH SHA256=005aee2fcdca252cee42271f7f90574dda64ca6505d9f8b86ae61abc2b426371
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/libjpeg-turbo"
     UPDATE_COMMAND ""
-    CMAKE_GENERATOR ${CMAKE_GENERATOR}
-    CMAKE_GENERATOR_PLATFORM ${CMAKE_GENERATOR_PLATFORM}
-    CMAKE_GENERATOR_TOOLSET ${CMAKE_GENERATOR_TOOLSET}
     CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DWITH_CRT_DLL=${WITH_CRT_DLL}
         -DENABLE_STATIC=ON
         -DENABLE_SHARED=OFF
         -DWITH_SIMD=${WITH_SIMD}
-        -DCMAKE_INSTALL_PREFIX=${JPEG_TURBO_INSTALL_PREFIX}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
-        ${JPEG_TURBO_INSTALL_PREFIX}/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
-# For linking with Open3D's after installation
+ExternalProject_Get_Property(ext_turbojpeg INSTALL_DIR)
+set(JPEG_TURBO_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
+set(JPEG_TURBO_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(JPEG_TURBO_LIBRARIES ${lib_name})
