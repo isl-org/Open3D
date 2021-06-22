@@ -158,42 +158,46 @@ class RaggedTensor:
         return len(self.r_tensor)
 
     def __add__(self, other):
-        return RaggedTensor(self.r_tensor + self.convert_to_tensor(other), True)
+        return RaggedTensor(self.r_tensor + self.__convert_to_tensor(other),
+                            True)
 
     def __iadd__(self, other):
-        self.r_tensor += self.convert_to_tensor(other)
+        self.r_tensor += self.__convert_to_tensor(other)
         return self
 
     def __sub__(self, other):
-        return RaggedTensor(self.r_tensor - self.convert_to_tensor(other), True)
+        return RaggedTensor(self.r_tensor - self.__convert_to_tensor(other),
+                            True)
 
     def __isub__(self, other):
-        self.r_tensor -= self.convert_to_tensor(other)
+        self.r_tensor -= self.__convert_to_tensor(other)
         return self
 
     def __mul__(self, other):
-        return RaggedTensor(self.r_tensor * self.convert_to_tensor(other), True)
+        return RaggedTensor(self.r_tensor * self.__convert_to_tensor(other),
+                            True)
 
     def __imul__(self, other):
-        self.r_tensor *= self.convert_to_tensor(other)
+        self.r_tensor *= self.__convert_to_tensor(other)
         return self
 
     def __truediv__(self, other):
-        return RaggedTensor(self.r_tensor / self.convert_to_tensor(other), True)
+        return RaggedTensor(self.r_tensor / self.__convert_to_tensor(other),
+                            True)
 
     def __itruediv__(self, other):
-        self.r_tensor /= self.convert_to_tensor(other)
+        self.r_tensor /= self.__convert_to_tensor(other)
         return self
 
     def __floordiv__(self, other):
-        return RaggedTensor(self.r_tensor // self.convert_to_tensor(other),
+        return RaggedTensor(self.r_tensor // self.__convert_to_tensor(other),
                             True)
 
     def __ifloordiv__(self, other):
-        self.r_tensor //= self.convert_to_tensor(other)
+        self.r_tensor //= self.__convert_to_tensor(other)
         return self
 
-    def convert_to_tensor(self, value):
+    def __convert_to_tensor(self, value):
         """Converts scalar/tensor/RaggedTensor to torch.Tensor"""
         if isinstance(value, RaggedTensor):
             if self.row_splits.shape != value.row_splits.shape or torch.any(
@@ -205,6 +209,6 @@ class RaggedTensor:
         elif isinstance(value, torch.Tensor):
             return value
         elif isinstance(value, (int, float, bool)):
-            return torch.full(self.values.shape, value)
+            return torch.Tensor([value]).to(type(value))
         else:
             raise ValueError(f"Unknown type : {type(value)}")
