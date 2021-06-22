@@ -200,7 +200,7 @@ def test_binary_ew_ops(dtype, ml):
     b = ml.classes.RaggedTensor.from_row_splits(t_2, row_splits)
 
     with np.testing.assert_raises(ValueError):
-        c = a + b
+        a + b
     with np.testing.assert_raises(ValueError):
         a += b
 
@@ -211,6 +211,6 @@ def test_binary_ew_ops(dtype, ml):
     b = ml.classes.RaggedTensor.from_row_splits(t_2, row_splits)
 
     with np.testing.assert_raises(ValueError):
-        c = a + b
+        a + b
     with np.testing.assert_raises(ValueError):
         a += b
