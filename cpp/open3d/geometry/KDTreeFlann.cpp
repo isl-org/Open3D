@@ -171,18 +171,16 @@ int KDTreeFlann::SearchHybrid(const T &query,
         size_t(query.rows()) != dimension_ || max_nn < 0) {
         return -1;
     }
-    std::vector<std::pair<Eigen::Index, double>> indices_dists;
-    int k = nanoflann_index_->index->radiusSearch(
-            query.data(), radius * radius, indices_dists,
-            nanoflann::SearchParams(-1, 0.0));
-    k = std::min(k, max_nn);
+    distance2.resize(max_nn);
+    std::vector<Eigen::Index> indices_eigen(max_nn);
+    int k = nanoflann_index_->index->knnSearch(
+            query.data(), max_nn, indices_eigen.data(), distance2.data());
+    k = std::distance(distance2.begin(),
+                      std::lower_bound(distance2.begin(), distance2.begin() + k,
+                                       radius * radius));
     indices.resize(k);
     distance2.resize(k);
-    for (int i = 0; i < k; ++i) {
-        indices[i] = indices_dists[i].first;
-        distance2[i] = indices_dists[i].second;
-    }
-
+    std::copy_n(indices_eigen.begin(), k, indices.begin());
     return k;
 }
 
