@@ -69,7 +69,9 @@ jobs:
       - name: Install dependencies
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
-          sudo apt-get --yes install ccache
+          wget https://github.com/intel-isl/open3d_downloads/releases/download/ccache/ccache
+          chmod +x ccache
+          sudo mv ccache /usr/local/bin
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build
@@ -142,7 +144,9 @@ jobs:
         shell: bash -l {0}
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
-          sudo apt-get --yes install ccache
+          wget https://github.com/intel-isl/open3d_downloads/releases/download/ccache/ccache
+          chmod +x ccache
+          sudo mv ccache /usr/local/bin
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           source util/ci_utils.sh
           echo

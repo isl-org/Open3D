@@ -33,10 +33,6 @@
 	path = 3rdparty/tinygltf/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
     shallow = true
-[submodule "3rdparty/libjpeg-turbo/libjpeg-turbo"]
-	path = 3rdparty/libjpeg-turbo/libjpeg-turbo
-	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
-    shallow = true
 [submodule "3rdparty/PoissonRecon/Open3D-PoissonRecon"]
 	path = 3rdparty/PoissonRecon/PoissonRecon
 	url = https://github.com/intel-isl/Open3D-PoissonRecon.git
@@ -56,10 +52,6 @@
 [submodule "3rdparty/cutlass"]
 	path = 3rdparty/cutlass
 	url = https://github.com/NVIDIA/cutlass
-    shallow = true
-[submodule "3rdparty/filament/filament"]
-	path = 3rdparty/filament/filament
-	url = https://github.com/google/filament.git
     shallow = true
 [submodule "3rdparty/imgui"]
 	path = 3rdparty/imgui

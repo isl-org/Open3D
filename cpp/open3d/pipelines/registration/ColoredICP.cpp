@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -257,10 +257,16 @@ RegistrationResult RegistrationColoredICP(
                 "ColoredICP requires source pointcloud to have colors.");
     }
 
-    auto target_c = InitializePointCloudForColoredICP(
-            target, geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30));
-    return RegistrationICP(source, *target_c, max_distance, init, estimation,
-                           criteria);
+    if (auto target_c = InitializePointCloudForColoredICP(
+                target,
+                geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30))) {
+        return RegistrationICP(source, *target_c, max_distance, init,
+                               estimation, criteria);
+    } else {
+        utility::LogError(
+                "Internal error: InitializePointCloudForColoredICP returns "
+                "nullptr.");
+    };
 }
 
 }  // namespace registration
