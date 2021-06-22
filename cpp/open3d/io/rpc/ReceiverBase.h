@@ -30,7 +30,7 @@
 #include <mutex>
 #include <thread>
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace zmq {
 class message_t;

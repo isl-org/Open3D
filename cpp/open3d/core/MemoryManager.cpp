@@ -31,8 +31,8 @@
 
 #include "open3d/core/Blob.h"
 #include "open3d/core/Device.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {

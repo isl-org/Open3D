@@ -29,7 +29,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/slac/ControlGrid.h"
 #include "open3d/t/pipelines/slac/SLACOptimizer.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
 
 namespace open3d {

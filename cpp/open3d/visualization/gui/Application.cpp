@@ -40,8 +40,8 @@
 #include <unordered_set>
 
 #include "open3d/geometry/Image.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/GLFWWindowSystem.h"

@@ -27,7 +27,7 @@
 #include "open3d/visualization/rendering/Renderer.h"
 
 #include "open3d/geometry/Image.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
 #include "open3d/visualization/rendering/Scene.h"

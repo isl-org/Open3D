@@ -34,8 +34,8 @@
 #include "open3d/pipelines/registration/GlobalOptimizationConvergenceCriteria.h"
 #include "open3d/pipelines/registration/GlobalOptimizationMethod.h"
 #include "open3d/pipelines/registration/PoseGraph.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/Timer.h"
 
 namespace open3d {

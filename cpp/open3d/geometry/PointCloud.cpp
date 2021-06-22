@@ -35,8 +35,8 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {

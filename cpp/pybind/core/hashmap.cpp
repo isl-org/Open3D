@@ -31,7 +31,7 @@
 
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/core/core.h"
 #include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
