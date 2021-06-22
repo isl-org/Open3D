@@ -155,6 +155,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
                 holder_.get());
 
         nanoflann::SearchParams params;
+        params.sorted = sort;
 
         // Check if the raii has negative values.
         Tensor below_zero = radii.Le(0);
@@ -227,7 +228,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         Tensor radii(std::vector<scalar_t>(num_query_points,
                                            static_cast<scalar_t>(radius)),
                      {num_query_points}, dtype);
-        result = SearchRadius(query_points, radii);
+        result = SearchRadius(query_points, radii, sort);
     });
     return result;
 };
