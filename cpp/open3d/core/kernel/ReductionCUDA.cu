@@ -30,6 +30,7 @@
 #include <thrust/tuple.h>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <sstream>
 #include <tuple>

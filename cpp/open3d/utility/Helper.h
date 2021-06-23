@@ -167,5 +167,8 @@ T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
     return static_cast<T>(1. / p * n);
 }
 
+/// Returns current time stamp.
+std::string GetCurrentTimeStamp();
+
 }  // namespace utility
 }  // namespace open3d
