@@ -34,6 +34,7 @@
 #include <sstream>
 #include <tuple>
 #include <type_traits>
+#include <array>
 
 #include "open3d/core/Blob.h"
 #include "open3d/core/CUDAState.cuh"
