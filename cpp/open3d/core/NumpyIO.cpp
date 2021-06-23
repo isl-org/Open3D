@@ -290,6 +290,7 @@ NumpyArray NumpyArray::Load(const std::string& file_name) {
     FILE* fp = fopen(file_name.c_str(), "rb");
     if (!fp) {
         utility::LogError("Load: Unable to open file {}.", file_name);
+        assert(fp);
     }
     SizeVector shape;
     int64_t word_size;
@@ -310,6 +311,7 @@ void NumpyArray::Save(std::string file_name) const {
     FILE* fp = fopen(file_name.c_str(), "wb");
     if (!fp) {
         utility::LogError("Save: Unable to open file {}.", file_name);
+        return;
     }
     std::vector<char> header = CreateNumpyHeader(shape_, GetDtype());
     fseek(fp, 0, SEEK_SET);
