@@ -407,18 +407,12 @@ if(NOT USE_SYSTEM_EIGEN3)
 endif()
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${EIGEN3_TARGET}")
 
-# Flann
-if(USE_SYSTEM_FLANN)
-    pkg_config_3rdparty_library(3rdparty_flann flann)
-endif()
-if(NOT USE_SYSTEM_FLANN OR NOT 3rdparty_flann_FOUND)
-    build_3rdparty_library(3rdparty_flann DIRECTORY flann)
-endif()
-set(FLANN_TARGET "3rdparty_flann")
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${FLANN_TARGET}")
-
 # Nanoflann
-build_3rdparty_library(3rdparty_nanoflann DIRECTORY nanoflann INCLUDE_DIRS include/ INCLUDE_ALL)
+include(${Open3D_3RDPARTY_DIR}/nanoflann/nanoflann.cmake)
+import_3rdparty_library(3rdparty_nanoflann
+    INCLUDE_DIRS ${NANOFLANN_INCLUDE_DIRS}
+)
+add_dependencies(3rdparty_nanoflann ext_nanoflann)
 set(NANOFLANN_TARGET "3rdparty_nanoflann")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${NANOFLANN_TARGET}")
 
