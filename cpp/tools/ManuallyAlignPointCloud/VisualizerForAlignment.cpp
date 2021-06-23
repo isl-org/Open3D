@@ -353,6 +353,7 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
     if (!f) {
         utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",
                           source_binname);
+        return;
     }
     fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
     fclose(f);
@@ -363,6 +364,7 @@ void VisualizerForAlignment::EvaluateAlignmentAndSave(
     if (!f) {
         utility::LogError("EvaluateAlignmentAndSave: Unable to open file {}.",
                           target_binname);
+        return;
     }
     fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
     fclose(f);
