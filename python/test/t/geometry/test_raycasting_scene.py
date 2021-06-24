@@ -60,7 +60,7 @@ def test_cast_lots_of_rays():
     triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
-    geom_id = scene.add_triangles(vertices, triangles)
+    _ = scene.add_triangles(vertices, triangles)
 
     rs = np.random.RandomState(123)
     rays = o3d.core.Tensor.from_numpy(rs.rand(7654321, 6).astype(np.float32))

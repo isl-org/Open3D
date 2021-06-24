@@ -210,6 +210,16 @@ std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
         const core::Tensor& rays) {
     rays.AssertDevice(impl_->tensor_device);
     rays.AssertShapeCompatible({utility::nullopt, 6});
+    if (rays.GetShape().size() < 2) {
+        utility::LogError("rays Tensor ndim is {} but expected ndim >= 2",
+                          rays.GetShape().size());
+    }
+    if (rays.GetShape().back() != 6) {
+        utility::LogError(
+                "The last dimension of the rays Tensor must be 6 but got "
+                "Tensor with shape {}",
+                rays.GetShape().ToString());
+    }
     rays.AssertDtype(core::Dtype::FromType<float>());
 
     auto shape = rays.GetShape();
