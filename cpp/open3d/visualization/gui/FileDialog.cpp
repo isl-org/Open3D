@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,9 +35,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Combobox.h"
 #include "open3d/visualization/gui/Label.h"
@@ -405,7 +405,7 @@ void FileDialog::OnDone() {
                 }
             }
         }
-        std::cout << "[o3d] name: '" << name << "'" << std::endl;
+        utility::LogInfo("[o3d] name: {}.", name);
         this->impl_->on_done_((dir + "/" + name).c_str());
     } else {
         utility::LogError("FileDialog: need to call SetOnDone()");

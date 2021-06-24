@@ -52,7 +52,6 @@ option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF
 # 3rd-party build options
 option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"           OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
-option(USE_SYSTEM_FLANN           "Use system pre-installed flann"           OFF)
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
 option(USE_SYSTEM_GLEW            "Use system pre-installed glew"            OFF)
 option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"            OFF)
@@ -164,10 +163,6 @@ if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
 endif()
 if(BUILD_WEBRTC AND LINUX_AARCH64)
     message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
-endif()
-if(BUILD_WEBRTC AND MSVC AND (BUILD_SHARED OR NOT STATIC_WINDOWS_RUNTIME))
-    message(FATAL_ERROR "Please use STATIC_WINDOWS_RUNTIME=ON and "
-    "BUILD_SHARED=OFF to build WebRTC with MSVC")
 endif()
 if(BUILD_WEBRTC AND NOT BUILD_GUI)
     message(FATAL_ERROR "BUILD_WEBRTC=ON requires BUILD_GUI=ON")
@@ -373,17 +368,19 @@ if(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
 
     if(BUILD_COMMON_CUDA_ARCHS)
-        # Build with all known (and deprecated) architectures.
+        # Build with all supported architectures for previous 2 generations and
+        # M0 (minor=0) architectures for previous generations (inluding
+        # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
+        # This is a tradeoff between binary size / build time and runtime on
+        # older architectures.
         # See https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility.
+        # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
         if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
-            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
-                60-real 61-real 62-real 70-real 72-real 75-real 80-real 86)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 50-real 60-real 70-real 72-real 75-real 80-real 86)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
-                60-real 61-real 62-real 70-real 72-real 75-real 80)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 50-real 60-real 70-real 72-real 75-real 80)
         else()
-            set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real
-                52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
+            set(CMAKE_CUDA_ARCHITECTURES 30-real 50-real 60-real 70-real 72-real 75)
         endif()
     else()
         if(CMAKE_CUDA_ARCHITECTURES)
@@ -431,7 +428,7 @@ if(BUILD_CUDA_MODULE)
     message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
 
-    if (CMAKE_CUDA_COMPILER MATCHES "NVCC" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
+    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
         message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
     endif()
 endif ()
@@ -748,7 +745,6 @@ set(deps
     EIGEN3
     FAISS
     FILAMENT
-    FLANN
     FMT
     GLEW
     GLFW

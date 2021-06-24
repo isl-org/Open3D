@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include <Eigen/Geometry>
 #include <Eigen/Sparse>
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace utility {
@@ -179,7 +179,8 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
         JTJ_private.setZero();
         JTr_private.setZero();
         VecType J_r;
-        double r;
+        J_r.setZero();
+        double r = 0.0;
         double w = 0.0;
 #pragma omp for nowait
         for (int i = 0; i < iteration_num; i++) {
