@@ -1,4 +1,6 @@
-add_library(tpipelines OBJECT)
+add_subdirectory(kernel)
+
+add_library(tpipelines OBJECT $<TARGET_OBJECTS:tpipelines_kernel>)
 
 target_sources(tpipelines PRIVATE
     kernel/ComputeTransform.cpp
@@ -45,7 +47,6 @@ open3d_link_3rdparty_libraries(tpipelines)
 
 if(BUILD_CUDA_MODULE)
     target_include_directories(tpipelines SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-
     find_package(CUB REQUIRED)
     target_include_directories(tpipelines SYSTEM PRIVATE ${CUB_INCLUDE_DIR})
 endif()

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
         if (file_in == nullptr) {
             printf("ShaderLinker:\n"
                    "Cannot open file %s\n",
-                   argv[2]);
+                   argv[i]);
             continue;
         }
 
@@ -76,6 +76,8 @@ int main(int argc, char **argv) {
             fprintf(file_out, "%s", buffer);
         }
         fprintf(file_out, "\n");
+
+        fclose(file_in);
     }
 
     fprintf(file_out, "// clang-format on\n");

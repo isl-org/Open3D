@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -165,6 +165,10 @@ int main(int argc, char **argv) {
         auto image_ptr = io::CreateImageFromFile(depth_filename);
         auto pointcloud_ptr = geometry::PointCloud::CreateFromDepthImage(
                 *image_ptr, parameters.intrinsic_, parameters.extrinsic_);
+        if (pointcloud_ptr == nullptr) {
+            utility::LogWarning("Failed creating from depth image.");
+            return 1;
+        }
         if (!visualizer.AddGeometry(pointcloud_ptr)) {
             utility::LogWarning("Failed adding depth image.");
             return 1;
