@@ -29,6 +29,7 @@
 #include <cstddef>
 #include <map>
 #include <mutex>
+#include <unordered_map>
 
 #include "open3d/core/Device.h"
 
@@ -47,19 +48,21 @@ public:
         None = 2,
     };
 
-    static MemoryManagerStatistic& getInstance();
+    static MemoryManagerStatistic& GetInstance();
 
     MemoryManagerStatistic(const MemoryManagerStatistic&) = delete;
     MemoryManagerStatistic& operator=(MemoryManagerStatistic&) = delete;
 
-    /// Always print the statistics at the end of the program.
-    ~MemoryManagerStatistic() { Print(); }
+    ~MemoryManagerStatistic();
 
-    void setPrintLevel(PrintLevel level);
+    void SetPrintLevel(PrintLevel level);
+    void SetPrintAtProgramEnd(bool print);
     void Print() const;
 
-    void IncrementCountMalloc(const Device& device);
-    void IncrementCountFree(const Device& device);
+    void IncrementCountMalloc(const Device& device,
+                              void* ptr,
+                              size_t byte_size);
+    void IncrementCountFree(const Device& device, void* ptr);
 
 private:
     MemoryManagerStatistic() = default;
@@ -67,6 +70,7 @@ private:
     struct MemoryStatistics {
         size_t count_malloc_ = 0;
         size_t count_free_ = 0;
+        std::unordered_map<void*, size_t> active_allocations_;
     };
 
     struct DeviceComparator {
@@ -77,6 +81,7 @@ private:
 
     /// Only print unbalanced statistics by default.
     PrintLevel level_ = PrintLevel::Unbalanced;
+    bool print_at_program_end_ = true;
 
     std::mutex statistics_mutex_;
     std::map<Device, MemoryStatistics, DeviceComparator> statistics_;

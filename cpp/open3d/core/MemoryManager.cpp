@@ -39,13 +39,15 @@ namespace open3d {
 namespace core {
 
 void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
-    MemoryManagerStatistic::getInstance().IncrementCountMalloc(device);
-    return GetDeviceMemoryManager(device)->Malloc(byte_size, device);
+    void* ptr = GetDeviceMemoryManager(device)->Malloc(byte_size, device);
+    MemoryManagerStatistic::GetInstance().IncrementCountMalloc(device, ptr,
+                                                               byte_size);
+    return ptr;
 }
 
 void MemoryManager::Free(void* ptr, const Device& device) {
-    MemoryManagerStatistic::getInstance().IncrementCountFree(device);
-    return GetDeviceMemoryManager(device)->Free(ptr, device);
+    GetDeviceMemoryManager(device)->Free(ptr, device);
+    MemoryManagerStatistic::GetInstance().IncrementCountFree(device, ptr);
 }
 
 void MemoryManager::Memcpy(void* dst_ptr,

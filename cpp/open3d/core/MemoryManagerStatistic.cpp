@@ -27,31 +27,46 @@
 #include "open3d/core/MemoryManagerStatistic.h"
 
 #include <algorithm>
+#include <numeric>
 
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
-MemoryManagerStatistic& MemoryManagerStatistic::getInstance() {
+MemoryManagerStatistic& MemoryManagerStatistic::GetInstance() {
     // Ensure the static Logger instance is instantiated before the
     // MemoryManagerStatistic instance.
     // Since destruction of static instances happens in reverse order,
     // this guarantees that the Logger can be used at any point in time.
-    open3d::utility::Logger::GetInstance();
+    utility::Logger::GetInstance();
 
     static MemoryManagerStatistic instance;
     return instance;
 }
 
-void MemoryManagerStatistic::setPrintLevel(PrintLevel level) { level_ = level; }
+MemoryManagerStatistic::~MemoryManagerStatistic() {
+    if (print_at_program_end_) {
+        // Always use the default print function (print to the console).
+        // Custom print functions like py::print may not work reliably
+        // at this point in time.
+        utility::Logger::GetInstance().ResetPrintFunction();
+        Print();
+    }
+}
+
+void MemoryManagerStatistic::SetPrintLevel(PrintLevel level) { level_ = level; }
+
+void MemoryManagerStatistic::SetPrintAtProgramEnd(bool print) {
+    print_at_program_end_ = print;
+}
 
 void MemoryManagerStatistic::Print() const {
     if (level_ == PrintLevel::None) {
         return;
     }
 
-    auto is_unbalanced = [](const auto& value_pair) {
+    auto is_unbalanced = [](const auto& value_pair) -> bool {
         return value_pair.second.count_malloc_ != value_pair.second.count_free_;
     };
 
@@ -61,37 +76,51 @@ void MemoryManagerStatistic::Print() const {
         return;
     }
 
-    open3d::utility::LogInfo("Memory Statistics: (Device) (#Malloc) (#Free)");
-    open3d::utility::LogInfo("---------------------------------------------");
+    utility::LogInfo("Memory Statistics: (Device) (#Malloc) (#Free)");
+    utility::LogInfo("---------------------------------------------");
     for (const auto& value_pair : statistics_) {
         if (level_ == PrintLevel::Unbalanced && !is_unbalanced(value_pair)) {
             continue;
         }
 
         if (is_unbalanced(value_pair)) {
-            open3d::utility::LogWarning("{}: {} {} --> {}",
-                                        value_pair.first.ToString(),
-                                        value_pair.second.count_malloc_,
-                                        value_pair.second.count_free_,
-                                        value_pair.second.count_malloc_ -
-                                                value_pair.second.count_free_);
+            size_t count_leaking = value_pair.second.count_malloc_ -
+                                   value_pair.second.count_free_;
+
+            size_t leaking_byte_size = std::accumulate(
+                    value_pair.second.active_allocations_.begin(),
+                    value_pair.second.active_allocations_.end(), 0,
+                    [](size_t count, auto ptr_byte_size) -> size_t {
+                        return count + ptr_byte_size.second;
+                    });
+
+            utility::LogWarning("{}: {} {} --> {} with {} bytes",
+                                value_pair.first.ToString(),
+                                value_pair.second.count_malloc_,
+                                value_pair.second.count_free_, count_leaking,
+                                leaking_byte_size);
         } else {
-            open3d::utility::LogInfo("{}: {} {}", value_pair.first.ToString(),
-                                     value_pair.second.count_malloc_,
-                                     value_pair.second.count_free_);
+            utility::LogInfo("{}: {} {}", value_pair.first.ToString(),
+                             value_pair.second.count_malloc_,
+                             value_pair.second.count_free_);
         }
     }
-    open3d::utility::LogInfo("---------------------------------------------");
+    utility::LogInfo("---------------------------------------------");
 }
 
-void MemoryManagerStatistic::IncrementCountMalloc(const Device& device) {
+void MemoryManagerStatistic::IncrementCountMalloc(const Device& device,
+                                                  void* ptr,
+                                                  size_t byte_size) {
     std::lock_guard<std::mutex> lock(statistics_mutex_);
     statistics_[device].count_malloc_++;
+    statistics_[device].active_allocations_.emplace(ptr, byte_size);
 }
 
-void MemoryManagerStatistic::IncrementCountFree(const Device& device) {
+void MemoryManagerStatistic::IncrementCountFree(const Device& device,
+                                                void* ptr) {
     std::lock_guard<std::mutex> lock(statistics_mutex_);
     statistics_[device].count_free_++;
+    statistics_[device].active_allocations_.erase(ptr);
 }
 
 }  // namespace core
