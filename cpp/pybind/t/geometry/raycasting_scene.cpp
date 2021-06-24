@@ -24,40 +24,31 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "open3d/t/geometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include "open3d/t/geometry/RaycastingScene.h"
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
-public:
-    using GeometryBase::GeometryBase;
+void pybind_raycasting_scene(py::module& m) {
+    py::class_<RaycastingScene> raycasting_scene(
+            m, "RaycastingScene",
+            "A scene providing basic raycasting and closest point queries.");
 
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
-    }
+    // Constructors.
+    raycasting_scene.def(py::init<>());
 
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
-};
+    raycasting_scene.def("add_triangles", &RaycastingScene::AddTriangles,
+                         "vertices"_a, "triangles"_a);
 
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_tensormap(py::module& m);
-void pybind_image(py::module& m);
-void pybind_pointcloud(py::module& m);
-void pybind_trianglemesh(py::module& m);
-void pybind_image(py::module& m);
-void pybind_tsdf_voxelgrid(py::module& m);
-void pybind_raycasting_scene(py::module& m);
+    raycasting_scene.def("cast_rays", &RaycastingScene::CastRays, "rays"_a);
 
+    raycasting_scene.def_property_readonly_static(
+            "INVALID_ID", [](py::object /* self */) -> uint32_t {
+                return RaycastingScene::INVALID_ID;
+            });
+}
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

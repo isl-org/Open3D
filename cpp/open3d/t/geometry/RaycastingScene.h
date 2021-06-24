@@ -26,37 +26,36 @@
 
 #pragma once
 
-#include "open3d/t/geometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include <memory>
+
+#include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
+/// A scene which provides basic ray casting and closest point queries.
+class RaycastingScene {
 public:
-    using GeometryBase::GeometryBase;
+    /// \brief Default Constructor.
+    RaycastingScene();
 
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
-    }
+    ~RaycastingScene();
 
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
+    uint32_t AddTriangles(const core::Tensor &vertices,
+                          const core::Tensor &triangles);
+
+    std::unordered_map<std::string, core::Tensor> CastRays(
+            const core::Tensor &rays);
+
+    static const uint32_t INVALID_ID;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
-
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_tensormap(py::module& m);
-void pybind_image(py::module& m);
-void pybind_pointcloud(py::module& m);
-void pybind_trianglemesh(py::module& m);
-void pybind_image(py::module& m);
-void pybind_tsdf_voxelgrid(py::module& m);
-void pybind_raycasting_scene(py::module& m);
 
 }  // namespace geometry
 }  // namespace t

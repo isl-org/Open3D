@@ -5,4 +5,5 @@ target_sources(pybind PRIVATE
     tensormap.cpp
     trianglemesh.cpp
     tsdf_voxelgrid.cpp
+    raycasting_scene.cpp
 )
