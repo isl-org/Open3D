@@ -24,42 +24,63 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/LUImpl.h"
-#include "open3d/core/linalg/LapackWrapper.h"
-#include "open3d/core/linalg/LinalgUtils.h"
+#pragma once
+
+#include <cstddef>
+#include <map>
+#include <mutex>
+
+#include "open3d/core/Device.h"
 
 namespace open3d {
 namespace core {
 
-void LUCUDA(void* A_data,
-            void* ipiv_data,
-            int64_t rows,
-            int64_t cols,
-            Dtype dtype,
-            const Device& device) {
-    cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
-    DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        int len;
-        OPEN3D_CUSOLVER_CHECK(
-                getrf_cuda_buffersize<scalar_t>(handle, rows, cols, rows, &len),
-                "getrf_buffersize failed in LUCUDA");
+class MemoryManagerStatistic {
+public:
+    enum class PrintLevel {
+        /// Statistics for all used devices are printed.
+        All = 0,
+        /// Only devices with unbalanced counts are printed.
+        /// This is typically an indicator for memory leaks.
+        Unbalanced = 1,
+        /// No statistics are printed.
+        None = 2,
+    };
 
-        int* dinfo =
-                static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
-        void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
+    static MemoryManagerStatistic& getInstance();
 
-        cusolverStatus_t getrf_status = getrf_cuda<scalar_t>(
-                handle, rows, cols, static_cast<scalar_t*>(A_data), rows,
-                static_cast<scalar_t*>(workspace), static_cast<int*>(ipiv_data),
-                dinfo);
+    MemoryManagerStatistic(const MemoryManagerStatistic&) = delete;
+    MemoryManagerStatistic& operator=(MemoryManagerStatistic&) = delete;
 
-        MemoryManager::Free(workspace, device);
-        MemoryManager::Free(dinfo, device);
+    /// Always print the statistics at the end of the program.
+    ~MemoryManagerStatistic() { Print(); }
 
-        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(getrf_status, "getrf failed in LUCUDA",
-                                         dinfo, device);
-    });
-}
+    void setPrintLevel(PrintLevel level);
+    void Print() const;
+
+    void IncrementCountMalloc(const Device& device);
+    void IncrementCountFree(const Device& device);
+
+private:
+    MemoryManagerStatistic() = default;
+
+    struct MemoryStatistics {
+        size_t count_malloc_ = 0;
+        size_t count_free_ = 0;
+    };
+
+    struct DeviceComparator {
+        bool operator()(const Device& lhs, const Device& rhs) const {
+            return lhs.ToString() < rhs.ToString();
+        }
+    };
+
+    /// Only print unbalanced statistics by default.
+    PrintLevel level_ = PrintLevel::Unbalanced;
+
+    std::mutex statistics_mutex_;
+    std::map<Device, MemoryStatistics, DeviceComparator> statistics_;
+};
 
 }  // namespace core
 }  // namespace open3d
