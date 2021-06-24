@@ -251,7 +251,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
 
     double radius_squared = radius * radius;
     int64_t num_query_points = query_points.GetShape()[0];
-    Tensor indices, distances, neighbour_counts;
+    Tensor indices, distances, counts;
     Dtype dtype = GetDtype();
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -259,8 +259,8 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         auto indices_ptr = indices.GetDataPtr<int64_t>();
         distances = Tensor::Empty({num_query_points, max_knn}, dtype);
         auto distances_ptr = distances.GetDataPtr<scalar_t>();
-        neighbour_counts = Tensor::Empty({num_query_points}, Dtype::Int64);
-        auto neighbour_counts_ptr = neighbour_counts.GetDataPtr<int64_t>();
+        counts = Tensor::Empty({num_query_points}, Dtype::Int64);
+        auto counts_ptr = counts.GetDataPtr<int64_t>();
 
         auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
                 holder_.get());
@@ -288,7 +288,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
                         result_count =
                                 result_count < max_knn ? result_count : max_knn;
 
-                        neighbour_counts_ptr[workload_idx] = result_count;
+                        counts_ptr[workload_idx] = result_count;
 
                         int neighbour_idx = 0;
                         for (auto it = ret_matches.begin();
@@ -307,7 +307,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
                     }
                 });
     });
-    return std::make_tuple(indices, distances, neighbour_counts);
+    return std::make_tuple(indices, distances, counts);
 }
 
 }  // namespace nns

@@ -123,7 +123,7 @@ public:
     }
 
     void AllocCounts(int64_t** ptr, size_t num) {
-        distances_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
+        counts_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
         *ptr = counts_.GetDataPtr<int64_t>();
     }
 

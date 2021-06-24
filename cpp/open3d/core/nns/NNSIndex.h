@@ -105,10 +105,10 @@ public:
     /// \param radius Radius.
     /// \param max_knn Maximum number of
     /// neighbor to search per query point.
-    /// \return Tuple of Tensors, (indices, distances, neighbour_counts):
+    /// \return Tuple of Tensors, (indices, distances, counts):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distances: Tensor of shape {n, knn}, with dtype Float32.
-    /// - neighbour_counts: Tensor of shape {n, 1}, with dtype Int64.
+    /// - counts: Tensor of shape {n, 1}, with dtype Int64.
     virtual std::tuple<Tensor, Tensor, Tensor> SearchHybrid(
             const Tensor &query_points, double radius, int max_knn) const = 0;
 
