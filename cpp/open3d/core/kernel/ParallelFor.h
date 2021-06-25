@@ -40,20 +40,16 @@ namespace kernel {
 // heuristically.
 static constexpr int64_t DEFAULT_MIN_PARALLEL_SIZE = 32767;
 
-// 1. Is the name too general? I.e. it only applies for small jobs.
-// 2. Do we need a wrapper, i.e. shall we simply use
-//    `#pragma omp parallel for if (xxx)`?
-
 /// Parallel for loop with default minimal_chunk size.
 ///
-/// \param num_jobs Number of jobs. \p func will be called from 0 to \p num_jobs
-/// - 1. That is, func(0), func(1), ..., func(num_jobs - 1).
+/// \param n Number of jobs. \p func will be called from 0 to \p n
+/// - 1. That is, func(0), func(1), ..., func(n - 1).
 /// \param func Function to be executed in parallel. The function shall have the
 /// signature `void func(int64_t)`. The function shall be embarrassingly
 /// parallelizable.
 template <typename func_t>
-void ParallelFor(int64_t num_jobs, const func_t& func) {
-    ParallelFor(0, num_jobs, DEFAULT_MIN_PARALLEL_SIZE, func);
+void ParallelFor(int64_t n, const func_t& func) {
+    ParallelFor(0, n, DEFAULT_MIN_PARALLEL_SIZE, func);
 }
 
 /// Parallel for loop with default minimal_chunk size.
