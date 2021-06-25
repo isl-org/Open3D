@@ -28,6 +28,7 @@
 
 #include <memory>
 
+#include "open3d/Macro.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
@@ -50,7 +51,7 @@ public:
     std::unordered_map<std::string, core::Tensor> CastRays(
             const core::Tensor &rays);
 
-    static const uint32_t INVALID_ID;
+    static OPEN3D_API const uint32_t INVALID_ID;
 
 private:
     struct Impl;
