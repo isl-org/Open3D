@@ -74,7 +74,7 @@ void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
     core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32, device);
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
+    core::kernel::cuda_launcher::LaunchParallel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 float x = pcd_ptr[3 * workload_idx + 0];
                 float y = pcd_ptr[3 * workload_idx + 1];

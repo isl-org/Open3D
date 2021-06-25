@@ -96,15 +96,15 @@ void UnprojectCPU
 #endif
 
     int64_t n = rows_strided * cols_strided;
+
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
 
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                int64_t workload_idx) {
+        launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
             int64_t y = (workload_idx / cols_strided) * stride;
             int64_t x = (workload_idx % cols_strided) * stride;
 
