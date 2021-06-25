@@ -85,7 +85,7 @@ __global__ void ElementWiseKernel(int64_t n, func_t f) {
 /// \param func The function to be executed in parallel. The function should
 /// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
 template <typename func_t>
-void LaunchParallel(int64_t n, func_t func) {
+void LaunchParallel(int64_t n, const func_t& func) {
     if (n == 0) {
         return;
     }
@@ -98,7 +98,7 @@ void LaunchParallel(int64_t n, func_t func) {
 }
 
 template <typename func_t>
-void LaunchUnaryEWKernel(const Indexer& indexer, func_t element_kernel) {
+void LaunchUnaryEWKernel(const Indexer& indexer, const func_t& func) {
     OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
     int64_t n = indexer.NumWorkloads();
@@ -109,8 +109,8 @@ void LaunchUnaryEWKernel(const Indexer& indexer, func_t element_kernel) {
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
     auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-        element_kernel(indexer.GetInputPtr(0, workload_idx),
-                       indexer.GetOutputPtr(workload_idx));
+        func(indexer.GetInputPtr(0, workload_idx),
+             indexer.GetOutputPtr(workload_idx));
     };
 
     ElementWiseKernel<default_block_size, default_thread_size>
@@ -119,7 +119,7 @@ void LaunchUnaryEWKernel(const Indexer& indexer, func_t element_kernel) {
 }
 
 template <typename func_t>
-void LaunchBinaryEWKernel(const Indexer& indexer, func_t element_kernel) {
+void LaunchBinaryEWKernel(const Indexer& indexer, const func_t& func) {
     OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
     int64_t n = indexer.NumWorkloads();
@@ -130,9 +130,9 @@ void LaunchBinaryEWKernel(const Indexer& indexer, func_t element_kernel) {
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
     auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-        element_kernel(indexer.GetInputPtr(0, workload_idx),
-                       indexer.GetInputPtr(1, workload_idx),
-                       indexer.GetOutputPtr(workload_idx));
+        func(indexer.GetInputPtr(0, workload_idx),
+             indexer.GetInputPtr(1, workload_idx),
+             indexer.GetOutputPtr(workload_idx));
     };
 
     ElementWiseKernel<default_block_size, default_thread_size>
@@ -142,7 +142,7 @@ void LaunchBinaryEWKernel(const Indexer& indexer, func_t element_kernel) {
 
 template <typename func_t>
 void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
-                                 func_t element_kernel) {
+                                 const func_t& func) {
     OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
     int64_t n = indexer.NumWorkloads();
@@ -153,8 +153,8 @@ void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
     auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-        element_kernel(indexer.GetInputPtr(workload_idx),
-                       indexer.GetOutputPtr(workload_idx));
+        func(indexer.GetInputPtr(workload_idx),
+             indexer.GetOutputPtr(workload_idx));
     };
 
     ElementWiseKernel<default_block_size, default_thread_size>

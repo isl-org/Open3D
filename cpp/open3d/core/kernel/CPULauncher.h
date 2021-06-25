@@ -60,7 +60,7 @@ namespace cpu_launcher {
 /// \param func The function to be executed in parallel. The function should
 /// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
 template <typename func_t>
-void LaunchParallel(int64_t n, func_t func) {
+void LaunchParallel(int64_t n, const func_t& func) {
 #pragma omp parallel for schedule(static)
     for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
         func(workload_idx);
@@ -75,7 +75,7 @@ void LaunchParallel(int64_t n, func_t func) {
 /// workload_idx, computes the value to fill, and fills the value at the
 /// pointer location.
 template <typename func_t>
-void LaunchIndexFillKernel(const Indexer& indexer, func_t func) {
+void LaunchIndexFillKernel(const Indexer& indexer, const func_t& func) {
 #pragma omp parallel for schedule(static)
     for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
          ++workload_idx) {
@@ -84,7 +84,7 @@ void LaunchIndexFillKernel(const Indexer& indexer, func_t func) {
 }
 
 template <typename func_t>
-void LaunchUnaryEWKernel(const Indexer& indexer, func_t func) {
+void LaunchUnaryEWKernel(const Indexer& indexer, const func_t& func) {
 #pragma omp parallel for schedule(static)
     for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
          ++workload_idx) {
@@ -94,7 +94,7 @@ void LaunchUnaryEWKernel(const Indexer& indexer, func_t func) {
 }
 
 template <typename func_t>
-void LaunchBinaryEWKernel(const Indexer& indexer, func_t func) {
+void LaunchBinaryEWKernel(const Indexer& indexer, const func_t& func) {
 #pragma omp parallel for schedule(static)
     for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
          ++workload_idx) {
@@ -105,7 +105,8 @@ void LaunchBinaryEWKernel(const Indexer& indexer, func_t func) {
 }
 
 template <typename func_t>
-void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer, func_t func) {
+void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
+                                 const func_t& func) {
 #pragma omp parallel for schedule(static)
     for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
          ++workload_idx) {
@@ -115,7 +116,7 @@ void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer, func_t func) {
 }
 
 template <typename scalar_t, typename func_t>
-void LaunchReductionKernelSerial(const Indexer& indexer, func_t func) {
+void LaunchReductionKernelSerial(const Indexer& indexer, const func_t& func) {
     for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
          ++workload_idx) {
         func(indexer.GetInputPtr(0, workload_idx),
@@ -127,7 +128,7 @@ void LaunchReductionKernelSerial(const Indexer& indexer, func_t func) {
 /// to the final results. This only applies to reduction op with one output.
 template <typename scalar_t, typename func_t>
 void LaunchReductionKernelTwoPass(const Indexer& indexer,
-                                  func_t func,
+                                  const func_t& func,
                                   scalar_t identity) {
     if (indexer.NumOutputElements() > 1) {
         utility::LogError(
@@ -156,7 +157,7 @@ void LaunchReductionKernelTwoPass(const Indexer& indexer,
 }
 
 template <typename scalar_t, typename func_t>
-void LaunchReductionParallelDim(const Indexer& indexer, func_t func) {
+void LaunchReductionParallelDim(const Indexer& indexer, const func_t& func) {
     // Prefers outer dimension >= num_threads.
     const int64_t* indexer_shape = indexer.GetMasterShape();
     const int64_t num_dims = indexer.NumDims();
