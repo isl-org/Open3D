@@ -31,6 +31,7 @@
 
 #include "open3d/core/Blob.h"
 #include "open3d/core/Device.h"
+#include "open3d/core/MemoryManagerStatistic.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -38,11 +39,15 @@ namespace open3d {
 namespace core {
 
 void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
-    return GetDeviceMemoryManager(device)->Malloc(byte_size, device);
+    void* ptr = GetDeviceMemoryManager(device)->Malloc(byte_size, device);
+    MemoryManagerStatistic::GetInstance().IncrementCountMalloc(ptr, byte_size,
+                                                               device);
+    return ptr;
 }
 
 void MemoryManager::Free(void* ptr, const Device& device) {
-    return GetDeviceMemoryManager(device)->Free(ptr, device);
+    GetDeviceMemoryManager(device)->Free(ptr, device);
+    MemoryManagerStatistic::GetInstance().IncrementCountFree(ptr, device);
 }
 
 void MemoryManager::Memcpy(void* dst_ptr,

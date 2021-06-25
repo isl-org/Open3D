@@ -8,6 +8,7 @@ target_sources(core PRIVATE
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCPU.cpp
+    MemoryManagerStatistic.cpp
     NumpyIO.cpp
     ShapeUtil.cpp
     Tensor.cpp
