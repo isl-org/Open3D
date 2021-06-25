@@ -51,6 +51,11 @@ public:
     std::unordered_map<std::string, core::Tensor> CastRays(
             const core::Tensor &rays);
 
+    core::Tensor CountIntersections(const core::Tensor &rays);
+
+    std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
+            const core::Tensor &query_points);
+
     static OPEN3D_API const uint32_t INVALID_ID;
 
 private:

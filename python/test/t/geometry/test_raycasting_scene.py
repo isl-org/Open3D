@@ -29,9 +29,8 @@ import numpy as np
 import pytest
 
 # RaycastingScene is not available for linux arm
-pytestmark = pytest.mark.skipif(
-    not hasattr(o3d.t.geometry, 'RaycastingScene') or True,
-    reason="RaycastingScene was not compiled")
+pytestmark = pytest.mark.skipif(not hasattr(o3d.t.geometry, 'RaycastingScene'),
+                                reason="RaycastingScene was not compiled")
 
 
 # test intersection with a single triangle
@@ -71,3 +70,54 @@ def test_cast_lots_of_rays():
     rays = o3d.core.Tensor.from_numpy(rs.rand(7654321, 6).astype(np.float32))
 
     _ = scene.cast_rays(rays)
+
+
+def test_count_intersections():
+    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+        o3d.geometry.TriangleMesh.create_box())
+    vertices = cube.vertices['vertices']
+    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    geom_id = scene.add_triangles(vertices, triangles)
+
+    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
+                            [10, 10, 10, 1, 0, 0]],
+                           dtype=o3d.core.Dtype.Float32)
+    ans = scene.count_intersections(rays)
+
+    assert (ans.numpy() == [2, 1, 0]).all()
+
+
+# count lots of random ray intersections to test the internal batching
+# we expect no errors for this test
+def test_count_lots_of_intersections():
+    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+        o3d.geometry.TriangleMesh.create_box())
+    vertices = cube.vertices['vertices']
+    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    geom_id = scene.add_triangles(vertices, triangles)
+
+    rs = np.random.RandomState(123)
+    rays = o3d.core.Tensor.from_numpy(rs.rand(1234567, 6).astype(np.float32))
+
+    _ = scene.count_intersections(rays)
+
+
+def test_compute_closest_points():
+    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=o3d.core.Dtype.Float32)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    geom_id = scene.add_triangles(vertices, triangles)
+
+    query_points = o3d.core.Tensor([[0.2, 0.1, 1], [10, 10, 10]],
+                                   dtype=o3d.core.Dtype.Float32)
+    ans = scene.compute_closest_points(query_points)
+
+    assert (geom_id == ans['geometry_ids']).all()
+    assert np.allclose(ans['points'].numpy(),
+                       np.array([[0.2, 0.1, 0.0], [1, 1, 0]]))
