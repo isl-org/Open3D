@@ -8,14 +8,14 @@ include(ExternalProject)
 # select ISAs
 if(APPLE)
     # with AppleClang we can select only 1 ISA
-    set(ISA_ARGS -DEMBREE_ISA_AVX=ON
-                 -DEMBREE_ISA_AVX2=OFF
+    set(ISA_ARGS -DEMBREE_ISA_AVX=OFF
+                 -DEMBREE_ISA_AVX2=ON
                  -DEMBREE_ISA_AVX512=OFF
                  -DEMBREE_ISA_SSE2=OFF
                  -DEMBREE_ISA_SSE42=OFF
     )
-    set(ISA_LIBS embree_avx)
-    set(ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_avx${CMAKE_STATIC_LIBRARY_SUFFIX}" )
+    set(ISA_LIBS embree_avx2)
+    set(ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_avx2${CMAKE_STATIC_LIBRARY_SUFFIX}" )
 else() # Linux and WIN32
     set(ISA_ARGS -DEMBREE_ISA_AVX=ON
                  -DEMBREE_ISA_AVX2=ON
