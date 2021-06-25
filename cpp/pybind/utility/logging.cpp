@@ -31,7 +31,7 @@
 namespace open3d {
 namespace utility {
 
-void pybind_console(py::module& m) {
+void pybind_logging(py::module& m) {
     py::enum_<VerbosityLevel> vl(m, "VerbosityLevel", py::arithmetic(),
                                  "VerbosityLevel");
     vl.value("Error", VerbosityLevel::Error)
