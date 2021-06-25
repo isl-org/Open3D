@@ -31,12 +31,12 @@
 namespace open3d {
 namespace tests {
 
-TEST(Logger, LogError) {
+TEST(Logging, LogError) {
     EXPECT_THROW(utility::LogError("Example exception message."),
                  std::runtime_error);
 }
 
-TEST(Logger, LogInfo) {
+TEST(Logging, LogInfo) {
     utility::LogInfo("{}", "Example shape print {1, 2, 3}.");
 }
 
