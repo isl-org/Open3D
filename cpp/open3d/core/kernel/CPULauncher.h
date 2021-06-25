@@ -42,6 +42,10 @@ namespace cpu_launcher {
 
 /// Run a function in parallel on CPU.
 ///
+/// \param n The number of workloads.
+/// \param func The function to be executed in parallel. The function should
+/// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
+///
 /// This is typically used together with cuda_launcher::LaunchParallel() to
 /// share the same code between CPU and CUDA. For example:
 ///
@@ -56,10 +60,6 @@ namespace cpu_launcher {
 ///     process_workload(idx);
 /// });
 /// ```
-///
-/// \param n The number of workloads.
-/// \param func The function to be executed in parallel. The function should
-/// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
 template <typename func_t>
 void LaunchParallel(int64_t n, const func_t& func) {
 #pragma omp parallel for schedule(static)
