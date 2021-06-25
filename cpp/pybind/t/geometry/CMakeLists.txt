@@ -7,3 +7,9 @@ target_sources(pybind PRIVATE
     tsdf_voxelgrid.cpp
     raycasting_scene.cpp
 )
+# RaycastingScene is not supported on ARM
+if(NOT LINUX_AARCH64)
+    target_sources(pybind PRIVATE
+        raycasting_scene.cpp
+    )
+endif()
