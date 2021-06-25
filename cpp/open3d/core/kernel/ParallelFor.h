@@ -51,7 +51,8 @@ static constexpr int64_t DEFAULT_MIN_PARALLEL_SIZE = 32767;
 /// \param func Function to be executed in parallel. The function shall have the
 /// signature `void func(int64_t)`. The function shall be embarrassingly
 /// parallelizable.
-void ParallelFor(int64_t num_jobs, const std::function<void(int64_t)>& func) {
+template <typename func_t>
+void ParallelFor(int64_t num_jobs, const func_t& func) {
     ParallelFor(0, num_jobs, DEFAULT_MIN_PARALLEL_SIZE, func);
 }
 
@@ -62,9 +63,8 @@ void ParallelFor(int64_t num_jobs, const std::function<void(int64_t)>& func) {
 /// \param func Function to be executed in parallel. The function shall have the
 /// signature `void func(int64_t)`. The function shall be embarrassingly
 /// parallelizable.
-void ParallelFor(int64_t start,
-                 int64_t end,
-                 const std::function<void(int64_t)>& func) {
+template <typename func_t>
+void ParallelFor(int64_t start, int64_t end, const func_t& func) {
     ParallelFor(start, end, DEFAULT_MIN_PARALLEL_SIZE, func);
 }
 
@@ -77,10 +77,11 @@ void ParallelFor(int64_t start,
 /// \param func Function to be executed in parallel. The function shall have the
 /// signature `void func(int64_t)`. The function shall be embarrassingly
 /// parallelizable.
+template <typename func_t>
 void ParallelFor(int64_t start,
                  int64_t end,
                  int64_t min_parallel_size,
-                 const std::function<void(int64_t)>& func) {
+                 const func_t& func) {
     if (min_parallel_size <= 0) {
         utility::LogError("min_parallel_size must be > 0, but got {}.",
                           min_parallel_size);
