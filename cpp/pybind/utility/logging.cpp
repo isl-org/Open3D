@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/utility/Logging.h"
+
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
