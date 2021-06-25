@@ -35,6 +35,10 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+// Value taken from PyTorch's at::internal::GRAIN_SIZE. The value is chosen
+// heuristically.
+static constexpr int64_t DEFAULT_MIN_PARALLEL_SIZE = 32767;
+
 // 1. Is the name too general? I.e. it only applies for small jobs.
 // 2. Do we need a wrapper, i.e. shall we simply use
 //    `#pragma omp parallel for if (xxx)`?
