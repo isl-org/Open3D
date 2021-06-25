@@ -40,6 +40,7 @@
 #include "open3d/io/PoseGraphIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
+#include "open3d/io/OctreeIO.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "pybind/docstring.h"
 #include "pybind/io/io.h"
@@ -89,6 +90,7 @@ static const std::unordered_map<std::string, std::string>
                 {"line_set", "The ``LineSet`` object for I/O"},
                 {"image", "The ``Image`` object for I/O"},
                 {"voxel_grid", "The ``VoxelGrid`` object for I/O"},
+                {"octree", "The ``Octree`` object for I/O"},
                 {"trajectory",
                  "The ``PinholeCameraTrajectory`` object for I/O"},
                 {"intrinsic", "The ``PinholeCameraIntrinsic`` object for I/O"},
@@ -290,6 +292,32 @@ void pybind_class_io(py::module &m_io) {
             "write_ascii"_a = false, "compressed"_a = false,
             "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_voxel_grid",
+                                 map_shared_argument_docstrings);
+
+
+    // open3d::geometry::Octree
+    m_io.def(
+            "read_octree",
+            [](const std::string &filename, const std::string &format) {
+                py::gil_scoped_release release;
+                geometry::Octree octree;
+                ReadOctree(filename, octree, format);
+                return octree;
+            },
+            "Function to read Octree from file", "filename"_a,
+            "format"_a = "auto");
+    docstring::FunctionDocInject(m_io, "read_octree",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "write_octree",
+            [](const std::string &filename,
+               const geometry::Octree &octree) {
+                py::gil_scoped_release release;
+                return WriteOctree(filename, octree);
+            },
+            "Function to write Octree to file", "filename"_a, "octree"_a);
+    docstring::FunctionDocInject(m_io, "write_octree",
                                  map_shared_argument_docstrings);
 
     // open3d::camera
