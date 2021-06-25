@@ -70,6 +70,10 @@ public:
 
     bool operator!=(const Device& other) const { return !operator==(other); }
 
+    bool operator<(const Device& other) const {
+        return ToString() < other.ToString();
+    }
+
     std::string ToString() const {
         std::string str = "";
         switch (device_type_) {
@@ -132,3 +136,12 @@ protected:
 
 }  // namespace core
 }  // namespace open3d
+
+namespace std {
+template <>
+struct hash<open3d::core::Device> {
+    std::size_t operator()(const open3d::core::Device& device) const {
+        return std::hash<std::string>{}(device.ToString());
+    }
+};
+}  // namespace std

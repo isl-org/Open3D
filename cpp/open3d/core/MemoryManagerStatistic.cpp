@@ -108,16 +108,16 @@ void MemoryManagerStatistic::Print() const {
     utility::LogInfo("---------------------------------------------");
 }
 
-void MemoryManagerStatistic::IncrementCountMalloc(const Device& device,
-                                                  void* ptr,
-                                                  size_t byte_size) {
+void MemoryManagerStatistic::IncrementCountMalloc(void* ptr,
+                                                  size_t byte_size,
+                                                  const Device& device) {
     std::lock_guard<std::mutex> lock(statistics_mutex_);
     statistics_[device].count_malloc_++;
     statistics_[device].active_allocations_.emplace(ptr, byte_size);
 }
 
-void MemoryManagerStatistic::IncrementCountFree(const Device& device,
-                                                void* ptr) {
+void MemoryManagerStatistic::IncrementCountFree(void* ptr,
+                                                const Device& device) {
     std::lock_guard<std::mutex> lock(statistics_mutex_);
     statistics_[device].count_free_++;
     statistics_[device].active_allocations_.erase(ptr);

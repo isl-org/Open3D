@@ -59,10 +59,10 @@ public:
     void SetPrintAtProgramEnd(bool print);
     void Print() const;
 
-    void IncrementCountMalloc(const Device& device,
-                              void* ptr,
-                              size_t byte_size);
-    void IncrementCountFree(const Device& device, void* ptr);
+    void IncrementCountMalloc(void* ptr,
+                              size_t byte_size,
+                              const Device& device);
+    void IncrementCountFree(void* ptr, const Device& device);
 
 private:
     MemoryManagerStatistic() = default;
@@ -73,18 +73,12 @@ private:
         std::unordered_map<void*, size_t> active_allocations_;
     };
 
-    struct DeviceComparator {
-        bool operator()(const Device& lhs, const Device& rhs) const {
-            return lhs.ToString() < rhs.ToString();
-        }
-    };
-
     /// Only print unbalanced statistics by default.
     PrintLevel level_ = PrintLevel::Unbalanced;
     bool print_at_program_end_ = true;
 
     std::mutex statistics_mutex_;
-    std::map<Device, MemoryStatistics, DeviceComparator> statistics_;
+    std::map<Device, MemoryStatistics> statistics_;
 };
 
 }  // namespace core
