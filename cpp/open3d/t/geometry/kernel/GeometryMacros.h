@@ -31,12 +31,45 @@
 #include "open3d/core/CUDAUtils.h"
 
 #if defined(__CUDACC__)
+
+#if defined(__CUDA_ARCH__)
+#if __CUDA_ARCH__ < 600
+__device__ double atomicAdd(double *address, double val) {
+    unsigned long long int *address_as_ull = (unsigned long long int *)address;
+    unsigned long long int old = *address_as_ull, assumed;
+
+    do {
+        assumed = old;
+        old = atomicCAS(
+                address_as_ull, assumed,
+                __double_as_longlong(val + __longlong_as_double(assumed)));
+
+        // Note: uses integer comparison to avoid hang in case of NaN (since NaN
+        // != NaN)
+    } while (assumed != old);
+
+    return __longlong_as_double(old);
+}
+#endif
+#endif
+
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
+
 #define ISNAN(X) isnan(X)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
 #define ISNAN(X) std::isnan(X)
 #endif
+
+#define OPEN3D_ABS(a) (a < 0 ? -a : a)
+#define OPEN3D_MAX(a, b) (a > b ? a : b)
+#define OPEN3D_MIN(a, b) (a < b ? a : b)
+#define OPEN3D_SQUARE(a) ((a) * (a))
+
+#define OPEN3D_EXP(a) exp(a)
+#define OPEN3D_POW(a, b) pow(a, b)
+
+#define OPEN3D_IsClose(a, b) (a > 0.99998 * b && a < 1.00002 * b ? true : false)
 
 // https://stackoverflow.com/a/51549250
 #ifdef __CUDACC__
