@@ -61,8 +61,7 @@ namespace cpu_launcher {
 /// ```
 template <typename func_t>
 void LaunchParallel(int64_t n, const func_t& func) {
-#pragma omp parallel for schedule(static) if (GetMaxThreads() != 1 && \
-                                              !InParallel())
+#pragma omp parallel for if (GetMaxThreads() != 1 && !InParallel())
     for (int64_t i = 0; i < n; ++i) {
         func(i);
     }
