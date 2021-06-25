@@ -39,6 +39,10 @@ namespace core {
 namespace kernel {
 namespace cpu_launcher {
 
+// Value taken from PyTorch's at::internal::GRAIN_SIZE. The value is chosen
+// heuristically for small element-wise ops.
+static constexpr int64_t SMALL_OP_MIN_PARALLEL_SIZE = 32767;
+
 /// Run a function in parallel on CPU.
 ///
 /// \param n The number of workloads.
@@ -94,10 +98,10 @@ void LaunchParallel(int64_t n, int64_t min_parallel_size, const func_t& func) {
 /// pointer location.
 template <typename func_t>
 void LaunchIndexFillKernel(const Indexer& indexer, const func_t& func) {
-#pragma omp parallel for schedule(static)
-    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
-        func(indexer.GetInputPtr(0, i), i);
-    }
+    LaunchParallel(indexer.NumWorkloads(), SMALL_OP_MIN_PARALLEL_SIZE,
+                   [&indexer, &func](int64_t i) {
+                       func(indexer.GetInputPtr(0, i), i);
+                   });
 }
 
 template <typename func_t>
