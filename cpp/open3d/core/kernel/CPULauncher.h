@@ -31,7 +31,6 @@
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/ParallelFor.h"
 #include "open3d/core/kernel/ParallelUtil.h"
 #include "open3d/utility/Logging.h"
 
@@ -56,13 +55,32 @@ namespace cpu_launcher {
 ///     namespace launcher = core::kernel::cpu_launcher;
 /// #endif
 ///
-/// launcher::LaunchParallel(num_workloads, [=] OPEN3D_DEVICE(int64_t idx) {
-///     process_workload(idx);
+/// launcher::LaunchParallel(num_workloads, [=] OPEN3D_DEVICE(int64_t i) {
+///     process_workload(i);
 /// });
 /// ```
 template <typename func_t>
 void LaunchParallel(int64_t n, const func_t& func) {
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) if (GetMaxThreads() != 1 && \
+                                              !InParallel())
+    for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
+        func(workload_idx);
+    }
+}
+
+/// Run a function in parallel on CPU when the number of workloads is larger
+/// than a threshold.
+///
+/// \param n The number of workloads.
+/// \param min_parallel_size If \p n <= \p min_parallel_size, the jobs will
+/// be executed in serial.
+/// \param func The function to be executed in parallel. The function should
+/// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
+template <typename func_t>
+void LaunchParallel(int64_t n, int64_t min_parallel_size, const func_t& func) {
+#pragma omp parallel for schedule(static) if (n > min_parallel_size && \
+                                              GetMaxThreads() != 1 &&  \
+                                              !InParallel())
     for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
         func(workload_idx);
     }
