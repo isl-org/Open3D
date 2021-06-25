@@ -100,9 +100,10 @@ public:
 public:
     /// The estimated transformation matrix of dtype Float64 on CPU device.
     core::Tensor transformation_;
-    /// Correspondence Set. Refer to the definition in
-    /// `TransformationEstimation.h`.
-    CorrespondenceSet correspondence_set_;
+    /// Tensor containing indices of corresponding target points, where the
+    /// value is the target index and the index of the value itself is the
+    /// source index. It contains -1 as value at index with no correspondence.
+    core::Tensor correspondences_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
     /// For ICP: the overlapping area (# of inlier correspondences / # of points

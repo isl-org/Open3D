@@ -27,110 +27,97 @@
 #include "open3d/t/pipelines/kernel/ComputeTransform.h"
 
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 
-core::Tensor ComputePosePointToPlane(
-        const core::Tensor &source_points,
-        const core::Tensor &target_points,
-        const core::Tensor &target_normals,
-        const pipelines::registration::CorrespondenceSet &corres) {
+core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
+                                     const core::Tensor &target_points,
+                                     const core::Tensor &target_normals,
+                                     const core::Tensor &correspondence_indices,
+                                     const registration::RobustKernel &kernel) {
     // Get dtype and device.
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();
-
-    // Checks.
-    source_points.AssertDtype(dtype);
-    target_points.AssertDtype(dtype);
-    target_normals.AssertDtype(dtype);
-    target_points.AssertDevice(device);
-    target_normals.AssertDevice(device);
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
-    // Number of correspondences.
-    int n = corres.first.GetLength();
 
     // Pointer to point cloud data - indexed according to correspondences.
     core::Tensor source_points_contiguous = source_points.Contiguous();
     core::Tensor target_points_contiguous = target_points.Contiguous();
     core::Tensor target_normals_contiguous = target_normals.Contiguous();
-    core::Tensor corres_first_contiguous = corres.first.Contiguous();
-    core::Tensor corres_second_contiguous = corres.second.Contiguous();
+    core::Tensor corres_contiguous = correspondence_indices.Contiguous();
 
-    const float *source_points_ptr =
-            source_points_contiguous.GetDataPtr<float>();
-    const float *target_points_ptr =
-            target_points_contiguous.GetDataPtr<float>();
-    const float *target_normals_ptr =
-            target_normals_contiguous.GetDataPtr<float>();
-    const int64_t *corres_first = corres_first_contiguous.GetDataPtr<int64_t>();
-    const int64_t *corres_second =
-            corres_second_contiguous.GetDataPtr<int64_t>();
-
+    float residual = 0;
+    int inlier_count = 0;
+    
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ComputePosePointToPlaneCPU(source_points_ptr, target_points_ptr,
-                                   target_normals_ptr, corres_first,
-                                   corres_second, n, pose, dtype, device);
+        ComputePosePointToPlaneCPU(
+                source_points_contiguous, target_points_contiguous,
+                target_normals_contiguous, corres_contiguous, pose, residual,
+                inlier_count, dtype, device, kernel);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(ComputePosePointToPlaneCUDA, source_points_ptr,
-                  target_points_ptr, target_normals_ptr, corres_first,
-                  corres_second, n, pose, dtype, device);
+        CUDA_CALL(ComputePosePointToPlaneCUDA, source_points_contiguous,
+                  target_points_contiguous, target_normals_contiguous,
+                  corres_contiguous, pose, residual, inlier_count, dtype,
+                  device, kernel);
     } else {
         utility::LogError("Unimplemented device.");
     }
+
     return pose;
 }
 
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
-        const pipelines::registration::CorrespondenceSet &corres) {
+        const core::Tensor &correspondence_indices) {
     // Get dtype and device.
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();
-
-    // Checks.
-    source_points.AssertDtype(dtype);
-    target_points.AssertDtype(dtype);
-    target_points.AssertDevice(device);
 
     // [Output] Rotation and translation tensor of type Float64.
     core::Tensor R;
     core::Tensor t;
 
-    // Number of correspondences.
-    int n = corres.first.GetLength();
+    int inlier_count = 0;
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         // Pointer to point cloud data - indexed according to correspondences.
         core::Tensor source_points_contiguous = source_points.Contiguous();
         core::Tensor target_points_contiguous = target_points.Contiguous();
-        core::Tensor corres_first_contiguous = corres.first.Contiguous();
-        core::Tensor corres_second_contiguous = corres.second.Contiguous();
+        core::Tensor correspondence_indices_contiguous =
+                correspondence_indices.Contiguous();
 
-        const float *source_points_ptr =
-                source_points_contiguous.GetDataPtr<float>();
-        const float *target_points_ptr =
-                target_points_contiguous.GetDataPtr<float>();
-        const int64_t *corres_first =
-                corres_first_contiguous.GetDataPtr<int64_t>();
-        const int64_t *corres_second =
-                corres_second_contiguous.GetDataPtr<int64_t>();
-
-        ComputeRtPointToPointCPU(source_points_ptr, target_points_ptr,
-                                 corres_first, corres_second, n, R, t, dtype,
-                                 device);
+        ComputeRtPointToPointCPU(source_points_contiguous,
+                                 target_points_contiguous,
+                                 correspondence_indices_contiguous, R, t,
+                                 inlier_count, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         // TODO: Implement optimised CUDA reduction kernel.
-        core::Tensor source_select = source_points.IndexGet({corres.first});
-        core::Tensor target_select = target_points.IndexGet({corres.second});
+        core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
+        // correpondence_set : (i, corres[i]).
+        // source[i] and target[corres[i]] is a correspondence.
+        core::Tensor source_indices =
+                core::Tensor::Arange(0, source_points.GetShape()[0], 1,
+                                     core::Dtype::Int64, device)
+                        .IndexGet({valid});
+        // Only take valid indices.
+        core::Tensor target_indices =
+                correspondence_indices.IndexGet({valid}).Reshape({-1});
+
+        // Number of good correspondences (C).
+        inlier_count = source_indices.GetLength();
+
+        core::Tensor source_select = source_points.IndexGet({source_indices});
+        core::Tensor target_select = target_points.IndexGet({target_indices});
 
         // https://ieeexplore.ieee.org/document/88573
         core::Tensor mean_s = source_select.Mean({0}, true);
@@ -141,7 +128,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         core::Tensor Sxy = (target_select - mean_t)
                                    .T()
                                    .Matmul(source_select - mean_s)
-                                   .Div_(static_cast<float>(n))
+                                   .Div_(static_cast<float>(inlier_count))
                                    .To(host, core::Dtype::Float64);
 
         mean_s = mean_s.To(host, core::Dtype::Float64);
