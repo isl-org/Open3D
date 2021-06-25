@@ -63,8 +63,8 @@ template <typename func_t>
 void LaunchParallel(int64_t n, const func_t& func) {
 #pragma omp parallel for schedule(static) if (GetMaxThreads() != 1 && \
                                               !InParallel())
-    for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
-        func(workload_idx);
+    for (int64_t i = 0; i < n; ++i) {
+        func(i);
     }
 }
 
@@ -81,8 +81,8 @@ void LaunchParallel(int64_t n, int64_t min_parallel_size, const func_t& func) {
 #pragma omp parallel for schedule(static) if (n > min_parallel_size && \
                                               GetMaxThreads() != 1 &&  \
                                               !InParallel())
-    for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
-        func(workload_idx);
+    for (int64_t i = 0; i < n; ++i) {
+        func(i);
     }
 }
 
@@ -91,35 +91,30 @@ void LaunchParallel(int64_t n, int64_t min_parallel_size, const func_t& func) {
 /// \param indexer The input tensor and output tensor to the indexer are the
 /// same (as a hack), since the tensor are filled in-place.
 /// \param func A function that takes pointer location and
-/// workload_idx, computes the value to fill, and fills the value at the
+/// workload index i, computes the value to fill, and fills the value at the
 /// pointer location.
 template <typename func_t>
 void LaunchIndexFillKernel(const Indexer& indexer, const func_t& func) {
 #pragma omp parallel for schedule(static)
-    for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-         ++workload_idx) {
-        func(indexer.GetInputPtr(0, workload_idx), workload_idx);
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(0, i), i);
     }
 }
 
 template <typename func_t>
 void LaunchUnaryEWKernel(const Indexer& indexer, const func_t& func) {
 #pragma omp parallel for schedule(static)
-    for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-         ++workload_idx) {
-        func(indexer.GetInputPtr(0, workload_idx),
-             indexer.GetOutputPtr(workload_idx));
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(0, i), indexer.GetOutputPtr(i));
     }
 }
 
 template <typename func_t>
 void LaunchBinaryEWKernel(const Indexer& indexer, const func_t& func) {
 #pragma omp parallel for schedule(static)
-    for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-         ++workload_idx) {
-        func(indexer.GetInputPtr(0, workload_idx),
-             indexer.GetInputPtr(1, workload_idx),
-             indexer.GetOutputPtr(workload_idx));
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(0, i), indexer.GetInputPtr(1, i),
+             indexer.GetOutputPtr(i));
     }
 }
 
@@ -127,19 +122,15 @@ template <typename func_t>
 void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
                                  const func_t& func) {
 #pragma omp parallel for schedule(static)
-    for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-         ++workload_idx) {
-        func(indexer.GetInputPtr(workload_idx),
-             indexer.GetOutputPtr(workload_idx));
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(i), indexer.GetOutputPtr(i));
     }
 }
 
 template <typename scalar_t, typename func_t>
 void LaunchReductionKernelSerial(const Indexer& indexer, const func_t& func) {
-    for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-         ++workload_idx) {
-        func(indexer.GetInputPtr(0, workload_idx),
-             indexer.GetOutputPtr(workload_idx));
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(0, i), indexer.GetOutputPtr(i));
     }
 }
 
@@ -164,9 +155,8 @@ void LaunchReductionKernelTwoPass(const Indexer& indexer,
     for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
         int64_t start = thread_idx * workload_per_thread;
         int64_t end = std::min(start + workload_per_thread, num_workloads);
-        for (int64_t workload_idx = start; workload_idx < end; ++workload_idx) {
-            func(indexer.GetInputPtr(0, workload_idx),
-                 &thread_results[thread_idx]);
+        for (int64_t i = start; i < end; ++i) {
+            func(indexer.GetInputPtr(0, i), &thread_results[thread_idx]);
         }
     }
     void* output_ptr = indexer.GetOutputPtr(0);

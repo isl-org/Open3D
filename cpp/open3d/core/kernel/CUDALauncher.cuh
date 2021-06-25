@@ -108,9 +108,8 @@ void LaunchUnaryEWKernel(const Indexer& indexer, const func_t& func) {
     int64_t items_per_block = default_block_size * default_thread_size;
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-        func(indexer.GetInputPtr(0, workload_idx),
-             indexer.GetOutputPtr(workload_idx));
+    auto f = [=] OPEN3D_HOST_DEVICE(int64_t i) {
+        func(indexer.GetInputPtr(0, i), indexer.GetOutputPtr(i));
     };
 
     ElementWiseKernel<default_block_size, default_thread_size>
@@ -129,10 +128,9 @@ void LaunchBinaryEWKernel(const Indexer& indexer, const func_t& func) {
     int64_t items_per_block = default_block_size * default_thread_size;
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-        func(indexer.GetInputPtr(0, workload_idx),
-             indexer.GetInputPtr(1, workload_idx),
-             indexer.GetOutputPtr(workload_idx));
+    auto f = [=] OPEN3D_HOST_DEVICE(int64_t i) {
+        func(indexer.GetInputPtr(0, i), indexer.GetInputPtr(1, i),
+             indexer.GetOutputPtr(i));
     };
 
     ElementWiseKernel<default_block_size, default_thread_size>
@@ -152,9 +150,8 @@ void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
     int64_t items_per_block = default_block_size * default_thread_size;
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-        func(indexer.GetInputPtr(workload_idx),
-             indexer.GetOutputPtr(workload_idx));
+    auto f = [=] OPEN3D_HOST_DEVICE(int64_t i) {
+        func(indexer.GetInputPtr(i), indexer.GetOutputPtr(i));
     };
 
     ElementWiseKernel<default_block_size, default_thread_size>
