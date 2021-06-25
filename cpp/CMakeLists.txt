@@ -22,14 +22,6 @@ function(open3d_show_and_abort_on_warning trgt)
             )
 
     if (BUILD_CUDA_MODULE)
-        # General NVCC flags
-        set(DISABLE_NVCC_WARNINGS
-                550            # variable was set but never used (Eigen)
-                940            # missing return statement at end of non-void function (Eigen)
-                2809           # ignoring return value from routine declared with "nodiscard" attribute (Eigen)
-                )
-        string(REPLACE ";" "," DISABLE_NVCC_WARNINGS "${DISABLE_NVCC_WARNINGS}")
-
         set(CUDA_FLAGS "--Werror cross-execution-space-call,deprecated-declarations")
         if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "10.2")
             string(APPEND CUDA_FLAGS " --Werror all-warnings")
@@ -38,11 +30,6 @@ function(open3d_show_and_abort_on_warning trgt)
             string(APPEND CUDA_FLAGS " --Werror ext-lambda-captures-this")
         endif()
         string(APPEND CUDA_FLAGS " --expt-relaxed-constexpr")
-        if (CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "11.2")
-            string(APPEND CUDA_FLAGS " --diag-suppress ${DISABLE_NVCC_WARNINGS}")
-        else()
-            string(APPEND CUDA_FLAGS " -Xcudafe --diag_suppress=[${DISABLE_NVCC_WARNINGS}]")
-        endif()
 
         # Host compiler flags
         if (MSVC)
