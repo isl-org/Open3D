@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <functional>
 
+#include "open3d/core/kernel/ParallelUtil.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -45,26 +46,26 @@ static constexpr int64_t DEFAULT_MIN_PARALLEL_SIZE = 32767;
 
 /// Parallel for loop with default minimal_chunk size.
 ///
-/// \param num_jobs Number of jobs. \p f will be called from 0 to \p num_jobs
-/// - 1. That is `f(0)`, `f(1)`, ..., `f(num_jobs - 1)`.
-/// \param f Function to be executed in parallel. The function shall have the
-/// signature `void f(int64_t)`. The function shall be embarrassingly
+/// \param num_jobs Number of jobs. \p func will be called from 0 to \p num_jobs
+/// - 1. That is, func(0), func(1), ..., func(num_jobs - 1).
+/// \param func Function to be executed in parallel. The function shall have the
+/// signature `void func(int64_t)`. The function shall be embarrassingly
 /// parallelizable.
-void ParallelFor(int64_t num_jobs, const std::function<void(int64_t)>& f) {
-    ParallelFor(0, num_jobs, DEFAULT_MIN_PARALLEL_SIZE, f);
+void ParallelFor(int64_t num_jobs, const std::function<void(int64_t)>& func) {
+    ParallelFor(0, num_jobs, DEFAULT_MIN_PARALLEL_SIZE, func);
 }
 
 /// Parallel for loop with default minimal_chunk size.
 ///
 /// \param start The start index, inclusive.
 /// \param end The end index, exclusive.
-/// \param f Function to be executed in parallel. The function shall have the
-/// signature `void f(int64_t)`. The function shall be embarrassingly
+/// \param func Function to be executed in parallel. The function shall have the
+/// signature `void func(int64_t)`. The function shall be embarrassingly
 /// parallelizable.
 void ParallelFor(int64_t start,
                  int64_t end,
-                 const std::function<void(int64_t)>& f) {
-    ParallelFor(start, end, DEFAULT_MIN_PARALLEL_SIZE, f);
+                 const std::function<void(int64_t)>& func) {
+    ParallelFor(start, end, DEFAULT_MIN_PARALLEL_SIZE, func);
 }
 
 /// Parallel for loop.
@@ -73,13 +74,13 @@ void ParallelFor(int64_t start,
 /// \param end The end index, exclusive.
 /// \param min_parallel_size If end - start <= min_parallel_size, the job will
 /// be executed in serial.
-/// \param f Function to be executed in parallel. The function shall have the
-/// signature `void f(int64_t)`. The function shall be embarrassingly
+/// \param func Function to be executed in parallel. The function shall have the
+/// signature `void func(int64_t)`. The function shall be embarrassingly
 /// parallelizable.
 void ParallelFor(int64_t start,
                  int64_t end,
                  int64_t min_parallel_size,
-                 const std::function<void(int64_t)>& f) {
+                 const std::function<void(int64_t)>& func) {
     if (min_parallel_size <= 0) {
         utility::LogError("min_parallel_size must be > 0, but got {}.",
                           min_parallel_size);
@@ -89,12 +90,12 @@ void ParallelFor(int64_t start,
     if (end - start <= min_parallel_size || GetMaxThreads() == 1 ||
         InParallel()) {
         for (int64_t i = start; i < end; i++) {
-            f(i);
+            func(i);
         }
     } else {
 #pragma omp parallel for
         for (int64_t i = start; i < end; i++) {
-            f(i);
+            func(i);
         }
     }
 }
