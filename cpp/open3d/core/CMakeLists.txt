@@ -34,7 +34,6 @@ target_sources(core PRIVATE
     kernel/Kernel.cpp
     kernel/NonZero.cpp
     kernel/NonZeroCPU.cpp
-    kernel/ParallelFor.cpp
     kernel/Reduction.cpp
     kernel/ReductionCPU.cpp
     kernel/UnaryEW.cpp

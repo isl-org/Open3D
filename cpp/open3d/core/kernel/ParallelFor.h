@@ -29,6 +29,8 @@
 #include <cstdint>
 #include <functional>
 
+#include "open3d/utility/Logging.h"
+
 namespace open3d {
 namespace core {
 namespace kernel {
@@ -44,7 +46,9 @@ namespace kernel {
 /// \param f Function to be executed in parallel. The function shall have the
 /// signature `void f(int64_t)`. The function shall be embarrassingly
 /// parallelizable.
-void ParallelFor(int64_t num_jobs, const std::function<void(int64_t)>& f);
+void ParallelFor(int64_t num_jobs, const std::function<void(int64_t)>& f) {
+    ParallelFor(0, num_jobs, DEFAULT_MIN_PARALLEL_SIZE, f);
+}
 
 /// Parallel for loop with default minimal_chunk size.
 ///
@@ -55,7 +59,9 @@ void ParallelFor(int64_t num_jobs, const std::function<void(int64_t)>& f);
 /// parallelizable.
 void ParallelFor(int64_t start,
                  int64_t end,
-                 const std::function<void(int64_t)>& f);
+                 const std::function<void(int64_t)>& f) {
+    ParallelFor(start, end, DEFAULT_MIN_PARALLEL_SIZE, f);
+}
 
 /// Parallel for loop.
 ///
@@ -69,7 +75,25 @@ void ParallelFor(int64_t start,
 void ParallelFor(int64_t start,
                  int64_t end,
                  int64_t min_parallel_size,
-                 const std::function<void(int64_t)>& f);
+                 const std::function<void(int64_t)>& f) {
+    if (min_parallel_size <= 0) {
+        utility::LogError("min_parallel_size must be > 0, but got {}.",
+                          min_parallel_size);
+    }
+
+    // It's also possible to use `#pragma omp parallel for if (xxx)`.
+    if (end - start <= min_parallel_size || GetMaxThreads() == 1 ||
+        InParallel()) {
+        for (int64_t i = start; i < end; i++) {
+            f(i);
+        }
+    } else {
+#pragma omp parallel for
+        for (int64_t i = start; i < end; i++) {
+            f(i);
+        }
+    }
+}
 
 }  // namespace kernel
 }  // namespace core
