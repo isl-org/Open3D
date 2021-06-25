@@ -63,7 +63,7 @@ void ProjectCUDA(
     NDArrayIndexer depth_indexer(depth, 2);
 
     // Pass 1: depth map
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
+    core::kernel::cuda_launcher::LaunchParallel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 float x = points_ptr[3 * workload_idx + 0];
                 float y = points_ptr[3 * workload_idx + 1];
@@ -94,7 +94,7 @@ void ProjectCUDA(
 
     NDArrayIndexer color_indexer(image_colors.value().get(), 2);
     float precision_bound = depth_scale * 1e-4;
-    core::kernel::CUDALauncher::LaunchGeneralKernel(
+    core::kernel::cuda_launcher::LaunchParallel(
             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 float x = points_ptr[3 * workload_idx + 0];
                 float y = points_ptr[3 * workload_idx + 1];

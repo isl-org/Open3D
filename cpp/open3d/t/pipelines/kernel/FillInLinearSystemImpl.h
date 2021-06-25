@@ -75,11 +75,12 @@ void FillInRigidAlignmentTermCPU
             static_cast<const float *>(Ri_normal_ps.GetDataPtr());
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         const float *p_prime = Ti_ps_ptr + 3 * workload_idx;
         const float *q_prime = Tj_qs_ptr + 3 * workload_idx;
         const float *normal_p_prime = Ri_normal_ps_ptr + 3 * workload_idx;
@@ -213,11 +214,12 @@ void FillInSLACAlignmentTermCPU
             static_cast<const float *>(cgrid_ratio_qs.GetDataPtr());
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         const float *Ti_Cp = Ti_Cps_ptr + 3 * workload_idx;
         const float *Tj_Cq = Tj_Cqs_ptr + 3 * workload_idx;
         const float *Cnormal_p = Cnormal_ps_ptr + 3 * workload_idx;
@@ -408,11 +410,12 @@ void FillInSLACRegularizerTermCPU
             static_cast<const float *>(positions_curr.GetDataPtr());
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         // Enumerate 6 neighbors
         int idx_i = grid_idx_ptr[workload_idx];
 

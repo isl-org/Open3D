@@ -47,6 +47,7 @@ static constexpr int64_t default_thread_size = 4;
 namespace open3d {
 namespace core {
 namespace kernel {
+namespace cuda_launcher {
 
 // Applies f for each element
 // Works for unary / binary elementwise operations
@@ -63,91 +64,105 @@ __global__ void ElementWiseKernel(int64_t n, func_t f) {
     }
 }
 
-class CUDALauncher {
-public:
-    template <typename func_t>
-    static void LaunchUnaryEWKernel(const Indexer& indexer,
-                                    func_t element_kernel) {
-        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
-
-        int64_t n = indexer.NumWorkloads();
-        if (n == 0) {
-            return;
-        }
-        int64_t items_per_block = default_block_size * default_thread_size;
-        int64_t grid_size = (n + items_per_block - 1) / items_per_block;
-
-        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-            element_kernel(indexer.GetInputPtr(0, workload_idx),
-                           indexer.GetOutputPtr(workload_idx));
-        };
-
-        ElementWiseKernel<default_block_size, default_thread_size>
-                <<<grid_size, default_block_size, 0>>>(n, f);
-        OPEN3D_GET_LAST_CUDA_ERROR("LaunchUnaryEWKernel failed.");
+/// Run a function in parallel with CUDA.
+///
+/// This is typically used together with cpu_launcher::LaunchParallel() to share
+/// the same code between CPU and CUDA. For example:
+///
+/// ```cpp
+/// #if defined(__CUDACC__)
+///     namespace launcher = core::kernel::cuda_launcher;
+/// #else
+///     namespace launcher = core::kernel::cpu_launcher;
+/// #endif
+///
+/// launcher::LaunchParallel(num_workloads, [=] OPEN3D_DEVICE(int64_t idx) {
+///     process_workload(idx);
+/// });
+/// ```
+///
+/// \param n The number of workloads.
+/// \param func The function to be executed in parallel. The function should
+/// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
+template <typename func_t>
+void LaunchParallel(int64_t n, func_t func) {
+    if (n == 0) {
+        return;
     }
+    int64_t items_per_block = default_block_size * default_thread_size;
+    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    template <typename func_t>
-    static void LaunchBinaryEWKernel(const Indexer& indexer,
-                                     func_t element_kernel) {
-        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+    ElementWiseKernel<default_block_size, default_thread_size>
+            <<<grid_size, default_block_size, 0>>>(n, func);
+    OPEN3D_GET_LAST_CUDA_ERROR("LaunchParallel failed.");
+}
 
-        int64_t n = indexer.NumWorkloads();
-        if (n == 0) {
-            return;
-        }
-        int64_t items_per_block = default_block_size * default_thread_size;
-        int64_t grid_size = (n + items_per_block - 1) / items_per_block;
+template <typename func_t>
+void LaunchUnaryEWKernel(const Indexer& indexer, func_t element_kernel) {
+    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-            element_kernel(indexer.GetInputPtr(0, workload_idx),
-                           indexer.GetInputPtr(1, workload_idx),
-                           indexer.GetOutputPtr(workload_idx));
-        };
-
-        ElementWiseKernel<default_block_size, default_thread_size>
-                <<<grid_size, default_block_size, 0>>>(n, f);
-        OPEN3D_GET_LAST_CUDA_ERROR("LaunchBinaryEWKernel failed.");
+    int64_t n = indexer.NumWorkloads();
+    if (n == 0) {
+        return;
     }
+    int64_t items_per_block = default_block_size * default_thread_size;
+    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    template <typename func_t>
-    static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
-                                            func_t element_kernel) {
-        OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+    auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+        element_kernel(indexer.GetInputPtr(0, workload_idx),
+                       indexer.GetOutputPtr(workload_idx));
+    };
 
-        int64_t n = indexer.NumWorkloads();
-        if (n == 0) {
-            return;
-        }
-        int64_t items_per_block = default_block_size * default_thread_size;
-        int64_t grid_size = (n + items_per_block - 1) / items_per_block;
+    ElementWiseKernel<default_block_size, default_thread_size>
+            <<<grid_size, default_block_size, 0>>>(n, f);
+    OPEN3D_GET_LAST_CUDA_ERROR("LaunchUnaryEWKernel failed.");
+}
 
-        auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
-            element_kernel(indexer.GetInputPtr(workload_idx),
-                           indexer.GetOutputPtr(workload_idx));
-        };
+template <typename func_t>
+void LaunchBinaryEWKernel(const Indexer& indexer, func_t element_kernel) {
+    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
 
-        ElementWiseKernel<default_block_size, default_thread_size>
-                <<<grid_size, default_block_size, 0>>>(n, f);
-        OPEN3D_GET_LAST_CUDA_ERROR("LaunchAdvancedIndexerKernel failed.");
+    int64_t n = indexer.NumWorkloads();
+    if (n == 0) {
+        return;
     }
+    int64_t items_per_block = default_block_size * default_thread_size;
+    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    /// General kernels with non-conventional indexers
-    /// Do not assert host_device compatible, because there can be some GPU-only
-    /// operations (e.g., atomicAdd, __shfl_sync).
-    template <typename func_t>
-    static void LaunchGeneralKernel(int64_t n, func_t element_kernel) {
-        if (n == 0) {
-            return;
-        }
-        int64_t items_per_block = default_block_size * default_thread_size;
-        int64_t grid_size = (n + items_per_block - 1) / items_per_block;
+    auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+        element_kernel(indexer.GetInputPtr(0, workload_idx),
+                       indexer.GetInputPtr(1, workload_idx),
+                       indexer.GetOutputPtr(workload_idx));
+    };
 
-        ElementWiseKernel<default_block_size, default_thread_size>
-                <<<grid_size, default_block_size, 0>>>(n, element_kernel);
-        OPEN3D_GET_LAST_CUDA_ERROR("LaunchGeneralKernel failed.");
+    ElementWiseKernel<default_block_size, default_thread_size>
+            <<<grid_size, default_block_size, 0>>>(n, f);
+    OPEN3D_GET_LAST_CUDA_ERROR("LaunchBinaryEWKernel failed.");
+}
+
+template <typename func_t>
+void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
+                                 func_t element_kernel) {
+    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+
+    int64_t n = indexer.NumWorkloads();
+    if (n == 0) {
+        return;
     }
-};
+    int64_t items_per_block = default_block_size * default_thread_size;
+    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
+
+    auto f = [=] OPEN3D_HOST_DEVICE(int64_t workload_idx) {
+        element_kernel(indexer.GetInputPtr(workload_idx),
+                       indexer.GetOutputPtr(workload_idx));
+    };
+
+    ElementWiseKernel<default_block_size, default_thread_size>
+            <<<grid_size, default_block_size, 0>>>(n, f);
+    OPEN3D_GET_LAST_CUDA_ERROR("LaunchAdvancedIndexerKernel failed.");
+}
+
+}  // namespace cuda_launcher
 }  // namespace kernel
 }  // namespace core
 }  // namespace open3d

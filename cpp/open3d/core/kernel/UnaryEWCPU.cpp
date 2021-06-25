@@ -155,7 +155,7 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
             scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
             scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
-            CPULauncher::LaunchGeneralKernel(
+            cpu_launcher::LaunchParallel(
                     num_elements, [&](int64_t workload_idx) {
                         dst_ptr[workload_idx] = scalar_element;
                     });
@@ -164,7 +164,7 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
         if (src.GetDtype().IsObject()) {
             int64_t object_byte_size = src.GetDtype().ByteSize();
-            CPULauncher::LaunchUnaryEWKernel(
+            cpu_launcher::LaunchUnaryEWKernel(
                     indexer, [&](const void* src, void* dst) {
                         CPUCopyObjectElementKernel(src, dst, object_byte_size);
                     });
@@ -174,7 +174,7 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
                 using src_t = scalar_t;
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                     using dst_t = scalar_t;
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUCopyElementKernel<src_t, dst_t>);
                 });
             });
@@ -199,13 +199,13 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
             if (dst_dtype == src_dtype) {
                 Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
-                CPULauncher::LaunchUnaryEWKernel(
+                cpu_launcher::LaunchUnaryEWKernel(
                         indexer,
                         CPULogicalNotElementKernel<scalar_t, scalar_t>);
             } else if (dst_dtype == Dtype::Bool) {
                 Indexer indexer({src}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
-                CPULauncher::LaunchUnaryEWKernel(
+                cpu_launcher::LaunchUnaryEWKernel(
                         indexer, CPULogicalNotElementKernel<scalar_t, bool>);
             } else {
                 utility::LogError(
@@ -220,14 +220,14 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             if (op_code == UnaryEWOpCode::IsNan) {
-                CPULauncher::LaunchUnaryEWKernel(
+                cpu_launcher::LaunchUnaryEWKernel(
                         indexer, CPUIsNanElementKernel<scalar_t>);
             } else if (op_code == UnaryEWOpCode::IsInf) {
-                CPULauncher::LaunchUnaryEWKernel(
+                cpu_launcher::LaunchUnaryEWKernel(
                         indexer, CPUIsInfElementKernel<scalar_t>);
 
             } else if (op_code == UnaryEWOpCode::IsFinite) {
-                CPULauncher::LaunchUnaryEWKernel(
+                cpu_launcher::LaunchUnaryEWKernel(
                         indexer, CPUIsFiniteElementKernel<scalar_t>);
             }
         });
@@ -237,46 +237,46 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
             switch (op_code) {
                 case UnaryEWOpCode::Sqrt:
                     assert_dtype_is_float(src_dtype);
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUSqrtElementKernel<scalar_t>);
                     break;
                 case UnaryEWOpCode::Sin:
                     assert_dtype_is_float(src_dtype);
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUSinElementKernel<scalar_t>);
                     break;
                 case UnaryEWOpCode::Cos:
                     assert_dtype_is_float(src_dtype);
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUCosElementKernel<scalar_t>);
                     break;
                 case UnaryEWOpCode::Neg:
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUNegElementKernel<scalar_t>);
                     break;
                 case UnaryEWOpCode::Exp:
                     assert_dtype_is_float(src_dtype);
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUExpElementKernel<scalar_t>);
                     break;
                 case UnaryEWOpCode::Abs:
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUAbsElementKernel<scalar_t>);
                     break;
                 case UnaryEWOpCode::Floor:
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUFloorElementKernel<scalar_t>);
                     break;
                 case UnaryEWOpCode::Ceil:
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUCeilElementKernel<scalar_t>);
                     break;
                 case UnaryEWOpCode::Round:
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPURoundElementKernel<scalar_t>);
                     break;
                 case UnaryEWOpCode::Trunc:
-                    CPULauncher::LaunchUnaryEWKernel(
+                    cpu_launcher::LaunchUnaryEWKernel(
                             indexer, CPUTruncElementKernel<scalar_t>);
                     break;
                 default:
