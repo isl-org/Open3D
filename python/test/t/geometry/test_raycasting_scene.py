@@ -28,6 +28,11 @@ import open3d as o3d
 import numpy as np
 import pytest
 
+# RaycastingScene is not available for linux arm
+pytestmark = pytest.mark.skipif(
+    not hasattr(o3d.t.geometry, 'RaycastingScene') or True,
+    reason="RaycastingScene was not compiled")
+
 
 # test intersection with a single triangle
 def test_cast_rays():

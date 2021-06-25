@@ -9,7 +9,6 @@ target_sources(tgeometry PRIVATE
     TensorMap.cpp
     TriangleMesh.cpp
     TSDFVoxelGrid.cpp
-    RaycastingScene.cpp
 )
 # RaycastingScene is not supported on ARM
 if(NOT LINUX_AARCH64)

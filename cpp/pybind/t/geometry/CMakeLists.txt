@@ -5,7 +5,6 @@ target_sources(pybind PRIVATE
     tensormap.cpp
     trianglemesh.cpp
     tsdf_voxelgrid.cpp
-    raycasting_scene.cpp
 )
 # RaycastingScene is not supported on ARM
 if(NOT LINUX_AARCH64)
