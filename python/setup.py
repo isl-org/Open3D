@@ -130,6 +130,11 @@ setup_args = dict(
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),
+    entry_points={
+        "tensorboard_plugins": [
+            "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin.plugin:Open3DPlugin",
+        ],
+    },
     zip_safe=False,
     cmdclass=cmdclass,
     author='Open3D Team',

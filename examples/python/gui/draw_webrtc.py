@@ -2,6 +2,7 @@
 import open3d as o3d
 
 if __name__ == "__main__":
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
     o3d.visualization.webrtc_server.enable_webrtc()
     cube_red = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube_red.compute_vertex_normals()

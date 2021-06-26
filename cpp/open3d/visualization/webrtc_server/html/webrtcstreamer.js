@@ -73,13 +73,13 @@ var WebRtcStreamer = (function () {
     this.commsFetch = commsFetch;
   }
 
-  logAndReturn = function (value) {
+  const logAndReturn = function (value) {
     console.log("logAndReturn: ", value);
     return value;
   };
 
   /**
-   * Call remove server API.
+   * Call remote server API.
    * Non-prototype (static) method, we don't need to new an instance to use it.
    * See https://stackoverflow.com/a/1635143/1255535.
    * @param {string} url Remote URL, e.g. "/api/getMediaList"
