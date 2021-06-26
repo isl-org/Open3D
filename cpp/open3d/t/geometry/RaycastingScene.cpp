@@ -24,6 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#ifdef _MSC_VER
+// embree header files in ext_embree redefine some macros on win
+#pragma warning(disable : 4005)
+#endif
 #include "open3d/t/geometry/RaycastingScene.h"
 
 #include <../src/ext_embree/tutorials/common/math/closest_point.h>
@@ -512,7 +516,10 @@ RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points) {
     return result;
 }
 
-const uint32_t RaycastingScene::INVALID_ID = RTC_INVALID_GEOMETRY_ID;
+
+uint32_t RaycastingScene::INVALID_ID(){
+    return RTC_INVALID_GEOMETRY_ID;
+}
 
 }  // namespace geometry
 }  // namespace t

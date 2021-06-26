@@ -53,7 +53,7 @@ void pybind_raycasting_scene(py::module& m) {
 
     raycasting_scene.def_property_readonly_static(
             "INVALID_ID", [](py::object /* self */) -> uint32_t {
-                return RaycastingScene::INVALID_ID;
+                return RaycastingScene::INVALID_ID();
             });
 }
 }  // namespace geometry
