@@ -35,7 +35,6 @@ pytestmark = pytest.mark.skipif(not hasattr(o3d.t.geometry, 'RaycastingScene'),
 
 # test intersection with a single triangle
 def test_cast_rays():
-
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.Dtype.Float32)
     triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
@@ -64,7 +63,7 @@ def test_cast_lots_of_rays():
     triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
-    _ = scene.add_triangles(vertices, triangles)
+    scene.add_triangles(vertices, triangles)
 
     rs = np.random.RandomState(123)
     rays = o3d.core.Tensor.from_numpy(rs.rand(7654321, 6).astype(np.float32))
@@ -79,7 +78,7 @@ def test_count_intersections():
     triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
-    geom_id = scene.add_triangles(vertices, triangles)
+    scene.add_triangles(vertices, triangles)
 
     rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
@@ -98,7 +97,7 @@ def test_count_lots_of_intersections():
     triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
-    geom_id = scene.add_triangles(vertices, triangles)
+    scene.add_triangles(vertices, triangles)
 
     rs = np.random.RandomState(123)
     rays = o3d.core.Tensor.from_numpy(rs.rand(1234567, 6).astype(np.float32))
@@ -119,5 +118,127 @@ def test_compute_closest_points():
     ans = scene.compute_closest_points(query_points)
 
     assert (geom_id == ans['geometry_ids']).all()
+    assert (0 == ans['primitive_ids']).all()
     assert np.allclose(ans['points'].numpy(),
                        np.array([[0.2, 0.1, 0.0], [1, 1, 0]]))
+    assert np.allclose(ans['primitive_normals'].numpy(),
+                       np.array([[0, 0, 1], [0, 0, 1]]))
+
+
+def test_add_triangle_mesh():
+    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+        o3d.geometry.TriangleMesh.create_box())
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(cube)
+
+    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
+                            [10, 10, 10, 1, 0, 0]],
+                           dtype=o3d.core.Dtype.Float32)
+    ans = scene.count_intersections(rays)
+
+    assert (ans.numpy() == [2, 1, 0]).all()
+
+
+def test_compute_distance():
+    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+        o3d.geometry.TriangleMesh.create_box())
+    vertices = cube.vertices['vertices']
+    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(cube)
+
+    query_points = o3d.core.Tensor(
+        [[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5], [0, 0, 0]],
+        dtype=o3d.core.Dtype.Float32)
+    ans = scene.compute_distance(query_points)
+    assert np.allclose(ans.numpy(), [0.5, np.sqrt(3 * 0.5**2), 0.0])
+
+
+@pytest.mark.parametrize("use_triangle_normal", (False, True))
+def test_compute_signed_distance(use_triangle_normal):
+    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+        o3d.geometry.TriangleMesh.create_box())
+    vertices = cube.vertices['vertices']
+    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(cube)
+
+    query_points = o3d.core.Tensor(
+        [[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5], [0, 0, 0]],
+        dtype=o3d.core.Dtype.Float32)
+    ans = scene.compute_signed_distance(query_points, use_triangle_normal)
+    assert np.allclose(ans.numpy(), [-0.5, np.sqrt(3 * 0.5**2), 0.0])
+
+
+@pytest.mark.parametrize("use_triangle_normal", (False, True))
+def test_compute_occupancy(use_triangle_normal):
+    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+        o3d.geometry.TriangleMesh.create_box())
+    vertices = cube.vertices['vertices']
+    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(cube)
+
+    query_points = o3d.core.Tensor([[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5]],
+                                   dtype=o3d.core.Dtype.Float32)
+    ans = scene.compute_occupancy(query_points, use_triangle_normal)
+    assert np.allclose(ans.numpy(), [1.0, 0.0])
+
+
+@pytest.mark.parametrize("shape", ([11], [1, 2, 3], [32, 14]))
+@pytest.mark.parametrize("use_triangle_normal", (False, True))
+def test_output_shapes(shape, use_triangle_normal):
+    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=o3d.core.Dtype.Float32)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    geom_id = scene.add_triangles(vertices, triangles)
+
+    rs = np.random.RandomState(123)
+    rays = o3d.core.Tensor.from_numpy(
+        rs.uniform(size=shape + [6]).astype(np.float32))
+    query_points = o3d.core.Tensor.from_numpy(
+        rs.uniform(size=shape + [3]).astype(np.float32))
+
+    ans = scene.count_intersections(rays)
+    assert list(ans.shape) == shape
+
+    ans = scene.compute_distance(query_points)
+    assert list(ans.shape) == shape
+
+    ans = scene.compute_signed_distance(query_points, use_triangle_normal)
+    assert list(ans.shape) == shape
+
+    ans = scene.compute_occupancy(query_points, use_triangle_normal)
+    assert list(ans.shape) == shape
+
+    # some outputs append a specific last dim
+    last_dim = {
+        't_hit': [],
+        'geometry_ids': [],
+        'primitive_ids': [],
+        'primitive_uvs': [2],
+        'primitive_normals': [3],
+        'points': [3]
+    }
+
+    ans = scene.cast_rays(rays)
+    for k, v in ans.items():
+        expected_shape = shape + last_dim[k]
+        assert list(
+            v.shape
+        ) == expected_shape, 'shape mismatch: expected {} but got {} for {}'.format(
+            expected_shape, list(v.shape), k)
+
+    ans = scene.compute_closest_points(query_points)
+    for k, v in ans.items():
+        expected_shape = shape + last_dim[k]
+        assert list(
+            v.shape
+        ) == expected_shape, 'shape mismatch: expected {} but got {} for {}'.format(
+            expected_shape, list(v.shape), k)

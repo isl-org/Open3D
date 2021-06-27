@@ -48,6 +48,8 @@ public:
     uint32_t AddTriangles(const core::Tensor &vertices,
                           const core::Tensor &triangles);
 
+    uint32_t AddTriangles(const TriangleMesh &mesh);
+
     std::unordered_map<std::string, core::Tensor> CastRays(
             const core::Tensor &rays);
 
@@ -55,6 +57,14 @@ public:
 
     std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
             const core::Tensor &query_points);
+
+    core::Tensor ComputeDistance(const core::Tensor &query_points);
+
+    core::Tensor ComputeSignedDistance(const core::Tensor &query_points,
+                                       bool use_triangle_normal = false);
+
+    core::Tensor ComputeOccupancy(const core::Tensor &query_points,
+                                  bool use_triangle_normal = false);
 
     static uint32_t INVALID_ID();
 

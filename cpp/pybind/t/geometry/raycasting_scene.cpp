@@ -39,8 +39,16 @@ void pybind_raycasting_scene(py::module& m) {
     // Constructors.
     raycasting_scene.def(py::init<>());
 
-    raycasting_scene.def("add_triangles", &RaycastingScene::AddTriangles,
-                         "vertices"_a, "triangles"_a);
+    raycasting_scene.def(
+            "add_triangles",
+            py::overload_cast<const core::Tensor&, const core::Tensor&>(
+                    &RaycastingScene::AddTriangles),
+            "vertices"_a, "triangles"_a);
+
+    raycasting_scene.def("add_triangles",
+                         py::overload_cast<const TriangleMesh&>(
+                                 &RaycastingScene::AddTriangles),
+                         "mesh"_a);
 
     raycasting_scene.def("cast_rays", &RaycastingScene::CastRays, "rays"_a);
 
@@ -50,6 +58,17 @@ void pybind_raycasting_scene(py::module& m) {
     raycasting_scene.def("compute_closest_points",
                          &RaycastingScene::ComputeClosestPoints,
                          "query_points"_a);
+
+    raycasting_scene.def("compute_distance", &RaycastingScene::ComputeDistance,
+                         "query_points"_a);
+
+    raycasting_scene.def("compute_signed_distance",
+                         &RaycastingScene::ComputeSignedDistance,
+                         "query_points"_a, "use_triangle_normal"_a = false);
+
+    raycasting_scene.def("compute_occupancy",
+                         &RaycastingScene::ComputeOccupancy, "query_points"_a,
+                         "use_triangle_normal"_a = false);
 
     raycasting_scene.def_property_readonly_static(
             "INVALID_ID", [](py::object /* self */) -> uint32_t {
