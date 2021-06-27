@@ -35,12 +35,12 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/LineSetIO.h"
 #include "open3d/io/ModelIO.h"
+#include "open3d/io/OctreeIO.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/PoseGraphIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
-#include "open3d/io/OctreeIO.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "pybind/docstring.h"
 #include "pybind/io/io.h"
@@ -294,7 +294,6 @@ void pybind_class_io(py::module &m_io) {
     docstring::FunctionDocInject(m_io, "write_voxel_grid",
                                  map_shared_argument_docstrings);
 
-
     // open3d::geometry::Octree
     m_io.def(
             "read_octree",
@@ -311,8 +310,7 @@ void pybind_class_io(py::module &m_io) {
 
     m_io.def(
             "write_octree",
-            [](const std::string &filename,
-               const geometry::Octree &octree) {
+            [](const std::string &filename, const geometry::Octree &octree) {
                 py::gil_scoped_release release;
                 return WriteOctree(filename, octree);
             },
