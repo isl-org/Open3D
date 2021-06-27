@@ -1,3 +1,28 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
 /**************************************************************************
 **
 **  svd3
@@ -8,10 +33,11 @@
 **  with minimal branching and elementary floating point operations,
 **  University of Wisconsin - Madison technical report TR1690, May 2011
 **
-**	Identical GPU version
+**	Identical CPU version
 ** 	Implementated by: Kui Wu
 **	kwu@cs.utah.edu
 **  Simply modified back to CPU by: Wei Dong
+**  Modified for double type support by: Rishabh Singh
 **
 **  May 2018
 **
@@ -30,54 +56,56 @@
 #define gtiny_number 1.e-20f
 #define gfour_gamma_squared 5.8284273147583007813f
 
+template <typename scalar_t>
 union un {
-    float f;
+    scalar_t f;
     unsigned int ui;
 };
 
-#define max(x, y) (x > y ? x : y)
+#define __max(x, y) (x > y ? x : y)
 #define __fadd_rn(x, y) (x + y)
 #define __fsub_rn(x, y) (x - y)
 #define __frsqrt_rn(x) (1.0 / sqrt(x))
 
-inline void svd(float a11,
-                float a12,
-                float a13,
-                float a21,
-                float a22,
-                float a23,
-                float a31,
-                float a32,
-                float a33,  // input A
-                float &u11,
-                float &u12,
-                float &u13,
-                float &u21,
-                float &u22,
-                float &u23,
-                float &u31,
-                float &u32,
-                float &u33,  // output U
-                float &s11,
-                float &s22,
-                float &s33,  // output S
-                float &v11,
-                float &v12,
-                float &v13,
-                float &v21,
-                float &v22,
-                float &v23,
-                float &v31,
-                float &v32,
-                float &v33  // output V
+template <typename scalar_t>
+inline void svd(scalar_t a11,
+                scalar_t a12,
+                scalar_t a13,
+                scalar_t a21,
+                scalar_t a22,
+                scalar_t a23,
+                scalar_t a31,
+                scalar_t a32,
+                scalar_t a33,  // input A
+                scalar_t &u11,
+                scalar_t &u12,
+                scalar_t &u13,
+                scalar_t &u21,
+                scalar_t &u22,
+                scalar_t &u23,
+                scalar_t &u31,
+                scalar_t &u32,
+                scalar_t &u33,  // output U
+                scalar_t &s11,
+                scalar_t &s22,
+                scalar_t &s33,  // output S
+                scalar_t &v11,
+                scalar_t &v12,
+                scalar_t &v13,
+                scalar_t &v21,
+                scalar_t &v22,
+                scalar_t &v23,
+                scalar_t &v31,
+                scalar_t &v32,
+                scalar_t &v33  // output V
 ) {
-    un Sa11, Sa21, Sa31, Sa12, Sa22, Sa32, Sa13, Sa23, Sa33;
-    un Su11, Su21, Su31, Su12, Su22, Su32, Su13, Su23, Su33;
-    un Sv11, Sv21, Sv31, Sv12, Sv22, Sv32, Sv13, Sv23, Sv33;
-    un Sc, Ss, Sch, Ssh;
-    un Stmp1, Stmp2, Stmp3, Stmp4, Stmp5;
-    un Ss11, Ss21, Ss31, Ss22, Ss32, Ss33;
-    un Sqvs, Sqvvx, Sqvvy, Sqvvz;
+    un<scalar_t> Sa11, Sa21, Sa31, Sa12, Sa22, Sa32, Sa13, Sa23, Sa33;
+    un<scalar_t> Su11, Su21, Su31, Su12, Su22, Su32, Su13, Su23, Su33;
+    un<scalar_t> Sv11, Sv21, Sv31, Sv12, Sv22, Sv32, Sv13, Sv23, Sv33;
+    un<scalar_t> Sc, Ss, Sch, Ssh;
+    un<scalar_t> Stmp1, Stmp2, Stmp3, Stmp4, Stmp5;
+    un<scalar_t> Ss11, Ss21, Ss31, Ss22, Ss32, Ss33;
+    un<scalar_t> Sqvs, Sqvvx, Sqvvy, Sqvvz;
 
     Sa11.f = a11;
     Sa12.f = a12;
@@ -172,7 +200,7 @@ inline void svd(float a11,
         Ss.f = __fadd_rn(Ss.f, Ss.f);
 
 #ifdef DEBUG_JACOBI_CONJUGATE
-        printf("GPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
+        printf("CPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
                Sch.f);
 #endif
         //###########################################################
@@ -236,7 +264,7 @@ inline void svd(float a11,
         Sqvvy.f = __fsub_rn(Sqvvy.f, Stmp1.f);
 
 #ifdef DEBUG_JACOBI_CONJUGATE
-        printf("GPU q %.20g %.20g %.20g %.20g\n", Sqvvx.f, Sqvvy.f, Sqvvz.f,
+        printf("CPU q %.20g %.20g %.20g %.20g\n", Sqvvx.f, Sqvvy.f, Sqvvz.f,
                Sqvs.f);
 #endif
 
@@ -277,7 +305,7 @@ inline void svd(float a11,
         Ss.f = __fadd_rn(Ss.f, Ss.f);
 
 #ifdef DEBUG_JACOBI_CONJUGATE
-        printf("GPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
+        printf("CPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
                Sch.f);
 #endif
 
@@ -342,7 +370,7 @@ inline void svd(float a11,
         Sqvvz.f = __fsub_rn(Sqvvz.f, Stmp2.f);
 
 #ifdef DEBUG_JACOBI_CONJUGATE
-        printf("GPU q %.20g %.20g %.20g %.20g\n", Sqvvx.f, Sqvvy.f, Sqvvz.f,
+        printf("CPU q %.20g %.20g %.20g %.20g\n", Sqvvx.f, Sqvvy.f, Sqvvz.f,
                Sqvs.f);
 #endif
 #if 1
@@ -384,7 +412,7 @@ inline void svd(float a11,
         Ss.f = __fadd_rn(Ss.f, Ss.f);
 
 #ifdef DEBUG_JACOBI_CONJUGATE
-        printf("GPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
+        printf("CPU s %.20g, c %.20g, sh %.20g, ch %.20g\n", Ss.f, Sc.f, Ssh.f,
                Sch.f);
 #endif
 
@@ -769,8 +797,8 @@ inline void svd(float a11,
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = max(Sch.f, Sa11.f);
-    Sch.f = max(Sch.f, gsmall_number);
+    Sch.f = __max(Sch.f, Sa11.f);
+    Sch.f = __max(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -874,8 +902,8 @@ inline void svd(float a11,
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = max(Sch.f, Sa11.f);
-    Sch.f = max(Sch.f, gsmall_number);
+    Sch.f = __max(Sch.f, Sa11.f);
+    Sch.f = __max(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -979,8 +1007,8 @@ inline void svd(float a11,
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa22.f);
-    Sch.f = max(Sch.f, Sa22.f);
-    Sch.f = max(Sch.f, gsmall_number);
+    Sch.f = __max(Sch.f, Sa22.f);
+    Sch.f = __max(Sch.f, gsmall_number);
     Stmp5.ui = (Sa22.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1101,4 +1129,124 @@ inline void svd(float a11,
     s22 = Sa22.f;
     // s23 = Sa23.f; s31 = Sa31.f; s32 = Sa32.f;
     s33 = Sa33.f;
+}
+
+template <typename scalar_t>
+inline scalar_t det3x3(scalar_t m00,
+                       scalar_t m01,
+                       scalar_t m02,
+                       scalar_t m10,
+                       scalar_t m11,
+                       scalar_t m12,
+                       scalar_t m20,
+                       scalar_t m21,
+                       scalar_t m22) {
+    return m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 - m21) +
+           m20 * (m01 * m12 - m02 * m11);
+}
+
+template <typename scalar_t>
+inline void matmul3x3_3x1(scalar_t m00,
+                          scalar_t m01,
+                          scalar_t m02,
+                          scalar_t m10,
+                          scalar_t m11,
+                          scalar_t m12,
+                          scalar_t m20,
+                          scalar_t m21,
+                          scalar_t m22,
+                          scalar_t v0,
+                          scalar_t v1,
+                          scalar_t v2,
+                          scalar_t &o0,
+                          scalar_t &o1,
+                          scalar_t &o2) {
+    o0 = m00 * v0 + m01 * v1 + m02 * v2;
+    o1 = m10 * v0 + m11 * v1 + m12 * v2;
+    o2 = m20 * v0 + m21 * v1 + m22 * v2;
+}
+
+template <typename scalar_t>
+inline void matmul3x3_3x3(scalar_t a00,
+                          scalar_t a01,
+                          scalar_t a02,
+                          scalar_t a10,
+                          scalar_t a11,
+                          scalar_t a12,
+                          scalar_t a20,
+                          scalar_t a21,
+                          scalar_t a22,
+                          scalar_t b00,
+                          scalar_t b01,
+                          scalar_t b02,
+                          scalar_t b10,
+                          scalar_t b11,
+                          scalar_t b12,
+                          scalar_t b20,
+                          scalar_t b21,
+                          scalar_t b22,
+                          scalar_t &c00,
+                          scalar_t &c01,
+                          scalar_t &c02,
+                          scalar_t &c10,
+                          scalar_t &c11,
+                          scalar_t &c12,
+                          scalar_t &c20,
+                          scalar_t &c21,
+                          scalar_t &c22) {
+    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b00, b10, b20,
+                  c00, c10, c20);
+    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b01, b11, b21,
+                  c01, c11, c21);
+    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b02, b12, b22,
+                  c02, c12, c22);
+}
+
+template <typename scalar_t>
+inline void solve_svd3x3(scalar_t &a11,
+                         scalar_t &a12,
+                         scalar_t &a13,
+                         scalar_t &a21,
+                         scalar_t &a22,
+                         scalar_t &a23,
+                         scalar_t &a31,
+                         scalar_t &a32,
+                         scalar_t &a33,  // input A {3,3}
+                         scalar_t &b1,
+                         scalar_t &b2,
+                         scalar_t &b3,  // input b {3,1}
+                         scalar_t &x1,
+                         scalar_t &x2,
+                         scalar_t &x3)  // output x {3,1}
+{
+    scalar_t U[9];
+    scalar_t V[9];
+    scalar_t S[3];
+    svd(a11, a12, a13, a21, a22, a23, a31, a32, a33, U[0], U[1], U[2], U[3],
+        U[4], U[5], U[6], U[7], U[8], S[0], S[1], S[2], V[0], V[1], V[2], V[3],
+        V[4], V[5], V[6], V[7], V[8]);
+
+    //###########################################################
+    // Sigma^+
+    //###########################################################
+    const scalar_t epsilon = 1e-6;
+    S[0] = S[0] < epsilon ? 0 : 1.0 / S[0];
+    S[1] = S[1] < epsilon ? 0 : 1.0 / S[1];
+    S[2] = S[2] < epsilon ? 0 : 1.0 / S[2];
+
+    //###########################################################
+    // Ainv = V * [(Sigma^+) * UT]
+    //###########################################################
+    scalar_t Ainv[9] = {0};
+    matmul3x3_3x3(V[0], V[1], V[2], V[3], V[4], V[5], V[6], V[7], V[8],
+                  U[0] * S[0], U[3] * S[0], U[6] * S[0], U[1] * S[1],
+                  U[4] * S[1], U[7] * S[1], U[2] * S[2], U[5] * S[2],
+                  U[8] * S[2], Ainv[0], Ainv[1], Ainv[2], Ainv[3], Ainv[4],
+                  Ainv[5], Ainv[6], Ainv[7], Ainv[8]);
+
+    //###########################################################
+    // x = Ainv * b
+    //###########################################################
+    matmul3x3_3x1(Ainv[0], Ainv[1], Ainv[2], Ainv[3], Ainv[4], Ainv[5], Ainv[6],
+                  Ainv[7], Ainv[8], b1, b2, b3, x1, x2, x3);
 }
