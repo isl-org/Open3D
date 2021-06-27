@@ -141,8 +141,6 @@ def test_add_triangle_mesh():
 def test_compute_distance():
     cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
         o3d.geometry.TriangleMesh.create_box())
-    vertices = cube.vertices['vertices']
-    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -173,8 +171,6 @@ def test_compute_signed_distance():
 def test_compute_occupancy():
     cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
         o3d.geometry.TriangleMesh.create_box())
-    vertices = cube.vertices['vertices']
-    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)
@@ -192,7 +188,7 @@ def test_output_shapes(shape):
     triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
-    geom_id = scene.add_triangles(vertices, triangles)
+    scene.add_triangles(vertices, triangles)
 
     rs = np.random.RandomState(123)
     rays = o3d.core.Tensor.from_numpy(
