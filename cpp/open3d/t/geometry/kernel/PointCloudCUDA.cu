@@ -127,22 +127,16 @@ void ProjectCUDA(
             });
 }
 
-void TransformCUDA(core::Tensor& points,
-                   const core::Tensor& transformation,
-                   core::Tensor& output_points,
-                   core::Tensor& output_normals) {
+void TransformCUDA(core::Tensor& points, const core::Tensor& transformation) {
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
         scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
-        scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
-        scalar_t* output_points_ptr = output_points.GetDataPtr<scalar_t>();
         const scalar_t* transformation_ptr =
                 transformation.GetDataPtr<scalar_t>();
 
         core::kernel::CUDALauncher::LaunchGeneralKernel(
                 points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    TransformPointWiseKernel(
-                            points_ptr + 3 * workload_idx, transformation_ptr,
-                            output_points_ptr + 3 * workload_idx);
+                    TransformPointWiseKernel(points_ptr + 3 * workload_idx,
+                                             transformation_ptr);
                 });
     });
 
@@ -151,25 +145,19 @@ void TransformCUDA(core::Tensor& points,
 
 void TransformCUDA(core::Tensor& points,
                    core::Tensor& normals,
-                   const core::Tensor& transformation,
-                   core::Tensor& output_points,
-                   core::Tensor& output_normals) {
+                   const core::Tensor& transformation) {
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
         scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
         scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
-        scalar_t* output_points_ptr = output_points.GetDataPtr<scalar_t>();
-        scalar_t* output_normals_ptr = output_normals.GetDataPtr<scalar_t>();
         const scalar_t* transformation_ptr =
                 transformation.GetDataPtr<scalar_t>();
 
         core::kernel::CUDALauncher::LaunchGeneralKernel(
                 points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    TransformPointWiseKernel(
-                            points_ptr + 3 * workload_idx, transformation_ptr,
-                            output_points_ptr + 3 * workload_idx);
-                    RotatePointWiseKernel(
-                            normals_ptr + 3 * workload_idx, transformation_ptr,
-                            output_normals_ptr + 3 * workload_idx);
+                    TransformPointWiseKernel(points_ptr + 3 * workload_idx,
+                                             transformation_ptr);
+                    RotatePointWiseKernel(normals_ptr + 3 * workload_idx,
+                                          transformation_ptr);
                 });
     });
 

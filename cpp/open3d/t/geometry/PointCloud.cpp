@@ -154,19 +154,14 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    transformation.AssertShape({4, 4});
-    transformation.AssertDevice(device_);
-
-    if (transformation.AllClose(core::Tensor::Eye(
-                4, transformation.GetDtype(), transformation.GetDevice()))) {
-        return *this;
-    }
-
+    // - Required Asserts are performed inside the Transfom kernel.
+    // - Transform kernel assumes the tensor to be transformed is contiguous,
+    //   and Transformation matrix contains only Rotation and translation
+    //   values.
     SetPoints(GetPoints().Contiguous());
 
     if (HasPointNormals()) {
         SetPointNormals(GetPointNormals().Contiguous());
-
         t::geometry::kernel::pointcloud::Transform(
                 GetPoints(), GetPointNormals(), transformation);
     } else {

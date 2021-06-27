@@ -120,7 +120,7 @@ void TransformCPU(core::Tensor& points, const core::Tensor& transformation) {
                 transformation.GetDataPtr<scalar_t>();
 
         core::kernel::CPULauncher::LaunchGeneralKernel(
-                points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                points.GetLength(), [&] OPEN3D_DEVICE(int64_t workload_idx) {
                     TransformPointWiseKernel(points_ptr + 3 * workload_idx,
                                              transformation_ptr);
                 });
@@ -139,7 +139,7 @@ void TransformCPU(core::Tensor& points,
                 transformation.GetDataPtr<scalar_t>();
 
         core::kernel::CPULauncher::LaunchGeneralKernel(
-                points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                points.GetLength(), [&] OPEN3D_DEVICE(int64_t workload_idx) {
                     TransformPointWiseKernel(points_ptr + 3 * workload_idx,
                                              transformation_ptr);
                     RotatePointWiseKernel(normals_ptr + 3 * workload_idx,
