@@ -64,11 +64,10 @@ void pybind_raycasting_scene(py::module& m) {
 
     raycasting_scene.def("compute_signed_distance",
                          &RaycastingScene::ComputeSignedDistance,
-                         "query_points"_a, "use_triangle_normal"_a = false);
+                         "query_points"_a);
 
     raycasting_scene.def("compute_occupancy",
-                         &RaycastingScene::ComputeOccupancy, "query_points"_a,
-                         "use_triangle_normal"_a = false);
+                         &RaycastingScene::ComputeOccupancy, "query_points"_a);
 
     raycasting_scene.def_property_readonly_static(
             "INVALID_ID", [](py::object /* self */) -> uint32_t {

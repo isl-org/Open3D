@@ -130,7 +130,6 @@ struct ClosestPointResult {
           geometry_ptrs_ptr() {}
 
     embree::Vec3f p;
-    embree::Vec3f Ng;
     unsigned int primID;
     unsigned int geomID;
     std::vector<std::tuple<RTCGeometryType, const void*, const void*>>*
@@ -181,9 +180,6 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
         if (d < args->query->radius) {
             args->query->radius = d;
             result->p = p;
-            Vec3fa e1 = v0 - v1;
-            Vec3fa e2 = v2 - v0;
-            result->Ng = normalize(cross(e2, e1));
             result->primID = primID;
             result->geomID = geomID;
             return true;  // Return true to indicate that the query radius
@@ -352,7 +348,6 @@ struct RaycastingScene::Impl {
     void ComputeClosestPoints(const float* const query_points,
                               const size_t num_query_points,
                               float* closest_points,
-                              float* normals,
                               unsigned int* geometry_ids,
                               unsigned int* primitive_ids) {
         if (!scene_committed) {
@@ -379,9 +374,6 @@ struct RaycastingScene::Impl {
             closest_points[3 * i + 0] = result.p.x;
             closest_points[3 * i + 1] = result.p.y;
             closest_points[3 * i + 2] = result.p.z;
-            normals[3 * i + 0] = result.Ng.x;
-            normals[3 * i + 1] = result.Ng.y;
-            normals[3 * i + 2] = result.Ng.z;
             geometry_ids[i] = result.geomID;
             primitive_ids[i] = result.primID;
         }
@@ -531,13 +523,10 @@ RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points) {
             core::Tensor(shape, core::Dtype::FromType<uint32_t>());
     shape.push_back(3);
     result["points"] = core::Tensor(shape, core::Dtype::FromType<float>());
-    result["primitive_normals"] =
-            core::Tensor(shape, core::Dtype::FromType<float>());
 
     auto data = query_points.Contiguous();
     impl_->ComputeClosestPoints(data.GetDataPtr<float>(), num_query_points,
                                 result["points"].GetDataPtr<float>(),
-                                result["primitive_normals"].GetDataPtr<float>(),
                                 result["geometry_ids"].GetDataPtr<uint32_t>(),
                                 result["primitive_ids"].GetDataPtr<uint32_t>());
 
@@ -569,7 +558,7 @@ core::Tensor RaycastingScene::ComputeDistance(
 }
 
 core::Tensor RaycastingScene::ComputeSignedDistance(
-        const core::Tensor& query_points, bool use_triangle_normal) {
+        const core::Tensor& query_points) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device);
     auto shape = query_points.GetShape();
@@ -577,67 +566,32 @@ core::Tensor RaycastingScene::ComputeSignedDistance(
                        // results
     size_t num_query_points = shape.NumElements();
 
-    // code path that uses the triangle normal to determine the sign
-    if (use_triangle_normal) {
-        auto data = query_points.Contiguous();
-        auto closest_points = ComputeClosestPoints(data);
+    auto data = query_points.Contiguous();
+    auto distance = ComputeDistance(data);
+    core::Tensor rays({int64_t(num_query_points), 6},
+                      core::Dtype::FromType<float>());
+    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
+                  core::TensorKey::Slice(0, 3, 1)},
+                 data.Reshape({int64_t(num_query_points), 3}));
+    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
+                  core::TensorKey::Slice(3, 6, 1)},
+                 core::Tensor::Ones({1}, core::Dtype::FromType<float>(),
+                                    impl_->tensor_device)
+                         .Expand({int64_t(num_query_points), 3}));
+    auto intersections = CountIntersections(rays);
 
-        size_t num_query_points = shape.NumElements();
-        Eigen::Map<Eigen::MatrixXf> query_points_map(data.GetDataPtr<float>(),
-                                                     3, num_query_points);
-        Eigen::Map<Eigen::MatrixXf> closest_points_map(
-                closest_points["points"].GetDataPtr<float>(), 3,
-                num_query_points);
-        Eigen::Map<Eigen::MatrixXf> primitive_normals_map(
-                closest_points["primitive_normals"].GetDataPtr<float>(), 3,
-                num_query_points);
-
-        Eigen::VectorXf sign(num_query_points);
-        // overwrite closest_points with difference vector
-        closest_points_map = query_points_map - closest_points_map;
-        // dot product
-        sign = (closest_points_map.array() * primitive_normals_map.array())
-                       .colwise()
-                       .sum();
-        sign = sign.unaryExpr(
-                [](const float x) { return x >= 0.f ? 1.f : -1.f; });
-
-        core::Tensor distance(shape, core::Dtype::FromType<float>());
-        Eigen::Map<Eigen::VectorXf> distance_map(distance.GetDataPtr<float>(),
-                                                 num_query_points);
-        distance_map = closest_points_map.colwise().norm();
-        distance_map.array() *= sign.array();
-        return distance;
-    }
-    // code path that counts intersections to determine the sign
-    else {
-        auto data = query_points.Contiguous();
-        auto distance = ComputeDistance(data);
-        core::Tensor rays({int64_t(num_query_points), 6},
-                          core::Dtype::FromType<float>());
-        rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                      core::TensorKey::Slice(0, 3, 1)},
-                     data.Reshape({int64_t(num_query_points), 3}));
-        rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                      core::TensorKey::Slice(3, 6, 1)},
-                     core::Tensor::Ones({1}, core::Dtype::FromType<float>(),
-                                        impl_->tensor_device)
-                             .Expand({int64_t(num_query_points), 3}));
-        auto intersections = CountIntersections(rays);
-
-        Eigen::Map<Eigen::VectorXf> distance_map(distance.GetDataPtr<float>(),
-                                                 num_query_points);
-        Eigen::Map<Eigen::VectorXi> intersections_map(
-                intersections.GetDataPtr<int>(), num_query_points);
-        intersections_map = intersections_map.unaryExpr(
-                [](const int x) { return (x % 2) ? -1 : 1; });
-        distance_map.array() *= intersections_map.array().cast<float>();
-        return distance;
-    }
+    Eigen::Map<Eigen::VectorXf> distance_map(distance.GetDataPtr<float>(),
+                                             num_query_points);
+    Eigen::Map<Eigen::VectorXi> intersections_map(
+            intersections.GetDataPtr<int>(), num_query_points);
+    intersections_map = intersections_map.unaryExpr(
+            [](const int x) { return (x % 2) ? -1 : 1; });
+    distance_map.array() *= intersections_map.array().cast<float>();
+    return distance;
 }
 
-core::Tensor RaycastingScene::ComputeOccupancy(const core::Tensor& query_points,
-                                               bool use_triangle_normal) {
+core::Tensor RaycastingScene::ComputeOccupancy(
+        const core::Tensor& query_points) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device);
     auto shape = query_points.GetShape();
@@ -645,55 +599,22 @@ core::Tensor RaycastingScene::ComputeOccupancy(const core::Tensor& query_points,
                        // results
     size_t num_query_points = shape.NumElements();
 
-    // code path that uses the triangle normal to determine inside or outside
-    if (use_triangle_normal) {
-        auto data = query_points.Contiguous();
-        auto closest_points = ComputeClosestPoints(data);
-
-        size_t num_query_points = shape.NumElements();
-        Eigen::Map<Eigen::MatrixXf> query_points_map(data.GetDataPtr<float>(),
-                                                     3, num_query_points);
-        Eigen::Map<Eigen::MatrixXf> closest_points_map(
-                closest_points["points"].GetDataPtr<float>(), 3,
-                num_query_points);
-        Eigen::Map<Eigen::MatrixXf> primitive_normals_map(
-                closest_points["primitive_normals"].GetDataPtr<float>(), 3,
-                num_query_points);
-
-        // overwrite with closest_point with difference vector
-        closest_points_map = query_points_map - closest_points_map;
-
-        core::Tensor occupancy(shape, core::Dtype::FromType<float>());
-        Eigen::Map<Eigen::VectorXf> occupancy_map(occupancy.GetDataPtr<float>(),
-                                                  num_query_points);
-        // dot product
-        occupancy_map =
-                (closest_points_map.array() * primitive_normals_map.array())
-                        .colwise()
-                        .sum();
-        occupancy_map = occupancy_map.unaryExpr(
-                [](const float x) { return x >= 0.f ? 0.f : 1.f; });
-        return occupancy;
-    }
-    // code path that counts intersections to determine the inside or outside
-    else {
-        core::Tensor rays({int64_t(num_query_points), 6},
-                          core::Dtype::FromType<float>());
-        rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                      core::TensorKey::Slice(0, 3, 1)},
-                     query_points.Reshape({int64_t(num_query_points), 3}));
-        rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                      core::TensorKey::Slice(3, 6, 1)},
-                     core::Tensor::Ones({1}, core::Dtype::FromType<float>(),
-                                        impl_->tensor_device)
-                             .Expand({int64_t(num_query_points), 3}));
-        auto intersections = CountIntersections(rays);
-        Eigen::Map<Eigen::VectorXi> intersections_map(
-                intersections.GetDataPtr<int>(), num_query_points);
-        intersections_map =
-                intersections_map.unaryExpr([](const int x) { return x % 2; });
-        return intersections.To(core::Dtype::FromType<float>()).Reshape(shape);
-    }
+    core::Tensor rays({int64_t(num_query_points), 6},
+                      core::Dtype::FromType<float>());
+    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
+                  core::TensorKey::Slice(0, 3, 1)},
+                 query_points.Reshape({int64_t(num_query_points), 3}));
+    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
+                  core::TensorKey::Slice(3, 6, 1)},
+                 core::Tensor::Ones({1}, core::Dtype::FromType<float>(),
+                                    impl_->tensor_device)
+                         .Expand({int64_t(num_query_points), 3}));
+    auto intersections = CountIntersections(rays);
+    Eigen::Map<Eigen::VectorXi> intersections_map(
+            intersections.GetDataPtr<int>(), num_query_points);
+    intersections_map =
+            intersections_map.unaryExpr([](const int x) { return x % 2; });
+    return intersections.To(core::Dtype::FromType<float>()).Reshape(shape);
 }
 
 uint32_t RaycastingScene::INVALID_ID() { return RTC_INVALID_GEOMETRY_ID; }

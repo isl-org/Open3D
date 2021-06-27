@@ -121,8 +121,6 @@ def test_compute_closest_points():
     assert (0 == ans['primitive_ids']).all()
     assert np.allclose(ans['points'].numpy(),
                        np.array([[0.2, 0.1, 0.0], [1, 1, 0]]))
-    assert np.allclose(ans['primitive_normals'].numpy(),
-                       np.array([[0, 0, 1], [0, 0, 1]]))
 
 
 def test_add_triangle_mesh():
@@ -156,8 +154,7 @@ def test_compute_distance():
     assert np.allclose(ans.numpy(), [0.5, np.sqrt(3 * 0.5**2), 0.0])
 
 
-@pytest.mark.parametrize("use_triangle_normal", (False, True))
-def test_compute_signed_distance(use_triangle_normal):
+def test_compute_signed_distance():
     cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
         o3d.geometry.TriangleMesh.create_box())
     vertices = cube.vertices['vertices']
@@ -169,12 +166,11 @@ def test_compute_signed_distance(use_triangle_normal):
     query_points = o3d.core.Tensor(
         [[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5], [0, 0, 0]],
         dtype=o3d.core.Dtype.Float32)
-    ans = scene.compute_signed_distance(query_points, use_triangle_normal)
+    ans = scene.compute_signed_distance(query_points)
     assert np.allclose(ans.numpy(), [-0.5, np.sqrt(3 * 0.5**2), 0.0])
 
 
-@pytest.mark.parametrize("use_triangle_normal", (False, True))
-def test_compute_occupancy(use_triangle_normal):
+def test_compute_occupancy():
     cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
         o3d.geometry.TriangleMesh.create_box())
     vertices = cube.vertices['vertices']
@@ -185,13 +181,12 @@ def test_compute_occupancy(use_triangle_normal):
 
     query_points = o3d.core.Tensor([[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5]],
                                    dtype=o3d.core.Dtype.Float32)
-    ans = scene.compute_occupancy(query_points, use_triangle_normal)
+    ans = scene.compute_occupancy(query_points)
     assert np.allclose(ans.numpy(), [1.0, 0.0])
 
 
 @pytest.mark.parametrize("shape", ([11], [1, 2, 3], [32, 14]))
-@pytest.mark.parametrize("use_triangle_normal", (False, True))
-def test_output_shapes(shape, use_triangle_normal):
+def test_output_shapes(shape):
     vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
                                dtype=o3d.core.Dtype.Float32)
     triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.Dtype.UInt32)
@@ -211,10 +206,10 @@ def test_output_shapes(shape, use_triangle_normal):
     ans = scene.compute_distance(query_points)
     assert list(ans.shape) == shape
 
-    ans = scene.compute_signed_distance(query_points, use_triangle_normal)
+    ans = scene.compute_signed_distance(query_points)
     assert list(ans.shape) == shape
 
-    ans = scene.compute_occupancy(query_points, use_triangle_normal)
+    ans = scene.compute_occupancy(query_points)
     assert list(ans.shape) == shape
 
     # some outputs append a specific last dim
