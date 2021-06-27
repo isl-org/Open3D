@@ -37,7 +37,15 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-/// A scene which provides basic ray casting and closest point queries.
+/// \class RaycastingScene
+/// \brief A scene class with basic ray casting and closest point queries.
+///
+/// The RaycastingScene allows to compute ray intersections with triangle meshes
+/// or compute the closest point on the surface of a mesh with respect to one
+/// or more query points.
+/// It builds an internal acceleration structure to speed up those queries.
+///
+/// This class supports only the CPU device.
 class RaycastingScene {
 public:
     /// \brief Default Constructor.
@@ -45,25 +53,115 @@ public:
 
     ~RaycastingScene();
 
+    /// \brief Add a triangle mesh to the scene.
+    /// \param vertices Vertices as Tensor of dim {N,3} and dtype float.
+    /// \param triangles Triangles as Tensor of dim {M,3} and dtype uint32_t.
+    /// \return The geometry ID of the added mesh.
     uint32_t AddTriangles(const core::Tensor &vertices,
                           const core::Tensor &triangles);
 
+    /// \brief Add a triangle mesh to the scene.
+    /// \param mesh A triangle mesh.
+    /// \return The geometry ID of the added mesh.
     uint32_t AddTriangles(const TriangleMesh &mesh);
 
+    /// \brief Computes the first intersection of the rays with the scene.
+    /// \param rays A tensor with >=2 dims and shape {.., 6} describing the
+    /// rays.
+    /// {..} can be any number of dimensions, e.g., to organize rays for
+    /// creating an image the shape can be {height, width, 6}.
+    /// The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
+    /// with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
+    /// necessary to normalize the direction but the returned hit distance uses
+    /// the length of the direction vector as unit.
+    /// \return The returned dictionary contains:
+    ///         - \b t_hit A tensor with the distance to the first hit. The
+    ///           shape is {..}. If there is no intersection the hit distance
+    ///           is \a inf .
+    ///         - \b geometry_ids A tensor with the geometry IDs. The shape is
+    ///           The shape is {..}. If there is no intersection the ID is
+    ///           \a INVALID_ID .
+    ///         - \b primitive_ids A tensor with the primitive IDs, which
+    ///           corresponds to the triangle index. The shape is {..}.
+    ///           If there is no intersection the ID is \a INVALID_ID .
+    ///         - \b primitive_uvs A tensor with the barycentric coordinates of
+    ///           the hit points within the hit triangles. The shape is {.., 2}.
+    ///         - \b primitive_normals A tensor with the normals of the hit
+    ///           triangles. The shape is {.., 3}.
     std::unordered_map<std::string, core::Tensor> CastRays(
             const core::Tensor &rays);
 
+    /// \brief Computes the first intersection of the rays with the scene.
+    /// \param rays A tensor with >=2 dims and shape {.., 6} describing the
+    /// rays.
+    /// {..} can be any number of dimensions, e.g., to organize rays for
+    /// creating an image the shape can be {height, width, 6}.
+    /// The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
+    /// with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
+    /// necessary to normalize the direction.
+    /// \return A tensor with the number of intersections. The shape is {..}.
     core::Tensor CountIntersections(const core::Tensor &rays);
 
+    /// \brief Computes the closest points on the surfaces of the scene.
+    /// \param query_points A tensor with >=2 dims and shape {.., 3} describing
+    /// the query_points. {..} can be any number of dimensions, e.g., to
+    /// organize the query_point to create a 3D grid the shape can be
+    /// {depth, height, width, 3}.
+    /// The last dimension must be 3 and has the format [x, y, z].
+    /// \return The returned dictionary contains:
+    ///         - \b points A tensor with the closest surface points. The shape
+    ///           is {..}.
+    ///         - \b geometry_ids A tensor with the geometry IDs. The shape is
+    ///           The shape is {..}.
+    ///         - \b primitive_ids A tensor with the primitive IDs, which
+    ///           corresponds to the triangle index. The shape is {..}.
     std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
             const core::Tensor &query_points);
 
+    /// \brief Computes the distance to the surface of the scene.
+    /// \param query_points A tensor with >=2 dims and shape {.., 3} describing
+    /// the query_points. {..} can be any number of dimensions, e.g., to
+    /// organize the query_point to create a 3D grid the shape can be
+    /// {depth, height, width, 3}.
+    /// The last dimension must be 3 and has the format [x, y, z].
+    /// \return A tensor with the distances to the surface. The shape is {..}.
     core::Tensor ComputeDistance(const core::Tensor &query_points);
 
+    /// \brief Computes the signed distance to the surface of the scene.
+    ///
+    /// This function computes the signed distance to the meshes in the scene.
+    /// The function assumes that all meshes are watertight and that there are
+    /// no intersections between meshes, i.e., inside and outside must be well
+    /// defined. The function determines the sign of the distance by counting
+    /// the intersections of a rays starting at the query points.
+    ///
+    /// \param query_points A tensor with >=2 dims and shape {.., 3} describing
+    /// the query_points. {..} can be any number of dimensions, e.g., to
+    /// organize the query_point to create a 3D grid the shape can be
+    /// {depth, height, width, 3}.
+    /// The last dimension must be 3 and has the format [x, y, z].
+    /// \return A tensor with the signed distances to the surface. The shape is
+    /// {..}. Negative distances mean a point is inside a closed surface.
     core::Tensor ComputeSignedDistance(const core::Tensor &query_points);
 
+    /// \brief Computes the occupancy at the query point positions.
+    ///
+    /// This function computes whether the query points are inside or outside.
+    /// The function assumes that all meshes are watertight and that there are
+    /// no intersections between meshes, i.e., inside and outside must be well
+    /// defined. The function determines if a point is inside by counting the
+    /// intersections of a rays starting at the query points.
+    ///
+    /// \param query_points A tensor with >=2 dims and shape {.., 3} describing
+    /// the query_points. {..} can be any number of dimensions, e.g., to
+    /// organize the query_point to create a 3D grid the shape can be
+    /// {depth, height, width, 3}.
+    /// The last dimension must be 3 and has the format [x, y, z].
+    /// \return A tensor with the occupancy values. The shape is {..}. Values
+    /// are either 0 or 1. A point is occupied or inside if the value is 1.
     core::Tensor ComputeOccupancy(const core::Tensor &query_points);
 
+    /// \brief The value for invalid IDs.
     static uint32_t INVALID_ID();
 
 private:
