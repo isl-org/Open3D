@@ -119,6 +119,17 @@ void pybind_pointcloud(py::module& m) {
                    "Scale points.");
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
+
+    pointcloud.def("estimate_normals", &PointCloud::EstimateNormals, "radius"_a,
+                   "max_nn"_a = 30, "Function to compute point normals.");
+    pointcloud.def("estimate_covariances", &PointCloud::EstimateCovariances,
+                   "radius"_a, "max_nn"_a = 30,
+                   "Function to compute point covariances.");
+    pointcloud.def("estimate_color_gradients",
+                   &PointCloud::EstimateColorGradients, "radius"_a,
+                   "max_nn"_a = 30,
+                   "Function to compute point color gradients.");
+
     pointcloud.def(
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
