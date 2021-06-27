@@ -57,6 +57,12 @@ void Project(
         float depth_scale,
         float depth_max);
 
+void Transform(core::Tensor& points, const core::Tensor& transformation);
+
+void Transform(core::Tensor& points,
+               core::Tensor& normals,
+               const core::Tensor& transformation);
+
 void UnprojectCPU(
         const core::Tensor& depth,
         utility::optional<std::reference_wrapper<const core::Tensor>>
@@ -78,6 +84,12 @@ void ProjectCPU(
         const core::Tensor& extrinsics,
         float depth_scale,
         float depth_max);
+
+void TransformCPU(core::Tensor& points, const core::Tensor& transformation);
+
+void TransformCPU(core::Tensor& points,
+                  core::Tensor& normals,
+                  const core::Tensor& transformation);
 
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
@@ -101,6 +113,12 @@ void ProjectCUDA(
         const core::Tensor& extrinsics,
         float depth_scale,
         float depth_max);
+
+void TransformCUDA(core::Tensor& points, const core::Tensor& transformation);
+
+void TransformCUDA(core::Tensor& points,
+                   core::Tensor& normals,
+                   const core::Tensor& transformation);
 #endif
 
 }  // namespace pointcloud

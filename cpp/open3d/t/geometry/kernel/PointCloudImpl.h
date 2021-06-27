@@ -149,41 +149,41 @@ void UnprojectCPU
 
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void TransformPointWiseKernel(
-        scalar_t* points_ptr,
-        const scalar_t* transformation_ptr,
-        scalar_t* output_ptr) {
-    output_ptr[0] = transformation_ptr[0] * points_ptr[0] +
-                    transformation_ptr[1] * points_ptr[1] +
-                    transformation_ptr[2] * points_ptr[2] +
-                    transformation_ptr[3];
-    output_ptr[1] = transformation_ptr[4] * points_ptr[0] +
-                    transformation_ptr[5] * points_ptr[1] +
-                    transformation_ptr[6] * points_ptr[2] +
-                    transformation_ptr[7];
-    output_ptr[2] = transformation_ptr[8] * points_ptr[0] +
-                    transformation_ptr[9] * points_ptr[1] +
-                    transformation_ptr[10] * points_ptr[2] +
-                    transformation_ptr[11];
+        scalar_t* points_ptr, const scalar_t* transformation_ptr) {
+    scalar_t x[3] = {transformation_ptr[0] * points_ptr[0] +
+                             transformation_ptr[1] * points_ptr[1] +
+                             transformation_ptr[2] * points_ptr[2] +
+                             transformation_ptr[3],
+                     transformation_ptr[4] * points_ptr[0] +
+                             transformation_ptr[5] * points_ptr[1] +
+                             transformation_ptr[6] * points_ptr[2] +
+                             transformation_ptr[7],
+                     transformation_ptr[8] * points_ptr[0] +
+                             transformation_ptr[9] * points_ptr[1] +
+                             transformation_ptr[10] * points_ptr[2] +
+                             transformation_ptr[11]};
 
-    points_ptr[0] = x;
-    points_ptr[1] = y;
-    points_ptr[2] = z;
+    points_ptr[0] = x[0];
+    points_ptr[1] = x[1];
+    points_ptr[2] = x[2];
 }
 
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RotatePointWiseKernel(
-        scalar_t* points_ptr,
-        const scalar_t* transformation_ptr,
-        scalar_t* output_ptr) {
-    output_ptr[0] = transformation_ptr[0] * points_ptr[0] +
-                    transformation_ptr[1] * points_ptr[1] +
-                    transformation_ptr[2] * points_ptr[2];
-    output_ptr[1] = transformation_ptr[4] * points_ptr[0] +
-                    transformation_ptr[5] * points_ptr[1] +
-                    transformation_ptr[6] * points_ptr[2];
-    output_ptr[2] = transformation_ptr[8] * points_ptr[0] +
-                    transformation_ptr[9] * points_ptr[1] +
-                    transformation_ptr[10] * points_ptr[2];
+        scalar_t* points_ptr, const scalar_t* transformation_ptr) {
+    scalar_t x[3] = {transformation_ptr[0] * points_ptr[0] +
+                             transformation_ptr[1] * points_ptr[1] +
+                             transformation_ptr[2] * points_ptr[2],
+                     transformation_ptr[4] * points_ptr[0] +
+                             transformation_ptr[5] * points_ptr[1] +
+                             transformation_ptr[6] * points_ptr[2],
+                     transformation_ptr[8] * points_ptr[0] +
+                             transformation_ptr[9] * points_ptr[1] +
+                             transformation_ptr[10] * points_ptr[2]};
+
+    points_ptr[0] = x[0];
+    points_ptr[1] = x[1];
+    points_ptr[2] = x[2];
 }
 
 }  // namespace pointcloud

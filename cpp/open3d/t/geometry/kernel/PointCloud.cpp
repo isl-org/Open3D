@@ -104,6 +104,58 @@ void Project(
     }
 }
 
+void Transform(core::Tensor& points, const core::Tensor& transformation) {
+    transformation.AssertShape({4, 4});
+    core::Dtype dtype = points.GetDtype();
+    transformation.AssertDtype(dtype);
+    core::Device device = points.GetDevice();
+    transformation.AssertDevice(device);
+
+    core::Tensor points_contiguous = points.Contiguous();
+    core::Tensor transformation_contiguous = transformation.Contiguous();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        TransformCPU(points_contiguous, transformation_contiguous);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(TransformCUDA, points_contiguous, transformation_contiguous);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    points = points_contiguous;
+}
+
+void Transform(core::Tensor& points,
+               core::Tensor& normals,
+               const core::Tensor& transformation) {
+    transformation.AssertShape({4, 4});
+    core::Dtype dtype = points.GetDtype();
+    transformation.AssertDtype(dtype);
+    normals.AssertDtype(dtype);
+    core::Device device = points.GetDevice();
+    transformation.AssertDevice(device);
+    normals.AssertDevice(device);
+
+    core::Tensor points_contiguous = points.Contiguous();
+    core::Tensor normals_contiguous = normals.Contiguous();
+    core::Tensor transformation_contiguous = transformation.Contiguous();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        TransformCPU(points_contiguous, normals_contiguous,
+                     transformation_contiguous);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(TransformCUDA, points_contiguous, normals_contiguous,
+                  transformation_contiguous);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    points = points_contiguous;
+    normals = normals_contiguous;
+}
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry
