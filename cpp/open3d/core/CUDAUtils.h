@@ -39,6 +39,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#define OPEN3D_FORCE_INLINE __forceinline__
+#define OPEN3D_INLINE inline
 #define OPEN3D_HOST_DEVICE __host__ __device__
 #define OPEN3D_DEVICE __device__
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
@@ -53,6 +55,8 @@
 
 #else  // #ifdef BUILD_CUDA_MODULE
 
+#define OPEN3D_FORCE_INLINE inline
+#define OPEN3D_INLINE inline
 #define OPEN3D_HOST_DEVICE
 #define OPEN3D_DEVICE
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)
