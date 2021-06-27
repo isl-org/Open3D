@@ -175,9 +175,10 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
         utility::LogError(
                 "[NearestNeighborSearch::HybridSearch] Index is not set.");
     }
-    core::Tensor target_indices, residual_distances_Tij;
-    std::tie(target_indices, residual_distances_Tij) = tpcd_j_nns.HybridSearch(
-            tpcd_i_transformed_Tij.GetPoints(), distance_threshold, 1);
+    core::Tensor target_indices, residual_distances_Tij, neighbour_counts;
+    std::tie(target_indices, residual_distances_Tij, neighbour_counts) =
+            tpcd_j_nns.HybridSearch(tpcd_i_transformed_Tij.GetPoints(),
+                                    distance_threshold, 1);
 
     // Get the correspondence_set Transformed of shape {C, 2}.
     core::Tensor correspondence_set =

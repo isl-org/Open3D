@@ -198,7 +198,11 @@ void pybind_registration_classes(py::module &m) {
             te_p2l);
     py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
             te_p2l);
-    te_p2l.def(py::init())
+    te_p2l.def(py::init([](const RobustKernel &robust_kernel) {
+                   return new TransformationEstimationPointToPlane(
+                           robust_kernel);
+               }),
+               "robust_kernel"_a)
             .def("__repr__",
                  [](const TransformationEstimationPointToPlane &te) {
                      return std::string("TransformationEstimationPointToPlane");
@@ -275,6 +279,8 @@ void pybind_registration(py::module &m) {
             "registration", "Tensor-based registration pipeline.");
     pybind_registration_classes(m_submodule);
     pybind_registration_methods(m_submodule);
+
+    pybind_robust_kernels(m_submodule);
 }
 
 }  // namespace registration

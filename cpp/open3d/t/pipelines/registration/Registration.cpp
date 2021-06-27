@@ -141,7 +141,8 @@ RegistrationResult RegistrationMultiScaleICP(
     }
     if (dtype == core::Dtype::Float64 &&
         device.GetType() == core::Device::DeviceType::CUDA) {
-        utility::LogDebug("Use Float32 pointcloud for best performance.");
+        utility::LogDebug(
+                "Use Float32 pointcloud for best performance on CUDA device.");
     }
     if (!(criterias.size() == voxel_sizes.size() &&
           criterias.size() == max_correspondence_distances.size())) {
