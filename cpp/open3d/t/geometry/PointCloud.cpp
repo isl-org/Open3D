@@ -263,7 +263,7 @@ void PointCloud::EstimateCovariances(const double radius,
                                            dtype, GetDevice()));
 
     // Compute and set `covariances` attribute.
-    kernel::pointcloud::EstimateCovariances(this->GetPoints(),
+    kernel::pointcloud::EstimateCovariances(this->GetPoints().Contiguous(),
                                             this->GetPointAttr("covariances"),
                                             radius, max_knn);
 }
@@ -281,10 +281,15 @@ void PointCloud::EstimateNormals(const double radius,
     if (!has_normals) {
         this->SetPointNormals(core::Tensor::Empty({GetPoints().GetLength(), 3},
                                                   dtype, GetDevice()));
+    } else {
+        this->SetPointNormals(GetPointNormals().Contiguous());
     }
 
     if (!HasPointAttr("covariances")) {
         EstimateCovariances(radius, max_knn);
+    } else {
+        this->SetPointAttr("covariances",
+                           GetPointAttr("covariances").Contiguous());
     }
 
     kernel::pointcloud::EstimateNormals(this->GetPointAttr("covariances"),
@@ -312,7 +317,9 @@ void PointCloud::EstimateColorGradients(const double radius,
 
     // Compute and set `color_gradients` attribute.
     kernel::pointcloud::EstimateColorGradients(
-            this->GetPoints(), this->GetPointNormals(), this->GetPointColors(),
+            this->GetPoints().Contiguous(),
+            this->GetPointNormals().Contiguous(),
+            this->GetPointColors().Contiguous(),
             this->GetPointAttr("color_gradients"), radius, max_knn);
 }
 

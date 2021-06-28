@@ -115,13 +115,11 @@ void EstimateColorGradients(const core::Tensor& points,
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        EstimateColorGradientsCPU(points.Contiguous(), normals.Contiguous(),
-                                  colors.Contiguous(), color_gradient, radius,
-                                  max_nn);
+        EstimateColorGradientsCPU(points, normals, colors, color_gradient,
+                                  radius, max_nn);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(EstimateColorGradientsCUDA, points.Contiguous(),
-                  normals.Contiguous(), colors.Contiguous(), color_gradient,
-                  radius, max_nn);
+        CUDA_CALL(EstimateColorGradientsCUDA, points, normals, colors,
+                  color_gradient, radius, max_nn);
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -135,11 +133,9 @@ void EstimateCovariances(const core::Tensor& points,
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        EstimateCovariancesCPU(points.Contiguous(), covariances, radius,
-                               max_nn);
+        EstimateCovariancesCPU(points, covariances, radius, max_nn);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(EstimateCovariancesCUDA, points.Contiguous(), covariances,
-                  radius, max_nn);
+        CUDA_CALL(EstimateCovariancesCUDA, points, covariances, radius, max_nn);
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -152,10 +148,9 @@ void EstimateNormals(const core::Tensor& covariances,
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        EstimateNormalsCPU(covariances.Contiguous(), normals, has_normals);
+        EstimateNormalsCPU(covariances, normals, has_normals);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(EstimateNormalsCUDA, covariances.Contiguous(), normals,
-                  has_normals);
+        CUDA_CALL(EstimateNormalsCUDA, covariances, normals, has_normals);
     } else {
         utility::LogError("Unimplemented device");
     }
