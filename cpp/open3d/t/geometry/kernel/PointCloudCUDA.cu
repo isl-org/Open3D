@@ -135,8 +135,8 @@ void TransformCUDA(core::Tensor& points, const core::Tensor& transformation) {
 
         core::kernel::CUDALauncher::LaunchGeneralKernel(
                 points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    TransformPointWiseKernel(points_ptr + 3 * workload_idx,
-                                             transformation_ptr);
+                    RigidTransformPointWiseKernel(points_ptr + 3 * workload_idx,
+                                                  transformation_ptr);
                 });
     });
 
@@ -154,8 +154,8 @@ void TransformCUDA(core::Tensor& points,
 
         core::kernel::CUDALauncher::LaunchGeneralKernel(
                 points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    TransformPointWiseKernel(points_ptr + 3 * workload_idx,
-                                             transformation_ptr);
+                    RigidTransformPointWiseKernel(points_ptr + 3 * workload_idx,
+                                                  transformation_ptr);
                     RotatePointWiseKernel(normals_ptr + 3 * workload_idx,
                                           transformation_ptr);
                 });
