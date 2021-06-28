@@ -33,6 +33,8 @@
 #include <unordered_map>
 
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
+#include "open3d/core/linalg/performance/Matrix.h"
+#include "open3d/core/linalg/performance/SVD3x3.h"
 
 namespace open3d {
 namespace core {
@@ -40,6 +42,7 @@ namespace core {
 void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     // Check devices
     Device device = A.GetDevice();
+
     if (device != B.GetDevice()) {
         utility::LogError("Tensor A device {} and Tensor B device {} mismatch",
                           A.GetDevice().ToString(), B.GetDevice().ToString());
@@ -62,60 +65,83 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     // Check dimensions
     SizeVector A_shape = A.GetShape();
     SizeVector B_shape = B.GetShape();
-    if (A_shape.size() != 2) {
-        utility::LogError("Tensor A must be 2D, but got {}D", A_shape.size());
-    }
-    if (A_shape[0] != A_shape[1]) {
-        utility::LogError("Tensor A must be square, but got {} x {}.",
-                          A_shape[0], A_shape[1]);
-    }
-    if (B_shape.size() != 1 && B_shape.size() != 2) {
-        utility::LogError(
-                "Tensor B must be 1D (vector) or 2D (matrix), but got {}D",
-                B_shape.size());
-    }
-    if (B_shape[0] != A_shape[0]) {
-        utility::LogError("Tensor A and B's first dimension mismatch.");
-    }
 
-    int64_t n = A_shape[0];
-    int64_t k = B_shape.size() == 2 ? B_shape[1] : 1;
-    if (n == 0 || k == 0) {
-        utility::LogError(
-                "Tensor shapes should not contain dimensions with zero.");
-    }
+    core::Tensor X_3x1;
 
-    // A and B are modified in-place
-    Tensor A_copy = A.T().To(device, /*copy=*/true);
-    void *A_data = A_copy.GetDataPtr();
+    if (A.GetShape() == open3d::core::SizeVector({3, 3})) {
+        DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+            X_3x1 = core::Tensor::Empty({3, 1}, dtype, core::HostDevice);
 
-    X = B.T().To(device, /*copy=*/true);
-    void *B_data = X.GetDataPtr();
+            scalar_t *X_3x1_ptr = X_3x1.GetDataPtr<scalar_t>();
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        Tensor ipiv = Tensor::Empty({n}, Dtype::Int32, device);
-        void *ipiv_data = ipiv.GetDataPtr();
+            core::Tensor A_3x3 = A.To(core::HostDevice, false).Contiguous();
+            const scalar_t *A_3x3_ptr = A_3x3.GetDataPtr<scalar_t>();
+            core::Tensor B_3x1 = B.To(core::HostDevice, false).Contiguous();
+            const scalar_t *B_3x1_ptr = B_3x1.GetDataPtr<scalar_t>();
 
-        SolveCUDA(A_data, B_data, ipiv_data, n, k, dtype, device);
-#else
-        utility::LogError("Unimplemented device.");
-#endif
+            solve_svd3x3(A_3x3_ptr, B_3x1_ptr, X_3x1_ptr);
+        });
+
+        X = X_3x1.To(device);
+        return;
     } else {
-        Dtype ipiv_dtype;
-        if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
-            ipiv_dtype = Dtype::Int32;
-        } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
-            ipiv_dtype = Dtype::Int64;
-        } else {
-            utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
+        if (A_shape.size() != 2) {
+            utility::LogError("Tensor A must be 2D, but got {}D",
+                              A_shape.size());
         }
-        Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
-        void *ipiv_data = ipiv.GetDataPtr();
+        if (A_shape[0] != A_shape[1]) {
+            utility::LogError("Tensor A must be square, but got {} x {}.",
+                              A_shape[0], A_shape[1]);
+        }
+        if (B_shape.size() != 1 && B_shape.size() != 2) {
+            utility::LogError(
+                    "Tensor B must be 1D (vector) or 2D (matrix), but got {}D",
+                    B_shape.size());
+        }
+        if (B_shape[0] != A_shape[0]) {
+            utility::LogError("Tensor A and B's first dimension mismatch.");
+        }
 
-        SolveCPU(A_data, B_data, ipiv_data, n, k, dtype, device);
+        int64_t n = A_shape[0];
+        int64_t k = B_shape.size() == 2 ? B_shape[1] : 1;
+        if (n == 0 || k == 0) {
+            utility::LogError(
+                    "Tensor shapes should not contain dimensions with zero.");
+        }
+
+        // A and B are modified in-place
+        Tensor A_copy = A.T().To(device, /*copy=*/true);
+        void *A_data = A_copy.GetDataPtr();
+
+        X = B.T().To(device, /*copy=*/true);
+        void *B_data = X.GetDataPtr();
+
+        if (device.GetType() == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+            Tensor ipiv = Tensor::Empty({n}, Dtype::Int32, device);
+            void *ipiv_data = ipiv.GetDataPtr();
+
+            SolveCUDA(A_data, B_data, ipiv_data, n, k, dtype, device);
+#else
+            utility::LogError("Unimplemented device.");
+#endif
+        } else {
+            Dtype ipiv_dtype;
+            if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
+                ipiv_dtype = Dtype::Int32;
+            } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
+                ipiv_dtype = Dtype::Int64;
+            } else {
+                utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
+            }
+            Tensor ipiv = Tensor::Empty({n}, ipiv_dtype, device);
+            void *ipiv_data = ipiv.GetDataPtr();
+
+            SolveCPU(A_data, B_data, ipiv_data, n, k, dtype, device);
+        }
+        X = X.T();
     }
-    X = X.T();
 }
+
 }  // namespace core
 }  // namespace open3d
