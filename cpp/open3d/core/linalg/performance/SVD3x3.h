@@ -62,6 +62,7 @@
 #define gfour_gamma_squared 5.8284273147583007813f
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#define __o3d__max(x, y) (x > y ? x : y)
 #define __o3d__fadd_rn(x, y) __fadd_rn(x, y)
 #define __o3d__fsub_rn(x, y) __fsub_rn(x, y)
 #define __o3d__frsqrt_rn(x) __frsqrt_rn(x)

@@ -359,8 +359,7 @@ TEST_P(LinalgPermuteDevices, Inverse) {
         EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Inverse());
         EXPECT_ANY_THROW(
                 core::Tensor::Ones({2, 2, 2}, dtype, device).Inverse());
-        EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype,
-        device).Inverse());
+        EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Inverse());
     }
 }
 
