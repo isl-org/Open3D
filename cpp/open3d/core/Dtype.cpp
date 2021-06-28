@@ -4,7 +4,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,7 @@ Dtype::Dtype(DtypeCode dtype_code, int64_t byte_size, const std::string &name)
     if (name.size() > max_name_len_ - 1) {
         utility::LogError("Name {} must be shorter.", name);
     } else {
-        std::strcpy(name_, name.c_str());
+        std::strncpy(name_, name.c_str(), max_name_len_);
     }
 }
 

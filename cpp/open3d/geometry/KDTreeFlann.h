@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,14 +35,11 @@
 #include "open3d/pipelines/registration/Feature.h"
 
 /// @cond
-namespace flann {
-template <typename T>
-class Matrix;
-template <typename T>
-struct L2;
-template <typename T>
-class Index;
-}  // namespace flann
+namespace nanoflann {
+struct metric_L2;
+template <class MatrixType, int DIM, class Distance, bool row_major>
+struct KDTreeEigenMatrixAdaptor;
+}  // namespace nanoflann
 /// @endcond
 
 namespace open3d {
@@ -119,9 +116,15 @@ private:
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXd> &data);
 
 protected:
+    using KDTree_t = nanoflann::KDTreeEigenMatrixAdaptor<
+            Eigen::Map<const Eigen::MatrixXd>,
+            -1,
+            nanoflann::metric_L2,
+            false>;
+
     std::vector<double> data_;
-    std::unique_ptr<flann::Matrix<double>> flann_dataset_;
-    std::unique_ptr<flann::Index<flann::L2<double>>> flann_index_;
+    std::unique_ptr<Eigen::Map<const Eigen::MatrixXd>> data_interface_;
+    std::unique_ptr<KDTree_t> nanoflann_index_;
     size_t dimension_ = 0;
     size_t dataset_size_ = 0;
 };

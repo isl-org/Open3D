@@ -6,7 +6,6 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 find_package(Tensorflow REQUIRED)
-find_package(nanoflann REQUIRED)
 find_package(parallelstl REQUIRED)
 if(BUILD_CUDA_MODULE)
     find_package(CUB REQUIRED)
@@ -169,7 +168,6 @@ endif()
 target_include_directories(open3d_tf_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
     ${Tensorflow_INCLUDE_DIR}
-    ${nanoflann_INCLUDE_DIR}
     ${parallelstl_INCLUDE_DIR}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
@@ -178,5 +176,6 @@ target_link_libraries(open3d_tf_ops PRIVATE
     3rdparty_tbb
     ${Tensorflow_FRAMEWORK_LIB}
     ${FMT_TARGET}
+    ${NANOFLANN_TARGET}
     Open3D::Open3D
 )

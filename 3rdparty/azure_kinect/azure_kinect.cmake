@@ -42,10 +42,17 @@ else()
         URL https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_1.4.1_amd64.deb
         URL_HASH SHA256=08303094b9ad36ea74c19bc8b8950c97055e73dd2e8bd18e2af5e165a2289cd2
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/k4a"
-        UPDATE_COMMAND ${CMAKE_COMMAND} -E tar xvf data.tar.gz
+        UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
+    )
+    ExternalProject_Add_Step(ext_k4a extract_headers
+        COMMAND ${CMAKE_COMMAND} -E tar xvf data.tar.gz
+        WORKING_DIRECTORY <SOURCE_DIR>
+        DEPENDEES download
+        DEPENDERS update
+        INDEPENDENT TRUE
     )
     ExternalProject_Get_Property(ext_k4a SOURCE_DIR)
     set(K4A_INCLUDE_DIR ${SOURCE_DIR}/usr/include/) # "/" is critical
