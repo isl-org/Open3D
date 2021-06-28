@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -91,10 +91,10 @@ protected:
     void ReleaseProgram();
 
 protected:
-    GLuint vertex_shader_;
-    GLuint geometry_shader_;
-    GLuint fragment_shader_;
-    GLuint program_;
+    GLuint vertex_shader_ = 0;
+    GLuint geometry_shader_ = 0;
+    GLuint fragment_shader_ = 0;
+    GLuint program_ = 0;
     GLenum draw_arrays_mode_ = GL_POINTS;
     GLsizei draw_arrays_size_ = 0;
     bool compiled_ = false;

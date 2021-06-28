@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,51 +24,21 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 #include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {
 
-TEST(Logger, LogError) {
+TEST(Logging, LogError) {
     EXPECT_THROW(utility::LogError("Example exception message."),
                  std::runtime_error);
 }
 
-TEST(Logger, LogInfo) {
+TEST(Logging, LogInfo) {
     utility::LogInfo("{}", "Example shape print {1, 2, 3}.");
 }
-
-TEST(Console, DISABLED_SetVerbosityLevel) { NotImplemented(); }
-
-TEST(Console, DISABLED_GetVerbosityLevel) { NotImplemented(); }
-
-TEST(Console, DISABLED_PrintWarning) { NotImplemented(); }
-
-TEST(Console, DISABLED_PrintInfo) { NotImplemented(); }
-
-TEST(Console, DISABLED_PrintDebug) { NotImplemented(); }
-
-TEST(Console, DISABLED_PrintAlways) { NotImplemented(); }
-
-TEST(Console, DISABLED_ResetConsoleProgress) { NotImplemented(); }
-
-TEST(Console, DISABLED_AdvanceConsoleProgress) { NotImplemented(); }
-
-TEST(Console, DISABLED_GetCurrentTimeStamp) { NotImplemented(); }
-
-TEST(Console, DISABLED_GetProgramOptionAsString) { NotImplemented(); }
-
-TEST(Console, DISABLED_GetProgramOptionAsInt) { NotImplemented(); }
-
-TEST(Console, DISABLED_GetProgramOptionAsDouble) { NotImplemented(); }
-
-TEST(Console, DISABLED_GetProgramOptionAsEigenVectorXd) { NotImplemented(); }
-
-TEST(Console, DISABLED_ProgramOptionExists) { NotImplemented(); }
-
-TEST(Console, DISABLED_ProgramOptionExistsAny) { NotImplemented(); }
 
 }  // namespace tests
 }  // namespace open3d

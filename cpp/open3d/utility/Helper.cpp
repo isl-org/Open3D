@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/utility/Helper.h"
+
+#include <fmt/chrono.h>
 
 #include <algorithm>
 #include <cctype>
@@ -118,6 +120,11 @@ int UniformRandInt(const int min, const int max) {
     static thread_local std::mt19937 generator(std::random_device{}());
     std::uniform_int_distribution<int> distribution(min, max);
     return distribution(generator);
+}
+
+std::string GetCurrentTimeStamp() {
+    std::time_t t = std::time(nullptr);
+    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
 }
 
 }  // namespace utility

@@ -16,11 +16,13 @@
 
 if(NOT Pytorch_FOUND)
     # Searching for pytorch requires the python executable
-    find_package(PythonExecutable REQUIRED)
+    if (NOT Python3_EXECUTABLE)
+        message(FATAL_ERROR "Python 3 not found in top level file")
+    endif()
 
     message(STATUS "Getting PyTorch properties ...")
 
-    set(Pytorch_FETCH_PROPERTIES
+    set(PyTorch_FETCH_PROPERTIES
         "import os"
         "import torch"
         "print(torch.__version__, end=';')"
@@ -28,8 +30,7 @@ if(NOT Pytorch_FOUND)
         "print(torch._C._GLIBCXX_USE_CXX11_ABI, end=';')"
     )
     execute_process(
-        COMMAND
-            ${PYTHON_EXECUTABLE} "-c" "${Pytorch_FETCH_PROPERTIES}"
+        COMMAND ${Python3_EXECUTABLE} "-c" "${PyTorch_FETCH_PROPERTIES}"
         OUTPUT_VARIABLE PyTorch_PROPERTIES
     )
 
@@ -37,6 +38,7 @@ if(NOT Pytorch_FOUND)
     list(GET PyTorch_PROPERTIES 1 Pytorch_ROOT)
     list(GET PyTorch_PROPERTIES 2 Pytorch_CXX11_ABI)
 
+    unset(PyTorch_FETCH_PROPERTIES)
     unset(PyTorch_PROPERTIES)
 
     # Use the cmake config provided by torch

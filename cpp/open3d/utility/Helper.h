@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -166,6 +166,9 @@ T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
     int n = UniformRandInt(0, p - 1);
     return static_cast<T>(1. / p * n);
 }
+
+/// Returns current time stamp.
+std::string GetCurrentTimeStamp();
 
 }  // namespace utility
 }  // namespace open3d

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -233,10 +233,12 @@ std::unique_ptr<Indexer> Indexer::SplitLargestDim() {
     // Get the dimension to split.
     if (ndims_ == 0) {
         utility::LogError("Cannot split when ndims_ == 0");
+        return nullptr;
     }
     if (master_shape_[ndims_ - 1] < 2) {
         utility::LogError("master_shape_[ndims_ - 1] = {} < 2, cannot split.",
                           master_shape_[ndims_ - 1]);
+        return nullptr;
     }
     int64_t max_extent = -1;
     int64_t dim_to_split = -1;
@@ -265,16 +267,19 @@ std::unique_ptr<Indexer> Indexer::SplitLargestDim() {
         utility::LogError(
                 "Internal error: max_extent must be >= 0, but got {}.",
                 max_extent);
+        return nullptr;
     }
     if (!(dim_to_split >= 0 && dim_to_split < ndims_)) {
         utility::LogError(
                 "Internal error: 0 <= dim_to_split < {} required, but got {}.",
                 ndims_, dim_to_split);
+        return nullptr;
     }
     if (master_shape_[dim_to_split] < 2) {
         utility::LogError(
                 "Internal error: cannot split dimension size {}, must be >= 2.",
                 master_shape_[dim_to_split]);
+        return nullptr;
     }
 
     std::unique_ptr<Indexer> copy(new Indexer(*this));
@@ -351,9 +356,11 @@ void Indexer::ShrinkDim(int64_t dim, int64_t start, int64_t size) {
     // inputs_ and output_'s shapes are not important.
     if (!(dim >= 0 && dim < ndims_)) {
         utility::LogError("0 <= dim < {} required, but got {}.", ndims_, dim);
+        return;
     }
     if (size <= 0) {
         utility::LogError("Invalid size {}, must be > 0.", size);
+        return;
     }
     // Inputs
     for (int64_t i = 0; i < num_inputs_; ++i) {
