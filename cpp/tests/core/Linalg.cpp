@@ -336,28 +336,32 @@ TEST_P(LinalgPermuteDevices, Inverse) {
     const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
 
-    // Inverse test.
-    core::Tensor A(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3}, dtype,
-                   device);
+    for (core::Dtype dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+        // Inverse test.
+        core::Tensor A = core::Tensor::Init<float>(
+                                 {{2, 3, 1}, {3, 3, 1}, {2, 4, 1}}, device)
+                                 .To(dtype);
 
-    core::Tensor A_inv = A.Inverse();
-    EXPECT_EQ(A_inv.GetShape(), core::SizeVector({3, 3}));
+        core::Tensor A_inv = A.Inverse();
+        EXPECT_EQ(A_inv.GetShape(), core::SizeVector({3, 3}));
 
-    std::vector<float> A_inv_data = A_inv.ToFlatVector<float>();
-    std::vector<float> A_inv_gt = {-1, 1, 0, -1, 0, 1, 6, -2, -3};
-    for (int i = 0; i < 9; ++i) {
-        EXPECT_TRUE(std::abs(A_inv_data[i] - A_inv_gt[i]) < EPSILON);
+        EXPECT_TRUE(A_inv.AllClose(
+                core::Tensor::Init<float>({{-1, 1, 0}, {-1, 0, 1}, {6, -2, -3}},
+                                          device)
+                        .To(dtype),
+                EPSILON, EPSILON));
+
+        // Singular test.
+        EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Inverse());
+
+        // Shape test.
+        EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Inverse());
+        EXPECT_ANY_THROW(
+                core::Tensor::Ones({2, 2, 2}, dtype, device).Inverse());
+        EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype,
+        device).Inverse());
     }
-
-    // Singular test.
-    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Inverse());
-
-    // Shape test.
-    EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Inverse());
-    EXPECT_ANY_THROW(core::Tensor::Ones({2, 2, 2}, dtype, device).Inverse());
-    EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Inverse());
 }
 
 TEST_P(LinalgPermuteDevices, SVD) {
