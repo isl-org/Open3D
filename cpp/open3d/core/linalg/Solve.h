@@ -32,7 +32,11 @@ namespace open3d {
 namespace core {
 
 /// Solve AX = B with LU decomposition. A is a square matrix.
-void Solve(const Tensor& A, const Tensor& B, Tensor& X);
+/// \param fast_3x3 Approximate solve for 3x3 matrix.
+void Solve(const Tensor& A,
+           const Tensor& B,
+           Tensor& X,
+           const bool fast_3x3 = false);
 
 void SolveCPU(void* A_data,
               void* B_data,

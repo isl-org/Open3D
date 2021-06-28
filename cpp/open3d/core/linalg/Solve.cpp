@@ -39,7 +39,10 @@
 namespace open3d {
 namespace core {
 
-void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
+void Solve(const Tensor &A,
+           const Tensor &B,
+           Tensor &X,
+           const bool fast_3x3 /*= false*/) {
     // Check devices
     Device device = A.GetDevice();
 
@@ -68,7 +71,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
 
     core::Tensor X_3x1;
 
-    if (A.GetShape() == open3d::core::SizeVector({3, 3})) {
+    if (fast_3x3 && A.GetShape() == open3d::core::SizeVector({3, 3})) {
         DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
             X_3x1 = core::Tensor::Empty({3, 1}, dtype, core::HostDevice);
 

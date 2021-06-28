@@ -33,7 +33,16 @@ namespace core {
 
 /// Computes SVD decomposition A = U S VT, where A is an m x n, U is an m x m, S
 /// is a min(m, n), VT is an n x n tensor.
-void SVD(const Tensor& A, Tensor& U, Tensor& S, Tensor& VT);
+/// \param A Input tensor.
+/// \param U Output tensor U.
+/// \param S Output tensor S.
+/// \param VT Output tensor VT. (Transpose of V).
+/// \param fast_3x3 Compute approx SVD for 3x3 matrix.
+void SVD(const Tensor& A,
+         Tensor& U,
+         Tensor& S,
+         Tensor& VT,
+         const bool fast_3x3 = false);
 
 #ifdef BUILD_CUDA_MODULE
 void SVDCUDA(const void* A_data,

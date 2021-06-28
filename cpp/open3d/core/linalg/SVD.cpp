@@ -34,7 +34,11 @@
 namespace open3d {
 namespace core {
 
-void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
+void SVD(const Tensor &A,
+         Tensor &U,
+         Tensor &S,
+         Tensor &VT,
+         const bool fast_3x3 /*= false*/) {
     // Check dtypes
     Dtype dtype = A.GetDtype();
     if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
@@ -54,7 +58,7 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
     // Check devices
     Device device = A.GetDevice();
 
-    if (A.GetShape() == open3d::core::SizeVector({3, 3})) {
+    if (fast_3x3 && A.GetShape() == open3d::core::SizeVector({3, 3})) {
         DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
             U_3x3 = core::Tensor::Empty({3, 3}, dtype, core::HostDevice);
             S_3x1 = core::Tensor::Empty({3, 1}, dtype, core::HostDevice);

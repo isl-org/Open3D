@@ -48,15 +48,15 @@ double Det(const Tensor& A) {
         DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
             core::Tensor A_3x3 = A.To(core::HostDevice, true);
             const scalar_t* A_3x3_ptr = A_3x3.GetDataPtr<scalar_t>();
-            return static_cast<double>(det3x3(A_3x3_ptr));
+            det = static_cast<double>(det3x3(A_3x3_ptr));
         });
-    } else if (A.GetShape() == open3d::core::SizeVector({2, 2}))
+    } else if (A.GetShape() == open3d::core::SizeVector({2, 2})) {
         DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
             core::Tensor A_2x2 = A.To(core::HostDevice, true);
             const scalar_t* A_2x2_ptr = A_2x2.GetDataPtr<scalar_t>();
-            return static_cast<double>(det2x2(A_2x2_ptr));
+            det = static_cast<double>(det2x2(A_2x2_ptr));
         });
-    else {
+    } else {
         Tensor ipiv, output;
         LUIpiv(A, ipiv, output);
         // Sequential loop to compute determinant from LU output, is more

@@ -118,7 +118,7 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE scalar_t det2x2(const scalar_t* A_2x2) {
 template <typename scalar_t>
 OPEN3D_DEVICE OPEN3D_FORCE_INLINE scalar_t det3x3(const scalar_t* A_3x3) {
     return A_3x3[0] * (A_3x3[4] * A_3x3[8] - A_3x3[5] * A_3x3[7]) -
-           A_3x3[3] * (A_3x3[1] * A_3x3[8] - A_3x3[2] - A_3x3[7]) +
+           A_3x3[3] * (A_3x3[1] * A_3x3[8] - A_3x3[2] * A_3x3[7]) +
            A_3x3[6] * (A_3x3[1] * A_3x3[5] - A_3x3[2] * A_3x3[4]);
 }
 
@@ -164,35 +164,6 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void inverse3x3(const scalar_t* A_3x3,
     }
     return;
 }
-
-// template <typename scalar_t>
-// inline void inverse4x4(const scalar_t* A_4x4,
-//                        scalar_t* output_4x4,
-//                        bool& success) {
-//     if (det4x4(A_4x4) == 0) {
-//         success = false;
-//         return;
-//     } else {
-
-//         output_4x4[0] =
-//         output_4x4[1] =
-//         output_4x4[2] =
-//         output_4x4[3] =
-//         output_4x4[4] =
-//         output_4x4[5] =
-//         output_4x4[6] =
-//         output_4x4[7] =
-//         output_4x4[8] =
-//         output_4x4[9] =
-//         output_4x4[10] =
-//         output_4x4[11] =
-//         output_4x4[12] =
-//         output_4x4[13] =
-//         output_4x4[14] =
-//         output_4x4[15] =
-//     }
-//     return;
-// }
 
 // ---- Matrix Transpose ----
 template <typename scalar_t>
