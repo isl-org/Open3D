@@ -33,13 +33,13 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
+#include "open3d/core/linalg/performance/SVD3x3.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
-#include "open3d/core/linalg/performance/SVD3x3.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
 
@@ -200,118 +200,6 @@ void UnprojectCPU(
     }
 }
 
-template <typename scalar_t>
-static void EstimateColorGradientsCPUKernel(
-        const scalar_t* points_ptr,
-        const scalar_t* normals_ptr,
-        const scalar_t* colors_ptr,
-        const int64_t* neighbour_indices_ptr,
-        const int64_t* neighbour_counts_ptr,
-        scalar_t* color_gradients_ptr,
-        const int64_t max_nn,
-        const int64_t n) {
-#pragma omp parallel for schedule(static)
-    for (int64_t workload_idx = 0; workload_idx < n; workload_idx++) {
-        int64_t neighbour_offset = max_nn * workload_idx;
-        int64_t neighbour_count = neighbour_counts_ptr[workload_idx];
-        int64_t point_idx = 3 * workload_idx;
-
-        if (neighbour_count >= 4) {
-            scalar_t vt[3] = {points_ptr[point_idx], points_ptr[point_idx + 1],
-                              points_ptr[point_idx + 2]};
-
-            scalar_t nt[3] = {normals_ptr[point_idx],
-                              normals_ptr[point_idx + 1],
-                              normals_ptr[point_idx + 2]};
-
-            scalar_t it = (colors_ptr[point_idx] + colors_ptr[point_idx + 1] +
-                           colors_ptr[point_idx + 2]) /
-                          3.0;
-
-            scalar_t AtA[9] = {0};
-            scalar_t Atb[3] = {0};
-
-            // approximate image gradient of vt's tangential plane
-            // projection (p') of a point p on a plane defined by normal n,
-            // where o is the closest point to p on the plane, is given by:
-            // p' = p - [(p - o).dot(n)] * n
-            // p' = p - [(p.dot(n) - s)] * n [where s = o.dot(n)]
-            // Computing the scalar s.
-            scalar_t s = vt[0] * nt[0] + vt[1] * nt[1] + vt[2] * nt[2];
-
-            int i = 1;
-            for (i = 1; i < neighbour_count; i++) {
-                int64_t neighbour_idx =
-                        3 * neighbour_indices_ptr[neighbour_offset + i];
-
-                if (neighbour_idx == -1) {
-                    break;
-                }
-
-                scalar_t vt_adj[3] = {points_ptr[neighbour_idx],
-                                      points_ptr[neighbour_idx + 1],
-                                      points_ptr[neighbour_idx + 2]};
-
-                // p' = p - d * n [where d = p.dot(n) - s]
-                // Computing the scalar d.
-                scalar_t d = vt_adj[0] * nt[0] + vt_adj[1] * nt[1] +
-                             vt_adj[2] * nt[2] - s;
-
-                // Computing the p' (projection of the point).
-                scalar_t vt_proj[3] = {vt_adj[0] - d * nt[0],
-                                       vt_adj[1] - d * nt[1],
-                                       vt_adj[2] - d * nt[2]};
-
-                scalar_t it_adj = (colors_ptr[neighbour_idx + 0] +
-                                   colors_ptr[neighbour_idx + 1] +
-                                   colors_ptr[neighbour_idx + 2]) /
-                                  3.0;
-
-                scalar_t A[3] = {vt_proj[0] - vt[0], vt_proj[1] - vt[1],
-                                 vt_proj[2] - vt[2]};
-
-                AtA[0] += A[0] * A[0];
-                AtA[1] += A[1] * A[0];
-                AtA[2] += A[2] * A[0];
-                AtA[4] += A[1] * A[1];
-                AtA[5] += A[2] * A[1];
-                AtA[8] += A[2] * A[2];
-
-                scalar_t b = it_adj - it;
-
-                Atb[0] += A[0] * b;
-                Atb[1] += A[1] * b;
-                Atb[2] += A[2] * b;
-            }
-
-            // Orthogonal constraint.
-            scalar_t A[3] = {(i - 1) * nt[0], (i - 1) * nt[1], (i - 1) * nt[2]};
-
-            AtA[0] += A[0] * A[0];
-            AtA[1] += A[0] * A[1];
-            AtA[2] += A[0] * A[2];
-            AtA[4] += A[1] * A[1];
-            AtA[5] += A[1] * A[2];
-            AtA[8] += A[2] * A[2];
-
-            // Symmetry.
-            AtA[3] = AtA[1];
-            AtA[6] = AtA[2];
-            AtA[7] = AtA[5];
-
-            solve_svd3x3(AtA[0], AtA[1], AtA[2], AtA[3], AtA[4], AtA[5], AtA[6],
-                         AtA[7], AtA[8], Atb[0], Atb[1], Atb[2],
-                         color_gradients_ptr[point_idx + 0],
-                         color_gradients_ptr[point_idx + 1],
-                         color_gradients_ptr[point_idx + 2]);
-        } else {
-            color_gradients_ptr[point_idx] = 0;
-            color_gradients_ptr[point_idx + 1] = 0;
-            color_gradients_ptr[point_idx + 2] = 0;
-        }
-    }
-}
-
 void EstimateColorGradientsCPU(const core::Tensor& points,
                                const core::Tensor& normals,
                                const core::Tensor& colors,
@@ -334,49 +222,123 @@ void EstimateColorGradientsCPU(const core::Tensor& points,
             tree.HybridSearch(points, radius, max_nn);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        EstimateColorGradientsCPUKernel(
-                points.GetDataPtr<scalar_t>(), normals.GetDataPtr<scalar_t>(),
-                colors.GetDataPtr<scalar_t>(), indices.GetDataPtr<int64_t>(),
-                counts.GetDataPtr<int64_t>(),
-                color_gradients.GetDataPtr<scalar_t>(), max_nn, n);
+        auto points_ptr = points.GetDataPtr<scalar_t>();
+        auto normals_ptr = normals.GetDataPtr<scalar_t>();
+        auto colors_ptr = colors.GetDataPtr<scalar_t>();
+        auto neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
+        auto neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
+        auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
+
+        core::kernel::CPULauncher::LaunchGeneralKernel(
+                n, [&](int64_t workload_idx) {
+                    int64_t neighbour_offset = max_nn * workload_idx;
+                    int64_t neighbour_count =
+                            neighbour_counts_ptr[workload_idx];
+                    int64_t point_idx = 3 * workload_idx;
+
+                    if (neighbour_count >= 4) {
+                        scalar_t vt[3] = {points_ptr[point_idx],
+                                          points_ptr[point_idx + 1],
+                                          points_ptr[point_idx + 2]};
+
+                        scalar_t nt[3] = {normals_ptr[point_idx],
+                                          normals_ptr[point_idx + 1],
+                                          normals_ptr[point_idx + 2]};
+
+                        scalar_t it = (colors_ptr[point_idx] +
+                                       colors_ptr[point_idx + 1] +
+                                       colors_ptr[point_idx + 2]) /
+                                      3.0;
+
+                        scalar_t AtA[9] = {0};
+                        scalar_t Atb[3] = {0};
+
+                        // approximate image gradient of vt's tangential plane
+                        // projection (p') of a point p on a plane defined by
+                        // normal n, where o is the closest point to p on the
+                        // plane, is given by: p' = p - [(p - o).dot(n)] * n p'
+                        // = p - [(p.dot(n) - s)] * n [where s = o.dot(n)]
+                        // Computing the scalar s.
+                        scalar_t s =
+                                vt[0] * nt[0] + vt[1] * nt[1] + vt[2] * nt[2];
+
+                        int i = 1;
+                        for (i = 1; i < neighbour_count; i++) {
+                            int64_t neighbour_idx =
+                                    3 *
+                                    neighbour_indices_ptr[neighbour_offset + i];
+
+                            if (neighbour_idx == -1) {
+                                break;
+                            }
+
+                            scalar_t vt_adj[3] = {
+                                    points_ptr[neighbour_idx],
+                                    points_ptr[neighbour_idx + 1],
+                                    points_ptr[neighbour_idx + 2]};
+
+                            // p' = p - d * n [where d = p.dot(n) - s]
+                            // Computing the scalar d.
+                            scalar_t d = vt_adj[0] * nt[0] + vt_adj[1] * nt[1] +
+                                         vt_adj[2] * nt[2] - s;
+
+                            // Computing the p' (projection of the point).
+                            scalar_t vt_proj[3] = {vt_adj[0] - d * nt[0],
+                                                   vt_adj[1] - d * nt[1],
+                                                   vt_adj[2] - d * nt[2]};
+
+                            scalar_t it_adj = (colors_ptr[neighbour_idx + 0] +
+                                               colors_ptr[neighbour_idx + 1] +
+                                               colors_ptr[neighbour_idx + 2]) /
+                                              3.0;
+
+                            scalar_t A[3] = {vt_proj[0] - vt[0],
+                                             vt_proj[1] - vt[1],
+                                             vt_proj[2] - vt[2]};
+
+                            AtA[0] += A[0] * A[0];
+                            AtA[1] += A[1] * A[0];
+                            AtA[2] += A[2] * A[0];
+                            AtA[4] += A[1] * A[1];
+                            AtA[5] += A[2] * A[1];
+                            AtA[8] += A[2] * A[2];
+
+                            scalar_t b = it_adj - it;
+
+                            Atb[0] += A[0] * b;
+                            Atb[1] += A[1] * b;
+                            Atb[2] += A[2] * b;
+                        }
+
+                        // Orthogonal constraint.
+                        scalar_t A[3] = {(i - 1) * nt[0], (i - 1) * nt[1],
+                                         (i - 1) * nt[2]};
+
+                        AtA[0] += A[0] * A[0];
+                        AtA[1] += A[0] * A[1];
+                        AtA[2] += A[0] * A[2];
+                        AtA[4] += A[1] * A[1];
+                        AtA[5] += A[1] * A[2];
+                        AtA[8] += A[2] * A[2];
+
+                        // Symmetry.
+                        AtA[3] = AtA[1];
+                        AtA[6] = AtA[2];
+                        AtA[7] = AtA[5];
+
+                        solve_svd3x3(AtA[0], AtA[1], AtA[2], AtA[3], AtA[4],
+                                     AtA[5], AtA[6], AtA[7], AtA[8], Atb[0],
+                                     Atb[1], Atb[2],
+                                     color_gradients_ptr[point_idx + 0],
+                                     color_gradients_ptr[point_idx + 1],
+                                     color_gradients_ptr[point_idx + 2]);
+                    } else {
+                        color_gradients_ptr[point_idx] = 0;
+                        color_gradients_ptr[point_idx + 1] = 0;
+                        color_gradients_ptr[point_idx + 2] = 0;
+                    }
+                });
     });
-}
-
-template <typename scalar_t>
-void EstimateCovariancesCPUKernel(const scalar_t* points_ptr,
-                                  const int64_t* neighbour_indices_ptr,
-                                  const int64_t* neighbour_counts_ptr,
-                                  scalar_t* covariances_ptr,
-                                  const int64_t& max_nn,
-                                  const int64_t& n) {
-#pragma omp parallel for schedule(static)
-    for (int64_t workload_idx = 0; workload_idx < n; workload_idx++) {
-        // NNS [Hybrid Search].
-        int64_t neighbour_offset = max_nn * workload_idx;
-        // Count of valid correspondences per point.
-        int64_t neighbour_count = neighbour_counts_ptr[workload_idx];
-        // Covariance is of shape {3, 3}, so it has an offset factor of
-        // 9 x workload_idx.
-        int64_t covariances_offset = 9 * workload_idx;
-
-        if (neighbour_count >= 3) {
-            EstimatePointWiseCovarianceKernel(
-                    points_ptr, neighbour_indices_ptr + neighbour_offset,
-                    neighbour_count, covariances_ptr + covariances_offset);
-        } else {
-            // Identity.
-            covariances_ptr[covariances_offset] = 1.0;
-            covariances_ptr[covariances_offset + 1] = 0.0;
-            covariances_ptr[covariances_offset + 2] = 0.0;
-            covariances_ptr[covariances_offset + 3] = 0.0;
-            covariances_ptr[covariances_offset + 4] = 1.0;
-            covariances_ptr[covariances_offset + 5] = 0.0;
-            covariances_ptr[covariances_offset + 6] = 0.0;
-            covariances_ptr[covariances_offset + 7] = 0.0;
-            covariances_ptr[covariances_offset + 8] = 1.0;
-        }
-    }
-    return;
 }
 
 void EstimateCovariancesCPU(const core::Tensor& points,
@@ -399,60 +361,87 @@ void EstimateCovariancesCPU(const core::Tensor& points,
             tree.HybridSearch(points, radius, max_nn);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        EstimateCovariancesCPUKernel(
-                points.GetDataPtr<scalar_t>(), indices.GetDataPtr<int64_t>(),
-                counts.GetDataPtr<int64_t>(),
-                covariances.GetDataPtr<scalar_t>(), max_nn, n);
+        auto points_ptr = points.GetDataPtr<scalar_t>();
+        auto neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
+        auto neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
+        auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
+
+        core::kernel::CPULauncher::LaunchGeneralKernel(
+                n, [&](int64_t workload_idx) {
+                    // NNS [Hybrid Search].
+                    int64_t neighbour_offset = max_nn * workload_idx;
+                    // Count of valid correspondences per point.
+                    int64_t neighbour_count =
+                            neighbour_counts_ptr[workload_idx];
+                    // Covariance is of shape {3, 3}, so it has an offset factor
+                    // of 9 x workload_idx.
+                    int64_t covariances_offset = 9 * workload_idx;
+
+                    if (neighbour_count >= 3) {
+                        EstimatePointWiseCovarianceKernel(
+                                points_ptr,
+                                neighbour_indices_ptr + neighbour_offset,
+                                neighbour_count,
+                                covariances_ptr + covariances_offset);
+                    } else {
+                        // Identity.
+                        covariances_ptr[covariances_offset] = 1.0;
+                        covariances_ptr[covariances_offset + 1] = 0.0;
+                        covariances_ptr[covariances_offset + 2] = 0.0;
+                        covariances_ptr[covariances_offset + 3] = 0.0;
+                        covariances_ptr[covariances_offset + 4] = 1.0;
+                        covariances_ptr[covariances_offset + 5] = 0.0;
+                        covariances_ptr[covariances_offset + 6] = 0.0;
+                        covariances_ptr[covariances_offset + 7] = 0.0;
+                        covariances_ptr[covariances_offset + 8] = 1.0;
+                    }
+                });
     });
-}
-
-template <typename scalar_t>
-void EstimateNormalsCPUKernel(const scalar_t* covariances_ptr,
-                              scalar_t* normals_ptr,
-                              const bool has_normals,
-                              const int64_t& n) {
-#pragma omp parallel for schedule(static)
-    for (int64_t workload_idx = 0; workload_idx < n; workload_idx++) {
-        int64_t covariances_offset = 9 * workload_idx;
-        int64_t normals_offset = 3 * workload_idx;
-        scalar_t normals_output[3] = {0};
-        EstimatePointWiseNormalsWithFastEigen3x3(
-                covariances_ptr + covariances_offset, normals_output);
-
-        if ((normals_output[0] * normals_output[0] +
-             normals_output[1] * normals_output[1] +
-             normals_output[2] * normals_output[2]) == 0.0 &&
-            !has_normals) {
-            normals_output[0] = 0.0;
-            normals_output[1] = 0.0;
-            normals_output[2] = 1.0;
-        }
-        if (has_normals) {
-            if ((normals_ptr[normals_offset] * normals_output[0] +
-                 normals_ptr[normals_offset + 1] * normals_output[1] +
-                 normals_ptr[normals_offset + 2] * normals_output[2]) < 0.0) {
-                normals_output[0] *= -1;
-                normals_output[1] *= -1;
-                normals_output[2] *= -1;
-            }
-        }
-
-        normals_ptr[normals_offset] = normals_output[0];
-        normals_ptr[normals_offset + 1] = normals_output[1];
-        normals_ptr[normals_offset + 2] = normals_output[2];
-    }
 }
 
 void EstimateNormalsCPU(const core::Tensor& covariances,
                         core::Tensor& normals,
-                        const bool& has_normals) {
+                        const bool has_normals) {
     core::Dtype dtype = covariances.GetDtype();
     int64_t n = covariances.GetLength();
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        EstimateNormalsCPUKernel(covariances.GetDataPtr<scalar_t>(),
-                                 normals.GetDataPtr<scalar_t>(), has_normals,
-                                 n);
+        auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
+        auto normals_ptr = normals.GetDataPtr<scalar_t>();
+
+        core::kernel::CPULauncher::LaunchGeneralKernel(
+                n, [&](int64_t workload_idx) {
+                    int64_t covariances_offset = 9 * workload_idx;
+                    int64_t normals_offset = 3 * workload_idx;
+                    scalar_t normals_output[3] = {0};
+                    EstimatePointWiseNormalsWithFastEigen3x3(
+                            covariances_ptr + covariances_offset,
+                            normals_output);
+
+                    if ((normals_output[0] * normals_output[0] +
+                         normals_output[1] * normals_output[1] +
+                         normals_output[2] * normals_output[2]) == 0.0 &&
+                        !has_normals) {
+                        normals_output[0] = 0.0;
+                        normals_output[1] = 0.0;
+                        normals_output[2] = 1.0;
+                    }
+                    if (has_normals) {
+                        if ((normals_ptr[normals_offset] * normals_output[0] +
+                             normals_ptr[normals_offset + 1] *
+                                     normals_output[1] +
+                             normals_ptr[normals_offset + 2] *
+                                     normals_output[2]) < 0.0) {
+                            normals_output[0] *= -1;
+                            normals_output[1] *= -1;
+                            normals_output[2] *= -1;
+                        }
+                    }
+
+                    normals_ptr[normals_offset] = normals_output[0];
+                    normals_ptr[normals_offset + 1] = normals_output[1];
+                    normals_ptr[normals_offset + 2] = normals_output[2];
+                });
     });
 }
 

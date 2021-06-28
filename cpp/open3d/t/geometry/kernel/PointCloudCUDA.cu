@@ -33,13 +33,13 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
+#include "open3d/core/linalg/performance/SVD3x3.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
-#include "open3d/core/linalg/performance/SVD3x3.h"
 #include "open3d/utility/Console.h"
 
 namespace open3d {
@@ -417,14 +417,42 @@ void EstimateCovariancesCUDA(const core::Tensor& points,
     std::tie(indices, distance, counts) =
             tree.HybridSearch(points, radius, max_nn);
 
-    const dim3 blocks((n + 512 - 1) / 512);
-    const dim3 threads(512);
-
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        EstimateCovariancesCUDAKernel<<<blocks, threads>>>(
-                points.GetDataPtr<scalar_t>(), indices.GetDataPtr<int64_t>(),
-                counts.GetDataPtr<int64_t>(),
-                covariances.GetDataPtr<scalar_t>(), max_nn, n);
+        auto points_ptr = points.GetDataPtr<scalar_t>();
+        auto neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
+        auto neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
+        auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
+
+        core::kernel::CUDALauncher::LaunchGeneralKernel(
+                n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    // NNS [Hybrid Search].
+                    int64_t neighbour_offset = max_nn * workload_idx;
+                    // Count of valid correspondences per point.
+                    int64_t neighbour_count =
+                            neighbour_counts_ptr[workload_idx];
+                    // Covariance is of shape {3, 3}, so it has an offset factor
+                    // of 9 x workload_idx.
+                    int64_t covariances_offset = 9 * workload_idx;
+
+                    if (neighbour_count >= 3) {
+                        EstimatePointWiseCovarianceKernel(
+                                points_ptr,
+                                neighbour_indices_ptr + neighbour_offset,
+                                neighbour_count,
+                                covariances_ptr + covariances_offset);
+                    } else {
+                        // Identity.
+                        covariances_ptr[covariances_offset] = 1.0;
+                        covariances_ptr[covariances_offset + 1] = 0.0;
+                        covariances_ptr[covariances_offset + 2] = 0.0;
+                        covariances_ptr[covariances_offset + 3] = 0.0;
+                        covariances_ptr[covariances_offset + 4] = 1.0;
+                        covariances_ptr[covariances_offset + 5] = 0.0;
+                        covariances_ptr[covariances_offset + 6] = 0.0;
+                        covariances_ptr[covariances_offset + 7] = 0.0;
+                        covariances_ptr[covariances_offset + 8] = 1.0;
+                    }
+                });
     });
 
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
@@ -470,7 +498,7 @@ __global__ void EstimateNormalsCUDAKernel(const scalar_t* covariances_ptr,
 
 void EstimateNormalsCUDA(const core::Tensor& covariances,
                          core::Tensor& normals,
-                         const bool& has_normals) {
+                         const bool has_normals) {
     core::Dtype dtype = covariances.GetDtype();
     int64_t n = covariances.GetLength();
 
@@ -482,6 +510,46 @@ void EstimateNormalsCUDA(const core::Tensor& covariances,
                 covariances.GetDataPtr<scalar_t>(),
                 normals.GetDataPtr<scalar_t>(), has_normals, n);
     });
+
+    // DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+    //     auto normals_ptr = normals.GetDataPtr<scalar_t>();
+    //     auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
+
+    //     core::kernel::CUDALauncher::LaunchGeneralKernel(
+    //             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+    //                 int64_t covariances_offset = 9 * workload_idx;
+    //                 int64_t normals_offset = 3 * workload_idx;
+    //                 scalar_t normals_output[3] = {0};
+    //                 EstimatePointWiseNormalsWithFastEigen3x3(
+    //                         covariances_ptr + covariances_offset,
+    //                         normals_output);
+
+    //                 if ((normals_output[0] * normals_output[0] +
+    //                      normals_output[1] * normals_output[1] +
+    //                      normals_output[2] * normals_output[2]) == 0.0 &&
+    //                     !has_normals) {
+    //                     normals_output[0] = 0.0;
+    //                     normals_output[1] = 0.0;
+    //                     normals_output[2] = 1.0;
+    //                 }
+    //                 if (has_normals) {
+    //                     if ((normals_ptr[normals_offset] * normals_output[0]
+    //                     +
+    //                          normals_ptr[normals_offset + 1] *
+    //                                  normals_output[1] +
+    //                          normals_ptr[normals_offset + 2] *
+    //                                  normals_output[2]) < 0.0) {
+    //                         normals_output[0] = -1 * normals_output[0];
+    //                         normals_output[1] = -1 * normals_output[1];
+    //                         normals_output[2] = -1 * normals_output[2];
+    //                     }
+    //                 }
+
+    //                 normals_ptr[normals_offset] = normals_output[0];
+    //                 normals_ptr[normals_offset + 1] = normals_output[1];
+    //                 normals_ptr[normals_offset + 2] = normals_output[2];
+    //             });
+    // });
 }
 
 }  // namespace pointcloud

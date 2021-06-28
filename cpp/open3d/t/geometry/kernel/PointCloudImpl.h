@@ -95,7 +95,7 @@ void EstimateCovariancesCPU(const core::Tensor& points,
 
 void EstimateNormalsCPU(const core::Tensor& covariances,
                         core::Tensor& normals,
-                        const bool& has_normals);
+                        const bool has_normals);
 
 #ifdef BUILD_CUDA_MODULE
 void EstimateColorGradientsCUDA(const core::Tensor& points,
@@ -112,7 +112,7 @@ void EstimateCovariancesCUDA(const core::Tensor& points,
 
 void EstimateNormalsCUDA(const core::Tensor& covariances,
                          core::Tensor& normals,
-                         const bool& has_normals);
+                         const bool has_normals);
 #endif
 
 template <typename scalar_t>
