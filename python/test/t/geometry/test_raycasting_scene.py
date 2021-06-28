@@ -151,8 +151,6 @@ def test_compute_distance():
 def test_compute_signed_distance():
     cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
         o3d.geometry.TriangleMesh.create_box())
-    vertices = cube.vertices['vertices']
-    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
     scene.add_triangles(cube)

@@ -49,7 +49,7 @@ The following shows how to create a scene and compute ray intersections::
     import matplotlib.pyplot as plt
 
     cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
-    o3d.geometry.TriangleMesh.create_box())
+                                        o3d.geometry.TriangleMesh.create_box())
 
     # Create scene and add the cube mesh
     scene = o3d.t.geometry.RaycastingScene()
