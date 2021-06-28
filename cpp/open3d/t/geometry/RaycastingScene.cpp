@@ -617,6 +617,104 @@ core::Tensor RaycastingScene::ComputeOccupancy(
     return intersections.To(core::Dtype::FromType<float>()).Reshape(shape);
 }
 
+core::Tensor RaycastingScene::CreateRaysPinhole(
+        const core::Tensor& intrinsic_matrix,
+        const core::Tensor& extrinsic_matrix,
+        int width_px,
+        int height_px) {
+    intrinsic_matrix.AssertDevice(core::Device());
+    intrinsic_matrix.AssertShape({3, 3});
+    extrinsic_matrix.AssertDevice(core::Device());
+    extrinsic_matrix.AssertShape({4, 4});
+
+    auto intrinsic_matrix_contig =
+            intrinsic_matrix.To(core::Dtype::Float64).Contiguous();
+    auto extrinsic_matrix_contig =
+            extrinsic_matrix.To(core::Dtype::Float64).Contiguous();
+    // Eigen is col major
+    Eigen::Map<Eigen::MatrixXd> KT(intrinsic_matrix_contig.GetDataPtr<double>(),
+                                   3, 3);
+    Eigen::Map<Eigen::MatrixXd> TT(extrinsic_matrix_contig.GetDataPtr<double>(),
+                                   4, 4);
+
+    Eigen::Matrix3d invK = KT.transpose().inverse();
+    Eigen::Matrix3d RT = TT.block(0, 0, 3, 3);
+    Eigen::Vector3d t = TT.transpose().block(0, 3, 3, 1);
+    Eigen::Vector3d C = -RT * t;
+    Eigen::Matrix3f RT_invK = (RT * invK).cast<float>();
+
+    core::Tensor rays({height_px, width_px, 6}, core::Dtype::Float32);
+    Eigen::Map<Eigen::MatrixXf> rays_map(rays.GetDataPtr<float>(), 6,
+                                         height_px * width_px);
+
+    Eigen::Matrix<float, 6, 1> r;
+    r.topRows<3>() = C.cast<float>();
+    int64_t linear_idx = 0;
+    for (int y = 0; y < height_px; ++y) {
+        for (int x = 0; x < width_px; ++x, ++linear_idx) {
+            Eigen::Vector3f px(x + 0.5f, y + 0.5f, 1);
+            Eigen::Vector3f ray_dir = RT_invK * px;
+            r.bottomRows<3>() = ray_dir;
+            rays_map.col(linear_idx) = r;
+        }
+    }
+    return rays;
+}
+
+core::Tensor RaycastingScene::CreateRaysPinhole(double fov_deg,
+                                                const core::Tensor& center,
+                                                const core::Tensor& eye,
+                                                const core::Tensor& up,
+                                                int width_px,
+                                                int height_px) {
+    center.AssertDevice(core::Device());
+    center.AssertShape({3});
+    eye.AssertDevice(core::Device());
+    eye.AssertShape({3});
+    up.AssertDevice(core::Device());
+    up.AssertShape({3});
+
+    double focal_length =
+            0.5 * width_px / std::tan(0.5 * (M_PI / 180) * fov_deg);
+
+    core::Tensor intrinsic_matrix =
+            core::Tensor::Eye(3, core::Dtype::Float64, core::Device());
+    Eigen::Map<Eigen::MatrixXd> intrinsic_matrix_map(
+            intrinsic_matrix.GetDataPtr<double>(), 3, 3);
+    intrinsic_matrix_map(0, 0) = focal_length;
+    intrinsic_matrix_map(1, 1) = focal_length;
+    intrinsic_matrix_map(2, 0) = 0.5 * width_px;
+    intrinsic_matrix_map(2, 1) = 0.5 * height_px;
+
+    auto center_contig = center.To(core::Dtype::Float64).Contiguous();
+    auto eye_contig = eye.To(core::Dtype::Float64).Contiguous();
+    auto up_contig = up.To(core::Dtype::Float64).Contiguous();
+
+    Eigen::Map<const Eigen::Vector3d> center_map(
+            center_contig.GetDataPtr<double>());
+    Eigen::Map<const Eigen::Vector3d> eye_map(eye_contig.GetDataPtr<double>());
+    Eigen::Map<const Eigen::Vector3d> up_map(up_contig.GetDataPtr<double>());
+
+    Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
+    R.row(1) = up_map / up_map.norm();
+    R.row(2) = center_map - eye_map;
+    R.row(2) /= R.row(2).norm();
+    R.row(0) = R.row(1).cross(R.row(2));
+    R.row(0) /= R.row(0).norm();
+    R.row(1) = R.row(2).cross(R.row(0));
+    Eigen::Vector3d t = -R * eye_map;
+
+    core::Tensor extrinsic_matrix =
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device());
+    Eigen::Map<Eigen::MatrixXd> extrinsic_matrix_map(
+            extrinsic_matrix.GetDataPtr<double>(), 4, 4);
+    extrinsic_matrix_map.block(3, 0, 1, 3) = t.transpose();
+    extrinsic_matrix_map.block(0, 0, 3, 3) = R.transpose();
+
+    return CreateRaysPinhole(intrinsic_matrix, extrinsic_matrix, width_px,
+                             height_px);
+}
+
 uint32_t RaycastingScene::INVALID_ID() { return RTC_INVALID_GEOMETRY_ID; }
 
 }  // namespace geometry

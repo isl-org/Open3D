@@ -71,14 +71,27 @@ def test_cast_lots_of_rays():
     _ = scene.cast_rays(rays)
 
 
+def test_add_triangle_mesh():
+    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+        o3d.geometry.TriangleMesh.create_box())
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(cube)
+
+    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
+                            [10, 10, 10, 1, 0, 0]],
+                           dtype=o3d.core.Dtype.Float32)
+    ans = scene.count_intersections(rays)
+
+    assert (ans.numpy() == [2, 1, 0]).all()
+
+
 def test_count_intersections():
     cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
         o3d.geometry.TriangleMesh.create_box())
-    vertices = cube.vertices['vertices']
-    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
-    scene.add_triangles(vertices, triangles)
+    scene.add_triangles(cube)
 
     rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
                             [10, 10, 10, 1, 0, 0]],
@@ -93,11 +106,9 @@ def test_count_intersections():
 def test_count_lots_of_intersections():
     cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
         o3d.geometry.TriangleMesh.create_box())
-    vertices = cube.vertices['vertices']
-    triangles = cube.triangles['triangles'].to(o3d.core.Dtype.UInt32)
 
     scene = o3d.t.geometry.RaycastingScene()
-    scene.add_triangles(vertices, triangles)
+    scene.add_triangles(cube)
 
     rs = np.random.RandomState(123)
     rays = o3d.core.Tensor.from_numpy(rs.rand(1234567, 6).astype(np.float32))
@@ -121,21 +132,6 @@ def test_compute_closest_points():
     assert (0 == ans['primitive_ids']).all()
     assert np.allclose(ans['points'].numpy(),
                        np.array([[0.2, 0.1, 0.0], [1, 1, 0]]))
-
-
-def test_add_triangle_mesh():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
-        o3d.geometry.TriangleMesh.create_box())
-
-    scene = o3d.t.geometry.RaycastingScene()
-    scene.add_triangles(cube)
-
-    rays = o3d.core.Tensor([[0.5, 0.5, -1, 0, 0, 1], [0.5, 0.5, 0.5, 0, 0, 1],
-                            [10, 10, 10, 1, 0, 0]],
-                           dtype=o3d.core.Dtype.Float32)
-    ans = scene.count_intersections(rays)
-
-    assert (ans.numpy() == [2, 1, 0]).all()
 
 
 def test_compute_distance():

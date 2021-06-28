@@ -79,8 +79,7 @@ public:
     ///           shape is {..}. If there is no intersection the hit distance
     ///           is \a inf .
     ///         - \b geometry_ids A tensor with the geometry IDs. The shape is
-    ///           The shape is {..}. If there is no intersection the ID is
-    ///           \a INVALID_ID .
+    ///           {..}. If there is no intersection the ID is \a INVALID_ID .
     ///         - \b primitive_ids A tensor with the primitive IDs, which
     ///           corresponds to the triangle index. The shape is {..}.
     ///           If there is no intersection the ID is \a INVALID_ID .
@@ -112,7 +111,7 @@ public:
     ///         - \b points A tensor with the closest surface points. The shape
     ///           is {..}.
     ///         - \b geometry_ids A tensor with the geometry IDs. The shape is
-    ///           The shape is {..}.
+    ///           {..}.
     ///         - \b primitive_ids A tensor with the primitive IDs, which
     ///           corresponds to the triangle index. The shape is {..}.
     std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
@@ -160,6 +159,35 @@ public:
     /// \return A tensor with the occupancy values. The shape is {..}. Values
     /// are either 0 or 1. A point is occupied or inside if the value is 1.
     core::Tensor ComputeOccupancy(const core::Tensor &query_points);
+
+    /// \brief Creates rays for the given camera parameters.
+    ///
+    /// \param intrinsic_matrix The upper triangular intrinsic matrix with
+    /// shape {3,3}.
+    /// \param extrinsic_matrix The 4x4 world to camera SE(3) transformation
+    /// matrix. \param width_px The width of the image in pixels. \param
+    /// height_px The height of the image in pixels. \return A tensor of shape
+    /// {height_px, width_px, 6} with the rays.
+    static core::Tensor CreateRaysPinhole(const core::Tensor &intrinsic_matrix,
+                                          const core::Tensor &extrinsic_matrix,
+                                          int width_px,
+                                          int height_px);
+
+    /// \brief Creates rays for the given camera parameters.
+    ///
+    /// \param fov_deg The horizontal field of view in degree.
+    /// \param center The point the camera is looking at with shape {3}.
+    /// \param eye The position of the camera with shape {3}.
+    /// \param up The up-vector with shape {3}.
+    /// \param width_px The width of the image in pixels.
+    /// \param height_px The height of the image in pixels.
+    /// \return A tensor of shape {height_px, width_px, 6} with the rays.
+    static core::Tensor CreateRaysPinhole(double fov_deg,
+                                          const core::Tensor &center,
+                                          const core::Tensor &eye,
+                                          const core::Tensor &up,
+                                          int width_px,
+                                          int height_px);
 
     /// \brief The value for invalid IDs.
     static uint32_t INVALID_ID();
