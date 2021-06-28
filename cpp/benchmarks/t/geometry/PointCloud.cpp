@@ -100,6 +100,81 @@ void VoxelDownSample(benchmark::State& state,
     }
 }
 
+void EstimateCovariances(benchmark::State& state, const core::Device& device) {
+    t::geometry::PointCloud pcd;
+    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
+    // remove_nan_points
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    pcd.VoxelDownSample(0.02);
+
+    // Warp up
+    pcd.EstimateCovariances(0.07, 30);
+    (void)pcd;
+    for (auto _ : state) {
+        pcd.EstimateCovariances(0.07, 30);
+    }
+}
+
+void EstimateNormals(benchmark::State& state, const core::Device& device) {
+    t::geometry::PointCloud pcd;
+    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
+    // remove_nan_points
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    pcd.VoxelDownSample(0.02);
+
+    // Warp up
+    pcd.EstimateNormals(0.07, 30);
+    pcd.RemovePointAttr("covariances");
+    (void)pcd;
+    for (auto _ : state) {
+        pcd.EstimateNormals(0.07, 30);
+        pcd.RemovePointAttr("covariances");
+    }
+}
+
+void EstimateColorGradients(benchmark::State& state,
+                            const core::Device& device) {
+    t::geometry::PointCloud pcd;
+    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
+    // remove_nan_points
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    pcd.VoxelDownSample(0.02);
+    pcd.SetPointColors(
+            pcd.GetPointColors().To(pcd.GetPoints().GetDtype()).Div(255.0));
+    pcd.EstimateNormals(0.07, 30);
+
+    // Warp up
+    pcd.EstimateColorGradients(0.07, 30);
+    (void)pcd;
+    for (auto _ : state) {
+        pcd.EstimateColorGradients(0.07, 30);
+    }
+}
+
+void LegacyEstimateNormals(benchmark::State& state, double voxel_size) {
+    open3d::geometry::PointCloud pcd;
+    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
+    // remove_nan_points
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    pcd.VoxelDownSample(voxel_size);
+
+    // Warp up
+    pcd.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.07, 30),
+                        true);
+    (void)pcd;
+    for (auto _ : state) {
+        pcd.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.07, 30),
+                            true);
+    }
+}
+
 BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
@@ -151,6 +226,26 @@ BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_16, 0.16)
 BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_32, 0.32)
         ->Unit(benchmark::kMillisecond);
 ENUM_VOXELDOWNSAMPLE_BACKEND()
+
+BENCHMARK_CAPTURE(EstimateCovariances, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateColorGradients, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(EstimateCovariances, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateColorGradients, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+
+#endif
+
+BENCHMARK_CAPTURE(LegacyEstimateNormals, Legacy, 0.02)
+        ->Unit(benchmark::kMillisecond);
 
 }  // namespace geometry
 }  // namespace t
