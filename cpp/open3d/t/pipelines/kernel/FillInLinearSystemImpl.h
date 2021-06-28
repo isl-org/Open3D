@@ -24,14 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/linalg/performance/SVD3x3.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
-
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-#include "open3d/t/pipelines/kernel/SVD3x3CUDA.cuh"
-#else
-#include "open3d/t/pipelines/kernel/SVD3x3CPU.h"
-#endif
 
 namespace open3d {
 namespace t {
@@ -304,74 +299,6 @@ void FillInSLACAlignmentTermCPU
     });
 }
 
-inline OPEN3D_HOST_DEVICE void matmul3x3_3x1(float m00,
-                                             float m01,
-                                             float m02,
-                                             float m10,
-                                             float m11,
-                                             float m12,
-                                             float m20,
-                                             float m21,
-                                             float m22,
-                                             float v0,
-                                             float v1,
-                                             float v2,
-                                             float &o0,
-                                             float &o1,
-                                             float &o2) {
-    o0 = m00 * v0 + m01 * v1 + m02 * v2;
-    o1 = m10 * v0 + m11 * v1 + m12 * v2;
-    o2 = m20 * v0 + m21 * v1 + m22 * v2;
-}
-
-inline OPEN3D_HOST_DEVICE void matmul3x3_3x3(float a00,
-                                             float a01,
-                                             float a02,
-                                             float a10,
-                                             float a11,
-                                             float a12,
-                                             float a20,
-                                             float a21,
-                                             float a22,
-                                             float b00,
-                                             float b01,
-                                             float b02,
-                                             float b10,
-                                             float b11,
-                                             float b12,
-                                             float b20,
-                                             float b21,
-                                             float b22,
-                                             float &c00,
-                                             float &c01,
-                                             float &c02,
-                                             float &c10,
-                                             float &c11,
-                                             float &c12,
-                                             float &c20,
-                                             float &c21,
-                                             float &c22) {
-    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b00, b10, b20,
-                  c00, c10, c20);
-    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b01, b11, b21,
-                  c01, c11, c21);
-    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b02, b12, b22,
-                  c02, c12, c22);
-}
-
-inline OPEN3D_HOST_DEVICE float det3x3(float m00,
-                                       float m01,
-                                       float m02,
-                                       float m10,
-                                       float m11,
-                                       float m12,
-                                       float m20,
-                                       float m21,
-                                       float m22) {
-    return m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 - m21) +
-           m20 * (m01 * m12 - m02 * m11);
-}
-
 #if defined(__CUDACC__)
 void FillInSLACRegularizerTermCUDA
 #else
@@ -460,18 +387,17 @@ void FillInSLACRegularizerTermCPU
         }
 
         // clang-format off
-        svd(cov[0][0], cov[0][1], cov[0][2],
-            cov[1][0], cov[1][1], cov[1][2],
-            cov[2][0], cov[2][1], cov[2][2],
-            U[0][0], U[0][1], U[0][2],
-            U[1][0], U[1][1], U[1][2],
-            U[2][0], U[2][1], U[2][2],
-            S[0], S[1], S[2],
-            V[0][0], V[0][1], V[0][2],
-            V[1][0], V[1][1], V[1][2],
-            V[2][0], V[2][1], V[2][2]);
+        svd3x3(cov[0][0], cov[0][1], cov[0][2],
+               cov[1][0], cov[1][1], cov[1][2],
+               cov[2][0], cov[2][1], cov[2][2],
+               U[0][0], U[0][1], U[0][2],
+               U[1][0], U[1][1], U[1][2],
+               U[2][0], U[2][1], U[2][2],
+               S[0], S[1], S[2],
+               V[0][0], V[0][1], V[0][2],
+               V[1][0], V[1][1], V[1][2],
+               V[2][0], V[2][1], V[2][2]);
 
-        // TODO: det3x3 and matmul3x3
         float R[3][3];
 
         // clang-format off
@@ -485,9 +411,7 @@ void FillInSLACRegularizerTermCPU
                       R[1][0], R[1][1], R[1][2],
                       R[2][0], R[2][1], R[2][2]);
 
-        float d = det3x3(R[0][0], R[0][1], R[0][2],
-                         R[1][0], R[1][1], R[1][2],
-                         R[2][0], R[2][1], R[2][2]);
+        float d = det3x3(*R);
         // clang-format on
 
         if (d < 0) {
