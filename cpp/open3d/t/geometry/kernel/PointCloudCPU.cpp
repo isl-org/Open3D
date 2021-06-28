@@ -39,7 +39,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
-#include "open3d/t/pipelines/kernel/SVD3x3CPU.h"
+#include "open3d/core/linalg/performance/SVD3x3.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
 
