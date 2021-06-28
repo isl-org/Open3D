@@ -227,7 +227,7 @@ if(NOT DEFINED Python3_FIND_REGISTRY)
     # Only consider PATH variable on Windows by default
     set(Python3_FIND_REGISTRY NEVER)
 endif()
-find_package(Python3 3.6...<3.9
+find_package(Python3 3.6...<3.10
              COMPONENTS Interpreter Development
 )
 if (Python3_FOUND)
@@ -237,7 +237,7 @@ if (Python3_FOUND)
         "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
 else()
     if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.8. Please ensure it is in PATH.")
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")
     endif()
 endif()
 
