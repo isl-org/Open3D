@@ -1554,7 +1554,7 @@ Tensor Tensor::Matmul(const Tensor& rhs) const {
 
 Tensor Tensor::Solve(const Tensor& rhs) const {
     Tensor output;
-    core::Solve(*this, rhs, output);
+    core::Solve(*this, rhs, output, false);
     return output;
 }
 
@@ -1602,7 +1602,7 @@ Tensor Tensor::Inverse() const {
 
 std::tuple<Tensor, Tensor, Tensor> Tensor::SVD() const {
     Tensor U, S, VT;
-    core::SVD(*this, U, S, VT);
+    core::SVD(*this, U, S, VT, false);
     return std::tie(U, S, VT);
 }
 
