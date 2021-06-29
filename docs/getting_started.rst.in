@@ -115,7 +115,6 @@ A minimal ``Dockerfile`` looks like this:
     RUN apt-get update && apt-get install --no-install-recommends -y \
         libgl1 \
         libgomp1 \
-        libusb-1.0-0 \
         python3-pip \
         && rm -rf /var/lib/apt/lists/*
 
