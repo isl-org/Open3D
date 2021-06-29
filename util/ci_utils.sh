@@ -97,7 +97,7 @@ install_cuda_toolkit() {
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-cudnn" =~ ^($options)$ ]]; then
         echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
-        $SUDO apt-get install --yes --no-install-recommends \
+        $SUDO apt-get install --yes --no-install-recommends --allow-downgrades \
             "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
             "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
     fi
