@@ -59,22 +59,31 @@ public:
     void SetPrintAtProgramEnd(bool print);
     void Print() const;
 
+    bool HasLeaks() const;
+
     void IncrementCountMalloc(void* ptr,
                               size_t byte_size,
                               const Device& device);
     void IncrementCountFree(void* ptr, const Device& device);
 
+    void Reset();
+
 private:
     MemoryManagerStatistic() = default;
 
     struct MemoryStatistics {
-        size_t count_malloc_ = 0;
-        size_t count_free_ = 0;
+        bool IsBalanced() const;
+
+        int64_t count_malloc_ = 0;
+        int64_t count_free_ = 0;
         std::unordered_map<void*, size_t> active_allocations_;
     };
 
     /// Only print unbalanced statistics by default.
     PrintLevel level_ = PrintLevel::Unbalanced;
+
+    // Print at the end of the program be default. If leaks are detected,
+    // the exit code will be overriden with EXIT_FAILURE.
     bool print_at_program_end_ = true;
 
     std::mutex statistics_mutex_;

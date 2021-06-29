@@ -46,8 +46,10 @@ void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
 }
 
 void MemoryManager::Free(void* ptr, const Device& device) {
-    GetDeviceMemoryManager(device)->Free(ptr, device);
+    // Update statistics before freeing the memory. This ensures a consistent
+    // order in case a subsequent Malloc requires the currently freed memory.
     MemoryManagerStatistic::GetInstance().IncrementCountFree(ptr, device);
+    GetDeviceMemoryManager(device)->Free(ptr, device);
 }
 
 void MemoryManager::Memcpy(void* dst_ptr,

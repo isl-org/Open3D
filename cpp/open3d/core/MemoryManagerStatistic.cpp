@@ -27,6 +27,7 @@
 #include "open3d/core/MemoryManagerStatistic.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <numeric>
 
 #include "open3d/utility/Logging.h"
@@ -52,6 +53,12 @@ MemoryManagerStatistic::~MemoryManagerStatistic() {
         // at this point in time.
         utility::Logger::GetInstance().ResetPrintFunction();
         Print();
+
+        // Indicate failure if possible leaks have been detected.
+        // This is useful to automatically let unit tests fail.
+        if (HasLeaks()) {
+            std::exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -66,61 +73,106 @@ void MemoryManagerStatistic::Print() const {
         return;
     }
 
-    auto is_unbalanced = [](const auto& value_pair) -> bool {
-        return value_pair.second.count_malloc_ != value_pair.second.count_free_;
-    };
-
-    if (level_ == PrintLevel::Unbalanced &&
-        std::count_if(statistics_.begin(), statistics_.end(), is_unbalanced) ==
-                0) {
+    if (level_ == PrintLevel::Unbalanced && !HasLeaks()) {
         return;
     }
 
     utility::LogInfo("Memory Statistics: (Device) (#Malloc) (#Free)");
     utility::LogInfo("---------------------------------------------");
     for (const auto& value_pair : statistics_) {
-        if (level_ == PrintLevel::Unbalanced && !is_unbalanced(value_pair)) {
+        // Simulate C++17 structured bindings for better readability.
+        const auto& device = value_pair.first;
+        const auto& statistics = value_pair.second;
+
+        if (level_ == PrintLevel::Unbalanced && statistics.IsBalanced()) {
             continue;
         }
 
-        if (is_unbalanced(value_pair)) {
-            size_t count_leaking = value_pair.second.count_malloc_ -
-                                   value_pair.second.count_free_;
+        if (!statistics.IsBalanced()) {
+            int64_t count_leaking =
+                    statistics.count_malloc_ - statistics.count_free_;
 
             size_t leaking_byte_size = std::accumulate(
-                    value_pair.second.active_allocations_.begin(),
-                    value_pair.second.active_allocations_.end(), 0,
+                    statistics.active_allocations_.begin(),
+                    statistics.active_allocations_.end(), 0,
                     [](size_t count, auto ptr_byte_size) -> size_t {
                         return count + ptr_byte_size.second;
                     });
 
-            utility::LogWarning("{}: {} {} --> {} with {} bytes",
-                                value_pair.first.ToString(),
-                                value_pair.second.count_malloc_,
-                                value_pair.second.count_free_, count_leaking,
+            utility::LogWarning("{}: {} {} --> {} with {} total bytes",
+                                device.ToString(), statistics.count_malloc_,
+                                statistics.count_free_, count_leaking,
                                 leaking_byte_size);
+
+            for (const auto& leak : statistics.active_allocations_) {
+                utility::LogWarning("    {} @ {} bytes", fmt::ptr(leak.first),
+                                    leak.second);
+            }
         } else {
-            utility::LogInfo("{}: {} {}", value_pair.first.ToString(),
-                             value_pair.second.count_malloc_,
-                             value_pair.second.count_free_);
+            utility::LogInfo("{}: {} {}", device.ToString(),
+                             statistics.count_malloc_, statistics.count_free_);
         }
     }
     utility::LogInfo("---------------------------------------------");
+}
+
+bool MemoryManagerStatistic::HasLeaks() const {
+    return std::any_of(statistics_.begin(), statistics_.end(),
+                       [](const auto& value_pair) -> bool {
+                           return !value_pair.second.IsBalanced();
+                       });
 }
 
 void MemoryManagerStatistic::IncrementCountMalloc(void* ptr,
                                                   size_t byte_size,
                                                   const Device& device) {
     std::lock_guard<std::mutex> lock(statistics_mutex_);
-    statistics_[device].count_malloc_++;
-    statistics_[device].active_allocations_.emplace(ptr, byte_size);
+
+    // Filter nullptr. Empty allocations are not tracked.
+    if (ptr == nullptr && byte_size == 0) {
+        return;
+    }
+
+    auto it = statistics_[device].active_allocations_.emplace(ptr, byte_size);
+    if (it.second) {
+        statistics_[device].count_malloc_++;
+    } else {
+        utility::LogError(
+                "{} @ {} bytes on {} is still active and was not freed before",
+                fmt::ptr(ptr), byte_size, device.ToString());
+    }
 }
 
 void MemoryManagerStatistic::IncrementCountFree(void* ptr,
                                                 const Device& device) {
     std::lock_guard<std::mutex> lock(statistics_mutex_);
-    statistics_[device].count_free_++;
-    statistics_[device].active_allocations_.erase(ptr);
+
+    // Filter nullptr. Empty allocations are not tracked.
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto num_erased = statistics_[device].active_allocations_.erase(ptr);
+    if (num_erased == 1) {
+        statistics_[device].count_free_++;
+    } else if (num_erased == 0) {
+        // Either the statistics were reset before or the given pointer is
+        // invalid. Do not increase any counts and ignore both cases.
+    } else {
+        // Should never reach here.
+        utility::LogError(
+                "Invalid number of erased allocations {} for {} on {}",
+                num_erased, fmt::ptr(ptr), device.ToString());
+    }
+}
+
+void MemoryManagerStatistic::Reset() {
+    std::lock_guard<std::mutex> lock(statistics_mutex_);
+    statistics_.clear();
+}
+
+bool MemoryManagerStatistic::MemoryStatistics::IsBalanced() const {
+    return count_malloc_ == count_free_;
 }
 
 }  // namespace core
