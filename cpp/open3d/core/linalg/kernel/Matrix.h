@@ -27,6 +27,11 @@
 #pragma once
 #include "open3d/core/CUDAUtils.h"
 
+namespace open3d {
+namespace core {
+namespace linalg {
+namespace kernel {
+
 // ---- Matmul ----
 template <typename scalar_t>
 OPEN3D_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x1(const scalar_t& m00,
@@ -109,6 +114,32 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x3(const scalar_t* A_3x3,
                   C_3x3[2], C_3x3[5], C_3x3[8]);
 }
 
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void cross_3x1(
+        const scalar_t* A_3x1_input,
+        const scalar_t* B_3x1_input,
+        scalar_t* C_3x1_output) {
+    C_3x1_output[0] =
+            A_3x1_input[1] * B_3x1_input[2] - A_3x1_input[2] * B_3x1_input[1];
+    C_3x1_output[1] =
+            A_3x1_input[2] * B_3x1_input[0] - A_3x1_input[0] * B_3x1_input[2];
+    C_3x1_output[2] =
+            A_3x1_input[0] * B_3x1_input[1] - A_3x1_input[1] * B_3x1_input[0];
+
+    return;
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void dot_3x1(const scalar_t* A_3x1_input,
+                                                    const scalar_t* B_3x1_input,
+                                                    scalar_t& C_output) {
+    C_output = A_3x1_input[0] * B_3x1_input[0] +
+               A_3x1_input[1] * B_3x1_input[1] +
+               A_3x1_input[2] * B_3x1_input[2];
+
+    return;
+}
+
 // ---- Determinant ----
 template <typename scalar_t>
 OPEN3D_DEVICE OPEN3D_FORCE_INLINE scalar_t det2x2(const scalar_t* A_2x2) {
@@ -121,9 +152,6 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE scalar_t det3x3(const scalar_t* A_3x3) {
            A_3x3[3] * (A_3x3[1] * A_3x3[8] - A_3x3[2] * A_3x3[7]) +
            A_3x3[6] * (A_3x3[1] * A_3x3[5] - A_3x3[2] * A_3x3[4]);
 }
-
-// template <typename scalar_t>
-// inline scalar_t det4x4(const scalar_t* A_4x4) {}
 
 template <typename scalar_t>
 OPEN3D_DEVICE OPEN3D_FORCE_INLINE void inverse2x2(const scalar_t* A_2x2,
@@ -213,3 +241,8 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void transpose4x4_(scalar_t* A_4x4) {
 
     return;
 }
+
+}  // namespace kernel
+}  // namespace linalg
+}  // namespace core
+}  // namespace open3d

@@ -29,7 +29,7 @@
 #include <unordered_map>
 
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
-#include "open3d/core/linalg/performance/Matrix.h"
+#include "open3d/core/linalg/kernel/Matrix.h"
 
 namespace open3d {
 namespace core {
@@ -55,7 +55,7 @@ void Inverse(const Tensor &A, Tensor &output) {
             core::Tensor A_3x3 = A.To(core::HostDevice, true);
             const scalar_t *A_3x3_ptr = A_3x3.GetDataPtr<scalar_t>();
 
-            inverse3x3(A_3x3_ptr, B_3x3_ptr, success);
+            linalg::kernel::inverse3x3(A_3x3_ptr, B_3x3_ptr, success);
         });
     } else if (A.GetShape() == open3d::core::SizeVector({2, 2}))
         DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -65,7 +65,7 @@ void Inverse(const Tensor &A, Tensor &output) {
             core::Tensor A_2x2 = A.To(core::HostDevice, true);
             const scalar_t *A_2x2_ptr = A_2x2.GetDataPtr<scalar_t>();
 
-            inverse2x2(A_2x2_ptr, B_2x2_ptr, success);
+            linalg::kernel::inverse2x2(A_2x2_ptr, B_2x2_ptr, success);
         });
 
     // Check devices

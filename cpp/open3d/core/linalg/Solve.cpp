@@ -33,8 +33,8 @@
 #include <unordered_map>
 
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
-#include "open3d/core/linalg/performance/Matrix.h"
-#include "open3d/core/linalg/performance/SVD3x3.h"
+#include "open3d/core/linalg/kernel/Matrix.h"
+#include "open3d/core/linalg/kernel/SVD3x3.h"
 
 namespace open3d {
 namespace core {
@@ -82,7 +82,7 @@ void Solve(const Tensor &A,
             core::Tensor B_3x1 = B.To(core::HostDevice, false).Contiguous();
             const scalar_t *B_3x1_ptr = B_3x1.GetDataPtr<scalar_t>();
 
-            solve_svd3x3(A_3x3_ptr, B_3x1_ptr, X_3x1_ptr);
+            linalg::kernel::solve_svd3x3(A_3x3_ptr, B_3x1_ptr, X_3x1_ptr);
         });
 
         X = X_3x1.To(device);

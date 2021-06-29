@@ -27,7 +27,7 @@
 #include "open3d/core/linalg/Det.h"
 
 #include "open3d/core/linalg/LU.h"
-#include "open3d/core/linalg/performance/Matrix.h"
+#include "open3d/core/linalg/kernel/Matrix.h"
 
 namespace open3d {
 namespace core {
@@ -46,15 +46,15 @@ double Det(const Tensor& A) {
 
     if (A.GetShape() == open3d::core::SizeVector({3, 3})) {
         DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            core::Tensor A_3x3 = A.To(core::HostDevice, true);
+            core::Tensor A_3x3 = A.To(core::HostDevice, false).Contiguous();
             const scalar_t* A_3x3_ptr = A_3x3.GetDataPtr<scalar_t>();
-            det = static_cast<double>(det3x3(A_3x3_ptr));
+            det = static_cast<double>(linalg::kernel::det3x3(A_3x3_ptr));
         });
     } else if (A.GetShape() == open3d::core::SizeVector({2, 2})) {
         DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            core::Tensor A_2x2 = A.To(core::HostDevice, true);
+            core::Tensor A_2x2 = A.To(core::HostDevice, false).Contiguous();
             const scalar_t* A_2x2_ptr = A_2x2.GetDataPtr<scalar_t>();
-            det = static_cast<double>(det2x2(A_2x2_ptr));
+            det = static_cast<double>(linalg::kernel::det2x2(A_2x2_ptr));
         });
     } else {
         Tensor ipiv, output;

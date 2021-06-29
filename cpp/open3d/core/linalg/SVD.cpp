@@ -28,8 +28,8 @@
 
 #include <unordered_map>
 
-#include "open3d/core/linalg/performance/Matrix.h"
-#include "open3d/core/linalg/performance/SVD3x3.h"
+#include "open3d/core/linalg/kernel/Matrix.h"
+#include "open3d/core/linalg/kernel/SVD3x3.h"
 
 namespace open3d {
 namespace core {
@@ -71,8 +71,8 @@ void SVD(const Tensor &A,
             core::Tensor A_3x3 = A.To(core::HostDevice, false).Contiguous();
             const scalar_t *A_3x3_ptr = A_3x3.GetDataPtr<scalar_t>();
 
-            svd3x3(A_3x3_ptr, U_3x3_ptr, S_3x1_ptr, VT_3x3_ptr);
-            transpose3x3_(VT_3x3_ptr);
+            linalg::kernel::svd3x3(A_3x3_ptr, U_3x3_ptr, S_3x1_ptr, VT_3x3_ptr);
+            linalg::kernel::transpose3x3_(VT_3x3_ptr);
         });
 
         U = U_3x3.To(device);

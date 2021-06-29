@@ -50,7 +50,7 @@
 #endif
 
 #include "math.h"
-#include "open3d/core/linalg/performance/Matrix.h"
+#include "open3d/core/linalg/kernel/Matrix.h"
 
 #define gone 1065353216
 #define gsine_pi_over_eight 1053028117
@@ -85,6 +85,11 @@
 #define __o3d__sub_rn(x, y) (x - y)
 #define __o3d__rsqrt_rn(x) (1.0 / sqrt(x))
 #endif
+
+namespace open3d {
+namespace core {
+namespace linalg {
+namespace kernel {
 
 template <typename scalar_t>
 union un {
@@ -2329,3 +2334,8 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void solve_svd3x3(
                  X_3x1[0], X_3x1[1], X_3x1[2]);
     return;
 }
+
+}  // namespace kernel
+}  // namespace linalg
+}  // namespace core
+}  // namespace open3d

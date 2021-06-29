@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/linalg/performance/SVD3x3.h"
+#include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
 
@@ -387,44 +387,44 @@ void FillInSLACRegularizerTermCPU
         }
 
         // clang-format off
-        svd3x3(cov[0][0], cov[0][1], cov[0][2],
-               cov[1][0], cov[1][1], cov[1][2],
-               cov[2][0], cov[2][1], cov[2][2],
-               U[0][0], U[0][1], U[0][2],
-               U[1][0], U[1][1], U[1][2],
-               U[2][0], U[2][1], U[2][2],
-               S[0], S[1], S[2],
-               V[0][0], V[0][1], V[0][2],
-               V[1][0], V[1][1], V[1][2],
-               V[2][0], V[2][1], V[2][2]);
+        core::linalg::kernel::svd3x3(cov[0][0], cov[0][1], cov[0][2],
+                                    cov[1][0], cov[1][1], cov[1][2],
+                                    cov[2][0], cov[2][1], cov[2][2],
+                                    U[0][0], U[0][1], U[0][2],
+                                    U[1][0], U[1][1], U[1][2],
+                                    U[2][0], U[2][1], U[2][2],
+                                    S[0], S[1], S[2],
+                                    V[0][0], V[0][1], V[0][2],
+                                    V[1][0], V[1][1], V[1][2],
+                                    V[2][0], V[2][1], V[2][2]);
 
         float R[3][3];
 
         // clang-format off
-        matmul3x3_3x3(V[0][0], V[0][1], V[0][2],
-                      V[1][0], V[1][1], V[1][2],
-                      V[2][0], V[2][1], V[2][2],
-                      U[0][0], U[1][0], U[2][0],
-                      U[0][1], U[1][1], U[2][1],
-                      U[0][2], U[1][2], U[2][2],
-                      R[0][0], R[0][1], R[0][2],
-                      R[1][0], R[1][1], R[1][2],
-                      R[2][0], R[2][1], R[2][2]);
+        core::linalg::kernel::matmul3x3_3x3(V[0][0], V[0][1], V[0][2],
+                                            V[1][0], V[1][1], V[1][2],
+                                            V[2][0], V[2][1], V[2][2],
+                                            U[0][0], U[1][0], U[2][0],
+                                            U[0][1], U[1][1], U[2][1],
+                                            U[0][2], U[1][2], U[2][2],
+                                            R[0][0], R[0][1], R[0][2],
+                                            R[1][0], R[1][1], R[1][2],
+                                            R[2][0], R[2][1], R[2][2]);
 
-        float d = det3x3(*R);
+        float d = core::linalg::kernel::det3x3(*R);
         // clang-format on
 
         if (d < 0) {
             // clang-format off
-            matmul3x3_3x3(V[0][0], V[0][1], V[0][2],
-                          V[1][0], V[1][1], V[1][2],
-                          V[2][0], V[2][1], V[2][2],
-                          U[0][0], U[1][0], U[2][0],
-                          U[0][1], U[1][1], U[2][1],
-                          -U[0][2], -U[1][2], -U[2][2],
-                          R[0][0], R[0][1], R[0][2],
-                          R[1][0], R[1][1], R[1][2],
-                          R[2][0], R[2][1], R[2][2]);
+            core::linalg::kernel::matmul3x3_3x3(V[0][0], V[0][1], V[0][2],
+                                                V[1][0], V[1][1], V[1][2],
+                                                V[2][0], V[2][1], V[2][2],
+                                                U[0][0], U[1][0], U[2][0],
+                                                U[0][1], U[1][1], U[2][1],
+                                                -U[0][2], -U[1][2], -U[2][2],
+                                                R[0][0], R[0][1], R[0][2],
+                                                R[1][0], R[1][1], R[1][2],
+                                                R[2][0], R[2][1], R[2][2]);
             // clang-format on
         }
 
@@ -457,15 +457,15 @@ void FillInSLACRegularizerTermCPU
                 float R_diff_ik_curr[3];
 
                 // clang-format off
-                matmul3x3_3x1(R[0][0], R[0][1], R[0][2],
-                              R[1][0], R[1][1], R[1][2],
-                              R[2][0], R[2][1], R[2][2],
-                              diff_ik_init[0],
-                              diff_ik_init[1],
-                              diff_ik_init[2],
-                              R_diff_ik_curr[0],
-                              R_diff_ik_curr[1],
-                              R_diff_ik_curr[2]);
+                core::linalg::kernel::matmul3x3_3x1(R[0][0], R[0][1], R[0][2],
+                                                    R[1][0], R[1][1], R[1][2],
+                                                    R[2][0], R[2][1], R[2][2],
+                                                    diff_ik_init[0],
+                                                    diff_ik_init[1],
+                                                    diff_ik_init[2],
+                                                    R_diff_ik_curr[0],
+                                                    R_diff_ik_curr[1],
+                                                    R_diff_ik_curr[2]);
                 // clang-format on
 
                 float local_r[3];
