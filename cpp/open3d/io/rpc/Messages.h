@@ -41,8 +41,8 @@ inline std::string EndiannessStr() {
     auto IsLittleEndian = []() -> bool {
         uint32_t a = 1;
         uint8_t b;
-        /// Use memcpy as a reliable way to access a single byte.
-        /// Other approaches, e.g. union, often rely on undefined behaviour.
+        // Use memcpy as a reliable way to access a single byte.
+        // Other approaches, e.g. union, often rely on undefined behaviour.
         std::memcpy(&b, &a, sizeof(uint8_t));
         return b == 1;
     };
