@@ -23,11 +23,11 @@ LABEL name="open3d-dev/open3d-gpu-ci-${UBUNTU_VERSION}"
 LABEL vendor="open3d.org"
 LABEL architecture="x86_64"
 LABEL os="linux"
-LABEL version="0.12.0"
+LABEL version="0.13.0"
 LABEL maintainer="open3d-info@osvf.org"
 
 ENV DEBIAN_FRONTEND=noninteractive TZ=America/Los_Angeles SUDO=command
-# Install Python 3, cmake>=3.12 and nvidia drivers (only if not installed)
+# Install Python 3, cmake>=3.19 and nvidia drivers (only if not installed)
 COPY ./util/docker/open3d-gpu/scripts/env-setup.sh /root/Open3D/util/docker/open3d-gpu/scripts/env-setup.sh
 RUN /root/Open3D/util/docker/open3d-gpu/scripts/env-setup.sh
 
