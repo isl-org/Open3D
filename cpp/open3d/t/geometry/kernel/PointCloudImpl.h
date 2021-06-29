@@ -38,7 +38,6 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -148,9 +147,9 @@ void UnprojectCPU
 }
 
 template <typename scalar_t>
-OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RigidTransformPointWiseKernel(
-        scalar_t* points_ptr, const scalar_t* transformation_ptr) {
-    scalar_t x[3] = {transformation_ptr[0] * points_ptr[0] +
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void TransformPointsKernel(
+        const scalar_t* transformation_ptr, scalar_t* points_ptr) {
+    scalar_t x[4] = {transformation_ptr[0] * points_ptr[0] +
                              transformation_ptr[1] * points_ptr[1] +
                              transformation_ptr[2] * points_ptr[2] +
                              transformation_ptr[3],
@@ -161,29 +160,62 @@ OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RigidTransformPointWiseKernel(
                      transformation_ptr[8] * points_ptr[0] +
                              transformation_ptr[9] * points_ptr[1] +
                              transformation_ptr[10] * points_ptr[2] +
-                             transformation_ptr[11]};
+                             transformation_ptr[11],
+                     transformation_ptr[12] * points_ptr[0] +
+                             transformation_ptr[13] * points_ptr[1] +
+                             transformation_ptr[14] * points_ptr[2] +
+                             transformation_ptr[15]};
 
-    points_ptr[0] = x[0] * transformation_ptr[15];
-    points_ptr[1] = x[1] * transformation_ptr[15];
-    points_ptr[2] = x[2] * transformation_ptr[15];
+    points_ptr[0] = x[0] / x[3];
+    points_ptr[1] = x[1] / x[3];
+    points_ptr[2] = x[2] / x[3];
 }
 
 template <typename scalar_t>
-OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RotatePointWiseKernel(
-        scalar_t* points_ptr, const scalar_t* transformation_ptr) {
-    scalar_t x[3] = {transformation_ptr[0] * points_ptr[0] +
-                             transformation_ptr[1] * points_ptr[1] +
-                             transformation_ptr[2] * points_ptr[2],
-                     transformation_ptr[4] * points_ptr[0] +
-                             transformation_ptr[5] * points_ptr[1] +
-                             transformation_ptr[6] * points_ptr[2],
-                     transformation_ptr[8] * points_ptr[0] +
-                             transformation_ptr[9] * points_ptr[1] +
-                             transformation_ptr[10] * points_ptr[2]};
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void TransformNormalsKernel(
+        const scalar_t* transformation_ptr, scalar_t* normals_ptr) {
+    scalar_t x[3] = {transformation_ptr[0] * normals_ptr[0] +
+                             transformation_ptr[1] * normals_ptr[1] +
+                             transformation_ptr[2] * normals_ptr[2],
+                     transformation_ptr[4] * normals_ptr[0] +
+                             transformation_ptr[5] * normals_ptr[1] +
+                             transformation_ptr[6] * normals_ptr[2],
+                     transformation_ptr[8] * normals_ptr[0] +
+                             transformation_ptr[9] * normals_ptr[1] +
+                             transformation_ptr[10] * normals_ptr[2]};
 
-    points_ptr[0] = x[0];
-    points_ptr[1] = x[1];
-    points_ptr[2] = x[2];
+    normals_ptr[0] = x[0];
+    normals_ptr[1] = x[1];
+    normals_ptr[2] = x[2];
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RotatePointsKernel(
+        const scalar_t* R_ptr, scalar_t* points_ptr, const scalar_t* center) {
+    scalar_t x[3] = {points_ptr[0] - center[0], points_ptr[1] - center[1],
+                     points_ptr[2] - center[2]};
+
+    points_ptr[0] =
+            R_ptr[0] * x[0] + R_ptr[1] * x[1] + R_ptr[2] * x[2] + center[0];
+    points_ptr[1] =
+            R_ptr[3] * x[0] + R_ptr[4] * x[1] + R_ptr[5] * x[2] + center[1];
+    points_ptr[2] =
+            R_ptr[6] * x[0] + R_ptr[7] * x[1] + R_ptr[8] * x[2] + center[2];
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RotateNormalsKernel(
+        const scalar_t* R_ptr, scalar_t* normals_ptr) {
+    scalar_t x[3] = {R_ptr[0] * normals_ptr[0] + R_ptr[1] * normals_ptr[1] +
+                             R_ptr[2] * normals_ptr[2],
+                     R_ptr[3] * normals_ptr[0] + R_ptr[4] * normals_ptr[1] +
+                             R_ptr[5] * normals_ptr[2],
+                     R_ptr[6] * normals_ptr[0] + R_ptr[7] * normals_ptr[1] +
+                             R_ptr[8] * normals_ptr[2]};
+
+    normals_ptr[0] = x[0];
+    normals_ptr[1] = x[1];
+    normals_ptr[2] = x[2];
 }
 
 }  // namespace pointcloud

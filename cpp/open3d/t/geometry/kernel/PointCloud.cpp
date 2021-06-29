@@ -104,43 +104,22 @@ void Project(
     }
 }
 
-template <typename scalar_t>
-static OPEN3D_FORCE_INLINE bool IsValidRigidTransformation(
-        const scalar_t* transformation_ptr) {
-    if (transformation_ptr[0] > 1 || transformation_ptr[1] > 1 ||
-        transformation_ptr[2] > 1 || transformation_ptr[4] > 1 ||
-        transformation_ptr[5] > 1 || transformation_ptr[6] > 1 ||
-        transformation_ptr[8] > 1 || transformation_ptr[9] > 1 ||
-        transformation_ptr[10] > 1 || transformation_ptr[12] != 0 ||
-        transformation_ptr[13] != 0 || transformation_ptr[14] != 0) {
-        return false;
-    }
-    return true;
-}
-
-void Transform(core::Tensor& points, const core::Tensor& transformation) {
+void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
     transformation.AssertShape({4, 4});
     core::Dtype dtype = points.GetDtype();
     transformation.AssertDtype(dtype);
     core::Device device = points.GetDevice();
     transformation.AssertDevice(device);
 
-    if (!IsValidRigidTransformation(
-                transformation.To(core::Device("CPU:0"), core::Dtype::Float64)
-                        .GetDataPtr<double>())) {
-        utility::LogError(
-                "Invalid Transformation Matrix. Only Rigid Transformation "
-                "is supported.");
-    }
-
     core::Tensor points_contiguous = points.Contiguous();
     core::Tensor transformation_contiguous = transformation.Contiguous();
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        TransformCPU(points, transformation);
+        TransformPointsCPU(transformation_contiguous, points_contiguous);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(TransformCUDA, points, transformation);
+        CUDA_CALL(TransformPointsCUDA, transformation_contiguous,
+                  points_contiguous);
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -148,39 +127,79 @@ void Transform(core::Tensor& points, const core::Tensor& transformation) {
     points = points_contiguous;
 }
 
-void Transform(core::Tensor& points,
-               core::Tensor& normals,
-               const core::Tensor& transformation) {
+void TransformNormals(const core::Tensor& transformation,
+                      core::Tensor& normals) {
     transformation.AssertShape({4, 4});
-    core::Dtype dtype = points.GetDtype();
+    core::Dtype dtype = normals.GetDtype();
     transformation.AssertDtype(dtype);
-    normals.AssertDtype(dtype);
-    core::Device device = points.GetDevice();
+    core::Device device = normals.GetDevice();
     transformation.AssertDevice(device);
-    normals.AssertDevice(device);
 
-    if (!IsValidRigidTransformation(
-                transformation.To(core::Device("CPU:0"), core::Dtype::Float64)
-                        .GetDataPtr<double>())) {
-        utility::LogError(
-                "Invalid Transformation Matrix. Only Rigid Transformation "
-                "is supported.");
-    }
-
-    core::Tensor points_contiguous = points.Contiguous();
     core::Tensor normals_contiguous = normals.Contiguous();
     core::Tensor transformation_contiguous = transformation.Contiguous();
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        TransformCPU(points, normals, transformation_contiguous);
+        TransformNormalsCPU(transformation_contiguous, normals_contiguous);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(TransformCUDA, points, normals, transformation_contiguous);
+        CUDA_CALL(TransformNormalsCUDA, transformation_contiguous,
+                  normals_contiguous);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    normals = normals_contiguous;
+}
+
+void RotatePoints(const core::Tensor& R,
+                  core::Tensor& points,
+                  const core::Tensor& center) {
+    R.AssertShape({3, 3});
+    center.AssertShape({3});
+
+    core::Dtype dtype = points.GetDtype();
+    R.AssertDtype(dtype);
+    center.AssertDtype(dtype);
+    core::Device device = points.GetDevice();
+    R.AssertDevice(device);
+    center.AssertDevice(device);
+
+    core::Tensor points_contiguous = points.Contiguous();
+    core::Tensor R_contiguous = R.Contiguous();
+    core::Tensor center_contiguous = center.Contiguous();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        RotatePointsCPU(R_contiguous, points_contiguous, center_contiguous);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(RotatePointsCUDA, R_contiguous, points_contiguous,
+                  center_contiguous);
     } else {
         utility::LogError("Unimplemented device");
     }
 
     points = points_contiguous;
+}
+
+void RotateNormals(const core::Tensor& R, core::Tensor& normals) {
+    R.AssertShape({3, 3});
+    core::Dtype dtype = normals.GetDtype();
+    R.AssertDtype(dtype);
+    core::Device device = normals.GetDevice();
+    R.AssertDevice(device);
+
+    core::Tensor normals_contiguous = normals.Contiguous();
+    core::Tensor R_contiguous = R.Contiguous();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        RotateNormalsCPU(R_contiguous, normals_contiguous);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(RotateNormalsCUDA, R_contiguous, normals_contiguous);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
     normals = normals_contiguous;
 }
 

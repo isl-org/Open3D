@@ -154,18 +154,11 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    // - Required Asserts are performed inside the Transfom kernel.
-    // - Transform kernel assumes the tensor to be transformed is contiguous,
-    //   and Transformation matrix contains only Rotation and translation
-    //   values.
-    SetPoints(GetPoints().Contiguous());
-
+    t::geometry::kernel::pointcloud::TransformPoints(transformation,
+                                                     GetPoints());
     if (HasPointNormals()) {
-        SetPointNormals(GetPointNormals().Contiguous());
-        t::geometry::kernel::pointcloud::Transform(
-                GetPoints(), GetPointNormals(), transformation);
-    } else {
-        t::geometry::kernel::pointcloud::Transform(GetPoints(), transformation);
+        t::geometry::kernel::pointcloud::TransformNormals(transformation,
+                                                          GetPoints());
     }
 
     return *this;
@@ -195,18 +188,10 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    R.AssertShape({3, 3});
-    R.AssertDevice(device_);
-    center.AssertShape({3});
-    center.AssertDevice(device_);
-
-    core::Tensor Rot = R;
-    core::Tensor &points = GetPoints();
-    points = ((Rot.Matmul((points.Sub_(center)).T())).T()).Add_(center);
+    t::geometry::kernel::pointcloud::RotatePoints(R, GetPoints(), center);
 
     if (HasPointNormals()) {
-        core::Tensor &normals = GetPointNormals();
-        normals = (Rot.Matmul(normals.T())).T();
+        t::geometry::kernel::pointcloud::RotateNormals(R, GetPoints());
     }
     return *this;
 }

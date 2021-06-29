@@ -113,7 +113,8 @@ void ProjectCPU(
             });
 }
 
-void TransformCPU(core::Tensor& points, const core::Tensor& transformation) {
+void TransformPointsCPU(const core::Tensor& transformation,
+                        core::Tensor& points) {
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
         scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
         const scalar_t* transformation_ptr =
@@ -121,29 +122,57 @@ void TransformCPU(core::Tensor& points, const core::Tensor& transformation) {
 
         core::kernel::CPULauncher::LaunchGeneralKernel(
                 points.GetLength(), [&] OPEN3D_DEVICE(int64_t workload_idx) {
-                    RigidTransformPointWiseKernel(points_ptr + 3 * workload_idx,
-                                                  transformation_ptr);
+                    TransformPointsKernel(transformation_ptr,
+                                          points_ptr + 3 * workload_idx);
                 });
     });
 
     return;
 }
 
-void TransformCPU(core::Tensor& points,
-                  core::Tensor& normals,
-                  const core::Tensor& transformation) {
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
-        scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+void TransformNormalsCPU(const core::Tensor& transformation,
+                         core::Tensor& normals) {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(normals.GetDtype(), [&]() {
         scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
         const scalar_t* transformation_ptr =
                 transformation.GetDataPtr<scalar_t>();
 
         core::kernel::CPULauncher::LaunchGeneralKernel(
+                normals.GetLength(), [&] OPEN3D_DEVICE(int64_t workload_idx) {
+                    TransformNormalsKernel(transformation_ptr,
+                                           normals_ptr + 3 * workload_idx);
+                });
+    });
+
+    return;
+}
+
+void RotatePointsCPU(const core::Tensor& R,
+                     core::Tensor& points,
+                     const core::Tensor& center) {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const scalar_t* R_ptr = R.GetDataPtr<scalar_t>();
+        const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
+
+        core::kernel::CPULauncher::LaunchGeneralKernel(
                 points.GetLength(), [&] OPEN3D_DEVICE(int64_t workload_idx) {
-                    RigidTransformPointWiseKernel(points_ptr + 3 * workload_idx,
-                                                  transformation_ptr);
-                    RotatePointWiseKernel(normals_ptr + 3 * workload_idx,
-                                          transformation_ptr);
+                    RotatePointsKernel(R_ptr, points_ptr + 3 * workload_idx,
+                                       center_ptr);
+                });
+    });
+
+    return;
+}
+
+void RotateNormalsCPU(const core::Tensor& R, core::Tensor& normals) {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(normals.GetDtype(), [&]() {
+        scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
+        const scalar_t* R_ptr = R.GetDataPtr<scalar_t>();
+
+        core::kernel::CPULauncher::LaunchGeneralKernel(
+                normals.GetLength(), [&] OPEN3D_DEVICE(int64_t workload_idx) {
+                    RotateNormalsKernel(R_ptr, normals_ptr + 3 * workload_idx);
                 });
     });
 

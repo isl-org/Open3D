@@ -33,6 +33,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/kernel/PointCloud.h"
 
 namespace open3d {
 namespace t {
@@ -58,6 +59,56 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
       }()) {
     SetVertices(vertices);
     SetTriangles(triangles);
+}
+
+TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
+    t::geometry::kernel::pointcloud::TransformPoints(transformation,
+                                                     GetVertices());
+    if (HasVertexNormals()) {
+        t::geometry::kernel::pointcloud::TransformNormals(transformation,
+                                                          GetVertexNormals());
+    }
+    if (HasTriangleNormals()) {
+        t::geometry::kernel::pointcloud::TransformNormals(transformation,
+                                                          GetTriangleNormals());
+    }
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
+                                      bool relative) {
+    translation.AssertShape({3});
+    translation.AssertDevice(device_);
+
+    core::Tensor transform = translation;
+    if (!relative) {
+        transform -= GetCenter();
+    }
+    GetVertices() += transform;
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
+    center.AssertShape({3});
+    center.AssertDevice(device_);
+
+    core::Tensor points = GetVertices();
+    points.Sub_(center).Mul_(scale).Add_(center);
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
+                                   const core::Tensor &center) {
+    t::geometry::kernel::pointcloud::RotatePoints(R, GetVertices(), center);
+    if (HasVertexNormals()) {
+        t::geometry::kernel::pointcloud::RotateNormals(R, GetVertexNormals());
+    }
+    if (HasTriangleNormals()) {
+        t::geometry::kernel::pointcloud::RotateNormals(R, GetTriangleNormals());
+    }
+
+    return *this;
 }
 
 geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(

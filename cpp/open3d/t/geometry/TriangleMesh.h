@@ -396,22 +396,14 @@ public:
 
     core::Tensor GetCenter() const { utility::LogError("Unimplemented"); }
 
-    TriangleMesh &Transform(const core::Tensor &transformation) {
-        utility::LogError("Unimplemented");
-    }
+    TriangleMesh &Transform(const core::Tensor &transformation);
 
     TriangleMesh &Translate(const core::Tensor &translation,
-                            bool relative = true) {
-        utility::LogError("Unimplemented");
-    }
+                            bool relative = true);
 
-    TriangleMesh &Scale(double scale, const core::Tensor &center) {
-        utility::LogError("Unimplemented");
-    }
+    TriangleMesh &Scale(double scale, const core::Tensor &center);
 
-    TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center) {
-        utility::LogError("Unimplemented");
-    }
+    TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     core::Device GetDevice() const { return device_; }
 

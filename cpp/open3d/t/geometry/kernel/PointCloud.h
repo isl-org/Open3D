@@ -57,11 +57,16 @@ void Project(
         float depth_scale,
         float depth_max);
 
-void Transform(core::Tensor& points, const core::Tensor& transformation);
+void TransformPoints(const core::Tensor& transformation, core::Tensor& points);
 
-void Transform(core::Tensor& points,
-               core::Tensor& normals,
-               const core::Tensor& transformation);
+void TransformNormals(const core::Tensor& transformation,
+                      core::Tensor& normals);
+
+void RotatePoints(const core::Tensor& R,
+                  core::Tensor& points,
+                  const core::Tensor& center);
+
+void RotateNormals(const core::Tensor& R, core::Tensor& normals);
 
 void UnprojectCPU(
         const core::Tensor& depth,
@@ -85,11 +90,17 @@ void ProjectCPU(
         float depth_scale,
         float depth_max);
 
-void TransformCPU(core::Tensor& points, const core::Tensor& transformation);
+void TransformPointsCPU(const core::Tensor& transformation,
+                        core::Tensor& points);
 
-void TransformCPU(core::Tensor& points,
-                  core::Tensor& normals,
-                  const core::Tensor& transformation);
+void TransformNormalsCPU(const core::Tensor& transformation,
+                         core::Tensor& normals);
+
+void RotatePointsCPU(const core::Tensor& R,
+                     core::Tensor& points,
+                     const core::Tensor& center);
+
+void RotateNormalsCPU(const core::Tensor& R, core::Tensor& normals);
 
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
@@ -114,11 +125,17 @@ void ProjectCUDA(
         float depth_scale,
         float depth_max);
 
-void TransformCUDA(core::Tensor& points, const core::Tensor& transformation);
+void TransformPointsCUDA(const core::Tensor& transformation,
+                         core::Tensor& points);
 
-void TransformCUDA(core::Tensor& points,
-                   core::Tensor& normals,
-                   const core::Tensor& transformation);
+void TransformNormalsCUDA(const core::Tensor& transformation,
+                          core::Tensor& normals);
+
+void RotatePointsCUDA(const core::Tensor& R,
+                      core::Tensor& points,
+                      const core::Tensor& center);
+
+void RotateNormalsCUDA(const core::Tensor& R, core::Tensor& normals);
 #endif
 
 }  // namespace pointcloud
