@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import numpy as np
 import open3d as o3d
 import open3d.visualization.gui as gui

@@ -21,7 +21,12 @@ MLModules = namedtuple(
 # define the list of frameworks and devices for running the ops
 _ml_modules = {}
 try:
-    tf = importlib.import_module('tensorflow')
+    # Suppress deprecated imp module warnings caused by tensorflow,
+    # see https://github.com/tensorflow/tensorflow/issues/31412
+    import warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        tf = importlib.import_module('tensorflow')
     ml3d_ops = importlib.import_module('open3d.ml.tf.ops')
     ml3d_layers = importlib.import_module('open3d.ml.tf.layers')
     _ml_modules['tf'] = MLModules(tf, ml3d_ops, ml3d_layers, 'CPU:0', 'CPU:0',

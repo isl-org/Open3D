@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,9 +30,9 @@
 #include <unordered_map>
 
 #include "open3d/io/PointCloudIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
@@ -47,6 +47,7 @@ static const std::unordered_map<
         file_extension_to_pointcloud_read_function{
                 {"xyzi", ReadPointCloudFromXYZI},
                 {"ply", ReadPointCloudFromPLY},
+                {"pts", ReadPointCloudFromPTS},
         };
 
 static const std::unordered_map<
@@ -57,6 +58,7 @@ static const std::unordered_map<
         file_extension_to_pointcloud_write_function{
                 {"xyzi", WritePointCloudToXYZI},
                 {"ply", WritePointCloudToPLY},
+                {"pts", WritePointCloudToPTS},
         };
 
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
@@ -135,9 +137,13 @@ bool WritePointCloud(const std::string &filename,
                 filename, pointcloud.ToLegacyPointCloud(), params);
     }
 
-    bool success = map_itr->second(filename, pointcloud, params);
-    utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
-                      (int)pointcloud.GetPoints().GetLength());
+    bool success = map_itr->second(filename, pointcloud.CPU(), params);
+    if (!pointcloud.IsEmpty()) {
+        utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
+                          (int)pointcloud.GetPoints().GetLength());
+    } else {
+        utility::LogDebug("Write geometry::PointCloud: 0 vertices.");
+    }
     return success;
 }
 

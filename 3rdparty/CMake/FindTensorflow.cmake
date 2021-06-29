@@ -9,30 +9,36 @@
 
 if(NOT Tensorflow_FOUND)
     # Searching for tensorflow requires the python executable
-    find_package(PythonExecutable REQUIRED)
+    if (NOT Python3_EXECUTABLE)
+        message(FATAL_ERROR "Python 3 not found in top level file")
+    endif()
 
     message(STATUS "Getting TensorFlow properties ...")
 
-    # Get Tensorflow_VERSION
+    set(Tensorflow_FETCH_PROPERTIES
+        "import tensorflow as tf"
+        "print(tf.__version__, end=';')"
+        "print(tf.sysconfig.get_include(), end=';')"
+        "print(tf.sysconfig.get_lib(), end=';')"
+        "defs = [ x[2:] for x in tf.sysconfig.get_compile_flags() if x.startswith('-D')]; print('::'.join(defs), end=';')"
+        "print(tf.__cxx11_abi_flag__, end=';')"
+    )
     execute_process(
-        COMMAND
-            ${PYTHON_EXECUTABLE} "-c"
-            "import tensorflow as tf; print(tf.__version__, end='')"
-            OUTPUT_VARIABLE Tensorflow_VERSION)
+        COMMAND ${Python3_EXECUTABLE} "-c" "${Tensorflow_FETCH_PROPERTIES}"
+        OUTPUT_VARIABLE Tensorflow_PROPERTIES
+    )
 
-    # Get Tensorflow_INCLUDE_DIR
-    execute_process(
-        COMMAND
-            ${PYTHON_EXECUTABLE} "-c"
-            "import tensorflow as tf; print(tf.sysconfig.get_include(), end='')"
-        OUTPUT_VARIABLE Tensorflow_INCLUDE_DIR)
+    list(GET Tensorflow_PROPERTIES 0 Tensorflow_VERSION)
+    list(GET Tensorflow_PROPERTIES 1 Tensorflow_INCLUDE_DIR)
+    list(GET Tensorflow_PROPERTIES 2 Tensorflow_LIB_DIR)
+    list(GET Tensorflow_PROPERTIES 3 Tensorflow_DEFINITIONS)
+    list(GET Tensorflow_PROPERTIES 4 Tensorflow_CXX11_ABI)
 
-    # Get Tensorflow_LIB_DIR
-    execute_process(
-        COMMAND
-            ${PYTHON_EXECUTABLE} "-c"
-            "import tensorflow as tf; print(tf.sysconfig.get_lib(), end='')"
-        OUTPUT_VARIABLE Tensorflow_LIB_DIR)
+    unset(Tensorflow_FETCH_PROPERTIES)
+    unset(Tensorflow_PROPERTIES)
+
+    # Decode definitions into a proper list
+    string(REGEX REPLACE "::" ";" Tensorflow_DEFINITIONS ${Tensorflow_DEFINITIONS})
 
     # Get Tensorflow_FRAMEWORK_LIB
     find_library(
@@ -40,22 +46,6 @@ if(NOT Tensorflow_FOUND)
         NAMES tensorflow_framework libtensorflow_framework.so.2
         PATHS "${Tensorflow_LIB_DIR}"
         NO_DEFAULT_PATH
-    )
-
-    # Get Tensorflow_DEFINITIONS
-    execute_process(
-        COMMAND
-            ${PYTHON_EXECUTABLE} "-c"
-            "import tensorflow as tf; defs = [ x[2:] for x in tf.sysconfig.get_compile_flags() if x.startswith('-D')]; print(';'.join(defs), end='')"
-        OUTPUT_VARIABLE Tensorflow_DEFINITIONS
-    )
-
-    # Get TensorFlow CXX11_ABI: 0/1
-    execute_process(
-        COMMAND
-            ${PYTHON_EXECUTABLE} "-c"
-            "import tensorflow; print(tensorflow.__cxx11_abi_flag__, end='')"
-        OUTPUT_VARIABLE Tensorflow_CXX11_ABI
     )
 endif()
 

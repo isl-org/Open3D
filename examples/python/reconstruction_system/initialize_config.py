@@ -71,8 +71,9 @@ def initialize_config(config):
     set_default_value(config, "template_global_mesh", "scene/integrated.ply")
     set_default_value(config, "template_global_traj", "scene/trajectory.log")
 
-    if os.path.isfile(
-            config["path_dataset"]) and config["path_dataset"].endswith(".bag"):
+    if config["path_dataset"].endswith(".bag"):
+        assert os.path.isfile(config["path_dataset"]), (
+            f"File {config['path_dataset']} not found.")
         print("Extracting frames from RGBD video file")
         config["path_dataset"], config["path_intrinsic"], config[
             "depth_scale"] = extract_rgbd_frames(config["path_dataset"])

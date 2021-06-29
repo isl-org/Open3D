@@ -42,9 +42,9 @@ The package has been tested on:
 * macOS High Sierra and above
 
 With Python versions:
-* 3.5
 * 3.6
 * 3.7
+* 3.8
 
 Resources
 ======================

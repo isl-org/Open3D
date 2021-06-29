@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,6 +68,25 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
                             map_keys_to_tensors.end());
 }
 
+std::string PointCloud::ToString() const {
+    if (point_attr_.size() == 0)
+        return fmt::format("PointCloud on {} [0 points ()] Attributes: None.",
+                           GetDevice().ToString());
+    auto str = fmt::format("PointCloud on {} [{} points ({})] Attributes:",
+                           GetDevice().ToString(), GetPoints().GetShape(0),
+                           GetPoints().GetDtype().ToString());
+    if (point_attr_.size() == 1) return str + " None.";
+    for (const auto &keyval : point_attr_) {
+        if (keyval.first != "points") {
+            str += fmt::format(" {} ({}, {}),", keyval.first,
+                               keyval.second.GetDtype().ToString(),
+                               keyval.second.GetShape(1));
+        }
+    }
+    str[str.size() - 1] = '.';
+    return str;
+}
+
 core::Tensor PointCloud::GetMinBound() const { return GetPoints().Min({0}); }
 
 core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
@@ -86,6 +105,53 @@ PointCloud PointCloud::To(const core::Device &device, bool copy) const {
 }
 
 PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
+
+PointCloud PointCloud::Append(const PointCloud &other) const {
+    PointCloud pcd(GetDevice());
+
+    int64_t length = GetPoints().GetLength();
+
+    for (auto &kv : point_attr_) {
+        if (other.HasPointAttr(kv.first)) {
+            auto other_attr = other.GetPointAttr(kv.first);
+            other_attr.AssertDtype(kv.second.GetDtype());
+            other_attr.AssertDevice(kv.second.GetDevice());
+
+            // Checking shape compatibility.
+            auto other_attr_shape = other_attr.GetShape();
+            auto attr_shape = kv.second.GetShape();
+            int64_t combined_length = other_attr_shape[0] + attr_shape[0];
+            other_attr_shape[0] = combined_length;
+            attr_shape[0] = combined_length;
+            if (other_attr_shape != attr_shape) {
+                utility::LogError(
+                        "Shape mismatch. Attribure {}, shape {}, is not "
+                        "compatible with {}.",
+                        kv.first, other_attr.GetShape(), kv.second.GetShape());
+            }
+
+            core::Tensor combined_attr =
+                    core::Tensor::Empty(other_attr_shape, kv.second.GetDtype(),
+                                        kv.second.GetDevice());
+
+            combined_attr.SetItem(core::TensorKey::Slice(0, length, 1),
+                                  kv.second);
+            combined_attr.SetItem(
+                    core::TensorKey::Slice(length, combined_length, 1),
+                    other_attr);
+
+            pcd.SetPointAttr(kv.first, combined_attr.Clone());
+        } else {
+            utility::LogError(
+                    "The pointcloud is missing attribute {}. The pointcloud "
+                    "being appended, must have all the attributes present in "
+                    "the "
+                    "pointcloud it is being appended to.",
+                    kv.first);
+        }
+    }
+    return pcd;
+}
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
     transformation.AssertShape({4, 4});
@@ -213,7 +279,7 @@ static PointCloud CreatePointCloudWithNormals(
         utility::LogError("Depth and color images have different sizes.");
     }
     auto depth =
-            depth_in.ClipTransform(depth_scale, 0.0f, depth_max, invalid_fill);
+            depth_in.ClipTransform(depth_scale, 0.01f, depth_max, invalid_fill);
     auto color = color_in;
     auto intrinsics = intrinsics_in / stride;
     intrinsics[-1][-1] = 1.f;
@@ -233,8 +299,15 @@ static PointCloud CreatePointCloudWithNormals(
     if (!extrinsics.AllClose(Tensor::Eye(4, extrinsics.GetDtype(),
                                          extrinsics.GetDevice()))) {
         auto cam_to_world = extrinsics.Inverse();
-        vertex_list.Mul_(cam_to_world.Slice(0, 0, 3, 1).Slice(1, 0, 3, 1))
-                .Add_(cam_to_world.Slice(0, 0, 3, 1).Slice(1, 3, 4, 1));
+        vertex_list = vertex_list
+                              .Matmul(cam_to_world.Slice(0, 0, 3, 1)
+                                              .Slice(1, 0, 3, 1)
+                                              .T())
+                              .Add_(cam_to_world.Slice(0, 0, 3, 1)
+                                            .Slice(1, 3, 4, 1)
+                                            .T());
+        vertex_map = Image(vertex_list.View(vertex_map.AsTensor().GetShape())
+                                   .Contiguous());
     }
     auto normal_map_t = vertex_map.CreateNormalMap(invalid_fill)
                                 .AsTensor()
@@ -245,7 +318,6 @@ static PointCloud CreatePointCloudWithNormals(
                     .IsFinite()
                     .LogicalAnd(vertex_list.Slice(1, 0, 1, 1).IsFinite())
                     .Reshape({im_size});
-
     PointCloud pcd(
             {{"points",
               vertex_list.GetItem({TensorKey::IndexTensor(valid_idx),

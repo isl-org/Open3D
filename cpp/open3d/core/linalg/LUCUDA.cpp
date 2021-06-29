@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,23 +40,24 @@ void LUCUDA(void* A_data,
     cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len;
-        int* dinfo =
-                static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
         OPEN3D_CUSOLVER_CHECK(
                 getrf_cuda_buffersize<scalar_t>(handle, rows, cols, rows, &len),
                 "getrf_buffersize failed in LUCUDA");
 
+        int* dinfo =
+                static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
         void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
 
-        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
-                getrf_cuda<scalar_t>(handle, rows, cols,
-                                     static_cast<scalar_t*>(A_data), rows,
-                                     static_cast<scalar_t*>(workspace),
-                                     static_cast<int*>(ipiv_data), dinfo),
-                "getrf failed in LUCUDA", dinfo, device);
+        cusolverStatus_t getrf_status = getrf_cuda<scalar_t>(
+                handle, rows, cols, static_cast<scalar_t*>(A_data), rows,
+                static_cast<scalar_t*>(workspace), static_cast<int*>(ipiv_data),
+                dinfo);
 
         MemoryManager::Free(workspace, device);
         MemoryManager::Free(dinfo, device);
+
+        OPEN3D_CUSOLVER_CHECK_WITH_DINFO(getrf_status, "getrf failed in LUCUDA",
+                                         dinfo, device);
     });
 }
 

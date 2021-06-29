@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,11 +72,11 @@ void ClipTransformCPU
                     int64_t x = workload_idx % cols;
 
                     float in = static_cast<float>(
-                            *src_indexer.GetDataPtrFromCoord<scalar_t>(x, y));
+                            *src_indexer.GetDataPtr<scalar_t>(x, y));
                     float out = in / scale;
                     out = out <= min_value ? clip_fill : out;
                     out = out >= max_value ? clip_fill : out;
-                    *dst_indexer.GetDataPtrFromCoord<float>(x, y) = out;
+                    *dst_indexer.GetDataPtr<float>(x, y) = out;
                 });
     });
 }
@@ -124,9 +124,9 @@ void PyrDownDepthCPU
         int y_src = 2 * y;
         int x_src = 2 * x;
 
-        float v_center = *src_indexer.GetDataPtrFromCoord<float>(x_src, y_src);
+        float v_center = *src_indexer.GetDataPtr<float>(x_src, y_src);
         if (v_center == invalid_fill) {
-            *dst_indexer.GetDataPtrFromCoord<float>(x, y) = invalid_fill;
+            *dst_indexer.GetDataPtr<float>(x, y) = invalid_fill;
             return;
         }
 
@@ -140,7 +140,7 @@ void PyrDownDepthCPU
         float w_sum = 0;
         for (int yk = y_min; yk <= y_max; ++yk) {
             for (int xk = x_min; xk <= x_max; ++xk) {
-                float v = *src_indexer.GetDataPtrFromCoord<float>(xk, yk);
+                float v = *src_indexer.GetDataPtr<float>(xk, yk);
                 int dy = abs(yk - y_src);
                 int dx = abs(xk - x_src);
 
@@ -152,7 +152,8 @@ void PyrDownDepthCPU
             }
         }
 
-        *dst_indexer.GetDataPtrFromCoord<float>(x, y) = v_sum / w_sum;
+        *dst_indexer.GetDataPtr<float>(x, y) =
+                w_sum == 0 ? invalid_fill : v_sum / w_sum;
     });
 }
 
@@ -191,9 +192,9 @@ void CreateVertexMapCPU
         int64_t y = workload_idx / cols;
         int64_t x = workload_idx % cols;
 
-        float d = *src_indexer.GetDataPtrFromCoord<float>(x, y);
+        float d = *src_indexer.GetDataPtr<float>(x, y);
 
-        float* vertex = dst_indexer.GetDataPtrFromCoord<float>(x, y);
+        float* vertex = dst_indexer.GetDataPtr<float>(x, y);
         if (!is_invalid(d)) {
             ti.Unproject(static_cast<float>(x), static_cast<float>(y), d,
                          vertex + 0, vertex + 1, vertex + 2);
@@ -227,12 +228,12 @@ void CreateNormalMapCPU
         int64_t y = workload_idx / cols;
         int64_t x = workload_idx % cols;
 
-        float* normal = dst_indexer.GetDataPtrFromCoord<float>(x, y);
+        float* normal = dst_indexer.GetDataPtr<float>(x, y);
 
         if (y < rows - 1 && x < cols - 1) {
-            float* v00 = src_indexer.GetDataPtrFromCoord<float>(x, y);
-            float* v10 = src_indexer.GetDataPtrFromCoord<float>(x + 1, y);
-            float* v01 = src_indexer.GetDataPtrFromCoord<float>(x, y + 1);
+            float* v00 = src_indexer.GetDataPtr<float>(x, y);
+            float* v10 = src_indexer.GetDataPtr<float>(x + 1, y);
+            float* v01 = src_indexer.GetDataPtr<float>(x, y + 1);
 
             if ((v00[0] == invalid_fill && v00[1] == invalid_fill &&
                  v00[2] == invalid_fill) ||
@@ -302,14 +303,14 @@ void ColorizeDepthCPU
             int64_t y = workload_idx / cols;
             int64_t x = workload_idx % cols;
 
-            float in = static_cast<float>(
-                    *src_indexer.GetDataPtrFromCoord<scalar_t>(x, y));
+            float in =
+                    static_cast<float>(*src_indexer.GetDataPtr<scalar_t>(x, y));
             float out = in / scale;
             out = out <= min_value ? min_value : out;
             out = out >= max_value ? max_value : out;
 
             int idx = static_cast<int>(inv_interval * (out - min_value));
-            uint8_t* out_ptr = dst_indexer.GetDataPtrFromCoord<uint8_t>(x, y);
+            uint8_t* out_ptr = dst_indexer.GetDataPtr<uint8_t>(x, y);
             out_ptr[0] = turbo_srgb_bytes[idx][0];
             out_ptr[1] = turbo_srgb_bytes[idx][1];
             out_ptr[2] = turbo_srgb_bytes[idx][2];

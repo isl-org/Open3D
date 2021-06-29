@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -84,12 +84,22 @@ protected:
     }
 };
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > DepthCapture  [filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    if (argc < 2) {
-        PrintOpen3DVersion();
-        utility::LogInfo("Usage:");
-        utility::LogInfo("    > DepthCapture  [filename]");
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
         return 1;
     }
 

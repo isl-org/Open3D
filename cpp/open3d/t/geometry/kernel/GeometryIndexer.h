@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,8 @@
 #include <unordered_map>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/Timer.h"
 
 namespace open3d {
@@ -321,14 +321,13 @@ public:
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x) const {
         return static_cast<T*>(static_cast<void*>(static_cast<uint8_t*>(ptr_) +
                                                   x * element_byte_size_));
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
-                                                     int64_t y) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x, int64_t y) const {
         int64_t workload;
         CoordToWorkload(x, y, &workload);
         return static_cast<T*>(static_cast<void*>(
@@ -336,9 +335,9 @@ public:
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
-                                                     int64_t y,
-                                                     int64_t z) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
+                                            int64_t y,
+                                            int64_t z) const {
         int64_t workload;
         CoordToWorkload(x, y, z, &workload);
         return static_cast<T*>(static_cast<void*>(
@@ -346,10 +345,10 @@ public:
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
-                                                     int64_t y,
-                                                     int64_t z,
-                                                     int64_t t) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
+                                            int64_t y,
+                                            int64_t z,
+                                            int64_t t) const {
         int64_t workload;
         CoordToWorkload(x, y, z, t, &workload);
         return static_cast<T*>(static_cast<void*>(

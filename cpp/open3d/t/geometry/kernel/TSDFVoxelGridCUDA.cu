@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGridImpl.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -47,7 +47,7 @@ namespace kernel {
 namespace tsdf {
 struct Coord3i {
     OPEN3D_HOST_DEVICE Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
-    bool OPEN3D_HOST_DEVICE operator==(const Coord3i& other) const {
+    OPEN3D_HOST_DEVICE bool operator==(const Coord3i& other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
 

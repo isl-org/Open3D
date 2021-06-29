@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,7 @@ namespace geometry {
 
 /// \class Image
 ///
-/// \brief The Image class stores image with customizable rols, cols, channels,
+/// \brief The Image class stores image with customizable rows, cols, channels,
 /// dtype and device.
 class Image : public Geometry {
 public:
@@ -366,7 +366,7 @@ public:
 
 protected:
     /// Internal data of the Image, represented as a contiguous 3D tensor of
-    /// shape {rols, cols, channels}. Image properties can be obtained from the
+    /// shape {rows, cols, channels}. Image properties can be obtained from the
     /// tensor.
     core::Tensor data_;
 };

@@ -19,23 +19,27 @@ material {
 
 vertex {
     void materialVertex(inout MaterialVertexInputs material) {
-        float4 pos = getPosition();
-        float4 next = getCustom0();
         float4 resolution = getResolution();
         float aspect = resolution.x / resolution.y;
+        float4 pos = getPosition();
+        // next.xyz is the position of the end of the line used to compute the direction of
+        // the line.
+        // next.w is the sign of the direction perpendicular to the line along which the
+        // vertex will be moved to create the line's width.
+        float4 next = getCustom0();
 
         // Project current vertex and next vertex to screen
-        float4 projected_pos = getClipFromWorldMatrix() * float4(pos.xyz - getWorldOffset(), 1.0);
-        float4 projected_next = getClipFromWorldMatrix() * float4(next.xyz - getWorldOffset(), 1.0);
+        float4 world_pos = getWorldFromModelMatrix() * pos;
+        float4 world_pos_next = getWorldFromModelMatrix() * float4(next.xyz, 1.0);
+        float4 projected_pos = getClipFromWorldMatrix() * world_pos;
+        float4 projected_next = getClipFromWorldMatrix() * world_pos_next;
         float2 screen_pos = projected_pos.xy / projected_pos.w;
-        screen_pos.x *= aspect;
         float2 screen_next = projected_next.xy / projected_next.w;
-        screen_next.x *= aspect;
 
         // now compute offset for the desired line width
         float2 dir = normalize(screen_next - screen_pos);
         float4 normal = float4(-dir.y, dir.x, 0.0, 1.0);
-        normal.xy *= (materialParams.lineWidth * resolution.z * 0.5);
+        normal.xy *= (materialParams.lineWidth * resolution.z * 0.5 * aspect);
         normal *= getClipFromViewMatrix();
         normal.xy *= projected_pos.w;
 

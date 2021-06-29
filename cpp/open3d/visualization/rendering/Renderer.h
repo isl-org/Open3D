@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,10 @@ class Image;
 
 namespace geometry {
 class Image;
+}
+
+namespace core {
+class Tensor;
 }
 
 namespace visualization {
@@ -85,7 +89,7 @@ public:
     virtual void RequestReadPixels(
             int width,
             int height,
-            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
+            std::function<void(std::shared_ptr<core::Tensor>)> callback) = 0;
     virtual void EndFrame() = 0;
 
     virtual void SetOnAfterDraw(std::function<void()> callback) = 0;

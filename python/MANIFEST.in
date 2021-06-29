@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +24,23 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+# Main library, including compiled binaries
+graft open3d
+graft js
+prune **/node_modules
+graft test
+
 # Misc
 include README.rst
 include LICENSE.txt
 include requirements.txt
+include open3d.json
 include setup.cfg
 include setup.py
+include pyproject.toml
+include install.json
 
-# Main library, including compiled binaries
-graft open3d
-graft js
-graft test
-
-# Exclude
+# Patterns to exclude from any directory
 global-exclude *~
 global-exclude *.pyc
 global-exclude *.pyo

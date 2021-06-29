@@ -1,71 +1,135 @@
-# some black magic to automatically create a header file from shader files
-file(GLOB SHADER_FILES "shader/glsl/*.glsl")
+add_library(visualization OBJECT)
 
-add_custom_command(
-    OUTPUT ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h
-    COMMAND EncodeShader Shader.h
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/
-    DEPENDS ${SHADER_FILES} EncodeShader
+target_sources(visualization PRIVATE
+    shader/GeometryRenderer.cpp
+    shader/ImageMaskShader.cpp
+    shader/ImageShader.cpp
+    shader/NormalShader.cpp
+    shader/PhongShader.cpp
+    shader/PickingShader.cpp
+    shader/RGBDImageShader.cpp
+    shader/ShaderWrapper.cpp
+    shader/Simple2DShader.cpp
+    shader/SimpleBlackShader.cpp
+    shader/SimpleShader.cpp
+    shader/TexturePhongShader.cpp
+    shader/TextureSimpleShader.cpp
 )
 
-foreach(file ${SHADER_FILES})
-    add_custom_command(
-        OUTPUT ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h
-        COMMAND EncodeShader Shader.h ${file}
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/
-        DEPENDS ${SHADER_FILES} EncodeShader
-        APPEND
-    )
-endforeach(file)
+target_sources(visualization PRIVATE
+    utility/ColorMap.cpp
+    utility/DrawGeometry.cpp
+    utility/GLHelper.cpp
+    utility/PointCloudPicker.cpp
+    utility/SelectionPolygon.cpp
+    utility/SelectionPolygonVolume.cpp
+)
 
-add_custom_target(ShaderFileTarget ALL
-                  DEPENDS ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h)
-set_target_properties(ShaderFileTarget PROPERTIES FOLDER "Custom")
-
-# build
-set(VISUALIZATION_ALL_HEADER_FILES "")
-set(VISUALIZATION_ALL_SOURCE_FILES "")
-macro(AddSourceDir DIR)
-    file(GLOB_RECURSE HEADER_FILES "${DIR}/*.h")
-    file(GLOB_RECURSE SOURCE_FILES "${DIR}/*.cpp")
-    list(APPEND VISUALIZATION_ALL_HEADER_FILES ${HEADER_FILES})
-    list(APPEND VISUALIZATION_ALL_SOURCE_FILES ${SOURCE_FILES})
-endmacro(AddSourceDir)
-AddSourceDir("shader")
-AddSourceDir("utility")
-AddSourceDir("visualizer")
+target_sources(visualization PRIVATE
+    visualizer/RenderOption.cpp
+    visualizer/RenderOptionWithEditing.cpp
+    visualizer/ViewControl.cpp
+    visualizer/ViewControlWithCustomAnimation.cpp
+    visualizer/ViewControlWithEditing.cpp
+    visualizer/ViewParameters.cpp
+    visualizer/ViewTrajectory.cpp
+    visualizer/Visualizer.cpp
+    visualizer/VisualizerCallback.cpp
+    visualizer/VisualizerRender.cpp
+    visualizer/VisualizerWithCustomAnimation.cpp
+    visualizer/VisualizerWithEditing.cpp
+    visualizer/VisualizerWithKeyCallback.cpp
+    visualizer/VisualizerWithVertexSelection.cpp
+)
 
 if (BUILD_GUI)
-    AddSourceDir("rendering")
-else ()
-    list(FILTER VISUALIZATION_ALL_HEADER_FILES EXCLUDE REGEX .*GuiVisualizer.h)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiVisualizer.cpp)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiSettingsModel.cpp)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiSettingsModel.h)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiSettingsView.cpp)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiSettingsView.h)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiWidgets.cpp)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*GuiWidgets.h)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*/Draw.h)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*/Draw.cpp)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*O3D.*.h)
-    list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*O3D.*.cpp)
+    target_sources(visualization PRIVATE
+        rendering/Camera.cpp
+        rendering/CameraInteractorLogic.cpp
+        rendering/CameraSphereInteractorLogic.cpp
+        rendering/ColorGrading.cpp
+        rendering/Gradient.cpp
+        rendering/IBLRotationInteractorLogic.cpp
+        rendering/LightDirectionInteractorLogic.cpp
+        rendering/MaterialModifier.cpp
+        rendering/MatrixInteractorLogic.cpp
+        rendering/ModelInteractorLogic.cpp
+        rendering/Open3DScene.cpp
+        rendering/Renderer.cpp
+        rendering/RendererHandle.cpp
+        rendering/RotationInteractorLogic.cpp
+    )
+
+    target_sources(visualization PRIVATE
+        rendering/filament/FilamentCamera.cpp
+        rendering/filament/FilamentEngine.cpp
+        rendering/filament/FilamentEntitiesMods.cpp
+        rendering/filament/FilamentGeometryBuffersBuilder.cpp
+        rendering/filament/FilamentRenderer.cpp
+        rendering/filament/FilamentRenderToBuffer.cpp
+        rendering/filament/FilamentResourceManager.cpp
+        rendering/filament/FilamentScene.cpp
+        rendering/filament/FilamentView.cpp
+        rendering/filament/LineSetBuffers.cpp
+        rendering/filament/PointCloudBuffers.cpp
+        rendering/filament/TriangleMeshBuffers.cpp
+    )
+
+    target_sources(visualization PRIVATE
+        utility/Draw.cpp
+    )
+
+    target_sources(visualization PRIVATE
+        visualizer/GuiSettingsModel.cpp
+        visualizer/GuiSettingsView.cpp
+        visualizer/GuiVisualizer.cpp
+        visualizer/GuiWidgets.cpp
+        visualizer/O3DVisualizer.cpp
+        visualizer/O3DVisualizerSelections.cpp
+    )
 endif()
 
-if ( NOT BUILD_RPC_INTERFACE )
-        list(FILTER VISUALIZATION_ALL_SOURCE_FILES EXCLUDE REGEX .*Receiver.cpp)
+if (BUILD_RPC_INTERFACE)
+    target_sources(visualization PRIVATE
+        visualizer/Receiver.cpp
+    )
 endif()
 
 
-# create object library
-add_library(visualization OBJECT
-            ${SHADER_FILES}
-            ${VISUALIZATION_ALL_HEADER_FILES}
-            ${VISUALIZATION_ALL_SOURCE_FILES})
+include(add_encoded_shader)
 
-source_group("Source Files\\Shader\\GLSL" FILES ${SHADER_FILES})
+open3d_add_encoded_shader(shader
+    OUTPUT_HEADER
+    shader/Shader.h
+    SOURCES
+    shader/glsl/ImageFragmentShader.glsl
+    shader/glsl/ImageMaskFragmentShader.glsl
+    shader/glsl/ImageMaskVertexShader.glsl
+    shader/glsl/ImageVertexShader.glsl
+    shader/glsl/NormalFragmentShader.glsl
+    shader/glsl/NormalVertexShader.glsl
+    shader/glsl/PhongFragmentShader.glsl
+    shader/glsl/PhongVertexShader.glsl
+    shader/glsl/PickingFragmentShader.glsl
+    shader/glsl/PickingVertexShader.glsl
+    shader/glsl/RGBDImageFragmentShader.glsl
+    shader/glsl/Simple2DFragmentShader.glsl
+    shader/glsl/Simple2DVertexShader.glsl
+    shader/glsl/SimpleBlackFragmentShader.glsl
+    shader/glsl/SimpleBlackVertexShader.glsl
+    shader/glsl/SimpleFragmentShader.glsl
+    shader/glsl/SimpleVertexShader.glsl
+    shader/glsl/TexturePhongFragmentShader.glsl
+    shader/glsl/TexturePhongVertexShader.glsl
+    shader/glsl/TextureSimpleFragmentShader.glsl
+    shader/glsl/TextureSimpleVertexShader.glsl
+)
 
-add_dependencies(visualization ShaderFileTarget)
+# Source group for Visual Studio
+add_source_group(shader/glsl)
+
+add_dependencies(visualization shader)
+
 
 open3d_show_and_abort_on_warning(visualization)
 open3d_set_global_properties(visualization)

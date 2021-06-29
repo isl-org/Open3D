@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -76,7 +76,7 @@ public:
     void Draw() override;
     void RequestReadPixels(int width,
                            int height,
-                           std::function<void(std::shared_ptr<geometry::Image>)>
+                           std::function<void(std::shared_ptr<core::Tensor>)>
                                    callback) override;
     void EndFrame() override;
 

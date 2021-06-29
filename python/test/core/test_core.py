@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -203,7 +203,12 @@ def test_tensor_constructor(dtype, device):
     # 2D list, inconsistent length
     li_t = [[0, 1, 2], [3, 4]]
     with pytest.raises(Exception):
-        o3_t = o3d.core.Tensor(li_t, dtype, device)
+        # Suppress inconsistent length warning as this check is intentional
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                                    category=VisibleDeprecationWarning)
+            o3_t = o3d.core.Tensor(li_t, dtype, device)
 
     # Automatic casting
     np_t_double = np.array([[0., 1.5, 2.], [3., 4., 5.]])

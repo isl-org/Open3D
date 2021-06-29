@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -166,12 +166,31 @@ public:
     /// Returns true if open and false if collapsed.
     bool GetIsOpen();
 
-    FontStyle GetFontStyle() const;
-    void SetFontStyle(FontStyle style);
+    FontId GetFontId() const;
+    void SetFontId(FontId font_id);
 
     Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
     void Layout(const LayoutContext& context) override;
+    Widget::DrawResult Draw(const DrawContext& context) override;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+/// This a vertical layout that scrolls if it is smaller than its contents
+class ScrollableVert : public Vert {
+    using Super = Vert;
+
+public:
+    ScrollableVert();
+    ScrollableVert(int spacing, const Margins& margins = Margins());
+    ScrollableVert(int spacing,
+                   const Margins& margins,
+                   const std::vector<std::shared_ptr<Widget>>& children);
+    virtual ~ScrollableVert();
+
     Widget::DrawResult Draw(const DrawContext& context) override;
 
 private:

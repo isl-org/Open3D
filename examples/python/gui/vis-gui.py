@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import glob
 import numpy as np
 import open3d as o3d

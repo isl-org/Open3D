@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -84,7 +84,7 @@ void ProjectCPU(
                     return;
                 }
 
-                float* depth_ptr = depth_indexer.GetDataPtrFromCoord<float>(
+                float* depth_ptr = depth_indexer.GetDataPtr<float>(
                         static_cast<int64_t>(u), static_cast<int64_t>(v));
                 float d = zc * depth_scale;
 #pragma omp critical
@@ -94,7 +94,7 @@ void ProjectCPU(
 
                         if (has_colors) {
                             uint8_t* color_ptr =
-                                    color_indexer.GetDataPtrFromCoord<uint8_t>(
+                                    color_indexer.GetDataPtr<uint8_t>(
                                             static_cast<int64_t>(u),
                                             static_cast<int64_t>(v));
 

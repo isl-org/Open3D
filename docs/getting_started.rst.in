@@ -35,6 +35,10 @@ Pip (PyPI)
     pip install open3d
 
 .. note::
+   We recommend using ``pip`` version >=20.3 for better platform compatibility
+   checking in Linux.
+
+.. note::
     In general, we recommend using a
     `virtual environment <https://docs.python-guide.org/dev/virtualenvs/>`_ for
     containerization. Otherwise, depending on the configurations, ``pip3`` may
@@ -55,9 +59,9 @@ Development version (pip)
 To test the latest features in Open3D, download and install the development
 version (``HEAD`` of ``master`` branch):
 
-:Linux: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-linux_x86_64.whl>`__
-        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-linux_x86_64.whl>`__
-        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl>`__
+:Linux: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-manylinux_2_27_x86_64.whl>`__
+        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-manylinux_2_27_x86_64.whl>`__
+        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
 
 :MacOS: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-macosx_10_14_x86_64.whl>`__
         `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_14_x86_64.whl>`__
@@ -73,6 +77,10 @@ Please use these links from the `latest version of this page <http://www.open3d.
 
     pip install --user --pre https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl
 
+.. note::
+   The development wheels for Linux are named according to PEP600. Please
+   use ``pip`` version >=20.3 to install them. The wheels are not yet fully
+   PEP600 compliant.
 
 Conda
 -----
