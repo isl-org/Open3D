@@ -38,6 +38,7 @@
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
+#include "open3d/t/geometry/kernel/Transform.h"
 
 namespace open3d {
 namespace t {
@@ -154,11 +155,11 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    t::geometry::kernel::pointcloud::TransformPoints(transformation,
-                                                     GetPoints());
+    t::geometry::kernel::transform::TransformPoints(transformation,
+                                                    GetPoints());
     if (HasPointNormals()) {
-        t::geometry::kernel::pointcloud::TransformNormals(transformation,
-                                                          GetPoints());
+        t::geometry::kernel::transform::TransformNormals(transformation,
+                                                         GetPointNormals());
     }
 
     return *this;
@@ -188,10 +189,10 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    t::geometry::kernel::pointcloud::RotatePoints(R, GetPoints(), center);
+    t::geometry::kernel::transform::RotatePoints(R, GetPoints(), center);
 
     if (HasPointNormals()) {
-        t::geometry::kernel::pointcloud::RotateNormals(R, GetPoints());
+        t::geometry::kernel::transform::RotateNormals(R, GetPoints());
     }
     return *this;
 }

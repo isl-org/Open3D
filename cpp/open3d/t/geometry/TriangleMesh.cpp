@@ -34,6 +34,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
+#include "open3d/t/geometry/kernel/Transform.h"
 
 namespace open3d {
 namespace t {
@@ -62,15 +63,15 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
-    t::geometry::kernel::pointcloud::TransformPoints(transformation,
-                                                     GetVertices());
+    t::geometry::kernel::transform::TransformPoints(transformation,
+                                                    GetVertices());
     if (HasVertexNormals()) {
-        t::geometry::kernel::pointcloud::TransformNormals(transformation,
-                                                          GetVertexNormals());
+        t::geometry::kernel::transform::TransformNormals(transformation,
+                                                         GetVertexNormals());
     }
     if (HasTriangleNormals()) {
-        t::geometry::kernel::pointcloud::TransformNormals(transformation,
-                                                          GetTriangleNormals());
+        t::geometry::kernel::transform::TransformNormals(transformation,
+                                                         GetTriangleNormals());
     }
 
     return *this;
@@ -100,12 +101,12 @@ TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
 
 TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
                                    const core::Tensor &center) {
-    t::geometry::kernel::pointcloud::RotatePoints(R, GetVertices(), center);
+    t::geometry::kernel::transform::RotatePoints(R, GetVertices(), center);
     if (HasVertexNormals()) {
-        t::geometry::kernel::pointcloud::RotateNormals(R, GetVertexNormals());
+        t::geometry::kernel::transform::RotateNormals(R, GetVertexNormals());
     }
     if (HasTriangleNormals()) {
-        t::geometry::kernel::pointcloud::RotateNormals(R, GetTriangleNormals());
+        t::geometry::kernel::transform::RotateNormals(R, GetTriangleNormals());
     }
 
     return *this;

@@ -57,17 +57,6 @@ void Project(
         float depth_scale,
         float depth_max);
 
-void TransformPoints(const core::Tensor& transformation, core::Tensor& points);
-
-void TransformNormals(const core::Tensor& transformation,
-                      core::Tensor& normals);
-
-void RotatePoints(const core::Tensor& R,
-                  core::Tensor& points,
-                  const core::Tensor& center);
-
-void RotateNormals(const core::Tensor& R, core::Tensor& normals);
-
 void UnprojectCPU(
         const core::Tensor& depth,
         utility::optional<std::reference_wrapper<const core::Tensor>>
@@ -89,18 +78,6 @@ void ProjectCPU(
         const core::Tensor& extrinsics,
         float depth_scale,
         float depth_max);
-
-void TransformPointsCPU(const core::Tensor& transformation,
-                        core::Tensor& points);
-
-void TransformNormalsCPU(const core::Tensor& transformation,
-                         core::Tensor& normals);
-
-void RotatePointsCPU(const core::Tensor& R,
-                     core::Tensor& points,
-                     const core::Tensor& center);
-
-void RotateNormalsCPU(const core::Tensor& R, core::Tensor& normals);
 
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
@@ -124,18 +101,6 @@ void ProjectCUDA(
         const core::Tensor& extrinsics,
         float depth_scale,
         float depth_max);
-
-void TransformPointsCUDA(const core::Tensor& transformation,
-                         core::Tensor& points);
-
-void TransformNormalsCUDA(const core::Tensor& transformation,
-                          core::Tensor& normals);
-
-void RotatePointsCUDA(const core::Tensor& R,
-                      core::Tensor& points,
-                      const core::Tensor& center);
-
-void RotateNormalsCUDA(const core::Tensor& R, core::Tensor& normals);
 #endif
 
 }  // namespace pointcloud
