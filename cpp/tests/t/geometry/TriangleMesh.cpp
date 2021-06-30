@@ -238,16 +238,12 @@ TEST_P(TriangleMeshPermuteDevices, Transform) {
     mesh.SetVertices(core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
     mesh.SetVertexNormals(
             core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
-    // mesh.SetTriangleNormals(
-    //         core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
 
     mesh.Transform(transformation);
     EXPECT_TRUE(mesh.GetVertices().AllClose(
             core::Tensor::Init<float>({{3, 3, 2}, {3, 3, 2}}, device)));
     EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
             core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
-    // EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
-    //         core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
 }
 
 TEST_P(TriangleMeshPermuteDevices, Translate) {
@@ -260,15 +256,11 @@ TEST_P(TriangleMeshPermuteDevices, Translate) {
     mesh.SetVertices(core::Tensor::Init<float>({{0, 1, 2}, {6, 7, 8}}, device));
     mesh.SetVertexNormals(
             core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
-    // mesh.SetTriangleNormals(
-    //         core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
 
     mesh.Translate(translation, /*relative=*/true);
 
     // Normals do not translate.
     EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
-            core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device)));
-    EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
             core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device)));
 
     EXPECT_TRUE(mesh.GetVertices().AllClose(
@@ -310,16 +302,12 @@ TEST_P(TriangleMeshPermuteDevices, Rotate) {
     mesh.SetVertices(core::Tensor::Init<float>({{2, 2, 2}, {2, 2, 2}}, device));
     mesh.SetVertexNormals(
             core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
-    // mesh.SetTriangleNormals(
-    //         core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
 
     mesh.Rotate(rotation, center);
     EXPECT_TRUE(mesh.GetVertices().AllClose(
             core::Tensor::Init<float>({{3, 3, 2}, {3, 3, 2}}, device)));
     EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
             core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
-    // EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
-    //         core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
 }
 
 TEST_P(TriangleMeshPermuteDevices, FromLegacyTriangleMesh) {
