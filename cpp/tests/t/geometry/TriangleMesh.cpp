@@ -228,6 +228,100 @@ TEST_P(TriangleMeshPermuteDevices, Has) {
     EXPECT_TRUE(mesh.HasTriangleNormals());
 }
 
+TEST_P(TriangleMeshPermuteDevices, Transform) {
+    core::Device device = GetParam();
+
+    t::geometry::TriangleMesh mesh(device);
+    core::Tensor transformation = core::Tensor::Init<float>(
+            {{1, 1, 0, 1}, {0, 1, 1, 1}, {0, 1, 0, 1}, {0, 0, 0, 1}}, device);
+
+    mesh.SetVertices(core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
+    mesh.SetVertexNormals(
+            core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
+    // mesh.SetTriangleNormals(
+    //         core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
+
+    mesh.Transform(transformation);
+    EXPECT_TRUE(mesh.GetVertices().AllClose(
+            core::Tensor::Init<float>({{3, 3, 2}, {3, 3, 2}}, device)));
+    EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
+            core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
+    // EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
+    //         core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
+}
+
+TEST_P(TriangleMeshPermuteDevices, Translate) {
+    core::Device device = GetParam();
+
+    t::geometry::TriangleMesh mesh(device);
+    core::Tensor translation = core::Tensor::Init<float>({10, 20, 30}, device);
+
+    // Relative.
+    mesh.SetVertices(core::Tensor::Init<float>({{0, 1, 2}, {6, 7, 8}}, device));
+    mesh.SetVertexNormals(
+            core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
+    // mesh.SetTriangleNormals(
+    //         core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
+
+    mesh.Translate(translation, /*relative=*/true);
+
+    // Normals do not translate.
+    EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
+            core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device)));
+    EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
+            core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device)));
+
+    EXPECT_TRUE(mesh.GetVertices().AllClose(
+            core::Tensor::Init<float>({{10, 21, 32}, {16, 27, 38}}, device)));
+
+    // Non-relative.
+    mesh.SetVertices(core::Tensor::Init<float>({{0, 1, 2}, {6, 7, 8}}, device));
+    mesh.Translate(translation, /*relative=*/false);
+
+    EXPECT_TRUE(mesh.GetVertices().AllClose(
+            core::Tensor::Init<float>({{7, 17, 27}, {13, 23, 33}}, device)));
+}
+
+TEST_P(TriangleMeshPermuteDevices, Scale) {
+    core::Device device = GetParam();
+
+    t::geometry::TriangleMesh mesh(device);
+    core::Tensor rotation = core::Tensor::Init<float>(
+            {{1, 1, 0}, {0, 1, 1}, {0, 1, 0}}, device);
+    core::Tensor center = core::Tensor::Ones({3}, core::Dtype::Float32, device);
+    double scale = 4;
+
+    mesh.SetVertices(core::Tensor::Init<float>(
+            {{0, 0, 0}, {1, 1, 1}, {2, 2, 2}}, device));
+
+    mesh.Scale(scale, center);
+    EXPECT_TRUE(mesh.GetVertices().AllClose(core::Tensor::Init<float>(
+            {{-3, -3, -3}, {1, 1, 1}, {5, 5, 5}}, device)));
+}
+
+TEST_P(TriangleMeshPermuteDevices, Rotate) {
+    core::Device device = GetParam();
+
+    t::geometry::TriangleMesh mesh(device);
+    core::Tensor rotation = core::Tensor::Init<float>(
+            {{1, 1, 0}, {0, 1, 1}, {0, 1, 0}}, device);
+    core::Tensor center = core::Tensor::Ones({3}, core::Dtype::Float32, device);
+
+    mesh.SetVertices(core::Tensor::Init<float>({{2, 2, 2}, {2, 2, 2}}, device));
+    mesh.SetVertexNormals(
+            core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
+    // mesh.SetTriangleNormals(
+    //         core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
+
+    mesh.Rotate(rotation, center);
+    EXPECT_TRUE(mesh.GetVertices().AllClose(
+            core::Tensor::Init<float>({{3, 3, 2}, {3, 3, 2}}, device)));
+    EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
+            core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
+    // EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
+    //         core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
+}
+
 TEST_P(TriangleMeshPermuteDevices, FromLegacyTriangleMesh) {
     core::Device device = GetParam();
     geometry::TriangleMesh legacy_mesh;

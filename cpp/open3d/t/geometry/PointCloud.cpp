@@ -192,7 +192,7 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     t::geometry::kernel::transform::RotatePoints(R, GetPoints(), center);
 
     if (HasPointNormals()) {
-        t::geometry::kernel::transform::RotateNormals(R, GetPoints());
+        t::geometry::kernel::transform::RotateNormals(R, GetPointNormals());
     }
     return *this;
 }

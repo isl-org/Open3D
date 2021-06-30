@@ -390,11 +390,11 @@ public:
     /// Returns !HasVertices(), triangles are ignored.
     bool IsEmpty() const override { return !HasVertices(); }
 
-    core::Tensor GetMinBound() const { utility::LogError("Unimplemented"); }
+    core::Tensor GetMinBound() const { return GetVertices().Min({0}); }
 
-    core::Tensor GetMaxBound() const { utility::LogError("Unimplemented"); }
+    core::Tensor GetMaxBound() const { return GetVertices().Max({0}); }
 
-    core::Tensor GetCenter() const { utility::LogError("Unimplemented"); }
+    core::Tensor GetCenter() const { return GetVertices().Mean({0}); }
 
     TriangleMesh &Transform(const core::Tensor &transformation);
 
