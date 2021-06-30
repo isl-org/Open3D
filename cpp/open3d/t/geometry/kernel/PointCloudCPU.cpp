@@ -85,7 +85,7 @@ void ProjectCPU(
         float* depth_ptr = depth_indexer.GetDataPtr<float>(
                 static_cast<int64_t>(u), static_cast<int64_t>(v));
         float d = zc * depth_scale;
-#pragma omp critical
+#pragma omp critical(ProjectCPU)
         {
             if (*depth_ptr == 0 || *depth_ptr >= d) {
                 *depth_ptr = d;

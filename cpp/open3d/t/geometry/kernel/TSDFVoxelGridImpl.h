@@ -1072,7 +1072,7 @@ void EstimateRangeCPU
                 atomicMinf(&(range_ptr[0]), z_min);
                 atomicMaxf(&(range_ptr[1]), z_max);
 #else
-#pragma omp critical
+#pragma omp critical(EstimateRangeCPU)
                 {
                     range_ptr[0] = min(z_min, range_ptr[0]);
                     range_ptr[1] = max(z_max, range_ptr[1]);

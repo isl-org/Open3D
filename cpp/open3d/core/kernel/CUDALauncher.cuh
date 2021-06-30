@@ -84,6 +84,12 @@ __global__ void ElementWiseKernel(int64_t n, func_t f) {
 /// \param n The number of workloads.
 /// \param func The function to be executed in parallel. The function should
 /// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
+///
+/// \note This is optimized for uniform work items, i.e. where each call to \p
+/// func takes the same time.
+/// \note If you use a lambda function, capture only the required variables
+/// instead of all to prevent accidental race conditions. If you want the kernel
+/// to be used on both CPU and CUDA, capture the variables by value.
 template <typename func_t>
 void LaunchParallel(int64_t n, const func_t& func) {
     if (n == 0) {

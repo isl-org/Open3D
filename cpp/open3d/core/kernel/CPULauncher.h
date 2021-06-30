@@ -39,7 +39,7 @@ namespace core {
 namespace kernel {
 namespace cpu_launcher {
 
-/// Run a function in parallel on CPU.
+/// \brief Run a function in parallel on CPU.
 ///
 /// This is typically used together with cuda_launcher::LaunchParallel() to
 /// share the same code between CPU and CUDA. For example:
@@ -59,6 +59,12 @@ namespace cpu_launcher {
 /// \param n The number of workloads.
 /// \param func The function to be executed in parallel. The function should
 /// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
+///
+/// \note This is optimized for uniform work items, i.e. where each call to \p
+/// func takes the same time.
+/// \note If you use a lambda function, capture only the required variables
+/// instead of all to prevent accidental race conditions. If you want the kernel
+/// to be used on both CPU and CUDA, capture the variables by value.
 template <typename func_t>
 void LaunchParallel(int64_t n, const func_t& func) {
 #pragma omp parallel for schedule(static)

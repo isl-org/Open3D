@@ -115,7 +115,7 @@ void FillInRigidAlignmentTermCPU
         }
         atomicAdd(residual_ptr, r * r);
 #else
-#pragma omp critical
+#pragma omp critical(FillInRigidAlignmentTermCPU)
         {
             for (int i_local = 0; i_local < 12; ++i_local) {
                 for (int j_local = 0; j_local < 12; ++j_local) {
@@ -291,7 +291,7 @@ void FillInSLACAlignmentTermCPU
         }
         atomicAdd(residual_ptr, r * r);
 #else
-#pragma omp critical
+#pragma omp critical(FillInSLACAlignmentTermCPU)
         {
             for (int ki = 0; ki < 60; ++ki) {
                 for (int kj = 0; kj < 60; ++kj) {
@@ -583,7 +583,7 @@ void FillInSLACRegularizerTermCPU
                               -weight * local_r[axis]);
                 }
 #else
-#pragma omp critical
+#pragma omp critical(FillInSLACRegularizerTermCPU)
                 {
                     // Update residual
                     *residual_ptr += weight * (local_r[0] * local_r[0] +
