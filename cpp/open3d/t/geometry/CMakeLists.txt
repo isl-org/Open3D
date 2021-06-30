@@ -10,12 +10,9 @@ target_sources(tgeometry PRIVATE
     TriangleMesh.cpp
     TSDFVoxelGrid.cpp
 )
-# RaycastingScene is not supported on ARM
-if(NOT LINUX_AARCH64)
-    target_sources(tgeometry PRIVATE
-        RaycastingScene.cpp
-    )
-endif()
+target_sources(tgeometry PRIVATE
+    RaycastingScene.cpp
+)
 
 open3d_show_and_abort_on_warning(tgeometry)
 open3d_set_global_properties(tgeometry)

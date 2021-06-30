@@ -1287,16 +1287,14 @@ else()
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
 
-if(NOT LINUX_AARCH64)
-    # embree is not supported on arm
-    include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-    import_3rdparty_library(3rdparty_embree
-        HIDDEN
-        INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-        LIB_DIR      ${EMBREE_LIB_DIR}
-        LIBRARIES    ${EMBREE_LIBRARIES}
-    )
-    set(EMBREE_TARGET "3rdparty_embree")
-    add_dependencies(3rdparty_embree ext_embree)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${EMBREE_TARGET}")
-endif()
+# embree is not supported on arm
+include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+import_3rdparty_library(3rdparty_embree
+    HIDDEN
+    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+    LIB_DIR      ${EMBREE_LIB_DIR}
+    LIBRARIES    ${EMBREE_LIBRARIES}
+)
+set(EMBREE_TARGET "3rdparty_embree")
+add_dependencies(3rdparty_embree ext_embree)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${EMBREE_TARGET}")

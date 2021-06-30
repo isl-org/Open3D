@@ -57,9 +57,7 @@ void pybind_geometry(py::module& m) {
     pybind_image(m_submodule);
     pybind_tsdf_voxelgrid(m_submodule);
     // RaycastingScene is not supported on ARM
-#ifndef LINUX_AARCH64
     pybind_raycasting_scene(m_submodule);
-#endif
 }
 
 }  // namespace geometry
