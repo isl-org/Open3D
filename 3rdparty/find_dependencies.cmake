@@ -1041,19 +1041,9 @@ if(BUILD_GUI)
 endif()
 
 # RPC interface
-# - boost: predef
 # - zeromq
 # - msgpack
 if(BUILD_RPC_INTERFACE)
-    # boost: predef
-    include(${Open3D_3RDPARTY_DIR}/boost/boost.cmake)
-    import_3rdparty_library(3rdparty_boost
-        INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
-    )
-    set(BOOST_TARGET "3rdparty_boost")
-    add_dependencies(3rdparty_boost ext_boost)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
-
     # zeromq
     include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
     import_3rdparty_library(3rdparty_zeromq
