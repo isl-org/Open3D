@@ -26,6 +26,7 @@
 
 #include "pybind/open3d_pybind.h"
 
+#include "open3d/core/MemoryManagerStatistic.h"
 #include "open3d/utility/Logging.h"
 #include "pybind/camera/camera.h"
 #include "pybind/core/core.h"
@@ -65,6 +66,12 @@ PYBIND11_MODULE(pybind, m) {
     io::pybind_io(m);
     pipelines::pybind_pipelines(m);
     visualization::pybind_visualization(m);
+
+    // pybind11 will internally manage the lifetime of default arguments for
+    // function bindings. Since these objects will live longer than the memory
+    // manager statistics, the latter will report leaks. Reset the statistics to
+    // ignore them and transfer the responsibility to pybind11.
+    core::MemoryManagerStatistic::GetInstance().Reset();
 }
 
 }  // namespace open3d
