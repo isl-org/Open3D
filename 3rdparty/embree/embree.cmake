@@ -23,7 +23,7 @@ elseif(LINUX_AARCH64)
                  -DEMBREE_ISA_SSE2=OFF
                  -DEMBREE_ISA_SSE42=OFF
     )
-    set(ISA_LIBS embree_avx embree_avx2)
+    unset(ISA_LIBS)
     set(ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_avx${CMAKE_STATIC_LIBRARY_SUFFIX}"
                 "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_avx2${CMAKE_STATIC_LIBRARY_SUFFIX}"
     )
