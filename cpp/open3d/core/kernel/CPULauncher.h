@@ -41,7 +41,7 @@ namespace cpu_launcher {
 
 /// \brief Run a function in parallel on CPU.
 ///
-/// This is typically used together with cuda_launcher::LaunchParallel() to
+/// This is typically used together with cuda_launcher::ParallelFor() to
 /// share the same code between CPU and CUDA. For example:
 ///
 /// ```cpp
@@ -51,7 +51,7 @@ namespace cpu_launcher {
 ///     namespace launcher = core::kernel::cpu_launcher;
 /// #endif
 ///
-/// launcher::LaunchParallel(num_workloads, [=] OPEN3D_DEVICE(int64_t idx) {
+/// launcher::ParallelFor(num_workloads, [=] OPEN3D_DEVICE(int64_t idx) {
 ///     process_workload(idx);
 /// });
 /// ```
@@ -66,7 +66,7 @@ namespace cpu_launcher {
 /// instead of all to prevent accidental race conditions. If you want the kernel
 /// to be used on both CPU and CUDA, capture the variables by value.
 template <typename func_t>
-void LaunchParallel(int64_t n, const func_t& func) {
+void ParallelFor(int64_t n, const func_t& func) {
 #pragma omp parallel for schedule(static)
     for (int64_t i = 0; i < n; ++i) {
         func(i);

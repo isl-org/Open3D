@@ -104,7 +104,7 @@ void UnprojectCPU
 #endif
 
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
             int64_t y = (workload_idx / cols_strided) * stride;
             int64_t x = (workload_idx % cols_strided) * stride;
 

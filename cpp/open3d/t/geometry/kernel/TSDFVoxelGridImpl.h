@@ -98,8 +98,8 @@ void IntegrateCPU
 
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(
-                                                    int64_t workload_idx) {
+                launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+                                                 int64_t workload_idx) {
                     // Natural index (0, N) -> (block_idx, voxel_idx)
                     int block_idx = indices_ptr[workload_idx / resolution3];
                     int voxel_idx = workload_idx % resolution3;
@@ -227,8 +227,8 @@ void ExtractSurfacePointsCPU
         // This pass determines valid number of points.
         DISPATCH_BYTESIZE_TO_VOXEL(
                 voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                    launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(
-                                                        int64_t workload_idx) {
+                    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+                                                     int64_t workload_idx) {
                         auto GetVoxelAt =
                                 [&] OPEN3D_DEVICE(
                                         int xo, int yo, int zo,
@@ -323,8 +323,8 @@ void ExtractSurfacePointsCPU
                     color_indexer = NDArrayIndexer(colors.value().get(), 1);
                 }
 
-                launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(
-                                                    int64_t workload_idx) {
+                launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+                                                 int64_t workload_idx) {
                     auto GetVoxelAt = [&] OPEN3D_DEVICE(
                                               int xo, int yo, int zo,
                                               int curr_block_idx) -> voxel_t* {
@@ -544,7 +544,7 @@ void ExtractSurfaceMeshCPU
     // Pass 0: analyze mesh structure, set up one-on-one correspondences
     // from edges to vertices.
     DISPATCH_BYTESIZE_TO_VOXEL(voxel_bytesize, [&]() {
-        launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t widx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
             auto GetVoxelAt = [&] OPEN3D_DEVICE(
                                       int xo, int yo, int zo,
                                       int curr_block_idx) -> voxel_t* {
@@ -628,7 +628,7 @@ void ExtractSurfaceMeshCPU
 #endif
 
     if (vertex_count < 0) {
-        launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t widx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
             // Natural index (0, N) -> (block_idx, voxel_idx)
             int64_t workload_block_idx = widx / resolution3;
             int64_t voxel_idx = widx % resolution3;
@@ -700,7 +700,7 @@ void ExtractSurfaceMeshCPU
             color_indexer = NDArrayIndexer(colors.value().get(), 1);
         }
 
-        launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t widx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
             auto GetVoxelAt = [&] OPEN3D_DEVICE(
                                       int xo, int yo, int zo,
                                       int curr_block_idx) -> voxel_t* {
@@ -834,7 +834,7 @@ void ExtractSurfaceMeshCPU
 #else
     (*count_ptr) = 0;
 #endif
-    launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t widx) {
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
         // Natural index (0, N) -> (block_idx, voxel_idx)
         int64_t workload_block_idx = widx / resolution3;
         int64_t voxel_idx = widx % resolution3;
@@ -948,7 +948,7 @@ void EstimateRangeCPU
 #endif
 
     // Pass 0: iterate over blocks, fill-in an rendering fragment array
-    launcher::LaunchParallel(
+    launcher::ParallelFor(
             block_keys.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 int* key = block_keys_indexer.GetDataPtr<int>(workload_idx);
 
@@ -1036,7 +1036,7 @@ void EstimateRangeCPU
 #endif
 
     // Pass 0.5: Fill in range map to prepare for atomic min/max
-    launcher::LaunchParallel(
+    launcher::ParallelFor(
             h_down * w_down, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 int v = workload_idx / w_down;
                 int u = workload_idx % w_down;
@@ -1046,7 +1046,7 @@ void EstimateRangeCPU
             });
 
     // Pass 1: iterate over rendering fragment array, fill-in range
-    launcher::LaunchParallel(
+    launcher::ParallelFor(
             frag_count * fragment_size * fragment_size,
             [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 int frag_idx = workload_idx / (fragment_size * fragment_size);
@@ -1191,296 +1191,317 @@ void RayCastCPU
     using std::max;
 #endif
 
-    DISPATCH_BYTESIZE_TO_VOXEL(voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-        launcher::LaunchParallel(rows * cols, [=] OPEN3D_DEVICE(
-                                                      int64_t workload_idx) {
-            auto GetVoxelAtP =
-                    [&] OPEN3D_DEVICE(int x_b, int y_b, int z_b, int x_v,
-                                      int y_v, int z_v, core::addr_t block_addr,
-                                      BlockCache& cache) -> voxel_t* {
-                int x_vn = (x_v + block_resolution) % block_resolution;
-                int y_vn = (y_v + block_resolution) % block_resolution;
-                int z_vn = (z_v + block_resolution) % block_resolution;
+    DISPATCH_BYTESIZE_TO_VOXEL(
+            voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                launcher::ParallelFor(rows * cols, [=] OPEN3D_DEVICE(
+                                                           int64_t workload_idx) {
+                    auto GetVoxelAtP = [&] OPEN3D_DEVICE(
+                                               int x_b, int y_b, int z_b,
+                                               int x_v, int y_v, int z_v,
+                                               core::addr_t block_addr,
+                                               BlockCache& cache) -> voxel_t* {
+                        int x_vn = (x_v + block_resolution) % block_resolution;
+                        int y_vn = (y_v + block_resolution) % block_resolution;
+                        int z_vn = (z_v + block_resolution) % block_resolution;
 
-                int dx_b = Sign(x_v - x_vn);
-                int dy_b = Sign(y_v - y_vn);
-                int dz_b = Sign(z_v - z_vn);
+                        int dx_b = Sign(x_v - x_vn);
+                        int dy_b = Sign(y_v - y_vn);
+                        int dz_b = Sign(z_v - z_vn);
 
-                if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
-                    return voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
-                            x_v, y_v, z_v, block_addr);
-                } else {
-                    Key key;
-                    key.Set(0, x_b + dx_b);
-                    key.Set(1, y_b + dy_b);
-                    key.Set(2, z_b + dz_b);
+                        if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
+                            return voxel_block_buffer_indexer
+                                    .GetDataPtr<voxel_t>(x_v, y_v, z_v,
+                                                         block_addr);
+                        } else {
+                            Key key;
+                            key.Set(0, x_b + dx_b);
+                            key.Set(1, y_b + dy_b);
+                            key.Set(2, z_b + dz_b);
 
-                    int block_addr =
-                            cache.Check(key.Get(0), key.Get(1), key.Get(2));
-                    if (block_addr < 0) {
-                        auto iter = hashmap_impl.find(key);
-                        if (iter == hashmap_impl.end()) return nullptr;
-                        block_addr = iter->second;
-                        cache.Update(key.Get(0), key.Get(1), key.Get(2),
-                                     block_addr);
-                    }
+                            int block_addr = cache.Check(key.Get(0), key.Get(1),
+                                                         key.Get(2));
+                            if (block_addr < 0) {
+                                auto iter = hashmap_impl.find(key);
+                                if (iter == hashmap_impl.end()) return nullptr;
+                                block_addr = iter->second;
+                                cache.Update(key.Get(0), key.Get(1), key.Get(2),
+                                             block_addr);
+                            }
 
-                    return voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
-                            x_vn, y_vn, z_vn, block_addr);
-                }
-            };
+                            return voxel_block_buffer_indexer
+                                    .GetDataPtr<voxel_t>(x_vn, y_vn, z_vn,
+                                                         block_addr);
+                        }
+                    };
 
-            auto GetVoxelAtT = [&] OPEN3D_DEVICE(
-                                       float x_o, float y_o, float z_o,
-                                       float x_d, float y_d, float z_d, float t,
-                                       BlockCache& cache) -> voxel_t* {
-                float x_g = x_o + t * x_d;
-                float y_g = y_o + t * y_d;
-                float z_g = z_o + t * z_d;
+                    auto GetVoxelAtT = [&] OPEN3D_DEVICE(
+                                               float x_o, float y_o, float z_o,
+                                               float x_d, float y_d, float z_d,
+                                               float t,
+                                               BlockCache& cache) -> voxel_t* {
+                        float x_g = x_o + t * x_d;
+                        float y_g = y_o + t * y_d;
+                        float z_g = z_o + t * z_d;
 
-                // Block coordinate and look up
-                int x_b = static_cast<int>(floorf(x_g / block_size));
-                int y_b = static_cast<int>(floorf(y_g / block_size));
-                int z_b = static_cast<int>(floorf(z_g / block_size));
+                        // Block coordinate and look up
+                        int x_b = static_cast<int>(floorf(x_g / block_size));
+                        int y_b = static_cast<int>(floorf(y_g / block_size));
+                        int z_b = static_cast<int>(floorf(z_g / block_size));
 
-                Key key;
-                key.Set(0, x_b);
-                key.Set(1, y_b);
-                key.Set(2, z_b);
+                        Key key;
+                        key.Set(0, x_b);
+                        key.Set(1, y_b);
+                        key.Set(2, z_b);
 
-                int block_addr = cache.Check(x_b, y_b, z_b);
-                if (block_addr < 0) {
-                    auto iter = hashmap_impl.find(key);
-                    if (iter == hashmap_impl.end()) return nullptr;
-                    block_addr = iter->second;
-                    cache.Update(x_b, y_b, z_b, block_addr);
-                }
-
-                // Voxel coordinate and look up
-                int x_v = int((x_g - x_b * block_size) / voxel_size);
-                int y_v = int((y_g - y_b * block_size) / voxel_size);
-                int z_v = int((z_g - z_b * block_size) / voxel_size);
-                return voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
-                        x_v, y_v, z_v, block_addr);
-            };
-
-            int64_t y = workload_idx / cols;
-            int64_t x = workload_idx % cols;
-
-            float *depth_ptr = nullptr, *vertex_ptr = nullptr,
-                  *normal_ptr = nullptr, *color_ptr = nullptr;
-            if (enable_depth) {
-                depth_ptr = depth_map_indexer.GetDataPtr<float>(x, y);
-                *depth_ptr = 0;
-            }
-            if (enable_vertex) {
-                vertex_ptr = vertex_map_indexer.GetDataPtr<float>(x, y);
-                vertex_ptr[0] = 0;
-                vertex_ptr[1] = 0;
-                vertex_ptr[2] = 0;
-            }
-            if (enable_color) {
-                color_ptr = color_map_indexer.GetDataPtr<float>(x, y);
-                color_ptr[0] = 0;
-                color_ptr[1] = 0;
-                color_ptr[2] = 0;
-            }
-            if (enable_normal) {
-                normal_ptr = normal_map_indexer.GetDataPtr<float>(x, y);
-                normal_ptr[0] = 0;
-                normal_ptr[1] = 0;
-                normal_ptr[2] = 0;
-            }
-
-            const float* range =
-                    range_map_indexer.GetDataPtr<float>(x / 8, y / 8);
-            float t = range[0];
-            const float t_max = range[1];
-            if (t >= t_max) return;
-
-            // Coordinates in camera and global
-            float x_c = 0, y_c = 0, z_c = 0;
-            float x_g = 0, y_g = 0, z_g = 0;
-            float x_o = 0, y_o = 0, z_o = 0;
-
-            // Iterative ray intersection check
-            float t_prev = t;
-
-            float tsdf_prev = -1.0f;
-            float tsdf = 1.0;
-            float w = 0.0;
-
-            // Camera origin
-            c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o, &z_o);
-
-            // Direction
-            c2w_transform_indexer.Unproject(static_cast<float>(x),
-                                            static_cast<float>(y), 1.0f, &x_c,
-                                            &y_c, &z_c);
-            c2w_transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g, &y_g,
-                                                 &z_g);
-            float x_d = (x_g - x_o);
-            float y_d = (y_g - y_o);
-            float z_d = (z_g - z_o);
-
-            BlockCache cache{0, 0, 0, -1};
-            bool surface_found = false;
-            while (t < t_max) {
-                voxel_t* voxel_ptr =
-                        GetVoxelAtT(x_o, y_o, z_o, x_d, y_d, z_d, t, cache);
-
-                if (!voxel_ptr) {
-                    t_prev = t;
-                    t += block_size;
-                } else {
-                    tsdf_prev = tsdf;
-                    tsdf = voxel_ptr->GetTSDF();
-                    w = voxel_ptr->GetWeight();
-                    if (tsdf_prev > 0 && w >= weight_threshold && tsdf <= 0) {
-                        surface_found = true;
-                        break;
-                    }
-                    t_prev = t;
-                    float delta = tsdf * sdf_trunc;
-                    t += delta < voxel_size ? voxel_size : delta;
-                }
-            }
-
-            if (surface_found) {
-                float t_intersect =
-                        (t * tsdf_prev - t_prev * tsdf) / (tsdf_prev - tsdf);
-                x_g = x_o + t_intersect * x_d;
-                y_g = y_o + t_intersect * y_d;
-                z_g = z_o + t_intersect * z_d;
-
-                // Trivial vertex assignment
-                if (enable_depth) {
-                    *depth_ptr = t_intersect * depth_scale;
-                }
-                if (enable_vertex) {
-                    w2c_transform_indexer.RigidTransform(
-                            x_g, y_g, z_g, vertex_ptr + 0, vertex_ptr + 1,
-                            vertex_ptr + 2);
-                }
-
-                // Trilinear interpolation
-                // TODO(wei): simplify the flow by splitting the
-                // functions given what is enabled
-                if (enable_color || enable_normal) {
-                    int x_b = static_cast<int>(floorf(x_g / block_size));
-                    int y_b = static_cast<int>(floorf(y_g / block_size));
-                    int z_b = static_cast<int>(floorf(z_g / block_size));
-                    float x_v = (x_g - float(x_b) * block_size) / voxel_size;
-                    float y_v = (y_g - float(y_b) * block_size) / voxel_size;
-                    float z_v = (z_g - float(z_b) * block_size) / voxel_size;
-
-                    Key key;
-                    key.Set(0, x_b);
-                    key.Set(1, y_b);
-                    key.Set(2, z_b);
-
-                    int block_addr = cache.Check(x_b, y_b, z_b);
-                    if (block_addr < 0) {
-                        auto iter = hashmap_impl.find(key);
-                        if (iter == hashmap_impl.end()) return;
-                        block_addr = iter->second;
-                        cache.Update(x_b, y_b, z_b, block_addr);
-                    }
-
-                    int x_v_floor = static_cast<int>(floorf(x_v));
-                    int y_v_floor = static_cast<int>(floorf(y_v));
-                    int z_v_floor = static_cast<int>(floorf(z_v));
-
-                    float ratio_x = x_v - float(x_v_floor);
-                    float ratio_y = y_v - float(y_v_floor);
-                    float ratio_z = z_v - float(z_v_floor);
-
-                    float sum_weight_color = 0.0;
-                    float sum_weight_normal = 0.0;
-                    for (int k = 0; k < 8; ++k) {
-                        int dx_v = (k & 1) > 0 ? 1 : 0;
-                        int dy_v = (k & 2) > 0 ? 1 : 0;
-                        int dz_v = (k & 4) > 0 ? 1 : 0;
-                        float ratio =
-                                (dx_v * (ratio_x) +
-                                 (1 - dx_v) * (1 - ratio_x)) *
-                                (dy_v * (ratio_y) +
-                                 (1 - dy_v) * (1 - ratio_y)) *
-                                (dz_v * (ratio_z) + (1 - dz_v) * (1 - ratio_z));
-
-                        voxel_t* voxel_ptr_k =
-                                GetVoxelAtP(x_b, y_b, z_b, x_v_floor + dx_v,
-                                            y_v_floor + dy_v, z_v_floor + dz_v,
-                                            block_addr, cache);
-
-                        if (enable_color && voxel_ptr_k &&
-                            voxel_ptr_k->GetWeight() > 0) {
-                            sum_weight_color += ratio;
-                            color_ptr[0] += ratio * voxel_ptr_k->GetR();
-                            color_ptr[1] += ratio * voxel_ptr_k->GetG();
-                            color_ptr[2] += ratio * voxel_ptr_k->GetB();
+                        int block_addr = cache.Check(x_b, y_b, z_b);
+                        if (block_addr < 0) {
+                            auto iter = hashmap_impl.find(key);
+                            if (iter == hashmap_impl.end()) return nullptr;
+                            block_addr = iter->second;
+                            cache.Update(x_b, y_b, z_b, block_addr);
                         }
 
-                        if (enable_normal) {
-                            for (int dim = 0; dim < 3; ++dim) {
-                                voxel_t* voxel_ptr_k_plus = GetVoxelAtP(
-                                        x_b, y_b, z_b,
-                                        x_v_floor + dx_v + (dim == 0),
-                                        y_v_floor + dy_v + (dim == 1),
-                                        z_v_floor + dz_v + (dim == 2),
-                                        block_addr, cache);
-                                voxel_t* voxel_ptr_k_minus = GetVoxelAtP(
-                                        x_b, y_b, z_b,
-                                        x_v_floor + dx_v - (dim == 0),
-                                        y_v_floor + dy_v - (dim == 1),
-                                        z_v_floor + dz_v - (dim == 2),
-                                        block_addr, cache);
+                        // Voxel coordinate and look up
+                        int x_v = int((x_g - x_b * block_size) / voxel_size);
+                        int y_v = int((y_g - y_b * block_size) / voxel_size);
+                        int z_v = int((z_g - z_b * block_size) / voxel_size);
+                        return voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
+                                x_v, y_v, z_v, block_addr);
+                    };
 
-                                bool valid = false;
-                                if (voxel_ptr_k_plus &&
-                                    voxel_ptr_k_plus->GetWeight() > 0) {
-                                    normal_ptr[dim] +=
-                                            ratio *
-                                            voxel_ptr_k_plus->GetTSDF() /
-                                            (2 * voxel_size);
-                                    valid = true;
-                                }
+                    int64_t y = workload_idx / cols;
+                    int64_t x = workload_idx % cols;
 
-                                if (voxel_ptr_k_minus &&
-                                    voxel_ptr_k_minus->GetWeight() > 0) {
-                                    normal_ptr[dim] -=
-                                            ratio *
-                                            voxel_ptr_k_minus->GetTSDF() /
-                                            (2 * voxel_size);
-                                    valid = true;
-                                }
-                                sum_weight_normal += valid ? ratio : 0;
+                    float *depth_ptr = nullptr, *vertex_ptr = nullptr,
+                          *normal_ptr = nullptr, *color_ptr = nullptr;
+                    if (enable_depth) {
+                        depth_ptr = depth_map_indexer.GetDataPtr<float>(x, y);
+                        *depth_ptr = 0;
+                    }
+                    if (enable_vertex) {
+                        vertex_ptr = vertex_map_indexer.GetDataPtr<float>(x, y);
+                        vertex_ptr[0] = 0;
+                        vertex_ptr[1] = 0;
+                        vertex_ptr[2] = 0;
+                    }
+                    if (enable_color) {
+                        color_ptr = color_map_indexer.GetDataPtr<float>(x, y);
+                        color_ptr[0] = 0;
+                        color_ptr[1] = 0;
+                        color_ptr[2] = 0;
+                    }
+                    if (enable_normal) {
+                        normal_ptr = normal_map_indexer.GetDataPtr<float>(x, y);
+                        normal_ptr[0] = 0;
+                        normal_ptr[1] = 0;
+                        normal_ptr[2] = 0;
+                    }
+
+                    const float* range =
+                            range_map_indexer.GetDataPtr<float>(x / 8, y / 8);
+                    float t = range[0];
+                    const float t_max = range[1];
+                    if (t >= t_max) return;
+
+                    // Coordinates in camera and global
+                    float x_c = 0, y_c = 0, z_c = 0;
+                    float x_g = 0, y_g = 0, z_g = 0;
+                    float x_o = 0, y_o = 0, z_o = 0;
+
+                    // Iterative ray intersection check
+                    float t_prev = t;
+
+                    float tsdf_prev = -1.0f;
+                    float tsdf = 1.0;
+                    float w = 0.0;
+
+                    // Camera origin
+                    c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o,
+                                                         &z_o);
+
+                    // Direction
+                    c2w_transform_indexer.Unproject(static_cast<float>(x),
+                                                    static_cast<float>(y), 1.0f,
+                                                    &x_c, &y_c, &z_c);
+                    c2w_transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g,
+                                                         &y_g, &z_g);
+                    float x_d = (x_g - x_o);
+                    float y_d = (y_g - y_o);
+                    float z_d = (z_g - z_o);
+
+                    BlockCache cache{0, 0, 0, -1};
+                    bool surface_found = false;
+                    while (t < t_max) {
+                        voxel_t* voxel_ptr = GetVoxelAtT(x_o, y_o, z_o, x_d,
+                                                         y_d, z_d, t, cache);
+
+                        if (!voxel_ptr) {
+                            t_prev = t;
+                            t += block_size;
+                        } else {
+                            tsdf_prev = tsdf;
+                            tsdf = voxel_ptr->GetTSDF();
+                            w = voxel_ptr->GetWeight();
+                            if (tsdf_prev > 0 && w >= weight_threshold &&
+                                tsdf <= 0) {
+                                surface_found = true;
+                                break;
                             }
-                        }  // if (enable_normal)
-                    }      // loop over 8 neighbors
+                            t_prev = t;
+                            float delta = tsdf * sdf_trunc;
+                            t += delta < voxel_size ? voxel_size : delta;
+                        }
+                    }
 
-                    if (enable_color && sum_weight_color > 0) {
-                        sum_weight_color *= 255.0;
-                        color_ptr[0] /= sum_weight_color;
-                        color_ptr[1] /= sum_weight_color;
-                        color_ptr[2] /= sum_weight_color;
-                    }
-                    if (enable_normal && sum_weight_normal > 0) {
-                        normal_ptr[0] /= sum_weight_normal;
-                        normal_ptr[1] /= sum_weight_normal;
-                        normal_ptr[2] /= sum_weight_normal;
-                        float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
-                                          normal_ptr[1] * normal_ptr[1] +
-                                          normal_ptr[2] * normal_ptr[2]);
-                        w2c_transform_indexer.Rotate(
-                                normal_ptr[0] / norm, normal_ptr[1] / norm,
-                                normal_ptr[2] / norm, normal_ptr + 0,
-                                normal_ptr + 1, normal_ptr + 2);
-                    }
-                }  // if (color or normal)
-            }      // if (tsdf < 0)
-        });
-    });
+                    if (surface_found) {
+                        float t_intersect = (t * tsdf_prev - t_prev * tsdf) /
+                                            (tsdf_prev - tsdf);
+                        x_g = x_o + t_intersect * x_d;
+                        y_g = y_o + t_intersect * y_d;
+                        z_g = z_o + t_intersect * z_d;
+
+                        // Trivial vertex assignment
+                        if (enable_depth) {
+                            *depth_ptr = t_intersect * depth_scale;
+                        }
+                        if (enable_vertex) {
+                            w2c_transform_indexer.RigidTransform(
+                                    x_g, y_g, z_g, vertex_ptr + 0,
+                                    vertex_ptr + 1, vertex_ptr + 2);
+                        }
+
+                        // Trilinear interpolation
+                        // TODO(wei): simplify the flow by splitting the
+                        // functions given what is enabled
+                        if (enable_color || enable_normal) {
+                            int x_b =
+                                    static_cast<int>(floorf(x_g / block_size));
+                            int y_b =
+                                    static_cast<int>(floorf(y_g / block_size));
+                            int z_b =
+                                    static_cast<int>(floorf(z_g / block_size));
+                            float x_v = (x_g - float(x_b) * block_size) /
+                                        voxel_size;
+                            float y_v = (y_g - float(y_b) * block_size) /
+                                        voxel_size;
+                            float z_v = (z_g - float(z_b) * block_size) /
+                                        voxel_size;
+
+                            Key key;
+                            key.Set(0, x_b);
+                            key.Set(1, y_b);
+                            key.Set(2, z_b);
+
+                            int block_addr = cache.Check(x_b, y_b, z_b);
+                            if (block_addr < 0) {
+                                auto iter = hashmap_impl.find(key);
+                                if (iter == hashmap_impl.end()) return;
+                                block_addr = iter->second;
+                                cache.Update(x_b, y_b, z_b, block_addr);
+                            }
+
+                            int x_v_floor = static_cast<int>(floorf(x_v));
+                            int y_v_floor = static_cast<int>(floorf(y_v));
+                            int z_v_floor = static_cast<int>(floorf(z_v));
+
+                            float ratio_x = x_v - float(x_v_floor);
+                            float ratio_y = y_v - float(y_v_floor);
+                            float ratio_z = z_v - float(z_v_floor);
+
+                            float sum_weight_color = 0.0;
+                            float sum_weight_normal = 0.0;
+                            for (int k = 0; k < 8; ++k) {
+                                int dx_v = (k & 1) > 0 ? 1 : 0;
+                                int dy_v = (k & 2) > 0 ? 1 : 0;
+                                int dz_v = (k & 4) > 0 ? 1 : 0;
+                                float ratio = (dx_v * (ratio_x) +
+                                               (1 - dx_v) * (1 - ratio_x)) *
+                                              (dy_v * (ratio_y) +
+                                               (1 - dy_v) * (1 - ratio_y)) *
+                                              (dz_v * (ratio_z) +
+                                               (1 - dz_v) * (1 - ratio_z));
+
+                                voxel_t* voxel_ptr_k = GetVoxelAtP(
+                                        x_b, y_b, z_b, x_v_floor + dx_v,
+                                        y_v_floor + dy_v, z_v_floor + dz_v,
+                                        block_addr, cache);
+
+                                if (enable_color && voxel_ptr_k &&
+                                    voxel_ptr_k->GetWeight() > 0) {
+                                    sum_weight_color += ratio;
+                                    color_ptr[0] += ratio * voxel_ptr_k->GetR();
+                                    color_ptr[1] += ratio * voxel_ptr_k->GetG();
+                                    color_ptr[2] += ratio * voxel_ptr_k->GetB();
+                                }
+
+                                if (enable_normal) {
+                                    for (int dim = 0; dim < 3; ++dim) {
+                                        voxel_t* voxel_ptr_k_plus = GetVoxelAtP(
+                                                x_b, y_b, z_b,
+                                                x_v_floor + dx_v + (dim == 0),
+                                                y_v_floor + dy_v + (dim == 1),
+                                                z_v_floor + dz_v + (dim == 2),
+                                                block_addr, cache);
+                                        voxel_t* voxel_ptr_k_minus =
+                                                GetVoxelAtP(x_b, y_b, z_b,
+                                                            x_v_floor + dx_v -
+                                                                    (dim == 0),
+                                                            y_v_floor + dy_v -
+                                                                    (dim == 1),
+                                                            z_v_floor + dz_v -
+                                                                    (dim == 2),
+                                                            block_addr, cache);
+
+                                        bool valid = false;
+                                        if (voxel_ptr_k_plus &&
+                                            voxel_ptr_k_plus->GetWeight() > 0) {
+                                            normal_ptr[dim] +=
+                                                    ratio *
+                                                    voxel_ptr_k_plus
+                                                            ->GetTSDF() /
+                                                    (2 * voxel_size);
+                                            valid = true;
+                                        }
+
+                                        if (voxel_ptr_k_minus &&
+                                            voxel_ptr_k_minus->GetWeight() >
+                                                    0) {
+                                            normal_ptr[dim] -=
+                                                    ratio *
+                                                    voxel_ptr_k_minus
+                                                            ->GetTSDF() /
+                                                    (2 * voxel_size);
+                                            valid = true;
+                                        }
+                                        sum_weight_normal += valid ? ratio : 0;
+                                    }
+                                }  // if (enable_normal)
+                            }      // loop over 8 neighbors
+
+                            if (enable_color && sum_weight_color > 0) {
+                                sum_weight_color *= 255.0;
+                                color_ptr[0] /= sum_weight_color;
+                                color_ptr[1] /= sum_weight_color;
+                                color_ptr[2] /= sum_weight_color;
+                            }
+                            if (enable_normal && sum_weight_normal > 0) {
+                                normal_ptr[0] /= sum_weight_normal;
+                                normal_ptr[1] /= sum_weight_normal;
+                                normal_ptr[2] /= sum_weight_normal;
+                                float norm =
+                                        sqrt(normal_ptr[0] * normal_ptr[0] +
+                                             normal_ptr[1] * normal_ptr[1] +
+                                             normal_ptr[2] * normal_ptr[2]);
+                                w2c_transform_indexer.Rotate(
+                                        normal_ptr[0] / norm,
+                                        normal_ptr[1] / norm,
+                                        normal_ptr[2] / norm, normal_ptr + 0,
+                                        normal_ptr + 1, normal_ptr + 2);
+                            }
+                        }  // if (color or normal)
+                    }      // if (tsdf < 0)
+                });
+            });
 
 #if defined(__CUDACC__)
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());

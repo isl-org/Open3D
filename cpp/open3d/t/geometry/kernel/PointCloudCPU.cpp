@@ -67,7 +67,7 @@ void ProjectCPU(
         color_indexer = NDArrayIndexer(image_colors.value().get(), 2);
     }
 
-    core::kernel::cpu_launcher::LaunchParallel(n, [&](int64_t workload_idx) {
+    core::kernel::cpu_launcher::ParallelFor(n, [&](int64_t workload_idx) {
         float x = points_ptr[3 * workload_idx + 0];
         float y = points_ptr[3 * workload_idx + 1];
         float z = points_ptr[3 * workload_idx + 2];

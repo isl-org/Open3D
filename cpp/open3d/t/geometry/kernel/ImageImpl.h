@@ -66,7 +66,7 @@ void ClipTransformCPU
 #endif
 
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
-        launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
             int64_t y = workload_idx / cols;
             int64_t x = workload_idx % cols;
 
@@ -116,7 +116,7 @@ void PyrDownDepthCPU
     using std::min;
 #endif
 
-    launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         int y = workload_idx / cols_down;
         int x = workload_idx % cols_down;
 
@@ -182,7 +182,7 @@ void CreateVertexMapCPU
     using std::isnan;
 #endif
 
-    launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         auto is_invalid = [invalid_fill] OPEN3D_DEVICE(float v) {
             if (isinf(invalid_fill)) return isinf(v);
             if (isnan(invalid_fill)) return isnan(v);
@@ -224,7 +224,7 @@ void CreateNormalMapCPU
     namespace launcher = core::kernel::cpu_launcher;
 #endif
 
-    launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         int64_t y = workload_idx / cols;
         int64_t x = workload_idx % cols;
 
@@ -298,7 +298,7 @@ void ColorizeDepthCPU
 
     float inv_interval = 255.0f / (max_value - min_value);
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
-        launcher::LaunchParallel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
             int64_t y = workload_idx / cols;
             int64_t x = workload_idx % cols;
 

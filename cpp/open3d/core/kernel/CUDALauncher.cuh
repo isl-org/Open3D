@@ -66,7 +66,7 @@ __global__ void ElementWiseKernel(int64_t n, func_t f) {
 
 /// Run a function in parallel with CUDA.
 ///
-/// This is typically used together with cpu_launcher::LaunchParallel() to share
+/// This is typically used together with cpu_launcher::ParallelFor() to share
 /// the same code between CPU and CUDA. For example:
 ///
 /// ```cpp
@@ -76,7 +76,7 @@ __global__ void ElementWiseKernel(int64_t n, func_t f) {
 ///     namespace launcher = core::kernel::cpu_launcher;
 /// #endif
 ///
-/// launcher::LaunchParallel(num_workloads, [=] OPEN3D_DEVICE(int64_t idx) {
+/// launcher::ParallelFor(num_workloads, [=] OPEN3D_DEVICE(int64_t idx) {
 ///     process_workload(idx);
 /// });
 /// ```
@@ -91,7 +91,7 @@ __global__ void ElementWiseKernel(int64_t n, func_t f) {
 /// instead of all to prevent accidental race conditions. If you want the kernel
 /// to be used on both CPU and CUDA, capture the variables by value.
 template <typename func_t>
-void LaunchParallel(int64_t n, const func_t& func) {
+void ParallelFor(int64_t n, const func_t& func) {
     if (n == 0) {
         return;
     }
@@ -100,7 +100,7 @@ void LaunchParallel(int64_t n, const func_t& func) {
 
     ElementWiseKernel<default_block_size, default_thread_size>
             <<<grid_size, default_block_size, 0>>>(n, func);
-    OPEN3D_GET_LAST_CUDA_ERROR("LaunchParallel failed.");
+    OPEN3D_GET_LAST_CUDA_ERROR("ParallelFor failed.");
 }
 
 template <typename func_t>
