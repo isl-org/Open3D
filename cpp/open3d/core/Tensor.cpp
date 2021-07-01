@@ -748,7 +748,7 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
         }
         if (index_tensors[0].IsNonZero()) {
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_tensor.GetDtype(), [&]() {
-                Fill(src_tensor.Item<scalar_t>());
+                AsRvalue() = src_tensor.Item<scalar_t>();
             });
         }
         return;
