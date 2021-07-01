@@ -6,6 +6,7 @@ target_sources(utility PRIVATE
     FileSystem.cpp
     Helper.cpp
     IJsonConvertible.cpp
+    Logging.cpp
     Timer.cpp
 )
 

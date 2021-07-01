@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -126,7 +126,7 @@ static core::Tensor EigenVector3xVectorToTensor(
     core::Indexer indexer({tensor_cpu}, tensor_cpu,
                           core::DtypePolicy::ALL_SAME);
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        core::kernel::CPULauncher::LaunchIndexFillKernel(
+        kernel::cpu_launcher::LaunchIndexFillKernel(
                 indexer, [&](void *ptr, int64_t workload_idx) {
                     // Fills the flattened tensor tensor_cpu[:] with dtype
                     // casting. tensor_cpu[:][i] corresponds to the (i/3)-th

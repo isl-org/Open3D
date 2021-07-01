@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -178,7 +178,7 @@ CreateVertexAndImageVisibility(
                 continue;
             }
             visibility_image_to_vertex[camera_id].push_back(vertex_id);
-#pragma omp critical
+#pragma omp critical(CreateVertexAndImageVisibility)
             { visibility_vertex_to_image[vertex_id].push_back(camera_id); }
         }
     }
@@ -283,7 +283,7 @@ void SetGeometryColorAverage(
                 sum += 1.0;
             }
         }
-#pragma omp critical
+#pragma omp critical(SetGeometryColorAverage)
         {
             if (sum > 0.0) {
                 mesh.vertex_colors_[i] /= sum;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,161 +26,168 @@
 
 #pragma once
 
-#include <cassert>
 #include <vector>
 
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/ParallelUtil.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
+namespace cpu_launcher {
 
-class CPULauncher {
-public:
-    /// Fills tensor[:][i] with element_kernel(i).
-    ///
-    /// \param indexer The input tensor and output tensor to the indexer are the
-    /// same (as a hack), since the tensor are filled in-place.
-    /// \param element_kernel A function that takes pointer location and
-    /// workload_idx, computes the value to fill, and fills the value at the
-    /// pointer location.
-    template <typename func_t>
-    static void LaunchIndexFillKernel(const Indexer& indexer,
-                                      func_t element_kernel) {
+/// \brief Run a function in parallel on CPU.
+///
+/// This is typically used together with cuda_launcher::ParallelFor() to
+/// share the same code between CPU and CUDA. For example:
+///
+/// ```cpp
+/// #if defined(__CUDACC__)
+///     namespace launcher = core::kernel::cuda_launcher;
+/// #else
+///     namespace launcher = core::kernel::cpu_launcher;
+/// #endif
+///
+/// launcher::ParallelFor(num_workloads, [=] OPEN3D_DEVICE(int64_t idx) {
+///     process_workload(idx);
+/// });
+/// ```
+///
+/// \param n The number of workloads.
+/// \param func The function to be executed in parallel. The function should
+/// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
+///
+/// \note This is optimized for uniform work items, i.e. where each call to \p
+/// func takes the same time.
+/// \note If you use a lambda function, capture only the required variables
+/// instead of all to prevent accidental race conditions. If you want the kernel
+/// to be used on both CPU and CUDA, capture the variables by value.
+template <typename func_t>
+void ParallelFor(int64_t n, const func_t& func) {
 #pragma omp parallel for schedule(static)
-        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-             ++workload_idx) {
-            element_kernel(indexer.GetInputPtr(0, workload_idx), workload_idx);
-        }
+    for (int64_t i = 0; i < n; ++i) {
+        func(i);
     }
+}
 
-    template <typename func_t>
-    static void LaunchUnaryEWKernel(const Indexer& indexer,
-                                    func_t element_kernel) {
+/// Fills tensor[:][i] with func(i).
+///
+/// \param indexer The input tensor and output tensor to the indexer are the
+/// same (as a hack), since the tensor are filled in-place.
+/// \param func A function that takes pointer location and
+/// workload index i, computes the value to fill, and fills the value at the
+/// pointer location.
+template <typename func_t>
+void LaunchIndexFillKernel(const Indexer& indexer, const func_t& func) {
 #pragma omp parallel for schedule(static)
-        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-             ++workload_idx) {
-            element_kernel(indexer.GetInputPtr(0, workload_idx),
-                           indexer.GetOutputPtr(workload_idx));
-        }
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(0, i), i);
     }
+}
 
-    template <typename func_t>
-    static void LaunchBinaryEWKernel(const Indexer& indexer,
-                                     func_t element_kernel) {
+template <typename func_t>
+void LaunchUnaryEWKernel(const Indexer& indexer, const func_t& func) {
 #pragma omp parallel for schedule(static)
-        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-             ++workload_idx) {
-            element_kernel(indexer.GetInputPtr(0, workload_idx),
-                           indexer.GetInputPtr(1, workload_idx),
-                           indexer.GetOutputPtr(workload_idx));
-        }
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(0, i), indexer.GetOutputPtr(i));
     }
+}
 
-    template <typename func_t>
-    static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
-                                            func_t element_kernel) {
+template <typename func_t>
+void LaunchBinaryEWKernel(const Indexer& indexer, const func_t& func) {
 #pragma omp parallel for schedule(static)
-        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-             ++workload_idx) {
-            element_kernel(indexer.GetInputPtr(workload_idx),
-                           indexer.GetOutputPtr(workload_idx));
-        }
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(0, i), indexer.GetInputPtr(1, i),
+             indexer.GetOutputPtr(i));
     }
+}
 
-    template <typename scalar_t, typename func_t>
-    static void LaunchReductionKernelSerial(const Indexer& indexer,
-                                            func_t element_kernel) {
-        for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
-             ++workload_idx) {
-            element_kernel(indexer.GetInputPtr(0, workload_idx),
-                           indexer.GetOutputPtr(workload_idx));
-        }
-    }
-
-    /// Create num_threads workers to compute partial reductions and then reduce
-    /// to the final results. This only applies to reduction op with one output.
-    template <typename scalar_t, typename func_t>
-    static void LaunchReductionKernelTwoPass(const Indexer& indexer,
-                                             func_t element_kernel,
-                                             scalar_t identity) {
-        if (indexer.NumOutputElements() > 1) {
-            utility::LogError(
-                    "Internal error: two-pass reduction only works for "
-                    "single-output reduction ops.");
-        }
-        int64_t num_workloads = indexer.NumWorkloads();
-        int64_t num_threads = GetMaxThreads();
-        int64_t workload_per_thread =
-                (num_workloads + num_threads - 1) / num_threads;
-        std::vector<scalar_t> thread_results(num_threads, identity);
-
+template <typename func_t>
+void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
+                                 const func_t& func) {
 #pragma omp parallel for schedule(static)
-        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
-            int64_t start = thread_idx * workload_per_thread;
-            int64_t end = std::min(start + workload_per_thread, num_workloads);
-            for (int64_t workload_idx = start; workload_idx < end;
-                 ++workload_idx) {
-                element_kernel(indexer.GetInputPtr(0, workload_idx),
-                               &thread_results[thread_idx]);
-            }
-        }
-        void* output_ptr = indexer.GetOutputPtr(0);
-        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
-            element_kernel(&thread_results[thread_idx], output_ptr);
-        }
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(i), indexer.GetOutputPtr(i));
     }
+}
 
-    template <typename scalar_t, typename func_t>
-    static void LaunchReductionParallelDim(const Indexer& indexer,
-                                           func_t element_kernel) {
-        // Prefers outer dimension >= num_threads.
-        const int64_t* indexer_shape = indexer.GetMasterShape();
-        const int64_t num_dims = indexer.NumDims();
-        int64_t num_threads = GetMaxThreads();
+template <typename scalar_t, typename func_t>
+void LaunchReductionKernelSerial(const Indexer& indexer, const func_t& func) {
+    for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
+        func(indexer.GetInputPtr(0, i), indexer.GetOutputPtr(i));
+    }
+}
 
-        // Init best_dim as the outer-most non-reduction dim.
-        int64_t best_dim = num_dims - 1;
-        while (best_dim >= 0 && indexer.IsReductionDim(best_dim)) {
-            best_dim--;
-        }
-        for (int64_t dim = best_dim; dim >= 0 && !indexer.IsReductionDim(dim);
-             --dim) {
-            if (indexer_shape[dim] >= num_threads) {
-                best_dim = dim;
-                break;
-            } else if (indexer_shape[dim] > indexer_shape[best_dim]) {
-                best_dim = dim;
-            }
-        }
-        if (best_dim == -1) {
-            utility::LogError(
-                    "Internal error: all dims are reduction dims, use "
-                    "LaunchReductionKernelTwoPass instead.");
-        }
+/// Create num_threads workers to compute partial reductions and then reduce
+/// to the final results. This only applies to reduction op with one output.
+template <typename scalar_t, typename func_t>
+void LaunchReductionKernelTwoPass(const Indexer& indexer,
+                                  const func_t& func,
+                                  scalar_t identity) {
+    if (indexer.NumOutputElements() > 1) {
+        utility::LogError(
+                "Internal error: two-pass reduction only works for "
+                "single-output reduction ops.");
+    }
+    int64_t num_workloads = indexer.NumWorkloads();
+    int64_t num_threads = GetMaxThreads();
+    int64_t workload_per_thread =
+            (num_workloads + num_threads - 1) / num_threads;
+    std::vector<scalar_t> thread_results(num_threads, identity);
 
 #pragma omp parallel for schedule(static)
-        for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
-            Indexer sub_indexer(indexer);
-            sub_indexer.ShrinkDim(best_dim, i, 1);
-            LaunchReductionKernelSerial<scalar_t>(sub_indexer, element_kernel);
+    for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
+        int64_t start = thread_idx * workload_per_thread;
+        int64_t end = std::min(start + workload_per_thread, num_workloads);
+        for (int64_t i = start; i < end; ++i) {
+            func(indexer.GetInputPtr(0, i), &thread_results[thread_idx]);
         }
     }
+    void* output_ptr = indexer.GetOutputPtr(0);
+    for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
+        func(&thread_results[thread_idx], output_ptr);
+    }
+}
 
-    /// General kernels with non-conventional indexers
-    template <typename func_t>
-    static void LaunchGeneralKernel(int64_t n, func_t element_kernel) {
+template <typename scalar_t, typename func_t>
+void LaunchReductionParallelDim(const Indexer& indexer, const func_t& func) {
+    // Prefers outer dimension >= num_threads.
+    const int64_t* indexer_shape = indexer.GetMasterShape();
+    const int64_t num_dims = indexer.NumDims();
+    int64_t num_threads = GetMaxThreads();
+
+    // Init best_dim as the outer-most non-reduction dim.
+    int64_t best_dim = num_dims - 1;
+    while (best_dim >= 0 && indexer.IsReductionDim(best_dim)) {
+        best_dim--;
+    }
+    for (int64_t dim = best_dim; dim >= 0 && !indexer.IsReductionDim(dim);
+         --dim) {
+        if (indexer_shape[dim] >= num_threads) {
+            best_dim = dim;
+            break;
+        } else if (indexer_shape[dim] > indexer_shape[best_dim]) {
+            best_dim = dim;
+        }
+    }
+    if (best_dim == -1) {
+        utility::LogError(
+                "Internal error: all dims are reduction dims, use "
+                "LaunchReductionKernelTwoPass instead.");
+    }
+
 #pragma omp parallel for schedule(static)
-        for (int64_t workload_idx = 0; workload_idx < n; ++workload_idx) {
-            element_kernel(workload_idx);
-        }
+    for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
+        Indexer sub_indexer(indexer);
+        sub_indexer.ShrinkDim(best_dim, i, 1);
+        LaunchReductionKernelSerial<scalar_t>(sub_indexer, func);
     }
-};
+}
 
+}  // namespace cpu_launcher
 }  // namespace kernel
 }  // namespace core
 }  // namespace open3d

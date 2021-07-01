@@ -5,12 +5,6 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 find_package(Pytorch REQUIRED)
-find_package(nanoflann REQUIRED)
-find_package(parallelstl REQUIRED)
-if(BUILD_CUDA_MODULE)
-    find_package(CUB REQUIRED)
-    find_package(CUTLASS REQUIRED)
-endif()
 
 
 add_library(open3d_torch_ops SHARED)
@@ -22,6 +16,15 @@ target_sources(open3d_torch_ops PRIVATE
     continuous_conv/ContinuousConvTransposeBackpropFilterOpKernel.cpp
     continuous_conv/ContinuousConvTransposeOpKernel.cpp
     continuous_conv/ContinuousConvTransposeOps.cpp
+)
+
+target_sources(open3d_torch_ops PRIVATE
+    sparse_conv/SparseConvBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvOpKernel.cpp
+    sparse_conv/SparseConvOps.cpp
+    sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvTransposeOpKernel.cpp
+    sparse_conv/SparseConvTransposeOps.cpp
 )
 
 target_sources(open3d_torch_ops PRIVATE
@@ -66,6 +69,13 @@ if (BUILD_CUDA_MODULE)
     )
 
     target_sources(open3d_torch_ops PRIVATE
+        sparse_conv/SparseConvBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvOpKernel.cu
+        sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvTransposeOpKernel.cu
+    )
+
+    target_sources(open3d_torch_ops PRIVATE
         misc/BuildSpatialHashTableOpKernel.cu
         misc/FixedRadiusSearchOpKernel.cu
         misc/InvertNeighborsListOpKernel.cu
@@ -82,6 +92,7 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(open3d_torch_ops PRIVATE
         ../impl/continuous_conv/ContinuousConvCUDAKernels.cu
+        ../impl/sparse_conv/SparseConvCUDAKernels.cu
     )
 
     target_sources(open3d_torch_ops PRIVATE
@@ -107,17 +118,8 @@ set_target_properties(open3d_torch_ops PROPERTIES
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
-if (BUILD_CUDA_MODULE)
-    target_include_directories(open3d_torch_ops SYSTEM PRIVATE
-        ${CUB_INCLUDE_DIR}
-        ${CUTLASS_INCLUDE_DIR}
-    )
-endif()
-
 target_include_directories(open3d_torch_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
-    ${nanoflann_INCLUDE_DIR}
-    ${parallelstl_INCLUDE_DIR}
     ${TORCH_INCLUDE_DIRS}
 )
 
@@ -126,11 +128,20 @@ target_link_libraries(open3d_torch_ops PRIVATE
     torch_cpu
     ${EIGEN3_TARGET}
     ${FMT_TARGET}
+    ${NANOFLANN_TARGET}
+    ${PARALLELSTL_TARGET}
     Open3D::Open3D
 )
 
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_torch_ops PRIVATE
+        ${CUTLASS_TARGET}
         ${TORCH_LIBRARIES}
     )
+
+    if (CUB_TARGET)
+        target_link_libraries(open3d_torch_ops PRIVATE
+            ${CUB_TARGET}
+        )
+    endif()
 endif()

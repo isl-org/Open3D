@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include "open3d/core/CUDAUtils.h"
 
 #include "open3d/Macro.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 #ifdef BUILD_CUDA_MODULE
 #include "open3d/core/CUDAState.cuh"

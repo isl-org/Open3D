@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/core/kernel/IndexGetSet.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -58,13 +58,13 @@ void IndexGetCPU(const Tensor& src,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        CPULauncher::LaunchAdvancedIndexerKernel(
+        cpu_launcher::LaunchAdvancedIndexerKernel(
                 ai, [&](const void* src, void* dst) {
                     CPUCopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CPULauncher::LaunchAdvancedIndexerKernel(
+            cpu_launcher::LaunchAdvancedIndexerKernel(
                     ai, CPUCopyElementKernel<scalar_t>);
         });
     }
@@ -80,13 +80,13 @@ void IndexSetCPU(const Tensor& src,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        CPULauncher::LaunchAdvancedIndexerKernel(
+        cpu_launcher::LaunchAdvancedIndexerKernel(
                 ai, [&](const void* src, void* dst) {
                     CPUCopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CPULauncher::LaunchAdvancedIndexerKernel(
+            cpu_launcher::LaunchAdvancedIndexerKernel(
                     ai, CPUCopyElementKernel<scalar_t>);
         });
     }

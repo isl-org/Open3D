@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxel.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/Timer.h"
 
 namespace open3d {
@@ -91,15 +91,15 @@ void IntegrateCPU
     int64_t n = indices.GetLength() * resolution3;
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
 
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                        int64_t workload_idx) {
+                launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+                                                 int64_t workload_idx) {
                     // Natural index (0, N) -> (block_idx, voxel_idx)
                     int block_idx = indices_ptr[workload_idx / resolution3];
                     int voxel_idx = workload_idx % resolution3;
@@ -215,10 +215,11 @@ void ExtractSurfacePointsCPU
 #endif
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
+
     if (valid_size < 0) {
         utility::LogWarning(
                 "No estimated max point cloud size provided, using a 2-pass "
@@ -226,61 +227,55 @@ void ExtractSurfacePointsCPU
         // This pass determines valid number of points.
         DISPATCH_BYTESIZE_TO_VOXEL(
                 voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                    launcher.LaunchGeneralKernel(
-                            n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                                auto GetVoxelAt = [&] OPEN3D_DEVICE(
-                                                          int xo, int yo,
-                                                          int zo,
-                                                          int curr_block_idx)
-                                        -> voxel_t* {
-                                    return DeviceGetVoxelAt<voxel_t>(
-                                            xo, yo, zo, curr_block_idx,
-                                            static_cast<int>(resolution),
-                                            nb_block_masks_indexer,
-                                            nb_block_indices_indexer,
-                                            voxel_block_buffer_indexer);
-                                };
+                    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+                                                     int64_t workload_idx) {
+                        auto GetVoxelAt =
+                                [&] OPEN3D_DEVICE(
+                                        int xo, int yo, int zo,
+                                        int curr_block_idx) -> voxel_t* {
+                            return DeviceGetVoxelAt<voxel_t>(
+                                    xo, yo, zo, curr_block_idx,
+                                    static_cast<int>(resolution),
+                                    nb_block_masks_indexer,
+                                    nb_block_indices_indexer,
+                                    voxel_block_buffer_indexer);
+                        };
 
-                                // Natural index (0, N) -> (block_idx,
-                                // voxel_idx)
-                                int64_t workload_block_idx =
-                                        workload_idx / resolution3;
-                                int64_t block_idx =
-                                        indices_ptr[workload_block_idx];
-                                int64_t voxel_idx = workload_idx % resolution3;
+                        // Natural index (0, N) -> (block_idx,
+                        // voxel_idx)
+                        int64_t workload_block_idx = workload_idx / resolution3;
+                        int64_t block_idx = indices_ptr[workload_block_idx];
+                        int64_t voxel_idx = workload_idx % resolution3;
 
-                                // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-                                int64_t xv, yv, zv;
-                                voxel_indexer.WorkloadToCoord(voxel_idx, &xv,
-                                                              &yv, &zv);
+                        // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                        int64_t xv, yv, zv;
+                        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-                                voxel_t* voxel_ptr =
-                                        voxel_block_buffer_indexer
-                                                .GetDataPtr<voxel_t>(xv, yv, zv,
-                                                                     block_idx);
-                                float tsdf_o = voxel_ptr->GetTSDF();
-                                float weight_o = voxel_ptr->GetWeight();
-                                if (weight_o <= weight_threshold) return;
+                        voxel_t* voxel_ptr =
+                                voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
+                                        xv, yv, zv, block_idx);
+                        float tsdf_o = voxel_ptr->GetTSDF();
+                        float weight_o = voxel_ptr->GetWeight();
+                        if (weight_o <= weight_threshold) return;
 
-                                // Enumerate x-y-z directions
-                                for (int i = 0; i < 3; ++i) {
-                                    voxel_t* ptr = GetVoxelAt(
-                                            static_cast<int>(xv) + (i == 0),
-                                            static_cast<int>(yv) + (i == 1),
-                                            static_cast<int>(zv) + (i == 2),
-                                            static_cast<int>(
-                                                    workload_block_idx));
-                                    if (ptr == nullptr) continue;
+                        // Enumerate x-y-z directions
+                        for (int i = 0; i < 3; ++i) {
+                            voxel_t* ptr = GetVoxelAt(
+                                    static_cast<int>(xv) + (i == 0),
+                                    static_cast<int>(yv) + (i == 1),
+                                    static_cast<int>(zv) + (i == 2),
+                                    static_cast<int>(workload_block_idx));
+                            if (ptr == nullptr) continue;
 
-                                    float tsdf_i = ptr->GetTSDF();
-                                    float weight_i = ptr->GetWeight();
+                            float tsdf_i = ptr->GetTSDF();
+                            float weight_i = ptr->GetWeight();
 
-                                    if (weight_i > weight_threshold &&
-                                        tsdf_i * tsdf_o < 0) {
-                                        OPEN3D_ATOMIC_ADD(count_ptr, 1);
-                                    }
-                                }
-                            });
+                            if (weight_i > weight_threshold &&
+                                tsdf_i * tsdf_o < 0) {
+                                OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                            }
+                        }
+                    });
                 });
 
 #if defined(__CUDACC__)
@@ -328,8 +323,8 @@ void ExtractSurfacePointsCPU
                     color_indexer = NDArrayIndexer(colors.value().get(), 1);
                 }
 
-                launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                        int64_t workload_idx) {
+                launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
+                                                 int64_t workload_idx) {
                     auto GetVoxelAt = [&] OPEN3D_DEVICE(
                                               int xo, int yo, int zo,
                                               int curr_block_idx) -> voxel_t* {
@@ -541,15 +536,15 @@ void ExtractSurfaceMeshCPU
     int64_t n = n_blocks * resolution3;
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
     int64_t voxel_bytesize = voxel_block_buffer_indexer.ElementByteSize();
     // Pass 0: analyze mesh structure, set up one-on-one correspondences
     // from edges to vertices.
     DISPATCH_BYTESIZE_TO_VOXEL(voxel_bytesize, [&]() {
-        launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t widx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
             auto GetVoxelAt = [&] OPEN3D_DEVICE(
                                       int xo, int yo, int zo,
                                       int curr_block_idx) -> voxel_t* {
@@ -633,7 +628,7 @@ void ExtractSurfaceMeshCPU
 #endif
 
     if (vertex_count < 0) {
-        launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t widx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
             // Natural index (0, N) -> (block_idx, voxel_idx)
             int64_t workload_block_idx = widx / resolution3;
             int64_t voxel_idx = widx % resolution3;
@@ -705,7 +700,7 @@ void ExtractSurfaceMeshCPU
             color_indexer = NDArrayIndexer(colors.value().get(), 1);
         }
 
-        launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t widx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
             auto GetVoxelAt = [&] OPEN3D_DEVICE(
                                       int xo, int yo, int zo,
                                       int curr_block_idx) -> voxel_t* {
@@ -776,6 +771,8 @@ void ExtractSurfaceMeshCPU
                                    static_cast<int>(yv) + (e == 1),
                                    static_cast<int>(zv) + (e == 2),
                                    static_cast<int>(workload_block_idx));
+                OPEN3D_ASSERT(voxel_ptr_e != nullptr &&
+                              "Internal error: GetVoxelAt returns nullptr.");
                 float tsdf_e = voxel_ptr_e->GetTSDF();
                 float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 
@@ -837,7 +834,7 @@ void ExtractSurfaceMeshCPU
 #else
     (*count_ptr) = 0;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t widx) {
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
         // Natural index (0, N) -> (block_idx, voxel_idx)
         int64_t workload_block_idx = widx / resolution3;
         int64_t voxel_idx = widx % resolution3;
@@ -941,16 +938,17 @@ void EstimateRangeCPU
     std::atomic<int> count_atomic(0);
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
+
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
     using std::max;
     using std::min;
 #endif
 
     // Pass 0: iterate over blocks, fill-in an rendering fragment array
-    launcher.LaunchGeneralKernel(
+    launcher::ParallelFor(
             block_keys.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 int* key = block_keys_indexer.GetDataPtr<int>(workload_idx);
 
@@ -1038,7 +1036,7 @@ void EstimateRangeCPU
 #endif
 
     // Pass 0.5: Fill in range map to prepare for atomic min/max
-    launcher.LaunchGeneralKernel(
+    launcher::ParallelFor(
             h_down * w_down, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 int v = workload_idx / w_down;
                 int u = workload_idx % w_down;
@@ -1048,7 +1046,7 @@ void EstimateRangeCPU
             });
 
     // Pass 1: iterate over rendering fragment array, fill-in range
-    launcher.LaunchGeneralKernel(
+    launcher::ParallelFor(
             frag_count * fragment_size * fragment_size,
             [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 int frag_idx = workload_idx / (fragment_size * fragment_size);
@@ -1074,7 +1072,7 @@ void EstimateRangeCPU
                 atomicMinf(&(range_ptr[0]), z_min);
                 atomicMaxf(&(range_ptr[1]), z_max);
 #else
-#pragma omp critical
+#pragma omp critical(EstimateRangeCPU)
                 {
                     range_ptr[0] = min(z_min, range_ptr[0]);
                     range_ptr[1] = max(z_max, range_ptr[1]);
@@ -1185,16 +1183,18 @@ void RayCastCPU
     int64_t cols = w;
 
     float block_size = voxel_size * block_resolution;
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+
+#if defined(__CUDACC__)
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
     using std::max;
 #endif
 
-    DISPATCH_BYTESIZE_TO_VOXEL(voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-        launcher.LaunchGeneralKernel(
-                rows * cols, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+    DISPATCH_BYTESIZE_TO_VOXEL(
+            voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+                launcher::ParallelFor(rows * cols, [=] OPEN3D_DEVICE(
+                                                           int64_t workload_idx) {
                     auto GetVoxelAtP = [&] OPEN3D_DEVICE(
                                                int x_b, int y_b, int z_b,
                                                int x_v, int y_v, int z_v,
@@ -1501,7 +1501,7 @@ void RayCastCPU
                         }  // if (color or normal)
                     }      // if (tsdf < 0)
                 });
-    });
+            });
 
 #if defined(__CUDACC__)
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());

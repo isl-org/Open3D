@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import open3d as o3d
 import random
 

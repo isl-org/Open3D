@@ -9,7 +9,9 @@
 
 if(NOT Tensorflow_FOUND)
     # Searching for tensorflow requires the python executable
-    find_package(PythonExecutable REQUIRED)
+    if (NOT Python3_EXECUTABLE)
+        message(FATAL_ERROR "Python 3 not found in top level file")
+    endif()
 
     message(STATUS "Getting TensorFlow properties ...")
 
@@ -22,8 +24,7 @@ if(NOT Tensorflow_FOUND)
         "print(tf.__cxx11_abi_flag__, end=';')"
     )
     execute_process(
-        COMMAND
-            ${PYTHON_EXECUTABLE} "-c" "${Tensorflow_FETCH_PROPERTIES}"
+        COMMAND ${Python3_EXECUTABLE} "-c" "${Tensorflow_FETCH_PROPERTIES}"
         OUTPUT_VARIABLE Tensorflow_PROPERTIES
     )
 
@@ -33,6 +34,7 @@ if(NOT Tensorflow_FOUND)
     list(GET Tensorflow_PROPERTIES 3 Tensorflow_DEFINITIONS)
     list(GET Tensorflow_PROPERTIES 4 Tensorflow_CXX11_ABI)
 
+    unset(Tensorflow_FETCH_PROPERTIES)
     unset(Tensorflow_PROPERTIES)
 
     # Decode definitions into a proper list

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -60,24 +60,23 @@ void ClipTransformCPU
     int64_t n = rows * cols;
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
 
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
-        launcher.LaunchGeneralKernel(
-                n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    int64_t y = workload_idx / cols;
-                    int64_t x = workload_idx % cols;
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+            int64_t y = workload_idx / cols;
+            int64_t x = workload_idx % cols;
 
-                    float in = static_cast<float>(
-                            *src_indexer.GetDataPtr<scalar_t>(x, y));
-                    float out = in / scale;
-                    out = out <= min_value ? clip_fill : out;
-                    out = out >= max_value ? clip_fill : out;
-                    *dst_indexer.GetDataPtr<float>(x, y) = out;
-                });
+            float in =
+                    static_cast<float>(*src_indexer.GetDataPtr<scalar_t>(x, y));
+            float out = in / scale;
+            out = out <= min_value ? clip_fill : out;
+            out = out >= max_value ? clip_fill : out;
+            *dst_indexer.GetDataPtr<float>(x, y) = out;
+        });
     });
 }
 
@@ -109,15 +108,15 @@ void PyrDownDepthCPU
     const float gweights[3] = {0.375f, 0.25f, 0.0625f};
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
     using std::abs;
     using std::max;
     using std::min;
 #endif
 
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         int y = workload_idx / cols_down;
         int x = workload_idx % cols_down;
 
@@ -152,7 +151,8 @@ void PyrDownDepthCPU
             }
         }
 
-        *dst_indexer.GetDataPtr<float>(x, y) = v_sum / w_sum;
+        *dst_indexer.GetDataPtr<float>(x, y) =
+                w_sum == 0 ? invalid_fill : v_sum / w_sum;
     });
 }
 
@@ -175,13 +175,14 @@ void CreateVertexMapCPU
     int64_t n = rows * cols;
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
     using std::isinf;
     using std::isnan;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         auto is_invalid = [invalid_fill] OPEN3D_DEVICE(float v) {
             if (isinf(invalid_fill)) return isinf(v);
             if (isnan(invalid_fill)) return isnan(v);
@@ -218,12 +219,12 @@ void CreateNormalMapCPU
     int64_t n = rows * cols;
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
 
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         int64_t y = workload_idx / cols;
         int64_t x = workload_idx % cols;
 
@@ -290,15 +291,14 @@ void ColorizeDepthCPU
     int64_t n = rows * cols;
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
 
     float inv_interval = 255.0f / (max_value - min_value);
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
-        launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                int64_t workload_idx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
             int64_t y = workload_idx / cols;
             int64_t x = workload_idx % cols;
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -189,8 +189,10 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
         case geometry::Geometry::GeometryType::PointCloud: {
             auto cloud = std::static_pointer_cast<const geometry::PointCloud>(
                     geometry_ptr_);
-            if (cloud->points_.size() !=
-                GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
+            const std::vector<Eigen::Vector3d> *geometry_points =
+                    GetGeometryPoints(ui_points_geometry_ptr_);
+            if (geometry_points &&
+                cloud->points_.size() != geometry_points->size()) {
                 ClearPickedPoints();
             }
             ui_points_geometry_ptr_->points_ = cloud->points_;
@@ -200,8 +202,10 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
         case geometry::Geometry::GeometryType::LineSet: {
             auto lines = std::static_pointer_cast<const geometry::LineSet>(
                     geometry_ptr_);
-            if (lines->points_.size() !=
-                GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
+            const std::vector<Eigen::Vector3d> *geometry_points =
+                    GetGeometryPoints(ui_points_geometry_ptr_);
+            if (geometry_points &&
+                lines->points_.size() != geometry_points->size()) {
                 ClearPickedPoints();
             }
             ui_points_geometry_ptr_->points_ = lines->points_;
@@ -213,8 +217,10 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
         case geometry::Geometry::GeometryType::TetraMesh: {
             auto mesh = std::static_pointer_cast<const geometry::MeshBase>(
                     geometry_ptr_);
-            if (mesh->vertices_.size() !=
-                GetGeometryPoints(ui_points_geometry_ptr_)->size()) {
+            const std::vector<Eigen::Vector3d> *geometry_points =
+                    GetGeometryPoints(ui_points_geometry_ptr_);
+            if (geometry_points &&
+                mesh->vertices_.size() != geometry_points->size()) {
                 ClearPickedPoints();
             }
             ui_points_geometry_ptr_->points_ = mesh->vertices_;

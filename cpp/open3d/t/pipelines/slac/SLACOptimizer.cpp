@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,6 +58,9 @@ static std::vector<std::string> PreprocessPointClouds(
         if (utility::filesystem::FileExists(fname_processed)) continue;
 
         auto pcd = io::CreatePointCloudFromFile(fname);
+        if (pcd == nullptr) {
+            utility::LogError("Internal error: pcd is nullptr.");
+        }
 
         // Pre-processing input pointcloud.
         if (params.voxel_size_ > 0) {
