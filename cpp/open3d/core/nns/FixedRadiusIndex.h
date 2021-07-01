@@ -61,6 +61,9 @@ public:
     }
 
     bool SetTensorData(const Tensor& dataset_points, double radius) override;
+    bool SetTensorData(const Tensor& dataset_points,
+                       const Tensor& points_row_splits,
+                       double radius);
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override {
@@ -81,6 +84,12 @@ public:
             double radius,
             bool sort = true) const override;
 
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor& query_points,
+            const Tensor& queries_row_splits,
+            double radius,
+            bool sort = true) const;
+
     std::pair<Tensor, Tensor> SearchHybrid(const Tensor& query_points,
                                            double radius,
                                            int max_knn) const override;
@@ -89,8 +98,9 @@ public:
     const int64_t max_hash_tabls_size = 33554432;
 
 protected:
-    std::vector<int64_t> points_row_splits_;
-    std::vector<int64_t> hash_table_splits_;
+    int64_t batch_size_;
+    Tensor points_row_splits_;
+    Tensor hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
 };
