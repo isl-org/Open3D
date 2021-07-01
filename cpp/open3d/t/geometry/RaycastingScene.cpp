@@ -58,7 +58,7 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const open3d::core::Tensor& tensor,
                                            const std::string& tensor_name,
                                            int64_t last_dim,
                                            const open3d::core::Device& device,
-                                           size_t min_ndim = 2) {
+                                           int64_t min_ndim = 2) {
     tensor.AssertDevice(device);
     if (tensor.NumDims() < min_ndim) {
         open3d::utility::LogError(
