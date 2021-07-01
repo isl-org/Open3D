@@ -67,50 +67,43 @@ void ProjectCPU(
         color_indexer = NDArrayIndexer(image_colors.value().get(), 2);
     }
 
-    core::kernel::CPULauncher::LaunchGeneralKernel(
-            n, [&](int64_t workload_idx) {
-                float x = points_ptr[3 * workload_idx + 0];
-                float y = points_ptr[3 * workload_idx + 1];
-                float z = points_ptr[3 * workload_idx + 2];
+    core::kernel::cpu_launcher::ParallelFor(n, [&](int64_t workload_idx) {
+        float x = points_ptr[3 * workload_idx + 0];
+        float y = points_ptr[3 * workload_idx + 1];
+        float z = points_ptr[3 * workload_idx + 2];
 
-                // coordinate in camera (in voxel -> in meter)
-                float xc, yc, zc, u, v;
-                transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
+        // coordinate in camera (in voxel -> in meter)
+        float xc, yc, zc, u, v;
+        transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
 
-                // coordinate in image (in pixel)
-                transform_indexer.Project(xc, yc, zc, &u, &v);
-                if (!depth_indexer.InBoundary(u, v) || zc <= 0 ||
-                    zc > depth_max) {
-                    return;
+        // coordinate in image (in pixel)
+        transform_indexer.Project(xc, yc, zc, &u, &v);
+        if (!depth_indexer.InBoundary(u, v) || zc <= 0 || zc > depth_max) {
+            return;
+        }
+
+        float* depth_ptr = depth_indexer.GetDataPtr<float>(
+                static_cast<int64_t>(u), static_cast<int64_t>(v));
+        float d = zc * depth_scale;
+#pragma omp critical(ProjectCPU)
+        {
+            if (*depth_ptr == 0 || *depth_ptr >= d) {
+                *depth_ptr = d;
+
+                if (has_colors) {
+                    uint8_t* color_ptr = color_indexer.GetDataPtr<uint8_t>(
+                            static_cast<int64_t>(u), static_cast<int64_t>(v));
+
+                    color_ptr[0] = static_cast<uint8_t>(
+                            point_colors_ptr[3 * workload_idx + 0] * 255.0);
+                    color_ptr[1] = static_cast<uint8_t>(
+                            point_colors_ptr[3 * workload_idx + 1] * 255.0);
+                    color_ptr[2] = static_cast<uint8_t>(
+                            point_colors_ptr[3 * workload_idx + 2] * 255.0);
                 }
-
-                float* depth_ptr = depth_indexer.GetDataPtr<float>(
-                        static_cast<int64_t>(u), static_cast<int64_t>(v));
-                float d = zc * depth_scale;
-#pragma omp critical
-                {
-                    if (*depth_ptr == 0 || *depth_ptr >= d) {
-                        *depth_ptr = d;
-
-                        if (has_colors) {
-                            uint8_t* color_ptr =
-                                    color_indexer.GetDataPtr<uint8_t>(
-                                            static_cast<int64_t>(u),
-                                            static_cast<int64_t>(v));
-
-                            color_ptr[0] = static_cast<uint8_t>(
-                                    point_colors_ptr[3 * workload_idx + 0] *
-                                    255.0);
-                            color_ptr[1] = static_cast<uint8_t>(
-                                    point_colors_ptr[3 * workload_idx + 1] *
-                                    255.0);
-                            color_ptr[2] = static_cast<uint8_t>(
-                                    point_colors_ptr[3 * workload_idx + 2] *
-                                    255.0);
-                        }
-                    }
-                }
-            });
+            }
+        }
+    });
 }
 }  // namespace pointcloud
 }  // namespace kernel

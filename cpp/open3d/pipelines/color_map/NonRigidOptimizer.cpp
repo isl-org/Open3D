@@ -104,7 +104,7 @@ static std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
             }
             r2_sum_private += r * r;
         }
-#pragma omp critical
+#pragma omp critical(ComputeJTJandJTrNonRigid)
         {
             JTJ += JTJ_private;
             JTr += JTr_private;
@@ -362,7 +362,7 @@ geometry::TriangleMesh RunNonRigidOptimizer(
             }
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
 
-#pragma omp critical
+#pragma omp critical(RunNonRigidOptimizer)
             {
                 residual += r2;
                 residual_reg += rr_reg;
