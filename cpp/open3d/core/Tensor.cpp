@@ -705,11 +705,12 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
     // Handle 0-D tensor.
     // NOTE: Numpy supports only boolean indexing for 0-D tensor.
     if (shape_.size() == 0) {
-        if (index_tensors.size() != 1 &&
-            index_tensors[0].GetDtype() != core::Dtype::Bool) {
+        if (index_tensors.size() != 1 ||
+            index_tensors[0].GetDtype() != core::Dtype::Bool ||
+            index_tensors[0].GetShape() != SizeVector({})) {
             utility::LogError(
-                    "Index vector should have only one element boolean tensor "
-                    "for 0-D tensor.");
+                    "Index vector should have a 0-D boolean tensor "
+                    "for tensor of dimension 0.");
             return *this;
         }
         if (index_tensors[0].IsNonZero()) {
@@ -732,11 +733,12 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
     // Handle 0-D tensor.
     // NOTE: Numpy supports only boolean indexing for 0-D tensor.
     if (shape_.size() == 0) {
-        if (index_tensors.size() != 1 &&
-            index_tensors[0].GetDtype() != core::Dtype::Bool) {
+        if (index_tensors.size() != 1 ||
+            index_tensors[0].GetDtype() != core::Dtype::Bool ||
+            index_tensors[0].GetShape() != SizeVector({})) {
             utility::LogError(
-                    "Index vector should have only one element boolean tensor "
-                    "for 0-D tensor.");
+                    "Index vector should have a 0-D boolean tensor "
+                    "for tensor of dimension 0.");
             return;
         }
         if (src_tensor.NumElements() != 1) {
