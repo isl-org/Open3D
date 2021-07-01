@@ -1,0 +1,403 @@
+1.8.0    02/15/2018
+    - API change: change to the interfaces of cub::ShuffleIndex, cub::ShuffleUp, and 
+      cub::ShuffleDown to better compute the PTX shfl control constant for 
+      logical warps smaller than 32 threads 
+    - Bug fixes: 
+        - Issue #112: Bug in WarpScan's broadcast of warp-wide aggregate for 
+          logical warps < 32 threads 
+        
+          		  
+//-----------------------------------------------------------------------------
+
+1.7.5    02/08/2018
+    - Added radix-sorting support for __half keys
+    - Updated sorting policies for improved 8b-key performance 
+    - Bug fixes: 
+        - Syntax tweaks to mollify Clang
+        - Issue #127: DeviceRunLengthEncode::Encode returns wrong results 
+        - Issue #128: 7-bit sorting passes fail for sm61 w/ large-values
+        
+          		  
+//-----------------------------------------------------------------------------
+
+1.7.4    09/20/2017
+    - Bug fixes: 
+        - Issue #114: Can't pair non-trivially-constructible values in radix sort
+        - Issue #115: WarpReduce segmented reduction broken in CUDA 9 for logical warp sizes < 32 
+          		  
+//-----------------------------------------------------------------------------
+
+1.7.3    08/28/2017
+    - Bug fixes: 
+        - Issue #110: DeviceHistogram null-pointer exception bug for iterator inputs
+          		  
+//-----------------------------------------------------------------------------
+
+1.7.2    08/26/2017
+    - Bug fixes: 
+        - Issue #104: Device-wide reduction is now "run-to-run" deterministic for 
+          pseudo-associative reduction operators (like floating point addition)
+          		  
+//-----------------------------------------------------------------------------
+
+1.7.1    08/18/2017
+    - Updated Volta radix sorting tuning policies 
+    - Bug fixes: 
+        - Issue #104 (uint64_t warp-reduce broken for cub 1.7.0 on cuda 8 and older)
+        - Issue #103 (Can't mix Thrust 9.0 and CUB)
+        - Issue #102 (CUB pulls in windows.h which defines min/max macros that conflict with std::min/std::max)
+        - Issue #99 (Radix sorting crashes NVCC on Windows 10 for SM52)
+        - Issue #98 (cuda-memcheck: --tool initcheck failed with lineOfSight)
+        - Issue #94 (Git clone size)
+        - Issue #93 (accept iterators for segment offsets)
+        - Issue #87 (CUB uses anonymous unions which is not valid C++)
+        - Issue #44 (Check for C++ 11 should be changed that Visual Studio 2013 is also recognized as C++ 11 capable)
+          		  
+//-----------------------------------------------------------------------------
+
+1.7.0    06/07/2017
+    - Compatible with CUDA9 and SM7.x (Volta) independent thread scheduling 
+    - API change: remove cub::WarpAll() and cub::WarpAny().  These functions served to 
+      emulate __all and __any functionality for SM1.x devices, which did not have those 
+      operations.  However, the SM1.x devices are now deprecated in CUDA, and the 
+      interfaces of the these two functions are now lacking the lane-mask needed 
+      for collectives to run on Volta SMs having independent thread scheduling. 
+    - Bug fixes: 
+        - Issue #86 Incorrect results with ReduceByKey
+          		  
+//-----------------------------------------------------------------------------
+
+1.6.4    12/06/2016
+    - Updated sm_5x, sm_6x tuning policies for radix sorting (3.5B and 3.4B 
+      32b keys/s on TitanX and GTX 1080, respectively)
+    - Bug fixes: 
+        - Restore fence work-around for scan (reduce-by-key, etc.) hangs 
+          in CUDA 8.5
+        - Issue 65: DeviceSegmentedRadixSort should allow inputs to have 
+          pointer-to-const type 
+        - Mollify Clang device-side warnings
+        - Remove out-dated VC project files
+          		  
+//-----------------------------------------------------------------------------
+
+1.6.3    11/20/2016
+    - API change: BlockLoad and BlockStore are now templated by the local
+      data type, instead of the Iterator type.  This allows for output iterators
+      having \p void as their \p value_type (e.g., discard iterators).
+    - Updated GP100 tuning policies for radix sorting (6.2B 32b keys/s)
+    - Bug fixes: 
+        - Issue #74: Warpreduce executes reduction operator for out-of-bounds items
+        - Issue #72 (cub:InequalityWrapper::operator() should be non-const)
+        - Issue #71 (KeyVairPair won't work if Key has non-trivial ctor)
+		- Issue #70 1.5.3 breaks BlockScan API.  Retroactively reversioned
+		  from v1.5.3 -> v1.6 to appropriately indicate API change.
+		- Issue #69 cub::BlockStore::Store doesn't compile if OutputIteratorT::value_type != T  
+        - Issue #68 (cub::TilePrefixCallbackOp::WarpReduce doesn't permit ptx 
+          arch specialization)
+		- Improved support for Win32 platforms (warnings, alignment, etc)
+		  
+//-----------------------------------------------------------------------------
+
+1.6.2 (was 1.5.5)    10/25/2016
+    - Updated Pascal tuning policies for radix sorting
+    - Bug fixes: 
+        - Fix for arm64 compilation of caching allocator
+
+//-----------------------------------------------------------------------------
+
+1.6.1 (was 1.5.4)    10/14/2016
+    - Bug fixes: 
+        - Fix for radix sorting bug introduced by scan refactorization
+
+//-----------------------------------------------------------------------------
+
+1.6.0 (was 1.5.3)    10/11/2016
+    - API change: Device/block/warp-wide exclusive scans have been revised to now 
+      accept an "initial value" (instead of an "identity value") for seeding the 
+      computation with an arbitrary prefix.  
+    - API change: Device-wide reductions and scans can now have input sequence types that are 
+      different from output sequence types (as long as they are coercible)
+      value") for seeding the computation with an arbitrary prefix
+    - Reduce repository size (move doxygen binary to doc repository)
+    - Minor reductions in block-scan instruction count
+    - Bug fixes: 
+        - Issue #55: warning in cub/device/dispatch/dispatch_reduce_by_key.cuh 
+        - Issue #59: cub::DeviceScan::ExclusiveSum can't prefix sum of float into double
+        - Issue #58: Infinite loop in cub::CachingDeviceAllocator::NearestPowerOf
+        - Issue #47: Caching allocator needs to clean up cuda error upon successful retry 
+        - Issue #46: Very high amount of needed memory from the cub::DeviceHistogram::HistogramEven routine
+        - Issue #45: Caching Device Allocator fails with debug output enabled
+        - Fix for generic-type reduce-by-key warpscan (sm3.x and newer)
+
+//-----------------------------------------------------------------------------
+
+1.5.2    03/21/2016
+	- Improved medium-size scan performance for sm5x (Maxwell)
+    - Refactored caching allocator for device memory
+   		- Spends less time locked
+		- Failure to allocate a block from the runtime will retry once after
+		  freeing cached allocations
+		- Now respects max-bin (issue where blocks in excess of max-bin were
+		  still being retained in free cache)
+		- Uses C++11 mutex when available
+    - Bug fixes: 
+        - Fix for generic-type reduce-by-key warpscan (sm3.x and newer)
+          
+//-----------------------------------------------------------------------------
+
+1.5.1    12/28/2015
+    - Bug fixes: 
+        - Fix for incorrect DeviceRadixSort output for some small problems on 
+          Maxwell SM52 architectures
+        - Fix for macro redefinition warnings when compiling with Thrust sort
+          
+//-----------------------------------------------------------------------------
+
+1.5.0    12/14/2015
+    - New Features:
+        - Added new segmented device-wide operations for device-wide sort and 
+          reduction primitives.
+    - Bug fixes: 
+        - Fix for Git Issue 36 (Compilation error with GCC 4.8.4 nvcc 7.0.27) and
+          Forums thread (ThreadLoad generates compiler errors when loading from 
+          pointer-to-const)
+        - Fix for Git Issue 29 (DeviceRadixSort::SortKeys<bool> yields compiler 
+          errors)
+        - Fix for Git Issue 26 (CUDA error: misaligned address after 
+          cub::DeviceRadixSort::SortKeys())
+        - Fix for incorrect/crash on 0-length problems, e.g., Git Issue 25 (Floating 
+          point exception (core dumped) during cub::DeviceRadixSort::SortKeys)
+        - Fix for CUDA 7.5 issues on SM 5.2 with SHFL-based warp-scan and warp-reduction 
+          on non-primitive data types (e.g., user-defined structs)
+        - Fix for small radix sorting problems where 0 temporary bytes were 
+          required and users code was invoking malloc(0) on some systems where
+          that returns NULL.  (Impl assumed was asking for size again and was not 
+          running the sort.)
+          
+//-----------------------------------------------------------------------------
+
+1.4.1    04/13/2015
+    - Bug fixes: 
+        - Fixes for CUDA 7.0 issues with SHFL-based warp-scan and warp-reduction 
+          on non-primitive data types (e.g., user-defined structs)
+        - Fixes for minor CUDA 7.0 performance regressions in cub::DeviceScan,
+          DeviceReduceByKey
+        - Fixes to allow cub::DeviceRadixSort and cub::BlockRadixSort on bool types
+        - Remove requirement for callers to define the CUB_CDP macro 
+          when invoking CUB device-wide rountines using CUDA dynamic parallelism
+        - Fix for headers not being included in the proper order (or missing includes)
+          for some block-wide functions
+          
+//-----------------------------------------------------------------------------
+
+1.4.0    03/18/2015
+    - New Features:
+		- Support and performance tuning for new Maxwell GPU architectures
+        - Updated cub::DeviceHistogram implementation that provides the same 
+          "histogram-even" and "histogram-range" functionality as IPP/NPP.
+          Provides extremely fast and, perhaps more importantly, very 
+          uniform performance response across diverse real-world datasets, 
+          including pathological (homogeneous) sample distributions (resilience)
+        - New cub::DeviceSpmv methods for multiplying sparse matrices by 
+          dense vectors, load-balanced using a merge-based parallel decomposition.
+        - New cub::DeviceRadixSort sorting entry-points that always return
+          the sorted output into the specified buffer (as opposed to the 
+          cub::DoubleBuffer in which it could end up in either buffer)
+        - New cub::DeviceRunLengthEncode::NonTrivialRuns for finding the starting 
+          offsets and lengths of all non-trivial runs (i.e., length > 1) of keys in 
+          a given sequence.  (Useful for top-down partitioning algorithms like 
+          MSD sorting of very-large keys.)
+          
+//-----------------------------------------------------------------------------
+
+1.3.2    07/28/2014
+    - Bug fixes: 
+        - Fix for cub::DeviceReduce where reductions of small problems 
+          (small enough to only dispatch a single thread block) would run in 
+          the default stream (stream zero) regardless of whether an alternate
+          stream was specified.  
+          
+//-----------------------------------------------------------------------------
+
+1.3.1    05/23/2014
+    - Bug fixes: 
+        - Workaround for a benign WAW race warning reported by cuda-memcheck
+          in BlockScan specialized for BLOCK_SCAN_WARP_SCANS algorithm.
+        - Fix for bug in DeviceRadixSort where the algorithm may sort more 
+          key bits than the caller specified (up to the nearest radix digit).
+        - Fix for ~3% DeviceRadixSort performance regression on Kepler and 
+          Fermi that was introduced in v1.3.0.  
+
+//-----------------------------------------------------------------------------
+
+1.3.0    05/12/2014
+    - New features:
+        - CUB's collective (block-wide, warp-wide) primitives underwent a minor 
+          interface refactoring:
+            - To provide the appropriate support for multidimensional thread blocks,
+              The interfaces for collective classes are now template-parameterized 
+              by X, Y, and Z block dimensions (with BLOCK_DIM_Y and BLOCK_DIM_Z being 
+              optional, and BLOCK_DIM_X replacing BLOCK_THREADS).  Furthermore, the 
+              constructors that accept remapped linear thread-identifiers have been 
+              removed: all primitives now assume a row-major thread-ranking for 
+              multidimensional thread blocks.  
+            - To allow the host program (compiled by the host-pass) to 
+              accurately determine the device-specific storage requirements for 
+              a given collective (compiled for each device-pass), the interfaces 
+              for collective classes are now (optionally) template-parameterized 
+              by the desired PTX compute capability. This is useful when 
+              aliasing collective storage to shared memory that has been 
+              allocated dynamically by the host at the kernel call site.   
+            - Most CUB programs having typical 1D usage should not require any 
+              changes to accomodate these updates.
+        - Added new "combination" WarpScan methods for efficiently computing 
+          both inclusive and exclusive prefix scans (and sums).
+    - Bug fixes: 
+        - Fixed bug in cub::WarpScan (which affected cub::BlockScan and 
+          cub::DeviceScan) where incorrect results (e.g., NAN) would often be 
+          returned when parameterized for floating-point types (fp32, fp64).
+        - Workaround-fix for ptxas error when compiling with with -G flag on Linux 
+          (for debug instrumentation) 
+        - Misc. workaround-fixes for certain scan scenarios (using custom 
+          scan operators) where code compiled for SM1x is run on newer 
+          GPUs of higher compute-capability: the compiler could not tell
+          which memory space was being used collective operations and was 
+          mistakenly using global ops instead of shared ops. 
+
+//-----------------------------------------------------------------------------
+
+1.2.3    04/01/2014
+    - Bug fixes: 
+        - Fixed access violation bug in DeviceReduce::ReduceByKey for non-primitive value types
+        - Fixed code-snippet bug in ArgIndexInputIteratorT documentation 
+
+//-----------------------------------------------------------------------------
+
+1.2.2    03/03/2014
+    - New features:
+        - Added MS VC++ project solutions for device-wide and block-wide examples 
+    - Performance:
+        - Added a third algorithmic variant of cub::BlockReduce for improved performance
+          when using commutative operators (e.g., numeric addition)
+    - Bug fixes: 
+        - Fixed bug where inclusion of Thrust headers in a certain order prevented CUB device-wide primitives from working properly
+
+//-----------------------------------------------------------------------------
+
+1.2.0    02/25/2014
+    - New features:
+        - Added device-wide reduce-by-key (DeviceReduce::ReduceByKey, DeviceReduce::RunLengthEncode) 
+    - Performance
+        - Improved DeviceScan, DeviceSelect, DevicePartition performance
+    - Documentation and testing:
+        - Compatible with CUDA 6.0
+        - Added performance-portability plots for many device-wide primitives to doc 
+        - Update doc and tests to reflect iterator (in)compatibilities with CUDA 5.0 (and older) and Thrust 1.6 (and older).
+    - Bug fixes 
+        - Revised the operation of temporary tile status bookkeeping for DeviceScan (and similar) to be safe for current code run on future platforms (now uses proper fences)  
+        - Fixed DeviceScan bug where Win32 alignment disagreements between host and device regarding user-defined data types would corrupt tile status
+        - Fixed BlockScan bug where certain exclusive scans on custom data types for the BLOCK_SCAN_WARP_SCANS variant would return incorrect results for the first thread in the block
+        - Added workaround for TexRefInputIteratorTto work with CUDA 6.0
+    
+//-----------------------------------------------------------------------------
+
+1.1.1    12/11/2013
+    - New features:
+        - Added TexObjInputIteratorT, TexRefInputIteratorT, CacheModifiedInputIteratorT, and CacheModifiedOutputIterator types for loading & storing arbitrary types through the cache hierarchy.  Compatible with Thrust API. 
+        - Added descending sorting to DeviceRadixSort and BlockRadixSort
+        - Added min, max, arg-min, and arg-max to DeviceReduce
+        - Added DeviceSelect (select-unique, select-if, and select-flagged)
+        - Added DevicePartition (partition-if, partition-flagged)
+        - Added generic cub::ShuffleUp(), cub::ShuffleDown(), and cub::ShuffleIndex() for warp-wide communication of arbitrary data types (SM3x+)
+        - Added cub::MaxSmOccupancy() for accurately determining SM occupancy for any given kernel function pointer
+    - Performance
+        - Improved DeviceScan and DeviceRadixSort performance for older architectures (SM10-SM30)
+    - Interface changes:
+        - Refactored block-wide I/O (BlockLoad and BlockStore), removing cache-modifiers from their interfaces.  The CacheModifiedInputIteratorTand CacheModifiedOutputIterator should now be used with BlockLoad and BlockStore to effect that behavior.
+        - Rename device-wide "stream_synchronous" param to "debug_synchronous" to avoid confusion about usage
+    - Documentation and testing:
+        - Added simple examples of device-wide methods
+        - Improved doxygen documentation and example snippets
+        - Improved test coverege to include up to 21,000 kernel variants and 851,000 unit tests (per architecture, per platform)
+    - Bug fixes 
+        - Fixed misc DeviceScan, BlockScan, DeviceReduce, and BlockReduce bugs when operating on non-primitive types for older architectures SM10-SM13
+        - Fixed DeviceScan / WarpReduction bug: SHFL-based segmented reduction producting incorrect results for multi-word types (size > 4B) on Linux 
+        - Fixed BlockScan bug: For warpscan-based scans, not all threads in the first warp were entering the prefix callback functor
+        - Fixed DeviceRadixSort bug: race condition with key-value pairs for pre-SM35 architectures
+        - Fixed DeviceRadixSort bug: incorrect bitfield-extract behavior with long keys on 64bit Linux
+        - Fixed BlockDiscontinuity bug: complation error in for types other than int32/uint32
+        - CDP (device-callable) versions of device-wide methods now report the same temporary storage allocation size requirement as their host-callable counterparts
+     
+
+//-----------------------------------------------------------------------------
+
+1.0.2    08/23/2013
+    - Corrections to code snippet examples for BlockLoad, BlockStore, and BlockDiscontinuity
+    - Cleaned up unnecessary/missing header includes.  You can now safely #inlude a specific .cuh (instead of cub.cuh)
+    - Bug/compilation fixes for BlockHistogram 
+
+//-----------------------------------------------------------------------------
+
+1.0.1    08/08/2013
+    - New collective interface idiom (specialize::construct::invoke).
+    - Added best-in-class DeviceRadixSort.  Implements short-circuiting for homogenous digit passes.
+    - Added best-in-class DeviceScan.  Implements single-pass "adaptive-lookback" strategy.
+    - Significantly improved documentation (with example code snippets) 
+    - More extensive regression test suit for aggressively testing collective variants
+    - Allow non-trially-constructed types (previously unions had prevented aliasing temporary storage of those types)
+    - Improved support for Kepler SHFL (collective ops now use SHFL for types larger than 32b)
+    - Better code generation for 64-bit addressing within BlockLoad/BlockStore
+    - DeviceHistogram now supports histograms of arbitrary bins
+    - Misc. fixes
+      - Workarounds for SM10 codegen issues in uncommonly-used WarpScan/Reduce specializations
+      - Updates to accommodate CUDA 5.5 dynamic parallelism   
+
+
+//-----------------------------------------------------------------------------
+
+0.9.4    05/07/2013
+
+    - Fixed compilation errors for SM10-SM13
+    - Fixed compilation errors for some WarpScan entrypoints on SM30+
+    - Added block-wide histogram (BlockHistogram256)
+    - Added device-wide histogram (DeviceHistogram256)
+    - Added new BlockScan algorithm variant BLOCK_SCAN_RAKING_MEMOIZE, which 
+      trades more register consumption for less shared memory I/O)
+    - Updates to BlockRadixRank to use BlockScan (which improves performance
+      on Kepler due to SHFL instruction)
+    - Allow types other than C++ primitives to be used in WarpScan::*Sum methods 
+      if they only have operator + overloaded.  (Previously they also required 
+      to support assignment from int(0).) 
+    - Update BlockReduce's BLOCK_REDUCE_WARP_REDUCTIONS algorithm to work even 
+      when block size is not an even multiple of warp size
+    - Added work management utility descriptors (GridQueue, GridEvenShare)
+    - Refactoring of DeviceAllocator interface and CachingDeviceAllocator 
+      implementation 
+    - Misc. documentation updates and corrections. 
+     
+//-----------------------------------------------------------------------------
+
+0.9.2    04/04/2013
+
+    - Added WarpReduce.  WarpReduce uses the SHFL instruction when applicable. 
+      BlockReduce now uses this WarpReduce instead of implementing its own.
+    - Misc. fixes for 64-bit Linux compilation warnings and errors.
+    - Misc. documentation updates and corrections. 
+
+//-----------------------------------------------------------------------------
+
+0.9.1    03/09/2013
+
+    - Fix for ambiguity in BlockScan::Reduce() between generic reduction and 
+      summation.  Summation entrypoints are now called ::Sum(), similar to the 
+      convention in BlockScan.
+    - Small edits to mainpage documentation and download tracking
+    
+//-----------------------------------------------------------------------------
+
+0.9.0    03/07/2013    
+
+    - Intial "preview" release.    CUB is the first durable, high-performance library 
+      of cooperative block-level, warp-level, and thread-level primitives for CUDA 
+      kernel programming.  More primitives and examples coming soon!
+    

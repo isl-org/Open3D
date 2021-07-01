@@ -1,0 +1,25 @@
+// -*- C++ -*-
+//===-- algorithm ---------------------------------------------------------===//
+//
+// Copyright (C) 2019 Intel Corporation
+//
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+// This file incorporates work covered by the following copyright and permission
+// notice:
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef __PSTL_experimental_algorithm
+#define __PSTL_experimental_algorithm
+
+#define __cpp_lib_experimental_parallel_for_loop 201711
+
+#include "internal/reduction.h"
+#include "internal/induction.h"
+#include "internal/for_loop.h"
+
+#endif /* __PSTL_experimental_algorithm */

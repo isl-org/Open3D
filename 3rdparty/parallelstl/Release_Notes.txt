@@ -1,0 +1,123 @@
+------------------------------------------------------------------------
+                           Parallel STL
+------------------------------------------------------------------------
+
+System Requirements
+-------------------
+
+Parallel STL is available as a part of Intel(R) Parallel Studio XE 2019
+    and Intel(R) System Studio 2019.
+
+    Parallel STL distributions are validated and officially supported
+for the hardware, software, operating systems and compilers listed here.
+
+Hardware - Recommended
+
+    Microsoft* Windows* Systems
+        Intel(R) Core(TM) processor family
+        Intel(R) Xeon(R) processor family
+        Intel(R) Xeon Phi(TM) processor family
+    Linux* Systems
+        Intel(R) Core(TM) processor family
+        Intel(R) Xeon(R) processor family
+        Intel(R) Xeon Phi(TM) processor family
+    macOS* Systems
+        Intel(R) Core(TM) processor family
+    Android* Systems
+        Intel(R) Atom(TM) processor family
+
+Hardware - Supported
+
+    Intel(R) Pentium(R) 4 processor family
+    Intel(R) Xeon Phi(TM) coprocessor
+    Intel(R) Atom(TM) processor family
+    Non Intel(R) processors compatible with the above processors
+
+Software - Minimum Requirements
+
+    Supported operating system (see below)
+    Supported compiler (see below)
+
+Software - Recommended
+
+    Intel(R) Parallel Studio XE 2018, 2019
+    Intel(R) System Studio 2018, 2019
+
+Software - Supported Operating Systems
+
+    Systems with Microsoft* Windows* operating systems
+        Microsoft* Windows* 10
+        Microsoft* Windows* 8.1
+        Microsoft* Windows* 7 SP1
+        Microsoft* Windows* Server 2016
+        Microsoft* Windows* Server 2012 R2
+    Systems with Linux* operating systems
+        CentOS 7.1
+        Debian* 8, 9
+        Fedora* 27
+        Red Hat* Enterprise Linux* 7
+        SuSE* Linux* Enterprise Server 12
+        Ubuntu* 14.04 LTS, 16.04 LTS, 18.04 LTS
+        Yocto 2.3
+    Systems with OS X* and macOS* operating systems
+        OS X* 10.11
+        macOS* 10.12, 10.13
+    Systems with Android* operating systems
+        Android* 5.x, 6.x, 7.x, 8.x
+
+Software - Supported Compilers
+
+    Intel(R) C++ Compiler 17, 18 and 19 version
+        Note: Using Intel C++ Compiler 19.0 might result
+        in better performance for many of Parallel STL algorithms,
+        comparing to previous compiler versions.
+    Microsoft* Visual C++ 14.0 (Microsoft* Visual Studio* 2015,
+        Windows* OS only)
+    Microsoft* Visual C++ 14.1 (Microsoft* Visual Studio* 2017,
+        Windows* OS only)
+    Microsoft* Windows* Software Development Kit for Windows* 10
+    For each supported Linux* operating system, the standard gcc
+        version provided with that operating system is supported
+            GNU Compilers (gcc) 4.8 - 7.1
+    Clang* 3.8 - 7.0
+    Xcode* 7.0 - 9.1
+    Android* NDK r13 - r17b
+
+Known Issues or limitations
+
+    unseq and par_unseq policies only have effect with compilers that
+        support '#pragma omp simd' or '#pragma simd'.
+    Parallel and vector execution is only supported for the algorithms
+        if random access iterators are provided, while for other iterator
+        types the execution will remain serial, excepting for_each and
+        transform which support parallel execution with forward iterators
+        as well. In case of forward iterators an execution of the invoked
+        function should have enough work for the parallel execution to be
+        effective.
+    Semantics of the following algorithms does not allow unsequenced execution:
+        includes, inplace_merge, merge, set_difference, set_intersection,
+        set_symmetric_difference, set_union, stable_partition, unique.
+    The initial value type for exclusive_scan, inclusive_scan,
+        transform_exclusive_scan, transform_inclusive_scan shall satisfy
+        the DefaultConstructible requirements. A default constructed-instance
+        of the initial value type shall be the identity element for binary_op.
+    The initial value type for exclusive_scan, inclusive_scan, reduce,
+        transform_reduce, transform_exclusive_scan, transform_inclusive_scan
+        shall additionally satisfy the MoveAssignable and the CopyConstructible
+        requirements.
+    For max_element, min_element, minmax_element, partial_sort,
+        partial_sort_copy, sort, stable_sort the dereferenced value type of
+        the provided iterators shall be DefaultConstructible.
+    For remove, remove_if, unique the dereferenced value type of the provided
+        iterators shall be MoveConstructible.
+    The following algorithms require additional O(n) memory space for parallel
+        execution: copy_if, inplace_merge, partial_sort, partial_sort_copy,
+        partition_copy, remove, remove_if, rotate, sort, stable_sort, unique,
+        unique_copy.
+------------------------------------------------------------------------
+
+Intel, the Intel logo, Intel Core, Intel Atom, Xeon, Intel Xeon Phi,
+and Pentium are trademarks of Intel Corporation in the U.S. and/or
+other countries.
+
+* Other names and brands may be claimed as the property of others.

@@ -1,0 +1,250 @@
+------------------------------------------------------------------------
+The list of most significant changes made over time in Parallel STL.
+
+Parallel STL 20190522 release
+PSTL_VERSION == 207
+
+Features / APIs:
+
+- Added for_loop algorithm family from the Parallelism TS v2
+    (working draft N4808) with support for sequenced_policy
+    and parallel_policy.
+- The following algorithms support parallel_policy with forward
+    iterators: transform, for_each.
+
+------------------------------------------------------------------------
+Parallel STL release within Intel(R) Parallel Studio XE 2019 Update 4
+PSTL_VERSION == 206
+
+Features / APIs:
+
+- Improved performance in equal algorithm.
+
+Bugs fixed:
+- Fixed an error with multiple invocations of FindTBB.cmake
+  (https://github.com/intel/parallelstl/issues/26).
+
+------------------------------------------------------------------------
+Parallel STL 20190321 release
+PSTL_VERSION == 205
+
+Features / APIs:
+
+- Improved performance in stable_sort and sort algorithms.
+
+------------------------------------------------------------------------
+Parallel STL release within Intel(R) Parallel Studio XE 2019 Update 3
+PSTL_VERSION == 204
+
+Bugs fixed:
+- Fixed compilation error for usage of PSTL_USE_PARALLEL_POLICIES macro.
+- Fixed compilation error for reordering standard included files.
+
+Examples:
+
+- Added CMake support for convex_hull and dot_product samples.
+
+------------------------------------------------------------------------
+Parallel STL 20181204 release
+PSTL_VERSION == 203
+
+Features / APIs:
+
+- More algorithms support parallel execution policies:
+    set_union, set_intersection, set_difference, set_symmetric_difference.
+- Improved performance in reverse, reverse_copy algorithm with vector
+    execution policies.
+- Added FindTBB CMake module - Preview Feature.
+
+Bugs fixed:
+
+- Fixed several algorithms which use scan and reduction patterns with
+    a user defined binary operation with vector execution policies.
+
+Examples:
+
+- CMake support for gamma_correction sample was added.
+
+------------------------------------------------------------------------
+Parallel STL release within Intel(R) Parallel Studio XE 2019 Update 1
+PSTL_VERSION == 202
+
+Features / APIs:
+
+- Fixed compilation error for reduce and transform_reduce algorithms
+    with Microsoft* Visual Studio 2017 15.8.
+
+------------------------------------------------------------------------
+Parallel STL 20181004 release
+PSTL_VERSION == 201
+
+Features / APIs:
+
+- Fixed a number of algorithms to work with mutable function objects.
+- Fixed algorithms to throw std::bad_alloc when additional memory cannot
+    be obtained.
+
+------------------------------------------------------------------------
+Parallel STL release within Intel(R) Parallel Studio XE 2019
+PSTL_VERSION == 200
+
+Features / APIs:
+
+- More algorithms support parallel and vector execution policies:
+    rotate.
+- More algorithms support parallel execution policies:
+    includes, nth_element, remove, remove_if, unique.
+- More algorithms support vector execution policies:
+    exclusive_scan, inclusive_scan, max_element, minmax_element,
+    min_element, reduce, transform_exclusive_scan, transform_inclusive_scan,
+    transform_reduce.
+- Arranged types and variables naming: single- and double-underscore.
+    (by Thomas Rodgers).
+
+------------------------------------------------------------------------
+Parallel STL 20180619 release
+PSTL_VERSION == 106
+
+Features / APIs:
+
+- More algorithms support parallel and vector execution policies:
+    adjacent_difference, partition, reverse, reverse_copy, rotate_copy,
+    stable_partition.
+- More algorithms support parallel execution policies:
+    inplace_merge, partial_sort_copy.
+- Split algorithm declarations and implementation by files.
+    (by Thomas Rodgers).
+- CMake support - Preview Feature
+    (by Amit Prakash Ambasta and Henry Schreiner)
+
+------------------------------------------------------------------------
+Parallel STL release within Intel(R) Parallel Studio XE 2018 Update 3
+PSTL_VERSION == 105
+
+Features / APIs:
+
+- More algorithms support parallel and vector execution policies:
+    is_partitioned, lexicographical_compare, swap_ranges.
+- Added specialization of parallel_transform_scan pattern for better
+    performance with floating point types.
+- Arranged iterator types in public interface according to the standard
+    (by Thomas Rodgers).
+
+Bugs fixed:
+
+- Fixed an error in parallel version of partial_sort algorithm.
+- Fixed an error in equal algorithm connected with values comparison.
+
+------------------------------------------------------------------------
+Parallel STL 20180329 release
+PSTL_VERSION == 104
+
+Features / APIs:
+
+- More algorithms support parallel and vector execution policies:
+    find_first_of, is_heap, is_heap_until, replace, replace_if.
+- More algorithms support vector execution policies:
+    remove, remove_if.
+- More algorithms support parallel execution policies:
+    partial_sort.
+
+------------------------------------------------------------------------
+Parallel STL release within Intel(R) Parallel Studio XE 2018 Update 2
+PSTL_VERSION == 103
+
+Features / APIs:
+
+- More algorithms support parallel and/or vector execution policies:
+    find_end, merge, search, search_n
+
+------------------------------------------------------------------------
+Parallel STL 20171127 release
+PSTL_VERSION == 102
+
+Features / APIs:
+
+- Added Parallel STL version macros:
+    PSTL_VERSION, PSTL_VERSION_MAJOR, PSTL_VERSION_MINOR.
+- More algorithms support parallel and vector execution policies:
+    move, partition_copy, mismatch.
+- More algorithms support parallel execution policies:
+    min_element, max_element, minmax_element.
+
+------------------------------------------------------------------------
+Parallel STL release within Intel(R) Parallel Studio XE 2018 Update 1
+
+Features / APIs:
+
+- More algorithms support parallel and vector execution policies:
+    destroy, destroy_n, uninitialized_copy, uninitialized_copy_n,
+    uninitialized_default_construct, uninitialized_default_construct_n,
+    uninitialized_fill, uninitialized_fill_n, uninitialized_move,
+    uninitialized_move_n, uninitialized_value_construct,
+    uninitialized_value_construct_n.
+- Improved performance in find_end and search algorithms.
+- Added macro PSTL_USE_NONTEMPORAL_STORES that can improve performance
+    of copy, copy_n, fill, fill_n, generate, generate_n algorithms with
+    unseq and par_unseq policies; by default the macro is not defined.
+
+Bugs fixed:
+
+- Fixed transform_inclusive_scan to correctly process the first element.
+- Fixed compile time error in sort algorithm when used with zip_iterator
+    and some other custom iterator types.
+- Fixed several algorithms to allow use of non-const functors.
+
+------------------------------------------------------------------------
+Parallel STL release within Intel(R) Parallel Studio XE 2018
+
+Features / APIs:
+
+- Aligned the implementation with the draft N4659 of the C++ standard.
+    In particular, inner_product no longer supports execution policies.
+- reduce and transform_reduce support unseq and par_unseq execution
+    policies if std::plus<> is used for reduction.
+- Added counting_iterator and zip_iterator to support advanced use cases.
+   To use, include pstl/iterators.h header file.
+- Added macro PSTL_USE_PARALLEL_POLICIES to control usage of parallel
+    execution policies (par, par_unseq); by default these are enabled.
+
+Examples:
+
+- Added dot_product and convex_hull samples to demonstrate Parallel STL
+    usage.
+
+------------------------------------------------------------------------
+Parallel STL beta update release
+
+Features / APIs:
+
+- sequenced_policy is supported by all C++17 algorithms.
+- Added other execution policies support for inner_product algorithm.
+
+------------------------------------------------------------------------
+Parallel STL beta initial release
+
+Features / APIs:
+
+- Implemented C++17 execution policies: sequenced_policy,
+    parallel_policy, parallel_unsequenced_policy.
+- Implemented unsequenced_policy based on the ISO C++ working group
+    paper P0076R3.
+- sequenced_policy is supported by all except a few C++17 algorithms.
+- Other execution policies are supported by the following algorithms:
+    adjacent_find, all_of, any_of, copy, copy_if, copy_n, count,
+    count_if, equal, exclusive_scan, fill, fill_n, find, find_if,
+    find_if_not, for_each, for_each_n, generate, generate_n,
+    inclusive_scan, none_of, is_sorted, is_sorted_until, reduce,
+    remove_copy, remove_copy_if, sort, stable_sort, transform,
+    transform_exclusive_scan, transform_inclusive_scan,
+    transform_reduce, unique_copy.
+
+Documentation:
+
+- Initial set of documents: Getting Started Guide, Release Notes.
+
+Examples:
+
+- Added gamma_correction sample to demonstrate Parallel STL usage.
+
+------------------------------------------------------------------------
