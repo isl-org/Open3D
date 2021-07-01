@@ -82,32 +82,25 @@ void TouchCPU(std::shared_ptr<core::Hashmap>&
     const float* pcd_ptr = static_cast<const float*>(points.GetDataPtr());
 
     tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
-    core::kernel::CPULauncher::LaunchGeneralKernel(
-            n, [&](int64_t workload_idx) {
-                float x = pcd_ptr[3 * workload_idx + 0];
-                float y = pcd_ptr[3 * workload_idx + 1];
-                float z = pcd_ptr[3 * workload_idx + 2];
+    core::kernel::cpu_launcher::ParallelFor(n, [&](int64_t workload_idx) {
+        float x = pcd_ptr[3 * workload_idx + 0];
+        float y = pcd_ptr[3 * workload_idx + 1];
+        float z = pcd_ptr[3 * workload_idx + 2];
 
-                int xb_lo = static_cast<int>(
-                        std::floor((x - sdf_trunc) / block_size));
-                int xb_hi = static_cast<int>(
-                        std::floor((x + sdf_trunc) / block_size));
-                int yb_lo = static_cast<int>(
-                        std::floor((y - sdf_trunc) / block_size));
-                int yb_hi = static_cast<int>(
-                        std::floor((y + sdf_trunc) / block_size));
-                int zb_lo = static_cast<int>(
-                        std::floor((z - sdf_trunc) / block_size));
-                int zb_hi = static_cast<int>(
-                        std::floor((z + sdf_trunc) / block_size));
-                for (int xb = xb_lo; xb <= xb_hi; ++xb) {
-                    for (int yb = yb_lo; yb <= yb_hi; ++yb) {
-                        for (int zb = zb_lo; zb <= zb_hi; ++zb) {
-                            set.emplace(xb, yb, zb);
-                        }
-                    }
+        int xb_lo = static_cast<int>(std::floor((x - sdf_trunc) / block_size));
+        int xb_hi = static_cast<int>(std::floor((x + sdf_trunc) / block_size));
+        int yb_lo = static_cast<int>(std::floor((y - sdf_trunc) / block_size));
+        int yb_hi = static_cast<int>(std::floor((y + sdf_trunc) / block_size));
+        int zb_lo = static_cast<int>(std::floor((z - sdf_trunc) / block_size));
+        int zb_hi = static_cast<int>(std::floor((z + sdf_trunc) / block_size));
+        for (int xb = xb_lo; xb <= xb_hi; ++xb) {
+            for (int yb = yb_lo; yb <= yb_hi; ++yb) {
+                for (int zb = zb_lo; zb <= zb_hi; ++zb) {
+                    set.emplace(xb, yb, zb);
                 }
-            });
+            }
+        }
+    });
 
     int64_t block_count = set.size();
     if (block_count == 0) {

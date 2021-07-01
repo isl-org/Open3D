@@ -178,7 +178,7 @@ CreateVertexAndImageVisibility(
                 continue;
             }
             visibility_image_to_vertex[camera_id].push_back(vertex_id);
-#pragma omp critical
+#pragma omp critical(CreateVertexAndImageVisibility)
             { visibility_vertex_to_image[vertex_id].push_back(camera_id); }
         }
     }
@@ -283,7 +283,7 @@ void SetGeometryColorAverage(
                 sum += 1.0;
             }
         }
-#pragma omp critical
+#pragma omp critical(SetGeometryColorAverage)
         {
             if (sum > 0.0) {
                 mesh.vertex_colors_[i] /= sum;

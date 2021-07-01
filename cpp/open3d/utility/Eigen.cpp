@@ -189,7 +189,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
             JTr_private.noalias() += J_r * w * r;
             r2_sum_private += r * r;
         }
-#pragma omp critical
+#pragma omp critical(ComputeJTJandJTr)
         {
             JTJ += JTJ_private;
             JTr += JTr_private;
@@ -236,7 +236,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
                 r2_sum_private += r[j] * r[j];
             }
         }
-#pragma omp critical
+#pragma omp critical(ComputeJTJandJTr)
         {
             JTJ += JTJ_private;
             JTr += JTr_private;
