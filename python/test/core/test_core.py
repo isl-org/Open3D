@@ -861,8 +861,8 @@ def test_boolean_advanced_indexing(device):
     o3_i = o3d.core.Tensor(np_i, device=device)
     np_o = np_a[np_i]
     o3_o = o3_a[o3_i]
-    # TODO: find a better way to assert for 0-D.
-    np.testing.assert_equal(np_o, o3_o.cpu().numpy())
+    np.testing.assert_equal(np_o.size, 0)
+    np.testing.assert_equal(o3_o.cpu().numpy().size, 0)
 
     np_i = np.array(True)
     o3_i = o3d.core.Tensor(np_i, device=device)
