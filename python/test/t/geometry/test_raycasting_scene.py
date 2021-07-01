@@ -126,8 +126,9 @@ def test_compute_closest_points():
 
     assert (geom_id == ans['geometry_ids']).all()
     assert (0 == ans['primitive_ids']).all()
-    np.testing.assert_allclose(ans['points'].numpy(),
-                               np.array([[0.2, 0.1, 0.0], [1, 1, 0]]))
+    np.testing.assert_allclose(
+        ans['points'].numpy(),
+        np.array([[0.2, 0.1, 0.0], [1, 1, 0]], rtol=1e-6, atol=1e-6))
 
 
 def test_compute_distance():
