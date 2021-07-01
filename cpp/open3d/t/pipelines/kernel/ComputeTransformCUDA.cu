@@ -34,7 +34,6 @@
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -51,7 +50,7 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
         const int64_t *correspondence_indices,
         const int n,
         scalar_t *global_sum,
-        funct_t op) {
+        funct_t GetWeight) {
     __shared__ scalar_t local_sum0[kThread1DUnit];
     __shared__ scalar_t local_sum1[kThread1DUnit];
     __shared__ scalar_t local_sum2[kThread1DUnit];
@@ -73,7 +72,7 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
             workload_idx, source_points_ptr, target_points_ptr,
             target_normals_ptr, correspondence_indices, J_ij, r);
 
-    scalar_t w = op(r);
+    scalar_t w = GetWeight(r);
 
     if (valid) {
         // Dump J, r into JtJ and Jtr
