@@ -57,6 +57,12 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     double num_correspondences =
             counts.Sum({0}).To(core::Dtype::Float64).Item<double>();
 
+    if (num_correspondences == 0) {
+        utility::LogError(
+                "0 correspondence present between the pointclouds. Try "
+                "increasing the max_correspondence_distance parameter.");
+    }
+
     // Reduction sum of "distances" for error.
     double squared_error =
             distances.Sum({0}).To(core::Dtype::Float64).Item<double>();

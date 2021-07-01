@@ -61,13 +61,9 @@ __device__ double atomicAdd(double *address, double val) {
 #define ISNAN(X) std::isnan(X)
 #endif
 
-#define OPEN3D_ABS(a) (a < 0 ? -a : a)
 #define OPEN3D_MAX(a, b) (a > b ? a : b)
 #define OPEN3D_MIN(a, b) (a < b ? a : b)
 #define OPEN3D_SQUARE(a) ((a) * (a))
-
-#define OPEN3D_EXP(a) exp(a)
-#define OPEN3D_POW(a, b) pow(a, b)
 
 #define OPEN3D_IsClose(a, b) (a > 0.99998 * b && a < 1.00002 * b ? true : false)
 
