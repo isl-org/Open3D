@@ -39,9 +39,7 @@ struct type_caster<open3d::core::Tensor>
 
 public:
     bool load(py::handle src, bool convert) {
-        // std::cerr << "load (convert=" << convert << "  src=" << src << ") ";
         if (base::load(src, convert)) {
-            // std::cerr << "loaded via base\n";
             return true;
         }
 
@@ -53,14 +51,12 @@ public:
                 class_name == "<class 'list'>" ||
                 class_name == "<class 'tuple'>" ||
                 class_name == "<class 'numpy.ndarray'>") {
-                // std::cerr << "loaded via PyHandleToTensor\n";
                 auto tmp = open3d::core::PyHandleToTensor(src);
                 value = new open3d::core::Tensor(tmp);
                 return true;
             }
         }
 
-        // std::cerr << "returned false\n";
         return false;
     }
 };

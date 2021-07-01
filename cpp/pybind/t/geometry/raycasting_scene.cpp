@@ -110,8 +110,8 @@ Returns:
 Computes the first intersection of the rays with the scene.
 
 Args:
-    rays (open3d.core.Tensor): A tensor with >=2 dims and shape {.., 6} 
-        describing the rays.
+    rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
+        Float32 describing the rays.
         {..} can be any number of dimensions, e.g., to organize rays for
         creating an image the shape can be {height, width, 6}. The last
         dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
@@ -148,9 +148,10 @@ Returns:
 Computes the first intersection of the rays with the scene.
 
 Args:
-    rays (open3d.core.Tensor): A tensor with >=2 dims and shape {.., 6}
-        describing the rays. {..} can be any number of dimensions, e.g., to 
-        organize rays for creating an image the shape can be {height, width, 6}.
+    rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
+        Float32 describing the rays. 
+        {..} can be any number of dimensions, e.g., to organize rays for 
+        creating an image the shape can be {height, width, 6}.
         The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
         with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
         necessary to normalize the direction.
@@ -165,10 +166,10 @@ Returns:
 Computes the closest points on the surfaces of the scene.
 
 Args:
-    query_points (open3d.core.Tensor): A tensor with >=2 dims and shape {.., 3}
-        describing the query_points. {..} can be any number of dimensions, 
-        e.g., to organize the query_point to create a 3D grid the shape can be
-        {depth, height, width, 3}.
+    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3}, 
+        and Dtype Float32 describing the query points. 
+        {..} can be any number of dimensions, e.g., to organize the query_point 
+        to create a 3D grid the shape can be {depth, height, width, 3}.
         The last dimension must be 3 and has the format [x, y, z].
 
 Returns:
@@ -191,9 +192,10 @@ Returns:
 Computes the distance to the surface of the scene.
 
 Args:
-    query_points (open3d.core.Tensor): A tensor with >=2 dims and shape {.., 3}
-        describing the query_points. {..} can be any number of dimensions, 
-        e.g., to organize the query_point to create a 3D grid the shape can be
+    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
+        and Dtype Float32 describing the query points. 
+        {..} can be any number of dimensions, e.g., to organize the
+        query points to create a 3D grid the shape can be
         {depth, height, width, 3}.
         The last dimension must be 3 and has the format [x, y, z].
 
@@ -213,9 +215,10 @@ defined. The function determines the sign of the distance by counting
 the intersections of a rays starting at the query points.
 
 Args:
-    query_points (open3d.core.Tensor): A tensor with >=2 dims and shape {.., 3}
-        describing the query_points. {..} can be any number of dimensions, 
-        e.g., to organize the query_point to create a 3D grid the shape can be
+    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
+        and Dtype Float32 describing the query_points. 
+        {..} can be any number of dimensions, e.g., to organize the 
+        query points to create a 3D grid the shape can be
         {depth, height, width, 3}.
         The last dimension must be 3 and has the format [x, y, z].
 
@@ -236,9 +239,10 @@ defined. The function determines if a point is inside by counting the
 intersections of a rays starting at the query points.
 
 Args:
-    query_points (open3d.core.Tensor): A tensor with >=2 dims and shape {.., 3}
-        describing the query_points. {..} can be any number of dimensions, 
-        e.g., to organize the query_point to create a 3D grid the shape can be
+    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
+        and Dtype Float32 describing the query points.
+        {..} can be any number of dimensions, e.g., to organize the 
+        query points to create a 3D grid the shape can be
         {depth, height, width, 3}.
         The last dimension must be 3 and has the format [x, y, z].
 

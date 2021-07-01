@@ -28,10 +28,6 @@ import open3d as o3d
 import numpy as np
 import pytest
 
-# RaycastingScene is not available for linux arm
-pytestmark = pytest.mark.skipif(not hasattr(o3d.t.geometry, 'RaycastingScene'),
-                                reason="RaycastingScene was not compiled")
-
 
 # test intersection with a single triangle
 def test_cast_rays():
@@ -83,7 +79,7 @@ def test_add_triangle_mesh():
                            dtype=o3d.core.Dtype.Float32)
     ans = scene.count_intersections(rays)
 
-    assert (ans.numpy() == [2, 1, 0]).all()
+    np.testing.assert_equal(ans.numpy(), [2, 1, 0])
 
 
 def test_count_intersections():
@@ -98,7 +94,7 @@ def test_count_intersections():
                            dtype=o3d.core.Dtype.Float32)
     ans = scene.count_intersections(rays)
 
-    assert (ans.numpy() == [2, 1, 0]).all()
+    np.testing.assert_equal(ans.numpy(), [2, 1, 0])
 
 
 # count lots of random ray intersections to test the internal batching
@@ -130,8 +126,8 @@ def test_compute_closest_points():
 
     assert (geom_id == ans['geometry_ids']).all()
     assert (0 == ans['primitive_ids']).all()
-    assert np.allclose(ans['points'].numpy(),
-                       np.array([[0.2, 0.1, 0.0], [1, 1, 0]]))
+    np.testing.assert_allclose(ans['points'].numpy(),
+                               np.array([[0.2, 0.1, 0.0], [1, 1, 0]]))
 
 
 def test_compute_distance():
@@ -145,7 +141,7 @@ def test_compute_distance():
         [[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5], [0, 0, 0]],
         dtype=o3d.core.Dtype.Float32)
     ans = scene.compute_distance(query_points)
-    assert np.allclose(ans.numpy(), [0.5, np.sqrt(3 * 0.5**2), 0.0])
+    np.testing.assert_allclose(ans.numpy(), [0.5, np.sqrt(3 * 0.5**2), 0.0])
 
 
 def test_compute_signed_distance():
@@ -159,7 +155,7 @@ def test_compute_signed_distance():
         [[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5], [0, 0, 0]],
         dtype=o3d.core.Dtype.Float32)
     ans = scene.compute_signed_distance(query_points)
-    assert np.allclose(ans.numpy(), [-0.5, np.sqrt(3 * 0.5**2), 0.0])
+    np.testing.assert_allclose(ans.numpy(), [-0.5, np.sqrt(3 * 0.5**2), 0.0])
 
 
 def test_compute_occupancy():
@@ -172,7 +168,7 @@ def test_compute_occupancy():
     query_points = o3d.core.Tensor([[0.5, 0.5, 0.5], [-0.5, -0.5, -0.5]],
                                    dtype=o3d.core.Dtype.Float32)
     ans = scene.compute_occupancy(query_points)
-    assert np.allclose(ans.numpy(), [1.0, 0.0])
+    np.testing.assert_allclose(ans.numpy(), [1.0, 0.0])
 
 
 @pytest.mark.parametrize("shape", ([11], [1, 2, 3], [32, 14]))

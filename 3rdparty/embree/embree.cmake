@@ -23,10 +23,8 @@ elseif(LINUX_AARCH64)
                  -DEMBREE_ISA_SSE2=OFF
                  -DEMBREE_ISA_SSE42=OFF
     )
-    unset(ISA_LIBS)
-    set(ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_avx${CMAKE_STATIC_LIBRARY_SUFFIX}"
-                "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_avx2${CMAKE_STATIC_LIBRARY_SUFFIX}"
-    )
+    set(ISA_LIBS "")
+    set(ISA_BUILD_BYPRODUCTS "")
 else() # Linux(x86) and WIN32
     set(ISA_ARGS -DEMBREE_ISA_AVX=ON
                  -DEMBREE_ISA_AVX2=ON
@@ -34,6 +32,7 @@ else() # Linux(x86) and WIN32
                  -DEMBREE_ISA_SSE2=OFF
                  -DEMBREE_ISA_SSE42=OFF
     )
+    # order matters. link libs with increasing ISA order.
     set(ISA_LIBS embree_avx embree_avx2)
     set(ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_avx${CMAKE_STATIC_LIBRARY_SUFFIX}"
                              "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_avx2${CMAKE_STATIC_LIBRARY_SUFFIX}"
@@ -89,7 +88,6 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_embree INSTALL_DIR)
-set(EMBREE_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
+set(EMBREE_INCLUDE_DIRS ${INSTALL_DIR}/include/ ${INSTALL_DIR}/src/ext_embree/) # "/" is critical.
 set(EMBREE_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-# order matters. link libs with increasing ISA order.
 set(EMBREE_LIBRARIES embree3 ${ISA_LIBS} simd lexers sys math tasking)

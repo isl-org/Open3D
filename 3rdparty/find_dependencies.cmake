@@ -1287,7 +1287,7 @@ else()
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
 
-# embree is not supported on arm
+# embree 
 include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
 import_3rdparty_library(3rdparty_embree
     HIDDEN
