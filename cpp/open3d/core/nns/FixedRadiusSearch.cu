@@ -515,6 +515,7 @@ template <class T, int METRIC, bool RETURN_DISTANCES>
 __global__ void WriteNeighborsHybridKernel(
         int64_t* __restrict__ indices,
         T* __restrict__ distances,
+        size_t query_offset,
         const int64_t* const __restrict__ point_index_table,
         const int64_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
@@ -530,7 +531,7 @@ __global__ void WriteNeighborsHybridKernel(
 
     int count = 0;  // counts the number of neighbors for this query point
 
-    size_t indices_offset = max_knn * query_idx;
+    size_t indices_offset = query_offset + max_knn * query_idx;
 
     Vec3<T> query_pos(query_points[query_idx * 3 + 0],
                       query_points[query_idx * 3 + 1],
@@ -668,6 +669,7 @@ template <class T>
 void WriteNeighborsHybrid(const cudaStream_t& stream,
                           int64_t* indices,
                           T* distances,
+                          size_t query_offset,
                           const int64_t* const point_index_table,
                           const int64_t* const hash_table_cell_splits,
                           size_t hash_table_cell_splits_size,
@@ -687,10 +689,11 @@ void WriteNeighborsHybrid(const cudaStream_t& stream,
     grid.x = utility::DivUp(num_queries, block.x);
 
     if (grid.x) {
-#define FN_PARAMETERS                                                   \
-    indices, distances, point_index_table, hash_table_cell_splits,      \
-            hash_table_cell_splits_size - 1, query_points, num_queries, \
-            points, inv_voxel_size, radius, threshold, max_knn
+#define FN_PARAMETERS                                                  \
+    indices, distances, query_offset, point_index_table,               \
+            hash_table_cell_splits, hash_table_cell_splits_size - 1,   \
+            query_points, num_queries, points, inv_voxel_size, radius, \
+            threshold, max_knn
 
 #define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                     \
     if (METRIC == metric && RETURN_DISTANCES == return_distances) { \
@@ -1039,16 +1042,17 @@ void HybridSearchCUDA(size_t num_points,
     for (int i = 0; i < batch_size; ++i) {
         const size_t hash_table_size =
                 hash_table_splits[i + 1] - hash_table_splits[i];
+        const size_t query_offset = max_knn * queries_row_splits[i];
         const size_t first_cell_idx = hash_table_splits[i];
         const T* const queries_i = queries + 3 * queries_row_splits[i];
         const size_t num_queries_i =
                 queries_row_splits[i + 1] - queries_row_splits[i];
 
         WriteNeighborsHybrid(
-                stream, indices_ptr, distances_ptr, hash_table_index,
-                hash_table_cell_splits + first_cell_idx, hash_table_size + 1,
-                queries_i, num_queries_i, points, inv_voxel_size, radius,
-                max_knn, metric, true);
+                stream, indices_ptr, distances_ptr, query_offset,
+                hash_table_index, hash_table_cell_splits + first_cell_idx,
+                hash_table_size + 1, queries_i, num_queries_i, points,
+                inv_voxel_size, radius, max_knn, metric, true);
     }
 }
 ////

@@ -94,6 +94,11 @@ public:
                                            double radius,
                                            int max_knn) const override;
 
+    std::pair<Tensor, Tensor> SearchHybrid(const Tensor& query_points,
+                                           const Tensor& queries_row_splits,
+                                           double radius,
+                                           int max_knn) const;
+
     const double hash_table_size_factor = 1.0 / 32;
     const int64_t max_hash_tabls_size = 33554432;
 

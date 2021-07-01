@@ -275,11 +275,15 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 };
 
 std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
-        const Tensor &query_points, double radius, int max_knn) const {
+        const Tensor &query_points,
+        const Tensor &queries_row_splits,
+        double radius,
+        int max_knn) const {
 #ifdef BUILD_CUDA_MODULE
     Dtype dtype = GetDtype();
     Device device = GetDevice();
     int64_t num_dataset_points = GetDatasetSize();
+    int64_t num_query_points = query_points.GetShape()[0];
 
     // Check dtype.
     query_points.AssertDtype(dtype);
@@ -296,8 +300,7 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     }
 
     Tensor query_points_ = query_points.Contiguous();
-    int64_t num_query_points = query_points_.GetShape()[0];
-    std::vector<int64_t> queries_row_splits({0, num_query_points});
+    Tensor queries_row_splits_ = queries_row_splits.Contiguous();
 
     Tensor neighbors_index, neighbors_distance;
 
@@ -309,7 +312,8 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
                 num_query_points, query_points_.GetDataPtr<scalar_t>(),
                 scalar_t(radius), max_knn, points_row_splits_.GetShape()[0],
                 points_row_splits_.GetDataPtr<int64_t>(),
-                queries_row_splits.size(), queries_row_splits.data(),
+                queries_row_splits_.GetShape()[0],
+                queries_row_splits_.GetDataPtr<int64_t>(),
                 hash_table_splits_.GetDataPtr<int64_t>(),
                 hash_table_cell_splits_.GetShape()[0],
                 hash_table_cell_splits_.GetDataPtr<int64_t>(),
@@ -325,6 +329,15 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
             "FixedRadiusIndex::SearchHybrid BUILD_CUDA_MODULE is OFF. Please "
             "compile Open3d with BUILD_CUDA_MODULE=ON.");
 #endif
+}
+
+std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
+        const Tensor &query_points, double radius, int max_knn) const {
+    // Make queries_row_splits tensor for single batch.
+    int64_t num_query_points = query_points.GetShape()[0];
+    Tensor queries_row_splits(std::vector<int64_t>({0, num_query_points}), {2},
+                              Dtype::Int64);
+    return SearchHybrid(query_points, queries_row_splits, radius, max_knn);
 }
 }  // namespace nns
 }  // namespace core
