@@ -39,10 +39,7 @@ namespace kernel {
 /// \param source_points source points indexed according to correspondences.
 /// \param target_points target points indexed according to correspondences.
 /// \param target_normals target normals indexed according to correspondences.
-/// \param correspondence_indices Tensor of type Int64 containing indices of
-/// corresponding target points, where the value is the target index and the
-/// index of the value itself is the source index. It contains -1 as value
-/// at index with no correspondence.
+/// \param correspondence_indices TODO.
 /// \return Pose [alpha beta gamma, tx, ty, tz], a shape {6} tensor of dtype
 /// Float32, where alpha, beta, gamma are the Euler angles in the ZYX order.
 core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
@@ -55,10 +52,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
 /// for point to point registration method.
 /// \param source_points source points indexed according to correspondences.
 /// \param target_points target points indexed according to correspondences.
-/// \param correspondence_indices Tensor of type Int64 containing indices of
-/// corresponding target points, where the value is the target index and the
-/// index of the value itself is the source index. It contains -1 as value
-/// at index with no correspondence.
+/// \param correspondence_indices TODO.
 /// \return tuple of (R, t). [Dtype: Float32].
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,

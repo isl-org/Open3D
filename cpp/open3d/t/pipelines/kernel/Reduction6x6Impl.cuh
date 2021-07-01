@@ -165,9 +165,9 @@ __device__ inline void ReduceSum6x6LinearSystem(const int tid,
                                              local_sum2);
 
         if (tid == 0) {
-            atomicAdd(&global_sum[i + 0], local_sum0[0]);
-            atomicAdd(&global_sum[i + 1], local_sum1[0]);
-            atomicAdd(&global_sum[i + 2], local_sum2[0]);
+            OPEN3D_ATOMIC_ADD(&global_sum[i + 0], local_sum0[0]);
+            OPEN3D_ATOMIC_ADD(&global_sum[i + 1], local_sum1[0]);
+            OPEN3D_ATOMIC_ADD(&global_sum[i + 2], local_sum2[0]);
         }
         __syncthreads();
     }
@@ -180,8 +180,8 @@ __device__ inline void ReduceSum6x6LinearSystem(const int tid,
 
         BlockReduceSum<scalar_t, BLOCK_SIZE>(tid, local_sum0, local_sum1);
         if (tid == 0) {
-            atomicAdd(&global_sum[27], local_sum0[0]);
-            atomicAdd(&global_sum[28], local_sum1[0]);
+            OPEN3D_ATOMIC_ADD(&global_sum[27], local_sum0[0]);
+            OPEN3D_ATOMIC_ADD(&global_sum[28], local_sum1[0]);
         }
         __syncthreads();
     }
