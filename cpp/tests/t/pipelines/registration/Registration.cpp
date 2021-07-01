@@ -262,46 +262,5 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
     }
 }
 
-TEST_P(RegistrationPermuteDevices, RobustKernel) {
-    core::Device device = GetParam();
-
-    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
-        for (auto LossMethod : {t_reg::RobustKernelMethod::L1Loss,
-                                t_reg::RobustKernelMethod::L2Loss,
-                                t_reg::RobustKernelMethod::TukeyLoss,
-                                t_reg::RobustKernelMethod::HuberLoss,
-                                t_reg::RobustKernelMethod::GMLoss,
-                                t_reg::RobustKernelMethod::CauchyLoss,
-                                t_reg::RobustKernelMethod::GeneralizedLoss}) {
-            t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
-            std::tie(source_tpcd, target_tpcd) =
-                    GetTestPointClouds(dtype, device);
-
-            // Initial transformation input for tensor implementation.
-            core::Tensor initial_transform_t = core::Tensor::Eye(
-                    4, core::Dtype::Float64, core::Device("CPU:0"));
-
-            double max_correspondence_dist = 2.0;
-            double relative_fitness = 1e-6;
-            double relative_rmse = 1e-6;
-            int max_iterations = 2;
-
-            // PointToPlane - Tensor.
-            t_reg::RegistrationResult reg_p2plane_t = t_reg::RegistrationICP(
-                    source_tpcd, target_tpcd, max_correspondence_dist,
-                    initial_transform_t,
-                    t_reg::TransformationEstimationPointToPlane(
-                            t_reg::RobustKernel(LossMethod,
-                                                /*scale parameter =*/1.0,
-                                                /*shape parameter =*/1.0)),
-                    t_reg::ICPConvergenceCriteria(
-                            relative_fitness, relative_rmse, max_iterations));
-
-            std::cout << " Fitness " << reg_p2plane_t.fitness_ << std::endl;
-            std::cout << " RMSE " << reg_p2plane_t.inlier_rmse_ << std::endl;
-        }
-    }
-}
-
 }  // namespace tests
 }  // namespace open3d
