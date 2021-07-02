@@ -168,8 +168,12 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
     -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
-    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-    )
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
+if(IPO_AVAILABLE)
+    list(APPEND ExternalProject_CMAKE_ARGS
+    -DCMAKE_POLICY_DEFAULT_CMP0069:STRING=NEW
+    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE)
+endif()
 # Keep 3rd party symbols hidden from Open3D user code. Do not use if 3rd party
 # libraries throw exceptions that escape Open3D.
 set(ExternalProject_CMAKE_ARGS_hidden

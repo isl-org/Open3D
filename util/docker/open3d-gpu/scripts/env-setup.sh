@@ -10,7 +10,7 @@ SUDO=${SUDO:=sudo}
 UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs)"} # Empty in macOS
 
 $SUDO apt-get update
-$SUDO apt-get --yes install git software-properties-common
+$SUDO apt-get --yes install git software-properties-common binutils-gold
 echo "Installing Python3 and setting as default python"
 $SUDO apt-get --yes --no-install-recommends install python3 python3-pip \
     python3-setuptools python3-venv

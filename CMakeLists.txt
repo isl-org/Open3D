@@ -80,13 +80,17 @@ option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
 
 # Release build options
-option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )
+option(DEVELOPER_BUILD      "Add +commit_hash to the project version number"  ON)
 if (NOT DEVELOPER_BUILD)
     if (NOT BUILD_COMMON_CUDA_ARCHS)
         set(BUILD_COMMON_CUDA_ARCHS ON CACHE BOOL "Build for common CUDA GPUs (for release)" FORCE)
         message(WARNING "Setting BUILD_COMMON_CUDA_ARCHS=ON since DEVELOPER_BUILD is OFF.")
     endif()
 endif()
+# TODO: Set to OFF by default. Takes a while.
+cmake_dependent_option(
+    OPEN3D_ENABLE_LTO           "Enable LTO / IPO. ON for Production builds." ON
+    "DEVELOPER_BUILD"                                                         ON)
 
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
@@ -380,6 +384,18 @@ add_link_options(
     "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>"
     )
 
+# Link Time Optimization
+if (OPEN3D_ENABLE_LTO)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT IPO_AVAILABLE)
+    if (IPO_AVAILABLE AND CMAKE_BUILD_TYPE STREQUAL Release)
+        message("IPO (LTO) is available. Enabling for Release builds.")
+    endif ()
+else ()
+    set(IPO_AVAILABLE FALSE)
+endif()
+
+
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
@@ -451,7 +467,22 @@ if(BUILD_CUDA_MODULE)
 endif ()
 
 # OS specific settings
-if(WIN32)
+if (UNIX AND NOT APPLE)
+# Faster linking with gold linker on Linux.
+    set(USE_LINKER gold CACHE STRING "Linker: bfd (GNU default), gold (Open3D default)")
+    set_property(CACHE USE_LINKER PROPERTY STRINGS bfd gold)
+    if(USE_LINKER STREQUAL gold)
+        execute_process(COMMAND ${CMAKE_C_COMPILER} -fuse-ld=${USE_LINKER}
+            -Wl,--version RESULT_VARIABLE USE_LINKER_OK OUTPUT_QUIET ERROR_QUIET)
+        if (USE_LINKER_OK EQUAL 0)
+            add_link_options(-fuse-ld=${USE_LINKER})
+        else()
+            message(STATUS "Linker ${USE_LINKER} not available. Falling back "
+            "to default GNU linker.")
+            set(USE_LINKER bfd CACHE STRING "Linker: bfd (GNU default), gold (Open3D default)" FORCE)
+        endif()
+    endif()
+elseif (WIN32)
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explictly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well
@@ -632,6 +663,11 @@ function(open3d_set_global_properties target)
                 $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
                 COMMAND_EXPAND_LISTS)
         endif()
+    endif()
+
+    if(IPO_AVAILABLE)   # Enable LTO for Release builds
+        set_target_properties(${target} PROPERTIES INTERPROCEDURAL_OPTIMIZATION
+            $<IF:$<CONFIG:Release>,TRUE,FALSE>)
     endif()
 
 endfunction()

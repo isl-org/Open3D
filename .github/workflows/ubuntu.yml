@@ -69,6 +69,7 @@ jobs:
       - name: Install dependencies
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
+          sudo apt-get install binutils-gold    # Optional faster linking
           wget https://github.com/intel-isl/open3d_downloads/releases/download/ccache/ccache
           chmod +x ccache
           sudo mv ccache /usr/local/bin
