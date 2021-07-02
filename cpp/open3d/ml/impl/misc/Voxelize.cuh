@@ -41,6 +41,7 @@ namespace impl {
 namespace {
 
 using namespace open3d::utility;
+#define MAX_BATCH_SIZE 1024
 
 template <class T, bool LARGE_ARRAY>
 __global__ void IotaCUDAKernel(T* first, int64_t len, T value) {
@@ -83,15 +84,92 @@ void IotaCUDA(const cudaStream_t& stream, T* first, T* last, T value) {
     }
 }
 
+__global__ void ComputeBatchIdKernel(int64_t* hashes,
+                                     const int64_t num_voxels,
+                                     const int64_t batch_hash) {
+    int64_t linear_idx;
+    const int64_t x = blockDim.x * blockIdx.x + threadIdx.x;
+    const int64_t y = blockDim.y * blockIdx.y + threadIdx.y;
+    const int64_t z = blockDim.z * blockIdx.z + threadIdx.z;
+    linear_idx = z * gridDim.x * blockDim.x * gridDim.y +
+                 y * gridDim.x * blockDim.x + x;
+
+    if (linear_idx >= num_voxels) return;
+
+    hashes[linear_idx] /= batch_hash;
+}
+
+void ComputeBatchId(const cudaStream_t& stream,
+                    int64_t* hashes,
+                    const int64_t num_voxels,
+                    const int64_t batch_hash) {
+    if (num_voxels) {
+        const int BLOCKSIZE = 128;
+        dim3 block(BLOCKSIZE, 1, 1);
+        dim3 grid;
+        grid.y = std::ceil(std::cbrt(num_voxels));
+        grid.z = grid.y;
+        grid.x = DivUp(num_voxels, int64_t(grid.z) * grid.y * block.x);
+        ComputeBatchIdKernel<<<grid, block, 0, stream>>>(hashes, num_voxels,
+                                                         batch_hash);
+    }
+}
+
+__global__ void ComputeVoxelPerBatchKernel(int64_t* num_voxels_per_batch,
+                                           int64_t* unique_batches_count,
+                                           int64_t* unique_batches,
+                                           const int64_t num_batches) {
+    int64_t linear_idx;
+    const int64_t x = blockDim.x * blockIdx.x + threadIdx.x;
+    const int64_t y = blockDim.y * blockIdx.y + threadIdx.y;
+    const int64_t z = blockDim.z * blockIdx.z + threadIdx.z;
+    linear_idx = z * gridDim.x * blockDim.x * gridDim.y +
+                 y * gridDim.x * blockDim.x + x;
+
+    if (linear_idx >= num_batches) return;
+
+    int64_t out_idx = unique_batches[linear_idx];
+    num_voxels_per_batch[out_idx] = unique_batches_count[linear_idx];
+}
+
+void ComputeVoxelPerBatch(const cudaStream_t& stream,
+                          int64_t* num_voxels_per_batch,
+                          int64_t* unique_batches_count,
+                          int64_t* unique_batches,
+                          const int64_t num_batches) {
+    if (num_batches) {
+        const int BLOCKSIZE = 128;
+        dim3 block(BLOCKSIZE, 1, 1);
+        dim3 grid;
+        grid.y = std::ceil(std::cbrt(num_batches));
+        grid.z = grid.y;
+        grid.x = DivUp(num_batches, int64_t(grid.z) * grid.y * block.x);
+        ComputeVoxelPerBatchKernel<<<grid, block, 0, stream>>>(
+                num_voxels_per_batch, unique_batches_count, unique_batches,
+                num_batches);
+    }
+}
+
+__device__ int64_t GetBatch(const int64_t& idx,
+                            const int64_t* __restrict__ row_splits,
+                            const int64_t& batch_size) {
+    for (size_t i = 0; i < batch_size; i++) {
+        if (idx < row_splits[i + 1]) return i;
+    }
+}
+
 template <class T, int NDIM>
 __global__ void ComputeHashKernel(
         int64_t* __restrict__ hashes,
         int64_t num_points,
         const T* const __restrict__ points,
+        const int64_t batch_size,
+        const int64_t* row_splits,
         const open3d::utility::MiniVec<T, NDIM> points_range_min_vec,
         const open3d::utility::MiniVec<T, NDIM> points_range_max_vec,
         const open3d::utility::MiniVec<T, NDIM> inv_voxel_size,
         const open3d::utility::MiniVec<int64_t, NDIM> strides,
+        const int64_t batch_hash,
         const int64_t invalid_hash) {
     typedef MiniVec<T, NDIM> Vec_t;
     int64_t linear_idx;
@@ -105,12 +183,15 @@ __global__ void ComputeHashKernel(
 
     Vec_t point(points + linear_idx * NDIM);
 
+    int64_t batch_id = GetBatch(linear_idx, row_splits, batch_size);
+
     if ((point >= points_range_min_vec && point <= points_range_max_vec)
                 .all()) {
         auto coords = ((point - points_range_min_vec) * inv_voxel_size)
                               .template cast<int64_t>();
         int64_t h = coords.dot(strides);
-        hashes[linear_idx] = h;  // add 1 and use 0 as invalid
+        h += batch_id * batch_hash;  // add hash for batch_id
+        hashes[linear_idx] = h;      // add 1 and use 0 as invalid
     } else {
         hashes[linear_idx] = invalid_hash;  // 0 means invalid
     }
@@ -137,10 +218,13 @@ void ComputeHash(const cudaStream_t& stream,
                  int64_t* hashes,
                  int64_t num_points,
                  const T* const points,
+                 const int64_t batch_size,
+                 const int64_t* row_splits,
                  const MiniVec<T, NDIM> points_range_min_vec,
                  const MiniVec<T, NDIM> points_range_max_vec,
                  const MiniVec<T, NDIM> inv_voxel_size,
                  const MiniVec<int64_t, NDIM> strides,
+                 const int64_t batch_hash,
                  const int64_t invalid_hash) {
     if (num_points) {
         const int BLOCKSIZE = 128;
@@ -150,8 +234,9 @@ void ComputeHash(const cudaStream_t& stream,
         grid.z = grid.y;
         grid.x = DivUp(num_points, int64_t(grid.z) * grid.y * block.x);
         ComputeHashKernel<T, NDIM><<<grid, block, 0, stream>>>(
-                hashes, num_points, points, points_range_min_vec,
-                points_range_max_vec, inv_voxel_size, strides, invalid_hash);
+                hashes, num_points, points, batch_size, row_splits,
+                points_range_min_vec, points_range_max_vec, inv_voxel_size,
+                strides, batch_hash, invalid_hash);
     }
 }
 
@@ -392,18 +477,20 @@ void CopyPointIndices(const cudaStream_t& stream,
 ///         ptr does not need to be set.
 ///
 template <class T, int NDIM, class OUTPUT_ALLOCATOR>
-void VoxelizeCUDA(const cudaStream_t& stream,
-                  void* temp,
-                  size_t& temp_size,
-                  int texture_alignment,
-                  size_t num_points,
-                  const T* const points,
-                  const T* const voxel_size,
-                  const T* const points_range_min,
-                  const T* const points_range_max,
-                  const int64_t max_points_per_voxel,
-                  const int64_t max_voxels,
-                  OUTPUT_ALLOCATOR& output_allocator) {
+void VoxelizeBatchCUDA(const cudaStream_t& stream,
+                       void* temp,
+                       size_t& temp_size,
+                       int texture_alignment,
+                       size_t num_points,
+                       const T* const points,
+                       const size_t batch_size,
+                       const int64_t* const row_splits,
+                       const T* const voxel_size,
+                       const T* const points_range_min,
+                       const T* const points_range_max,
+                       const int64_t max_points_per_voxel,
+                       const int64_t max_voxels,
+                       OUTPUT_ALLOCATOR& output_allocator) {
     using namespace open3d::utility;
     typedef MiniVec<T, NDIM> Vec_t;
 
@@ -429,7 +516,8 @@ void VoxelizeCUDA(const cudaStream_t& stream,
             strides[i] *= extents[j];
         }
     }
-    const int64_t invalid_hash = strides[NDIM - 1] * extents[NDIM - 1];
+    const int64_t batch_hash = strides[NDIM - 1] * extents[NDIM - 1];
+    const int64_t invalid_hash = batch_hash * MAX_BATCH_SIZE;
 
     // use double buffers for the sorting
     std::pair<int64_t*, size_t> point_indices =
@@ -447,9 +535,9 @@ void VoxelizeCUDA(const cudaStream_t& stream,
     if (!get_temp_size) {
         IotaCUDA(stream, point_indices.first,
                  point_indices.first + point_indices.second, int64_t(0));
-        ComputeHash(stream, hashes.first, num_points, points,
-                    points_range_min_vec, points_range_max_vec, inv_voxel_size,
-                    strides, invalid_hash);
+        ComputeHash(stream, hashes.first, num_points, points, batch_size,
+                    row_splits, points_range_min_vec, points_range_max_vec,
+                    inv_voxel_size, strides, batch_hash, invalid_hash);
     }
 
     {
@@ -578,6 +666,83 @@ void VoxelizeCUDA(const cudaStream_t& stream,
                             sizeof(int64_t) * num_voxels,
                             cudaMemcpyDeviceToDevice, stream);
         }
+    }
+
+    // Convert unique_hashes to batch_id (divide with batch_hash)
+    int64_t* unique_hashes_batch_id = unique_hashes.first;
+    if (!get_temp_size) {
+        ComputeBatchId(stream, unique_hashes_batch_id, num_voxels, batch_hash);
+    }
+
+    std::pair<int64_t*, size_t> unique_batches =
+            mem_temp.Alloc<int64_t>(batch_size);
+    std::pair<int64_t*, size_t> unique_batches_count =
+            mem_temp.Alloc<int64_t>(batch_size);
+    int64_t num_batches = 0;  // Store non empty batches
+
+    // Convert batch_id to counts (array of num_voxels per batch)
+    {
+        std::pair<void*, size_t> encode_temp(nullptr, 0);
+        std::pair<int64_t*, size_t> num_batches_mem =
+                mem_temp.Alloc<int64_t>(1);
+
+        cub::DeviceRunLengthEncode::Encode(
+                encode_temp.first, encode_temp.second, unique_hashes_batch_id,
+                unique_batches.first, unique_batches_count.first,
+                num_batches_mem.first, num_voxels, stream);
+        encode_temp = mem_temp.Alloc(encode_temp.second);
+        if (!get_temp_size) {
+            cub::DeviceRunLengthEncode::Encode(
+                    encode_temp.first, encode_temp.second,
+                    unique_hashes_batch_id, unique_batches.first,
+                    unique_batches_count.first, num_batches_mem.first,
+                    num_voxels, stream);
+
+            // get the number of non empty batches.
+            cudaMemcpyAsync(&num_batches, num_batches_mem.first,
+                            sizeof(int64_t), cudaMemcpyDeviceToHost, stream);
+            // wait for the async copies
+            while (cudaErrorNotReady == cudaStreamQuery(stream)) { /*empty*/
+            }
+        }
+        mem_temp.Free(encode_temp);
+    }
+
+    // Insert count(0) for empty batches
+    std::pair<int64_t*, size_t> num_voxels_per_batch =
+            mem_temp.Alloc<int64_t>(batch_size);
+    if (!get_temp_size) {
+        cudaMemset(num_voxels_per_batch.first, 0, batch_size * sizeof(int64_t));
+        ComputeVoxelPerBatch(stream, num_voxels_per_batch.first,
+                             unique_batches_count.first, unique_batches.first,
+                             num_batches);
+    }
+
+    int64_t* out_batch_splits = nullptr;
+    if (!get_temp_size) {
+        output_allocator.AllocVoxelBatchSplits(&out_batch_splits,
+                                               batch_size + 1);
+        cudaMemsetAsync(out_batch_splits, 0, sizeof(int64_t), stream);
+    }
+
+    // Prefix sum of counts to get batch splits
+    {
+        std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
+
+        cub::DeviceScan::InclusiveSum(
+                inclusive_scan_temp.first, inclusive_scan_temp.second,
+                num_voxels_per_batch.first, out_batch_splits + 1,
+                num_voxels_per_batch.second, stream);
+
+        inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
+
+        if (!get_temp_size) {
+            cub::DeviceScan::InclusiveSum(
+                    inclusive_scan_temp.first, inclusive_scan_temp.second,
+                    num_voxels_per_batch.first, out_batch_splits + 1,
+                    batch_size, stream);
+        }
+        mem_temp.Free(inclusive_scan_temp);
     }
 
     if (get_temp_size) {
