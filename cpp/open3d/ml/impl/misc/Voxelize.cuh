@@ -99,6 +99,12 @@ __global__ void ComputeBatchIdKernel(int64_t* hashes,
     hashes[linear_idx] /= batch_hash;
 }
 
+/// This funciton computes batch_id from hash value.
+///
+/// \param hashes    Input and output array.
+/// \param num_voxels    Number of valid voxels.
+/// \param batch_hash    The value used to hash batch dimension.
+///
 void ComputeBatchId(const cudaStream_t& stream,
                     int64_t* hashes,
                     const int64_t num_voxels,
@@ -132,6 +138,13 @@ __global__ void ComputeVoxelPerBatchKernel(int64_t* num_voxels_per_batch,
     num_voxels_per_batch[out_idx] = unique_batches_count[linear_idx];
 }
 
+/// This funciton computes number of voxels per batch element.
+///
+/// \param num_voxels_per_batch    The output array.
+/// \param unique_batches_count    Counts for unique batch_id.
+/// \param unique_batches    Unique batch_id.
+/// \param num_batches    Number of non empty batches (<= batch_size).
+///
 void ComputeVoxelPerBatch(const cudaStream_t& stream,
                           int64_t* num_voxels_per_batch,
                           int64_t* unique_batches_count,
@@ -150,11 +163,43 @@ void ComputeVoxelPerBatch(const cudaStream_t& stream,
     }
 }
 
-__device__ int64_t GetBatch(const int64_t& idx,
-                            const int64_t* __restrict__ row_splits,
-                            const int64_t& batch_size) {
-    for (size_t i = 0; i < batch_size; i++) {
-        if (idx < row_splits[i + 1]) return i;
+__global__ void ComputeIndicesBatchesKernel(int64_t* indices_batches,
+                                            const int64_t* row_splits,
+                                            const int64_t batch_size) {
+    int64_t linear_idx;
+    const int64_t x = blockDim.x * blockIdx.x + threadIdx.x;
+    const int64_t y = blockDim.y * blockIdx.y + threadIdx.y;
+    const int64_t z = blockDim.z * blockIdx.z + threadIdx.z;
+    linear_idx = z * gridDim.x * blockDim.x * gridDim.y +
+                 y * gridDim.x * blockDim.x + x;
+
+    if (linear_idx >= batch_size) return;
+
+    for (int64_t i = row_splits[linear_idx]; i < row_splits[linear_idx + 1];
+         ++i) {
+        indices_batches[i] = linear_idx;
+    }
+}
+
+/// This function computes mapping of index to batch_id.
+///
+/// \param indices_batches    The output array.
+/// \param row_splits    The row_splits for defining batches.
+/// \param batch_size    The batch_size of given points.
+///
+void ComputeIndicesBatches(const cudaStream_t& stream,
+                           int64_t* indices_batches,
+                           const int64_t* row_splits,
+                           const int64_t batch_size) {
+    if (batch_size) {
+        const int BLOCKSIZE = 128;
+        dim3 block(BLOCKSIZE, 1, 1);
+        dim3 grid;
+        grid.y = std::ceil(std::cbrt(batch_size));
+        grid.z = grid.y;
+        grid.x = DivUp(batch_size, int64_t(grid.z) * grid.y * block.x);
+        ComputeIndicesBatchesKernel<<<grid, block, 0, stream>>>(
+                indices_batches, row_splits, batch_size);
     }
 }
 
@@ -165,6 +210,7 @@ __global__ void ComputeHashKernel(
         const T* const __restrict__ points,
         const int64_t batch_size,
         const int64_t* row_splits,
+        const int64_t* indices_batches,
         const open3d::utility::MiniVec<T, NDIM> points_range_min_vec,
         const open3d::utility::MiniVec<T, NDIM> points_range_max_vec,
         const open3d::utility::MiniVec<T, NDIM> inv_voxel_size,
@@ -183,15 +229,13 @@ __global__ void ComputeHashKernel(
 
     Vec_t point(points + linear_idx * NDIM);
 
-    int64_t batch_id = GetBatch(linear_idx, row_splits, batch_size);
-
     if ((point >= points_range_min_vec && point <= points_range_max_vec)
                 .all()) {
         auto coords = ((point - points_range_min_vec) * inv_voxel_size)
                               .template cast<int64_t>();
         int64_t h = coords.dot(strides);
-        h += batch_id * batch_hash;  // add hash for batch_id
-        hashes[linear_idx] = h;      // add 1 and use 0 as invalid
+        h += indices_batches[linear_idx] * batch_hash;  // add hash for batch_id
+        hashes[linear_idx] = h;  // add 1 and use 0 as invalid
     } else {
         hashes[linear_idx] = invalid_hash;  // 0 means invalid
     }
@@ -207,11 +251,15 @@ __global__ void ComputeHashKernel(
 /// \param num_points    The number of points.
 /// \param points    The array with the point coordinates. The shape is
 ///        [num_points,NDIM] and the storage order is row-major.
+/// \param batch_size    The batch size of points.
+/// \param row_splits    row_splits for defining batches.
+/// \param indices_batches    Mapping of index to batch_id.
 /// \param points_range_min_vec    The minimum range for a point to be valid.
 /// \param points_range_max_vec    The maximum range for a point to be valid.
 /// \param inv_voxel_size    The reciprocal of the voxel edge lengths in each
 ///        dimension
 /// \param strides    The strides for computing the linear index.
+/// \param batch_hash    The value for hashing batch dimension.
 /// \param invalid_hash    The value to use for points outside the range.
 template <class T, int NDIM>
 void ComputeHash(const cudaStream_t& stream,
@@ -220,6 +268,7 @@ void ComputeHash(const cudaStream_t& stream,
                  const T* const points,
                  const int64_t batch_size,
                  const int64_t* row_splits,
+                 const int64_t* indices_batches,
                  const MiniVec<T, NDIM> points_range_min_vec,
                  const MiniVec<T, NDIM> points_range_max_vec,
                  const MiniVec<T, NDIM> inv_voxel_size,
@@ -235,8 +284,8 @@ void ComputeHash(const cudaStream_t& stream,
         grid.x = DivUp(num_points, int64_t(grid.z) * grid.y * block.x);
         ComputeHashKernel<T, NDIM><<<grid, block, 0, stream>>>(
                 hashes, num_points, points, batch_size, row_splits,
-                points_range_min_vec, points_range_max_vec, inv_voxel_size,
-                strides, batch_hash, invalid_hash);
+                indices_batches, points_range_min_vec, points_range_max_vec,
+                inv_voxel_size, strides, batch_hash, invalid_hash);
     }
 }
 
@@ -445,6 +494,10 @@ void CopyPointIndices(const cudaStream_t& stream,
 /// \param points    Array with the point positions. The shape is
 ///        [num_points,NDIM].
 ///
+/// \param batch_size    The batch size of points.
+///
+/// \param row_splits    row_splits for defining batches.
+///
 /// \param voxel_size    The edge lenghts of the voxel. The shape is
 ///        [NDIM]. This pointer points to host memory!
 ///
@@ -469,10 +522,11 @@ void CopyPointIndices(const cudaStream_t& stream,
 ///         allocating the output arrays. The object must implement
 ///         functions AllocVoxelCoords(int32_t** ptr, int64_t rows,
 ///         int64_t cols), AllocVoxelPointIndices(int64_t** ptr, int64_t
-///         size), and AllocVoxelPointRowSplits(int64_t** ptr, int64_t
-///         size). All functions should allocate memory and return a
-///         pointer to that memory in ptr. The argments size, rows, and
-///         cols define the size of the array as the number of elements.
+///         size), AllocVoxelPointRowSplits(int64_t** ptr, int64_t
+///         size) and AllocVoxelBatchSplits(int64_t** ptr, int64_t size).
+///         All functions should allocate memory and return a pointer
+///         to that memory in ptr. The argments size, rows, and cols
+///         define the size of the array as the number of elements.
 ///         All functions must accept zero size arguments. In this case
 ///         ptr does not need to be set.
 ///
@@ -519,6 +573,13 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
     const int64_t batch_hash = strides[NDIM - 1] * extents[NDIM - 1];
     const int64_t invalid_hash = batch_hash * MAX_BATCH_SIZE;
 
+    std::pair<int64_t*, size_t> indices_batches =
+            mem_temp.Alloc<int64_t>(num_points);
+    if (!get_temp_size) {
+        ComputeIndicesBatches(stream, indices_batches.first, row_splits,
+                              batch_size);
+    }
+
     // use double buffers for the sorting
     std::pair<int64_t*, size_t> point_indices =
             mem_temp.Alloc<int64_t>(num_points);
@@ -536,8 +597,9 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
         IotaCUDA(stream, point_indices.first,
                  point_indices.first + point_indices.second, int64_t(0));
         ComputeHash(stream, hashes.first, num_points, points, batch_size,
-                    row_splits, points_range_min_vec, points_range_max_vec,
-                    inv_voxel_size, strides, batch_hash, invalid_hash);
+                    row_splits, indices_batches.first, points_range_min_vec,
+                    points_range_max_vec, inv_voxel_size, strides, batch_hash,
+                    invalid_hash);
     }
 
     {
