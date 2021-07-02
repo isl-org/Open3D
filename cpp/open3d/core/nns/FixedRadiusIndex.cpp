@@ -290,6 +290,13 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
 
     // Check shape.
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    queries_row_splits.AssertShape(points_row_splits_.GetShape());
+
+    if (num_query_points != queries_row_splits[-1].Item<int64_t>()) {
+        utility::LogError(
+                "[FixedRadiusIndex::SearchRadius] query_points and "
+                "queries_row_splits have incompatible shape.");
+    }
 
     // Check device.
     query_points.AssertDevice(device);
