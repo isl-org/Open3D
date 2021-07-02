@@ -49,7 +49,7 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
         std::vector<double> dists2;
         kdtree.SearchRadius(points_[idx], eps, nbs[idx], dists2);
 
-#pragma omp critical
+#pragma omp critical(ClusterDBSCAN)
         { ++progress_bar; }
     }
     utility::LogDebug("Done Precompute neighbors.");

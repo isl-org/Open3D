@@ -200,7 +200,7 @@ geometry::TriangleMesh RunRigidOptimizer(
                                                                          JTr);
             pose = delta * pose;
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
-#pragma omp critical
+#pragma omp critical(RunRigidOptimizer)
             {
                 residual += r2;
                 total_num_ += int(visibility_image_to_vertex[c].size());

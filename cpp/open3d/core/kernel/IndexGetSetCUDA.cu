@@ -61,13 +61,13 @@ void IndexGetCUDA(const Tensor& src,
     CUDADeviceSwitcher switcher(src.GetDevice());
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        CUDALauncher::LaunchAdvancedIndexerKernel(
+        cuda_launcher::LaunchAdvancedIndexerKernel(
                 ai, [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CUDALauncher::LaunchAdvancedIndexerKernel(
+            cuda_launcher::LaunchAdvancedIndexerKernel(
                     ai,
                     // Need to wrap as extended CUDA lambda function
                     [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
@@ -88,13 +88,13 @@ void IndexSetCUDA(const Tensor& src,
     CUDADeviceSwitcher switcher(dst.GetDevice());
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        CUDALauncher::LaunchAdvancedIndexerKernel(
+        cuda_launcher::LaunchAdvancedIndexerKernel(
                 ai, [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            CUDALauncher::LaunchAdvancedIndexerKernel(
+            cuda_launcher::LaunchAdvancedIndexerKernel(
                     ai,
                     // Need to wrap as extended CUDA lambda function
                     [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
