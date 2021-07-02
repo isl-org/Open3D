@@ -134,6 +134,11 @@ void VoxelizeBatchCPU(const size_t num_points,
     for (size_t batch_i = 0; batch_i < batch_size; ++batch_i) {
         size_t begin_idx = row_splits[batch_i];
         size_t end_idx = row_splits[batch_i + 1];
+        if (end_idx <= begin_idx) {
+            num_voxels[batch_i] = 0;
+            tmp_batch_splits.push_back(tmp_batch_splits[tmp_batch_splits.size() - 1]);
+            continue;
+        }
         hashes_indices[batch_i].resize(end_idx - begin_idx);
 
         tbb::parallel_for(
