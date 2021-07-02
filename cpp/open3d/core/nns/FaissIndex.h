@@ -69,26 +69,64 @@ public:
                 "FaissIndex::SetTensorData with radius not implemented.");
     }
 
-    // query_points must be float32.
+    /// Perform K nearest neighbor search.
+    ///
+    /// \param query_points Query points. Must be Float32, 2D, with shape {n,
+    /// d}.
+    /// \param knn Number of nearest neighbor to search.
+    /// \return Pair of Tensors: (indices, distances):
+    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
+    /// - distainces: Tensor of shape {n, knn}, same dtype with dataset_points.
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                         int knn) const override;
 
+    /// Perform radius search with multiple radii.
+    ///
+    /// \param query_points Query points. Must be Float32, 2D, with shape {n,
+    /// d}.
+    /// \param radii list of radius. Must be 1D, with shape {n, }.
+    /// \return Tuple of Tensors: (indices, distances, counts):
+    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
+    /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
+    /// dataset_points.
+    /// - counts: Tensor of shape {n,}, dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
                                                     const Tensor &radii,
                                                     bool sort) const override {
         utility::LogError("FaissIndex::SearchHybrid not implemented.");
     }
 
+    /// Perform radius search.
+    ///
+    /// \param query_points Query points. Must be Float32, 2D, with shape {n,
+    /// d}.
+    /// \param radius Radius.
+    /// \return Tuple of Tensors, (indices, distances, counts):
+    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
+    /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
+    /// dataset_points.
+    /// - counts: Tensor of shape {n,}, dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
                                                     double radius,
                                                     bool sort) const override {
         utility::LogError("FaissIndex::SearchHybrid not implemented.");
     }
 
-    // query_points must be float32.
-    std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                           double radius,
-                                           int max_knn) const override;
+    /// Perform hybrid search.
+    ///
+    /// \param query_points Query points. Must be Float32, 2D, with shape {n,
+    /// d}.
+    /// \param radius Radius.
+    /// \param max_knn Maximum number of neighbor to
+    /// search per query point.
+    /// \return Tuple of Tensors, (indices, distances, counts):
+    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
+    /// - distances: Tensor of shape {n, knn}, with dtype Float32.
+    /// - counts: Counts of neighbour for each query points. [Tensor
+    /// of shape {n}, with dtype Int64].
+    std::tuple<Tensor, Tensor, Tensor> SearchHybrid(const Tensor &query_points,
+                                                    double radius,
+                                                    int max_knn) const override;
 
 protected:
     std::unique_ptr<faiss::Index> index;
