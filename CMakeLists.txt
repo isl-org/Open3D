@@ -609,6 +609,9 @@ function(open3d_set_global_properties target)
     elseif(UNIX)
         target_compile_definitions(${target} PRIVATE UNIX)
     endif()
+    if(LINUX_AARCH64)
+        target_compile_definitions(${target} PRIVATE LINUX_AARCH64)
+    endif()
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>")
 
     # TBB static version is used

@@ -26,38 +26,40 @@
 
 #pragma once
 
-#include "open3d/t/geometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include "pybind/core/tensor_converter.h"
 
-namespace open3d {
-namespace t {
-namespace geometry {
+// Define type caster allowing implicit conversion to Tensor from common types.
+// Needs to be included in each compilation unit.
+namespace pybind11 {
+namespace detail {
+template <>
+struct type_caster<open3d::core::Tensor>
+    : public type_caster_base<open3d::core::Tensor> {
+    using base = type_caster_base<open3d::core::Tensor>;
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
 public:
-    using GeometryBase::GeometryBase;
+    bool load(py::handle src, bool convert) {
+        if (base::load(src, convert)) {
+            return true;
+        }
 
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
-    }
+        if (convert) {
+            std::string class_name(py::str(src.get_type()));
+            if (class_name == "<class 'bool'>" ||
+                class_name == "<class 'int'>" ||
+                class_name == "<class 'float'>" ||
+                class_name == "<class 'list'>" ||
+                class_name == "<class 'tuple'>" ||
+                class_name == "<class 'numpy.ndarray'>") {
+                auto tmp = open3d::core::PyHandleToTensor(src);
+                value = new open3d::core::Tensor(tmp);
+                return true;
+            }
+        }
 
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
+        return false;
     }
 };
 
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_tensormap(py::module& m);
-void pybind_image(py::module& m);
-void pybind_pointcloud(py::module& m);
-void pybind_trianglemesh(py::module& m);
-void pybind_image(py::module& m);
-void pybind_tsdf_voxelgrid(py::module& m);
-void pybind_raycasting_scene(py::module& m);
-
-}  // namespace geometry
-}  // namespace t
-}  // namespace open3d
+}  // namespace detail
+}  // namespace pybind11
