@@ -27,11 +27,14 @@
 #include "open3d/t/pipelines/registration/Registration.h"
 
 #include "core/CoreTest.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
+#include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 #include "tests/UnitTest.h"
 
 namespace t_reg = open3d::t::pipelines::registration;
@@ -149,7 +152,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
         Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
 
         // Identity transformation.
-        double max_correspondence_dist = 1.25;
+        double max_correspondence_dist = 2.0;
 
         // Tensor evaluation.
         t_reg::RegistrationResult evaluation_t = t_reg::EvaluateRegistration(
@@ -160,7 +163,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
         l_reg::RegistrationResult evaluation_l = l_reg::EvaluateRegistration(
                 source_lpcd, target_lpcd, max_correspondence_dist,
                 initial_transform_l);
-
+        Eigen::Matrix4d::Identity();
         EXPECT_NEAR(evaluation_t.fitness_, evaluation_l.fitness_, 0.0005);
         EXPECT_NEAR(evaluation_t.inlier_rmse_, evaluation_l.inlier_rmse_,
                     0.0005);
@@ -180,13 +183,19 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
                 target_tpcd.ToLegacyPointCloud();
 
         // Initial transformation input for tensor implementation.
-        core::Tensor initial_transform_t = core::Tensor::Eye(
-                4, core::Dtype::Float64, core::Device("CPU:0"));
+        core::Tensor initial_transform_t =
+                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
+                                            {-0.139, 0.967, -0.215, 0.7},
+                                            {0.487, 0.255, 0.835, -1.4},
+                                            {0.0, 0.0, 0.0, 1.0}},
+                                           core::Device("CPU:0"));
 
         // Initial transformation input for legacy implementation.
-        Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
+        Eigen::Matrix4d initial_transform_l =
+                core::eigen_converter::TensorToEigenMatrixXd(
+                        initial_transform_t);
 
-        double max_correspondence_dist = 1.25;
+        double max_correspondence_dist = 2.0;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;
@@ -225,16 +234,24 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
                 target_tpcd.ToLegacyPointCloud();
 
         // Initial transformation input for tensor implementation.
-        core::Tensor initial_transform_t = core::Tensor::Eye(
-                4, core::Dtype::Float64, core::Device("CPU:0"));
+        core::Tensor initial_transform_t =
+                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
+                                            {-0.139, 0.967, -0.215, 0.7},
+                                            {0.487, 0.255, 0.835, -1.4},
+                                            {0.0, 0.0, 0.0, 1.0}},
+                                           core::Device("CPU:0"));
 
         // Initial transformation input for legacy implementation.
-        Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
+        Eigen::Matrix4d initial_transform_l =
+                core::eigen_converter::TensorToEigenMatrixXd(
+                        initial_transform_t);
 
         double max_correspondence_dist = 2.0;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;
+
+        // L1Loss Method:
 
         // PointToPlane - Tensor.
         t_reg::RegistrationResult reg_p2plane_t = t_reg::RegistrationICP(
@@ -259,6 +276,86 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
         EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.0005);
         EXPECT_NEAR(reg_p2plane_t.inlier_rmse_, reg_p2plane_l.inlier_rmse_,
                     0.0005);
+    }
+}
+
+TEST_P(RegistrationPermuteDevices, RobustKernel) {
+    double scaling_parameter = 1.0;
+    double shape_parameter = 1.0;
+
+    std::unordered_map<int, double> expected_output = {
+            {0, 1.0},         // L2Loss [1.0]
+            {1, 1.0204},      // L1Loss [1.0 / abs(residual)]
+            {2, 1.0},         // HuberLoss [scale / max(abs(residual), scale)]
+            {3, 0.5101},      // CauchyLoss [1 / (1 + sq(residual / scale))]
+            {4, 0.260202},    // GMLoss [scale / sq(scale + sq(residual))]
+            {5, 0.00156816},  // TukeyLoss [sq(1 - sq(min(1, abs(r) / scale)))]
+            {6, 0.714213}     // GeneralizedLoss
+    };
+
+    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+        for (auto LossMethod : {t_reg::RobustKernelMethod::L2Loss,
+                                t_reg::RobustKernelMethod::L1Loss,
+                                t_reg::RobustKernelMethod::HuberLoss,
+                                t_reg::RobustKernelMethod::CauchyLoss,
+                                t_reg::RobustKernelMethod::GMLoss,
+                                t_reg::RobustKernelMethod::TukeyLoss,
+                                t_reg::RobustKernelMethod::GeneralizedLoss}) {
+            DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+                DISPATCH_ROBUST_KERNEL_FUNCTION(
+                        LossMethod, scalar_t, scaling_parameter,
+                        shape_parameter, [&]() {
+                            auto weight = GetWeightFromRobustKernel(0.98);
+                            EXPECT_NEAR(weight,
+                                        expected_output[(int)LossMethod], 1e-3);
+                        });
+            });
+        }
+
+        // GeneralizedLoss can behave as other loss methods by changing the
+        // shape_parameter (and adjusting the scaling_parameter).
+        // For shape_parameter = 2 : L2Loss.
+        // For shape_parameter = 0 : Cauchy or Lorentzian Loss.
+        // For shape_parameter = -2 : German-McClure or GM Loss.
+        // For shape_parameter = 1 : Charbonnier Loss or Pseudo-Huber loss or
+        // smoothened form of L1 Loss.
+        //
+        // Refer:
+        // @article{BarronCVPR2019,
+        //   Author = {Jonathan T. Barron},
+        //   Title = {A General and Adaptive Robust Loss Function},
+        //   Journal = {CVPR},
+        //   Year = {2019}
+        // }
+        DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+            DISPATCH_ROBUST_KERNEL_FUNCTION(
+                    t_reg::RobustKernelMethod::GeneralizedLoss, scalar_t,
+                    scaling_parameter, 2.0, [&]() {
+                        auto weight = GetWeightFromRobustKernel(0.98);
+                        EXPECT_NEAR(weight, 1.0, 1e-3);
+                    });
+
+            DISPATCH_ROBUST_KERNEL_FUNCTION(
+                    t_reg::RobustKernelMethod::GeneralizedLoss, scalar_t,
+                    scaling_parameter, 0.0, [&]() {
+                        auto weight = GetWeightFromRobustKernel(0.98);
+                        EXPECT_NEAR(weight, 0.675584, 1e-3);
+                    });
+
+            DISPATCH_ROBUST_KERNEL_FUNCTION(
+                    t_reg::RobustKernelMethod::GeneralizedLoss, scalar_t,
+                    scaling_parameter, -2.0, [&]() {
+                        auto weight = GetWeightFromRobustKernel(0.98);
+                        EXPECT_NEAR(weight, 0.650259, 1e-3);
+                    });
+
+            DISPATCH_ROBUST_KERNEL_FUNCTION(
+                    t_reg::RobustKernelMethod::GeneralizedLoss, scalar_t,
+                    scaling_parameter, 1.0, [&]() {
+                        auto weight = GetWeightFromRobustKernel(0.98);
+                        EXPECT_NEAR(weight, 0.714213, 1e-3);
+                    });
+        });
     }
 }
 

@@ -50,7 +50,7 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
         const int64_t *correspondence_indices,
         const int n,
         scalar_t *global_sum,
-        funct_t GetWeight) {
+        funct_t GetWeightFromRobustKernel) {
     __shared__ scalar_t local_sum0[kThread1DUnit];
     __shared__ scalar_t local_sum1[kThread1DUnit];
     __shared__ scalar_t local_sum2[kThread1DUnit];
@@ -72,7 +72,7 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
             workload_idx, source_points_ptr, target_points_ptr,
             target_normals_ptr, correspondence_indices, J_ij, r);
 
-    scalar_t w = GetWeight(r);
+    scalar_t w = GetWeightFromRobustKernel(r);
 
     if (valid) {
         // Dump J, r into JtJ and Jtr
@@ -141,7 +141,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
                             target_points.GetDataPtr<scalar_t>(),
                             target_normals.GetDataPtr<scalar_t>(),
                             correspondence_indices.GetDataPtr<int64_t>(), n,
-                            global_sum_ptr, func_t);
+                            global_sum_ptr, GetWeightFromRobustKernel);
                 });
     });
 

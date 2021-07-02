@@ -66,9 +66,17 @@ enum class RobustKernelMethod {
 ///     w(r) = (1 / r) * (dp(r) / dr) , for all r
 /// Therefore, the only impact of the choice on the kernel is thorugh its first
 /// order derivate.
+///
+/// GeneralizedLoss Method is an implementation of the following paper:
+/// @article{BarronCVPR2019,
+///   Author = {Jonathan T. Barron},
+///   Title = {A General and Adaptive Robust Loss Function},
+///   Journal = {CVPR},
+///   Year = {2019}
+/// }
 class RobustKernel {
 public:
-    RobustKernel(const RobustKernelMethod type = RobustKernelMethod::HuberLoss,
+    RobustKernel(const RobustKernelMethod type = RobustKernelMethod::L2Loss,
                  const double& scaling_parameter = 1.0,
                  const double& shape_parameter = 1.0)
         : type_(type),
@@ -79,7 +87,7 @@ public:
 
 public:
     /// Loss type.
-    RobustKernelMethod type_ = RobustKernelMethod::HuberLoss;
+    RobustKernelMethod type_ = RobustKernelMethod::L2Loss;
     /// Scaling parameter.
     double scaling_parameter_ = 1.0;
     /// Shape parameter.

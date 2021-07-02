@@ -30,9 +30,10 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 
-/// To use `Robust Kernel` functions please refer
+/// To use `Robust Kernel` functions please refer the unit-tests for
+/// `t::registration` or the implementation use cases at
 /// `t::pipelines::kernel::ComputePosePointToPlaneCUDA` and
-/// `t::pipelines::kernel::ComputePosePointToPlaneCPU` use cases.
+/// `t::pipelines::kernel::ComputePosePointToPlaneCPU`.
 ///
 /// \param METHOD registration::RobustKernelMethod Loss type.
 /// \param scalar_t type: float / double.
@@ -43,21 +44,21 @@
     [&] {                                                                     \
         if (METHOD ==                                                         \
             open3d::t::pipelines::registration::RobustKernelMethod::L2Loss) { \
-            auto func_t =                                                     \
+            auto GetWeightFromRobustKernel =                                  \
                     [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t {   \
                 return 1.0;                                                   \
             };                                                                \
             return __VA_ARGS__();                                             \
         } else if (METHOD == open3d::t::pipelines::registration::             \
                                      RobustKernelMethod::L1Loss) {            \
-            auto func_t =                                                     \
+            auto GetWeightFromRobustKernel =                                  \
                     [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t {   \
                 return 1.0 / abs(residual);                                   \
             };                                                                \
             return __VA_ARGS__();                                             \
         } else if (METHOD == open3d::t::pipelines::registration::             \
                                      RobustKernelMethod::HuberLoss) {         \
-            auto func_t =                                                     \
+            auto GetWeightFromRobustKernel =                                  \
                     [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t {   \
                 return scaling_parameter /                                    \
                        OPEN3D_MAX(abs(residual), scaling_parameter);          \
@@ -65,7 +66,7 @@
             return __VA_ARGS__();                                             \
         } else if (METHOD == open3d::t::pipelines::registration::             \
                                      RobustKernelMethod::CauchyLoss) {        \
-            auto func_t =                                                     \
+            auto GetWeightFromRobustKernel =                                  \
                     [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t {   \
                 return 1.0 /                                                  \
                        (1.0 + OPEN3D_SQUARE(residual / scaling_parameter));   \
@@ -73,7 +74,7 @@
             return __VA_ARGS__();                                             \
         } else if (METHOD == open3d::t::pipelines::registration::             \
                                      RobustKernelMethod::GMLoss) {            \
-            auto func_t =                                                     \
+            auto GetWeightFromRobustKernel =                                  \
                     [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t {   \
                 return scaling_parameter /                                    \
                        OPEN3D_SQUARE(scaling_parameter +                      \
@@ -82,7 +83,7 @@
             return __VA_ARGS__();                                             \
         } else if (METHOD == open3d::t::pipelines::registration::             \
                                      RobustKernelMethod::TukeyLoss) {         \
-            auto func_t =                                                     \
+            auto GetWeightFromRobustKernel =                                  \
                     [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t {   \
                 return OPEN3D_SQUARE(                                         \
                         1.0 -                                                 \
@@ -94,29 +95,33 @@
                                      RobustKernelMethod::GeneralizedLoss) {   \
             if (OPEN3D_IsClose(shape_parameter, 2.0)) {                       \
                 auto const_val = 1.0 / OPEN3D_SQUARE(scaling_parameter);      \
-                auto func_t = [=] OPEN3D_HOST_DEVICE(                         \
-                                      scalar_t residual) -> scalar_t {        \
+                auto GetWeightFromRobustKernel =                              \
+                        [=] OPEN3D_HOST_DEVICE(                               \
+                                scalar_t residual) -> scalar_t {              \
                     return const_val;                                         \
                 };                                                            \
                 return __VA_ARGS__();                                         \
             } else if (OPEN3D_IsClose(shape_parameter, 0.0)) {                \
-                auto func_t = [=] OPEN3D_HOST_DEVICE(                         \
-                                      scalar_t residual) -> scalar_t {        \
+                auto GetWeightFromRobustKernel =                              \
+                        [=] OPEN3D_HOST_DEVICE(                               \
+                                scalar_t residual) -> scalar_t {              \
                     return 2.0 / (OPEN3D_SQUARE(residual) +                   \
                                   2 * OPEN3D_SQUARE(scaling_parameter));      \
                 };                                                            \
                 return __VA_ARGS__();                                         \
             } else if (shape_parameter < -1e7) {                              \
-                auto func_t = [=] OPEN3D_HOST_DEVICE(                         \
-                                      scalar_t residual) -> scalar_t {        \
+                auto GetWeightFromRobustKernel =                              \
+                        [=] OPEN3D_HOST_DEVICE(                               \
+                                scalar_t residual) -> scalar_t {              \
                     return exp(OPEN3D_SQUARE(residual / scaling_parameter) /  \
                                (-2.0)) /                                      \
                            OPEN3D_SQUARE(scaling_parameter);                  \
                 };                                                            \
                 return __VA_ARGS__();                                         \
             } else {                                                          \
-                auto func_t = [=] OPEN3D_HOST_DEVICE(                         \
-                                      scalar_t residual) -> scalar_t {        \
+                auto GetWeightFromRobustKernel =                              \
+                        [=] OPEN3D_HOST_DEVICE(                               \
+                                scalar_t residual) -> scalar_t {              \
                     return pow((OPEN3D_SQUARE(residual / scaling_parameter) / \
                                         abs(shape_parameter - 2.0) +          \
                                 1),                                           \

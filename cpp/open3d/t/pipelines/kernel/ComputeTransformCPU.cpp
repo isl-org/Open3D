@@ -51,7 +51,7 @@ static void ComputePosePointToPlaneKernelCPU(
         const int64_t *correspondence_indices,
         const int n,
         scalar_t *global_sum,
-        funct_t GetWeight) {
+        funct_t GetWeightFromRobustKernel) {
     // As, AtA is a symmetric matrix, we only need 21 elements instead of 36.
     // Atb is of shape {6,1}. Combining both, A_1x29 is a temp. storage
     // with [0:21] elements as AtA, [21:27] elements as Atb, 27th as residual
@@ -78,7 +78,7 @@ static void ComputePosePointToPlaneKernelCPU(
                             target_normals_ptr, correspondence_indices, J_ij,
                             r);
 
-                    scalar_t w = GetWeight(r);
+                    scalar_t w = GetWeightFromRobustKernel(r);
 
                     if (valid) {
                         A_reduction[0] += J_ij[0] * w * J_ij[0];
@@ -158,7 +158,7 @@ void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
                             target_points.GetDataPtr<scalar_t>(),
                             target_normals.GetDataPtr<scalar_t>(),
                             correspondence_indices.GetDataPtr<int64_t>(), n,
-                            global_sum_ptr, func_t);
+                            global_sum_ptr, GetWeightFromRobustKernel);
                 });
     });
 
