@@ -77,6 +77,8 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
         res.reset(new faiss::gpu::StandardGpuResources());
         faiss::gpu::GpuIndexFlatConfig config;
         config.device = dataset_points_.GetDevice().GetID();
+
+        CUDACachedMemoryManager::ReleaseCache();
         index.reset(new faiss::gpu::GpuIndexFlat(
                 res.get(), dimension, faiss::MetricType::METRIC_L2, config));
 #else
