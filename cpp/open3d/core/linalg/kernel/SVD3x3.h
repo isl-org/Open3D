@@ -2180,9 +2180,10 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
 }
 
 template <typename scalar_t>
-OPEN3D_DEVICE void solve_svd3x3(const scalar_t *A_3x3,  // input A {3,3}
-                                const scalar_t *B_3x1,  // input b {3,1}
-                                scalar_t *X_3x1)        // output x {3,1}
+OPEN3D_DEVICE OPEN3D_FORCE_INLINE void solve_svd3x3(
+        const scalar_t *A_3x3,  // input A {3,3}
+        const scalar_t *B_3x1,  // input b {3,1}
+        scalar_t *X_3x1)        // output x {3,1}
 {
     scalar_t U[9];
     scalar_t V[9];
