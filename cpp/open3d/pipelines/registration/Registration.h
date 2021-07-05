@@ -27,12 +27,14 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <random>
 #include <tuple>
 #include <vector>
 
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 
@@ -185,6 +187,7 @@ RegistrationResult RegistrationICP(
 /// \param ransac_n Fit ransac with `ransac_n` correspondences.
 /// \param checkers Correspondence checker.
 /// \param criteria Convergence criteria.
+/// \param seed Random seed.
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -195,8 +198,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         int ransac_n = 3,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers = {},
-        const RANSACConvergenceCriteria &criteria =
-                RANSACConvergenceCriteria());
+        const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
+        utility::optional<unsigned int> seed = utility::nullopt);
 
 /// \brief Function for global RANSAC registration based on feature matching.
 ///
@@ -211,6 +214,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 /// \param ransac_n Fit ransac with `ransac_n` correspondences.
 /// \param checkers Correspondence checker.
 /// \param criteria Convergence criteria.
+/// \param seed Random seed.
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -223,8 +227,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         int ransac_n = 3,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers = {},
-        const RANSACConvergenceCriteria &criteria =
-                RANSACConvergenceCriteria());
+        const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
+        utility::optional<unsigned int> seed = utility::nullopt);
 
 /// \param source The source point cloud.
 /// \param target The target point cloud.

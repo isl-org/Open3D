@@ -611,6 +611,7 @@ static const std::unordered_map<std::string, std::string>
                  "source point's correspondence is itself."},
                 {"option", "Registration option"},
                 {"ransac_n", "Fit ransac with ``ransac_n`` correspondences"},
+                {"seed", "Random seed."},
                 {"source_feature", "Source point cloud feature."},
                 {"source", "The source point cloud."},
                 {"target_feature", "Target point cloud feature."},
@@ -667,7 +668,8 @@ void pybind_registration_methods(py::module &m) {
           "ransac_n"_a = 3,
           "checkers"_a = std::vector<
                   std::reference_wrapper<const CorrespondenceChecker>>(),
-          "criteria"_a = RANSACConvergenceCriteria(100000, 0.999));
+          "criteria"_a = RANSACConvergenceCriteria(100000, 0.999),
+          "seed"_a = py::none());
     docstring::FunctionDocInject(m,
                                  "registration_ransac_based_on_correspondence",
                                  map_shared_argument_docstrings);
@@ -682,7 +684,8 @@ void pybind_registration_methods(py::module &m) {
           "ransac_n"_a = 3,
           "checkers"_a = std::vector<
                   std::reference_wrapper<const CorrespondenceChecker>>(),
-          "criteria"_a = RANSACConvergenceCriteria(100000, 0.999));
+          "criteria"_a = RANSACConvergenceCriteria(100000, 0.999),
+          "seed"_a = py::none());
     docstring::FunctionDocInject(
             m, "registration_ransac_based_on_feature_matching",
             map_shared_argument_docstrings);
