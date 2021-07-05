@@ -209,7 +209,12 @@ TEST_P(NNSPermuteDevicesWithFaiss, HybridSearch) {
 TEST_P(NNSPermuteDevicesWithFaiss, HybridSearchLarge) {
     // Set up nns.
     int64_t size = (1ULL << 12) + 10;
+#ifdef BUILD_CUDA_MODULE
     int max_shared_memory = core::GetCUDACurrentDeviceMaxSharedMemoryPerBlock();
+#else
+    // Use a default value to make this test work for CPU only builds.
+    int max_shared_memory = 48 * 1024;
+#endif
     int block_size = 32;
     double radius = 0.1;
 
@@ -228,11 +233,10 @@ TEST_P(NNSPermuteDevicesWithFaiss, HybridSearchLarge) {
 
     nns.HybridIndex(radius);
 
-    std::pair<core::Tensor, core::Tensor> result =
+    core::Tensor indices, distances, counts;
+    std::tie(indices, distances, counts) =
             nns.HybridSearch(query, radius, max_knn);
 
-    core::Tensor indices = result.first;
-    core::Tensor distances = result.second;
     core::SizeVector shape{size, max_knn};
 
     ExpectEQ(indices.GetShape(), shape);

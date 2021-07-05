@@ -735,9 +735,9 @@ void WriteNeighborsHybrid(const cudaStream_t& stream,
             max_shared_memory > req_shared_memory ? req_shared_memory : 0;
 
     if (grid.x) {
-#define FN_PARAMETERS                                                   \
-    indices, distances, point_index_table, hash_table_cell_splits,      \
-            hash_table_cell_splits_size - 1, query_points, num_queries, \
+#define FN_PARAMETERS                                                      \
+    indices, distances, counts, point_index_table, hash_table_cell_splits, \
+            hash_table_cell_splits_size - 1, query_points, num_queries,    \
             points, inv_voxel_size, radius, threshold, max_knn, shared_memory
 
 #define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                     \
