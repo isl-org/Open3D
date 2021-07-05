@@ -48,12 +48,6 @@ INSTANTIATE_TEST_SUITE_P(ControlGrid,
                          ControlGridPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class ControlGridPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        ControlGrid,
-        ControlGridPermuteDevicePairs,
-        testing::ValuesIn(ControlGridPermuteDevicePairs::TestCases()));
-
 // TODO(wei): more well-designed test cases
 TEST_P(ControlGridPermuteDevices, Touch) {
     core::Device device = GetParam();
