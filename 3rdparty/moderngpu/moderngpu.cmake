@@ -13,8 +13,4 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_moderngpu SOURCE_DIR)
-message(STATUS "moderngpu source dir: ${SOURCE_DIR}")
-
 set(MODERNGPU_INCLUDE_DIRS "${SOURCE_DIR}/src/")
-message(STATUS "moderngpu include dir: ${MODERNGPU_INCLUDE_DIRS}")
-
