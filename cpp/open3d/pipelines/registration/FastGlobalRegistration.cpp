@@ -30,7 +30,6 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/Registration.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -115,7 +114,7 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
             }
         }
     }
-    utility::LogDebug("points are remained : %d", (int)corres_cross.size());
+    utility::LogDebug("points are remained : {:d}", (int)corres_cross.size());
 
     // STEP 3) TUPLE CONSTRAINT
     utility::LogDebug("\t[tuple constraint] ");
@@ -125,11 +124,13 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
 
+    std::mt19937 generator(option.seed_);
+    std::uniform_int_distribution<int> distribution(0, ncorr - 1);
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
-        rand0 = utility::UniformRandInt(0, ncorr - 1);
-        rand1 = utility::UniformRandInt(0, ncorr - 1);
-        rand2 = utility::UniformRandInt(0, ncorr - 1);
+        rand0 = distribution(generator);
+        rand1 = distribution(generator);
+        rand2 = distribution(generator);
         idi0 = corres_cross[rand0].first;
         idj0 = corres_cross[rand0].second;
         idi1 = corres_cross[rand1].first;
