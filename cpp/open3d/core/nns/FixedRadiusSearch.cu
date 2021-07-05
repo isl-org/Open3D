@@ -649,6 +649,10 @@ __global__ void WriteNeighborsHybridKernel(
             }
         }
     }
+
+    // write count
+    counts[query_idx] = count;
+
     // heap sort
     for (int i = (count / 2) - 1; i > -1; i--) {
         heapify(distance_ptr, indices + indices_offset, i, count);
