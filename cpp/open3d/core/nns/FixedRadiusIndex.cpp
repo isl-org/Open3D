@@ -191,7 +191,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 #endif
 };
 
-std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
+std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
 #ifdef BUILD_CUDA_MODULE
     Dtype dtype = GetDtype();
@@ -216,7 +216,7 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     int64_t num_query_points = query_points_.GetShape()[0];
     std::vector<int64_t> queries_row_splits({0, num_query_points});
 
-    Tensor neighbors_index, neighbors_distance;
+    Tensor neighbors_index, neighbors_distance, neighbour_counts;
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         NeighborSearchAllocator<scalar_t> output_allocator(device);
@@ -233,9 +233,11 @@ std::pair<Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
 
         neighbors_index = output_allocator.NeighborsIndex();
         neighbors_distance = output_allocator.NeighborsDistance();
+        neighbour_counts = output_allocator.NeighborCounts();
     });
-    return std::make_pair(neighbors_index.View({num_query_points, max_knn}),
-                          neighbors_distance.View({num_query_points, max_knn}));
+    return std::make_tuple(neighbors_index.View({num_query_points, max_knn}),
+                           neighbors_distance.View({num_query_points, max_knn}),
+                           neighbour_counts.View({num_query_points}));
 #else
     utility::LogError(
             "FixedRadiusIndex::SearchHybrid BUILD_CUDA_MODULE is OFF. Please "

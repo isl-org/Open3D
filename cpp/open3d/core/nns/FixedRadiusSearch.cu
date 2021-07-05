@@ -195,8 +195,8 @@ __global__ void ComputePointIndexTableKernel(
 ///        all cells. Start and end of each cell is defined by
 ///        \p hash_table_prefix_sum
 ///
-/// \param count_tmp    Temporary memory of size \p hash_table_cell_splits_size
-/// .
+/// \param count_tmp    Temporary memory of size
+///                     \p hash_table_cell_splits_size.
 ///
 /// \param hash_table_cell_splits    The row splits array describing the start
 ///        and end of each cell.
@@ -550,6 +550,7 @@ template <class T, int METRIC, bool RETURN_DISTANCES>
 __global__ void WriteNeighborsHybridKernel(
         int64_t* __restrict__ indices,
         T* __restrict__ distances,
+        int64_t* __restrict__ counts,
         const int64_t* const __restrict__ point_index_table,
         const int64_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
@@ -662,6 +663,7 @@ __global__ void WriteNeighborsHybridKernel(
         }
     }
 }
+
 /// Write indices and distances for each query point in hybrid search mode.
 ///
 /// \param indices    Output array with the neighbors indices.
@@ -669,9 +671,11 @@ __global__ void WriteNeighborsHybridKernel(
 /// \param distances    Output array with the neighbors distances. May be null
 ///        if return_distances is false.
 ///
+/// \param counts    Output array with the neighbour counts.
+///
 /// \param point_index_table    The array storing the point indices for all
-///        cells. Start and end of each cell is defined by \p
-///        hash_table_cell_splits
+///        cells. Start and end of each cell is defined by
+///        \p hash_table_cell_splits
 ///
 /// \param hash_table_cell_splits    The row splits array describing the start
 ///        and end of each cell.
@@ -706,6 +710,7 @@ template <class T>
 void WriteNeighborsHybrid(const cudaStream_t& stream,
                           int64_t* indices,
                           T* distances,
+                          int64_t* counts,
                           const int64_t* const point_index_table,
                           const int64_t* const hash_table_cell_splits,
                           size_t hash_table_cell_splits_size,
@@ -1038,6 +1043,8 @@ void HybridSearchCUDA(size_t num_points,
         T* distances_ptr;
         output_allocator.AllocDistances(&distances_ptr, 0);
 
+        int64_t* counts_ptr;
+        output_allocator.AllocCounts(&counts_ptr, 0);
         return;
     }
 
@@ -1054,6 +1061,9 @@ void HybridSearchCUDA(size_t num_points,
     T* distances_ptr;
     output_allocator.AllocDistances(&distances_ptr, num_indices, 0);
 
+    int64_t* counts_ptr;
+    output_allocator.AllocCounts(&counts_ptr, num_queries, 0);
+
     for (int i = 0; i < batch_size; ++i) {
         const size_t hash_table_size =
                 hash_table_splits[i + 1] - hash_table_splits[i];
@@ -1063,10 +1073,10 @@ void HybridSearchCUDA(size_t num_points,
                 queries_row_splits[i + 1] - queries_row_splits[i];
 
         WriteNeighborsHybrid(
-                stream, indices_ptr, distances_ptr, hash_table_index,
-                hash_table_cell_splits + first_cell_idx, hash_table_size + 1,
-                queries_i, num_queries_i, points, inv_voxel_size, radius,
-                max_knn, metric, true);
+                stream, indices_ptr, distances_ptr, counts_ptr,
+                hash_table_index, hash_table_cell_splits + first_cell_idx,
+                hash_table_size + 1, queries_i, num_queries_i, points,
+                inv_voxel_size, radius, max_knn, metric, true);
     }
 }
 ////
@@ -1180,6 +1190,7 @@ template void HybridSearchCUDA(
         const int64_t* const hash_table_cell_splits,
         const int64_t* const hash_table_index,
         NeighborSearchAllocator<double>& output_allocator);
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

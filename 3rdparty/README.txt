@@ -111,6 +111,10 @@ cppzmq                      4.6.0                                    MIT license
 Header-only C++ binding for libzmq
 https://github.com/zeromq/cppzmq
 --------------------------------------------------------------------------------
-moderngpu                   2b39855                            moderngpu license
+moderngpu                   2b39855                                  BSD license
 A C++ header-only for general-purpose computing on GPUs
 https://github.com/moderngpu/moderngpu
+--------------------------------------------------------------------------------
+embree                      3.13.0                              Apache-2 license
+Embree is a collection of high-performance ray tracing kernels
+https://github.com/embree/embree

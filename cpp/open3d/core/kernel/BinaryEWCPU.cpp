@@ -132,39 +132,39 @@ static void LaunchBoolBinaryEWCPUKernel(const Tensor& lhs,
                                         const Indexer& indexer) {
     switch (op_code) {
         case BinaryEWOpCode::LogicalAnd:
-            CPULauncher::LaunchBinaryEWKernel(
+            cpu_launcher::LaunchBinaryEWKernel(
                     indexer, CPULogicalAndElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::LogicalOr:
-            CPULauncher::LaunchBinaryEWKernel(
+            cpu_launcher::LaunchBinaryEWKernel(
                     indexer, CPULogicalOrElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::LogicalXor:
-            CPULauncher::LaunchBinaryEWKernel(
+            cpu_launcher::LaunchBinaryEWKernel(
                     indexer, CPULogicalXorElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Gt:
-            CPULauncher::LaunchBinaryEWKernel(indexer,
-                                              CPUGtElementKernel<src_t, dst_t>);
+            cpu_launcher::LaunchBinaryEWKernel(
+                    indexer, CPUGtElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Lt:
-            CPULauncher::LaunchBinaryEWKernel(indexer,
-                                              CPULtElementKernel<src_t, dst_t>);
+            cpu_launcher::LaunchBinaryEWKernel(
+                    indexer, CPULtElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Ge:
-            CPULauncher::LaunchBinaryEWKernel(
+            cpu_launcher::LaunchBinaryEWKernel(
                     indexer, CPUGeqElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Le:
-            CPULauncher::LaunchBinaryEWKernel(
+            cpu_launcher::LaunchBinaryEWKernel(
                     indexer, CPULeqElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Eq:
-            CPULauncher::LaunchBinaryEWKernel(indexer,
-                                              CPUEqElementKernel<src_t, dst_t>);
+            cpu_launcher::LaunchBinaryEWKernel(
+                    indexer, CPUEqElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Ne:
-            CPULauncher::LaunchBinaryEWKernel(
+            cpu_launcher::LaunchBinaryEWKernel(
                     indexer, CPUNeqElementKernel<src_t, dst_t>);
             break;
         default:
@@ -206,19 +206,19 @@ void BinaryEWCPU(const Tensor& lhs,
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case BinaryEWOpCode::Add:
-                    CPULauncher::LaunchBinaryEWKernel(
+                    cpu_launcher::LaunchBinaryEWKernel(
                             indexer, CPUAddElementKernel<scalar_t>);
                     break;
                 case BinaryEWOpCode::Sub:
-                    CPULauncher::LaunchBinaryEWKernel(
+                    cpu_launcher::LaunchBinaryEWKernel(
                             indexer, CPUSubElementKernel<scalar_t>);
                     break;
                 case BinaryEWOpCode::Mul:
-                    CPULauncher::LaunchBinaryEWKernel(
+                    cpu_launcher::LaunchBinaryEWKernel(
                             indexer, CPUMulElementKernel<scalar_t>);
                     break;
                 case BinaryEWOpCode::Div:
-                    CPULauncher::LaunchBinaryEWKernel(
+                    cpu_launcher::LaunchBinaryEWKernel(
                             indexer, CPUDivElementKernel<scalar_t>);
                     break;
                 default:

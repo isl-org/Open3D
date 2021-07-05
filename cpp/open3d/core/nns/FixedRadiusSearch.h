@@ -158,8 +158,13 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///        array must be equal to the number of points.
 ///
 /// \param output_allocator    An object that implements functions for
-///         allocating the output arrays.
-///
+///         allocating the output arrays. The object must implement functions
+///         AllocIndices(int64_t** ptr, size_t size) and
+///         AllocDistances(T** ptr, size_t size). Both functions should
+///         allocate memory and return a pointer to that memory in ptr.
+///         Argument size specifies the size of the array as the number of
+///         elements. Both functions must accept the argument size==0.
+///         In this case ptr does not need to be set.
 template <class T>
 void FixedRadiusSearchCUDA(void* temp,
                            size_t& temp_size,
@@ -240,8 +245,13 @@ void FixedRadiusSearchCUDA(void* temp,
 ///        array must be equal to the number of points.
 ///
 /// \param output_allocator    An object that implements functions for
-///         allocating the output arrays.
-///
+///         allocating the output arrays. The object must implement functions
+///         AllocIndices(int64_t** ptr, size_t size),
+///         AllocDistances(T** ptr, size_t size) and AllocCounts(int64_t** ptr,
+///         size_t num). These functions should allocate memory and return a
+///         pointer to that memory in ptr. Argument size specifies the size of
+///         the array as the number of elements. Both functions must accept the
+///         argument size==0. In this case ptr does not need to be set.
 template <class T>
 void HybridSearchCUDA(size_t num_points,
                       const T* const points,

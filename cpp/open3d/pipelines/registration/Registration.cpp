@@ -65,7 +65,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                         Eigen::Vector2i(i, indices[0]));
             }
         }
-#pragma omp critical
+#pragma omp critical(GetRegistrationResultAndCorrespondences)
         {
             for (int i = 0; i < (int)correspondence_set_private.size(); i++) {
                 result.correspondence_set_.push_back(
@@ -255,7 +255,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 }
             }  // if < exit_itr_local
         }      // for loop
-#pragma omp critical
+#pragma omp critical(RegistrationRANSACBasedOnCorrespondence)
         {
             if (best_result_local.IsBetterRANSACThan(best_result)) {
                 best_result = best_result_local;
@@ -394,7 +394,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
             G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
-#pragma omp critical
+#pragma omp critical(GetInformationMatrixFromPointClouds)
         { GTG += GTG_private; }
     }
     return GTG;

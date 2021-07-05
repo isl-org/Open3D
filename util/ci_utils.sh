@@ -24,9 +24,21 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
 # CUDA
-CUDA_VERSION=("11-0" "11.0")
-CUDNN_MAJOR_VERSION=8
-CUDNN_VERSION="8.0.5.39-1+cuda11.0"
+if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON || \
+    $UBUNTU_VERSION != bionic ]]; then
+    # CUDA version in sync with PyTorch and Tensorflow
+    CUDA_VERSION=("11-0" "11.0")
+    CUDNN_MAJOR_VERSION=8
+    CUDNN_VERSION="8.0.5.39-1+cuda11.0"
+    GCC_MAX_VER=9
+else
+    # Without MLOps, ensure Open3D works with the lowest supported CUDA version
+    # Not available in Nvidia focal repos
+    CUDA_VERSION=("10-1" "10.1")
+    CUDNN_MAJOR_VERSION=8
+    CUDNN_VERSION="8.0.5.39-1+cuda10.1"
+    GCC_MAX_VER=7
+fi
 # ML
 TENSORFLOW_VER="2.4.1"
 # TORCH_CUDA_GLNX_VER="1.7.1+cu110"
@@ -84,21 +96,8 @@ install_cuda_toolkit() {
     fi
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-cudnn" =~ ^($options)$ ]]; then
-        # The repository method can cause "File has unexpected size" error so
-        # we use a tar file copy approach instead. The scripts are taken from
-        # CentOS 6 nvidia-docker scripts. The CUDA version and CUDNN version
-        # should be the same as the repository method. Ref:
-        # https://gitlab.com/nvidia/container-images/cuda/-/blob/2d67fde701915bd88a15038895203c894b36d3dd/dist/10.1/centos6-x86_64/devel/cudnn7/Dockerfile#L9
-        # $SUDO apt-get install --yes --no-install-recommends curl
-        # CUDNN_DOWNLOAD_SUM=7eaec8039a2c30ab0bc758d303588767693def6bf49b22485a2c00bf2e136cb3
-        # curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.6.5/cudnn-10.1-linux-x64-v7.6.5.32.tgz -O
-        # echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.1-linux-x64-v7.6.5.32.tgz" | sha256sum -c -
-        # $SUDO tar --no-same-owner -xzf cudnn-10.1-linux-x64-v7.6.5.32.tgz -C /usr/local
-        # rm cudnn-10.1-linux-x64-v7.6.5.32.tgz
-        # $SUDO ldconfig
-        # CUDNN is now part of the main CUDA repo, so re-trying apt install
         echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
-        $SUDO apt-get install --yes --no-install-recommends \
+        $SUDO apt-get install --yes --no-install-recommends --allow-downgrades \
             "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
             "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
     fi
@@ -109,14 +108,14 @@ install_cuda_toolkit() {
     export PATH="${CUDA_TOOLKIT_DIR}/bin${PATH:+:$PATH}"
     export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     set -u +x
-    # Ensure g++ < 10 is installed for CUDA 11.0
+    # Ensure g++ < {8,10} is installed for CUDA {10.1,11.0}
     cpp_version=$(c++ --version 2>/dev/null | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
-    if dpkg --compare-versions "$cpp_version" ge-nl 10; then
-        $SUDO apt-get install --yes --no-install-recommends g++-9 gcc-9
-        $SUDO update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-9 70 \
-            --slave /usr/bin/gcc gcc /usr/bin/gcc-9
-        $SUDO update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-9 70 \
-            --slave /usr/bin/g++ g++ /usr/bin/g++-9
+    if dpkg --compare-versions "$cpp_version" ge-nl $((GCC_MAX_VER + 1)); then
+        $SUDO apt-get install --yes --no-install-recommends g++-$GCC_MAX_VER gcc-$GCC_MAX_VER
+        $SUDO update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-$GCC_MAX_VER 70 \
+            --slave /usr/bin/gcc gcc /usr/bin/gcc-$GCC_MAX_VER
+        $SUDO update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-$GCC_MAX_VER 70 \
+            --slave /usr/bin/g++ g++ /usr/bin/g++-$GCC_MAX_VER
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         $SUDO apt-get clean
