@@ -76,6 +76,26 @@ public:
     virtual ~DeviceMemoryManager() {}
 };
 
+class CachedMemoryManager : public DeviceMemoryManager {
+public:
+    explicit CachedMemoryManager(
+            const std::shared_ptr<DeviceMemoryManager>& device_mm);
+    void* Malloc(size_t byte_size, const Device& device) override;
+    void Free(void* ptr, const Device& device) override;
+    void Memcpy(void* dst_ptr,
+                const Device& dst_device,
+                const void* src_ptr,
+                const Device& src_device,
+                size_t num_bytes) override;
+
+public:
+    static void ReleaseCache(const Device& device);
+    static void ReleaseCache();
+
+protected:
+    std::shared_ptr<DeviceMemoryManager> device_mm_;
+};
+
 class CPUMemoryManager : public DeviceMemoryManager {
 public:
     CPUMemoryManager();
@@ -89,9 +109,9 @@ public:
 };
 
 #ifdef BUILD_CUDA_MODULE
-class CUDASimpleMemoryManager : public DeviceMemoryManager {
+class CUDAMemoryManager : public DeviceMemoryManager {
 public:
-    CUDASimpleMemoryManager();
+    CUDAMemoryManager();
     void* Malloc(size_t byte_size, const Device& device) override;
     void Free(void* ptr, const Device& device) override;
     void Memcpy(void* dst_ptr,
@@ -99,27 +119,6 @@ public:
                 const void* src_ptr,
                 const Device& src_device,
                 size_t num_bytes) override;
-
-public:
-    static void ReleaseCache(){};
-
-protected:
-    bool IsCUDAPointer(const void* ptr);
-};
-
-class CUDACachedMemoryManager : public DeviceMemoryManager {
-public:
-    CUDACachedMemoryManager();
-    void* Malloc(size_t byte_size, const Device& device) override;
-    void Free(void* ptr, const Device& device) override;
-    void Memcpy(void* dst_ptr,
-                const Device& dst_device,
-                const void* src_ptr,
-                const Device& src_device,
-                size_t num_bytes) override;
-
-public:
-    static void ReleaseCache();
 
 protected:
     bool IsCUDAPointer(const void* ptr);
