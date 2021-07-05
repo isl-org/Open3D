@@ -29,7 +29,6 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 
@@ -206,7 +205,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers /* = {}*/,
         const RANSACConvergenceCriteria &criteria
-        /* = RANSACConvergenceCriteria()*/) {
+        /* = RANSACConvergenceCriteria()*/,
+        utility::optional<unsigned int> seed /* = utility::nullopt*/) {
     if (ransac_n < 3 || (int)corres.size() < ransac_n ||
         max_correspondence_distance <= 0.0) {
         return RegistrationResult();
@@ -220,13 +220,16 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         CorrespondenceSet ransac_corres(ransac_n);
         RegistrationResult best_result_local;
         int exit_itr_local = criteria.max_iteration_;
+        std::mt19937 generator(
+            seed.has_value() ? seed.value() : std::random_device{}());
+        std::uniform_int_distribution<int> distribution(
+            0, static_cast<int>(corres.size()) - 1);
 
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
             if (itr < exit_itr_local) {
                 for (int j = 0; j < ransac_n; j++) {
-                    ransac_corres[j] = corres[utility::UniformRandInt(
-                            0, static_cast<int>(corres.size()) - 1)];
+                    ransac_corres[j] = corres[distribution(generator)];
                 }
 
                 Eigen::Matrix4d transformation =
@@ -294,7 +297,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers /* = {}*/,
         const RANSACConvergenceCriteria &criteria
-        /* = RANSACConvergenceCriteria()*/) {
+        /* = RANSACConvergenceCriteria()*/,
+        utility::optional<unsigned int> seed /* = utility::nullopt*/) {
     if (ransac_n < 3 || max_correspondence_distance <= 0.0) {
         return RegistrationResult();
     }
@@ -346,7 +350,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                               corres_mutual.size());
             return RegistrationRANSACBasedOnCorrespondence(
                     source, target, corres_mutual, max_correspondence_distance,
-                    estimation, ransac_n, checkers, criteria);
+                    estimation, ransac_n, checkers, criteria, seed);
         }
         utility::LogDebug(
                 "Too few correspondences after mutual filter, fall back to "
@@ -355,7 +359,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 
     return RegistrationRANSACBasedOnCorrespondence(
             source, target, corres_ij, max_correspondence_distance, estimation,
-            ransac_n, checkers, criteria);
+            ransac_n, checkers, criteria, seed);
 }
 
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
