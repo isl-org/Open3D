@@ -238,9 +238,14 @@ TEST_P(NNSPermuteDevicesWithFaiss, HybridSearchLarge) {
             nns.HybridSearch(query, radius, max_knn);
 
     core::SizeVector shape{size, max_knn};
+    std::vector<int64_t> gt_index_slice(size, 0);
+    std::iota(std::begin(gt_index_slice), std::end(gt_index_slice), 0);
+    std::vector<float> gt_distance_slice(size, 0);
 
     ExpectEQ(indices.GetShape(), shape);
+    ExpectEQ(indices.Slice(1, 0, 1).ToFlatVector<int64_t>(), gt_index_slice);
     ExpectEQ(distances.GetShape(), shape);
+    ExpectEQ(distances.Slice(1, 0, 1).ToFlatVector<float>(), gt_distance_slice);
 }
 }  // namespace tests
 }  // namespace open3d
