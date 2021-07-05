@@ -57,51 +57,21 @@ void Project(
         float depth_scale,
         float depth_max);
 
-void UnprojectCPU(
-        const core::Tensor& depth,
-        utility::optional<std::reference_wrapper<const core::Tensor>>
-                image_colors,
-        core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        float depth_scale,
-        float depth_max,
-        int64_t stride);
+void EstimateColorGradients(const core::Tensor& points,
+                            const core::Tensor& normals,
+                            const core::Tensor& colors,
+                            core::Tensor& color_gradient,
+                            const double& radius,
+                            const int64_t& max_nn);
 
-void ProjectCPU(
-        core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
-        const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        float depth_scale,
-        float depth_max);
+void EstimateCovariances(const core::Tensor& points,
+                         core::Tensor& covariances,
+                         const double& radius,
+                         const int64_t& max_nn);
 
-#ifdef BUILD_CUDA_MODULE
-void UnprojectCUDA(
-        const core::Tensor& depth,
-        utility::optional<std::reference_wrapper<const core::Tensor>>
-                image_colors,
-        core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        float depth_scale,
-        float depth_max,
-        int64_t stride);
-
-void ProjectCUDA(
-        core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
-        const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        float depth_scale,
-        float depth_max);
-#endif
+void EstimateNormals(const core::Tensor& covariances,
+                     core::Tensor& normals,
+                     const bool& has_normals);
 
 }  // namespace pointcloud
 }  // namespace kernel

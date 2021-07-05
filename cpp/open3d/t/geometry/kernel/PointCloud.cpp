@@ -31,7 +31,8 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Logging.h"
+#include "open3d/t/geometry/kernel/PointCloudImpl.h"
+#include "open3d/utility/Console.h"
 
 namespace open3d {
 namespace t {
@@ -99,6 +100,57 @@ void Project(
     } else if (device_type == core::Device::DeviceType::CUDA) {
         CUDA_CALL(ProjectCUDA, depth, image_colors, points, colors, intrinsics,
                   extrinsics, depth_scale, depth_max);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void EstimateColorGradients(const core::Tensor& points,
+                            const core::Tensor& normals,
+                            const core::Tensor& colors,
+                            core::Tensor& color_gradient,
+                            const double& radius,
+                            const int64_t& max_nn) {
+    core::Device device = points.GetDevice();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        EstimateColorGradientsCPU(points, normals, colors, color_gradient,
+                                  radius, max_nn);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(EstimateColorGradientsCUDA, points, normals, colors,
+                  color_gradient, radius, max_nn);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void EstimateCovariances(const core::Tensor& points,
+                         core::Tensor& covariances,
+                         const double& radius,
+                         const int64_t& max_nn) {
+    core::Device device = points.GetDevice();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        EstimateCovariancesCPU(points, covariances, radius, max_nn);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(EstimateCovariancesCUDA, points, covariances, radius, max_nn);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void EstimateNormals(const core::Tensor& covariances,
+                     core::Tensor& normals,
+                     const bool& has_normals) {
+    core::Device device = covariances.GetDevice();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        EstimateNormalsCPU(covariances, normals, has_normals);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(EstimateNormalsCUDA, covariances, normals, has_normals);
     } else {
         utility::LogError("Unimplemented device");
     }

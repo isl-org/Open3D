@@ -324,6 +324,29 @@ public:
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
+public:
+    /// \brief Function to compute the covariance matrix for each point of a
+    /// point cloud.
+    /// \param radius NeighbourSearch radius parameter.
+    /// [Recommended ~1.4x voxel size].
+    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
+    void EstimateCovariances(const double radius, const int max_nn = 30);
+
+    /// \brief Function to compute point normals.
+    /// \param radius NeighbourSearch radius parameter.
+    /// [Recommended ~1.4x voxel size].
+    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
+    void EstimateNormals(const double radius, const int max_nn = 30);
+
+    /// \brief Function to compute point color gradients.
+    /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
+    /// Colored Point Cloud Registration Revisited, ICCV, 2017.
+    /// \param radius NeighbourSearch radius parameter.
+    /// [Recommended ~1.4x voxel size].
+    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
+    void EstimateColorGradients(const double radius, const int max_nn = 30);
+
+public:
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.
     ///

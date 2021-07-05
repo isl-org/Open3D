@@ -249,6 +249,80 @@ PointCloud PointCloud::VoxelDownSample(
     return pcd_down;
 }
 
+void PointCloud::EstimateCovariances(const double radius,
+                                     const int max_knn /* = 30*/) {
+    core::Dtype dtype = this->GetPoints().GetDtype();
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                "Only Float32 and Float64 type color attribute supported for "
+                "estimating color gradient.");
+    }
+
+    this->SetPointAttr("covariances",
+                       core::Tensor::Empty({GetPoints().GetLength(), 3, 3},
+                                           dtype, GetDevice()));
+
+    // Compute and set `covariances` attribute.
+    kernel::pointcloud::EstimateCovariances(this->GetPoints().Contiguous(),
+                                            this->GetPointAttr("covariances"),
+                                            radius, max_knn);
+}
+
+void PointCloud::EstimateNormals(const double radius,
+                                 const int max_knn /* = 30*/) {
+    core::Dtype dtype = this->GetPoints().GetDtype();
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                "Only Float32 and Float64 type color attribute supported for "
+                "estimating color gradient.");
+    }
+    const bool has_normals = HasPointNormals();
+
+    if (!has_normals) {
+        this->SetPointNormals(core::Tensor::Empty({GetPoints().GetLength(), 3},
+                                                  dtype, GetDevice()));
+    } else {
+        this->SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    if (!HasPointAttr("covariances")) {
+        EstimateCovariances(radius, max_knn);
+    } else {
+        this->SetPointAttr("covariances",
+                           GetPointAttr("covariances").Contiguous());
+    }
+
+    kernel::pointcloud::EstimateNormals(this->GetPointAttr("covariances"),
+                                        this->GetPointNormals(), has_normals);
+}
+
+void PointCloud::EstimateColorGradients(const double radius,
+                                        const int max_knn /*= 30*/) {
+    if (!HasPointColors() || !HasPointNormals()) {
+        utility::LogError(
+                "PointCloud must have colors and normals attribute "
+                "to compute color gradients.");
+    }
+
+    core::Dtype dtype = this->GetPointColors().GetDtype();
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                "Only Float32 and Float64 type color attribute supported for "
+                "estimating color gradient.");
+    }
+
+    this->SetPointAttr("color_gradients",
+                       core::Tensor::Empty({GetPoints().GetLength(), 3}, dtype,
+                                           GetDevice()));
+
+    // Compute and set `color_gradients` attribute.
+    kernel::pointcloud::EstimateColorGradients(
+            this->GetPoints().Contiguous(),
+            this->GetPointNormals().Contiguous(),
+            this->GetPointColors().Contiguous(),
+            this->GetPointAttr("color_gradients"), radius, max_knn);
+}
+
 static PointCloud CreatePointCloudWithNormals(
         const Image &depth_in, /* UInt16 or Float32 */
         const Image &color_in, /* Float32 */
@@ -301,8 +375,7 @@ static PointCloud CreatePointCloudWithNormals(
         auto cam_to_world = extrinsics.Inverse();
         vertex_list = vertex_list
                               .Matmul(cam_to_world.Slice(0, 0, 3, 1)
-                                              .Slice(1, 0, 3, 1)
-                                              .T())
+                                              .Slice(1, 0, 3, 1))
                               .Add_(cam_to_world.Slice(0, 0, 3, 1)
                                             .Slice(1, 3, 4, 1)
                                             .T());
