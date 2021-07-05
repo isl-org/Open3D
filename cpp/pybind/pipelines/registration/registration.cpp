@@ -423,17 +423,27 @@ must hold true for all edges.)");
                              bool decrease_mu,
                              double maximum_correspondence_distance,
                              int iteration_number, double tuple_scale,
-                             int maximum_tuple_count) {
-                     return new FastGlobalRegistrationOption(
-                             division_factor, use_absolute_scale, decrease_mu,
-                             maximum_correspondence_distance, iteration_number,
-                             tuple_scale, maximum_tuple_count);
+                             int maximum_tuple_count,
+                             utility::optional<unsigned int> seed) {
+                     if (!seed.has_value()) {
+                         return new FastGlobalRegistrationOption(
+                                 division_factor, use_absolute_scale,
+                                 decrease_mu, maximum_correspondence_distance,
+                                 iteration_number, tuple_scale,
+                                 maximum_tuple_count);
+                     } else {
+                         return new FastGlobalRegistrationOption(
+                                 division_factor, use_absolute_scale,
+                                 decrease_mu, maximum_correspondence_distance,
+                                 iteration_number, tuple_scale,
+                                 maximum_tuple_count, seed.value());
+                     }
                  }),
                  "division_factor"_a = 1.4, "use_absolute_scale"_a = false,
                  "decrease_mu"_a = false,
                  "maximum_correspondence_distance"_a = 0.025,
                  "iteration_number"_a = 64, "tuple_scale"_a = 0.95,
-                 "maximum_tuple_count"_a = 1000)
+                 "maximum_tuple_count"_a = 1000, "seed"_a = py::none())
             .def_readwrite(
                     "division_factor",
                     &FastGlobalRegistrationOption::division_factor_,
@@ -461,6 +471,8 @@ must hold true for all edges.)");
             .def_readwrite("maximum_tuple_count",
                            &FastGlobalRegistrationOption::maximum_tuple_count_,
                            "float: Maximum tuple numbers.")
+            .def_readwrite("seed", &FastGlobalRegistrationOption::seed_,
+                           "unsigned int: Random seed.")
             .def("__repr__", [](const FastGlobalRegistrationOption &c) {
                 return fmt::format(
                         ""
@@ -472,10 +484,10 @@ must hold true for all edges.)");
                         "\niteration_number={}"
                         "\ntuple_scale={}"
                         "\nmaximum_tuple_count={}",
-                        c.division_factor_, c.use_absolute_scale_,
+                        "\nseed={}", c.division_factor_, c.use_absolute_scale_,
                         c.decrease_mu_, c.maximum_correspondence_distance_,
                         c.iteration_number_, c.tuple_scale_,
-                        c.maximum_tuple_count_);
+                        c.maximum_tuple_count_, c.seed_);
             });
 
     // open3d.registration.RegistrationResult
