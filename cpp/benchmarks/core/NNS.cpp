@@ -48,9 +48,9 @@ void HybridSearch(benchmark::State& state,
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    pcd.VoxelDownSample(voxel_size);
+    auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
-    core::nns::NearestNeighborSearch tree(pcd.GetPoints());
+    core::nns::NearestNeighborSearch tree(pcd_down.GetPoints());
 
     bool check = tree.HybridIndex(radius);
     if (!check) {
@@ -61,10 +61,10 @@ void HybridSearch(benchmark::State& state,
     core::Tensor indices, distance, counts;
     // Warp up
     std::tie(indices, distance, counts) =
-            tree.HybridSearch(pcd.GetPoints(), radius, max_nn);
+            tree.HybridSearch(pcd_down.GetPoints(), radius, max_nn);
     for (auto _ : state) {
         std::tie(indices, distance, counts) =
-                tree.HybridSearch(pcd.GetPoints(), radius, max_nn);
+                tree.HybridSearch(pcd_down.GetPoints(), radius, max_nn);
     }
 }
 
@@ -77,9 +77,9 @@ void KnnSearch(benchmark::State& state,
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    pcd.VoxelDownSample(voxel_size);
+    auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
-    core::nns::NearestNeighborSearch tree(pcd.GetPoints());
+    core::nns::NearestNeighborSearch tree(pcd_down.GetPoints());
 
     bool check = tree.KnnIndex();
     if (!check) {
@@ -88,9 +88,10 @@ void KnnSearch(benchmark::State& state,
 
     core::Tensor indices, distance, counts;
     // Warp up
-    std::tie(indices, distance) = tree.KnnSearch(pcd.GetPoints(), max_nn);
+    std::tie(indices, distance) = tree.KnnSearch(pcd_down.GetPoints(), max_nn);
     for (auto _ : state) {
-        std::tie(indices, distance) = tree.KnnSearch(pcd.GetPoints(), max_nn);
+        std::tie(indices, distance) =
+                tree.KnnSearch(pcd_down.GetPoints(), max_nn);
     }
 }
 
