@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/linalg/kernel/Matrix.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 
 #define O3D_MIN(a, b) a < b ? a : b
@@ -177,22 +178,15 @@ OPEN3D_HOST_DEVICE void ComputeEigenvector0(const scalar_t* A,
     scalar_t row1[3] = {A[1], A[4] - eval0, A[5]};
     scalar_t row2[3] = {A[2], A[5], A[8] - eval0};
 
-    scalar_t r0xr1[3] = {row0[1] * row1[2] - row0[2] * row1[1],
-                         row0[2] * row1[0] - row0[0] * row1[2],
-                         row0[0] * row1[1] - row0[1] * row1[0]};
-    scalar_t r0xr2[3] = {row0[1] * row2[2] - row0[2] * row2[1],
-                         row0[2] * row2[0] - row0[0] * row2[2],
-                         row0[0] * row2[1] - row0[1] * row2[0]};
-    scalar_t r1xr2[3] = {row1[1] * row2[2] - row1[2] * row2[1],
-                         row1[2] * row2[0] - row1[0] * row2[2],
-                         row1[0] * row2[1] - row1[1] * row2[0]};
+    scalar_t r0xr1[3], r0xr2[3], r1xr2[3];
 
-    scalar_t d0 =
-            r0xr1[0] * r0xr1[0] + r0xr1[1] * r0xr1[1] + r0xr1[2] * r0xr1[2];
-    scalar_t d1 =
-            r0xr2[0] * r0xr2[0] + r0xr2[1] * r0xr2[1] + r0xr2[2] * r0xr2[2];
-    scalar_t d2 =
-            r1xr2[0] * r1xr2[0] + r1xr2[1] * r1xr2[1] + r1xr2[2] * r1xr2[2];
+    core::linalg::kernel::cross_3x1(row0, row1, r0xr1);
+    core::linalg::kernel::cross_3x1(row0, row2, r0xr2);
+    core::linalg::kernel::cross_3x1(row1, row2, r1xr2);
+
+    scalar_t d0 = core::linalg::kernel::dot_3x1(r0xr1, r0xr1);
+    scalar_t d1 = core::linalg::kernel::dot_3x1(r0xr2, r0xr2);
+    scalar_t d2 = core::linalg::kernel::dot_3x1(r1xr2, r1xr2);
 
     scalar_t dmax = d0;
     int imax = 0;
@@ -244,21 +238,14 @@ OPEN3D_HOST_DEVICE void ComputeEigenvector1(const scalar_t* A,
         U[1] = evec0[2] * inv_length;
         U[2] = -evec0[1] * inv_length;
     }
-    scalar_t V[3] = {evec0[1] * U[2] - evec0[2] * U[1],
-                     evec0[2] * U[0] - evec0[0] * U[2],
-                     evec0[0] * U[1] - evec0[1] * U[0]};
+    scalar_t V[3], AU[3], AV[3];
+    core::linalg::kernel::cross_3x1(evec0, U, V);
+    core::linalg::kernel::matmul3x3_3x1(A, U, AU);
+    core::linalg::kernel::matmul3x3_3x1(A, V, AV);
 
-    scalar_t AU[3] = {A[0] * U[0] + A[1] * U[1] + A[2] * U[2],
-                      A[1] * U[0] + A[4] * U[1] + A[5] * U[2],
-                      A[2] * U[0] + A[5] * U[1] + A[8] * U[2]};
-
-    scalar_t AV[3] = {A[0] * V[0] + A[1] * V[1] + A[2] * V[2],
-                      A[1] * V[0] + A[4] * V[1] + A[5] * V[2],
-                      A[2] * V[0] + A[5] * V[1] + A[8] * V[2]};
-
-    scalar_t m00 = U[0] * AU[0] + U[1] * AU[1] + U[2] * AU[2] - eval1;
-    scalar_t m01 = U[0] * AV[0] + U[1] * AV[1] + U[2] * AV[2];
-    scalar_t m11 = V[0] * AV[0] + V[1] * AV[1] + V[2] * AV[2] - eval1;
+    scalar_t m00 = core::linalg::kernel::dot_3x1(U, AU) - eval1;
+    scalar_t m01 = core::linalg::kernel::dot_3x1(U, AV);
+    scalar_t m11 = core::linalg::kernel::dot_3x1(V, AV) - eval1;
 
     scalar_t absM00 = abs(m00);
     scalar_t absM01 = abs(m01);
