@@ -202,7 +202,7 @@ public:
 
     template <typename func_t, typename scalar_t>
     void Run(const func_t& reduce_func, scalar_t identity) {
-        // Arg-reduction needs to iterate each output element separatly in
+        // Arg-reduction needs to iterate each output element separately in
         // sub-iterations. Each output elemnent corresponds to multiple input
         // elements. We need to keep track of the indices within each
         // sub-iteration.
