@@ -28,11 +28,8 @@
 #include <omp.h>
 #endif
 
-#include <hwloc.h>
-
-#include <thread>
-
 #include "open3d/core/kernel/ParallelUtil.h"
+#include "open3d/utility/CPUInfo.h"
 
 namespace open3d {
 namespace core {
@@ -54,40 +51,10 @@ bool InParallel() {
 #endif
 }
 
-int GetNumPhysicalCores() {
-    // https://stackoverflow.com/a/12486105/1255535
-    static int num_physical_cores = []() -> int {
-        hwloc_topology_t topology;
-        hwloc_topology_init(&topology);
-        hwloc_topology_load(topology);
-        int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_CORE);
-        if (depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
-            // Make the best guess. This typically returns # logical cores.
-            // We dont' divide by 2, since the CPU may not support SMT or the
-            // SMT can be disabled.
-            return static_cast<int>(std::thread::hardware_concurrency());
-        } else {
-            return hwloc_get_nbobjs_by_depth(topology, depth);
-        }
-    }();
-    return num_physical_cores;
-}
+int GetNumPhysicalCores() { return utility::CPUInfo::GetInstance().NumCores(); }
 
 int GetNumLogicalCores() {
-    // https://stackoverflow.com/a/12486105/1255535
-    static int num_logical_cores = []() -> int {
-        hwloc_topology_t topology;
-        hwloc_topology_init(&topology);
-        hwloc_topology_load(topology);
-        int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
-        if (depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
-            // Make the best guess. This typically returns # logical cores.
-            return static_cast<int>(std::thread::hardware_concurrency());
-        } else {
-            return hwloc_get_nbobjs_by_depth(topology, depth);
-        }
-    }();
-    return num_logical_cores;
+    return utility::CPUInfo::GetInstance().NumThreads();
 }
 
 }  // namespace kernel
