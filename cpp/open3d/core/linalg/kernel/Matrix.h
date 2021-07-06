@@ -60,7 +60,7 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void matmul3x3_3x1(const scalar_t* A_3x3,
                                                      scalar_t* C_3x1) {
     C_3x1[0] = A_3x3[0] * B_3x1[0] + A_3x3[1] * B_3x1[1] + A_3x3[2] * B_3x1[2];
     C_3x1[1] = A_3x3[3] * B_3x1[0] + A_3x3[4] * B_3x1[1] + A_3x3[5] * B_3x1[2];
-    C_3x1[2] = A_3x3[6] * B_3x1[0] + A_3x3[7] * B_3x1[1] + A_3x3[7] * B_3x1[2];
+    C_3x1[2] = A_3x3[6] * B_3x1[0] + A_3x3[7] * B_3x1[1] + A_3x3[8] * B_3x1[2];
 }
 
 template <typename scalar_t>
@@ -114,13 +114,15 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE scalar_t det3x3(const scalar_t* A_3x3) {
 template <typename scalar_t>
 OPEN3D_DEVICE OPEN3D_FORCE_INLINE bool inverse2x2(const scalar_t* A_2x2,
                                                   scalar_t* output_2x2) {
-    if (det2x2(A_2x2) == 0) {
+    scalar_t det = det3x3(A_2x2);
+    if (det < 1e-12) {
         return false;
     } else {
-        output_2x2[0] = A_2x2[3];
-        output_2x2[1] = -A_2x2[1];
-        output_2x2[2] = -A_2x2[2];
-        output_2x2[3] = A_2x2[0];
+        scalar_t invdet = 1.0 / det;
+        output_2x2[0] = A_2x2[3] * det;
+        output_2x2[1] = -A_2x2[1] * det;
+        output_2x2[2] = -A_2x2[2] * det;
+        output_2x2[3] = A_2x2[0] * det;
     }
     return true;
 }
@@ -130,19 +132,19 @@ template <typename scalar_t>
 OPEN3D_DEVICE OPEN3D_FORCE_INLINE bool inverse3x3(const scalar_t* A_3x3,
                                                   scalar_t* output_3x3) {
     scalar_t det = det3x3(A_3x3);
-    if (det == 0) {
+    if (det < 1e-12) {
         return false;
     } else {
-        scalar_t invdet = 1 / det;
-        output_3x3[0] = (A_3x3[4] * A_3x3[8] - A_3x3[7] - A_3x3[5]) * invdet;
-        output_3x3[1] = (A_3x3[2] * A_3x3[7] - A_3x3[1] - A_3x3[8]) * invdet;
-        output_3x3[2] = (A_3x3[1] * A_3x3[5] - A_3x3[2] - A_3x3[4]) * invdet;
-        output_3x3[3] = (A_3x3[5] * A_3x3[6] - A_3x3[3] - A_3x3[8]) * invdet;
-        output_3x3[4] = (A_3x3[0] * A_3x3[8] - A_3x3[2] - A_3x3[6]) * invdet;
-        output_3x3[5] = (A_3x3[3] * A_3x3[2] - A_3x3[0] - A_3x3[5]) * invdet;
-        output_3x3[6] = (A_3x3[3] * A_3x3[7] - A_3x3[6] - A_3x3[4]) * invdet;
-        output_3x3[7] = (A_3x3[6] * A_3x3[1] - A_3x3[0] - A_3x3[7]) * invdet;
-        output_3x3[8] = (A_3x3[0] * A_3x3[4] - A_3x3[3] - A_3x3[1]) * invdet;
+        scalar_t invdet = 1.0 / det;
+        output_3x3[0] = (A_3x3[4] * A_3x3[8] - A_3x3[7] * A_3x3[5]) * invdet;
+        output_3x3[1] = (A_3x3[2] * A_3x3[7] - A_3x3[1] * A_3x3[8]) * invdet;
+        output_3x3[2] = (A_3x3[1] * A_3x3[5] - A_3x3[2] * A_3x3[4]) * invdet;
+        output_3x3[3] = (A_3x3[5] * A_3x3[6] - A_3x3[3] * A_3x3[8]) * invdet;
+        output_3x3[4] = (A_3x3[0] * A_3x3[8] - A_3x3[2] * A_3x3[6]) * invdet;
+        output_3x3[5] = (A_3x3[3] * A_3x3[2] - A_3x3[0] * A_3x3[5]) * invdet;
+        output_3x3[6] = (A_3x3[3] * A_3x3[7] - A_3x3[6] * A_3x3[4]) * invdet;
+        output_3x3[7] = (A_3x3[6] * A_3x3[1] - A_3x3[0] * A_3x3[7]) * invdet;
+        output_3x3[8] = (A_3x3[0] * A_3x3[4] - A_3x3[3] * A_3x3[1]) * invdet;
     }
     return true;
 }
