@@ -1137,7 +1137,7 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     // s12 = Sa12.f; s13 = Sa13.f; s21 = Sa21.f;
     S_3x1[1] = Sa22.f;
     // s23 = Sa23.f; s31 = Sa31.f; s32 = Sa32.f;
-    S_3x1[3] = Sa33.f;
+    S_3x1[2] = Sa33.f;
 }
 
 template <>
@@ -2175,7 +2175,7 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     // s12 = Sa12.f; s13 = Sa13.f; s21 = Sa21.f;
     S_3x1[1] = Sa22.f;
     // s23 = Sa23.f; s31 = Sa31.f; s32 = Sa32.f;
-    S_3x1[3] = Sa33.f;
+    S_3x1[2] = Sa33.f;
 }
 
 template <typename scalar_t>
