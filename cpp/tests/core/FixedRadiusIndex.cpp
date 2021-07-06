@@ -146,8 +146,8 @@ TEST(FixedRadiusIndex, SearchHybrid) {
             core::Dtype::Float32, device);
 
     // if radius == 0.1
-    core::Tensor indices, distances;
-    std::tie(indices, distances) =
+    core::Tensor indices, distances, counts;
+    std::tie(indices, distances, counts) =
             index.SearchHybrid(query_points, radius, max_knn);
 
     ExpectEQ(indices.ToFlatVector<int64_t>(), gt_indices);
@@ -194,9 +194,9 @@ TEST(FixedRadiusIndex, SearchHybridBatch) {
     core::nns::FixedRadiusIndex index;
     index.SetTensorData(dataset_points, points_row_splits, radius);
 
-    core::Tensor indices, distances;
+    core::Tensor indices, distances, counts;
 
-    std::tie(indices, distances) = index.SearchHybrid(
+    std::tie(indices, distances, counts) = index.SearchHybrid(
             query_points, queries_row_splits, radius, max_knn);
 
     ExpectEQ(indices.ToFlatVector<int64_t>(), gt_indices);
