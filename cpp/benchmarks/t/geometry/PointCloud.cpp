@@ -107,13 +107,13 @@ void EstimateCovariances(benchmark::State& state, const core::Device& device) {
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    pcd.VoxelDownSample(0.02);
+    auto pcd_down = pcd.VoxelDownSample(0.02);
 
     // Warp up
-    pcd.EstimateCovariances(0.07, 30);
-    (void)pcd;
+    pcd_down.EstimateCovariances(0.04, 30);
+    (void)pcd_down;
     for (auto _ : state) {
-        pcd.EstimateCovariances(0.07, 30);
+        pcd_down.EstimateCovariances(0.04, 30);
     }
 }
 
@@ -124,15 +124,15 @@ void EstimateNormals(benchmark::State& state, const core::Device& device) {
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    pcd.VoxelDownSample(0.02);
+    auto pcd_down = pcd.VoxelDownSample(0.02);
 
     // Warp up
-    pcd.EstimateNormals(0.07, 30);
-    pcd.RemovePointAttr("covariances");
-    (void)pcd;
+    pcd_down.EstimateNormals(0.04, 30);
+    pcd_down.RemovePointAttr("covariances");
+    (void)pcd_down;
     for (auto _ : state) {
-        pcd.EstimateNormals(0.07, 30);
-        pcd.RemovePointAttr("covariances");
+        pcd_down.EstimateNormals(0.04, 30);
+        pcd_down.RemovePointAttr("covariances");
     }
 }
 
@@ -144,16 +144,17 @@ void EstimateColorGradients(benchmark::State& state,
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    pcd.VoxelDownSample(0.02);
-    pcd.SetPointColors(
-            pcd.GetPointColors().To(pcd.GetPoints().GetDtype()).Div(255.0));
-    pcd.EstimateNormals(0.07, 30);
+    auto pcd_down = pcd.VoxelDownSample(0.02);
+    pcd_down.SetPointColors(pcd_down.GetPointColors()
+                                    .To(pcd_down.GetPoints().GetDtype())
+                                    .Div(255.0));
+    pcd_down.EstimateNormals(0.04, 30);
 
     // Warp up
-    pcd.EstimateColorGradients(0.07, 30);
-    (void)pcd;
+    pcd_down.EstimateColorGradients(0.04, 30);
+    (void)pcd_down;
     for (auto _ : state) {
-        pcd.EstimateColorGradients(0.07, 30);
+        pcd_down.EstimateColorGradients(0.04, 30);
     }
 }
 
@@ -163,15 +164,15 @@ void LegacyEstimateNormals(benchmark::State& state, double voxel_size) {
     // remove_nan_points
     open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
 
-    pcd.VoxelDownSample(voxel_size);
+    auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
     // Warp up
-    pcd.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.07, 30),
-                        true);
+    pcd_down->EstimateNormals(
+            open3d::geometry::KDTreeSearchParamHybrid(0.04, 30), true);
     (void)pcd;
     for (auto _ : state) {
-        pcd.EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(0.07, 30),
-                            true);
+        pcd_down->EstimateNormals(
+                open3d::geometry::KDTreeSearchParamHybrid(0.04, 30), true);
     }
 }
 
