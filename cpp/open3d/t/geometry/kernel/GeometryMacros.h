@@ -61,6 +61,12 @@ __device__ double atomicAdd(double *address, double val) {
 #define ISNAN(X) std::isnan(X)
 #endif
 
+#define OPEN3D_MAX(a, b) (a > b ? a : b)
+#define OPEN3D_MIN(a, b) (a < b ? a : b)
+#define OPEN3D_SQUARE(a) ((a) * (a))
+
+#define OPEN3D_IsClose(a, b) (a > 0.99998 * b && a < 1.00002 * b ? true : false)
+
 // https://stackoverflow.com/a/51549250
 #ifdef __CUDACC__
 __device__ inline float atomicMinf(float *addr, float value) {
