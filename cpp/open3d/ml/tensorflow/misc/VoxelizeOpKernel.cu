@@ -44,6 +44,7 @@ public:
 
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& points,
+                const tensorflow::Tensor& row_splits,
                 const tensorflow::Tensor& voxel_size,
                 const tensorflow::Tensor& points_range_min,
                 const tensorflow::Tensor& points_range_max) {
@@ -56,9 +57,10 @@ public:
     case NDIM: {                                                            \
         void* temp_ptr = nullptr;                                           \
         size_t temp_size = 0;                                               \
-        VoxelizeCUDA<T, NDIM>(                                              \
+        VoxelizeBatchCUDA<T, NDIM>(                                         \
                 device.stream(), temp_ptr, temp_size, texture_alignment,    \
                 points.dim_size(0), points.flat<T>().data(),                \
+                row_splits.dim_size(0) - 1, row_splits<int64_t>().data(),   \
                 voxel_size.flat<T>().data(),                                \
                 points_range_min.flat<T>().data(),                          \
                 points_range_max.flat<T>().data(), max_points_per_voxel,    \
@@ -71,9 +73,10 @@ public:
                                               temp_shape, &temp_tensor));   \
         temp_ptr = temp_tensor.flat<uint8_t>().data();                      \
                                                                             \
-        VoxelizeCUDA<T, NDIM>(                                              \
+        VoxelizeBatchCUDA<T, NDIM>(                                         \
                 device.stream(), temp_ptr, temp_size, texture_alignment,    \
                 points.dim_size(0), points.flat<T>().data(),                \
+                row_splits.dim_size(0) - 1, row_splits<int64_t>().data(),   \
                 voxel_size.flat<T>().data(),                                \
                 points_range_min.flat<T>().data(),                          \
                 points_range_max.flat<T>().data(), max_points_per_voxel,    \
@@ -99,7 +102,7 @@ private:
 };
 
 #define REG_KB(type)                                                 \
-    REGISTER_KERNEL_BUILDER(Name("Open3DVoxelize")                   \
+    REGISTER_KERNEL_BUILDER(Name("Open3DVoxelizeBatch")              \
                                     .Device(DEVICE_GPU)              \
                                     .TypeConstraint<type>("T")       \
                                     .HostMemory("voxel_size")        \

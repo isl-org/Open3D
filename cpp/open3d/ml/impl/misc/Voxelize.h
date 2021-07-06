@@ -236,6 +236,8 @@ void VoxelizeBatchCPU(const size_t num_points,
             // add up to max_points_per_voxel indices for this voxel
             int64_t points_per_voxel = 0;
             const int64_t current_hash = hashes_indices[hash_i].first;
+            int64_t batch_id = current_hash / batch_hash;
+            num_voxels[batch_id]--;
             for (; hash_i < hashes_indices.size(); ++hash_i) {
                 if (current_hash != hashes_indices[hash_i].first) {
                     // new voxel starts -> break
@@ -244,6 +246,16 @@ void VoxelizeBatchCPU(const size_t num_points,
                 if (points_per_voxel < max_points_per_voxel) {
                     tmp_point_indices.push_back(hashes_indices[hash_i].second);
                     ++points_per_voxel;
+                }
+            }
+
+            // skip voxels exceeding max_voxel
+            if (num_voxels[batch_id] == 0) {
+                for (; hash_i < hashes_indices.size(); ++hash_i) {
+                    if ((int64_t)(hashes_indices[hash_i].first / batch_hash) !=
+                        batch_id) {
+                        break;
+                    }
                 }
             }
         }

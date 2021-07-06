@@ -32,28 +32,32 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DVoxelize")
+REGISTER_OP("Open3DVoxelizeBatch")
         .Attr("T: {float, double}")  // type for the point positions
         .Attr("max_points_per_voxel: int = 9223372036854775807")
         .Attr("max_voxels: int = 9223372036854775807")
         .Input("points: T")
+        .Input("row_splits: int64")
         .Input("voxel_size: T")
         .Input("points_range_min: T")
         .Input("points_range_max: T")
         .Output("voxel_coords: int32")
         .Output("voxel_point_indices: int64")
         .Output("voxel_point_row_splits: int64")
+        .Output("voxel_batch_splits: int64")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             using namespace open3d::ml::op_util;
-            ShapeHandle points, voxel_size, points_range_min, points_range_max,
-                    max_points_per_voxel, max_voxels, voxel_coords,
-                    voxel_point_indices, voxel_point_row_splits;
+            ShapeHandle points, row_splits, voxel_size, points_range_min,
+                    points_range_max, max_points_per_voxel, max_voxels,
+                    voxel_coords, voxel_point_indices, voxel_point_row_splits,
+                    voxel_batch_splits;
 
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &points));
-            TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &voxel_size));
-            TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 1, &points_range_min));
-            TF_RETURN_IF_ERROR(c->WithRank(c->input(3), 1, &points_range_max));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &row_splits));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 1, &voxel_size));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(3), 1, &points_range_min));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(4), 1, &points_range_max));
 
             Dim num_points("num_points");
             Dim ndim("ndim");
@@ -70,6 +74,8 @@ REGISTER_OP("Open3DVoxelize")
             c->set_output(1, voxel_point_indices);
             voxel_point_row_splits = c->MakeShape({c->UnknownDim()});
             c->set_output(2, voxel_point_row_splits);
+            voxel_batch_splits = c->MakeShape({c->UnknownDim()});
+            c->set_output(3, voxel_batch_splits);
 
             return Status::OK();
         })
