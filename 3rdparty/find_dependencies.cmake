@@ -1341,7 +1341,7 @@ else()
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
 
-# embree 
+# embree
 include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
 import_3rdparty_library(3rdparty_embree
     HIDDEN
@@ -1352,3 +1352,14 @@ import_3rdparty_library(3rdparty_embree
 set(EMBREE_TARGET "3rdparty_embree")
 add_dependencies(3rdparty_embree ext_embree)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${EMBREE_TARGET}")
+
+# hwloc
+include(${Open3D_3RDPARTY_DIR}/hwloc/hwloc.cmake)
+import_3rdparty_library(3rdparty_hwloc
+    INCLUDE_DIRS ${HWLOC_INCLUDE_DIRS}
+    LIB_DIR      ${HWLOC_LIB_DIR}
+    LIBRARIES    ${HWLOC_LIBRARIES}
+)
+set(HWLOC_TARGET "3rdparty_hwloc")
+add_dependencies(3rdparty_hwloc ext_hwloc)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${HWLOC_TARGET}")

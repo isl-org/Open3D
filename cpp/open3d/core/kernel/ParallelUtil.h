@@ -26,29 +26,17 @@
 
 #pragma once
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 namespace open3d {
 namespace core {
 namespace kernel {
 
-inline int GetMaxThreads() {
-#ifdef _OPENMP
-    return omp_get_max_threads();
-#else
-    return 1;
-#endif
-}
+int GetMaxThreads();
 
-inline bool InParallel() {
-#ifdef _OPENMP
-    return omp_in_parallel();
-#else
-    return false;
-#endif
-}
+bool InParallel();
+
+int GetNumPhysicalCores();
+
+int GetNumLogicalCores();
 
 }  // namespace kernel
 }  // namespace core
