@@ -57,7 +57,6 @@
 #define gsine_pi_over_eight 1053028117
 
 #define gcosine_pi_over_eight 1064076127
-#define gone_half 0.5f
 #define gsmall_number 1.e-12f
 #define gtiny_number 1.e-20f
 #define gfour_gamma_squared 5.8284273147583007813f
@@ -1132,12 +1131,11 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
     U_3x3[7] = Su32.f;
     U_3x3[8] = Su33.f;
 
-    // S_3x1 contains only diagonal elements.
     S_3x1[0] = Sa11.f;
     // s12 = Sa12.f; s13 = Sa13.f; s21 = Sa21.f;
     S_3x1[1] = Sa22.f;
     // s23 = Sa23.f; s31 = Sa31.f; s32 = Sa32.f;
-    S_3x1[3] = Sa33.f;
+    S_3x1[2] = Sa33.f;
 }
 
 template <>
@@ -2170,12 +2168,11 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
     U_3x3[7] = Su32.f;
     U_3x3[8] = Su33.f;
 
-    // S_3x1 contains only diagonal elements.
     S_3x1[0] = Sa11.f;
     // s12 = Sa12.f; s13 = Sa13.f; s21 = Sa21.f;
     S_3x1[1] = Sa22.f;
     // s23 = Sa23.f; s31 = Sa31.f; s32 = Sa32.f;
-    S_3x1[3] = Sa33.f;
+    S_3x1[2] = Sa33.f;
 }
 
 template <typename scalar_t>
@@ -2192,35 +2189,36 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void solve_svd3x3(
     //###########################################################
     // Sigma^+
     //###########################################################
-    const scalar_t epsilon = 1e-6;
-    S[0] = S[0] < epsilon ? 0 : 1.0 / S[0];
-    S[1] = S[1] < epsilon ? 0 : 1.0 / S[1];
-    S[2] = S[2] < epsilon ? 0 : 1.0 / S[2];
+    const scalar_t epsilon = 1e-10;
+    S[0] = abs(S[0]) < epsilon ? 0 : 1.0 / S[0];
+    S[1] = abs(S[1]) < epsilon ? 0 : 1.0 / S[1];
+    S[2] = abs(S[2]) < epsilon ? 0 : 1.0 / S[2];
 
     //###########################################################
     // (Sigma^+) * UT
     //###########################################################
-    U[0] *= S[0];
-    U[3] *= S[0];
-    U[6] *= S[0];
+    scalar_t S_UT[9];
 
-    U[1] *= S[1];
-    U[4] *= S[1];
-    U[7] *= S[1];
-
-    U[2] *= S[0];
-    U[5] *= S[0];
-    U[8] *= S[0];
+    S_UT[0] = U[0] * S[0];
+    S_UT[1] = U[3] * S[0];
+    S_UT[2] = U[6] * S[0];
+    S_UT[3] = U[1] * S[1];
+    S_UT[4] = U[4] * S[1];
+    S_UT[5] = U[7] * S[1];
+    S_UT[6] = U[2] * S[2];
+    S_UT[7] = U[5] * S[2];
+    S_UT[8] = U[8] * S[2];
 
     //###########################################################
     // Ainv = V * [(Sigma^+) * UT]
     //###########################################################
     scalar_t Ainv[9] = {0};
-    matmul3x3_3x3(V, U, Ainv);
+    matmul3x3_3x3(V, S_UT, Ainv);
 
     //###########################################################
     // x = Ainv * b
     //###########################################################
+
     matmul3x3_3x1(Ainv, B_3x1, X_3x1);
 }
 
