@@ -12,7 +12,26 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     PATCH_COMMAND ""
     CONFIGURE_COMMAND ./autogen.sh
-    COMMAND ./configure --prefix=<INSTALL_DIR> --enable-static --with-pic --disable-libxml2 --disable-pci --disable-libudev
+    COMMAND ./configure --prefix=<INSTALL_DIR>
+                        --enable-silent-rules
+                        --enable-static
+                        --silent
+                        --with-pic
+                        --disable-dependency-tracking
+                        --disable-picky
+                        --disable-cairo
+                        --disable-libxml2
+                        --disable-io
+                        --disable-pci
+                        --disable-opencl
+                        --disable-cuda
+                        --disable-nvml
+                        --disable-rsmi
+                        --disable-levelzero
+                        --disable-gl
+                        --disable-libudev
+                        --disable-plugin-dlopen
+                        --disable-plugin-ltdl
     BUILD_COMMAND make -j${NPROC}
     INSTALL_COMMAND make install
     BUILD_BYPRODUCTS
