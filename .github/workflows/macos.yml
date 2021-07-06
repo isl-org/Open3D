@@ -62,6 +62,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ccache
+          brew install automake
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
@@ -124,6 +125,7 @@ jobs:
         shell: bash -l {0}
         run: |
           brew install ccache
+          brew install automake
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           echo
           source util/ci_utils.sh
