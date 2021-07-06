@@ -25,9 +25,10 @@
 // ----------------------------------------------------------------------------
 //
 
-#include <vector>
-#include <torch/script.h>
 #include <torch/custom_class.h>
+#include <torch/script.h>
+
+#include <vector>
 
 #include "open3d/ml/pytorch/TorchHelper.h"
 
