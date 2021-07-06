@@ -26,10 +26,10 @@
 //
 
 #include <vector>
+#include <torch/script.h>
+#include <torch/custom_class.h>
 
 #include "open3d/ml/pytorch/TorchHelper.h"
-#include "torch/custom_class.h"
-#include "torch/script.h"
 
 /// A RaggedTensor is a tensor with ragged dimensions, whose slice
 /// may have different lengths. We define a container for ragged tensor
