@@ -79,7 +79,8 @@ else()
         PATCH_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
-        INSTALL_COMMAND ""
+        INSTALL_COMMAND $<$<PLATFORM_ID:Windows>:${CMAKE_COMMAND} -E rename <SOURCE_DIR>/lib/libhwloc.a <SOURCE_DIR>/lib/hwloc.lib>
+
     )
 
     ExternalProject_Get_Property(ext_hwloc SOURCE_DIR)
