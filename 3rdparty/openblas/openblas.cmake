@@ -8,7 +8,7 @@ else()
     set(OPENBLAS_TARGET "NEHALEM")
 endif()
 
-set(OPENBLAS_INCLUDE_DIR "${OPENBLAS_INSTALL_PREFIX}/include/") # The "/"" is critical, see import_3rdparty_library.
+set(OPENBLAS_INCLUDE_DIR "${OPENBLAS_INSTALL_PREFIX}/include/") # The "/"" is critical, see open3d_import_3rdparty_library.
 set(OPENBLAS_LIB_DIR "${OPENBLAS_INSTALL_PREFIX}/lib")
 set(OPENBLAS_LIBRARIES openblas)  # Extends to libopenblas.a automatically.
 
