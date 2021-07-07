@@ -102,8 +102,8 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
         reduction[22] += J_ij[1] * w * r;
         reduction[23] += J_ij[2] * w * r;
         reduction[24] += J_ij[3] * w * r;
-        reduction[26] += J_ij[5] * w * r;
         reduction[25] += J_ij[4] * w * r;
+        reduction[26] += J_ij[5] * w * r;
 
         reduction[27] += r * r;
         reduction[28] += 1;

@@ -39,6 +39,10 @@
 
 namespace t_reg = open3d::t::pipelines::registration;
 namespace l_reg = open3d::pipelines::registration;
+static const std::string source_pointcloud_filename =
+        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
+static const std::string target_pointcloud_filename =
+        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
 
 namespace open3d {
 namespace tests {
@@ -73,55 +77,20 @@ TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
 
 static std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
 GetTestPointClouds(const core::Dtype& dtype, const core::Device& device) {
-    core::Tensor source_points =
-            core::Tensor::Init<double>({{1.15495, 2.40671, 1.15061},
-                                        {1.81481, 2.06281, 1.71927},
-                                        {0.888322, 2.05068, 2.04879},
-                                        {3.78842, 1.70788, 1.30246},
-                                        {1.8437, 2.22894, 0.986237},
-                                        {2.95706, 2.20180, 0.987878},
-                                        {1.72644, 1.24356, 1.93486},
-                                        {0.922024, 1.14872, 2.34317},
-                                        {3.70293, 1.85134, 1.15357},
-                                        {3.06505, 1.30386, 1.55279},
-                                        {0.634826, 1.04995, 2.47046},
-                                        {1.40107, 1.37469, 1.09687},
-                                        {2.93002, 1.96242, 1.48532},
-                                        {3.74384, 1.30258, 1.30244}},
-                                       device);
+    t::geometry::PointCloud source, target;
 
-    t::geometry::PointCloud source(source_points.To(device, dtype));
+    t::io::ReadPointCloud(source_pointcloud_filename, source,
+                          {"auto", false, false, true});
+    t::io::ReadPointCloud(target_pointcloud_filename, target,
+                          {"auto", false, false, true});
 
-    core::Tensor target_points =
-            core::Tensor::Init<double>({{2.41766, 2.05397, 1.74994},
-                                        {1.37848, 2.19793, 1.66553},
-                                        {2.24325, 2.27183, 1.33708},
-                                        {3.09898, 1.98482, 1.77401},
-                                        {1.81615, 1.48337, 1.49697},
-                                        {3.01758, 2.20312, 1.51502},
-                                        {2.38836, 1.39096, 1.74914},
-                                        {1.30911, 1.4252, 1.37429},
-                                        {3.16847, 1.39194, 1.90959},
-                                        {1.59412, 1.53304, 1.58040},
-                                        {1.34342, 2.19027, 1.30075}},
-                                       device);
+    source = source.To(device, false).VoxelDownSample(0.08);
+    source.SetPoints(source.GetPoints().To(dtype, false));
+    source.SetPointNormals(source.GetPointNormals().To(dtype, false));
 
-    core::Tensor target_normals =
-            core::Tensor::Init<double>({{-0.00850160, -0.22355, -0.519574},
-                                        {0.257463, -0.0738755, -0.698319},
-                                        {0.0574301, -0.484248, -0.409929},
-                                        {-0.0123503, -0.230172, -0.520720},
-                                        {0.355904, -0.142007, -0.720467},
-                                        {0.0674038, -0.418757, -0.458602},
-                                        {0.226091, 0.258253, -0.874024},
-                                        {0.43979, 0.122441, -0.574998},
-                                        {0.109144, 0.180992, -0.762368},
-                                        {0.273325, 0.292013, -0.903111},
-                                        {0.385407, -0.212348, -0.277818}},
-                                       device);
-
-    t::geometry::PointCloud target(target_points.To(device, dtype));
-    target.SetPointNormals(target_normals.To(device, dtype));
+    target = target.To(device, false).VoxelDownSample(0.08);
+    target.SetPoints(target.GetPoints().To(dtype, false));
+    target.SetPointNormals(target.GetPointNormals().To(dtype, false));
 
     return std::make_tuple(source, target);
 }
@@ -146,7 +115,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
         Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
 
         // Identity transformation.
-        double max_correspondence_dist = 2.0;
+        double max_correspondence_dist = 1.5;
 
         // Tensor evaluation.
         t_reg::RegistrationResult evaluation_t = t_reg::EvaluateRegistration(
@@ -189,7 +158,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
                 core::eigen_converter::TensorToEigenMatrixXd(
                         initial_transform_t);
 
-        double max_correspondence_dist = 2.0;
+        double max_correspondence_dist = 1.5;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;
@@ -240,7 +209,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
                 core::eigen_converter::TensorToEigenMatrixXd(
                         initial_transform_t);
 
-        double max_correspondence_dist = 2.0;
+        double max_correspondence_dist = 1.5;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;
