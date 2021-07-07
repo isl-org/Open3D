@@ -281,7 +281,11 @@ TEST_P(PointCloudPermuteDevices, EstimateNormalsAndCovariances) {
                                           device)
                         .To(dtype);
 
-        EXPECT_TRUE(pcd.GetPointAttr("normals").AllClose(normals, 1e-4, 1e-4));
+        // To Debug CI Issue.
+        utility::LogDebug(" Estimated Normals: \n{}\n Expected Normals: \n{}\n",
+                          pcd.GetPointNormals().ToString(), normals.ToString());
+
+        EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
 
         // When computing normals, covariances are also computed by default.
         core::Tensor covariances =

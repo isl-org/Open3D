@@ -40,6 +40,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -90,7 +91,7 @@ void ProjectCPU(
         float* depth_ptr = depth_indexer.GetDataPtr<float>(
                 static_cast<int64_t>(u), static_cast<int64_t>(v));
         float d = zc * depth_scale;
-#pragma omp critical
+#pragma omp critical(ProjectCPU)
         {
             if (*depth_ptr == 0 || *depth_ptr >= d) {
                 *depth_ptr = d;

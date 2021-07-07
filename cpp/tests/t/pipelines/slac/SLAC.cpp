@@ -51,12 +51,6 @@ INSTANTIATE_TEST_SUITE_P(SLAC,
                          SLACPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class SLACPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        SLAC,
-        SLACPermuteDevicePairs,
-        testing::ValuesIn(SLACPermuteDevicePairs::TestCases()));
-
 // PointCloud is similar if fitness is higher and rmse is lower than tolerance
 // threshold.
 static bool IsPointCloudSimilar(t::geometry::PointCloud source,

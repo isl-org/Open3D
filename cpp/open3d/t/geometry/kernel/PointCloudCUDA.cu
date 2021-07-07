@@ -357,44 +357,6 @@ void EstimateColorGradientsCUDA(const core::Tensor& points,
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
-template <typename scalar_t>
-__global__ void EstimateCovariancesCUDAKernel(
-        const scalar_t* points_ptr,
-        const int64_t* neighbour_indices_ptr,
-        const int64_t* neighbour_counts_ptr,
-        scalar_t* covariances_ptr,
-        const int64_t max_nn,
-        const int64_t n) {
-    const int64_t workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (workload_idx >= n) return;
-
-    // NNS [Hybrid Search].
-    int64_t neighbour_offset = max_nn * workload_idx;
-    // Count of valid correspondences per point.
-    int64_t neighbour_count = neighbour_counts_ptr[workload_idx];
-    // Covariance is of shape {3, 3}, so it has an offset factor of
-    // 9 x workload_idx.
-    int64_t covariances_offset = 9 * workload_idx;
-
-    if (neighbour_count >= 3) {
-        EstimatePointWiseCovarianceKernel(
-                points_ptr, neighbour_indices_ptr + neighbour_offset,
-                neighbour_count, covariances_ptr + covariances_offset);
-    } else {
-        // Identity.
-        covariances_ptr[covariances_offset] = 1.0;
-        covariances_ptr[covariances_offset + 1] = 0.0;
-        covariances_ptr[covariances_offset + 2] = 0.0;
-        covariances_ptr[covariances_offset + 3] = 0.0;
-        covariances_ptr[covariances_offset + 4] = 1.0;
-        covariances_ptr[covariances_offset + 5] = 0.0;
-        covariances_ptr[covariances_offset + 6] = 0.0;
-        covariances_ptr[covariances_offset + 7] = 0.0;
-        covariances_ptr[covariances_offset + 8] = 1.0;
-    }
-    return;
-}
-
 void EstimateCovariancesCUDA(const core::Tensor& points,
                              core::Tensor& covariances,
                              const double& radius,
@@ -453,7 +415,6 @@ void EstimateCovariancesCUDA(const core::Tensor& points,
     });
 
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-    return;
 }
 
 template <typename scalar_t>
@@ -507,46 +468,6 @@ void EstimateNormalsCUDA(const core::Tensor& covariances,
                 covariances.GetDataPtr<scalar_t>(),
                 normals.GetDataPtr<scalar_t>(), has_normals, n);
     });
-
-    // DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-    //     auto normals_ptr = normals.GetDataPtr<scalar_t>();
-    //     auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
-
-    //     core::kernel::cuda_launcher::ParallelFor(
-    //             n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-    //                 int64_t covariances_offset = 9 * workload_idx;
-    //                 int64_t normals_offset = 3 * workload_idx;
-    //                 scalar_t normals_output[3] = {0};
-    //                 EstimatePointWiseNormalsWithFastEigen3x3(
-    //                         covariances_ptr + covariances_offset,
-    //                         normals_output);
-
-    //                 if ((normals_output[0] * normals_output[0] +
-    //                      normals_output[1] * normals_output[1] +
-    //                      normals_output[2] * normals_output[2]) == 0.0 &&
-    //                     !has_normals) {
-    //                     normals_output[0] = 0.0;
-    //                     normals_output[1] = 0.0;
-    //                     normals_output[2] = 1.0;
-    //                 }
-    //                 if (has_normals) {
-    //                     if ((normals_ptr[normals_offset] * normals_output[0]
-    //                     +
-    //                          normals_ptr[normals_offset + 1] *
-    //                                  normals_output[1] +
-    //                          normals_ptr[normals_offset + 2] *
-    //                                  normals_output[2]) < 0.0) {
-    //                         normals_output[0] = -1 * normals_output[0];
-    //                         normals_output[1] = -1 * normals_output[1];
-    //                         normals_output[2] = -1 * normals_output[2];
-    //                     }
-    //                 }
-
-    //                 normals_ptr[normals_offset] = normals_output[0];
-    //                 normals_ptr[normals_offset + 1] = normals_output[1];
-    //                 normals_ptr[normals_offset + 2] = normals_output[2];
-    //             });
-    // });
 }
 
 }  // namespace pointcloud
