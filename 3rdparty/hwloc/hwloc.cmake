@@ -18,7 +18,7 @@ elseif(APPLE)
         set(HWLOC_SHA256 67a2abfec135fca86e8aa3952bd0e77e3edb143ae88d67365b99b53e7e982eaa)
     else()
         set(HWLOC_BUILD_FROM_SOURCE OFF)
-        set(HWLOC_URL https://github.com/intel-isl/open3d_downloads/releases/download/hwloc-macos/hwloc-macos-10.14-build-2.5.0.zip)
+        set(HWLOC_URL https://github.com/intel-isl/open3d_downloads/releases/download/hwloc-macos/hwloc-macos-10.14-build-2.5.0.zip) # For 10.14+
         set(HWLOC_SHA256 d6c48ab1bf515cf631d98a6800ce4e86c3d1281f215db54ce4304b14103d61ee)
     endif()
 else()

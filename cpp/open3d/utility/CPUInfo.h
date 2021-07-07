@@ -31,15 +31,15 @@
 namespace open3d {
 namespace utility {
 
-/// Usage: int num_cores = CPUInfo::GetInstance().NumCores();
+/// Usage: int num_cores = CPUInfo::GetInstance().PrintInfo();
 class CPUInfo {
 public:
     virtual ~CPUInfo();
     static CPUInfo& GetInstance();
 
-    std::string Name() const;
     int NumCores() const;
     int NumThreads() const;
+    void PrintInfo() const;
 
 private:
     CPUInfo();

@@ -64,10 +64,6 @@ int main(int argc, char** argv) {
 #endif
     testing::InitGoogleMock(&argc, argv);
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-
-    utility::LogInfo("CPU: {} ({} cores/{} threads)",
-                     utility::CPUInfo::GetInstance().Name(),
-                     utility::CPUInfo::GetInstance().NumCores(),
-                     utility::CPUInfo::GetInstance().NumThreads());
+    utility::CPUInfo::GetInstance().PrintInfo();
     return RUN_ALL_TESTS();
 }
