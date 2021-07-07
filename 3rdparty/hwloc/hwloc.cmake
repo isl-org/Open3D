@@ -32,7 +32,7 @@ ExternalProject_Add(
                         --disable-libudev
                         --disable-plugin-dlopen
                         --disable-plugin-ltdl
-    BUILD_COMMAND make -j${NPROC}
+    BUILD_COMMAND make $<$<PLATFORM_ID:Darwin>:CFLAGS="-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}"> -j${NPROC}
     INSTALL_COMMAND make install
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}hwloc${CMAKE_STATIC_LIBRARY_SUFFIX}
