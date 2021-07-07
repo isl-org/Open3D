@@ -52,17 +52,6 @@ INSTANTIATE_TEST_SUITE_P(
         TensorObjectPermuteDevicePairs,
         testing::ValuesIn(TensorObjectPermuteDevicePairs::TestCases()));
 
-class TensorObjectPermuteSizesDefaultStridesAndDevices
-    : public testing::TestWithParam<
-              std::tuple<std::pair<core::SizeVector, core::SizeVector>,
-                         core::Device>> {};
-INSTANTIATE_TEST_SUITE_P(
-        TensorObject,
-        TensorObjectPermuteSizesDefaultStridesAndDevices,
-        testing::Combine(
-                testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
-                testing::ValuesIn(PermuteDevices::TestCases())));
-
 class TestObject {
 public:
     TestObject() = default;
