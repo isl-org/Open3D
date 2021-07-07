@@ -5,6 +5,8 @@ ProcessorCount(NPROC)
 
 if(WIN32)
     set(HWLOC_BUILD_FROM_SOURCE OFF)
+    set(HWLOC_URL https://download.open-mpi.org/release/hwloc/v2.5/hwloc-win64-build-2.5.0.zip)
+    set(HWLOC_SHA256 b64f5ebe534d1ad57cdd4b18ab4035389b68802a97464c1295005043075309ea)
 elseif(APPLE)
     # `brew install automake` to install these dependencies
     find_program(AUTOCONF_BIN NAMES autoconf)
