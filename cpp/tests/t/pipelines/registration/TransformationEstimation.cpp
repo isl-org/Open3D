@@ -39,13 +39,6 @@ INSTANTIATE_TEST_SUITE_P(TransformationEstimation,
                          TransformationEstimationPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class TransformationEstimationPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        TransformationEstimation,
-        TransformationEstimationPermuteDevicePairs,
-        testing::ValuesIn(
-                TransformationEstimationPermuteDevicePairs::TestCases()));
-
 static std::
         tuple<t::geometry::PointCloud, t::geometry::PointCloud, core::Tensor>
         GetTestPointCloudsAndCorrespondences(const core::Dtype& dtype,

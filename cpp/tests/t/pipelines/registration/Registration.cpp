@@ -48,12 +48,6 @@ INSTANTIATE_TEST_SUITE_P(Registration,
                          RegistrationPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class RegistrationPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        Registration,
-        RegistrationPermuteDevicePairs,
-        testing::ValuesIn(RegistrationPermuteDevicePairs::TestCases()));
-
 TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
     // Constructor.
     t_reg::ICPConvergenceCriteria convergence_criteria;
