@@ -2,6 +2,7 @@ add_library(utility OBJECT)
 
 target_sources(utility PRIVATE
     Console.cpp
+    CPUInfo.cpp
     Eigen.cpp
     FileSystem.cpp
     Helper.cpp

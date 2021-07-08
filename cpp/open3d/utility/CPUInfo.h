@@ -23,47 +23,29 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+#pragma once
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <cstring>
+#include <memory>
 #include <string>
 
-#ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
-#endif
+namespace open3d {
+namespace utility {
 
-#include "open3d/utility/CPUInfo.h"
-#include "open3d/utility/Logging.h"
-#include "tests/UnitTest.h"
+/// Usage: int num_cores = CPUInfo::GetInstance().PrintInfo();
+class CPUInfo {
+public:
+    virtual ~CPUInfo();
+    static CPUInfo& GetInstance();
 
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
-    }
-    return shall_disable_p2p;
-}
-#endif
+    int NumCores() const;
+    int NumThreads() const;
+    void PrintInfo() const;
 
-int main(int argc, char** argv) {
-    using namespace open3d;
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<core::CUDAState> cuda_state =
-                core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        utility::LogInfo("P2P device transfer has been disabled.");
-    }
-#endif
-    testing::InitGoogleMock(&argc, argv);
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    utility::CPUInfo::GetInstance().PrintInfo();
-    return RUN_ALL_TESTS();
-}
+private:
+    CPUInfo();
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+}  // namespace utility
+}  // namespace open3d
