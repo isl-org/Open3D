@@ -23,47 +23,36 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+#pragma once
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <memory>
 
-#include <cstring>
-#include <string>
+namespace open3d {
+namespace utility {
 
-#ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
-#endif
+/// \brief CPU information.
+class CPUInfo {
+public:
+    virtual ~CPUInfo();
+    static CPUInfo& GetInstance();
 
-#include "open3d/utility/CPUInfo.h"
-#include "open3d/utility/Logging.h"
-#include "tests/UnitTest.h"
+    /// Returns the number of physical CPU cores.
+    /// This is similar to boost::thread::physical_concurrency().
+    unsigned int NumCores() const;
 
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
-    }
-    return shall_disable_p2p;
-}
-#endif
+    /// Returns the number of logical CPU cores.
+    /// This returns the same result as std::thread::hardware_concurrency() or
+    /// boost::thread::hardware_concurrency().
+    unsigned int NumThreads() const;
 
-int main(int argc, char** argv) {
-    using namespace open3d;
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<core::CUDAState> cuda_state =
-                core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        utility::LogInfo("P2P device transfer has been disabled.");
-    }
-#endif
-    testing::InitGoogleMock(&argc, argv);
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    utility::CPUInfo::GetInstance().PrintInfo();
-    return RUN_ALL_TESTS();
-}
+    /// Prints CPUInfo in the console.
+    void PrintInfo() const;
+
+private:
+    CPUInfo();
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+}  // namespace utility
+}  // namespace open3d

@@ -23,47 +23,29 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+// Copyright 2018 Google Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <cstring>
-#include <string>
-
-#ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
-#endif
+#include <benchmark/benchmark.h>
 
 #include "open3d/utility/CPUInfo.h"
-#include "open3d/utility/Logging.h"
-#include "tests/UnitTest.h"
-
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
-    }
-    return shall_disable_p2p;
-}
-#endif
 
 int main(int argc, char** argv) {
-    using namespace open3d;
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<core::CUDAState> cuda_state =
-                core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        utility::LogInfo("P2P device transfer has been disabled.");
+    open3d::utility::CPUInfo::GetInstance().PrintInfo();
+    benchmark::Initialize(&argc, argv);
+    if (benchmark::ReportUnrecognizedArguments(argc, argv)) {
+        return 1;
     }
-#endif
-    testing::InitGoogleMock(&argc, argv);
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    utility::CPUInfo::GetInstance().PrintInfo();
-    return RUN_ALL_TESTS();
+    benchmark::RunSpecifiedBenchmarks();
 }
