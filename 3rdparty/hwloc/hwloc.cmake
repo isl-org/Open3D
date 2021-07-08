@@ -69,18 +69,33 @@ if(HWLOC_BUILD_FROM_SOURCE)
     set(HWLOC_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
     set(HWLOC_LIBRARIES hwloc)
 else()
-    ExternalProject_Add(
-        ext_hwloc
-        PREFIX hwloc
-        URL ${HWLOC_URL}
-        URL_HASH SHA256=${HWLOC_SHA256}
-        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/hwloc"
-        UPDATE_COMMAND ""
-        PATCH_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/lib/hwloc.a <SOURCE_DIR>/lib/hwloc.lib
-    )
+    if(WIN32)
+        ExternalProject_Add(
+            ext_hwloc
+            PREFIX hwloc
+            URL ${HWLOC_URL}
+            URL_HASH SHA256=${HWLOC_SHA256}
+            DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/hwloc"
+            UPDATE_COMMAND ""
+            PATCH_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_if_different <SOURCE_DIR>/lib/libhwloc.a <SOURCE_DIR>/lib/hwloc.lib
+        )
+    elseif()
+        ExternalProject_Add(
+            ext_hwloc
+            PREFIX hwloc
+            URL ${HWLOC_URL}
+            URL_HASH SHA256=${HWLOC_SHA256}
+            DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/hwloc"
+            UPDATE_COMMAND ""
+            PATCH_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+        )
+    endif()
 
     ExternalProject_Get_Property(ext_hwloc SOURCE_DIR)
     set(HWLOC_INCLUDE_DIRS ${SOURCE_DIR}/include/) # "/" is critical.
