@@ -37,8 +37,8 @@ public:
     virtual ~CPUInfo();
     static CPUInfo& GetInstance();
 
-    int NumCores() const;
-    int NumThreads() const;
+    unsigned int NumCores() const;
+    unsigned int NumThreads() const;
     void PrintInfo() const;
 
 private:

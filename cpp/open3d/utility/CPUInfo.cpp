@@ -38,8 +38,8 @@
 #elif defined(__APPLE__) || defined(__FreeBSD__)
 #include <sys/sysctl.h>
 #include <sys/types.h>
-#elif defined BOOST_HAS_UNISTD_H
-#include <unistd.h>
+#elif defined(_WIN32)
+#include <Windows.h>
 #endif
 
 #include "open3d/utility/Helper.h"
@@ -49,9 +49,9 @@ namespace open3d {
 namespace utility {
 
 /// Returns the number of physical cores.
-/// Ported from boost::thread::physical_concurrency().
-static int PhysicalConcurrency() {
+static unsigned int PhysicalConcurrency() {
 #ifdef __linux__
+    // Ported from boost::thread::physical_concurrency().
     try {
         std::ifstream proc_cpuinfo("/proc/cpuinfo");
 
@@ -59,10 +59,8 @@ static int PhysicalConcurrency() {
         const std::string core_id("core id");
 
         // [physical ID, core id]
-        typedef std::pair<int, int> CoreEntry;
-
+        typedef std::pair<unsigned int, unsigned int> CoreEntry;
         std::set<CoreEntry> cores;
-
         CoreEntry current_core_entry;
 
         std::string line;
@@ -97,17 +95,43 @@ static int PhysicalConcurrency() {
         return std::thread::hardware_concurrency();
     }
 #elif defined(__APPLE__)
-    int count;
+    // Ported from boost::thread::physical_concurrency().
+    unsigned int count;
     size_t size = sizeof(count);
     return sysctlbyname("hw.physicalcpu", &count, &size, NULL, 0) ? 0 : count;
+#elif defined(_WIN32)
+    // https://stackoverflow.com/a/44247223/1255535
+    DWORD length = 0;
+    const BOOL result_first = GetLogicalProcessorInformationEx(
+            RelationProcessorCore, nullptr, &length);
+    assert(GetLastError() == ERROR_INSUFFICIENT_BUFFER);
+
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[length]);
+    const PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX info =
+            reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
+                    buffer.get());
+    const BOOL result_second = GetLogicalProcessorInformationEx(
+            RelationProcessorCore, info, &length);
+    assert(result_second != FALSE);
+
+    unsigned int nb_physical_cores = 0;
+    unsigned int offset = 0;
+    do {
+        const PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX current_info =
+                reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
+                        buffer.get() + offset);
+        offset += current_info->Size;
+        ++nb_physical_cores;
+    } while (offset < length);
+    return nb_physical_cores;
 #else
     return std::thread::hardware_concurrency();
 #endif
 }
 
 struct CPUInfo::Impl {
-    int num_cores_;
-    int num_threads_;
+    unsigned int num_cores_;
+    unsigned int num_threads_;
 };
 
 CPUInfo& CPUInfo::GetInstance() {
@@ -115,8 +139,8 @@ CPUInfo& CPUInfo::GetInstance() {
     return instance;
 }
 
-int CPUInfo::NumCores() const { return impl_->num_cores_; }
-int CPUInfo::NumThreads() const { return impl_->num_threads_; }
+unsigned int CPUInfo::NumCores() const { return impl_->num_cores_; }
+unsigned int CPUInfo::NumThreads() const { return impl_->num_threads_; }
 
 CPUInfo::~CPUInfo() {}
 CPUInfo::CPUInfo() : impl_(new CPUInfo::Impl()) {
