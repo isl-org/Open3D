@@ -53,7 +53,7 @@
                                      RobustKernelMethod::L1Loss) {            \
             auto GetWeightFromRobustKernel =                                  \
                     [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t {   \
-                return 1.0 / abs(residual);                                   \
+                return 1.0 / OPEN3D_ABS(residual);                            \
             };                                                                \
             return __VA_ARGS__();                                             \
         } else if (METHOD == open3d::t::pipelines::registration::             \
@@ -61,7 +61,7 @@
             auto GetWeightFromRobustKernel =                                  \
                     [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t {   \
                 return scaling_parameter /                                    \
-                       OPEN3D_MAX(abs(residual), scaling_parameter);          \
+                       OPEN3D_MAX(OPEN3D_ABS(residual), scaling_parameter);   \
             };                                                                \
             return __VA_ARGS__();                                             \
         } else if (METHOD == open3d::t::pipelines::registration::             \
@@ -86,9 +86,9 @@
             auto GetWeightFromRobustKernel =                                  \
                     [=] OPEN3D_HOST_DEVICE(scalar_t residual) -> scalar_t {   \
                 return OPEN3D_SQUARE(                                         \
-                        1.0 -                                                 \
-                        OPEN3D_SQUARE(OPEN3D_MIN(                             \
-                                1.0, abs(residual) / scaling_parameter)));    \
+                        1.0 - OPEN3D_SQUARE(OPEN3D_MIN(                       \
+                                      1.0, OPEN3D_ABS(residual) /             \
+                                                   scaling_parameter)));      \
             };                                                                \
             return __VA_ARGS__();                                             \
         } else if (METHOD == open3d::t::pipelines::registration::             \
@@ -123,7 +123,7 @@
                         [=] OPEN3D_HOST_DEVICE(                               \
                                 scalar_t residual) -> scalar_t {              \
                     return pow((OPEN3D_SQUARE(residual / scaling_parameter) / \
-                                        abs(shape_parameter - 2.0) +          \
+                                        OPEN3D_ABS(shape_parameter - 2.0) +   \
                                 1),                                           \
                                ((shape_parameter / 2.0) - 1.0)) /             \
                            OPEN3D_SQUARE(scaling_parameter);                  \

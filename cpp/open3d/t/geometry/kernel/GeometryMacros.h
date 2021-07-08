@@ -54,10 +54,17 @@ __device__ double atomicAdd(double *address, double val) {
 #endif
 
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
+#define OPEN3D_ABS(X) abs(X)
+#define OPEN3D_EXP(X) exp(X)
+#define OPEN3D_POW(X, Y) pow((X), (Y))
 
 #define ISNAN(X) isnan(X)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
+#define OPEN3D_ABS(X) std::abs(X)
+#define OPEN3D_EXP(X) std::exp(X)
+#define OPEN3D_POW(X, Y) std::pow((X), (Y))
+
 #define ISNAN(X) std::isnan(X)
 #endif
 

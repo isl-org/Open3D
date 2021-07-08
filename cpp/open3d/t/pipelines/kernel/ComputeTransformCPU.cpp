@@ -36,6 +36,7 @@
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 
 namespace open3d {
@@ -79,6 +80,7 @@ static void ComputePosePointToPlaneKernelCPU(
                             r);
 
                     scalar_t w = GetWeightFromRobustKernel(r);
+                    // printf(" residual: %f, weight: %f", (float)r, (float)w);
 
                     if (valid) {
                         A_reduction[0] += J_ij[0] * w * J_ij[0];
