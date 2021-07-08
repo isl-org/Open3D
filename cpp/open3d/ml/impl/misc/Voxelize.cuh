@@ -323,6 +323,87 @@ void LimitCounts(const cudaStream_t& stream, T* counts, int64_t num, T limit) {
     }
 }
 
+__global__ void ComputeStartIdxKernel(
+        int64_t* start_idx,
+        int64_t* points_count,
+        const int64_t* num_voxels_prefix_sum,
+        const int64_t* unique_hashes_count_prefix_sum,
+        const int64_t* out_batch_splits,
+        const int64_t batch_size,
+        const int64_t max_voxels,
+        const int64_t max_points_per_voxel) {
+    int64_t linear_idx;
+    const int64_t x = blockDim.x * blockIdx.x + threadIdx.x;
+    const int64_t y = blockDim.y * blockIdx.y + threadIdx.y;
+    const int64_t z = blockDim.z * blockIdx.z + threadIdx.z;
+    linear_idx = z * gridDim.x * blockDim.x * gridDim.y +
+                 y * gridDim.x * blockDim.x + x;
+
+    if (linear_idx >= batch_size) return;
+
+    int64_t voxel_idx;
+    if (0 == linear_idx) {
+        voxel_idx = 0;
+    } else {
+        voxel_idx = num_voxels_prefix_sum[linear_idx - 1];
+    }
+
+    int64_t begin_out = out_batch_splits[linear_idx];
+    int64_t end_out = out_batch_splits[linear_idx + 1];
+
+    for (int64_t out_idx = begin_out; out_idx < end_out;
+         out_idx++, voxel_idx++) {
+        if (voxel_idx == 0) {
+            start_idx[out_idx] = 0;
+            points_count[out_idx] = min(max_points_per_voxel,
+                                        unique_hashes_count_prefix_sum[0]);
+        } else {
+            start_idx[out_idx] = unique_hashes_count_prefix_sum[voxel_idx - 1];
+            points_count[out_idx] =
+                    min(max_points_per_voxel,
+                        unique_hashes_count_prefix_sum[voxel_idx] -
+                                unique_hashes_count_prefix_sum[voxel_idx - 1]);
+        }
+    }
+}
+
+/// Computes the starting index of each voxel.
+///
+/// \param start_idx The output array for storing starting index.
+/// \param points_count The output array for storing points count.
+/// \param num_voxels_prefix_sum The Inclusive prefix sum which gives
+///        the index of starting voxel for each batch.
+/// \param unique_hashes_count_prefix_sum Inclusive prefix sum defining
+///        where point indices for each voxel ends.
+/// \param out_batch_splits Defines starting and ending voxels for
+///        each batch element.
+/// \param batch_size The batch size.
+/// \param max_voxels Maximum voxels per batch.
+/// \param max_points_per_voxel Maximum points per voxel.
+///
+void ComputeStartIdx(const cudaStream_t& stream,
+                     int64_t* start_idx,
+                     int64_t* points_count,
+                     const int64_t* num_voxels_prefix_sum,
+                     const int64_t* unique_hashes_count_prefix_sum,
+                     const int64_t* out_batch_splits,
+                     const int64_t batch_size,
+                     const int64_t max_voxels,
+                     const int64_t max_points_per_voxel) {
+    if (batch_size) {
+        const int BLOCKSIZE = 128;
+        dim3 block(BLOCKSIZE, 1, 1);
+        dim3 grid;
+        grid.y = std::ceil(std::cbrt(batch_size));
+        grid.z = grid.y;
+        grid.x = DivUp(batch_size, int64_t(grid.z) * grid.y * block.x);
+        ComputeStartIdxKernel<<<grid, block, 0, stream>>>(
+                start_idx, points_count, num_voxels_prefix_sum,
+                unique_hashes_count_prefix_sum, out_batch_splits, batch_size,
+                max_voxels, max_points_per_voxel);
+    }
+}
+
 template <class T, int NDIM>
 __global__ void ComputeVoxelCoordsKernel(
         int32_t* __restrict__ voxel_coords,
@@ -342,12 +423,7 @@ __global__ void ComputeVoxelCoordsKernel(
 
     if (linear_idx >= num_voxels) return;
 
-    int64_t point_idx;
-    if (0 == linear_idx) {
-        point_idx = point_indices[0];
-    } else {
-        point_idx = point_indices[prefix_sum[linear_idx - 1]];
-    }
+    int64_t point_idx = point_indices[prefix_sum[linear_idx]];
 
     Vec_t point(points + point_idx * NDIM);
     auto coords = ((point - points_range_min_vec) * inv_voxel_size)
@@ -420,12 +496,7 @@ __global__ void CopyPointIndicesKernel(
 
     int64_t num_points = end_out - begin_out;
 
-    int64_t in_idx;
-    if (0 == linear_idx) {
-        in_idx = 0;
-    } else {
-        in_idx = prefix_sum_in[linear_idx - 1];
-    }
+    int64_t in_idx = prefix_sum_in[linear_idx];
 
     for (int64_t out_idx = begin_out; out_idx < end_out; ++out_idx, ++in_idx) {
         out[out_idx] = point_indices[in_idx];
@@ -573,6 +644,7 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
     const int64_t batch_hash = strides[NDIM - 1] * extents[NDIM - 1];
     const int64_t invalid_hash = batch_hash * MAX_BATCH_SIZE;
 
+    /// store batch_id for each point
     std::pair<int64_t*, size_t> indices_batches =
             mem_temp.Alloc<int64_t>(num_points);
     if (!get_temp_size) {
@@ -624,6 +696,7 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
     std::pair<int64_t*, size_t> unique_hashes_count(
             point_indices_dbuf.Alternate(), point_indices.second);
 
+    // encode unique hashes(voxels) and their counts(points per voxel)
     int64_t num_voxels = 0;
     int64_t last_hash = 0;  // 0 is a valid hash value
     {
@@ -660,13 +733,13 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
         // the last hash is invalid we have one voxel less
         --num_voxels;
     }
-    num_voxels = std::min(int64_t(num_voxels), max_voxels);
 
     // reuse the hashes buffer
     std::pair<int64_t*, size_t> unique_hashes_count_prefix_sum(
             hashes_dbuf.Current(), hashes.second);
 
     // compute the prefix sum for unique_hashes_count
+    // gives starting index of each voxel
     {
         std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
 
@@ -686,47 +759,12 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
         mem_temp.Free(inclusive_scan_temp);
     }
 
-    int64_t* out_voxel_row_splits = nullptr;
+    // Limit the number of output points to max_points_per_voxel by
+    // limiting the unique_hashes_count.
     if (!get_temp_size) {
-        output_allocator.AllocVoxelPointRowSplits(&out_voxel_row_splits,
-                                                  num_voxels + 1);
-    }
-
-    if (!get_temp_size) {
-        // set first element to 0
-        cudaMemsetAsync(out_voxel_row_splits, 0, sizeof(int64_t), stream);
-    }
-
-    if (max_points_per_voxel < num_points) {
-        // Limit the number of output points to max_points_per_voxel by
-        // limiting the unique_hashes_count.
-        if (!get_temp_size) {
+        if (max_points_per_voxel < num_points) {
             LimitCounts(stream, unique_hashes_count.first, num_voxels,
                         max_points_per_voxel);
-        }
-
-        std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
-
-        cub::DeviceScan::InclusiveSum(
-                inclusive_scan_temp.first, inclusive_scan_temp.second,
-                unique_hashes_count.first, out_voxel_row_splits + 1, num_voxels,
-                stream);
-
-        inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
-        if (!get_temp_size) {
-            cub::DeviceScan::InclusiveSum(
-                    inclusive_scan_temp.first, inclusive_scan_temp.second,
-                    unique_hashes_count.first, out_voxel_row_splits + 1,
-                    num_voxels, stream);
-        }
-        mem_temp.Free(inclusive_scan_temp);
-
-    } else {
-        if (!get_temp_size) {
-            cudaMemcpyAsync(out_voxel_row_splits + 1,
-                            unique_hashes_count_prefix_sum.first,
-                            sizeof(int64_t) * num_voxels,
-                            cudaMemcpyDeviceToDevice, stream);
         }
     }
 
@@ -780,6 +818,40 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
                              num_batches);
     }
 
+    std::pair<int64_t*, size_t> num_voxels_prefix_sum(unique_batches.first,
+                                                      batch_size);
+
+    // compute the prefix sum for number of voxels per batch
+    // gives starting voxel index for each batch
+    // used only when voxel count exceeds max_voxels
+    {
+        std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
+
+        cub::DeviceScan::InclusiveSum(
+                inclusive_scan_temp.first, inclusive_scan_temp.second,
+                num_voxels_per_batch.first, num_voxels_prefix_sum.first,
+                num_voxels_per_batch.second, stream);
+
+        inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
+        if (!get_temp_size) {
+            if (num_voxels > max_voxels) {
+                cub::DeviceScan::InclusiveSum(
+                        inclusive_scan_temp.first, inclusive_scan_temp.second,
+                        num_voxels_per_batch.first, num_voxels_prefix_sum.first,
+                        num_voxels_per_batch.second, stream);
+            }
+        }
+        mem_temp.Free(inclusive_scan_temp);
+    }
+
+    // Limit the number of voxels per batch to max_voxels
+    if (!get_temp_size) {
+        if (num_voxels >= max_voxels)
+            LimitCounts(stream, num_voxels_per_batch.first, batch_size,
+                        max_voxels);
+    }
+
+    // Prefix sum of limited counts to get batch splits.
     int64_t* out_batch_splits = nullptr;
     if (!get_temp_size) {
         output_allocator.AllocVoxelBatchSplits(&out_batch_splits,
@@ -807,6 +879,73 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
         mem_temp.Free(inclusive_scan_temp);
     }
 
+    // num_valid_voxels excludes voxels exceeding max_voxels
+    int64_t num_valid_voxels = num_points;
+    if (!get_temp_size) {
+        // get the number of valid voxels.
+        cudaMemcpyAsync(&num_valid_voxels, out_batch_splits + batch_size,
+                        sizeof(int64_t), cudaMemcpyDeviceToHost, stream);
+        // wait for the async copies
+        while (cudaErrorNotReady == cudaStreamQuery(stream)) { /*empty*/
+        }
+    }
+
+    // start_idx stores starting index of each valid voxel.
+    // points_count stores number of valid points in respective voxel.
+    std::pair<int64_t*, size_t> start_idx(indices_batches.first,
+                                          num_valid_voxels);
+    std::pair<int64_t*, size_t> points_count =
+            mem_temp.Alloc<int64_t>(num_valid_voxels);
+
+    if (!get_temp_size) {
+        if (num_voxels <= max_voxels) {
+            // starting index and points_count will be same as
+            // unique_hashes_count_prefix_sum and unique_hashes_count when voxel
+            // count doesn't exceeds max_voxels
+            cudaMemsetAsync(start_idx.first, 0, sizeof(int64_t), stream);
+            cudaMemcpyAsync(start_idx.first + 1,
+                            unique_hashes_count_prefix_sum.first,
+                            (num_voxels - 1) * sizeof(int64_t),
+                            cudaMemcpyDeviceToDevice, stream);
+            mem_temp.Free(points_count);
+            points_count.first = unique_hashes_count.first;
+        } else {
+            ComputeStartIdx(stream, start_idx.first, points_count.first,
+                            num_voxels_prefix_sum.first,
+                            unique_hashes_count_prefix_sum.first,
+                            out_batch_splits, batch_size, max_voxels,
+                            max_points_per_voxel);
+        }
+    }
+
+    int64_t* out_voxel_row_splits = nullptr;
+    if (!get_temp_size) {
+        output_allocator.AllocVoxelPointRowSplits(&out_voxel_row_splits,
+                                                  num_valid_voxels + 1);
+    }
+
+    if (!get_temp_size) {
+        // set first element to 0
+        cudaMemsetAsync(out_voxel_row_splits, 0, sizeof(int64_t), stream);
+    }
+    {
+        std::pair<void*, size_t> inclusive_scan_temp(nullptr, 0);
+
+        cub::DeviceScan::InclusiveSum(
+                inclusive_scan_temp.first, inclusive_scan_temp.second,
+                points_count.first, out_voxel_row_splits + 1, num_valid_voxels,
+                stream);
+
+        inclusive_scan_temp = mem_temp.Alloc(inclusive_scan_temp.second);
+        if (!get_temp_size) {
+            cub::DeviceScan::InclusiveSum(
+                    inclusive_scan_temp.first, inclusive_scan_temp.second,
+                    points_count.first, out_voxel_row_splits + 1,
+                    num_valid_voxels, stream);
+        }
+        mem_temp.Free(inclusive_scan_temp);
+    }
+
     if (get_temp_size) {
         // return the memory peak as the required temporary memory size.
         temp_size = mem_temp.MaxUsed();
@@ -814,15 +953,16 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
     }
 
     int32_t* out_voxel_coords = nullptr;
-    output_allocator.AllocVoxelCoords(&out_voxel_coords, num_voxels, NDIM);
+    output_allocator.AllocVoxelCoords(&out_voxel_coords, num_valid_voxels,
+                                      NDIM);
     ComputeVoxelCoords(stream, out_voxel_coords, points,
-                       point_indices_dbuf.Current(),
-                       unique_hashes_count_prefix_sum.first,
-                       points_range_min_vec, inv_voxel_size, num_voxels);
+                       point_indices_dbuf.Current(), start_idx.first,
+                       points_range_min_vec, inv_voxel_size, num_valid_voxels);
 
     int64_t num_valid_points = 0;
     {
-        cudaMemcpyAsync(&num_valid_points, out_voxel_row_splits + num_voxels,
+        cudaMemcpyAsync(&num_valid_points,
+                        out_voxel_row_splits + num_valid_voxels,
                         sizeof(int64_t), cudaMemcpyDeviceToHost, stream);
         // wait for the async copies
         while (cudaErrorNotReady == cudaStreamQuery(stream)) { /*empty*/
@@ -832,8 +972,8 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
     output_allocator.AllocVoxelPointIndices(&out_point_indices,
                                             num_valid_points);
     CopyPointIndices(stream, out_point_indices, point_indices_dbuf.Current(),
-                     unique_hashes_count_prefix_sum.first,
-                     out_voxel_row_splits + 1, num_voxels);
+                     start_idx.first, out_voxel_row_splits + 1,
+                     num_valid_voxels);
 }
 
 }  // namespace impl
