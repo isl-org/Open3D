@@ -866,10 +866,8 @@ if (BUILD_PYTHON_MODULE)
     endif()
     if (NOT USE_SYSTEM_PYBIND11 OR NOT TARGET pybind11::module)
         set(USE_SYSTEM_PYBIND11 OFF)
-        add_subdirectory(${Open3D_3RDPARTY_DIR}/pybind11)
-    endif()
-    if(TARGET pybind11::module)
-        set(PYBIND11_TARGET "pybind11::module")
+        include(${Open3D_3RDPARTY_DIR}/pybind11/pybind11.cmake)
+        # pybind11 will automatically become available.
     endif()
 endif()
 
@@ -927,6 +925,12 @@ if (BUILD_UNIT_TESTS)
         add_dependencies(3rdparty_googletest ext_googletest)
         set(GOOGLETEST_TARGET "3rdparty_googletest")
     endif()
+endif()
+
+# Google benchmark
+if (BUILD_BENCHMARKS)
+    include(${Open3D_3RDPARTY_DIR}/benchmark/benchmark.cmake)
+    # benchmark and benchmark_main will automatically become available.
 endif()
 
 # Headless rendering
@@ -1109,7 +1113,7 @@ if(BUILD_RPC_INTERFACE)
         LIBRARIES ${ZEROMQ_LIBRARIES}
     )
     set(ZEROMQ_TARGET "3rdparty_zeromq")
-    add_dependencies(${ZEROMQ_TARGET} ext_zeromq)
+    add_dependencies(${ZEROMQ_TARGET} ext_zeromq ext_cppzmq)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
     if( DEFINED ZEROMQ_ADDITIONAL_LIBS )
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${ZEROMQ_ADDITIONAL_LIBS})
