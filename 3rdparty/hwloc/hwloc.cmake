@@ -82,6 +82,7 @@ else()
             BUILD_COMMAND ""
             INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_if_different <SOURCE_DIR>/lib/libhwloc.a <SOURCE_DIR>/lib/hwloc.lib
         )
+        set(HWLOC_LIBRARIES libhwloc)
     elseif()
         ExternalProject_Add(
             ext_hwloc
@@ -95,10 +96,10 @@ else()
             BUILD_COMMAND ""
             INSTALL_COMMAND ""
         )
+        set(HWLOC_LIBRARIES hwloc)
     endif()
 
     ExternalProject_Get_Property(ext_hwloc SOURCE_DIR)
     set(HWLOC_INCLUDE_DIRS ${SOURCE_DIR}/include/) # "/" is critical.
     set(HWLOC_LIB_DIR ${SOURCE_DIR}/lib)
-    set(HWLOC_LIBRARIES hwloc)
 endif()
