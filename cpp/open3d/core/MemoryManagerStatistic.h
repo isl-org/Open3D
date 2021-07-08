@@ -55,26 +55,48 @@ public:
 
     ~MemoryManagerStatistic();
 
+    /// Sets the level of provided information for printing.
     void SetPrintLevel(PrintLevel level);
+
+    /// Enables or disables printing at the program end.
+    /// Printing at the program end additionally overrides the exit code
+    /// to EXIT_FAILURE in the presence of leaks.
     void SetPrintAtProgramEnd(bool print);
+
+    /// Prints statistics for all recorded devices depending on the print level.
     void Print() const;
 
-    void IncrementCountMalloc(void* ptr,
-                              size_t byte_size,
-                              const Device& device);
-    void IncrementCountFree(void* ptr, const Device& device);
+    /// Returns true if any recorded device has unbalanced counts, false
+    /// otherwise.
+    bool HasLeaks() const;
+
+    /// Adds the given allocation to the statistics.
+    void CountMalloc(void* ptr, size_t byte_size, const Device& device);
+
+    /// Adds the given deallocations to the statistics.
+    /// Counts for previously recorded allocations after a reset are ignored for
+    /// consistency.
+    void CountFree(void* ptr, const Device& device);
+
+    /// Resets the statistics.
+    void Reset();
 
 private:
     MemoryManagerStatistic() = default;
 
     struct MemoryStatistics {
-        size_t count_malloc_ = 0;
-        size_t count_free_ = 0;
+        bool IsBalanced() const;
+
+        int64_t count_malloc_ = 0;
+        int64_t count_free_ = 0;
         std::unordered_map<void*, size_t> active_allocations_;
     };
 
     /// Only print unbalanced statistics by default.
     PrintLevel level_ = PrintLevel::Unbalanced;
+
+    // Print at the end of the program be default. If leaks are detected,
+    // the exit code will be overriden with EXIT_FAILURE.
     bool print_at_program_end_ = true;
 
     std::mutex statistics_mutex_;

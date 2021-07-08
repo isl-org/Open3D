@@ -46,7 +46,8 @@ find_package(PkgConfig QUIET)
 #        Required, for example, if it may throw exceptions that need to be
 #        caught in client code.
 #    DIRECTORY <dir>
-#        the library sources are in the subdirectory <dir> of 3rdparty/
+#        the library source directory <dir> is either a subdirectory of
+#        3rdparty/ or an absolute directory.
 #    INCLUDE_DIRS <dir> [<dir> ...]
 #        include headers are in the subdirectories <dir>. Trailing slashes
 #        have the same meaning as with install(DIRECTORY). <dir> must be
@@ -64,70 +65,61 @@ find_package(PkgConfig QUIET)
 function(build_3rdparty_library name)
     cmake_parse_arguments(arg "PUBLIC;HEADER;INCLUDE_ALL;VISIBLE" "DIRECTORY" "INCLUDE_DIRS;SOURCES;LIBS" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
+        message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: build_3rdparty_library(${name} ${ARGN})")
     endif()
-    if(NOT arg_DIRECTORY)
-        set(arg_DIRECTORY "${name}")
+    get_filename_component(arg_DIRECTORY "${arg_DIRECTORY}" ABSOLUTE BASE_DIR "${Open3D_3RDPARTY_DIR}")
+    if(arg_SOURCES)
+        add_library(${name} STATIC)
+        set_target_properties(${name} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}_${name}")
+        open3d_set_global_properties(${name})
+    else()
+        add_library(${name} INTERFACE)
     endif()
     if(arg_INCLUDE_DIRS)
         set(include_dirs)
         foreach(incl IN LISTS arg_INCLUDE_DIRS)
-            list(APPEND include_dirs "${Open3D_3RDPARTY_DIR}/${arg_DIRECTORY}/${incl}")
+            list(APPEND include_dirs "${arg_DIRECTORY}/${incl}")
         endforeach()
     else()
-        set(include_dirs "${Open3D_3RDPARTY_DIR}/${arg_DIRECTORY}/")
+        set(include_dirs "${arg_DIRECTORY}/")
     endif()
-    message(STATUS "Building library ${name} from source")
     if(arg_SOURCES)
-        set(sources)
-        foreach(src ${arg_SOURCES})
-            list(APPEND sources "${Open3D_3RDPARTY_DIR}/${arg_DIRECTORY}/${src}")
+        foreach(src IN LISTS arg_SOURCES)
+            get_filename_component(abs_src "${src}" ABSOLUTE BASE_DIR "${arg_DIRECTORY}")
+            # Mark as generated to skip CMake's file existence checks
+            set_source_files_properties(${abs_src} PROPERTIES GENERATED TRUE)
+            target_sources(${name} PRIVATE ${abs_src})
         endforeach()
-        add_library(${name} STATIC ${sources})
         foreach(incl IN LISTS include_dirs)
             if (incl MATCHES "(.*)/$")
                 set(incl_path ${CMAKE_MATCH_1})
             else()
                 get_filename_component(incl_path "${incl}" DIRECTORY)
             endif()
-            target_include_directories(${name} SYSTEM PUBLIC
-                $<BUILD_INTERFACE:${incl_path}>
-            )
+            target_include_directories(${name} SYSTEM PUBLIC $<BUILD_INTERFACE:${incl_path}>)
         endforeach()
-        target_include_directories(${name} PUBLIC
-            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>
-        )
-        open3d_set_global_properties(${name})
-        set_target_properties(${name} PROPERTIES
-            OUTPUT_NAME "${PROJECT_NAME}_${name}"
-        )
         # Do not export symbols from 3rd party libraries outside the Open3D DSO.
         if(NOT arg_PUBLIC AND NOT arg_HEADER AND NOT arg_VISIBLE)
             set_target_properties(${name} PROPERTIES
+                C_VISIBILITY_PRESET hidden
                 CXX_VISIBILITY_PRESET hidden
                 CUDA_VISIBILITY_PRESET hidden
-                C_VISIBILITY_PRESET hidden
                 VISIBILITY_INLINES_HIDDEN ON
-                )
+            )
         endif()
         if(arg_LIBS)
             target_link_libraries(${name} PRIVATE ${arg_LIBS})
         endif()
     else()
-        add_library(${name} INTERFACE)
         foreach(incl IN LISTS include_dirs)
             if (incl MATCHES "(.*)/$")
                 set(incl_path ${CMAKE_MATCH_1})
             else()
                 get_filename_component(incl_path "${incl}" DIRECTORY)
             endif()
-            target_include_directories(${name} SYSTEM INTERFACE
-                $<BUILD_INTERFACE:${incl_path}>
-            )
+            target_include_directories(${name} SYSTEM INTERFACE $<BUILD_INTERFACE:${incl_path}>)
         endforeach()
-        target_include_directories(${name} INTERFACE
-            $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>
-        )
     endif()
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets
@@ -150,6 +142,7 @@ function(build_3rdparty_library name)
                         PATTERN "*.hpp"
                 )
             endif()
+            target_include_directories(${name} INTERFACE $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>)
         endforeach()
     endif()
     add_library(${PROJECT_NAME}::${name} ALIAS ${name})
@@ -240,6 +233,8 @@ endif()
 #    HEADER
 #        the library headers belong to the public interface and will be
 #        installed, but the library is linked privately.
+#    INCLUDE_ALL
+#        install all files in the include directories. Default is *.h, *.hpp
 #    HIDDEN
 #         Symbols from this library will not be exported to client code during
 #         linking with Open3D. This is the opposite of the VISIBLE option in
@@ -261,7 +256,7 @@ endif()
 #        CMAKE_ARCHIVE_OUTPUT_DIRECTORY.
 #
 function(import_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;HIDDEN" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;INCLUDE_ALL;HIDDEN" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: import_3rdparty_library(${name} ${ARGN})")
@@ -279,9 +274,18 @@ function(import_3rdparty_library name)
             endif()
             target_include_directories(${name} SYSTEM INTERFACE $<BUILD_INTERFACE:${incl_path}>)
             if(arg_PUBLIC OR arg_HEADER)
-                install(DIRECTORY ${incl} DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty
-                    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-                )
+                if(arg_INCLUDE_ALL)
+                    install(DIRECTORY ${incl}
+                        DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty
+                    )
+                else()
+                    install(DIRECTORY ${incl}
+                        DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty
+                        FILES_MATCHING
+                            PATTERN "*.h"
+                            PATTERN "*.hpp"
+                    )
+                endif()
                 target_include_directories(${name} INTERFACE $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}/open3d/3rdparty>)
             endif()
         endforeach()
@@ -379,6 +383,28 @@ if(UNIX AND NOT APPLE)
     endif()
 endif()
 
+# CUB (already included in CUDA 11.0+)
+if(BUILD_CUDA_MODULE AND CUDAToolkit_VERSION VERSION_LESS "11.0")
+    include(${Open3D_3RDPARTY_DIR}/cub/cub.cmake)
+    import_3rdparty_library(3rdparty_cub
+        INCLUDE_DIRS ${CUB_INCLUDE_DIRS}
+    )
+    add_dependencies(3rdparty_cub ext_cub)
+    set(CUB_TARGET "3rdparty_cub")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUB_TARGET}")
+endif()
+
+# cutlass
+if(BUILD_CUDA_MODULE)
+    include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
+    import_3rdparty_library(3rdparty_cutlass
+        INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
+    )
+    add_dependencies(3rdparty_cutlass ext_cutlass)
+    set(CUTLASS_TARGET "3rdparty_cutlass")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${CUTLASS_TARGET}")
+endif()
+
 # Dirent
 if(WIN32)
     message(STATUS "Building library 3rdparty_dirent from source (WIN32)")
@@ -402,7 +428,13 @@ if(USE_SYSTEM_EIGEN3)
     endif()
 endif()
 if(NOT USE_SYSTEM_EIGEN3)
-    build_3rdparty_library(3rdparty_eigen3 PUBLIC DIRECTORY Eigen INCLUDE_DIRS Eigen INCLUDE_ALL)
+    include(${Open3D_3RDPARTY_DIR}/eigen/eigen.cmake)
+    import_3rdparty_library(3rdparty_eigen3
+        PUBLIC
+        INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS}
+        INCLUDE_ALL
+    )
+    add_dependencies(3rdparty_eigen3 ext_eigen)
     set(EIGEN3_TARGET "3rdparty_eigen3")
 endif()
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS "${EIGEN3_TARGET}")
@@ -694,7 +726,11 @@ if(USE_SYSTEM_TINYGLTF)
     endif()
 endif()
 if(NOT USE_SYSTEM_TINYGLTF)
-    build_3rdparty_library(3rdparty_tinygltf DIRECTORY tinygltf INCLUDE_DIRS tinygltf/)
+    include(${Open3D_3RDPARTY_DIR}/tinygltf/tinygltf.cmake)
+    import_3rdparty_library(3rdparty_tinygltf
+        INCLUDE_DIRS ${TINYGLTF_INCLUDE_DIRS}
+    )
+    add_dependencies(3rdparty_tinygltf ext_tinygltf)
     target_compile_definitions(3rdparty_tinygltf INTERFACE TINYGLTF_IMPLEMENTATION STB_IMAGE_IMPLEMENTATION STB_IMAGE_WRITE_IMPLEMENTATION)
     set(TINYGLTF_TARGET "3rdparty_tinygltf")
 endif()
@@ -715,7 +751,11 @@ if(USE_SYSTEM_TINYOBJLOADER)
     endif()
 endif()
 if(NOT USE_SYSTEM_TINYOBJLOADER)
-    build_3rdparty_library(3rdparty_tinyobjloader DIRECTORY tinyobjloader INCLUDE_DIRS tinyobjloader/)
+    include(${Open3D_3RDPARTY_DIR}/tinyobjloader/tinyobjloader.cmake)
+    import_3rdparty_library(3rdparty_tinyobjloader
+        INCLUDE_DIRS ${TINYOBJLOADER_INCLUDE_DIRS}
+    )
+    add_dependencies(3rdparty_tinyobjloader ext_tinyobjloader)
     target_compile_definitions(3rdparty_tinyobjloader INTERFACE TINYOBJLOADER_IMPLEMENTATION)
     set(TINYOBJLOADER_TARGET "3rdparty_tinyobjloader")
 endif()
@@ -736,7 +776,8 @@ if(USE_SYSTEM_QHULL)
     endif()
 endif()
 if(NOT USE_SYSTEM_QHULL)
-    build_3rdparty_library(3rdparty_qhull_r DIRECTORY qhull
+    include(${Open3D_3RDPARTY_DIR}/qhull/qhull.cmake)
+    build_3rdparty_library(3rdparty_qhull_r DIRECTORY ${QHULL_SOURCE_DIR}
         SOURCES
             src/libqhull_r/global_r.c
             src/libqhull_r/stat_r.c
@@ -758,7 +799,8 @@ if(NOT USE_SYSTEM_QHULL)
         INCLUDE_DIRS
             src/
     )
-    build_3rdparty_library(3rdparty_qhullcpp DIRECTORY qhull
+    add_dependencies(3rdparty_qhull_r ext_qhull)
+    build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
         SOURCES
             src/libqhullcpp/Coordinates.cpp
             src/libqhullcpp/PointCoordinates.cpp
@@ -782,6 +824,7 @@ if(NOT USE_SYSTEM_QHULL)
         INCLUDE_DIRS
             src/
     )
+    add_dependencies(3rdparty_qhullcpp ext_qhull)
     target_link_libraries(3rdparty_qhullcpp PRIVATE 3rdparty_qhull_r)
     set(QHULL_TARGET "3rdparty_qhullcpp")
 endif()
@@ -805,7 +848,12 @@ if(USE_SYSTEM_FMT)
 endif()
 if(NOT USE_SYSTEM_FMT)
     # We set the FMT_HEADER_ONLY macro, so no need to actually compile the source
-    build_3rdparty_library(3rdparty_fmt PUBLIC DIRECTORY fmt INCLUDE_DIRS include/)
+    include(${Open3D_3RDPARTY_DIR}/fmt/fmt.cmake)
+    import_3rdparty_library(3rdparty_fmt
+        PUBLIC
+        INCLUDE_DIRS ${FMT_INCLUDE_DIRS}
+    )
+    add_dependencies(3rdparty_fmt ext_fmt)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=1)
     set(FMT_TARGET "3rdparty_fmt")
 endif()
@@ -818,10 +866,8 @@ if (BUILD_PYTHON_MODULE)
     endif()
     if (NOT USE_SYSTEM_PYBIND11 OR NOT TARGET pybind11::module)
         set(USE_SYSTEM_PYBIND11 OFF)
-        add_subdirectory(${Open3D_3RDPARTY_DIR}/pybind11)
-    endif()
-    if(TARGET pybind11::module)
-        set(PYBIND11_TARGET "pybind11::module")
+        include(${Open3D_3RDPARTY_DIR}/pybind11/pybind11.cmake)
+        # pybind11 will automatically become available.
     endif()
 endif()
 
@@ -838,7 +884,11 @@ if (BUILD_AZURE_KINECT)
 endif()
 
 # PoissonRecon
-build_3rdparty_library(3rdparty_poisson DIRECTORY PoissonRecon INCLUDE_DIRS PoissonRecon)
+include(${Open3D_3RDPARTY_DIR}/PoissonRecon/PoissonRecon.cmake)
+import_3rdparty_library(3rdparty_poisson
+    INCLUDE_DIRS ${POISSON_INCLUDE_DIRS}
+)
+add_dependencies(3rdparty_poisson ext_poisson)
 set(POISSON_TARGET "3rdparty_poisson")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${POISSON_TARGET}")
 
@@ -861,7 +911,8 @@ if (BUILD_UNIT_TESTS)
         endif()
     endif()
     if(NOT USE_SYSTEM_GOOGLETEST)
-        build_3rdparty_library(3rdparty_googletest DIRECTORY googletest
+        include(${Open3D_3RDPARTY_DIR}/googletest/googletest.cmake)
+        build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
             SOURCES
                 googletest/src/gtest-all.cc
                 googlemock/src/gmock-all.cc
@@ -871,8 +922,15 @@ if (BUILD_UNIT_TESTS)
                 googlemock/include/
                 googlemock/
         )
+        add_dependencies(3rdparty_googletest ext_googletest)
         set(GOOGLETEST_TARGET "3rdparty_googletest")
     endif()
+endif()
+
+# Google benchmark
+if (BUILD_BENCHMARKS)
+    include(${Open3D_3RDPARTY_DIR}/benchmark/benchmark.cmake)
+    # benchmark and benchmark_main will automatically become available.
 endif()
 
 # Headless rendering
@@ -917,13 +975,15 @@ if(BUILD_GUI)
         endif()
     endif()
     if(NOT USE_SYSTEM_IMGUI)
-        build_3rdparty_library(3rdparty_imgui DIRECTORY imgui
+        include(${Open3D_3RDPARTY_DIR}/imgui/imgui.cmake)
+        build_3rdparty_library(3rdparty_imgui DIRECTORY ${IMGUI_SOURCE_DIR}
             SOURCES
                 imgui_demo.cpp
                 imgui_draw.cpp
                 imgui_widgets.cpp
                 imgui.cpp
         )
+        add_dependencies(3rdparty_imgui ext_imgui)
         set(IMGUI_TARGET "3rdparty_imgui")
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${IMGUI_TARGET}")
@@ -1041,19 +1101,9 @@ if(BUILD_GUI)
 endif()
 
 # RPC interface
-# - boost: predef
 # - zeromq
 # - msgpack
 if(BUILD_RPC_INTERFACE)
-    # boost: predef
-    include(${Open3D_3RDPARTY_DIR}/boost/boost.cmake)
-    import_3rdparty_library(3rdparty_boost
-        INCLUDE_DIRS ${BOOST_INCLUDE_DIRS}
-    )
-    set(BOOST_TARGET "3rdparty_boost")
-    add_dependencies(3rdparty_boost ext_boost)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${BOOST_TARGET}")
-
     # zeromq
     include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
     import_3rdparty_library(3rdparty_zeromq
@@ -1063,7 +1113,7 @@ if(BUILD_RPC_INTERFACE)
         LIBRARIES ${ZEROMQ_LIBRARIES}
     )
     set(ZEROMQ_TARGET "3rdparty_zeromq")
-    add_dependencies(${ZEROMQ_TARGET} ext_zeromq)
+    add_dependencies(${ZEROMQ_TARGET} ext_zeromq ext_cppzmq)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${ZEROMQ_TARGET}")
     if( DEFINED ZEROMQ_ADDITIONAL_LIBS )
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${ZEROMQ_ADDITIONAL_LIBS})
@@ -1091,7 +1141,13 @@ add_dependencies(3rdparty_tbb ext_tbb)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${TBB_TARGET}")
 
 # parallelstl
-build_3rdparty_library(3rdparty_parallelstl DIRECTORY parallelstl INCLUDE_DIRS include/ INCLUDE_ALL)
+include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
+import_3rdparty_library(3rdparty_parallelstl
+    PUBLIC
+    INCLUDE_DIRS ${PARALLELSTL_INCLUDE_DIRS}
+    INCLUDE_ALL
+)
+add_dependencies(3rdparty_parallelstl ext_parallelstl)
 set(PARALLELSTL_TARGET "3rdparty_parallelstl")
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${PARALLELSTL_TARGET}")
 
@@ -1288,3 +1344,15 @@ else()
     # Don't incude WebRTC headers in Open3D.h.
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
+
+# embree
+include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+import_3rdparty_library(3rdparty_embree
+    HIDDEN
+    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+    LIB_DIR      ${EMBREE_LIB_DIR}
+    LIBRARIES    ${EMBREE_LIBRARIES}
+)
+set(EMBREE_TARGET "3rdparty_embree")
+add_dependencies(3rdparty_embree ext_embree)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${EMBREE_TARGET}")

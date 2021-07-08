@@ -41,7 +41,7 @@ void TriuCUDA(const Tensor &A, Tensor &output, const int diagonal) {
         int cols = A.GetShape()[1];
         int n = A.GetShape()[0] * cols;
 
-        core::kernel::CUDALauncher::LaunchGeneralKernel(
+        kernel::cuda_launcher::ParallelFor(
                 n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     const int64_t idx = workload_idx / cols;
                     const int64_t idy = workload_idx % cols;
@@ -61,7 +61,7 @@ void TrilCUDA(const Tensor &A, Tensor &output, const int diagonal) {
         int cols = A.GetShape()[1];
         int n = A.GetShape()[0] * cols;
 
-        core::kernel::CUDALauncher::LaunchGeneralKernel(
+        kernel::cuda_launcher::ParallelFor(
                 n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     const int64_t idx = workload_idx / cols;
                     const int64_t idy = workload_idx % cols;
@@ -85,7 +85,7 @@ void TriulCUDA(const Tensor &A,
         int cols = A.GetShape()[1];
         int n = A.GetShape()[0] * cols;
 
-        core::kernel::CUDALauncher::LaunchGeneralKernel(
+        kernel::cuda_launcher::ParallelFor(
                 n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     const int64_t idx = workload_idx / cols;
                     const int64_t idy = workload_idx % cols;

@@ -39,13 +39,6 @@ INSTANTIATE_TEST_SUITE_P(TransformationEstimation,
                          TransformationEstimationPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class TransformationEstimationPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        TransformationEstimation,
-        TransformationEstimationPermuteDevicePairs,
-        testing::ValuesIn(
-                TransformationEstimationPermuteDevicePairs::TestCases()));
-
 TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPoint) {
     core::Device device = GetParam();
 

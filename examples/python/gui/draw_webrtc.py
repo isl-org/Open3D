@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import open3d as o3d
 
 if __name__ == "__main__":
