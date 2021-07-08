@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package tensorboard.open3d;
+
+// A Open3DPluginData encapsulates information on which plugins are able to make
+// use of a certain summary value.
+message Open3DPluginData {
+
+  // Version 14 is the only supported version.
+  int32 version = 1;
+
+  // Shape of underlying data. Cache it here for performance reasons.
+  repeated int32 shape = 2;
+}

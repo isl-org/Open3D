@@ -26,6 +26,7 @@
 
 #include "pybind/visualization/webrtc_server/webrtc_window_system.h"
 
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 
 namespace open3d {
@@ -37,6 +38,8 @@ static void pybind_webrtc_server_functions(py::module &m) {
             "call_http_api",
             [](const std::string &entry_point, const std::string &query_string,
                const std::string &data) {
+                utility::LogDebug("call_http_api|{}|{}|{}|", entry_point,
+                                  query_string, data);
                 return WebRTCWindowSystem::GetInstance()->CallHttpAPI(
                         entry_point, query_string, data);
             },

@@ -324,6 +324,8 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                                       k_session_description_sdp_name, &sdp)) {
         utility::LogWarning("Can't parse received message.");
     } else {
+        utility::LogDebug("in_message:{}||type:{}||sdp:{}", json_message, type,
+                          sdp);
         PeerConnectionObserver *peer_connection_observer =
                 this->CreatePeerConnection(peerid);
         if (!peer_connection_observer) {
@@ -561,6 +563,8 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
             this, peerid, config, std::move(port_allocator));
     if (!obs) {
         utility::LogError("CreatePeerConnection failed.");
+    } else {
+        utility::LogInfo("CreatePeerConnection success!");
     }
     return obs;
 }

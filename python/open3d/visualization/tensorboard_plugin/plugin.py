@@ -1,6 +1,9 @@
 """Open3D visualization plugin for Tensorboard"""
 import json
 import os
+import threading
+import time
+from collections import namedtuple
 
 import mimetypes
 from tensorboard import errors
@@ -9,15 +12,19 @@ from tensorboard.util import tensor_util
 from tensorboard.data import provider
 from tensorboard import plugin_util
 from tensorboard.backend import http_util
+from tensorboard.backend.event_processing.plugin_event_multiplexer import EventMultiplexer
 import werkzeug
 from werkzeug import wrappers
 
-import threading
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import metadata
+# Note: the _AsyncEventLoop is started whenever this module is imported.
+# from open3d.visualization._async_event_loop import _async_event_loop
 
 import ipdb
 import logging as log
+
+Window = namedtuple('Window', ['run', 'tags', 'step'])
 
 
 class Open3DPlugin(base_plugin.TBPlugin):
@@ -40,6 +47,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
     _RESOURCE_PATH = os.path.join(os.path.dirname(__file__), "..", "..",
                                   "resources")
     _DEFAULT_DOWNSAMPLING = 100  # meshes per time series
+    _MAX_SAMPLES_IN_RAM = 10
     _PLUGIN_DIRECTORY_PATH_PART = "/data/plugin/" + metadata.PLUGIN_NAME + "/"
 
     def __init__(self, context):
@@ -49,22 +57,65 @@ class Open3DPlugin(base_plugin.TBPlugin):
             context: A `base_plugin.TBContext` instance.
         """
         self._data_provider = context.data_provider
-        self._downsample_to = (context.sampling_hints
-                               or {}).get(self.plugin_name,
-                                          self._DEFAULT_DOWNSAMPLING)
+        self._downsample_to = (context.sampling_hints or
+                               {}).get(self.plugin_name,
+                                       self._DEFAULT_DOWNSAMPLING)
         self._logdir = context.logdir
+        self._events = EventMultiplexer(tensor_size_guidance={
+            metadata.PLUGIN_NAME: self._MAX_SAMPLES_IN_RAM
+        }).AddRunsFromDirectory(self._logdir)
+        self._windows = {}
+        self._next_wid = 0
         o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
-        threading.Thread(target=self.render_thread).start()
-
-    def render_thread(self):
-
-        o3d.visualization.webrtc_server.disable_http_handshake()
+        # o3d.visualization.webrtc_server.disable_http_handshake()
         o3d.visualization.webrtc_server.enable_webrtc()
 
-        cube_red = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
-        cube_red.compute_vertex_normals()
-        cube_red.paint_uniform_color((1.0, 0.0, 0.0))
-        o3d.visualization.draw(cube_red)
+    @wrappers.Request.application
+    def _new_window(self, request):
+
+        self._events.Reload()
+        run_to_tags = self._events.PluginRunToTagToContent(metadata.PLUGIN_NAME)
+        # Pick first run for now
+        run = next(iter(run_to_tags))
+
+        tags = [
+            tag[:-9] for tag in run_to_tags[run] if tag.endswith('_vertices')
+        ]
+        # Pick first tag for now
+        tag = tags[0]
+
+        # Pick step 0
+        step = 0
+
+        # Pick first in the batch
+        batch_idx = 0
+
+        mesh = o3d.geometry.TriangleMesh()
+
+        mesh.vertices = o3d.utility.Vector3dVector(
+            tensor_util.make_ndarray(
+                self._events.Tensors(
+                    run, tag + '_vertices')[step].tensor_proto)[batch_idx, ...])
+        for prop in metadata._MESH_PROPERTIES:
+            if tag + '_' + prop in run_to_tags[run]:
+                prop_value = tensor_util.make_ndarray(
+                    self._events.Tensors(run, tag + '_' +
+                                         prop)[step].tensor_proto)[batch_idx,
+                                                                   ...]
+                setattr(
+                    mesh, prop,
+                    o3d.utility.Vector3iVector(prop_value.astype(int)) if prop
+                    == 'triangles' else o3d.utility.Vector3dVector(prop_value))
+
+        threading.Thread(target=lambda: o3d.visualization.draw(mesh)).start()
+
+        self._windows[self._next_wid] = Window(run, tags, step)
+        response = str(self._next_wid)
+        self._next_wid += 1
+
+        time.sleep(0.4)
+        print("--WebRTC setup should be complete by now-->\n")
+        return werkzeug.Response(response, content_type="text/plain")
 
     # def _instance_tag_content(self, ctx, experiment, run, instance_tag):
     #     """Gets the `MeshPluginData` proto for an instance tag."""
@@ -89,9 +140,9 @@ class Open3DPlugin(base_plugin.TBPlugin):
         """
         return {
             "/index.js": self._serve_js,
+            "/window": self._new_window,
             "/tags": self._serve_tags,
             "/api/*": self._webrtc_http_api,
-            "/greetings": self._serve_greetings,
         }
 
     def is_active(self):
@@ -127,19 +178,20 @@ class Open3DPlugin(base_plugin.TBPlugin):
                                         1):]
             query_string = (b'?' + request.query_string
                             if request.query_string else b'')
-            data = request.data
+            data = request.get_data()
             print("Request:{}|{}|{}".format(entry_point, query_string, data))
             response = o3d.visualization.webrtc_server.call_http_api(
                 entry_point, query_string, data)
             print("Response: {}", response)
         except:
-            print(f"request is not a function call, ignored: {request}")
+            raise werkzeug.exceptions.BadRequest(
+                description=f"request is not a function call, ignored: {request}"
+            )
         else:
             return werkzeug.Response(response, content_type="application/json")
 
     @wrappers.Request.application
     def _serve_js(self, request):
-        # ipdb.set_trace()
         contents = ""
         for js_lib in (os.path.join(self._RESOURCE_PATH, "html", "libs",
                                     "adapter.min.js"),
@@ -161,7 +213,6 @@ class Open3DPlugin(base_plugin.TBPlugin):
         data for a specific run+tag. Responds with a map of the form:
         {runName: [tagName, tagName, ...]}
         """
-        ipdb.set_trace()
         ctx = plugin_util.context(request.environ)
         experiment = plugin_util.experiment_id(request.environ)
         lp = self._data_provider.list_plugins(ctx, experiment_id=experiment)
@@ -169,6 +220,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
                                                      experiment_id=experiment)
         log.info(lp)
         log.info(em)
+        ipdb.set_trace()
         run_tag_mapping = self._data_provider.list_tensors(
             ctx,
             experiment_id=experiment,
@@ -176,6 +228,16 @@ class Open3DPlugin(base_plugin.TBPlugin):
         )
         run_info = {run: list(tags) for (run, tags) in run_tag_mapping.items()}
         log.info(run_info)
+        blob_run_tag_mapping = self._data_provider.list_blob_sequences(
+            ctx,
+            experiment_id=experiment,
+            plugin_name=metadata.PLUGIN_NAME,
+        )
+        blob_run_info = {
+            run: list(tags) for (run, tags) in blob_run_tag_mapping.items()
+        }
+        log.info(blob_run_info)
+        ipdb.set_trace()
 
         return http_util.Respond(request, run_info, "application/json")
 

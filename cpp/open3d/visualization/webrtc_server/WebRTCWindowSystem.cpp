@@ -367,6 +367,9 @@ std::string WebRTCWindowSystem::CallHttpAPI(const std::string &entry_point,
         query_string_trimmed =
                 query_string.substr(1, query_string.length() - 1);
     }
+    utility::LogDebug("entry_point: {}", entry_point);
+    utility::LogDebug("query_string_trimmed: {}", query_string_trimmed);
+    utility::LogDebug("data: {}", data);
 
     std::string result = "";
     if (entry_point == "/api/getMediaList") {
@@ -415,9 +418,6 @@ std::string WebRTCWindowSystem::CallHttpAPI(const std::string &entry_point,
                         peerid, utility::StringToJson(data)));
     }
 
-    utility::LogDebug("entry_point: {}", entry_point);
-    utility::LogDebug("query_string_trimmed: {}", query_string_trimmed);
-    utility::LogDebug("data: {}", data);
     utility::LogDebug("result: {}", result);
 
     return result;

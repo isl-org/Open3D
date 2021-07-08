@@ -111,6 +111,7 @@ var WebRtcStreamer = (function () {
    * additional web server is required to process the http requests.
    */
   WebRtcStreamer.getMediaList = function (url = "", commsFetch = null) {
+    // url = "http://localhost:6006/data/plugin/Open3D";
     return WebRtcStreamer.remoteCall(url + "/api/getMediaList", {}, commsFetch);
   };
 
@@ -168,8 +169,10 @@ var WebRtcStreamer = (function () {
     if (!this.iceServers) {
       console.log("Get IceServers");
 
+      let url = "http://localhost:6006/data/plugin/Open3D";
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/getIceServers",
+        // url + "/api/getIceServers",
         {},
         this.commsFetch
       )
@@ -490,6 +493,7 @@ var WebRtcStreamer = (function () {
     options,
     stream
   ) {
+    let url = "http://localhost:6006/data/plugin/Open3D";
     this.iceServers = iceServers;
     this.pcConfig = iceServers || { iceServers: [] };
     try {
@@ -497,6 +501,7 @@ var WebRtcStreamer = (function () {
 
       var callurl =
         this.srvurl +
+         // url +
         "/api/call?peerid=" +
         this.pc.peerid +
         "&url=" +

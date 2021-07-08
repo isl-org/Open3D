@@ -2,9 +2,10 @@ import ipywidgets
 import traitlets
 import IPython
 import json
-import threading
 import functools
 import open3d as o3d
+# Note: the _AsyncEventLoop is started whenever this module is imported.
+from open3d.visualization._async_event_loop import _async_event_loop
 
 from open3d._build_config import _build_config
 if not _build_config["BUILD_JUPYTER_EXTENSION"]:
@@ -94,67 +95,6 @@ class WebVisualizer(ipywidgets.DOMWidget):
                 f"jspy_message is not a function call, ignored: {jspy_message}")
         else:
             self.pyjs_channel = json.dumps(self.result_map)
-
-
-class _AsyncEventLoop:
-
-    class _Task:
-        _g_next_id = 0
-
-        def __init__(self, f):
-            self.task_id = self._g_next_id
-            self.func = f
-            _AsyncEventLoop._Task._g_next_id += 1
-
-    def __init__(self):
-        # TODO (yixing): find a better solution. Currently py::print acquires
-        # GIL which causes deadlock when AsyncEventLoop is used. By calling
-        # reset_print_function(), all C++ prints will be directed to the
-        # terminal while python print will still remain in the cell.
-        o3d.utility.reset_print_function()
-        self._lock = threading.Lock()
-        self._run_queue = []
-        self._return_vals = {}
-        self._started = False
-        self._start()
-
-    def _start(self):
-        if not self._started:
-            self._thread = threading.Thread(target=self._thread_main)
-            self._thread.start()
-            self._started = True
-
-    def run_sync(self, f):
-        with self._lock:
-            task = _AsyncEventLoop._Task(f)
-            self._run_queue.append(task)
-
-        while True:
-            with self._lock:
-                if task.task_id in self._return_vals:
-                    return self._return_vals[task.task_id]
-
-    def _thread_main(self):
-        app = o3d.visualization.gui.Application.instance
-        app.initialize()
-
-        done = False
-        while not done:
-            with self._lock:
-                for task in self._run_queue:
-                    retval = task.func()
-                    self._return_vals[task.task_id] = retval
-                self._run_queue.clear()
-
-            done = not app.run_one_tick()
-
-
-# The _AsyncEventLoop class shall only be used to create a singleton instance.
-# There are different ways to achieve this, here we use the module as a holder
-# for singleton variables, see: https://stackoverflow.com/a/31887/1255535.
-#
-# Note: the _AsyncEventLoop is started whenever web_visualizer module is imported.
-_async_event_loop = _AsyncEventLoop()
 
 
 def draw(geometry=None,
