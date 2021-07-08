@@ -84,7 +84,7 @@ Voxelization for point clouds.
 
 The function returns the integer coordinates of the voxels that contain
 points and a compact list of the indices that associate the voxels to the
-points.
+points. Also supports variable length batching.
 
 Minimal example::
 
@@ -97,7 +97,10 @@ Minimal example::
       [1.8,1.8,1.8],
       [9.3,9.4,9.4]]
 
-  ml3d.ops.voxelize(points,
+  row_splits = [0, 2, 5]
+
+  ml3d.ops.voxelize_batch(points,
+                    row_splits,
                     voxel_size=[1.0,1.0,1.0],
                     points_range_min=[0,0,0],
                     points_range_max=[2,2,2])
@@ -107,8 +110,9 @@ Minimal example::
   #
   #         the point indices      [0, 1, 2, 3]
   #
-  #         and the point row splits [0, 2, 4]
-
+  #         the point row splits   [0, 2, 4]
+  #
+  #         and the batch splits   [0, 1, 2]
   # or with pytorch
   import torch
   import open3d.ml.torch as ml3d
@@ -120,7 +124,10 @@ Minimal example::
       [1.8,1.8,1.8],
       [9.3,9.4,9.4]])
 
-  ml3d.ops.voxelize(points,
+  row_splits = torch.Tensor([0, 2, 5]).to(torch.int64)
+
+  ml3d.ops.voxelize_batch(points,
+                    row_splits,
                     voxel_size=torch.Tensor([1.0,1.0,1.0]),
                     points_range_min=torch.Tensor([0,0,0]),
                     points_range_max=torch.Tensor([2,2,2]))
@@ -130,10 +137,15 @@ Minimal example::
   #
   #         the point indices      [0, 1, 2, 3]
   #
-  #         and the point row splits [0, 2, 4]
+  #         the point row splits   [0, 2, 4]
+  #
+  #         and the batch splits   [0, 1, 2]
 
 points: The point positions with shape [N,D] with N as the number of points and
   D as the number of dimensions, which must be 0 < D < 9.
+
+row_splits: 1D vector with row splits information if points is batched. This
+  vector is [0, num_points] if there is only 1 batch item.
 
 voxel_size: The voxel size with shape [D].
 
@@ -145,7 +157,7 @@ points_range_min: The maximum range for valid points to be voxelized. This
 
 max_points_per_voxel: The maximum number of points to consider for a voxel.
 
-max_voxels: The maximum number of voxels to generate.
+max_voxels: The maximum number of voxels to generate per batch.
 
 voxel_coords: The integer voxel coordinates.The shape of this tensor is [M, D]
   with M as the number of voxels and D as the number of dimensions.
@@ -156,5 +168,9 @@ voxel_point_indices: A flat list of all the points that have been voxelized.
 voxel_point_row_splits: This is an exclusive prefix sum that includes the total
   number of points in the last element. This can be used to find the start and
   end of the point indices for each voxel. The shape of this tensor is [M+1].
+
+voxel_batch_splits: This is a prefix sum of number of voxels per batch. This can
+  be used to find voxel_coords and row_splits corresponding to any particular
+  batch.
 
 )doc");
