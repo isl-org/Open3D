@@ -30,6 +30,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/Registration.h"
+#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -124,13 +125,12 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
 
-    std::mt19937 generator(option.seed_);
-    std::uniform_int_distribution<int> distribution(0, ncorr - 1);
+    utility::UniformRandInt dist_gen(0, ncorr - 1, option.seed_);
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
-        rand0 = distribution(generator);
-        rand1 = distribution(generator);
-        rand2 = distribution(generator);
+        rand0 = dist_gen();
+        rand1 = dist_gen();
+        rand2 = dist_gen();
         idi0 = corres_cross[rand0].first;
         idj0 = corres_cross[rand0].second;
         idi1 = corres_cross[rand1].first;

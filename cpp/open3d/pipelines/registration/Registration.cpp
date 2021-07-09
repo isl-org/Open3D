@@ -29,6 +29,7 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
+#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 
@@ -220,16 +221,16 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         CorrespondenceSet ransac_corres(ransac_n);
         RegistrationResult best_result_local;
         int exit_itr_local = criteria.max_iteration_;
-        std::mt19937 generator(
-            seed.has_value() ? seed.value() : std::random_device{}());
-        std::uniform_int_distribution<int> distribution(
-            0, static_cast<int>(corres.size()) - 1);
+        unsigned int seed_val =
+                seed.has_value() ? seed.value() : std::random_device{}();
+        utility::UniformRandInt dist_gen(0, static_cast<int>(corres.size()) - 1,
+                                         seed_val);
 
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
             if (itr < exit_itr_local) {
                 for (int j = 0; j < ransac_n; j++) {
-                    ransac_corres[j] = corres[distribution(generator)];
+                    ransac_corres[j] = corres[dist_gen()];
                 }
 
                 Eigen::Matrix4d transformation =

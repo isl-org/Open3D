@@ -1752,8 +1752,9 @@ TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {
     std::vector<int64_t> sizes = TensorSizes::TestCases();
     int64_t max_size = *std::max_element(sizes.begin(), sizes.end());
     std::vector<int> vals(max_size);
+    utility::UniformRandInt dist_gen(0, 3);
     std::transform(vals.begin(), vals.end(), vals.begin(),
-                   [](int x) -> int { return utility::UniformRandInt(0, 3); });
+                   [&dist_gen](int x) -> int { return dist_gen(); });
 
     for (int64_t size : sizes) {
         int ref_result = std::accumulate(vals.begin(), vals.begin() + size, 0,
