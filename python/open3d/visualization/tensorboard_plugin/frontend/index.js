@@ -42,7 +42,7 @@ export async function render() {
 
             let videoElt = document.createElement("video");
             videoElt.id = videoId;
-            videoElt.title = windowId;
+            // videoElt.title = windowId;
             videoElt.muted = true;
             videoElt.controls = false;
             videoElt.playsinline = true;

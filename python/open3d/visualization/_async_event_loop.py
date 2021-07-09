@@ -1,4 +1,5 @@
 import threading
+import functools
 import open3d as o3d
 
 
@@ -61,3 +62,13 @@ class _AsyncEventLoop:
 #
 # Note: the _AsyncEventLoop is started whenever this module is imported.
 _async_event_loop = _AsyncEventLoop()
+
+
+def in_async_event_loop(func):
+    """Decorator to run a function in the async event loop."""
+
+    @functools.wraps(func)
+    def wrapper_run_sync(*args, **kwargs):
+        return _async_event_loop.run_sync(lambda: func(*args, **kwargs))
+
+    return wrapper_run_sync
