@@ -29,6 +29,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <random>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -142,30 +143,22 @@ inline int DivUp(int x, int y) {
     return tmp.quot + (tmp.rem != 0 ? 1 : 0);
 }
 
-/// Thread-safe function returning a pseudo-random integer.
-/// The integer is drawn from a uniform distribution bounded by min and max
-/// (inclusive)
-int UniformRandInt(const int min, const int max);
+/// \class UniformRandInt
+///
+/// \brief Draw pseudo-random integers bounded by min and max (inclusive)
+/// from a uniform distribution
+class UniformRandInt {
+public:
+    UniformRandInt(const int min,
+                   const int max,
+                   std::mt19937::result_type seed = std::random_device{}())
+        : distribution_(min, max), generator_(seed) {}
+    int operator()() { return distribution_(generator_); }
 
-/// Uniformly distributed binary-friendly floating point number in [0, 1).
-///
-/// Binary-friendly means that the random number can be represented by floating
-/// point with a few bits of mantissa. The binary-friendliness is useful for
-/// unit testing since it reduces the chances of numerical errors.
-///
-/// E.g.
-/// - 0.9 is not representable by floating point accurately, the actual value
-///   stored in a float32 is 0.89999997615814208984375...
-/// - 0.875 = 0.5 + 0.25 + 0.125, is binary-friendly.
-///
-/// \param power The possible random numbers are: n * 1 / (2 ^ power),
-///              where n = 0, 1, 2, ..., (2 ^ power - 1).
-template <typename T>
-T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
-    double p = std::pow(2, power);
-    int n = UniformRandInt(0, p - 1);
-    return static_cast<T>(1. / p * n);
-}
+protected:
+    std::uniform_int_distribution<int> distribution_;
+    std::mt19937 generator_;
+};
 
 /// Returns current time stamp.
 std::string GetCurrentTimeStamp();
