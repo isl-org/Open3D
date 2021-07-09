@@ -65,7 +65,7 @@ _async_event_loop = _AsyncEventLoop()
 
 
 def in_async_event_loop(func):
-    """Decorator to run a function in the async event loop."""
+    """Decorator to run a callable in the async event loop."""
 
     @functools.wraps(func)
     def wrapper_run_sync(*args, **kwargs):

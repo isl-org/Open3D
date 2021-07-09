@@ -72,7 +72,10 @@ export async function render() {
       }
 
     // Ask Open3D for a new window
-    fetch(url_route_prefix + "/window", null)
+    var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+
+    fetch(url_route_prefix + "/window?width=" + width + "&height=" + height, null)
         .then((response) => response.text())
         .then((response) => addConnection("window_" + response))
         .catch(err => console.log(err));

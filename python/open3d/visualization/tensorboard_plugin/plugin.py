@@ -1,11 +1,10 @@
 """Open3D visualization plugin for Tensorboard"""
-import json
 import os
 import threading
 import time
 from collections import namedtuple
+import logging as log
 
-import mimetypes
 from tensorboard import errors
 from tensorboard.plugins import base_plugin
 from tensorboard.util import tensor_util
@@ -24,14 +23,12 @@ from open3d.visualization.tensorboard_plugin import metadata
 from open3d.visualization._async_event_loop import in_async_event_loop, _async_event_loop
 
 import ipdb
-import logging as log
 
 WindowData = namedtuple('WindowData', ['run', 'tag', 'step', 'batch_idx'])
 
 
 class Open3DPluginWindow(object):
 
-    @in_async_event_loop
     def __init__(self,
                  window_id,
                  event_mux,
@@ -51,18 +48,24 @@ class Open3DPluginWindow(object):
         self.mesh = o3d.geometry.TriangleMesh()
 
         self.window_id = window_id
-        self.window = gui.Application.instance.create_window(
-            title, width, height)
-
-    @in_async_event_loop
-    def _create_selector_ui(self):
         self.event_mux.Reload()
         self.run_to_tags = self.event_mux.PluginRunToTagToContent(
             metadata.PLUGIN_NAME)
 
+        self.cv_init_done = threading.Condition()  # Notify when WebRTC is ready
+        self.init_done = False
+
+        self._create_ui(title, width, height)
+        self._update_scene()
+
+    @in_async_event_loop
+    def _create_ui(self, title, width, height):
+        self.window = gui.Application.instance.create_window(
+            title, width, height)
+
         layout = gui.Horiz()
-        layout.background_color = gui.Color(0.95, 0.95, 0.95)
         self.window.add_child(layout)
+        layout.background_color = gui.Color(0.95, 0.95, 0.95)
 
         # Setup the run selector
         run_selector = gui.Vert()
@@ -70,9 +73,13 @@ class Open3DPluginWindow(object):
         run_selector.add_child(gui.Label('Runs'))
         self.run_list = gui.ListView()
         run_selector.add_child(self.run_list)
-        self.run_list.set_items(list(self.run_to_tags.keys()))
-        self.run_list.selected_index = 0
-        self.run = self.run_list.selected_value
+        run_list = list(self.run_to_tags.keys())
+        self.run_list.set_items(run_list)
+        try:
+            self.run_list.selected_index = run_list.index(self.run)
+        except ValueError:  # self.run is None or not in list
+            self.run_list.selected_index = 0
+            self.run = run_list[0]
         self.run_list.set_on_selection_changed(self._on_run_select)
         logdir = gui.Label(self._logdir)
         logdir.text_color = gui.Color(0.5, 0.5, 0.5)
@@ -90,8 +97,11 @@ class Open3DPluginWindow(object):
             if tag.endswith('_vertices')
         ]
         self.tag_list.set_items(self.tags)
-        self.tag_list.selected_index = 0
-        self.tag = self.tag_list.selected_value
+        try:
+            self.tag_list.selected_index = self.tags.index(self.tag)
+        except ValueError:  # self.tag is None or not in list
+            self.tag_list.selected_index = 0
+            self.tag = self.tags[0]
         self.tag_list.set_on_selection_changed(self._on_tag_select)
 
         for prop in metadata._MESH_PROPERTIES:
@@ -153,6 +163,10 @@ class Open3DPluginWindow(object):
         self._on_tag_select(self.tag, False)
 
     def _on_tag_select(self, selected_tag, unused_is_double_click):
+        if selected_tag not in self.tags:
+            log.warn(f"Tag {selected_tag} not in current run. Skipping.")
+            self._update_selectors()
+            return
         self.tag = selected_tag
         for prop in metadata._MESH_PROPERTIES:
             if self.tag + '_' + prop in self.run_to_tags[self.run]:
@@ -174,10 +188,11 @@ class Open3DPluginWindow(object):
 
     def _on_step_changed(self, new_step):
         if new_step not in self.step_to_idx:
-            log.warn(f"Step {new_step} missing in event file for run " +
-                     f"{self.run}, tag {self.tag}")
+            log.warn(
+                f"Step {new_step} missing in event file for run {self.run}, tag {self.tag}. Skipping."
+            )
+            self._update_selectors()
             return
-
         self.step = new_step
         self.idx = self.step_to_idx[self.step]
         self.wall_time = self.all_tensor_events['vertices'][self.idx].wall_time
@@ -190,13 +205,18 @@ class Open3DPluginWindow(object):
         this_batch_size = self.all_tensor_events['vertices'][
             self.idx].tensor_shape.dim[0].size
         self.batch_idx = max(0, min(new_batch_idx, this_batch_size - 1))
+        self._update_selectors()
         self._update_scene()
 
     @in_async_event_loop
-    def _update_scene(self):
-
+    def _update_selectors(self):
+        self.tag_list.set_items(self.tags)
         self.step_slider.set_limits(*self.step_limits)
         self.batch_idx_slider.set_limits(0, self.batch_size)
+        self.window.post_redraw()
+
+    @in_async_event_loop
+    def _update_scene(self):
 
         self.mesh.vertices = o3d.utility.Vector3dVector(
             tensor_util.make_ndarray(self.all_tensor_events['vertices'][
@@ -214,6 +234,11 @@ class Open3DPluginWindow(object):
             self.scene_widget.remove_geometry(self.tag)
         self.scene_widget.add_geometry(self.tag, self.mesh)
         self.scene_widget.force_redraw()
+
+        if not self.init_done:
+            with self.cv_init_done:
+                self.init_done = True
+                self.cv_init_done.notify_all()
 
 
 class Open3DPlugin(base_plugin.TBPlugin):
@@ -253,14 +278,11 @@ class Open3DPlugin(base_plugin.TBPlugin):
         self.event_mux = EventMultiplexer(tensor_size_guidance={
             metadata.PLUGIN_NAME: self._MAX_SAMPLES_IN_RAM
         }).AddRunsFromDirectory(self._logdir)
-        self._windows = None
+        self._windows = []
         self._next_wid = 0
         o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
         # o3d.visualization.webrtc_server.disable_http_handshake()
         o3d.visualization.webrtc_server.enable_webrtc()
-
-        _async_event_loop.run_sync(gui.Application.instance.initialize)
-        # _async_event_loop.run_sync(gui.Application.instance.run)
 
     @wrappers.Request.application
     def _new_window(self, request):
@@ -268,51 +290,20 @@ class Open3DPlugin(base_plugin.TBPlugin):
         assert not request.is_multithread, "Open3D plugin is not currently multi-thread safe."
         assert not request.is_multiprocess, "Open3D plugin is not currently multi-process safe."
 
-        self._windows.append(Open3DPluginWindow(self._next_wid, self.event_mux))
-        self._next_wid += 1
+        win_width = min(3840, max(640, request.args.get('width', 1024)))
+        win_height = min(2400, max(480, request.args.get('height', 768)))
+        self._windows.append(
+            Open3DPluginWindow(self._next_wid, self.event_mux,
+                               "Open3D for Tensorboard", win_width, win_height))
 
-        self.event_mux.Reload()
-        run_to_tags = self.event_mux.PluginRunToTagToContent(
-            metadata.PLUGIN_NAME)
-        # Pick first run for now
-        run = next(iter(run_to_tags))
-
-        tags = [
-            tag[:-9] for tag in run_to_tags[run] if tag.endswith('_vertices')
-        ]
-        # Pick first tag for now
-        tag = tags[0]
-
-        # Pick step 0
-        step = 0
-
-        # Pick first in the batch
-        batch_idx = 0
-
-        mesh = o3d.geometry.TriangleMesh()
-
-        mesh.vertices = o3d.utility.Vector3dVector(
-            tensor_util.make_ndarray(
-                self.event_mux.Tensors(
-                    run, tag + '_vertices')[step].tensor_proto)[batch_idx, ...])
-        for prop in metadata._MESH_PROPERTIES:
-            if tag + '_' + prop in run_to_tags[run]:
-                prop_value = tensor_util.make_ndarray(
-                    self.event_mux.Tensors(run, tag + '_' +
-                                           prop)[step].tensor_proto)[batch_idx,
-                                                                     ...]
-                setattr(
-                    mesh, prop,
-                    o3d.utility.Vector3iVector(prop_value.astype(int)) if prop
-                    == 'triangles' else o3d.utility.Vector3dVector(prop_value))
-
-        threading.Thread(target=lambda: o3d.visualization.draw(mesh)).start()
-
-        self._windows[self._next_wid] = Window(run, tags, step)
         response = str(self._next_wid)
         self._next_wid += 1
 
-        time.sleep(0.4)
+        # Wait for WebRTC initialization
+        with self._windows[-1].cv_init_done:
+            self._windows[-1].cv_init_done.wait_for(
+                predicate=lambda: self._windows[-1].init_done)
+
         print("--WebRTC setup should be complete by now-->\n")
         return werkzeug.Response(response, content_type="text/plain")
 
