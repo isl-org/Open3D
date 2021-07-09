@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,25 +25,30 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include <boost/predef/other/endian.h>
 
+#include <cstring>
 #include <map>
 #include <msgpack.hpp>
 #include <string>
 #include <vector>
 
-#if BOOST_ENDIAN_LITTLE_BYTE
-#define ENDIANNESS_STR "<"
-#elif BOOST_ENDIAN_BIG_BYTE
-#define ENDIANNESS_STR ">"
-#else
-#error Cannot determine endianness
-#endif
-
 namespace open3d {
 namespace io {
 namespace rpc {
 namespace messages {
+
+inline std::string EndiannessStr() {
+    auto IsLittleEndian = []() -> bool {
+        uint32_t a = 1;
+        uint8_t b;
+        // Use memcpy as a reliable way to access a single byte.
+        // Other approaches, e.g. union, often rely on undefined behaviour.
+        std::memcpy(&b, &a, sizeof(uint8_t));
+        return b == 1;
+    };
+
+    return IsLittleEndian() ? "<" : ">";
+}
 
 /// Template function for converting types to their string representation.
 /// E.g. TypeStr<float>() -> "<f4"
@@ -53,11 +58,11 @@ inline std::string TypeStr() {
 }
 template <>
 inline std::string TypeStr<float>() {
-    return ENDIANNESS_STR "f4";
+    return EndiannessStr() + "f4";
 }
 template <>
 inline std::string TypeStr<double>() {
-    return ENDIANNESS_STR "f8";
+    return EndiannessStr() + "f8";
 }
 template <>
 inline std::string TypeStr<int8_t>() {
@@ -65,15 +70,15 @@ inline std::string TypeStr<int8_t>() {
 }
 template <>
 inline std::string TypeStr<int16_t>() {
-    return ENDIANNESS_STR "i2";
+    return EndiannessStr() + "i2";
 }
 template <>
 inline std::string TypeStr<int32_t>() {
-    return ENDIANNESS_STR "i4";
+    return EndiannessStr() + "i4";
 }
 template <>
 inline std::string TypeStr<int64_t>() {
-    return ENDIANNESS_STR "i8";
+    return EndiannessStr() + "i8";
 }
 template <>
 inline std::string TypeStr<uint8_t>() {
@@ -81,18 +86,16 @@ inline std::string TypeStr<uint8_t>() {
 }
 template <>
 inline std::string TypeStr<uint16_t>() {
-    return ENDIANNESS_STR "u2";
+    return EndiannessStr() + "u2";
 }
 template <>
 inline std::string TypeStr<uint32_t>() {
-    return ENDIANNESS_STR "u4";
+    return EndiannessStr() + "u4";
 }
 template <>
 inline std::string TypeStr<uint64_t>() {
-    return ENDIANNESS_STR "u8";
+    return EndiannessStr() + "u8";
 }
-
-#undef ENDIANNESS_STR
 
 /// Array structure inspired by msgpack_numpy but not directly compatible
 /// because they use bin-type for the map keys and we must use string.

@@ -24,15 +24,27 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
 # CUDA
-CUDA_VERSION=("11-0" "11.0")
-CUDNN_MAJOR_VERSION=8
-CUDNN_VERSION="8.0.5.39-1+cuda11.0"
+if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON || \
+    $UBUNTU_VERSION != bionic ]]; then
+    # CUDA version in sync with PyTorch and Tensorflow
+    CUDA_VERSION=("11-0" "11.0")
+    CUDNN_MAJOR_VERSION=8
+    CUDNN_VERSION="8.0.5.39-1+cuda11.0"
+    GCC_MAX_VER=9
+else
+    # Without MLOps, ensure Open3D works with the lowest supported CUDA version
+    # Not available in Nvidia focal repos
+    CUDA_VERSION=("10-1" "10.1")
+    CUDNN_MAJOR_VERSION=8
+    CUDNN_VERSION="8.0.5.39-1+cuda10.1"
+    GCC_MAX_VER=7
+fi
 # ML
 TENSORFLOW_VER="2.4.1"
-TORCH_CUDA_GLNX_VER="1.7.1+cu110"
+# TORCH_CUDA_GLNX_VER="1.7.1+cu110"
+# TORCH_CPU_GLNX_VER="1.7.1+cpu"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_CPU_GLNX_VER="1.7.1+cpu"
 TORCH_MACOS_VER="1.7.1"
 # Python
 CONDA_BUILD_VER="3.20.0"
@@ -84,21 +96,8 @@ install_cuda_toolkit() {
     fi
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "with-cudnn" =~ ^($options)$ ]]; then
-        # The repository method can cause "File has unexpected size" error so
-        # we use a tar file copy approach instead. The scripts are taken from
-        # CentOS 6 nvidia-docker scripts. The CUDA version and CUDNN version
-        # should be the same as the repository method. Ref:
-        # https://gitlab.com/nvidia/container-images/cuda/-/blob/2d67fde701915bd88a15038895203c894b36d3dd/dist/10.1/centos6-x86_64/devel/cudnn7/Dockerfile#L9
-        # $SUDO apt-get install --yes --no-install-recommends curl
-        # CUDNN_DOWNLOAD_SUM=7eaec8039a2c30ab0bc758d303588767693def6bf49b22485a2c00bf2e136cb3
-        # curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.6.5/cudnn-10.1-linux-x64-v7.6.5.32.tgz -O
-        # echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.1-linux-x64-v7.6.5.32.tgz" | sha256sum -c -
-        # $SUDO tar --no-same-owner -xzf cudnn-10.1-linux-x64-v7.6.5.32.tgz -C /usr/local
-        # rm cudnn-10.1-linux-x64-v7.6.5.32.tgz
-        # $SUDO ldconfig
-        # CUDNN is now part of the main CUDA repo, so re-trying apt install
         echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
-        $SUDO apt-get install --yes --no-install-recommends \
+        $SUDO apt-get install --yes --no-install-recommends --allow-downgrades \
             "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
             "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
     fi
@@ -109,14 +108,14 @@ install_cuda_toolkit() {
     export PATH="${CUDA_TOOLKIT_DIR}/bin${PATH:+:$PATH}"
     export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     set -u +x
-    # Ensure g++ < 10 is installed for CUDA 11.0
+    # Ensure g++ < {8,10} is installed for CUDA {10.1,11.0}
     cpp_version=$(c++ --version 2>/dev/null | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
-    if dpkg --compare-versions "$cpp_version" ge-nl 10; then
-        $SUDO apt-get install --yes --no-install-recommends g++-9 gcc-9
-        $SUDO update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-9 70 \
-            --slave /usr/bin/gcc gcc /usr/bin/gcc-9
-        $SUDO update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-9 70 \
-            --slave /usr/bin/g++ g++ /usr/bin/g++-9
+    if dpkg --compare-versions "$cpp_version" ge-nl $((GCC_MAX_VER + 1)); then
+        $SUDO apt-get install --yes --no-install-recommends g++-$GCC_MAX_VER gcc-$GCC_MAX_VER
+        $SUDO update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-$GCC_MAX_VER 70 \
+            --slave /usr/bin/gcc gcc /usr/bin/gcc-$GCC_MAX_VER
+        $SUDO update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-$GCC_MAX_VER 70 \
+            --slave /usr/bin/g++ g++ /usr/bin/g++-$GCC_MAX_VER
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         $SUDO apt-get clean
@@ -140,16 +139,18 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow-gpu
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        TORCH_ARCH_GLNX_VER="$TORCH_CUDA_GLNX_VER"
+        # TORCH_ARCH_GLNX_VER="$TORCH_CUDA_GLNX_VER"
     else
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
-        TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
+        # TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
     fi
 
     # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
+    if [[ "with-jupyter" =~ ^($options)$ ]]; then
+        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
+    fi
 
     echo
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ]; then
@@ -228,7 +229,6 @@ build_all() {
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
         -DBUILD_RPC_INTERFACE="$BUILD_RPC_INTERFACE"
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
-        -DPYTHON_EXECUTABLE="$(command -v python)"
         -DBUILD_UNIT_TESTS=ON
         -DBUILD_BENCHMARKS=ON
         -DBUILD_EXAMPLES=OFF
@@ -252,6 +252,7 @@ build_pip_conda_package() {
     #   build_pip_conda_package pip        # Build pip only
     #   build_pip_conda_package conda      # Build conda only
     echo "Building Open3D wheel"
+    options="$(echo "$@" | tr ' ' '|')"
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
     set +u
@@ -276,17 +277,19 @@ build_pip_conda_package() {
         echo "Azure Kinect disabled in Python wheel."
         BUILD_AZURE_KINECT=OFF
     fi
+    if [[ "build_jupyter" =~ ^($options)$ ]]; then
+        echo "Building Jupyter extension in Python wheel."
+        BUILD_JUPYTER_EXTENSION=ON
+    else
+        echo "Jupyter extension disabled in Python wheel."
+        BUILD_JUPYTER_EXTENSION=OFF
+    fi
     set -u
 
     echo
     echo Building with CPU only...
     mkdir -p build
-    cd build # PWD=Open3D/build
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        BUILD_JUPYTER_EXTENSION=ON
-    else
-        BUILD_JUPYTER_EXTENSION=OFF
-    fi
+    pushd build # PWD=Open3D/build
     cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
@@ -295,9 +298,8 @@ build_pip_conda_package() {
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUILD_RPC_INTERFACE=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
-        "-DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}"
+        "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
-        "-DPYTHON_EXECUTABLE=$(command -v python)"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"
@@ -337,7 +339,7 @@ build_pip_conda_package() {
         echo "Packaging Open3D pip and conda package..."
         make VERBOSE=1 -j"$NPROC" pip-conda-package
     fi
-    cd .. # PWD=Open3D
+    popd # PWD=Open3D
 }
 
 # Test wheel in blank virtual environment

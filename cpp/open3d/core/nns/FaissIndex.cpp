@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/SizeVector.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -77,6 +77,8 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
         res.reset(new faiss::gpu::StandardGpuResources());
         faiss::gpu::GpuIndexFlatConfig config;
         config.device = dataset_points_.GetDevice().GetID();
+
+        CUDACachedMemoryManager::ReleaseCache();
         index.reset(new faiss::gpu::GpuIndexFlat(
                 res.get(), dimension, faiss::MetricType::METRIC_L2, config));
 #else
@@ -124,9 +126,8 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
     return std::make_pair(indices, distances);
 }
 
-std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
-                                                   double radius,
-                                                   int max_knn) const {
+std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
+        const Tensor &query_points, double radius, int max_knn) const {
     // Check dtype.
     query_points.AssertDtype(Dtype::Float32);
 
@@ -148,6 +149,9 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
     std::tie(indices, distances) = SearchKnn(query_points, max_knn);
 
     Tensor invalid = distances.Gt(radius);
+
+    Tensor counts = max_knn - invalid.To(core::Dtype::Int64).Sum({0});
+
     Tensor invalid_indices = Tensor(std::vector<int64_t>({-1}), {1},
                                     Dtype::Int64, indices.GetDevice());
     Tensor invalid_distances = Tensor(std::vector<float>({-1}), {1},
@@ -156,7 +160,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
     indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
     distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);
 
-    return std::make_pair(indices, distances);
+    return std::make_tuple(indices, distances, counts);
 }
 
 }  // namespace nns

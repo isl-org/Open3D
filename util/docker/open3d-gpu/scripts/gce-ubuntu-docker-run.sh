@@ -63,11 +63,6 @@ case "$1" in
 gcloud-setup)
     gcloud auth configure-docker
     gcloud info
-    # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
-    for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do
-        echo "Removing ssh key"
-        gcloud compute os-login ssh-keys remove --key $i || true
-    done
     ;;
 
     # Build the Docker image
@@ -162,6 +157,8 @@ delete-image)
 
 delete-vm)
     gcloud compute instances delete "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}"
+    # Remove ssh key to prevent metadata buildup in login profile
+    gcloud compute os-login ssh-keys remove --key-file "${HOME}"/.ssh/google_compute_engine.pub
     ;;
 
 ssh-vm)

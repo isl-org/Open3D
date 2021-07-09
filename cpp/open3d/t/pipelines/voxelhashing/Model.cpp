@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -110,6 +110,11 @@ void Model::Integrate(const Frame& input_frame,
 t::geometry::PointCloud Model::ExtractPointCloud(int estimated_number,
                                                  float weight_threshold) {
     return voxel_grid_.ExtractSurfacePoints(estimated_number, weight_threshold);
+}
+
+t::geometry::TriangleMesh Model::ExtractTriangleMesh(int estimated_number,
+                                                     float weight_threshold) {
+    return voxel_grid_.ExtractSurfaceMesh(estimated_number, weight_threshold);
 }
 
 core::Hashmap Model::GetHashmap() { return *voxel_grid_.GetBlockHashmap(); }

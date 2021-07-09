@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,9 +38,9 @@
 #include <unordered_map>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/IJsonConvertible.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/Window.h"
@@ -51,12 +51,41 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-// List of ICE servers. We only use publicly available STUN servers, which works
-// for most users. In certain network configurations (e.g. if the peers are
-// behind certain type of firewalls), STUN server may fail to resolve and in
-// this case, we'll need to implement and host a separate TURN server. If our
-// default list fails to connect, you may replace this with other STUN servers.
-static const std::list<std::string> ice_servers{"stun:stun.l.google.com:19302"};
+// List of ICE servers (STUN or TURN). STUN servers is used by default. In
+// certain network configurations TURN servers are required to forward WebRTC
+// traffic.
+static const std::list<std::string> s_public_ice_servers{
+        "stun:stun.l.google.com:19302"};
+
+// We also provide an experimental TURN server for testing purposes. Don't abuse
+// the server. The strings are split to avoid search enging indexing.
+static const std::list<std::string> s_open3d_ice_servers{
+        std::string("turn:user:password@34.69") + ".27.100:3478",
+        std::string("turn:user:password@34.69") + ".27.100:3478?transport=tcp",
+};
+
+// clang-format off
+/// Get custom STUN server address from WEBRTC_STUN_SERVER environment variable.
+/// If there are more than one server, separate them with ";".
+/// Example usage:
+/// 1. Set WEBRTC_STUN_SERVER to:
+///    - UDP only
+///      WEBRTC_STUN_SERVER="turn:user:password@$(curl -s ifconfig.me):3478"
+///    - TCP only
+///      WEBRTC_STUN_SERVER="turn:user:password@$(curl -s ifconfig.me):3478?transport=tcp"
+///    - UDP and TCP
+///      WEBRTC_STUN_SERVER="turn:user:password@$(curl -s ifconfig.me):3478;turn:user:password@$(curl -s ifconfig.me):3478?transport=tcp"
+/// 2. Start your TURN server binding to a local IP address and port
+/// 3. Set router configurations to forward your local IP address and port to
+///    the public IP address and port.
+// clang-format on
+static std::string GetCustomSTUNServer() {
+    if (const char *env_p = std::getenv("WEBRTC_STUN_SERVER")) {
+        return std::string(env_p);
+    } else {
+        return "";
+    }
+}
 
 static std::string GetEnvWebRTCIP() {
     if (const char *env_p = std::getenv("WEBRTC_IP")) {
@@ -200,12 +229,30 @@ void WebRTCWindowSystem::StartWebRTCServer() {
             rtc::Thread *thread = rtc::Thread::Current();
             rtc::InitializeSSL();
             Json::Value config;
+            std::list<std::string> ice_servers;
+            ice_servers.insert(ice_servers.end(), s_public_ice_servers.begin(),
+                               s_public_ice_servers.end());
+            if (!GetCustomSTUNServer().empty()) {
+                std::vector<std::string> custom_servers =
+                        utility::SplitString(GetCustomSTUNServer(), ";");
+                ice_servers.insert(ice_servers.end(), custom_servers.begin(),
+                                   custom_servers.end());
+            }
+            ice_servers.insert(ice_servers.end(), s_open3d_ice_servers.begin(),
+                               s_open3d_ice_servers.end());
+            utility::LogInfo("ICE servers: {}", ice_servers);
+
             impl_->peer_connection_manager_ =
                     std::make_unique<PeerConnectionManager>(
                             ice_servers, config["urls"], ".*", "");
             if (!impl_->peer_connection_manager_->InitializePeerConnection()) {
                 utility::LogError("InitializePeerConnection() failed.");
             }
+
+            utility::LogInfo(
+                    "Set WEBRTC_STUN_SERVER environment variable add a "
+                    "customized WebRTC STUN server.",
+                    impl_->http_address_);
 
             // CivetWeb server is used for WebRTC handshake. This is enabled
             // when running as a standalone application, and is disabled when
@@ -237,12 +284,12 @@ void WebRTCWindowSystem::StartWebRTCServer() {
                                            ->GetHttpApi();
 
                     // Main loop for Civet server.
-                    utility::LogInfo("Open3D WebVisualizer is serving at {}.",
-                                     impl_->http_address_);
+                    utility::LogInfo(
+                            "Open3D WebVisualizer is serving at http://{}.",
+                            impl_->http_address_);
                     utility::LogInfo(
                             "Set WEBRTC_IP and WEBRTC_PORT environment "
-                            "variable to "
-                            "customize server address.",
+                            "variable to customize the HTTP server address.",
                             impl_->http_address_);
                     HttpServerRequestHandler civet_server(func, options);
                     thread->Run();

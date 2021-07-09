@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -159,7 +159,7 @@ void BuildSpatialHashTableCUDA(void* temp,
 ///
 /// \param output_allocator    An object that implements functions for
 ///         allocating the output arrays. The object must implement functions
-///         AllocIndices(int32_t** ptr, size_t size) and
+///         AllocIndices(int64_t** ptr, size_t size) and
 ///         AllocDistances(T** ptr, size_t size). Both functions should
 ///         allocate memory and return a pointer to that memory in ptr.
 ///         Argument size specifies the size of the array as the number of
@@ -246,12 +246,12 @@ void FixedRadiusSearchCUDA(void* temp,
 ///
 /// \param output_allocator    An object that implements functions for
 ///         allocating the output arrays. The object must implement functions
-///         AllocIndices(int32_t** ptr, size_t size) and
-///         AllocDistances(T** ptr, size_t size). Both functions should
-///         allocate memory and return a pointer to that memory in ptr.
-///         Argument size specifies the size of the array as the number of
-///         elements. Both functions must accept the argument size==0.
-///         In this case ptr does not need to be set.
+///         AllocIndices(int64_t** ptr, size_t size),
+///         AllocDistances(T** ptr, size_t size) and AllocCounts(int64_t** ptr,
+///         size_t num). These functions should allocate memory and return a
+///         pointer to that memory in ptr. Argument size specifies the size of
+///         the array as the number of elements. Both functions must accept the
+///         argument size==0. In this case ptr does not need to be set.
 template <class T>
 void HybridSearchCUDA(size_t num_points,
                       const T* const points,

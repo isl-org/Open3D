@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -119,8 +119,12 @@ var WebRtcStreamer = (function () {
     var modNone = 0;
     var modShift = 1 << 0;
     var modCtrl = 1 << 1;
-    var modAlt = 1 << 2;
-    var modMeta = 1 << 3;
+    var modAlt = 1 << 2; // Option in macOS
+    var modMeta = 1 << 3; // Command in macOS, Win in Windows, Super in Linux
+    // Swap Command and Ctrl in macOS
+    if (window.navigator.platform.includes("Mac")) {
+      [modCtrl, modMeta] = [modMeta, modCtrl];
+    }
     var mod = modNone;
     if (event.getModifierState("Shift")) {
       mod = mod | modShift;
@@ -228,7 +232,7 @@ var WebRtcStreamer = (function () {
         );
         var widthInputElt = document.getElementById(windowUID + "_width_input");
         if (!heightInputElt || !widthInputElt) {
-          Console.warn("Cannot resize, missing hight/width inputs.");
+          Console.warn("Cannot resize, missing height/width inputs.");
           return;
         }
         var resizeEvent = {
@@ -241,6 +245,15 @@ var WebRtcStreamer = (function () {
       };
       controllerDivElt.appendChild(resizeButtonElt);
 
+      var o3dmouseButtons = ["LEFT", "MIDDLE", "RIGHT"];
+
+      this.videoElt.addEventListener(
+        "contextmenu",
+        (event) => {
+          event.preventDefault();
+        },
+        false
+      );
       this.videoElt.onloadedmetadata = function () {
         console.log("width is", this.videoWidth);
         console.log("height is", this.videoHeight);
@@ -256,122 +269,152 @@ var WebRtcStreamer = (function () {
         }
       };
 
-      this.videoElt.addEventListener("mousedown", (event) => {
-        var open3dMouseEvent = {
-          window_uid: windowUID,
-          class_name: "MouseEvent",
-          type: "BUTTON_DOWN",
-          x: event.offsetX,
-          y: event.offsetY,
-          modifiers: WebRtcStreamer._getModifiers(event),
-          button: {
-            button: "LEFT", // Fix me.
-            count: 1,
-          },
-        };
-        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
-      });
-      this.videoElt.addEventListener("touchstart", (event) => {
-        event.preventDefault();
-        var rect = event.target.getBoundingClientRect();
-        var open3dMouseEvent = {
-          window_uid: windowUID,
-          class_name: "MouseEvent",
-          type: "BUTTON_DOWN",
-          x: Math.round(event.targetTouches[0].pageX - rect.left),
-          y: Math.round(event.targetTouches[0].pageY - rect.top),
-          modifiers: 0,
-          button: {
-            button: "LEFT", // Fix me.
-            count: 1,
-          },
-        };
-        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
-      });
-      this.videoElt.addEventListener("mouseup", (event) => {
-        var open3dMouseEvent = {
-          window_uid: windowUID,
-          class_name: "MouseEvent",
-          type: "BUTTON_UP",
-          x: event.offsetX,
-          y: event.offsetY,
-          modifiers: WebRtcStreamer._getModifiers(event),
-          button: {
-            button: "LEFT", // Fix me.
-            count: 1,
-          },
-        };
-        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
-      });
-      this.videoElt.addEventListener("touchend", (event) => {
-        event.preventDefault();
-        var rect = event.target.getBoundingClientRect();
-        var open3dMouseEvent = {
-          window_uid: windowUID,
-          class_name: "MouseEvent",
-          type: "BUTTON_UP",
-          x: Math.round(event.targetTouches[0].pageX - rect.left),
-          y: Math.round(event.targetTouches[0].pageY - rect.top),
-          modifiers: 0,
-          button: {
-            button: "LEFT", // Fix me.
-            count: 1,
-          },
-        };
-        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
-      });
-      this.v;
-      this.videoElt.addEventListener("mousemove", (event) => {
-        // TODO: Known differences. Currently only left-key drag works.
-        // - Open3D: L=1, M=2, R=4
-        // - JavaScript: L=1, R=2, M=4
-        var open3dMouseEvent = {
-          window_uid: windowUID,
-          class_name: "MouseEvent",
-          type: event.buttons == 0 ? "MOVE" : "DRAG",
-          x: event.offsetX,
-          y: event.offsetY,
-          modifiers: WebRtcStreamer._getModifiers(event),
-          move: {
-            buttons: event.buttons, // MouseButtons ORed together
-          },
-        };
-        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
-      });
-      this.videoElt.addEventListener("touchmove", (event) => {
-        // TODO: Known differences. Currently only left-key drag works.
-        // - Open3D: L=1, M=2, R=4
-        // - JavaScript: L=1, R=2, M=4
-        event.preventDefault();
-        var rect = event.target.getBoundingClientRect();
-        var open3dMouseEvent = {
-          window_uid: windowUID,
-          class_name: "MouseEvent",
-          type: "DRAG",
-          x: Math.round(event.targetTouches[0].pageX - rect.left),
-          y: Math.round(event.targetTouches[0].pageY - rect.top),
-          modifiers: 0,
-          move: {
-            buttons: 1, // MouseButtons ORed together
-          },
-        };
-        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
-      });
-      this.videoElt.addEventListener("mouseleave", (event) => {
-        var open3dMouseEvent = {
-          window_uid: windowUID,
-          class_name: "MouseEvent",
-          type: "BUTTON_UP",
-          x: event.offsetX,
-          y: event.offsetY,
-          modifiers: WebRtcStreamer._getModifiers(event),
-          button: {
-            button: "LEFT", // Fix me.
-            count: 1,
-          },
-        };
-        this.dataChannel.send(JSON.stringify(open3dMouseEvent));
-      });
+      this.videoElt.addEventListener(
+        "mousedown",
+        (event) => {
+          event.preventDefault();
+          var open3dMouseEvent = {
+            window_uid: windowUID,
+            class_name: "MouseEvent",
+            type: "BUTTON_DOWN",
+            x: event.offsetX,
+            y: event.offsetY,
+            modifiers: WebRtcStreamer._getModifiers(event),
+            button: {
+              button: o3dmouseButtons[event.button],
+              count: 1,
+            },
+          };
+          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+        },
+        false
+      );
+      this.videoElt.addEventListener(
+        "touchstart",
+        (event) => {
+          event.preventDefault();
+          var rect = event.target.getBoundingClientRect();
+          var open3dMouseEvent = {
+            window_uid: windowUID,
+            class_name: "MouseEvent",
+            type: "BUTTON_DOWN",
+            x: Math.round(event.targetTouches[0].pageX - rect.left),
+            y: Math.round(event.targetTouches[0].pageY - rect.top),
+            modifiers: 0,
+            button: {
+              button: o3dmouseButtons[event.button],
+              count: 1,
+            },
+          };
+          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+        },
+        false
+      );
+      this.videoElt.addEventListener(
+        "mouseup",
+        (event) => {
+          event.preventDefault();
+          var open3dMouseEvent = {
+            window_uid: windowUID,
+            class_name: "MouseEvent",
+            type: "BUTTON_UP",
+            x: event.offsetX,
+            y: event.offsetY,
+            modifiers: WebRtcStreamer._getModifiers(event),
+            button: {
+              button: o3dmouseButtons[event.button],
+              count: 1,
+            },
+          };
+          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+        },
+        false
+      );
+      this.videoElt.addEventListener(
+        "touchend",
+        (event) => {
+          event.preventDefault();
+          var rect = event.target.getBoundingClientRect();
+          var open3dMouseEvent = {
+            window_uid: windowUID,
+            class_name: "MouseEvent",
+            type: "BUTTON_UP",
+            x: Math.round(event.targetTouches[0].pageX - rect.left),
+            y: Math.round(event.targetTouches[0].pageY - rect.top),
+            modifiers: 0,
+            button: {
+              button: o3dmouseButtons[event.button],
+              count: 1,
+            },
+          };
+          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+        },
+        false
+      );
+      this.videoElt.addEventListener(
+        "mousemove",
+        (event) => {
+          // TODO: Known differences. Currently only left-key drag works.
+          // - Open3D: L=1, M=2, R=4
+          // - JavaScript: L=1, R=2, M=4
+          event.preventDefault();
+          var open3dMouseEvent = {
+            window_uid: windowUID,
+            class_name: "MouseEvent",
+            type: event.buttons == 0 ? "MOVE" : "DRAG",
+            x: event.offsetX,
+            y: event.offsetY,
+            modifiers: WebRtcStreamer._getModifiers(event),
+            move: {
+              buttons: event.buttons, // MouseButtons ORed together
+            },
+          };
+          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+        },
+        false
+      );
+      this.videoElt.addEventListener(
+        "touchmove",
+        (event) => {
+          // TODO: Known differences. Currently only left-key drag works.
+          // - Open3D: L=1, M=2, R=4
+          // - JavaScript: L=1, R=2, M=4
+          event.preventDefault();
+          var rect = event.target.getBoundingClientRect();
+          var open3dMouseEvent = {
+            window_uid: windowUID,
+            class_name: "MouseEvent",
+            type: "DRAG",
+            x: Math.round(event.targetTouches[0].pageX - rect.left),
+            y: Math.round(event.targetTouches[0].pageY - rect.top),
+            modifiers: 0,
+            move: {
+              buttons: 1, // MouseButtons ORed together
+            },
+          };
+          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+        },
+        false
+      );
+      this.videoElt.addEventListener(
+        "mouseleave",
+        (event) => {
+          var open3dMouseEvent = {
+            window_uid: windowUID,
+            class_name: "MouseEvent",
+            type: "BUTTON_UP",
+            x: event.offsetX,
+            y: event.offsetY,
+            modifiers: WebRtcStreamer._getModifiers(event),
+            button: {
+              button: o3dmouseButtons[event.button],
+              count: 1,
+            },
+          };
+          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+        },
+        false
+      );
       this.videoElt.addEventListener(
         "wheel",
         (event) => {
@@ -385,7 +428,7 @@ var WebRtcStreamer = (function () {
             : event.deltaMode === 0;
 
           // TODO: set better scaling.
-          // Flip the sign and set abaolute value to 1.
+          // Flip the sign and set absolute value to 1.
           var dx = event.deltaX;
           var dy = event.deltaY;
           dx = dx == 0 ? dx : (-dx / Math.abs(dx)) * 1;

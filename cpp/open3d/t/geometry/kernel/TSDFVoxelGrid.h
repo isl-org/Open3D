@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -102,19 +102,21 @@ void ExtractSurfacePoints(
         float weight_threshold,
         int& valid_size);
 
-void ExtractSurfaceMesh(const core::Tensor& block_indices,
-                        const core::Tensor& inv_block_indices,
-                        const core::Tensor& nb_block_indices,
-                        const core::Tensor& nb_block_masks,
-                        const core::Tensor& block_keys,
-                        const core::Tensor& block_values,
-                        core::Tensor& vertices,
-                        core::Tensor& triangles,
-                        core::Tensor& vertex_normals,
-                        core::Tensor& vertex_colors,
-                        int64_t block_resolution,
-                        float voxel_size,
-                        float weight_threshold);
+void ExtractSurfaceMesh(
+        const core::Tensor& block_indices,
+        const core::Tensor& inv_block_indices,
+        const core::Tensor& nb_block_indices,
+        const core::Tensor& nb_block_masks,
+        const core::Tensor& block_keys,
+        const core::Tensor& block_values,
+        core::Tensor& vertices,
+        core::Tensor& triangles,
+        utility::optional<std::reference_wrapper<core::Tensor>> vertex_normals,
+        utility::optional<std::reference_wrapper<core::Tensor>> vertex_colors,
+        int64_t block_resolution,
+        float voxel_size,
+        float weight_threshold,
+        int& vertex_count);
 
 void TouchCPU(std::shared_ptr<core::Hashmap>& hashmap,
               const core::Tensor& points,
@@ -181,19 +183,21 @@ void ExtractSurfacePointsCPU(
         float weight_threshold,
         int& valid_size);
 
-void ExtractSurfaceMeshCPU(const core::Tensor& block_indices,
-                           const core::Tensor& inv_block_indices,
-                           const core::Tensor& nb_block_indices,
-                           const core::Tensor& nb_block_masks,
-                           const core::Tensor& block_keys,
-                           const core::Tensor& block_values,
-                           core::Tensor& vertices,
-                           core::Tensor& triangles,
-                           core::Tensor& vertex_normals,
-                           core::Tensor& vertex_colors,
-                           int64_t block_resolution,
-                           float voxel_size,
-                           float weight_threshold);
+void ExtractSurfaceMeshCPU(
+        const core::Tensor& block_indices,
+        const core::Tensor& inv_block_indices,
+        const core::Tensor& nb_block_indices,
+        const core::Tensor& nb_block_masks,
+        const core::Tensor& block_keys,
+        const core::Tensor& block_values,
+        core::Tensor& vertices,
+        core::Tensor& triangles,
+        utility::optional<std::reference_wrapper<core::Tensor>> vertex_normals,
+        utility::optional<std::reference_wrapper<core::Tensor>> vertex_colors,
+        int64_t block_resolution,
+        float voxel_size,
+        float weight_threshold,
+        int& vertex_count);
 
 #ifdef BUILD_CUDA_MODULE
 void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
@@ -261,20 +265,21 @@ void ExtractSurfacePointsCUDA(
         float weight_threshold,
         int& valid_size);
 
-void ExtractSurfaceMeshCUDA(const core::Tensor& block_indices,
-                            const core::Tensor& inv_block_indices,
-                            const core::Tensor& nb_block_indices,
-                            const core::Tensor& nb_block_masks,
-                            const core::Tensor& block_keys,
-                            const core::Tensor& block_values,
-                            core::Tensor& vertices,
-                            core::Tensor& triangles,
-                            core::Tensor& vertex_normals,
-                            core::Tensor& vertex_colors,
-                            int64_t block_resolution,
-                            float voxel_size,
-                            float weight_threshold);
-
+void ExtractSurfaceMeshCUDA(
+        const core::Tensor& block_indices,
+        const core::Tensor& inv_block_indices,
+        const core::Tensor& nb_block_indices,
+        const core::Tensor& nb_block_masks,
+        const core::Tensor& block_keys,
+        const core::Tensor& block_values,
+        core::Tensor& vertices,
+        core::Tensor& triangles,
+        utility::optional<std::reference_wrapper<core::Tensor>> vertex_normals,
+        utility::optional<std::reference_wrapper<core::Tensor>> vertex_colors,
+        int64_t block_resolution,
+        float voxel_size,
+        float weight_threshold,
+        int& vertex_count);
 #endif
 }  // namespace tsdf
 }  // namespace kernel

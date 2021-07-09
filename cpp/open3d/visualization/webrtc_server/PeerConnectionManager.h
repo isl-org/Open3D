@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -101,8 +101,8 @@ class PeerConnectionManager {
         virtual void OnFrame(const webrtc::VideoFrame& video_frame) {
             rtc::scoped_refptr<webrtc::I420BufferInterface> buffer(
                     video_frame.video_frame_buffer()->ToI420());
-            utility::LogDebug("[{}] frame: {}x{}", __PRETTY_FUNCTION__,
-                              buffer->height(), buffer->width());
+            utility::LogDebug("[{}] frame: {}x{}", __FN__, buffer->height(),
+                              buffer->width());
         }
 
     protected:
@@ -311,8 +311,7 @@ class PeerConnectionManager {
         // PeerConnectionObserver interface
         virtual void OnAddStream(
                 rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-            utility::LogDebug("[{}] GetVideoTracks().size(): {}.",
-                              __PRETTY_FUNCTION__,
+            utility::LogDebug("[{}] GetVideoTracks().size(): {}.", __FN__,
                               stream->GetVideoTracks().size());
             webrtc::VideoTrackVector videoTracks = stream->GetVideoTracks();
             if (videoTracks.size() > 0) {

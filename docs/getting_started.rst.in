@@ -59,9 +59,9 @@ Development version (pip)
 To test the latest features in Open3D, download and install the development
 version (``HEAD`` of ``master`` branch):
 
-:Linux: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-linux_x86_64.whl>`__
-        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-linux_x86_64.whl>`__
-        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl>`__
+:Linux: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-manylinux_2_27_x86_64.whl>`__
+        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-manylinux_2_27_x86_64.whl>`__
+        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
 
 :MacOS: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-macosx_10_14_x86_64.whl>`__
         `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_14_x86_64.whl>`__
@@ -115,7 +115,6 @@ A minimal ``Dockerfile`` looks like this:
     RUN apt-get update && apt-get install --no-install-recommends -y \
         libgl1 \
         libgomp1 \
-        libusb-1.0-0 \
         python3-pip \
         && rm -rf /var/lib/apt/lists/*
 

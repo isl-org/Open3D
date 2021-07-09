@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Dialog.h"
@@ -685,7 +685,10 @@ void Window::ShowMessageBox(const char* title, const char* message) {
     ShowDialog(dlg);
 }
 
-void Window::ShowMenu(bool show) { impl_->draw_menu_ = show; }
+void Window::ShowMenu(bool show) {
+    impl_->draw_menu_ = show;
+    SetNeedsLayout();
+}
 
 LayoutContext Window::GetLayoutContext() { return {GetTheme(), impl_->imgui_}; }
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,8 +39,8 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Checkbox.h"
@@ -839,7 +839,11 @@ struct O3DVisualizer::Impl {
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
             valid_tpcd = t_cloud.get();
-        } else if (!model) {  // branch only applies to geometries
+        } else if (model) {
+            // Adding a triangle mesh model. Shader needs to be set to
+            // defaultLit for O3D shader handling logic to work.
+            mat.shader = kShaderLit;
+        } else {  // branch only applies to geometries
             bool has_colors = false;
             bool has_normals = false;
 
@@ -1217,6 +1221,9 @@ struct O3DVisualizer::Impl {
     }
 
     void SetShader(O3DVisualizer::Shader shader) {
+        // Don't force material override if no change
+        if (ui_state_.scene_shader == shader) return;
+
         ui_state_.scene_shader = shader;
         for (auto &o : objects_) {
             OverrideMaterial(o.name, o.material, shader);
@@ -1233,11 +1240,11 @@ struct O3DVisualizer::Impl {
         // unlit mode so that we can keep the wide lines.
         if (shader == Shader::STANDARD ||
             (shader == Shader::UNLIT && is_lines)) {
-            scene->GetScene()->OverrideMaterial(name, original_material);
+            scene->ModifyGeometryMaterial(name, original_material);
         } else {
             Material m = original_material;
             m.shader = GetShaderString(shader);
-            scene->GetScene()->OverrideMaterial(name, m);
+            scene->ModifyGeometryMaterial(name, m);
         }
     }
 
@@ -1693,7 +1700,7 @@ struct O3DVisualizer::Impl {
                 (std::string("Open3D ") + OPEN3D_VERSION).c_str());
         auto text = std::make_shared<gui::Label>(
                 "The MIT License (MIT)\n"
-                "Copyright (c) 2018 - 2021 www.open3d.org\n\n"
+                "Copyright (c) 2018-2021 www.open3d.org\n\n"
 
                 "Permission is hereby granted, free of charge, to any person "
                 "obtaining a copy of this software and associated "

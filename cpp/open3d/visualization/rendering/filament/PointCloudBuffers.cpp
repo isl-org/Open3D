@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -345,14 +345,18 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
         return {};
     }
 
+    const size_t vertex_array_size = n_vertices * 3 * sizeof(float);
+    float* vertex_array = static_cast<float*>(malloc(vertex_array_size));
+    memcpy(vertex_array, points.GetDataPtr(), vertex_array_size);
     VertexBuffer::BufferDescriptor pts_descriptor(
-            points.GetDataPtr(), n_vertices * 3 * sizeof(float));
+            vertex_array, vertex_array_size,
+            GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(pts_descriptor));
 
     const size_t color_array_size = n_vertices * 3 * sizeof(float);
     if (geometry_.HasPointColors()) {
+        float* color_array = static_cast<float*>(malloc(color_array_size));
         if (geometry_.GetPointColors().GetDtype() == core::Dtype::UInt8) {
-            float* color_array = static_cast<float*>(malloc(color_array_size));
             float* color_array_ptr = color_array;
             const uint8_t* color_uint8_array = static_cast<const uint8_t*>(
                     geometry_.GetPointColors().GetDataPtr());
@@ -366,8 +370,11 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
                     GeometryBuffersBuilder::DeallocateBuffer);
             vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
         } else {
+            memcpy(color_array, geometry_.GetPointColors().GetDataPtr(),
+                   color_array_size);
             VertexBuffer::BufferDescriptor color_descriptor(
-                    geometry_.GetPointColors().GetDataPtr(), color_array_size);
+                    color_array, color_array_size,
+                    GeometryBuffersBuilder::DeallocateBuffer);
             vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
         }
     } else {

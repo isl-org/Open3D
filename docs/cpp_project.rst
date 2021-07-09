@@ -1,7 +1,7 @@
 .. _cplusplus_example_project:
 
-Build your C++ projects with Open3D
------------------------------------
+Link Open3D in C++ projects
+---------------------------
 
 We provide two example CMake projects to demonstrate how to use Open3D in your
 CMake projects.

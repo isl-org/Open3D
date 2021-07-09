@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,8 +39,8 @@
 #include "open3d/io/ModelIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Checkbox.h"
@@ -85,7 +85,7 @@ std::shared_ptr<gui::Dialog> CreateAboutDialog(gui::Window *window) {
             (std::string("Open3D ") + OPEN3D_VERSION).c_str());
     auto text = std::make_shared<gui::Label>(
             "The MIT License (MIT)\n"
-            "Copyright (c) 2018 - 2021 www.open3d.org\n\n"
+            "Copyright (c) 2018-2021 www.open3d.org\n\n"
 
             "Permission is hereby granted, free of charge, to any person "
             "obtaining a copy of this software and associated documentation "

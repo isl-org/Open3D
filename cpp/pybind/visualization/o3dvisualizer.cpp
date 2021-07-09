@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -173,6 +173,10 @@ void pybind_o3dvisualizer(py::module& m) {
                  "closed. The callback is given no arguments and should return "
                  "True to continue closing the window or False to cancel the "
                  "close")
+            .def("show_menu", &O3DVisualizer::ShowMenu,
+                 "show_menu(show): shows or hides the menu in the window, "
+                 "except on macOS since the menubar is not in the window "
+                 "and all applications must have a menubar.")
             // from O3DVisualizer
             .def("add_action", &O3DVisualizer::AddAction,
                  "Adds a button to the custom actions section of the UI "

@@ -14,6 +14,7 @@ util/pip_package/setup.py
 CMakeSettings.json
 
 # Temp directories
+3rdparty_downloads
 build*/
 cmake-build-debug/
 cmake-build-release/
@@ -87,5 +88,6 @@ docs/tutorial/**/*.pcd
 docs/tutorial/**/*.json
 docs/_out/
 docs/python_api/
+docs/conf.py
 docs/Doxyfile
 docs/getting_started.rst

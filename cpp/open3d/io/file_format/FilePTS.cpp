@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +28,9 @@
 
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/PointCloudIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
@@ -81,14 +81,14 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                     pointcloud.colors_.resize(num_of_pts);
                 }
             }
-            double x, y, z;
-            int i, r, g, b;
+            double x, y, z, i;
+            int r, g, b;
             if (num_of_fields < 7) {
                 if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
                     pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
                 }
             } else {
-                if (sscanf(line_buffer, "%lf %lf %lf %d %d %d %d", &x, &y, &z,
+                if (sscanf(line_buffer, "%lf %lf %lf %lf %d %d %d", &x, &y, &z,
                            &i, &r, &g, &b) == 7) {
                     pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
                     pointcloud.colors_[idx] = utility::ColorToDouble(r, g, b);
@@ -139,8 +139,9 @@ bool WritePointCloudToPTS(const std::string &filename,
                 }
             } else {
                 auto color = utility::ColorToUint8(pointcloud.colors_[i]);
-                if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %d %d %d %d\r\n",
-                            point(0), point(1), point(2), 0, (int)color(0),
+                if (fprintf(file.GetFILE(),
+                            "%.10f %.10f %.10f %.10f %d %d %d\r\n", point(0),
+                            point(1), point(2), 0.0, (int)color(0),
                             (int)color(1), (int)(color(2))) < 0) {
                     utility::LogWarning(
                             "Write PTS failed: unable to write file: {}",

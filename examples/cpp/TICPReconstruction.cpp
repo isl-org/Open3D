@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -483,7 +483,7 @@ protected:
                 // rendering, using `AddGeometry`, or update an existing
                 // pointcloud using `UpdateGeometry`, then setup camera.
                 gui::Application::GetInstance().PostToMainThread(
-                        this, [this, i, out_ = out_.str()]() {
+                        this, [this, out_ = out_.str()]() {
                             this->SetOutput(out_);
 
                             // Locking to protect: pcd_.source_,
@@ -794,8 +794,8 @@ private:
                     "Index is not set.");
         }
 
-        core::Tensor distances;
-        std::tie(result.correspondence_set_.second, distances) =
+        core::Tensor distances, counts;
+        std::tie(result.correspondence_set_.second, distances, counts) =
                 target_nns.HybridSearch(source.GetPoints(),
                                         max_correspondence_distance, 1);
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -75,11 +75,12 @@ void FillInRigidAlignmentTermCPU
             static_cast<const float *>(Ri_normal_ps.GetDataPtr());
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         const float *p_prime = Ti_ps_ptr + 3 * workload_idx;
         const float *q_prime = Tj_qs_ptr + 3 * workload_idx;
         const float *normal_p_prime = Ri_normal_ps_ptr + 3 * workload_idx;
@@ -114,7 +115,7 @@ void FillInRigidAlignmentTermCPU
         }
         atomicAdd(residual_ptr, r * r);
 #else
-#pragma omp critical
+#pragma omp critical(FillInRigidAlignmentTermCPU)
         {
             for (int i_local = 0; i_local < 12; ++i_local) {
                 for (int j_local = 0; j_local < 12; ++j_local) {
@@ -213,11 +214,12 @@ void FillInSLACAlignmentTermCPU
             static_cast<const float *>(cgrid_ratio_qs.GetDataPtr());
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         const float *Ti_Cp = Ti_Cps_ptr + 3 * workload_idx;
         const float *Tj_Cq = Tj_Cqs_ptr + 3 * workload_idx;
         const float *Cnormal_p = Cnormal_ps_ptr + 3 * workload_idx;
@@ -289,7 +291,7 @@ void FillInSLACAlignmentTermCPU
         }
         atomicAdd(residual_ptr, r * r);
 #else
-#pragma omp critical
+#pragma omp critical(FillInSLACAlignmentTermCPU)
         {
             for (int ki = 0; ki < 60; ++ki) {
                 for (int kj = 0; kj < 60; ++kj) {
@@ -408,11 +410,12 @@ void FillInSLACRegularizerTermCPU
             static_cast<const float *>(positions_curr.GetDataPtr());
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         // Enumerate 6 neighbors
         int idx_i = grid_idx_ptr[workload_idx];
 
@@ -580,7 +583,7 @@ void FillInSLACRegularizerTermCPU
                               -weight * local_r[axis]);
                 }
 #else
-#pragma omp critical
+#pragma omp critical(FillInSLACRegularizerTermCPU)
                 {
                     // Update residual
                     *residual_ptr += weight * (local_r[0] * local_r[0] +

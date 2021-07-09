@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -91,9 +91,12 @@ void pybind_tsdf_voxelgrid(py::module& m) {
             "estimate_number"_a = -1, "weight_threshold"_a = 3.0f,
             "surface_mask"_a = TSDFVoxelGrid::SurfaceMaskCode::VertexMap |
                                TSDFVoxelGrid::SurfaceMaskCode::ColorMap);
-    tsdf_voxelgrid.def("extract_surface_mesh",
-                       &TSDFVoxelGrid::ExtractSurfaceMesh,
-                       "weight_threshold"_a = 3.0f);
+    tsdf_voxelgrid.def(
+            "extract_surface_mesh", &TSDFVoxelGrid::ExtractSurfaceMesh,
+            "estimate_number"_a = -1, "weight_threshold"_a = 3.0f,
+            "surface_mask"_a = TSDFVoxelGrid::SurfaceMaskCode::VertexMap |
+                               TSDFVoxelGrid::SurfaceMaskCode::ColorMap |
+                               TSDFVoxelGrid::SurfaceMaskCode::NormalMap);
 
     tsdf_voxelgrid.def("to", &TSDFVoxelGrid::To, "device"_a, "copy"_a = false);
     tsdf_voxelgrid.def("clone", &TSDFVoxelGrid::Clone);

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,14 +31,16 @@
 #include <cmath>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/t/geometry/kernel/GeometryMacros.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 
-template <typename T>
-__device__ inline void WarpReduceSum(volatile T* local_sum, const int tid) {
+template <typename scalar_t>
+__device__ inline void WarpReduceSum(volatile scalar_t* local_sum,
+                                     const int tid) {
     local_sum[tid] += local_sum[tid + 32];
     local_sum[tid] += local_sum[tid + 16];
     local_sum[tid] += local_sum[tid + 8];
@@ -47,8 +49,9 @@ __device__ inline void WarpReduceSum(volatile T* local_sum, const int tid) {
     local_sum[tid] += local_sum[tid + 1];
 }
 
-template <typename T, size_t BLOCK_SIZE>
-__device__ inline void BlockReduceSum(const int tid, volatile T* local_sum) {
+template <typename scalar_t, size_t BLOCK_SIZE>
+__device__ inline void BlockReduceSum(const int tid,
+                                      volatile scalar_t* local_sum) {
     if (BLOCK_SIZE >= 512) {
         if (tid < 256) {
             local_sum[tid] += local_sum[tid + 256];
@@ -68,14 +71,14 @@ __device__ inline void BlockReduceSum(const int tid, volatile T* local_sum) {
         __syncthreads();
     }
     if (tid < 32) {
-        WarpReduceSum<T>(local_sum, tid);
+        WarpReduceSum<scalar_t>(local_sum, tid);
     }
 }
 
-template <typename T, size_t BLOCK_SIZE>
+template <typename scalar_t, size_t BLOCK_SIZE>
 __device__ inline void BlockReduceSum(const int tid,
-                                      volatile T* local_sum0,
-                                      volatile T* local_sum1) {
+                                      volatile scalar_t* local_sum0,
+                                      volatile scalar_t* local_sum1) {
     if (BLOCK_SIZE >= 512) {
         if (tid < 256) {
             local_sum0[tid] += local_sum0[tid + 256];
@@ -99,16 +102,16 @@ __device__ inline void BlockReduceSum(const int tid,
     }
 
     if (tid < 32) {
-        WarpReduceSum<float>(local_sum0, tid);
-        WarpReduceSum<float>(local_sum1, tid);
+        WarpReduceSum<scalar_t>(local_sum0, tid);
+        WarpReduceSum<scalar_t>(local_sum1, tid);
     }
 }
 
-template <typename T, size_t BLOCK_SIZE>
+template <typename scalar_t, size_t BLOCK_SIZE>
 __device__ inline void BlockReduceSum(const int tid,
-                                      volatile T* local_sum0,
-                                      volatile T* local_sum1,
-                                      volatile T* local_sum2) {
+                                      volatile scalar_t* local_sum0,
+                                      volatile scalar_t* local_sum1,
+                                      volatile scalar_t* local_sum2) {
     if (BLOCK_SIZE >= 512) {
         if (tid < 256) {
             local_sum0[tid] += local_sum0[tid + 256];
@@ -137,20 +140,20 @@ __device__ inline void BlockReduceSum(const int tid,
     }
 
     if (tid < 32) {
-        WarpReduceSum<float>(local_sum0, tid);
-        WarpReduceSum<float>(local_sum1, tid);
-        WarpReduceSum<float>(local_sum2, tid);
+        WarpReduceSum<scalar_t>(local_sum0, tid);
+        WarpReduceSum<scalar_t>(local_sum1, tid);
+        WarpReduceSum<scalar_t>(local_sum2, tid);
     }
 }
 
-template <typename T, size_t BLOCK_SIZE>
+template <typename scalar_t, size_t BLOCK_SIZE>
 __device__ inline void ReduceSum6x6LinearSystem(const int tid,
                                                 bool valid,
-                                                const T* reduction,
-                                                volatile T* local_sum0,
-                                                volatile T* local_sum1,
-                                                volatile T* local_sum2,
-                                                T* global_sum) {
+                                                const scalar_t* reduction,
+                                                volatile scalar_t* local_sum0,
+                                                volatile scalar_t* local_sum1,
+                                                volatile scalar_t* local_sum2,
+                                                scalar_t* global_sum) {
     // Sum reduction: JtJ(21) and Jtr(6)
     for (size_t i = 0; i < 27; i += 3) {
         local_sum0[tid] = valid ? reduction[i + 0] : 0;
@@ -158,8 +161,8 @@ __device__ inline void ReduceSum6x6LinearSystem(const int tid,
         local_sum2[tid] = valid ? reduction[i + 2] : 0;
         __syncthreads();
 
-        BlockReduceSum<float, BLOCK_SIZE>(tid, local_sum0, local_sum1,
-                                          local_sum2);
+        BlockReduceSum<scalar_t, BLOCK_SIZE>(tid, local_sum0, local_sum1,
+                                             local_sum2);
 
         if (tid == 0) {
             atomicAdd(&global_sum[i + 0], local_sum0[0]);
@@ -175,7 +178,7 @@ __device__ inline void ReduceSum6x6LinearSystem(const int tid,
         local_sum1[tid] = valid ? reduction[28] : 0;
         __syncthreads();
 
-        BlockReduceSum<float, BLOCK_SIZE>(tid, local_sum0, local_sum1);
+        BlockReduceSum<scalar_t, BLOCK_SIZE>(tid, local_sum0, local_sum1);
         if (tid == 0) {
             atomicAdd(&global_sum[27], local_sum0[0]);
             atomicAdd(&global_sum[28], local_sum1[0]);

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -85,15 +85,15 @@ Minimal example::
   import open3d.ml.tf as ml3d
 
   points = [
-      [0.1,0.1,0.1], 
-      [0.5,0.5,0.5], 
+      [0.1,0.1,0.1],
+      [0.5,0.5,0.5],
       [1.7,1.7,1.7],
       [1.8,1.8,1.8],
       [9.3,9.4,9.4]]
 
-  ml3d.ops.voxelize(points, 
-                    voxel_size=[1.0,1.0,1.0], 
-                    points_range_min=[0,0,0], 
+  ml3d.ops.voxelize(points,
+                    voxel_size=[1.0,1.0,1.0],
+                    points_range_min=[0,0,0],
                     points_range_max=[2,2,2])
 
   # returns the voxel coordinates  [[0, 0, 0],
@@ -101,22 +101,22 @@ Minimal example::
   #
   #         the point indices      [0, 1, 2, 3]
   #
-  #         and the point row splits [0, 2, 4] 
+  #         and the point row splits [0, 2, 4]
 
   # or with pytorch
   import torch
   import open3d.ml.torch as ml3d
 
   points = torch.Tensor([
-      [0.1,0.1,0.1], 
-      [0.5,0.5,0.5], 
+      [0.1,0.1,0.1],
+      [0.5,0.5,0.5],
       [1.7,1.7,1.7],
       [1.8,1.8,1.8],
       [9.3,9.4,9.4]])
 
-  ml3d.ops.voxelize(points, 
-                    voxel_size=torch.Tensor([1.0,1.0,1.0]), 
-                    points_range_min=torch.Tensor([0,0,0]), 
+  ml3d.ops.voxelize(points,
+                    voxel_size=torch.Tensor([1.0,1.0,1.0]),
+                    points_range_min=torch.Tensor([0,0,0]),
                     points_range_max=torch.Tensor([2,2,2]))
 
   # returns the voxel coordinates  [[0, 0, 0],
@@ -124,17 +124,17 @@ Minimal example::
   #
   #         the point indices      [0, 1, 2, 3]
   #
-  #         and the point row splits [0, 2, 4] 
+  #         and the point row splits [0, 2, 4]
 
 points: The point positions with shape [N,D] with N as the number of points and
   D as the number of dimensions, which must be 0 < D < 9.
 
 voxel_size: The voxel size with shape [D].
 
-points_range_min: The minimum range for valid points to be voxelized. This 
+points_range_min: The minimum range for valid points to be voxelized. This
   vector has shape [D] and is used as the origin for computing the voxel_indices.
 
-points_range_min: The maximum range for valid points to be voxelized. This 
+points_range_min: The maximum range for valid points to be voxelized. This
   vector has shape [D].
 
 max_points_per_voxel: The maximum number of points to consider for a voxel.

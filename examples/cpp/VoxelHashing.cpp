@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -191,5 +191,14 @@ int main(int argc, char* argv[]) {
         auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
                 pcd.ToLegacyPointCloud());
         open3d::io::WritePointCloud(filename, *pcd_legacy);
+    }
+
+    if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
+        std::string filename = utility::GetProgramOptionAsString(
+                argc, argv, "--mesh", "mesh_" + device.ToString() + ".ply");
+        auto mesh = model.ExtractTriangleMesh(-1);
+        auto mesh_legacy = std::make_shared<open3d::geometry::TriangleMesh>(
+                mesh.ToLegacyTriangleMesh());
+        open3d::io::WriteTriangleMesh(filename, *mesh_legacy);
     }
 }

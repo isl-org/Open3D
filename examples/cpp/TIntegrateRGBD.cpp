@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -116,6 +116,7 @@ int main(int argc, char* argv[]) {
             argc, argv, "--sdf_trunc", 0.04f));
 
     bool enable_raycast = utility::ProgramOptionExists(argc, argv, "--raycast");
+    bool debug = utility::ProgramOptionExists(argc, argv, "--debug");
 
     // Device
     std::string device_code = "CPU:0";
@@ -173,15 +174,14 @@ int main(int argc, char* argv[]) {
             auto result = voxel_grid.RayCast(
                     intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
                     depth_scale, 0.1, depth_max, std::min(i * 1.0f, 3.0f),
-                    MaskCode::DepthMap | MaskCode::VertexMap |
-                            MaskCode::ColorMap | MaskCode::NormalMap);
+                    MaskCode::DepthMap | MaskCode::ColorMap);
             ray_timer.Stop();
 
             utility::LogInfo("{}: Raycast takes {}", i,
                              ray_timer.GetDuration());
             time_raycasting += ray_timer.GetDuration();
 
-            if (i % 20 == 0) {
+            if (debug) {
                 core::Tensor range_map = result[MaskCode::RangeMap];
                 t::geometry::Image im_near(
                         range_map.Slice(2, 0, 1).Contiguous() / depth_max);
@@ -193,22 +193,17 @@ int main(int argc, char* argv[]) {
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 im_far.ToLegacyImage())});
-                t::geometry::Image depth(result[MaskCode::DepthMap]);
+                t::geometry::Image depth_raycast(result[MaskCode::DepthMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                depth.ToLegacyImage())});
-                t::geometry::Image vertex(result[MaskCode::VertexMap]);
+                                depth_raycast
+                                        .ColorizeDepth(depth_scale, 0.1,
+                                                       depth_max)
+                                        .ToLegacyImage())});
+                t::geometry::Image color_raycast(result[MaskCode::ColorMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                vertex.ToLegacyImage())});
-                t::geometry::Image normal(result[MaskCode::NormalMap]);
-                visualization::DrawGeometries(
-                        {std::make_shared<open3d::geometry::Image>(
-                                normal.ToLegacyImage())});
-                t::geometry::Image color(result[MaskCode::ColorMap]);
-                visualization::DrawGeometries(
-                        {std::make_shared<open3d::geometry::Image>(
-                                color.ToLegacyImage())});
+                                color_raycast.ToLegacyImage())});
             }
         }
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,12 +39,6 @@ class RegistrationPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Registration,
                          RegistrationPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
-
-class RegistrationPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        Registration,
-        RegistrationPermuteDevicePairs,
-        testing::ValuesIn(RegistrationPermuteDevicePairs::TestCases()));
 
 TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
     // Constructor.
