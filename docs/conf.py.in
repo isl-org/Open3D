@@ -124,8 +124,7 @@ todo_include_todos = False
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-theme_path = os.path.join(current_file_dir, "..", "3rdparty",
-                          "open3d_sphinx_theme")
+theme_path = "@OPEN3D_SPHINX_THEME_SOURCE_DIR@"
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [theme_path]
 html_favicon = "_static/open3d_logo.ico"

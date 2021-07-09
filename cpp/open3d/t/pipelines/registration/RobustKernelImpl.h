@@ -113,8 +113,9 @@
                 auto GetWeightFromRobustKernel =                              \
                         [=] OPEN3D_HOST_DEVICE(                               \
                                 scalar_t residual) -> scalar_t {              \
-                    return exp(OPEN3D_SQUARE(residual / scaling_parameter) /  \
-                               (-2.0)) /                                      \
+                    return OPEN3D_EXP(OPEN3D_SQUARE(residual /                \
+                                                    scaling_parameter) /      \
+                                      (-2.0)) /                               \
                            OPEN3D_SQUARE(scaling_parameter);                  \
                 };                                                            \
                 return __VA_ARGS__();                                         \
@@ -122,10 +123,12 @@
                 auto GetWeightFromRobustKernel =                              \
                         [=] OPEN3D_HOST_DEVICE(                               \
                                 scalar_t residual) -> scalar_t {              \
-                    return pow((OPEN3D_SQUARE(residual / scaling_parameter) / \
-                                        OPEN3D_ABS(shape_parameter - 2.0) +   \
-                                1),                                           \
-                               ((shape_parameter / 2.0) - 1.0)) /             \
+                    return OPEN3D_POW((OPEN3D_SQUARE(residual /               \
+                                                     scaling_parameter) /     \
+                                               OPEN3D_ABS(shape_parameter -   \
+                                                          2.0) +              \
+                                       1),                                    \
+                                      ((shape_parameter / 2.0) - 1.0)) /      \
                            OPEN3D_SQUARE(scaling_parameter);                  \
                 };                                                            \
                 return __VA_ARGS__();                                         \

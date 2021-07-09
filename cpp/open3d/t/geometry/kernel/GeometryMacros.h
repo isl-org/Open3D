@@ -54,25 +54,26 @@ __device__ double atomicAdd(double *address, double val) {
 #endif
 
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
+#define OPEN3D_ABS(X) abs(X)
 #define OPEN3D_EXP(X) exp(X)
 #define OPEN3D_POW(X, Y) pow((X), (Y))
 #define ISNAN(X) isnan(X)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
+#define OPEN3D_ABS(X) std::abs(X)
 #define OPEN3D_EXP(X) std::exp(X)
 #define OPEN3D_POW(X, Y) std::pow((X), (Y))
 #define ISNAN(X) std::isnan(X)
 #endif
 
-#define OPEN3D_ABS(X) ((X) > 0 ? (X) : -1.0 * (X))
-#define OPEN3D_SQUARE(X) ((X) * (Y))
+#define OPEN3D_SQUARE(X) ((X) * (X))
 #define OPEN3D_MIN(X, Y) ((X) < (Y) ? (X) : (Y))
 #define OPEN3D_MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
 template <typename scalar_t>
-OPEN3D_HOST_DEVICE OPEN3D_IS_CLOSE(const scalar_t &X,
-                                   const scalar_t &Y,
-                                   const double rtol = 1e-4) {
+OPEN3D_HOST_DEVICE bool OPEN3D_IS_CLOSE(const scalar_t &X,
+                                        const scalar_t &Y,
+                                        const double rtol = 1e-4) {
     return (((X > (1.0 - rtol) * Y) && (X < (1.0 + rtol) * Y)));
 }
 
