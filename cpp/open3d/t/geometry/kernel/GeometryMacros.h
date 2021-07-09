@@ -54,25 +54,27 @@ __device__ double atomicAdd(double *address, double val) {
 #endif
 
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
-#define OPEN3D_ABS(X) abs(X)
 #define OPEN3D_EXP(X) exp(X)
 #define OPEN3D_POW(X, Y) pow((X), (Y))
-
 #define ISNAN(X) isnan(X)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
-#define OPEN3D_ABS(X) std::abs(X)
 #define OPEN3D_EXP(X) std::exp(X)
 #define OPEN3D_POW(X, Y) std::pow((X), (Y))
-
 #define ISNAN(X) std::isnan(X)
 #endif
 
-#define OPEN3D_MAX(a, b) (a > b ? a : b)
-#define OPEN3D_MIN(a, b) (a < b ? a : b)
-#define OPEN3D_SQUARE(a) ((a) * (a))
+#define OPEN3D_ABS(X) ((X) > 0 ? (X) : -1.0 * (X))
+#define OPEN3D_SQUARE(X) ((X) * (Y))
+#define OPEN3D_MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+#define OPEN3D_MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
-#define OPEN3D_IsClose(a, b) (a > 0.99998 * b && a < 1.00002 * b ? true : false)
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE OPEN3D_IS_CLOSE(const scalar_t &X,
+                                   const scalar_t &Y,
+                                   const double rtol = 1e-4) {
+    return (((X > (1.0 - rtol) * Y) && (X < (1.0 + rtol) * Y)));
+}
 
 // https://stackoverflow.com/a/51549250
 #ifdef __CUDACC__

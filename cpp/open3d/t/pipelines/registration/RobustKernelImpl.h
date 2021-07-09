@@ -93,7 +93,7 @@
             return __VA_ARGS__();                                             \
         } else if (METHOD == open3d::t::pipelines::registration::             \
                                      RobustKernelMethod::GeneralizedLoss) {   \
-            if (OPEN3D_IsClose(shape_parameter, 2.0)) {                       \
+            if (OPEN3D_IS_CLOSE(shape_parameter, 2.0, 1e-3)) {                \
                 auto const_val = 1.0 / OPEN3D_SQUARE(scaling_parameter);      \
                 auto GetWeightFromRobustKernel =                              \
                         [=] OPEN3D_HOST_DEVICE(                               \
@@ -101,7 +101,7 @@
                     return const_val;                                         \
                 };                                                            \
                 return __VA_ARGS__();                                         \
-            } else if (OPEN3D_IsClose(shape_parameter, 0.0)) {                \
+            } else if (OPEN3D_IS_CLOSE(shape_parameter, 0.0, 1e-3)) {         \
                 auto GetWeightFromRobustKernel =                              \
                         [=] OPEN3D_HOST_DEVICE(                               \
                                 scalar_t residual) -> scalar_t {              \
