@@ -24,44 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#pragma once
 
-#include <cstring>
-#include <string>
+namespace open3d {
+namespace utility {
 
-#ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
-#endif
+/// Estimate the maximum number of threads to be used in a parallel region.
+int EstimateMaxThreads();
 
-#include "open3d/Open3D.h"
-#include "tests/UnitTest.h"
+/// Returns true if in an parallel section.
+bool InParallel();
 
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
-    }
-    return shall_disable_p2p;
-}
-#endif
-
-int main(int argc, char** argv) {
-    open3d::utility::CPUInfo::GetInstance().PrintInfo();
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<open3d::core::CUDAState> cuda_state =
-                open3d::core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        open3d::utility::LogInfo("P2P device transfer has been disabled.");
-    }
-#endif
-    testing::InitGoogleMock(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
-    return RUN_ALL_TESTS();
-}
+}  // namespace utility
+}  // namespace open3d

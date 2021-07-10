@@ -27,6 +27,7 @@
 #include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/Indexer.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/BinaryEW.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
@@ -34,6 +35,20 @@
 namespace open3d {
 namespace core {
 namespace kernel {
+
+// Cannot be a static function since on Windows a function enclosing
+// __host__ __device__ lambda function must have external linkage.
+template <typename func_t>
+void LaunchBinaryEWKernel(const Indexer& indexer,
+                          const func_t& element_kernel) {
+    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
+    auto element_func = [=] OPEN3D_HOST_DEVICE(int64_t i) {
+        element_kernel(indexer.GetInputPtr(0, i), indexer.GetInputPtr(1, i),
+                       indexer.GetOutputPtr(i));
+    };
+    cuda_launcher::ParallelFor(indexer.NumWorkloads(), element_func);
+    OPEN3D_GET_LAST_CUDA_ERROR("LaunchBinaryEWKernel failed.");
+}
 
 template <typename scalar_t>
 static OPEN3D_HOST_DEVICE void CUDAAddElementKernel(const void* lhs,
@@ -150,65 +165,63 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
                                   const Indexer& indexer) {
     switch (op_code) {
         case BinaryEWOpCode::LogicalAnd:
-            cuda_launcher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
-                                                   void* dst) {
-                        CUDALogicalAndElementKernel<src_t, dst_t>(lhs, rhs,
-                                                                  dst);
-                    });
+            LaunchBinaryEWKernel(indexer, [] OPEN3D_HOST_DEVICE(const void* lhs,
+                                                                void* rhs,
+                                                                void* dst) {
+                CUDALogicalAndElementKernel<src_t, dst_t>(lhs, rhs, dst);
+            });
             break;
         case BinaryEWOpCode::LogicalOr:
-            cuda_launcher::LaunchBinaryEWKernel(
+            LaunchBinaryEWKernel(
                     indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDALogicalOrElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::LogicalXor:
-            cuda_launcher::LaunchBinaryEWKernel(
-                    indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
-                                                   void* dst) {
-                        CUDALogicalXorElementKernel<src_t, dst_t>(lhs, rhs,
-                                                                  dst);
-                    });
+            LaunchBinaryEWKernel(indexer, [] OPEN3D_HOST_DEVICE(const void* lhs,
+                                                                void* rhs,
+                                                                void* dst) {
+                CUDALogicalXorElementKernel<src_t, dst_t>(lhs, rhs, dst);
+            });
             break;
         case BinaryEWOpCode::Gt:
-            cuda_launcher::LaunchBinaryEWKernel(
+            LaunchBinaryEWKernel(
                     indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDAGtElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Lt:
-            cuda_launcher::LaunchBinaryEWKernel(
+            LaunchBinaryEWKernel(
                     indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDALtElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Ge:
-            cuda_launcher::LaunchBinaryEWKernel(
+            LaunchBinaryEWKernel(
                     indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDAGeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Le:
-            cuda_launcher::LaunchBinaryEWKernel(
+            LaunchBinaryEWKernel(
                     indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDALeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Eq:
-            cuda_launcher::LaunchBinaryEWKernel(
+            LaunchBinaryEWKernel(
                     indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDAEqElementKernel<src_t, dst_t>(lhs, rhs, dst);
                     });
             break;
         case BinaryEWOpCode::Ne:
-            cuda_launcher::LaunchBinaryEWKernel(
+            LaunchBinaryEWKernel(
                     indexer, [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                    void* dst) {
                         CUDANeqElementKernel<src_t, dst_t>(lhs, rhs, dst);
@@ -260,7 +273,7 @@ void BinaryEWCUDA(const Tensor& lhs,
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case BinaryEWOpCode::Add:
-                    cuda_launcher::LaunchBinaryEWKernel(
+                    LaunchBinaryEWKernel(
                             indexer,
                             [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
@@ -268,7 +281,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                             });
                     break;
                 case BinaryEWOpCode::Sub:
-                    cuda_launcher::LaunchBinaryEWKernel(
+                    LaunchBinaryEWKernel(
                             indexer,
                             [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
@@ -276,7 +289,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                             });
                     break;
                 case BinaryEWOpCode::Mul:
-                    cuda_launcher::LaunchBinaryEWKernel(
+                    LaunchBinaryEWKernel(
                             indexer,
                             [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {
@@ -284,7 +297,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                             });
                     break;
                 case BinaryEWOpCode::Div:
-                    cuda_launcher::LaunchBinaryEWKernel(
+                    LaunchBinaryEWKernel(
                             indexer,
                             [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
                                                   void* dst) {

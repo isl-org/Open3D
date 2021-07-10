@@ -35,6 +35,16 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+template <typename func_t>
+static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
+                                        const func_t& func) {
+    cpu_launcher::ParallelFor(
+            indexer.NumWorkloads(), cpu_launcher::SMALL_OP_GRAIN_SIZE,
+            [&indexer, &func](int64_t i) {
+                func(indexer.GetInputPtr(i), indexer.GetOutputPtr(i));
+            });
+}
+
 template <typename scalar_t>
 static void CPUCopyElementKernel(const void* src, void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(src);
@@ -58,14 +68,12 @@ void IndexGetCPU(const Tensor& src,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        cpu_launcher::LaunchAdvancedIndexerKernel(
-                ai, [&](const void* src, void* dst) {
-                    CPUCopyObjectElementKernel(src, dst, object_byte_size);
-                });
+        LaunchAdvancedIndexerKernel(ai, [&](const void* src, void* dst) {
+            CPUCopyObjectElementKernel(src, dst, object_byte_size);
+        });
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            cpu_launcher::LaunchAdvancedIndexerKernel(
-                    ai, CPUCopyElementKernel<scalar_t>);
+            LaunchAdvancedIndexerKernel(ai, CPUCopyElementKernel<scalar_t>);
         });
     }
 }
@@ -80,14 +88,12 @@ void IndexSetCPU(const Tensor& src,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        cpu_launcher::LaunchAdvancedIndexerKernel(
-                ai, [&](const void* src, void* dst) {
-                    CPUCopyObjectElementKernel(src, dst, object_byte_size);
-                });
+        LaunchAdvancedIndexerKernel(ai, [&](const void* src, void* dst) {
+            CPUCopyObjectElementKernel(src, dst, object_byte_size);
+        });
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-            cpu_launcher::LaunchAdvancedIndexerKernel(
-                    ai, CPUCopyElementKernel<scalar_t>);
+            LaunchAdvancedIndexerKernel(ai, CPUCopyElementKernel<scalar_t>);
         });
     }
 }

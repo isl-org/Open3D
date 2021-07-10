@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     std::vector<bool> remove_vertex_mask(mesh->vertices_.size(), false);
     utility::ConsoleProgressBar progress_bar(mesh->vertices_.size(),
                                              "Prune vetices: ");
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)mesh->vertices_.size(); i++) {
         std::vector<int> indices(1);
         std::vector<double> dists(1);

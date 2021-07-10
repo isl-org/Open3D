@@ -23,33 +23,36 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-
 #pragma once
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include <memory>
 
 namespace open3d {
-namespace core {
-namespace kernel {
+namespace utility {
 
-inline int GetMaxThreads() {
-#ifdef _OPENMP
-    return omp_get_max_threads();
-#else
-    return 1;
-#endif
-}
+/// \brief CPU information.
+class CPUInfo {
+public:
+    virtual ~CPUInfo();
+    static CPUInfo& GetInstance();
 
-inline bool InParallel() {
-#ifdef _OPENMP
-    return omp_in_parallel();
-#else
-    return false;
-#endif
-}
+    /// Returns the number of physical CPU cores.
+    /// This is similar to boost::thread::physical_concurrency().
+    unsigned int NumCores() const;
 
-}  // namespace kernel
-}  // namespace core
+    /// Returns the number of logical CPU cores.
+    /// This returns the same result as std::thread::hardware_concurrency() or
+    /// boost::thread::hardware_concurrency().
+    unsigned int NumThreads() const;
+
+    /// Prints CPUInfo in the console.
+    void PrintInfo() const;
+
+private:
+    CPUInfo();
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+}  // namespace utility
 }  // namespace open3d

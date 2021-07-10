@@ -26,6 +26,7 @@
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
@@ -36,6 +37,16 @@
 namespace open3d {
 namespace core {
 namespace kernel {
+
+template <typename func_t>
+static void LaunchBinaryEWKernel(const Indexer& indexer, const func_t& func) {
+    cpu_launcher::ParallelFor(
+            indexer.NumWorkloads(), cpu_launcher::SMALL_OP_GRAIN_SIZE,
+            [&indexer, &func](int64_t i) {
+                func(indexer.GetInputPtr(0, i), indexer.GetInputPtr(1, i),
+                     indexer.GetOutputPtr(i));
+            });
+}
 
 template <typename scalar_t>
 static void CPUAddElementKernel(const void* lhs, const void* rhs, void* dst) {
@@ -132,40 +143,34 @@ static void LaunchBoolBinaryEWCPUKernel(const Tensor& lhs,
                                         const Indexer& indexer) {
     switch (op_code) {
         case BinaryEWOpCode::LogicalAnd:
-            cpu_launcher::LaunchBinaryEWKernel(
-                    indexer, CPULogicalAndElementKernel<src_t, dst_t>);
+            LaunchBinaryEWKernel(indexer,
+                                 CPULogicalAndElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::LogicalOr:
-            cpu_launcher::LaunchBinaryEWKernel(
-                    indexer, CPULogicalOrElementKernel<src_t, dst_t>);
+            LaunchBinaryEWKernel(indexer,
+                                 CPULogicalOrElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::LogicalXor:
-            cpu_launcher::LaunchBinaryEWKernel(
-                    indexer, CPULogicalXorElementKernel<src_t, dst_t>);
+            LaunchBinaryEWKernel(indexer,
+                                 CPULogicalXorElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Gt:
-            cpu_launcher::LaunchBinaryEWKernel(
-                    indexer, CPUGtElementKernel<src_t, dst_t>);
+            LaunchBinaryEWKernel(indexer, CPUGtElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Lt:
-            cpu_launcher::LaunchBinaryEWKernel(
-                    indexer, CPULtElementKernel<src_t, dst_t>);
+            LaunchBinaryEWKernel(indexer, CPULtElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Ge:
-            cpu_launcher::LaunchBinaryEWKernel(
-                    indexer, CPUGeqElementKernel<src_t, dst_t>);
+            LaunchBinaryEWKernel(indexer, CPUGeqElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Le:
-            cpu_launcher::LaunchBinaryEWKernel(
-                    indexer, CPULeqElementKernel<src_t, dst_t>);
+            LaunchBinaryEWKernel(indexer, CPULeqElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Eq:
-            cpu_launcher::LaunchBinaryEWKernel(
-                    indexer, CPUEqElementKernel<src_t, dst_t>);
+            LaunchBinaryEWKernel(indexer, CPUEqElementKernel<src_t, dst_t>);
             break;
         case BinaryEWOpCode::Ne:
-            cpu_launcher::LaunchBinaryEWKernel(
-                    indexer, CPUNeqElementKernel<src_t, dst_t>);
+            LaunchBinaryEWKernel(indexer, CPUNeqElementKernel<src_t, dst_t>);
             break;
         default:
             break;
@@ -206,20 +211,20 @@ void BinaryEWCPU(const Tensor& lhs,
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case BinaryEWOpCode::Add:
-                    cpu_launcher::LaunchBinaryEWKernel(
-                            indexer, CPUAddElementKernel<scalar_t>);
+                    LaunchBinaryEWKernel(indexer,
+                                         CPUAddElementKernel<scalar_t>);
                     break;
                 case BinaryEWOpCode::Sub:
-                    cpu_launcher::LaunchBinaryEWKernel(
-                            indexer, CPUSubElementKernel<scalar_t>);
+                    LaunchBinaryEWKernel(indexer,
+                                         CPUSubElementKernel<scalar_t>);
                     break;
                 case BinaryEWOpCode::Mul:
-                    cpu_launcher::LaunchBinaryEWKernel(
-                            indexer, CPUMulElementKernel<scalar_t>);
+                    LaunchBinaryEWKernel(indexer,
+                                         CPUMulElementKernel<scalar_t>);
                     break;
                 case BinaryEWOpCode::Div:
-                    cpu_launcher::LaunchBinaryEWKernel(
-                            indexer, CPUDivElementKernel<scalar_t>);
+                    LaunchBinaryEWKernel(indexer,
+                                         CPUDivElementKernel<scalar_t>);
                     break;
                 default:
                     break;
