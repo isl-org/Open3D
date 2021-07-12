@@ -99,7 +99,8 @@ void ParallelFor(int64_t n, const func_t& func) {
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
     ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, func);
+            <<<grid_size, default_block_size, 0, core::cuda::GetStream()>>>(
+                    n, func);
     OPEN3D_GET_LAST_CUDA_ERROR("ParallelFor failed.");
 }
 
@@ -119,7 +120,8 @@ void LaunchUnaryEWKernel(const Indexer& indexer, const func_t& func) {
     };
 
     ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, f);
+            <<<grid_size, default_block_size, 0, core::cuda::GetStream()>>>(n,
+                                                                            f);
     OPEN3D_GET_LAST_CUDA_ERROR("LaunchUnaryEWKernel failed.");
 }
 
@@ -140,7 +142,8 @@ void LaunchBinaryEWKernel(const Indexer& indexer, const func_t& func) {
     };
 
     ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, f);
+            <<<grid_size, default_block_size, 0, core::cuda::GetStream()>>>(n,
+                                                                            f);
     OPEN3D_GET_LAST_CUDA_ERROR("LaunchBinaryEWKernel failed.");
 }
 
@@ -161,7 +164,8 @@ void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
     };
 
     ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, f);
+            <<<grid_size, default_block_size, 0, core::cuda::GetStream()>>>(n,
+                                                                            f);
     OPEN3D_GET_LAST_CUDA_ERROR("LaunchAdvancedIndexerKernel failed.");
 }
 

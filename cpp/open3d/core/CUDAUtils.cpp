@@ -68,6 +68,90 @@ void ReleaseCache() {
 #endif
 }
 
+#ifdef BUILD_CUDA_MODULE
+
+int GetDevice() {
+    int device;
+    OPEN3D_CUDA_CHECK(cudaGetDevice(&device));
+    return device;
+}
+
+void SetDevice(int device_id) { OPEN3D_CUDA_CHECK(cudaSetDevice(device_id)); }
+
+class CUDAStream {
+public:
+    static CUDAStream& GetInstance() {
+        // The global stream state is given per thread like CUDA's internal
+        // device state.
+        static thread_local CUDAStream instance;
+        return instance;
+    }
+
+    cudaStream_t Get() { return stream_; }
+    void Set(cudaStream_t stream) { stream_ = stream; }
+
+    static cudaStream_t Default() { return (cudaStream_t)0; }
+
+private:
+    CUDAStream() = default;
+
+    cudaStream_t stream_ = Default();
+};
+
+#define OPEN3D_CUDA_DRIVER_CHECK(err) \
+    __OPEN3D_CUDA_DRIVER_CHECK(err, __FILE__, __LINE__)
+
+inline void __OPEN3D_CUDA_DRIVER_CHECK(CUresult err,
+                                       const char* file,
+                                       const int line) {
+    if (err != CUDA_SUCCESS) {
+        const char* error_string;
+        CUresult err_get_string = cuGetErrorString(err, &error_string);
+
+        if (err_get_string == CUDA_SUCCESS) {
+            utility::LogError("{}:{} CUDA driver error: {}", file, line,
+                              error_string);
+        } else {
+            utility::LogError("{}:{} CUDA driver error: UNKNOWN", file, line);
+        }
+    }
+}
+
+cudaStream_t GetStream() { return CUDAStream::GetInstance().Get(); }
+
+void SetStream(cudaStream_t stream) { CUDAStream::GetInstance().Set(stream); }
+
+cudaStream_t GetDefaultStream() { return CUDAStream::Default(); }
+
+int GetDevice(cudaStream_t stream) {
+    if (stream == CUDAStream::Default()) {
+        // Default device.
+        return 0;
+    }
+
+    // Remember current context.
+    CUcontext current_context;
+    OPEN3D_CUDA_DRIVER_CHECK(cuCtxGetCurrent(&current_context));
+
+    // Switch to context of provided stream.
+    CUcontext context;
+    OPEN3D_CUDA_DRIVER_CHECK(cuStreamGetCtx(stream, &context));
+    OPEN3D_CUDA_DRIVER_CHECK(cuCtxSetCurrent(context));
+
+    // Query device of current context.
+    // This is the device of the provided stream.
+    CUdevice device;
+    OPEN3D_CUDA_DRIVER_CHECK(cuCtxGetDevice(&device));
+
+    // Restore previous context.
+    OPEN3D_CUDA_DRIVER_CHECK(cuCtxSetCurrent(current_context));
+
+    // CUdevice is a typedef to int.
+    return device;
+}
+
+#endif
+
 }  // namespace cuda
 }  // namespace core
 }  // namespace open3d

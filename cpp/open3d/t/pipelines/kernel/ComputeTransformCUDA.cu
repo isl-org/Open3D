@@ -104,7 +104,8 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
     const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
     const dim3 threads(kThread1DUnit);
 
-    ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
+    ComputePosePointToPlaneCUDAKernel<<<blocks, threads, 0,
+                                        core::cuda::GetStream()>>>(
             source_points_ptr, target_points_ptr, target_normals_ptr,
             correspondences_first, correspondences_second, n, global_sum_ptr);
 

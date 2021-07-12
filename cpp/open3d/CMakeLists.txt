@@ -106,6 +106,12 @@ if (X11_TARGET)
     target_link_libraries(Open3D PRIVATE ${X11_TARGET})
 endif()
 
+# Required to use CUDA driver API, e.g. cuCtxGetDevice, in core/CUDAUtils.cpp.
+# Causes a CMake warning for pybind target.
+if(BUILD_CUDA_MODULE)
+    target_link_libraries(Open3D PRIVATE CUDA::cuda_driver)
+endif()
+
 add_library(Open3D::Open3D ALIAS Open3D)
 
 include(CMakePackageConfigHelpers)

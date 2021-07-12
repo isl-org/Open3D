@@ -166,8 +166,9 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
     dim3 blocks(utility::DivUp(n, NMS_BLOCK_SIZE),
                 utility::DivUp(n, NMS_BLOCK_SIZE));
     dim3 threads(NMS_BLOCK_SIZE);
-    NmsKernel<<<blocks, threads>>>(boxes, sort_indices, mask_ptr, n,
-                                   nms_overlap_thresh, num_block_cols);
+    NmsKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+            boxes, sort_indices, mask_ptr, n, nms_overlap_thresh,
+            num_block_cols);
 
     // Copy cuda masks to cpu.
     std::vector<uint64_t> mask_vec(n * num_block_cols);

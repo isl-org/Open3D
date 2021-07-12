@@ -55,7 +55,7 @@ namespace core {
 /// Example:
 /// ```cpp
 /// void my_func() {
-///     // The switcher recoreds the previous device when it is constructed.
+///     // The switcher records the previous device when it is constructed.
 ///     // Let's assume cudaGetDevice == 0 initially.
 ///     CUDADeviceSwitcher switcher;
 ///
@@ -74,7 +74,7 @@ namespace core {
 ///
 /// You may also directly initialize and switch to a device:
 /// void my_func() {
-///     // The switcher recoreds the previous device and switch to device 1.
+///     // The switcher records the previous device and switch to device 1.
 ///     CUDADeviceSwitcher switcher(1);
 ///
 ///     // After `my_func` returns, `switcher` goes out-of-scope,
@@ -83,7 +83,7 @@ namespace core {
 class CUDADeviceSwitcher {
 public:
     /// Init CUDADeviceSwitcher class and keep using the current device.
-    CUDADeviceSwitcher() { OPEN3D_CUDA_CHECK(cudaGetDevice(&prev_device_id_)); }
+    CUDADeviceSwitcher() : prev_device_id_(cuda::GetDevice()) {}
 
     CUDADeviceSwitcher(int device_id) : CUDADeviceSwitcher() {
         SwitchTo(device_id);
@@ -92,20 +92,55 @@ public:
     CUDADeviceSwitcher(const Device& device)
         : CUDADeviceSwitcher(device.GetID()) {}
 
-    void SwitchTo(int device_id) const {
-        OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
-    }
+    ~CUDADeviceSwitcher() { cuda::SetDevice(prev_device_id_); }
+
+    CUDADeviceSwitcher(CUDADeviceSwitcher const&) = delete;
+    void operator=(CUDADeviceSwitcher const&) = delete;
+
+    void SwitchTo(int device_id) const { cuda::SetDevice(device_id); }
 
     void SwitchTo(const Device& device) const { SwitchTo(device.GetID()); }
 
-    ~CUDADeviceSwitcher() { OPEN3D_CUDA_CHECK(cudaSetDevice(prev_device_id_)); }
-
-    CUDADeviceSwitcher(CUDADeviceSwitcher const&) = delete;
-
-    void operator=(CUDADeviceSwitcher const&) = delete;
-
 private:
     int prev_device_id_;
+};
+
+/// \class CUDAScopedStream
+///
+/// Switch CUDA stream in the current scope. The stream will be resetted
+/// once leaving the scope.
+///
+/// CUDAScopedStream provies an
+/// [RAII-style](https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization)
+/// mechanism for setting and resetting CUDA streams of a scoped block.
+///
+/// Example:
+/// ```cpp
+/// void my_func(cudaStream_t stream) {
+///     // The scoped stream records the previous stream when it is constructed.
+///     // Let's assume the current stream is 0 initially.
+///     CUDAScopedStream scoped_stream(stream);
+///
+///     // After `my_func` returns, `scoped_stream` goes out-of-scope,
+///     // so the global stream will be reset back to 0.
+/// }
+/// ```
+class CUDAScopedStream {
+public:
+    explicit CUDAScopedStream(cudaStream_t stream) {
+        prev_stream_ = cuda::GetStream();
+        cuda::SetStream(stream);
+        switcher_.SwitchTo(cuda::GetDevice(stream));
+    }
+
+    ~CUDAScopedStream() { cuda::SetStream(prev_stream_); }
+
+    CUDAScopedStream(CUDAScopedStream const&) = delete;
+    void operator=(CUDAScopedStream const&) = delete;
+
+private:
+    CUDADeviceSwitcher switcher_;
+    cudaStream_t prev_stream_;
 };
 
 /// CUDAState is a lazy-evaluated singleton class that initializes and stores

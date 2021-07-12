@@ -118,6 +118,19 @@ int DeviceCount();
 bool IsAvailable();
 void ReleaseCache();
 
+#ifdef BUILD_CUDA_MODULE
+
+int GetDevice();
+void SetDevice(int device_id);
+
+cudaStream_t GetStream();
+void SetStream(cudaStream_t stream);
+
+cudaStream_t GetDefaultStream();
+int GetDevice(cudaStream_t stream);
+
+#endif
+
 }  // namespace cuda
 }  // namespace core
 }  // namespace open3d

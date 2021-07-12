@@ -28,6 +28,10 @@
 
 #include "open3d/core/CUDAState.cuh"
 
+#include <thread>
+#include <vector>
+
+#include "open3d/core/CUDAUtils.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -41,6 +45,55 @@ TEST(CUDAState, InitState) {
         for (int j = 0; j < cuda_state->GetNumDevices(); ++j) {
             utility::LogInfo("P2PEnabled {}->{}: {}", i, j,
                              cuda_state->GetP2PEnabled()[i][j]);
+        }
+    }
+}
+
+void CheckScopedStream() {
+    int current_device = core::cuda::GetDevice();
+
+    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_EQ(core::cuda::GetDevice(), current_device);
+
+    cudaStream_t stream;
+    OPEN3D_CUDA_CHECK(cudaStreamCreate(&stream));
+
+    {
+        core::CUDAScopedStream scoped_stream(stream);
+
+        ASSERT_EQ(core::cuda::GetStream(), stream);
+        ASSERT_EQ(core::cuda::GetDevice(), current_device);
+        ASSERT_EQ(core::cuda::GetDevice(stream), current_device);
+    }
+
+    OPEN3D_CUDA_CHECK(cudaStreamDestroy(stream));
+
+    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_EQ(core::cuda::GetDevice(), current_device);
+}
+
+TEST(CUDAState, ScopedStream) { CheckScopedStream(); }
+
+TEST(CUDAState, ScopedStreamMultiThreaded) {
+    std::vector<std::thread> threads;
+
+    const int kIterations = 100000;
+    const int kThreads = 8;
+    for (int i = 0; i < kThreads; ++i) {
+        threads.emplace_back([&kIterations]() {
+            utility::LogDebug("Starting thread with ID {}",
+                              std::this_thread::get_id());
+
+            for (int i = 0; i < kIterations; ++i) {
+                CheckScopedStream();
+            }
+        });
+    }
+
+    for (auto& thread : threads) {
+        if (thread.joinable()) {
+            utility::LogDebug("Joining thread with ID {}", thread.get_id());
+            thread.join();
         }
     }
 }
