@@ -35,7 +35,12 @@ else()
 endif()
 
 find_package(Threads REQUIRED)
-target_link_libraries(tests PRIVATE Open3D::Open3D Threads::Threads ${JSONCPP_TARGET} ${GOOGLETEST_TARGET})
+target_link_libraries(tests PRIVATE
+    Open3D::Open3D
+    Open3D::3rdparty_jsoncpp
+    Open3D::3rdparty_googletest
+    Open3D::3rdparty_threads
+)
 
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
