@@ -42,7 +42,7 @@
 #include "open3d/Open3D.h"
 
 int main(int argc, char** argv) {
-    open3d::utility::CPUInfo::GetInstance().PrintInfo();
+    open3d::utility::CPUInfo::GetInstance().Print();
     benchmark::Initialize(&argc, argv);
     if (benchmark::ReportUnrecognizedArguments(argc, argv)) {
         return 1;

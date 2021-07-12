@@ -49,12 +49,12 @@ namespace open3d {
 namespace utility {
 
 struct CPUInfo::Impl {
-    unsigned int num_cores_;
-    unsigned int num_threads_;
+    int num_cores_;
+    int num_threads_;
 };
 
 /// Returns the number of physical CPU cores.
-static unsigned int PhysicalConcurrency() {
+static int PhysicalConcurrency() {
     try {
 #ifdef __linux__
         // Ref: boost::thread::physical_concurrency().
@@ -63,7 +63,7 @@ static unsigned int PhysicalConcurrency() {
         const std::string core_id("core id");
 
         // [physical ID, core id]
-        using CoreEntry = std::pair<unsigned int, unsigned int>;
+        using CoreEntry = std::pair<int, int>;
         std::set<CoreEntry> cores;
         CoreEntry current_core_entry;
 
@@ -95,7 +95,7 @@ static unsigned int PhysicalConcurrency() {
                                  : std::thread::hardware_concurrency();
 #elif __APPLE__
         // Ref: boost::thread::physical_concurrency().
-        unsigned int count;
+        int count;
         size_t size = sizeof(count);
         return sysctlbyname("hw.physicalcpu", &count, &size, NULL, 0) ? 0
                                                                       : count;
@@ -114,8 +114,8 @@ static unsigned int PhysicalConcurrency() {
                 RelationProcessorCore, info, &length);
         assert(result_second != FALSE);
 
-        unsigned int nb_physical_cores = 0;
-        unsigned int offset = 0;
+        int nb_physical_cores = 0;
+        int offset = 0;
         do {
             const PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX current_info =
                     reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
@@ -144,11 +144,11 @@ CPUInfo& CPUInfo::GetInstance() {
     return instance;
 }
 
-unsigned int CPUInfo::NumCores() const { return impl_->num_cores_; }
+int CPUInfo::NumCores() const { return impl_->num_cores_; }
 
-unsigned int CPUInfo::NumThreads() const { return impl_->num_threads_; }
+int CPUInfo::NumThreads() const { return impl_->num_threads_; }
 
-void CPUInfo::PrintInfo() const {
+void CPUInfo::Print() const {
     utility::LogInfo("CPUInfo: {} cores, {} threads.", NumCores(),
                      NumThreads());
 }

@@ -52,7 +52,7 @@ bool ShallDisableP2P(int argc, char** argv) {
 #endif
 
 int main(int argc, char** argv) {
-    open3d::utility::CPUInfo::GetInstance().PrintInfo();
+    open3d::utility::CPUInfo::GetInstance().Print();
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {
         std::shared_ptr<open3d::core::CUDAState> cuda_state =

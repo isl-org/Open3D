@@ -25,7 +25,7 @@ else()
     target_compile_definitions(benchmarks PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
 endif()
 
-target_link_libraries(benchmarks PRIVATE benchmark::benchmark)
 target_sources(benchmarks PRIVATE
     Main.cpp
 )
+target_link_libraries(benchmarks PRIVATE benchmark::benchmark)

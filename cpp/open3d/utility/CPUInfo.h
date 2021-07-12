@@ -33,20 +33,20 @@ namespace utility {
 /// \brief CPU information.
 class CPUInfo {
 public:
-    virtual ~CPUInfo();
+    ~CPUInfo();
     static CPUInfo& GetInstance();
 
     /// Returns the number of physical CPU cores.
     /// This is similar to boost::thread::physical_concurrency().
-    unsigned int NumCores() const;
+    int NumCores() const;
 
     /// Returns the number of logical CPU cores.
     /// This returns the same result as std::thread::hardware_concurrency() or
     /// boost::thread::hardware_concurrency().
-    unsigned int NumThreads() const;
+    int NumThreads() const;
 
     /// Prints CPUInfo in the console.
-    void PrintInfo() const;
+    void Print() const;
 
 private:
     CPUInfo();
