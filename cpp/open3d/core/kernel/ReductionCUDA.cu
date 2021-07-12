@@ -1001,8 +1001,8 @@ private:
         // Launch reduce kernel
         int shared_memory = config.SharedMemorySize();
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
-                <<<config.GridDim(), config.BlockDim(), shared_memory>>>(
-                        reduce_op);
+                <<<config.GridDim(), config.BlockDim(), shared_memory,
+                   core::cuda::GetStream()>>>(reduce_op);
         OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }

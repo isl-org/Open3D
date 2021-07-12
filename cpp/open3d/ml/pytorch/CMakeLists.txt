@@ -137,6 +137,7 @@ if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_torch_ops PRIVATE
         ${CUTLASS_TARGET}
         ${TORCH_LIBRARIES}
+        CUDA::cuda_driver
     )
 
     if (CUB_TARGET)

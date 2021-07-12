@@ -173,6 +173,7 @@ target_link_libraries(open3d_tf_ops PRIVATE
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_tf_ops PRIVATE
         ${CUTLASS_TARGET}
+        CUDA::cuda_driver
     )
 
     if (CUB_TARGET)

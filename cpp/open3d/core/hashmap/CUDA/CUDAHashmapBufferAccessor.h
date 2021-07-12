@@ -71,8 +71,8 @@ public:
 
         const int blocks =
                 (capacity_ + kThreadsPerBlock - 1) / kThreadsPerBlock;
-        ResetHashmapBufferKernel<<<blocks, kThreadsPerBlock>>>(heap_,
-                                                               capacity_);
+        ResetHashmapBufferKernel<<<blocks, kThreadsPerBlock, 0,
+                                   core::cuda::GetStream()>>>(heap_, capacity_);
         OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
