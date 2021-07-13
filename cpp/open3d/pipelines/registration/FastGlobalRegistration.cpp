@@ -26,6 +26,8 @@
 
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 
+#include <map>
+
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
@@ -43,77 +45,48 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
         const FastGlobalRegistrationOption& option) {
     // STEP 0) Swap source and target if necessary
     int fi = 0, fj = 1;
-    utility::LogDebug("Advanced matching : [{:d} - {:d}]", fi, fj);
-    bool swapped = false;
-    if (point_cloud_vec[fj].points_.size() >
-        point_cloud_vec[fi].points_.size()) {
-        int temp = fi;
-        fi = fj;
-        fj = temp;
-        swapped = true;
+    int nPti = features_vec[fi].data_.cols();
+    int nPtj = features_vec[fj].data_.cols();
+    bool swapped = nPtj > nPti;
+    if (swapped) {
+        fi = 1;
+        fj = 0;
+        int temp = nPti;
+        nPti = nPtj;
+        nPtj = temp;
     }
+    utility::LogDebug("Advanced matching : [{:d} - {:d}]", fi, fj);
 
     // STEP 1) Initial matching
-    int nPti = int(point_cloud_vec[fi].points_.size());
-    int nPtj = int(point_cloud_vec[fj].points_.size());
     geometry::KDTreeFlann feature_tree_i(features_vec[fi]);
     geometry::KDTreeFlann feature_tree_j(features_vec[fj]);
     std::vector<int> corresK;
     std::vector<double> dis;
-    std::vector<std::pair<int, int>> corres;
-    std::vector<std::pair<int, int>> corres_ij;
-    std::vector<std::pair<int, int>> corres_ji;
-    std::vector<int> i_to_j(nPti, -1);
+    std::map<int, int> corres_ij;
+    std::map<int, int> corres_ji;
+
     for (int j = 0; j < nPtj; j++) {
         feature_tree_i.SearchKNN(Eigen::VectorXd(features_vec[fj].data_.col(j)),
                                  1, corresK, dis);
         int i = corresK[0];
-        if (i_to_j[i] == -1) {
+        corres_ji[j] = i;
+        if (corres_ij.find(i) == corres_ij.end()) {
             feature_tree_j.SearchKNN(
                     Eigen::VectorXd(features_vec[fi].data_.col(i)), 1, corresK,
                     dis);
-            int ij = corresK[0];
-            i_to_j[i] = ij;
+            corres_ij[i] = corresK[0];
         }
-        corres_ji.push_back(std::pair<int, int>(i, j));
     }
-    for (int i = 0; i < nPti; i++) {
-        if (i_to_j[i] != -1)
-            corres_ij.push_back(std::pair<int, int>(i, i_to_j[i]));
-    }
-    int ncorres_ij = int(corres_ij.size());
-    int ncorres_ji = int(corres_ji.size());
-    for (int i = 0; i < ncorres_ij; ++i)
-        corres.push_back(
-                std::pair<int, int>(corres_ij[i].first, corres_ij[i].second));
-    for (int j = 0; j < ncorres_ji; ++j)
-        corres.push_back(
-                std::pair<int, int>(corres_ji[j].first, corres_ji[j].second));
-    utility::LogDebug("points are remained : {:d}", (int)corres.size());
 
     // STEP 2) CROSS CHECK
     utility::LogDebug("\t[cross check] ");
     std::vector<std::pair<int, int>> corres_cross;
-    std::vector<std::vector<int>> Mi(nPti), Mj(nPtj);
-    int ci, cj;
-    for (int i = 0; i < ncorres_ij; ++i) {
-        ci = corres_ij[i].first;
-        cj = corres_ij[i].second;
-        Mi[ci].push_back(cj);
-    }
-    for (int j = 0; j < ncorres_ji; ++j) {
-        ci = corres_ji[j].first;
-        cj = corres_ji[j].second;
-        Mj[cj].push_back(ci);
-    }
-    for (int i = 0; i < nPti; ++i) {
-        for (size_t ii = 0; ii < Mi[i].size(); ++ii) {
-            int j = Mi[i][ii];
-            for (size_t jj = 0; jj < Mj[j].size(); ++jj) {
-                if (Mj[j][jj] == i)
-                    corres_cross.push_back(std::pair<int, int>(i, j));
-            }
-        }
+    for (const std::pair<int, int>& ij : corres_ij) {
+        int i = ij.first;
+        int j = ij.second;
+        auto i_ptr = corres_ji.find(j);
+        if (i_ptr != corres_ji.end() && i_ptr->second == i)
+            corres_cross.push_back(std::pair<int, int>(i, j));
     }
     utility::LogDebug("points are remained : {:d}", (int)corres_cross.size());
 
