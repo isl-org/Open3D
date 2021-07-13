@@ -26,33 +26,57 @@
 
 #include "open3d/core/linalg/Det.h"
 
-#include "open3d/core/Dispatch.h"
 #include "open3d/core/linalg/LU.h"
+#include "open3d/core/linalg/kernel/Matrix.h"
 
 namespace open3d {
 namespace core {
 
 double Det(const Tensor& A) {
-    Tensor ipiv, output;
-    LUIpiv(A, ipiv, output);
-    // Sequential loop to compute determinant from LU output, is more efficient
-    // on CPU.
-    Tensor output_cpu = output.To(core::Device("CPU:0"));
-    Tensor ipiv_cpu = ipiv.To(core::Device("CPU:0"));
+    // Check dtypes
+    Dtype dtype = A.GetDtype();
+    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+        utility::LogError(
+                "Only tensors with Float32 or Float64 are supported, but "
+                "received {}.",
+                dtype.ToString());
+    }
+
     double det = 1.0;
-    int n = A.GetShape()[0];
 
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(A.GetDtype(), [&]() {
-        scalar_t* output_ptr = output_cpu.GetDataPtr<scalar_t>();
-        int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
+    if (A.GetShape() == open3d::core::SizeVector({3, 3})) {
+        DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+            core::Tensor A_3x3 = A.To(core::HOST, false).Contiguous();
+            const scalar_t* A_3x3_ptr = A_3x3.GetDataPtr<scalar_t>();
+            det = static_cast<double>(linalg::kernel::det3x3(A_3x3_ptr));
+        });
+    } else if (A.GetShape() == open3d::core::SizeVector({2, 2})) {
+        DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+            core::Tensor A_2x2 = A.To(core::HOST, false).Contiguous();
+            const scalar_t* A_2x2_ptr = A_2x2.GetDataPtr<scalar_t>();
+            det = static_cast<double>(linalg::kernel::det2x2(A_2x2_ptr));
+        });
+    } else {
+        Tensor ipiv, output;
+        LUIpiv(A, ipiv, output);
+        // Sequential loop to compute determinant from LU output, is more
+        // efficient on CPU.
+        Tensor output_cpu = output.To(core::HOST);
+        Tensor ipiv_cpu = ipiv.To(core::HOST);
+        int n = A.GetShape()[0];
 
-        for (int i = 0; i < n; i++) {
-            det *= output_ptr[i * n + i];
-            if (ipiv_ptr[i] != i) {
-                det *= -1;
+        DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+            scalar_t* output_ptr = output_cpu.GetDataPtr<scalar_t>();
+            int* ipiv_ptr = static_cast<int*>(ipiv_cpu.GetDataPtr());
+
+            for (int i = 0; i < n; i++) {
+                det *= output_ptr[i * n + i];
+                if (ipiv_ptr[i] != i) {
+                    det *= -1;
+                }
             }
-        }
-    });
+        });
+    }
     return det;
 }
 

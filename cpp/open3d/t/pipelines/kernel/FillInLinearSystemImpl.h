@@ -24,14 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
-
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-#include "open3d/t/pipelines/kernel/SVD3x3CUDA.cuh"
-#else
-#include "open3d/t/pipelines/kernel/SVD3x3CPU.h"
-#endif
 
 namespace open3d {
 namespace t {
@@ -75,11 +70,12 @@ void FillInRigidAlignmentTermCPU
             static_cast<const float *>(Ri_normal_ps.GetDataPtr());
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         const float *p_prime = Ti_ps_ptr + 3 * workload_idx;
         const float *q_prime = Tj_qs_ptr + 3 * workload_idx;
         const float *normal_p_prime = Ri_normal_ps_ptr + 3 * workload_idx;
@@ -114,7 +110,7 @@ void FillInRigidAlignmentTermCPU
         }
         atomicAdd(residual_ptr, r * r);
 #else
-#pragma omp critical
+#pragma omp critical(FillInRigidAlignmentTermCPU)
         {
             for (int i_local = 0; i_local < 12; ++i_local) {
                 for (int j_local = 0; j_local < 12; ++j_local) {
@@ -213,11 +209,12 @@ void FillInSLACAlignmentTermCPU
             static_cast<const float *>(cgrid_ratio_qs.GetDataPtr());
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         const float *Ti_Cp = Ti_Cps_ptr + 3 * workload_idx;
         const float *Tj_Cq = Tj_Cqs_ptr + 3 * workload_idx;
         const float *Cnormal_p = Cnormal_ps_ptr + 3 * workload_idx;
@@ -289,7 +286,7 @@ void FillInSLACAlignmentTermCPU
         }
         atomicAdd(residual_ptr, r * r);
 #else
-#pragma omp critical
+#pragma omp critical(FillInSLACAlignmentTermCPU)
         {
             for (int ki = 0; ki < 60; ++ki) {
                 for (int kj = 0; kj < 60; ++kj) {
@@ -302,74 +299,6 @@ void FillInSLACAlignmentTermCPU
         }
 #endif
     });
-}
-
-inline OPEN3D_HOST_DEVICE void matmul3x3_3x1(float m00,
-                                             float m01,
-                                             float m02,
-                                             float m10,
-                                             float m11,
-                                             float m12,
-                                             float m20,
-                                             float m21,
-                                             float m22,
-                                             float v0,
-                                             float v1,
-                                             float v2,
-                                             float &o0,
-                                             float &o1,
-                                             float &o2) {
-    o0 = m00 * v0 + m01 * v1 + m02 * v2;
-    o1 = m10 * v0 + m11 * v1 + m12 * v2;
-    o2 = m20 * v0 + m21 * v1 + m22 * v2;
-}
-
-inline OPEN3D_HOST_DEVICE void matmul3x3_3x3(float a00,
-                                             float a01,
-                                             float a02,
-                                             float a10,
-                                             float a11,
-                                             float a12,
-                                             float a20,
-                                             float a21,
-                                             float a22,
-                                             float b00,
-                                             float b01,
-                                             float b02,
-                                             float b10,
-                                             float b11,
-                                             float b12,
-                                             float b20,
-                                             float b21,
-                                             float b22,
-                                             float &c00,
-                                             float &c01,
-                                             float &c02,
-                                             float &c10,
-                                             float &c11,
-                                             float &c12,
-                                             float &c20,
-                                             float &c21,
-                                             float &c22) {
-    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b00, b10, b20,
-                  c00, c10, c20);
-    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b01, b11, b21,
-                  c01, c11, c21);
-    matmul3x3_3x1(a00, a01, a02, a10, a11, a12, a20, a21, a22, b02, b12, b22,
-                  c02, c12, c22);
-}
-
-inline OPEN3D_HOST_DEVICE float det3x3(float m00,
-                                       float m01,
-                                       float m02,
-                                       float m10,
-                                       float m11,
-                                       float m12,
-                                       float m20,
-                                       float m21,
-                                       float m22) {
-    return m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 - m21) +
-           m20 * (m01 * m12 - m02 * m11);
 }
 
 #if defined(__CUDACC__)
@@ -408,11 +337,12 @@ void FillInSLACRegularizerTermCPU
             static_cast<const float *>(positions_curr.GetDataPtr());
 
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
-    launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
         // Enumerate 6 neighbors
         int idx_i = grid_idx_ptr[workload_idx];
 
@@ -459,49 +389,19 @@ void FillInSLACRegularizerTermCPU
             return;
         }
 
-        // clang-format off
-        svd(cov[0][0], cov[0][1], cov[0][2],
-            cov[1][0], cov[1][1], cov[1][2],
-            cov[2][0], cov[2][1], cov[2][2],
-            U[0][0], U[0][1], U[0][2],
-            U[1][0], U[1][1], U[1][2],
-            U[2][0], U[2][1], U[2][2],
-            S[0], S[1], S[2],
-            V[0][0], V[0][1], V[0][2],
-            V[1][0], V[1][1], V[1][2],
-            V[2][0], V[2][1], V[2][2]);
+        core::linalg::kernel::svd3x3(*cov, *U, S, *V);
 
-        // TODO: det3x3 and matmul3x3
         float R[3][3];
+        core::linalg::kernel::transpose3x3_(*U);
+        core::linalg::kernel::matmul3x3_3x3(*V, *U, *R);
 
-        // clang-format off
-        matmul3x3_3x3(V[0][0], V[0][1], V[0][2],
-                      V[1][0], V[1][1], V[1][2],
-                      V[2][0], V[2][1], V[2][2],
-                      U[0][0], U[1][0], U[2][0],
-                      U[0][1], U[1][1], U[2][1],
-                      U[0][2], U[1][2], U[2][2],
-                      R[0][0], R[0][1], R[0][2],
-                      R[1][0], R[1][1], R[1][2],
-                      R[2][0], R[2][1], R[2][2]);
-
-        float d = det3x3(R[0][0], R[0][1], R[0][2],
-                         R[1][0], R[1][1], R[1][2],
-                         R[2][0], R[2][1], R[2][2]);
-        // clang-format on
+        float d = core::linalg::kernel::det3x3(*R);
 
         if (d < 0) {
-            // clang-format off
-            matmul3x3_3x3(V[0][0], V[0][1], V[0][2],
-                          V[1][0], V[1][1], V[1][2],
-                          V[2][0], V[2][1], V[2][2],
-                          U[0][0], U[1][0], U[2][0],
-                          U[0][1], U[1][1], U[2][1],
-                          -U[0][2], -U[1][2], -U[2][2],
-                          R[0][0], R[0][1], R[0][2],
-                          R[1][0], R[1][1], R[1][2],
-                          R[2][0], R[2][1], R[2][2]);
-            // clang-format on
+            U[2][0] = -U[2][0];
+            U[2][1] = -U[2][1];
+            U[2][2] = -U[2][2];
+            core::linalg::kernel::matmul3x3_3x3(*V, *U, *R);
         }
 
         // Now we have R, we build Hessian and residuals
@@ -532,17 +432,8 @@ void FillInSLACRegularizerTermCPU
                                 positions_curr_ptr[idx_k * 3 + 2]};
                 float R_diff_ik_curr[3];
 
-                // clang-format off
-                matmul3x3_3x1(R[0][0], R[0][1], R[0][2],
-                              R[1][0], R[1][1], R[1][2],
-                              R[2][0], R[2][1], R[2][2],
-                              diff_ik_init[0],
-                              diff_ik_init[1],
-                              diff_ik_init[2],
-                              R_diff_ik_curr[0],
-                              R_diff_ik_curr[1],
-                              R_diff_ik_curr[2]);
-                // clang-format on
+                core::linalg::kernel::matmul3x3_3x1(*R, diff_ik_init,
+                                                    R_diff_ik_curr);
 
                 float local_r[3];
                 local_r[0] = diff_ik_curr[0] - R_diff_ik_curr[0];
@@ -580,7 +471,7 @@ void FillInSLACRegularizerTermCPU
                               -weight * local_r[axis]);
                 }
 #else
-#pragma omp critical
+#pragma omp critical(FillInSLACRegularizerTermCPU)
                 {
                     // Update residual
                     *residual_ptr += weight * (local_r[0] * local_r[0] +

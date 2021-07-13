@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import open3d.visualization.gui as gui
 import os.path
 import platform

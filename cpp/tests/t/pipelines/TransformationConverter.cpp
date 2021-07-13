@@ -38,13 +38,6 @@ INSTANTIATE_TEST_SUITE_P(TransformationConverter,
                          TransformationConverterPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class TransformationConverterPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        TransformationConverter,
-        TransformationConverterPermuteDevicePairs,
-        testing::ValuesIn(
-                TransformationConverterPermuteDevicePairs::TestCases()));
-
 TEST_P(TransformationConverterPermuteDevices, RtToTransformation) {
     core::Device device = GetParam();
 

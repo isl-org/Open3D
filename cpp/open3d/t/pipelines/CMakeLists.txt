@@ -47,6 +47,4 @@ open3d_link_3rdparty_libraries(tpipelines)
 
 if(BUILD_CUDA_MODULE)
     target_include_directories(tpipelines SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-    find_package(CUB REQUIRED)
-    target_include_directories(tpipelines SYSTEM PRIVATE ${CUB_INCLUDE_DIR})
 endif()

@@ -38,12 +38,6 @@ INSTANTIATE_TEST_SUITE_P(TriangleMesh,
                          TriangleMeshPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class TriangleMeshPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        TriangleMesh,
-        TriangleMeshPermuteDevicePairs,
-        testing::ValuesIn(TriangleMeshPermuteDevicePairs::TestCases()));
-
 TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
     t::geometry::TriangleMesh mesh;
 

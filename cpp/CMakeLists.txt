@@ -24,9 +24,7 @@ function(open3d_show_and_abort_on_warning trgt)
     if (BUILD_CUDA_MODULE)
         # General NVCC flags
         set(DISABLE_NVCC_WARNINGS
-                550            # variable was set but never used (Eigen)
-                940            # missing return statement at end of non-void function (Eigen)
-                2809           # ignoring return value from routine declared with "nodiscard" attribute (Eigen)
+                2809           # ignoring return value from routine declared with "nodiscard" attribute (cub)
                 )
         string(REPLACE ";" "," DISABLE_NVCC_WARNINGS "${DISABLE_NVCC_WARNINGS}")
 

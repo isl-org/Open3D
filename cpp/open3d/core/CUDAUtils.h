@@ -50,7 +50,6 @@
     open3d::core::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message) \
     __OPEN3D_GET_LAST_CUDA_ERROR(message, __FILE__, __LINE__)
-
 #define CUDA_CALL(cuda_function, ...) cuda_function(__VA_ARGS__);
 
 #else  // #ifdef BUILD_CUDA_MODULE
