@@ -102,10 +102,6 @@ open3d_link_3rdparty_libraries(Open3D)
 target_link_options(Open3D INTERFACE
     $<$<STREQUAL:$<TARGET_PROPERTY:Open3D,TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
 
-if (X11_TARGET)
-    target_link_libraries(Open3D PRIVATE ${X11_TARGET})
-endif()
-
 add_library(Open3D::Open3D ALIAS Open3D)
 
 include(CMakePackageConfigHelpers)
