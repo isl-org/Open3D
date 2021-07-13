@@ -34,6 +34,13 @@
 
 var WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
+
+  // Query style from the user's browser and match Open3D style
+
+    function css( element, property ) {
+    return window.getComputedStyle( element, null ).getPropertyValue( property );
+}
+
   /**
    * Interface with WebRTC-streamer API
    * @constructor

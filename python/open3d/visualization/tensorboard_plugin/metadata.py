@@ -8,9 +8,9 @@ PLUGIN_NAME = "Open3D"
 # `Open3DPluginData` proto. Sync with Open3D version (MAJOR*100 + MINOR)
 _PROTO_VERSION = 14
 
-_MESH_PROPERTIES = ('vertices', 'vertex_normals', 'vertex_colors', 'triangles',
-                    'triangle_normals', 'triangle_material_ids', 'triangle_uvs',
-                    'adjacency_list', 'textures')
+MESH_PROPERTIES = ('vertices', 'vertex_normals', 'vertex_colors', 'triangles',
+                   'triangle_normals', 'triangle_material_ids', 'triangle_uvs',
+                   'adjacency_list', 'textures')
 
 
 def create_summary_metadata(description):

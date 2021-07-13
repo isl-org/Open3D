@@ -27,21 +27,25 @@ class _AsyncEventLoop:
 
     def _start(self):
         if not self._started:
-            self._thread = threading.Thread(target=self._thread_main)
+            self._thread = threading.Thread(name="GUIMain",
+                                            target=self._thread_main)
             self._thread.start()
             self._started = True
 
     def run_sync(self, f):
         with self._lock:
+            print(f"AEL: Adding {f.__name__}")
             task = _AsyncEventLoop._Task(f)
             self._run_queue.append(task)
 
         while True:
             with self._lock:
                 if task.task_id in self._return_vals:
+                    print(f"AEL: Completed {f.__name__}")
                     return self._return_vals[task.task_id]
 
     def _thread_main(self):
+        print(f"Initializing GUi in thread {threading.get_ident()}")
         app = o3d.visualization.gui.Application.instance
         app.initialize()
 
@@ -49,8 +53,11 @@ class _AsyncEventLoop:
         while not done:
             with self._lock:
                 for task in self._run_queue:
+                    print(f"AEL: running {task.func.__name__}")
                     retval = task.func()
                     self._return_vals[task.task_id] = retval
+                if len(self._run_queue) > 0:
+                    print("AEL: Queue completed!")
                 self._run_queue.clear()
 
             done = not app.run_one_tick()
@@ -62,13 +69,3 @@ class _AsyncEventLoop:
 #
 # Note: the _AsyncEventLoop is started whenever this module is imported.
 _async_event_loop = _AsyncEventLoop()
-
-
-def in_async_event_loop(func):
-    """Decorator to run a callable in the async event loop."""
-
-    @functools.wraps(func)
-    def wrapper_run_sync(*args, **kwargs):
-        return _async_event_loop.run_sync(lambda: func(*args, **kwargs))
-
-    return wrapper_run_sync

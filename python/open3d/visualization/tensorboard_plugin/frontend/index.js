@@ -20,6 +20,7 @@ export async function render() {
             let content_div = document.createElement("div");
             document.body.appendChild(content_div);
             content_div.setAttribute("id", "content");
+            content_div.setAttribute("style", "text-align:center;");
             contentDiv = document.getElementById("content");
         }
         return contentDiv;
@@ -35,14 +36,9 @@ export async function render() {
             let divElt = document.createElement("div");
             divElt.id = "div_" + videoId;
 
-            let nameElt = document.createElement("h2");
-            nameElt.id = "title_" + videoId;
-            nameElt.innerHTML = "<div>" + windowId + "</div>";
-            divElt.appendChild(nameElt);
-
             let videoElt = document.createElement("video");
             videoElt.id = videoId;
-            // videoElt.title = windowId;
+            videoElt.title = windowId;
             videoElt.muted = true;
             videoElt.controls = false;
             videoElt.playsinline = true;
@@ -69,13 +65,15 @@ export async function render() {
             webrtcClient.disconnect();
             webrtcClient = undefined;
         }
+        fetch(url_route_prefix + "/close_window?window_id=" + windowId, null)
       }
 
     // Ask Open3D for a new window
     var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
     var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+    var fontsize = window.getComputedStyle(document.body).fontSize
 
-    fetch(url_route_prefix + "/window?width=" + width + "&height=" + height, null)
+    fetch(url_route_prefix + "/new_window?width=" + width + "&height=" + height + "&fontsize=" + fontsize, null)
         .then((response) => response.text())
         .then((response) => addConnection("window_" + response))
         .catch(err => console.log(err));
