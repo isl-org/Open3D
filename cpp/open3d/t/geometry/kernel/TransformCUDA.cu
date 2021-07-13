@@ -47,7 +47,7 @@ void TransformPointsCUDA(const core::Tensor& transformation,
         const scalar_t* transformation_ptr =
                 transformation.GetDataPtr<scalar_t>();
 
-        core::kernel::CUDALauncher::LaunchGeneralKernel(
+        core::kernel::cuda_launcher::ParallelFor(
                 points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     TransformPointsKernel(transformation_ptr,
                                           points_ptr + 3 * workload_idx);
@@ -64,7 +64,7 @@ void TransformNormalsCUDA(const core::Tensor& transformation,
         const scalar_t* transformation_ptr =
                 transformation.GetDataPtr<scalar_t>();
 
-        core::kernel::CUDALauncher::LaunchGeneralKernel(
+        core::kernel::cuda_launcher::ParallelFor(
                 normals.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     TransformNormalsKernel(transformation_ptr,
                                            normals_ptr + 3 * workload_idx);
@@ -82,7 +82,7 @@ void RotatePointsCUDA(const core::Tensor& R,
         const scalar_t* R_ptr = R.GetDataPtr<scalar_t>();
         const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
 
-        core::kernel::CUDALauncher::LaunchGeneralKernel(
+        core::kernel::cuda_launcher::ParallelFor(
                 points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     RotatePointsKernel(R_ptr, points_ptr + 3 * workload_idx,
                                        center_ptr);
@@ -97,7 +97,7 @@ void RotateNormalsCUDA(const core::Tensor& R, core::Tensor& normals) {
         scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
         const scalar_t* R_ptr = R.GetDataPtr<scalar_t>();
 
-        core::kernel::CUDALauncher::LaunchGeneralKernel(
+        core::kernel::cuda_launcher::ParallelFor(
                 normals.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     RotateNormalsKernel(R_ptr, normals_ptr + 3 * workload_idx);
                 });
