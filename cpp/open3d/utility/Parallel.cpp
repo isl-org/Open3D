@@ -65,6 +65,7 @@ int EstimateMaxThreads() {
 }
 
 bool InParallel() {
+    // TODO: when we add TBB/Parallel STL support to ParallelFor, update this.
 #ifdef _OPENMP
     return omp_in_parallel();
 #else

@@ -122,7 +122,7 @@ static int PhysicalConcurrency() {
                             buffer.get() + offset);
             offset += current_info->Size;
             ++nb_physical_cores;
-        } while (offset < length);
+        } while (offset < static_cast<int>(length));
         return nb_physical_cores;
 #else
         return std::thread::hardware_concurrency();

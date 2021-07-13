@@ -36,8 +36,9 @@ namespace core {
 namespace kernel {
 namespace cpu_launcher {
 
-// Value taken from PyTorch's at::internal::GRAIN_SIZE. The value is chosen
-// heuristically for small element-wise ops.
+/// The value is chosen heuristically for small element-wise ops. When the
+/// number of workloads is smaller or equal to SMALL_OP_GRAIN_SIZE, the
+/// workloads are executed in serial, otherwise they are executed in parallel.
 static constexpr int64_t SMALL_OP_GRAIN_SIZE = 32767;
 
 /// \brief Run a function in parallel on CPU.
@@ -68,8 +69,7 @@ static constexpr int64_t SMALL_OP_GRAIN_SIZE = 32767;
 /// to be used on both CPU and CUDA, capture the variables by value.
 template <typename func_t>
 void ParallelFor(int64_t n, const func_t& func) {
-#pragma omp parallel for if (!utility::InParallel()) \
-        num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (int64_t i = 0; i < n; ++i) {
         func(i);
     }
@@ -85,8 +85,7 @@ void ParallelFor(int64_t n, const func_t& func) {
 /// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
 template <typename func_t>
 void ParallelFor(int64_t n, int64_t grain_size, const func_t& func) {
-#pragma omp parallel for schedule(static) if (n > grain_size &&       \
-                                              !utility::InParallel()) \
+#pragma omp parallel for schedule(static) if (n > grain_size) \
         num_threads(utility::EstimateMaxThreads())
     for (int64_t i = 0; i < n; ++i) {
         func(i);
