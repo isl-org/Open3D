@@ -847,7 +847,7 @@ public:
             numerator_ = 1;
             denominator_ = 1;
         } else {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
+            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
             buffer_ = std::make_unique<Blob>(size, device);
             acc_ptr_ = (char*)buffer_->GetDataPtr();
@@ -973,7 +973,7 @@ private:
         void* buffer = nullptr;
         void* semaphores = nullptr;
         if (config.ShouldGlobalReduce()) {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
+            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
 
             buffer_blob =
@@ -1001,8 +1001,8 @@ private:
         // Launch reduce kernel
         int shared_memory = config.SharedMemorySize();
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
-                <<<config.GridDim(), config.BlockDim(), shared_memory>>>(
-                        reduce_op);
+                <<<config.GridDim(), config.BlockDim(), shared_memory,
+                   core::cuda::GetStream()>>>(reduce_op);
         OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }

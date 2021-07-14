@@ -70,8 +70,8 @@ void IoUBevCUDAKernel(const float *boxes_a,
     }
     int items_per_block = block_size * thread_size;
     int grid_size = (n + items_per_block - 1) / items_per_block;
-    IoUBevElementKernel<<<grid_size, block_size>>>(boxes_a, boxes_b, iou, num_a,
-                                                   num_b);
+    IoUBevElementKernel<<<grid_size, block_size, 0, core::cuda::GetStream()>>>(
+            boxes_a, boxes_b, iou, num_a, num_b);
 }
 
 __global__ void IoU3dElementKernel(const float *boxes_a,
@@ -110,8 +110,8 @@ void IoU3dCUDAKernel(const float *boxes_a,
     }
     int items_per_block = block_size * thread_size;
     int grid_size = (n + items_per_block - 1) / items_per_block;
-    IoU3dElementKernel<<<grid_size, block_size>>>(boxes_a, boxes_b, iou, num_a,
-                                                  num_b);
+    IoU3dElementKernel<<<grid_size, block_size, 0, core::cuda::GetStream()>>>(
+            boxes_a, boxes_b, iou, num_a, num_b);
 }
 
 }  // namespace contrib

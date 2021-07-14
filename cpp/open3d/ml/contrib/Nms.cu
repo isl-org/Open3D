@@ -148,40 +148,39 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
 
     // Compute sort indices.
     float *scores_copy = nullptr;
-    OPEN3D_ML_CUDA_CHECK(cudaMalloc((void **)&scores_copy, n * sizeof(float)));
-    OPEN3D_ML_CUDA_CHECK(cudaMemcpy(scores_copy, scores, n * sizeof(float),
-                                    cudaMemcpyDeviceToDevice));
+    OPEN3D_CUDA_CHECK(cudaMalloc((void **)&scores_copy, n * sizeof(float)));
+    OPEN3D_CUDA_CHECK(cudaMemcpy(scores_copy, scores, n * sizeof(float),
+                                 cudaMemcpyDeviceToDevice));
     int64_t *sort_indices = nullptr;
-    OPEN3D_ML_CUDA_CHECK(
-            cudaMalloc((void **)&sort_indices, n * sizeof(int64_t)));
+    OPEN3D_CUDA_CHECK(cudaMalloc((void **)&sort_indices, n * sizeof(int64_t)));
     SortIndices(scores_copy, sort_indices, n, true);
-    OPEN3D_ML_CUDA_CHECK(cudaFree(scores_copy));
+    OPEN3D_CUDA_CHECK(cudaFree(scores_copy));
 
     // Allocate masks on device.
     uint64_t *mask_ptr = nullptr;
-    OPEN3D_ML_CUDA_CHECK(cudaMalloc((void **)&mask_ptr,
-                                    n * num_block_cols * sizeof(uint64_t)));
+    OPEN3D_CUDA_CHECK(cudaMalloc((void **)&mask_ptr,
+                                 n * num_block_cols * sizeof(uint64_t)));
 
     // Launch kernel.
     dim3 blocks(utility::DivUp(n, NMS_BLOCK_SIZE),
                 utility::DivUp(n, NMS_BLOCK_SIZE));
     dim3 threads(NMS_BLOCK_SIZE);
-    NmsKernel<<<blocks, threads>>>(boxes, sort_indices, mask_ptr, n,
-                                   nms_overlap_thresh, num_block_cols);
+    NmsKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+            boxes, sort_indices, mask_ptr, n, nms_overlap_thresh,
+            num_block_cols);
 
     // Copy cuda masks to cpu.
     std::vector<uint64_t> mask_vec(n * num_block_cols);
     uint64_t *mask = mask_vec.data();
-    OPEN3D_ML_CUDA_CHECK(cudaMemcpy(mask_vec.data(), mask_ptr,
-                                    n * num_block_cols * sizeof(uint64_t),
-                                    cudaMemcpyDeviceToHost));
-    OPEN3D_ML_CUDA_CHECK(cudaFree(mask_ptr));
+    OPEN3D_CUDA_CHECK(cudaMemcpy(mask_vec.data(), mask_ptr,
+                                 n * num_block_cols * sizeof(uint64_t),
+                                 cudaMemcpyDeviceToHost));
+    OPEN3D_CUDA_CHECK(cudaFree(mask_ptr));
 
     // Copy sort_indices to cpu.
     std::vector<int64_t> sort_indices_cpu(n);
-    OPEN3D_ML_CUDA_CHECK(cudaMemcpy(sort_indices_cpu.data(), sort_indices,
-                                    n * sizeof(int64_t),
-                                    cudaMemcpyDeviceToHost));
+    OPEN3D_CUDA_CHECK(cudaMemcpy(sort_indices_cpu.data(), sort_indices,
+                                 n * sizeof(int64_t), cudaMemcpyDeviceToHost));
 
     // Write to keep_indices in CPU.
     // remv_cpu has n bits in total. If the bit is 1, the corresponding
@@ -208,7 +207,7 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
             }
         }
     }
-    OPEN3D_ML_CUDA_CHECK(cudaFree(sort_indices));
+    OPEN3D_CUDA_CHECK(cudaFree(sort_indices));
     return keep_indices;
 }
 

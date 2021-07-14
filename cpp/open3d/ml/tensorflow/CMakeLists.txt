@@ -173,6 +173,7 @@ target_link_libraries(open3d_tf_ops PRIVATE
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_tf_ops PRIVATE
         Open3D::3rdparty_cutlass
+        CUDA::cuda_driver
     )
 
     if (TARGET Open3D::3rdparty_cub)
