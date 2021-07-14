@@ -23,36 +23,39 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+#pragma once
 
-#include "open3d/core/Dispatch.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Arange.h"
-#include "open3d/core/kernel/CPULauncher.h"
+#include <memory>
 
 namespace open3d {
-namespace core {
-namespace kernel {
+namespace utility {
 
-void ArangeCPU(const Tensor& start,
-               const Tensor& stop,
-               const Tensor& step,
-               Tensor& dst) {
-    Dtype dtype = start.GetDtype();
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        scalar_t sstart = start.Item<scalar_t>();
-        scalar_t sstep = step.Item<scalar_t>();
-        scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-        int64_t n = dst.GetLength();
-        cpu_launcher::ParallelFor(
-                n, cpu_launcher::SMALL_OP_GRAIN_SIZE,
-                [&](int64_t workload_idx) {
-                    dst_ptr[workload_idx] =
-                            sstart +
-                            static_cast<scalar_t>(sstep * workload_idx);
-                });
-    });
-}
+/// \brief CPU information.
+class CPUInfo {
+public:
+    static CPUInfo& GetInstance();
 
-}  // namespace kernel
-}  // namespace core
+    ~CPUInfo() = default;
+    CPUInfo(const CPUInfo&) = delete;
+    void operator=(const CPUInfo&) = delete;
+
+    /// Returns the number of physical CPU cores.
+    /// This is similar to boost::thread::physical_concurrency().
+    int NumCores() const;
+
+    /// Returns the number of logical CPU cores.
+    /// This returns the same result as std::thread::hardware_concurrency() or
+    /// boost::thread::hardware_concurrency().
+    int NumThreads() const;
+
+    /// Prints CPUInfo in the console.
+    void Print() const;
+
+private:
+    CPUInfo();
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
+}  // namespace utility
 }  // namespace open3d

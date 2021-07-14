@@ -24,35 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/Dispatch.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/Arange.h"
-#include "open3d/core/kernel/CPULauncher.h"
+#pragma once
 
 namespace open3d {
-namespace core {
-namespace kernel {
+namespace utility {
 
-void ArangeCPU(const Tensor& start,
-               const Tensor& stop,
-               const Tensor& step,
-               Tensor& dst) {
-    Dtype dtype = start.GetDtype();
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        scalar_t sstart = start.Item<scalar_t>();
-        scalar_t sstep = step.Item<scalar_t>();
-        scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-        int64_t n = dst.GetLength();
-        cpu_launcher::ParallelFor(
-                n, cpu_launcher::SMALL_OP_GRAIN_SIZE,
-                [&](int64_t workload_idx) {
-                    dst_ptr[workload_idx] =
-                            sstart +
-                            static_cast<scalar_t>(sstep * workload_idx);
-                });
-    });
-}
+/// Estimate the maximum number of threads to be used in a parallel region.
+int EstimateMaxThreads();
 
-}  // namespace kernel
-}  // namespace core
+/// Returns true if in an parallel section.
+bool InParallel();
+
+}  // namespace utility
 }  // namespace open3d

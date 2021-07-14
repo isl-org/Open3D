@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "open3d/core/hashmap/HashmapBuffer.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace core {
@@ -57,7 +58,7 @@ public:
     }
 
     void Reset() {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
         for (int i = 0; i < capacity_; ++i) {
             heap_[i] = i;
         }
