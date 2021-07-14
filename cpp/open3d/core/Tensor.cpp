@@ -702,21 +702,28 @@ Tensor Tensor::Slice(int64_t dim,
 }
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
-    // Handle 0-D tensor.
-    // NOTE: Numpy supports only boolean indexing for 0-D tensor.
-    if (shape_.size() == 0) {
-        if (index_tensors.size() != 1 ||
-            index_tensors[0].GetDtype() != core::Dtype::Bool ||
-            index_tensors[0].GetShape() != SizeVector({})) {
-            utility::LogError(
-                    "Index vector should have a 0-D boolean tensor "
-                    "for tensor of dimension 0.");
-            return *this;
+    if (NumDims() == 0) {
+        const std::string error_prefix =
+                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
+        if (index_tensors.size() != 1) {
+            utility::LogError("{}, but got {} index tensors.", error_prefix,
+                              index_tensors.size());
         }
-        if (index_tensors[0].IsNonZero()) {
+        Tensor index_tensor = index_tensors[0];
+        index_tensor.AssertShape(
+                {}, fmt::format("{}, but got shape {}.",
+                                index_tensor.GetShape().ToString()));
+        index_tensor.AssertDtype(
+                Dtype::Bool, fmt::format("{}, but got dtype {}.",
+                                         index_tensor.GetDtype().ToString()));
+        if (index_tensor.IsNonZero()) {
+            // E.g. np.array(5)[np.array(True)].
             return *this;
+        } else {
+            // E.g. np.array(5)[np.array(False)].
+            // The output tensor becomes 1D of 0 element.
+            return Tensor(/*shape=*/{0}, GetDtype(), GetDevice());
         }
-        return Tensor({0}, core::Dtype::Int64, GetDevice());
     }
 
     AdvancedIndexPreprocessor aip(*this, index_tensors);
@@ -730,12 +737,11 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
-    // Handle 0-D tensor.
-    // NOTE: Numpy supports only boolean indexing for 0-D tensor.
-    if (shape_.size() == 0) {
+    if (NumDims() == 0) {
+        // A 0-D tensor can only be indexed by a 0-D boolean tensor.
         if (index_tensors.size() != 1 ||
             index_tensors[0].GetDtype() != core::Dtype::Bool ||
-            index_tensors[0].GetShape() != SizeVector({})) {
+            index_tensors[0].GetShape() != SizeVector{}) {
             utility::LogError(
                     "Index vector should have a 0-D boolean tensor "
                     "for tensor of dimension 0.");
