@@ -5,7 +5,11 @@ target_sources(ManuallyAlignPointCloud PRIVATE
     AlignmentSession.cpp
     VisualizerForAlignment.cpp
 )
-target_link_libraries(ManuallyAlignPointCloud PRIVATE Open3D::Open3D ${JSONCPP_TARGET} ${TINYFILEDIALOGS_TARGET})
+target_link_libraries(ManuallyAlignPointCloud PRIVATE
+    Open3D::Open3D
+    Open3D::3rdparty_jsoncpp
+    Open3D::3rdparty_tinyfiledialogs
+)
 
 set_target_properties(ManuallyAlignPointCloud PROPERTIES FOLDER "Tools")
 open3d_show_and_abort_on_warning(ManuallyAlignPointCloud)

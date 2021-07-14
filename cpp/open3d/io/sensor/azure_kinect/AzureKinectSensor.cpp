@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@
 
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace io {
@@ -177,7 +178,8 @@ void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
     }
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
 #pragma omp parallel for collapse(3) schedule(static)
 #endif

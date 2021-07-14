@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@
 #include "open3d/core/CUDAState.cuh"
 #endif
 
-#include "open3d/utility/Console.h"
+#include "open3d/Open3D.h"
 #include "tests/UnitTest.h"
 
 #ifdef BUILD_CUDA_MODULE
@@ -52,6 +52,7 @@ bool ShallDisableP2P(int argc, char** argv) {
 #endif
 
 int main(int argc, char** argv) {
+    open3d::utility::CPUInfo::GetInstance().Print();
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {
         std::shared_ptr<open3d::core::CUDAState> cuda_state =

@@ -17,6 +17,7 @@ ExternalProject_Add(
     URL_HASH SHA256=11310ec1f2ad2cd46b95ba88faca8f7aaa1efe9aa12605c55e3de2b977b3dbfc
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
     UPDATE_COMMAND ""
+    PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${ASSIMP_PATCH_FILES} <SOURCE_DIR>/code/Obj
     CMAKE_ARGS
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -34,12 +35,6 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
-ExternalProject_Get_Property(ext_assimp SOURCE_DIR)
-ExternalProject_Add_Step(ext_assimp patch-copy
-  COMMAND ${CMAKE_COMMAND} -E copy ${ASSIMP_PATCH_FILES} ${SOURCE_DIR}/code/Obj
-  COMMAND ${CMAKE_COMMAND} -E echo "Copying patch files for Obj loader into assimp source"
-  DEPENDEES download
-  DEPENDERS update)
 set(ASSIMP_INCLUDE_DIR ${INSTALL_DIR}/include/)
 set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
 set(ASSIMP_LIBRARIES ${lib_name} IrrXML)

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 
 #include "open3d/core/hashmap/CPU/CPUHashmapBufferAccessor.hpp"
 #include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace core {
@@ -148,7 +149,7 @@ void TBBHashmap<Key, Hash>::Find(const void* input_keys,
                                  int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (int64_t i = 0; i < count; ++i) {
         const Key& key = input_keys_templated[i];
 
@@ -258,7 +259,7 @@ void TBBHashmap<Key, Hash>::InsertImpl(const void* input_keys,
                                        int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (int64_t i = 0; i < count; ++i) {
         output_addrs[i] = 0;
         output_masks[i] = false;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/pipelines/integration/MarchingCubesConst.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
@@ -277,9 +278,11 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     voxel_grid->origin_ = origin_;
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
@@ -304,9 +307,11 @@ std::vector<Eigen::Vector2d> UniformTSDFVolume::ExtractVolumeTSDF() const {
     sharedvoxels_.resize(voxel_num_);
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
@@ -326,9 +331,11 @@ std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor() const {
     sharedcolors_.resize(voxel_num_);
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
@@ -344,9 +351,11 @@ std::vector<Eigen::Vector3d> UniformTSDFVolume::ExtractVolumeColor() const {
 void UniformTSDFVolume::InjectVolumeTSDF(
         const std::vector<Eigen::Vector2d> &sharedvoxels) {
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
@@ -362,9 +371,11 @@ void UniformTSDFVolume::InjectVolumeTSDF(
 void UniformTSDFVolume::InjectVolumeColor(
         const std::vector<Eigen::Vector3d> &sharedcolors) {
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {
@@ -395,9 +406,11 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
     const float safe_height_f = intrinsic.height_ - 0.0001f;
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int x = 0; x < resolution_; x++) {
         for (int y = 0; y < resolution_; y++) {

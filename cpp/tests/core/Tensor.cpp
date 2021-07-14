@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1200,9 +1200,6 @@ TEST_P(TensorPermuteDevices, Det) {
             {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
     double A_3x3d_det = A_3x3d.Det();
     EXPECT_DOUBLE_EQ(A_3x3d_det, -40.0);
-
-    // Singular test.
-    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Det());
 
     // Det expects a 2D square matrix [shape test].
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Det());

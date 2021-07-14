@@ -5,12 +5,6 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 find_package(Pytorch REQUIRED)
-find_package(nanoflann REQUIRED)
-find_package(parallelstl REQUIRED)
-if(BUILD_CUDA_MODULE)
-    find_package(CUB REQUIRED)
-    find_package(CUTLASS REQUIRED)
-endif()
 
 
 add_library(open3d_torch_ops SHARED)
@@ -127,30 +121,30 @@ set_target_properties(open3d_torch_ops PROPERTIES
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
-if (BUILD_CUDA_MODULE)
-    target_include_directories(open3d_torch_ops SYSTEM PRIVATE
-        ${CUB_INCLUDE_DIR}
-        ${CUTLASS_INCLUDE_DIR}
-    )
-endif()
-
 target_include_directories(open3d_torch_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
-    ${nanoflann_INCLUDE_DIR}
-    ${parallelstl_INCLUDE_DIR}
     ${TORCH_INCLUDE_DIRS}
 )
 
 target_link_libraries(open3d_torch_ops PRIVATE
-    3rdparty_tbb
     torch_cpu
-    ${EIGEN3_TARGET}
-    ${FMT_TARGET}
     Open3D::Open3D
+    Open3D::3rdparty_eigen3
+    Open3D::3rdparty_fmt
+    Open3D::3rdparty_nanoflann
+    Open3D::3rdparty_parallelstl
+    Open3D::3rdparty_tbb
 )
 
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_torch_ops PRIVATE
+        Open3D::3rdparty_cutlass
         ${TORCH_LIBRARIES}
     )
+
+    if (TARGET Open3D::3rdparty_cub)
+        target_link_libraries(open3d_torch_ops PRIVATE
+            Open3D::3rdparty_cub
+        )
+    endif()
 endif()

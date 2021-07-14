@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Cross-platform Python script to download and extract datasets. All common
 archive formats are supported.

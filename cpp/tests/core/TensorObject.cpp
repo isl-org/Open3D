@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,17 +51,6 @@ INSTANTIATE_TEST_SUITE_P(
         TensorObject,
         TensorObjectPermuteDevicePairs,
         testing::ValuesIn(TensorObjectPermuteDevicePairs::TestCases()));
-
-class TensorObjectPermuteSizesDefaultStridesAndDevices
-    : public testing::TestWithParam<
-              std::tuple<std::pair<core::SizeVector, core::SizeVector>,
-                         core::Device>> {};
-INSTANTIATE_TEST_SUITE_P(
-        TensorObject,
-        TensorObjectPermuteSizesDefaultStridesAndDevices,
-        testing::Combine(
-                testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
-                testing::ValuesIn(PermuteDevices::TestCases())));
 
 class TestObject {
 public:
