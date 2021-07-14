@@ -39,34 +39,33 @@ namespace open3d {
 namespace pipelines {
 namespace registration {
 
-static std::vector<std::pair<int, int>> AdvancedMatching(
-        const geometry::PointCloud& big_point_cloud,
-        const geometry::PointCloud& small_point_cloud,
-        const Feature& big_features,
-        const Feature& small_features,
-        const FastGlobalRegistrationOption& option) {
-    // STEP 1) Initial matching
+static std::vector<std::pair<int, int>> InitialMatching(
+        const Feature& big_features, const Feature& small_features) {
     geometry::KDTreeFlann big_feature_tree(big_features);
     geometry::KDTreeFlann small_feature_tree(small_features);
-    std::vector<int> corresK;
-    std::vector<double> dis;
     std::map<int, int> corres_ij;
     std::map<int, int> corres_ji;
 
+#pragma omp parallel for
     for (int j = 0; j < small_features.data_.cols(); j++) {
+        std::vector<int> corres_tmp(1);
+        std::vector<double> dist_tmp(1);
         big_feature_tree.SearchKNN(Eigen::VectorXd(small_features.data_.col(j)),
-                                   1, corresK, dis);
-        int i = corresK[0];
+                                   1, corres_tmp, dist_tmp);
+        int i = corres_tmp[0];
         corres_ji[j] = i;
         if (corres_ij.find(i) == corres_ij.end()) {
+            // set a temp value to prevent other threads recomputing
+            // corres_ij[i] until the following small_feature_tree.SearchKNN()
+            // call completes
+            corres_ij[i] = -1;
             small_feature_tree.SearchKNN(
-                    Eigen::VectorXd(big_features.data_.col(i)), 1, corresK,
-                    dis);
-            corres_ij[i] = corresK[0];
+                    Eigen::VectorXd(big_features.data_.col(i)), 1, corres_tmp,
+                    dist_tmp);
+            corres_ij[i] = corres_tmp[0];
         }
     }
 
-    // STEP 2) CROSS CHECK
     utility::LogDebug("\t[cross check] ");
     std::vector<std::pair<int, int>> corres_cross;
     for (const std::pair<int, int>& ij : corres_ij) {
@@ -76,9 +75,15 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
         if (i_ptr != corres_ji.end() && i_ptr->second == i)
             corres_cross.push_back(std::pair<int, int>(i, j));
     }
-    utility::LogDebug("points are remained : {:d}", (int)corres_cross.size());
+    utility::LogDebug("Initial matchings : {}", corres_cross.size());
+    return corres_cross;
+}
 
-    // STEP 3) TUPLE CONSTRAINT
+static std::vector<std::pair<int, int>> AdvancedMatching(
+        const geometry::PointCloud& big_point_cloud,
+        const geometry::PointCloud& small_point_cloud,
+        const std::vector<std::pair<int, int>>& corres_cross,
+        const FastGlobalRegistrationOption& option) {
     utility::LogDebug("\t[tuple constraint] ");
     int rand0, rand1, rand2, i, cnt = 0;
     int idi0, idi1, idi2, idj0, idj1, idj2;
@@ -311,11 +316,13 @@ RegistrationResult FastGlobalRegistration(
     // for AdvancedMatching ensure the first point cloud is the larger one
     std::vector<std::pair<int, int>> corres;
     if (source.points_.size() > target.points_.size()) {
-        corres = AdvancedMatching(source, target, source_feature,
-                                  target_feature, option);
+        corres = AdvancedMatching(
+                source, target, InitialMatching(source_feature, target_feature),
+                option);
     } else {
-        corres = AdvancedMatching(target, source, target_feature,
-                                  source_feature, option);
+        corres = AdvancedMatching(
+                target, source, InitialMatching(target_feature, source_feature),
+                option);
         for (auto& p : corres) std::swap(p.first, p.second);
     }
 
