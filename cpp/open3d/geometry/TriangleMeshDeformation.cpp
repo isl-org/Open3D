@@ -30,6 +30,7 @@
 
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace geometry {
@@ -112,7 +113,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             std::swap(Rs, Rs_old);
         }
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int i = 0; i < int(vertices_.size()); ++i) {
             // Update rotations
             Eigen::Matrix3d S = Eigen::Matrix3d::Zero();
@@ -148,7 +150,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             }
         }
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int i = 0; i < int(vertices_.size()); ++i) {
             // Update Positions
             Eigen::Vector3d bi(0, 0, 0);
@@ -165,7 +168,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             b[1](i) = bi(1);
             b[2](i) = bi(2);
         }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int comp = 0; comp < 3; ++comp) {
             Eigen::VectorXd p_prime = solver.solve(b[comp]);
             if (solver.info() != Eigen::Success) {

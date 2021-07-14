@@ -33,6 +33,7 @@
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 
@@ -319,7 +320,8 @@ void PointCloud::EstimateNormals(
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices;
         std::vector<double> distance2;
@@ -351,7 +353,8 @@ void PointCloud::OrientNormalsToAlignWithDirection(
                 "[OrientNormalsToAlignWithDirection] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         auto &normal = normals_[i];
         if (normal.norm() == 0.0) {
@@ -369,7 +372,8 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
                 "[OrientNormalsTowardsCameraLocation] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         Eigen::Vector3d orientation_reference = camera_location - points_[i];
         auto &normal = normals_[i];
