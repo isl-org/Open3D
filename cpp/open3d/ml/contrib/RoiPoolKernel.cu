@@ -28,6 +28,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/ml/contrib/RoiPoolKernel.h"
 
 namespace open3d {
@@ -295,8 +296,8 @@ void roipool3dLauncher(int batch_size,
     dim3 blocks(DIVUP(pts_num, THREADS_PER_BLOCK), boxes_num,
                 batch_size);  // blockIdx.x(col), blockIdx.y(row)
     dim3 threads(THREADS_PER_BLOCK);
-    assign_pts_to_box3d<<<blocks, threads>>>(batch_size, pts_num, boxes_num,
-                                             xyz, boxes3d, pts_assign);
+    assign_pts_to_box3d<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+            batch_size, pts_num, boxes_num, xyz, boxes3d, pts_assign);
 
     int *pts_idx = NULL;
     cudaMalloc(&pts_idx,
@@ -305,13 +306,13 @@ void roipool3dLauncher(int batch_size,
 
     dim3 blocks2(DIVUP(boxes_num, THREADS_PER_BLOCK),
                  batch_size);  // blockIdx.x(col), blockIdx.y(row)
-    get_pooled_idx<<<blocks2, threads>>>(batch_size, pts_num, boxes_num,
-                                         sampled_pts_num, pts_assign, pts_idx,
-                                         pooled_empty_flag);
+    get_pooled_idx<<<blocks2, threads, 0, core::cuda::GetStream()>>>(
+            batch_size, pts_num, boxes_num, sampled_pts_num, pts_assign,
+            pts_idx, pooled_empty_flag);
 
     dim3 blocks_pool(DIVUP(sampled_pts_num, THREADS_PER_BLOCK), boxes_num,
                      batch_size);
-    roipool3d_forward<<<blocks_pool, threads>>>(
+    roipool3d_forward<<<blocks_pool, threads, 0, core::cuda::GetStream()>>>(
             batch_size, pts_num, boxes_num, feature_in_len, sampled_pts_num,
             xyz, pts_idx, pts_feature, pooled_features, pooled_empty_flag);
 

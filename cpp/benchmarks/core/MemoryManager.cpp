@@ -28,6 +28,10 @@
 
 #include <benchmark/benchmark.h>
 
+#ifdef BUILD_CUDA_MODULE
+#include "open3d/core/CUDAUtils.h"
+#endif
+
 namespace open3d {
 namespace core {
 
@@ -65,6 +69,14 @@ std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
     }
 }
 
+void Synchronize(const Device& device) {
+    if (device.GetType() == Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
+    }
+}
+
 void Malloc(benchmark::State& state,
             int size,
             const Device& device,
@@ -77,13 +89,16 @@ void Malloc(benchmark::State& state,
     {
         void* ptr = device_mm->Malloc(size, device);
         device_mm->Free(ptr, device);
+        Synchronize(device);
     }
 
     for (auto _ : state) {
         void* ptr = device_mm->Malloc(size, device);
+        Synchronize(device);
 
         state.PauseTiming();
         device_mm->Free(ptr, device);
+        Synchronize(device);
         state.ResumeTiming();
     }
 
@@ -102,14 +117,17 @@ void Free(benchmark::State& state,
     {
         void* ptr = device_mm->Malloc(size, device);
         device_mm->Free(ptr, device);
+        Synchronize(device);
     }
 
     for (auto _ : state) {
         state.PauseTiming();
         void* ptr = device_mm->Malloc(size, device);
+        Synchronize(device);
         state.ResumeTiming();
 
         device_mm->Free(ptr, device);
+        Synchronize(device);
     }
 
     CachedMemoryManager::ReleaseCache(device);
