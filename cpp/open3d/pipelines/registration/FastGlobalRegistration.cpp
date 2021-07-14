@@ -40,39 +40,27 @@ namespace pipelines {
 namespace registration {
 
 static std::vector<std::pair<int, int>> AdvancedMatching(
-        const std::vector<geometry::PointCloud>& point_cloud_vec,
-        const std::vector<Feature>& features_vec,
+        const geometry::PointCloud& big_point_cloud,
+        const geometry::PointCloud& small_point_cloud,
+        const Feature& big_features,
+        const Feature& small_features,
         const FastGlobalRegistrationOption& option) {
-    // STEP 0) Swap source and target if necessary
-    int fi = 0, fj = 1;
-    int nPti = features_vec[fi].data_.cols();
-    int nPtj = features_vec[fj].data_.cols();
-    bool swapped = nPtj > nPti;
-    if (swapped) {
-        fi = 1;
-        fj = 0;
-        int temp = nPti;
-        nPti = nPtj;
-        nPtj = temp;
-    }
-    utility::LogDebug("Advanced matching : [{:d} - {:d}]", fi, fj);
-
     // STEP 1) Initial matching
-    geometry::KDTreeFlann feature_tree_i(features_vec[fi]);
-    geometry::KDTreeFlann feature_tree_j(features_vec[fj]);
+    geometry::KDTreeFlann big_feature_tree(big_features);
+    geometry::KDTreeFlann small_feature_tree(small_features);
     std::vector<int> corresK;
     std::vector<double> dis;
     std::map<int, int> corres_ij;
     std::map<int, int> corres_ji;
 
-    for (int j = 0; j < nPtj; j++) {
-        feature_tree_i.SearchKNN(Eigen::VectorXd(features_vec[fj].data_.col(j)),
-                                 1, corresK, dis);
+    for (int j = 0; j < small_features.data_.cols(); j++) {
+        big_feature_tree.SearchKNN(Eigen::VectorXd(small_features.data_.col(j)),
+                                   1, corresK, dis);
         int i = corresK[0];
         corres_ji[j] = i;
         if (corres_ij.find(i) == corres_ij.end()) {
-            feature_tree_j.SearchKNN(
-                    Eigen::VectorXd(features_vec[fi].data_.col(i)), 1, corresK,
+            small_feature_tree.SearchKNN(
+                    Eigen::VectorXd(big_features.data_.col(i)), 1, corresK,
                     dis);
             corres_ij[i] = corresK[0];
         }
@@ -113,18 +101,18 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
         idi2 = corres_cross[rand2].first;
         idj2 = corres_cross[rand2].second;
 
-        // collect 3 points from i-th fragment
-        Eigen::Vector3d pti0 = point_cloud_vec[fi].points_[idi0];
-        Eigen::Vector3d pti1 = point_cloud_vec[fi].points_[idi1];
-        Eigen::Vector3d pti2 = point_cloud_vec[fi].points_[idi2];
+        // collect 3 points from big fragment
+        Eigen::Vector3d pti0 = big_point_cloud.points_[idi0];
+        Eigen::Vector3d pti1 = big_point_cloud.points_[idi1];
+        Eigen::Vector3d pti2 = big_point_cloud.points_[idi2];
         double li0 = (pti0 - pti1).norm();
         double li1 = (pti1 - pti2).norm();
         double li2 = (pti2 - pti0).norm();
 
-        // collect 3 points from j-th fragment
-        Eigen::Vector3d ptj0 = point_cloud_vec[fj].points_[idj0];
-        Eigen::Vector3d ptj1 = point_cloud_vec[fj].points_[idj1];
-        Eigen::Vector3d ptj2 = point_cloud_vec[fj].points_[idj2];
+        // collect 3 points from small fragment
+        Eigen::Vector3d ptj0 = small_point_cloud.points_[idj0];
+        Eigen::Vector3d ptj1 = small_point_cloud.points_[idj1];
+        Eigen::Vector3d ptj2 = small_point_cloud.points_[idj2];
         double lj0 = (ptj0 - ptj1).norm();
         double lj1 = (ptj1 - ptj2).norm();
         double lj2 = (ptj2 - ptj0).norm();
@@ -142,14 +130,6 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     utility::LogDebug("{:d} tuples ({:d} trial, {:d} actual).", cnt,
                       number_of_trial, i);
 
-    if (swapped) {
-        std::vector<std::pair<int, int>> temp;
-        for (size_t i = 0; i < corres_tuple.size(); i++)
-            temp.push_back(std::pair<int, int>(corres_tuple[i].second,
-                                               corres_tuple[i].first));
-        corres_tuple.clear();
-        corres_tuple = temp;
-    }
     utility::LogDebug("\t[final] matches {:d}.", (int)corres_tuple.size());
     return corres_tuple;
 }
@@ -316,22 +296,29 @@ RegistrationResult FastGlobalRegistration(
         const Feature& target_feature,
         const FastGlobalRegistrationOption& option /* =
         FastGlobalRegistrationOption()*/) {
-    std::vector<geometry::PointCloud> point_cloud_vec;
     geometry::PointCloud source_orig = source;
     geometry::PointCloud target_orig = target;
+
+    std::vector<geometry::PointCloud> point_cloud_vec;
     point_cloud_vec.push_back(source);
     point_cloud_vec.push_back(target);
-
-    std::vector<Feature> features_vec;
-    features_vec.push_back(source_feature);
-    features_vec.push_back(target_feature);
 
     double scale_global, scale_start;
     std::vector<Eigen::Vector3d> pcd_mean_vec;
     std::tie(pcd_mean_vec, scale_global, scale_start) =
             NormalizePointCloud(point_cloud_vec, option);
+
+    // for AdvancedMatching ensure the first point cloud is the larger one
     std::vector<std::pair<int, int>> corres;
-    corres = AdvancedMatching(point_cloud_vec, features_vec, option);
+    if (source.points_.size() > target.points_.size()) {
+        corres = AdvancedMatching(source, target, source_feature,
+                                  target_feature, option);
+    } else {
+        corres = AdvancedMatching(target, source, target_feature,
+                                  source_feature, option);
+        for (auto& p : corres) std::swap(p.first, p.second);
+    }
+
     Eigen::Matrix4d transformation;
     transformation = OptimizePairwiseRegistration(point_cloud_vec, corres,
                                                   scale_global, option);
