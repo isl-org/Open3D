@@ -101,7 +101,7 @@ void VoxelDownSample(benchmark::State& state,
 }
 
 void Transform(benchmark::State& state, const core::Device& device) {
-    t::geometry::PointCloud pcd;
+    PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
@@ -114,13 +114,11 @@ void Transform(benchmark::State& state, const core::Device& device) {
                                           .To(dtype);
 
     // Warm Up.
-    auto warm_up = pcd.Transform(transformation);
-    (void)warm_up;
+    PointCloud pcd_transformed = pcd.Transform(transformation);
 
     for (auto _ : state) {
-        warm_up = pcd.Transform(transformation);
+        pcd_transformed = pcd.Transform(transformation);
     }
-    return;
 }
 
 BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))

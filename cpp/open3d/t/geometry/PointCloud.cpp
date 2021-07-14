@@ -155,11 +155,9 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    t::geometry::kernel::transform::TransformPoints(transformation,
-                                                    GetPoints());
+    kernel::transform::TransformPoints(transformation, GetPoints());
     if (HasPointNormals()) {
-        t::geometry::kernel::transform::TransformNormals(transformation,
-                                                         GetPointNormals());
+        kernel::transform::TransformNormals(transformation, GetPointNormals());
     }
 
     return *this;
@@ -189,10 +187,10 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    t::geometry::kernel::transform::RotatePoints(R, GetPoints(), center);
+    kernel::transform::RotatePoints(R, GetPoints(), center);
 
     if (HasPointNormals()) {
-        t::geometry::kernel::transform::RotateNormals(R, GetPointNormals());
+        kernel::transform::RotateNormals(R, GetPointNormals());
     }
     return *this;
 }

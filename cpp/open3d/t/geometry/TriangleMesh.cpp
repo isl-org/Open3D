@@ -63,15 +63,13 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
-    t::geometry::kernel::transform::TransformPoints(transformation,
-                                                    GetVertices());
+    kernel::transform::TransformPoints(transformation, GetVertices());
     if (HasVertexNormals()) {
-        t::geometry::kernel::transform::TransformNormals(transformation,
-                                                         GetVertexNormals());
+        kernel::transform::TransformNormals(transformation, GetVertexNormals());
     }
     if (HasTriangleNormals()) {
-        t::geometry::kernel::transform::TransformNormals(transformation,
-                                                         GetTriangleNormals());
+        kernel::transform::TransformNormals(transformation,
+                                            GetTriangleNormals());
     }
 
     return *this;
@@ -101,14 +99,13 @@ TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
 
 TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
                                    const core::Tensor &center) {
-    t::geometry::kernel::transform::RotatePoints(R, GetVertices(), center);
+    kernel::transform::RotatePoints(R, GetVertices(), center);
     if (HasVertexNormals()) {
-        t::geometry::kernel::transform::RotateNormals(R, GetVertexNormals());
+        kernel::transform::RotateNormals(R, GetVertexNormals());
     }
     if (HasTriangleNormals()) {
-        t::geometry::kernel::transform::RotateNormals(R, GetTriangleNormals());
+        kernel::transform::RotateNormals(R, GetTriangleNormals());
     }
-
     return *this;
 }
 

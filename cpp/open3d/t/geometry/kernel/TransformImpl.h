@@ -25,38 +25,14 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
 namespace transform {
-
-void TransformPointsCPU(const core::Tensor& transformation,
-                        core::Tensor& points);
-
-void TransformNormalsCPU(const core::Tensor& transformation,
-                         core::Tensor& normals);
-
-void RotatePointsCPU(const core::Tensor& R,
-                     core::Tensor& points,
-                     const core::Tensor& center);
-
-void RotateNormalsCPU(const core::Tensor& R, core::Tensor& normals);
-
-#ifdef BUILD_CUDA_MODULE
-void TransformPointsCUDA(const core::Tensor& transformation,
-                         core::Tensor& points);
-
-void TransformNormalsCUDA(const core::Tensor& transformation,
-                          core::Tensor& normals);
-
-void RotatePointsCUDA(const core::Tensor& R,
-                      core::Tensor& points,
-                      const core::Tensor& center);
-
-void RotateNormalsCUDA(const core::Tensor& R, core::Tensor& normals);
-#endif
 
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void TransformPointsKernel(
@@ -128,6 +104,98 @@ OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RotateNormalsKernel(
     normals_ptr[0] = x[0];
     normals_ptr[1] = x[1];
     normals_ptr[2] = x[2];
+}
+
+#ifdef __CUDACC__
+void TransformPointsCUDA
+#else
+void TransformPointsCPU
+#endif
+        (const core::Tensor& transformation, core::Tensor& points) {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const scalar_t* transformation_ptr =
+                transformation.GetDataPtr<scalar_t>();
+#if defined(__CUDACC__)
+        namespace launcher = core::kernel::cuda_launcher;
+#else
+        namespace launcher = core::kernel::cpu_launcher;
+#endif
+        launcher::ParallelFor(
+                points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    TransformPointsKernel(transformation_ptr,
+                                          points_ptr + 3 * workload_idx);
+                });
+    });
+}
+
+#ifdef __CUDACC__
+void TransformNormalsCUDA
+#else
+void TransformNormalsCPU
+#endif
+        (const core::Tensor& transformation, core::Tensor& normals) {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(normals.GetDtype(), [&]() {
+        scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
+        const scalar_t* transformation_ptr =
+                transformation.GetDataPtr<scalar_t>();
+#if defined(__CUDACC__)
+        namespace launcher = core::kernel::cuda_launcher;
+#else
+        namespace launcher = core::kernel::cpu_launcher;
+#endif
+        launcher::ParallelFor(
+                normals.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    TransformNormalsKernel(transformation_ptr,
+                                           normals_ptr + 3 * workload_idx);
+                });
+    });
+}
+
+#ifdef __CUDACC__
+void RotatePointsCUDA
+#else
+void RotatePointsCPU
+#endif
+        (const core::Tensor& R,
+         core::Tensor& points,
+         const core::Tensor& center) {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const scalar_t* R_ptr = R.GetDataPtr<scalar_t>();
+        const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
+#if defined(__CUDACC__)
+        namespace launcher = core::kernel::cuda_launcher;
+#else
+        namespace launcher = core::kernel::cpu_launcher;
+#endif
+        launcher::ParallelFor(
+                points.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    RotatePointsKernel(R_ptr, points_ptr + 3 * workload_idx,
+                                       center_ptr);
+                });
+    });
+}
+
+#ifdef __CUDACC__
+void RotateNormalsCUDA
+#else
+void RotateNormalsCPU
+#endif
+        (const core::Tensor& R, core::Tensor& normals) {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(normals.GetDtype(), [&]() {
+        scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
+        const scalar_t* R_ptr = R.GetDataPtr<scalar_t>();
+#if defined(__CUDACC__)
+        namespace launcher = core::kernel::cuda_launcher;
+#else
+        namespace launcher = core::kernel::cpu_launcher;
+#endif
+        launcher::ParallelFor(
+                normals.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    RotateNormalsKernel(R_ptr, normals_ptr + 3 * workload_idx);
+                });
+    });
 }
 
 }  // namespace transform
