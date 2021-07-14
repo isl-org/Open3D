@@ -158,7 +158,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
     return nanoflann_index_->SearchRadius(query_points, radii);
 }
 
-std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
+std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         const Tensor& query_points, double radius, int max_knn) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {

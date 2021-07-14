@@ -35,6 +35,7 @@
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace t {
@@ -66,7 +67,7 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
                      workload_idx++) {
 #else
     float *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     float J[6] = {0};
@@ -137,7 +138,7 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                      workload_idx++) {
 #else
     float *mean_reduction = mean_1x6.data();
-#pragma omp parallel for reduction(+ : mean_reduction[:6]) schedule(static)
+#pragma omp parallel for reduction(+ : mean_reduction[:6]) schedule(static) num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     for (int i = 0; i < 3; i++) {
@@ -178,7 +179,7 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
                      workload_idx++) {
 #else
     float *sxy_1x9_reduction = sxy_1x9.data();
-#pragma omp parallel for reduction(+ : sxy_1x9_reduction[:9]) schedule(static) collapse(2)
+#pragma omp parallel for reduction(+ : sxy_1x9_reduction[:9]) schedule(static) collapse(2) num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     for (int i = 0; i < 9; i++) {

@@ -44,12 +44,6 @@ INSTANTIATE_TEST_SUITE_P(Odometry,
                          OdometryPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class OdometryPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        Odometry,
-        OdometryPermuteDevicePairs,
-        testing::ValuesIn(OdometryPermuteDevicePairs::TestCases()));
-
 core::Tensor CreateIntrisicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);

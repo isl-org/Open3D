@@ -134,6 +134,8 @@ protected:
     int device_id_;
 };
 
+const Device HOST = Device("CPU:0");
+
 }  // namespace core
 }  // namespace open3d
 

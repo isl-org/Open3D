@@ -53,7 +53,7 @@ function(open3d_add_compiled_materials target)
             OUTPUT ${COMPILED_MATERIAL_FULL_PATH}
             COMMAND ${FILAMENT_MATC} ${FILAMENT_MATC_ARGS} -o ${COMPILED_MATERIAL_FULL_PATH} ${MATERIAL_FULL_PATH}
             COMMENT "Building Material object ${COMPILED_MATERIAL_RELATIVE_PATH}"
-            MAIN_DEPENDENCY ${mat} DEPENDS ${FILAMENT_TARGET}
+            MAIN_DEPENDENCY ${mat} DEPENDS Open3D::3rdparty_filament
             VERBATIM
         )
 

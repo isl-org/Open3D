@@ -51,12 +51,6 @@ INSTANTIATE_TEST_SUITE_P(SLAC,
                          SLACPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class SLACPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        SLAC,
-        SLACPermuteDevicePairs,
-        testing::ValuesIn(SLACPermuteDevicePairs::TestCases()));
-
 // PointCloud is similar if fitness is higher and rmse is lower than tolerance
 // threshold.
 static bool IsPointCloudSimilar(t::geometry::PointCloud source,
@@ -284,10 +278,6 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
             ++k;
             utility::LogDebug("{}: Deformation + Integration takes {}", k,
                               timer.GetDuration());
-
-#ifdef BUILD_CUDA_MODULE
-            core::CUDACachedMemoryManager::ReleaseCache();
-#endif
         }
     }
 

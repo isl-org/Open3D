@@ -38,6 +38,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace geometry {
@@ -939,7 +940,8 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
     // precompute all neighbours
     utility::LogDebug("Precompute Neighbours");
     std::vector<std::vector<int>> nbs(vertices_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int idx = 0; idx < int(vertices_.size()); ++idx) {
         std::vector<double> dists2;
         kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
@@ -1234,7 +1236,7 @@ double TriangleMesh::GetVolume() const {
 
     double volume = 0;
     int64_t num_triangles = triangles_.size();
-#pragma omp parallel for reduction(+ : volume)
+#pragma omp parallel for reduction(+ : volume) num_threads(utility::EstimateMaxThreads())
     for (int64_t tidx = 0; tidx < num_triangles; ++tidx) {
         volume += GetSignedVolumeOfTriangle(tidx);
     }
@@ -1439,7 +1441,8 @@ TriangleMesh::ClusterConnectedTriangles() const {
     utility::LogDebug("[ClusterConnectedTriangles] Compute triangle adjacency");
     auto edges_to_triangles = GetEdgeToTrianglesMap();
     std::vector<std::unordered_set<int>> adjacency_list(triangles_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
         const auto &triangle = triangles_[tidx];
         for (auto tnb :
