@@ -186,12 +186,6 @@ int main(int argc, char* argv[]) {
             ++k;
             utility::LogInfo("{}: Deformation + Integration takes {}", k,
                              timer.GetDuration());
-
-            if (k % 10 == 0) {
-#ifdef BUILD_CUDA_MODULE
-                CUDACachedMemoryManager::ReleaseCache();
-#endif
-            }
         }
     }
 

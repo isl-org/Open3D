@@ -34,37 +34,33 @@
 namespace open3d {
 namespace core {
 
-CUDASimpleMemoryManager::CUDASimpleMemoryManager() {}
-
-void* CUDASimpleMemoryManager::Malloc(size_t byte_size, const Device& device) {
+void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
     CUDADeviceSwitcher switcher(device);
     void* ptr;
     if (device.GetType() == Device::DeviceType::CUDA) {
         OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
     } else {
-        utility::LogError(
-                "CUDASimpleMemoryManager::Malloc: Unimplemented device.");
+        utility::LogError("CUDAMemoryManager::Malloc: Unimplemented device.");
     }
     return ptr;
 }
 
-void CUDASimpleMemoryManager::Free(void* ptr, const Device& device) {
+void CUDAMemoryManager::Free(void* ptr, const Device& device) {
     CUDADeviceSwitcher switcher(device);
     if (device.GetType() == Device::DeviceType::CUDA) {
         if (ptr && IsCUDAPointer(ptr)) {
             OPEN3D_CUDA_CHECK(cudaFree(ptr));
         }
     } else {
-        utility::LogError(
-                "CUDASimpleMemoryManager::Free: Unimplemented device.");
+        utility::LogError("CUDAMemoryManager::Free: Unimplemented device.");
     }
 }
 
-void CUDASimpleMemoryManager::Memcpy(void* dst_ptr,
-                                     const Device& dst_device,
-                                     const void* src_ptr,
-                                     const Device& src_device,
-                                     size_t num_bytes) {
+void CUDAMemoryManager::Memcpy(void* dst_ptr,
+                               const Device& dst_device,
+                               const void* src_ptr,
+                               const Device& src_device,
+                               size_t num_bytes) {
     if (dst_device.GetType() == Device::DeviceType::CUDA &&
         src_device.GetType() == Device::DeviceType::CPU) {
         CUDADeviceSwitcher switcher(dst_device);
@@ -116,7 +112,7 @@ void CUDASimpleMemoryManager::Memcpy(void* dst_ptr,
     }
 }
 
-bool CUDASimpleMemoryManager::IsCUDAPointer(const void* ptr) {
+bool CUDAMemoryManager::IsCUDAPointer(const void* ptr) {
     cudaPointerAttributes attributes;
     cudaPointerGetAttributes(&attributes, ptr);
     if (attributes.devicePointer != nullptr) {
