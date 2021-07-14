@@ -716,6 +716,7 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
         index_tensor.AssertDtype(
                 Dtype::Bool, fmt::format("{}, but got dtype {}.",
                                          index_tensor.GetDtype().ToString()));
+
         if (index_tensor.IsNonZero()) {
             // E.g. np.array(5)[np.array(True)].
             return *this;
@@ -738,26 +739,52 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
     if (NumDims() == 0) {
-        // A 0-D tensor can only be indexed by a 0-D boolean tensor.
-        if (index_tensors.size() != 1 ||
-            index_tensors[0].GetDtype() != core::Dtype::Bool ||
-            index_tensors[0].GetShape() != SizeVector{}) {
-            utility::LogError(
-                    "Index vector should have a 0-D boolean tensor "
-                    "for tensor of dimension 0.");
-            return;
+        const std::string error_prefix =
+                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
+        if (index_tensors.size() != 1) {
+            utility::LogError("{}, but got {} index tensors.", error_prefix,
+                              index_tensors.size());
         }
+        Tensor index_tensor = index_tensors[0];
+        index_tensor.AssertShape(
+                {}, fmt::format("{}, but got shape {}.",
+                                index_tensor.GetShape().ToString()));
+        index_tensor.AssertDtype(
+                Dtype::Bool, fmt::format("{}, but got dtype {}.",
+                                         index_tensor.GetDtype().ToString()));
+
+        // E.g.
+        // a = np.array(5)
+        // a[np.array(True)]  = 10                 // Works, assigned
+        // a[np.array(True)]  = np.array(10)       // Works, assigned
+        // a[np.array(True)]  = np.array([10])     // Works, assigned
+        // a[np.array(True)]  = np.array([[10]])   // Cannot assign 2D
+        // a[np.array(True)]  = np.array([10, 11]) // Cannot assign 1+ values
+        // a[np.array(False)] = 10                 // Works, unchanged
+        // a[np.array(False)] = np.array(10)       // Works, unchanged
+        // a[np.array(False)] = np.array([10])     // Works, unchanged
+        // a[np.array(False)] = np.array([[10]])   // Cannot assign 2D
+        // a[np.array(False)] = np.array([10, 11]) // Cannot assign 1+ values
+
+        // Assert 0-D or 1-D.
+        if (src_tensor.NumDims() > 1) {
+            utility::LogError(
+                    "Boolean indexing of a 0-D tensor can only be assigned "
+                    "with 0 or 1-dimensional input, but got {} dimensions.",
+                    src_tensor.NumDims());
+        }
+        // Assert single element.
         if (src_tensor.NumElements() != 1) {
             utility::LogError(
-                    "Source should be a single-element tensor for 0-D tensor.");
-            return;
+                    "Boolean indexing of a 0-D tensor can only be assigned "
+                    "with input containing 1 element, but got {} elements.",
+                    src_tensor.NumElements());
         }
         if (index_tensors[0].IsNonZero()) {
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_tensor.GetDtype(), [&]() {
                 AsRvalue() = src_tensor.Item<scalar_t>();
             });
         }
-        return;
     }
 
     AdvancedIndexPreprocessor aip(*this, index_tensors);
