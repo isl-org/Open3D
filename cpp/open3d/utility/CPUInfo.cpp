@@ -137,8 +137,6 @@ CPUInfo::CPUInfo() : impl_(new CPUInfo::Impl()) {
     impl_->num_threads_ = std::thread::hardware_concurrency();
 }
 
-CPUInfo::~CPUInfo() {}
-
 CPUInfo& CPUInfo::GetInstance() {
     static CPUInfo instance;
     return instance;

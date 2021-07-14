@@ -33,8 +33,11 @@ namespace utility {
 /// \brief CPU information.
 class CPUInfo {
 public:
-    ~CPUInfo();
     static CPUInfo& GetInstance();
+
+    ~CPUInfo() = default;
+    CPUInfo(const CPUInfo&) = delete;
+    void operator=(const CPUInfo&) = delete;
 
     /// Returns the number of physical CPU cores.
     /// This is similar to boost::thread::physical_concurrency().
