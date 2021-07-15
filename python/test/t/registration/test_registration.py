@@ -104,9 +104,9 @@ def test_evaluate_registration(device):
             init_trans_legacy)
 
         np.testing.assert_allclose(evaluation_t.inlier_rmse,
-                                   evaluation_legacy.inlier_rmse, 0.0001)
+                                   evaluation_legacy.inlier_rmse, 0.001)
         np.testing.assert_allclose(evaluation_t.fitness,
-                                   evaluation_legacy.fitness, 0.0001)
+                                   evaluation_legacy.fitness, 0.001)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -142,9 +142,9 @@ def test_registration_icp_point_to_point(device):
             o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
 
         np.testing.assert_allclose(reg_p2p_t.inlier_rmse,
-                                   reg_p2p_legacy.inlier_rmse, 0.0001)
+                                   reg_p2p_legacy.inlier_rmse, 0.001)
         np.testing.assert_allclose(reg_p2p_t.fitness, reg_p2p_legacy.fitness,
-                                   0.0001)
+                                   0.001)
 
 
 @pytest.mark.parametrize("device", list_devices())
