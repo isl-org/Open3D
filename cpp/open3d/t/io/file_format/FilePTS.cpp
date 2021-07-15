@@ -68,7 +68,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                     "Read PTS failed: number of points must be >= 0.");
             return false;
         } else if (num_points == 0) {
-            pointcloud.SetPoints(core::Tensor({0, 3}, core::Dtype::Float64));
+            pointcloud.SetPoints(core::Tensor({0, 3}, core::kFloat64));
             return true;
         }
         utility::CountingProgressReporter reporter(params.update_progress);
@@ -88,41 +88,41 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             // X Y Z I R G B.
             if (num_fields == 7) {
                 pointcloud.SetPoints(
-                        core::Tensor({num_points, 3}, core::Dtype::Float64));
+                        core::Tensor({num_points, 3}, core::kFloat64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
                 pointcloud.SetPointAttr(
                         "intensities",
-                        core::Tensor({num_points, 1}, core::Dtype::Float64));
+                        core::Tensor({num_points, 1}, core::kFloat64));
                 intensities_ptr = pointcloud.GetPointAttr("intensities")
                                           .GetDataPtr<double>();
                 pointcloud.SetPointColors(
-                        core::Tensor({num_points, 3}, core::Dtype::UInt8));
+                        core::Tensor({num_points, 3}, core::kUInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
             }
             // X Y Z R G B.
             else if (num_fields == 6) {
                 pointcloud.SetPoints(
-                        core::Tensor({num_points, 3}, core::Dtype::Float64));
+                        core::Tensor({num_points, 3}, core::kFloat64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
                 pointcloud.SetPointColors(
-                        core::Tensor({num_points, 3}, core::Dtype::UInt8));
+                        core::Tensor({num_points, 3}, core::kUInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
             }
             // X Y Z I.
             else if (num_fields == 4) {
                 pointcloud.SetPoints(
-                        core::Tensor({num_points, 3}, core::Dtype::Float64));
+                        core::Tensor({num_points, 3}, core::kFloat64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
                 pointcloud.SetPointAttr(
                         "intensities",
-                        core::Tensor({num_points, 1}, core::Dtype::Float64));
+                        core::Tensor({num_points, 1}, core::kFloat64));
                 intensities_ptr = pointcloud.GetPointAttr("intensities")
                                           .GetDataPtr<double>();
             }
             // X Y Z.
             else if (num_fields == 3) {
                 pointcloud.SetPoints(
-                        core::Tensor({num_points, 3}, core::Dtype::Float64));
+                        core::Tensor({num_points, 3}, core::kFloat64));
                 points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
             } else {
                 utility::LogWarning("Read PTS failed: unknown pts format: {}",
@@ -195,15 +195,15 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
 core::Tensor ConvertColorTensorToUint8(const core::Tensor &color_in) {
     core::Tensor color_values;
-    if (color_in.GetDtype() == core::Dtype::Float32 ||
-        color_in.GetDtype() == core::Dtype::Float64) {
+    if (color_in.GetDtype() == core::kFloat32 ||
+        color_in.GetDtype() == core::kFloat64) {
         color_values = color_in.Clip(0, 1).Mul(255).Round();
-    } else if (color_in.GetDtype() == core::Dtype::Bool) {
-        color_values = color_in.To(core::Dtype::UInt8) * 255;
+    } else if (color_in.GetDtype() == core::kBool) {
+        color_values = color_in.To(core::kUInt8) * 255;
     } else {
         color_values = color_in;
     }
-    return color_values.To(core::Dtype::UInt8);
+    return color_values.To(core::kUInt8);
 }
 
 bool WritePointCloudToPTS(const std::string &filename,
@@ -252,7 +252,7 @@ bool WritePointCloudToPTS(const std::string &filename,
 
         if (num_points > 0) {
             points_ptr = pointcloud.GetPoints()
-                                 .To(core::Dtype::Float64)
+                                 .To(core::kFloat64)
                                  .GetDataPtr<double>();
         }
 
@@ -262,7 +262,7 @@ bool WritePointCloudToPTS(const std::string &filename,
             colors = ConvertColorTensorToUint8(pointcloud.GetPointColors());
             colors_ptr = colors.GetDataPtr<uint8_t>();
             intensities_ptr = pointcloud.GetPointAttr("intensities")
-                                      .To(core::Dtype::Float64)
+                                      .To(core::kFloat64)
                                       .GetDataPtr<double>();
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(),
@@ -305,7 +305,7 @@ bool WritePointCloudToPTS(const std::string &filename,
         // X Y Z I.
         else if (pointcloud.HasPointAttr("intensities")) {
             intensities_ptr = pointcloud.GetPointAttr("intensities")
-                                      .To(core::Dtype::Float64)
+                                      .To(core::kFloat64)
                                       .GetDataPtr<double>();
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\r\n",

@@ -87,7 +87,7 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
             dst_depth_processed.CreateVertexMap(intrinsic_t, NAN);
 
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0"));
     for (int i = 0; i < 20; ++i) {
         auto result = t::pipelines::odometry::ComputeOdometryResultPointToPlane(
                 src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
@@ -117,7 +117,7 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
             host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
-            trans.To(host, core::Dtype::Float64).Inverse());
+            trans.To(host, core::kFloat64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 3e-4);
 }
@@ -155,7 +155,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
             src, dst, intrinsic_t, trans, depth_scale, depth_max,
             std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
@@ -184,7 +184,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
             host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
-            result.transformation_.To(host, core::Dtype::Float64).Inverse());
+            result.transformation_.To(host, core::kFloat64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
 }
@@ -222,7 +222,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
             src, dst, intrinsic_t, trans, depth_scale, depth_max,
             std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
@@ -251,7 +251,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
             host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
-            result.transformation_.To(host, core::Dtype::Float64).Inverse());
+            result.transformation_.To(host, core::kFloat64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
 }
@@ -289,7 +289,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
             src, dst, intrinsic_t, trans, depth_scale, depth_max,
             std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
@@ -318,7 +318,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
             host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
-            result.transformation_.To(host, core::Dtype::Float64).Inverse());
+            result.transformation_.To(host, core::kFloat64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
 }

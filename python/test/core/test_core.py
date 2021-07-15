@@ -38,48 +38,48 @@ from open3d_test import list_devices
 
 def list_dtypes():
     return [
-        o3c.Dtype.Float32,
-        o3c.Dtype.Float64,
-        o3c.Dtype.Int8,
-        o3c.Dtype.Int16,
-        o3c.Dtype.Int32,
-        o3c.Dtype.Int64,
-        o3c.Dtype.UInt8,
-        o3c.Dtype.UInt16,
-        o3c.Dtype.UInt32,
-        o3c.Dtype.UInt64,
-        o3c.Dtype.Bool,
+        o3c.float32,
+        o3c.float64,
+        o3c.int8,
+        o3c.int16,
+        o3c.int32,
+        o3c.int64,
+        o3c.uint8,
+        o3c.uint16,
+        o3c.uint32,
+        o3c.uint64,
+        o3c.bool,
     ]
 
 
 def list_non_bool_dtypes():
     return [
-        o3c.Dtype.Float32,
-        o3c.Dtype.Float64,
-        o3c.Dtype.Int8,
-        o3c.Dtype.Int16,
-        o3c.Dtype.Int32,
-        o3c.Dtype.Int64,
-        o3c.Dtype.UInt8,
-        o3c.Dtype.UInt16,
-        o3c.Dtype.UInt32,
-        o3c.Dtype.UInt64,
+        o3c.float32,
+        o3c.float64,
+        o3c.int8,
+        o3c.int16,
+        o3c.int32,
+        o3c.int64,
+        o3c.uint8,
+        o3c.uint16,
+        o3c.uint32,
+        o3c.uint64,
     ]
 
 
 def to_numpy_dtype(dtype: o3c.Dtype):
     conversions = {
-        o3c.Dtype.Float32: np.float32,
-        o3c.Dtype.Float64: np.float64,
-        o3c.Dtype.Int8: np.int8,
-        o3c.Dtype.Int16: np.int16,
-        o3c.Dtype.Int32: np.int32,
-        o3c.Dtype.Int64: np.int64,
-        o3c.Dtype.UInt8: np.uint8,
-        o3c.Dtype.UInt16: np.uint16,
-        o3c.Dtype.UInt32: np.uint32,
-        o3c.Dtype.UInt64: np.uint64,
-        o3c.Dtype.Bool: np.bool8,  # np.bool deprecated
+        o3c.float32: np.float32,
+        o3c.float64: np.float64,
+        o3c.int8: np.int8,
+        o3c.int16: np.int16,
+        o3c.int32: np.int32,
+        o3c.int64: np.int64,
+        o3c.uint8: np.uint8,
+        o3c.uint16: np.uint16,
+        o3c.uint32: np.uint32,
+        o3c.uint64: np.uint64,
+        o3c.bool: np.bool8,  # np.bool deprecated
     }
     return conversions[dtype]
 
@@ -102,10 +102,10 @@ def test_creation(dtype, device):
     np.testing.assert_equal(t.cpu().numpy(), np.ones((2, 3), dtype=np.float32))
 
     # Automatic casting of dtype.
-    t = o3c.Tensor.full((2,), False, o3c.Dtype.Float32, device=device)
+    t = o3c.Tensor.full((2,), False, o3c.float32, device=device)
     np.testing.assert_equal(t.cpu().numpy(),
                             np.full((2,), False, dtype=np.float32))
-    t = o3c.Tensor.full((2,), 3.5, o3c.Dtype.UInt8, device=device)
+    t = o3c.Tensor.full((2,), 3.5, o3c.uint8, device=device)
     np.testing.assert_equal(t.cpu().numpy(), np.full((2,), 3.5, dtype=np.uint8))
 
 
@@ -120,7 +120,7 @@ def test_creation_special_shapes(shape, dtype, device):
 
 
 def test_dtype():
-    dtype = o3c.Dtype.Int32
+    dtype = o3c.int32
     assert dtype.byte_size() == 4
     assert "{}".format(dtype) == "Int32"
 
@@ -214,26 +214,26 @@ def test_tensor_constructor(dtype, device):
     # Automatic casting
     np_t_double = np.array([[0., 1.5, 2.], [3., 4., 5.]])
     np_t_int = np.array([[0, 1, 2], [3, 4, 5]])
-    o3_t = o3c.Tensor(np_t_double, o3c.Dtype.Int32, device)
+    o3_t = o3c.Tensor(np_t_double, o3c.int32, device)
     np.testing.assert_equal(np_t_int, o3_t.cpu().numpy())
 
     # Special strides
     np_t = np.random.randint(10, size=(10, 10))[1:10:2, 1:10:3].T
-    o3_t = o3c.Tensor(np_t, o3c.Dtype.Int32, device)
+    o3_t = o3c.Tensor(np_t, o3c.int32, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Boolean
     np_t = np.array([True, False, True], dtype=np.bool8)
-    o3_t = o3c.Tensor([True, False, True], o3c.Dtype.Bool, device)
+    o3_t = o3c.Tensor([True, False, True], o3c.bool, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
-    o3_t = o3c.Tensor(np_t, o3c.Dtype.Bool, device)
+    o3_t = o3c.Tensor(np_t, o3c.bool, device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Scalar Boolean
     np_t = np.array(True)
     o3_t = o3c.Tensor(True, dtype=None, device=device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
-    o3_t = o3c.Tensor(True, dtype=o3c.Dtype.Bool, device=device)
+    o3_t = o3c.Tensor(True, dtype=o3c.bool, device=device)
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
@@ -263,25 +263,25 @@ def test_arange(device):
     # Type inference: int -> int.
     o3_t = o3c.Tensor.arange(0, 5, dtype=None, device=device)
     np_t = np.arange(0, 5)
-    assert o3_t.dtype == o3c.Dtype.Int64
+    assert o3_t.dtype == o3c.int64
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Type inference: int, float -> float.
     o3_t = o3c.Tensor.arange(0, 5.0, dtype=None, device=device)
     np_t = np.arange(0, 5)
-    assert o3_t.dtype == o3c.Dtype.Float64
+    assert o3_t.dtype == o3c.float64
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Type inference: float, float -> float.
     o3_t = o3c.Tensor.arange(0.0, 5.0, dtype=None, device=device)
     np_t = np.arange(0, 5)
-    assert o3_t.dtype == o3c.Dtype.Float64
+    assert o3_t.dtype == o3c.float64
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
     # Type inference: explicit type.
-    o3_t = o3c.Tensor.arange(0.0, 5.0, dtype=o3c.Dtype.Int64, device=device)
+    o3_t = o3c.Tensor.arange(0.0, 5.0, dtype=o3c.int64, device=device)
     np_t = np.arange(0, 5)
-    assert o3_t.dtype == o3c.Dtype.Int64
+    assert o3_t.dtype == o3c.int64
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
@@ -369,11 +369,11 @@ def test_binary_ew_ops(dtype, device):
 def test_to(device):
     a = o3c.Tensor(np.array([0.1, 1.2, 2.3, 3.4, 4.5, 5.6]).astype(np.float32),
                    device=device)
-    b = a.to(o3c.Dtype.Int32)
+    b = a.to(o3c.int32)
     np.testing.assert_equal(b.cpu().numpy(), np.array([0, 1, 2, 3, 4, 5]))
     assert b.shape == o3c.SizeVector([6])
     assert b.strides == o3c.SizeVector([1])
-    assert b.dtype == o3c.Dtype.Int32
+    assert b.dtype == o3c.int32
     assert b.device == a.device
 
 
@@ -542,7 +542,7 @@ def test_setitem(device):
 
     # Scalar boolean set item
     np_t = np.eye(4, dtype=np.bool8)
-    o3_t = o3c.Tensor.eye(4, dtype=o3c.Dtype.Bool)
+    o3_t = o3c.Tensor.eye(4, dtype=o3c.bool)
     np_t[2, 2] = False
     o3_t[2, 2] = False
     np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
@@ -874,7 +874,7 @@ def test_boolean_advanced_indexing(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_scalar_op(device):
     # +
-    a = o3c.Tensor.ones((2, 3), o3c.Dtype.Float32, device=device)
+    a = o3c.Tensor.ones((2, 3), o3c.float32, device=device)
     b = a.add(1)
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 2))
     b = a + 1
@@ -885,7 +885,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 2))
 
     # +=
-    a = o3c.Tensor.ones((2, 3), o3c.Dtype.Float32, device=device)
+    a = o3c.Tensor.ones((2, 3), o3c.float32, device=device)
     a.add_(1)
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 2))
     a += 1
@@ -894,7 +894,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 4))
 
     # -
-    a = o3c.Tensor.ones((2, 3), o3c.Dtype.Float32, device=device)
+    a = o3c.Tensor.ones((2, 3), o3c.float32, device=device)
     b = a.sub(1)
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 0))
     b = a - 1
@@ -905,7 +905,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 0))
 
     # -=
-    a = o3c.Tensor.ones((2, 3), o3c.Dtype.Float32, device=device)
+    a = o3c.Tensor.ones((2, 3), o3c.float32, device=device)
     a.sub_(1)
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 0))
     a -= 1
@@ -914,7 +914,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), -2))
 
     # *
-    a = o3c.Tensor.full((2, 3), 2, o3c.Dtype.Float32, device=device)
+    a = o3c.Tensor.full((2, 3), 2, o3c.float32, device=device)
     b = a.mul(10)
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 20))
     b = a * 10
@@ -925,7 +925,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 2))
 
     # *=
-    a = o3c.Tensor.full((2, 3), 2, o3c.Dtype.Float32, device=device)
+    a = o3c.Tensor.full((2, 3), 2, o3c.float32, device=device)
     a.mul_(10)
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 20))
     a *= 10
@@ -934,7 +934,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 200))
 
     # /
-    a = o3c.Tensor.full((2, 3), 20, o3c.Dtype.Float32, device=device)
+    a = o3c.Tensor.full((2, 3), 20, o3c.float32, device=device)
     b = a.div(2)
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 10))
     b = a / 2
@@ -949,7 +949,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(b.cpu().numpy(), np.full((2, 3), 20))
 
     # /=
-    a = o3c.Tensor.full((2, 3), 20, o3c.Dtype.Float32, device=device)
+    a = o3c.Tensor.full((2, 3), 20, o3c.float32, device=device)
     a.div_(2)
     np.testing.assert_equal(a.cpu().numpy(), np.full((2, 3), 10))
     a /= 2
@@ -1032,7 +1032,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([True, False]))
 
     # gt
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
     a = o3c.Tensor([-1, 0, 1], dtype=dtype, device=device)
     np.testing.assert_equal((a.gt(0)).cpu().numpy(),
                             np.array([False, False, True]))
@@ -1045,7 +1045,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([False, False, True]))
 
     # lt
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
     a = o3c.Tensor([-1, 0, 1], dtype=dtype, device=device)
     np.testing.assert_equal((a.lt(0)).cpu().numpy(),
                             np.array([True, False, False]))
@@ -1058,7 +1058,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([True, False, False]))
 
     # ge
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
     a = o3c.Tensor([-1, 0, 1], dtype=dtype, device=device)
     np.testing.assert_equal((a.ge(0)).cpu().numpy(),
                             np.array([False, True, True]))
@@ -1071,7 +1071,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([False, True, True]))
 
     # le
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
     a = o3c.Tensor([-1, 0, 1], dtype=dtype, device=device)
     np.testing.assert_equal((a.le(0)).cpu().numpy(),
                             np.array([True, True, False]))
@@ -1084,7 +1084,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([True, True, False]))
 
     # eq
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
     a = o3c.Tensor([-1, 0, 1], dtype=dtype, device=device)
     np.testing.assert_equal((a.eq(0)).cpu().numpy(),
                             np.array([False, True, False]))
@@ -1097,7 +1097,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([False, True, False]))
 
     # ne
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
     a = o3c.Tensor([-1, 0, 1], dtype=dtype, device=device)
     np.testing.assert_equal((a.ne(0)).cpu().numpy(),
                             np.array([True, False, True]))
@@ -1110,7 +1110,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([True, False, True]))
 
     # clip
-    dtype = o3c.Dtype.Int64
+    dtype = o3c.int64
     a = o3c.Tensor([2, -1, 1], dtype=dtype, device=device)
     np.testing.assert_equal(a.clip(0, 1).cpu().numpy(), np.array([1, 0, 1]))
     np.testing.assert_equal(a.clip(0.5, 1.2).cpu().numpy(), np.array([1, 0, 1]))
@@ -1123,19 +1123,15 @@ def test_scalar_op(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_all_any(device):
-    a = o3c.Tensor([False, True, True, True],
-                   dtype=o3c.Dtype.Bool,
-                   device=device)
+    a = o3c.Tensor([False, True, True, True], dtype=o3c.bool, device=device)
     assert not a.all()
     assert a.any()
 
-    a = o3c.Tensor([True, True, True, True],
-                   dtype=o3c.Dtype.Bool,
-                   device=device)
+    a = o3c.Tensor([True, True, True, True], dtype=o3c.bool, device=device)
     assert a.all()
 
     # Empty
-    a = o3c.Tensor([], dtype=o3c.Dtype.Bool, device=device)
+    a = o3c.Tensor([], dtype=o3c.bool, device=device)
     assert a.all()
     assert not a.any()
 
@@ -1167,7 +1163,7 @@ def test_allclose_isclose(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_issame(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
     a = o3c.Tensor.ones((2, 3), dtype, device=device)
     b = o3c.Tensor.ones((2, 3), dtype, device=device)
     assert a.allclose(b)
@@ -1185,23 +1181,23 @@ def test_issame(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_item(device):
-    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.Dtype.Float32, device=device) * 1.5
+    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.float32, device=device) * 1.5
     assert o3_t[0, 0].item() == 1.5
     assert isinstance(o3_t[0, 0].item(), float)
 
-    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.Dtype.Float64, device=device) * 1.5
+    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.float64, device=device) * 1.5
     assert o3_t[0, 0].item() == 1.5
     assert isinstance(o3_t[0, 0].item(), float)
 
-    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.Dtype.Int32, device=device) * 1.5
+    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.int32, device=device) * 1.5
     assert o3_t[0, 0].item() == 1
     assert isinstance(o3_t[0, 0].item(), int)
 
-    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.Dtype.Int64, device=device) * 1.5
+    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.int64, device=device) * 1.5
     assert o3_t[0, 0].item() == 1
     assert isinstance(o3_t[0, 0].item(), int)
 
-    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.Dtype.Bool, device=device)
+    o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.bool, device=device)
     assert o3_t[0, 0].item() == True
     assert isinstance(o3_t[0, 0].item(), bool)
 
@@ -1212,12 +1208,11 @@ def test_save_load(device):
         file_name = f"{temp_dir}/tensor.npy"
 
         o3_tensors = [
-            o3c.Tensor([[1, 2], [3, 4]], dtype=o3c.Dtype.Float32,
-                       device=device),
-            o3c.Tensor(3.14, dtype=o3c.Dtype.Float32, device=device),
-            o3c.Tensor.ones((0,), dtype=o3c.Dtype.Float32, device=device),
-            o3c.Tensor.ones((0, 0), dtype=o3c.Dtype.Float32, device=device),
-            o3c.Tensor.ones((0, 1, 0), dtype=o3c.Dtype.Float32, device=device)
+            o3c.Tensor([[1, 2], [3, 4]], dtype=o3c.float32, device=device),
+            o3c.Tensor(3.14, dtype=o3c.float32, device=device),
+            o3c.Tensor.ones((0,), dtype=o3c.float32, device=device),
+            o3c.Tensor.ones((0, 0), dtype=o3c.float32, device=device),
+            o3c.Tensor.ones((0, 1, 0), dtype=o3c.float32, device=device)
         ]
         np_tensors = [
             np.array([[1, 2], [3, 4]], dtype=np.float32),

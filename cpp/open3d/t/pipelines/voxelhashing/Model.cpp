@@ -45,9 +45,9 @@ Model::Model(float voxel_size,
              int est_block_count,
              const core::Tensor& T_init,
              const core::Device& device)
-    : voxel_grid_({{"tsdf", core::Dtype::Float32},
-                   {"weight", core::Dtype::UInt16},
-                   {"color", core::Dtype::UInt16}},
+    : voxel_grid_({{"tsdf", core::kFloat32},
+                   {"weight", core::kUInt16},
+                   {"color", core::kUInt16}},
                   voxel_size,
                   sdf_trunc,
                   block_resolution,
@@ -83,7 +83,7 @@ odometry::OdometryResult Model::TrackFrameToModel(const Frame& input_frame,
                                                   float depth_max,
                                                   float depth_diff) {
     const static core::Tensor identity =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0"));
 
     // TODO: more customized / optimized
     return odometry::RGBDOdometryMultiScale(

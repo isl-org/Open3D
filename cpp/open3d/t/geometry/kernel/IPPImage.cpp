@@ -141,7 +141,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     // Create mask.
     core::Tensor mask =
             core::Tensor::Ones(core::SizeVector{kernel_size, kernel_size, 1},
-                               core::Dtype::UInt8, src_im.GetDevice());
+                               core::kUInt8, src_im.GetDevice());
 
     auto dtype = src_im.GetDtype();
     // Create IPP wrappers for all Open3D tensors
@@ -191,9 +191,9 @@ void Filter(const open3d::core::Tensor &src_im,
             dst_im.GetStride(0) * dtype.ByteSize());
     ::ipp::IwiImage ipp_kernel(
             ::ipp::IwiSize(kernel.GetShape(1), kernel.GetShape(0)),
-            ToIppDataType(core::Dtype::Float32), 1 /* channels */,
+            ToIppDataType(core::kFloat32), 1 /* channels */,
             0 /* border buffer size */, const_cast<void *>(kernel.GetDataPtr()),
-            kernel.GetStride(0) * core::Dtype::Float32.ByteSize());
+            kernel.GetStride(0) * core::kFloat32.ByteSize());
 
     try {
         ::ipp::iwiFilter(ipp_src_im, ipp_dst_im, ipp_kernel);

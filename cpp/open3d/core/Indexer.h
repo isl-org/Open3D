@@ -212,7 +212,7 @@ enum class DtypePolicy {
 /// ```cpp
 /// // Create a float Tensor and set all elements to 100.
 /// std::vector<float> vals{0, 1, 2, 3, 4};
-/// Tensor a(vals, SizeVector{5}, Dtype::Float32);
+/// Tensor a(vals, SizeVector{5}, core::kFloat32);
 /// TensorIterator iter(a);
 /// for (int64_t i = 0; i < iter.NumWorkloads(); ++i) {
 ///     *static_cast<float*>(iter.GetPtr(i)) = 100.f;

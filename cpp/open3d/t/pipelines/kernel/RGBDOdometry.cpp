@@ -50,9 +50,9 @@ void ComputeOdometryResultPointToPlane(
 
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+            intrinsics.To(host, core::kFloat64).Contiguous();
     core::Tensor trans_d =
-            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+            init_source_to_target.To(host, core::kFloat64).Contiguous();
 
     if (device.GetType() == core::Device::DeviceType::CPU) {
         ComputeOdometryResultPointToPlaneCPU(
@@ -84,9 +84,9 @@ void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
                                     const float intensity_huber_delta) {
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+            intrinsics.To(host, core::kFloat64).Contiguous();
     core::Tensor trans_d =
-            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+            init_source_to_target.To(host, core::kFloat64).Contiguous();
 
     core::Device device = source_vertex_map.GetDevice();
     if (device.GetType() == core::Device::DeviceType::CPU) {
@@ -125,9 +125,9 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
                                  const float intensity_huber_delta) {
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+            intrinsics.To(host, core::kFloat64).Contiguous();
     core::Tensor trans_d =
-            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+            init_source_to_target.To(host, core::kFloat64).Contiguous();
 
     core::Device device = source_vertex_map.GetDevice();
     if (device.GetType() == core::Device::DeviceType::CPU) {

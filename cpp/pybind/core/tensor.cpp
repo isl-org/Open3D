@@ -241,7 +241,7 @@ static void BindTensorCreation(py::module& m,
                        utility::optional<Device> device) {
                 return cpp_func(
                         shape,
-                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        dtype.has_value() ? dtype.value() : core::kFloat32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create Tensor with a given shape.", "shape"_a,
@@ -252,7 +252,7 @@ static void BindTensorCreation(py::module& m,
                        utility::optional<Device> device) {
                 return cpp_func(
                         PyTupleToSizeVector(shape),
-                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        dtype.has_value() ? dtype.value() : core::kFloat32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create Tensor with a given shape."
@@ -264,7 +264,7 @@ static void BindTensorCreation(py::module& m,
                        utility::optional<Device> device) {
                 return cpp_func(
                         PyListToSizeVector(shape),
-                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        dtype.has_value() ? dtype.value() : core::kFloat32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create Tensor with a given shape."
@@ -283,7 +283,7 @@ static void BindTensorFullCreation(py::module& m, py::class_<Tensor>& tensor) {
                utility::optional<Device> device) {
                 return Tensor::Full<T>(
                         shape, fill_value,
-                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        dtype.has_value() ? dtype.value() : core::kFloat32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
@@ -295,7 +295,7 @@ static void BindTensorFullCreation(py::module& m, py::class_<Tensor>& tensor) {
                utility::optional<Device> device) {
                 return Tensor::Full<T>(
                         PyTupleToSizeVector(shape), fill_value,
-                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        dtype.has_value() ? dtype.value() : core::kFloat32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
@@ -307,7 +307,7 @@ static void BindTensorFullCreation(py::module& m, py::class_<Tensor>& tensor) {
                utility::optional<Device> device) {
                 return Tensor::Full<T>(
                         PyListToSizeVector(shape), fill_value,
-                        dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        dtype.has_value() ? dtype.value() : core::kFloat32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
@@ -406,7 +406,7 @@ void pybind_core_tensor(py::module& m) {
             [](int64_t n, utility::optional<Dtype> dtype,
                utility::optional<Device> device) {
                 return Tensor::Eye(
-                        n, dtype.has_value() ? dtype.value() : Dtype::Float32,
+                        n, dtype.has_value() ? dtype.value() : core::kFloat32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create an identity matrix of size n x n.", "n"_a,
@@ -420,7 +420,7 @@ void pybind_core_tensor(py::module& m) {
                utility::optional<Device> device) {
                 return Tensor::Arange(
                         0, stop, 1,
-                        dtype.has_value() ? dtype.value() : Dtype::Int64,
+                        dtype.has_value() ? dtype.value() : core::kInt64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create a 1D tensor with evenly spaced values in the given "
@@ -434,7 +434,7 @@ void pybind_core_tensor(py::module& m) {
                 return Tensor::Arange(
                         start.has_value() ? start.value() : 0, stop,
                         step.has_value() ? step.value() : 1,
-                        dtype.has_value() ? dtype.value() : Dtype::Int64,
+                        dtype.has_value() ? dtype.value() : core::kInt64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create a 1D tensor with evenly spaced values in the given "
@@ -449,7 +449,7 @@ void pybind_core_tensor(py::module& m) {
                utility::optional<Device> device) {
                 return Tensor::Arange(
                         0.0, stop, 1.0,
-                        dtype.has_value() ? dtype.value() : Dtype::Float64,
+                        dtype.has_value() ? dtype.value() : core::kFloat64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create a 1D tensor with evenly spaced values in the given "
@@ -463,7 +463,7 @@ void pybind_core_tensor(py::module& m) {
                 return Tensor::Arange(
                         start.has_value() ? start.value() : 0.0, stop,
                         step.has_value() ? step.value() : 1.0,
-                        dtype.has_value() ? dtype.value() : Dtype::Float64,
+                        dtype.has_value() ? dtype.value() : core::kFloat64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
             "Create a 1D tensor with evenly spaced values in the given "
@@ -925,27 +925,27 @@ Returns:
             "item",
             [](const Tensor& tensor) -> py::object {
                 Dtype dtype = tensor.GetDtype();
-                if (dtype == Dtype::Float32)
+                if (dtype == core::kFloat32)
                     return py::float_(tensor.Item<float>());
-                if (dtype == Dtype::Float64)
+                if (dtype == core::kFloat64)
                     return py::float_(tensor.Item<double>());
-                if (dtype == Dtype::Int8)
+                if (dtype == core::kInt8)
                     return py::int_(tensor.Item<int8_t>());
-                if (dtype == Dtype::Int16)
+                if (dtype == core::kInt16)
                     return py::int_(tensor.Item<int16_t>());
-                if (dtype == Dtype::Int32)
+                if (dtype == core::kInt32)
                     return py::int_(tensor.Item<int32_t>());
-                if (dtype == Dtype::Int64)
+                if (dtype == core::kInt64)
                     return py::int_(tensor.Item<int64_t>());
-                if (dtype == Dtype::UInt8)
+                if (dtype == core::kUInt8)
                     return py::int_(tensor.Item<uint8_t>());
-                if (dtype == Dtype::UInt16)
+                if (dtype == core::kUInt16)
                     return py::int_(tensor.Item<uint16_t>());
-                if (dtype == Dtype::UInt32)
+                if (dtype == core::kUInt32)
                     return py::int_(tensor.Item<uint32_t>());
-                if (dtype == Dtype::UInt64)
+                if (dtype == core::kUInt64)
                     return py::int_(tensor.Item<uint64_t>());
-                if (dtype == Dtype::Bool) return py::bool_(tensor.Item<bool>());
+                if (dtype == core::kBool) return py::bool_(tensor.Item<bool>());
                 utility::LogError(
                         "Tensor.item(): unsupported dtype to convert to "
                         "python.");

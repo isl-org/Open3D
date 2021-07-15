@@ -146,8 +146,7 @@ void ComputeOdometryResultPointToPlaneCUDA(
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    core::Tensor global_sum =
-            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    core::Tensor global_sum = core::Tensor::Zeros({29}, core::kFloat32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
     const int kThreadSize = 16;
@@ -253,8 +252,7 @@ void ComputeOdometryResultIntensityCUDA(
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    core::Tensor global_sum =
-            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    core::Tensor global_sum = core::Tensor::Zeros({29}, core::kFloat32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
     const int kThreadSize = 16;
@@ -374,8 +372,7 @@ void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    core::Tensor global_sum =
-            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    core::Tensor global_sum = core::Tensor::Zeros({29}, core::kFloat32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
     const int kThreadSize = 16;

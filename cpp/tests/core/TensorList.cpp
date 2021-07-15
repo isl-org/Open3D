@@ -41,7 +41,7 @@ INSTANTIATE_TEST_SUITE_P(TensorList,
 
 TEST_P(TensorListPermuteDevices, EmptyConstructor) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     // TensorList allows 0-sized and scalar {} element_shape.
     for (const core::SizeVector& element_shape : std::vector<core::SizeVector>{
@@ -66,7 +66,7 @@ TEST_P(TensorListPermuteDevices, EmptyConstructor) {
 
 TEST_P(TensorListPermuteDevices, ConstructFromTensorVector) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     core::Tensor t0 = core::Tensor::Ones({2, 3}, dtype, device) * 0.;
     core::Tensor t1 = core::Tensor::Ones({2, 3}, dtype, device) * 1.;
@@ -96,14 +96,14 @@ TEST_P(TensorListPermuteDevices, ConstructFromTensorVector) {
     }
 
     // Shape mismatch.
-    core::Tensor t5 = core::Tensor::Ones({2, 3}, core::Dtype::Float32, device);
-    core::Tensor t6 = core::Tensor::Ones({2, 3}, core::Dtype::Float64, device);
+    core::Tensor t5 = core::Tensor::Ones({2, 3}, core::kFloat32, device);
+    core::Tensor t6 = core::Tensor::Ones({2, 3}, core::kFloat64, device);
     EXPECT_ANY_THROW(core::TensorList(std::vector<core::Tensor>({t5, t6})));
 }
 
 TEST_P(TensorListPermuteDevices, ConstructFromTensors) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     core::Tensor t0 = core::Tensor::Ones({2, 3}, dtype, device) * 0.;
     core::Tensor t1 = core::Tensor::Ones({2, 3}, dtype, device) * 1.;
@@ -138,14 +138,14 @@ TEST_P(TensorListPermuteDevices, ConstructFromTensors) {
     }
 
     // Shape mismatch.
-    core::Tensor t5 = core::Tensor::Ones({2, 3}, core::Dtype::Float32, device);
-    core::Tensor t6 = core::Tensor::Ones({2, 3}, core::Dtype::Float64, device);
+    core::Tensor t5 = core::Tensor::Ones({2, 3}, core::kFloat32, device);
+    core::Tensor t6 = core::Tensor::Ones({2, 3}, core::kFloat64, device);
     EXPECT_ANY_THROW(core::TensorList(std::vector<core::Tensor>({t5, t6})));
 }
 
 TEST_P(TensorListPermuteDevices, FromTensor) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Tensor t = core::Tensor::Ones({3, 4, 5}, dtype, device);
 
     // Copyied tensor.
@@ -167,7 +167,7 @@ TEST_P(TensorListPermuteDevices, FromTensor) {
 
 TEST_P(TensorListPermuteDevices, CopyConstructor) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Tensor t = core::Tensor::Ones({3, 4, 5}, dtype, device);
 
     core::TensorList tl = core::TensorList::FromTensor(t, false);
@@ -177,7 +177,7 @@ TEST_P(TensorListPermuteDevices, CopyConstructor) {
 
 TEST_P(TensorListPermuteDevices, MoveConstructor) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Tensor t = core::Tensor::Ones({3, 4, 5}, dtype, device);
 
     auto create_tl = [&t]() {
@@ -189,7 +189,7 @@ TEST_P(TensorListPermuteDevices, MoveConstructor) {
 
 TEST_P(TensorListPermuteDevices, CopyAssignmentOperator) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Tensor t = core::Tensor::Ones({3, 4, 5}, dtype, device);
 
     // Initially tl_a and tl_b does not share the same underlying memory.
@@ -212,7 +212,7 @@ TEST_P(TensorListPermuteDevices, CopyAssignmentOperator) {
 
 TEST_P(TensorListPermuteDevices, MoveAssignmentOperator) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Tensor t_a = core::Tensor::Ones({3, 4, 5}, dtype, device);
     core::Tensor t_b = core::Tensor::Ones({3, 4, 5}, dtype, device);
 
@@ -227,7 +227,7 @@ TEST_P(TensorListPermuteDevices, MoveAssignmentOperator) {
 
 TEST_P(TensorListPermuteDevices, CopyFrom) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Tensor t_a = core::Tensor::Ones({10, 4, 5}, dtype, device);
     core::Tensor t_b = core::Tensor::Ones({0, 2, 3}, dtype, device);
 
@@ -253,7 +253,7 @@ TEST_P(TensorListPermuteDevices, CopyFrom) {
 
 TEST_P(TensorListPermuteDevices, CopyBecomesResizable) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Tensor t_a = core::Tensor::Ones({10, 4, 5}, dtype, device);
     core::Tensor t_b = core::Tensor::Ones({0, 2, 3}, dtype, device);
     core::Tensor t = core::Tensor::Ones({4, 5}, dtype, device);
@@ -274,7 +274,7 @@ TEST_P(TensorListPermuteDevices, CopyBecomesResizable) {
 
 TEST_P(TensorListPermuteDevices, Resize) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Tensor t = core::Tensor::Ones({3, 4, 5}, dtype, device);
 
     core::TensorList tl = core::TensorList::FromTensor(t);
@@ -307,14 +307,14 @@ TEST_P(TensorListPermuteDevices, Resize) {
 
 TEST_P(TensorListPermuteDevices, PushBack) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     core::Tensor t0 = core::Tensor::Ones({2, 3}, dtype, device) * 0;
     core::Tensor t1 = core::Tensor::Ones({2, 3}, dtype, device) * 1;
     core::Tensor t2 = core::Tensor::Ones({2, 3}, dtype, device) * 2;
 
     // Start from emtpy tensor list
-    core::TensorList tl({2, 3}, core::Dtype::Float32, device);
+    core::TensorList tl({2, 3}, core::kFloat32, device);
     EXPECT_EQ(tl.GetSize(), 0);
     EXPECT_EQ(tl.GetReservedSize(), 1);
 
@@ -344,7 +344,7 @@ TEST_P(TensorListPermuteDevices, PushBack) {
 
 TEST_P(TensorListPermuteDevices, Extend) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     core::Tensor t0 = core::Tensor::Zeros({1, 2, 3}, dtype, device);
     core::Tensor t1 = core::Tensor::Ones({3, 2, 3}, dtype, device);
@@ -370,7 +370,7 @@ TEST_P(TensorListPermuteDevices, Extend) {
 
 TEST_P(TensorListPermuteDevices, Concatenate) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     core::Tensor t0 = core::Tensor::Zeros({1, 2, 3}, dtype, device);
     core::Tensor t1 = core::Tensor::Ones({3, 2, 3}, dtype, device);
@@ -395,7 +395,7 @@ TEST_P(TensorListPermuteDevices, Concatenate) {
 
 TEST_P(TensorListPermuteDevices, SquareBracketsOperator) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     core::Tensor t0 = core::Tensor::Ones({2, 3}, dtype, device) * 0;
     core::Tensor t1 = core::Tensor::Ones({2, 3}, dtype, device) * 1;
@@ -428,7 +428,7 @@ TEST_P(TensorListPermuteDevices, SquareBracketsOperator) {
 
 TEST_P(TensorListPermuteDevices, Clear) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     core::Tensor t = core::Tensor::Ones({10, 4, 5}, dtype, device);
     core::TensorList tl = core::TensorList::FromTensor(t);

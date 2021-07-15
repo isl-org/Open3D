@@ -60,9 +60,9 @@ void Unproject(const core::Tensor& depth,
 
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+            intrinsics.To(host, core::kFloat64).Contiguous();
     core::Tensor extrinsics_d =
-            extrinsics.To(host, core::Dtype::Float64).Contiguous();
+            extrinsics.To(host, core::kFloat64).Contiguous();
 
     if (device_type == core::Device::DeviceType::CPU) {
         UnprojectCPU(depth, image_colors, points, colors, intrinsics_d,

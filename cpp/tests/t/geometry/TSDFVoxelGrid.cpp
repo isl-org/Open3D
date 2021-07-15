@@ -57,9 +57,9 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
     for (auto backend : backends) {
         float voxel_size = 0.008;
-        t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
-                                               {"weight", core::Dtype::UInt16},
-                                               {"color", core::Dtype::UInt16}},
+        t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::kFloat32},
+                                               {"weight", core::kUInt16},
+                                               {"color", core::kUInt16}},
                                               voxel_size, 0.04f, 16, 1000,
                                               device, backend);
 
@@ -127,9 +127,9 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
 
     for (auto backend : backends) {
         float voxel_size = 3.0f / 512.0f;
-        t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
-                                               {"weight", core::Dtype::UInt16},
-                                               {"color", core::Dtype::UInt16}},
+        t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::kFloat32},
+                                               {"weight", core::kUInt16},
+                                               {"color", core::kUInt16}},
                                               voxel_size, 0.04f, 16, 1000,
                                               device, backend);
 
@@ -212,7 +212,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
                               vertex_map_gt)
                                      .Abs()
                                      .Ge(1e-5))
-                                    .To(core::Dtype::Int64)
+                                    .To(core::kInt64)
                                     .Sum({0, 1, 2})
                                     .Item<int64_t>();
                     EXPECT_LE(

@@ -104,9 +104,9 @@ static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
                   "Only supports double and int (Vector3d and Vector3i).");
     core::Dtype dtype;
     if (std::is_same<T, double>::value) {
-        dtype = core::Dtype::Float64;
+        dtype = core::kFloat64;
     } else if (std::is_same<T, int>::value) {
-        dtype = core::Dtype::Int32;
+        dtype = core::kInt32;
     }
     if (dtype.ByteSize() * 3 != sizeof(Eigen::Matrix<T, 3, 1>)) {
         utility::LogError("Internal error: dtype size mismatch {} != {}.",

@@ -44,8 +44,8 @@ ControlGrid::ControlGrid(float grid_size,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
-            grid_count, core::Dtype::Int32, core::Dtype::Float32,
-            core::SizeVector{3}, core::SizeVector{3}, device);
+            grid_count, core::kInt32, core::kFloat32, core::SizeVector{3},
+            core::SizeVector{3}, device);
 }
 
 ControlGrid::ControlGrid(float grid_size,
@@ -54,7 +54,7 @@ ControlGrid::ControlGrid(float grid_size,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
-            2 * keys.GetLength(), core::Dtype::Int32, core::Dtype::Float32,
+            2 * keys.GetLength(), core::kInt32, core::kFloat32,
             core::SizeVector{3}, core::SizeVector{3}, device);
 
     core::Tensor addrs, masks;
@@ -67,27 +67,27 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
 
     // Coordinate in the grid unit.
     core::Tensor vals = (pts / grid_size_).Floor();
-    core::Tensor keys = vals.To(core::Dtype::Int32);
+    core::Tensor keys = vals.To(core::kInt32);
 
     // Prepare for insertion with 8 neighbors
-    core::Tensor keys_nb({8, n, 3}, core::Dtype::Int32, device_);
-    core::Tensor vals_nb({8, n, 3}, core::Dtype::Float32, device_);
+    core::Tensor keys_nb({8, n, 3}, core::kInt32, device_);
+    core::Tensor vals_nb({8, n, 3}, core::kFloat32, device_);
     for (int nb = 0; nb < 8; ++nb) {
         int x_sel = (nb & 4) >> 2;
         int y_sel = (nb & 2) >> 1;
         int z_sel = (nb & 1);
 
         core::Tensor dt = core::Tensor(std::vector<int>{x_sel, y_sel, z_sel},
-                                       {1, 3}, core::Dtype::Int32, device_);
+                                       {1, 3}, core::kInt32, device_);
         keys_nb[nb] = keys + dt;
-        vals_nb[nb] = vals + dt.To(core::Dtype::Float32);
+        vals_nb[nb] = vals + dt.To(core::kFloat32);
     }
     keys_nb = keys_nb.View({8 * n, 3});
 
     // Convert back to the meter unit.
     vals_nb = vals_nb.View({8 * n, 3}) * grid_size_;
 
-    core::Hashmap unique_hashmap(n, core::Dtype::Int32, core::Dtype::Int32,
+    core::Hashmap unique_hashmap(n, core::kInt32, core::kInt32,
                                  core::SizeVector{3}, core::SizeVector{1},
                                  device_);
 
@@ -107,7 +107,7 @@ void ControlGrid::Compactify() {
 
     // Select anchor point
     core::Tensor active_keys = ctr_hashmap_->GetKeyTensor().IndexGet(
-            {active_addrs.To(core::Dtype::Int64)});
+            {active_addrs.To(core::kInt64)});
 
     std::vector<Eigen::Vector3i> active_keys_vec =
             core::eigen_converter::TensorToEigenVector3iVector(active_keys);
@@ -135,19 +135,19 @@ ControlGrid::GetNeighborGridMap() {
     core::Tensor active_addrs;
     ctr_hashmap_->GetActiveIndices(active_addrs);
 
-    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+    core::Tensor active_indices = active_addrs.To(core::kInt64);
     core::Tensor active_keys =
             ctr_hashmap_->GetKeyTensor().IndexGet({active_indices});
 
     int64_t n = active_indices.GetLength();
-    core::Tensor keys_nb({6, n, 3}, core::Dtype::Int32, device_);
+    core::Tensor keys_nb({6, n, 3}, core::kInt32, device_);
 
     core::Tensor dx = core::Tensor(std::vector<int>{1, 0, 0}, {1, 3},
-                                   core::Dtype::Int32, device_);
+                                   core::kInt32, device_);
     core::Tensor dy = core::Tensor(std::vector<int>{0, 1, 0}, {1, 3},
-                                   core::Dtype::Int32, device_);
+                                   core::kInt32, device_);
     core::Tensor dz = core::Tensor(std::vector<int>{0, 0, 1}, {1, 3},
-                                   core::Dtype::Int32, device_);
+                                   core::kInt32, device_);
     keys_nb[0] = active_keys - dx;
     keys_nb[1] = active_keys + dx;
     keys_nb[2] = active_keys - dy;
@@ -189,10 +189,10 @@ geometry::PointCloud ControlGrid::Parameterize(
         residuals[axis].emplace_back(residual_axis);
     }
 
-    core::Tensor keys = pts_quantized_floor.To(core::Dtype::Int32);
-    core::Tensor keys_nb({8, n, 3}, core::Dtype::Int32, device_);
-    core::Tensor point_ratios_nb({8, n}, core::Dtype::Float32, device_);
-    core::Tensor normal_ratios_nb({8, n}, core::Dtype::Float32, device_);
+    core::Tensor keys = pts_quantized_floor.To(core::kInt32);
+    core::Tensor keys_nb({8, n, 3}, core::kInt32, device_);
+    core::Tensor point_ratios_nb({8, n}, core::kFloat32, device_);
+    core::Tensor normal_ratios_nb({8, n}, core::kFloat32, device_);
     for (int nb = 0; nb < 8; ++nb) {
         int x_sel = (nb & 4) >> 2;
         int y_sel = (nb & 2) >> 1;
@@ -203,7 +203,7 @@ geometry::PointCloud ControlGrid::Parameterize(
         float z_sign = z_sel * 2.0 - 1.0;
 
         core::Tensor dt = core::Tensor(std::vector<int>{x_sel, y_sel, z_sel},
-                                       {1, 3}, core::Dtype::Int32, device_);
+                                       {1, 3}, core::kInt32, device_);
         keys_nb[nb] = keys + dt;
         point_ratios_nb[nb] =
                 residuals[0][x_sel] * residuals[1][y_sel] * residuals[2][z_sel];
@@ -231,7 +231,7 @@ geometry::PointCloud ControlGrid::Parameterize(
     /// kernel. Now we simply discard them and only accepts points with all
     /// 8 neighbors in the control grid map.
     core::Tensor valid_mask =
-            masks_nb.View({8, n}).To(core::Dtype::Int64).Sum({0}).Eq(8);
+            masks_nb.View({8, n}).To(core::kInt64).Sum({0}).Eq(8);
 
     geometry::PointCloud pcd_with_params = pcd;
     pcd_with_params.SetPoints(pcd.GetPoints().IndexGet({valid_mask}));
@@ -269,7 +269,7 @@ geometry::PointCloud ControlGrid::Deform(const geometry::PointCloud& pcd) {
     // N x 8, we have ensured that every neighbor is valid through
     // grid.Parameterize
     core::Tensor nb_grid_indices =
-            pcd.GetPointAttr(kGrid8NbIndices).To(core::Dtype::Int64);
+            pcd.GetPointAttr(kGrid8NbIndices).To(core::kInt64);
     core::Tensor nb_grid_positions =
             grid_positions.IndexGet({nb_grid_indices.View({-1})})
                     .View({-1, 8, 3});

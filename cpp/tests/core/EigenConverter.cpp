@@ -46,8 +46,8 @@ TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
     core::Device cpu_device = core::Device("CPU:0");
 
     // Device transfer and dtype conversions are handled.
-    for (core::Dtype dtype : {core::Dtype::Float32, core::Dtype::Float64,
-                              core::Dtype::Int32, core::Dtype::Int64}) {
+    for (core::Dtype dtype :
+         {core::kFloat32, core::kFloat64, core::kInt32, core::kInt64}) {
         // Testing on shapes {i, j} : {0, 0}, {0, 1}, {1, 0}, {1, 1}.
         for (const auto& shape :
              std::vector<core::SizeVector>({{0, 0}, {0, 1}, {1, 0}, {1, 1}})) {
@@ -57,8 +57,8 @@ TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
                     core::eigen_converter::TensorToEigenMatrixXd(tensor_d);
             core::Tensor tensor_converted_d =
                     core::eigen_converter::EigenMatrixToTensor(eigen_d);
-            EXPECT_TRUE(tensor_converted_d.AllClose(core::Tensor::Ones(
-                    shape, core::Dtype::Float64, cpu_device)));
+            EXPECT_TRUE(tensor_converted_d.AllClose(
+                    core::Tensor::Ones(shape, core::kFloat64, cpu_device)));
 
             // TensorToEigenMatrixXf.
             core::Tensor tensor_f = core::Tensor::Ones(shape, dtype, device);
@@ -66,8 +66,8 @@ TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
                     core::eigen_converter::TensorToEigenMatrixXf(tensor_f);
             core::Tensor tensor_converted_f =
                     core::eigen_converter::EigenMatrixToTensor(eigen_f);
-            EXPECT_TRUE(tensor_converted_f.AllClose(core::Tensor::Ones(
-                    shape, core::Dtype::Float32, cpu_device)));
+            EXPECT_TRUE(tensor_converted_f.AllClose(
+                    core::Tensor::Ones(shape, core::kFloat32, cpu_device)));
 
             // TensorToEigenMatrixXi.
             core::Tensor tensor_i = core::Tensor::Ones(shape, dtype, device);
@@ -76,17 +76,17 @@ TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
             core::Tensor tensor_converted_i =
                     core::eigen_converter::EigenMatrixToTensor(eigen_i);
             EXPECT_TRUE(tensor_converted_i.AllClose(
-                    core::Tensor::Ones(shape, core::Dtype::Int32, cpu_device)));
+                    core::Tensor::Ones(shape, core::kInt32, cpu_device)));
         }
     }
 
     core::Tensor tensor =
-            core::Tensor::Full({5, 4}, 1.5, core::Dtype::Float32, device);
+            core::Tensor::Full({5, 4}, 1.5, core::kFloat32, device);
     auto eigen = core::eigen_converter::TensorToEigenMatrixXi(tensor);
     core::Tensor tensor_converted =
             core::eigen_converter::EigenMatrixToTensor(eigen);
     EXPECT_TRUE(tensor_converted.AllClose(
-            core::Tensor::Ones({5, 4}, core::Dtype::Int32, cpu_device)));
+            core::Tensor::Ones({5, 4}, core::kInt32, cpu_device)));
 }
 
 }  // namespace tests

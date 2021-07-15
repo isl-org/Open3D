@@ -356,7 +356,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     const size_t color_array_size = n_vertices * 3 * sizeof(float);
     if (geometry_.HasPointColors()) {
         float* color_array = static_cast<float*>(malloc(color_array_size));
-        if (geometry_.GetPointColors().GetDtype() == core::Dtype::UInt8) {
+        if (geometry_.GetPointColors().GetDtype() == core::kUInt8) {
             float* color_array_ptr = color_array;
             const uint8_t* color_uint8_array = static_cast<const uint8_t*>(
                     geometry_.GetPointColors().GetDataPtr());

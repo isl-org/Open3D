@@ -35,13 +35,13 @@ namespace geometry {
 /// TODO(wei): find a proper place for such functionalities
 inline core::Tensor InverseTransformation(const core::Tensor& T) {
     T.AssertShape({4, 4});
-    T.AssertDtype(core::Dtype::Float64);
+    T.AssertDtype(core::kFloat64);
     T.AssertDevice(core::Device("CPU:0"));
     if (!T.IsContiguous()) {
         utility::LogError("T is expected to be contiguous");
     }
 
-    core::Tensor Tinv({4, 4}, core::Dtype::Float64, core::Device("CPU:0"));
+    core::Tensor Tinv({4, 4}, core::kFloat64, core::Device("CPU:0"));
     const double* T_ptr = T.GetDataPtr<double>();
     double* Tinv_ptr = Tinv.GetDataPtr<double>();
 

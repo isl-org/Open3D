@@ -245,7 +245,7 @@ void FilamentRenderer::RequestReadPixels(
         int height,
         std::function<void(std::shared_ptr<core::Tensor>)> callback) {
     core::SizeVector shape{height, width, 3};
-    core::Dtype dtype = core::Dtype::UInt8;
+    core::Dtype dtype = core::kUInt8;
     int64_t nbytes = shape.NumElements() * dtype.ByteSize();
 
     auto image = std::make_shared<core::Tensor>(shape, dtype);

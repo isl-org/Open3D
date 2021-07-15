@@ -74,17 +74,17 @@ void HashInsertInt(benchmark::State& state,
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
-    Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
-    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+    Tensor keys(data.keys_, {capacity}, core::kInt32, device);
+    Tensor values(data.vals_, {capacity}, core::kInt32, device);
 
-    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {1}, {1},
+    Hashmap hashmap_warmup(capacity, core::kInt32, core::kInt32, {1}, {1},
                            device, backend);
     Tensor addrs, masks;
     hashmap_warmup.Insert(keys, values, addrs, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {1}, {1}, device,
+        Hashmap hashmap(capacity, core::kInt32, core::kInt32, {1}, {1}, device,
                         backend);
         Tensor addrs, masks;
         state.ResumeTiming();
@@ -110,17 +110,17 @@ void HashEraseInt(benchmark::State& state,
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
-    Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
-    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+    Tensor keys(data.keys_, {capacity}, core::kInt32, device);
+    Tensor values(data.vals_, {capacity}, core::kInt32, device);
 
-    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {1}, {1},
+    Hashmap hashmap_warmup(capacity, core::kInt32, core::kInt32, {1}, {1},
                            device, backend);
     Tensor addrs, masks;
     hashmap_warmup.Insert(keys, values, addrs, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {1}, {1}, device,
+        Hashmap hashmap(capacity, core::kInt32, core::kInt32, {1}, {1}, device,
                         backend);
         Tensor addrs, masks;
         hashmap.Insert(keys, values, addrs, masks);
@@ -147,10 +147,10 @@ void HashFindInt(benchmark::State& state,
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
-    Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
-    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+    Tensor keys(data.keys_, {capacity}, core::kInt32, device);
+    Tensor values(data.vals_, {capacity}, core::kInt32, device);
 
-    Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {1}, {1}, device,
+    Hashmap hashmap(capacity, core::kInt32, core::kInt32, {1}, {1}, device,
                     backend);
     Tensor addrs, masks;
     // Insert as warp-up
@@ -169,17 +169,17 @@ void HashClearInt(benchmark::State& state,
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
-    Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
-    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+    Tensor keys(data.keys_, {capacity}, core::kInt32, device);
+    Tensor values(data.vals_, {capacity}, core::kInt32, device);
 
-    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {1}, {1},
+    Hashmap hashmap_warmup(capacity, core::kInt32, core::kInt32, {1}, {1},
                            device, backend);
     Tensor addrs, masks;
     hashmap_warmup.Insert(keys, values, addrs, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {1}, {1}, device,
+        Hashmap hashmap(capacity, core::kInt32, core::kInt32, {1}, {1}, device,
                         backend);
         Tensor addrs, masks;
 
@@ -229,17 +229,17 @@ void HashInsertInt3(benchmark::State& state,
     std::vector<int> keys_Int3;
     keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
-    Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
-    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+    Tensor keys(keys_Int3, {capacity, 3}, core::kInt32, device);
+    Tensor values(data.vals_, {capacity}, core::kInt32, device);
 
-    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {3}, {1},
+    Hashmap hashmap_warmup(capacity, core::kInt32, core::kInt32, {3}, {1},
                            device, backend);
     Tensor addrs, masks;
     hashmap_warmup.Insert(keys, values, addrs, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {3}, {1}, device,
+        Hashmap hashmap(capacity, core::kInt32, core::kInt32, {3}, {1}, device,
                         backend);
         Tensor addrs, masks;
         state.ResumeTiming();
@@ -268,17 +268,17 @@ void HashEraseInt3(benchmark::State& state,
     std::vector<int> keys_Int3;
     keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
-    Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
-    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+    Tensor keys(keys_Int3, {capacity, 3}, core::kInt32, device);
+    Tensor values(data.vals_, {capacity}, core::kInt32, device);
 
-    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {3}, {1},
+    Hashmap hashmap_warmup(capacity, core::kInt32, core::kInt32, {3}, {1},
                            device, backend);
     Tensor addrs, masks;
     hashmap_warmup.Insert(keys, values, addrs, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {3}, {1}, device,
+        Hashmap hashmap(capacity, core::kInt32, core::kInt32, {3}, {1}, device,
                         backend);
         Tensor addrs, masks;
         hashmap.Insert(keys, values, addrs, masks);
@@ -308,10 +308,10 @@ void HashFindInt3(benchmark::State& state,
     std::vector<int> keys_Int3;
     keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
-    Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
-    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+    Tensor keys(keys_Int3, {capacity, 3}, core::kInt32, device);
+    Tensor values(data.vals_, {capacity}, core::kInt32, device);
 
-    Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {3}, {1}, device,
+    Hashmap hashmap(capacity, core::kInt32, core::kInt32, {3}, {1}, device,
                     backend);
     Tensor addrs, masks;
     hashmap.Insert(keys, values, addrs, masks);
@@ -332,17 +332,17 @@ void HashClearInt3(benchmark::State& state,
     std::vector<int> keys_Int3;
     keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
-    Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
-    Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
+    Tensor keys(keys_Int3, {capacity, 3}, core::kInt32, device);
+    Tensor values(data.vals_, {capacity}, core::kInt32, device);
 
-    Hashmap hashmap_warmup(capacity, Dtype::Int32, Dtype::Int32, {3}, {1},
+    Hashmap hashmap_warmup(capacity, core::kInt32, core::kInt32, {3}, {1},
                            device, backend);
     Tensor addrs, masks;
     hashmap_warmup.Insert(keys, values, addrs, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, Dtype::Int32, Dtype::Int32, {3}, {1}, device,
+        Hashmap hashmap(capacity, core::kInt32, core::kInt32, {3}, {1}, device,
                         backend);
         Tensor addrs, masks;
 

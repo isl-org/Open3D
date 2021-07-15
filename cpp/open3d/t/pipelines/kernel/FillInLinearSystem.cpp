@@ -40,12 +40,12 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               int i,
                               int j,
                               float threshold) {
-    AtA.AssertDtype(core::Dtype::Float32);
-    Atb.AssertDtype(core::Dtype::Float32);
-    residual.AssertDtype(core::Dtype::Float32);
-    Ti_ps.AssertDtype(core::Dtype::Float32);
-    Tj_qs.AssertDtype(core::Dtype::Float32);
-    Ri_normal_ps.AssertDtype(core::Dtype::Float32);
+    AtA.AssertDtype(core::kFloat32);
+    Atb.AssertDtype(core::kFloat32);
+    residual.AssertDtype(core::kFloat32);
+    Ti_ps.AssertDtype(core::kFloat32);
+    Tj_qs.AssertDtype(core::kFloat32);
+    Ri_normal_ps.AssertDtype(core::kFloat32);
 
     core::Device device = AtA.GetDevice();
     if (Atb.GetDevice() != device) {
@@ -98,14 +98,14 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
                              int j,
                              int n,
                              float threshold) {
-    AtA.AssertDtype(core::Dtype::Float32);
-    Atb.AssertDtype(core::Dtype::Float32);
-    residual.AssertDtype(core::Dtype::Float32);
-    Ti_ps.AssertDtype(core::Dtype::Float32);
-    Tj_qs.AssertDtype(core::Dtype::Float32);
-    normal_ps.AssertDtype(core::Dtype::Float32);
-    Ri_normal_ps.AssertDtype(core::Dtype::Float32);
-    RjT_Ri_normal_ps.AssertDtype(core::Dtype::Float32);
+    AtA.AssertDtype(core::kFloat32);
+    Atb.AssertDtype(core::kFloat32);
+    residual.AssertDtype(core::kFloat32);
+    Ti_ps.AssertDtype(core::kFloat32);
+    Tj_qs.AssertDtype(core::kFloat32);
+    normal_ps.AssertDtype(core::kFloat32);
+    Ri_normal_ps.AssertDtype(core::kFloat32);
+    RjT_Ri_normal_ps.AssertDtype(core::kFloat32);
 
     core::Device device = AtA.GetDevice();
     if (Atb.GetDevice() != device) {
@@ -157,9 +157,9 @@ void FillInSLACRegularizerTerm(core::Tensor &AtA,
                                float weight,
                                int n,
                                int anchor_idx) {
-    AtA.AssertDtype(core::Dtype::Float32);
-    Atb.AssertDtype(core::Dtype::Float32);
-    residual.AssertDtype(core::Dtype::Float32);
+    AtA.AssertDtype(core::kFloat32);
+    Atb.AssertDtype(core::kFloat32);
+    residual.AssertDtype(core::kFloat32);
 
     core::Device device = AtA.GetDevice();
     if (Atb.GetDevice() != device) {
