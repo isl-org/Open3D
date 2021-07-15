@@ -124,24 +124,24 @@ target_include_directories(open3d_torch_ops SYSTEM PRIVATE
 )
 
 target_link_libraries(open3d_torch_ops PRIVATE
-    3rdparty_tbb
     torch_cpu
-    ${EIGEN3_TARGET}
-    ${FMT_TARGET}
-    ${NANOFLANN_TARGET}
-    ${PARALLELSTL_TARGET}
     Open3D::Open3D
+    Open3D::3rdparty_eigen3
+    Open3D::3rdparty_fmt
+    Open3D::3rdparty_nanoflann
+    Open3D::3rdparty_parallelstl
+    Open3D::3rdparty_tbb
 )
 
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_torch_ops PRIVATE
-        ${CUTLASS_TARGET}
+        Open3D::3rdparty_cutlass
         ${TORCH_LIBRARIES}
     )
 
-    if (CUB_TARGET)
+    if (TARGET Open3D::3rdparty_cub)
         target_link_libraries(open3d_torch_ops PRIVATE
-            ${CUB_TARGET}
+            Open3D::3rdparty_cub
         )
     endif()
 endif()

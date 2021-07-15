@@ -31,6 +31,7 @@
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
@@ -296,7 +297,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     geometry::KDTreeFlann kdtree_target(target_feature);
     pipelines::registration::CorrespondenceSet corres_ij(num_src_pts);
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < num_src_pts; i++) {
         std::vector<int> corres_tmp(1);
         std::vector<double> dist_tmp(1);
@@ -312,7 +313,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         geometry::KDTreeFlann kdtree_source(source_feature);
         pipelines::registration::CorrespondenceSet corres_ji(num_tgt_pts);
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
         for (int j = 0; j < num_tgt_pts; ++j) {
             std::vector<int> corres_tmp(1);
             std::vector<double> dist_tmp(1);

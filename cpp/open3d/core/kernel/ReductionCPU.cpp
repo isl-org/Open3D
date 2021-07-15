@@ -29,9 +29,9 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/ParallelUtil.h"
 #include "open3d/core/kernel/Reduction.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace core {
@@ -95,7 +95,7 @@ public:
     void Run(const func_t& reduce_func, scalar_t identity) {
         // See: PyTorch's TensorIterator::parallel_reduce for the reference
         // design of reduction strategy.
-        if (GetMaxThreads() == 1 || InParallel()) {
+        if (utility::EstimateMaxThreads() == 1 || utility::InParallel()) {
             LaunchReductionKernelSerial<scalar_t>(indexer_, reduce_func);
         } else if (indexer_.NumOutputElements() <= 1) {
             LaunchReductionKernelTwoPass<scalar_t>(indexer_, reduce_func,
@@ -131,12 +131,13 @@ private:
                     "single-output reduction ops.");
         }
         int64_t num_workloads = indexer.NumWorkloads();
-        int64_t num_threads = GetMaxThreads();
+        int64_t num_threads = utility::EstimateMaxThreads();
         int64_t workload_per_thread =
                 (num_workloads + num_threads - 1) / num_threads;
         std::vector<scalar_t> thread_results(num_threads, identity);
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
             int64_t start = thread_idx * workload_per_thread;
             int64_t end = std::min(start + workload_per_thread, num_workloads);
@@ -160,7 +161,7 @@ private:
         // Prefers outer dimension >= num_threads.
         const int64_t* indexer_shape = indexer.GetMasterShape();
         const int64_t num_dims = indexer.NumDims();
-        int64_t num_threads = GetMaxThreads();
+        int64_t num_threads = utility::EstimateMaxThreads();
 
         // Init best_dim as the outer-most non-reduction dim.
         int64_t best_dim = num_dims - 1;
@@ -182,7 +183,8 @@ private:
                     "LaunchReductionKernelTwoPass instead.");
         }
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
             Indexer sub_indexer(indexer);
             sub_indexer.ShrinkDim(best_dim, i, 1);
@@ -202,13 +204,14 @@ public:
 
     template <typename func_t, typename scalar_t>
     void Run(const func_t& reduce_func, scalar_t identity) {
-        // Arg-reduction needs to iterate each output element separatly in
+        // Arg-reduction needs to iterate each output element separately in
         // sub-iterations. Each output elemnent corresponds to multiple input
         // elements. We need to keep track of the indices within each
         // sub-iteration.
         int64_t num_output_elements = indexer_.NumOutputElements();
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int64_t output_idx = 0; output_idx < num_output_elements;
              output_idx++) {
             // sub_indexer.NumWorkloads() == ipo.

@@ -24,58 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/CUDAUtils.h"
-
-#include "open3d/Macro.h"
-#include "open3d/utility/Logging.h"
-
-#ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
-#include "open3d/core/MemoryManager.h"
-#endif
+#pragma once
 
 namespace open3d {
-namespace core {
-namespace cuda {
+namespace utility {
 
-int DeviceCount() {
-#ifdef BUILD_CUDA_MODULE
-    try {
-        std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
-        return cuda_state->GetNumDevices();
-    } catch (const std::runtime_error&) {  // GetInstance can throw
-        return 0;
-    }
-#else
-    return 0;
-#endif
-}
+/// Estimate the maximum number of threads to be used in a parallel region.
+int EstimateMaxThreads();
 
-bool IsAvailable() { return cuda::DeviceCount() > 0; }
+/// Returns true if in an parallel section.
+bool InParallel();
 
-void ReleaseCache() {
-#ifdef BUILD_CUDA_MODULE
-#ifdef BUILD_CACHED_CUDA_MANAGER
-    // Release cache from all devices. Since only memory from CUDAMemoryManager
-    // is cached at the moment, this works as expected. In the future, the logic
-    // could become more fine-grained.
-    CachedMemoryManager::ReleaseCache();
-#else
-    utility::LogWarning(
-            "Built without cached CUDA memory manager, cuda::ReleaseCache() "
-            "has no effect.");
-#endif
-
-#else
-    utility::LogWarning("Built without CUDA module, cuda::ReleaseCache().");
-#endif
-}
-
-}  // namespace cuda
-}  // namespace core
+}  // namespace utility
 }  // namespace open3d
-
-// C interface to provide un-mangled function to Python ctypes
-extern "C" OPEN3D_DLL_EXPORT int open3d_core_cuda_device_count() {
-    return open3d::core::cuda::DeviceCount();
-}
