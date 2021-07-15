@@ -188,10 +188,10 @@ public:
                 InvertNeighborsList(inp_features.size(0), neighbors_index,     \
                                     neighbors_row_splits, arange);             \
         torch::Tensor inv_neighbors_kernel_index =                             \
-                neighbors_kernel_index.index(inv_arange).contiguous();         \
+                neighbors_kernel_index.index({inv_arange}).contiguous();       \
         if (neighbors_importance.size(0) > 0) {                                \
             inv_neighbors_importance =                                         \
-                    neighbors_importance.index(inv_arange).contiguous();       \
+                    neighbors_importance.index({inv_arange}).contiguous();     \
         } else {                                                               \
             inv_neighbors_importance = torch::empty(                           \
                     {0}, torch::dtype(feat_dtype).device(device));             \
