@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/Indexer.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/core/linalg/TriImpl.h"
@@ -42,7 +43,8 @@ void TriuCPU(const Tensor &A, Tensor &output, const int diagonal) {
         int n = A.GetShape()[0] * cols;
 
         kernel::cpu_launcher::ParallelFor(
-                n, [&] OPEN3D_DEVICE(int64_t workload_idx) {
+                n, kernel::cpu_launcher::SMALL_OP_GRAIN_SIZE,
+                [&] OPEN3D_DEVICE(int64_t workload_idx) {
                     const int64_t idx = workload_idx / cols;
                     const int64_t idy = workload_idx % cols;
                     if (idy - idx >= diagonal) {
@@ -62,7 +64,8 @@ void TrilCPU(const Tensor &A, Tensor &output, const int diagonal) {
         int n = A.GetShape()[0] * cols;
 
         kernel::cpu_launcher::ParallelFor(
-                n, [&] OPEN3D_DEVICE(int64_t workload_idx) {
+                n, kernel::cpu_launcher::SMALL_OP_GRAIN_SIZE,
+                [&] OPEN3D_DEVICE(int64_t workload_idx) {
                     const int64_t idx = workload_idx / cols;
                     const int64_t idy = workload_idx % cols;
                     if (idy - idx <= diagonal) {
@@ -86,7 +89,8 @@ void TriulCPU(const Tensor &A,
         int n = A.GetShape()[0] * cols;
 
         kernel::cpu_launcher::ParallelFor(
-                n, [&] OPEN3D_DEVICE(int64_t workload_idx) {
+                n, kernel::cpu_launcher::SMALL_OP_GRAIN_SIZE,
+                [&] OPEN3D_DEVICE(int64_t workload_idx) {
                     const int64_t idx = workload_idx / cols;
                     const int64_t idy = workload_idx % cols;
                     if (idy - idx < diagonal) {

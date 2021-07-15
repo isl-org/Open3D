@@ -197,10 +197,6 @@ string(CONCAT OPEN3D_VERSION
     ".${OPEN3D_VERSION_PATCH}"
 )
 set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst @ONLY)
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
@@ -603,6 +599,9 @@ function(open3d_set_global_properties target)
     elseif(UNIX)
         target_compile_definitions(${target} PRIVATE UNIX)
     endif()
+    if(LINUX_AARCH64)
+        target_compile_definitions(${target} PRIVATE LINUX_AARCH64)
+    endif()
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>")
 
     # TBB static version is used
@@ -651,6 +650,9 @@ add_subdirectory(cpp)
 
 # Examples
 add_subdirectory(examples)
+
+# Documentation
+add_subdirectory(docs)
 
 # Install CMake configuration files
 install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})

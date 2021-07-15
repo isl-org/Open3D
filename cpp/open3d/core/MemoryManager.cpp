@@ -110,10 +110,11 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
 #ifdef BUILD_CUDA_MODULE
 #ifdef BUILD_CACHED_CUDA_MANAGER
                     {Device::DeviceType::CUDA,
-                     std::make_shared<CUDACachedMemoryManager>()},
+                     std::make_shared<CachedMemoryManager>(
+                             std::make_shared<CUDAMemoryManager>())},
 #else
                     {Device::DeviceType::CUDA,
-                     std::make_shared<CUDASimpleMemoryManager>()},
+                     std::make_shared<CUDAMemoryManager>()},
 #endif  // BUILD_CACHED_CUDA_MANAGER
 #endif  // BUILD_CUDA_MODULE
             };

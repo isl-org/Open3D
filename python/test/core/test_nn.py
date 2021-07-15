@@ -164,10 +164,11 @@ def test_hybrid_search_random(dtype):
             query_points_cuda = query_points.cuda()
 
             nns.hybrid_index(radius)
-            indices, distances = nns.hybrid_search(query_points, radius, k)
+            indices, distances, counts = nns.hybrid_search(
+                query_points, radius, k)
 
             nns_cuda.hybrid_index(radius)
-            indices_cuda, distances_cuda = nns_cuda.hybrid_search(
+            indices_cuda, distances_cuda, counts_cuda = nns_cuda.hybrid_search(
                 query_points_cuda, radius, k)
 
             np.testing.assert_allclose(distances.numpy(),
@@ -175,6 +176,7 @@ def test_hybrid_search_random(dtype):
                                        rtol=1e-5,
                                        atol=0)
             np.testing.assert_equal(indices.numpy(), indices_cuda.cpu().numpy())
+            np.testing.assert_equal(counts.numpy(), counts_cuda.cpu().numpy())
 
 
 @pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])

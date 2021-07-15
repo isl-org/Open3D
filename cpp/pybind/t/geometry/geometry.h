@@ -56,6 +56,7 @@ void pybind_pointcloud(py::module& m);
 void pybind_trianglemesh(py::module& m);
 void pybind_image(py::module& m);
 void pybind_tsdf_voxelgrid(py::module& m);
+void pybind_raycasting_scene(py::module& m);
 
 }  // namespace geometry
 }  // namespace t
