@@ -61,9 +61,9 @@ __device__ double atomicAdd(double *address, double val) {
 #endif
 
 namespace open3d {
-template <typename scalar_t>
+template <typename scalar_t, typename T>
 OPEN3D_HOST_DEVICE bool IsClose(const scalar_t &X,
-                                const scalar_t &Y,
+                                const T &Y,
                                 const double rtol = 1e-4) {
     return ((X > (1.0 - rtol) * Y) && (X < (1.0 + rtol) * Y));
 }
