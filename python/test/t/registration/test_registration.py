@@ -118,7 +118,7 @@ def test_registration_icp_point_to_point(device):
         source_legacy = source_t.to_legacy_pointcloud()
         target_legacy = target_t.to_legacy_pointcloud()
 
-        max_correspondence_distance = 1.25
+        max_correspondence_distance = 1.5
 
         init_trans_legacy = np.array([[0.862, 0.011, -0.507, 0.5],
                                       [-0.139, 0.967, -0.215, 0.7],
@@ -156,7 +156,7 @@ def test_test_registration_icp_point_to_plane(device):
         source_legacy = source_t.to_legacy_pointcloud()
         target_legacy = target_t.to_legacy_pointcloud()
 
-        max_correspondence_distance = 1.25
+        max_correspondence_distance = 1.5
 
         init_trans_legacy = np.array([[0.862, 0.011, -0.507, 0.5],
                                       [-0.139, 0.967, -0.215, 0.7],
