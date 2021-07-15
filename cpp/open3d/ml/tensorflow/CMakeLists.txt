@@ -162,22 +162,22 @@ target_include_directories(open3d_tf_ops SYSTEM PRIVATE
 )
 
 target_link_libraries(open3d_tf_ops PRIVATE
-    3rdparty_tbb
     ${Tensorflow_FRAMEWORK_LIB}
-    ${FMT_TARGET}
-    ${NANOFLANN_TARGET}
-    ${PARALLELSTL_TARGET}
     Open3D::Open3D
+    Open3D::3rdparty_fmt
+    Open3D::3rdparty_nanoflann
+    Open3D::3rdparty_parallelstl
+    Open3D::3rdparty_tbb
 )
 
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_tf_ops PRIVATE
-        ${CUTLASS_TARGET}
+        Open3D::3rdparty_cutlass
     )
 
-    if (CUB_TARGET)
+    if (TARGET Open3D::3rdparty_cub)
         target_link_libraries(open3d_tf_ops PRIVATE
-            ${CUB_TARGET}
+            Open3D::3rdparty_cub
         )
     endif()
 endif()

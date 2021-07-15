@@ -34,6 +34,7 @@
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryJacobianImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace t {
@@ -78,7 +79,7 @@ void ComputeOdometryResultPointToPlaneCPU(
                      workload_idx++) {
 #else
     float* A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     int y = workload_idx / cols;
@@ -171,7 +172,7 @@ void ComputeOdometryResultIntensityCPU(
                      workload_idx++) {
 #else
     float* A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     int y = workload_idx / cols;
@@ -272,7 +273,7 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
                      workload_idx++) {
 #else
     float* A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
+#pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
     for (int workload_idx = 0; workload_idx < n; workload_idx++) {
 #endif
                     int y = workload_idx / cols;

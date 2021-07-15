@@ -54,6 +54,18 @@ def _create_or_clear_dir(dir_path):
     print("Created directory %s" % dir_path)
 
 
+def _update_file(src, dst):
+    """Copies a file if the destination does not exist or is older."""
+    if Path(dst).exists():
+        src_stat = os.stat(src)
+        dst_stat = os.stat(dst)
+        if src_stat.st_mtime - dst_stat.st_mtime <= 0:
+            print("Copy skipped: {}".format(dst))
+            return
+    print("Copy: {}\n   -> {}".format(src, dst))
+    shutil.copy2(src, dst)
+
+
 class PyAPIDocsBuilder:
     """
     Generate Python API *.rst files, per (sub) module, per class, per function.
@@ -397,12 +409,16 @@ class JupyterDocsBuilder:
 
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
-                if not nb_out_path.is_file():
-                    print("Copy: {}\n   -> {}".format(nb_in_path, nb_out_path))
-                    shutil.copy(nb_in_path, nb_out_path)
-                else:
-                    print("Copy skipped: {}.format(nb_out_path)")
+                _update_file(nb_in_path, nb_out_path)
                 nb_paths.append(nb_out_path)
+
+            # Copy the 'images' dir present in some example dirs.
+            if (in_dir / "images").is_dir():
+                if (out_dir / "images").exists():
+                    shutil.rmtree(out_dir / "images")
+                print("Copy: {}\n   -> {}".format(in_dir / "images",
+                                                  out_dir / "images"))
+                shutil.copytree(in_dir / "images", out_dir / "images")
 
         # Execute Jupyter notebooks
         for nb_path in nb_paths:

@@ -135,7 +135,6 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
             float(this->capacity_) / float(this->bucket_count_);
 
     Free();
-    CUDACachedMemoryManager::ReleaseCache();
 
     Allocate(buckets,
              std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
@@ -149,7 +148,6 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
                    output_masks.GetDataPtr<bool>(), iterator_count);
     }
-    CUDACachedMemoryManager::ReleaseCache();
 }
 
 template <typename Key, typename Hash>
