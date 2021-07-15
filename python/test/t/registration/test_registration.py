@@ -180,6 +180,6 @@ def test_test_registration_icp_point_to_plane(device):
             o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2))
 
         np.testing.assert_allclose(reg_p2plane_t.inlier_rmse,
-                                   reg_p2plane_legacy.inlier_rmse, 0.0001)
+                                   reg_p2plane_legacy.inlier_rmse, 0.001)
         np.testing.assert_allclose(reg_p2plane_t.fitness,
-                                   reg_p2plane_legacy.fitness, 0.0001)
+                                   reg_p2plane_legacy.fitness, 0.001)
