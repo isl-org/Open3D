@@ -44,7 +44,7 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-template <typename scalar_t, typename funct_t>
+template <typename scalar_t, typename func_t>
 static void ComputePosePointToPlaneKernelCPU(
         const scalar_t *source_points_ptr,
         const scalar_t *target_points_ptr,
@@ -52,7 +52,7 @@ static void ComputePosePointToPlaneKernelCPU(
         const int64_t *correspondence_indices,
         const int n,
         scalar_t *global_sum,
-        funct_t GetWeightFromRobustKernel) {
+        func_t GetWeightFromRobustKernel) {
     // As, AtA is a symmetric matrix, we only need 21 elements instead of 36.
     // Atb is of shape {6,1}. Combining both, A_1x29 is a temp. storage
     // with [0:21] elements as AtA, [21:27] elements as Atb, 27th as residual
@@ -65,11 +65,11 @@ static void ComputePosePointToPlaneKernelCPU(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
-                     workload_idx++) {
+                     ++workload_idx) {
 #else
     scalar_t *A_reduction = A_1x29.data();
 #pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static)
-    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
 #endif
                     scalar_t J_ij[6];
                     scalar_t r = 0;
@@ -80,7 +80,6 @@ static void ComputePosePointToPlaneKernelCPU(
                             r);
 
                     scalar_t w = GetWeightFromRobustKernel(r);
-                    // printf(" residual: %f, weight: %f", (float)r, (float)w);
 
                     if (valid) {
                         A_reduction[0] += J_ij[0] * w * J_ij[0];
@@ -122,7 +121,7 @@ static void ComputePosePointToPlaneKernelCPU(
             // TBB: Defining reduction operation.
             [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
                 std::vector<scalar_t> result(29);
-                for (int j = 0; j < 29; j++) {
+                for (int j = 0; j < 29; ++j) {
                     result[j] = a[j] + b[j];
                 }
                 return result;
@@ -130,7 +129,7 @@ static void ComputePosePointToPlaneKernelCPU(
 #endif
 
 #pragma omp parallel for schedule(static)
-    for (int i = 0; i < 29; i++) {
+    for (int i = 0; i < 29; ++i) {
         global_sum[i] = A_1x29[i];
     }
 }
@@ -175,20 +174,21 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                                   const core::Dtype &dtype,
                                   const core::Device &device,
                                   core::Tensor &Sxy,
-                                  core::Tensor &mean_t,
-                                  core::Tensor &mean_s,
+                                  core::Tensor &target_mean,
+                                  core::Tensor &source_mean,
                                   int &inlier_count) {
-    // Calculating mean_s and mean_t, which are mean(x, y, z) of source and
-    // target points respectively.
-    std::vector<double> mean_1x7(7, 0.0);
+    // Calculating source_mean and target_mean, which are mean(x, y, z) of
+    // source and target points respectively.
+    std::vector<scalar_t> mean_1x7(7, 0.0);
     // Identity element for running_total reduction variable: zeros_6.
-    std::vector<double> zeros_7(7, 0.0);
+    std::vector<scalar_t> zeros_7(7, 0.0);
 
     mean_1x7 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_7,
-            [&](tbb::blocked_range<int> r, std::vector<double> mean_reduction) {
+            [&](tbb::blocked_range<int> r,
+                std::vector<scalar_t> mean_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
-                     workload_idx++) {
+                     ++workload_idx) {
                     if (correspondence_indices[workload_idx] != -1) {
                         int64_t target_idx =
                                 3 * correspondence_indices[workload_idx];
@@ -209,31 +209,31 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 return mean_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<double> a, std::vector<double> b) {
-                std::vector<double> result(7);
-                for (int j = 0; j < 7; j++) {
+            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
+                std::vector<scalar_t> result(7);
+                for (int j = 0; j < 7; ++j) {
                     result[j] = a[j] + b[j];
                 }
                 return result;
             });
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 6; ++i) {
         mean_1x7[i] = mean_1x7[i] / mean_1x7[6];
     }
 
     // Calculating the Sxy for SVD.
-    std::vector<double> sxy_1x9(9, 0.0);
+    std::vector<scalar_t> sxy_1x9(9, 0.0);
     // Identity element for running total reduction variable: zeros_9.
-    std::vector<double> zeros_9(9, 0.0);
+    std::vector<scalar_t> zeros_9(9, 0.0);
 
     sxy_1x9 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_9,
             [&](tbb::blocked_range<int> r,
-                std::vector<double> sxy_1x9_reduction) {
+                std::vector<scalar_t> sxy_1x9_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
                     if (correspondence_indices[workload_idx] != -1) {
-                        for (int i = 0; i < 9; i++) {
+                        for (int i = 0; i < 9; ++i) {
                             const int row = i % 3;
                             const int col = i / 3;
                             const int source_idx = 3 * workload_idx + row;
@@ -251,33 +251,33 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 return sxy_1x9_reduction;
             },
             // TBB: Defining reduction operation.
-            [&](std::vector<double> a, std::vector<double> b) {
-                std::vector<double> result(9);
-                for (int j = 0; j < 9; j++) {
+            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
+                std::vector<scalar_t> result(9);
+                for (int j = 0; j < 9; ++j) {
                     result[j] = a[j] + b[j];
                 }
                 return result;
             });
 
-    mean_s = core::Tensor::Empty({1, 3}, dtype, device);
-    scalar_t *mean_s_ptr = mean_s.GetDataPtr<scalar_t>();
+    source_mean = core::Tensor::Empty({1, 3}, dtype, device);
+    scalar_t *source_mean_ptr = source_mean.GetDataPtr<scalar_t>();
 
-    mean_t = core::Tensor::Empty({1, 3}, dtype, device);
-    scalar_t *mean_t_ptr = mean_t.GetDataPtr<scalar_t>();
+    target_mean = core::Tensor::Empty({1, 3}, dtype, device);
+    scalar_t *target_mean_ptr = target_mean.GetDataPtr<scalar_t>();
 
     Sxy = core::Tensor::Empty({3, 3}, dtype, device);
     scalar_t *sxy_ptr = Sxy.GetDataPtr<scalar_t>();
 
-    // Getting Tensor Sxy {3,3}, mean_s {3,1} and mean_t {3} from temporary
-    // reduction variables. The shapes of mean_s and mean_t are such, because it
-    // will be required in equation:
-    // t = mean_s - R.Matmul(mean_t.T()).Reshape({-1}).
-    for (int i = 0, j = 0; j < 3; j++) {
+    // Getting Tensor Sxy {3,3}, source_mean {3,1} and target_mean {3} from
+    // temporary reduction variables. The shapes of source_mean and target_mean
+    // are such, because it will be required in equation: t = source_mean -
+    // R.Matmul(target_mean.T()).Reshape({-1}).
+    for (int i = 0, j = 0; j < 3; ++j) {
         for (int k = 0; k < 3; k++) {
             sxy_ptr[j * 3 + k] = sxy_1x9[i++] / mean_1x7[6];
         }
-        mean_s_ptr[j] = mean_1x7[j];
-        mean_t_ptr[j] = mean_1x7[j + 3];
+        source_mean_ptr[j] = mean_1x7[j];
+        target_mean_ptr[j] = mean_1x7[j + 3];
     }
 
     inlier_count = static_cast<int64_t>(mean_1x7[6]);
@@ -291,7 +291,7 @@ void ComputeRtPointToPointCPU(const core::Tensor &source_points,
                               int &inlier_count,
                               const core::Dtype &dtype,
                               const core::Device &device) {
-    core::Tensor Sxy, mean_t, mean_s;
+    core::Tensor Sxy, target_mean, source_mean;
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t *source_points_ptr =
@@ -304,7 +304,7 @@ void ComputeRtPointToPointCPU(const core::Tensor &source_points,
 
         Get3x3SxyLinearSystem(source_points_ptr, target_points_ptr,
                               correspondence_indices, n, dtype, device, Sxy,
-                              mean_t, mean_s, inlier_count);
+                              target_mean, source_mean, inlier_count);
     });
 
     core::Tensor U, D, VT;
@@ -315,7 +315,8 @@ void ComputeRtPointToPointCPU(const core::Tensor &source_points,
     }
 
     R = U.Matmul(S.Matmul(VT));
-    t = (mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1})).To(dtype);
+    t = (target_mean.Reshape({-1}) - R.Matmul(source_mean.T()).Reshape({-1}))
+                .To(dtype);
 }
 
 }  // namespace kernel

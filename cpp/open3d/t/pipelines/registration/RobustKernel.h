@@ -76,14 +76,13 @@ enum class RobustKernelMethod {
 /// }
 class RobustKernel {
 public:
-    RobustKernel(const RobustKernelMethod type = RobustKernelMethod::L2Loss,
-                 const double& scaling_parameter = 1.0,
-                 const double& shape_parameter = 1.0)
+    explicit RobustKernel(
+            const RobustKernelMethod type = RobustKernelMethod::L2Loss,
+            const double scaling_parameter = 1.0,
+            const double shape_parameter = 1.0)
         : type_(type),
           scaling_parameter_(scaling_parameter),
-          shape_parameter_(shape_parameter){};
-
-    ~RobustKernel() = default;
+          shape_parameter_(shape_parameter) {}
 
 public:
     /// Loss type.

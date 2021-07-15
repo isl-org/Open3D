@@ -38,6 +38,13 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_normals,
                                      const core::Tensor &correspondence_indices,
                                      const registration::RobustKernel &kernel) {
+    if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
+        utility::LogError(" PointCloud is Empty.");
+    }
+    if (correspondence_indices.GetLength() == 0) {
+        utility::LogError(" 0 correspondence present.");
+    }
+
     // Get dtype and device.
     core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();
@@ -76,6 +83,13 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const core::Tensor &correspondence_indices) {
+    if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
+        utility::LogError(" PointCloud is Empty.");
+    }
+    if (correspondence_indices.GetLength() == 0) {
+        utility::LogError(" 0 correspondence present.");
+    }
+
     // Get dtype and device.
     core::Dtype dtype = source_points.GetDtype();
     core::Device device = source_points.GetDevice();

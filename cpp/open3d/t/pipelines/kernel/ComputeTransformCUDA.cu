@@ -42,7 +42,7 @@ namespace kernel {
 
 const int kThread1DUnit = 256;
 
-template <typename scalar_t, typename funct_t>
+template <typename scalar_t, typename func_t>
 __global__ void ComputePosePointToPlaneKernelCUDA(
         const scalar_t *source_points_ptr,
         const scalar_t *target_points_ptr,
@@ -50,7 +50,7 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
         const int64_t *correspondence_indices,
         const int n,
         scalar_t *global_sum,
-        funct_t GetWeightFromRobustKernel) {
+        func_t GetWeightFromRobustKernel) {
     __shared__ scalar_t local_sum0[kThread1DUnit];
     __shared__ scalar_t local_sum1[kThread1DUnit];
     __shared__ scalar_t local_sum2[kThread1DUnit];

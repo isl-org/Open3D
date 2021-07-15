@@ -257,20 +257,21 @@ TEST_P(RegistrationPermuteDevices, RobustKernel) {
     };
 
     for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
-        for (auto LossMethod : {t_reg::RobustKernelMethod::L2Loss,
-                                t_reg::RobustKernelMethod::L1Loss,
-                                t_reg::RobustKernelMethod::HuberLoss,
-                                t_reg::RobustKernelMethod::CauchyLoss,
-                                t_reg::RobustKernelMethod::GMLoss,
-                                t_reg::RobustKernelMethod::TukeyLoss,
-                                t_reg::RobustKernelMethod::GeneralizedLoss}) {
+        for (auto loss_method : {t_reg::RobustKernelMethod::L2Loss,
+                                 t_reg::RobustKernelMethod::L1Loss,
+                                 t_reg::RobustKernelMethod::HuberLoss,
+                                 t_reg::RobustKernelMethod::CauchyLoss,
+                                 t_reg::RobustKernelMethod::GMLoss,
+                                 t_reg::RobustKernelMethod::TukeyLoss,
+                                 t_reg::RobustKernelMethod::GeneralizedLoss}) {
             DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
                 DISPATCH_ROBUST_KERNEL_FUNCTION(
-                        LossMethod, scalar_t, scaling_parameter,
+                        loss_method, scalar_t, scaling_parameter,
                         shape_parameter, [&]() {
                             auto weight = GetWeightFromRobustKernel(0.98);
                             EXPECT_NEAR(weight,
-                                        expected_output[(int)LossMethod], 1e-3);
+                                        expected_output[(int)loss_method],
+                                        1e-3);
                         });
             });
         }
