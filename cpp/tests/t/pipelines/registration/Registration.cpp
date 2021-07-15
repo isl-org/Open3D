@@ -158,7 +158,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
                 core::eigen_converter::TensorToEigenMatrixXd(
                         initial_transform_t);
 
-        double max_correspondence_dist = 1.5;
+        double max_correspondence_dist = 1.25;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;
@@ -209,7 +209,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
                 core::eigen_converter::TensorToEigenMatrixXd(
                         initial_transform_t);
 
-        double max_correspondence_dist = 1.5;
+        double max_correspondence_dist = 1.25;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;

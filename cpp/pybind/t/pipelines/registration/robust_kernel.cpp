@@ -121,13 +121,13 @@ Non-Linear Least Squares Problems"**, by Nived Chebrolu et al.
 )");
     py::detail::bind_copy_functions<RobustKernel>(robust_kernel);
     robust_kernel
-            .def(py::init([](const RobustKernelMethod& type,
-                             const double& scaling_parameter,
-                             const double& shape_parameter) {
+            .def(py::init([](const RobustKernelMethod type,
+                             const double scaling_parameter,
+                             const double shape_parameter) {
                      return new RobustKernel(type, scaling_parameter,
                                              shape_parameter);
                  }),
-                 "type"_a = RobustKernelMethod::HuberLoss,
+                 "type"_a = RobustKernelMethod::L2Loss,
                  "scaling_parameter"_a = 1.0, "shape_parameter"_a = 1.0)
             .def_readwrite("type", &RobustKernel::type_, "Loss type.")
             .def_readwrite("scaling_parameter",

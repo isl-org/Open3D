@@ -127,7 +127,6 @@ def test_member_functions(device):
     with pytest.raises(RuntimeError) as excinfo:
         pcd3 = pcd2 + pcd
         assert 'The pointcloud is missing attribute' in str(excinfo.value)
-    return
 
     # transform.
     pcd = o3d.t.geometry.PointCloud(device)
