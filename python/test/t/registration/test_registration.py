@@ -50,6 +50,7 @@ def get_pcds(dtype, device):
     target = target.to(device)
 
     source.point["points"] = source.point["points"].to(dtype)
+    source.point["normals"] = source.point["normals"].to(dtype)
     target.point["points"] = target.point["points"].to(dtype)
     target.point["normals"] = target.point["normals"].to(dtype)
 
@@ -124,7 +125,9 @@ def test_registration_icp_point_to_point(device):
                                       [-0.139, 0.967, -0.215, 0.7],
                                       [0.487, 0.255, 0.835, -1.4],
                                       [0.0, 0.0, 0.0, 1.0]])
-        init_trans_t = o3c.Tensor(init_trans_legacy, dtype=dtype, device=device)
+        init_trans_t = o3c.Tensor(init_trans_legacy,
+                                  dtype=o3c.Dtype.Float64,
+                                  device=device)
 
         reg_p2p_t = o3d.t.pipelines.registration.registration_icp(
             source_t, target_t, max_correspondence_distance, init_trans_t,
@@ -160,7 +163,9 @@ def test_test_registration_icp_point_to_plane(device):
                                       [-0.139, 0.967, -0.215, 0.7],
                                       [0.487, 0.255, 0.835, -1.4],
                                       [0.0, 0.0, 0.0, 1.0]])
-        init_trans_t = o3c.Tensor(init_trans_legacy, dtype=dtype, device=device)
+        init_trans_t = o3c.Tensor(init_trans_legacy,
+                                  dtype=o3c.Dtype.Float64,
+                                  device=device)
 
         reg_p2plane_t = o3d.t.pipelines.registration.registration_icp(
             source_t, target_t, max_correspondence_distance, init_trans_t,
