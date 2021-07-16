@@ -79,7 +79,7 @@ public:
     ~CUDAScopedDevice() { cuda::SetDevice(prev_device_id_); }
 
     CUDAScopedDevice(const CUDAScopedDevice&) = delete;
-    void operator=(const CUDAScopedDevice&) = delete;
+    CUDAScopedDevice& operator=(const CUDAScopedDevice&) = delete;
 
 private:
     int prev_device_id_;
@@ -109,20 +109,60 @@ private:
 ///     // so the global stream will be reset back to 0.
 /// }
 /// ```
+/// If a new stream shall be used, the following constructor can be used:
+/// ```cpp
+/// void my_func() {
+///     // The scoped wrapper records the previous stream when it is
+///     constructed.
+///     // Let's assume the current stream is 0 initially.
+///     CUDAScopedStream scoped_stream(CUDAScopedStream::CreateNewStream);
+///
+///     // Now the current stream is 1.
+///     // Make cuda calls here for stream 1.
+///
+///     // After `my_func` returns, `scoped_stream` goes out-of-scope,
+///     // so the global stream will be reset back to 0.
+/// }
+/// ```
 class CUDAScopedStream {
+private:
+    struct CreateNewStreamTag {
+        CreateNewStreamTag(const CreateNewStreamTag&) = delete;
+        CreateNewStreamTag& operator=(const CreateNewStreamTag&) = delete;
+        CreateNewStreamTag(CreateNewStreamTag&&) = delete;
+        CreateNewStreamTag& operator=(CreateNewStreamTag&&) = delete;
+    };
+
 public:
+    constexpr static CreateNewStreamTag CreateNewStream = {};
+
+    explicit CUDAScopedStream(const CreateNewStreamTag&)
+        : prev_stream_(cuda::GetStream()), owns_new_stream_(true) {
+        OPEN3D_CUDA_CHECK(cudaStreamCreate(&new_stream_));
+        cuda::SetStream(new_stream_);
+    }
+
     explicit CUDAScopedStream(cudaStream_t stream)
-        : prev_stream_(cuda::GetStream()) {
+        : prev_stream_(cuda::GetStream()),
+          new_stream_(stream),
+          owns_new_stream_(false) {
         cuda::SetStream(stream);
     }
 
-    ~CUDAScopedStream() { cuda::SetStream(prev_stream_); }
+    ~CUDAScopedStream() {
+        if (owns_new_stream_) {
+            OPEN3D_CUDA_CHECK(cudaStreamDestroy(new_stream_));
+        }
+        cuda::SetStream(prev_stream_);
+    }
 
     CUDAScopedStream(const CUDAScopedStream&) = delete;
-    void operator=(const CUDAScopedStream&) = delete;
+    CUDAScopedStream& operator=(const CUDAScopedStream&) = delete;
 
 private:
     cudaStream_t prev_stream_;
+    cudaStream_t new_stream_;
+    bool owns_new_stream_ = false;
 };
 
 /// CUDAState is a lazy-evaluated singleton class that initializes and stores
