@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -74,9 +74,6 @@ void HashInsertInt(benchmark::State& state,
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
-#ifdef BUILD_CUDA_MODULE
-    CUDACachedMemoryManager::ReleaseCache();
-#endif
     Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
@@ -113,9 +110,6 @@ void HashEraseInt(benchmark::State& state,
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
-#ifdef BUILD_CUDA_MODULE
-    CUDACachedMemoryManager::ReleaseCache();
-#endif
     Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
@@ -153,9 +147,6 @@ void HashFindInt(benchmark::State& state,
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
-#ifdef BUILD_CUDA_MODULE
-    CUDACachedMemoryManager::ReleaseCache();
-#endif
     Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
@@ -178,9 +169,6 @@ void HashClearInt(benchmark::State& state,
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
-#ifdef BUILD_CUDA_MODULE
-    CUDACachedMemoryManager::ReleaseCache();
-#endif
     Tensor keys(data.keys_, {capacity}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
@@ -241,9 +229,6 @@ void HashInsertInt3(benchmark::State& state,
     std::vector<int> keys_Int3;
     keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
-#ifdef BUILD_CUDA_MODULE
-    CUDACachedMemoryManager::ReleaseCache();
-#endif
     Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
@@ -283,9 +268,6 @@ void HashEraseInt3(benchmark::State& state,
     std::vector<int> keys_Int3;
     keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
-#ifdef BUILD_CUDA_MODULE
-    CUDACachedMemoryManager::ReleaseCache();
-#endif
     Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
@@ -326,9 +308,6 @@ void HashFindInt3(benchmark::State& state,
     std::vector<int> keys_Int3;
     keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
-#ifdef BUILD_CUDA_MODULE
-    CUDACachedMemoryManager::ReleaseCache();
-#endif
     Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 
@@ -353,9 +332,6 @@ void HashClearInt3(benchmark::State& state,
     std::vector<int> keys_Int3;
     keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
                      reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
-#ifdef BUILD_CUDA_MODULE
-    CUDACachedMemoryManager::ReleaseCache();
-#endif
     Tensor keys(keys_Int3, {capacity, 3}, Dtype::Int32, device);
     Tensor values(data.vals_, {capacity}, Dtype::Int32, device);
 

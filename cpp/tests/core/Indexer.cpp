@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,23 +40,6 @@ class IndexerPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Indexer,
                          IndexerPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
-
-class IndexerPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        Indexer,
-        IndexerPermuteDevicePairs,
-        testing::ValuesIn(IndexerPermuteDevicePairs::TestCases()));
-
-class IndexerPermuteSizesDefaultStridesAndDevices
-    : public testing::TestWithParam<
-              std::tuple<std::pair<core::SizeVector, core::SizeVector>,
-                         core::Device>> {};
-INSTANTIATE_TEST_SUITE_P(
-        Indexer,
-        IndexerPermuteSizesDefaultStridesAndDevices,
-        testing::Combine(
-                testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
-                testing::ValuesIn(PermuteDevices::TestCases())));
 
 TEST_P(IndexerPermuteDevices, TensorRef) {
     core::Device device = GetParam();

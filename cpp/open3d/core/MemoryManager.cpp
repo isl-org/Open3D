@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,18 +31,24 @@
 
 #include "open3d/core/Blob.h"
 #include "open3d/core/Device.h"
-#include "open3d/utility/Console.h"
+#include "open3d/core/MemoryManagerStatistic.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
 void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
-    return GetDeviceMemoryManager(device)->Malloc(byte_size, device);
+    void* ptr = GetDeviceMemoryManager(device)->Malloc(byte_size, device);
+    MemoryManagerStatistic::GetInstance().CountMalloc(ptr, byte_size, device);
+    return ptr;
 }
 
 void MemoryManager::Free(void* ptr, const Device& device) {
-    return GetDeviceMemoryManager(device)->Free(ptr, device);
+    // Update statistics before freeing the memory. This ensures a consistent
+    // order in case a subsequent Malloc requires the currently freed memory.
+    MemoryManagerStatistic::GetInstance().CountFree(ptr, device);
+    GetDeviceMemoryManager(device)->Free(ptr, device);
 }
 
 void MemoryManager::Memcpy(void* dst_ptr,
@@ -104,10 +110,11 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
 #ifdef BUILD_CUDA_MODULE
 #ifdef BUILD_CACHED_CUDA_MANAGER
                     {Device::DeviceType::CUDA,
-                     std::make_shared<CUDACachedMemoryManager>()},
+                     std::make_shared<CachedMemoryManager>(
+                             std::make_shared<CUDAMemoryManager>())},
 #else
                     {Device::DeviceType::CUDA,
-                     std::make_shared<CUDASimpleMemoryManager>()},
+                     std::make_shared<CUDAMemoryManager>()},
 #endif  // BUILD_CACHED_CUDA_MANAGER
 #endif  // BUILD_CUDA_MODULE
             };

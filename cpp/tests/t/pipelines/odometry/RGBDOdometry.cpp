@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,12 +43,6 @@ class OdometryPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Odometry,
                          OdometryPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
-
-class OdometryPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        Odometry,
-        OdometryPermuteDevicePairs,
-        testing::ValuesIn(OdometryPermuteDevicePairs::TestCases()));
 
 core::Tensor CreateIntrisicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(

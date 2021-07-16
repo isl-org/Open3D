@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -174,9 +174,9 @@ void StdGPUHashmap<Key, Hash>::Find(const void* input_keys,
     uint32_t threads = 128;
     uint32_t blocks = (count + threads - 1) / threads;
 
-    STDGPUFindKernel<<<blocks, threads>>>(impl_, buffer_accessor_,
-                                          static_cast<const Key*>(input_keys),
-                                          output_addrs, output_masks, count);
+    STDGPUFindKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+            impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
+            output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
@@ -216,9 +216,9 @@ void StdGPUHashmap<Key, Hash>::Erase(const void* input_keys,
             core::Tensor({count}, Dtype::Int32, this->device_);
     addr_t* output_addrs = static_cast<addr_t*>(toutput_addrs.GetDataPtr());
 
-    STDGPUEraseKernel<<<blocks, threads>>>(impl_, buffer_accessor_,
-                                           static_cast<const Key*>(input_keys),
-                                           output_addrs, output_masks, count);
+    STDGPUEraseKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+            impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
+            output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
@@ -353,10 +353,10 @@ void StdGPUHashmap<Key, Hash>::InsertImpl(const void* input_keys,
     uint32_t threads = 128;
     uint32_t blocks = (count + threads - 1) / threads;
 
-    STDGPUInsertKernel<<<blocks, threads>>>(impl_, buffer_accessor_,
-                                            static_cast<const Key*>(input_keys),
-                                            input_values, this->dsize_value_,
-                                            output_addrs, output_masks, count);
+    STDGPUInsertKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
+            impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
+            input_values, this->dsize_value_, output_addrs, output_masks,
+            count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
@@ -375,6 +375,8 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
                            this->buffer_->GetValueBuffer(),
                            this->buffer_->GetHeap());
     buffer_accessor_.Reset(this->device_);
+
+    CachedMemoryManager::ReleaseCache(this->device_);
 
     impl_ = stdgpu::unordered_map<Key, addr_t, Hash>::createDeviceObject(
             this->capacity_);

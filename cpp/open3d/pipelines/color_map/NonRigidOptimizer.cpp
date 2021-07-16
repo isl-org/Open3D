@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@
 #include "open3d/pipelines/color_map/ColorMapUtils.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Parallel.h"
 
 namespace Eigen {
 
@@ -104,7 +105,7 @@ static std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
             }
             r2_sum_private += r * r;
         }
-#pragma omp critical
+#pragma omp critical(ComputeJTJandJTrNonRigid)
         {
             JTJ += JTJ_private;
             JTr += JTr_private;
@@ -302,7 +303,8 @@ geometry::TriangleMesh RunNonRigidOptimizer(
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         double residual_reg = 0.0;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int c = 0; c < n_camera; c++) {
             int nonrigidval = warping_fields[c].anchor_w_ *
                               warping_fields[c].anchor_h_ * 2;
@@ -362,7 +364,7 @@ geometry::TriangleMesh RunNonRigidOptimizer(
             }
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
 
-#pragma omp critical
+#pragma omp critical(RunNonRigidOptimizer)
             {
                 residual += r2;
                 residual_reg += rr_reg;

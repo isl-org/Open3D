@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,10 +43,13 @@ void ArangeCPU(const Tensor& start,
         scalar_t sstep = step.Item<scalar_t>();
         scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
         int64_t n = dst.GetLength();
-        CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
-            dst_ptr[workload_idx] =
-                    sstart + static_cast<scalar_t>(sstep * workload_idx);
-        });
+        cpu_launcher::ParallelFor(
+                n, cpu_launcher::SMALL_OP_GRAIN_SIZE,
+                [&](int64_t workload_idx) {
+                    dst_ptr[workload_idx] =
+                            sstart +
+                            static_cast<scalar_t>(sstep * workload_idx);
+                });
     });
 }
 

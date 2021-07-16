@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,6 @@
 
 #include <thrust/device_vector.h>
 
-#include <cassert>
 #include <memory>
 #include <random>
 
@@ -278,7 +277,8 @@ public:
         int num_mem_units = kBlocksPerSuperBlock * 32;
         int num_cuda_blocks =
                 (num_mem_units + kThreadsPerBlock - 1) / kThreadsPerBlock;
-        CountSlabsPerSuperblockKernel<<<num_cuda_blocks, kThreadsPerBlock>>>(
+        CountSlabsPerSuperblockKernel<<<num_cuda_blocks, kThreadsPerBlock, 0,
+                                        core::cuda::GetStream()>>>(
                 impl_, thrust::raw_pointer_cast(slabs_per_superblock.data()));
         OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
         OPEN3D_CUDA_CHECK(cudaGetLastError());

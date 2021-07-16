@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/io/rpc/BufferConnection.h"
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
 #include "open3d/io/rpc/ZMQContext.h"
+#include "pybind/core/tensor_type_caster.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
@@ -56,6 +58,16 @@ void pybind_rpc(py::module& m_io) {
                  "Creates a connection object",
                  "address"_a = "tcp://127.0.0.1:51454",
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
+
+    py::class_<rpc::BufferConnection, std::shared_ptr<rpc::BufferConnection>,
+               rpc::ConnectionBase>(m, "BufferConnection")
+            .def(py::init<>())
+            .def(
+                    "get_buffer",
+                    [](const rpc::BufferConnection& self) {
+                        return py::bytes(self.buffer().str());
+                    },
+                    "Returns a copy of the buffer.");
 
     py::class_<rpc::DummyReceiver, std::shared_ptr<rpc::DummyReceiver>>(
             m, "_DummyReceiver",

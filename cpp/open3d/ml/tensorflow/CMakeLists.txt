@@ -6,12 +6,6 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 find_package(Tensorflow REQUIRED)
-find_package(nanoflann REQUIRED)
-find_package(parallelstl REQUIRED)
-if(BUILD_CUDA_MODULE)
-    find_package(CUB REQUIRED)
-    find_package(CUTLASS REQUIRED)
-endif()
 
 
 add_library(open3d_tf_ops SHARED)
@@ -25,6 +19,17 @@ target_sources(open3d_tf_ops PRIVATE
     continuous_conv/ContinuousConvTransposeBackpropFilterOps.cpp
     continuous_conv/ContinuousConvTransposeOpKernel.cpp
     continuous_conv/ContinuousConvTransposeOps.cpp
+)
+
+target_sources(open3d_tf_ops PRIVATE
+    sparse_conv/SparseConvBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvOpKernel.cpp
+    sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cpp
+    sparse_conv/SparseConvTransposeOpKernel.cpp
+    sparse_conv/SparseConvBackpropFilterOps.cpp
+    sparse_conv/SparseConvOps.cpp
+    sparse_conv/SparseConvTransposeBackpropFilterOps.cpp
+    sparse_conv/SparseConvTransposeOps.cpp
 )
 
 target_sources(open3d_tf_ops PRIVATE
@@ -82,6 +87,13 @@ if (BUILD_CUDA_MODULE)
     )
 
     target_sources(open3d_tf_ops PRIVATE
+        sparse_conv/SparseConvBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvOpKernel.cu
+        sparse_conv/SparseConvTransposeBackpropFilterOpKernel.cu
+        sparse_conv/SparseConvTransposeOpKernel.cu
+    )
+
+    target_sources(open3d_tf_ops PRIVATE
         misc/BuildSpatialHashTableOpKernel.cu
         misc/FixedRadiusSearchOpKernel.cu
         misc/InvertNeighborsListOpKernel.cu
@@ -99,6 +111,7 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(open3d_tf_ops PRIVATE
         ../impl/continuous_conv/ContinuousConvCUDAKernels.cu
+        ../impl/sparse_conv/SparseConvCUDAKernels.cu
     )
 
     target_sources(open3d_tf_ops PRIVATE
@@ -136,11 +149,6 @@ set_target_properties(open3d_tf_ops PROPERTIES
 target_compile_definitions(open3d_tf_ops PRIVATE "${Tensorflow_DEFINITIONS}")
 
 if (BUILD_CUDA_MODULE)
-    target_include_directories(open3d_tf_ops SYSTEM PRIVATE
-        ${CUB_INCLUDE_DIR}
-        ${CUTLASS_INCLUDE_DIR}
-    )
-
     target_compile_definitions(open3d_tf_ops PRIVATE "BUILD_CUDA_MODULE")
 endif()
 
@@ -150,14 +158,27 @@ endif()
 target_include_directories(open3d_tf_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
     ${Tensorflow_INCLUDE_DIR}
-    ${nanoflann_INCLUDE_DIR}
-    ${parallelstl_INCLUDE_DIR}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
 target_link_libraries(open3d_tf_ops PRIVATE
-    3rdparty_tbb
     ${Tensorflow_FRAMEWORK_LIB}
-    ${FMT_TARGET}
     Open3D::Open3D
+    Open3D::3rdparty_fmt
+    Open3D::3rdparty_nanoflann
+    Open3D::3rdparty_parallelstl
+    Open3D::3rdparty_tbb
 )
+
+if (BUILD_CUDA_MODULE)
+    target_link_libraries(open3d_tf_ops PRIVATE
+        Open3D::3rdparty_cutlass
+        CUDA::cuda_driver
+    )
+
+    if (TARGET Open3D::3rdparty_cub)
+        target_link_libraries(open3d_tf_ops PRIVATE
+            Open3D::3rdparty_cub
+        )
+    endif()
+endif()

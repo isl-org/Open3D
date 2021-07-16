@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -104,7 +104,8 @@ void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
     const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
     const dim3 threads(kThread1DUnit);
 
-    ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
+    ComputePosePointToPlaneCUDAKernel<<<blocks, threads, 0,
+                                        core::cuda::GetStream()>>>(
             source_points_ptr, target_points_ptr, target_normals_ptr,
             correspondences_first, correspondences_second, n, global_sum_ptr);
 

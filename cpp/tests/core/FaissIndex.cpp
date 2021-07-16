@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -118,14 +118,14 @@ TEST_P(FaissPermuteDevices, HybridSearch) {
     core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
                        {1, 3}, core::Dtype::Float32);
 
-    std::pair<core::Tensor, core::Tensor> result =
+    core::Tensor indices, distances, counts;
+    std::tie(indices, distances, counts) =
             faiss_index.SearchHybrid(query, 0.1, 1);
 
-    core::Tensor indices = result.first;
-    core::Tensor distainces = result.second;
     ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
-    ExpectEQ(distainces.ToFlatVector<float>(),
-             std::vector<float>({0.00626358}));
+    ExpectEQ(distances.ToFlatVector<float>(), std::vector<float>({0.00626358}));
+    ExpectEQ(counts.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
+
     // Fails on double type.
     EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Dtype::Float64)),
                  std::runtime_error);

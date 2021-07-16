@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.19)
 # If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
-# official repository https://apt.kitware.com/.  CMake 3.18+ is required to
+# official repository https://apt.kitware.com/.  CMake 3.19+ is required to
 # allow linking with OBJECT libraries, to prevent erroneous -gencode option
-# deduplication with CUDA, and to simplify generator expressions for selecting
-# compile flags and setting global hardened link flags.
+# deduplication with CUDA, to simplify generator expressions for selecting
+# compile flags and setting global hardened link flags, and to parse JSON files
+# for downloading files from the open3d_downloads repository.
 
 if (APPLE)
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
@@ -52,7 +53,6 @@ option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF
 # 3rd-party build options
 option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"           OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
-option(USE_SYSTEM_FLANN           "Use system pre-installed flann"           OFF)
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
 option(USE_SYSTEM_GLEW            "Use system pre-installed glew"            OFF)
 option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"            OFF)
@@ -88,12 +88,6 @@ if (NOT DEVELOPER_BUILD)
     endif()
 endif()
 
-# In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
-# first try to look for the required files in OPEN3D_THIRD_PARTY_DOWNLOAD_DIR, before
-# downloading it from the internet. The files inside OPEN3D_THIRD_PARTY_DOWNLOAD_DIR
-# are prepared manually by the user. This is only supported by limited 3rd party
-# libraries.
-
 # Default build type on single-config generators.
 # For multi-config generators (e.g. Visual Studio), CMAKE_CONFIGURATION_TYPES
 # will be set, and we don't specify a default CMAKE_BUILD_TYPE.
@@ -119,19 +113,12 @@ if (CCACHE)
     endif()
 endif()
 
-set(THIRD_PARTY_FROM "cmake options")
-if(DEFINED ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} AND
-        IS_DIRECTORY "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}" AND
-        NOT OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
-    set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "$ENV{OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
-    set(THIRD_PARTY_FROM "the environment")
-endif()
-if(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR)
-    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is set to "
-    "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR} from ${THIRD_PARTY_FROM}.")
-else()
-    message(STATUS "OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is not specified, will download directly.")
-endif()
+# In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
+# use this directory to cache downloaded 3rd party dependencies and automatically skip
+# downloading from the Internet if the files are available. This is only supported by
+# a limited number of 3rd party libraries.
+set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads")
+message(STATUS "Downloading 3rdparty dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 
@@ -178,10 +165,6 @@ endif()
 if(BUILD_WEBRTC AND LINUX_AARCH64)
     message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
 endif()
-if(BUILD_WEBRTC AND MSVC AND (BUILD_SHARED OR NOT STATIC_WINDOWS_RUNTIME))
-    message(FATAL_ERROR "Please use STATIC_WINDOWS_RUNTIME=ON and "
-    "BUILD_SHARED=OFF to build WebRTC with MSVC")
-endif()
 if(BUILD_WEBRTC AND NOT BUILD_GUI)
     message(FATAL_ERROR "BUILD_WEBRTC=ON requires BUILD_GUI=ON")
 endif()
@@ -214,19 +197,45 @@ string(CONCAT OPEN3D_VERSION
     ".${OPEN3D_VERSION_PATCH}"
 )
 set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/docs/getting_started.rst @ONLY)
 
 project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
+# FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
+if (BUILD_CUDA_MODULE
+    AND CMAKE_CXX_COMPILER MATCHES "MSVC"
+    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
+)
+    # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
+    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD 17)
+    # Suppress warnings for deprecated C++17 functions.
+    add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
+    message(WARNING "Visual Studio 16.10 (MSVC 19.29) introduced a compiler bug when compiling CUDA code with C++14. "
+        "Workaround this bug by setting the CUDA standard to C++17.")
+endif()
+
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
 
-# setup PYTHON_EXECUTABLE if not set
-find_package(PythonExecutable REQUIRED) # invokes the module in 3rdparty/CMake
+# Setup Python executable
+if(NOT DEFINED Python3_FIND_REGISTRY)
+    # Only consider PATH variable on Windows by default
+    set(Python3_FIND_REGISTRY NEVER)
+endif()
+find_package(Python3 3.6...<3.9
+             COMPONENTS Interpreter Development
+)
+if (Python3_FOUND)
+    # Setup PYTHON_EXECUTABLE for 3rdparty modules
+    # which still use the deprecated find_package(PythonInterp)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE STRING
+        "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
+else()
+    if (BUILD_PYTHON_MODULE)
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.8. Please ensure it is in PATH.")
+    endif()
+endif()
 
 # npm version has to be MAJOR.MINOR.PATCH
 string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
@@ -301,14 +310,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         -fsanitize=safe-stack       # Stack execution protection
         -Wl,-z,relro,-z,now         # Data relocation protection
         -pie                        # Position independent executable
+        $<$<CONFIG:Release>:LINKER:-S>  # Exclude debug info
         CACHE STRING "Linker flags for security hardening")
     if(NOT BUILD_SHARED_LIBS AND NOT BUILD_PYTHON_MODULE)
         list(APPEND HARDENING_CFLAGS -fsanitize=safe-stack)   # Stack execution protection
         list(APPEND HARDENING_LDFLAGS -fsanitize=safe-stack)  # only static libraries supported
-    endif()
-    if(NOT DEVELOPER_BUILD)
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -S)     # Strip debug symbols
     endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
@@ -316,13 +322,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         -fstack-protector               # Stack-based buffer overrun detection
         -Wformat -Wformat-security      # Format string vulnerability
         CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS  ""
-        # -pie Position independent execution is default on macOSX 10.6+
+    set(HARDENING_LDFLAGS
+        # -pie Position independent executable is default on macOSX 10.6+
+        LINKER:-dead_strip    # Remove unreachable code
+        $<$<CONFIG:Release>:LINKER:-S,-x>  # Exclude debug info, non-global symbols
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        # list(APPEND HARDENING_LDFLAGS -S) # Causing link error for EncodeShader
-    endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
     set(HARDENING_CFLAGS
@@ -333,11 +337,8 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         -Wl,-z,noexecstack   # Stack execution protection
         -Wl,-z,relro,-z,now  # Data relocation protection
         -pie                 # Position independent executable
+        $<$<CONFIG:Release>:LINKER:--strip-debug>  # Exclude debug info
         CACHE STRING "Linker flags for security hardening")
-    if(NOT DEVELOPER_BUILD)     # Strip debug symbols
-        list(APPEND HARDENING_CFLAGS -O2)
-        list(APPEND HARDENING_LDFLAGS -strip-debug)
-    endif()
 else()
     message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "
     "flags set")
@@ -380,19 +381,19 @@ if(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
 
     if(BUILD_COMMON_CUDA_ARCHS)
-        # Build with all known (and deprecated) architectures.
+        # Build with all supported architectures for previous 2 generations and
+        # M0 (minor=0) architectures for previous generations (inluding
+        # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
+        # This is a tradeoff between binary size / build time and runtime on
+        # older architectures.
         # See https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility.
+        # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
         if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
-            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
-                60-real 61-real 62-real 70-real 72-real 75-real 80-real 86)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 50-real 60-real 70-real 72-real 75-real 80-real 86)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-            set(CMAKE_CUDA_ARCHITECTURES 35-real 37-real 50-real 52-real 53-real
-                60-real 61-real 62-real 70-real 72-real 75-real 80)
-        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "10.0")
-            set(CMAKE_CUDA_ARCHITECTURES 30-real 32-real 35-real 37-real 50-real
-                52-real 53-real 60-real 61-real 62-real 70-real 72-real 75)
+            set(CMAKE_CUDA_ARCHITECTURES 35-real 50-real 60-real 70-real 72-real 75-real 80)
         else()
-            message(STATUS "Old CUDA <10.0 detected. Falling back to CMake's default architectures.")
+            set(CMAKE_CUDA_ARCHITECTURES 30-real 50-real 60-real 70-real 72-real 75)
         endif()
     else()
         if(CMAKE_CUDA_ARCHITECTURES)
@@ -439,6 +440,10 @@ if(BUILD_CUDA_MODULE)
 
     message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
+
+    if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
+        message(FATAL_ERROR "CUDA 10.0 and older are not supported. Please upgrade to CUDA 10.1 or newer.")
+    endif()
 endif ()
 
 # OS specific settings
@@ -466,14 +471,9 @@ endif()
 
 # Downloads files from https://github.com/intel-isl/open3d_downloads to
 # Open3D/examples/test_data/open3d_downloads.
-include(ExternalProject)
-ExternalProject_Add(
-    open3d_downloads
-    DOWNLOAD_COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.py
-    UPDATE_COMMAND   ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.py
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
+add_custom_target(open3d_downloads
+    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
+    COMMENT ""
 )
 
 # Folder view for project files
@@ -605,6 +605,9 @@ function(open3d_set_global_properties target)
     elseif(UNIX)
         target_compile_definitions(${target} PRIVATE UNIX)
     endif()
+    if(LINUX_AARCH64)
+        target_compile_definitions(${target} PRIVATE LINUX_AARCH64)
+    endif()
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>")
 
     # TBB static version is used
@@ -613,6 +616,23 @@ function(open3d_set_global_properties target)
 
     # Download test data files from open3d_downloads repo.
     add_dependencies(${target} open3d_downloads)
+
+    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
+    # (from pybind11)
+    # macOS: -x: strip local symbols
+    # Linux: defaults
+    if(UNIX AND CMAKE_STRIP)
+        get_target_property(target_type ${target} TYPE)
+        if(target_type MATCHES
+                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND
+                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
+                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
+                COMMAND_EXPAND_LISTS)
+        endif()
+    endif()
+
 endfunction()
 
 macro(add_source_group module_name)
@@ -637,23 +657,28 @@ add_subdirectory(cpp)
 # Examples
 add_subdirectory(examples)
 
+# Documentation
+add_subdirectory(docs)
+
 # Install CMake configuration files
 install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})
 export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
 
-# `make check-style` checks style for c++/cuda/python/ipynb files
-add_custom_target(check-style
-    COMMAND ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py
-    COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
-)
+if (Python3_EXECUTABLE)
+    # `make check-style` checks style for c++/cuda/python/ipynb files
+    add_custom_target(check-style
+        COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py
+        COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
+    )
 
-# `make apply-style` applies style for c++/cuda/python/ipynb files
-add_custom_target(apply-style
-    COMMAND ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
-    COMMENT "Python executable used for style check: ${PYTHON_EXECUTABLE}."
-)
+    # `make apply-style` applies style for c++/cuda/python/ipynb files
+    add_custom_target(apply-style
+        COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
+        COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
+    )
+endif()
 
 # `make check-cpp-style` checks style for c++/cuda files.
 # This works outside of python virtualenv.
@@ -736,7 +761,6 @@ set(deps
     EIGEN3
     FAISS
     FILAMENT
-    FLANN
     FMT
     GLEW
     GLFW

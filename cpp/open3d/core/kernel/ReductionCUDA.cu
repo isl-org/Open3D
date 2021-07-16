@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@
 #include <thrust/tuple.h>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <sstream>
 #include <tuple>
@@ -47,7 +48,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/core/kernel/Reduction.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 // CUDA reduction is based on PyTorch's CUDA reduction implementation.
 // See: aten/src/ATen/native/cuda/Reduce.cuh
@@ -699,7 +700,7 @@ public:
             out_scalar_t*,
             arg_t,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        assert(false);  // can't use AT_ASSERT in Cuda.
+        OPEN3D_ASSERT(false);
         return arg_t{};
     }
 
@@ -708,7 +709,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<can_acc>::type* = nullptr) const {
-        assert(!final_output_);
+        OPEN3D_ASSERT(!final_output_);
         return (out_scalar_t)value;
     }
 
@@ -720,7 +721,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        assert(false);
+        OPEN3D_ASSERT(false);
         return *out;
     }
 
@@ -732,7 +733,7 @@ public:
 
     OPEN3D_DEVICE void SetResultsToOutput(arg_t value,
                                           index_t base_offset) const {
-        assert(final_output_);
+        OPEN3D_ASSERT(final_output_);
         SetResults(ops_.Project(value), base_offset);
     }
 
@@ -846,7 +847,7 @@ public:
             numerator_ = 1;
             denominator_ = 1;
         } else {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
+            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
             buffer_ = std::make_unique<Blob>(size, device);
             acc_ptr_ = (char*)buffer_->GetDataPtr();
@@ -972,7 +973,7 @@ private:
         void* buffer = nullptr;
         void* semaphores = nullptr;
         if (config.ShouldGlobalReduce()) {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
+            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
 
             buffer_blob =
@@ -985,7 +986,7 @@ private:
                     cudaMemset(semaphores, 0, config.SemaphoreSize()));
         }
 
-        assert(can_use_32bit_indexing);
+        OPEN3D_ASSERT(can_use_32bit_indexing);
         const char* in_data = (char*)indexer.GetInput(0).data_ptr_;
         char* out_data = (char*)indexer.GetOutput().data_ptr_;
         char* acc_data = acc_buf_ptr->GetAccSlice(out_data);
@@ -1000,8 +1001,8 @@ private:
         // Launch reduce kernel
         int shared_memory = config.SharedMemorySize();
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
-                <<<config.GridDim(), config.BlockDim(), shared_memory>>>(
-                        reduce_op);
+                <<<config.GridDim(), config.BlockDim(), shared_memory,
+                   core::cuda::GetStream()>>>(reduce_op);
         OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
@@ -1019,7 +1020,8 @@ void ReductionCUDA(const Tensor& src,
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         CUDAReductionEngine re(indexer);
         Dtype dtype = src.GetDtype();
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             switch (op_code) {
                 case ReductionOpCode::Sum:
@@ -1077,7 +1079,8 @@ void ReductionCUDA(const Tensor& src,
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME, dims);
         CUDAReductionEngine re(indexer);
         Dtype dtype = src.GetDtype();
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             switch (op_code) {
                 case ReductionOpCode::ArgMin:
@@ -1119,7 +1122,8 @@ void ReductionCUDA(const Tensor& src,
         }
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         CUDAReductionEngine re(indexer);
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         switch (op_code) {
             case ReductionOpCode::All:
                 if (indexer.NumWorkloads() == 0) {

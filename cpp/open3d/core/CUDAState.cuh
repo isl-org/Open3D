@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 /// \file CUDAState.cuh
 ///
-/// CUDAState.cuh can only be included by nvcc compiled source code.
+/// CUDAState.cuh can only be included by NVCC compiled source code.
 
 #pragma once
 
@@ -38,80 +38,97 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
-/// \class CUDADeviceSwitcher
+/// \class CUDAScopedDevice
 ///
-/// Switch CUDA device id in the current scope. The device id will be resetted
+/// Switch CUDA device id in the current scope. The device id will be reset
 /// once leaving the scope.
 ///
-/// CUDADeviceSwitcher provies an
+/// CUDAScopedDevice provides an
 /// [RAII-style](https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization)
 /// mechanism for setting and resetting CUDA devices of a scoped block.
 ///
 /// Example:
 /// ```cpp
 /// void my_func() {
-///     // The switcher recoreds the previous device when it is constructed.
-///     // Let's assume cudaGetDevice == 0 initially.
-///     CUDADeviceSwitcher switcher;
+///     // The scoped wrapper records the previous device when it is
+///     constructed.
+///     // Let's assume the current device is 0 initially.
+///     CUDAScopedDevice scoped_device(1);
 ///
-///     switcher.SwitchTo(1);
-///     // Now cudaGetDevice == 1.
+///     // Now the current device is 1.
 ///     // Make cuda calls here for device 1.
 ///
-///     switcher.SwitchTo(2);
-///     // Now cudaGetDevice == 2.
-///     // Make cuda calls here for device 1.
-///
-///     // After `my_func` returns, `switcher` goes out-of-scope,
-///     // so cudaGetDevice will be reset back to 0.
+///     // After `my_func` returns, `scoped_device` goes out-of-scope,
+///     // so the global device will be reset back to 0.
 /// }
-/// ```
-///
-/// You may also directly initialize and switch to a device:
-/// void my_func() {
-///     // The switcher recoreds the previous device and switch to device 1.
-///     CUDADeviceSwitcher switcher(1);
-///
-///     // After `my_func` returns, `switcher` goes out-of-scope,
-///     // so cudaGetDevice will be reset back to the previous device.
-/// }
-class CUDADeviceSwitcher {
+class CUDAScopedDevice {
 public:
-    /// Init CUDADeviceSwitcher class and keep using the current device.
-    CUDADeviceSwitcher() { OPEN3D_CUDA_CHECK(cudaGetDevice(&prev_device_id_)); }
-
-    CUDADeviceSwitcher(int device_id) : CUDADeviceSwitcher() {
-        SwitchTo(device_id);
+    explicit CUDAScopedDevice(int device_id)
+        : prev_device_id_(cuda::GetDevice()) {
+        cuda::SetDevice(device_id);
     }
 
-    CUDADeviceSwitcher(const Device& device)
-        : CUDADeviceSwitcher(device.GetID()) {}
+    explicit CUDAScopedDevice(const Device& device)
+        : CUDAScopedDevice(device.GetID()) {}
 
-    void SwitchTo(int device_id) const {
-        OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
-    }
+    ~CUDAScopedDevice() { cuda::SetDevice(prev_device_id_); }
 
-    void SwitchTo(const Device& device) const { SwitchTo(device.GetID()); }
-
-    ~CUDADeviceSwitcher() { OPEN3D_CUDA_CHECK(cudaSetDevice(prev_device_id_)); }
-
-    CUDADeviceSwitcher(CUDADeviceSwitcher const&) = delete;
-
-    void operator=(CUDADeviceSwitcher const&) = delete;
+    CUDAScopedDevice(const CUDAScopedDevice&) = delete;
+    void operator=(const CUDAScopedDevice&) = delete;
 
 private:
     int prev_device_id_;
 };
 
+/// \class CUDAScopedStream
+///
+/// Switch CUDA stream in the current scope. The stream will be reset
+/// once leaving the scope.
+///
+/// CUDAScopedStream provides an
+/// [RAII-style](https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization)
+/// mechanism for setting and resetting CUDA streams of a scoped block.
+///
+/// Example:
+/// ```cpp
+/// void my_func(cudaStream_t stream) {
+///     // The scoped wrapper records the previous stream when it is
+///     constructed.
+///     // Let's assume the current stream is 0 initially.
+///     CUDAScopedStream scoped_stream(stream);
+///
+///     // Now the current stream is 1.
+///     // Make cuda calls here for stream 1.
+///
+///     // After `my_func` returns, `scoped_stream` goes out-of-scope,
+///     // so the global stream will be reset back to 0.
+/// }
+/// ```
+class CUDAScopedStream {
+public:
+    explicit CUDAScopedStream(cudaStream_t stream)
+        : prev_stream_(cuda::GetStream()) {
+        cuda::SetStream(stream);
+    }
+
+    ~CUDAScopedStream() { cuda::SetStream(prev_stream_); }
+
+    CUDAScopedStream(const CUDAScopedStream&) = delete;
+    void operator=(const CUDAScopedStream&) = delete;
+
+private:
+    cudaStream_t prev_stream_;
+};
+
 /// CUDAState is a lazy-evaluated singleton class that initializes and stores
 /// the states of CUDA devices.
 ///
-/// Currenty is stores total number of devices and peer-to-peer availbility.
+/// Currently is stores total number of devices and peer-to-peer availability.
 ///
 /// In the future, it can also be used to store
 /// - Device allocators
@@ -160,18 +177,13 @@ public:
 
     int GetNumDevices() const { return num_devices_; }
 
-    int GetWarpSize() const { return warp_sizes_[GetCurentDeviceID()]; }
+    int GetWarpSize() const { return warp_sizes_[GetCurrentDeviceID()]; }
 
-    int GetCurentDeviceID() const {
-        int device_id;
-        OPEN3D_CUDA_CHECK(cudaGetDevice(&device_id));
-        return device_id;
-    }
+    int GetCurrentDeviceID() const { return cuda::GetDevice(); }
 
     /// Disable P2P device transfer by marking p2p_enabled_ to `false`, in order
     /// to run non-p2p tests on a p2p-capable machine.
     void ForceDisableP2PForTesting() {
-        CUDADeviceSwitcher switcher;
         for (int src_id = 0; src_id < num_devices_; ++src_id) {
             for (int tar_id = 0; tar_id < num_devices_; ++tar_id) {
                 if (src_id != tar_id && p2p_enabled_[src_id][tar_id]) {
@@ -183,7 +195,6 @@ public:
 
 private:
     CUDAState() {
-        CUDADeviceSwitcher switcher;
         OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&num_devices_));
 
         // Check and enable all possible peer to peer access.
@@ -195,7 +206,8 @@ private:
                 if (src_id == tar_id) {
                     p2p_enabled_[src_id][tar_id] = true;
                 } else {
-                    switcher.SwitchTo(src_id);
+                    CUDAScopedDevice scoped_device(src_id);
+
                     // Check access.
                     int can_access = 0;
                     OPEN3D_CUDA_CHECK(cudaDeviceCanAccessPeer(&can_access,

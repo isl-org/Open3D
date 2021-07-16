@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 
 #define EIGEN_USE_GPU
 #include "BuildSpatialHashTableOpKernel.h"
-#include "open3d/ml/Helper.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
 
 using namespace open3d;
@@ -41,7 +41,8 @@ public:
     explicit BuildSpatialHashTableOpKernelCUDA(
             OpKernelConstruction* construction)
         : BuildSpatialHashTableOpKernel(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,
