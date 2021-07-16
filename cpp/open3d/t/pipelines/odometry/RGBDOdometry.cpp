@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -429,12 +429,16 @@ OdometryResult ComputeOdometryResultPointToPlane(
             source_vertex_map, target_vertex_map, target_normal_map, intrinsics,
             init_source_to_target, se3_delta, inlier_residual, inlier_count,
             depth_outlier_trunc, depth_huber_delta);
-
+    // Check inlier_count, source_vertex_map's shape is non-zero guaranteed.
+    if (inlier_count <= 0) {
+        utility::LogError("Invalid inlier_count value {}, must be > 0.",
+                          inlier_count);
+    }
     return OdometryResult(
             pipelines::kernel::PoseToTransformation(se3_delta),
             inlier_residual / inlier_count,
-            double(inlier_count) / double(source_vertex_map.GetShape()[0] *
-                                          source_vertex_map.GetShape()[1]));
+            double(inlier_count) / double(source_vertex_map.GetShape(0) *
+                                          source_vertex_map.GetShape(1)));
 }
 
 OdometryResult ComputeOdometryResultIntensity(
@@ -458,12 +462,16 @@ OdometryResult ComputeOdometryResultIntensity(
             target_intensity_dx, target_intensity_dy, source_vertex_map,
             intrinsics, init_source_to_target, se3_delta, inlier_residual,
             inlier_count, depth_outlier_trunc, intensity_huber_delta);
-
+    // Check inlier_count, source_vertex_map's shape is non-zero guaranteed.
+    if (inlier_count <= 0) {
+        utility::LogError("Invalid inlier_count value {}, must be > 0.",
+                          inlier_count);
+    }
     return OdometryResult(
             pipelines::kernel::PoseToTransformation(se3_delta),
             inlier_residual / inlier_count,
-            double(inlier_count) / double(source_vertex_map.GetShape()[0] *
-                                          source_vertex_map.GetShape()[1]));
+            double(inlier_count) / double(source_vertex_map.GetShape(0) *
+                                          source_vertex_map.GetShape(1)));
 }
 
 OdometryResult ComputeOdometryResultHybrid(const Tensor& source_depth,
@@ -490,12 +498,16 @@ OdometryResult ComputeOdometryResultHybrid(const Tensor& source_depth,
             target_intensity_dy, source_vertex_map, intrinsics,
             init_source_to_target, se3_delta, inlier_residual, inlier_count,
             depth_outlier_trunc, depth_huber_delta, intensity_huber_delta);
-
+    // Check inlier_count, source_vertex_map's shape is non-zero guaranteed.
+    if (inlier_count <= 0) {
+        utility::LogError("Invalid inlier_count value {}, must be > 0.",
+                          inlier_count);
+    }
     return OdometryResult(
             pipelines::kernel::PoseToTransformation(se3_delta),
             inlier_residual / inlier_count,
-            double(inlier_count) / double(source_vertex_map.GetShape()[0] *
-                                          source_vertex_map.GetShape()[1]));
+            double(inlier_count) / double(source_vertex_map.GetShape(0) *
+                                          source_vertex_map.GetShape(1)));
 }
 
 }  // namespace odometry

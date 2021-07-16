@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 #include <nanoflann.hpp>
 
 #include "open3d/core/Dispatch.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
@@ -155,6 +155,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
                 holder_.get());
 
         nanoflann::SearchParams params;
+        params.sorted = sort;
 
         // Check if the raii has negative values.
         Tensor below_zero = radii.Le(0);
@@ -227,12 +228,12 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         Tensor radii(std::vector<scalar_t>(num_query_points,
                                            static_cast<scalar_t>(radius)),
                      {num_query_points}, dtype);
-        result = SearchRadius(query_points, radii);
+        result = SearchRadius(query_points, radii, sort);
     });
     return result;
 };
 
-std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
+std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
     query_points.AssertDtype(GetDtype());
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
@@ -250,7 +251,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
 
     double radius_squared = radius * radius;
     int64_t num_query_points = query_points.GetShape()[0];
-    Tensor indices, distances;
+    Tensor indices, distances, counts;
     Dtype dtype = GetDtype();
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -258,6 +259,8 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         auto indices_ptr = indices.GetDataPtr<int64_t>();
         distances = Tensor::Empty({num_query_points, max_knn}, dtype);
         auto distances_ptr = distances.GetDataPtr<scalar_t>();
+        counts = Tensor::Empty({num_query_points}, Dtype::Int64);
+        auto counts_ptr = counts.GetDataPtr<int64_t>();
 
         auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
                 holder_.get());
@@ -280,6 +283,13 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
                                 radius_squared, ret_matches, params);
                         ret_matches.resize(num_results);
 
+                        int64_t result_count =
+                                static_cast<int64_t>(num_results);
+                        result_count =
+                                result_count < max_knn ? result_count : max_knn;
+
+                        counts_ptr[workload_idx] = result_count;
+
                         int neighbour_idx = 0;
                         for (auto it = ret_matches.begin();
                              it < ret_matches.end() && neighbour_idx < max_knn;
@@ -297,7 +307,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
                     }
                 });
     });
-    return std::make_pair(indices, distances);
+    return std::make_tuple(indices, distances, counts);
 }
 
 }  // namespace nns

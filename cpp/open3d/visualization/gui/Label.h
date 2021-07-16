@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,8 +47,8 @@ public:
     Color GetTextColor() const;
     void SetTextColor(const Color& color);
 
-    FontStyle GetFontStyle() const;
-    void SetFontStyle(const FontStyle style);
+    FontId GetFontId() const;
+    void SetFontId(const FontId font_id);
 
     Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;

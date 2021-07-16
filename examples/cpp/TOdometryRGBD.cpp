@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,19 +31,20 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    TOdometryRGBD [src_depth] [dst_depth] [src_color] [dst_color]");
-    utility::LogInfo("     Given two RGBD images, perform rgbd odometry and visualize results.");
-    utility::LogInfo("     [options]");
-    utility::LogInfo("     --intrinsic_path [camera_intrinsic]");
-    utility::LogInfo("     --depth_scale [=1000.0]");
-    utility::LogInfo("     --depth_diff [=0.07]");
-    utility::LogInfo("     --method [=PointToPlane | Intensity | Hybrid]");
-    utility::LogInfo("     --device [CPU:0]");
+    utility::LogInfo("    > TOdometryRGBD [src_depth] [dst_depth] [src_color] [dst_color]");
+    utility::LogInfo("      Given two RGBD images, perform rgbd odometry and visualize results.");
+    utility::LogInfo("");
+    utility::LogInfo("Basic options:");
+    utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
+    utility::LogInfo("    --depth_scale [=1000.0]");
+    utility::LogInfo("    --depth_diff [=0.07]");
+    utility::LogInfo("    --method [=PointToPlane | Intensity | Hybrid]");
+    utility::LogInfo("    --device [CPU:0]");
     // clang-format on
     utility::LogInfo("");
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char* argv[]) {
     using namespace open3d;
     using core::Tensor;
     using t::geometry::PointCloud;
@@ -51,8 +52,8 @@ int main(int argc, char **argv) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc < 3) {
+    if (argc < 4 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }

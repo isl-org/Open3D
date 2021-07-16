@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/Timer.h"
 
 namespace open3d {
@@ -96,20 +96,19 @@ void UnprojectCPU
 #endif
 
     int64_t n = rows_strided * cols_strided;
+
 #if defined(__CUDACC__)
-    core::kernel::CUDALauncher launcher;
+    namespace launcher = core::kernel::cuda_launcher;
 #else
-    core::kernel::CPULauncher launcher;
+    namespace launcher = core::kernel::cpu_launcher;
 #endif
 
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        launcher.LaunchGeneralKernel(n, [=] OPEN3D_DEVICE(
-                                                int64_t workload_idx) {
+        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
             int64_t y = (workload_idx / cols_strided) * stride;
             int64_t x = (workload_idx % cols_strided) * stride;
 
-            float d = *depth_indexer.GetDataPtrFromCoord<scalar_t>(x, y) /
-                      depth_scale;
+            float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) / depth_scale;
             if (d > 0 && d < depth_max) {
                 int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
@@ -117,15 +116,13 @@ void UnprojectCPU
                 ti.Unproject(static_cast<float>(x), static_cast<float>(y), d,
                              &x_c, &y_c, &z_c);
 
-                float* vertex = point_indexer.GetDataPtrFromCoord<float>(idx);
+                float* vertex = point_indexer.GetDataPtr<float>(idx);
                 ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
                                   vertex + 2);
                 if (have_colors) {
-                    float* pcd_pixel =
-                            colors_indexer.GetDataPtrFromCoord<float>(idx);
+                    float* pcd_pixel = colors_indexer.GetDataPtr<float>(idx);
                     float* image_pixel =
-                            image_colors_indexer.GetDataPtrFromCoord<float>(x,
-                                                                            y);
+                            image_colors_indexer.GetDataPtr<float>(x, y);
                     *pcd_pixel = *image_pixel;
                     *(pcd_pixel + 1) = *(image_pixel + 1);
                     *(pcd_pixel + 2) = *(image_pixel + 2);

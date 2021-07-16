@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,8 @@ void pybind_pointcloud(py::module& m) {
             .def(py::init<const core::Tensor&>(), "points"_a)
             .def(py::init<const std::unordered_map<std::string,
                                                    core::Tensor>&>(),
-                 "map_keys_to_tensors"_a);
+                 "map_keys_to_tensors"_a)
+            .def("__repr__", &PointCloud::ToString);
 
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced
@@ -100,6 +101,16 @@ void pybind_pointcloud(py::module& m) {
                    "Returns the max bound for point coordinates.");
     pointcloud.def("get_center", &PointCloud::GetCenter,
                    "Returns the center for point coordinates.");
+
+    pointcloud.def("append",
+                   [](const PointCloud& self, const PointCloud& other) {
+                       return self.Append(other);
+                   });
+    pointcloud.def("__add__",
+                   [](const PointCloud& self, const PointCloud& other) {
+                       return self.Append(other);
+                   });
+
     pointcloud.def("transform", &PointCloud::Transform, "transformation"_a,
                    "Transforms the points and normals (if exist).");
     pointcloud.def("translate", &PointCloud::Translate, "translation"_a,

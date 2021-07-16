@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -121,8 +121,6 @@ public:
     rendering::MatrixInteractorLogic& GetMatrixInteractor() override {
         return *ibl_.get();
     }
-
-    void ShowSkybox(bool is_on) { ibl_->ShowSkybox(is_on); }
 
     void SetOnChanged(std::function<void(const rendering::Camera::Transform&)>
                               on_changed) {
@@ -629,8 +627,6 @@ public:
         sun_->SetOnSunLightChanged(onChanged);
     }
 
-    void ShowSkybox(bool isOn) { ibl_->ShowSkybox(isOn); }
-
     void SetSunInteractorEnabled(bool enable) {
         sun_interactor_enabled_ = enable;
     }
@@ -923,10 +919,6 @@ void SceneWidget::SetOnSunDirectionChanged(
             impl_->on_light_dir_changed_(dir);
         }
     });
-}
-
-void SceneWidget::ShowSkybox(bool is_on) {
-    impl_->controls_->ShowSkybox(is_on);
 }
 
 void SceneWidget::SetSunInteractorEnabled(bool enable) {

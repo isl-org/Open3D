@@ -14,6 +14,21 @@
         "path": "RGBD/vertex_map.npy",
         "sha256": "74237c2977476f27636be6f40feb703fd39f32e9952efac4358a886740be6148"
     },
+    "tests/bunnyData.pts": {
+        "url": "https://github.com/intel-isl/open3d_downloads/raw/master/tests/bunnyData.pts",
+        "path": "tests/bunnyData.pts",
+        "sha256": "2bc55437d6c3a6b3fbf6e63e9f909a6ab9e0bf73cc43628e243d720a6e04d40f"
+    },
+    "tests/point_cloud_sample1.pts": {
+        "url": "https://github.com/intel-isl/open3d_downloads/raw/master/tests/point_cloud_sample1.pts",
+        "path": "tests/point_cloud_sample1.pts",
+        "sha256": "8095941de628d6c553569e39151f33467ffb972bea8c7fe9660cba89f7d52bee"
+    },
+    "tests/point_cloud_sample2.pts": {
+        "url": "https://github.com/intel-isl/open3d_downloads/raw/master/tests/point_cloud_sample2.pts",
+        "path": "tests/point_cloud_sample2.pts",
+        "sha256": "59e8b0daee0b009f56fc19cf0a17a6c7bed0dc852845e31cc85911db24c3d1a4"
+    },
     "tests/cube.obj": {
         "url": "https://github.com/intel-isl/open3d_downloads/raw/master/tests/cube.obj",
         "path": "tests/cube.obj",

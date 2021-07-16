@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,7 @@
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
 #include "open3d/core/linalg/Tri.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -702,8 +702,34 @@ Tensor Tensor::Slice(int64_t dim,
 }
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
+    if (NumDims() == 0) {
+        const std::string error_prefix =
+                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
+        if (index_tensors.size() != 1) {
+            utility::LogError("{}, but got {} index tensors.", error_prefix,
+                              index_tensors.size());
+        }
+        Tensor index_tensor = index_tensors[0];
+        index_tensor.AssertShape(
+                {}, fmt::format("{}, but got shape {}.", error_prefix,
+                                index_tensor.GetShape().ToString()));
+        index_tensor.AssertDtype(
+                Dtype::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
+                                         index_tensor.GetDtype().ToString()));
+
+        if (index_tensor.IsNonZero()) {
+            // E.g. np.array(5)[np.array(True)].
+            return *this;
+        } else {
+            // E.g. np.array(5)[np.array(False)].
+            // The output tensor becomes 1D of 0 element.
+            return Tensor(/*shape=*/{0}, GetDtype(), GetDevice());
+        }
+    }
+
     AdvancedIndexPreprocessor aip(*this, index_tensors);
     Tensor dst = Tensor(aip.GetOutputShape(), dtype_, GetDevice());
+
     kernel::IndexGet(aip.GetTensor(), dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 
@@ -712,8 +738,59 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
+    if (NumDims() == 0) {
+        const std::string error_prefix =
+                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
+        if (index_tensors.size() != 1) {
+            utility::LogError("{}, but got {} index tensors.", error_prefix,
+                              index_tensors.size());
+        }
+        Tensor index_tensor = index_tensors[0];
+        index_tensor.AssertShape(
+                {}, fmt::format("{}, but got shape {}.", error_prefix,
+                                index_tensor.GetShape().ToString()));
+        index_tensor.AssertDtype(
+                Dtype::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
+                                         index_tensor.GetDtype().ToString()));
+
+        // Example index set
+        // t = np.array(5)
+        // t[np.array(True)]  = 10                 // Works, assigned
+        // t[np.array(True)]  = np.array(10)       // Works, assigned
+        // t[np.array(True)]  = np.array([10])     // Works, assigned
+        // t[np.array(True)]  = np.array([[10]])   // Cannot assign 2D
+        // t[np.array(True)]  = np.array([10, 11]) // Cannot assign 1+ values
+        // t[np.array(False)] = 10                 // Works, unchanged
+        // t[np.array(False)] = np.array(10)       // Works, unchanged
+        // t[np.array(False)] = np.array([10])     // Works, unchanged
+        // t[np.array(False)] = np.array([[10]])   // Cannot assign 2D
+        // t[np.array(False)] = np.array([10, 11]) // Cannot assign 1+ values
+
+        // Assert 0-D or 1-D.
+        if (src_tensor.NumDims() > 1) {
+            utility::LogError(
+                    "Boolean indexing of a 0-D tensor can only be assigned "
+                    "with 0 or 1-dimensional input, but got {} dimensions.",
+                    src_tensor.NumDims());
+        }
+        // Assert single element.
+        if (src_tensor.NumElements() != 1) {
+            utility::LogError(
+                    "Boolean indexing of a 0-D tensor can only be assigned "
+                    "with input containing 1 element, but got {} elements.",
+                    src_tensor.NumElements());
+        }
+        if (index_tensors[0].IsNonZero()) {
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_tensor.GetDtype(), [&]() {
+                AsRvalue() = src_tensor.Item<scalar_t>();
+            });
+        }
+        return;
+    }
+
     AdvancedIndexPreprocessor aip(*this, index_tensors);
     Tensor pre_processed_dst = aip.GetTensor();
+
     kernel::IndexSet(src_tensor, pre_processed_dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 }

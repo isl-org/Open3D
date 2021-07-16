@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -265,7 +265,8 @@ OdometryResult ComputeOdometryResultIntensity(
 /// \f$ D_q \f$ denotes the depth pixel q in the target.
 /// q is obtained by transforming p with \p init_source_to_target then
 /// projecting with \p intrinsics.
-/// Colored ICP Revisited, ICCV 2017
+/// Reference: J. Park, Q.Y. Zhou, and V. Koltun,
+/// Colored Point Cloud Registration Revisited, ICCV, 2017.
 ///
 /// \param source_depth (rows, cols, channels=1) Float32 source depth image
 /// obtained by PreprocessDepth before calling this function.

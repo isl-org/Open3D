@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -55,8 +55,8 @@ void PrintHelp() {
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
-    if (argc <= 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        utility::ProgramOptionExists(argc, argv, "-h")) {
+    if (argc <= 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,13 +32,15 @@
 
 #pragma once
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 #ifdef BUILD_CUDA_MODULE
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+#define OPEN3D_FORCE_INLINE __forceinline__
+#define OPEN3D_INLINE inline
 #define OPEN3D_HOST_DEVICE __host__ __device__
 #define OPEN3D_DEVICE __device__
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
@@ -48,11 +50,12 @@
     open3d::core::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message) \
     __OPEN3D_GET_LAST_CUDA_ERROR(message, __FILE__, __LINE__)
-
 #define CUDA_CALL(cuda_function, ...) cuda_function(__VA_ARGS__);
 
 #else  // #ifdef BUILD_CUDA_MODULE
 
+#define OPEN3D_FORCE_INLINE inline
+#define OPEN3D_INLINE inline
 #define OPEN3D_HOST_DEVICE
 #define OPEN3D_DEVICE
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -96,6 +96,10 @@ const char* Widget::GetTooltip() const { return impl_->tooltip_.c_str(); }
 Size Widget::CalcPreferredSize(const LayoutContext&,
                                const Constraints& constraints) const {
     return Size(DIM_GROW, DIM_GROW);
+}
+
+Size Widget::CalcMinimumSize(const LayoutContext& context) const {
+    return Size(0, 0);
 }
 
 void Widget::Layout(const LayoutContext& context) {

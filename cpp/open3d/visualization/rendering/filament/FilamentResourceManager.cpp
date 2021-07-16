@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
+
+#include "open3d/core/Dtype.h"
 
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 // 4146: PixelBufferDescriptor assert unsigned is positive before subtracting
@@ -59,8 +61,8 @@
 
 #include "open3d/io/ImageIO.h"
 #include "open3d/t/geometry/Image.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
@@ -149,6 +151,10 @@ std::intptr_t RetainImageForLoading(
     ++img_id;
 
     return id;
+}
+
+static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
+    free(buffer);
 }
 
 void FreeRetainedImage(void* buffer, size_t size, void* user_ptr) {
@@ -862,22 +868,41 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto levels = maxLevelCount(texture_settings.texel_width,
                                 texture_settings.texel_height);
 
-    Texture::PixelBufferDescriptor pb(
-            image.GetDataPtr(),
-            image.GetRows() * image.GetCols() * image.GetChannels() *
-                    image.GetDtype().ByteSize(),
-            texture_settings.image_format, texture_settings.image_type);
-    auto texture = Texture::Builder()
-                           .width(texture_settings.texel_width)
-                           .height(texture_settings.texel_height)
-                           .levels(levels)
-                           .format(texture_settings.format)
-                           .sampler(Texture::Sampler::SAMPLER_2D)
-                           .build(engine_);
-
-    texture->setImage(engine_, 0, std::move(pb));
-    texture->generateMipmaps(engine_);
-    return texture;
+    const size_t image_bytes = image.GetRows() * image.GetCols() *
+                               image.GetChannels() *
+                               image.GetDtype().ByteSize();
+    if (image.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        t::geometry::Image cpu_image = image.CPU();
+        auto* image_data = malloc(image_bytes);
+        memcpy(image_data, cpu_image.GetDataPtr(), image_bytes);
+        Texture::PixelBufferDescriptor pb(
+                image_data, image_bytes, texture_settings.image_format,
+                texture_settings.image_type, DeallocateBuffer);
+        auto texture = Texture::Builder()
+                               .width(texture_settings.texel_width)
+                               .height(texture_settings.texel_height)
+                               .levels(levels)
+                               .format(texture_settings.format)
+                               .sampler(Texture::Sampler::SAMPLER_2D)
+                               .build(engine_);
+        texture->setImage(engine_, 0, std::move(pb));
+        texture->generateMipmaps(engine_);
+        return texture;
+    } else {
+        Texture::PixelBufferDescriptor pb(image.GetDataPtr(), image_bytes,
+                                          texture_settings.image_format,
+                                          texture_settings.image_type);
+        auto texture = Texture::Builder()
+                               .width(texture_settings.texel_width)
+                               .height(texture_settings.texel_height)
+                               .levels(levels)
+                               .format(texture_settings.format)
+                               .sampler(Texture::Sampler::SAMPLER_2D)
+                               .build(engine_);
+        texture->setImage(engine_, 0, std::move(pb));
+        texture->generateMipmaps(engine_);
+        return texture;
+    }
 }
 
 filament::Texture* FilamentResourceManager::LoadFilledTexture(

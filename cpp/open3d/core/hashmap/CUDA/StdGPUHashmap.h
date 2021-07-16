@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -375,6 +375,8 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
                            this->buffer_->GetValueBuffer(),
                            this->buffer_->GetHeap());
     buffer_accessor_.Reset(this->device_);
+
+    CachedMemoryManager::ReleaseCache(this->device_);
 
     impl_ = stdgpu::unordered_map<Key, addr_t, Hash>::createDeviceObject(
             this->capacity_);

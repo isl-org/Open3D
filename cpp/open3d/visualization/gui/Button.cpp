@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -135,7 +135,8 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
     auto result = Widget::DrawResult::NONE;
 
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     bool was_on = impl_->is_on_;
     if (was_on) {

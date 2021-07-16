@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,8 @@
 #include <string>
 #include <vector>
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -69,6 +69,10 @@ public:
     }
 
     bool operator!=(const Device& other) const { return !operator==(other); }
+
+    bool operator<(const Device& other) const {
+        return ToString() < other.ToString();
+    }
 
     std::string ToString() const {
         std::string str = "";
@@ -130,5 +134,16 @@ protected:
     int device_id_;
 };
 
+const Device HOST = Device("CPU:0");
+
 }  // namespace core
 }  // namespace open3d
+
+namespace std {
+template <>
+struct hash<open3d::core::Device> {
+    std::size_t operator()(const open3d::core::Device& device) const {
+        return std::hash<std::string>{}(device.ToString());
+    }
+};
+}  // namespace std

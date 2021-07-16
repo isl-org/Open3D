@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -64,7 +64,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         const TransformIndexer& ti,
         float* J_ij,
         float& r) {
-    float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+    float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
     if (ISNAN(source_v[0])) {
         return false;
     }
@@ -86,8 +86,8 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
 
     int ui = static_cast<int>(u);
     int vi = static_cast<int>(v);
-    float* target_v = target_vertex_indexer.GetDataPtrFromCoord<float>(ui, vi);
-    float* target_n = target_normal_indexer.GetDataPtrFromCoord<float>(ui, vi);
+    float* target_v = target_vertex_indexer.GetDataPtr<float>(ui, vi);
+    float* target_n = target_normal_indexer.GetDataPtr<float>(ui, vi);
     if (ISNAN(target_v[0]) || ISNAN(target_n[0])) {
         return false;
     }
@@ -128,7 +128,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
         float& r_I) {
     const float sobel_scale = 0.125;
 
-    float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+    float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
     if (ISNAN(source_v[0])) {
         return false;
     }
@@ -151,21 +151,18 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
     float fx, fy;
     ti.GetFocalLength(&fx, &fy);
 
-    float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
+    float depth_t = *target_depth_indexer.GetDataPtr<float>(u_t, v_t);
     float diff_D = depth_t - T_source_to_target_v[2];
     if (ISNAN(depth_t) || abs(diff_D) > depth_outlier_trunc) {
         return false;
     }
 
-    float diff_I =
-            *target_intensity_indexer.GetDataPtrFromCoord<float>(u_t, v_t) -
-            *source_intensity_indexer.GetDataPtrFromCoord<float>(x, y);
-    float dIdx =
-            sobel_scale *
-            (*target_intensity_dx_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
-    float dIdy =
-            sobel_scale *
-            (*target_intensity_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
+    float diff_I = *target_intensity_indexer.GetDataPtr<float>(u_t, v_t) -
+                   *source_intensity_indexer.GetDataPtr<float>(x, y);
+    float dIdx = sobel_scale *
+                 (*target_intensity_dx_indexer.GetDataPtr<float>(u_t, v_t));
+    float dIdy = sobel_scale *
+                 (*target_intensity_dy_indexer.GetDataPtr<float>(u_t, v_t));
 
     float invz = 1 / T_source_to_target_v[2];
     float c0 = dIdx * fx * invz;
@@ -208,7 +205,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     const float sqrt_lambda_depth = 0.707;
     const float sobel_scale = 0.125;
 
-    float* source_v = source_vertex_indexer.GetDataPtrFromCoord<float>(x, y);
+    float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
     if (ISNAN(source_v[0])) {
         return false;
     }
@@ -231,31 +228,26 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     float fx, fy;
     ti.GetFocalLength(&fx, &fy);
 
-    float depth_t = *target_depth_indexer.GetDataPtrFromCoord<float>(u_t, v_t);
+    float depth_t = *target_depth_indexer.GetDataPtr<float>(u_t, v_t);
     float diff_D = depth_t - T_source_to_target_v[2];
     if (ISNAN(depth_t) || abs(diff_D) > depth_outlier_trunc) {
         return false;
     }
 
-    float dDdx =
-            sobel_scale *
-            (*target_depth_dx_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
-    float dDdy =
-            sobel_scale *
-            (*target_depth_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
+    float dDdx = sobel_scale *
+                 (*target_depth_dx_indexer.GetDataPtr<float>(u_t, v_t));
+    float dDdy = sobel_scale *
+                 (*target_depth_dy_indexer.GetDataPtr<float>(u_t, v_t));
     if (ISNAN(dDdx) || ISNAN(dDdy)) {
         return false;
     }
 
-    float diff_I =
-            *target_intensity_indexer.GetDataPtrFromCoord<float>(u_t, v_t) -
-            *source_intensity_indexer.GetDataPtrFromCoord<float>(x, y);
-    float dIdx =
-            sobel_scale *
-            (*target_intensity_dx_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
-    float dIdy =
-            sobel_scale *
-            (*target_intensity_dy_indexer.GetDataPtrFromCoord<float>(u_t, v_t));
+    float diff_I = *target_intensity_indexer.GetDataPtr<float>(u_t, v_t) -
+                   *source_intensity_indexer.GetDataPtr<float>(x, y);
+    float dIdx = sobel_scale *
+                 (*target_intensity_dx_indexer.GetDataPtr<float>(u_t, v_t));
+    float dIdy = sobel_scale *
+                 (*target_intensity_dy_indexer.GetDataPtr<float>(u_t, v_t));
 
     float invz = 1 / T_source_to_target_v[2];
     float c0 = dIdx * fx * invz;

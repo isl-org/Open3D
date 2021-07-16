@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <memory>
 
 #include "open3d/core/CUDAUtils.h"
@@ -136,7 +135,6 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
             float(this->capacity_) / float(this->bucket_count_);
 
     Free();
-    CUDACachedMemoryManager::ReleaseCache();
 
     Allocate(buckets,
              std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
@@ -150,7 +148,6 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
                    output_masks.GetDataPtr<bool>(), iterator_count);
     }
-    CUDACachedMemoryManager::ReleaseCache();
 }
 
 template <typename Key, typename Hash>

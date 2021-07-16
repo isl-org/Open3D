@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -76,18 +76,23 @@ void Integrate(const core::Tensor& depth,
                float depth_max) {
     core::Device device = depth.GetDevice();
 
-    if (color.GetDevice() != device) {
-        utility::LogError("Incompatible color device type for depth and color");
+    core::Tensor depthf32 = depth.To(core::Dtype::Float32);
+    core::Tensor colorf32;
+
+    if (color.NumElements() != 0) {
+        if (color.GetDevice() != device) {
+            utility::LogError(
+                    "Incompatible color device type for depth and color");
+        }
+        colorf32 = color.To(core::Dtype::Float32);
     }
+
     if (block_indices.GetDevice() != device ||
         block_keys.GetDevice() != device ||
         block_values.GetDevice() != device) {
         utility::LogError(
                 "Incompatible device type for depth and TSDF voxel grid");
     }
-
-    core::Tensor depthf32 = depth.To(core::Dtype::Float32);
-    core::Tensor colorf32 = color.To(core::Dtype::Float32);
 
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d =
@@ -229,19 +234,21 @@ void ExtractSurfacePoints(
     }
 }
 
-void ExtractSurfaceMesh(const core::Tensor& block_indices,
-                        const core::Tensor& inv_block_indices,
-                        const core::Tensor& nb_block_indices,
-                        const core::Tensor& nb_block_masks,
-                        const core::Tensor& block_keys,
-                        const core::Tensor& block_values,
-                        core::Tensor& vertices,
-                        core::Tensor& triangles,
-                        core::Tensor& vertex_normals,
-                        core::Tensor& vertex_colors,
-                        int64_t block_resolution,
-                        float voxel_size,
-                        float weight_threshold) {
+void ExtractSurfaceMesh(
+        const core::Tensor& block_indices,
+        const core::Tensor& inv_block_indices,
+        const core::Tensor& nb_block_indices,
+        const core::Tensor& nb_block_masks,
+        const core::Tensor& block_keys,
+        const core::Tensor& block_values,
+        core::Tensor& vertices,
+        core::Tensor& triangles,
+        utility::optional<std::reference_wrapper<core::Tensor>> vertex_normals,
+        utility::optional<std::reference_wrapper<core::Tensor>> vertex_colors,
+        int64_t block_resolution,
+        float voxel_size,
+        float weight_threshold,
+        int& vertex_count) {
     core::Device device = block_keys.GetDevice();
 
     core::Device::DeviceType device_type = device.GetType();
@@ -250,14 +257,14 @@ void ExtractSurfaceMesh(const core::Tensor& block_indices,
                               nb_block_indices, nb_block_masks, block_keys,
                               block_values, vertices, triangles, vertex_normals,
                               vertex_colors, block_resolution, voxel_size,
-                              weight_threshold);
+                              weight_threshold, vertex_count);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         ExtractSurfaceMeshCUDA(block_indices, inv_block_indices,
                                nb_block_indices, nb_block_masks, block_keys,
                                block_values, vertices, triangles,
                                vertex_normals, vertex_colors, block_resolution,
-                               voxel_size, weight_threshold);
+                               voxel_size, weight_threshold, vertex_count);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif

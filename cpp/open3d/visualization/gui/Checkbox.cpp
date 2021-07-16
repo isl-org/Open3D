@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -79,7 +79,8 @@ Size Checkbox::CalcPreferredSize(const LayoutContext& context,
 
 Widget::DrawResult Checkbox::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
     auto result = Widget::DrawResult::NONE;
 
     // ImGUI doesn't offer styling specific to checkboxes other than the

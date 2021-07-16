@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,13 +37,6 @@ class TransformationConverterPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(TransformationConverter,
                          TransformationConverterPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
-
-class TransformationConverterPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        TransformationConverter,
-        TransformationConverterPermuteDevicePairs,
-        testing::ValuesIn(
-                TransformationConverterPermuteDevicePairs::TestCases()));
 
 TEST_P(TransformationConverterPermuteDevices, RtToTransformation) {
     core::Device device = GetParam();

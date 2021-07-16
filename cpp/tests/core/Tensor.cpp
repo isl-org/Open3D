@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -901,6 +901,20 @@ TEST_P(TensorPermuteDevicePairs, IndexGet) {
     EXPECT_TRUE(dst_t.IsContiguous());
     EXPECT_EQ(dst_t.GetShape(), core::SizeVector({2, 2}));
     EXPECT_EQ(dst_t.ToFlatVector<float>(), std::vector<float>({5, 10, 17, 22}));
+
+    // Check 0-D tensor.
+    src_t = core::Tensor::Init<int>(1, src_device);
+    indices = {core::Tensor::Init<bool>(true, idx_device)};
+    dst_t = src_t.IndexGet(indices);
+    EXPECT_TRUE(dst_t.AllClose(src_t));
+    EXPECT_EQ(src_t.GetDtype(), dst_t.GetDtype());
+
+    src_t = core::Tensor::Init<int>(1, src_device);
+    indices = {core::Tensor::Init<bool>(false, idx_device)};
+    dst_t = src_t.IndexGet(indices);
+    EXPECT_TRUE(
+            dst_t.AllClose(core::Tensor({0}, core::Dtype::Int32, src_device)));
+    EXPECT_EQ(src_t.GetDtype(), dst_t.GetDtype());
 }
 
 TEST_P(TensorPermuteDevicePairs, IndexGetNegative) {
@@ -1088,6 +1102,60 @@ TEST_P(TensorPermuteDevicePairs, IndexSet) {
     EXPECT_EQ(dst_t.ToFlatVector<float>(),
               std::vector<float>({0, 0, 0, 0, 4,  5,  6,  0, 0, 0, 0, 0,
                                   0, 0, 0, 0, 16, 17, 18, 0, 0, 0, 0, 0}));
+
+    // Check 0-D tensor.
+    // dst_t[np.array(True)] = 10 // Works, assigned
+    // dst_t[np.array(True)] = np.array(10) // Works, assigned
+    dst_t = core::Tensor::Init<float>(5, dst_device);
+    dst_t.IndexSet({core::Tensor::Init<bool>(true, src_device)},
+                   core::Tensor::Init<float>(10, src_device));
+    EXPECT_TRUE(dst_t.AllClose(core::Tensor::Init<float>(10, dst_device)));
+
+    // dst_t[np.array(True)] = np.array([10]) // Works, assigned
+    dst_t = core::Tensor::Init<float>(5, dst_device);
+    dst_t.IndexSet({core::Tensor::Init<bool>(true, src_device)},
+                   core::Tensor::Init<float>({10}, src_device));
+    EXPECT_TRUE(dst_t.AllClose(core::Tensor::Init<float>(10, dst_device)));
+
+    // dst_t[np.array(True)] = np.array([[10]]) // Cannot assign 2D
+    dst_t = core::Tensor::Init<float>(5, dst_device);
+    EXPECT_ANY_THROW(
+            dst_t.IndexSet({core::Tensor::Init<bool>(true, src_device)},
+                           core::Tensor::Init<float>({{10}}, src_device)));
+
+    // dst_t[np.array(True)] = np.array([10, 11]) // Cannot assign 1+ values
+    EXPECT_ANY_THROW(
+            dst_t.IndexSet({core::Tensor::Init<bool>(true, src_device)},
+                           core::Tensor::Init<float>({10, 11}, src_device)));
+
+    // dst_t[np.array(False)] = 10 // Works, unchanged
+    dst_t = core::Tensor::Init<float>(5, dst_device);
+    dst_t.IndexSet({core::Tensor::Init<bool>(false, src_device)},
+                   core::Tensor::Init<float>(10, src_device));
+    EXPECT_TRUE(dst_t.AllClose(core::Tensor::Init<float>(5, dst_device)));
+
+    // dst_t[np.array(False)] = np.array(10) // Works, unchanged
+    dst_t = core::Tensor::Init<float>(5, dst_device);
+    dst_t.IndexSet({core::Tensor::Init<bool>(false, src_device)},
+                   core::Tensor::Init<float>({10}, src_device));
+    EXPECT_TRUE(dst_t.AllClose(core::Tensor::Init<float>(5, dst_device)));
+
+    // dst_t[np.array(False)] = np.array([10]) // Works, unchanged
+    dst_t = core::Tensor::Init<float>(5, dst_device);
+    EXPECT_ANY_THROW(
+            dst_t.IndexSet({core::Tensor::Init<bool>(false, src_device)},
+                           core::Tensor::Init<float>({{5}}, src_device)));
+
+    // dst_t[np.array(False)] = np.array([[10]]) // Cannot assign 2D
+    dst_t = core::Tensor::Init<float>(5, dst_device);
+    EXPECT_ANY_THROW(
+            dst_t.IndexSet({core::Tensor::Init<bool>(false, src_device)},
+                           core::Tensor::Init<float>({{10}}, src_device)));
+
+    // dst_t[np.array(False)] = np.array([10, 11]) // Cannot assign 1+ values
+    EXPECT_ANY_THROW(
+            dst_t.IndexSet({core::Tensor::Init<bool>(false, src_device)},
+                           core::Tensor::Init<float>({10, 11}, src_device)));
 }
 
 TEST_P(TensorPermuteDevicePairs, IndexSetBroadcast) {
@@ -1200,9 +1268,6 @@ TEST_P(TensorPermuteDevices, Det) {
             {{-5, 0, -1}, {1, 2, -1}, {-3, 4, 1}}, device);
     double A_3x3d_det = A_3x3d.Det();
     EXPECT_DOUBLE_EQ(A_3x3d_det, -40.0);
-
-    // Singular test.
-    EXPECT_ANY_THROW(core::Tensor::Zeros({3, 3}, dtype, device).Det());
 
     // Det expects a 2D square matrix [shape test].
     EXPECT_ANY_THROW(core::Tensor::Ones({0}, dtype, device).Det());

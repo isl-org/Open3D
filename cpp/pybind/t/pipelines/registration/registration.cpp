@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
 #include "pybind/t/pipelines/registration/registration.h"
 
@@ -230,6 +230,7 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for evaluating registration between point clouds",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
           "transformation"_a = core::Tensor::Eye(4, core::Dtype::Float64,
@@ -237,8 +238,10 @@ void pybind_registration_methods(py::module &m) {
     docstring::FunctionDocInject(m, "evaluate_registration",
                                  map_shared_argument_docstrings);
 
-    m.def("registration_icp", &RegistrationICP, "Function for ICP registration",
-          "source"_a, "target"_a, "max_correspondence_distance"_a,
+    m.def("registration_icp", &RegistrationICP,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
           "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
                                                         core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint(),
@@ -247,6 +250,7 @@ void pybind_registration_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("registration_multi_scale_icp", &RegistrationMultiScaleICP,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
           "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
           "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,

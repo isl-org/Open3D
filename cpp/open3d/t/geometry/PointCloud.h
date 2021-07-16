@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TensorMap.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -117,6 +117,9 @@ public:
                        &map_keys_to_tensors);
 
     virtual ~PointCloud() override {}
+
+    /// \brief Text description.
+    std::string ToString() const;
 
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
@@ -262,6 +265,19 @@ public:
 
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
+
+    /// Append a pointcloud and returns the resulting pointcloud.
+    ///
+    /// The pointcloud being appended, must have all the attributes
+    /// present in the pointcloud it is being appended to, with same
+    /// dtype, device and same shape other than the first dimension / length.
+    PointCloud Append(const PointCloud &other) const;
+
+    /// operator+ for t::PointCloud appends the compatible attributes to the
+    /// pointcloud.
+    PointCloud operator+(const PointCloud &other) const {
+        return Append(other);
+    }
 
     /// \brief Transforms the points and normals (if exist)
     /// of the PointCloud.

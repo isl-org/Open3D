@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -192,6 +192,7 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_odometry_methods(py::module &m) {
     m.def("rgbd_odometry_multi_scale", &RGBDOdometryMultiScale,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for Multi Scale RGBD odometry.", "source"_a, "target"_a,
           "intrinsics"_a,
           "init_source_to_target"_a = core::Tensor::Eye(4, core::Dtype::Float64,
@@ -205,16 +206,17 @@ void pybind_odometry_methods(py::module &m) {
 
     m.def("compute_odometry_result_point_to_plane",
           &ComputeOdometryResultPointToPlane,
-          R"(Estimates the OdometryResult (4x4 rigid transformation T from 
-source to target, with inlier rmse and fitness). Performs one 
-iteration of RGBD odometry using 
+          py::call_guard<py::gil_scoped_release>(),
+          R"(Estimates the OdometryResult (4x4 rigid transformation T from
+source to target, with inlier rmse and fitness). Performs one
+iteration of RGBD odometry using
 Loss function: :math:`[(V_p - V_q)^T N_p]^2`
 where,
-:math:`V_p` denotes the vertex at pixel p in the source, 
-:math:`V_q` denotes the vertex at pixel q in the target. 
-:math:`N_p` denotes the normal at pixel p in the source. 
-q is obtained by transforming p with init_source_to_target then 
-projecting with intrinsics. 
+:math:`V_p` denotes the vertex at pixel p in the source,
+:math:`V_q` denotes the vertex at pixel q in the target.
+:math:`N_p` denotes the normal at pixel p in the source.
+q is obtained by transforming p with init_source_to_target then
+projecting with intrinsics.
 Reference: KinectFusion, ISMAR 2011.)",
           "source_vertex_map"_a, "target_vertex_map"_a, "target_normal_map"_a,
           "intrinsics"_a, "init_source_to_target"_a, "depth_outlier_trunc"_a,
@@ -223,16 +225,17 @@ Reference: KinectFusion, ISMAR 2011.)",
                                  map_shared_argument_docstrings);
 
     m.def("compute_odometry_result_intensity", &ComputeOdometryResultIntensity,
-          R"(Estimates the OdometryResult (4x4 rigid transformation T from 
-source to target, with inlier rmse and fitness). Performs one 
-iteration of RGBD odometry using 
+          py::call_guard<py::gil_scoped_release>(),
+          R"(Estimates the OdometryResult (4x4 rigid transformation T from
+source to target, with inlier rmse and fitness). Performs one
+iteration of RGBD odometry using
 Loss function: :math:`(I_p - I_q)^2`
 where,
-:math:`I_p` denotes the intensity at pixel p in the source, 
-:math:`I_q` denotes the intensity at pixel q in the target. 
-q is obtained by transforming p with init_source_to_target then 
-projecting with intrinsics. 
-Reference: 
+:math:`I_p` denotes the intensity at pixel p in the source,
+:math:`I_q` denotes the intensity at pixel q in the target.
+q is obtained by transforming p with init_source_to_target then
+projecting with intrinsics.
+Reference:
 Real-time visual odometry from dense RGB-D images,
 ICCV Workshops, 2017.)",
           "source_depth"_a, "target_depth"_a, "source_intensity"_a,
@@ -244,19 +247,20 @@ ICCV Workshops, 2017.)",
                                  map_shared_argument_docstrings);
 
     m.def("compute_odometry_result_hybrid", &ComputeOdometryResultHybrid,
-          R"(Estimates the OdometryResult (4x4 rigid transformation T from 
-source to target, with inlier rmse and fitness). Performs one 
-iteration of RGBD odometry using 
+          py::call_guard<py::gil_scoped_release>(),
+          R"(Estimates the OdometryResult (4x4 rigid transformation T from
+source to target, with inlier rmse and fitness). Performs one
+iteration of RGBD odometry using
 Loss function: :math:`(I_p - I_q)^2 + \lambda(D_p - (D_q)')^2`
 where,
-:math:`I_p` denotes the intensity at pixel p in the source, 
-:math:`I_q` denotes the intensity at pixel q in the target. 
-:math:`D_p` denotes the depth pixel p in the source, 
-:math:`D_q` denotes the depth pixel q in the target. 
-q is obtained by transforming p with init_source_to_target then 
-projecting with intrinsics. 
-Reference: 
-Colored ICP Revisited, ICCV 2017.)",
+:math:`I_p` denotes the intensity at pixel p in the source,
+:math:`I_q` denotes the intensity at pixel q in the target.
+:math:`D_p` denotes the depth pixel p in the source,
+:math:`D_q` denotes the depth pixel q in the target.
+q is obtained by transforming p with init_source_to_target then
+projecting with intrinsics.
+Reference: J. Park, Q.Y. Zhou, and V. Koltun,
+Colored Point Cloud Registration Revisited, ICCV, 2017.)",
           "source_depth"_a, "target_depth"_a, "source_intensity"_a,
           "target_intensity"_a, "target_depth_dx"_a, "target_depth_dy"_a,
           "target_intensity_dx"_a, "target_intensity_dy"_a,

@@ -16,6 +16,19 @@
 #    └── webrtc
 #        ├── .gclient
 #        └── src
+#    Example commands:
+#    ```bash
+#    # You're in Open3D
+#    cd ..
+#    git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+#    export PATH=$PATH:`realpath depot_tools`
+#    mkdir webrtc
+#    cd webrtc
+#    fetch --no-history webrtc
+#    cd ../Open3D
+#    ```
+#    You may also want to checkout a specific commit for depot_tools and webrtc.
+#    See Dockerfile.webrtc on how to do that.
 #
 # 2) depot_tools and webrtc have compatible versions, see:
 #    https://chromium.googlesource.com/chromium/src/+/master/docs/building_old_revisions.md
@@ -29,7 +42,13 @@
 
 include(ExternalProject)
 
-option(WEBRTC_IS_DEBUG "WebRTC Debug buid" OFF)
+include(CMakeDependentOption)
+# Force WEBRTC_IS_DEBUG to ON if WIN32 Debug, else allow user setting.
+# Warning: MSBuild multi-config may override this, but generator expressions are
+# not supported here for forcing the corect option.
+cmake_dependent_option(WEBRTC_IS_DEBUG
+    "WebRTC Debug build. Use ON for Win32 Open3D Debug." OFF
+    "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 
 # Set paths
 set(WEBRTC_ROOT ${CMAKE_BINARY_DIR}/webrtc/src/ext_webrtc)
@@ -56,14 +75,13 @@ endif()
 ExternalProject_Add(
     ext_webrtc
     PREFIX webrtc
-    DOWNLOAD_COMMAND rm -rf ext_webrtc
-    COMMAND cp -ar ${PROJECT_SOURCE_DIR}/../webrtc ext_webrtc
+    DOWNLOAD_COMMAND ${CMAKE_COMMAND} -E rm -rf ext_webrtc
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/../webrtc ext_webrtc
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/args.gn
         ${WEBRTC_NINJA_ROOT}/args.gn
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
-    BUILD_ALWAYS ON
     BUILD_IN_SOURCE ON
     ${BUILD_BYPRODUCTS} ${EXTRA_WEBRTC_OBJS}
 )
@@ -79,7 +97,9 @@ ExternalProject_Add_Step(ext_webrtc build_webrtc
 
 # libwebrtc_extra.a
 add_library(webrtc_extra STATIC ${EXTRA_WEBRTC_OBJS})
-set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${EXTRA_WEBRTC_OBJS} PROPERTIES
+    GENERATED TRUE
+    EXTERNAL_OBJECT TRUE)
 add_dependencies(webrtc_extra ext_webrtc)
 set_target_properties(webrtc_extra PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(webrtc_extra PROPERTIES

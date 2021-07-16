@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -370,6 +370,10 @@ Size TreeView::CalcPreferredSize(const LayoutContext &context,
     return Size(constraints.width, Widget::DIM_GROW);
 }
 
+Size TreeView::CalcMinimumSize(const LayoutContext &context) const {
+    return Size(0, 3 * context.theme.font_size);
+}
+
 void TreeView::Layout(const LayoutContext &context) {
     // Nothing to do here. We don't know the x position because of the
     // indentations, which also means we don't know the size. So we need
@@ -381,7 +385,9 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
 
     DrawImGuiPushEnabledState();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    float outer_scroll_y = ImGui::GetScrollY();
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - outer_scroll_y));
 
     // ImGUI's tree wants to highlight the row as the user moves over it.
     // There are several problems here. First, there seems to be a bug in
@@ -408,8 +414,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     Impl::Item *new_selection = nullptr;
 
     std::function<void(Impl::Item &)> DrawItem;
-    DrawItem = [&DrawItem, this, &frame, &context, &new_selection,
-                &result](Impl::Item &item) {
+    DrawItem = [&DrawItem, this, &frame, &context, &new_selection, &result,
+                outer_scroll_y](Impl::Item &item) {
         int height = item.cell
                              ->CalcPreferredSize({context.theme, context.fonts},
                                                  Constraints())
@@ -422,7 +428,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             // of the tree's frame. To draw directly to the window list we
             // need to the absolute coordinates (relative the OS window's
             // upper left)
-            auto y = frame.y + ImGui::GetCursorPosY() - ImGui::GetScrollY();
+            auto y = frame.y - outer_scroll_y + ImGui::GetCursorPosY() -
+                     ImGui::GetScrollY();
             ImGui::GetWindowDrawList()->AddRectFilled(
                     ImVec2(float(frame.x), y),
                     ImVec2(float(frame.GetRight()), y + height),
@@ -445,11 +452,19 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
                                   bool is_selectable) {
             ImGui::SameLine(0, 0);
             auto x = int(std::round(ImGui::GetCursorScreenPos().x));
-            auto y = int(std::round(ImGui::GetCursorScreenPos().y));
+            auto y = int(std::round(
+                    ImGui::GetCursorScreenPos().y /*- ImGui::GetScrollY()*/));
+            auto scroll_y = ImGui::GetScrollY();
             auto scroll_width = int(ImGui::GetStyle().ScrollbarSize);
             auto indent = x - tree_frame.x;
-            item.cell->SetFrame(Rect(
-                    x, y, tree_frame.width - indent - scroll_width, height));
+            // Note that we add scroll_y to undo the Widget's Draw() subtracting
+            // it off. It needs to subtract it off if the whole ImGUI window
+            // is being scrolled, but not if it is in a TreeView, and it has no
+            // way of knowing the difference. Also it is necessary for clicks to
+            // work correctly.
+            item.cell->SetFrame(Rect(x, y + scroll_y,
+                                     tree_frame.width - indent - scroll_width,
+                                     height));
             // Now that we know the frame we can finally layout. It would be
             // nice to not relayout until something changed, which would
             // usually work, unless the cell changes shape in response to

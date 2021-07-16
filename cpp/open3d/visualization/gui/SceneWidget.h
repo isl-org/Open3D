@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -123,8 +123,6 @@ public:
     /// only needed if other things need to be updated (like a UI).
     void SetOnSunDirectionChanged(
             std::function<void(const Eigen::Vector3f&)> on_dir_changed);
-    /// Enables showing the skybox while in skybox ROTATE_IBL mode.
-    void ShowSkybox(bool is_on);
 
     void SetScene(std::shared_ptr<rendering::Open3DScene> scene);
     std::shared_ptr<rendering::Open3DScene> GetScene() const;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,7 @@
 #include "open3d/utility/Optional.h"
 #include "pybind/core/core.h"
 #include "pybind/core/tensor_converter.h"
+#include "pybind/core/tensor_type_caster.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
@@ -216,7 +217,10 @@ const std::unordered_map<std::string, std::string> argument_docs = {
         {"device", "Compute device to store and operate on the Tensor."},
         {"shape", "List of Tensor dimensions."},
         {"fill_value", "Scalar value to initialize all elements with."},
-        {"scalar_value", "Initial value for the single element tensor."}};
+        {"scalar_value", "Initial value for the single element tensor."},
+        {"copy",
+         "If true, a new tensor is always created; if false, the copy is "
+         "avoided when the original tensor already has the targeted dtype."}};
 
 template <typename T>
 static std::vector<T> ToFlatVector(
@@ -405,7 +409,8 @@ void pybind_core_tensor(py::module& m) {
                         n, dtype.has_value() ? dtype.value() : Dtype::Float32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
-            "n"_a, "dtype"_a = py::none(), "device"_a = py::none());
+            "Create an identity matrix of size n x n.", "n"_a,
+            "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static("diag", &Tensor::Diag);
 
     // Tensor creation from arange for int.
@@ -418,6 +423,8 @@ void pybind_core_tensor(py::module& m) {
                         dtype.has_value() ? dtype.value() : Dtype::Int64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
+            "Create a 1D tensor with evenly spaced values in the given "
+            "interval.",
             "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static(
             "arange",
@@ -430,6 +437,8 @@ void pybind_core_tensor(py::module& m) {
                         dtype.has_value() ? dtype.value() : Dtype::Int64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
+            "Create a 1D tensor with evenly spaced values in the given "
+            "interval.",
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
             "dtype"_a = py::none(), "device"_a = py::none());
 
@@ -443,6 +452,8 @@ void pybind_core_tensor(py::module& m) {
                         dtype.has_value() ? dtype.value() : Dtype::Float64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
+            "Create a 1D tensor with evenly spaced values in the given "
+            "interval.",
             "stop"_a, "dtype"_a = py::none(), "device"_a = py::none());
     tensor.def_static(
             "arange",
@@ -455,6 +466,8 @@ void pybind_core_tensor(py::module& m) {
                         dtype.has_value() ? dtype.value() : Dtype::Float64,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },
+            "Create a 1D tensor with evenly spaced values in the given "
+            "interval.",
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
             "dtype"_a = py::none(), "device"_a = py::none());
 
@@ -524,50 +537,170 @@ void pybind_core_tensor(py::module& m) {
     });
 
     // Numpy IO.
-    tensor.def("save", &Tensor::Save);
-    tensor.def_static("load", &Tensor::Load);
+    tensor.def("save", &Tensor::Save, "Save tensor to Numpy's npy format.",
+               "file_name"_a);
+    tensor.def_static("load", &Tensor::Load,
+                      "Load tensor from Numpy's npy format.", "file_name"_a);
 
     /// Linalg operations.
-    tensor.def("det", &Tensor::Det);
-    tensor.def("lu_ipiv", &Tensor::LUIpiv);
-    tensor.def("matmul", &Tensor::Matmul);
-    tensor.def("__matmul__", &Tensor::Matmul);
-    tensor.def("lstsq", &Tensor::LeastSquares);
-    tensor.def("solve", &Tensor::Solve);
-    tensor.def("inv", &Tensor::Inverse);
-    tensor.def("svd", &Tensor::SVD);
-    tensor.def("triu", &Tensor::Triu);
-    tensor.def("tril", &Tensor::Tril);
-    tensor.def("triul", &Tensor::Triul);
+    tensor.def("det", &Tensor::Det,
+               "Compute the determinant of a 2D square tensor.");
+    tensor.def(
+            "lu_ipiv", &Tensor::LUIpiv,
+            R"(Computes LU factorisation of the 2D square tensor, using A = P * L * U;
+where P is the permutation matrix, L is the lower-triangular matrix with
+diagonal elements as 1.0 and U is the upper-triangular matrix, and returns
+tuple `output` tensor of shape {n,n} and `ipiv` tensor of shape {n}, where
+{n,n} is the shape of input tensor.
+
+Returns:
+    ipiv: ipiv is a 1D integer pivot indices tensor. It contains the pivot
+        indices, indicating row i of the matrix was interchanged with row
+        ipiv[i]
+    output: It has L as lower triangular values and U as upper triangle
+        values including the main diagonal (diagonal elements of L to be
+        taken as unity).
+
+Example:
+    >>> ipiv, output = a.lu_ipiv())");
+    tensor.def("matmul", &Tensor::Matmul,
+               "Computes matrix multiplication of a"
+               " 2D tensor with another tensor of compatible shape.");
+    tensor.def("__matmul__", &Tensor::Matmul,
+               "Computes matrix multiplication of a"
+               " 2D tensor with another tensor of compatible shape.");
+    tensor.def("lstsq", &Tensor::LeastSquares,
+               "Solves the linear system AX = B with QR decomposition and "
+               "returns X. A is a (m, n) matrix with m >= n.",
+               "B"_a);
+    tensor.def("solve", &Tensor::Solve,
+               "Solves the linear system AX = B with LU decomposition and "
+               "returns X.  A must be a square matrix.",
+               "B"_a);
+    tensor.def("inv", &Tensor::Inverse,
+               "Computes the matrix inverse of the square matrix self with "
+               "LU factorization and returns the result.");
+    tensor.def("svd", &Tensor::SVD,
+               "Computes the matrix SVD decomposition :math:`A = U S V^T` and "
+               "returns "
+               "the result.  Note :math:`V^T` (V transpose) is returned "
+               "instead of :math:`V`.");
+    tensor.def("triu", &Tensor::Triu,
+               "Returns the upper triangular matrix of the 2D tensor, above "
+               "the given diagonal index. [The value of diagonal = col - row, "
+               "therefore 0 is the main diagonal (row = col), and it shifts "
+               "towards right for positive values (for diagonal = 1, col - row "
+               "= 1), and towards left for negative values. The value of the "
+               "diagonal parameter must be between [-m, n] for a {m,n} shaped "
+               "tensor.",
+               "diagonal"_a = 0);
+    docstring::ClassMethodDocInject(m, "Tensor", "triu",
+                                    {{"diagonal",
+                                      "Value of [col - row], above which the "
+                                      "elements are to be taken for"
+                                      " upper triangular matrix."}});
+
+    tensor.def("tril", &Tensor::Tril,
+               "Returns the lower triangular matrix of the 2D tensor, above "
+               "the given diagonal index. [The value of diagonal = col - row, "
+               "therefore 0 is the main diagonal (row = col), and it shifts "
+               "towards right for positive values (for diagonal = 1, col - row "
+               "= 1), and towards left for negative values. The value of the "
+               "diagonal parameter must be between [-m, n] where {m, n} is the "
+               "shape of input tensor.",
+               "diagonal"_a = 0);
+    docstring::ClassMethodDocInject(
+            m, "Tensor", "tril",
+            {{"diagonal",
+              "Value of [col - row], below which the elements are to be taken "
+              "for lower triangular matrix."}});
+
+    tensor.def(
+            "triul", &Tensor::Triul,
+            "Returns the tuple of upper and lower triangular matrix of the 2D "
+            "tensor, above and below the given diagonal index.  The diagonal "
+            "elements of lower triangular matrix are taken to be unity.  [The "
+            "value of diagonal = col - row, therefore 0 is the main diagonal "
+            "(row = col), and it shifts towards right for positive values (for "
+            "diagonal = 1, col - row = 1), and towards left for negative "
+            "values.  The value of the diagonal parameter must be between [-m, "
+            "n] where {m, n} is the shape of input tensor.",
+            "diagonal"_a = 0);
+    docstring::ClassMethodDocInject(
+            m, "Tensor", "triul",
+            {{"diagonal",
+              "Value of [col - row], above and below which the elements are to "
+              "be taken for upper (diag. included) and lower triangular "
+              "matrix."}});
     tensor.def(
             "lu",
             [](const Tensor& tensor, bool permute_l) {
                 return tensor.LU(permute_l);
             },
-            "permute_l"_a = false);
+            "permute_l"_a = false,
+            R"(Computes LU factorisation of the 2D square tensor, using A = P * L * U;
+where P is the permutation matrix, L is the lower-triangular matrix with
+diagonal elements as 1.0 and U is the upper-triangular matrix, and returns
+tuple (P, L, U).
 
-    // Casting can copying.
+Returns:
+    Tuple (P, L, U).)");
+    docstring::ClassMethodDocInject(
+            m, "Tensor", "lu", {{"permute_l", "If True, returns L as P * L."}});
+
+    // Casting and copying.
     tensor.def(
             "to",
             [](const Tensor& tensor, Dtype dtype, bool copy) {
                 return tensor.To(dtype, copy);
             },
-            "dtype"_a, "copy"_a = false);
+            "Returns a tensor with the specified ``dtype``.", "dtype"_a,
+            "copy"_a = false);
     tensor.def(
             "to",
             [](const Tensor& tensor, const Device& device, bool copy) {
                 return tensor.To(device, copy);
             },
-            "device"_a, "copy"_a = false);
+            "Returns a tensor with the specified ``device``.", "device"_a,
+            "copy"_a = false);
     tensor.def(
             "to",
             [](const Tensor& tensor, const Device& device, Dtype dtype,
                bool copy) { return tensor.To(device, dtype, copy); },
-            "device"_a, "dtype"_a, "copy"_a = false);
-    tensor.def("clone", &Tensor::Clone);
-    tensor.def("T", &Tensor::T);
-    tensor.def("contiguous", &Tensor::Contiguous);
-    tensor.def("is_contiguous", &Tensor::IsContiguous);
+            "Returns a tensor with the specified ``device`` and ``dtype``."
+            "device"_a,
+            "dtype"_a, "copy"_a = false);
+    docstring::ClassMethodDocInject(m, "Tensor", "to", argument_docs);
+
+    tensor.def("clone", &Tensor::Clone, "Copy Tensor to the same device.");
+    tensor.def("T", &Tensor::T,
+               "Transpose <=2-D tensor by swapping dimension 0 and 1."
+               "0-D and 1-D Tensor remains the same.");
+    tensor.def(
+            "reshape", &Tensor::Reshape,
+            R"(Returns a tensor with the same data and number of elements as input, but
+with the specified shape. When possible, the returned tensor will be a view of
+input. Otherwise, it will be a copy.
+
+Contiguous inputs and inputs with compatible strides can be reshaped
+without copying, but you should not depend on the copying vs. viewing
+behavior.
+
+Ref:
+- https://pytorch.org/docs/stable/tensors.html
+- aten/src/ATen/native/TensorShape.cpp
+- aten/src/ATen/TensorUtils.cpp)",
+            "dst_shape"_a);
+    docstring::ClassMethodDocInject(m, "Tensor", "reshape",
+                                    {{"dst_shape",
+                                      "Compatible destination shape with the "
+                                      "same number of elements."}});
+    tensor.def("contiguous", &Tensor::Contiguous,
+               "Returns a contiguous tensor containing the same data in the "
+               "same device.  If the tensor is already contiguous, the same "
+               "underlying memory will be used.");
+    tensor.def("is_contiguous", &Tensor::IsContiguous,
+               "Returns True if the underlying memory buffer is contiguous.");
 
     // See "emulating numeric types" section for Python built-in numeric ops.
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
@@ -701,9 +834,27 @@ void pybind_core_tensor(py::module& m) {
                     return py::cast(tensor.NonZeroNumpy());
                 }
             },
+            "Find the indices of the elements that are non-zero.",
             "as_tuple"_a = false);
-    tensor.def("all", &Tensor::All);
-    tensor.def("any", &Tensor::Any);
+    docstring::ClassMethodDocInject(
+            m, "Tensor", "nonzero",
+            {{"as_tuple",
+              "If ``as_tuple`` is True, returns an int64 tensor of shape "
+              "{num_dims, num_non_zeros}, where the i-th row contains the "
+              "indices of the non-zero elements in i-th dimension of the "
+              "original tensor. If ``as_tuple`` is False, Returns a vector of "
+              "int64 Tensors, each containing the indices of the non-zero "
+              "elements in each dimension."}});
+    tensor.def(
+            "all", &Tensor::All,
+            "Returns true if all elements in the tensor are true. Only works "
+            "for boolean tensors. This function does not take reduction "
+            "dimensions, and the reduction is applied to all dimensions.");
+    tensor.def(
+            "any", &Tensor::Any,
+            "Returns true if any elements in the tensor are true. Only works "
+            "for boolean tensors. This function does not take reduction "
+            "dimensions, and the reduction is applied to all dimensions.");
 
     // Reduction ops.
     BIND_REDUCTION_OP(sum, Sum);
@@ -715,12 +866,54 @@ void pybind_core_tensor(py::module& m) {
     BIND_REDUCTION_OP_NO_KEEPDIM(argmax, ArgMax);
 
     // Comparison.
-    tensor.def("allclose", &Tensor::AllClose, "other"_a, "rtol"_a = 1e-5,
-               "atol"_a = 1e-8);
-    tensor.def("isclose", &Tensor::IsClose, "other"_a, "rtol"_a = 1e-5,
-               "atol"_a = 1e-8);
-    tensor.def("issame", &Tensor::IsSame);
+    tensor.def(
+            "allclose", &Tensor::AllClose, "other"_a, "rtol"_a = 1e-5,
+            "atol"_a = 1e-8,
+            R"(Returns true if the two tensors are element-wise equal within a tolerance.
 
+- If the ``device`` is not the same: throws exception.
+- If the ``dtype`` is not the same: throws exception.
+- If the ``shape`` is not the same: returns false.
+- Returns true if: ``abs(self - other) <= (atol + rtol * abs(other)``).
+
+The equation is not symmetrical, i.e. ``a.allclose(b)`` might not be the same
+as ``b.allclose(a)``. Also see `Numpy's documentation <https://numpy.org/doc/stable/reference/generated/numpy.allclose.html>`__.
+
+TODO:
+	Support nan.)");
+    docstring::ClassMethodDocInject(
+            m, "Tensor", "allclose",
+            {{"other", "The other tensor to compare with."},
+             {"rtol", "Relative tolerance."},
+             {"atol", "Absolute tolerance."}});
+    tensor.def("isclose", &Tensor::IsClose, "other"_a, "rtol"_a = 1e-5,
+               "atol"_a = 1e-8,
+               R"(Element-wise version of ``tensor.allclose``.
+
+- If the ``device`` is not the same: throws exception.
+- If the ``dtype`` is not the same: throws exception.
+- If the ``shape`` is not the same: throws exception.
+- For each element in the returned tensor:
+  ``abs(self - other) <= (atol + rtol * abs(other))``.
+
+The equation is not symmetrical, i.e. a.is_close(b) might not be the same
+as b.is_close(a). Also see `Numpy's documentation <https://numpy.org/doc/stable/reference/generated/numpy.isclose.html>`__.
+
+TODO:
+    Support nan.
+
+Returns:
+    A boolean tensor indicating where the tensor is close.)");
+    docstring::ClassMethodDocInject(
+            m, "Tensor", "isclose",
+            {{"other", "The other tensor to compare with."},
+             {"rtol", "Relative tolerance."},
+             {"atol", "Absolute tolerance."}});
+
+    tensor.def("issame", &Tensor::IsSame,
+               "Returns true iff the tensor is the other tensor. This "
+               "means that, the two tensors have the same underlying "
+               "memory, device, dtype, shape, strides and etc.");
     // Print tensor.
     tensor.def("__repr__",
                [](const Tensor& tensor) { return tensor.ToString(); });
@@ -728,23 +921,38 @@ void pybind_core_tensor(py::module& m) {
                [](const Tensor& tensor) { return tensor.ToString(); });
 
     // Get item from Tensor of one element.
-    tensor.def("item", [](const Tensor& tensor) -> py::object {
-        Dtype dtype = tensor.GetDtype();
-        if (dtype == Dtype::Float32) return py::float_(tensor.Item<float>());
-        if (dtype == Dtype::Float64) return py::float_(tensor.Item<double>());
-        if (dtype == Dtype::Int8) return py::int_(tensor.Item<int8_t>());
-        if (dtype == Dtype::Int16) return py::int_(tensor.Item<int16_t>());
-        if (dtype == Dtype::Int32) return py::int_(tensor.Item<int32_t>());
-        if (dtype == Dtype::Int64) return py::int_(tensor.Item<int64_t>());
-        if (dtype == Dtype::UInt8) return py::int_(tensor.Item<uint8_t>());
-        if (dtype == Dtype::UInt16) return py::int_(tensor.Item<uint16_t>());
-        if (dtype == Dtype::UInt32) return py::int_(tensor.Item<uint32_t>());
-        if (dtype == Dtype::UInt64) return py::int_(tensor.Item<uint64_t>());
-        if (dtype == Dtype::Bool) return py::bool_(tensor.Item<bool>());
-        utility::LogError(
-                "Tensor.item(): unsupported dtype to convert to python.");
-        return py::none();
-    });
+    tensor.def(
+            "item",
+            [](const Tensor& tensor) -> py::object {
+                Dtype dtype = tensor.GetDtype();
+                if (dtype == Dtype::Float32)
+                    return py::float_(tensor.Item<float>());
+                if (dtype == Dtype::Float64)
+                    return py::float_(tensor.Item<double>());
+                if (dtype == Dtype::Int8)
+                    return py::int_(tensor.Item<int8_t>());
+                if (dtype == Dtype::Int16)
+                    return py::int_(tensor.Item<int16_t>());
+                if (dtype == Dtype::Int32)
+                    return py::int_(tensor.Item<int32_t>());
+                if (dtype == Dtype::Int64)
+                    return py::int_(tensor.Item<int64_t>());
+                if (dtype == Dtype::UInt8)
+                    return py::int_(tensor.Item<uint8_t>());
+                if (dtype == Dtype::UInt16)
+                    return py::int_(tensor.Item<uint16_t>());
+                if (dtype == Dtype::UInt32)
+                    return py::int_(tensor.Item<uint32_t>());
+                if (dtype == Dtype::UInt64)
+                    return py::int_(tensor.Item<uint64_t>());
+                if (dtype == Dtype::Bool) return py::bool_(tensor.Item<bool>());
+                utility::LogError(
+                        "Tensor.item(): unsupported dtype to convert to "
+                        "python.");
+                return py::none();
+            },
+            "Helper function to return the scalar value of a scalar tensor. "
+            "The tensor must be 0 - dimensional (i.e. have an empty shape).");
 }
 
 }  // namespace core

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,8 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace geometry {
@@ -453,6 +454,11 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         double surface_area,
         bool use_triangle_normal,
         int seed) {
+    if (surface_area <= 0) {
+        utility::LogError("Invalid surface area {}, it must be > 0.",
+                          surface_area);
+    }
+
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
@@ -934,7 +940,8 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
     // precompute all neighbours
     utility::LogDebug("Precompute Neighbours");
     std::vector<std::vector<int>> nbs(vertices_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int idx = 0; idx < int(vertices_.size()); ++idx) {
         std::vector<double> dists2;
         kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
@@ -1229,7 +1236,7 @@ double TriangleMesh::GetVolume() const {
 
     double volume = 0;
     int64_t num_triangles = triangles_.size();
-#pragma omp parallel for reduction(+ : volume)
+#pragma omp parallel for reduction(+ : volume) num_threads(utility::EstimateMaxThreads())
     for (int64_t tidx = 0; tidx < num_triangles; ++tidx) {
         volume += GetSignedVolumeOfTriangle(tidx);
     }
@@ -1434,7 +1441,8 @@ TriangleMesh::ClusterConnectedTriangles() const {
     utility::LogDebug("[ClusterConnectedTriangles] Compute triangle adjacency");
     auto edges_to_triangles = GetEdgeToTrianglesMap();
     std::vector<std::unordered_set<int>> adjacency_list(triangles_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
         const auto &triangle = triangles_[tidx];
         for (auto tnb :

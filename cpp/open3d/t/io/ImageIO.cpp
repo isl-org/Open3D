@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,8 @@
 #include <unordered_map>
 
 #include "open3d/io/ImageIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -95,11 +95,7 @@ bool WriteImage(const std::string &filename,
                 "Write geometry::Image failed: unknown file extension.");
         return false;
     }
-    if (image.GetDevice() != core::Device("CPU:0")) {
-        utility::LogWarning("Write geometry::Image failed, data not on CPU.");
-        return false;
-    }
-    return map_itr->second(filename, image, quality);
+    return map_itr->second(filename, image.CPU(), quality);
 }
 
 }  // namespace io

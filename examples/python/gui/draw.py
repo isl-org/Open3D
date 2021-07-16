@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import math
 import numpy as np
 import open3d as o3d

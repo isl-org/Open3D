@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,8 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
-#include "open3d/utility/Console.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
@@ -223,11 +224,11 @@ void FilamentRenderer::EndFrame() {
 namespace {
 
 struct UserData {
-    std::function<void(std::shared_ptr<geometry::Image>)> callback;
-    std::shared_ptr<geometry::Image> image;
+    std::function<void(std::shared_ptr<core::Tensor>)> callback;
+    std::shared_ptr<core::Tensor> image;
 
-    UserData(std::function<void(std::shared_ptr<geometry::Image>)> cb,
-             std::shared_ptr<geometry::Image> img)
+    UserData(std::function<void(std::shared_ptr<core::Tensor>)> cb,
+             std::shared_ptr<core::Tensor> img)
         : callback(cb), image(img) {}
 };
 
@@ -242,21 +243,18 @@ void ReadPixelsCallback(void*, size_t, void* user) {
 void FilamentRenderer::RequestReadPixels(
         int width,
         int height,
-        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
-    auto image = std::make_shared<geometry::Image>();
-    image->width_ = width;
-    image->height_ = height;
-    image->num_of_channels_ = 3;
-    image->bytes_per_channel_ = 1;
-    size_t nbytes = image->width_ * image->height_ * image->num_of_channels_ *
-                    image->bytes_per_channel_;
-    image->data_.resize(nbytes, 0);
+        std::function<void(std::shared_ptr<core::Tensor>)> callback) {
+    core::SizeVector shape{height, width, 3};
+    core::Dtype dtype = core::Dtype::UInt8;
+    int64_t nbytes = shape.NumElements() * dtype.ByteSize();
+
+    auto image = std::make_shared<core::Tensor>(shape, dtype);
     auto* user_data = new UserData(callback, image);
 
     using namespace filament;
     using namespace backend;
 
-    PixelBufferDescriptor pd(image->data_.data(), nbytes, PixelDataFormat::RGB,
+    PixelBufferDescriptor pd(image->GetDataPtr(), nbytes, PixelDataFormat::RGB,
                              PixelDataType::UBYTE, ReadPixelsCallback,
                              user_data);
     renderer_->readPixels(0, 0, width, height, std::move(pd));

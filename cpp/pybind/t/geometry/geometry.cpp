@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +56,7 @@ void pybind_geometry(py::module& m) {
     pybind_trianglemesh(m_submodule);
     pybind_image(m_submodule);
     pybind_tsdf_voxelgrid(m_submodule);
+    pybind_raycasting_scene(m_submodule);
 }
 
 }  // namespace geometry

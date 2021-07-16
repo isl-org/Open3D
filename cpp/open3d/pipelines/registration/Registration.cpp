@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,9 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
@@ -65,7 +66,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                         Eigen::Vector2i(i, indices[0]));
             }
         }
-#pragma omp critical
+#pragma omp critical(GetRegistrationResultAndCorrespondences)
         {
             for (int i = 0; i < (int)correspondence_set_private.size(); i++) {
                 result.correspondence_set_.push_back(
@@ -255,7 +256,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 }
             }  // if < exit_itr_local
         }      // for loop
-#pragma omp critical
+#pragma omp critical(RegistrationRANSACBasedOnCorrespondence)
         {
             if (best_result_local.IsBetterRANSACThan(best_result)) {
                 best_result = best_result_local;
@@ -296,7 +297,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     geometry::KDTreeFlann kdtree_target(target_feature);
     pipelines::registration::CorrespondenceSet corres_ij(num_src_pts);
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < num_src_pts; i++) {
         std::vector<int> corres_tmp(1);
         std::vector<double> dist_tmp(1);
@@ -312,7 +313,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         geometry::KDTreeFlann kdtree_source(source_feature);
         pipelines::registration::CorrespondenceSet corres_ji(num_tgt_pts);
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
         for (int j = 0; j < num_tgt_pts; ++j) {
             std::vector<int> corres_tmp(1);
             std::vector<double> dist_tmp(1);
@@ -394,7 +395,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
             G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
-#pragma omp critical
+#pragma omp critical(GetInformationMatrixFromPointClouds)
         { GTG += GTG_private; }
     }
     return GTG;
