@@ -148,9 +148,9 @@ void MemoryManagerStatistic::CountMalloc(void* ptr,
     if (it.second) {
         statistics_[device].count_malloc_++;
         if (print_at_malloc_free_) {
-            utility::LogInfo("[Allocate] {}, {}, {}",
-                             fmt::sprintf("%6s", device.ToString()), ptr,
-                             byte_size);
+            utility::LogInfo("[Malloc] {}: {} @ {} bytes",
+                             fmt::sprintf("%6s", device.ToString()),
+                             fmt::ptr(ptr), byte_size);
         }
     } else {
         utility::LogError(
@@ -170,8 +170,9 @@ void MemoryManagerStatistic::CountFree(void* ptr, const Device& device) {
     auto num_to_erase = statistics_[device].active_allocations_.count(ptr);
     if (num_to_erase == 1) {
         if (print_at_malloc_free_) {
-            utility::LogInfo("[Free    ] {}, {}, {}",
-                             fmt::sprintf("%6s", device.ToString()), ptr,
+            utility::LogInfo("[ Free ] {}: {} @ {} bytes",
+                             fmt::sprintf("%6s", device.ToString()),
+                             fmt::ptr(ptr),
                              statistics_[device].active_allocations_.at(ptr));
         }
         statistics_[device].active_allocations_.erase(ptr);
