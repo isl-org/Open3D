@@ -6,7 +6,7 @@ endif()
 
 find_package(Pytorch REQUIRED)
 
-if (UNIX AND NOT APPLE AND Python3_VERSION VERSION_GREATER_EQUAL 3.9 AND Pytorch_VERSION VERSION_LESS 1.8.0)
+if (Python3_VERSION VERSION_GREATER_EQUAL 3.9 AND Pytorch_VERSION VERSION_LESS 1.8.0)
     message(FATAL_ERROR "Please update to PyTorch 1.8.0+ to build PyTorch Ops "
     "with Python 3.9 to prevent a segmentation fault. See "
     "https://github.com/pytorch/pytorch/issues/50014 for details")
