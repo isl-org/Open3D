@@ -36,6 +36,10 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/utility/Logging.h"
 
+#ifdef BUILD_CUDA_MODULE
+#include "open3d/core/CUDAState.cuh"
+#endif
+
 namespace open3d {
 namespace core {
 
@@ -363,6 +367,11 @@ public:
         // Since destruction of static instances happens in reverse order,
         // this guarantees that the Logger can be used at any point in time.
         utility::Logger::GetInstance();
+
+#ifdef BUILD_CUDA_MODULE
+        // Ensure CUDAState is initialized before Cacher.
+        CUDAState::GetInstance();
+#endif
 
         static Cacher instance;
         return instance;
