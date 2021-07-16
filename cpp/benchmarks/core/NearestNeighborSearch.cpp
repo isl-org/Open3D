@@ -45,9 +45,9 @@ std::pair<core::Tensor, core::Tensor> PrepareInput(const core::Device& device,
                                                    const core::Dtype& dtype) {
     // Test data.
     static const std::string source_filename =
-            fmt::format("{}/ICP/cloud_bin_0.pcd", std::string(TEST_DATA_DIR));
+            fmt::format("{}/fragment.pcd", std::string(TEST_DATA_DIR));
     static const std::string target_filename =
-            fmt::format("{}/ICP/cloud_bin_1.pcd", std::string(TEST_DATA_DIR));
+            fmt::format("{}/fragment.pcd", std::string(TEST_DATA_DIR));
     // Load test point cloud data.
     t::geometry::PointCloud dataset_pc;
     t::geometry::PointCloud query_pc;
@@ -81,9 +81,9 @@ static void BM_TestNNS_Hybrid(benchmark::State& state,
     nns.HybridIndex(radius);
 
     // Search.
-    core::Tensor indices, distances;
+    core::Tensor indices, distances, num_neighbors;
     for (auto _ : state) {
-        std::tie(indices, distances) =
+        std::tie(indices, distances, num_neighbors) =
                 nns.HybridSearch(query_points, radius, max_knn);
 #ifdef BUILD_CUDA_MODULE
         core::CudaDeviceSynchronize();
@@ -116,6 +116,31 @@ static void BM_TestNNS_Radius(benchmark::State& state,
 #endif
     }
 }
+
+static void BM_TestNNS_Knn(benchmark::State& state,
+                           const core::Device& device) {
+    // state.range(n) are arguments that are passed to us
+    int knn = state.range(0);
+
+    // Prepare input data.
+    core::Tensor dataset_points, query_points;
+    std::tie(dataset_points, query_points) =
+            PrepareInput(device, core::Dtype::Float32);
+
+    // Setup NNS.
+    core::nns::NearestNeighborSearch nns(dataset_points);
+    nns.KnnIndex();
+
+    // Search.
+    core::Tensor indices, distances;
+    for (auto _ : state) {
+        std::tie(indices, distances) = nns.KnnSearch(query_points, knn);
+#ifdef BUILD_CUDA_MODULE
+        core::CudaDeviceSynchronize();
+#endif
+    }
+}
+
 BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, core::Device("CPU:0"))
         ->Args({100, 1})
         ->Args({100, 64})
@@ -129,6 +154,12 @@ BENCHMARK_CAPTURE(BM_TestNNS_Radius, CPU, core::Device("CPU:0"), true)
         ->Args({50})
         ->Args({100})
         ->Args({200})
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_TestNNS_Knn, CPU, core::Device("CPU:0"))
+        ->Args({1})
+        ->Args({16})
+        ->Args({64})
+        ->Args({128})
         ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, GPU, core::Device("CUDA:0"))
@@ -150,6 +181,12 @@ BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU_UNSORT, core::Device("CUDA:0"), false)
         ->Args({50})
         ->Args({100})
         ->Args({200})
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(BM_TestNNS_Knn, GPU, core::Device("CUDA:0"))
+        ->Args({1})
+        ->Args({16})
+        ->Args({64})
+        ->Args({128})
         ->Unit(benchmark::kMillisecond);
 #endif
 }  // namespace benchmarks

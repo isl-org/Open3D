@@ -3,4 +3,5 @@ target_sources(benchmarks PRIVATE
     MemoryManager.cpp
     Reduction.cpp
     Zeros.cpp
+    NearestNeighborSearch.cpp
 )
