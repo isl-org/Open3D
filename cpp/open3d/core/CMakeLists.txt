@@ -69,6 +69,7 @@ target_sources(core PRIVATE
 
 if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
+        CUDAState.cu
         MemoryManagerCUDA.cu
     )
 
