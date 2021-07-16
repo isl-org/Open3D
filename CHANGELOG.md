@@ -1,6 +1,6 @@
 ## Master
 
-* Python 3.9 support
+* Python 3.9 support. PyTorch bump 1.7.1 -> 1.8.1 (LTS)
 
 ## 0.13
 

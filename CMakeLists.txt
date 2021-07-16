@@ -735,7 +735,7 @@ if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
         "   '-Xcompiler -fno-gnu-unique'                                                 \n"
         "                                                                                \n"
         " or use the PyTorch wheels at                                                   \n"
-        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1        \n"
+        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.8.1        \n"
         "                                                                                \n"
         "--------------------------------------------------------------------------------\n"
     )

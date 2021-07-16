@@ -40,16 +40,16 @@ else
     GCC_MAX_VER=7
 fi
 # ML
-# TORCH_CUDA_GLNX_VER="1.7.1+cu110"
-# TORCH_CPU_GLNX_VER="1.7.1+cpu"
+# TORCH_CUDA_GLNX_VER="1.8.1+cu110"
+# TORCH_CPU_GLNX_VER="1.8.1+cpu"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 if [[ $PYTHON_VER == "cp39-cp39" ]]; then
     TENSORFLOW_VER="2.5.0" # TF 2.4.x does not support Python 3.9
 else
     TENSORFLOW_VER="2.4.1"
 fi
-TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_MACOS_VER="1.7.1"
+TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.8.1/torch-1.8.1-${PYTHON_VER}-linux_x86_64.whl"
+TORCH_MACOS_VER="1.8.1"
 # Python
 CONDA_BUILD_VER="3.21.4"
 PIP_VER="21.1.1"
