@@ -63,7 +63,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: 3.6
 
       # Pre-installed 18.04 packages: https://git.io/JfHmW
       - name: Install dependencies
@@ -97,7 +97,7 @@ jobs:
           - is_master: false
             python_version: 3.8
           - is_master: false
-            python_version: 3.6
+            python_version: 3.9
 
     env:
       BUILD_CUDA_MODULE: ON
@@ -226,7 +226,7 @@ jobs:
           - is_master: false
             python_version: 3.8
           - is_master: false
-            python_version: 3.6
+            python_version: 3.9
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML

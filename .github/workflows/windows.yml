@@ -174,7 +174,7 @@ jobs:
           - is_master: false
             python_version: 3.8
           - is_master: false
-            python_version: 3.6
+            python_version: 3.9
 
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
@@ -296,7 +296,7 @@ jobs:
           - is_master: false
             python_version: 3.8
           - is_master: false
-            python_version: 3.6
+            python_version: 3.9
 
     steps:
       - name: Checkout source code
