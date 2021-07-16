@@ -38,6 +38,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/FunctionTraits.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/MemoryManagerStatistic.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"

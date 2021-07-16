@@ -63,6 +63,10 @@ public:
     /// to EXIT_FAILURE in the presence of leaks.
     void SetPrintAtProgramEnd(bool print);
 
+    /// Enables or disables printing at the each malloc and free. By default
+    /// this is disabled.
+    void SetPrintAtMallocFree(bool print);
+
     /// Prints statistics for all recorded devices depending on the print level.
     void Print() const;
 
@@ -95,9 +99,12 @@ private:
     /// Only print unbalanced statistics by default.
     PrintLevel level_ = PrintLevel::Unbalanced;
 
-    // Print at the end of the program be default. If leaks are detected,
-    // the exit code will be overriden with EXIT_FAILURE.
+    /// Print at the end of the program be default. If leaks are detected,
+    /// the exit code will be overriden with EXIT_FAILURE.
     bool print_at_program_end_ = true;
+
+    /// Print at each malloc and free.
+    bool print_at_malloc_free_ = false;
 
     std::mutex statistics_mutex_;
     std::map<Device, MemoryStatistics> statistics_;
