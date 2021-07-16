@@ -99,6 +99,7 @@ public:
                               float view_height) const override;
 
     Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const override;
+    double GetViewZ(float z_buffer) const override;
 
     void CopyFrom(const Camera* camera) override;
 

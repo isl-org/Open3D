@@ -125,6 +125,7 @@ public:
     // is in the range [-1, 1] if the point is in view, or outside the range if
     // the point is out of view.
     virtual Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const = 0;
+    virtual double GetViewZ(float z_buffer) const = 0;
 
     struct ProjectionInfo {
         bool is_ortho;
