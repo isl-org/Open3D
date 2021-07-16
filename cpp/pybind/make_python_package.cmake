@@ -79,7 +79,7 @@ endif()
 
 # Build Jupyter plugin.
 if (BUILD_JUPYTER_EXTENSION)
-    if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
+    if(WIN32 OR UNIX AND NOT OPEN3D_LINUX_AARCH64)
         message(STATUS "Jupyter support is enabled, building Jupyter plugin now.")
     else()
         message(FATAL_ERROR "Jupyter plugin is not supported on ARM.")

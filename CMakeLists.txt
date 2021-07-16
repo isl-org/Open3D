@@ -6,24 +6,55 @@ cmake_minimum_required(VERSION 3.19)
 # compile flags and setting global hardened link flags, and to parse JSON files
 # for downloading files from the open3d_downloads repository.
 
-if (APPLE)
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
-    "Minimum OS X deployment version" FORCE)
-endif()
+include(CMakeDependentOption)
 
-if(UNIX AND NOT APPLE)
-    # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
-    # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
-    execute_process(COMMAND uname -p
-        OUTPUT_VARIABLE PROCESSOR_ARCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(PROCESSOR_ARCH STREQUAL "aarch64")
-        set(LINUX_AARCH64 TRUE)
+option(DEVELOPER_BUILD "Add +commit_hash to the project version number" ON)
+if(NOT DEVELOPER_BUILD)
+    if(NOT BUILD_COMMON_CUDA_ARCHS)
+        set(BUILD_COMMON_CUDA_ARCHS ON CACHE BOOL "Build for common CUDA GPUs (for release)" FORCE)
+        message(WARNING "Setting BUILD_COMMON_CUDA_ARCHS=ON since DEVELOPER_BUILD is OFF.")
     endif()
 endif()
 
-include(CMakeDependentOption)
+file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
+foreach(ver ${OPEN3D_VERSION_READ})
+    if(ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
+        set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
+    endif()
+endforeach()
+set(OPEN3D_VERSION_DEVHASH "")
+if(DEVELOPER_BUILD)
+    execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
+        OUTPUT_VARIABLE GIT_REV)
+    if(GIT_REV)
+        set(OPEN3D_VERSION_DEVHASH "+${GIT_REV}")
+    endif()
+endif()
+string(CONCAT OPEN3D_VERSION
+    "${OPEN3D_VERSION_MAJOR}"
+    ".${OPEN3D_VERSION_MINOR}"
+    ".${OPEN3D_VERSION_PATCH}"
+)
+set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
+
+project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
+message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
+
+# CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
+# which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
+# Possible values for CMAKE_HOST_SYSTEM_PROCESSOR:
+# - Linux  : aarch64
+# - macOS  : arm64    # ref: https://stackoverflow.com/a/65259353/1255535
+# - Windows: ARM64    # ref: https://superuser.com/a/1441469/306898)
+if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64" OR
+   CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64" OR
+   CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "ARM64")
+    set(OPEN3D_AARCH64 TRUE)
+    message(STATUS "ARM64 processor detected.")
+endif()
+if(OPEN3D_AARCH64 AND UNIX AND NOT APPLE)
+    set(OPEN3D_LINUX_AARCH64 TRUE)
+endif()
 
 # Open3D build options
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
@@ -43,7 +74,7 @@ cmake_dependent_option(
        "NOT BUILD_SHARED_LIBS"                                               OFF)
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
-if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
+if(NOT OPEN3D_AARCH64)
     cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
 else()
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
@@ -79,13 +110,9 @@ option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
 
-# Release build options
-option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )
-if (NOT DEVELOPER_BUILD)
-    if (NOT BUILD_COMMON_CUDA_ARCHS)
-        set(BUILD_COMMON_CUDA_ARCHS ON CACHE BOOL "Build for common CUDA GPUs (for release)" FORCE)
-        message(WARNING "Setting BUILD_COMMON_CUDA_ARCHS=ON since DEVELOPER_BUILD is OFF.")
-    endif()
+if(APPLE)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+    "Minimum OS X deployment version" FORCE)
 endif()
 
 # Default build type on single-config generators.
@@ -134,7 +161,7 @@ endif()
 cmake_policy(GET CMP0072 CMP0072_VALUE)
 
 # Set BLAS/LAPACK library preference.
-if(LINUX_AARCH64)
+if(OPEN3D_LINUX_AARCH64)
     if(NOT USE_BLAS)
         set(USE_BLAS ON)
         message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
@@ -162,7 +189,7 @@ endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
-if(BUILD_WEBRTC AND LINUX_AARCH64)
+if(BUILD_WEBRTC AND OPEN3D_LINUX_AARCH64)
     message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
 endif()
 if(BUILD_WEBRTC AND NOT BUILD_GUI)
@@ -175,31 +202,6 @@ endif()
 if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
-
-# Parse Open3D version number
-file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
-foreach(ver ${OPEN3D_VERSION_READ})
-    if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
-        set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
-    endif()
-endforeach()
-set(OPEN3D_VERSION_DEVHASH "")
-if(DEVELOPER_BUILD)
-    execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
-        OUTPUT_VARIABLE GIT_REV)
-    if (GIT_REV)
-        set(OPEN3D_VERSION_DEVHASH "+${GIT_REV}")
-    endif()
-endif()
-string(CONCAT OPEN3D_VERSION
-    "${OPEN3D_VERSION_MAJOR}"
-    ".${OPEN3D_VERSION_MINOR}"
-    ".${OPEN3D_VERSION_PATCH}"
-)
-set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
-
-project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
-message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
@@ -605,8 +607,8 @@ function(open3d_set_global_properties target)
     elseif(UNIX)
         target_compile_definitions(${target} PRIVATE UNIX)
     endif()
-    if(LINUX_AARCH64)
-        target_compile_definitions(${target} PRIVATE LINUX_AARCH64)
+    if(OPEN3D_LINUX_AARCH64)
+        target_compile_definitions(${target} PRIVATE OPEN3D_LINUX_AARCH64)
     endif()
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>")
 
