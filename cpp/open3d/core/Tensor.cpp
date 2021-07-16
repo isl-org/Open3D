@@ -33,7 +33,6 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
-#include "open3d/core/NumpyIO.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
@@ -47,6 +46,7 @@
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
 #include "open3d/core/linalg/Tri.h"
+#include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -1534,11 +1534,11 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
 }
 
 void Tensor::Save(const std::string& file_name) const {
-    NumpyArray(*this).Save(file_name);
+    t::io::WriteNpy(file_name, *this);
 }
 
 Tensor Tensor::Load(const std::string& file_name) {
-    return NumpyArray::Load(file_name).ToTensor();
+    return t::io::ReadNpy(file_name);
 }
 
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {

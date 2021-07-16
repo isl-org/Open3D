@@ -2,6 +2,7 @@ add_library(tio OBJECT)
 
 target_sources(tio PRIVATE
     ImageIO.cpp
+    NumpyIO.cpp
     PointCloudIO.cpp
     TriangleMeshIO.cpp
 )
