@@ -243,7 +243,7 @@ void BinaryEWCUDA(const Tensor& lhs,
     Dtype src_dtype = lhs.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
 
-    CUDADeviceSwitcher switcher(src_device);
+    CUDAScopedDevice scoped_device(src_device);
 
     if (s_boolean_binary_ew_op_codes.find(op_code) !=
         s_boolean_binary_ew_op_codes.end()) {

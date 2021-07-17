@@ -196,7 +196,7 @@ public:
                 size_t num_bytes) override;
 
 protected:
-    bool IsCUDAPointer(const void* ptr);
+    bool IsCUDAPointer(const void* ptr, const Device& device);
 };
 #endif
 

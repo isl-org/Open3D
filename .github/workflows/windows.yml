@@ -22,7 +22,7 @@ env:
   SCIPY_VER: "1.5.4"
   JEDI_VER: "0.17.2" # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8" # https://github.com/psf/requests/issues/5710
-  CONDA_BUILD_VER: "3.20.0"
+  CONDA_BUILD_VER: "3.21.4"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -165,7 +165,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -173,6 +173,8 @@ jobs:
             python_version: 3.7
           - is_master: false
             python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
@@ -285,7 +287,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -293,6 +295,8 @@ jobs:
             python_version: 3.7
           - is_master: false
             python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     steps:
       - name: Checkout source code

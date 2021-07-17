@@ -26,7 +26,7 @@
 
 #define EIGEN_USE_GPU
 #include "ContinuousConvTransposeOpKernel.h"
-#include "open3d/ml/Helper.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/ml/impl/continuous_conv/ContinuousConvTranspose.cuh"
 
 using namespace open3d;
@@ -41,7 +41,8 @@ public:
     explicit ContinuousConvTransposeOpKernelCUDA(
             OpKernelConstruction* construction)
         : ContinuousConvTransposeOpKernel<TIndex>(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

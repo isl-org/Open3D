@@ -28,7 +28,7 @@
 /// \brief Common CUDA utilities
 ///
 /// CUDAUtils.h may be included from CPU-only code.
-/// Use \#ifdef __CUDACC__ to mark conitional compilation
+/// Use \#ifdef __CUDACC__ to mark conditional compilation
 
 #pragma once
 
@@ -90,26 +90,7 @@ inline void __OPEN3D_GET_LAST_CUDA_ERROR(const char* message,
 }
 
 /// Returns the texture alignment in bytes for the current device.
-inline int GetCUDACurrentDeviceTextureAlignment() {
-    int device = 0;
-    cudaError_t err = cudaGetDevice(&device);
-    if (err != cudaSuccess) {
-        utility::LogError(
-                "GetCUDACurrentDeviceTextureAlignment(): cudaGetDevice failed "
-                "with {}",
-                cudaGetErrorString(err));
-    }
-
-    int value = 0;
-    err = cudaDeviceGetAttribute(&value, cudaDevAttrTextureAlignment, device);
-    if (err != cudaSuccess) {
-        utility::LogError(
-                "GetCUDACurrentDeviceTextureAlignment(): "
-                "cudaDeviceGetAttribute failed with {}",
-                cudaGetErrorString(err));
-    }
-    return value;
-}
+int GetCUDACurrentDeviceTextureAlignment();
 #endif
 
 namespace cuda {
@@ -117,6 +98,17 @@ namespace cuda {
 int DeviceCount();
 bool IsAvailable();
 void ReleaseCache();
+
+#ifdef BUILD_CUDA_MODULE
+
+int GetDevice();
+void SetDevice(int device_id);
+
+cudaStream_t GetStream();
+void SetStream(cudaStream_t stream);
+cudaStream_t GetDefaultStream();
+
+#endif
 
 }  // namespace cuda
 }  // namespace core

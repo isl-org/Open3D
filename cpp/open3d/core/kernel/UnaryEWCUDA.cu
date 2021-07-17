@@ -197,7 +197,8 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
             // For more optimized version, one can check if P2P from src to
             // dst is enabled, then put synchronization with streams on both
             // src and dst to wait for copy kernel to complete.
-            CUDADeviceSwitcher switcher(src_device);
+            CUDAScopedDevice scoped_device(src_device);
+
             Indexer indexer({src}, dst, DtypePolicy::NONE);
             if (src.GetDtype().IsObject()) {
                 int64_t object_byte_size = src.GetDtype().ByteSize();
