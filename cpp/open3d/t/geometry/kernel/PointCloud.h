@@ -57,21 +57,25 @@ void Project(
         float depth_scale,
         float depth_max);
 
-void EstimateColorGradients(const core::Tensor& points,
-                            const core::Tensor& normals,
-                            const core::Tensor& colors,
-                            core::Tensor& color_gradient,
-                            const double& radius,
-                            const int64_t& max_nn);
+void EstimateColorGradientsUsingHybridSearch(const core::Tensor& points,
+                                             const core::Tensor& normals,
+                                             const core::Tensor& colors,
+                                             core::Tensor& color_gradient,
+                                             const double& radius,
+                                             const int64_t& max_nn);
 
-void EstimateCovariances(const core::Tensor& points,
-                         core::Tensor& covariances,
-                         const double& radius,
-                         const int64_t& max_nn);
+void EstimateCovariancesUsingHybridSearch(const core::Tensor& points,
+                                          core::Tensor& covariances,
+                                          const double& radius,
+                                          const int64_t& max_nn);
 
-void EstimateNormals(const core::Tensor& covariances,
-                     core::Tensor& normals,
-                     const bool& has_normals);
+void EstimateCovariancesUsingKNNSearch(const core::Tensor& points,
+                                       core::Tensor& covariances,
+                                       const int64_t& max_nn);
+
+void EstimateNormalsFromCovariances(const core::Tensor& covariances,
+                                    core::Tensor& normals,
+                                    const bool& has_normals);
 
 }  // namespace pointcloud
 }  // namespace kernel

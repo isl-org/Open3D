@@ -80,38 +80,46 @@ void ProjectCUDA(
         float depth_max);
 #endif
 
-void EstimateColorGradientsCPU(const core::Tensor& points,
-                               const core::Tensor& normals,
-                               const core::Tensor& colors,
-                               core::Tensor& color_gradient,
-                               const double& radius,
-                               const int64_t& max_nn);
+void EstimateColorGradientsUsingHybridSearchCPU(const core::Tensor& points,
+                                                const core::Tensor& normals,
+                                                const core::Tensor& colors,
+                                                core::Tensor& color_gradient,
+                                                const double& radius,
+                                                const int64_t& max_nn);
 
-void EstimateCovariancesCPU(const core::Tensor& points,
-                            core::Tensor& covariances,
-                            const double& radius,
-                            const int64_t& max_nn);
+void EstimateCovariancesUsingHybridSearchCPU(const core::Tensor& points,
+                                             core::Tensor& covariances,
+                                             const double& radius,
+                                             const int64_t& max_nn);
 
-void EstimateNormalsCPU(const core::Tensor& covariances,
-                        core::Tensor& normals,
-                        const bool has_normals);
+void EstimateCovariancesUsingKNNSearchCPU(const core::Tensor& points,
+                                          core::Tensor& covariances,
+                                          const int64_t& max_nn);
+
+void EstimateNormalsFromCovariancesCPU(const core::Tensor& covariances,
+                                       core::Tensor& normals,
+                                       const bool has_normals);
 
 #ifdef BUILD_CUDA_MODULE
-void EstimateColorGradientsCUDA(const core::Tensor& points,
-                                const core::Tensor& normals,
-                                const core::Tensor& colors,
-                                core::Tensor& color_gradient,
-                                const double& radius,
-                                const int64_t& max_nn);
+void EstimateColorGradientsUsingHybridSearchCUDA(const core::Tensor& points,
+                                                 const core::Tensor& normals,
+                                                 const core::Tensor& colors,
+                                                 core::Tensor& color_gradient,
+                                                 const double& radius,
+                                                 const int64_t& max_nn);
 
-void EstimateCovariancesCUDA(const core::Tensor& points,
-                             core::Tensor& covariances,
-                             const double& radius,
-                             const int64_t& max_nn);
+void EstimateCovariancesUsingHybridSearchCUDA(const core::Tensor& points,
+                                              core::Tensor& covariances,
+                                              const double& radius,
+                                              const int64_t& max_nn);
 
-void EstimateNormalsCUDA(const core::Tensor& covariances,
-                         core::Tensor& normals,
-                         const bool has_normals);
+void EstimateCovariancesUsingKNNSearchCUDA(const core::Tensor& points,
+                                           core::Tensor& covariances,
+                                           const int64_t& max_nn);
+
+void EstimateNormalsFromCovariancesCUDA(const core::Tensor& covariances,
+                                        core::Tensor& normals,
+                                        const bool has_normals);
 #endif
 
 template <typename scalar_t>

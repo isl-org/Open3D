@@ -249,7 +249,7 @@ PointCloud PointCloud::VoxelDownSample(
     return pcd_down;
 }
 
-void PointCloud::EstimateCovariances(const double radius,
+void PointCloud::EstimateCovariances(const utility::optional<double> radius,
                                      const int max_knn /* = 30*/) {
     core::Dtype dtype = this->GetPoints().GetDtype();
     if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
@@ -262,13 +262,22 @@ void PointCloud::EstimateCovariances(const double radius,
                        core::Tensor::Empty({GetPoints().GetLength(), 3, 3},
                                            dtype, GetDevice()));
 
-    // Compute and set `covariances` attribute.
-    kernel::pointcloud::EstimateCovariances(this->GetPoints().Contiguous(),
-                                            this->GetPointAttr("covariances"),
-                                            radius, max_knn);
+    if (radius.has_value()) {
+        utility::LogDebug("Using Hybrid Search for computing covariances");
+        // Computes and set `covariances` attribute using Hybrid Search mehtod.
+        kernel::pointcloud::EstimateCovariancesUsingHybridSearch(
+                this->GetPoints().Contiguous(),
+                this->GetPointAttr("covariances"), radius.value(), max_knn);
+    } else {
+        utility::LogDebug("Using KNN Search for computing covariances");
+        // Computes and set `covariances` attribute using KNN Search method.
+        kernel::pointcloud::EstimateCovariancesUsingKNNSearch(
+                this->GetPoints().Contiguous(),
+                this->GetPointAttr("covariances"), max_knn);
+    }
 }
 
-void PointCloud::EstimateNormals(const double radius,
+void PointCloud::EstimateNormals(const utility::optional<double> radius,
                                  const int max_knn /* = 30*/) {
     core::Dtype dtype = this->GetPoints().GetDtype();
     if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
@@ -286,17 +295,21 @@ void PointCloud::EstimateNormals(const double radius,
     }
 
     if (!HasPointAttr("covariances")) {
+        // Computes and set `covariances` attribute using Hybrid or KNN Search.
         EstimateCovariances(radius, max_knn);
-    } else {
+    } else if (!GetPointAttr("covariances").IsContiguous()) {
+        // Make `covariances` attribute Contiguous.
         this->SetPointAttr("covariances",
                            GetPointAttr("covariances").Contiguous());
     }
 
-    kernel::pointcloud::EstimateNormals(this->GetPointAttr("covariances"),
-                                        this->GetPointNormals(), has_normals);
+    // Estiamte `normal` of each point using it's `covariance` matrix.
+    kernel::pointcloud::EstimateNormalsFromCovariances(
+            this->GetPointAttr("covariances"), this->GetPointNormals(),
+            has_normals);
 }
 
-void PointCloud::EstimateColorGradients(const double radius,
+void PointCloud::EstimateColorGradients(const utility::optional<double> radius,
                                         const int max_knn /*= 30*/) {
     if (!HasPointColors() || !HasPointNormals()) {
         utility::LogError(
@@ -311,16 +324,22 @@ void PointCloud::EstimateColorGradients(const double radius,
                 "estimating color gradient.");
     }
 
+    if (!radius.has_value()) {
+        utility::LogError(
+                "KNN Search based EstimateColorGradient is not implemented "
+                "yet. Please provide radius parameter value.");
+    }
+
     this->SetPointAttr("color_gradients",
                        core::Tensor::Empty({GetPoints().GetLength(), 3}, dtype,
                                            GetDevice()));
 
     // Compute and set `color_gradients` attribute.
-    kernel::pointcloud::EstimateColorGradients(
+    kernel::pointcloud::EstimateColorGradientsUsingHybridSearch(
             this->GetPoints().Contiguous(),
             this->GetPointNormals().Contiguous(),
             this->GetPointColors().Contiguous(),
-            this->GetPointAttr("color_gradients"), radius, max_knn);
+            this->GetPointAttr("color_gradients"), radius.value(), max_knn);
 }
 
 static PointCloud CreatePointCloudWithNormals(

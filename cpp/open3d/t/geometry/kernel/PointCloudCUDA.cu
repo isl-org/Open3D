@@ -216,7 +216,7 @@ void UnprojectCUDA(
 }
 
 template <typename scalar_t>
-__global__ void EstimateColorGradientsCUDAKernel(
+__global__ void EstimateColorGradientsUsingHybridSearchCUDAKernel(
         const scalar_t* points_ptr,
         const scalar_t* normals_ptr,
         const scalar_t* colors_ptr,
@@ -323,12 +323,12 @@ __global__ void EstimateColorGradientsCUDAKernel(
     }
 }
 
-void EstimateColorGradientsCUDA(const core::Tensor& points,
-                                const core::Tensor& normals,
-                                const core::Tensor& colors,
-                                core::Tensor& color_gradients,
-                                const double& radius,
-                                const int64_t& max_nn) {
+void EstimateColorGradientsUsingHybridSearchCUDA(const core::Tensor& points,
+                                                 const core::Tensor& normals,
+                                                 const core::Tensor& colors,
+                                                 core::Tensor& color_gradients,
+                                                 const double& radius,
+                                                 const int64_t& max_nn) {
     core::Dtype dtype = points.GetDtype();
     const int64_t n = points.GetLength();
 
@@ -347,7 +347,7 @@ void EstimateColorGradientsCUDA(const core::Tensor& points,
     const dim3 threads(512);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        EstimateColorGradientsCUDAKernel<<<blocks, threads>>>(
+        EstimateColorGradientsUsingHybridSearchCUDAKernel<<<blocks, threads>>>(
                 points.GetDataPtr<scalar_t>(), normals.GetDataPtr<scalar_t>(),
                 colors.GetDataPtr<scalar_t>(), indices.GetDataPtr<int64_t>(),
                 counts.GetDataPtr<int64_t>(),
@@ -357,10 +357,10 @@ void EstimateColorGradientsCUDA(const core::Tensor& points,
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
-void EstimateCovariancesCUDA(const core::Tensor& points,
-                             core::Tensor& covariances,
-                             const double& radius,
-                             const int64_t& max_nn) {
+void EstimateCovariancesUsingHybridSearchCUDA(const core::Tensor& points,
+                                              core::Tensor& covariances,
+                                              const double& radius,
+                                              const int64_t& max_nn) {
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
@@ -417,11 +417,60 @@ void EstimateCovariancesCUDA(const core::Tensor& points,
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
+void EstimateCovariancesUsingKNNSearchCUDA(const core::Tensor& points,
+                                           core::Tensor& covariances,
+                                           const int64_t& max_nn) {
+    core::Dtype dtype = points.GetDtype();
+    int64_t n = points.GetLength();
+
+    core::nns::NearestNeighborSearch tree(points);
+
+    bool check = tree.KnnIndex();
+    if (!check) {
+        utility::LogError("KnnIndex is not set.");
+    }
+
+    core::Tensor indices, distance;
+    std::tie(indices, distance) = tree.KnnSearch(points, max_nn);
+
+    indices = indices.Contiguous();
+    int64_t nn_count = indices.GetShape()[1];
+
+    if (nn_count < 3) {
+        utility::LogError(
+                "Not enought neighbors to compute Covariances / Normals. Try "
+                "changing the search parameter.");
+    }
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        auto points_ptr = points.GetDataPtr<scalar_t>();
+        auto neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
+        auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
+
+        core::kernel::cuda_launcher::ParallelFor(
+                n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    // NNS [KNN Search].
+                    int64_t neighbour_offset = nn_count * workload_idx;
+                    // Covariance is of shape {3, 3}, so it has an offset factor
+                    // of 9 x workload_idx.
+                    int64_t covariances_offset = 9 * workload_idx;
+
+                    EstimatePointWiseCovarianceKernel(
+                            points_ptr,
+                            neighbour_indices_ptr + neighbour_offset, nn_count,
+                            covariances_ptr + covariances_offset);
+                });
+    });
+
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+}
+
 template <typename scalar_t>
-__global__ void EstimateNormalsCUDAKernel(const scalar_t* covariances_ptr,
-                                          scalar_t* normals_ptr,
-                                          const bool has_normals,
-                                          const int64_t n) {
+__global__ void EstimateNormalsFromCovariancesCUDAKernel(
+        const scalar_t* covariances_ptr,
+        scalar_t* normals_ptr,
+        const bool has_normals,
+        const int64_t n) {
     const int64_t workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (workload_idx >= n) return;
 
@@ -454,9 +503,9 @@ __global__ void EstimateNormalsCUDAKernel(const scalar_t* covariances_ptr,
     normals_ptr[normals_offset + 2] = normals_output[2];
 }
 
-void EstimateNormalsCUDA(const core::Tensor& covariances,
-                         core::Tensor& normals,
-                         const bool has_normals) {
+void EstimateNormalsFromCovariancesCUDA(const core::Tensor& covariances,
+                                        core::Tensor& normals,
+                                        const bool has_normals) {
     core::Dtype dtype = covariances.GetDtype();
     int64_t n = covariances.GetLength();
 
@@ -464,7 +513,7 @@ void EstimateNormalsCUDA(const core::Tensor& covariances,
     const dim3 threads(512);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        EstimateNormalsCUDAKernel<<<blocks, threads>>>(
+        EstimateNormalsFromCovariancesCUDAKernel<<<blocks, threads>>>(
                 covariances.GetDataPtr<scalar_t>(),
                 normals.GetDataPtr<scalar_t>(), has_normals, n);
     });

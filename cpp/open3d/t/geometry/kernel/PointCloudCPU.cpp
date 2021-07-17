@@ -194,12 +194,12 @@ void UnprojectCPU(
     }
 }
 
-void EstimateColorGradientsCPU(const core::Tensor& points,
-                               const core::Tensor& normals,
-                               const core::Tensor& colors,
-                               core::Tensor& color_gradients,
-                               const double& radius,
-                               const int64_t& max_nn) {
+void EstimateColorGradientsUsingHybridSearchCPU(const core::Tensor& points,
+                                                const core::Tensor& normals,
+                                                const core::Tensor& colors,
+                                                core::Tensor& color_gradients,
+                                                const double& radius,
+                                                const int64_t& max_nn) {
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
@@ -326,10 +326,10 @@ void EstimateColorGradientsCPU(const core::Tensor& points,
     });
 }
 
-void EstimateCovariancesCPU(const core::Tensor& points,
-                            core::Tensor& covariances,
-                            const double& radius,
-                            const int64_t& max_nn) {
+void EstimateCovariancesUsingHybridSearchCPU(const core::Tensor& points,
+                                             core::Tensor& covariances,
+                                             const double& radius,
+                                             const int64_t& max_nn) {
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
@@ -380,9 +380,53 @@ void EstimateCovariancesCPU(const core::Tensor& points,
     });
 }
 
-void EstimateNormalsCPU(const core::Tensor& covariances,
-                        core::Tensor& normals,
-                        const bool has_normals) {
+void EstimateCovariancesUsingKNNSearchCPU(const core::Tensor& points,
+                                          core::Tensor& covariances,
+                                          const int64_t& max_nn) {
+    core::Dtype dtype = points.GetDtype();
+    int64_t n = points.GetLength();
+
+    core::nns::NearestNeighborSearch tree(points);
+
+    bool check = tree.KnnIndex();
+    if (!check) {
+        utility::LogError("KnnIndex is not set.");
+    }
+
+    core::Tensor indices, distance;
+    std::tie(indices, distance) = tree.KnnSearch(points, max_nn);
+
+    indices = indices.Contiguous();
+    int64_t nn_count = indices.GetShape()[1];
+
+    if (nn_count < 3) {
+        utility::LogError(
+                " Not enought neighbors to compute Covariances / Normals. Try "
+                "changing the search parameter.");
+    }
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        auto points_ptr = points.GetDataPtr<scalar_t>();
+        auto neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
+        auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
+
+        core::kernel::cpu_launcher::ParallelFor(n, [&](int64_t workload_idx) {
+            // NNS [KNN Search].
+            int64_t neighbour_offset = nn_count * workload_idx;
+            // Covariance is of shape {3, 3}, so it has an offset factor
+            // of 9 x workload_idx.
+            int64_t covariances_offset = 9 * workload_idx;
+
+            EstimatePointWiseCovarianceKernel(
+                    points_ptr, neighbour_indices_ptr + neighbour_offset,
+                    nn_count, covariances_ptr + covariances_offset);
+        });
+    });
+}
+
+void EstimateNormalsFromCovariancesCPU(const core::Tensor& covariances,
+                                       core::Tensor& normals,
+                                       const bool has_normals) {
     core::Dtype dtype = covariances.GetDtype();
     int64_t n = covariances.GetLength();
 

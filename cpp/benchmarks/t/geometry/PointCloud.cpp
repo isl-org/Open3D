@@ -100,79 +100,87 @@ void VoxelDownSample(benchmark::State& state,
     }
 }
 
-void EstimateCovariances(benchmark::State& state, const core::Device& device) {
+void EstimateCovariances(benchmark::State& state,
+                         const core::Device& device,
+                         const double voxel_size,
+                         const utility::optional<double> radius,
+                         const int max_nn) {
     t::geometry::PointCloud pcd;
-    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
-    // remove_nan_points
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    auto pcd_down = pcd.VoxelDownSample(0.02);
+    auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
     // Warp up
-    pcd_down.EstimateCovariances(0.04, 30);
+    pcd_down.EstimateCovariances(radius, max_nn);
     (void)pcd_down;
     for (auto _ : state) {
-        pcd_down.EstimateCovariances(0.04, 30);
+        pcd_down.EstimateCovariances(radius, max_nn);
     }
 }
 
-void EstimateNormals(benchmark::State& state, const core::Device& device) {
+void EstimateNormals(benchmark::State& state,
+                     const core::Device& device,
+                     const double voxel_size,
+                     const utility::optional<double> radius,
+                     const int max_nn) {
     t::geometry::PointCloud pcd;
-    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
-    // remove_nan_points
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    auto pcd_down = pcd.VoxelDownSample(0.02);
+    auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
     // Warp up
-    pcd_down.EstimateNormals(0.04, 30);
+    pcd_down.EstimateNormals(radius, max_nn);
     pcd_down.RemovePointAttr("covariances");
-    (void)pcd_down;
+    pcd_down.RemovePointAttr("normals");
+
     for (auto _ : state) {
-        pcd_down.EstimateNormals(0.04, 30);
+        pcd_down.EstimateNormals(radius, max_nn);
         pcd_down.RemovePointAttr("covariances");
+        pcd_down.RemovePointAttr("normals");
     }
 }
 
 void EstimateColorGradients(benchmark::State& state,
-                            const core::Device& device) {
+                            const core::Device& device,
+                            const double voxel_size,
+                            const utility::optional<double> radius,
+                            const int max_nn) {
     t::geometry::PointCloud pcd;
-    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
-    // remove_nan_points
+
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    auto pcd_down = pcd.VoxelDownSample(0.02);
+    auto pcd_down = pcd.VoxelDownSample(voxel_size);
     pcd_down.SetPointColors(pcd_down.GetPointColors()
                                     .To(pcd_down.GetPoints().GetDtype())
                                     .Div(255.0));
-    pcd_down.EstimateNormals(0.04, 30);
+    pcd_down.EstimateNormals(radius, max_nn);
 
     // Warp up
-    pcd_down.EstimateColorGradients(0.04, 30);
-    (void)pcd_down;
+    pcd_down.EstimateColorGradients(radius, max_nn);
     for (auto _ : state) {
-        pcd_down.EstimateColorGradients(0.04, 30);
+        pcd_down.EstimateColorGradients(radius, max_nn);
     }
 }
 
-void LegacyEstimateNormals(benchmark::State& state, double voxel_size) {
+void LegacyEstimateNormals(
+        benchmark::State& state,
+        const double voxel_size,
+        const open3d::geometry::KDTreeSearchParam& search_param) {
     open3d::geometry::PointCloud pcd;
-    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
-    // remove_nan_points
     open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
 
     auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
     // Warp up
-    pcd_down->EstimateNormals(
-            open3d::geometry::KDTreeSearchParamHybrid(0.04, 30), true);
-    (void)pcd;
+    pcd_down->EstimateNormals(search_param, true);
+
+    pcd_down->normals_.clear();
     for (auto _ : state) {
-        pcd_down->EstimateNormals(
-                open3d::geometry::KDTreeSearchParamHybrid(0.04, 30), true);
+        pcd_down->EstimateNormals(search_param, true);
+        pcd_down->normals_.clear();
     }
 }
 
@@ -228,24 +236,97 @@ BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_32, 0.32)
         ->Unit(benchmark::kMillisecond);
 ENUM_VOXELDOWNSAMPLE_BACKEND()
 
-BENCHMARK_CAPTURE(EstimateCovariances, CPU, core::Device("CPU:0"))
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CPU Hybrid[0.02 | 0.08 | 30],
+                  core::Device("CPU:0"),
+                  0.02,
+                  0.08,
+                  30)
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateNormals, CPU, core::Device("CPU:0"))
-        ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateColorGradients, CPU, core::Device("CPU:0"))
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CPU KNN[0.02 | 30],
+                  core::Device("CPU:0"),
+                  0.02,
+                  utility::nullopt,
+                  30)
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(EstimateCovariances, CUDA, core::Device("CUDA:0"))
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA Hybrid[0.02 | 0.08 | 30],
+                  core::Device("CUDA:0"),
+                  0.02,
+                  0.08,
+                  30)
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateNormals, CUDA, core::Device("CUDA:0"))
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA KNN[0.02 | 30],
+                  core::Device("CUDA:0"),
+                  0.02,
+                  utility::nullopt,
+                  30)
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateColorGradients, CUDA, core::Device("CUDA:0"))
-        ->Unit(benchmark::kMillisecond);
-
 #endif
 
-BENCHMARK_CAPTURE(LegacyEstimateNormals, Legacy, 0.02)
+BENCHMARK_CAPTURE(EstimateCovariances,
+                  CPU Hybrid[0.02 | 0.08 | 30],
+                  core::Device("CPU:0"),
+                  0.02,
+                  0.08,
+                  30)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateCovariances,
+                  CPU KNN[0.02 | 30],
+                  core::Device("CPU:0"),
+                  0.02,
+                  utility::nullopt,
+                  30)
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(EstimateCovariances,
+                  CUDA Hybrid[0.02 | 0.08 | 30],
+                  core::Device("CUDA:0"),
+                  0.02,
+                  0.08,
+                  30)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateCovariances,
+                  CUDA KNN[0.02 | 30],
+                  core::Device("CUDA:0"),
+                  0.02,
+                  utility::nullopt,
+                  30)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(EstimateColorGradients,
+                  CPU Hybrid[0.02 | 0.08 | 30],
+                  core::Device("CPU:0"),
+                  0.02,
+                  0.08,
+                  30)
+        ->Unit(benchmark::kMillisecond);
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(EstimateColorGradients,
+                  CUDA Hybrid[0.02 | 0.08 | 30],
+                  core::Device("CUDA:0"),
+                  0.02,
+                  0.08,
+                  30)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(LegacyEstimateNormals,
+                  Legacy Hybrid[0.02 | 0.08 | 30],
+                  0.02,
+                  open3d::geometry::KDTreeSearchParamHybrid(0.08, 30))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(LegacyEstimateNormals,
+                  Legacy KNN[0.02 | 30],
+                  0.02,
+                  open3d::geometry::KDTreeSearchParamKNN(30))
         ->Unit(benchmark::kMillisecond);
 
 }  // namespace geometry
