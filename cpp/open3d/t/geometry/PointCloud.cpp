@@ -250,8 +250,9 @@ PointCloud PointCloud::VoxelDownSample(
     return pcd_down;
 }
 
-void PointCloud::EstimateNormals(const utility::optional<double> radius,
-                                 const int max_knn /* = 30*/) {
+void PointCloud::EstimateNormals(
+        const int max_knn /* = 30*/,
+        const utility::optional<double> radius /*= utility::nullopt*/) {
     core::Dtype dtype = this->GetPoints().GetDtype();
     if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
         utility::LogError(
@@ -325,8 +326,9 @@ void PointCloud::EstimateNormals(const utility::optional<double> radius,
     RemovePointAttr("covariances");
 }
 
-void PointCloud::EstimateColorGradients(const utility::optional<double> radius,
-                                        const int max_knn /*= 30*/) {
+void PointCloud::EstimateColorGradients(
+        const int max_knn /* = 30*/,
+        const utility::optional<double> radius /*= utility::nullopt*/) {
     if (!HasPointColors() || !HasPointNormals()) {
         utility::LogError(
                 "PointCloud must have colors and normals attribute "

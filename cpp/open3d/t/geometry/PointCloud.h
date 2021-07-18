@@ -325,32 +325,25 @@ public:
     core::Device GetDevice() const { return device_; }
 
 public:
-    /// \brief Function to compute the covariance matrix for each point of a
-    /// point cloud. If radius is provided, then HybridSearch is used, otherwise
-    /// KNN-Search is used.
-    /// \param radius [optional] NeighbourSearch radius
-    /// parameter. [Recommended ~1.4x voxel size].
-    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    void EstimateCovariances(const utility::optional<double> radius,
-                             const int max_nn = 30);
-
     /// \brief Function to compute point normals. If radius is provided, then
     /// HybridSearch is used, otherwise KNN-Search is used.
-    /// \param radius [optional] NeighbourSearch radius parameter.
-    /// [Recommended ~1.4x voxel size].
     /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    void EstimateNormals(const utility::optional<double> radius,
-                         const int max_nn = 30);
+    /// \param radius [optional] NeighbourSearch radius parameter to use
+    /// HybridSearch. [Recommended ~1.4x voxel size].
+    void EstimateNormals(
+            const int max_nn = 30,
+            const utility::optional<double> radius = utility::nullopt);
 
     /// \brief Function to compute point color gradients. If radius is provided,
     /// then HybridSearch is used, otherwise KNN-Search is used.
     /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
     /// Colored Point Cloud Registration Revisited, ICCV, 2017.
-    /// \param radius [optional] NeighbourSearch radius parameter.
-    /// [Recommended ~1.4x voxel size].
     /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    void EstimateColorGradients(const utility::optional<double> radius,
-                                const int max_nn = 30);
+    /// \param radius [optional] NeighbourSearch radius parameter to use
+    /// HybridSearch. [Recommended ~1.4x voxel size].
+    void EstimateColorGradients(
+            const int max_nn = 30,
+            const utility::optional<double> radius = utility::nullopt);
 
 public:
     /// \brief Factory function to create a pointcloud from a depth image and a

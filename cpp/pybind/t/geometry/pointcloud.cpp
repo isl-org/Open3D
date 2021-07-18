@@ -127,6 +127,22 @@ void pybind_pointcloud(py::module& m) {
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
+
+    pointcloud.def(
+            "estimate_normals",
+            [](PointCloud& pointcloud, utility::optional<double> radius,
+               int max_nn) {
+                return pointcloud.EstimateNormals(max_nn, radius);
+            },
+            py::arg("max_nn") = 30, py::arg("radius") = py::none());
+    pointcloud.def(
+            "estimate_color_gradients",
+            [](PointCloud& pointcloud, utility::optional<double> radius,
+               int max_nn) {
+                return pointcloud.EstimateColorGradients(max_nn, radius);
+            },
+            py::arg("max_nn") = 30, py::arg("radius") = py::none());
+
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,
             py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,

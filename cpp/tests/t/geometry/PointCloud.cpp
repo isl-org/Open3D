@@ -267,7 +267,7 @@ TEST_P(PointCloudPermuteDevices, EstimateNormalsAndCovariances) {
                                       .To(dtype);
         t::geometry::PointCloud pcd(points);
 
-        pcd.EstimateNormals(2.0, 4);
+        pcd.EstimateNormals(4, 2.0);
 
         core::Tensor normals =
                 core::Tensor::Init<float>({{0.57735, 0.57735, 0.57735},
@@ -286,38 +286,6 @@ TEST_P(PointCloudPermuteDevices, EstimateNormalsAndCovariances) {
                           pcd.GetPointNormals().ToString(), normals.ToString());
 
         EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
-
-        // When computing normals, covariances are also computed by default.
-        core::Tensor covariances =
-                core::Tensor::Init<float>({{{0.1875, -0.0625, -0.0625},
-                                            {-0.0625, 0.1875, -0.0625},
-                                            {-0.0625, -0.0625, 0.1875}},
-                                           {{0.1875, -0.0625, 0.0625},
-                                            {-0.0625, 0.1875, 0.0625},
-                                            {0.0625, 0.0625, 0.1875}},
-                                           {{0.1875, 0.0625, -0.0625},
-                                            {0.0625, 0.1875, 0.0625},
-                                            {-0.0625, 0.0625, 0.1875}},
-                                           {{0.1875, 0.0625, 0.0625},
-                                            {0.0625, 0.1875, -0.0625},
-                                            {0.0625, -0.0625, 0.1875}},
-                                           {{0.1875, 0.0625, 0.0625},
-                                            {0.0625, 0.1875, -0.0625},
-                                            {0.0625, -0.0625, 0.1875}},
-                                           {{0.1875, 0.0625, -0.0625},
-                                            {0.0625, 0.1875, 0.0625},
-                                            {-0.0625, 0.0625, 0.1875}},
-                                           {{0.1875, -0.0625, 0.0625},
-                                            {-0.0625, 0.1875, 0.0625},
-                                            {0.0625, 0.0625, 0.1875}},
-                                           {{0.1875, -0.0625, -0.0625},
-                                            {-0.0625, 0.1875, -0.0625},
-                                            {-0.0625, -0.0625, 0.1875}}},
-                                          device)
-                        .To(dtype);
-
-        EXPECT_TRUE(pcd.GetPointAttr("covariances")
-                            .AllClose(covariances, 1e-4, 1e-4));
     }
 }
 
@@ -378,7 +346,7 @@ TEST_P(PointCloudPermuteDevices, DISABLED_EstimateColorGradient) {
     pcd.SetPointNormals(normals);
     pcd.SetPointColors(colors);
 
-    pcd.EstimateColorGradients(4.0, 5);
+    pcd.EstimateColorGradients(5, 4.0);
 
     core::Tensor expected_color_gradient =
             core::Tensor::Init<float>({{0.1313, -0.0267, -0.0905},

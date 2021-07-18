@@ -103,8 +103,8 @@ void VoxelDownSample(benchmark::State& state,
 void EstimateNormals(benchmark::State& state,
                      const core::Device& device,
                      const double voxel_size,
-                     const utility::optional<double> radius,
-                     const int max_nn) {
+                     const int max_nn,
+                     const utility::optional<double> radius) {
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
@@ -112,11 +112,11 @@ void EstimateNormals(benchmark::State& state,
     auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
     // Warp up
-    pcd_down.EstimateNormals(radius, max_nn);
+    pcd_down.EstimateNormals(max_nn, radius);
     pcd_down.RemovePointAttr("normals");
 
     for (auto _ : state) {
-        pcd_down.EstimateNormals(radius, max_nn);
+        pcd_down.EstimateNormals(max_nn, radius);
         pcd_down.RemovePointAttr("normals");
     }
 }
@@ -124,8 +124,8 @@ void EstimateNormals(benchmark::State& state,
 void EstimateColorGradients(benchmark::State& state,
                             const core::Device& device,
                             const double voxel_size,
-                            const utility::optional<double> radius,
-                            const int max_nn) {
+                            const int max_nn,
+                            const utility::optional<double> radius) {
     t::geometry::PointCloud pcd;
 
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
@@ -135,12 +135,12 @@ void EstimateColorGradients(benchmark::State& state,
     pcd_down.SetPointColors(pcd_down.GetPointColors()
                                     .To(pcd_down.GetPoints().GetDtype())
                                     .Div(255.0));
-    pcd_down.EstimateNormals(radius, max_nn);
+    pcd_down.EstimateNormals(max_nn, radius);
 
     // Warp up
-    pcd_down.EstimateColorGradients(radius, max_nn);
+    pcd_down.EstimateColorGradients(max_nn, radius);
     for (auto _ : state) {
-        pcd_down.EstimateColorGradients(radius, max_nn);
+        pcd_down.EstimateColorGradients(max_nn, radius);
     }
 }
 
@@ -216,56 +216,56 @@ BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_32, 0.32)
 ENUM_VOXELDOWNSAMPLE_BACKEND()
 
 BENCHMARK_CAPTURE(EstimateNormals,
-                  CPU Hybrid[0.02 | 0.08 | 30],
+                  CPU Hybrid[0.02 | 30 | 0.08],
                   core::Device("CPU:0"),
                   0.02,
-                  0.08,
-                  30)
+                  30,
+                  0.08)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
                   CPU KNN[0.02 | 30],
                   core::Device("CPU:0"),
                   0.02,
-                  utility::nullopt,
-                  30)
+                  30,
+                  utility::nullopt)
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(EstimateNormals,
-                  CUDA Hybrid[0.02 | 0.08 | 30],
+                  CUDA Hybrid[0.02 | 30 | 0.08],
                   core::Device("CUDA:0"),
                   0.02,
-                  0.08,
-                  30)
+                  30,
+                  0.08)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
                   CUDA KNN[0.02 | 30],
                   core::Device("CUDA:0"),
                   0.02,
-                  utility::nullopt,
-                  30)
+                  30,
+                  utility::nullopt)
         ->Unit(benchmark::kMillisecond);
 #endif
 
 BENCHMARK_CAPTURE(EstimateColorGradients,
-                  CPU Hybrid[0.02 | 0.08 | 30],
+                  CPU Hybrid[0.02 | 30 | 0.08],
                   core::Device("CPU:0"),
                   0.02,
-                  0.08,
-                  30)
+                  30,
+                  0.08)
         ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(EstimateColorGradients,
-                  CUDA Hybrid[0.02 | 0.08 | 30],
+                  CUDA Hybrid[0.02 | 30 | 0.08],
                   core::Device("CUDA:0"),
                   0.02,
-                  0.08,
-                  30)
+                  30,
+                  0.08)
         ->Unit(benchmark::kMillisecond);
 #endif
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,
-                  Legacy Hybrid[0.02 | 0.08 | 30],
+                  Legacy Hybrid[0.02 | 30 | 0.08],
                   0.02,
                   open3d::geometry::KDTreeSearchParamHybrid(0.08, 30))
         ->Unit(benchmark::kMillisecond);
