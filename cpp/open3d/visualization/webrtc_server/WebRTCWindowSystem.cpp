@@ -122,6 +122,9 @@ struct WebRTCWindowSystem::Impl {
 
     std::thread webrtc_thread_;
     bool sever_started_ = false;
+
+    std::unordered_map<std::string, std::function<void(std::string)>>
+            html_DOM_event_callbacks_;
 };
 
 std::shared_ptr<WebRTCWindowSystem> WebRTCWindowSystem::GetInstance() {
@@ -331,6 +334,32 @@ void WebRTCWindowSystem::OnDataChannelMessage(const std::string &message) {
             utility::LogDebug("ResizeEvent {}: ({}, {})", window_uid, height,
                               width);
             SetWindowSize(GetOSWindowByUID(window_uid), width, height);
+        } else if (value.get("class_name", "").asString() == "HTMLDOMEvent") {
+            const std::string html_element_id =
+                    value.get("element_id", "").asString();
+            const std::string event = value.get("event", "").asString();
+            const std::string data = value.get("data", "").asString();
+            if (impl_->html_DOM_event_callbacks_.count(html_element_id +
+                                                       event) > 0) {
+                utility::LogDebug(
+                        "HTMLDOMEvent for element id: '{}', event: '{}', data: "
+                        "'{}'",
+                        html_element_id, event, data);
+                impl_->html_DOM_event_callbacks_.at(html_element_id +
+                                                    event)(data);
+            } else {
+                utility::LogWarning(
+                        "No callback registered for the HTML element with Id: "
+                        "'{}' for the DOM event '{}' with data '{}'. Event "
+                        "ignored.",
+                        html_element_id, event, data);
+            }
+        } else {
+            utility::LogInfo(
+                    "OnDataChannelMessage: Message: '{}' has invalid "
+                    "class_name "
+                    "or window_uid. Ignored.",
+                    message);
         }
     } catch (...) {
         utility::LogInfo(
@@ -435,6 +464,13 @@ void WebRTCWindowSystem::DisableHttpHandshake() {
 
 void WebRTCWindowSystem::CloseWindowConnections(const std::string &window_uid) {
     impl_->peer_connection_manager_->CloseWindowConnections(window_uid);
+}
+
+void WebRTCWindowSystem::RegisterHTMLDOMCallback(
+        const std::string &html_element_id,
+        const std::string &event,
+        std::function<void(const std::string &)> callback) {
+    impl_->html_DOM_event_callbacks_[html_element_id + event] = callback;
 }
 
 }  // namespace webrtc_server

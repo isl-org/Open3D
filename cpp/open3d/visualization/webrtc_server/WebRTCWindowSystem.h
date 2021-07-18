@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -118,6 +119,48 @@ public:
 
     /// Close all WebRTC connections that correspond to a Window.
     void CloseWindowConnections(const std::string& window_uid);
+
+    /// \brief Register callback for an HTML DOM event.
+    ///
+    /// The callback will be executed when the corresponding event is received
+    /// on the WebRTC data channel as a message. This can be sent through
+    /// JavaScript from the client (browser) with a \verb class_name of
+    /// "HTMLDOMEvent". Any arbitrary (\p html_element_id, \p event) may be used
+    /// to register a callback, but see
+    /// https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement for
+    /// standard HTML elements and events.  A second callback for the same \p
+    /// html_element_id \p event combination will overwrite the previously
+    /// registered callback.
+    ///
+    /// \code{.cpp}
+    /// // Register callback in C++
+    /// open3d::visualization::webrtc_server::enable_webrtc()
+    /// open3d::visualization::webrtc_server::RegisterHTMLDOMCallback(
+    ///     "open3d-dashboard", "input",
+    ///     lambda data: print(f"Received HTML DOM message with data: {data}"))
+    /// \endcode
+    ///
+    /// \code{.js}
+    /// /* Send message in JavaScript to trigger callback. this is
+    /// WebRTCStreamer object */
+    /// this.dataChannel.send('{"class_name":"HTMLDOMEvent",
+    ///     "element_id":"open3d-dashboard",
+    ///     "event":"input",
+    ///     "data":"Test event"}')
+    /// \endcode
+    ///
+    /// \warning The event data passed to the callback must be validated inside
+    /// the callback before use.
+    ///
+    /// \param html_element_id Id of html element that triggered the \p event.
+    /// \param event Name of event.
+    /// \param callback Function to call when this \p event occurs. The function
+    /// should accept a std::string argument (corresponding to the event data,
+    /// such as form data or updated value of a slider) and return void.
+    void RegisterHTMLDOMCallback(
+            const std::string& html_element_id,
+            const std::string& event,
+            std::function<void(const std::string&)> callback);
 
 private:
     WebRTCWindowSystem();
