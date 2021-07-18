@@ -100,25 +100,6 @@ void VoxelDownSample(benchmark::State& state,
     }
 }
 
-void EstimateCovariances(benchmark::State& state,
-                         const core::Device& device,
-                         const double voxel_size,
-                         const utility::optional<double> radius,
-                         const int max_nn) {
-    t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
-    pcd = pcd.To(device);
-
-    auto pcd_down = pcd.VoxelDownSample(voxel_size);
-
-    // Warp up
-    pcd_down.EstimateCovariances(radius, max_nn);
-    (void)pcd_down;
-    for (auto _ : state) {
-        pcd_down.EstimateCovariances(radius, max_nn);
-    }
-}
-
 void EstimateNormals(benchmark::State& state,
                      const core::Device& device,
                      const double voxel_size,
@@ -132,12 +113,10 @@ void EstimateNormals(benchmark::State& state,
 
     // Warp up
     pcd_down.EstimateNormals(radius, max_nn);
-    pcd_down.RemovePointAttr("covariances");
     pcd_down.RemovePointAttr("normals");
 
     for (auto _ : state) {
         pcd_down.EstimateNormals(radius, max_nn);
-        pcd_down.RemovePointAttr("covariances");
         pcd_down.RemovePointAttr("normals");
     }
 }
@@ -260,38 +239,6 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   30)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
-                  CUDA KNN[0.02 | 30],
-                  core::Device("CUDA:0"),
-                  0.02,
-                  utility::nullopt,
-                  30)
-        ->Unit(benchmark::kMillisecond);
-#endif
-
-BENCHMARK_CAPTURE(EstimateCovariances,
-                  CPU Hybrid[0.02 | 0.08 | 30],
-                  core::Device("CPU:0"),
-                  0.02,
-                  0.08,
-                  30)
-        ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateCovariances,
-                  CPU KNN[0.02 | 30],
-                  core::Device("CPU:0"),
-                  0.02,
-                  utility::nullopt,
-                  30)
-        ->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(EstimateCovariances,
-                  CUDA Hybrid[0.02 | 0.08 | 30],
-                  core::Device("CUDA:0"),
-                  0.02,
-                  0.08,
-                  30)
-        ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateCovariances,
                   CUDA KNN[0.02 | 30],
                   core::Device("CUDA:0"),
                   0.02,
