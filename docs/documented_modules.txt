@@ -42,3 +42,4 @@ open3d.utility
 open3d.visualization
 open3d.visualization.gui
 open3d.visualization.rendering
+open3d.visualization.webrtc_server

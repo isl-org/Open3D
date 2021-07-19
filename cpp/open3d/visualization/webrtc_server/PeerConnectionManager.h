@@ -243,7 +243,13 @@ class PeerConnectionManager {
                             buffer.data.size());
             utility::LogDebug("DataChannelObserver::OnMessage: {}, msg: {}.",
                               data_channel_->label(), msg);
-            WebRTCWindowSystem::GetInstance()->OnDataChannelMessage(msg);
+            std::string reply =
+                    WebRTCWindowSystem::GetInstance()->OnDataChannelMessage(
+                            msg);
+            if (!reply.empty()) {
+                webrtc::DataBuffer buffer(reply);
+                data_channel_->Send(buffer);
+            }
         }
 
     protected:

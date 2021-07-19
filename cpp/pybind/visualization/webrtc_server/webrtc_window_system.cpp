@@ -62,7 +62,7 @@ static void pybind_webrtc_server_functions(py::module &m) {
     m.def(
             "register_data_channel_message_callback",
             [](const std::string &class_name,
-               std::function<void(const std::string &)> callback) {
+               std::function<std::string(const std::string &)> callback) {
                 return WebRTCWindowSystem::GetInstance()
                         ->RegisterDataChannelMessageCallback(class_name,
                                                              callback);
@@ -73,7 +73,12 @@ Register callback for a data channel message.
 
 When the data channel receives a valid JSON string, the ``class_name`` property
 of the JSON object will be examined and the corresponding callback function will
-be called.
+be called. The string return value of the callback will be sent back as a reply,
+if it is not empty.
+
+.. note:: Ordering between the message and the reply is not guaranteed, since
+some messages may take longer to process than others. If ordering is important,
+use a unique message id for every message and include it in the reply.
 
 .. code:: python
 
@@ -82,7 +87,8 @@ be called.
     o3d.visualization.webrtc_server.enable_webrtc()
     o3d.visualization.webrtc_server.register_data_channel_message_callback(
         "webapp/input",
-        lambda data: print(f"Received WebRTC data channel message with data: {data}"))
+        lambda data: (print(data),
+            f"Received WebRTC data channel message with data: {data}")[1])
 
 .. code:: js
 
