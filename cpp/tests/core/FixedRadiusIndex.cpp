@@ -34,12 +34,18 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/utility/Helper.h"
 #include "tests/UnitTest.h"
+#include "tests/core/CoreTest.h"
 
 namespace open3d {
 namespace tests {
 
-TEST(FixedRadiusIndex, SearchRadius) {
-    core::Device device = core::Device("CUDA:0");
+class FixedRadiusPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(FixedRadiusIndex,
+                         FixedRadiusPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
+
+TEST_P(FixedRadiusPermuteDevices, SearchRadius) {
+    core::Device device = GetParam();
     std::vector<int> ref_indices = {1, 4};
     std::vector<float> ref_distance = {0.00626358, 0.00747938};
 
@@ -55,17 +61,20 @@ TEST(FixedRadiusIndex, SearchRadius) {
                        {1, 3}, core::Dtype::Float32, device);
 
     // if radius <= 0
-    // EXPECT_THROW(index.SearchRadius(query, -1.0), std::runtime_error);
-    // EXPECT_THROW(index.SearchRadius(query, 0.0), std::runtime_error);
+    EXPECT_THROW(index.SearchRadius(query, -1.0), std::runtime_error);
+    EXPECT_THROW(index.SearchRadius(query, 0.0), std::runtime_error);
 
     // if radius == 0.1
-    std::tuple<core::Tensor, core::Tensor, core::Tensor> result =
+    core::Tensor indices, distances, neighbor_row_splits;
+
+    std::tie(indices, distances, neighbor_row_splits) =
             index.SearchRadius(query, radius);
-    core::Tensor indices = std::get<0>(result).To(core::Dtype::Int32);
-    core::Tensor distances = std::get<1>(result);
-    ExpectEQ(indices.ToFlatVector<int>(), std::vector<int>({1, 4}));
+
+    ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4}));
     ExpectEQ(distances.ToFlatVector<float>(),
              std::vector<float>({0.00626358, 0.00747938}));
+    ExpectEQ(neighbor_row_splits.ToFlatVector<int64_t>(),
+             std::vector<int64_t>({0, 2}));
 }
 
 }  // namespace tests

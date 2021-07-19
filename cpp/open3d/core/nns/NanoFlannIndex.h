@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NNSIndex.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Logging.h"
 
 // Forward declarations.
@@ -52,7 +53,7 @@ namespace core {
 namespace nns {
 
 /// Distance metric enum.
-enum Metric { L1, L2, Linf };
+// enum Metric { L1, L2, Linf };
 
 /// Base struct for Index holder
 struct NanoFlannIndexHolderBase {

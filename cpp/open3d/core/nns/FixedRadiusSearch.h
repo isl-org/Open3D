@@ -32,61 +32,69 @@
 namespace open3d {
 namespace core {
 namespace nns {
+return
 
-/// Builds a spatial hash table for a fixed radius search of 3D points.
-///
-/// All pointer arguments point to device memory unless stated otherwise.
-///
-/// \param temp    Pointer to temporary memory. If nullptr then the required
-///        size of temporary memory will be written to \p temp_size and no
-///        work is done.
-///
-/// \param temp_size    The size of the temporary memory in bytes. This is
-///        used as an output if temp is nullptr
-///
-/// \param num_points    The number of points.
-///
-/// \param points    The array of 3D points.
-///
-/// \param radius    The radius that will be used for searching.
-///
-/// \param points_row_splits_size    The size of the points_row_splits array.
-///        The size of the array is batch_size+1.
-///
-/// \param points_row_splits    This pointer points to host memory.
-///        Defines the start and end of the points in each batch item.
-///        The size of the array is batch_size+1. If there is
-///        only 1 batch item then this array is [0, num_points]
-///
-/// \param hash_table_splits    This pointer points to host memory.
-///        Array defining the start and end the hash table
-///        for each batch item. This is [0, number of cells] if there is only
-///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
-///
-/// \param hash_table_cell_splits_size    This is the length of the
-///        hash_table_cell_splits array.
-///
-/// \param hash_table_cell_splits    This is an output array storing the start
-///        of each hash table entry. The size of this array defines the size of
-///        the hash table.
-///        The hash table size is hash_table_cell_splits_size - 1.
-///
-/// \param hash_table_index    This is an output array storing the values of the
-///        hash table, which are the indices to the points. The size of the
-///        array must be equal to the number of points.
-///
-template <class T>
-void BuildSpatialHashTableCUDA(void* temp,
-                               size_t& temp_size,
-                               const size_t num_points,
-                               const T* const points,
-                               const T radius,
-                               const size_t points_row_splits_size,
-                               const int64_t* points_row_splits,
-                               const int64_t* hash_table_splits,
-                               const size_t hash_table_cell_splits_size,
-                               int64_t* hash_table_cell_splits,
-                               int64_t* hash_table_index);
+        /// Builds a spatial hash table for a fixed radius search of 3D points.
+        ///
+        /// All pointer arguments point to device memory unless stated
+        /// otherwise.
+        ///
+        /// \param temp    Pointer to temporary memory. If nullptr then the
+        /// required
+        ///        size of temporary memory will be written to \p temp_size and
+        ///        no work is done.
+        ///
+        /// \param temp_size    The size of the temporary memory in bytes. This
+        /// is
+        ///        used as an output if temp is nullptr
+        ///
+        /// \param num_points    The number of points.
+        ///
+        /// \param points    The array of 3D points.
+        ///
+        /// \param radius    The radius that will be used for searching.
+        ///
+        /// \param points_row_splits_size    The size of the points_row_splits
+        /// array.
+        ///        The size of the array is batch_size+1.
+        ///
+        /// \param points_row_splits    This pointer points to host memory.
+        ///        Defines the start and end of the points in each batch item.
+        ///        The size of the array is batch_size+1. If there is
+        ///        only 1 batch item then this array is [0, num_points]
+        ///
+        /// \param hash_table_splits    This pointer points to host memory.
+        ///        Array defining the start and end the hash table
+        ///        for each batch item. This is [0, number of cells] if there is
+        ///        only 1 batch item or [0, hash_table_cell_splits_size-1] which
+        ///        is the same.
+        ///
+        /// \param hash_table_cell_splits_size    This is the length of the
+        ///        hash_table_cell_splits array.
+        ///
+        /// \param hash_table_cell_splits    This is an output array storing the
+        /// start
+        ///        of each hash table entry. The size of this array defines the
+        ///        size of the hash table. The hash table size is
+        ///        hash_table_cell_splits_size - 1.
+        ///
+        /// \param hash_table_index    This is an output array storing the
+        /// values of the
+        ///        hash table, which are the indices to the points. The size of
+        ///        the array must be equal to the number of points.
+        ///
+        template <class T>
+        void BuildSpatialHashTableCUDA(void* temp,
+                                       size_t& temp_size,
+                                       const size_t num_points,
+                                       const T* const points,
+                                       const T radius,
+                                       const size_t points_row_splits_size,
+                                       const int64_t* points_row_splits,
+                                       const int64_t* hash_table_splits,
+                                       const size_t hash_table_cell_splits_size,
+                                       int64_t* hash_table_cell_splits,
+                                       int64_t* hash_table_index);
 
 /// Fixed radius search. This function computes a list of neighbor indices
 /// for each query point. The lists are stored linearly and an exclusive prefix

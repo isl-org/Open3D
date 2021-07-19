@@ -57,5 +57,15 @@ inline uint64_t AtomicFetchAddRelaxed(uint64_t* address, uint64_t val) {
 #endif
 }
 
+inline uint64_t AtomicFetchAddRelaxed(int64_t* address, int64_t val) {
+#ifdef __GNUC__
+    return __atomic_fetch_add(address, val, __ATOMIC_RELAXED);
+#elif _MSC_VER
+    return _InterlockedExchangeAdd64(address, val);
+#else
+    static_assert(false, "AtomicFetchAddRelaxed not implemented for platform");
+#endif
+}
+
 }  // namespace core
 }  // namespace open3d

@@ -179,7 +179,7 @@ TEST(NearestNeighborSearch, MultiRadiusSearch) {
                      {0.00626358, 0.00747938, 0.00626358, 0.00747938}));
 }
 
-TEST_P(NNSPermuteDevicesWithFaiss, HybridSearch) {
+TEST_P(NNSPermuteDevices, HybridSearch) {
     // Set up nns.
     int size = 10;
     core::Device device = GetParam();

@@ -31,10 +31,77 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NNSIndex.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 
 namespace open3d {
 namespace core {
 namespace nns {
+
+template <class T>
+void BuildSpatialHashTableCPU(const Tensor& points,
+                              double radius,
+                              const Tensor& points_row_splits,
+                              const Tensor& hash_table_splits,
+                              Tensor& hash_table_index,
+                              Tensor& hash_table_cell_splits);
+template <class T>
+void FixedRadiusSearchCPU(const Tensor& points,
+                          const Tensor& queries,
+                          double radius,
+                          const Tensor& points_row_splits,
+                          const Tensor& queries_row_splits,
+                          const Tensor& hash_table_splits,
+                          const Tensor& hash_table_index,
+                          const Tensor& hash_table_cell_splits,
+                          const Metric metric,
+                          const bool ignore_query_point,
+                          const bool return_distances,
+                          const bool sort,
+                          Tensor& neighbors_index,
+                          Tensor& neighbors_row_splits,
+                          Tensor& neighbors_distance);
+
+#ifdef BUILD_CUDA_MODULE
+template <class T>
+void BuildSpatialHashTableCUDA(const Tensor& points,
+                               double radius,
+                               const Tensor& points_row_splits,
+                               const Tensor& hash_table_splits,
+                               Tensor& hash_table_index,
+                               Tensor& hash_table_cell_splits);
+
+template <class T>
+void FixedRadiusSearchCUDA(const Tensor& points,
+                           const Tensor& queries,
+                           double radius,
+                           const Tensor& points_row_splits,
+                           const Tensor& queries_row_splits,
+                           const Tensor& hash_table_splits,
+                           const Tensor& hash_table_index,
+                           const Tensor& hash_table_cell_splits,
+                           const Metric metric,
+                           const bool ignore_query_point,
+                           const bool return_distances,
+                           const bool sort,
+                           Tensor& neighbors_index,
+                           Tensor& neighbors_row_splits,
+                           Tensor& neighbors_distance);
+
+template <class T>
+void HybridSearchCUDA(const Tensor& points,
+                      const Tensor& queries,
+                      double radius,
+                      int max_knn,
+                      const Tensor& points_row_splits,
+                      const Tensor& queries_row_splits,
+                      const Tensor& hash_table_splits,
+                      const Tensor& hash_table_index,
+                      const Tensor& hash_table_cell_splits,
+                      const Metric metric,
+                      Tensor& neighbors_index,
+                      Tensor& neighbors_count,
+                      Tensor& neighbors_distance);
+#endif
 
 /// \class FixedRadiusIndex
 ///
@@ -89,65 +156,12 @@ public:
     const int64_t max_hash_tabls_size = 33554432;
 
 protected:
-    std::vector<int64_t> points_row_splits_;
-    std::vector<int64_t> hash_table_splits_;
+    Tensor points_row_splits_;
+    Tensor hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
 };
 
-template <class T>
-class NeighborSearchAllocator {
-public:
-    NeighborSearchAllocator(Device device) : device_(device) {}
-
-    void AllocIndices(int64_t** ptr, size_t num) {
-        indices_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
-        *ptr = indices_.GetDataPtr<int64_t>();
-    }
-
-    void AllocIndices(int64_t** ptr, size_t num, int64_t value) {
-        indices_ = Tensor::Full({int64_t(num)}, value, Dtype::Int64, device_);
-        *ptr = indices_.GetDataPtr<int64_t>();
-    }
-
-    void AllocDistances(T** ptr, size_t num) {
-        distances_ =
-                Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
-        *ptr = distances_.GetDataPtr<T>();
-    }
-
-    void AllocDistances(T** ptr, size_t num, T value) {
-        distances_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<T>(),
-                                  device_);
-        *ptr = distances_.GetDataPtr<T>();
-    }
-
-    void AllocCounts(int64_t** ptr, size_t num) {
-        counts_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
-        *ptr = counts_.GetDataPtr<int64_t>();
-    }
-
-    void AllocCounts(int64_t** ptr, size_t num, int64_t value) {
-        counts_ = Tensor::Full({int64_t(num)}, value, Dtype::Int64, device_);
-        *ptr = counts_.GetDataPtr<int64_t>();
-    }
-
-    const int64_t* IndicesPtr() const { return indices_.GetDataPtr<int64_t>(); }
-
-    const T* DistancesPtr() const { return distances_.GetDataPtr<T>(); }
-
-    const int64_t* CountsPtr() const { return counts_.GetDataPtr<int64_t>(); }
-
-    const Tensor& NeighborsIndex() const { return indices_; }
-    const Tensor& NeighborsDistance() const { return distances_; }
-    const Tensor& NeighborCounts() const { return counts_; }
-
-private:
-    Tensor indices_;
-    Tensor distances_;
-    Tensor counts_;
-    Device device_;
-};
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d
