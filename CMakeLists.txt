@@ -223,7 +223,7 @@ if(NOT DEFINED Python3_FIND_REGISTRY)
     # Only consider PATH variable on Windows by default
     set(Python3_FIND_REGISTRY NEVER)
 endif()
-find_package(Python3 3.6...<3.9
+find_package(Python3 3.6...<3.10
              COMPONENTS Interpreter Development
 )
 if (Python3_FOUND)
@@ -233,7 +233,7 @@ if (Python3_FOUND)
         "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
 else()
     if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.8. Please ensure it is in PATH.")
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")
     endif()
 endif()
 
@@ -510,12 +510,6 @@ int main() { return _GLIBCXX_USE_CXX11_ABI; }" HAS_GLIBCXX_USE_CXX11_ABI)
 
 # Convenience function to set important target properties
 function(open3d_set_global_properties target)
-    # Libraries need to be compiled with position independent code
-    get_target_property(target_type ${target} TYPE)
-    if (NOT target_type STREQUAL "EXECUTABLE")
-        set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    endif()
-
     # Tell CMake we want a compiler that supports C++14 features
     target_compile_features(${target} PUBLIC cxx_std_14)
 
@@ -741,7 +735,7 @@ if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
         "   '-Xcompiler -fno-gnu-unique'                                                 \n"
         "                                                                                \n"
         " or use the PyTorch wheels at                                                   \n"
-        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1        \n"
+        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.8.1        \n"
         "                                                                                \n"
         "--------------------------------------------------------------------------------\n"
     )

@@ -33,6 +33,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/utility/Helper.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
@@ -366,7 +367,6 @@ TEST_P(LinalgPermuteDevices, SVD) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Dtype::Float32;
 
-    // Matmul test.
     core::Tensor A(std::vector<float>{2, 4, 1, 3, 0, 0, 0, 0}, {4, 2}, dtype,
                    device);
 
@@ -460,5 +460,60 @@ TEST_P(LinalgPermuteDevices, LeastSquares) {
         EXPECT_TRUE(std::abs(X_data[i] - X_gt[i]) < EPSILON);
     }
 }
+
+TEST_P(LinalgPermuteDevices, KernelOps) {
+    core::Tensor A_3x3 =
+            core::Tensor::Init<float>({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}});
+    core::Tensor B_3x1 = core::Tensor::Init<float>({{1}, {3}, {6}});
+    core::Tensor I_3x3 = core::Tensor::Eye(3, core::Dtype::Float32, core::HOST);
+
+    core::Tensor output3x3 =
+            core::Tensor::Empty({3, 3}, core::Dtype::Float32, core::HOST);
+    core::Tensor output3x1 =
+            core::Tensor::Empty({3, 1}, core::Dtype::Float32, core::HOST);
+
+    // {3, 3} x {3, 3} MatMul
+    auto matmul3x3_expected = A_3x3.Matmul(I_3x3);
+
+    core::linalg::kernel::matmul3x3_3x3(A_3x3.GetDataPtr<float>(),
+                                        I_3x3.GetDataPtr<float>(),
+                                        output3x3.GetDataPtr<float>());
+
+    EXPECT_TRUE(output3x3.AllClose(matmul3x3_expected));
+
+    // {3, 3} x {3, 1} MatMul
+    auto matmul3x1_expected = A_3x3.Matmul(B_3x1);
+
+    core::linalg::kernel::matmul3x3_3x1(A_3x3.GetDataPtr<float>(),
+                                        B_3x1.GetDataPtr<float>(),
+                                        output3x1.GetDataPtr<float>());
+    EXPECT_TRUE(output3x1.AllClose(matmul3x1_expected));
+
+    // Inverse 3x3
+    auto Ainv_expected = A_3x3.Inverse();
+    core::linalg::kernel::inverse3x3(A_3x3.GetDataPtr<float>(),
+                                     output3x3.GetDataPtr<float>());
+    EXPECT_TRUE(output3x3.AllClose(Ainv_expected));
+
+    // Transpose 3x3
+    auto AT_expected = A_3x3.T();
+    core::linalg::kernel::transpose3x3(A_3x3.GetDataPtr<float>(),
+                                       output3x3.GetDataPtr<float>());
+    EXPECT_TRUE(output3x3.AllClose(AT_expected));
+
+    // Det 3x3
+    double det_expected = A_3x3.Det();
+    double det_output = static_cast<double>(
+            core::linalg::kernel::det3x3(A_3x3.GetDataPtr<float>()));
+    EXPECT_EQ(det_output, det_expected);
+
+    // SVD Solver 3x3.
+    core::linalg::kernel::solve_svd3x3(A_3x3.GetDataPtr<float>(),
+                                       B_3x1.GetDataPtr<float>(),
+                                       output3x1.GetDataPtr<float>());
+    auto Solve_Expected = A_3x3.Solve(B_3x1);
+    EXPECT_TRUE(output3x1.AllClose(Solve_Expected));
+}
+
 }  // namespace tests
 }  // namespace open3d

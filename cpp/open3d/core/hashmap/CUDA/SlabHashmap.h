@@ -135,7 +135,6 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
             float(this->capacity_) / float(this->bucket_count_);
 
     Free();
-    CUDACachedMemoryManager::ReleaseCache();
 
     Allocate(buckets,
              std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
@@ -149,7 +148,6 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
                    output_masks.GetDataPtr<bool>(), iterator_count);
     }
-    CUDACachedMemoryManager::ReleaseCache();
 }
 
 template <typename Key, typename Hash>
@@ -192,7 +190,7 @@ void SlabHashmap<Key, Hash>::Find(const void* input_keys,
 
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
-    FindKernel<<<num_blocks, kThreadsPerBlock>>>(
+    FindKernel<<<num_blocks, kThreadsPerBlock, 0, core::cuda::GetStream()>>>(
             impl_, input_keys, output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
@@ -212,10 +210,12 @@ void SlabHashmap<Key, Hash>::Erase(const void* input_keys,
 
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
-    EraseKernelPass0<<<num_blocks, kThreadsPerBlock>>>(
+    EraseKernelPass0<<<num_blocks, kThreadsPerBlock, 0,
+                       core::cuda::GetStream()>>>(
             impl_, input_keys, iterator_addrs, output_masks, count);
-    EraseKernelPass1<<<num_blocks, kThreadsPerBlock>>>(impl_, iterator_addrs,
-                                                       output_masks, count);
+    EraseKernelPass1<<<num_blocks, kThreadsPerBlock, 0,
+                       core::cuda::GetStream()>>>(impl_, iterator_addrs,
+                                                  output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
@@ -233,8 +233,9 @@ int64_t SlabHashmap<Key, Hash>::GetActiveIndices(addr_t* output_addrs) {
     const int64_t num_blocks =
             (impl_.bucket_count_ * kWarpSize + kThreadsPerBlock - 1) /
             kThreadsPerBlock;
-    GetActiveIndicesKernel<<<num_blocks, kThreadsPerBlock>>>(
-            impl_, output_addrs, iterator_count);
+    GetActiveIndicesKernel<<<num_blocks, kThreadsPerBlock, 0,
+                             core::cuda::GetStream()>>>(impl_, output_addrs,
+                                                        iterator_count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
@@ -278,7 +279,8 @@ std::vector<int64_t> SlabHashmap<Key, Hash>::BucketSizes() const {
 
     const int64_t num_blocks =
             (impl_.capacity_ + kThreadsPerBlock - 1) / kThreadsPerBlock;
-    CountElemsPerBucketKernel<<<num_blocks, kThreadsPerBlock>>>(
+    CountElemsPerBucketKernel<<<num_blocks, kThreadsPerBlock, 0,
+                                core::cuda::GetStream()>>>(
             impl_, thrust::raw_pointer_cast(elems_per_bucket.data()));
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());
@@ -310,11 +312,14 @@ void SlabHashmap<Key, Hash>::InsertImpl(const void* input_keys,
 
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
-    InsertKernelPass0<<<num_blocks, kThreadsPerBlock>>>(
+    InsertKernelPass0<<<num_blocks, kThreadsPerBlock, 0,
+                        core::cuda::GetStream()>>>(
             impl_, input_keys, output_addrs, prev_heap_counter, count);
-    InsertKernelPass1<<<num_blocks, kThreadsPerBlock>>>(
+    InsertKernelPass1<<<num_blocks, kThreadsPerBlock, 0,
+                        core::cuda::GetStream()>>>(
             impl_, input_keys, output_addrs, output_masks, count);
-    InsertKernelPass2<<<num_blocks, kThreadsPerBlock>>>(
+    InsertKernelPass2<<<num_blocks, kThreadsPerBlock, 0,
+                        core::cuda::GetStream()>>>(
             impl_, input_values, output_addrs, output_masks, count);
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
     OPEN3D_CUDA_CHECK(cudaGetLastError());

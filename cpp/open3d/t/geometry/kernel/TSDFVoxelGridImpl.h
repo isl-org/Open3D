@@ -502,9 +502,6 @@ void ExtractSurfaceMeshCPU
     NDArrayIndexer voxel_indexer({resolution, resolution, resolution});
     int n_blocks = static_cast<int>(indices.GetLength());
 
-#if defined(__CUDACC__)
-    core::CUDACachedMemoryManager::ReleaseCache();
-#endif
     // TODO(wei): profile performance by replacing the table to a hashmap.
     // Voxel-wise mesh info. 4 channels correspond to:
     // 3 edges' corresponding vertex index + 1 table index.

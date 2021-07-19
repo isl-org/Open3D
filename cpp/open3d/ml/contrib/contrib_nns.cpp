@@ -27,6 +27,7 @@
 #include <numeric>
 
 #include "open3d/core/nns/NearestNeighborSearch.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace ml {
@@ -183,7 +184,8 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
     core::Tensor result = core::Tensor::Full(
             {num_query_points, max_num_neighbors}, -1, core::Dtype::Int64);
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int64_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
         int32_t result_start_idx = query_prefix_indices[batch_idx];
         int32_t result_end_idx = query_prefix_indices[batch_idx + 1];

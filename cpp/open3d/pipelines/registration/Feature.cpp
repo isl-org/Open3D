@@ -31,6 +31,7 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
@@ -76,7 +77,8 @@ static std::shared_ptr<Feature> ComputeSPFHFeature(
         const geometry::KDTreeSearchParam &search_param) {
     auto feature = std::make_shared<Feature>();
     feature->Resize(33, (int)input.points_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)input.points_.size(); i++) {
         const auto &point = input.points_[i];
         const auto &normal = input.normals_[i];
@@ -124,7 +126,8 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     if (spfh == nullptr) {
         utility::LogError("Internal error: SPFH feature is nullptr.");
     }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)input.points_.size(); i++) {
         const auto &point = input.points_[i];
         std::vector<int> indices;

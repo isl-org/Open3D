@@ -26,7 +26,7 @@
 
 #define EIGEN_USE_GPU
 #include "SparseConvOpKernel.h"
-#include "open3d/ml/Helper.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/ml/impl/sparse_conv/SparseConv.cuh"
 
 using namespace open3d::ml;
@@ -38,7 +38,8 @@ class SparseConvOpKernelCUDA : public SparseConvOpKernel<TIndex> {
 public:
     explicit SparseConvOpKernelCUDA(OpKernelConstruction* construction)
         : SparseConvOpKernel<TIndex>(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

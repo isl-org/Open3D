@@ -7,6 +7,7 @@ target_sources(core PRIVATE
     EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
+    MemoryManagerCached.cpp
     MemoryManagerCPU.cpp
     MemoryManagerStatistic.cpp
     NumpyIO.cpp
@@ -68,8 +69,8 @@ target_sources(core PRIVATE
 
 if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
-        MemoryManagerCUDACached.cu
-        MemoryManagerCUDASimple.cu
+        CUDAState.cu
+        MemoryManagerCUDA.cu
     )
 
     target_sources(core PRIVATE

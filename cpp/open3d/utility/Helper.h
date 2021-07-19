@@ -53,7 +53,7 @@ namespace {
 
 template <class T>
 inline void hash_combine(std::size_t& seed, T const& v) {
-    seed ^= hash_tuple<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>

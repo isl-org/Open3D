@@ -29,11 +29,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/Indexer.h"
-#include "open3d/core/SizeVector.h"
-#include "open3d/core/Tensor.h"
 
 // CUDA kernel launcher's goal is to separate scheduling (looping through each
 // valid element) and computation (operations performed on each element).
@@ -41,16 +37,15 @@
 // The kernel launch mechanism is inspired by PyTorch's launch Loops.cuh.
 // See: https://tinyurl.com/y4lak257
 
-static constexpr int64_t default_block_size = 128;
-static constexpr int64_t default_thread_size = 4;
-
 namespace open3d {
 namespace core {
 namespace kernel {
 namespace cuda_launcher {
 
-// Applies f for each element
-// Works for unary / binary elementwise operations
+static constexpr int64_t default_block_size = 128;
+static constexpr int64_t default_thread_size = 4;
+
+/// Calls f(n) with the "grid-stride loops" pattern.
 template <int64_t block_size, int64_t thread_size, typename func_t>
 __global__ void ElementWiseKernel(int64_t n, func_t f) {
     int64_t items_per_block = block_size * thread_size;
@@ -99,70 +94,9 @@ void ParallelFor(int64_t n, const func_t& func) {
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
     ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, func);
+            <<<grid_size, default_block_size, 0, core::cuda::GetStream()>>>(
+                    n, func);
     OPEN3D_GET_LAST_CUDA_ERROR("ParallelFor failed.");
-}
-
-template <typename func_t>
-void LaunchUnaryEWKernel(const Indexer& indexer, const func_t& func) {
-    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
-
-    int64_t n = indexer.NumWorkloads();
-    if (n == 0) {
-        return;
-    }
-    int64_t items_per_block = default_block_size * default_thread_size;
-    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
-
-    auto f = [=] OPEN3D_HOST_DEVICE(int64_t i) {
-        func(indexer.GetInputPtr(0, i), indexer.GetOutputPtr(i));
-    };
-
-    ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, f);
-    OPEN3D_GET_LAST_CUDA_ERROR("LaunchUnaryEWKernel failed.");
-}
-
-template <typename func_t>
-void LaunchBinaryEWKernel(const Indexer& indexer, const func_t& func) {
-    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
-
-    int64_t n = indexer.NumWorkloads();
-    if (n == 0) {
-        return;
-    }
-    int64_t items_per_block = default_block_size * default_thread_size;
-    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
-
-    auto f = [=] OPEN3D_HOST_DEVICE(int64_t i) {
-        func(indexer.GetInputPtr(0, i), indexer.GetInputPtr(1, i),
-             indexer.GetOutputPtr(i));
-    };
-
-    ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, f);
-    OPEN3D_GET_LAST_CUDA_ERROR("LaunchBinaryEWKernel failed.");
-}
-
-template <typename func_t>
-void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
-                                 const func_t& func) {
-    OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
-
-    int64_t n = indexer.NumWorkloads();
-    if (n == 0) {
-        return;
-    }
-    int64_t items_per_block = default_block_size * default_thread_size;
-    int64_t grid_size = (n + items_per_block - 1) / items_per_block;
-
-    auto f = [=] OPEN3D_HOST_DEVICE(int64_t i) {
-        func(indexer.GetInputPtr(i), indexer.GetOutputPtr(i));
-    };
-
-    ElementWiseKernel<default_block_size, default_thread_size>
-            <<<grid_size, default_block_size, 0>>>(n, f);
-    OPEN3D_GET_LAST_CUDA_ERROR("LaunchAdvancedIndexerKernel failed.");
 }
 
 }  // namespace cuda_launcher

@@ -27,6 +27,7 @@
 #include "open3d/core/Indexer.h"
 #include "open3d/core/kernel/NonZero.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace core {
@@ -62,7 +63,8 @@ Tensor NonZeroCPU(const Tensor& src) {
 
     std::vector<std::vector<int64_t>> non_zero_indices_by_dimensions(
             num_dims, std::vector<int64_t>(num_non_zeros, 0));
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int64_t i = 0; i < static_cast<int64_t>(num_non_zeros); i++) {
         int64_t non_zero_index = non_zero_indices[i];
         for (int64_t dim = num_dims - 1; dim >= 0; dim--) {
