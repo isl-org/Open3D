@@ -130,15 +130,15 @@ void pybind_pointcloud(py::module& m) {
 
     pointcloud.def(
             "estimate_normals",
-            [](PointCloud& pointcloud, utility::optional<double> radius,
-               int max_nn) {
+            [](PointCloud& pointcloud, int max_nn,
+               utility::optional<double> radius) {
                 return pointcloud.EstimateNormals(max_nn, radius);
             },
             py::arg("max_nn") = 30, py::arg("radius") = py::none());
     pointcloud.def(
             "estimate_color_gradients",
-            [](PointCloud& pointcloud, utility::optional<double> radius,
-               int max_nn) {
+            [](PointCloud& pointcloud, int max_nn,
+               utility::optional<double> radius) {
                 return pointcloud.EstimateColorGradients(max_nn, radius);
             },
             py::arg("max_nn") = 30, py::arg("radius") = py::none());
