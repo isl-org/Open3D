@@ -69,7 +69,7 @@ namespace io {
 
 static char BigEndianChar() {
     int x = 1;
-    return (((char*)&x)[0]) ? '<' : '>';
+    return ((reinterpret_cast<char*>(&x))[0]) ? '<' : '>';
 }
 
 static char DtypeToChar(const core::Dtype& dtype) {
@@ -101,7 +101,7 @@ template <typename T>
 static std::string ToByteString(const T& rhs) {
     std::stringstream ss;
     for (size_t i = 0; i < sizeof(T); i++) {
-        char val = *((char*)&rhs + i);
+        char val = *(reinterpret_cast<const char*>(&rhs) + i);
         ss << val;
     }
     return ss.str();
@@ -243,7 +243,7 @@ public:
           word_size_(t.GetDtype().ByteSize()),
           fortran_order_(false),
           num_elements_(t.GetShape().NumElements()) {
-        blob_ = t.Contiguous().To(core::Device("CPU:0")).GetBlob();
+        blob_ = t.To(core::Device("CPU:0")).Contiguous().GetBlob();
     }
 
     NumpyArray(const core::SizeVector& shape,
