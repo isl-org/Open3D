@@ -180,7 +180,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                     const int width = value.get("width", 0).asInt();
                     if (height <= 0 || width <= 0) {
                         utility::LogWarning(
-                                "Invalid heigh {} or width {}, ResizeEvent "
+                                "Invalid height {} or width {}, ResizeEvent "
                                 "ignored.",
                                 height, width);
                     } else {

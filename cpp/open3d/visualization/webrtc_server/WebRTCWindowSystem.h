@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -85,6 +86,25 @@ public:
     /// object.
     /// \param callback The callback function that will be called when a JSON
     /// object with the matching \p class_name is received via the data channel.
+    ///
+    /// \code{.cpp}
+    /// // Register callback in C++
+    /// auto ws =
+    /// visualization::webrtc_server::WebRTCWindowSystem::GetInstance();
+    /// ws->EnableWebRTC();
+    /// ws->RegisterDataChannelMessageCallback("webapp/input", "input",
+    ///     [](const std::string &data) {
+    ///     utility::LogInfo("Received dataChannel message for class_name "
+    ///             "'webapp/input' with data: {}", data);
+    ///     });
+    /// \endcode
+    ///
+    /// \code{.js}
+    /// /* Send message in JavaScript to trigger callback. this is
+    /// WebRTCStreamer object */
+    /// this.dataChannel.send('{"class_name":"webapp/input",
+    ///     "data":"Test event"}');
+    /// \endcode
     void RegisterDataChannelMessageCallback(
             const std::string& class_name,
             const std::function<void(const std::string&)> callback);
