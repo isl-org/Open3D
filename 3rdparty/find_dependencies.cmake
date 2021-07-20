@@ -183,14 +183,27 @@ set(ExternalProject_CMAKE_ARGS_hidden
 # open3d_pkg_config_3rdparty_library(name ...)
 #
 # Creates an interface library for a pkg-config dependency.
-# All arguments are passed verbatim to pkg_search_module()
 #
 # The function will set ${name}_FOUND to TRUE or FALSE
 # indicating whether or not the library could be found.
 #
+# Valid options:
+#    PUBLIC
+#        the library belongs to the public interface and must be installed
+#    HEADER
+#        the library headers belong to the public interface, but the library
+#        itself is linked privately
+#    SEARCH_ARGS
+#        the arguments passed to pkg_search_module()
+#
 function(open3d_pkg_config_3rdparty_library name)
+    cmake_parse_arguments(arg "PUBLIC;HEADER" "" "SEARCH_ARGS" ${ARGN})
+    if(arg_UNPARSED_ARGUMENTS)
+        message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
+        message(FATAL_ERROR "Invalid syntax: open3d_pkg_config_3rdparty_library(${name} ${ARGN})")
+    endif()
     if(PKGCONFIG_FOUND)
-        pkg_search_module(pc_${name} ${ARGN})
+        pkg_search_module(pc_${name} ${arg_SEARCH_ARGS})
     endif()
     if(pc_${name}_FOUND)
         message(STATUS "Using installed third-party library ${name} ${${name_uc}_VERSION}")
@@ -202,7 +215,9 @@ function(open3d_pkg_config_3rdparty_library name)
                 target_compile_definitions(${name} INTERFACE ${CMAKE_MATCH_1})
             endif()
         endforeach()
-        install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
+        if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
+            install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
+        endif()
         set(${name}_FOUND TRUE PARENT_SCOPE)
         add_library(${PROJECT_NAME}::${name} ALIAS ${name})
     else()
@@ -219,12 +234,20 @@ endfunction()
 # indicating whether or not the library could be found.
 #
 # Valid options:
+#    PUBLIC
+#        the library belongs to the public interface and must be installed
+#    HEADER
+#        the library headers belong to the public interface, but the library
+#        itself is linked privately
 #    REQUIRED
 #        finding the package is required
 #    QUIET
 #        finding the package is quiet
 #    PACKAGE <pkg>
 #        the name of the queried package <pkg> forwarded to find_package()
+#    PACKAGE_VERSION_VAR <pkg_version>
+#        the variable <pkg_version> where to find the version of the queried package <pkg> find_package().
+#        If not provided, PACKAGE_VERSION_VAR will default to <pkg>_VERSION.
 #    TARGETS <target> [<target> ...]
 #        the expected targets to be found in <pkg>
 #    INCLUDE_DIRS
@@ -235,13 +258,16 @@ endfunction()
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
 #
 function(open3d_find_package_3rdparty_library name)
-    cmake_parse_arguments(arg "REQUIRED;QUIET" "PACKAGE" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: open3d_find_package_3rdparty_library(${name} ${ARGN})")
     endif()
     if(NOT arg_PACKAGE)
         message(FATAL_ERROR "open3d_find_package_3rdparty_library: Expected value for argument PACKAGE")
+    endif()
+    if(NOT arg_PACKAGE_VERSION_VAR)
+        set(arg_PACKAGE_VERSION_VAR "${arg_PACKAGE}_VERSION")
     endif()
     set(find_package_args "")
     if(arg_REQUIRED)
@@ -273,10 +299,11 @@ function(open3d_find_package_3rdparty_library name)
                 target_link_libraries(${name} INTERFACE ${${lib}})
             endforeach()
         endif()
-        if(NOT BUILD_SHARED_LIBS)
+        if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
             install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
-         endif()
+        endif()
         set(${name}_FOUND TRUE PARENT_SCOPE)
+        set(${name}_VERSION ${${arg_PACKAGE_VERSION_VAR}} PARENT_SCOPE)
         add_library(${PROJECT_NAME}::${name} ALIAS ${name})
     else()
         message(STATUS "Unable to find installed third-party library ${name}")
@@ -446,14 +473,15 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_assimp)
 if(WITH_OPENMP)
     open3d_find_package_3rdparty_library(3rdparty_openmp
         PACKAGE OpenMP
+        PACKAGE_VERSION_VAR OpenMP_CXX_VERSION
         TARGETS OpenMP::OpenMP_CXX
     )
     if(3rdparty_openmp_FOUND)
         message(STATUS "Building with OpenMP")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openmp)
         if(NOT BUILD_SHARED_LIBS)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenMP")
         endif()
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openmp)
     endif()
 endif()
 
@@ -500,6 +528,7 @@ endif()
 # Eigen3
 if(USE_SYSTEM_EIGEN3)
     open3d_find_package_3rdparty_library(3rdparty_eigen3
+        PUBLIC
         PACKAGE Eigen3
         TARGETS Eigen3::Eigen
     )
@@ -533,13 +562,17 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_nanoflann)
 # GLEW
 if(USE_SYSTEM_GLEW)
     open3d_find_package_3rdparty_library(3rdparty_glew
+        HEADER
         PACKAGE GLEW
         TARGETS GLEW::GLEW
     )
     if(3rdparty_glew_FOUND)
         list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "GLEW")
     else()
-        open3d_pkg_config_3rdparty_library(3rdparty_glew glew)
+        open3d_pkg_config_3rdparty_library(3rdparty_glew
+            HEADER
+            SEARCH_ARGS glew
+        )
         if(NOT 3rdparty_glew_FOUND)
             set(USE_SYSTEM_GLEW OFF)
         endif()
@@ -565,43 +598,44 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_glew)
 
 # GLFW
 if(USE_SYSTEM_GLFW)
-    open3d_find_package_3rdparty_library(3rdparty_glfw3
+    open3d_find_package_3rdparty_library(3rdparty_glfw
+        HEADER
         PACKAGE glfw3
         TARGETS glfw
     )
-    if(3rdparty_glfw3_FOUND)
+    if(3rdparty_glfw_FOUND)
         list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "glfw3")
     else()
-        open3d_pkg_config_3rdparty_library(3rdparty_glfw3 glfw3)
-        if(NOT 3rdparty_glfw3_FOUND)
+        open3d_pkg_config_3rdparty_library(3rdparty_glfw
+            HEADER
+            SEARCH_ARGS glfw3
+        )
+        if(NOT 3rdparty_glfw_FOUND)
             set(USE_SYSTEM_GLFW OFF)
         endif()
     endif()
 endif()
 if(NOT USE_SYSTEM_GLFW)
-    message(STATUS "Building library 3rdparty_glfw3 from source")
+    message(STATUS "Building library 3rdparty_glfw from source")
     add_subdirectory(${Open3D_3RDPARTY_DIR}/GLFW)
-    open3d_import_3rdparty_library(3rdparty_glfw3
+    open3d_import_3rdparty_library(3rdparty_glfw
         HEADER
         INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/GLFW/include/
         LIBRARIES    glfw3
         DEPENDS      glfw
     )
-    target_link_libraries(3rdparty_glfw3 INTERFACE Open3D::3rdparty_threads)
+    target_link_libraries(3rdparty_glfw INTERFACE Open3D::3rdparty_threads)
     if(UNIX AND NOT APPLE)
-        if(TARGET Open3D::3rdparty_x11)
-            target_link_libraries(3rdparty_glfw3 INTERFACE Open3D::3rdparty_x11)
-        endif()
         find_library(RT_LIBRARY rt)
         if(RT_LIBRARY)
-            target_link_libraries(3rdparty_glfw3 INTERFACE ${RT_LIBRARY})
+            target_link_libraries(3rdparty_glfw INTERFACE ${RT_LIBRARY})
         endif()
         find_library(MATH_LIBRARY m)
         if(MATH_LIBRARY)
-            target_link_libraries(3rdparty_glfw3 INTERFACE ${MATH_LIBRARY})
+            target_link_libraries(3rdparty_glfw INTERFACE ${MATH_LIBRARY})
         endif()
         if(CMAKE_DL_LIBS)
-            target_link_libraries(3rdparty_glfw3 INTERFACE ${CMAKE_DL_LIBS})
+            target_link_libraries(3rdparty_glfw INTERFACE ${CMAKE_DL_LIBS})
         endif()
     endif()
     if(APPLE)
@@ -609,18 +643,23 @@ if(NOT USE_SYSTEM_GLFW)
         find_library(IOKIT_FRAMEWORK IOKit)
         find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
         find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
-        target_link_libraries(3rdparty_glfw3 INTERFACE ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK} ${CORE_FOUNDATION_FRAMEWORK} ${CORE_VIDEO_FRAMEWORK})
+        target_link_libraries(3rdparty_glfw INTERFACE ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK} ${CORE_FOUNDATION_FRAMEWORK} ${CORE_VIDEO_FRAMEWORK})
     endif()
     if(WIN32)
-        target_link_libraries(3rdparty_glfw3 INTERFACE gdi32)
+        target_link_libraries(3rdparty_glfw INTERFACE gdi32)
     endif()
 endif()
-list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_glfw3)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_glfw3)
+if(TARGET Open3D::3rdparty_x11)
+    target_link_libraries(3rdparty_glfw INTERFACE Open3D::3rdparty_x11)
+endif()
+list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_glfw)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_glfw)
 
 # TurboJPEG
 if(USE_SYSTEM_JPEG AND BUILD_AZURE_KINECT)
-    open3d_pkg_config_3rdparty_library(3rdparty_turbojpeg turbojpeg)
+    open3d_pkg_config_3rdparty_library(3rdparty_turbojpeg
+        SEARCH_ARGS turbojpeg
+    )
     if(3rdparty_turbojpeg_FOUND)
         message(STATUS "Using installed third-party library turbojpeg")
     else()
@@ -671,11 +710,11 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_jsoncpp)
 
 # liblzf
 if(USE_SYSTEM_LIBLZF)
-    open3d_find_package_3rdparty_library(3rdparty_lzf
+    open3d_find_package_3rdparty_library(3rdparty_liblzf
         PACKAGE liblzf
         TARGETS liblzf::liblzf
     )
-    if(3rdparty_lzf_FOUND)
+    if(3rdparty_liblzf_FOUND)
         if(NOT BUILD_SHARED_LIBS)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "JPEG")
         endif()
@@ -684,13 +723,13 @@ if(USE_SYSTEM_LIBLZF)
     endif()
 endif()
 if(NOT USE_SYSTEM_LIBLZF)
-    open3d_build_3rdparty_library(3rdparty_lzf DIRECTORY liblzf
+    open3d_build_3rdparty_library(3rdparty_liblzf DIRECTORY liblzf
         SOURCES
             liblzf/lzf_c.c
             liblzf/lzf_d.c
     )
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_lzf)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_liblzf)
 
 # tritriintersect
 open3d_build_3rdparty_library(3rdparty_tritriintersect DIRECTORY tomasakeninemoeller
@@ -740,11 +779,12 @@ endif()
 # PNG
 if(USE_SYSTEM_PNG)
     # ZLIB::ZLIB is automatically included by the PNG package.
-    open3d_find_package_3rdparty_library(3rdparty_libpng
+    open3d_find_package_3rdparty_library(3rdparty_png
         PACKAGE PNG
+        PACKAGE_VERSION_VAR PNG_VERSION_STRING
         TARGETS PNG::PNG
     )
-    if(3rdparty_libpng_FOUND)
+    if(3rdparty_png_FOUND)
         if(NOT BUILD_SHARED_LIBS)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "PNG")
         endif()
@@ -763,17 +803,16 @@ if(NOT USE_SYSTEM_PNG)
     )
 
     include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
-    open3d_import_3rdparty_library(3rdparty_libpng
+    open3d_import_3rdparty_library(3rdparty_png
         INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS}
         LIB_DIR      ${LIBPNG_LIB_DIR}
         LIBRARIES    ${LIBPNG_LIBRARIES}
         DEPENDS      ext_libpng
     )
     add_dependencies(ext_libpng ext_zlib)
-    target_link_libraries(3rdparty_libpng INTERFACE Open3D::3rdparty_zlib)
-
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_libpng)
+    target_link_libraries(3rdparty_png INTERFACE Open3D::3rdparty_zlib)
 endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_png)
 
 # rply
 open3d_build_3rdparty_library(3rdparty_rply DIRECTORY rply
@@ -841,8 +880,8 @@ if(NOT USE_SYSTEM_TINYOBJLOADER)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tinyobjloader)
 
-# Qhull
-if(USE_SYSTEM_QHULL)
+# Qhullcpp
+if(USE_SYSTEM_QHULLCPP)
     open3d_find_package_3rdparty_library(3rdparty_qhullcpp
         PACKAGE Qhull
         TARGETS Qhull::qhullcpp
@@ -852,10 +891,10 @@ if(USE_SYSTEM_QHULL)
             list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Qhull")
         endif()
     else()
-        set(USE_SYSTEM_QHULL OFF)
+        set(USE_SYSTEM_QHULLCPP OFF)
     endif()
 endif()
-if(NOT USE_SYSTEM_QHULL)
+if(NOT USE_SYSTEM_QHULLCPP)
     include(${Open3D_3RDPARTY_DIR}/qhull/qhull.cmake)
     open3d_build_3rdparty_library(3rdparty_qhull_r DIRECTORY ${QHULL_SOURCE_DIR}
         SOURCES
@@ -914,6 +953,7 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_qhullcpp)
 # fmt
 if(USE_SYSTEM_FMT)
     open3d_find_package_3rdparty_library(3rdparty_fmt
+        PUBLIC
         PACKAGE fmt
         TARGETS fmt::fmt-header-only fmt::fmt
     )
@@ -1129,7 +1169,8 @@ if(BUILD_GUI)
     if (APPLE)
         set(FILAMENT_RUNTIME_VER x86_64)
     endif()
-    open3d_import_3rdparty_library(3rdparty_filament HEADER
+    open3d_import_3rdparty_library(3rdparty_filament
+        HEADER
         INCLUDE_DIRS ${FILAMENT_ROOT}/include/
         LIB_DIR ${FILAMENT_ROOT}/lib/${FILAMENT_RUNTIME_VER}
         LIBRARIES ${filament_LIBRARIES}
@@ -1164,6 +1205,7 @@ if(BUILD_GUI)
         target_link_libraries(3rdparty_filament INTERFACE ${CORE_VIDEO} ${QUARTZ_CORE} ${OPENGL_LIBRARY} ${METAL_LIBRARY} ${APPKIT_LIBRARY})
         target_link_options(3rdparty_filament INTERFACE "-fobjc-link-runtime")
     endif()
+    list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_filament)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_filament)
 endif()
 
@@ -1212,7 +1254,7 @@ open3d_import_3rdparty_library(3rdparty_parallelstl
     INCLUDE_ALL
     DEPENDS      ext_parallelstl
 )
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_parallelstl)
+list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
 
 if(USE_BLAS)
     # Try to locate system BLAS/LAPACK
