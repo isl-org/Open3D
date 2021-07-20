@@ -101,7 +101,6 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(core PRIVATE
         nns/FixedRadiusSearchOps.cu
-        # nns/FixedRadiusSearch.cu
     )
 endif()
 
