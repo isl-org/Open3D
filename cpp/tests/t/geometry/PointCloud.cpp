@@ -251,7 +251,7 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
               std::vector<float>({2, 2, 1}));
 }
 
-TEST_P(PointCloudPermuteDevices, EstimateNormalsAndCovariances) {
+TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     core::Device device = GetParam();
 
     for (core::Dtype dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
@@ -280,10 +280,6 @@ TEST_P(PointCloudPermuteDevices, EstimateNormalsAndCovariances) {
                                            {0.57735, 0.57735, 0.57735}},
                                           device)
                         .To(dtype);
-
-        // To Debug CI Issue.
-        utility::LogDebug(" Estimated Normals: \n{}\n Expected Normals: \n{}\n",
-                          pcd.GetPointNormals().ToString(), normals.ToString());
 
         EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
     }
