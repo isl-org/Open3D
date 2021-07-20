@@ -73,7 +73,7 @@ public:
 
     /// Compute min 2D coordinates for the data (always {0,0}).
     core::Tensor GetMinBound() const {
-        return core::Tensor::Zeros({2}, core::kInt64);
+        return core::Tensor::Zeros({2}, core::Int64);
     };
 
     /// Compute max 2D coordinates for the data.
@@ -81,7 +81,7 @@ public:
         return core::Tensor(
                 std::vector<int64_t>{color_.GetCols() + depth_.GetCols(),
                                      color_.GetRows()},
-                {2}, core::kInt64);
+                {2}, core::Int64);
     };
 
     /// Transfer the RGBD image to a specified device.

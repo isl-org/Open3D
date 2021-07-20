@@ -44,7 +44,7 @@ INSTANTIATE_TEST_SUITE_P(Indexer,
 TEST_P(IndexerPermuteDevices, TensorRef) {
     core::Device device = GetParam();
 
-    core::Tensor t({2, 1, 3}, core::kFloat32, device);
+    core::Tensor t({2, 1, 3}, core::Float32, device);
     core::TensorRef tr(t);
 
     EXPECT_EQ(tr.ndims_, 3);
@@ -69,9 +69,9 @@ TEST_P(IndexerPermuteDevices, TensorRef) {
 TEST_P(IndexerPermuteDevices, IndexerCopyConstructor) {
     core::Device device = GetParam();
 
-    core::Tensor input0({2, 1, 1, 3}, core::kFloat32, device);
-    core::Tensor input1({1, 3}, core::kFloat32, device);
-    core::Tensor output({2, 2, 2, 1, 3}, core::kFloat32, device);
+    core::Tensor input0({2, 1, 1, 3}, core::Float32, device);
+    core::Tensor input1({1, 3}, core::Float32, device);
+    core::Tensor output({2, 2, 2, 1, 3}, core::Float32, device);
     core::Indexer indexer_a({input0, input1}, output);
     core::Indexer indexer_b = indexer_a;
 
@@ -91,9 +91,9 @@ TEST_P(IndexerPermuteDevices, IndexerCopyConstructor) {
 TEST_P(IndexerPermuteDevices, BroadcastRestride) {
     core::Device device = GetParam();
 
-    core::Tensor input0({2, 1, 1, 3}, core::kFloat32, device);
-    core::Tensor input1({1, 3}, core::kFloat32, device);
-    core::Tensor output({2, 2, 2, 1, 3}, core::kFloat32, device);
+    core::Tensor input0({2, 1, 1, 3}, core::Float32, device);
+    core::Tensor input1({1, 3}, core::Float32, device);
+    core::Tensor output({2, 2, 2, 1, 3}, core::Float32, device);
     core::Indexer indexer({input0, input1}, output);
 
     core::TensorRef input0_tr = indexer.GetInput(0);
@@ -140,15 +140,15 @@ TEST_P(IndexerPermuteDevices, BroadcastRestride) {
 TEST_P(IndexerPermuteDevices, GetPointers) {
     core::Device device = GetParam();
 
-    core::Tensor input0({3, 1, 1}, core::kFloat32, device);
-    core::Tensor input1({2, 1}, core::kFloat32, device);
-    core::Tensor output({3, 2, 1}, core::kFloat32, device);
+    core::Tensor input0({3, 1, 1}, core::Float32, device);
+    core::Tensor input1({2, 1}, core::Float32, device);
+    core::Tensor output({3, 2, 1}, core::Float32, device);
     core::Indexer indexer({input0, input1}, output);
 
     char* input0_base_ptr = static_cast<char*>(input0.GetDataPtr());
     char* input1_base_ptr = static_cast<char*>(input1.GetDataPtr());
     char* output_base_ptr = static_cast<char*>(output.GetDataPtr());
-    int64_t dtype_byte_size = core::kFloat32.ByteSize();
+    int64_t dtype_byte_size = core::Float32.ByteSize();
 
     EXPECT_EQ(indexer.GetInputPtr(0, 0), input0_base_ptr + 0 * dtype_byte_size);
     EXPECT_EQ(indexer.GetInputPtr(0, 1), input0_base_ptr + 0 * dtype_byte_size);

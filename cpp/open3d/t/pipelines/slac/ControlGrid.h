@@ -121,7 +121,7 @@ public:
 
     /// Get control grid original positions directly from tensor keys.
     core::Tensor GetInitPositions() {
-        return ctr_hashmap_->GetKeyTensor().To(core::kFloat32) * grid_size_;
+        return ctr_hashmap_->GetKeyTensor().To(core::Float32) * grid_size_;
     }
 
     /// Get control grid shifted positions from tensor values (optimized

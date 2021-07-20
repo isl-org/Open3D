@@ -206,7 +206,7 @@ void ExtractSurfacePointsCPU
 
     // Output
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {1}, core::kInt32,
+    core::Tensor count(std::vector<int>{0}, {1}, core::Int32,
                        block_values.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
@@ -289,7 +289,7 @@ void ExtractSurfacePointsCPU
 
     int max_count = valid_size;
     if (points.GetLength() == 0) {
-        points = core::Tensor({max_count, 3}, core::kFloat32,
+        points = core::Tensor({max_count, 3}, core::Float32,
                               block_values.GetDevice());
     }
     NDArrayIndexer point_indexer(points, 1);
@@ -300,7 +300,7 @@ void ExtractSurfacePointsCPU
     if (normals.has_value()) {
         extract_normal = true;
         if (normals.value().get().GetLength() == 0) {
-            normals.value().get() = core::Tensor({max_count, 3}, core::kFloat32,
+            normals.value().get() = core::Tensor({max_count, 3}, core::Float32,
                                                  block_values.GetDevice());
         }
         normal_indexer = NDArrayIndexer(normals.value().get(), 1);
@@ -316,7 +316,7 @@ void ExtractSurfacePointsCPU
                     extract_color = true;
                     if (colors.value().get().GetLength() == 0) {
                         colors.value().get() =
-                                core::Tensor({max_count, 3}, core::kFloat32,
+                                core::Tensor({max_count, 3}, core::Float32,
                                              block_values.GetDevice());
                     }
                     color_indexer = NDArrayIndexer(colors.value().get(), 1);
@@ -507,7 +507,7 @@ void ExtractSurfaceMeshCPU
     core::Tensor mesh_structure;
     try {
         mesh_structure = core::Tensor::Zeros(
-                {n_blocks, resolution, resolution, resolution, 4}, core::kInt32,
+                {n_blocks, resolution, resolution, resolution, 4}, core::Int32,
                 block_keys.GetDevice());
     } catch (const std::runtime_error&) {
         utility::LogError(
@@ -614,7 +614,7 @@ void ExtractSurfaceMeshCPU
 
     // Pass 1: determine valid number of vertices (if not preset)
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {}, core::kInt32,
+    core::Tensor count(std::vector<int>{0}, {}, core::Int32,
                        block_values.GetDevice());
 
     int* count_ptr = count.GetDataPtr<int>();
@@ -660,14 +660,14 @@ void ExtractSurfaceMeshCPU
     }
 
     utility::LogDebug("Total vertex count = {}", vertex_count);
-    vertices = core::Tensor({vertex_count, 3}, core::kFloat32,
+    vertices = core::Tensor({vertex_count, 3}, core::Float32,
                             block_values.GetDevice());
 
     bool extract_normal = false;
     NDArrayIndexer normal_indexer;
     if (normals.has_value()) {
         extract_normal = true;
-        normals.value().get() = core::Tensor({vertex_count, 3}, core::kFloat32,
+        normals.value().get() = core::Tensor({vertex_count, 3}, core::Float32,
                                              block_values.GetDevice());
         normal_indexer = NDArrayIndexer(normals.value().get(), 1);
     }
@@ -676,7 +676,7 @@ void ExtractSurfaceMeshCPU
     NDArrayIndexer vertex_indexer(vertices, 1);
 
 #if defined(__CUDACC__)
-    count = core::Tensor(std::vector<int>{0}, {}, core::kInt32,
+    count = core::Tensor(std::vector<int>{0}, {}, core::Int32,
                          block_values.GetDevice());
     count_ptr = count.GetDataPtr<int>();
 #else
@@ -689,9 +689,8 @@ void ExtractSurfaceMeshCPU
         NDArrayIndexer color_indexer;
         if (voxel_t::HasColor() && colors.has_value()) {
             extract_color = true;
-            colors.value().get() =
-                    core::Tensor({vertex_count, 3}, core::kFloat32,
-                                 block_values.GetDevice());
+            colors.value().get() = core::Tensor(
+                    {vertex_count, 3}, core::Float32, block_values.GetDevice());
             color_indexer = NDArrayIndexer(colors.value().get(), 1);
         }
 
@@ -818,12 +817,12 @@ void ExtractSurfaceMeshCPU
 
     // Pass 3: connect vertices and form triangles.
     int triangle_count = vertex_count * 3;
-    triangles = core::Tensor({triangle_count, 3}, core::kInt64,
+    triangles = core::Tensor({triangle_count, 3}, core::Int64,
                              block_values.GetDevice());
     NDArrayIndexer triangle_indexer(triangles, 1);
 
 #if defined(__CUDACC__)
-    count = core::Tensor(std::vector<int>{0}, {}, core::kInt32,
+    count = core::Tensor(std::vector<int>{0}, {}, core::Int32,
                          block_values.GetDevice());
     count_ptr = count.GetDataPtr<int>();
 #else
@@ -909,7 +908,7 @@ void EstimateRangeCPU
     // Every 2 channels: (min, max)
     int h_down = h / down_factor;
     int w_down = w / down_factor;
-    range_minmax_map = core::Tensor({h_down, w_down, 2}, core::kFloat32,
+    range_minmax_map = core::Tensor({h_down, w_down, 2}, core::Float32,
                                     block_keys.GetDevice());
     NDArrayIndexer range_map_indexer(range_minmax_map, 2);
 
@@ -919,13 +918,13 @@ void EstimateRangeCPU
 
     // TODO(wei): explicit buffer
     core::Tensor fragment_buffer = core::Tensor(
-            {frag_buffer_size, 6}, core::kFloat32, block_keys.GetDevice());
+            {frag_buffer_size, 6}, core::Float32, block_keys.GetDevice());
 
     NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {1}, core::kInt32,
+    core::Tensor count(std::vector<int>{0}, {1}, core::Int32,
                        block_keys.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else

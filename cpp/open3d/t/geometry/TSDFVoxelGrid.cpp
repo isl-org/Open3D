@@ -58,7 +58,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
     int64_t total_bytes = 0;
     if (attr_dtype_map_.count("tsdf") != 0) {
         core::Dtype dtype = attr_dtype_map_.at("tsdf");
-        if (dtype != core::kFloat32) {
+        if (dtype != core::Float32) {
             utility::LogWarning(
                     "[TSDFVoxelGrid] unexpected TSDF dtype, please "
                     "implement your own Voxel structure in "
@@ -69,7 +69,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
 
     if (attr_dtype_map_.count("weight") != 0) {
         core::Dtype dtype = attr_dtype_map_.at("weight");
-        if (dtype != core::kFloat32 && dtype != core::kUInt16) {
+        if (dtype != core::Float32 && dtype != core::UInt16) {
             utility::LogWarning(
                     "[TSDFVoxelGrid] unexpected weight dtype, please "
                     "implement your own Voxel structure in "
@@ -81,7 +81,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
 
     if (attr_dtype_map_.count("color") != 0) {
         core::Dtype dtype = attr_dtype_map_.at("color");
-        if (dtype != core::kFloat32 && dtype != core::kUInt16) {
+        if (dtype != core::Float32 && dtype != core::UInt16) {
             utility::LogWarning(
                     "[TSDFVoxelGrid] unexpected color dtype, please "
                     "implement your own Voxel structure in "
@@ -100,7 +100,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
                 "0.5)");
     }
     block_hashmap_ = std::make_shared<core::Hashmap>(
-            block_count_, core::kInt32, core::kUInt8, core::SizeVector{3},
+            block_count_, core::Int32, core::UInt8, core::SizeVector{3},
             core::SizeVector{block_resolution_, block_resolution_,
                              block_resolution_, total_bytes},
             device, backend);
@@ -138,7 +138,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
 
     if (point_hashmap_ == nullptr) {
         point_hashmap_ = std::make_shared<core::Hashmap>(
-                capacity, core::kInt32, core::kUInt8, core::SizeVector{3},
+                capacity, core::Int32, core::UInt8, core::SizeVector{3},
                 core::SizeVector{1}, device_, core::HashmapBackend::Default);
     } else {
         point_hashmap_->Clear();
@@ -219,16 +219,16 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
     // Extrinsic: world to camera -> pose: camera to world
     core::Tensor vertex_map, depth_map, color_map, normal_map;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
-        vertex_map = core::Tensor({height, width, 3}, core::kFloat32, device_);
+        vertex_map = core::Tensor({height, width, 3}, core::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::DepthMap) {
-        depth_map = core::Tensor({height, width, 1}, core::kFloat32, device_);
+        depth_map = core::Tensor({height, width, 1}, core::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::ColorMap) {
-        color_map = core::Tensor({height, width, 3}, core::kFloat32, device_);
+        color_map = core::Tensor({height, width, 3}, core::Float32, device_);
     }
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::NormalMap) {
-        normal_map = core::Tensor({height, width, 3}, core::kFloat32, device_);
+        normal_map = core::Tensor({height, width, 3}, core::Float32, device_);
     }
 
     core::Tensor range_minmax_map;
@@ -282,7 +282,7 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints(int estimated_number,
     core::Tensor points, normals, colors;
 
     kernel::tsdf::ExtractSurfacePoints(
-            active_addrs.To(core::kInt64), active_nb_addrs.To(core::kInt64),
+            active_addrs.To(core::Int64), active_nb_addrs.To(core::Int64),
             active_nb_masks, block_hashmap_->GetKeyTensor(),
             block_hashmap_->GetValueTensor(), points,
             surface_mask & SurfaceMaskCode::NormalMap
@@ -325,19 +325,19 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh(int estimate_vertices,
 
     // Map active indices to [0, num_blocks] to be allocated for surface mesh.
     int64_t num_blocks = block_hashmap_->Size();
-    core::Tensor inverse_index_map({block_hashmap_->GetCapacity()},
-                                   core::kInt64, device_);
+    core::Tensor inverse_index_map({block_hashmap_->GetCapacity()}, core::Int64,
+                                   device_);
     std::vector<int64_t> iota_map(num_blocks);
     std::iota(iota_map.begin(), iota_map.end(), 0);
     inverse_index_map.IndexSet(
-            {active_addrs.To(core::kInt64)},
-            core::Tensor(iota_map, {num_blocks}, core::kInt64, device_));
+            {active_addrs.To(core::Int64)},
+            core::Tensor(iota_map, {num_blocks}, core::Int64, device_));
 
     core::Tensor vertices, triangles, vertex_normals, vertex_colors;
     int vertex_count = estimate_vertices;
     kernel::tsdf::ExtractSurfaceMesh(
-            active_addrs.To(core::kInt64), inverse_index_map,
-            active_nb_addrs.To(core::kInt64), active_nb_masks,
+            active_addrs.To(core::Int64), inverse_index_map,
+            active_nb_addrs.To(core::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
             vertices, triangles,
             surface_mask & SurfaceMaskCode::NormalMap
@@ -384,17 +384,17 @@ std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
     core::Tensor key_buffer_int3_tensor = block_hashmap_->GetKeyTensor();
 
     core::Tensor active_keys =
-            key_buffer_int3_tensor.IndexGet({active_addrs.To(core::kInt64)});
+            key_buffer_int3_tensor.IndexGet({active_addrs.To(core::Int64)});
     int64_t n = active_keys.GetShape()[0];
 
     // Fill in radius nearest neighbors.
-    core::Tensor keys_nb({27, n, 3}, core::kInt32, device_);
+    core::Tensor keys_nb({27, n, 3}, core::Int32, device_);
     for (int nb = 0; nb < 27; ++nb) {
         int dz = nb / 9;
         int dy = (nb % 9) / 3;
         int dx = nb % 3;
         core::Tensor dt = core::Tensor(std::vector<int>{dx - 1, dy - 1, dz - 1},
-                                       {1, 3}, core::kInt32, device_);
+                                       {1, 3}, core::Int32, device_);
         keys_nb[nb] = active_keys + dt;
     }
     keys_nb = keys_nb.View({27 * n, 3});

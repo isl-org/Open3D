@@ -68,7 +68,7 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
     core::Tensor points = core::Tensor::Ones({10, 3}, dtype, device);
     core::Tensor single_point = core::Tensor::Ones({3}, dtype, device);
 
@@ -79,7 +79,7 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
 
     core::Tensor points = core::Tensor::Ones({10, 3}, dtype, device);
     core::Tensor colors = core::Tensor::Ones({10, 3}, dtype, device) * 0.5;
@@ -108,7 +108,7 @@ TEST_P(PointCloudPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
     t::geometry::PointCloud pcd(device);
 
     core::Tensor points = core::Tensor(std::vector<float>{1, 2, 3, 4, 5, 6},
-                                       {2, 3}, core::kFloat32, device);
+                                       {2, 3}, core::Float32, device);
     pcd.SetPoints(points);
 
     EXPECT_FALSE(pcd.IsEmpty());
@@ -126,7 +126,7 @@ TEST_P(PointCloudPermuteDevicePairs, CopyDevice) {
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
 
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
 
     core::Tensor points = core::Tensor::Ones({2, 3}, dtype, src_device);
     core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, src_device) * 2;
@@ -147,7 +147,7 @@ TEST_P(PointCloudPermuteDevicePairs, CopyDevice) {
 
 TEST_P(PointCloudPermuteDevices, Copy) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
 
     core::Tensor points = core::Tensor::Ones({2, 3}, dtype, device);
     core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, device) * 2;
@@ -178,7 +178,7 @@ TEST_P(PointCloudPermuteDevices, Copy) {
 
 TEST_P(PointCloudPermuteDevices, Transform) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pcd(device);
     core::Tensor transformation(
             std::vector<float>{1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1},
@@ -198,19 +198,19 @@ TEST_P(PointCloudPermuteDevices, Transform) {
 TEST_P(PointCloudPermuteDevices, Translate) {
     core::Device device = GetParam();
     t::geometry::PointCloud pcd(device);
-    core::Tensor translation(std::vector<float>{10, 20, 30}, {3},
-                             core::kFloat32, device);
+    core::Tensor translation(std::vector<float>{10, 20, 30}, {3}, core::Float32,
+                             device);
 
     // Relative.
     pcd.SetPoints(core::Tensor(std::vector<float>{0, 1, 2, 6, 7, 8}, {2, 3},
-                               core::kFloat32, device));
+                               core::Float32, device));
     pcd.Translate(translation, /*relative=*/true);
     EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
               std::vector<float>({10, 21, 32, 16, 27, 38}));
 
     // Non-relative.
     pcd.SetPoints(core::Tensor(std::vector<float>{0, 1, 2, 6, 7, 8}, {2, 3},
-                               core::kFloat32, device));
+                               core::Float32, device));
     pcd.Translate(translation, /*relative=*/false);
     EXPECT_EQ(pcd.GetPoints().ToFlatVector<float>(),
               std::vector<float>({7, 17, 27, 13, 23, 33}));
@@ -221,9 +221,9 @@ TEST_P(PointCloudPermuteDevices, Scale) {
     t::geometry::PointCloud pcd(device);
     core::Tensor points =
             core::Tensor(std::vector<float>{0, 0, 0, 1, 1, 1, 2, 2, 2}, {3, 3},
-                         core::kFloat32, device);
+                         core::Float32, device);
     pcd.SetPoints(points);
-    core::Tensor center(std::vector<float>{1, 1, 1}, {3}, core::kFloat32,
+    core::Tensor center(std::vector<float>{1, 1, 1}, {3}, core::Float32,
                         device);
     float scale = 4;
     pcd.Scale(scale, center);
@@ -233,7 +233,7 @@ TEST_P(PointCloudPermuteDevices, Scale) {
 
 TEST_P(PointCloudPermuteDevices, Rotate) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pcd(device);
     core::Tensor rotation(std::vector<float>{1, 1, 0, 0, 1, 1, 0, 1, 0}, {3, 3},
                           dtype, device);
@@ -260,7 +260,7 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
                                                       Eigen::Vector3d(1, 1, 1)};
 
     // Float32: vector3d will be converted to float32.
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacyPointCloud(
             legacy_pcd, dtype, device);
     EXPECT_TRUE(pcd.HasPoints());
@@ -272,7 +272,7 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
             core::Tensor::Ones({2, 3}, dtype, device)));
 
     // Float64 case.
-    dtype = core::kFloat64;
+    dtype = core::Float64;
     pcd = t::geometry::PointCloud::FromLegacyPointCloud(legacy_pcd, dtype,
                                                         device);
     EXPECT_TRUE(pcd.HasPoints());
@@ -286,7 +286,7 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
 
 TEST_P(PointCloudPermuteDevices, ToLegacyPointCloud) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
 
     t::geometry::PointCloud pcd({
             {"points", core::Tensor::Ones({2, 3}, dtype, device)},
@@ -310,7 +310,7 @@ TEST_P(PointCloudPermuteDevices, ToLegacyPointCloud) {
 
 TEST_P(PointCloudPermuteDevices, Getters) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
 
     t::geometry::PointCloud pcd({
             {"points", core::Tensor::Ones({2, 3}, dtype, device)},
@@ -336,7 +336,7 @@ TEST_P(PointCloudPermuteDevices, Getters) {
 
 TEST_P(PointCloudPermuteDevices, Setters) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
 
     core::Tensor points = core::Tensor::Ones({2, 3}, dtype, device);
     core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, device) * 2;
@@ -374,7 +374,7 @@ TEST_P(PointCloudPermuteDevices, Setters) {
 
 TEST_P(PointCloudPermuteDevices, Append) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
 
     core::Tensor points = core::Tensor::Ones({2, 3}, dtype, device);
     core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, device);
@@ -410,7 +410,7 @@ TEST_P(PointCloudPermuteDevices, Append) {
 
 TEST_P(PointCloudPermuteDevices, Has) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
 
     t::geometry::PointCloud pcd(device);
     EXPECT_FALSE(pcd.HasPoints());
@@ -431,7 +431,7 @@ TEST_P(PointCloudPermuteDevices, Has) {
 
 TEST_P(PointCloudPermuteDevices, RemovePointAttr) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
 
     t::geometry::PointCloud pcd({
             {"points", core::Tensor::Ones({2, 3}, dtype, device)},
@@ -462,7 +462,7 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
                                       device);
     core::Tensor intrinsics = core::Tensor::Init<float>(
             {{10, 0, 1}, {0, 10, 1}, {0, 0, 1}}, device);
-    core::Tensor extrinsics = core::Tensor::Eye(4, core::kFloat32, device);
+    core::Tensor extrinsics = core::Tensor::Eye(4, core::Float32, device);
     t::geometry::PointCloud pcd_ref(
             {{"points",
               core::Tensor::Init<float>(
@@ -507,7 +507,7 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
         return;
     }
 
-    core::Tensor extrinsics = core::Tensor::Eye(4, core::kFloat32, device);
+    core::Tensor extrinsics = core::Tensor::Eye(4, core::Float32, device);
     int stride = 1;
     float depth_scale = 10.f, depth_max = 2.5f;
     // clang-format off
@@ -517,18 +517,18 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
         1, 4, 7, 4, 30,
         1, 3, 5, 3, 1,
         1, 2, 3, 2, 1},
-        {5, 5, 1}, core::kUInt16, device);
+        {5, 5, 1}, core::UInt16, device);
     core::Tensor t_color(std::vector<float>{
         0,0,0, 0.1,0.1,0.1, 0.2,0.2,0.2, 0.1,0.1,0.1, 0.0,0.0,0.0,
         0,0,0, 0.2,0.2,0.2, 0.4,0.4,0.4, 0.2,0.2,0.2, 0.0,0.0,0.0,
         0,0,0, 0.3,0.3,0.3, 0.6,0.6,0.6, 0.3,0.3,0.3, 0.9,0.9,0.9,
         0,0,0, 0.2,0.2,0.2, 0.4,0.4,0.4, 0.2,0.2,0.2, 0.0,0.0,0.0,
         0,0,0, 0.1,0.1,0.1, 0.2,0.2,0.2, 0.1,0.1,0.1, 0.0,0.0,0.0
-        }, {5, 5, 3}, core::kFloat32, device);
+        }, {5, 5, 3}, core::Float32, device);
     core::Tensor intrinsics(std::vector<double>{
         1.f, 0.f, 2.f,
         0.f, 1.f, 2.f,
-        0.f, 0.f, 1.f}, {3, 3}, core::kFloat64, device);
+        0.f, 0.f, 1.f}, {3, 3}, core::Float64, device);
     core::Tensor t_vertex_ref, t_color_ref, t_normal_ref;
     // CUDA has slightly different output due to NPP vs IPP differences.
     if (device.GetType()==core::Device::DeviceType::CUDA) {

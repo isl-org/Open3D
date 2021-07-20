@@ -55,9 +55,9 @@ void pybind_tsdf_voxelgrid(py::module& m) {
                      float, int64_t, int64_t, const core::Device&>(),
             "map_attrs_to_dtypes"_a =
                     std::unordered_map<std::string, core::Dtype>{
-                            {"tsdf", core::kFloat32},
-                            {"weight", core::kUInt16},
-                            {"color", core::kUInt16},
+                            {"tsdf", core::Float32},
+                            {"weight", core::UInt16},
+                            {"color", core::UInt16},
                     },
             "voxel_size"_a = 3.0 / 512, "sdf_trunc"_a = 0.04,
             "block_resolution"_a = 16, "block_count"_a = 100,

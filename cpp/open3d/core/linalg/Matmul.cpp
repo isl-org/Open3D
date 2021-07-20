@@ -46,10 +46,10 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
                           A.GetDtype().ToString(), B.GetDtype().ToString());
     }
 
-    if (dtype != core::kFloat32 && dtype != core::kFloat64) {
+    if (dtype != core::Float32 && dtype != core::Float64) {
         utility::LogDebug("Converting to Float32 dtype to from {}.",
                           dtype.ToString());
-        dtype = core::kFloat32;
+        dtype = core::Float32;
     }
 
     // Check shapes

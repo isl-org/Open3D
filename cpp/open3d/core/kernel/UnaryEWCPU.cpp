@@ -198,7 +198,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     Dtype dst_dtype = dst.GetDtype();
 
     auto assert_dtype_is_float = [](Dtype dtype) -> void {
-        if (dtype != core::kFloat32 && dtype != core::kFloat64) {
+        if (dtype != core::Float32 && dtype != core::Float64) {
             utility::LogError(
                     "Only supports Float32 and Float64, but {} is used.",
                     dtype.ToString());
@@ -212,7 +212,7 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 LaunchUnaryEWKernel(
                         indexer,
                         CPULogicalNotElementKernel<scalar_t, scalar_t>);
-            } else if (dst_dtype == core::kBool) {
+            } else if (dst_dtype == core::Bool) {
                 Indexer indexer({src}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
                 LaunchUnaryEWKernel(indexer,

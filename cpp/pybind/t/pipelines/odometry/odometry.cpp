@@ -80,7 +80,7 @@ void pybind_odometry_classes(py::module &m) {
     py::detail::bind_copy_functions<OdometryResult>(odometry_result);
     odometry_result
             .def(py::init<core::Tensor, double, double>(),
-                 "transformation"_a = core::Tensor::Eye(4, core::kFloat64,
+                 "transformation"_a = core::Tensor::Eye(4, core::Float64,
                                                         core::Device("CPU:0")),
                  "inlier_rmse"_a = 0.0, "fitness"_a = 0.0)
             .def_readwrite("transformation", &OdometryResult::transformation_,
@@ -196,7 +196,7 @@ void pybind_odometry_methods(py::module &m) {
           "Function for Multi Scale RGBD odometry.", "source"_a, "target"_a,
           "intrinsics"_a,
           "init_source_to_target"_a =
-                  core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0")),
+                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
           "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f,
           "criteria_list"_a =
                   std::vector<OdometryConvergenceCriteria>({10, 5, 3}),

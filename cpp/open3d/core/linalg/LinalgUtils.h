@@ -40,10 +40,10 @@ namespace core {
 
 #define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)    \
     [&] {                                                \
-        if (DTYPE == open3d::core::kFloat32) {           \
+        if (DTYPE == open3d::core::Float32) {            \
             using scalar_t = float;                      \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kFloat64) {    \
+        } else if (DTYPE == open3d::core::Float64) {     \
             using scalar_t = double;                     \
             return __VA_ARGS__();                        \
         } else {                                         \

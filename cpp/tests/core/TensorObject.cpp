@@ -124,10 +124,10 @@ TEST_P(TensorObjectPermuteDevicePairs, IndexSetFillFancyObject) {
 
     // t[:, [1, 2], [1, 2]]
     std::vector<core::Tensor> indices = {
-            core::Tensor(core::SizeVector(), core::kInt64, dst_device),
-            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::kInt64,
+            core::Tensor(core::SizeVector(), core::Int64, dst_device),
+            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::Int64,
                          src_device),
-            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::kInt64,
+            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::Int64,
                          dst_device)};
 
     dst_t.IndexSet(indices, src_t);

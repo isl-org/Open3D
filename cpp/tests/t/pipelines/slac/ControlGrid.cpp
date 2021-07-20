@@ -39,7 +39,7 @@ static t::geometry::PointCloud CreateTPCDFromFile(
         const std::string& fname,
         const core::Device& device = core::Device("CPU:0")) {
     auto pcd = io::CreatePointCloudFromFile(fname);
-    return t::geometry::PointCloud::FromLegacyPointCloud(*pcd, core::kFloat32,
+    return t::geometry::PointCloud::FromLegacyPointCloud(*pcd, core::Float32,
                                                          device);
 }
 

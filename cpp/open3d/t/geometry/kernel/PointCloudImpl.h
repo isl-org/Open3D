@@ -72,7 +72,7 @@ void UnprojectCPU
     int64_t rows_strided = depth_indexer.GetShape(0) / stride;
     int64_t cols_strided = depth_indexer.GetShape(1) / stride;
 
-    points = core::Tensor({rows_strided * cols_strided, 3}, core::kFloat32,
+    points = core::Tensor({rows_strided * cols_strided, 3}, core::Float32,
                           depth.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
     NDArrayIndexer colors_indexer;
@@ -80,14 +80,13 @@ void UnprojectCPU
         const auto& imcol = image_colors.value().get();
         image_colors_indexer = NDArrayIndexer{imcol, 2};
         colors.value().get() = core::Tensor({rows_strided * cols_strided, 3},
-                                            core::kFloat32, imcol.GetDevice());
+                                            core::Float32, imcol.GetDevice());
         colors_indexer = NDArrayIndexer(colors.value().get(), 1);
     }
 
     // Counter
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {}, core::kInt32,
-                       depth.GetDevice());
+    core::Tensor count(std::vector<int>{0}, {}, core::Int32, depth.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
     std::atomic<int> count_atomic(0);

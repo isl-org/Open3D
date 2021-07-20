@@ -1073,7 +1073,7 @@ void ReductionCUDA(const Tensor& src,
             }
         });
     } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
-        if (dst.GetDtype() != core::kInt64) {
+        if (dst.GetDtype() != core::Int64) {
             utility::LogError("Arg-reduction must have int64 output dtype.");
         }
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME, dims);
@@ -1112,11 +1112,11 @@ void ReductionCUDA(const Tensor& src,
         });
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
-        if (src.GetDtype() != core::kBool) {
+        if (src.GetDtype() != core::Bool) {
             utility::LogError(
                     "Boolean reduction only supports boolean input tensor.");
         }
-        if (dst.GetDtype() != core::kBool) {
+        if (dst.GetDtype() != core::Bool) {
             utility::LogError(
                     "Boolean reduction only supports boolean output tensor.");
         }

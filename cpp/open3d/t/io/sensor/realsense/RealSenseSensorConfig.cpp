@@ -136,10 +136,10 @@ STRINGIFY_ENUM(rs2_sr300_visual_preset, {
 std::pair<core::Dtype, uint8_t> RealSenseSensorConfig::get_dtype_channels(
         int rs2_format_enum) {
     static const std::unordered_map<rs2_format, core::Dtype> format_dtype = {
-            {RS2_FORMAT_Z16, core::kUInt16},  {RS2_FORMAT_YUYV, core::kUInt8},
-            {RS2_FORMAT_RGB8, core::kUInt8},  {RS2_FORMAT_BGR8, core::kUInt8},
-            {RS2_FORMAT_RGBA8, core::kUInt8}, {RS2_FORMAT_BGRA8, core::kUInt8},
-            {RS2_FORMAT_Y8, core::kUInt8},    {RS2_FORMAT_Y16, core::kUInt16}};
+            {RS2_FORMAT_Z16, core::UInt16},  {RS2_FORMAT_YUYV, core::UInt8},
+            {RS2_FORMAT_RGB8, core::UInt8},  {RS2_FORMAT_BGR8, core::UInt8},
+            {RS2_FORMAT_RGBA8, core::UInt8}, {RS2_FORMAT_BGRA8, core::UInt8},
+            {RS2_FORMAT_Y8, core::UInt8},    {RS2_FORMAT_Y16, core::UInt16}};
     static const std::unordered_map<rs2_format, uint8_t> format_channels = {
             {RS2_FORMAT_Z16, 1},  {RS2_FORMAT_YUYV, 2},  {RS2_FORMAT_RGB8, 3},
             {RS2_FORMAT_BGR8, 3}, {RS2_FORMAT_RGBA8, 4}, {RS2_FORMAT_BGRA8, 4},
@@ -227,7 +227,7 @@ void RealSenseSensorConfig::GetPixelDtypes(const rs2::pipeline_profile &profile,
     std::tie(metadata.color_dt_, metadata.color_channels_) =
             RealSenseSensorConfig::get_dtype_channels(
                     static_cast<int>(rs_color.format()));
-    if (metadata.color_dt_ != core::kUInt8) {
+    if (metadata.color_dt_ != core::UInt8) {
         utility::LogError("Only 8 bit unsigned int color is supported!");
     }
     const auto rs_depth = profile.get_stream(RS2_STREAM_DEPTH)
@@ -235,7 +235,7 @@ void RealSenseSensorConfig::GetPixelDtypes(const rs2::pipeline_profile &profile,
     metadata.depth_dt_ = RealSenseSensorConfig::get_dtype_channels(
                                  static_cast<int>(rs_depth.format()))
                                  .first;
-    if (metadata.depth_dt_ != core::kUInt16) {
+    if (metadata.depth_dt_ != core::UInt16) {
         utility::LogError("Only 16 bit unsigned int depth is supported!");
     }
 }

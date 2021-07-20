@@ -80,7 +80,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     jpeg_start_decompress(&cinfo);
     image.Clear();
     image.Reset(cinfo.output_height, cinfo.output_width, num_of_channels,
-                core::kUInt8, image.GetDevice());
+                core::UInt8, image.GetDevice());
 
     int row_stride = cinfo.output_width * cinfo.output_components;
     buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE,
@@ -106,7 +106,7 @@ bool WriteImageToJPG(const std::string &filename,
         utility::LogWarning("Write JPG failed: image has no data.");
         return false;
     }
-    if (image.GetDtype() != core::kUInt8 ||
+    if (image.GetDtype() != core::UInt8 ||
         (image.GetChannels() != 1 && image.GetChannels() != 3)) {
         utility::LogWarning("Write JPG failed: unsupported image data.");
         return false;

@@ -69,9 +69,9 @@ void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
     const float* pcd_ptr = static_cast<const float*>(points.GetDataPtr());
 
     core::Device device = points.GetDevice();
-    core::Tensor block_coordi({8 * n, 3}, core::kInt32, device);
+    core::Tensor block_coordi({8 * n, 3}, core::Int32, device);
     int* block_coordi_ptr = static_cast<int*>(block_coordi.GetDataPtr());
-    core::Tensor count(std::vector<int>{0}, {}, core::kInt32, device);
+    core::Tensor count(std::vector<int>{0}, {}, core::Int32, device);
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 
     core::kernel::cuda_launcher::ParallelFor(n, [=] OPEN3D_DEVICE(

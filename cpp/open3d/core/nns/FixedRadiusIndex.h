@@ -101,12 +101,12 @@ public:
     NeighborSearchAllocator(Device device) : device_(device) {}
 
     void AllocIndices(int64_t** ptr, size_t num) {
-        indices_ = Tensor::Empty({int64_t(num)}, core::kInt64, device_);
+        indices_ = Tensor::Empty({int64_t(num)}, core::Int64, device_);
         *ptr = indices_.GetDataPtr<int64_t>();
     }
 
     void AllocIndices(int64_t** ptr, size_t num, int64_t value) {
-        indices_ = Tensor::Full({int64_t(num)}, value, core::kInt64, device_);
+        indices_ = Tensor::Full({int64_t(num)}, value, core::Int64, device_);
         *ptr = indices_.GetDataPtr<int64_t>();
     }
 
@@ -123,12 +123,12 @@ public:
     }
 
     void AllocCounts(int64_t** ptr, size_t num) {
-        counts_ = Tensor::Empty({int64_t(num)}, core::kInt64, device_);
+        counts_ = Tensor::Empty({int64_t(num)}, core::Int64, device_);
         *ptr = counts_.GetDataPtr<int64_t>();
     }
 
     void AllocCounts(int64_t** ptr, size_t num, int64_t value) {
-        counts_ = Tensor::Full({int64_t(num)}, value, core::kInt64, device_);
+        counts_ = Tensor::Full({int64_t(num)}, value, core::Int64, device_);
         *ptr = counts_.GetDataPtr<int64_t>();
     }
 

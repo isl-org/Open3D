@@ -58,7 +58,7 @@ Tensor NonZeroCPU(const Tensor& src) {
     const size_t num_non_zeros = non_zero_indices.size();
 
     SizeVector result_shape{num_dims, static_cast<int64_t>(num_non_zeros)};
-    Tensor result(result_shape, core::kInt64, src.GetDevice());
+    Tensor result(result_shape, core::Int64, src.GetDevice());
     TensorIterator result_iter(result);
 
     std::vector<std::vector<int64_t>> non_zero_indices_by_dimensions(

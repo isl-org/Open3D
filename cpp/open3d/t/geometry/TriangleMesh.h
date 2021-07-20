@@ -424,8 +424,8 @@ public:
     /// \param device The device where the resulting TriangleMesh resides in.
     static geometry::TriangleMesh FromLegacyTriangleMesh(
             const open3d::geometry::TriangleMesh &mesh_legacy,
-            core::Dtype float_dtype = core::kFloat32,
-            core::Dtype int_dtype = core::kInt64,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D TriangleMesh.

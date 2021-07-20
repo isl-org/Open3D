@@ -40,7 +40,7 @@ INSTANTIATE_TEST_SUITE_P(TensorMap,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
 TEST_P(TensorMapPermuteDevices, Constructor) {
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
     core::Device device = GetParam();
 
     // Empty TensorMap.
@@ -76,7 +76,7 @@ TEST_P(TensorMapPermuteDevices, Constructor) {
 }
 
 TEST_P(TensorMapPermuteDevices, IsSizeSynchronized) {
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
     core::Device device = GetParam();
 
     t::geometry::TensorMap tm(
@@ -89,7 +89,7 @@ TEST_P(TensorMapPermuteDevices, IsSizeSynchronized) {
 }
 
 TEST_P(TensorMapPermuteDevices, AssertSizeSynchronized) {
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
     core::Device device = GetParam();
 
     t::geometry::TensorMap tm(
@@ -102,7 +102,7 @@ TEST_P(TensorMapPermuteDevices, AssertSizeSynchronized) {
 }
 
 TEST_P(TensorMapPermuteDevices, Contains) {
-    core::Dtype dtype = core::kFloat32;
+    core::Dtype dtype = core::Float32;
     core::Device device = GetParam();
 
     t::geometry::TensorMap tm(

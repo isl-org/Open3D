@@ -91,18 +91,18 @@ private:
     char name_[max_name_len_];  // MSVC warns if std::string is exported to DLL.
 };
 
-OPEN3D_API extern const Dtype kUndefined;
-OPEN3D_API extern const Dtype kFloat32;
-OPEN3D_API extern const Dtype kFloat64;
-OPEN3D_API extern const Dtype kInt8;
-OPEN3D_API extern const Dtype kInt16;
-OPEN3D_API extern const Dtype kInt32;
-OPEN3D_API extern const Dtype kInt64;
-OPEN3D_API extern const Dtype kUInt8;
-OPEN3D_API extern const Dtype kUInt16;
-OPEN3D_API extern const Dtype kUInt32;
-OPEN3D_API extern const Dtype kUInt64;
-OPEN3D_API extern const Dtype kBool;
+OPEN3D_API extern const Dtype Undefined;
+OPEN3D_API extern const Dtype Float32;
+OPEN3D_API extern const Dtype Float64;
+OPEN3D_API extern const Dtype Int8;
+OPEN3D_API extern const Dtype Int16;
+OPEN3D_API extern const Dtype Int32;
+OPEN3D_API extern const Dtype Int64;
+OPEN3D_API extern const Dtype UInt8;
+OPEN3D_API extern const Dtype UInt16;
+OPEN3D_API extern const Dtype UInt32;
+OPEN3D_API extern const Dtype UInt64;
+OPEN3D_API extern const Dtype Bool;
 
 template <>
 inline const Dtype Dtype::FromType<float>() {

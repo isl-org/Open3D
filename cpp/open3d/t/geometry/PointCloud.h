@@ -352,7 +352,7 @@ public:
             const Image &depth,
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics =
-                    core::Tensor::Eye(4, core::kFloat32, core::Device("CPU:0")),
+                    core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
             int stride = 1,
@@ -387,7 +387,7 @@ public:
             const RGBDImage &rgbd_image,
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics =
-                    core::Tensor::Eye(4, core::kFloat32, core::Device("CPU:0")),
+                    core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f,
             int stride = 1,
@@ -396,7 +396,7 @@ public:
     /// Create a PointCloud from a legacy Open3D PointCloud.
     static PointCloud FromLegacyPointCloud(
             const open3d::geometry::PointCloud &pcd_legacy,
-            core::Dtype dtype = core::kFloat32,
+            core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D PointCloud.
@@ -408,7 +408,7 @@ public:
             int height,
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics =
-                    core::Tensor::Eye(4, core::kFloat32, core::Device("CPU:0")),
+                    core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
 
@@ -418,7 +418,7 @@ public:
             int height,
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics =
-                    core::Tensor::Eye(4, core::kFloat32, core::Device("CPU:0")),
+                    core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
 

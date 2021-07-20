@@ -78,17 +78,17 @@ static char DtypeToChar(const Dtype& dtype) {
     // 'c': std::complex<float>, std::complex<double>),
     //      std::complex<long double>)
     // '?': object
-    if (dtype == core::kFloat32) return 'f';
-    if (dtype == core::kFloat64) return 'f';
-    if (dtype == core::kInt8) return 'i';
-    if (dtype == core::kInt16) return 'i';
-    if (dtype == core::kInt32) return 'i';
-    if (dtype == core::kInt64) return 'i';
-    if (dtype == core::kUInt8) return 'u';
-    if (dtype == core::kUInt16) return 'u';
-    if (dtype == core::kUInt32) return 'u';
-    if (dtype == core::kUInt64) return 'u';
-    if (dtype == core::kBool) return 'b';
+    if (dtype == core::Float32) return 'f';
+    if (dtype == core::Float64) return 'f';
+    if (dtype == core::Int8) return 'i';
+    if (dtype == core::Int16) return 'i';
+    if (dtype == core::Int32) return 'i';
+    if (dtype == core::Int64) return 'i';
+    if (dtype == core::UInt8) return 'u';
+    if (dtype == core::UInt16) return 'u';
+    if (dtype == core::UInt32) return 'u';
+    if (dtype == core::UInt64) return 'u';
+    if (dtype == core::Bool) return 'b';
     utility::LogError("Unsupported dtype: {}", dtype.ToString());
     return '\0';
 }
@@ -255,19 +255,19 @@ NumpyArray::NumpyArray(const Tensor& t)
 }
 
 Dtype NumpyArray::GetDtype() const {
-    if (type_ == 'f' && word_size_ == 4) return core::kFloat32;
-    if (type_ == 'f' && word_size_ == 8) return core::kFloat64;
-    if (type_ == 'i' && word_size_ == 1) return core::kInt8;
-    if (type_ == 'i' && word_size_ == 2) return core::kInt16;
-    if (type_ == 'i' && word_size_ == 4) return core::kInt32;
-    if (type_ == 'i' && word_size_ == 8) return core::kInt64;
-    if (type_ == 'u' && word_size_ == 1) return core::kUInt8;
-    if (type_ == 'u' && word_size_ == 2) return core::kUInt16;
-    if (type_ == 'u' && word_size_ == 4) return core::kUInt32;
-    if (type_ == 'u' && word_size_ == 8) return core::kUInt64;
-    if (type_ == 'b') return core::kBool;
+    if (type_ == 'f' && word_size_ == 4) return core::Float32;
+    if (type_ == 'f' && word_size_ == 8) return core::Float64;
+    if (type_ == 'i' && word_size_ == 1) return core::Int8;
+    if (type_ == 'i' && word_size_ == 2) return core::Int16;
+    if (type_ == 'i' && word_size_ == 4) return core::Int32;
+    if (type_ == 'i' && word_size_ == 8) return core::Int64;
+    if (type_ == 'u' && word_size_ == 1) return core::UInt8;
+    if (type_ == 'u' && word_size_ == 2) return core::UInt16;
+    if (type_ == 'u' && word_size_ == 4) return core::UInt32;
+    if (type_ == 'u' && word_size_ == 8) return core::UInt64;
+    if (type_ == 'b') return core::Bool;
 
-    return core::kUndefined;
+    return core::Undefined;
 }
 
 Tensor NumpyArray::ToTensor() const {

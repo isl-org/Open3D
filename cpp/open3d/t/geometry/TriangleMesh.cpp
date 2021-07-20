@@ -65,11 +65,11 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
         core::Dtype float_dtype,
         core::Dtype int_dtype,
         const core::Device &device) {
-    if (float_dtype != core::kFloat32 && float_dtype != core::kFloat64) {
+    if (float_dtype != core::Float32 && float_dtype != core::Float64) {
         utility::LogError("float_dtype must be Float32 or Float64, but got {}.",
                           float_dtype.ToString());
     }
-    if (int_dtype != core::kInt32 && int_dtype != core::kInt64) {
+    if (int_dtype != core::Int32 && int_dtype != core::Int64) {
         utility::LogError("int_dtype must be Int32 or Int64, but got {}.",
                           int_dtype.ToString());
     }

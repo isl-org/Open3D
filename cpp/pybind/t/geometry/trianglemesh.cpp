@@ -91,8 +91,8 @@ void pybind_trianglemesh(py::module& m) {
                       "Rotate points and normals (if exist).");
     triangle_mesh.def_static(
             "from_legacy_triangle_mesh", &TriangleMesh::FromLegacyTriangleMesh,
-            "mesh_legacy"_a, "vertex_dtype"_a = core::kFloat32,
-            "triangle_dtype"_a = core::kInt64,
+            "mesh_legacy"_a, "vertex_dtype"_a = core::Float32,
+            "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
     triangle_mesh.def("to_legacy_triangle_mesh",

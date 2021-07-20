@@ -33,9 +33,9 @@
 /// a lambda function to use DISPATCH_DTYPE_TO_TEMPLATE.
 ///
 /// Before:
-///     if (dtype == core::kFloat32) {
+///     if (dtype == core::Float32) {
 ///         func<float>(args);
-///     } else if (dtype == core::kFloat64) {
+///     } else if (dtype == core::Float64) {
 ///         func<double>(args);
 ///     } else ...
 ///
@@ -48,34 +48,34 @@
 ///     https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/Dispatch.h
 #define DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, ...)           \
     [&] {                                                \
-        if (DTYPE == open3d::core::kFloat32) {           \
+        if (DTYPE == open3d::core::Float32) {            \
             using scalar_t = float;                      \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kFloat64) {    \
+        } else if (DTYPE == open3d::core::Float64) {     \
             using scalar_t = double;                     \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kInt8) {       \
+        } else if (DTYPE == open3d::core::Int8) {        \
             using scalar_t = int8_t;                     \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kInt16) {      \
+        } else if (DTYPE == open3d::core::Int16) {       \
             using scalar_t = int16_t;                    \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kInt32) {      \
+        } else if (DTYPE == open3d::core::Int32) {       \
             using scalar_t = int32_t;                    \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kInt64) {      \
+        } else if (DTYPE == open3d::core::Int64) {       \
             using scalar_t = int64_t;                    \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kUInt8) {      \
+        } else if (DTYPE == open3d::core::UInt8) {       \
             using scalar_t = uint8_t;                    \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kUInt16) {     \
+        } else if (DTYPE == open3d::core::UInt16) {      \
             using scalar_t = uint16_t;                   \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kUInt32) {     \
+        } else if (DTYPE == open3d::core::UInt32) {      \
             using scalar_t = uint32_t;                   \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kUInt64) {     \
+        } else if (DTYPE == open3d::core::UInt64) {      \
             using scalar_t = uint64_t;                   \
             return __VA_ARGS__();                        \
         } else {                                         \
@@ -85,7 +85,7 @@
 
 #define DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(DTYPE, ...)    \
     [&] {                                                   \
-        if (DTYPE == open3d::core::kBool) {                 \
+        if (DTYPE == open3d::core::Bool) {                  \
             using scalar_t = bool;                          \
             return __VA_ARGS__();                           \
         } else {                                            \
@@ -95,10 +95,10 @@
 
 #define DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(DTYPE, ...)     \
     [&] {                                                \
-        if (DTYPE == open3d::core::kFloat32) {           \
+        if (DTYPE == open3d::core::Float32) {            \
             using scalar_t = float;                      \
             return __VA_ARGS__();                        \
-        } else if (DTYPE == open3d::core::kFloat64) {    \
+        } else if (DTYPE == open3d::core::Float64) {     \
             using scalar_t = double;                     \
             return __VA_ARGS__();                        \
         } else {                                         \

@@ -234,7 +234,7 @@ void pybind_registration_methods(py::module &m) {
           "Function for evaluating registration between point clouds",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
           "transformation"_a =
-                  core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0")));
+                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")));
     docstring::FunctionDocInject(m, "evaluate_registration",
                                  map_shared_argument_docstrings);
 
@@ -243,7 +243,7 @@ void pybind_registration_methods(py::module &m) {
           "Function for ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init_source_to_target"_a =
-                  core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0")),
+                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint(),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_icp",
@@ -254,7 +254,7 @@ void pybind_registration_methods(py::module &m) {
           "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
           "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
           "init_source_to_target"_a =
-                  core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0")),
+                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint());
     docstring::FunctionDocInject(m, "registration_multi_scale_icp",
                                  map_shared_argument_docstrings);

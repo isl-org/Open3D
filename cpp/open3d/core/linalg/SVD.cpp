@@ -37,7 +37,7 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
 
     // Check dtypes
     Dtype dtype = A.GetDtype();
-    if (dtype != core::kFloat32 && dtype != core::kFloat64) {
+    if (dtype != core::Float32 && dtype != core::Float64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}",

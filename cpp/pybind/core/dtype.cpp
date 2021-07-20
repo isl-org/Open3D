@@ -50,18 +50,18 @@ void pybind_core_dtype(py::module &m) {
     py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype",
                                                     "Open3D data types.");
     dtype.def(py::init<Dtype::DtypeCode, int64_t, const std::string &>());
-    dtype.def_readonly_static("Undefined", &core::kUndefined);
-    dtype.def_readonly_static("Float32", &core::kFloat32);
-    dtype.def_readonly_static("Float64", &core::kFloat64);
-    dtype.def_readonly_static("Int8", &core::kInt8);
-    dtype.def_readonly_static("Int16", &core::kInt16);
-    dtype.def_readonly_static("Int32", &core::kInt32);
-    dtype.def_readonly_static("Int64", &core::kInt64);
-    dtype.def_readonly_static("UInt8", &core::kUInt8);
-    dtype.def_readonly_static("UInt16", &core::kUInt16);
-    dtype.def_readonly_static("UInt32", &core::kUInt32);
-    dtype.def_readonly_static("UInt64", &core::kUInt64);
-    dtype.def_readonly_static("Bool", &core::kBool);
+    dtype.def_readonly_static("Undefined", &core::Undefined);
+    dtype.def_readonly_static("Float32", &core::Float32);
+    dtype.def_readonly_static("Float64", &core::Float64);
+    dtype.def_readonly_static("Int8", &core::Int8);
+    dtype.def_readonly_static("Int16", &core::Int16);
+    dtype.def_readonly_static("Int32", &core::Int32);
+    dtype.def_readonly_static("Int64", &core::Int64);
+    dtype.def_readonly_static("UInt8", &core::UInt8);
+    dtype.def_readonly_static("UInt16", &core::UInt16);
+    dtype.def_readonly_static("UInt32", &core::UInt32);
+    dtype.def_readonly_static("UInt64", &core::UInt64);
+    dtype.def_readonly_static("Bool", &core::Bool);
     dtype.def("byte_size", &Dtype::ByteSize);
     dtype.def("byte_code", &Dtype::GetDtypeCode);
     dtype.def("__eq__", &Dtype::operator==);
@@ -77,18 +77,18 @@ void pybind_core_dtype(py::module &m) {
 
     // Dtype shortcuts.
     // E.g. open3d.core.Float32
-    m.attr("undefined") = &core::kUndefined;
-    m.attr("float32") = core::kFloat32;
-    m.attr("float64") = core::kFloat64;
-    m.attr("int8") = core::kInt8;
-    m.attr("int16") = core::kInt16;
-    m.attr("int32") = core::kInt32;
-    m.attr("int64") = core::kInt64;
-    m.attr("uint8") = core::kUInt8;
-    m.attr("uint16") = core::kUInt16;
-    m.attr("uint32") = core::kUInt32;
-    m.attr("uint64") = core::kUInt64;
-    m.attr("bool") = core::kBool;
+    m.attr("undefined") = &core::Undefined;
+    m.attr("float32") = core::Float32;
+    m.attr("float64") = core::Float64;
+    m.attr("int8") = core::Int8;
+    m.attr("int16") = core::Int16;
+    m.attr("int32") = core::Int32;
+    m.attr("int64") = core::Int64;
+    m.attr("uint8") = core::UInt8;
+    m.attr("uint16") = core::UInt16;
+    m.attr("uint32") = core::UInt32;
+    m.attr("uint64") = core::UInt64;
+    m.attr("bool") = core::Bool;
 }
 
 }  // namespace core

@@ -47,21 +47,21 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 
     // Warm up.
     t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacyPointCloud(
-            legacy_pcd, core::kFloat32, device);
+            legacy_pcd, core::Float32, device);
     (void)pcd;
 
     for (auto _ : state) {
         t::geometry::PointCloud pcd =
                 t::geometry::PointCloud::FromLegacyPointCloud(
-                        legacy_pcd, core::kFloat32, device);
+                        legacy_pcd, core::Float32, device);
     }
 }
 
 void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     int64_t num_points = 1000000;  // 1M
     PointCloud pcd(device);
-    pcd.SetPoints(core::Tensor({num_points, 3}, core::kFloat32, device));
-    pcd.SetPointColors(core::Tensor({num_points, 3}, core::kFloat32, device));
+    pcd.SetPoints(core::Tensor({num_points, 3}, core::Float32, device));
+    pcd.SetPointColors(core::Tensor({num_points, 3}, core::Float32, device));
 
     // Warm up.
     open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();

@@ -53,16 +53,16 @@ namespace open3d {
 namespace core {
 
 static DLDataTypeCode DtypeToDLDataTypeCode(const Dtype& dtype) {
-    if (dtype == core::kFloat32) return DLDataTypeCode::kDLFloat;
-    if (dtype == core::kFloat64) return DLDataTypeCode::kDLFloat;
-    if (dtype == core::kInt8) return DLDataTypeCode::kDLInt;
-    if (dtype == core::kInt16) return DLDataTypeCode::kDLInt;
-    if (dtype == core::kInt32) return DLDataTypeCode::kDLInt;
-    if (dtype == core::kInt64) return DLDataTypeCode::kDLInt;
-    if (dtype == core::kUInt8) return DLDataTypeCode::kDLUInt;
-    if (dtype == core::kUInt16) return DLDataTypeCode::kDLUInt;
-    if (dtype == core::kUInt32) return DLDataTypeCode::kDLUInt;
-    if (dtype == core::kUInt64) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::Float32) return DLDataTypeCode::kDLFloat;
+    if (dtype == core::Float64) return DLDataTypeCode::kDLFloat;
+    if (dtype == core::Int8) return DLDataTypeCode::kDLInt;
+    if (dtype == core::Int16) return DLDataTypeCode::kDLInt;
+    if (dtype == core::Int32) return DLDataTypeCode::kDLInt;
+    if (dtype == core::Int64) return DLDataTypeCode::kDLInt;
+    if (dtype == core::UInt8) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::UInt16) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::UInt32) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::UInt64) return DLDataTypeCode::kDLUInt;
     utility::LogError("Unsupported data type");
     return DLDataTypeCode();
 }
@@ -76,13 +76,13 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
         case DLDataTypeCode::kDLUInt:
             switch (dltype.bits) {
                 case 8:
-                    return core::kUInt8;
+                    return core::UInt8;
                 case 16:
-                    return core::kUInt16;
+                    return core::UInt16;
                 case 32:
-                    return core::kUInt32;
+                    return core::UInt32;
                 case 64:
-                    return core::kUInt64;
+                    return core::UInt64;
                 default:
                     utility::LogError("Unsupported kDLUInt bits {}",
                                       dltype.bits);
@@ -91,13 +91,13 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
         case DLDataTypeCode::kDLInt:
             switch (dltype.bits) {
                 case 8:
-                    return core::kInt8;
+                    return core::Int8;
                 case 16:
-                    return core::kInt16;
+                    return core::Int16;
                 case 32:
-                    return core::kInt32;
+                    return core::Int32;
                 case 64:
-                    return core::kInt64;
+                    return core::Int64;
                 default:
                     utility::LogError("Unsupported kDLInt bits {}",
                                       dltype.bits);
@@ -106,9 +106,9 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
         case DLDataTypeCode::kDLFloat:
             switch (dltype.bits) {
                 case 32:
-                    return core::kFloat32;
+                    return core::Float32;
                 case 64:
-                    return core::kFloat64;
+                    return core::Float64;
                 default:
                     utility::LogError("Unsupported kDLFloat bits {}",
                                       dltype.bits);
@@ -117,7 +117,7 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
         default:
             utility::LogError("Unsupported dtype code {}", dltype.code);
     }
-    return core::kUndefined;
+    return core::Undefined;
 }
 
 /// Open3D DLPack Tensor manager.
@@ -360,10 +360,10 @@ Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
             if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
                 index_tensors.push_back(
                         Tensor(std::vector<int64_t>({tk.GetIndex()}), {1},
-                               core::kInt64, GetDevice()));
+                               core::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
                 index_tensors.push_back(Tensor(std::vector<int64_t>{},
-                                               core::kInt64, GetDevice()));
+                                               core::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
                 index_tensors.push_back(tk.GetIndexTensor());
             } else {
@@ -431,10 +431,10 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
             if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
                 index_tensors.push_back(
                         Tensor(std::vector<int64_t>({tk.GetIndex()}), {1},
-                               core::kInt64, GetDevice()));
+                               core::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
                 index_tensors.push_back(Tensor(std::vector<int64_t>{},
-                                               core::kInt64, GetDevice()));
+                                               core::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
                 index_tensors.push_back(tk.GetIndexTensor());
             } else {
@@ -623,7 +623,7 @@ std::string Tensor::ToString(bool with_suffix,
 
 std::string Tensor::ScalarPtrToString(const void* ptr) const {
     std::string str = "";
-    if (dtype_ == core::kBool) {
+    if (dtype_ == core::Bool) {
         str = *static_cast<const unsigned char*>(ptr) ? "True" : "False";
     } else if (dtype_.IsObject()) {
         str = fmt::format("{}", fmt::ptr(ptr));
@@ -714,8 +714,8 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
                 {}, fmt::format("{}, but got shape {}.", error_prefix,
                                 index_tensor.GetShape().ToString()));
         index_tensor.AssertDtype(
-                core::kBool, fmt::format("{}, but got dtype {}.", error_prefix,
-                                         index_tensor.GetDtype().ToString()));
+                core::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
+                                        index_tensor.GetDtype().ToString()));
 
         if (index_tensor.IsNonZero()) {
             // E.g. np.array(5)[np.array(True)].
@@ -750,8 +750,8 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                 {}, fmt::format("{}, but got shape {}.", error_prefix,
                                 index_tensor.GetShape().ToString()));
         index_tensor.AssertDtype(
-                core::kBool, fmt::format("{}, but got dtype {}.", error_prefix,
-                                         index_tensor.GetDtype().ToString()));
+                core::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
+                                        index_tensor.GetDtype().ToString()));
 
         // Example index set
         // t = np.array(5)
@@ -981,7 +981,7 @@ Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
 }
 
 Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
-    if (dtype_ != core::kFloat32 && dtype_ != core::kFloat64) {
+    if (dtype_ != core::Float32 && dtype_ != core::Float64) {
         utility::LogError(
                 "Can only compute mean for Float32 or Float64, got {} instead.",
                 dtype_.ToString());
@@ -1020,14 +1020,14 @@ Tensor Tensor::Max(const SizeVector& dims, bool keepdim) const {
 }
 
 Tensor Tensor::ArgMin(const SizeVector& dims) const {
-    Tensor dst(shape_util::ReductionShape(shape_, dims, false), core::kInt64,
+    Tensor dst(shape_util::ReductionShape(shape_, dims, false), core::Int64,
                GetDevice());
     kernel::Reduction(*this, dst, dims, false, kernel::ReductionOpCode::ArgMin);
     return dst;
 }
 
 Tensor Tensor::ArgMax(const SizeVector& dims) const {
-    Tensor dst(shape_util::ReductionShape(shape_, dims, false), core::kInt64,
+    Tensor dst(shape_util::ReductionShape(shape_, dims, false), core::Int64,
                GetDevice());
     kernel::Reduction(*this, dst, dims, false, kernel::ReductionOpCode::ArgMax);
     return dst;
@@ -1100,32 +1100,32 @@ Tensor Tensor::Abs_() {
 }
 
 Tensor Tensor::IsNan() const {
-    if (dtype_ == core::kFloat32 || dtype_ == core::kFloat64) {
-        Tensor dst_tensor(shape_, core::kBool, GetDevice());
+    if (dtype_ == core::Float32 || dtype_ == core::Float64) {
+        Tensor dst_tensor(shape_, core::Bool, GetDevice());
         kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsNan);
         return dst_tensor;
     } else {
-        return Tensor::Zeros(shape_, core::kBool, GetDevice());
+        return Tensor::Zeros(shape_, core::Bool, GetDevice());
     }
 }
 
 Tensor Tensor::IsInf() const {
-    if (dtype_ == core::kFloat32 || dtype_ == core::kFloat64) {
-        Tensor dst_tensor(shape_, core::kBool, GetDevice());
+    if (dtype_ == core::Float32 || dtype_ == core::Float64) {
+        Tensor dst_tensor(shape_, core::Bool, GetDevice());
         kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsInf);
         return dst_tensor;
     } else {
-        return Tensor::Zeros(shape_, core::kBool, GetDevice());
+        return Tensor::Zeros(shape_, core::Bool, GetDevice());
     }
 }
 
 Tensor Tensor::IsFinite() const {
-    if (dtype_ == core::kFloat32 || dtype_ == core::kFloat64) {
-        Tensor dst_tensor(shape_, core::kBool, GetDevice());
+    if (dtype_ == core::Float32 || dtype_ == core::Float64) {
+        Tensor dst_tensor(shape_, core::Bool, GetDevice());
         kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsFinite);
         return dst_tensor;
     } else {
-        return Tensor::Ones(shape_, core::kBool, GetDevice());
+        return Tensor::Ones(shape_, core::Bool, GetDevice());
     }
 }
 
@@ -1180,7 +1180,7 @@ Device Tensor::GetDevice() const {
 }
 
 Tensor Tensor::LogicalNot() const {
-    Tensor dst_tensor(shape_, core::kBool, GetDevice());
+    Tensor dst_tensor(shape_, core::Bool, GetDevice());
     kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::LogicalNot);
     return dst_tensor;
 }
@@ -1192,7 +1192,7 @@ Tensor Tensor::LogicalNot_() {
 
 Tensor Tensor::LogicalAnd(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      core::kBool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
                      kernel::BinaryEWOpCode::LogicalAnd);
     return dst_tensor;
@@ -1222,7 +1222,7 @@ Tensor Tensor::LogicalAnd_(Scalar value) {
 
 Tensor Tensor::LogicalOr(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      core::kBool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
                      kernel::BinaryEWOpCode::LogicalOr);
     return dst_tensor;
@@ -1251,7 +1251,7 @@ Tensor Tensor::LogicalOr_(Scalar value) {
 
 Tensor Tensor::LogicalXor(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      core::kBool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
                      kernel::BinaryEWOpCode::LogicalXor);
     return dst_tensor;
@@ -1281,7 +1281,7 @@ Tensor Tensor::LogicalXor_(Scalar value) {
 
 Tensor Tensor::Gt(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      core::kBool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Gt);
     return dst_tensor;
 }
@@ -1309,7 +1309,7 @@ Tensor Tensor::Gt_(Scalar value) {
 
 Tensor Tensor::Lt(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      core::kBool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Lt);
     return dst_tensor;
 }
@@ -1337,7 +1337,7 @@ Tensor Tensor::Lt_(Scalar value) {
 
 Tensor Tensor::Ge(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      core::kBool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ge);
     return dst_tensor;
 }
@@ -1365,7 +1365,7 @@ Tensor Tensor::Ge_(Scalar value) {
 
 Tensor Tensor::Le(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      core::kBool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Le);
     return dst_tensor;
 }
@@ -1393,7 +1393,7 @@ Tensor Tensor::Le_(Scalar value) {
 
 Tensor Tensor::Eq(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      core::kBool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Eq);
     return dst_tensor;
 }
@@ -1421,7 +1421,7 @@ Tensor Tensor::Eq_(Scalar value) {
 
 Tensor Tensor::Ne(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      core::kBool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ne);
     return dst_tensor;
 }
@@ -1559,8 +1559,8 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
         utility::LogError("Shape mismatch {} != {}.", shape_, other.shape_);
     }
 
-    Tensor lhs = this->To(core::kFloat64);
-    Tensor rhs = other.To(core::kFloat64);
+    Tensor lhs = this->To(core::Float64);
+    Tensor rhs = other.To(core::Float64);
     Tensor actual_error = (lhs - rhs).Abs();
     Tensor max_error = atol + rtol * rhs.Abs();
     return actual_error <= max_error;

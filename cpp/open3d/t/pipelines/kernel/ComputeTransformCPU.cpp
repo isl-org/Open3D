@@ -106,7 +106,7 @@ void ComputePosePointToPlaneCPU(const float *source_points_ptr,
             });
 #endif
 
-    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::kFloat32, device);
+    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Float32, device);
 
     // TODO (@rishabh), residual will be used for adding robust kernel support.
     float residual;
@@ -209,13 +209,13 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
 
     // Compute linear system on CPU as Float64.
     core::Device host("CPU:0");
-    core::Tensor mean_s = core::Tensor::Empty({1, 3}, core::kFloat64, host);
+    core::Tensor mean_s = core::Tensor::Empty({1, 3}, core::Float64, host);
     double *mean_s_ptr = mean_s.GetDataPtr<double>();
 
-    core::Tensor mean_t = core::Tensor::Empty({1, 3}, core::kFloat64, host);
+    core::Tensor mean_t = core::Tensor::Empty({1, 3}, core::Float64, host);
     double *mean_t_ptr = mean_t.GetDataPtr<double>();
 
-    core::Tensor Sxy = core::Tensor::Empty({3, 3}, core::kFloat64, host);
+    core::Tensor Sxy = core::Tensor::Empty({3, 3}, core::Float64, host);
     double *sxy_ptr = Sxy.GetDataPtr<double>();
 
     // Getting Tensor Sxy {3,3}, mean_s {3,1} and mean_t {3} from temporary
@@ -232,7 +232,7 @@ void ComputeRtPointToPointCPU(const float *source_points_ptr,
 
     core::Tensor U, D, VT;
     std::tie(U, D, VT) = Sxy.SVD();
-    core::Tensor S = core::Tensor::Eye(3, core::kFloat64, host);
+    core::Tensor S = core::Tensor::Eye(3, core::Float64, host);
     if (U.Det() * (VT.T()).Det() < 0) {
         S[-1][-1] = -1;
     }

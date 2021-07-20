@@ -39,7 +39,7 @@ namespace core {
 void Reduction(benchmark::State& state, const Device& device) {
     int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{2, large_dim};
-    Tensor src(shape, core::kInt64, device);
+    Tensor src(shape, core::Int64, device);
     Tensor warm_up = src.Sum({1});
     (void)warm_up;
     for (auto _ : state) {

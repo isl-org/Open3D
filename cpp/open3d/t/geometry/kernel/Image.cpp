@@ -71,8 +71,7 @@ void CreateVertexMap(const core::Tensor &src,
     core::Device device = src.GetDevice();
     static const core::Device host("CPU:0");
 
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::kFloat64).Contiguous();
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
     if (device.GetType() == core::Device::DeviceType::CPU) {
         CreateVertexMapCPU(src, dst, intrinsics_d, invalid_fill);
     } else if (device.GetType() == core::Device::DeviceType::CUDA) {

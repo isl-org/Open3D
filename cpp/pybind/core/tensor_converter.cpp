@@ -161,7 +161,7 @@ Tensor PyTupleToTensor(const py::tuple& tuple,
 Tensor DoubleToTensor(double scalar_value,
                       utility::optional<Dtype> dtype,
                       utility::optional<Device> device) {
-    Dtype dtype_value = core::kFloat64;
+    Dtype dtype_value = core::Float64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
     }
@@ -169,7 +169,7 @@ Tensor DoubleToTensor(double scalar_value,
     if (device.has_value()) {
         device_value = device.value();
     }
-    return Tensor(std::vector<double>{scalar_value}, {}, core::kFloat64,
+    return Tensor(std::vector<double>{scalar_value}, {}, core::Float64,
                   device_value)
             .To(dtype_value);
 }
@@ -177,7 +177,7 @@ Tensor DoubleToTensor(double scalar_value,
 Tensor IntToTensor(int64_t scalar_value,
                    utility::optional<Dtype> dtype,
                    utility::optional<Device> device) {
-    Dtype dtype_value = core::kInt64;
+    Dtype dtype_value = core::Int64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
     }
@@ -185,7 +185,7 @@ Tensor IntToTensor(int64_t scalar_value,
     if (device.has_value()) {
         device_value = device.value();
     }
-    return Tensor(std::vector<int64_t>{scalar_value}, {}, core::kInt64,
+    return Tensor(std::vector<int64_t>{scalar_value}, {}, core::Int64,
                   device_value)
             .To(dtype_value);
 }
@@ -193,7 +193,7 @@ Tensor IntToTensor(int64_t scalar_value,
 Tensor BoolToTensor(bool scalar_value,
                     utility::optional<Dtype> dtype,
                     utility::optional<Device> device) {
-    Dtype dtype_value = core::kBool;
+    Dtype dtype_value = core::Bool;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
     }
@@ -201,8 +201,7 @@ Tensor BoolToTensor(bool scalar_value,
     if (device.has_value()) {
         device_value = device.value();
     }
-    return Tensor(std::vector<bool>{scalar_value}, {}, core::kBool,
-                  device_value)
+    return Tensor(std::vector<bool>{scalar_value}, {}, core::Bool, device_value)
             .To(dtype_value);
 }
 

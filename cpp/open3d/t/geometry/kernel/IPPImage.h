@@ -43,19 +43,19 @@ namespace geometry {
 namespace ipp {
 
 inline ::ipp::IppDataType ToIppDataType(core::Dtype dtype) {
-    if (dtype == core::kUInt8 || dtype == core::kBool) {
+    if (dtype == core::UInt8 || dtype == core::Bool) {
         return ipp8u;
-    } else if (dtype == core::kUInt16) {
+    } else if (dtype == core::UInt16) {
         return ipp16u;
-    } else if (dtype == core::kInt16) {
+    } else if (dtype == core::Int16) {
         return ipp16s;
-    } else if (dtype == core::kInt32) {
+    } else if (dtype == core::Int32) {
         return ipp32s;
-    } else if (dtype == core::kInt64) {
+    } else if (dtype == core::Int64) {
         return ipp64s;
-    } else if (dtype == core::kFloat32) {
+    } else if (dtype == core::Float32) {
         return ipp32f;
-    } else if (dtype == core::kFloat64) {
+    } else if (dtype == core::Float64) {
         return ipp64f;
     } else {
         return ippUndef;

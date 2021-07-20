@@ -70,9 +70,9 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     hash_table_splits_ = std::vector<int64_t>({0, hash_table_size});
 
     hash_table_index_ =
-            Tensor::Empty({num_dataset_points}, core::kInt64, device);
-    hash_table_cell_splits_ = Tensor::Empty({hash_table_splits_.back() + 1},
-                                            core::kInt64, device);
+            Tensor::Empty({num_dataset_points}, core::Int64, device);
+    hash_table_cell_splits_ =
+            Tensor::Empty({hash_table_splits_.back() + 1}, core::Int64, device);
 
     void *temp_ptr = nullptr;
     size_t temp_size = 0;
@@ -88,7 +88,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                   hash_table_cell_splits_.GetDataPtr<int64_t>(),
                                   hash_table_index_.GetDataPtr<int64_t>());
         Tensor temp_tensor =
-                Tensor::Empty({int64_t(temp_size)}, core::kUInt8, device);
+                Tensor::Empty({int64_t(temp_size)}, core::UInt8, device);
         temp_ptr = temp_tensor.GetDataPtr();
 
         // Actually run the function.
@@ -140,7 +140,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     Tensor neighbors_index;
     Tensor neighbors_distance;
     Tensor neighbors_row_splits =
-            Tensor({num_query_points + 1}, core::kInt64, device);
+            Tensor({num_query_points + 1}, core::Int64, device);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         NeighborSearchAllocator<scalar_t> output_allocator(device);
@@ -157,7 +157,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                 hash_table_index_.GetDataPtr<int64_t>(), output_allocator);
 
         Tensor temp_tensor =
-                Tensor::Empty({int64_t(temp_size)}, core::kUInt8, device);
+                Tensor::Empty({int64_t(temp_size)}, core::UInt8, device);
         temp_ptr = temp_tensor.GetDataPtr();
 
         // Actually run the function.
@@ -186,7 +186,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
             int64_t num_indices = indices_unsorted.GetShape()[0];
             int64_t num_segments = neighbors_row_splits.GetShape()[0] - 1;
             Tensor indices_sorted =
-                    Tensor::Empty({num_indices}, core::kInt64, device);
+                    Tensor::Empty({num_indices}, core::Int64, device);
             Tensor distances_sorted =
                     Tensor::Empty({num_indices}, dtype, device);
 
@@ -199,7 +199,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
                       distances_sorted.GetDataPtr<scalar_t>());
 
             temp_tensor =
-                    Tensor::Empty({int64_t(temp_size)}, core::kUInt8, device);
+                    Tensor::Empty({int64_t(temp_size)}, core::UInt8, device);
             temp_ptr = temp_tensor.GetDataPtr();
 
             // Actually run the sorting.

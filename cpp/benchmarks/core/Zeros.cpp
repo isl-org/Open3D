@@ -35,10 +35,10 @@ void Zeros(benchmark::State& state, const Device& device) {
     int64_t large_dim = (1ULL << 27) + 10;
     SizeVector shape{2, large_dim};
 
-    Tensor warm_up = Tensor::Zeros(shape, core::kFloat32, device);
+    Tensor warm_up = Tensor::Zeros(shape, core::Float32, device);
     (void)warm_up;
     for (auto _ : state) {
-        Tensor dst = Tensor::Zeros(shape, core::kFloat32, device);
+        Tensor dst = Tensor::Zeros(shape, core::Float32, device);
     }
 }
 
