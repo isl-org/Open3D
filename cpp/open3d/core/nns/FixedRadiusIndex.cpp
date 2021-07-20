@@ -67,26 +67,30 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
     hash_table_cell_splits_ =
             Tensor::Empty({hash_table_splits.back() + 1}, Dtype::Int64, device);
 
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        if (device.GetType() == Device::DeviceType::CUDA) {
+#define BUILD_PARAMETERS                                             \
+    dataset_points_, radius, points_row_splits_, hash_table_splits_, \
+            hash_table_index_, hash_table_cell_splits_
+
+#define CALL_BUILD(type, fn)                \
+    if (Dtype::FromType<type>() == dtype) { \
+        fn<type>(BUILD_PARAMETERS);         \
+        return true;                        \
+    }
+
+    if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-            BuildSpatialHashTableCUDA<scalar_t>(
-                    dataset_points_, radius, points_row_splits_,
-                    hash_table_splits_, hash_table_index_,
-                    hash_table_cell_splits_);
+        CALL_BUILD(float, BuildSpatialHashTableCUDA)
+        CALL_BUILD(double, BuildSpatialHashTableCUDA)
 #else
-                         utility::LogError(
-            "FixedRadiusIndex::SetTensorData BUILD_CUDA_MODULE is OFF. Please "
-            "compile Open3d with BUILD_CUDA_MODULE=ON.");
+        utility::LogError(
+                "FixedRadiusIndex::SetTensorData BUILD_CUDA_MODULE is OFF. "
+                "Please compile Open3d with BUILD_CUDA_MODULE=ON.");
 #endif
-        } else {
-            BuildSpatialHashTableCPU<scalar_t>(
-                    dataset_points_, radius, points_row_splits_,
-                    hash_table_splits_, hash_table_index_,
-                    hash_table_cell_splits_);
-        }
-    });
-    return true;
+    } else {
+        CALL_BUILD(float, BuildSpatialHashTableCPU)
+        CALL_BUILD(double, BuildSpatialHashTableCPU)
+    }
+    return false;
 };
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
@@ -118,27 +122,31 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     Tensor neighbors_row_splits =
             Tensor({num_query_points + 1}, Dtype::Int64, device);
 
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        if (device.GetType() == Device::DeviceType::CUDA) {
+#define RADIUS_PARAMETERS                                               \
+    dataset_points_, query_points_, radius, points_row_splits_,         \
+            queries_row_splits_, hash_table_splits_, hash_table_index_, \
+            hash_table_cell_splits_, Metric::L2, false, true, sort,     \
+            neighbors_index, neighbors_row_splits, neighbors_distance
+
+#define CALL_RADIUS(type, fn)               \
+    if (Dtype::FromType<type>() == dtype) { \
+        fn<type>(RADIUS_PARAMETERS);        \
+    }
+
+    if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-            FixedRadiusSearchCUDA<scalar_t>(
-                    dataset_points_, query_points_, radius, points_row_splits_,
-                    queries_row_splits_, hash_table_splits_, hash_table_index_,
-                    hash_table_cell_splits_, Metric::L2, false, true, sort,
-                    neighbors_index, neighbors_row_splits, neighbors_distance);
+        CALL_RADIUS(float, FixedRadiusSearchCUDA)
+        CALL_RADIUS(double, FixedRadiusSearchCUDA)
 #else
         utility::LogError(
-            "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. Please "
-            "compile Open3d with BUILD_CUDA_MODULE=ON.");
+                "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. "
+                "Please compile Open3d with BUILD_CUDA_MODULE=ON.");
 #endif
-        } else {
-            FixedRadiusSearchCPU<scalar_t>(
-                    dataset_points_, query_points_, radius, points_row_splits_,
-                    queries_row_splits_, hash_table_splits_, hash_table_index_,
-                    hash_table_cell_splits_, Metric::L2, false, true, sort,
-                    neighbors_index, neighbors_row_splits, neighbors_distance);
-        }
-    });
+    } else {
+        CALL_RADIUS(float, FixedRadiusSearchCPU)
+        CALL_RADIUS(double, FixedRadiusSearchCPU)
+    }
+
     return std::make_tuple(neighbors_index, neighbors_distance,
                            neighbors_row_splits);
 };
@@ -170,27 +178,31 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
 
     Tensor neighbors_index, neighbors_distance, neighbors_count;
 
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        if (device.GetType() == Device::DeviceType::CUDA) {
+#define HYBRID_PARAMETERS                                                \
+    dataset_points_, query_points_, radius, max_knn, points_row_splits_, \
+            queries_row_splits_, hash_table_splits_, hash_table_index_,  \
+            hash_table_cell_splits_, Metric::L2, neighbors_index,        \
+            neighbors_count, neighbors_distance
+
+#define CALL_HYBRID(type, fn)               \
+    if (Dtype::FromType<type>() == dtype) { \
+        fn<type>(HYBRID_PARAMETERS);        \
+    }
+
+    if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-            HybridSearchCUDA<scalar_t>(
-                    dataset_points_, query_points_, radius, max_knn,
-                    points_row_splits_, queries_row_splits_, hash_table_splits_,
-                    hash_table_index_, hash_table_cell_splits_, Metric::L2,
-                    neighbors_index, neighbors_count, neighbors_distance);
+        CALL_HYBRID(float, HybridSearchCUDA)
+        CALL_HYBRID(double, HybridSearchCUDA)
 #else
         utility::LogError(
-            "FixedRadiusIndex::SearchHybrid BUILD_CUDA_MODULE is OFF. Please "
-            "compile Open3d with BUILD_CUDA_MODULE=ON.");
+                "FixedRadiusIndex::SearchHybrid BUILD_CUDA_MODULE is OFF. "
+                "Please compile Open3d with BUILD_CUDA_MODULE=ON.");
 #endif
-        } else {
-            HybridSearchCPU<scalar_t>(
-                    dataset_points_, query_points_, radius, max_knn,
-                    points_row_splits_, queries_row_splits_, hash_table_splits_,
-                    hash_table_index_, hash_table_cell_splits_, Metric::L2,
-                    neighbors_index, neighbors_count, neighbors_distance);
-        }
-    });
+    } else {
+        CALL_HYBRID(float, HybridSearchCPU)
+        CALL_HYBRID(double, HybridSearchCPU)
+    }
+
     return std::make_tuple(neighbors_index.View({num_query_points, max_knn}),
                            neighbors_distance.View({num_query_points, max_knn}),
                            neighbors_count.View({num_query_points}));
