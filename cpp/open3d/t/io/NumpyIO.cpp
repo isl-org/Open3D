@@ -315,7 +315,6 @@ public:
         FILE* fp = fopen(filename.c_str(), "rb");
         if (!fp) {
             utility::LogError("Load: Unable to open file {}.", filename);
-            assert(fp);
         }
         core::SizeVector shape;
         int64_t word_size;
