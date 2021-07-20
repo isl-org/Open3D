@@ -254,35 +254,38 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
 TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     core::Device device = GetParam();
 
-    for (core::Dtype dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
-        core::Tensor points = core::Tensor::Init<float>({{0, 0, 0},
-                                                         {0, 0, 1},
-                                                         {0, 1, 0},
-                                                         {0, 1, 1},
-                                                         {1, 0, 0},
-                                                         {1, 0, 1},
-                                                         {1, 1, 0},
-                                                         {1, 1, 1}},
-                                                        device)
-                                      .To(dtype);
-        t::geometry::PointCloud pcd(points);
+    core::Tensor points = core::Tensor::Init<float>({{0, 0, 0},
+                                                     {0, 0, 1},
+                                                     {0, 1, 0},
+                                                     {0, 1, 1},
+                                                     {1, 0, 0},
+                                                     {1, 0, 1},
+                                                     {1, 1, 0},
+                                                     {1, 1, 1}},
+                                                    device);
+    t::geometry::PointCloud pcd(points);
 
-        pcd.EstimateNormals(4, 2.0);
+    // Estimate normals using Hybrid Search.
+    pcd.EstimateNormals(4, 2.0);
 
-        core::Tensor normals =
-                core::Tensor::Init<float>({{0.57735, 0.57735, 0.57735},
-                                           {-0.57735, -0.57735, 0.57735},
-                                           {0.57735, -0.57735, 0.57735},
-                                           {-0.57735, 0.57735, 0.57735},
-                                           {-0.57735, 0.57735, 0.57735},
-                                           {0.57735, -0.57735, 0.57735},
-                                           {-0.57735, -0.57735, 0.57735},
-                                           {0.57735, 0.57735, 0.57735}},
-                                          device)
-                        .To(dtype);
+    core::Tensor normals =
+            core::Tensor::Init<float>({{0.57735, 0.57735, 0.57735},
+                                       {-0.57735, -0.57735, 0.57735},
+                                       {0.57735, -0.57735, 0.57735},
+                                       {-0.57735, 0.57735, 0.57735},
+                                       {-0.57735, 0.57735, 0.57735},
+                                       {0.57735, -0.57735, 0.57735},
+                                       {-0.57735, -0.57735, 0.57735},
+                                       {0.57735, 0.57735, 0.57735}},
+                                      device);
 
-        EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
-    }
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+    pcd.RemovePointAttr("normals");
+
+    // Estimate normals using KNN Search.
+    pcd.EstimateNormals(4);
+
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
 }
 
 TEST_P(PointCloudPermuteDevices, DISABLED_EstimateColorGradient) {
