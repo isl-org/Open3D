@@ -42,7 +42,6 @@ cmake_dependent_option(
        STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON
        "NOT BUILD_SHARED_LIBS"                                               OFF)
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
-option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
 if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
     cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
 else()
@@ -525,6 +524,9 @@ function(open3d_set_global_properties target)
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
     )
 
+    # Required for static linking zeromq
+    target_compile_definitions(${target} PRIVATE ZMQ_STATIC)
+
     # Propagate build configuration into source code
     if (BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
@@ -537,9 +539,6 @@ function(open3d_set_global_properties target)
     endif()
     if (ENABLE_HEADLESS_RENDERING)
         target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
-    endif()
-    if (BUILD_RPC_INTERFACE)
-        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE ZMQ_STATIC)
     endif()
     if (BUILD_AZURE_KINECT)
         target_compile_definitions(${target} PRIVATE BUILD_AZURE_KINECT)
@@ -742,7 +741,6 @@ if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
 endif()
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
-open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
 if(GLIBCXX_USE_CXX11_ABI)
     set(usage "1")
 else()

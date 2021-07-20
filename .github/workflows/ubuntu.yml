@@ -29,7 +29,6 @@ jobs:
       BUILD_CUDA_MODULE: OFF
       BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
       BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
-      BUILD_RPC_INTERFACE: ON
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
