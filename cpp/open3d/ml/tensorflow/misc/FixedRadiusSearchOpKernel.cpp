@@ -27,9 +27,8 @@
 
 #include "FixedRadiusSearchOpKernel.h"
 
-#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
+#include "open3d/core/nns/FixedRadiusSearchImpl.h"
 
-using namespace open3d::ml::impl;
 using namespace fixed_radius_search_opkernel;
 using namespace tensorflow;
 
@@ -51,7 +50,7 @@ public:
                 tensorflow::Tensor& query_neighbors_row_splits) {
         OutputAllocator<T> output_allocator(context);
 
-        FixedRadiusSearchCPU(
+        open3d::core::nns::impl::FixedRadiusSearchCPU(
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
@@ -59,10 +58,10 @@ public:
                 (int64_t*)points_row_splits.flat<int64>().data(),
                 queries_row_splits.shape().dim_size(0),
                 (int64_t*)queries_row_splits.flat<int64>().data(),
-                hash_table_splits.flat<uint32_t>().data(),
+                (int64_t*)hash_table_splits.flat<int64>().data(),
                 hash_table_cell_splits.shape().dim_size(0),
-                hash_table_cell_splits.flat<uint32_t>().data(),
-                hash_table_index.flat<uint32_t>().data(), metric,
+                (int64_t*)hash_table_cell_splits.flat<int64>().data(),
+                (int64_t*)hash_table_index.flat<int64>().data(), metric,
                 ignore_query_point, return_distances, output_allocator);
     }
 };

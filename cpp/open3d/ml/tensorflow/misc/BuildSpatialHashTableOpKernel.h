@@ -23,7 +23,7 @@
 #pragma once
 
 #include "../TensorFlowHelper.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
+#include "open3d/core/nns/FixedRadiusSearchImpl.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -34,7 +34,6 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace open3d::ml::impl;
 
         OP_REQUIRES_OK(construction,
                        construction->GetAttr("max_hash_table_size",
@@ -69,7 +68,7 @@ public:
         CHECK_SHAPE(context, points, num_points, 3);
         CHECK_SHAPE(context, points_row_splits, batch_size + 1);
 
-        std::vector<uint32_t> hash_table_splits(batch_size.value() + 1, 0);
+        std::vector<int64_t> hash_table_splits(batch_size.value() + 1, 0);
         for (int i = 0; i < batch_size.value(); ++i) {
             int64_t num_points_i = points_row_splits.flat<int64>()(i + 1) -
                                    points_row_splits.flat<int64>()(i);
@@ -99,7 +98,7 @@ public:
                        context->allocate_output(2, out_hash_table_splits_shape,
                                                 &out_hash_table_splits));
         for (size_t i = 0; i < hash_table_splits.size(); ++i) {
-            out_hash_table_splits->flat<uint32_t>()(i) = hash_table_splits[i];
+            out_hash_table_splits->flat<int64>()(i) = hash_table_splits[i];
         }
 
         Kernel(context, points, radius, points_row_splits, hash_table_splits,
@@ -110,7 +109,7 @@ public:
                         const tensorflow::Tensor& points,
                         const tensorflow::Tensor& radius,
                         const tensorflow::Tensor& points_row_splits,
-                        const std::vector<uint32_t>& hash_table_splits,
+                        const std::vector<int64_t>& hash_table_splits,
                         tensorflow::Tensor& hash_table_index,
                         tensorflow::Tensor& hash_table_cell_splits) = 0;
 

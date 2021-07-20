@@ -28,11 +28,9 @@
 #define EIGEN_USE_GPU
 #include "FixedRadiusSearchOpKernel.h"
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
+#include "open3d/core/nns/FixedRadiusSearchImpl.cuh"
 
 using namespace open3d;
-using namespace open3d::ml;
-using namespace open3d::ml::impl;
 using namespace fixed_radius_search_opkernel;
 using namespace tensorflow;
 
@@ -63,7 +61,7 @@ public:
         size_t temp_size = 0;
 
         // determine temp_size
-        FixedRadiusSearchCUDA(
+        open3d::core::nns::impl::FixedRadiusSearchCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
@@ -72,10 +70,10 @@ public:
                 (int64_t*)points_row_splits.flat<int64>().data(),
                 queries_row_splits.shape().dim_size(0),
                 (int64_t*)queries_row_splits.flat<int64>().data(),
-                hash_table_splits.flat<uint32_t>().data(),
+                (int64_t*)hash_table_splits.flat<int64>().data(),
                 hash_table_cell_splits.shape().dim_size(0),
-                hash_table_cell_splits.flat<uint32_t>().data(),
-                hash_table_index.flat<uint32_t>().data(), metric,
+                (int64_t*)hash_table_cell_splits.flat<int64>().data(),
+                (int64_t*)hash_table_index.flat<int64>().data(), metric,
                 ignore_query_point, return_distances, output_allocator);
 
         Tensor temp_tensor;
@@ -86,7 +84,7 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually run the search
-        FixedRadiusSearchCUDA(
+        open3d::core::nns::impl::FixedRadiusSearchCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
@@ -95,10 +93,10 @@ public:
                 (int64_t*)points_row_splits.flat<int64>().data(),
                 queries_row_splits.shape().dim_size(0),
                 (int64_t*)queries_row_splits.flat<int64>().data(),
-                hash_table_splits.flat<uint32_t>().data(),
+                (int64_t*)hash_table_splits.flat<int64>().data(),
                 hash_table_cell_splits.shape().dim_size(0),
-                hash_table_cell_splits.flat<uint32_t>().data(),
-                hash_table_index.flat<uint32_t>().data(), metric,
+                (int64_t*)hash_table_cell_splits.flat<int64>().data(),
+                (int64_t*)hash_table_index.flat<int64>().data(), metric,
                 ignore_query_point, return_distances, output_allocator);
     }
 
