@@ -89,6 +89,7 @@ void pybind_core_dtype(py::module &m) {
     m.attr("uint32") = core::UInt32;
     m.attr("uint64") = core::UInt64;
     m.attr("bool") = core::Bool;
+    m.attr("bool8") = core::Bool;
 }
 
 }  // namespace core

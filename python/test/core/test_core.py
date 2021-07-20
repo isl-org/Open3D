@@ -79,7 +79,9 @@ def to_numpy_dtype(dtype: o3c.Dtype):
         o3c.uint16: np.uint16,
         o3c.uint32: np.uint32,
         o3c.uint64: np.uint64,
-        o3c.bool: np.bool8,  # np.bool deprecated
+        o3c.bool8: np.bool8,  # np.bool deprecated
+        o3c.bool: np.bool8,  # o3c.bool is an alias for o3c.bool8
+
     }
     return conversions[dtype]
 
