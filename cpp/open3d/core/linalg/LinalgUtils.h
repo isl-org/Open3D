@@ -38,17 +38,17 @@
 namespace open3d {
 namespace core {
 
-#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)       \
-    [&] {                                                   \
-        if (DTYPE == open3d::core::Dtype::Float32) {        \
-            using scalar_t = float;                         \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::Float64) { \
-            using scalar_t = double;                        \
-            return __VA_ARGS__();                           \
-        } else {                                            \
-            utility::LogError("Unsupported data type.");    \
-        }                                                   \
+#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)    \
+    [&] {                                                \
+        if (DTYPE == open3d::core::kFloat32) {           \
+            using scalar_t = float;                      \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::kFloat64) {    \
+            using scalar_t = double;                     \
+            return __VA_ARGS__();                        \
+        } else {                                         \
+            utility::LogError("Unsupported data type."); \
+        }                                                \
     }()
 
 inline void OPEN3D_LAPACK_CHECK(OPEN3D_CPU_LINALG_INT info,

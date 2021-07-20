@@ -35,7 +35,7 @@ namespace core {
 double Det(const Tensor& A) {
     // Check dtypes
     Dtype dtype = A.GetDtype();
-    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+    if (dtype != core::kFloat32 && dtype != core::kFloat64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}.",

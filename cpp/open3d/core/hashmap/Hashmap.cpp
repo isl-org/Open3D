@@ -100,8 +100,8 @@ void Hashmap::Insert(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
-    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+    output_addrs = Tensor({count}, core::kInt32, GetDevice());
+    output_masks = Tensor({count}, core::kBool, GetDevice());
 
     device_hashmap_->Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
                             static_cast<addr_t*>(output_addrs.GetDataPtr()),
@@ -127,8 +127,8 @@ void Hashmap::Activate(const Tensor& input_keys,
 
     int64_t count = shape[0];
 
-    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
-    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+    output_addrs = Tensor({count}, core::kInt32, GetDevice());
+    output_masks = Tensor({count}, core::kBool, GetDevice());
 
     device_hashmap_->Activate(input_keys.GetDataPtr(),
                               static_cast<addr_t*>(output_addrs.GetDataPtr()),
@@ -154,8 +154,8 @@ void Hashmap::Find(const Tensor& input_keys,
 
     int64_t count = shape[0];
 
-    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
-    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
+    output_masks = Tensor({count}, core::kBool, GetDevice());
+    output_addrs = Tensor({count}, core::kInt32, GetDevice());
 
     device_hashmap_->Find(input_keys.GetDataPtr(),
                           static_cast<addr_t*>(output_addrs.GetDataPtr()),
@@ -178,7 +178,7 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
     }
 
     int64_t count = shape[0];
-    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+    output_masks = Tensor({count}, core::kBool, GetDevice());
 
     device_hashmap_->Erase(input_keys.GetDataPtr(),
                            output_masks.GetDataPtr<bool>(), count);
@@ -186,7 +186,7 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
 
 void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
     int64_t count = device_hashmap_->Size();
-    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
+    output_addrs = Tensor({count}, core::kInt32, GetDevice());
 
     device_hashmap_->GetActiveIndices(
             static_cast<addr_t*>(output_addrs.GetDataPtr()));
@@ -209,7 +209,7 @@ Hashmap Hashmap::To(const Device& device, bool copy) const {
 
     core::Tensor active_addrs;
     GetActiveIndices(active_addrs);
-    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+    core::Tensor active_indices = active_addrs.To(core::kInt64);
 
     core::Tensor addrs, masks;
     new_hashmap.Insert(keys.IndexGet({active_indices}),

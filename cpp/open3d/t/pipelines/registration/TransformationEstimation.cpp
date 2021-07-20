@@ -39,7 +39,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &target,
         const CorrespondenceSet &correspondences) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
@@ -68,7 +68,7 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &target,
         const CorrespondenceSet &correspondences) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
@@ -89,7 +89,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &target,
         const CorrespondenceSet &correspondences) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
@@ -120,7 +120,7 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &target,
         const CorrespondenceSet &correspondences) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {

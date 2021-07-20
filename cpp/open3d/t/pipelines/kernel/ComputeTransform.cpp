@@ -39,7 +39,7 @@ core::Tensor ComputePosePointToPlane(
         const core::Tensor &target_normals,
         const pipelines::registration::CorrespondenceSet &corres) {
     // Get dtype and device.
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Device device = source_points.GetDevice();
 
     // Checks.
@@ -50,7 +50,7 @@ core::Tensor ComputePosePointToPlane(
     target_normals.AssertDevice(device);
 
     // Pose {6,} tensor [ouput].
-    core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
+    core::Tensor pose = core::Tensor::Empty({6}, core::kFloat64, device);
     // Number of correspondences.
     int n = corres.first.GetLength();
 
@@ -91,7 +91,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &target_points,
         const pipelines::registration::CorrespondenceSet &corres) {
     // Get dtype and device.
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
     core::Device device = source_points.GetDevice();
 
     // Checks.
@@ -142,14 +142,14 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
                                    .T()
                                    .Matmul(source_select - mean_s)
                                    .Div_(static_cast<float>(n))
-                                   .To(host, core::Dtype::Float64);
+                                   .To(host, core::kFloat64);
 
-        mean_s = mean_s.To(host, core::Dtype::Float64);
-        mean_t = mean_t.To(host, core::Dtype::Float64);
+        mean_s = mean_s.To(host, core::kFloat64);
+        mean_t = mean_t.To(host, core::kFloat64);
 
         core::Tensor U, D, VT;
         std::tie(U, D, VT) = Sxy.SVD();
-        core::Tensor S = core::Tensor::Eye(3, core::Dtype::Float64, host);
+        core::Tensor S = core::Tensor::Eye(3, core::kFloat64, host);
         if (U.Det() * (VT.T()).Det() < 0) {
             S[-1][-1] = -1;
         }

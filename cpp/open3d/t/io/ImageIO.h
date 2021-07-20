@@ -66,9 +66,9 @@ constexpr int kOpen3DImageIODefaultQuality = -1;
 ///
 /// Supported file extensions are png, jpg/jpeg. Data type and number of
 /// channels depends on the file extension.
-/// - PNG: Dtype should be one of core::Dtype::UInt8, core::Dtype::UInt16
+/// - PNG: Dtype should be one of core::kUInt8, core::kUInt16
 ///        Supported number of channels are 1, 3, and 4.
-/// - JPG: Dtyppe should be core::Dtype::UInt8
+/// - JPG: Dtyppe should be core::kUInt8
 ///        Supported number of channels are 1 and 3.
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,

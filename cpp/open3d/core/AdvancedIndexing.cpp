@@ -139,7 +139,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // Boolean indexing tensors will be supported in the future by
     // converting to int64_t tensors.
     for (const Tensor& index_tensor : index_tensors_) {
-        if (index_tensor.GetDtype() != Dtype::Int64) {
+        if (index_tensor.GetDtype() != core::kInt64) {
             utility::LogError(
                     "Index tensor must have Int64 dtype, but {} was used.",
                     index_tensor.GetDtype().ToString());
@@ -154,7 +154,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     //      A[[1, 2], [3, 4]] is converted to
     //      A[[1, 2], [3, 4], :, :].
     Tensor empty_index_tensor =
-            Tensor(SizeVector(), Dtype::Int64, tensor_.GetDevice());
+            Tensor(SizeVector(), core::kInt64, tensor_.GetDevice());
     int64_t num_omitted_dims = tensor_.NumDims() - index_tensors_.size();
     for (int64_t i = 0; i < num_omitted_dims; ++i) {
         index_tensors_.push_back(empty_index_tensor);
@@ -250,7 +250,7 @@ std::vector<Tensor> AdvancedIndexPreprocessor::ExpandBoolTensors(
         const std::vector<Tensor>& index_tensors) {
     std::vector<Tensor> res_index_tensors;
     for (const Tensor& index_tensor : index_tensors) {
-        if (index_tensor.GetDtype() == Dtype::Bool) {
+        if (index_tensor.GetDtype() == core::kBool) {
             std::vector<Tensor> non_zero_indices = index_tensor.NonZeroNumpy();
             res_index_tensors.insert(res_index_tensors.end(),
                                      non_zero_indices.begin(),

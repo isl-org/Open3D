@@ -42,65 +42,57 @@ core::Dtype ArrayFormatToDtype(const std::string& format, size_t byte_size) {
     // However, some integer dtypes have aliases. E.g. "l" can be 4 bytes or 8
     // bytes depending on the OS. To be safe, we always check the byte size.
     if (format == py::format_descriptor<float>::format() && byte_size == 4)
-        return core::Dtype::Float32;
+        return core::kFloat32;
     if (format == py::format_descriptor<double>::format() && byte_size == 8)
-        return core::Dtype::Float64;
+        return core::kFloat64;
     if (format == py::format_descriptor<int8_t>::format() && byte_size == 1)
-        return core::Dtype::Int8;
+        return core::kInt8;
     if (format == py::format_descriptor<int16_t>::format() && byte_size == 2)
-        return core::Dtype::Int16;
+        return core::kInt16;
     if ((format == py::format_descriptor<int32_t>::format() || format == "i" ||
          format == "l") &&
         byte_size == 4)
-        return core::Dtype::Int32;
+        return core::kInt32;
     if ((format == py::format_descriptor<int64_t>::format() || format == "q" ||
          format == "l") &&
         byte_size == 8)
-        return core::Dtype::Int64;
+        return core::kInt64;
     if (format == py::format_descriptor<uint8_t>::format() && byte_size == 1)
-        return core::Dtype::UInt8;
+        return core::kUInt8;
     if (format == py::format_descriptor<uint16_t>::format() && byte_size == 2)
-        return core::Dtype::UInt16;
+        return core::kUInt16;
     if ((format == py::format_descriptor<uint32_t>::format() ||
          format == "L") &&
         byte_size == 4)
-        return core::Dtype::UInt32;
+        return core::kUInt32;
     if ((format == py::format_descriptor<uint64_t>::format() ||
          format == "L") &&
         byte_size == 8)
-        return core::Dtype::UInt64;
+        return core::kUInt64;
     if (format == py::format_descriptor<bool>::format() && byte_size == 1)
-        return core::Dtype::Bool;
+        return core::kBool;
     utility::LogError(
             "ArrayFormatToDtype: unsupported python array format {} with "
             "byte_size {}.",
             format, byte_size);
-    return core::Dtype::Undefined;
+    return core::kUndefined;
 }
 
 std::string DtypeToArrayFormat(const core::Dtype& dtype) {
-    if (dtype == core::Dtype::Float32)
-        return py::format_descriptor<float>::format();
-    if (dtype == core::Dtype::Float64)
-        return py::format_descriptor<double>::format();
-    if (dtype == core::Dtype::Int8)
-        return py::format_descriptor<int8_t>::format();
-    if (dtype == core::Dtype::Int16)
-        return py::format_descriptor<int16_t>::format();
-    if (dtype == core::Dtype::Int32)
-        return py::format_descriptor<int32_t>::format();
-    if (dtype == core::Dtype::Int64)
-        return py::format_descriptor<int64_t>::format();
-    if (dtype == core::Dtype::UInt8)
-        return py::format_descriptor<uint8_t>::format();
-    if (dtype == core::Dtype::UInt16)
+    if (dtype == core::kFloat32) return py::format_descriptor<float>::format();
+    if (dtype == core::kFloat64) return py::format_descriptor<double>::format();
+    if (dtype == core::kInt8) return py::format_descriptor<int8_t>::format();
+    if (dtype == core::kInt16) return py::format_descriptor<int16_t>::format();
+    if (dtype == core::kInt32) return py::format_descriptor<int32_t>::format();
+    if (dtype == core::kInt64) return py::format_descriptor<int64_t>::format();
+    if (dtype == core::kUInt8) return py::format_descriptor<uint8_t>::format();
+    if (dtype == core::kUInt16)
         return py::format_descriptor<uint16_t>::format();
-    if (dtype == core::Dtype::UInt32)
+    if (dtype == core::kUInt32)
         return py::format_descriptor<uint32_t>::format();
-    if (dtype == core::Dtype::UInt64)
+    if (dtype == core::kUInt64)
         return py::format_descriptor<uint64_t>::format();
-    if (dtype == core::Dtype::Bool)
-        return py::format_descriptor<bool>::format();
+    if (dtype == core::kBool) return py::format_descriptor<bool>::format();
     utility::LogError("Unsupported data type.");
     return std::string();
 }

@@ -50,7 +50,7 @@ public:
           int block_resolution,
           int block_count,
           const core::Tensor& T_init = core::Tensor::Eye(4,
-                                                         core::Dtype::Float64,
+                                                         core::kFloat64,
                                                          core::Device("CPU:0")),
           const core::Device& device = core::Device("CUDA:0"));
 

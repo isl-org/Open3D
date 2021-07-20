@@ -51,7 +51,7 @@ TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
 
 TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::kFloat64;
 
     // Initial transformation input for tensor implementation.
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
@@ -65,7 +65,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
 
 TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     std::vector<float> src_points_vec{
             1.15495,  2.40671, 1.15061,  1.81481,  2.06281, 1.71927, 0.888322,
@@ -104,8 +104,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
             target_device.ToLegacyPointCloud();
 
     // Initial transformation input for tensor implementation.
-    core::Tensor init_trans_t =
-            core::Tensor::Eye(4, core::Dtype::Float64, device);
+    core::Tensor init_trans_t = core::Tensor::Eye(4, core::kFloat64, device);
 
     // Initial transformation input for legacy implementation.
     Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();
@@ -131,7 +130,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
 
 TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     std::vector<float> src_points_vec{
             1.15495,  2.40671, 1.15061,  1.81481,  2.06281, 1.71927, 0.888322,
@@ -161,8 +160,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
             target_device.ToLegacyPointCloud();
 
     // Initial transformation input for tensor implementation.
-    core::Tensor init_trans_t =
-            core::Tensor::Eye(4, core::Dtype::Float64, device);
+    core::Tensor init_trans_t = core::Tensor::Eye(4, core::kFloat64, device);
 
     // Initial transformation input for legacy implementation.
     Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();
@@ -198,7 +196,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
 
 TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::kFloat32;
 
     std::vector<float> src_points_vec{
             1.15495,  2.40671, 1.15061,  1.81481,  2.06281, 1.71927, 0.888322,
@@ -237,8 +235,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
             target_device.ToLegacyPointCloud();
 
     // Initial transformation input for tensor implementation.
-    core::Tensor init_trans_t =
-            core::Tensor::Eye(4, core::Dtype::Float64, device);
+    core::Tensor init_trans_t = core::Tensor::Eye(4, core::kFloat64, device);
 
     // Initial transformation input for legacy implementation.
     Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();

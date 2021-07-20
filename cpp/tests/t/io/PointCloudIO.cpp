@@ -90,7 +90,7 @@ INSTANTIATE_TEST_SUITE_P(ReadWritePC, ReadWriteTPC, testing::ValuesIn(pcArgs));
 TEST_P(ReadWriteTPC, Basic) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU", 0);
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::kFloat64;
     t::geometry::PointCloud pc1(device);
 
     for (const auto &attr_tensor : pc_data_1) {
@@ -135,7 +135,7 @@ TEST_P(ReadWriteTPC, Basic) {
 TEST_P(ReadWriteTPC, WriteBadData) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU", 0);
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::kFloat64;
     t::geometry::PointCloud pc1(device);
 
     for (const auto &attr_tensor : pc_data_bad) {
@@ -160,7 +160,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     EXPECT_EQ(pcd.GetPointNormals().GetLength(), 196133);
     EXPECT_EQ(pcd.GetPointColors().GetLength(), 196133);
     EXPECT_EQ(pcd.GetPointAttr("curvature").GetLength(), 196133);
-    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
+    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::kUInt8);
     EXPECT_FALSE(pcd.HasPointAttr("x"));
 }
 
@@ -214,7 +214,7 @@ TEST(TPointCloudIO, ReadWritePTS) {
     EXPECT_EQ(pcd.GetPoints().GetLength(), 10);
     EXPECT_EQ(pcd.GetPointColors().GetLength(), 10);
     EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
-    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
+    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::kUInt8);
     EXPECT_TRUE(pcd.GetPoints()[0].AllClose(
             core::Tensor::Init<double>({4.24644, -6.42662, -50.2146})));
     EXPECT_TRUE(pcd.GetPointColors()[0].AllClose(
@@ -316,8 +316,7 @@ TEST(TPointCloudIO, WritePTSColorConversion2) {
 TEST_P(PointCloudIOPermuteDevices, WriteDeviceTestPLY) {
     core::Device device = GetParam();
     std::string filename = std::string(TEST_DATA_DIR) + "/test_write.ply";
-    core::Tensor points =
-            core::Tensor::Ones({10, 3}, core::Dtype::Float32, device);
+    core::Tensor points = core::Tensor::Ones({10, 3}, core::kFloat32, device);
     t::geometry::PointCloud pcd(points);
     EXPECT_TRUE(t::io::WritePointCloud(filename, pcd));
     std::remove(filename.c_str());

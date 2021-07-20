@@ -282,7 +282,7 @@ void ReductionCPU(const Tensor& src,
             }
         });
     } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
-        if (dst.GetDtype() != Dtype::Int64) {
+        if (dst.GetDtype() != core::kInt64) {
             utility::LogError("Arg-reduction must have int64 output dtype.");
         }
         // Accumulation buffer to store temporary min/max values.
@@ -320,11 +320,11 @@ void ReductionCPU(const Tensor& src,
         });
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
-        if (src.GetDtype() != Dtype::Bool) {
+        if (src.GetDtype() != core::kBool) {
             utility::LogError(
                     "Boolean reduction only supports boolean input tensor.");
         }
-        if (dst.GetDtype() != Dtype::Bool) {
+        if (dst.GetDtype() != core::kBool) {
             utility::LogError(
                     "Boolean reduction only supports boolean output tensor.");
         }

@@ -114,9 +114,8 @@ void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
     pcd_grid->Transform(flip);
 
     // Prepare nb point cloud for visualization
-    core::Tensor corres =
-            tpcd_param.GetPointAttr(ControlGrid::kGrid8NbIndices)
-                    .To(core::Device("CPU:0"), core::Dtype::Int64);
+    core::Tensor corres = tpcd_param.GetPointAttr(ControlGrid::kGrid8NbIndices)
+                                  .To(core::Device("CPU:0"), core::kInt64);
     t::geometry::PointCloud tpcd_grid_nb(
             tpcd_grid.GetPoints().IndexGet({corres.View({-1})}));
 
@@ -162,7 +161,7 @@ void VisualizePointCloudDeformation(const geometry::PointCloud& tpcd_param,
     flip << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1;
 
     core::Tensor corres = tpcd_param.GetPointAttr(ControlGrid::kGrid8NbIndices)
-                                  .To(core::Device("CPU:0"), core::Dtype::Int64)
+                                  .To(core::Device("CPU:0"), core::kInt64)
                                   .View({-1});
 
     core::Tensor prev = ctr_grid.GetInitPositions().IndexGet({corres});

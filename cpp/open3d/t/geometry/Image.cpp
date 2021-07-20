@@ -101,16 +101,15 @@ Image Image::To(core::Dtype dtype,
     // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
     // IPP supports all pairs of conversions for these data types
     static const std::vector<core::Dtype> ipp_supported{
-            {core::Dtype::Bool},    {core::Dtype::UInt8},
-            {core::Dtype::UInt16},  {core::Dtype::Int32},
-            {core::Dtype::Float32}, {core::Dtype::Float64}};
+            {core::kBool},  {core::kUInt8},   {core::kUInt16},
+            {core::kInt32}, {core::kFloat32}, {core::kFloat64}};
 
     double scale = 1.0;
     if (!scale_.has_value() &&
-        (dtype == core::Dtype::Float32 || dtype == core::Dtype::Float64)) {
-        if (GetDtype() == core::Dtype::UInt8) {
+        (dtype == core::kFloat32 || dtype == core::kFloat64)) {
+        if (GetDtype() == core::kUInt8) {
             scale = 1. / 255;
-        } else if (GetDtype() == core::Dtype::UInt16) {
+        } else if (GetDtype() == core::kUInt16) {
             scale = 1. / 65535;
         }
     } else {
@@ -173,14 +172,14 @@ Image Image::RGBToGray() const {
                 GetChannels());
     }
     static const dtype_channels_pairs ipp_supported{
-            {core::Dtype::UInt8, 3},
-            {core::Dtype::UInt16, 3},
-            {core::Dtype::Float32, 3},
+            {core::kUInt8, 3},
+            {core::kUInt16, 3},
+            {core::kFloat32, 3},
     };
     static const dtype_channels_pairs npp_supported{
-            {core::Dtype::UInt8, 3},
-            {core::Dtype::UInt16, 3},
-            {core::Dtype::Float32, 3},
+            {core::kUInt8, 3},
+            {core::kUInt16, 3},
+            {core::kFloat32, 3},
     };
 
     Image dst_im;
@@ -209,20 +208,16 @@ Image Image::Resize(float sampling_rate, InterpType interp_type) const {
     }
 
     static const dtype_channels_pairs npp_supported{
-            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
-            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
-            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
-            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
-            {core::Dtype::Float32, 4},
+            {core::kUInt8, 1}, {core::kUInt16, 1}, {core::kFloat32, 1},
+            {core::kUInt8, 3}, {core::kUInt16, 3}, {core::kFloat32, 3},
+            {core::kUInt8, 4}, {core::kUInt16, 4}, {core::kFloat32, 4},
 
     };
 
     static const dtype_channels_pairs ipp_supported{
-            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
-            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
-            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
-            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
-            {core::Dtype::Float32, 4},
+            {core::kUInt8, 1}, {core::kUInt16, 1}, {core::kFloat32, 1},
+            {core::kUInt8, 3}, {core::kUInt16, 3}, {core::kFloat32, 3},
+            {core::kUInt8, 4}, {core::kUInt16, 4}, {core::kFloat32, 4},
     };
 
     Image dst_im;
@@ -253,23 +248,19 @@ Image Image::Dilate(int kernel_size) const {
     // Check NPP datatype support for each function in documentation:
     // https://docs.nvidia.com/cuda/npp/group__nppi.html
     static const dtype_channels_pairs npp_supported{
-            {core::Dtype::Bool, 1},    {core::Dtype::UInt8, 1},
-            {core::Dtype::UInt16, 1},  {core::Dtype::Int32, 1},
-            {core::Dtype::Float32, 1}, {core::Dtype::Bool, 3},
-            {core::Dtype::UInt8, 3},   {core::Dtype::UInt16, 3},
-            {core::Dtype::Int32, 3},   {core::Dtype::Float32, 3},
-            {core::Dtype::Bool, 4},    {core::Dtype::UInt8, 4},
-            {core::Dtype::UInt16, 4},  {core::Dtype::Int32, 4},
-            {core::Dtype::Float32, 4},
+            {core::kBool, 1},    {core::kUInt8, 1},   {core::kUInt16, 1},
+            {core::kInt32, 1},   {core::kFloat32, 1}, {core::kBool, 3},
+            {core::kUInt8, 3},   {core::kUInt16, 3},  {core::kInt32, 3},
+            {core::kFloat32, 3}, {core::kBool, 4},    {core::kUInt8, 4},
+            {core::kUInt16, 4},  {core::kInt32, 4},   {core::kFloat32, 4},
     };
     // Check IPP datatype support for each function in IPP documentation:
     // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
     static const dtype_channels_pairs ipp_supported{
-            {core::Dtype::Bool, 1},    {core::Dtype::UInt8, 1},
-            {core::Dtype::UInt16, 1},  {core::Dtype::Float32, 1},
-            {core::Dtype::Bool, 3},    {core::Dtype::UInt8, 3},
-            {core::Dtype::Float32, 3}, {core::Dtype::Bool, 4},
-            {core::Dtype::UInt8, 4},   {core::Dtype::Float32, 4}};
+            {core::kBool, 1},    {core::kUInt8, 1}, {core::kUInt16, 1},
+            {core::kFloat32, 1}, {core::kBool, 3},  {core::kUInt8, 3},
+            {core::kFloat32, 3}, {core::kBool, 4},  {core::kUInt8, 4},
+            {core::kFloat32, 4}};
 
     Image dst_im;
     dst_im.data_ = core::Tensor::EmptyLike(data_);
@@ -298,15 +289,14 @@ Image Image::FilterBilateral(int kernel_size,
     }
 
     static const dtype_channels_pairs npp_supported{
-            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
-            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
-            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
+            {core::kUInt8, 1}, {core::kUInt16, 1}, {core::kFloat32, 1},
+            {core::kUInt8, 3}, {core::kUInt16, 3}, {core::kFloat32, 3},
     };
     static const dtype_channels_pairs ipp_supported{
-            {core::Dtype::UInt8, 1},
-            {core::Dtype::Float32, 1},
-            {core::Dtype::UInt8, 3},
-            {core::Dtype::Float32, 3},
+            {core::kUInt8, 1},
+            {core::kFloat32, 1},
+            {core::kUInt8, 3},
+            {core::kFloat32, 3},
     };
 
     Image dst_im;
@@ -333,18 +323,14 @@ Image Image::FilterBilateral(int kernel_size,
 
 Image Image::Filter(const core::Tensor &kernel) const {
     static const dtype_channels_pairs npp_supported{
-            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
-            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
-            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
-            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
-            {core::Dtype::Float32, 4},
+            {core::kUInt8, 1}, {core::kUInt16, 1}, {core::kFloat32, 1},
+            {core::kUInt8, 3}, {core::kUInt16, 3}, {core::kFloat32, 3},
+            {core::kUInt8, 4}, {core::kUInt16, 4}, {core::kFloat32, 4},
     };
     static const dtype_channels_pairs ipp_supported{
-            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
-            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
-            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
-            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
-            {core::Dtype::Float32, 4},
+            {core::kUInt8, 1}, {core::kUInt16, 1}, {core::kFloat32, 1},
+            {core::kUInt8, 3}, {core::kUInt16, 3}, {core::kFloat32, 3},
+            {core::kUInt8, 4}, {core::kUInt16, 4}, {core::kFloat32, 4},
     };
 
     Image dst_im;
@@ -374,18 +360,14 @@ Image Image::FilterGaussian(int kernel_size, float sigma) const {
     }
 
     static const dtype_channels_pairs npp_supported{
-            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
-            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
-            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
-            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
-            {core::Dtype::Float32, 4},
+            {core::kUInt8, 1}, {core::kUInt16, 1}, {core::kFloat32, 1},
+            {core::kUInt8, 3}, {core::kUInt16, 3}, {core::kFloat32, 3},
+            {core::kUInt8, 4}, {core::kUInt16, 4}, {core::kFloat32, 4},
     };
     static const dtype_channels_pairs ipp_supported{
-            {core::Dtype::UInt8, 1},   {core::Dtype::UInt16, 1},
-            {core::Dtype::Float32, 1}, {core::Dtype::UInt8, 3},
-            {core::Dtype::UInt16, 3},  {core::Dtype::Float32, 3},
-            {core::Dtype::UInt8, 4},   {core::Dtype::UInt16, 4},
-            {core::Dtype::Float32, 4},
+            {core::kUInt8, 1}, {core::kUInt16, 1}, {core::kFloat32, 1},
+            {core::kUInt8, 3}, {core::kUInt16, 3}, {core::kFloat32, 3},
+            {core::kUInt8, 4}, {core::kUInt16, 4}, {core::kFloat32, 4},
     };
 
     Image dst_im;
@@ -418,24 +400,24 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
     // not supported by open3d. To filter 16 bit unsigned depth images, we
     // recommend first converting to Float32.
     static const dtype_channels_pairs npp_supported{
-            {core::Dtype::UInt8, 1},
-            {core::Dtype::Float32, 1},
+            {core::kUInt8, 1},
+            {core::kFloat32, 1},
     };
     static const dtype_channels_pairs ipp_supported{
-            {core::Dtype::UInt8, 1},
-            {core::Dtype::Float32, 1},
+            {core::kUInt8, 1},
+            {core::kFloat32, 1},
     };
 
     // Routines: 8u16s, 32f
     Image dst_im_dx, dst_im_dy;
     core::Dtype dtype = GetDtype();
-    if (dtype == core::Dtype::Float32) {
+    if (dtype == core::kFloat32) {
         dst_im_dx = core::Tensor::EmptyLike(data_);
         dst_im_dy = core::Tensor::EmptyLike(data_);
-    } else if (dtype == core::Dtype::UInt8) {
-        dst_im_dx = core::Tensor::Empty(data_.GetShape(), core::Dtype::Int16,
+    } else if (dtype == core::kUInt8) {
+        dst_im_dx = core::Tensor::Empty(data_.GetShape(), core::kInt16,
                                         data_.GetDevice());
-        dst_im_dy = core::Tensor::Empty(data_.GetShape(), core::Dtype::Int16,
+        dst_im_dy = core::Tensor::Empty(data_.GetShape(), core::kInt16,
                                         data_.GetDevice());
     }
 
@@ -471,7 +453,7 @@ Image Image::PyrDownDepth(float diff_threshold, float invalid_fill) const {
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::Dtype::Float32) {
+    if (GetDtype() != core::kFloat32) {
         utility::LogError("Expected a Float32 image, but got {}",
                           GetDtype().ToString());
     }
@@ -493,8 +475,7 @@ Image Image::ClipTransform(float scale,
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::Dtype::UInt16 &&
-        GetDtype() != core::Dtype::Float32) {
+    if (GetDtype() != core::kUInt16 && GetDtype() != core::kFloat32) {
         utility::LogError("Expected a UInt16 or Float32 image, but got {}",
                           GetDtype().ToString());
     }
@@ -511,8 +492,7 @@ Image Image::ClipTransform(float scale,
                 clip_fill);
     }
 
-    Image dst_im(GetRows(), GetCols(), 1, core::Dtype::Float32,
-                 data_.GetDevice());
+    Image dst_im(GetRows(), GetCols(), 1, core::kFloat32, data_.GetDevice());
     kernel::image::ClipTransform(data_, dst_im.data_, scale, min_value,
                                  max_value, clip_fill);
     return dst_im;
@@ -526,7 +506,7 @@ Image Image::CreateVertexMap(const core::Tensor &intrinsics,
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::Dtype::Float32) {
+    if (GetDtype() != core::kFloat32) {
         utility::LogError("Expected a Float32 image, but got {}",
                           GetDtype().ToString());
     }
@@ -544,7 +524,7 @@ Image Image::CreateNormalMap(float invalid_fill) {
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::Dtype::Float32) {
+    if (GetDtype() != core::kFloat32) {
         utility::LogError("Expected a Float32 image, but got {}",
                           GetDtype().ToString());
     }
@@ -561,8 +541,7 @@ Image Image::ColorizeDepth(float scale, float min_value, float max_value) {
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::Dtype::UInt16 &&
-        GetDtype() != core::Dtype::Float32) {
+    if (GetDtype() != core::kUInt16 && GetDtype() != core::kFloat32) {
         utility::LogError("Expected a UInt16 or Float32 image, but got {}",
                           GetDtype().ToString());
     }
@@ -573,7 +552,7 @@ Image Image::ColorizeDepth(float scale, float min_value, float max_value) {
                 scale, min_value, max_value);
     }
 
-    Image dst_im(GetRows(), GetCols(), 3, core::Dtype::UInt8, GetDevice());
+    Image dst_im(GetRows(), GetCols(), 3, core::kUInt8, GetDevice());
     kernel::image::ColorizeDepth(data_, dst_im.data_, scale, min_value,
                                  max_value);
     return dst_im;
@@ -582,13 +561,13 @@ Image Image::ColorizeDepth(float scale, float min_value, float max_value) {
 Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
                              const core::Device &device) {
     static const std::unordered_map<int, core::Dtype> kBytesToDtypeMap = {
-            {1, core::Dtype::UInt8},
-            {2, core::Dtype::UInt16},
-            {4, core::Dtype::Float32},
+            {1, core::kUInt8},
+            {2, core::kUInt16},
+            {4, core::kFloat32},
     };
 
     if (image_legacy.IsEmpty()) {
-        return Image(0, 0, 1, core::Dtype::Float32, device);
+        return Image(0, 0, 1, core::kFloat32, device);
     }
 
     auto iter = kBytesToDtypeMap.find(image_legacy.bytes_per_channel_);
@@ -610,8 +589,8 @@ Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
 
 open3d::geometry::Image Image::ToLegacyImage() const {
     auto dtype = GetDtype();
-    if (!(dtype == core::Dtype::UInt8 || dtype == core::Dtype::UInt16 ||
-          dtype == core::Dtype::Float32))
+    if (!(dtype == core::kUInt8 || dtype == core::kUInt16 ||
+          dtype == core::kFloat32))
         utility::LogError("Legacy image does not support data type {}.",
                           dtype.ToString());
     if (!data_.IsContiguous()) {

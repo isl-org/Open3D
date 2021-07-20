@@ -60,7 +60,7 @@ static bool IsPointCloudSimilar(t::geometry::PointCloud source,
                                 float inlier_rmse_threshold = 0.0001) {
     auto result = t::pipelines::registration::EvaluateRegistration(
             source, target, /*search_distance*/ voxel_size,
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
+            core::Tensor::Eye(4, core::kFloat64, core::Device("CPU:0")));
     if (result.fitness_ >= inlier_fitness_threshold &&
         result.inlier_rmse_ <= inlier_rmse_threshold) {
         return true;
@@ -126,7 +126,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     auto hashmap = control_grid.GetHashmap();
     core::Tensor active_addrs;
     hashmap->GetActiveIndices(active_addrs);
-    active_addrs = active_addrs.To(core::Dtype::Int64);
+    active_addrs = active_addrs.To(core::kInt64);
 
     hashmap->GetKeyTensor()
             .IndexGet({active_addrs})
@@ -219,9 +219,9 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     float depth_scale = 1000.f;
     float max_depth = 3.f;
     float sdf_trunc = 0.04f;
-    t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
-                                           {"weight", core::Dtype::UInt16},
-                                           {"color", core::Dtype::UInt16}},
+    t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::kFloat32},
+                                           {"weight", core::kUInt16},
+                                           {"color", core::kUInt16}},
                                           voxel_size, sdf_trunc, 16,
                                           block_count, device);
 

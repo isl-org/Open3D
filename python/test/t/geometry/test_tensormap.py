@@ -37,7 +37,7 @@ from open3d_test import list_devices
 
 @pytest.mark.parametrize("device", list_devices())
 def test_tensormap(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     # Constructor.
     tl = o3d.t.geometry.TensorMap("points")

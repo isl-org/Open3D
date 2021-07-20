@@ -54,7 +54,7 @@ const py::tuple SubsampleBatch(py::array points,
 
     // Fill original_points.
     core::Tensor points_t = core::PyArrayToTensor(points, true).Contiguous();
-    if (points_t.GetDtype() != core::Dtype::Float32) {
+    if (points_t.GetDtype() != core::kFloat32) {
         utility::LogError("points must be np.float32.");
     }
     if (points_t.NumDims() != 2 || points_t.GetShape()[1] != 3) {
@@ -68,7 +68,7 @@ const py::tuple SubsampleBatch(py::array points,
 
     // Fill original batches.
     core::Tensor batches_t = core::PyArrayToTensor(batches, true).Contiguous();
-    if (batches_t.GetDtype() != core::Dtype::Int32) {
+    if (batches_t.GetDtype() != core::kInt32) {
         utility::LogError("batches must be np.int32.");
     }
     if (batches_t.NumDims() != 1) {
@@ -92,7 +92,7 @@ const py::tuple SubsampleBatch(py::array points,
     if (features.has_value()) {
         core::Tensor features_t =
                 core::PyArrayToTensor(features.value(), true).Contiguous();
-        if (features_t.GetDtype() != core::Dtype::Float32) {
+        if (features_t.GetDtype() != core::kFloat32) {
             utility::LogError("features must be np.float32.");
         }
         if (features_t.NumDims() != 2) {
@@ -115,7 +115,7 @@ const py::tuple SubsampleBatch(py::array points,
     if (classes.has_value()) {
         core::Tensor classes_t =
                 core::PyArrayToTensor(classes.value(), true).Contiguous();
-        if (classes_t.GetDtype() != core::Dtype::Int32) {
+        if (classes_t.GetDtype() != core::kInt32) {
             utility::LogError("classes must be np.int32.");
         }
         if (classes_t.NumDims() != 1) {
@@ -144,13 +144,13 @@ const py::tuple SubsampleBatch(py::array points,
             static_cast<int64_t>(subsampled_points.size());
     core::Tensor subsampled_points_t(
             reinterpret_cast<float*>(subsampled_points.data()),
-            {num_subsampled_points, 3}, core::Dtype::Float32);
+            {num_subsampled_points, 3}, core::kFloat32);
 
     // Wrap result subsampled_batches. Data will be copied.
     int64_t num_subsampled_batches =
             static_cast<int64_t>(subsampled_batches.size());
     core::Tensor subsampled_batches_t = core::Tensor(
-            subsampled_batches, {num_subsampled_batches}, core::Dtype::Int32);
+            subsampled_batches, {num_subsampled_batches}, core::kInt32);
     if (static_cast<int64_t>(subsampled_batches_t.Sum({0}).Item<int32_t>()) !=
         num_subsampled_points) {
         utility::LogError(
@@ -184,7 +184,7 @@ const py::tuple SubsampleBatch(py::array points,
         }
         subsampled_features_t = core::Tensor(
                 subsampled_features, {num_subsampled_points, feature_dim},
-                core::Dtype::Float32);
+                core::kFloat32);
     }
 
     // Wrap result subsampled_classes. Data will be copied.
@@ -197,9 +197,8 @@ const py::tuple SubsampleBatch(py::array points,
                     "num_subsampled_points {}.",
                     subsampled_classes.size(), num_subsampled_points);
         }
-        subsampled_classes_t =
-                core::Tensor(subsampled_classes, {num_subsampled_points},
-                             core::Dtype::Int32);
+        subsampled_classes_t = core::Tensor(
+                subsampled_classes, {num_subsampled_points}, core::kInt32);
     }
 
     if (features.has_value() && classes.has_value()) {
@@ -235,7 +234,7 @@ const py::object Subsample(py::array points,
 
     // Fill original_points.
     core::Tensor points_t = core::PyArrayToTensor(points, true).Contiguous();
-    if (points_t.GetDtype() != core::Dtype::Float32) {
+    if (points_t.GetDtype() != core::kFloat32) {
         utility::LogError("points must be np.float32.");
     }
     if (points_t.NumDims() != 2 || points_t.GetShape()[1] != 3) {
@@ -255,7 +254,7 @@ const py::object Subsample(py::array points,
     if (features.has_value()) {
         core::Tensor features_t =
                 core::PyArrayToTensor(features.value(), true).Contiguous();
-        if (features_t.GetDtype() != core::Dtype::Float32) {
+        if (features_t.GetDtype() != core::kFloat32) {
             utility::LogError("features must be np.float32.");
         }
         if (features_t.NumDims() != 2) {
@@ -278,7 +277,7 @@ const py::object Subsample(py::array points,
     if (classes.has_value()) {
         core::Tensor classes_t =
                 core::PyArrayToTensor(classes.value(), true).Contiguous();
-        if (classes_t.GetDtype() != core::Dtype::Int32) {
+        if (classes_t.GetDtype() != core::kInt32) {
             utility::LogError("classes must be np.int32.");
         }
         if (classes_t.NumDims() != 1) {
@@ -306,7 +305,7 @@ const py::object Subsample(py::array points,
             static_cast<int64_t>(subsampled_points.size());
     core::Tensor subsampled_points_t(
             reinterpret_cast<float*>(subsampled_points.data()),
-            {num_subsampled_points, 3}, core::Dtype::Float32);
+            {num_subsampled_points, 3}, core::kFloat32);
     if (verbose) {
         utility::LogInfo("Subsampled to {} points.", num_subsampled_points);
     }
@@ -331,7 +330,7 @@ const py::object Subsample(py::array points,
         }
         subsampled_features_t = core::Tensor(
                 subsampled_features, {num_subsampled_points, feature_dim},
-                core::Dtype::Float32);
+                core::kFloat32);
     }
 
     // Wrap result subsampled_classes. Data will be copied.
@@ -344,9 +343,8 @@ const py::object Subsample(py::array points,
                     "num_subsampled_points {}.",
                     subsampled_classes.size(), num_subsampled_points);
         }
-        subsampled_classes_t =
-                core::Tensor(subsampled_classes, {num_subsampled_points},
-                             core::Dtype::Int32);
+        subsampled_classes_t = core::Tensor(
+                subsampled_classes, {num_subsampled_points}, core::kInt32);
     }
 
     if (features.has_value() && classes.has_value()) {

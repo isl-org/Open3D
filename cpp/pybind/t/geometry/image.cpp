@@ -93,8 +93,7 @@ void pybind_image(py::module &m) {
               "consistency, and avoid using width, height, u, v, x, y for "
               "coordinates.",
               "rows"_a = 0, "cols"_a = 0, "channels"_a = 1,
-              "dtype"_a = core::Dtype::Float32,
-              "device"_a = core::Device("CPU:0"))
+              "dtype"_a = core::kFloat32, "device"_a = core::Device("CPU:0"))
             .def(py::init<core::Tensor &>(),
                  "Construct from a tensor. The tensor won't be copied and "
                  "memory will be shared.",

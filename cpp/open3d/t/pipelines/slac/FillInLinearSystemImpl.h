@@ -49,7 +49,7 @@ static PointCloud CreateTPCDFromFile(
         const core::Device& device = core::Device("CPU:0")) {
     std::shared_ptr<open3d::geometry::PointCloud> pcd =
             open3d::io::CreatePointCloudFromFile(fname);
-    return PointCloud::FromLegacyPointCloud(*pcd, core::Dtype::Float32, device);
+    return PointCloud::FromLegacyPointCloud(*pcd, core::kFloat32, device);
 }
 
 static void FillInRigidAlignmentTerm(Tensor& AtA,
@@ -102,9 +102,9 @@ void FillInRigidAlignmentTerm(Tensor& AtA,
                 tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}));
 
         Tensor Ti = EigenMatrixToTensor(pose_graph.nodes_[i].pose_)
-                            .To(device, core::Dtype::Float32);
+                            .To(device, core::kFloat32);
         Tensor Tj = EigenMatrixToTensor(pose_graph.nodes_[j].pose_)
-                            .To(device, core::Dtype::Float32);
+                            .To(device, core::kFloat32);
 
         FillInRigidAlignmentTerm(AtA, Atb, residual, tpcd_i_indexed,
                                  tpcd_j_indexed, Ti, Tj, i, j,
@@ -210,11 +210,11 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
 
         // Load poses.
         auto Ti = EigenMatrixToTensor(pose_graph.nodes_[i].pose_)
-                          .To(device, core::Dtype::Float32);
+                          .To(device, core::kFloat32);
         auto Tj = EigenMatrixToTensor(pose_graph.nodes_[j].pose_)
-                          .To(device, core::Dtype::Float32);
+                          .To(device, core::kFloat32);
         auto Tij = EigenMatrixToTensor(edge.transformation_)
-                           .To(device, core::Dtype::Float32);
+                           .To(device, core::kFloat32);
 
         // Fill In.
         FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, tpcd_param_i,
