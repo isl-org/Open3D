@@ -100,25 +100,25 @@ void BuildSpatialHashTableCPU(const size_t num_points,
         const size_t hash_table_size =
                 hash_table_splits[i + 1] - hash_table_splits[i];
         const size_t first_cell_idx = hash_table_splits[i];
-        tbb::parallel_for(
-                tbb::blocked_range<int64_t>(points_row_splits[i],
-                                            points_row_splits[i + 1]),
-                [&](const tbb::blocked_range<int64_t>& r) {
-                    for (int64_t i = r.begin(); i != r.end(); ++i) {
-                        Vec3_t pos(points + 3 * i);
+        tbb::parallel_for(tbb::blocked_range<int64_t>(points_row_splits[i],
+                                                      points_row_splits[i + 1]),
+                          [&](const tbb::blocked_range<int64_t>& r) {
+                              for (int64_t i = r.begin(); i != r.end(); ++i) {
+                                  Vec3_t pos(points + 3 * i);
 
-                        auto voxel_index =
-                                ComputeVoxelIndex(pos, inv_voxel_size);
-                        size_t hash =
-                                SpatialHash(voxel_index) % hash_table_size;
+                                  auto voxel_index = ComputeVoxelIndex(
+                                          pos, inv_voxel_size);
+                                  size_t hash = SpatialHash(voxel_index) %
+                                                hash_table_size;
 
-                        // note the +1 because we want the first element to be 0
-                        core::AtomicFetchAddRelaxed(
-                                &hash_table_cell_splits[first_cell_idx + hash +
-                                                        1],
-                                1);
-                    }
-                });
+                                  // note the +1 because we want the first
+                                  // element to be 0
+                                  core::AtomicFetchAddRelaxed(
+                                          (uint64_t*)&hash_table_cell_splits
+                                                  [first_cell_idx + hash + 1],
+                                          1);
+                              }
+                          });
     }
     InclusivePrefixSum(&hash_table_cell_splits[0],
                        &hash_table_cell_splits[hash_table_cell_splits_size],
