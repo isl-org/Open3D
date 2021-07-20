@@ -30,6 +30,8 @@
 #include "open3d/core/nns/FixedRadiusSearchImpl.h"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
+#include "open3d/utility/Logging.h"
+
 namespace open3d {
 namespace core {
 namespace nns {
@@ -87,6 +89,23 @@ void FixedRadiusSearchCPU(const Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
+template <class T>
+void HybridSearchCPU(const Tensor& points,
+                     const Tensor& queries,
+                     double radius,
+                     int max_knn,
+                     const Tensor& points_row_splits,
+                     const Tensor& queries_row_splits,
+                     const Tensor& hash_table_splits,
+                     const Tensor& hash_table_index,
+                     const Tensor& hash_table_cell_splits,
+                     const Metric metric,
+                     Tensor& neighbors_index,
+                     Tensor& neighbors_count,
+                     Tensor& neighbors_distance) {
+    utility::LogError("Not implemented.");
+}
+
 #define INSTANTIATE_BUILD(T)                                                  \
     template void BuildSpatialHashTableCPU<T>(                                \
             const Tensor& points, double radius,                              \
@@ -103,11 +122,24 @@ void FixedRadiusSearchCPU(const Tensor& points,
             const bool sort, Tensor& neighbors_index,                          \
             Tensor& neighbors_row_splits, Tensor& neighbors_distance);
 
+#define INSTANTIATE_HYBRID(T)                                                  \
+    template void HybridSearchCPU<T>(                                          \
+            const Tensor& points, const Tensor& queries, double radius,        \
+            int max_knn, const Tensor& points_row_splits,                      \
+            const Tensor& queries_row_splits, const Tensor& hash_table_splits, \
+            const Tensor& hash_table_index,                                    \
+            const Tensor& hash_table_cell_splits, const Metric metric,         \
+            Tensor& neighbors_index, Tensor& neighbors_count,                  \
+            Tensor& neighbors_distance);
+
 INSTANTIATE_BUILD(float)
 INSTANTIATE_BUILD(double)
 
 INSTANTIATE_RADIUS(float)
 INSTANTIATE_RADIUS(double)
+
+INSTANTIATE_HYBRID(float)
+INSTANTIATE_HYBRID(double)
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

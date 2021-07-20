@@ -60,6 +60,20 @@ void FixedRadiusSearchCPU(const Tensor& points,
                           Tensor& neighbors_index,
                           Tensor& neighbors_row_splits,
                           Tensor& neighbors_distance);
+template <class T>
+void HybridSearchCPU(const Tensor& points,
+                     const Tensor& queries,
+                     double radius,
+                     int max_knn,
+                     const Tensor& points_row_splits,
+                     const Tensor& queries_row_splits,
+                     const Tensor& hash_table_splits,
+                     const Tensor& hash_table_index,
+                     const Tensor& hash_table_cell_splits,
+                     const Metric metric,
+                     Tensor& neighbors_index,
+                     Tensor& neighbors_count,
+                     Tensor& neighbors_distance);
 
 #ifdef BUILD_CUDA_MODULE
 template <class T>

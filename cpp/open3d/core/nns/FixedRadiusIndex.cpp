@@ -184,8 +184,11 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
             "compile Open3d with BUILD_CUDA_MODULE=ON.");
 #endif
         } else {
-            utility::LogError(
-                    "FixedRadiusIndex::SearchHybrid is not available on CPU. ");
+            HybridSearchCPU<scalar_t>(
+                    dataset_points_, query_points_, radius, max_knn,
+                    points_row_splits_, queries_row_splits_, hash_table_splits_,
+                    hash_table_index_, hash_table_cell_splits_, Metric::L2,
+                    neighbors_index, neighbors_count, neighbors_distance);
         }
     });
     return std::make_tuple(neighbors_index.View({num_query_points, max_knn}),
