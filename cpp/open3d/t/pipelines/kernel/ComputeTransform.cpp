@@ -38,25 +38,26 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_normals,
                                      const core::Tensor &correspondence_indices,
                                      const registration::RobustKernel &kernel) {
-    if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
-        utility::LogError(" PointCloud is Empty.");
-    }
-    if (correspondence_indices.GetLength() == 0) {
-        utility::LogError(" 0 correspondence present.");
+    core::Device device = source_points.GetDevice();
+    core::Dtype dtype = source_points.GetDtype();
+
+    if (dtype != core::Dtype::Float64 && dtype != core::Dtype::Float32) {
+        utility::LogError("Only Float32 and Float64 dtypes are supported.");
     }
 
-    // Get dtype and device.
-    core::Dtype dtype = source_points.GetDtype();
-    core::Device device = source_points.GetDevice();
+    target_points.AssertDtype(dtype);
+    target_normals.AssertDtype(dtype);
+    target_points.AssertDevice(device);
+
+    if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
+        utility::LogError("PointCloud is Empty.");
+    }
+    if (correspondence_indices.GetLength() == 0) {
+        utility::LogError("0 correspondence present.");
+    }
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
-
-    // Pointer to point cloud data - indexed according to correspondences.
-    core::Tensor source_points_contiguous = source_points.Contiguous();
-    core::Tensor target_points_contiguous = target_points.Contiguous();
-    core::Tensor target_normals_contiguous = target_normals.Contiguous();
-    core::Tensor corres_contiguous = correspondence_indices.Contiguous();
 
     float residual = 0;
     int inlier_count = 0;
@@ -64,17 +65,21 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         ComputePosePointToPlaneCPU(
-                source_points_contiguous, target_points_contiguous,
-                target_normals_contiguous, corres_contiguous, pose, residual,
+                source_points.Contiguous(), target_points.Contiguous(),
+                target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), pose, residual,
                 inlier_count, dtype, device, kernel);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(ComputePosePointToPlaneCUDA, source_points_contiguous,
-                  target_points_contiguous, target_normals_contiguous,
-                  corres_contiguous, pose, residual, inlier_count, dtype,
-                  device, kernel);
+        CUDA_CALL(ComputePosePointToPlaneCUDA, source_points.Contiguous(),
+                  target_points.Contiguous(), target_normals.Contiguous(),
+                  correspondence_indices.Contiguous(), pose, residual,
+                  inlier_count, dtype, device, kernel);
     } else {
         utility::LogError("Unimplemented device.");
     }
+
+    utility::LogDebug("PointToPlane Transform: residual {}, inlier_count {}",
+                      residual, inlier_count);
 
     return pose;
 }
@@ -83,16 +88,22 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const core::Tensor &correspondence_indices) {
-    if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
-        utility::LogError(" PointCloud is Empty.");
-    }
-    if (correspondence_indices.GetLength() == 0) {
-        utility::LogError(" 0 correspondence present.");
+    core::Device device = source_points.GetDevice();
+    core::Dtype dtype = source_points.GetDtype();
+
+    if (dtype != core::Dtype::Float64 && dtype != core::Dtype::Float32) {
+        utility::LogError("Only Float32 and Float64 dtypes are supported.");
     }
 
-    // Get dtype and device.
-    core::Dtype dtype = source_points.GetDtype();
-    core::Device device = source_points.GetDevice();
+    target_points.AssertDtype(dtype);
+    target_points.AssertDevice(device);
+
+    if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
+        utility::LogError("PointCloud is Empty.");
+    }
+    if (correspondence_indices.GetLength() == 0) {
+        utility::LogError("0 correspondence present.");
+    }
 
     // [Output] Rotation and translation tensor of type Float64.
     core::Tensor R;

@@ -277,7 +277,7 @@ Open3D-ML from GitHub during the build with
     We recommend to compile Pytorch from source
     with compile flags ``-Xcompiler -fno-gnu-unique`` or use the `PyTorch
     wheels from Open3D.
-    <https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1>`_
+    <https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.8.1>`_
     To reproduce the Open3D PyTorch wheels see the builder repository `here.
     <https://github.com/intel-isl/pytorch_builder>`_
 

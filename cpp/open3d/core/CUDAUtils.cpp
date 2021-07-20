@@ -36,6 +36,22 @@
 
 namespace open3d {
 namespace core {
+
+#ifdef BUILD_CUDA_MODULE
+int GetCUDACurrentDeviceTextureAlignment() {
+    int value = 0;
+    cudaError_t err = cudaDeviceGetAttribute(
+            &value, cudaDevAttrTextureAlignment, cuda::GetDevice());
+    if (err != cudaSuccess) {
+        utility::LogError(
+                "GetCUDACurrentDeviceTextureAlignment(): "
+                "cudaDeviceGetAttribute failed with {}",
+                cudaGetErrorString(err));
+    }
+    return value;
+}
+#endif
+
 namespace cuda {
 
 int DeviceCount() {
@@ -70,6 +86,44 @@ void ReleaseCache() {
     utility::LogWarning("Built without CUDA module, cuda::ReleaseCache().");
 #endif
 }
+
+#ifdef BUILD_CUDA_MODULE
+
+int GetDevice() {
+    int device;
+    OPEN3D_CUDA_CHECK(cudaGetDevice(&device));
+    return device;
+}
+
+void SetDevice(int device_id) { OPEN3D_CUDA_CHECK(cudaSetDevice(device_id)); }
+
+class CUDAStream {
+public:
+    static CUDAStream& GetInstance() {
+        // The global stream state is given per thread like CUDA's internal
+        // device state.
+        static thread_local CUDAStream instance;
+        return instance;
+    }
+
+    cudaStream_t Get() { return stream_; }
+    void Set(cudaStream_t stream) { stream_ = stream; }
+
+    static cudaStream_t Default() { return static_cast<cudaStream_t>(0); }
+
+private:
+    CUDAStream() = default;
+
+    cudaStream_t stream_ = Default();
+};
+
+cudaStream_t GetStream() { return CUDAStream::GetInstance().Get(); }
+
+void SetStream(cudaStream_t stream) { CUDAStream::GetInstance().Set(stream); }
+
+cudaStream_t GetDefaultStream() { return CUDAStream::Default(); }
+
+#endif
 
 }  // namespace cuda
 }  // namespace core

@@ -83,36 +83,16 @@ static void ComputePosePointToPlaneKernelCPU(
                     scalar_t w = GetWeightFromRobustKernel(r);
 
                     if (valid) {
-                        A_reduction[0] += J_ij[0] * w * J_ij[0];
-                        A_reduction[1] += J_ij[1] * w * J_ij[0];
-                        A_reduction[2] += J_ij[1] * w * J_ij[1];
-                        A_reduction[3] += J_ij[2] * w * J_ij[0];
-                        A_reduction[4] += J_ij[2] * w * J_ij[1];
-                        A_reduction[5] += J_ij[2] * w * J_ij[2];
-                        A_reduction[6] += J_ij[3] * w * J_ij[0];
-                        A_reduction[7] += J_ij[3] * w * J_ij[1];
-                        A_reduction[8] += J_ij[3] * w * J_ij[2];
-                        A_reduction[9] += J_ij[3] * w * J_ij[3];
-                        A_reduction[10] += J_ij[4] * w * J_ij[0];
-                        A_reduction[11] += J_ij[4] * w * J_ij[1];
-                        A_reduction[12] += J_ij[4] * w * J_ij[2];
-                        A_reduction[13] += J_ij[4] * w * J_ij[3];
-                        A_reduction[14] += J_ij[4] * w * J_ij[4];
-                        A_reduction[15] += J_ij[5] * w * J_ij[0];
-                        A_reduction[16] += J_ij[5] * w * J_ij[1];
-                        A_reduction[17] += J_ij[5] * w * J_ij[2];
-                        A_reduction[18] += J_ij[5] * w * J_ij[3];
-                        A_reduction[19] += J_ij[5] * w * J_ij[4];
-                        A_reduction[20] += J_ij[5] * w * J_ij[5];
-
-                        A_reduction[21] += J_ij[0] * w * r;
-                        A_reduction[22] += J_ij[1] * w * r;
-                        A_reduction[23] += J_ij[2] * w * r;
-                        A_reduction[24] += J_ij[3] * w * r;
-                        A_reduction[25] += J_ij[4] * w * r;
-                        A_reduction[26] += J_ij[5] * w * r;
-
-                        A_reduction[27] += r * r;
+                        // Dump J, r into JtJ and Jtr
+                        int i = 0;
+                        for (int j = 0; j < 6; j++) {
+                            for (int k = 0; k <= j; k++) {
+                                A_reduction[i] += J_ij[j] * w * J_ij[k];
+                                i++;
+                            }
+                            A_reduction[21 + j] += J_ij[j] * w * r;
+                        }
+                        A_reduction[27] += r;
                         A_reduction[28] += 1;
                     }
                 }

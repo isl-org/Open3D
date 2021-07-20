@@ -54,23 +54,21 @@ __device__ double atomicAdd(double *address, double val) {
 #endif
 
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
-#define ISNAN(X) isnan(X)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
-#define ISNAN(X) std::isnan(X)
 #endif
 
 namespace open3d {
 template <typename scalar_t, typename T>
-OPEN3D_HOST_DEVICE bool IsClose(const scalar_t &X,
-                                const T &Y,
+OPEN3D_HOST_DEVICE bool IsClose(const scalar_t &x,
+                                const T &y,
                                 const double rtol = 1e-4) {
-    return ((X > (1.0 - rtol) * Y) && (X < (1.0 + rtol) * Y));
+    return ((x > (1.0 - rtol) * y) && (x < (1.0 + rtol) * y));
 }
 
 template <typename scalar_t>
-OPEN3D_HOST_DEVICE scalar_t Square(const scalar_t &X) {
-    return X * X;
+OPEN3D_HOST_DEVICE scalar_t Square(const scalar_t &x) {
+    return x * x;
 }
 }  // namespace open3d
 

@@ -28,6 +28,10 @@
 
 #include "open3d/core/CUDAState.cuh"
 
+#include <thread>
+#include <vector>
+
+#include "open3d/core/CUDAUtils.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -43,6 +47,83 @@ TEST(CUDAState, InitState) {
                              cuda_state->GetP2PEnabled()[i][j]);
         }
     }
+}
+
+void CheckScopedStreamManually() {
+    int current_device = core::cuda::GetDevice();
+
+    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_EQ(core::cuda::GetDevice(), current_device);
+
+    cudaStream_t stream;
+    OPEN3D_CUDA_CHECK(cudaStreamCreate(&stream));
+
+    {
+        core::CUDAScopedStream scoped_stream(stream);
+
+        ASSERT_EQ(core::cuda::GetStream(), stream);
+        ASSERT_NE(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+        ASSERT_EQ(core::cuda::GetDevice(), current_device);
+    }
+
+    OPEN3D_CUDA_CHECK(cudaStreamDestroy(stream));
+
+    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_EQ(core::cuda::GetDevice(), current_device);
+}
+
+void CheckScopedStreamAutomatically() {
+    int current_device = core::cuda::GetDevice();
+
+    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_EQ(core::cuda::GetDevice(), current_device);
+
+    {
+        core::CUDAScopedStream scoped_stream(
+                core::CUDAScopedStream::CreateNewStream);
+
+        ASSERT_NE(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+        ASSERT_EQ(core::cuda::GetDevice(), current_device);
+    }
+
+    ASSERT_EQ(core::cuda::GetStream(), core::cuda::GetDefaultStream());
+    ASSERT_EQ(core::cuda::GetDevice(), current_device);
+}
+
+void CheckScopedStreamMultiThreaded(const std::function<void()>& func) {
+    std::vector<std::thread> threads;
+
+    const int kIterations = 100000;
+    const int kThreads = 8;
+    for (int i = 0; i < kThreads; ++i) {
+        threads.emplace_back([&kIterations, &func]() {
+            utility::LogDebug("Starting thread with ID {}",
+                              std::this_thread::get_id());
+
+            for (int i = 0; i < kIterations; ++i) {
+                func();
+            }
+        });
+    }
+
+    for (auto& thread : threads) {
+        if (thread.joinable()) {
+            utility::LogDebug("Joining thread with ID {}", thread.get_id());
+            thread.join();
+        }
+    }
+}
+
+TEST(CUDAState, ScopedStreamManually) { CheckScopedStreamManually(); }
+
+TEST(CUDAState, ScopedStreamManuallyMultiThreaded) {
+    CheckScopedStreamMultiThreaded(&CheckScopedStreamManually);
+}
+
+TEST(CUDAState, ScopedStreamAutomatically) { CheckScopedStreamAutomatically(); }
+
+TEST(CUDAState, ScopedStreamAutomaticallyMultiThreaded) {
+    CheckScopedStreamMultiThreaded(&CheckScopedStreamAutomatically);
 }
 
 }  // namespace tests

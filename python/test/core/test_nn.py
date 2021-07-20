@@ -49,7 +49,7 @@ def test_knn_index(device):
     assert nns.hybrid_index(0.1)
 
     # Multi radii search is only supported on CPU.
-    if device.get_type() == o3d.core.Device.DeviceType.CPU:
+    if device.get_type() == o3c.Device.DeviceType.CPU:
         assert nns.multi_radius_index()
 
 
@@ -146,7 +146,7 @@ def test_fixed_radius_search(device, dtype):
 
 @pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
 def test_hybrid_search_random(dtype):
-    if o3d.core.cuda.device_count() > 0:
+    if o3c.cuda.device_count() > 0:
         dataset_size, query_size = 1000, 100
         radius, k = 0.1, 10
 
@@ -181,7 +181,7 @@ def test_hybrid_search_random(dtype):
 
 @pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
 def test_fixed_radius_search_random(dtype):
-    if o3d.core.cuda.device_count() > 0:
+    if o3c.cuda.device_count() > 0:
         dataset_size, query_size = 1000, 100
         radius = 0.1
 

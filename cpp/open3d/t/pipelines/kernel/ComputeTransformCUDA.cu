@@ -76,36 +76,15 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
 
     if (valid) {
         // Dump J, r into JtJ and Jtr
-        reduction[0] += J_ij[0] * w * J_ij[0];
-        reduction[1] += J_ij[1] * w * J_ij[0];
-        reduction[2] += J_ij[1] * w * J_ij[1];
-        reduction[3] += J_ij[2] * w * J_ij[0];
-        reduction[4] += J_ij[2] * w * J_ij[1];
-        reduction[5] += J_ij[2] * w * J_ij[2];
-        reduction[6] += J_ij[3] * w * J_ij[0];
-        reduction[7] += J_ij[3] * w * J_ij[1];
-        reduction[8] += J_ij[3] * w * J_ij[2];
-        reduction[9] += J_ij[3] * w * J_ij[3];
-        reduction[10] += J_ij[4] * w * J_ij[0];
-        reduction[11] += J_ij[4] * w * J_ij[1];
-        reduction[12] += J_ij[4] * w * J_ij[2];
-        reduction[13] += J_ij[4] * w * J_ij[3];
-        reduction[14] += J_ij[4] * w * J_ij[4];
-        reduction[15] += J_ij[5] * w * J_ij[0];
-        reduction[16] += J_ij[5] * w * J_ij[1];
-        reduction[17] += J_ij[5] * w * J_ij[2];
-        reduction[18] += J_ij[5] * w * J_ij[3];
-        reduction[19] += J_ij[5] * w * J_ij[4];
-        reduction[20] += J_ij[5] * w * J_ij[5];
-
-        reduction[21] += J_ij[0] * w * r;
-        reduction[22] += J_ij[1] * w * r;
-        reduction[23] += J_ij[2] * w * r;
-        reduction[24] += J_ij[3] * w * r;
-        reduction[25] += J_ij[4] * w * r;
-        reduction[26] += J_ij[5] * w * r;
-
-        reduction[27] += r * r;
+        int i = 0;
+        for (int j = 0; j < 6; j++) {
+            for (int k = 0; k <= j; k++) {
+                reduction[i] += J_ij[j] * w * J_ij[k];
+                i++;
+            }
+            reduction[21 + j] += J_ij[j] * w * r;
+        }
+        reduction[27] += r;
         reduction[28] += 1;
     }
 
@@ -136,7 +115,8 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
         DISPATCH_ROBUST_KERNEL_FUNCTION(
                 kernel.type_, scalar_t, kernel.scaling_parameter_,
                 kernel.shape_parameter_, [&]() {
-                    ComputePosePointToPlaneKernelCUDA<<<blocks, threads>>>(
+                    ComputePosePointToPlaneKernelCUDA<<<
+                            blocks, threads, 0, core::cuda::GetStream()>>>(
                             source_points.GetDataPtr<scalar_t>(),
                             target_points.GetDataPtr<scalar_t>(),
                             target_normals.GetDataPtr<scalar_t>(),

@@ -66,18 +66,14 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
-    core::Device device = source.GetDevice();
-
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
-
     core::Tensor R, t;
+    // Get tuple of Rotation {3, 3} and Translation {3} of type Float64.
+    // [Checks are added in kernel functions].
     std::tie(R, t) = pipelines::kernel::ComputeRtPointToPoint(
             source.GetPoints(), target.GetPoints(), correspondences);
 
+    // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
+    // device, from rotation {3, 3} and translation {3}.
     return t::pipelines::kernel::RtToTransformation(R, t);
 }
 
@@ -117,21 +113,13 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
-    core::Device device = source.GetDevice();
-
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
-
-    // Get pose {6} of type Float64 from correspondences indexed source and
-    // target point cloud.
+    // Get pose {6} of type Float64. [Checks are added in kernel functions].
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
             source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
             correspondences, this->kernel_);
 
-    // Get transformation {4,4} of type Float64 from pose {6}.
+    // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
+    // device, from pose {6}.
     return pipelines::kernel::PoseToTransformation(pose);
 }
 

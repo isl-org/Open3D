@@ -24,43 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cuda.h>
-#include <cuda_runtime.h>
-
-#include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
+#include "open3d/core/CUDAState.cuh"
 
 namespace open3d {
-namespace t {
-namespace pipelines {
-namespace kernel {
+namespace core {
 
-template <typename scalar_t>
-__global__ void PoseToTransformationKernel(scalar_t *transformation_ptr,
-                                           const scalar_t *X_ptr) {
-    PoseToTransformationImpl(transformation_ptr, X_ptr);
-}
+constexpr CUDAScopedStream::CreateNewStreamTag
+        CUDAScopedStream::CreateNewStream;
 
-template <typename scalar_t>
-void PoseToTransformationCUDA(scalar_t *transformation_ptr,
-                              const scalar_t *X_ptr) {
-    utility::LogError("Unsupported data type.");
-}
-
-template <>
-void PoseToTransformationCUDA<float>(float *transformation_ptr,
-                                     const float *X_ptr) {
-    PoseToTransformationKernel<float>
-            <<<1, 1, 0, core::cuda::GetStream()>>>(transformation_ptr, X_ptr);
-}
-
-template <>
-void PoseToTransformationCUDA<double>(double *transformation_ptr,
-                                      const double *X_ptr) {
-    PoseToTransformationKernel<double>
-            <<<1, 1, 0, core::cuda::GetStream()>>>(transformation_ptr, X_ptr);
-}
-
-}  // namespace kernel
-}  // namespace pipelines
-}  // namespace t
+}  // namespace core
 }  // namespace open3d
