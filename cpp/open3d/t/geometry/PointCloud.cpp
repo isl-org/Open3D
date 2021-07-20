@@ -272,7 +272,7 @@ void PointCloud::EstimateNormals(
 
     // Computes and set `covariances` attribute using Hybrid or KNN Search.
     this->SetPointAttr("covariances",
-                       core::Tensor::Zeros({GetPoints().GetLength(), 3, 3},
+                       core::Tensor::Empty({GetPoints().GetLength(), 3, 3},
                                            dtype, device));
 
     if (radius.has_value()) {
