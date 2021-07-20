@@ -27,11 +27,11 @@
 
 #include <vector>
 
-#include "open3d/ml/impl/misc/NeighborSearchCommon.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace open3d::core::nns;
 
 template <class T>
 void FixedRadiusSearchCPU(const torch::Tensor& points,
@@ -91,9 +91,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
     }
     CHECK_TYPE(points_row_splits, kInt64);
     CHECK_TYPE(queries_row_splits, kInt64);
-    CHECK_TYPE(hash_table_splits, kInt32);
-    CHECK_TYPE(hash_table_index, kInt32);
-    CHECK_TYPE(hash_table_cell_splits, kInt32);
+    CHECK_TYPE(hash_table_splits, kInt64);
+    CHECK_TYPE(hash_table_index, kInt64);
+    CHECK_TYPE(hash_table_cell_splits, kInt64);
     CHECK_SAME_DTYPE(points, queries);
     CHECK_SAME_DEVICE_TYPE(points, queries);
     // ensure that these are on the cpu

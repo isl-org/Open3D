@@ -25,12 +25,13 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
+#include "open3d/core/nns/FixedRadiusSearchImpl.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace open3d::core::nns;
 
 template <class T>
 void FixedRadiusSearchCPU(const torch::Tensor& points,
@@ -47,20 +48,20 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
                           torch::Tensor& neighbors_index,
                           torch::Tensor& neighbors_row_splits,
                           torch::Tensor& neighbors_distance) {
-    NeighborSearchAllocator<T> output_allocator(points.device().type(),
-                                                points.device().index());
+    NeighborSearchAllocator<T, int64_t> output_allocator(
+            points.device().type(), points.device().index());
 
-    FixedRadiusSearchCPU(
+    open3d::core::nns::impl::FixedRadiusSearchCPU(
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
             T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), queries_row_splits.size(0),
             queries_row_splits.data_ptr<int64_t>(),
-            (uint32_t*)hash_table_splits.data_ptr<int32_t>(),
+            hash_table_splits.data_ptr<int64_t>(),
             hash_table_cell_splits.size(0),
-            (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
-            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric,
-            ignore_query_point, return_distances, output_allocator);
+            hash_table_cell_splits.data_ptr<int64_t>(),
+            hash_table_index.data_ptr<int64_t>(), metric, ignore_query_point,
+            return_distances, output_allocator);
 
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();

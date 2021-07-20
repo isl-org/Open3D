@@ -34,7 +34,7 @@ template <class T>
 void BuildSpatialHashTableCPU(const torch::Tensor& points,
                               double radius,
                               const torch::Tensor& points_row_splits,
-                              const std::vector<uint32_t>& hash_table_splits,
+                              const std::vector<int64_t>& hash_table_splits,
                               torch::Tensor& hash_table_index,
                               torch::Tensor& hash_table_cell_splits);
 #ifdef BUILD_CUDA_MODULE
@@ -42,7 +42,7 @@ template <class T>
 void BuildSpatialHashTableCUDA(const torch::Tensor& points,
                                double radius,
                                const torch::Tensor& points_row_splits,
-                               const std::vector<uint32_t>& hash_table_splits,
+                               const std::vector<int64_t>& hash_table_splits,
                                torch::Tensor& hash_table_index,
                                torch::Tensor& hash_table_cell_splits);
 #endif
@@ -69,7 +69,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> BuildSpatialHashTable(
 
     const auto& point_type = points.dtype();
 
-    std::vector<uint32_t> hash_table_splits(batch_size.value() + 1, 0);
+    std::vector<int64_t> hash_table_splits(batch_size.value() + 1, 0);
     for (int i = 0; i < batch_size.value(); ++i) {
         int64_t num_points_i = points_row_splits.data_ptr<int64_t>()[i + 1] -
                                points_row_splits.data_ptr<int64_t>()[i];
@@ -85,16 +85,16 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> BuildSpatialHashTable(
 
     torch::Tensor hash_table_index = torch::empty(
             {points.size(0)},
-            torch::dtype(ToTorchDtype<int32_t>()).device(device, device_idx));
+            torch::dtype(ToTorchDtype<int64_t>()).device(device, device_idx));
 
     torch::Tensor hash_table_cell_splits = torch::empty(
             {hash_table_splits.back() + 1},
-            torch::dtype(ToTorchDtype<int32_t>()).device(device, device_idx));
+            torch::dtype(ToTorchDtype<int64_t>()).device(device, device_idx));
 
     torch::Tensor out_hash_table_splits = torch::empty(
-            {batch_size.value() + 1}, torch::dtype(ToTorchDtype<int32_t>()));
+            {batch_size.value() + 1}, torch::dtype(ToTorchDtype<int64_t>()));
     for (size_t i = 0; i < hash_table_splits.size(); ++i) {
-        out_hash_table_splits.data_ptr<int32_t>()[i] = hash_table_splits[i];
+        out_hash_table_splits.data_ptr<int64_t>()[i] = hash_table_splits[i];
     }
 
 #define FN_PARAMETERS                                                       \

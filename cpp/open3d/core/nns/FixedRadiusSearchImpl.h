@@ -31,7 +31,7 @@
 #include <set>
 
 #include "open3d/core/Atomic.h"
-#include "open3d/ml/impl/misc/NeighborSearchCommon.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/ParallelScan.h"

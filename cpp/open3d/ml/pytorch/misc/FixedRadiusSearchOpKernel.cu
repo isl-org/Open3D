@@ -26,12 +26,13 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
+#include "open3d/core/nns/FixedRadiusSearchImpl.cuh"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace open3d::core::nns;
 
 template <class T>
 void FixedRadiusSearchCUDA(const torch::Tensor& points,
@@ -55,39 +56,39 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     auto device = points.device().type();
     auto device_idx = points.device().index();
 
-    NeighborSearchAllocator<T> output_allocator(device, device_idx);
+    NeighborSearchAllocator<T, int64_t> output_allocator(device, device_idx);
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
     // determine temp_size
-    FixedRadiusSearchCUDA(
+    open3d::core::nns::impl::FixedRadiusSearchCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
             T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), queries_row_splits.size(0),
             queries_row_splits.data_ptr<int64_t>(),
-            (uint32_t*)hash_table_splits.data_ptr<int32_t>(),
+            hash_table_splits.data_ptr<int64_t>(),
             hash_table_cell_splits.size(0),
-            (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
-            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric,
-            ignore_query_point, return_distances, output_allocator);
+            hash_table_cell_splits.data_ptr<int64_t>(),
+            hash_table_index.data_ptr<int64_t>(), metric, ignore_query_point,
+            return_distances, output_allocator);
 
     auto temp_tensor = CreateTempTensor(temp_size, points.device(), &temp_ptr);
 
     // actually run the search
-    FixedRadiusSearchCUDA(
+    open3d::core::nns::impl::FixedRadiusSearchCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
             T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), queries_row_splits.size(0),
             queries_row_splits.data_ptr<int64_t>(),
-            (uint32_t*)hash_table_splits.data_ptr<int32_t>(),
+            hash_table_splits.data_ptr<int64_t>(),
             hash_table_cell_splits.size(0),
-            (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
-            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric,
-            ignore_query_point, return_distances, output_allocator);
+            hash_table_cell_splits.data_ptr<int64_t>(),
+            hash_table_index.data_ptr<int64_t>(), metric, ignore_query_point,
+            return_distances, output_allocator);
 
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();
