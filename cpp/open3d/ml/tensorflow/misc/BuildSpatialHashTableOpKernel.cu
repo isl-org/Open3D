@@ -47,7 +47,7 @@ public:
                 const tensorflow::Tensor& points,
                 const tensorflow::Tensor& radius,
                 const tensorflow::Tensor& points_row_splits,
-                const std::vector<int64_t>& hash_table_splits,
+                const std::vector<uint32_t>& hash_table_splits,
                 tensorflow::Tensor& hash_table_index,
                 tensorflow::Tensor& hash_table_cell_splits) {
         auto device = context->eigen_gpu_device();
@@ -63,8 +63,8 @@ public:
                 (int64_t*)points_row_splits.flat<int64>().data(),
                 hash_table_splits.data(),
                 hash_table_cell_splits.shape().dim_size(0),
-                (int64_t*)hash_table_cell_splits.flat<int64>().data(),
-                (int64_t*)hash_table_index.flat<int64>().data());
+                hash_table_cell_splits.flat<uint32_t>().data(),
+                hash_table_index.flat<uint32_t>().data());
 
         Tensor temp_tensor;
         TensorShape temp_shape({ssize_t(temp_size)});
@@ -81,8 +81,8 @@ public:
                 (int64_t*)points_row_splits.flat<int64>().data(),
                 hash_table_splits.data(),
                 hash_table_cell_splits.shape().dim_size(0),
-                (int64_t*)hash_table_cell_splits.flat<int64>().data(),
-                (int64_t*)hash_table_index.flat<int64>().data());
+                hash_table_cell_splits.flat<uint32_t>().data(),
+                hash_table_index.flat<uint32_t>().data());
     }
 
 private:

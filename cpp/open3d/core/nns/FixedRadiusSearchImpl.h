@@ -81,10 +81,10 @@ void BuildSpatialHashTableCPU(const size_t num_points,
                               const T radius,
                               const size_t points_row_splits_size,
                               const int64_t* points_row_splits,
-                              const int64_t* hash_table_splits,
+                              const uint32_t* hash_table_splits,
                               const size_t hash_table_cell_splits_size,
-                              int64_t* hash_table_cell_splits,
-                              int64_t* hash_table_index) {
+                              uint32_t* hash_table_cell_splits,
+                              uint32_t* hash_table_index) {
     using namespace open3d::utility;
     typedef MiniVec<T, 3> Vec3_t;
 
@@ -93,7 +93,7 @@ void BuildSpatialHashTableCPU(const size_t num_points,
     const T inv_voxel_size = 1 / voxel_size;
 
     memset(&hash_table_cell_splits[0], 0,
-           sizeof(int64_t) * hash_table_cell_splits_size);
+           sizeof(uint32_t) * hash_table_cell_splits_size);
 
     // compute number of points that map to each hash
     for (int i = 0; i < batch_size; ++i) {
@@ -114,7 +114,7 @@ void BuildSpatialHashTableCPU(const size_t num_points,
                                   // note the +1 because we want the first
                                   // element to be 0
                                   core::AtomicFetchAddRelaxed(
-                                          (uint64_t*)&hash_table_cell_splits
+                                          &hash_table_cell_splits
                                                   [first_cell_idx + hash + 1],
                                           1);
                               }
@@ -205,10 +205,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                            const int64_t* const points_row_splits,
                            const size_t queries_row_splits_size,
                            const int64_t* const queries_row_splits,
-                           const int64_t* const hash_table_splits,
+                           const uint32_t* const hash_table_splits,
                            const size_t hash_table_cell_splits_size,
-                           const int64_t* const hash_table_cell_splits,
-                           const int64_t* const hash_table_index,
+                           const uint32_t* const hash_table_cell_splits,
+                           const uint32_t* const hash_table_index,
                            OUTPUT_ALLOCATOR& output_allocator) {
     using namespace open3d::utility;
 
@@ -216,7 +216,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
     const int VECSIZE = 8;
     typedef MiniVec<T, 3> Vec3_t;
     typedef Eigen::Array<T, VECSIZE, 1> Vec_t;
-    typedef Eigen::Array<int64_t, VECSIZE, 1> Veci_t;
+    typedef Eigen::Array<int32_t, VECSIZE, 1> Veci_t;
 
     const int batch_size = points_row_splits_size - 1;
 
@@ -224,7 +224,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
     if (num_points == 0 || num_queries == 0) {
         std::fill(query_neighbors_row_splits,
                   query_neighbors_row_splits + num_queries + 1, 0);
-        int64_t* indices_ptr;
+        int32_t* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
         T* distances_ptr;
@@ -290,7 +290,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                             size_t end_idx = hash_table_cell_splits[bin + 1];
 
                             for (size_t j = begin_idx; j < end_idx; ++j) {
-                                int64_t idx = hash_table_index[j];
+                                uint32_t idx = hash_table_index[j];
                                 if (IGNORE_QUERY_POINT) {
                                     if (points[idx * 3 + 0] == pos[0] &&
                                         points[idx * 3 + 1] == pos[1] &&
@@ -338,7 +338,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 
     // Allocate output arrays
     // output for the indices to the neighbors
-    int64_t* indices_ptr;
+    int32_t* indices_ptr;
     output_allocator.AllocIndices(&indices_ptr, num_indices);
 
     // output for the distances
@@ -555,10 +555,10 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                           const int64_t* const points_row_splits,
                           const size_t queries_row_splits_size,
                           const int64_t* const queries_row_splits,
-                          const int64_t* const hash_table_splits,
+                          const uint32_t* const hash_table_splits,
                           const size_t hash_table_cell_splits_size,
-                          const int64_t* const hash_table_cell_splits,
-                          const int64_t* const hash_table_index,
+                          const uint32_t* const hash_table_cell_splits,
+                          const uint32_t* const hash_table_index,
                           const Metric metric,
                           const bool ignore_query_point,
                           const bool return_distances,

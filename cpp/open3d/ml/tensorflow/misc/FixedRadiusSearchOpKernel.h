@@ -51,18 +51,6 @@ public:
         *ptr = (int32_t*)flat_tensor.data();
     }
 
-    void AllocIndices(int64_t** ptr, size_t num) {
-        using namespace tensorflow;
-        *ptr = nullptr;
-        Tensor* tensor = 0;
-        TensorShape shape({int64_t(num)});
-        OP_REQUIRES_OK(context, context->allocate_output(0, shape, &tensor));
-        auto flat_tensor = tensor->flat<int64>();
-        static_assert(sizeof(int64) == sizeof(int64_t),
-                      "int64 and int64_t not compatible");
-        *ptr = (int64_t*)flat_tensor.data();
-    }
-
     void AllocDistances(T** ptr, size_t num) {
         using namespace tensorflow;
         *ptr = nullptr;

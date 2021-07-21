@@ -91,9 +91,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
     }
     CHECK_TYPE(points_row_splits, kInt64);
     CHECK_TYPE(queries_row_splits, kInt64);
-    CHECK_TYPE(hash_table_splits, kInt64);
-    CHECK_TYPE(hash_table_index, kInt64);
-    CHECK_TYPE(hash_table_cell_splits, kInt64);
+    CHECK_TYPE(hash_table_splits, kInt32);
+    CHECK_TYPE(hash_table_index, kInt32);
+    CHECK_TYPE(hash_table_cell_splits, kInt32);
     CHECK_SAME_DTYPE(points, queries);
     CHECK_SAME_DEVICE_TYPE(points, queries);
     // ensure that these are on the cpu

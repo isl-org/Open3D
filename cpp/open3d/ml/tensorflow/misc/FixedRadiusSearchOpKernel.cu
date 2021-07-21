@@ -70,10 +70,10 @@ public:
                 (int64_t*)points_row_splits.flat<int64>().data(),
                 queries_row_splits.shape().dim_size(0),
                 (int64_t*)queries_row_splits.flat<int64>().data(),
-                (int64_t*)hash_table_splits.flat<int64>().data(),
+                hash_table_splits.flat<uint32_t>().data(),
                 hash_table_cell_splits.shape().dim_size(0),
-                (int64_t*)hash_table_cell_splits.flat<int64>().data(),
-                (int64_t*)hash_table_index.flat<int64>().data(), metric,
+                hash_table_cell_splits.flat<uint32_t>().data(),
+                hash_table_index.flat<uint32_t>().data(), metric,
                 ignore_query_point, return_distances, output_allocator);
 
         Tensor temp_tensor;
@@ -93,10 +93,10 @@ public:
                 (int64_t*)points_row_splits.flat<int64>().data(),
                 queries_row_splits.shape().dim_size(0),
                 (int64_t*)queries_row_splits.flat<int64>().data(),
-                (int64_t*)hash_table_splits.flat<int64>().data(),
+                hash_table_splits.flat<uint32_t>().data(),
                 hash_table_cell_splits.shape().dim_size(0),
-                (int64_t*)hash_table_cell_splits.flat<int64>().data(),
-                (int64_t*)hash_table_index.flat<int64>().data(), metric,
+                hash_table_cell_splits.flat<uint32_t>().data(),
+                hash_table_index.flat<uint32_t>().data(), metric,
                 ignore_query_point, return_distances, output_allocator);
     }
 

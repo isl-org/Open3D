@@ -53,10 +53,10 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
             points.GetShape()[0], points.GetDataPtr<T>(), T(radius),
             points_row_splits.GetShape()[0],
             points_row_splits.GetDataPtr<int64_t>(),
-            hash_table_splits.GetDataPtr<int64_t>(),
+            hash_table_splits.GetDataPtr<uint32_t>(),
             hash_table_cell_splits.GetShape()[0],
-            hash_table_cell_splits.GetDataPtr<int64_t>(),
-            hash_table_index.GetDataPtr<int64_t>());
+            hash_table_cell_splits.GetDataPtr<uint32_t>(),
+            hash_table_index.GetDataPtr<uint32_t>());
 
     Device device = points.GetDevice();
     Tensor temp_tensor =
@@ -68,10 +68,10 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
             points.GetShape()[0], points.GetDataPtr<T>(), T(radius),
             points_row_splits.GetShape()[0],
             points_row_splits.GetDataPtr<int64_t>(),
-            hash_table_splits.GetDataPtr<int64_t>(),
+            hash_table_splits.GetDataPtr<uint32_t>(),
             hash_table_cell_splits.GetShape()[0],
-            hash_table_cell_splits.GetDataPtr<int64_t>(),
-            hash_table_index.GetDataPtr<int64_t>());
+            hash_table_cell_splits.GetDataPtr<uint32_t>(),
+            hash_table_index.GetDataPtr<uint32_t>());
 }
 
 template <class T>
@@ -108,10 +108,10 @@ void FixedRadiusSearchCUDA(const Tensor& points,
             points_row_splits.GetDataPtr<int64_t>(),
             queries_row_splits.GetShape()[0],
             queries_row_splits.GetDataPtr<int64_t>(),
-            hash_table_splits.GetDataPtr<int64_t>(),
+            hash_table_splits.GetDataPtr<uint32_t>(),
             hash_table_cell_splits.GetShape()[0],
-            hash_table_cell_splits.GetDataPtr<int64_t>(),
-            hash_table_index.GetDataPtr<int64_t>(), metric, ignore_query_point,
+            hash_table_cell_splits.GetDataPtr<uint32_t>(),
+            hash_table_index.GetDataPtr<uint32_t>(), metric, ignore_query_point,
             return_distances, output_allocator);
 
     Tensor temp_tensor =
@@ -126,10 +126,10 @@ void FixedRadiusSearchCUDA(const Tensor& points,
             points_row_splits.GetDataPtr<int64_t>(),
             queries_row_splits.GetShape()[0],
             queries_row_splits.GetDataPtr<int64_t>(),
-            hash_table_splits.GetDataPtr<int64_t>(),
+            hash_table_splits.GetDataPtr<uint32_t>(),
             hash_table_cell_splits.GetShape()[0],
-            hash_table_cell_splits.GetDataPtr<int64_t>(),
-            hash_table_index.GetDataPtr<int64_t>(), metric, ignore_query_point,
+            hash_table_cell_splits.GetDataPtr<uint32_t>(),
+            hash_table_index.GetDataPtr<uint32_t>(), metric, ignore_query_point,
             return_distances, output_allocator);
 
     Tensor indices_unsorted = output_allocator.NeighborsIndex();
@@ -146,16 +146,16 @@ void FixedRadiusSearchCUDA(const Tensor& points,
         int64_t num_indices = indices_unsorted.GetShape()[0];
         int64_t num_segments = neighbors_row_splits.GetShape()[0] - 1;
         Tensor indices_sorted =
-                Tensor::Empty({num_indices}, Dtype::Int64, device);
+                Tensor::Empty({num_indices}, Dtype::Int32, device);
         Tensor distances_sorted = Tensor::Empty({num_indices}, dtype, device);
 
         // Determine temp_size for sorting
         open3d::core::nns::impl::SortPairs(
                 temp_ptr, temp_size, texture_alignment, num_indices,
                 num_segments, neighbors_row_splits.GetDataPtr<int64_t>(),
-                indices_unsorted.GetDataPtr<int64_t>(),
+                indices_unsorted.GetDataPtr<int32_t>(),
                 distances_unsorted.GetDataPtr<T>(),
-                indices_sorted.GetDataPtr<int64_t>(),
+                indices_sorted.GetDataPtr<int32_t>(),
                 distances_sorted.GetDataPtr<T>());
 
         temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
@@ -165,9 +165,9 @@ void FixedRadiusSearchCUDA(const Tensor& points,
         open3d::core::nns::impl::SortPairs(
                 temp_ptr, temp_size, texture_alignment, num_indices,
                 num_segments, neighbors_row_splits.GetDataPtr<int64_t>(),
-                indices_unsorted.GetDataPtr<int64_t>(),
+                indices_unsorted.GetDataPtr<int32_t>(),
                 distances_unsorted.GetDataPtr<T>(),
-                indices_sorted.GetDataPtr<int64_t>(),
+                indices_sorted.GetDataPtr<int32_t>(),
                 distances_sorted.GetDataPtr<T>());
         neighbors_index = indices_sorted;
         neighbors_distance = distances_sorted;
@@ -201,10 +201,10 @@ void HybridSearchCUDA(const Tensor& points,
             points_row_splits.GetDataPtr<int64_t>(),
             queries_row_splits.GetShape()[0],
             queries_row_splits.GetDataPtr<int64_t>(),
-            hash_table_splits.GetDataPtr<int64_t>(),
+            hash_table_splits.GetDataPtr<uint32_t>(),
             hash_table_cell_splits.GetShape()[0],
-            hash_table_cell_splits.GetDataPtr<int64_t>(),
-            hash_table_index.GetDataPtr<int64_t>(), metric, output_allocator);
+            hash_table_cell_splits.GetDataPtr<uint32_t>(),
+            hash_table_index.GetDataPtr<uint32_t>(), metric, output_allocator);
 
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();

@@ -56,7 +56,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     auto device = points.device().type();
     auto device_idx = points.device().index();
 
-    NeighborSearchAllocator<T, int64_t> output_allocator(device, device_idx);
+    NeighborSearchAllocator<T> output_allocator(device, device_idx);
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
@@ -68,10 +68,10 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
             T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), queries_row_splits.size(0),
             queries_row_splits.data_ptr<int64_t>(),
-            hash_table_splits.data_ptr<int64_t>(),
+            (uint32_t*)hash_table_splits.data_ptr<int32_t>(),
             hash_table_cell_splits.size(0),
-            hash_table_cell_splits.data_ptr<int64_t>(),
-            hash_table_index.data_ptr<int64_t>(), metric, ignore_query_point,
+            (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
+            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric, ignore_query_point,
             return_distances, output_allocator);
 
     auto temp_tensor = CreateTempTensor(temp_size, points.device(), &temp_ptr);
@@ -84,10 +84,10 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
             T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), queries_row_splits.size(0),
             queries_row_splits.data_ptr<int64_t>(),
-            hash_table_splits.data_ptr<int64_t>(),
+            (uint32_t*)hash_table_splits.data_ptr<int32_t>(),
             hash_table_cell_splits.size(0),
-            hash_table_cell_splits.data_ptr<int64_t>(),
-            hash_table_index.data_ptr<int64_t>(), metric, ignore_query_point,
+            (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
+            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric, ignore_query_point,
             return_distances, output_allocator);
 
     neighbors_index = output_allocator.NeighborsIndex();

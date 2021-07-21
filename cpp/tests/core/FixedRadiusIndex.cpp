@@ -46,8 +46,6 @@ INSTANTIATE_TEST_SUITE_P(FixedRadiusIndex,
 
 TEST_P(FixedRadiusPermuteDevices, SearchRadius) {
     core::Device device = GetParam();
-    std::vector<int> ref_indices = {1, 4};
-    std::vector<float> ref_distance = {0.00626358, 0.00747938};
 
     int size = 10;
     std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
@@ -70,7 +68,7 @@ TEST_P(FixedRadiusPermuteDevices, SearchRadius) {
     std::tie(indices, distances, neighbor_row_splits) =
             index.SearchRadius(query, radius);
 
-    ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4}));
+    ExpectEQ(indices.ToFlatVector<int32_t>(), std::vector<int32_t>({1, 4}));
     ExpectEQ(distances.ToFlatVector<float>(),
              std::vector<float>({0.00626358, 0.00747938}));
     ExpectEQ(neighbor_row_splits.ToFlatVector<int64_t>(),

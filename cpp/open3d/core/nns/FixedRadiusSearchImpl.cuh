@@ -131,9 +131,9 @@ void CountHashTableEntries(const cudaStream_t& stream,
 /// Kernel for ComputePointIndexTable
 template <class T>
 __global__ void ComputePointIndexTableKernel(
-        int64_t* __restrict__ point_index_table,
+        uint32_t* __restrict__ point_index_table,
         uint32_t* __restrict__ count_tmp,
-        const int64_t* const __restrict__ hash_table_cell_splits,
+        const uint32_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         T inv_voxel_size,
         const T* const __restrict__ points,
@@ -175,9 +175,9 @@ __global__ void ComputePointIndexTableKernel(
 template <class T>
 void ComputePointIndexTable(
         const cudaStream_t& stream,
-        int64_t* __restrict__ point_index_table,
+        uint32_t* __restrict__ point_index_table,
         uint32_t* __restrict__ count_tmp,
-        const int64_t* const __restrict__ hash_table_cell_splits,
+        const uint32_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_cell_splits_size,
         T inv_voxel_size,
         const T* const __restrict__ points,
@@ -202,9 +202,9 @@ void ComputePointIndexTable(
 /// Kernel for CountNeighbors
 template <int METRIC, bool IGNORE_QUERY_POINT, class T>
 __global__ void CountNeighborsKernel(
-        int64_t* __restrict__ neighbors_count,
-        const int64_t* const __restrict__ point_index_table,
-        const int64_t* const __restrict__ hash_table_cell_splits,
+        uint32_t* __restrict__ neighbors_count,
+        const uint32_t* const __restrict__ point_index_table,
+        const uint32_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         const T* const __restrict__ query_points,
         size_t num_queries,
@@ -254,7 +254,7 @@ __global__ void CountNeighborsKernel(
         size_t end_idx = hash_table_cell_splits[bin + 1];
 
         for (size_t j = begin_idx; j < end_idx; ++j) {
-            int64_t idx = point_index_table[j];
+            uint32_t idx = point_index_table[j];
 
             Vec3<T> p(&points[idx * 3 + 0]);
             if (IGNORE_QUERY_POINT) {
@@ -304,9 +304,9 @@ __global__ void CountNeighborsKernel(
 ///
 template <class T>
 void CountNeighbors(const cudaStream_t& stream,
-                    int64_t* neighbors_count,
-                    const int64_t* const point_index_table,
-                    const int64_t* const hash_table_cell_splits,
+                    uint32_t* neighbors_count,
+                    const uint32_t* const point_index_table,
+                    const uint32_t* const hash_table_cell_splits,
                     size_t hash_table_cell_splits_size,
                     const T* const query_points,
                     size_t num_queries,
@@ -350,11 +350,11 @@ void CountNeighbors(const cudaStream_t& stream,
 /// Kernel for WriteNeighborsIndicesAndDistances
 template <class T, int METRIC, bool IGNORE_QUERY_POINT, bool RETURN_DISTANCES>
 __global__ void WriteNeighborsIndicesAndDistancesKernel(
-        int64_t* __restrict__ indices,
+        int32_t* __restrict__ indices,
         T* __restrict__ distances,
         const int64_t* const __restrict__ neighbors_row_splits,
-        const int64_t* const __restrict__ point_index_table,
-        const int64_t* const __restrict__ hash_table_cell_splits,
+        const uint32_t* const __restrict__ point_index_table,
+        const uint32_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         const T* const __restrict__ query_points,
         size_t num_queries,
@@ -405,7 +405,7 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
         size_t end_idx = hash_table_cell_splits[bin + 1];
 
         for (size_t j = begin_idx; j < end_idx; ++j) {
-            int64_t idx = point_index_table[j];
+            uint32_t idx = point_index_table[j];
 
             Vec3<T> p(&points[idx * 3 + 0]);
             if (IGNORE_QUERY_POINT) {
@@ -470,11 +470,11 @@ __global__ void WriteNeighborsIndicesAndDistancesKernel(
 template <class T>
 void WriteNeighborsIndicesAndDistances(
         const cudaStream_t& stream,
-        int64_t* indices,
+        int32_t* indices,
         T* distances,
         const int64_t* const neighbors_row_splits,
-        const int64_t* const point_index_table,
-        const int64_t* const hash_table_cell_splits,
+        const uint32_t* const point_index_table,
+        const uint32_t* const hash_table_cell_splits,
         size_t hash_table_cell_splits_size,
         const T* const query_points,
         size_t num_queries,
@@ -528,11 +528,11 @@ void WriteNeighborsIndicesAndDistances(
 /// Kernel for WriteNeighborsHybrid
 template <class T, int METRIC, bool RETURN_DISTANCES>
 __global__ void WriteNeighborsHybridKernel(
-        int64_t* __restrict__ indices,
+        int32_t* __restrict__ indices,
         T* __restrict__ distances,
-        int64_t* __restrict__ counts,
-        const int64_t* const __restrict__ point_index_table,
-        const int64_t* const __restrict__ hash_table_cell_splits,
+        int32_t* __restrict__ counts,
+        const uint32_t* const __restrict__ point_index_table,
+        const uint32_t* const __restrict__ hash_table_cell_splits,
         size_t hash_table_size,
         const T* const __restrict__ query_points,
         size_t num_queries,
@@ -587,7 +587,7 @@ __global__ void WriteNeighborsHybridKernel(
         size_t end_idx = hash_table_cell_splits[bin + 1];
 
         for (size_t j = begin_idx; j < end_idx; ++j) {
-            int64_t idx = point_index_table[j];
+            uint32_t idx = point_index_table[j];
 
             Vec3<T> p(&points[idx * 3 + 0]);
 
@@ -633,7 +633,7 @@ __global__ void WriteNeighborsHybridKernel(
             if (distances[indices_offset + j] >
                 distances[indices_offset + j + 1]) {
                 T dist_tmp = distances[indices_offset + j];
-                int64_t ind_tmp = indices[indices_offset + j];
+                int32_t ind_tmp = indices[indices_offset + j];
                 distances[indices_offset + j] =
                         distances[indices_offset + j + 1];
                 indices[indices_offset + j] = indices[indices_offset + j + 1];
@@ -688,11 +688,11 @@ __global__ void WriteNeighborsHybridKernel(
 ///        Note that for the L2 metric the squared distances will be returned!!
 template <class T>
 void WriteNeighborsHybrid(const cudaStream_t& stream,
-                          int64_t* indices,
+                          int32_t* indices,
                           T* distances,
-                          int64_t* counts,
-                          const int64_t* const point_index_table,
-                          const int64_t* const hash_table_cell_splits,
+                          int32_t* counts,
+                          const uint32_t* const point_index_table,
+                          const uint32_t* const hash_table_cell_splits,
                           size_t hash_table_cell_splits_size,
                           const T* const query_points,
                           size_t num_queries,
@@ -751,10 +751,10 @@ void BuildSpatialHashTableCUDA(const cudaStream_t& stream,
                                const T radius,
                                const size_t points_row_splits_size,
                                const int64_t* points_row_splits,
-                               const int64_t* hash_table_splits,
+                               const uint32_t* hash_table_splits,
                                const size_t hash_table_cell_splits_size,
-                               int64_t* hash_table_cell_splits,
-                               int64_t* hash_table_index) {
+                               uint32_t* hash_table_cell_splits,
+                               uint32_t* hash_table_index) {
     const bool get_temp_size = !temp;
 
     if (get_temp_size) {
@@ -843,9 +843,9 @@ void SortPairs(void* temp,
                int64_t num_indices,
                int64_t num_segments,
                const int64_t* query_neighbors_row_splits,
-               int64_t* indices_unsorted,
+               int32_t* indices_unsorted,
                T* distances_unsorted,
-               int64_t* indices_sorted,
+               int32_t* indices_sorted,
                T* distances_sorted) {
     const bool get_temp_size = !temp;
 
@@ -896,10 +896,10 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
                            const int64_t* const points_row_splits,
                            const size_t queries_row_splits_size,
                            const int64_t* const queries_row_splits,
-                           const int64_t* const hash_table_splits,
+                           const uint32_t* const hash_table_splits,
                            size_t hash_table_cell_splits_size,
-                           const int64_t* const hash_table_cell_splits,
-                           const int64_t* const hash_table_index,
+                           const uint32_t* const hash_table_cell_splits,
+                           const uint32_t* const hash_table_index,
                            const Metric metric,
                            const bool ignore_query_point,
                            const bool return_distances,
@@ -915,7 +915,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
     if ((0 == num_points || 0 == num_queries) && !get_temp_size) {
         cudaMemsetAsync(query_neighbors_row_splits, 0,
                         sizeof(int64_t) * (num_queries + 1), stream);
-        int64_t* indices_ptr;
+        int32_t* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
         T* distances_ptr;
@@ -930,8 +930,8 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
     const T voxel_size = 2 * radius;
     const T inv_voxel_size = 1 / voxel_size;
 
-    std::pair<int64_t*, size_t> query_neighbors_count =
-            mem_temp.Alloc<int64_t>(num_queries);
+    std::pair<uint32_t*, size_t> query_neighbors_count =
+            mem_temp.Alloc<uint32_t>(num_queries);
 
     // we need this value to compute the size of the index array
     if (!get_temp_size) {
@@ -993,7 +993,7 @@ void FixedRadiusSearchCUDA(const cudaStream_t& stream,
         // allocate the output array for the neighbor indices
         const size_t num_indices = last_prefix_sum_entry;
 
-        int64_t* indices_ptr;
+        int32_t* indices_ptr;
         T* distances_ptr;
 
         output_allocator.AllocIndices(&indices_ptr, num_indices);
@@ -1030,21 +1030,21 @@ void HybridSearchCUDA(const cudaStream_t stream,
                       const int64_t* const points_row_splits,
                       const size_t queries_row_splits_size,
                       const int64_t* const queries_row_splits,
-                      const int64_t* const hash_table_splits,
+                      const uint32_t* const hash_table_splits,
                       size_t hash_table_cell_splits_size,
-                      const int64_t* const hash_table_cell_splits,
-                      const int64_t* const hash_table_index,
+                      const uint32_t* const hash_table_cell_splits,
+                      const uint32_t* const hash_table_index,
                       const Metric metric,
                       OUTPUT_ALLOCATOR& output_allocator) {
     // return empty output arrays if there are no points
     if (0 == num_points || 0 == num_queries) {
-        int64_t* indices_ptr;
+        int32_t* indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
         T* distances_ptr;
         output_allocator.AllocDistances(&distances_ptr, 0);
 
-        int64_t* counts_ptr;
+        int32_t* counts_ptr;
         output_allocator.AllocCounts(&counts_ptr, 0);
         return;
     }
@@ -1056,13 +1056,13 @@ void HybridSearchCUDA(const cudaStream_t stream,
     // Allocate output pointers.
     const size_t num_indices = num_queries * max_knn;
 
-    int64_t* indices_ptr;
+    int32_t* indices_ptr;
     output_allocator.AllocIndices(&indices_ptr, num_indices, -1);
 
     T* distances_ptr;
     output_allocator.AllocDistances(&distances_ptr, num_indices, 0);
 
-    int64_t* counts_ptr;
+    int32_t* counts_ptr;
     output_allocator.AllocCounts(&counts_ptr, num_queries, 0);
 
     for (int i = 0; i < batch_size; ++i) {

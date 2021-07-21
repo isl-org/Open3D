@@ -47,10 +47,10 @@ void BuildSpatialHashTableCPU(const Tensor& points,
             points.GetShape()[0], points.GetDataPtr<T>(), T(radius),
             points_row_splits.GetShape()[0],
             points_row_splits.GetDataPtr<int64_t>(),
-            hash_table_splits.GetDataPtr<int64_t>(),
+            hash_table_splits.GetDataPtr<uint32_t>(),
             hash_table_cell_splits.GetShape()[0],
-            hash_table_cell_splits.GetDataPtr<int64_t>(),
-            hash_table_index.GetDataPtr<int64_t>());
+            hash_table_cell_splits.GetDataPtr<uint32_t>(),
+            hash_table_index.GetDataPtr<uint32_t>());
 }
 
 template <class T>
@@ -79,10 +79,10 @@ void FixedRadiusSearchCPU(const Tensor& points,
             points_row_splits.GetDataPtr<int64_t>(),
             queries_row_splits.GetShape()[0],
             queries_row_splits.GetDataPtr<int64_t>(),
-            hash_table_splits.GetDataPtr<int64_t>(),
+            hash_table_splits.GetDataPtr<uint32_t>(),
             hash_table_cell_splits.GetShape()[0],
-            hash_table_cell_splits.GetDataPtr<int64_t>(),
-            hash_table_index.GetDataPtr<int64_t>(), metric, ignore_query_point,
+            hash_table_cell_splits.GetDataPtr<uint32_t>(),
+            hash_table_index.GetDataPtr<uint32_t>(), metric, ignore_query_point,
             return_distances, output_allocator);
 
     neighbors_index = output_allocator.NeighborsIndex();

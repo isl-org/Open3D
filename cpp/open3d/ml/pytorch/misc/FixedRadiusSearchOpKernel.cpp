@@ -48,8 +48,8 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
                           torch::Tensor& neighbors_index,
                           torch::Tensor& neighbors_row_splits,
                           torch::Tensor& neighbors_distance) {
-    NeighborSearchAllocator<T, int64_t> output_allocator(
-            points.device().type(), points.device().index());
+    NeighborSearchAllocator<T> output_allocator(points.device().type(),
+                                                points.device().index());
 
     open3d::core::nns::impl::FixedRadiusSearchCPU(
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
@@ -57,11 +57,11 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
             T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), queries_row_splits.size(0),
             queries_row_splits.data_ptr<int64_t>(),
-            hash_table_splits.data_ptr<int64_t>(),
+            (uint32_t*)hash_table_splits.data_ptr<int32_t>(),
             hash_table_cell_splits.size(0),
-            hash_table_cell_splits.data_ptr<int64_t>(),
-            hash_table_index.data_ptr<int64_t>(), metric, ignore_query_point,
-            return_distances, output_allocator);
+            (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
+            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric,
+            ignore_query_point, return_distances, output_allocator);
 
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();

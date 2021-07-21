@@ -34,19 +34,19 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-template <class T>
+template <class T, class TIndex = int32_t>
 class NeighborSearchAllocator {
 public:
     NeighborSearchAllocator(Device device) : device_(device) {}
 
-    void AllocIndices(int64_t** ptr, size_t num) {
-        indices_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
-        *ptr = indices_.GetDataPtr<int64_t>();
+    void AllocIndices(TIndex** ptr, size_t num) {
+        indices_ = Tensor::Empty({int64_t(num)}, Dtype::FromType<TIndex>(), device_);
+        *ptr = indices_.GetDataPtr<TIndex>();
     }
 
-    void AllocIndices(int64_t** ptr, size_t num, int64_t value) {
-        indices_ = Tensor::Full({int64_t(num)}, value, Dtype::Int64, device_);
-        *ptr = indices_.GetDataPtr<int64_t>();
+    void AllocIndices(TIndex** ptr, size_t num, TIndex value) {
+        indices_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<TIndex>(), device_);
+        *ptr = indices_.GetDataPtr<TIndex>();
     }
 
     void AllocDistances(T** ptr, size_t num) {
@@ -61,21 +61,21 @@ public:
         *ptr = distances_.GetDataPtr<T>();
     }
 
-    void AllocCounts(int64_t** ptr, size_t num) {
-        counts_ = Tensor::Empty({int64_t(num)}, Dtype::Int64, device_);
-        *ptr = counts_.GetDataPtr<int64_t>();
+    void AllocCounts(TIndex** ptr, size_t num) {
+        counts_ = Tensor::Empty({int64_t(num)}, Dtype::FromType<TIndex>(), device_);
+        *ptr = counts_.GetDataPtr<TIndex>();
     }
 
-    void AllocCounts(int64_t** ptr, size_t num, int64_t value) {
-        counts_ = Tensor::Full({int64_t(num)}, value, Dtype::Int64, device_);
-        *ptr = counts_.GetDataPtr<int64_t>();
+    void AllocCounts(TIndex** ptr, size_t num, TIndex value) {
+        counts_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<TIndex>(), device_);
+        *ptr = counts_.GetDataPtr<TIndex>();
     }
 
-    const int64_t* IndicesPtr() const { return indices_.GetDataPtr<int64_t>(); }
+    const TIndex* IndicesPtr() const { return indices_.GetDataPtr<TIndex>(); }
 
     const T* DistancesPtr() const { return distances_.GetDataPtr<T>(); }
 
-    const int64_t* CountsPtr() const { return counts_.GetDataPtr<int64_t>(); }
+    const TIndex* CountsPtr() const { return counts_.GetDataPtr<TIndex>(); }
 
     const Tensor& NeighborsIndex() const { return indices_; }
     const Tensor& NeighborsDistance() const { return distances_; }

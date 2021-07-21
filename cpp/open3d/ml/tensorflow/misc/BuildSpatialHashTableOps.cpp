@@ -39,9 +39,9 @@ REGISTER_OP("Open3DBuildSpatialHashTable")
         .Input("radius: T")
         .Input("points_row_splits: int64")
         .Input("hash_table_size_factor: double")
-        .Output("hash_table_index: int64")
-        .Output("hash_table_cell_splits: int64")
-        .Output("hash_table_splits: int64")
+        .Output("hash_table_index: uint32")
+        .Output("hash_table_cell_splits: uint32")
+        .Output("hash_table_splits: uint32")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             using namespace open3d::ml::op_util;

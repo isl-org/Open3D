@@ -59,13 +59,13 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 
     std::vector<int64_t> points_row_splits({0, num_dataset_points});
     points_row_splits_ = Tensor(points_row_splits, {2}, Dtype::Int64);
-    std::vector<int64_t> hash_table_splits({0, hash_table_size});
-    hash_table_splits_ = Tensor(hash_table_splits, {2}, Dtype::Int64);
+    std::vector<uint32_t> hash_table_splits({0, (uint32_t)hash_table_size});
+    hash_table_splits_ = Tensor(hash_table_splits, {2}, Dtype::UInt32);
 
     hash_table_index_ =
-            Tensor::Empty({num_dataset_points}, Dtype::Int64, device);
+            Tensor::Empty({num_dataset_points}, Dtype::UInt32, device);
     hash_table_cell_splits_ =
-            Tensor::Empty({hash_table_splits.back() + 1}, Dtype::Int64, device);
+            Tensor::Empty({hash_table_splits.back() + 1}, Dtype::UInt32, device);
 
 #define BUILD_PARAMETERS                                             \
     dataset_points_, radius, points_row_splits_, hash_table_splits_, \
