@@ -77,19 +77,19 @@ TEST_P(NumpyIOPermuteDevices, NpyIO) {
     EXPECT_TRUE(t.AllClose(t_load.To(device)));
 
     // {0} tensor.
-    t = core::Tensor::Ones({0}, core::Dtype::Float32, device);
+    t = core::Tensor::Ones({0}, core::Float32, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
     EXPECT_TRUE(t.AllClose(t_load.To(device)));
 
     // {0, 0} tensor.
-    t = core::Tensor::Ones({0, 0}, core::Dtype::Float32, device);
+    t = core::Tensor::Ones({0, 0}, core::Float32, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
     EXPECT_TRUE(t.AllClose(t_load.To(device)));
 
     // {0, 1, 0} tensor.
-    t = core::Tensor::Ones({0, 1, 0}, core::Dtype::Float32, device);
+    t = core::Tensor::Ones({0, 1, 0}, core::Float32, device);
     t.Save(file_name);
     t_load = core::Tensor::Load(file_name);
     EXPECT_TRUE(t.AllClose(t_load.To(device)));
