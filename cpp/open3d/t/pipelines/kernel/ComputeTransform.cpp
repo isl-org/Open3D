@@ -38,8 +38,8 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_normals,
                                      const core::Tensor &correspondence_indices,
                                      const registration::RobustKernel &kernel) {
-    core::Device device = source_points.GetDevice();
-    core::Dtype dtype = source_points.GetDtype();
+    const core::Device device = source_points.GetDevice();
+    const core::Dtype dtype = source_points.GetDtype();
 
     if (dtype != core::Float64 && dtype != core::Float32) {
         utility::LogError("Only Float32 and Float64 dtypes are supported.");
@@ -62,7 +62,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     float residual = 0;
     int inlier_count = 0;
 
-    core::Device::DeviceType device_type = device.GetType();
+    const core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         ComputePosePointToPlaneCPU(
                 source_points.Contiguous(), target_points.Contiguous(),
@@ -88,8 +88,8 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const core::Tensor &correspondence_indices) {
-    core::Device device = source_points.GetDevice();
-    core::Dtype dtype = source_points.GetDtype();
+    const core::Device device = source_points.GetDevice();
+    const core::Dtype dtype = source_points.GetDtype();
 
     if (dtype != core::Float64 && dtype != core::Float32) {
         utility::LogError("Only Float32 and Float64 dtypes are supported.");
@@ -111,17 +111,12 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
 
     int inlier_count = 0;
 
-    core::Device::DeviceType device_type = device.GetType();
+    const core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         // Pointer to point cloud data - indexed according to correspondences.
-        core::Tensor source_points_contiguous = source_points.Contiguous();
-        core::Tensor target_points_contiguous = target_points.Contiguous();
-        core::Tensor correspondence_indices_contiguous =
-                correspondence_indices.Contiguous();
-
-        ComputeRtPointToPointCPU(source_points_contiguous,
-                                 target_points_contiguous,
-                                 correspondence_indices_contiguous, R, t,
+        ComputeRtPointToPointCPU(source_points.Contiguous(),
+                                 target_points.Contiguous(),
+                                 correspondence_indices.Contiguous(), R, t,
                                  inlier_count, dtype, device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE

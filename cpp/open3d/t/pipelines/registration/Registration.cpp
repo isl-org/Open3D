@@ -151,7 +151,7 @@ static void AssertInputMultiScaleICP(
 
     if (estimation.GetTransformationEstimationType() ==
         TransformationEstimationType::ColoredICP) {
-        utility::LogError("Tensor PointCloud ColoredICP is not Implemented.");
+        utility::LogError("Tensor PointCloud ColoredICP is not implemented.");
     }
 
     if (max_correspondence_distances[0] <= 0.0) {
