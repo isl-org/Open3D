@@ -2848,62 +2848,6 @@ TEST_P(TensorPermuteDevices, IsSame) {
     EXPECT_TRUE(vec[0].IsSame(vec[1]));
 }
 
-TEST_P(TensorPermuteDevices, NumpyIO) {
-    const core::Device &device = GetParam();
-    const std::string file_name = "tensor.npy";
-
-    core::Tensor t;
-    core::Tensor t_load;
-
-    // 2x2 tensor.
-    t = core::Tensor::Init<float>({{1, 2}, {3, 4}}, device);
-    t.Save(file_name);
-    t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.To(device)));
-
-    // Non-contiguous tensor will be stored as contiguous tensor.
-    t = core::Tensor::Init<float>(
-            {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
-             {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-            device);
-    // t[0:2:1, 0:3:2, 0:4:2]
-    t = t.Slice(0, 0, 2, 1).Slice(1, 0, 3, 2).Slice(2, 0, 4, 2);
-    t.Save(file_name);
-    EXPECT_FALSE(t.IsContiguous());
-    t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t_load.IsContiguous());
-    EXPECT_EQ(t_load.GetShape(), core::SizeVector({2, 2, 2}));
-    EXPECT_EQ(t_load.ToFlatVector<float>(),
-              std::vector<float>({0, 2, 8, 10, 12, 14, 20, 22}));
-
-    // {} tensor (scalar).
-    t = core::Tensor::Init<float>(3.14, device);
-    t.Save(file_name);
-    t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.To(device)));
-
-    // {0} tensor.
-    t = core::Tensor::Ones({0}, core::Dtype::Float32, device);
-    t.Save(file_name);
-    t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.To(device)));
-
-    // {0, 0} tensor.
-    t = core::Tensor::Ones({0, 0}, core::Dtype::Float32, device);
-    t.Save(file_name);
-    t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.To(device)));
-
-    // {0, 1, 0} tensor.
-    t = core::Tensor::Ones({0, 1, 0}, core::Dtype::Float32, device);
-    t.Save(file_name);
-    t_load = core::Tensor::Load(file_name);
-    EXPECT_TRUE(t.AllClose(t_load.To(device)));
-
-    // Clean up.
-    utility::filesystem::RemoveFile(file_name);
-}
-
 TEST_P(TensorPermuteDevices, RValueScalar) {
     const core::Device &device = GetParam();
     core::Tensor t, t_ref;
