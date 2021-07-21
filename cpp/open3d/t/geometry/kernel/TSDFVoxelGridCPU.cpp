@@ -82,7 +82,7 @@ void TouchCPU(std::shared_ptr<core::Hashmap>&
     const float* pcd_ptr = static_cast<const float*>(points.GetDataPtr());
 
     tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
-    core::kernel::cpu_launcher::ParallelFor(n, [&](int64_t workload_idx) {
+    core::ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
         float x = pcd_ptr[3 * workload_idx + 0];
         float y = pcd_ptr[3 * workload_idx + 1];
         float z = pcd_ptr[3 * workload_idx + 2];

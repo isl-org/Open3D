@@ -44,11 +44,10 @@ namespace eigen_converter {
 /// pointer location.
 template <typename func_t>
 static void LaunchIndexFillKernel(const Indexer &indexer, const func_t &func) {
-    kernel::cpu_launcher::ParallelFor(indexer.NumWorkloads(),
-                                      kernel::cpu_launcher::SMALL_OP_GRAIN_SIZE,
-                                      [&indexer, &func](int64_t i) {
-                                          func(indexer.GetInputPtr(0, i), i);
-                                      });
+    ParallelFor(Device("CPU:0"), indexer.NumWorkloads(),
+                [&indexer, &func](int64_t i) {
+                    func(indexer.GetInputPtr(0, i), i);
+                });
 }
 
 template <typename T>
