@@ -49,10 +49,9 @@ void ComputeOdometryResultPointToPlane(
     core::Device device = source_vertex_map.GetDevice();
 
     static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
     core::Tensor trans_d =
-            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+            init_source_to_target.To(host, core::Float64).Contiguous();
 
     if (device.GetType() == core::Device::DeviceType::CPU) {
         ComputeOdometryResultPointToPlaneCPU(
@@ -83,10 +82,9 @@ void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
                                     const float depth_outlier_trunc,
                                     const float intensity_huber_delta) {
     static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
     core::Tensor trans_d =
-            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+            init_source_to_target.To(host, core::Float64).Contiguous();
 
     core::Device device = source_vertex_map.GetDevice();
     if (device.GetType() == core::Device::DeviceType::CPU) {
@@ -124,10 +122,9 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
                                  const float depth_huber_delta,
                                  const float intensity_huber_delta) {
     static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
     core::Tensor trans_d =
-            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+            init_source_to_target.To(host, core::Float64).Contiguous();
 
     core::Device device = source_vertex_map.GetDevice();
     if (device.GetType() == core::Device::DeviceType::CPU) {

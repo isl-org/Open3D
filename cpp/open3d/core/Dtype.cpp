@@ -58,6 +58,19 @@ const Dtype Dtype::UInt64   (Dtype::DtypeCode::UInt,      8, "UInt64"   );
 const Dtype Dtype::Bool     (Dtype::DtypeCode::Bool,      1, "Bool"     );
 // clang-format on
 
+const Dtype Undefined = Dtype::Undefined;
+const Dtype Float32 = Dtype::Float32;
+const Dtype Float64 = Dtype::Float64;
+const Dtype Int8 = Dtype::Int8;
+const Dtype Int16 = Dtype::Int16;
+const Dtype Int32 = Dtype::Int32;
+const Dtype Int64 = Dtype::Int64;
+const Dtype UInt8 = Dtype::UInt8;
+const Dtype UInt16 = Dtype::UInt16;
+const Dtype UInt32 = Dtype::UInt32;
+const Dtype UInt64 = Dtype::UInt64;
+const Dtype Bool = Dtype::Bool;
+
 Dtype::Dtype(DtypeCode dtype_code, int64_t byte_size, const std::string &name)
     : dtype_code_(dtype_code), byte_size_(byte_size) {
     (void)dtype_code_;

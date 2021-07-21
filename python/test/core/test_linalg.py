@@ -36,9 +36,8 @@ from open3d_test import list_devices
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize(
-    "dtype",
-    [o3c.Dtype.Int32, o3c.Dtype.Int64, o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype",
+                         [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_matmul(device, dtype):
     # Shape takes tuple, list or o3c.SizeVector
     a = o3c.Tensor([[1, 2.5, 3], [4, 5, 6.2]], dtype=dtype, device=device)
@@ -91,15 +90,14 @@ def test_matmul(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize(
-    "dtype",
-    [o3c.Dtype.Int32, o3c.Dtype.Int64, o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype",
+                         [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_det(device, dtype):
     a = o3c.Tensor([[-5, 0, -1], [1, 2, -1], [-3, 4, 1]],
                    dtype=dtype,
                    device=device)
 
-    if dtype in [o3c.Dtype.Int32, o3c.Dtype.Int64]:
+    if dtype in [o3c.int32, o3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
             a.det()
             assert 'Only tensors with Float32 or Float64 are supported' in str(
@@ -123,15 +121,14 @@ def test_det(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize(
-    "dtype",
-    [o3c.Dtype.Int32, o3c.Dtype.Int64, o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype",
+                         [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_lu(device, dtype):
     a = o3c.Tensor([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]],
                    dtype=dtype,
                    device=device)
 
-    if dtype in [o3c.Dtype.Int32, o3c.Dtype.Int64]:
+    if dtype in [o3c.int32, o3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
             o3c.lu(a)
             assert 'Only tensors with Float32 or Float64 are supported' in str(
@@ -155,14 +152,13 @@ def test_lu(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize(
-    "dtype",
-    [o3c.Dtype.Int32, o3c.Dtype.Int64, o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype",
+                         [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_lu_ipiv(device, dtype):
     a = o3c.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                    dtype=dtype,
                    device=device)
-    if dtype in [o3c.Dtype.Int32, o3c.Dtype.Int64]:
+    if dtype in [o3c.int32, o3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
             o3c.lu_ipiv(a)
             assert 'Only tensors with Float32 or Float64 are supported' in str(
@@ -190,15 +186,14 @@ def test_lu_ipiv(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize(
-    "dtype",
-    [o3c.Dtype.Int32, o3c.Dtype.Int64, o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype",
+                         [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_inverse(device, dtype):
     a = o3c.Tensor([[7, 2, 1], [0, 3, -1], [-3, 4, 2]],
                    dtype=dtype,
                    device=device)
 
-    if dtype in [o3c.Dtype.Int32, o3c.Dtype.Int64]:
+    if dtype in [o3c.int32, o3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
             o3c.inv(a)
             assert 'Only tensors with Float32 or Float64 are supported' in str(
@@ -243,12 +238,11 @@ def test_inverse(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize(
-    "dtype",
-    [o3c.Dtype.Int32, o3c.Dtype.Int64, o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype",
+                         [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_svd(device, dtype):
     a = o3c.Tensor([[2, 4], [1, 3], [0, 0], [0, 0]], dtype=dtype, device=device)
-    if dtype in [o3c.Dtype.Int32, o3c.Dtype.Int64]:
+    if dtype in [o3c.int32, o3c.int64]:
         with pytest.raises(RuntimeError) as excinfo:
             o3c.svd(a)
             assert 'Only tensors with Float32 or Float64 are supported' in str(
@@ -306,7 +300,7 @@ def test_svd(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_solve(device, dtype):
     # Test square
     a = o3c.Tensor([[3, 1], [1, 2]], dtype=dtype, device=device)
@@ -324,7 +318,7 @@ def test_solve(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_lstsq(device, dtype):
     # Test square
     a = o3c.Tensor([[3, 1], [1, 2]], dtype=dtype, device=device)
@@ -371,9 +365,8 @@ def test_lstsq(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize(
-    "dtype",
-    [o3c.Dtype.Int32, o3c.Dtype.Int64, o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype",
+                         [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_thiu(device, dtype):
     a = o3c.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                    dtype=dtype,
@@ -396,9 +389,8 @@ def test_thiu(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize(
-    "dtype",
-    [o3c.Dtype.Int32, o3c.Dtype.Int64, o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype",
+                         [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_thil(device, dtype):
     a = o3c.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                    dtype=dtype,
@@ -421,9 +413,8 @@ def test_thil(device, dtype):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize(
-    "dtype",
-    [o3c.Dtype.Int32, o3c.Dtype.Int64, o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype",
+                         [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_thiul(device, dtype):
     a = o3c.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                    dtype=dtype,

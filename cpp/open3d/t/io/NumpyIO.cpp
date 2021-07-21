@@ -82,17 +82,17 @@ static char DtypeToChar(const core::Dtype& dtype) {
     // 'c': std::complex<float>, std::complex<double>),
     //      std::complex<long double>)
     // '?': object
-    if (dtype == core::Dtype::Float32) return 'f';
-    if (dtype == core::Dtype::Float64) return 'f';
-    if (dtype == core::Dtype::Int8) return 'i';
-    if (dtype == core::Dtype::Int16) return 'i';
-    if (dtype == core::Dtype::Int32) return 'i';
-    if (dtype == core::Dtype::Int64) return 'i';
-    if (dtype == core::Dtype::UInt8) return 'u';
-    if (dtype == core::Dtype::UInt16) return 'u';
-    if (dtype == core::Dtype::UInt32) return 'u';
-    if (dtype == core::Dtype::UInt64) return 'u';
-    if (dtype == core::Dtype::Bool) return 'b';
+    if (dtype == core::Float32) return 'f';
+    if (dtype == core::Float64) return 'f';
+    if (dtype == core::Int8) return 'i';
+    if (dtype == core::Int16) return 'i';
+    if (dtype == core::Int32) return 'i';
+    if (dtype == core::Int64) return 'i';
+    if (dtype == core::UInt8) return 'u';
+    if (dtype == core::UInt16) return 'u';
+    if (dtype == core::UInt32) return 'u';
+    if (dtype == core::UInt64) return 'u';
+    if (dtype == core::Bool) return 'b';
     utility::LogError("Unsupported dtype: {}", dtype.ToString());
     return '\0';
 }
@@ -273,19 +273,19 @@ public:
     }
 
     core::Dtype GetDtype() const {
-        if (type_ == 'f' && word_size_ == 4) return core::Dtype::Float32;
-        if (type_ == 'f' && word_size_ == 8) return core::Dtype::Float64;
-        if (type_ == 'i' && word_size_ == 1) return core::Dtype::Int8;
-        if (type_ == 'i' && word_size_ == 2) return core::Dtype::Int16;
-        if (type_ == 'i' && word_size_ == 4) return core::Dtype::Int32;
-        if (type_ == 'i' && word_size_ == 8) return core::Dtype::Int64;
-        if (type_ == 'u' && word_size_ == 1) return core::Dtype::UInt8;
-        if (type_ == 'u' && word_size_ == 2) return core::Dtype::UInt16;
-        if (type_ == 'u' && word_size_ == 4) return core::Dtype::UInt32;
-        if (type_ == 'u' && word_size_ == 8) return core::Dtype::UInt64;
-        if (type_ == 'b') return core::Dtype::Bool;
+        if (type_ == 'f' && word_size_ == 4) return core::Float32;
+        if (type_ == 'f' && word_size_ == 8) return core::Float64;
+        if (type_ == 'i' && word_size_ == 1) return core::Int8;
+        if (type_ == 'i' && word_size_ == 2) return core::Int16;
+        if (type_ == 'i' && word_size_ == 4) return core::Int32;
+        if (type_ == 'i' && word_size_ == 8) return core::Int64;
+        if (type_ == 'u' && word_size_ == 1) return core::UInt8;
+        if (type_ == 'u' && word_size_ == 2) return core::UInt16;
+        if (type_ == 'u' && word_size_ == 4) return core::UInt32;
+        if (type_ == 'u' && word_size_ == 8) return core::UInt64;
+        if (type_ == 'b') return core::Bool;
 
-        return core::Dtype::Undefined;
+        return core::Undefined;
     }
 
     core::SizeVector GetShape() const { return shape_; }

@@ -58,9 +58,9 @@ class TSDFVoxelGrid {
 public:
     /// \brief Default Constructor.
     TSDFVoxelGrid(std::unordered_map<std::string, core::Dtype> attr_dtype_map =
-                          {{"tsdf", core::Dtype::Float32},
-                           {"weight", core::Dtype::UInt16},
-                           {"color", core::Dtype::UInt16}},
+                          {{"tsdf", core::Float32},
+                           {"weight", core::UInt16},
+                           {"color", core::UInt16}},
                   float voxel_size = 3.0 / 512.0, /* in meter */
                   float sdf_trunc = 0.04,         /*  in meter  */
                   int64_t block_resolution = 16, /*  block Tensor resolution  */

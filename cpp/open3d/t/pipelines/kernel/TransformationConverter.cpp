@@ -42,7 +42,7 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
     core::Device device = R.GetDevice();
     core::Dtype dtype = R.GetDtype();
 
-    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+    if (dtype != core::Float32 && dtype != core::Float64) {
         utility::LogError(
                 " [RtToTransformation]: Only Float32 abd Float64 supported, "
                 "but got {} ",
@@ -94,7 +94,7 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     core::Device device = pose.GetDevice();
     core::Dtype dtype = pose.GetDtype();
 
-    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+    if (dtype != core::Float32 && dtype != core::Float64) {
         utility::LogError(
                 " [PoseToTransformation]: Only Float32 abd Float64 supported, "
                 "but got {} ",
@@ -126,11 +126,11 @@ void DecodeAndSolve6x6(const core::Tensor &A_reduction,
                        float &inlier_residual,
                        int &inlier_count) {
     const core::Device host(core::Device("CPU:0"));
-    core::Tensor A_1x29_host = A_reduction.To(host, core::Dtype::Float64);
+    core::Tensor A_1x29_host = A_reduction.To(host, core::Float64);
     double *A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
 
-    core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
-    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float64, host);
+    core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Float64, host);
+    core::Tensor Atb = core::Tensor::Empty({6}, core::Float64, host);
 
     double *AtA_local_ptr = AtA.GetDataPtr<double>();
     double *Atb_local_ptr = Atb.GetDataPtr<double>();

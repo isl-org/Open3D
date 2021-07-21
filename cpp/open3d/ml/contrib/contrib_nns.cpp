@@ -63,7 +63,7 @@ const core::Tensor KnnSearch(const core::Tensor& query_points,
     core::Tensor indices;
     core::Tensor distances;
     std::tie(indices, distances) = nns.KnnSearch(query_points, knn);
-    return indices.To(core::Dtype::Int32);
+    return indices.To(core::Int32);
 }
 
 const core::Tensor RadiusSearch(const core::Tensor& query_points,
@@ -77,10 +77,10 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
                           dataset_points.GetDtype().ToString(),
                           query_points.GetDtype().ToString());
     }
-    if (query_batches.GetDtype() != core::Dtype::Int32) {
+    if (query_batches.GetDtype() != core::Int32) {
         utility::LogError("query_batches must be of dtype Int32.");
     }
-    if (dataset_batches.GetDtype() != core::Dtype::Int32) {
+    if (dataset_batches.GetDtype() != core::Int32) {
         utility::LogError("dataset_batches must be of dtype Int32.");
     }
 
@@ -182,7 +182,7 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
 
     // Convert to the required output format. Pad with -1.
     core::Tensor result = core::Tensor::Full(
-            {num_query_points, max_num_neighbors}, -1, core::Dtype::Int64);
+            {num_query_points, max_num_neighbors}, -1, core::Int64);
 
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
@@ -216,7 +216,7 @@ const core::Tensor RadiusSearch(const core::Tensor& query_points,
         }
     }
 
-    return result.To(core::Dtype::Int32);
+    return result.To(core::Int32);
 }
 }  // namespace contrib
 }  // namespace ml

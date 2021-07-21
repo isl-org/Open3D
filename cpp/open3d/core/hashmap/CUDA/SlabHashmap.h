@@ -122,10 +122,10 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
 
     if (iterator_count > 0) {
         Tensor active_addrs =
-                Tensor({iterator_count}, Dtype::Int32, this->device_);
+                Tensor({iterator_count}, core::Int32, this->device_);
         GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
-        Tensor active_indices = active_addrs.To(Dtype::Int64);
+        Tensor active_indices = active_addrs.To(core::Int64);
         active_keys = this->buffer_->GetKeyBuffer().IndexGet({active_indices});
         active_values =
                 this->buffer_->GetValueBuffer().IndexGet({active_indices});
@@ -141,8 +141,8 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
                       active_keys.GetLength()));
 
     if (iterator_count > 0) {
-        Tensor output_addrs({iterator_count}, Dtype::Int32, this->device_);
-        Tensor output_masks({iterator_count}, Dtype::Bool, this->device_);
+        Tensor output_addrs({iterator_count}, core::Int32, this->device_);
+        Tensor output_masks({iterator_count}, core::Bool, this->device_);
 
         InsertImpl(active_keys.GetDataPtr(), active_values.GetDataPtr(),
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),

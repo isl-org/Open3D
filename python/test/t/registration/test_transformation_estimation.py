@@ -34,7 +34,7 @@ from open3d_test import list_devices
 
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_rmse_point_to_point(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     source_points = o3c.Tensor(
         [[1.15495, 2.40671, 1.15061], [1.81481, 2.06281, 1.71927],
@@ -61,9 +61,9 @@ def test_compute_rmse_point_to_point(device):
     target_t.point["points"] = target_points
 
     corres_first = o3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              o3c.Dtype.Int64, device)
-    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
-                               o3c.Dtype.Int64, device)
+                              o3c.int64, device)
+    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8], o3c.int64,
+                               device)
     corres = corres_first, corres_second
 
     estimation_p2p = o3d.t.pipelines.registration.TransformationEstimationPointToPoint(
@@ -75,7 +75,7 @@ def test_compute_rmse_point_to_point(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_transformation_point_to_point(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     source_points = o3c.Tensor(
         [[1.15495, 2.40671, 1.15061], [1.81481, 2.06281, 1.71927],
@@ -102,9 +102,9 @@ def test_compute_transformation_point_to_point(device):
     target_t.point["points"] = target_points
 
     corres_first = o3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              o3c.Dtype.Int64, device)
-    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
-                               o3c.Dtype.Int64, device)
+                              o3c.int64, device)
+    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8], o3c.int64,
+                               device)
     corres = corres_first, corres_second
 
     estimation_p2p = o3d.t.pipelines.registration.TransformationEstimationPointToPoint(
@@ -122,7 +122,7 @@ def test_compute_transformation_point_to_point(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_rmse_point_to_plane(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     source_points = o3c.Tensor(
         [[1.15495, 2.40671, 1.15061], [1.81481, 2.06281, 1.71927],
@@ -158,9 +158,9 @@ def test_compute_rmse_point_to_plane(device):
     target_t.point["normals"] = target_normals
 
     corres_first = o3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              o3c.Dtype.Int64, device)
-    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
-                               o3c.Dtype.Int64, device)
+                              o3c.int64, device)
+    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8], o3c.int64,
+                               device)
     corres = corres_first, corres_second
 
     estimation_p2l = o3d.t.pipelines.registration.TransformationEstimationPointToPlane(
@@ -172,7 +172,7 @@ def test_compute_rmse_point_to_plane(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_transformation_point_to_plane(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     source_points = o3c.Tensor(
         [[1.15495, 2.40671, 1.15061], [1.81481, 2.06281, 1.71927],
@@ -208,9 +208,9 @@ def test_compute_transformation_point_to_plane(device):
     target_t.point["normals"] = target_normals
 
     corres_first = o3c.Tensor([0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13],
-                              o3c.Dtype.Int64, device)
-    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8],
-                               o3c.Dtype.Int64, device)
+                              o3c.int64, device)
+    corres_second = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 5, 8, 7, 5, 8], o3c.int64,
+                               device)
     corres = corres_first, corres_second
 
     estimation_p2l = o3d.t.pipelines.registration.TransformationEstimationPointToPlane(

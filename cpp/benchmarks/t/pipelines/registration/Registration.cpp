@@ -105,7 +105,7 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
 static void BenchmarkRegistrationICP(benchmark::State& state,
                                      const core::Device& device,
                                      const TransformationEstimationType& type) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     geometry::PointCloud source(device), target(device);
 

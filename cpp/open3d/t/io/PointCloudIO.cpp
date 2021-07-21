@@ -88,7 +88,7 @@ bool ReadPointCloud(const std::string &filename,
                 open3d::io::ReadPointCloud(filename, legacy_pointcloud, params);
         if (!success) return false;
         pointcloud = geometry::PointCloud::FromLegacyPointCloud(
-                legacy_pointcloud, core::Dtype::Float64);
+                legacy_pointcloud, core::Float64);
     } else {
         success = map_itr->second(filename, pointcloud, params);
         utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
