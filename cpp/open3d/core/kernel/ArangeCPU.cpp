@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Arange.h"
-#include "open3d/core/kernel/CPULauncher.h"
 
 namespace open3d {
 namespace core {

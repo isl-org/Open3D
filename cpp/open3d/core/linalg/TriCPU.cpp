@@ -26,8 +26,8 @@
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/core/linalg/TriImpl.h"
 
 namespace open3d {

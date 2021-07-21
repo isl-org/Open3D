@@ -31,8 +31,8 @@
 #include <functional>
 #include <vector>
 
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/utility/Parallel.h"

@@ -28,10 +28,10 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/BinaryEW.h"
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {

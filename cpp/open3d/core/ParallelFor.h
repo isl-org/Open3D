@@ -55,7 +55,7 @@ __global__ void __ElementWiseKernel(int64_t n, func_t f) {
     int64_t items_per_block = block_size * thread_size;
     int64_t idx = blockIdx.x * items_per_block + threadIdx.x;
 #pragma unroll
-    for (int64_t i = 0; i < thread_size; i++) {
+    for (int64_t i = 0; i < thread_size; ++i) {
         if (idx < n) {
             f(idx);
             idx += block_size;

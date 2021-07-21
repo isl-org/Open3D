@@ -29,7 +29,7 @@
 #include <type_traits>
 
 #include "open3d/core/Indexer.h"
-#include "open3d/core/kernel/CPULauncher.h"
+#include "open3d/core/ParallelFor.h"
 
 namespace open3d {
 namespace core {

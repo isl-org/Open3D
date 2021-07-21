@@ -24,5 +24,5 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/CPULauncher.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/t/geometry/kernel/ImageImpl.h"
