@@ -69,7 +69,7 @@ std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
     }
 }
 
-void Synchronize(const Device& device) {
+static void Synchronize(const Device& device) {
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());

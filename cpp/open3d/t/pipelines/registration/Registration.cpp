@@ -44,7 +44,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         double max_correspondence_distance,
         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
@@ -55,7 +55,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     transformation.AssertShape({4, 4});
 
     core::Tensor transformation_host =
-            transformation.To(core::Device("CPU:0"), core::Dtype::Float64);
+            transformation.To(core::Device("CPU:0"), core::Float64);
 
     RegistrationResult result(transformation_host);
     if (max_correspondence_distance <= 0.0) {
@@ -76,12 +76,14 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
             target_nns.HybridSearch(source.GetPoints(),
                                     max_correspondence_distance, 1);
 
+    result.correspondence_set_.second =
+            result.correspondence_set_.second.To(core::Int64);
     core::Tensor valid = result.correspondence_set_.second.Ne(-1).Reshape({-1});
     // correpondence_set : (i, corres[i]).
     // source[i] and target[corres[i]] is a correspondence.
     result.correspondence_set_.first =
             core::Tensor::Arange(0, source.GetPoints().GetShape()[0], 1,
-                                 core::Dtype::Int64, device)
+                                 core::Int64, device)
                     .IndexGet({valid});
     // Only take valid indices.
     result.correspondence_set_.second =
@@ -106,7 +108,7 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                                         double max_correspondence_distance,
                                         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     source.GetPoints().AssertDtype(dtype);
     target.GetPoints().AssertDtype(dtype);
     if (target.GetDevice() != device) {
@@ -146,7 +148,7 @@ RegistrationResult RegistrationMultiScaleICP(
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     source.GetPoints().AssertDtype(dtype,
                                    " RegistrationICP: Only Float32 Point cloud "
@@ -203,8 +205,8 @@ RegistrationResult RegistrationMultiScaleICP(
 
     init_source_to_target.AssertShape({4, 4});
 
-    core::Tensor transformation = init_source_to_target.To(
-            core::Device("CPU:0"), core::Dtype::Float64);
+    core::Tensor transformation =
+            init_source_to_target.To(core::Device("CPU:0"), core::Float64);
 
     std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
     std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);

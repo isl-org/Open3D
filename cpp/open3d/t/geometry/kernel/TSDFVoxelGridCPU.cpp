@@ -110,8 +110,8 @@ void TouchCPU(std::shared_ptr<core::Hashmap>&
                 "especially depth_scale and voxel_size");
     }
 
-    voxel_block_coords = core::Tensor({block_count, 3}, core::Dtype::Int32,
-                                      points.GetDevice());
+    voxel_block_coords =
+            core::Tensor({block_count, 3}, core::Int32, points.GetDevice());
     int* block_coords_ptr = static_cast<int*>(voxel_block_coords.GetDataPtr());
     int count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {

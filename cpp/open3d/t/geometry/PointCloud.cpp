@@ -226,11 +226,11 @@ PointCloud PointCloud::VoxelDownSample(
         utility::LogError("voxel_size must be positive.");
     }
     core::Tensor points_voxeld = GetPoints() / voxel_size;
-    core::Tensor points_voxeli = points_voxeld.Floor().To(core::Dtype::Int64);
+    core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
 
-    core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(),
-                                        core::Dtype::Int64, core::Dtype::Int32,
-                                        {3}, {1}, device_, backend);
+    core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(), core::Int64,
+                                        core::Int32, {3}, {1}, device_,
+                                        backend);
 
     core::Tensor addrs, masks;
     points_voxeli_hashmap.Activate(points_voxeli, addrs, masks);
@@ -343,7 +343,7 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             int stride,
                                             bool with_normals) {
     core::Dtype dtype = depth.AsTensor().GetDtype();
-    if (dtype != core::Dtype::UInt16 && dtype != core::Dtype::Float32) {
+    if (dtype != core::UInt16 && dtype != core::Float32) {
         utility::LogError(
                 "Unsupported dtype for CreateFromDepthImage, expected UInt16 "
                 "or Float32, but got {}.",
@@ -371,15 +371,14 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
                                            int stride,
                                            bool with_normals) {
     auto dtype = rgbd_image.depth_.AsTensor().GetDtype();
-    if (dtype != core::Dtype::UInt16 && dtype != core::Dtype::Float32) {
+    if (dtype != core::UInt16 && dtype != core::Float32) {
         utility::LogError(
                 "Unsupported dtype for CreateFromRGBDImage, expected UInt16 "
                 "or Float32, but got {}.",
                 dtype.ToString());
     }
 
-    Image image_colors =
-            rgbd_image.color_.To(core::Dtype::Float32, /*copy=*/false);
+    Image image_colors = rgbd_image.color_.To(core::Float32, /*copy=*/false);
 
     if (with_normals) {
         return CreatePointCloudWithNormals(rgbd_image.depth_, image_colors,
@@ -400,8 +399,8 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
                                                 const core::Tensor &extrinsics,
                                                 float depth_scale,
                                                 float depth_max) {
-    core::Tensor depth = core::Tensor::Zeros({height, width, 1},
-                                             core::Dtype::Float32, device_);
+    core::Tensor depth =
+            core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
     kernel::pointcloud::Project(depth, utility::nullopt, GetPoints(),
                                 utility::nullopt, intrinsics, extrinsics,
                                 depth_scale, depth_max);
@@ -421,10 +420,10 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
                 "point cloud.");
     }
 
-    core::Tensor depth = core::Tensor::Zeros({height, width, 1},
-                                             core::Dtype::Float32, device_);
-    core::Tensor color = core::Tensor::Zeros({height, width, 3},
-                                             core::Dtype::UInt8, device_);
+    core::Tensor depth =
+            core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
+    core::Tensor color =
+            core::Tensor::Zeros({height, width, 3}, core::UInt8, device_);
     kernel::pointcloud::Project(depth, color, GetPoints(), GetPointColors(),
                                 intrinsics, extrinsics, depth_scale, depth_max);
 
@@ -464,16 +463,16 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
         double normalization_factor = 1.0;
         core::Dtype point_color_dtype = GetPointColors().GetDtype();
 
-        if (point_color_dtype == core::Dtype::UInt8) {
+        if (point_color_dtype == core::UInt8) {
             normalization_factor =
                     1.0 /
                     static_cast<double>(std::numeric_limits<uint8_t>::max());
-        } else if (point_color_dtype == core::Dtype::UInt16) {
+        } else if (point_color_dtype == core::UInt16) {
             normalization_factor =
                     1.0 /
                     static_cast<double>(std::numeric_limits<uint16_t>::max());
-        } else if (point_color_dtype != core::Dtype::Float32 &&
-                   point_color_dtype != core::Dtype::Float64) {
+        } else if (point_color_dtype != core::Float32 &&
+                   point_color_dtype != core::Float64) {
             utility::LogWarning(
                     "Dtype {} of color attribute is not supported for "
                     "conversion to LegacyPointCloud and will be skipped. "
@@ -486,7 +485,7 @@ open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
         if (dtype_is_supported_for_conversion) {
             if (normalization_factor != 1.0) {
                 core::Tensor rescaled_colors =
-                        GetPointColors().To(core::Dtype::Float64) *
+                        GetPointColors().To(core::Float64) *
                         normalization_factor;
                 pcd_legacy.colors_ =
                         core::eigen_converter::TensorToEigenVector3dVector(

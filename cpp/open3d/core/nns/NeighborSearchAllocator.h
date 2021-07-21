@@ -40,12 +40,14 @@ public:
     NeighborSearchAllocator(Device device) : device_(device) {}
 
     void AllocIndices(TIndex** ptr, size_t num) {
-        indices_ = Tensor::Empty({int64_t(num)}, Dtype::FromType<TIndex>(), device_);
+        indices_ = Tensor::Empty({int64_t(num)}, Dtype::FromType<TIndex>(),
+                                 device_);
         *ptr = indices_.GetDataPtr<TIndex>();
     }
 
     void AllocIndices(TIndex** ptr, size_t num, TIndex value) {
-        indices_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<TIndex>(), device_);
+        indices_ = Tensor::Full({int64_t(num)}, value,
+                                Dtype::FromType<TIndex>(), device_);
         *ptr = indices_.GetDataPtr<TIndex>();
     }
 
@@ -62,12 +64,14 @@ public:
     }
 
     void AllocCounts(TIndex** ptr, size_t num) {
-        counts_ = Tensor::Empty({int64_t(num)}, Dtype::FromType<TIndex>(), device_);
+        counts_ = Tensor::Empty({int64_t(num)}, Dtype::FromType<TIndex>(),
+                                device_);
         *ptr = counts_.GetDataPtr<TIndex>();
     }
 
     void AllocCounts(TIndex** ptr, size_t num, TIndex value) {
-        counts_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<TIndex>(), device_);
+        counts_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<TIndex>(),
+                               device_);
         *ptr = counts_.GetDataPtr<TIndex>();
     }
 

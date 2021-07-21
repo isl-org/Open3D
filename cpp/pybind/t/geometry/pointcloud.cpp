@@ -130,8 +130,8 @@ void pybind_pointcloud(py::module& m) {
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,
             py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,
-            "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
-                                               core::Device("CPU:0")),
+            "extrinsics"_a =
+                    core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
             "with_normals"_a = false,
             "Factory function to create a pointcloud (with only 'points') from "
@@ -142,8 +142,8 @@ void pybind_pointcloud(py::module& m) {
             "create_from_rgbd_image", &PointCloud::CreateFromRGBDImage,
             py::call_guard<py::gil_scoped_release>(), "rgbd_image"_a,
             "intrinsics"_a,
-            "extrinsics"_a = core::Tensor::Eye(4, core::Dtype::Float32,
-                                               core::Device("CPU:0")),
+            "extrinsics"_a =
+                    core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f, "stride"_a = 1,
             "with_normals"_a = false,
             "Factory function to create a pointcloud (with properties "
@@ -154,7 +154,7 @@ void pybind_pointcloud(py::module& m) {
             "= (v - cy) * z / fy");
     pointcloud.def_static(
             "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
-            "pcd_legacy"_a, "dtype"_a = core::Dtype::Float32,
+            "pcd_legacy"_a, "dtype"_a = core::Float32,
             "device"_a = core::Device("CPU:0"),
             "Create a PointCloud from a legacy Open3D PointCloud.");
     pointcloud.def("to_legacy_pointcloud", &PointCloud::ToLegacyPointCloud,

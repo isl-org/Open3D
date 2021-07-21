@@ -58,14 +58,13 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
             max_hash_tabls_size);
 
     std::vector<int64_t> points_row_splits({0, num_dataset_points});
-    points_row_splits_ = Tensor(points_row_splits, {2}, Dtype::Int64);
+    points_row_splits_ = Tensor(points_row_splits, {2}, Int64);
     std::vector<uint32_t> hash_table_splits({0, (uint32_t)hash_table_size});
-    hash_table_splits_ = Tensor(hash_table_splits, {2}, Dtype::UInt32);
+    hash_table_splits_ = Tensor(hash_table_splits, {2}, UInt32);
 
-    hash_table_index_ =
-            Tensor::Empty({num_dataset_points}, Dtype::UInt32, device);
+    hash_table_index_ = Tensor::Empty({num_dataset_points}, UInt32, device);
     hash_table_cell_splits_ =
-            Tensor::Empty({hash_table_splits.back() + 1}, Dtype::UInt32, device);
+            Tensor::Empty({hash_table_splits.back() + 1}, UInt32, device);
 
 #define BUILD_PARAMETERS                                             \
     dataset_points_, radius, points_row_splits_, hash_table_splits_, \
@@ -116,11 +115,11 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     int64_t num_query_points = query_points_.GetShape()[0];
 
     std::vector<int64_t> queries_row_splits({0, num_query_points});
-    Tensor queries_row_splits_(queries_row_splits, {2}, Dtype::Int64);
+    Tensor queries_row_splits_(queries_row_splits, {2}, Int64);
 
     Tensor neighbors_index, neighbors_distance;
     Tensor neighbors_row_splits =
-            Tensor({num_query_points + 1}, Dtype::Int64, device);
+            Tensor({num_query_points + 1}, core::Int64, device);
 
 #define RADIUS_PARAMETERS                                               \
     dataset_points_, query_points_, radius, points_row_splits_,         \
@@ -174,7 +173,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     int64_t num_query_points = query_points_.GetShape()[0];
 
     std::vector<int64_t> queries_row_splits({0, num_query_points});
-    Tensor queries_row_splits_(queries_row_splits, {2}, Dtype::Int64);
+    Tensor queries_row_splits_(queries_row_splits, {2}, Int64);
 
     Tensor neighbors_index, neighbors_distance, neighbors_count;
 

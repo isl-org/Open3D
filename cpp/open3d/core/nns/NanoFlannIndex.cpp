@@ -88,32 +88,35 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     Tensor indices;
     Tensor distances;
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        Tensor batch_indices =
-                Tensor::Full({num_query_points, knn}, -1, Dtype::FromType<index_t>());
+        Tensor batch_indices = Tensor::Full({num_query_points, knn}, -1,
+                                            Dtype::FromType<index_t>());
         Tensor batch_distances =
                 Tensor::Full({num_query_points, knn}, -1, dtype);
 
-        auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
-                holder_.get());
+        auto holder =
+                static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
+                        holder_.get());
 
         // Parallel search.
         tbb::parallel_for(
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
                     for (size_t i = r.begin(); i != r.end(); ++i) {
-                        auto single_indices = batch_indices[i].GetDataPtr<index_t>();
-                        auto single_distances = batch_distances[i].GetDataPtr<scalar_t>();
+                        auto single_indices =
+                                batch_indices[i].GetDataPtr<index_t>();
+                        auto single_distances =
+                                batch_distances[i].GetDataPtr<scalar_t>();
 
                         // search
                         holder->index_->knnSearch(
                                 query_points[i].GetDataPtr<scalar_t>(),
-                                (size_t)knn, single_indices,
-                                single_distances);
+                                (size_t)knn, single_indices, single_distances);
                     }
                 });
         // Check if the number of neighbors are same.
-        Tensor check_valid =
-                batch_indices.Ge(0).To(Dtype::FromType<index_t>()).Sum({-1}, false);
+        Tensor check_valid = batch_indices.Ge(0)
+                                     .To(Dtype::FromType<index_t>())
+                                     .Sum({-1}, false);
         int64_t num_neighbors = check_valid[0].Item<index_t>();
         if (check_valid.Ne(num_neighbors).Any()) {
             utility::LogError(
@@ -150,8 +153,9 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         std::vector<std::vector<scalar_t>> batch_distances(num_query_points);
         std::vector<int64_t> batch_nums;
 
-        auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
-                holder_.get());
+        auto holder =
+                static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
+                        holder_.get());
 
         nanoflann::SearchParams params;
         params.sorted = sort;
@@ -209,10 +213,11 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         // Make result Tensors.
         int64_t total_nums = batch_row_splits[num_query_points];
 
-        indices = Tensor(batch_indices2, {total_nums}, Dtype::FromType<index_t>());
+        indices = Tensor(batch_indices2, {total_nums},
+                         Dtype::FromType<index_t>());
         distances = Tensor(batch_distances2, {total_nums}, dtype);
         neighbors_row_splits =
-                Tensor(batch_row_splits, {num_query_points + 1}, Dtype::Int64);
+                Tensor(batch_row_splits, {num_query_points + 1}, core::Int64);
     });
     return std::make_tuple(indices, distances, neighbors_row_splits);
 };
@@ -223,8 +228,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     Dtype dtype = GetDtype();
     std::tuple<Tensor, Tensor, Tensor> result;
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        Tensor radii(std::vector<scalar_t>(num_query_points,
-                                           (scalar_t)radius),
+        Tensor radii(std::vector<scalar_t>(num_query_points, (scalar_t)radius),
                      {num_query_points}, dtype);
         result = SearchRadius(query_points, radii, sort);
     });
@@ -253,15 +257,17 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     Dtype dtype = GetDtype();
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        indices = Tensor::Empty({num_query_points, max_knn}, Dtype::FromType<index_t>());
+        indices = Tensor::Empty({num_query_points, max_knn},
+                                Dtype::FromType<index_t>());
         auto indices_ptr = indices.GetDataPtr<index_t>();
         distances = Tensor::Empty({num_query_points, max_knn}, dtype);
         auto distances_ptr = distances.GetDataPtr<scalar_t>();
         counts = Tensor::Empty({num_query_points}, Dtype::FromType<index_t>());
         auto counts_ptr = counts.GetDataPtr<index_t>();
 
-        auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t,index_t> *>(
-                holder_.get());
+        auto holder =
+                static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
+                        holder_.get());
 
         nanoflann::SearchParams params;
 
@@ -275,8 +281,8 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
                         int64_t result_idx = workload_idx * max_knn;
 
                         size_t num_results = holder->index_->radiusSearch(
-                                        query_points[workload_idx]
-                                                .GetDataPtr<scalar_t>(),
+                                query_points[workload_idx]
+                                        .GetDataPtr<scalar_t>(),
                                 radius_squared, ret_matches, params);
                         ret_matches.resize(num_results);
 

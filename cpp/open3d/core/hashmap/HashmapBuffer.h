@@ -54,7 +54,7 @@
 namespace open3d {
 namespace core {
 
-// Type for the internal heap. Dtype::Int32 is used to store it in Tensors.
+// Type for the internal heap. core::Int32 is used to store it in Tensors.
 typedef uint32_t addr_t;
 
 class HashmapBuffer {
@@ -75,7 +75,7 @@ public:
                 Tensor({capacity_},
                        Dtype(Dtype::DtypeCode::Object, dsize_value_, "_hash_v"),
                        device_);
-        heap_ = Tensor({capacity_}, Dtype::Int32, device_);
+        heap_ = Tensor({capacity_}, core::Int32, device_);
     }
 
     Tensor &GetKeyBuffer() { return key_buffer_; }

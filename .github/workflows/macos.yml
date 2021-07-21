@@ -31,7 +31,6 @@ jobs:
       BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
       BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
       LOW_MEM_USAGE: ON
-      BUILD_RPC_INTERFACE: ON
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master

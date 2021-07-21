@@ -65,7 +65,9 @@ template <int METRIC, class TReal, class TIndex>
 struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
     /// This class is the Adaptor for connecting Open3D Tensor and NanoFlann.
     struct DataAdaptor {
-        DataAdaptor(size_t dataset_size, int dimension, const TReal *const data_ptr)
+        DataAdaptor(size_t dataset_size,
+                    int dimension,
+                    const TReal *const data_ptr)
             : dataset_size_(dataset_size),
               dimension_(dimension),
               data_ptr_(data_ptr) {}

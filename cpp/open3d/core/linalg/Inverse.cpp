@@ -39,7 +39,7 @@ void Inverse(const Tensor &A, Tensor &output) {
 
     // Check dtypes
     Dtype dtype = A.GetDtype();
-    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+    if (dtype != core::Float32 && dtype != core::Float64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}.",
@@ -64,7 +64,7 @@ void Inverse(const Tensor &A, Tensor &output) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        Tensor ipiv = Tensor::Zeros({n}, Dtype::Int32, device);
+        Tensor ipiv = Tensor::Zeros({n}, core::Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
         // cuSolver does not support getri, so we have to provide an identity
@@ -83,9 +83,9 @@ void Inverse(const Tensor &A, Tensor &output) {
     } else {
         Dtype ipiv_dtype;
         if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
-            ipiv_dtype = Dtype::Int32;
+            ipiv_dtype = core::Int32;
         } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
-            ipiv_dtype = Dtype::Int64;
+            ipiv_dtype = core::Int64;
         } else {
             utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }

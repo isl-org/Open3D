@@ -76,7 +76,7 @@ void Integrate(const core::Tensor& depth,
                float depth_max) {
     core::Device device = depth.GetDevice();
 
-    core::Tensor depthf32 = depth.To(core::Dtype::Float32);
+    core::Tensor depthf32 = depth.To(core::Float32);
     core::Tensor colorf32;
 
     if (color.NumElements() != 0) {
@@ -84,7 +84,7 @@ void Integrate(const core::Tensor& depth,
             utility::LogError(
                     "Incompatible color device type for depth and color");
         }
-        colorf32 = color.To(core::Dtype::Float32);
+        colorf32 = color.To(core::Float32);
     }
 
     if (block_indices.GetDevice() != device ||
@@ -95,10 +95,8 @@ void Integrate(const core::Tensor& depth,
     }
 
     static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
-    core::Tensor extrinsics_d =
-            extrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
@@ -130,10 +128,8 @@ void EstimateRange(const core::Tensor& block_keys,
                    float depth_min,
                    float depth_max) {
     static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
-    core::Tensor extrinsics_d =
-            extrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
 
     core::Device device = block_keys.GetDevice();
     core::Device::DeviceType device_type = device.GetType();
@@ -173,10 +169,8 @@ void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
              float depth_max,
              float weight_threshold) {
     static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
-    core::Tensor extrinsics_d =
-            extrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
 
     core::Device device = hashmap->GetDevice();
     core::Device::DeviceType device_type = device.GetType();

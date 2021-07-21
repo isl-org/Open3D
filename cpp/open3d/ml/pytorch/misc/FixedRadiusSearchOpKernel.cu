@@ -71,8 +71,8 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
             (uint32_t*)hash_table_splits.data_ptr<int32_t>(),
             hash_table_cell_splits.size(0),
             (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
-            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric, ignore_query_point,
-            return_distances, output_allocator);
+            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric,
+            ignore_query_point, return_distances, output_allocator);
 
     auto temp_tensor = CreateTempTensor(temp_size, points.device(), &temp_ptr);
 
@@ -87,8 +87,8 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
             (uint32_t*)hash_table_splits.data_ptr<int32_t>(),
             hash_table_cell_splits.size(0),
             (uint32_t*)hash_table_cell_splits.data_ptr<int32_t>(),
-            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric, ignore_query_point,
-            return_distances, output_allocator);
+            (uint32_t*)hash_table_index.data_ptr<int32_t>(), metric,
+            ignore_query_point, return_distances, output_allocator);
 
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();

@@ -45,11 +45,11 @@ TEST(NanoFlannIndex, SearchKnn) {
                                0.2, 0.0, 0.1, 0.0, 0.0, 0.1, 0.1, 0.0,
                                0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
                                0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
+    core::Tensor ref(points, {size, 3}, core::Float64);
     core::nns::NanoFlannIndex index(ref);
 
     core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Dtype::Float64);
+                       {1, 3}, core::Float64);
 
     // if k is smaller or equal to 0
     EXPECT_THROW(index.SearchKnn(query, -1), std::runtime_error);
@@ -60,7 +60,7 @@ TEST(NanoFlannIndex, SearchKnn) {
     core::Tensor distances;
     std::tie(indices, distances) = index.SearchKnn(query, 3);
 
-    ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4, 9}));
+    ExpectEQ(indices.ToFlatVector<int32_t>(), std::vector<int32_t>({1, 4, 9}));
     ExpectEQ(distances.ToFlatVector<double>(),
              std::vector<double>({0.00626358, 0.00747938, 0.0108912}));
     EXPECT_EQ(indices.GetShape(), core::SizeVector({1, 3}));
@@ -69,8 +69,8 @@ TEST(NanoFlannIndex, SearchKnn) {
     // if k > size
     std::tie(indices, distances) = index.SearchKnn(query, 12);
 
-    ExpectEQ(indices.ToFlatVector<int64_t>(),
-             std::vector<int64_t>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8}));
+    ExpectEQ(indices.ToFlatVector<int32_t>(),
+             std::vector<int32_t>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8}));
     ExpectEQ(distances.ToFlatVector<double>(),
              std::vector<double>({0.00626358, 0.00747938, 0.0108912, 0.0138322,
                                   0.015048, 0.018695, 0.0199108, 0.0286952,
@@ -88,11 +88,11 @@ TEST(NanoFlannIndex, SearchRadius) {
                                0.2, 0.0, 0.1, 0.0, 0.0, 0.1, 0.1, 0.0,
                                0.1, 0.2, 0.0, 0.2, 0.0, 0.0, 0.2, 0.1,
                                0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Dtype::Float64);
+    core::Tensor ref(points, {size, 3}, core::Float64);
     core::nns::NanoFlannIndex index(ref);
 
     core::Tensor query(std::vector<double>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Dtype::Float64);
+                       {1, 3}, core::Float64);
 
     // if radius <= 0
     EXPECT_THROW(index.SearchRadius(query, -1.0), std::runtime_error);
@@ -101,7 +101,7 @@ TEST(NanoFlannIndex, SearchRadius) {
     // if radius == 0.1
     std::tuple<core::Tensor, core::Tensor, core::Tensor> result =
             index.SearchRadius(query, 0.1);
-    core::Tensor indices = std::get<0>(result).To(core::Dtype::Int32);
+    core::Tensor indices = std::get<0>(result).To(core::Int32);
     core::Tensor distances = std::get<1>(result);
     ExpectEQ(indices.ToFlatVector<int>(), std::vector<int>({1, 4}));
     ExpectEQ(distances.ToFlatVector<double>(),
