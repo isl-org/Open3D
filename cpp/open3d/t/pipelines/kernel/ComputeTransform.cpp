@@ -50,10 +50,10 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     target_points.AssertDevice(device);
 
     if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
-        utility::LogError("PointCloud is Empty.");
+        utility::LogError("Source and/or target point cloud is empty.");
     }
     if (correspondence_indices.GetLength() == 0) {
-        utility::LogError("0 correspondence present.");
+        utility::LogError("No correspondence present.");
     }
 
     // Pose {6,} tensor [ouput].
@@ -99,10 +99,10 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     target_points.AssertDevice(device);
 
     if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
-        utility::LogError("PointCloud is Empty.");
+        utility::LogError("Source and/or target point cloud is empty.");
     }
     if (correspondence_indices.GetLength() == 0) {
-        utility::LogError("0 correspondence present.");
+        utility::LogError("No correspondence present.");
     }
 
     // [Output] Rotation and translation tensor of type Float64.
@@ -128,6 +128,11 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         // TODO: Implement optimised CUDA reduction kernel.
         core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
         // correpondence_set : (i, corres[i]).
+
+        if (valid.GetLength() == 0) {
+            utility::LogError("No valid correspondence present.");
+        }
+
         // source[i] and target[corres[i]] is a correspondence.
         core::Tensor source_indices =
                 core::Tensor::Arange(0, source_points.GetShape()[0], 1,

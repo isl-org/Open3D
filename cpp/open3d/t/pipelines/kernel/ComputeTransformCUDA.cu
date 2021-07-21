@@ -77,10 +77,10 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
     if (valid) {
         // Dump J, r into JtJ and Jtr
         int i = 0;
-        for (int j = 0; j < 6; j++) {
-            for (int k = 0; k <= j; k++) {
+        for (int j = 0; j < 6; ++j) {
+            for (int k = 0; k <= j; ++k) {
                 reduction[i] += J_ij[j] * w * J_ij[k];
-                i++;
+                ++i;
             }
             reduction[21 + j] += J_ij[j] * w * r;
         }

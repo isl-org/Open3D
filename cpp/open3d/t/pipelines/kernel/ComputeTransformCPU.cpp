@@ -85,10 +85,10 @@ static void ComputePosePointToPlaneKernelCPU(
                     if (valid) {
                         // Dump J, r into JtJ and Jtr
                         int i = 0;
-                        for (int j = 0; j < 6; j++) {
-                            for (int k = 0; k <= j; k++) {
+                        for (int j = 0; j < 6; ++j) {
+                            for (int k = 0; k <= j; ++k) {
                                 A_reduction[i] += J_ij[j] * w * J_ij[k];
-                                i++;
+                                ++i;
                             }
                             A_reduction[21 + j] += J_ij[j] * w * r;
                         }
@@ -159,6 +159,7 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                                   int &inlier_count) {
     // Calculating source_mean and target_mean, which are mean(x, y, z) of
     // source and target points respectively.
+    // mean_1x7[6] is the number of total valid correspondences.
     std::vector<scalar_t> mean_1x7(7, 0.0);
     // Identity element for running_total reduction variable: zeros_6.
     std::vector<scalar_t> zeros_7(7, 0.0);
@@ -196,6 +197,10 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                 }
                 return result;
             });
+
+    if (mean_1x7[6] == 0) {
+        utility::LogError("No valid correspondence present.");
+    }
 
     for (int i = 0; i < 6; ++i) {
         mean_1x7[i] = mean_1x7[i] / mean_1x7[6];
@@ -252,9 +257,11 @@ static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
     // temporary reduction variables. The shapes of source_mean and target_mean
     // are such, because it will be required in equation: t = source_mean -
     // R.Matmul(target_mean.T()).Reshape({-1}).
-    for (int i = 0, j = 0; j < 3; ++j) {
-        for (int k = 0; k < 3; k++) {
-            sxy_ptr[j * 3 + k] = sxy_1x9[i++] / mean_1x7[6];
+    int i = 0;
+    for (int j = 0; j < 3; ++j) {
+        for (int k = 0; k < 3; ++k) {
+            sxy_ptr[j * 3 + k] = sxy_1x9[i] / mean_1x7[6];
+            ++i;
         }
         source_mean_ptr[j] = mean_1x7[j];
         target_mean_ptr[j] = mean_1x7[j + 3];
