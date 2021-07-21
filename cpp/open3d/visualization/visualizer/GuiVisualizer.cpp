@@ -886,7 +886,6 @@ void GuiVisualizer::Layout(const gui::LayoutContext &context) {
 }
 
 void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-#ifdef BUILD_RPC_INTERFACE
     auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
                               const std::string &path, int time,
                               const std::string &layer) {
@@ -905,20 +904,9 @@ void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
     } catch (std::exception &e) {
         utility::LogWarning("Failed to start RPC interface: {}", e.what());
     }
-#else
-    utility::LogWarning(
-            "GuiVisualizer::StartRPCInterface: RPC interface not built");
-#endif
 }
 
-void GuiVisualizer::StopRPCInterface() {
-#ifdef BUILD_RPC_INTERFACE
-    impl_->receiver_.reset();
-#else
-    utility::LogWarning(
-            "GuiVisualizer::StopRPCInterface: RPC interface not built");
-#endif
-}
+void GuiVisualizer::StopRPCInterface() { impl_->receiver_.reset(); }
 
 bool GuiVisualizer::SetIBL(const char *path) {
     auto result = impl_->SetIBL(GetRenderer(), path);
