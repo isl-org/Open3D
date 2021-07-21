@@ -123,7 +123,7 @@ struct WebRTCWindowSystem::Impl {
     std::thread webrtc_thread_;
     bool sever_started_ = false;
 
-    std::unordered_map<std::string, std::function<void(std::string)>>
+    std::unordered_map<std::string, std::function<std::string(std::string)>>
             data_channel_message_callbacks_;
 };
 
@@ -156,7 +156,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 
     // Client->server message default callbacks.
     RegisterDataChannelMessageCallback(
-            "MouseEvent", [this](const std::string &message) -> void {
+            "MouseEvent", [this](const std::string &message) -> std::string {
                 const Json::Value value = utility::StringToJson(message);
                 const std::string window_uid =
                         value.get("window_uid", "").asString();
@@ -167,10 +167,11 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                         PostMouseEvent(GetOSWindowByUID(window_uid), me);
                     }
                 }
+                return "";  // empty string is not sent back
             });
 
     RegisterDataChannelMessageCallback(
-            "ResizeEvent", [this](const std::string &message) -> void {
+            "ResizeEvent", [this](const std::string &message) -> std::string {
                 const Json::Value value = utility::StringToJson(message);
                 const std::string window_uid =
                         value.get("window_uid", "").asString();
@@ -179,10 +180,12 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                     const int height = value.get("height", 0).asInt();
                     const int width = value.get("width", 0).asInt();
                     if (height <= 0 || width <= 0) {
-                        utility::LogWarning(
+                        std::string reply = fmt::format(
                                 "Invalid height {} or width {}, ResizeEvent "
                                 "ignored.",
                                 height, width);
+                        utility::LogWarning("{}", reply);
+                        return "[Open3D WARNING] " + reply;
                     } else {
                         utility::LogDebug("ResizeEvent {}: ({}, {})",
                                           window_uid, height, width);
@@ -190,6 +193,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                                       height);
                     }
                 }
+                return "";  // empty string is not sent back
             });
 }
 
@@ -349,31 +353,41 @@ void WebRTCWindowSystem::StartWebRTCServer() {
     }
 }
 
-void WebRTCWindowSystem::OnDataChannelMessage(const std::string &message) {
+std::string WebRTCWindowSystem::OnDataChannelMessage(
+        const std::string &message) {
     utility::LogDebug("WebRTCWindowSystem::OnDataChannelMessage: {}", message);
+    std::string reply("");
     try {
         const Json::Value value = utility::StringToJson(message);
         const std::string class_name = value.get("class_name", "").asString();
 
         if (impl_->data_channel_message_callbacks_.count(class_name) != 0) {
-            impl_->data_channel_message_callbacks_.at(class_name)(message);
+            return impl_->data_channel_message_callbacks_.at(class_name)(
+                    message);
         } else {
-            utility::LogInfo(
+            reply = fmt::format(
                     "OnDataChannelMessage: {}. Message cannot be parsed, as "
                     "the class_name {} is invalid.",
                     message, class_name);
         }
-    } catch (...) {
-        utility::LogInfo(
+    } catch (std::exception &e) {  // known error
+        reply = fmt::format(
+                "OnDataChannelMessage: {}. Error processing message: {}",
+                message, e.what());
+    } catch (...) {  // unknown error
+        reply = fmt::format(
                 "OnDataChannelMessage: {}. Message cannot be parsed, or "
                 "the target GUI event failed to execute.",
                 message);
     }
+    utility::LogInfo("{}", reply);
+    return "[Open3D WARNING] " +
+           reply;  // Add tag for detecting error in client
 }
 
 void WebRTCWindowSystem::RegisterDataChannelMessageCallback(
         const std::string &class_name,
-        const std::function<void(const std::string &)> callback) {
+        const std::function<std::string(const std::string &)> callback) {
     impl_->data_channel_message_callbacks_[class_name] = callback;
 }
 

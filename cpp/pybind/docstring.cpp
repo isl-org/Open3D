@@ -299,7 +299,7 @@ std::string FunctionDoc::ToGoogleDocString() const {
 }
 
 std::string FunctionDoc::NamespaceFix(const std::string& s) {
-    std::string rc = std::regex_replace(s, std::regex("::"), ".");
+    std::string rc = std::regex_replace(s, std::regex("::(\\S)"), ".$1");
     rc = std::regex_replace(rc, std::regex("open3d\\.(cpu|cuda)\\.pybind\\."),
                             "open3d.");
     return rc;
