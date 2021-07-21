@@ -109,7 +109,6 @@ static void ComputePosePointToPlaneKernelCPU(
             });
 #endif
 
-#pragma omp parallel for schedule(static)
     for (int i = 0; i < 29; ++i) {
         global_sum[i] = A_1x29[i];
     }

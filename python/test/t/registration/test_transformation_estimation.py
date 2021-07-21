@@ -67,7 +67,7 @@ def get_pcds_and_correspondences(dtype, device):
     target_t.point["normals"] = target_normals
 
     correspondences = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 7, 5, 8, 7, 7, 5, 8],
-                                 o3c.Dtype.Int64, device)
+                                 o3c.int64, device)
 
     return source_t, target_t, correspondences
 
@@ -91,7 +91,7 @@ def test_compute_rmse_point_to_point(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_transformation_point_to_point(device):
 
-    supported_dtypes = [o3c.Dtype.Float32, o3c.Dtype.Float64]
+    supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
         source_t, target_t, correspondences = get_pcds_and_correspondences(
             dtype, device)
@@ -112,7 +112,7 @@ def test_compute_transformation_point_to_point(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_rmse_point_to_plane(device):
 
-    supported_dtypes = [o3c.Dtype.Float32, o3c.Dtype.Float64]
+    supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
         source_t, target_t, correspondences = get_pcds_and_correspondences(
             dtype, device)
@@ -128,7 +128,7 @@ def test_compute_rmse_point_to_plane(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_compute_transformation_point_to_plane(device):
 
-    supported_dtypes = [o3c.Dtype.Float32, o3c.Dtype.Float64]
+    supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
         source_t, target_t, correspondences = get_pcds_and_correspondences(
             dtype, device)

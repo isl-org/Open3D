@@ -36,6 +36,16 @@ target_sources(io PRIVATE
     file_format/FileXYZRGB.cpp
 )
 
+target_sources(io PRIVATE
+    rpc/BufferConnection.cpp
+    rpc/Connection.cpp
+    rpc/DummyReceiver.cpp
+    rpc/MessageUtils.cpp
+    rpc/ReceiverBase.cpp
+    rpc/RemoteFunctions.cpp
+    rpc/ZMQContext.cpp
+)
+
 if (BUILD_AZURE_KINECT)
     target_sources(io PRIVATE
         sensor/azure_kinect/AzureKinectRecorder.cpp
@@ -48,17 +58,6 @@ if (BUILD_AZURE_KINECT)
     )
 endif()
 
-if (BUILD_RPC_INTERFACE)
-    target_sources(io PRIVATE
-        rpc/BufferConnection.cpp
-        rpc/Connection.cpp
-        rpc/DummyReceiver.cpp
-        rpc/MessageUtils.cpp
-        rpc/ReceiverBase.cpp
-        rpc/RemoteFunctions.cpp
-        rpc/ZMQContext.cpp
-    )
-endif()
 
 open3d_show_and_abort_on_warning(io)
 open3d_set_global_properties(io)

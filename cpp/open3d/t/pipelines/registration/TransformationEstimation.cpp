@@ -57,7 +57,7 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 
     core::Tensor error_t = (source_points_indexed - target_points_indexed);
     error_t.Mul_(error_t);
-    double error = error_t.Sum({0, 1}).To(core::Dtype::Float64).Item<double>();
+    double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
     return std::sqrt(error /
                      static_cast<double>(neighbour_indices.GetLength()));
 }
@@ -104,7 +104,7 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     core::Tensor error_t = (source_points_indexed - target_points_indexed)
                                    .Mul_(target_normals_indexed);
     error_t.Mul_(error_t);
-    double error = error_t.Sum({0, 1}).To(core::Dtype::Float64).Item<double>();
+    double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
     return std::sqrt(error /
                      static_cast<double>(neighbour_indices.GetLength()));
 }

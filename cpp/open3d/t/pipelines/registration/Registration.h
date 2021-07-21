@@ -87,7 +87,7 @@ public:
     /// \param transformation The estimated transformation matrix of dtype
     /// Float64 on CPU device.
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
-                               4, core::Dtype::Float64, core::Device("CPU:0")))
+                               4, core::Float64, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
 
     ~RegistrationResult() {}
@@ -123,8 +123,8 @@ RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
-        const core::Tensor &transformation = core::Tensor::Eye(
-                4, core::Dtype::Float64, core::Device("CPU:0")));
+        const core::Tensor &transformation =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")));
 
 /// \brief Functions for ICP registration.
 ///
@@ -140,8 +140,8 @@ RegistrationResult RegistrationICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
-        const core::Tensor &init_source_to_target = core::Tensor::Eye(
-                4, core::Dtype::Float64, core::Device("CPU:0")),
+        const core::Tensor &init_source_to_target =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
@@ -173,8 +173,8 @@ RegistrationResult RegistrationMultiScaleICP(
         const std::vector<double> &voxel_sizes,
         const std::vector<ICPConvergenceCriteria> &criteria_list,
         const std::vector<double> &max_correspondence_distances,
-        const core::Tensor &init_source_to_target = core::Tensor::Eye(
-                4, core::Dtype::Float64, core::Device("CPU:0")),
+        const core::Tensor &init_source_to_target =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint());
 

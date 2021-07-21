@@ -10,7 +10,6 @@ target_sources(core PRIVATE
     MemoryManagerCached.cpp
     MemoryManagerCPU.cpp
     MemoryManagerStatistic.cpp
-    NumpyIO.cpp
     ShapeUtil.cpp
     Tensor.cpp
     TensorKey.cpp

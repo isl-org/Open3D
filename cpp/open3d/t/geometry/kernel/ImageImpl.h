@@ -167,7 +167,7 @@ void CreateVertexMapCPU
          float invalid_fill) {
     NDArrayIndexer src_indexer(src, 2);
     NDArrayIndexer dst_indexer(dst, 2);
-    TransformIndexer ti(intrinsics, core::Tensor::Eye(4, core::Dtype::Float64,
+    TransformIndexer ti(intrinsics, core::Tensor::Eye(4, core::Float64,
                                                       core::Device("CPU:0")));
 
     int64_t rows = src.GetShape(0);

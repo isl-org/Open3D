@@ -119,9 +119,9 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
         estimation = std::make_shared<TransformationEstimationPointToPoint>();
     }
 
-    core::Tensor init_trans = core::Tensor(initial_transform_flat, {4, 4},
-                                           core::Dtype::Float32, device)
-                                      .To(dtype);
+    core::Tensor init_trans =
+            core::Tensor(initial_transform_flat, {4, 4}, core::Float32, device)
+                    .To(dtype);
 
     RegistrationResult reg_result(init_trans);
 
@@ -149,7 +149,7 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPlane / CPU32,
                   core::Device("CPU:0"),
-                  core::Dtype::Float32,
+                  core::Float32,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
@@ -157,7 +157,7 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPlane / CUDA32,
                   core::Device("CUDA:0"),
-                  core::Dtype::Float32,
+                  core::Float32,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 #endif
@@ -165,7 +165,7 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPoint / CPU32,
                   core::Device("CPU:0"),
-                  core::Dtype::Float32,
+                  core::Float32,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 
@@ -173,7 +173,7 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPoint / CUDA32,
                   core::Device("CUDA:0"),
-                  core::Dtype::Float32,
+                  core::Float32,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 #endif
@@ -181,7 +181,7 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPlane / CPU64,
                   core::Device("CPU:0"),
-                  core::Dtype::Float64,
+                  core::Float64,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
@@ -189,7 +189,7 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPlane / CUDA64,
                   core::Device("CUDA:0"),
-                  core::Dtype::Float64,
+                  core::Float64,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 #endif
@@ -197,7 +197,7 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPoint / CPU64,
                   core::Device("CPU:0"),
-                  core::Dtype::Float64,
+                  core::Float64,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 
@@ -205,7 +205,7 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPoint / CUDA64,
                   core::Device("CUDA:0"),
-                  core::Dtype::Float64,
+                  core::Float64,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 #endif

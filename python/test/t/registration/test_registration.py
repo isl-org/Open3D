@@ -24,6 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+from open3d_test import list_devices
 import open3d as o3d
 import open3d.core as o3c
 import numpy as np
@@ -38,8 +39,6 @@ test_data_path = test_path + "../../examples/test_data/"
 
 source_pointcloud_filename = test_data_path + "ICP/cloud_bin_0.pcd"
 target_pointcloud_filename = test_data_path + "ICP/cloud_bin_1.pcd"
-
-from open3d_test import list_devices
 
 
 def get_pcds(dtype, device):
@@ -71,7 +70,7 @@ def test_icp_convergence_criteria_constructor(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_registration_result_constructor(device):
-    dtype = o3c.Dtype.Float64
+    dtype = o3c.float64
 
     # Constructor.
     registration_result = o3d.t.pipelines.registration.RegistrationResult()
@@ -86,7 +85,7 @@ def test_registration_result_constructor(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_evaluate_registration(device):
 
-    supported_dtypes = [o3c.Dtype.Float32, o3c.Dtype.Float64]
+    supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
         source_t, target_t = get_pcds(dtype, device)
 
@@ -95,7 +94,7 @@ def test_evaluate_registration(device):
 
         max_correspondence_distance = 1.25
         init_trans_legacy = np.eye(4)
-        init_trans_t = o3c.Tensor.eye(4, o3c.Dtype.Float64, device)
+        init_trans_t = o3c.Tensor.eye(4, o3c.float64, device)
 
         evaluation_t = o3d.t.pipelines.registration.evaluate_registration(
             source_t, target_t, max_correspondence_distance, init_trans_t)
@@ -112,7 +111,7 @@ def test_evaluate_registration(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_registration_icp_point_to_point(device):
 
-    supported_dtypes = [o3c.Dtype.Float32, o3c.Dtype.Float64]
+    supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
         source_t, target_t = get_pcds(dtype, device)
 
@@ -126,7 +125,7 @@ def test_registration_icp_point_to_point(device):
                                       [0.487, 0.255, 0.835, -1.4],
                                       [0.0, 0.0, 0.0, 1.0]])
         init_trans_t = o3c.Tensor(init_trans_legacy,
-                                  dtype=o3c.Dtype.Float64,
+                                  dtype=o3c.float64,
                                   device=device)
 
         reg_p2p_t = o3d.t.pipelines.registration.registration_icp(
@@ -150,7 +149,7 @@ def test_registration_icp_point_to_point(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_test_registration_icp_point_to_plane(device):
 
-    supported_dtypes = [o3c.Dtype.Float32, o3c.Dtype.Float64]
+    supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
         source_t, target_t = get_pcds(dtype, device)
 
@@ -164,7 +163,7 @@ def test_test_registration_icp_point_to_plane(device):
                                       [0.487, 0.255, 0.835, -1.4],
                                       [0.0, 0.0, 0.0, 1.0]])
         init_trans_t = o3c.Tensor(init_trans_legacy,
-                                  dtype=o3c.Dtype.Float64,
+                                  dtype=o3c.float64,
                                   device=device)
 
         reg_p2plane_t = o3d.t.pipelines.registration.registration_icp(

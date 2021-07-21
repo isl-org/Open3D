@@ -399,10 +399,10 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertices,
                                        const core::Tensor& triangles) {
     vertices.AssertDevice(impl_->tensor_device_);
     vertices.AssertShapeCompatible({utility::nullopt, 3});
-    vertices.AssertDtype(core::Dtype::Float32);
+    vertices.AssertDtype(core::Float32);
     triangles.AssertDevice(impl_->tensor_device_);
     triangles.AssertShapeCompatible({utility::nullopt, 3});
-    triangles.AssertDtype(core::Dtype::UInt32);
+    triangles.AssertDtype(core::UInt32);
 
     const size_t num_vertices = vertices.GetLength();
     const size_t num_triangles = triangles.GetLength();
@@ -450,7 +450,7 @@ uint32_t RaycastingScene::AddTriangles(const TriangleMesh& mesh) {
                 std::numeric_limits<uint32_t>::max());
     }
     return AddTriangles(mesh.GetVertices(),
-                        mesh.GetTriangles().To(core::Dtype::UInt32));
+                        mesh.GetTriangles().To(core::UInt32));
 }
 
 std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
@@ -463,13 +463,13 @@ std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
     size_t num_rays = shape.NumElements();
 
     std::unordered_map<std::string, core::Tensor> result;
-    result["t_hit"] = core::Tensor(shape, core::Dtype::Float32);
-    result["geometry_ids"] = core::Tensor(shape, core::Dtype::UInt32);
-    result["primitive_ids"] = core::Tensor(shape, core::Dtype::UInt32);
+    result["t_hit"] = core::Tensor(shape, core::Float32);
+    result["geometry_ids"] = core::Tensor(shape, core::UInt32);
+    result["primitive_ids"] = core::Tensor(shape, core::UInt32);
     shape.push_back(2);
-    result["primitive_uvs"] = core::Tensor(shape, core::Dtype::Float32);
+    result["primitive_uvs"] = core::Tensor(shape, core::Float32);
     shape.back() = 3;
-    result["primitive_normals"] = core::Tensor(shape, core::Dtype::Float32);
+    result["primitive_normals"] = core::Tensor(shape, core::Float32);
 
     auto data = rays.Contiguous();
     impl_->CastRays<false>(data.GetDataPtr<float>(), num_rays,
@@ -509,10 +509,10 @@ RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points) {
     size_t num_query_points = shape.NumElements();
 
     std::unordered_map<std::string, core::Tensor> result;
-    result["geometry_ids"] = core::Tensor(shape, core::Dtype::UInt32);
-    result["primitive_ids"] = core::Tensor(shape, core::Dtype::UInt32);
+    result["geometry_ids"] = core::Tensor(shape, core::UInt32);
+    result["primitive_ids"] = core::Tensor(shape, core::UInt32);
     shape.push_back(3);
-    result["points"] = core::Tensor(shape, core::Dtype::Float32);
+    result["points"] = core::Tensor(shape, core::Float32);
 
     auto data = query_points.Contiguous();
     impl_->ComputeClosestPoints(data.GetDataPtr<float>(), num_query_points,
@@ -539,7 +539,7 @@ core::Tensor RaycastingScene::ComputeDistance(
                                                  num_query_points);
     Eigen::Map<Eigen::MatrixXf> closest_points_map(
             closest_points["points"].GetDataPtr<float>(), 3, num_query_points);
-    core::Tensor distance(shape, core::Dtype::Float32);
+    core::Tensor distance(shape, core::Float32);
     Eigen::Map<Eigen::VectorXf> distance_map(distance.GetDataPtr<float>(),
                                              num_query_points);
 
@@ -558,15 +558,14 @@ core::Tensor RaycastingScene::ComputeSignedDistance(
 
     auto data = query_points.Contiguous();
     auto distance = ComputeDistance(data);
-    core::Tensor rays({int64_t(num_query_points), 6}, core::Dtype::Float32);
+    core::Tensor rays({int64_t(num_query_points), 6}, core::Float32);
     rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
                   core::TensorKey::Slice(0, 3, 1)},
                  data.Reshape({int64_t(num_query_points), 3}));
-    rays.SetItem(
-            {core::TensorKey::Slice(0, num_query_points, 1),
-             core::TensorKey::Slice(3, 6, 1)},
-            core::Tensor::Ones({1}, core::Dtype::Float32, impl_->tensor_device_)
-                    .Expand({int64_t(num_query_points), 3}));
+    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
+                  core::TensorKey::Slice(3, 6, 1)},
+                 core::Tensor::Ones({1}, core::Float32, impl_->tensor_device_)
+                         .Expand({int64_t(num_query_points), 3}));
     auto intersections = CountIntersections(rays);
 
     Eigen::Map<Eigen::VectorXf> distance_map(distance.GetDataPtr<float>(),
@@ -588,21 +587,20 @@ core::Tensor RaycastingScene::ComputeOccupancy(
                        // results.
     size_t num_query_points = shape.NumElements();
 
-    core::Tensor rays({int64_t(num_query_points), 6}, core::Dtype::Float32);
+    core::Tensor rays({int64_t(num_query_points), 6}, core::Float32);
     rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
                   core::TensorKey::Slice(0, 3, 1)},
                  query_points.Reshape({int64_t(num_query_points), 3}));
-    rays.SetItem(
-            {core::TensorKey::Slice(0, num_query_points, 1),
-             core::TensorKey::Slice(3, 6, 1)},
-            core::Tensor::Ones({1}, core::Dtype::Float32, impl_->tensor_device_)
-                    .Expand({int64_t(num_query_points), 3}));
+    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
+                  core::TensorKey::Slice(3, 6, 1)},
+                 core::Tensor::Ones({1}, core::Float32, impl_->tensor_device_)
+                         .Expand({int64_t(num_query_points), 3}));
     auto intersections = CountIntersections(rays);
     Eigen::Map<Eigen::VectorXi> intersections_map(
             intersections.GetDataPtr<int>(), num_query_points);
     intersections_map =
             intersections_map.unaryExpr([](const int x) { return x % 2; });
-    return intersections.To(core::Dtype::Float32).Reshape(shape);
+    return intersections.To(core::Float32).Reshape(shape);
 }
 
 core::Tensor RaycastingScene::CreateRaysPinhole(
@@ -616,9 +614,9 @@ core::Tensor RaycastingScene::CreateRaysPinhole(
     extrinsic_matrix.AssertShape({4, 4});
 
     auto intrinsic_matrix_contig =
-            intrinsic_matrix.To(core::Dtype::Float64).Contiguous();
+            intrinsic_matrix.To(core::Float64).Contiguous();
     auto extrinsic_matrix_contig =
-            extrinsic_matrix.To(core::Dtype::Float64).Contiguous();
+            extrinsic_matrix.To(core::Float64).Contiguous();
     // Eigen is col major
     Eigen::Map<Eigen::MatrixXd> KT(intrinsic_matrix_contig.GetDataPtr<double>(),
                                    3, 3);
@@ -631,7 +629,7 @@ core::Tensor RaycastingScene::CreateRaysPinhole(
     Eigen::Vector3d C = -RT * t;
     Eigen::Matrix3f RT_invK = (RT * invK).cast<float>();
 
-    core::Tensor rays({height_px, width_px, 6}, core::Dtype::Float32);
+    core::Tensor rays({height_px, width_px, 6}, core::Float32);
     Eigen::Map<Eigen::MatrixXf> rays_map(rays.GetDataPtr<float>(), 6,
                                          height_px * width_px);
 
@@ -666,7 +664,7 @@ core::Tensor RaycastingScene::CreateRaysPinhole(double fov_deg,
             0.5 * width_px / std::tan(0.5 * (M_PI / 180) * fov_deg);
 
     core::Tensor intrinsic_matrix =
-            core::Tensor::Eye(3, core::Dtype::Float64, core::Device());
+            core::Tensor::Eye(3, core::Float64, core::Device());
     Eigen::Map<Eigen::MatrixXd> intrinsic_matrix_map(
             intrinsic_matrix.GetDataPtr<double>(), 3, 3);
     intrinsic_matrix_map(0, 0) = focal_length;
@@ -674,9 +672,9 @@ core::Tensor RaycastingScene::CreateRaysPinhole(double fov_deg,
     intrinsic_matrix_map(2, 0) = 0.5 * width_px;
     intrinsic_matrix_map(2, 1) = 0.5 * height_px;
 
-    auto center_contig = center.To(core::Dtype::Float64).Contiguous();
-    auto eye_contig = eye.To(core::Dtype::Float64).Contiguous();
-    auto up_contig = up.To(core::Dtype::Float64).Contiguous();
+    auto center_contig = center.To(core::Float64).Contiguous();
+    auto eye_contig = eye.To(core::Float64).Contiguous();
+    auto up_contig = up.To(core::Float64).Contiguous();
 
     Eigen::Map<const Eigen::Vector3d> center_map(
             center_contig.GetDataPtr<double>());
@@ -693,7 +691,7 @@ core::Tensor RaycastingScene::CreateRaysPinhole(double fov_deg,
     Eigen::Vector3d t = -R * eye_map;
 
     core::Tensor extrinsic_matrix =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device());
+            core::Tensor::Eye(4, core::Float64, core::Device());
     Eigen::Map<Eigen::MatrixXd> extrinsic_matrix_map(
             extrinsic_matrix.GetDataPtr<double>(), 4, 4);
     extrinsic_matrix_map.block(3, 0, 1, 3) = t.transpose();

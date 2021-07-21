@@ -41,7 +41,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     core::Device device = source_points.GetDevice();
     core::Dtype dtype = source_points.GetDtype();
 
-    if (dtype != core::Dtype::Float64 && dtype != core::Dtype::Float32) {
+    if (dtype != core::Float64 && dtype != core::Float32) {
         utility::LogError("Only Float32 and Float64 dtypes are supported.");
     }
 
@@ -57,7 +57,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     }
 
     // Pose {6,} tensor [ouput].
-    core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
+    core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
 
     float residual = 0;
     int inlier_count = 0;
@@ -91,7 +91,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     core::Device device = source_points.GetDevice();
     core::Dtype dtype = source_points.GetDtype();
 
-    if (dtype != core::Dtype::Float64 && dtype != core::Dtype::Float32) {
+    if (dtype != core::Float64 && dtype != core::Float32) {
         utility::LogError("Only Float32 and Float64 dtypes are supported.");
     }
 
@@ -131,7 +131,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         // source[i] and target[corres[i]] is a correspondence.
         core::Tensor source_indices =
                 core::Tensor::Arange(0, source_points.GetShape()[0], 1,
-                                     core::Dtype::Int64, device)
+                                     core::Int64, device)
                         .IndexGet({valid});
         // Only take valid indices.
         core::Tensor target_indices =
@@ -153,14 +153,14 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
                                    .T()
                                    .Matmul(source_select - mean_s)
                                    .Div_(static_cast<float>(inlier_count))
-                                   .To(host, core::Dtype::Float64);
+                                   .To(host, core::Float64);
 
-        mean_s = mean_s.To(host, core::Dtype::Float64);
-        mean_t = mean_t.To(host, core::Dtype::Float64);
+        mean_s = mean_s.To(host, core::Float64);
+        mean_t = mean_t.To(host, core::Float64);
 
         core::Tensor U, D, VT;
         std::tie(U, D, VT) = Sxy.SVD();
-        core::Tensor S = core::Tensor::Eye(3, core::Dtype::Float64, host);
+        core::Tensor S = core::Tensor::Eye(3, core::Float64, host);
         if (U.Det() * (VT.T()).Det() < 0) {
             S[-1][-1] = -1;
         }

@@ -45,7 +45,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     transformation.AssertShape({4, 4});
 
     core::Tensor transformation_host =
-            transformation.To(core::Device("CPU:0"), core::Dtype::Float64);
+            transformation.To(core::Device("CPU:0"), core::Float64);
 
     RegistrationResult result(transformation_host);
 
@@ -55,7 +55,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                                     max_correspondence_distance, 1);
 
     double num_correspondences =
-            counts.Sum({0}).To(core::Dtype::Float64).Item<double>();
+            counts.Sum({0}).To(core::Float64).Item<double>();
 
     if (num_correspondences == 0) {
         utility::LogError(
@@ -64,8 +64,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     }
 
     // Reduction sum of "distances" for error.
-    double squared_error =
-            distances.Sum({0}).To(core::Dtype::Float64).Item<double>();
+    double squared_error = distances.Sum({0}).To(core::Float64).Item<double>();
 
     result.fitness_ = num_correspondences /
                       static_cast<double>(source.GetPoints().GetLength());
@@ -131,7 +130,7 @@ static void AssertInputMultiScaleICP(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
-    if (dtype == core::Dtype::Float64 &&
+    if (dtype == core::Float64 &&
         device.GetType() == core::Device::DeviceType::CUDA) {
         utility::LogDebug(
                 "Use Float32 pointcloud for best performance on CUDA device.");
@@ -240,7 +239,7 @@ static RegistrationResult DoSingleScaleIterationsICP(
                 estimation
                         .ComputeTransformation(source, target,
                                                result.correspondences_)
-                        .To(core::Dtype::Float64);
+                        .To(core::Float64);
 
         // Multiply the transform to the cumulative transformation (update).
         transformation = update.Matmul(transformation);
@@ -293,8 +292,8 @@ RegistrationResult RegistrationMultiScaleICP(
                     source, target, voxel_sizes, estimation, num_iterations);
 
     // Transformation tensor is always of shape {4,4}, type Float64 on CPU:0.
-    core::Tensor transformation = init_source_to_target.To(
-            core::Device("CPU:0"), core::Dtype::Float64);
+    core::Tensor transformation =
+            init_source_to_target.To(core::Device("CPU:0"), core::Float64);
     RegistrationResult result(transformation);
 
     double prev_fitness = 0;

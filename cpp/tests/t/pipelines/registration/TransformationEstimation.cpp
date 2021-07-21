@@ -102,7 +102,7 @@ static std::
 TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPoint) {
     core::Device device = GetParam();
 
-    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (auto dtype : {core::Float32, core::Float64}) {
         t::geometry::PointCloud source_pcd(device), target_pcd(device);
         core::Tensor corres;
         std::tie(source_pcd, target_pcd, corres) =
@@ -121,7 +121,7 @@ TEST_P(TransformationEstimationPermuteDevices,
        ComputeTransformationPointToPoint) {
     core::Device device = GetParam();
 
-    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (auto dtype : {core::Float32, core::Float64}) {
         t::geometry::PointCloud source_pcd(device), target_pcd(device);
         core::Tensor corres;
         std::tie(source_pcd, target_pcd, corres) =
@@ -147,7 +147,7 @@ TEST_P(TransformationEstimationPermuteDevices,
 TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPlane) {
     core::Device device = GetParam();
 
-    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (auto dtype : {core::Float32, core::Float64}) {
         t::geometry::PointCloud source_pcd(device), target_pcd(device);
         core::Tensor corres;
         std::tie(source_pcd, target_pcd, corres) =
@@ -166,7 +166,7 @@ TEST_P(TransformationEstimationPermuteDevices,
        ComputeTransformationPointToPlane) {
     core::Device device = GetParam();
 
-    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (auto dtype : {core::Float32, core::Float64}) {
         t::geometry::PointCloud source_pcd(device), target_pcd(device);
         core::Tensor corres;
         std::tie(source_pcd, target_pcd, corres) =

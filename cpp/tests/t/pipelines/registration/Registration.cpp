@@ -63,7 +63,7 @@ TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
 
 TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::Float64;
 
     // Initial transformation input for tensor implementation.
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
@@ -98,7 +98,7 @@ GetTestPointClouds(const core::Dtype& dtype, const core::Device& device) {
 TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     core::Device device = GetParam();
 
-    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (auto dtype : {core::Float32, core::Float64}) {
         t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
         std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
@@ -108,8 +108,8 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
                 target_tpcd.ToLegacyPointCloud();
 
         // Initial transformation input for tensor implementation.
-        core::Tensor initial_transform_t = core::Tensor::Eye(
-                4, core::Dtype::Float64, core::Device("CPU:0"));
+        core::Tensor initial_transform_t =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
 
         // Initial transformation input for legacy implementation.
         Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
@@ -136,7 +136,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
 TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     core::Device device = GetParam();
 
-    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (auto dtype : {core::Float32, core::Float64}) {
         t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
         std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
@@ -187,7 +187,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
 TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
     core::Device device = GetParam();
 
-    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (auto dtype : {core::Float32, core::Float64}) {
         t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
         std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
@@ -256,7 +256,7 @@ TEST_P(RegistrationPermuteDevices, RobustKernel) {
             {6, 0.714213}     // GeneralizedLoss
     };
 
-    for (auto dtype : {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (auto dtype : {core::Float32, core::Float64}) {
         for (auto loss_method : {t_reg::RobustKernelMethod::L2Loss,
                                  t_reg::RobustKernelMethod::L1Loss,
                                  t_reg::RobustKernelMethod::HuberLoss,
