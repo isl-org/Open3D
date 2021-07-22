@@ -51,7 +51,7 @@ inline uint64_t AtomicFetchAddRelaxed(uint64_t* address, uint64_t val) {
 #ifdef __GNUC__
     return __atomic_fetch_add(address, val, __ATOMIC_RELAXED);
 #elif _MSC_VER
-    return _InterlockedExchangeAdd64(address, val);
+    return (uint64_t)_InterlockedExchangeAdd64((int64_t*)address, (int64_t)val);
 #else
     static_assert(false, "AtomicFetchAddRelaxed not implemented for platform");
 #endif
