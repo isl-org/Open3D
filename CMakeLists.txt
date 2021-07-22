@@ -61,7 +61,7 @@ option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
-option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"           OFF)
+option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
@@ -742,51 +742,50 @@ endif()
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
 if(GLIBCXX_USE_CXX11_ABI)
-    set(usage "1")
+    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "1")
 else()
-    set(usage "0")
+    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "0")
 endif()
-open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
+
 message(STATUS "================================================================================")
 message(STATUS "Third-Party Dependencies:")
-set(deps
-    EIGEN3
-    FAISS
-    FILAMENT
-    FMT
+set(3RDPARTY_DEPENDENCIES
+    Eigen3
+    faiss
+    filament
+    fmt
     GLEW
     GLFW
-    GOOGLETEST
-    IMGUI
-    IPPICV
+    googletest
+    imgui
+    ippicv
     JPEG
-    JSONCPP
-    LIBLZF
-    OPENGL
+    jsoncpp
+    liblzf
+    OpenGL
     PNG
-    PYBIND11
-    QHULL
-    LIBREALSENSE
-    TINYFILEDIALOGS
-    TINYGLTF
-    TINYOBJLOADER
-    WEBRTC
+    qhullcpp
+    librealsense
+    tinyfiledialogs
+    TinyGLTF
+    tinyobjloader
+    WebRTC
 )
-foreach(dep IN ITEMS ${deps})
-    if(${dep}_TARGET)
-        if(NOT USE_SYSTEM_${dep})
-            set(usage "yes (build from source)")
+foreach(dep IN LISTS 3RDPARTY_DEPENDENCIES)
+    string(TOLOWER "${dep}" dep_lower)
+    string(TOUPPER "${dep}" dep_upper)
+    if(TARGET Open3D::3rdparty_${dep_lower})
+        if(NOT USE_SYSTEM_${dep_upper})
+            open3d_aligned_print("${dep}" "yes (build from source)")
         else()
-            set(usage "yes")
-            if(${dep}_VERSION_STRING)
-                set(usage "${usage} (v${${dep}_VERSION_STRING})")
-            elseif(${dep}_VERSION)
-                set(usage "${usage} (v${${dep}_VERSION})")
+            if(3rdparty_${dep_lower}_VERSION)
+                open3d_aligned_print("${dep}" "yes (v${3rdparty_${dep_lower}_VERSION})")
+            else()
+                open3d_aligned_print("${dep}" "yes")
             endif()
         endif()
     else()
-        set(usage "no")
+        open3d_aligned_print("${dep}" "no")
     endif()
-    open3d_aligned_print("${dep}" "${usage}")
 endforeach()
 message(STATUS "================================================================================")
