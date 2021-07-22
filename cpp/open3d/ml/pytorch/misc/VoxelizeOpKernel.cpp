@@ -34,24 +34,24 @@
 using namespace open3d::ml::impl;
 
 template <class T>
-void VoxelizeBatchCPU(const torch::Tensor& points,
-                      const torch::Tensor& row_splits,
-                      const torch::Tensor& voxel_size,
-                      const torch::Tensor& points_range_min,
-                      const torch::Tensor& points_range_max,
-                      const int64_t max_points_per_voxel,
-                      const int64_t max_voxels,
-                      torch::Tensor& voxel_coords,
-                      torch::Tensor& voxel_point_indices,
-                      torch::Tensor& voxel_point_row_splits,
-                      torch::Tensor& voxel_batch_splits) {
+void VoxelizeCPU(const torch::Tensor& points,
+                 const torch::Tensor& row_splits,
+                 const torch::Tensor& voxel_size,
+                 const torch::Tensor& points_range_min,
+                 const torch::Tensor& points_range_max,
+                 const int64_t max_points_per_voxel,
+                 const int64_t max_voxels,
+                 torch::Tensor& voxel_coords,
+                 torch::Tensor& voxel_point_indices,
+                 torch::Tensor& voxel_point_row_splits,
+                 torch::Tensor& voxel_batch_splits) {
     VoxelizeOutputAllocator output_allocator(points.device().type(),
                                              points.device().index());
 
     switch (points.size(1)) {
 #define CASE(NDIM)                                                            \
     case NDIM:                                                                \
-        VoxelizeBatchCPU<T, NDIM>(                                            \
+        VoxelizeCPU<T, NDIM>(                                                 \
                 points.size(0), points.data_ptr<T>(), row_splits.size(0) - 1, \
                 row_splits.data_ptr<int64_t>(), voxel_size.data_ptr<T>(),     \
                 points_range_min.data_ptr<T>(),                               \
@@ -79,7 +79,7 @@ void VoxelizeBatchCPU(const torch::Tensor& points,
 }
 
 #define INSTANTIATE(T)                                                       \
-    template void VoxelizeBatchCPU<T>(                                       \
+    template void VoxelizeCPU<T>(                                            \
             const torch::Tensor& points, const torch::Tensor& row_splits,    \
             const torch::Tensor& voxel_size,                                 \
             const torch::Tensor& points_range_min,                           \

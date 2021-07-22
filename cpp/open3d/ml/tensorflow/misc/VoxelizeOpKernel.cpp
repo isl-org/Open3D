@@ -49,7 +49,7 @@ public:
         switch (points.dim_size(1)) {
 #define CASE(NDIM)                                                             \
     case NDIM:                                                                 \
-        VoxelizeBatchCPU<T, NDIM>(                                             \
+        VoxelizeCPU<T, NDIM>(                                                  \
                 points.dim_size(0), points.flat<T>().data(),                   \
                 row_splits.dim_size(0) - 1, row_splits.flat<int64_t>().data(), \
                 voxel_size.flat<T>().data(),                                   \
@@ -74,7 +74,7 @@ public:
 };
 
 #define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("Open3DVoxelizeBatch")         \
+    REGISTER_KERNEL_BUILDER(Name("Open3DVoxelize")              \
                                     .Device(DEVICE_CPU)         \
                                     .TypeConstraint<type>("T"), \
                             VoxelizeOpKernelCPU<type>);

@@ -32,7 +32,7 @@
 
 using namespace tensorflow;
 
-REGISTER_OP("Open3DVoxelizeBatch")
+REGISTER_OP("Open3DVoxelize")
         .Attr("T: {float, double}")  // type for the point positions
         .Attr("max_points_per_voxel: int = 9223372036854775807")
         .Attr("max_voxels: int = 9223372036854775807")
@@ -99,7 +99,7 @@ Minimal example::
 
   row_splits = [0, 2, 5]
 
-  ml3d.ops.voxelize_batch(points,
+  ml3d.ops.voxelize(points,
                     row_splits,
                     voxel_size=[1.0,1.0,1.0],
                     points_range_min=[0,0,0],
@@ -126,7 +126,7 @@ Minimal example::
 
   row_splits = torch.Tensor([0, 2, 5]).to(torch.int64)
 
-  ml3d.ops.voxelize_batch(points,
+  ml3d.ops.voxelize(points,
                     row_splits,
                     voxel_size=torch.Tensor([1.0,1.0,1.0]),
                     points_range_min=torch.Tensor([0,0,0]),

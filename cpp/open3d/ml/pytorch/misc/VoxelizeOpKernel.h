@@ -30,31 +30,31 @@
 #include "torch/script.h"
 
 template <class T>
-void VoxelizeBatchCPU(const torch::Tensor& points,
-                      const torch::Tensor& row_splits,
-                      const torch::Tensor& voxel_size,
-                      const torch::Tensor& points_range_min,
-                      const torch::Tensor& points_range_max,
-                      const int64_t max_points_per_voxel,
-                      const int64_t max_voxels,
-                      torch::Tensor& voxel_coords,
-                      torch::Tensor& voxel_point_indices,
-                      torch::Tensor& voxel_point_row_splits,
-                      torch::Tensor& voxel_batch_splits);
+void VoxelizeCPU(const torch::Tensor& points,
+                 const torch::Tensor& row_splits,
+                 const torch::Tensor& voxel_size,
+                 const torch::Tensor& points_range_min,
+                 const torch::Tensor& points_range_max,
+                 const int64_t max_points_per_voxel,
+                 const int64_t max_voxels,
+                 torch::Tensor& voxel_coords,
+                 torch::Tensor& voxel_point_indices,
+                 torch::Tensor& voxel_point_row_splits,
+                 torch::Tensor& voxel_batch_splits);
 
 #ifdef BUILD_CUDA_MODULE
 template <class T>
-void VoxelizeBatchCUDA(const torch::Tensor& points,
-                       const torch::Tensor& row_splits,
-                       const torch::Tensor& voxel_size,
-                       const torch::Tensor& points_range_min,
-                       const torch::Tensor& points_range_max,
-                       const int64_t max_points_per_voxel,
-                       const int64_t max_voxels,
-                       torch::Tensor& voxel_coords,
-                       torch::Tensor& voxel_point_indices,
-                       torch::Tensor& voxel_point_row_splits,
-                       torch::Tensor& voxel_batch_splits);
+void VoxelizeCUDA(const torch::Tensor& points,
+                  const torch::Tensor& row_splits,
+                  const torch::Tensor& voxel_size,
+                  const torch::Tensor& points_range_min,
+                  const torch::Tensor& points_range_max,
+                  const int64_t max_points_per_voxel,
+                  const int64_t max_voxels,
+                  torch::Tensor& voxel_coords,
+                  torch::Tensor& voxel_point_indices,
+                  torch::Tensor& voxel_point_row_splits,
+                  torch::Tensor& voxel_batch_splits);
 #endif
 
 class VoxelizeOutputAllocator {

@@ -57,7 +57,7 @@ public:
     case NDIM: {                                                               \
         void* temp_ptr = nullptr;                                              \
         size_t temp_size = 0;                                                  \
-        VoxelizeBatchCUDA<T, NDIM>(                                            \
+        VoxelizeCUDA<T, NDIM>(                                                 \
                 device.stream(), temp_ptr, temp_size, texture_alignment,       \
                 points.dim_size(0), points.flat<T>().data(),                   \
                 row_splits.dim_size(0) - 1, row_splits.flat<int64_t>().data(), \
@@ -73,7 +73,7 @@ public:
                                               temp_shape, &temp_tensor));      \
         temp_ptr = temp_tensor.flat<uint8_t>().data();                         \
                                                                                \
-        VoxelizeBatchCUDA<T, NDIM>(                                            \
+        VoxelizeCUDA<T, NDIM>(                                                 \
                 device.stream(), temp_ptr, temp_size, texture_alignment,       \
                 points.dim_size(0), points.flat<T>().data(),                   \
                 row_splits.dim_size(0) - 1, row_splits.flat<int64_t>().data(), \
@@ -102,7 +102,7 @@ private:
 };
 
 #define REG_KB(type)                                                 \
-    REGISTER_KERNEL_BUILDER(Name("Open3DVoxelizeBatch")              \
+    REGISTER_KERNEL_BUILDER(Name("Open3DVoxelize")                   \
                                     .Device(DEVICE_GPU)              \
                                     .TypeConstraint<type>("T")       \
                                     .HostMemory("voxel_size")        \

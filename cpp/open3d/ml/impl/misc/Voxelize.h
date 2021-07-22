@@ -39,8 +39,6 @@ namespace open3d {
 namespace ml {
 namespace impl {
 
-#define MAX_BATCH_SIZE 1024
-
 /// This function voxelizes a point cloud.
 /// The function returns the integer coordinates of the voxels that contain
 /// points and a compact list of the indices that associate the voxels to the
@@ -96,16 +94,16 @@ namespace impl {
 ///         ptr does not need to be set.
 ///
 template <class T, int NDIM, class OUTPUT_ALLOCATOR>
-void VoxelizeBatchCPU(const size_t num_points,
-                      const T* const points,
-                      const size_t batch_size,
-                      const int64_t* const row_splits,
-                      const T* const voxel_size,
-                      const T* const points_range_min,
-                      const T* const points_range_max,
-                      const int64_t max_points_per_voxel,
-                      const int64_t max_voxels,
-                      OUTPUT_ALLOCATOR& output_allocator) {
+void VoxelizeCPU(const size_t num_points,
+                 const T* const points,
+                 const size_t batch_size,
+                 const int64_t* const row_splits,
+                 const T* const voxel_size,
+                 const T* const points_range_min,
+                 const T* const points_range_max,
+                 const int64_t max_points_per_voxel,
+                 const int64_t max_voxels,
+                 OUTPUT_ALLOCATOR& output_allocator) {
     using namespace open3d::utility;
     typedef MiniVec<T, NDIM> Vec_t;
     const Vec_t inv_voxel_size = T(1) / Vec_t(voxel_size);
@@ -122,7 +120,7 @@ void VoxelizeBatchCPU(const size_t num_points,
         }
     }
     const int64_t batch_hash = strides[NDIM - 1] * extents[NDIM - 1];
-    const int64_t invalid_hash = batch_hash * MAX_BATCH_SIZE;
+    const int64_t invalid_hash = batch_hash * batch_size;
 
     std::vector<int64_t> indices_batches(num_points, 0);
     tbb::parallel_for(tbb::blocked_range<int64_t>(0, batch_size),
@@ -198,19 +196,10 @@ void VoxelizeBatchCPU(const size_t num_points,
     output_allocator.AllocVoxelBatchSplits(&out_batch_splits, batch_size + 1);
     out_batch_splits[0] = 0;
 
-    tbb::parallel_scan(
-            tbb::blocked_range<int64_t>(1, batch_size + 1), (int64_t)0,
-            [&](const tbb::blocked_range<int64_t>& r, int64_t sum,
-                bool is_final_scan) {
-                for (int64_t i = r.begin(); i != r.end(); ++i) {
-                    sum += num_voxels[i - 1];
-                    if (is_final_scan) {
-                        out_batch_splits[i] = sum;
-                    }
-                }
-                return sum;
-            },
-            [](int64_t x, int64_t y) { return x + y; });
+    // prefix sum for batch_splits
+    for (int64_t i = 1; i < batch_size + 1; ++i) {
+        out_batch_splits[i] = out_batch_splits[i - 1] + num_voxels[i - 1];
+    }
 
     uint64_t total_voxels = out_batch_splits[batch_size];
 

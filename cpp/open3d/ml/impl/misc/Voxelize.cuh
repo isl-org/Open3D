@@ -41,7 +41,6 @@ namespace impl {
 namespace {
 
 using namespace open3d::utility;
-#define MAX_BATCH_SIZE 1024
 
 template <class T, bool LARGE_ARRAY>
 __global__ void IotaCUDAKernel(T* first, int64_t len, T value) {
@@ -99,7 +98,7 @@ __global__ void ComputeBatchIdKernel(int64_t* hashes,
     hashes[linear_idx] /= batch_hash;
 }
 
-/// This funciton computes batch_id from hash value.
+/// This function computes batch_id from hash value.
 ///
 /// \param hashes    Input and output array.
 /// \param num_voxels    Number of valid voxels.
@@ -138,7 +137,7 @@ __global__ void ComputeVoxelPerBatchKernel(int64_t* num_voxels_per_batch,
     num_voxels_per_batch[out_idx] = unique_batches_count[linear_idx];
 }
 
-/// This funciton computes number of voxels per batch element.
+/// This function computes number of voxels per batch element.
 ///
 /// \param num_voxels_per_batch    The output array.
 /// \param unique_batches_count    Counts for unique batch_id.
@@ -235,13 +234,13 @@ __global__ void ComputeHashKernel(
                               .template cast<int64_t>();
         int64_t h = coords.dot(strides);
         h += indices_batches[linear_idx] * batch_hash;  // add hash for batch_id
-        hashes[linear_idx] = h;  // add 1 and use 0 as invalid
+        hashes[linear_idx] = h;
     } else {
-        hashes[linear_idx] = invalid_hash;  // 0 means invalid
+        hashes[linear_idx] = invalid_hash;  // max hash value used as invalid
     }
 }
 
-/// This function computes the a hash (linear index+1) for each point.
+/// This function computes the hash (linear index) for each point.
 /// Points outside the range will get a specific hash value.
 ///
 /// \tparam T    The floating point type for the points
@@ -602,20 +601,20 @@ void CopyPointIndices(const cudaStream_t& stream,
 ///         ptr does not need to be set.
 ///
 template <class T, int NDIM, class OUTPUT_ALLOCATOR>
-void VoxelizeBatchCUDA(const cudaStream_t& stream,
-                       void* temp,
-                       size_t& temp_size,
-                       int texture_alignment,
-                       size_t num_points,
-                       const T* const points,
-                       const size_t batch_size,
-                       const int64_t* const row_splits,
-                       const T* const voxel_size,
-                       const T* const points_range_min,
-                       const T* const points_range_max,
-                       const int64_t max_points_per_voxel,
-                       const int64_t max_voxels,
-                       OUTPUT_ALLOCATOR& output_allocator) {
+void VoxelizeCUDA(const cudaStream_t& stream,
+                  void* temp,
+                  size_t& temp_size,
+                  int texture_alignment,
+                  size_t num_points,
+                  const T* const points,
+                  const size_t batch_size,
+                  const int64_t* const row_splits,
+                  const T* const voxel_size,
+                  const T* const points_range_min,
+                  const T* const points_range_max,
+                  const int64_t max_points_per_voxel,
+                  const int64_t max_voxels,
+                  OUTPUT_ALLOCATOR& output_allocator) {
     using namespace open3d::utility;
     typedef MiniVec<T, NDIM> Vec_t;
 
@@ -642,7 +641,7 @@ void VoxelizeBatchCUDA(const cudaStream_t& stream,
         }
     }
     const int64_t batch_hash = strides[NDIM - 1] * extents[NDIM - 1];
-    const int64_t invalid_hash = batch_hash * MAX_BATCH_SIZE;
+    const int64_t invalid_hash = batch_hash * batch_size;
 
     /// store batch_id for each point
     std::pair<int64_t*, size_t> indices_batches =

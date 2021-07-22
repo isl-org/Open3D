@@ -31,14 +31,14 @@
 #include "open3d/ml/pytorch/misc/VoxelizeOpKernel.h"
 #include "torch/script.h"
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
-VoxelizeBatch(torch::Tensor points,
-              torch::Tensor row_splits,
-              torch::Tensor voxel_size,
-              torch::Tensor points_range_min,
-              torch::Tensor points_range_max,
-              const int64_t max_points_per_voxel,
-              const int64_t max_voxels) {
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> Voxelize(
+        torch::Tensor points,
+        torch::Tensor row_splits,
+        torch::Tensor voxel_size,
+        torch::Tensor points_range_min,
+        torch::Tensor points_range_max,
+        const int64_t max_points_per_voxel,
+        const int64_t max_voxels) {
     points = points.contiguous();
     row_splits = row_splits.contiguous();
     CHECK_TYPE(row_splits, kInt64);
@@ -82,14 +82,14 @@ VoxelizeBatch(torch::Tensor points,
     if (points.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
         // pass to cuda function
-        CALL(float, VoxelizeBatchCUDA)
-        CALL(double, VoxelizeBatchCUDA)
+        CALL(float, VoxelizeCUDA)
+        CALL(double, VoxelizeCUDA)
 #else
         TORCH_CHECK(false, "Voxelize was not compiled with CUDA support")
 #endif
     } else {
-        CALL(float, VoxelizeBatchCPU)
-        CALL(double, VoxelizeBatchCPU)
+        CALL(float, VoxelizeCPU)
+        CALL(double, VoxelizeCPU)
     }
 
     TORCH_CHECK(false, "Voxelize does not support " + points.toString() +
@@ -99,11 +99,11 @@ VoxelizeBatch(torch::Tensor points,
 }
 
 static auto registry_batch = torch::RegisterOperators(
-        "open3d::voxelize_batch(Tensor points, Tensor row_splits, "
+        "open3d::voxelize(Tensor points, Tensor row_splits, "
         "Tensor voxel_size, Tensor "
         "points_range_min, Tensor points_range_max, int "
         "max_points_per_voxel=9223372036854775807 , "
         "int max_voxels=9223372036854775807) -> (Tensor voxel_coords, Tensor "
         "voxel_point_indices, Tensor voxel_point_row_splits, "
         "Tensor voxel_batch_splits)",
-        &VoxelizeBatch);
+        &Voxelize);
