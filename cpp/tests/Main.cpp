@@ -31,7 +31,7 @@
 #include <string>
 
 #ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/CUDAUtils.h"
 #endif
 
 #include "open3d/Open3D.h"
