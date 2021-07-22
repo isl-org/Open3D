@@ -27,6 +27,7 @@
 #include <atomic>
 #include <vector>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
@@ -37,7 +38,6 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -143,6 +143,7 @@ void UnprojectCPU
                 colors.value().get().Slice(0, 0, total_pts_count);
     }
 }
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry
