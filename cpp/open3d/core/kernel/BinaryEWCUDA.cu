@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
@@ -255,7 +254,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                 Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
                 LaunchBoolBinaryEWCUDAKernel<scalar_t, scalar_t>(
                         lhs, rhs, dst, op_code, indexer);
-            } else if (dst_dtype == Dtype::Bool) {
+            } else if (dst_dtype == core::Bool) {
                 // By default, output is boolean type.
                 Indexer indexer({lhs, rhs}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);

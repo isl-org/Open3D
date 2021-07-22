@@ -48,7 +48,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "open3d/core/NumpyIO.h"
+#include "open3d/t/io/NumpyIO.h"
 
 #include <memory>
 #include <numeric>
@@ -57,18 +57,22 @@
 #include <string>
 #include <vector>
 
+#include "open3d/core/Blob.h"
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/SizeVector.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace io {
 
 static char BigEndianChar() {
     int x = 1;
-    return (((char*)&x)[0]) ? '<' : '>';
+    return ((reinterpret_cast<char*>(&x))[0]) ? '<' : '>';
 }
 
-static char DtypeToChar(const Dtype& dtype) {
+static char DtypeToChar(const core::Dtype& dtype) {
     // Not all dtypes are supported.
     // 'f': float, double, long double
     // 'i': int, char, short, long, long long
@@ -78,17 +82,17 @@ static char DtypeToChar(const Dtype& dtype) {
     // 'c': std::complex<float>, std::complex<double>),
     //      std::complex<long double>)
     // '?': object
-    if (dtype == Dtype::Float32) return 'f';
-    if (dtype == Dtype::Float64) return 'f';
-    if (dtype == Dtype::Int8) return 'i';
-    if (dtype == Dtype::Int16) return 'i';
-    if (dtype == Dtype::Int32) return 'i';
-    if (dtype == Dtype::Int64) return 'i';
-    if (dtype == Dtype::UInt8) return 'u';
-    if (dtype == Dtype::UInt16) return 'u';
-    if (dtype == Dtype::UInt32) return 'u';
-    if (dtype == Dtype::UInt64) return 'u';
-    if (dtype == Dtype::Bool) return 'b';
+    if (dtype == core::Float32) return 'f';
+    if (dtype == core::Float64) return 'f';
+    if (dtype == core::Int8) return 'i';
+    if (dtype == core::Int16) return 'i';
+    if (dtype == core::Int32) return 'i';
+    if (dtype == core::Int64) return 'i';
+    if (dtype == core::UInt8) return 'u';
+    if (dtype == core::UInt16) return 'u';
+    if (dtype == core::UInt32) return 'u';
+    if (dtype == core::UInt64) return 'u';
+    if (dtype == core::Bool) return 'b';
     utility::LogError("Unsupported dtype: {}", dtype.ToString());
     return '\0';
 }
@@ -97,14 +101,14 @@ template <typename T>
 static std::string ToByteString(const T& rhs) {
     std::stringstream ss;
     for (size_t i = 0; i < sizeof(T); i++) {
-        char val = *((char*)&rhs + i);
+        char val = *(reinterpret_cast<const char*>(&rhs) + i);
         ss << val;
     }
     return ss.str();
 }
 
-static std::vector<char> CreateNumpyHeader(const SizeVector& shape,
-                                           const Dtype& dtype) {
+static std::vector<char> CreateNumpyHeader(const core::SizeVector& shape,
+                                           const core::Dtype& dtype) {
     // {}     -> "()"
     // {1}    -> "(1,)"
     // {1, 2} -> "(1, 2)"
@@ -155,10 +159,11 @@ static std::vector<char> CreateNumpyHeader(const SizeVector& shape,
     return std::vector<char>(s.begin(), s.end());
 }
 
-static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
+static std::tuple<char, int64_t, core::SizeVector, bool> ParseNumpyHeader(
+        FILE* fp) {
     char type;
     int64_t word_size;
-    SizeVector shape;
+    core::SizeVector shape;
     bool fortran_order;
 
     char buffer[256];
@@ -230,97 +235,134 @@ static std::tuple<char, int64_t, SizeVector, bool> ParseNumpyHeader(FILE* fp) {
     return std::make_tuple(type, word_size, shape, fortran_order);
 }
 
-NumpyArray::NumpyArray(const SizeVector& shape,
-                       char type,
-                       int64_t word_size,
-                       bool fortran_order)
-    : shape_(shape),
-      type_(type),
-      word_size_(word_size),
-      fortran_order_(fortran_order) {
-    num_elements_ = 1;
-    for (size_t i = 0; i < shape_.size(); i++) {
-        num_elements_ *= shape_[i];
+class NumpyArray {
+public:
+    NumpyArray(const core::Tensor& t)
+        : shape_(t.GetShape()),
+          type_(DtypeToChar(t.GetDtype())),
+          word_size_(t.GetDtype().ByteSize()),
+          fortran_order_(false),
+          num_elements_(t.GetShape().NumElements()) {
+        blob_ = t.To(core::Device("CPU:0")).Contiguous().GetBlob();
     }
-    blob_ = std::make_shared<Blob>(num_elements_ * word_size_, Device("CPU:0"));
+
+    NumpyArray(const core::SizeVector& shape,
+               char type,
+               int64_t word_size,
+               bool fortran_order)
+        : shape_(shape),
+          type_(type),
+          word_size_(word_size),
+          fortran_order_(fortran_order) {
+        num_elements_ = 1;
+        for (size_t i = 0; i < shape_.size(); i++) {
+            num_elements_ *= shape_[i];
+        }
+        blob_ = std::make_shared<core::Blob>(num_elements_ * word_size_,
+                                             core::Device("CPU:0"));
+    }
+
+    template <typename T>
+    T* GetDataPtr() {
+        return reinterpret_cast<T*>(blob_->GetDataPtr());
+    }
+
+    template <typename T>
+    const T* GetDataPtr() const {
+        return reinterpret_cast<const T*>(blob_->GetDataPtr());
+    }
+
+    core::Dtype GetDtype() const {
+        if (type_ == 'f' && word_size_ == 4) return core::Float32;
+        if (type_ == 'f' && word_size_ == 8) return core::Float64;
+        if (type_ == 'i' && word_size_ == 1) return core::Int8;
+        if (type_ == 'i' && word_size_ == 2) return core::Int16;
+        if (type_ == 'i' && word_size_ == 4) return core::Int32;
+        if (type_ == 'i' && word_size_ == 8) return core::Int64;
+        if (type_ == 'u' && word_size_ == 1) return core::UInt8;
+        if (type_ == 'u' && word_size_ == 2) return core::UInt16;
+        if (type_ == 'u' && word_size_ == 4) return core::UInt32;
+        if (type_ == 'u' && word_size_ == 8) return core::UInt64;
+        if (type_ == 'b') return core::Bool;
+
+        return core::Undefined;
+    }
+
+    core::SizeVector GetShape() const { return shape_; }
+
+    bool IsFortranOrder() const { return fortran_order_; }
+
+    int64_t NumBytes() const { return num_elements_ * word_size_; }
+
+    core::Tensor ToTensor() const {
+        if (fortran_order_) {
+            utility::LogError("Cannot load Numpy array with fortran_order.");
+        }
+        core::Dtype dtype = GetDtype();
+        if (dtype.GetDtypeCode() == core::Dtype::DtypeCode::Undefined) {
+            utility::LogError(
+                    "Cannot load Numpy array with Numpy dtype={} and "
+                    "word_size={}.",
+                    type_, word_size_);
+        }
+        // t.blob_ is the same as blob_, no need for memory copy.
+        core::Tensor t(shape_, core::shape_util::DefaultStrides(shape_),
+                       const_cast<void*>(GetDataPtr<void>()), dtype, blob_);
+        return t;
+    }
+
+    static NumpyArray CreateFromFile(const std::string& filename) {
+        FILE* fp = fopen(filename.c_str(), "rb");
+        if (!fp) {
+            utility::LogError("Load: Unable to open file {}.", filename);
+        }
+        core::SizeVector shape;
+        int64_t word_size;
+        bool fortran_order;
+        char type;
+        std::tie(type, word_size, shape, fortran_order) = ParseNumpyHeader(fp);
+        NumpyArray arr(shape, type, word_size, fortran_order);
+        size_t nread = fread(arr.GetDataPtr<char>(), 1,
+                             static_cast<size_t>(arr.NumBytes()), fp);
+        if (nread != static_cast<size_t>(arr.NumBytes())) {
+            utility::LogError("Load: failed fread");
+        }
+        fclose(fp);
+        return arr;
+    }
+
+    void Save(std::string filename) const {
+        FILE* fp = fopen(filename.c_str(), "wb");
+        if (!fp) {
+            utility::LogError("Save: Unable to open file {}.", filename);
+            return;
+        }
+        std::vector<char> header = CreateNumpyHeader(shape_, GetDtype());
+        fseek(fp, 0, SEEK_SET);
+        fwrite(&header[0], sizeof(char), header.size(), fp);
+        fseek(fp, 0, SEEK_END);
+        fwrite(GetDataPtr<void>(), static_cast<size_t>(GetDtype().ByteSize()),
+               static_cast<size_t>(shape_.NumElements()), fp);
+        fclose(fp);
+    }
+
+private:
+    std::shared_ptr<core::Blob> blob_ = nullptr;
+    core::SizeVector shape_;
+    char type_;
+    int64_t word_size_;
+    bool fortran_order_;
+    int64_t num_elements_;
+};
+
+core::Tensor ReadNpy(const std::string& filename) {
+    return NumpyArray::CreateFromFile(filename).ToTensor();
 }
 
-NumpyArray::NumpyArray(const Tensor& t)
-    : shape_(t.GetShape()),
-      type_(DtypeToChar(t.GetDtype())),
-      word_size_(t.GetDtype().ByteSize()),
-      fortran_order_(false),
-      num_elements_(t.GetShape().NumElements()) {
-    blob_ = t.Contiguous().To(Device("CPU:0")).GetBlob();
+void WriteNpy(const std::string& filename, const core::Tensor& tensor) {
+    NumpyArray(tensor).Save(filename);
 }
 
-Dtype NumpyArray::GetDtype() const {
-    if (type_ == 'f' && word_size_ == 4) return Dtype::Float32;
-    if (type_ == 'f' && word_size_ == 8) return Dtype::Float64;
-    if (type_ == 'i' && word_size_ == 1) return Dtype::Int8;
-    if (type_ == 'i' && word_size_ == 2) return Dtype::Int16;
-    if (type_ == 'i' && word_size_ == 4) return Dtype::Int32;
-    if (type_ == 'i' && word_size_ == 8) return Dtype::Int64;
-    if (type_ == 'u' && word_size_ == 1) return Dtype::UInt8;
-    if (type_ == 'u' && word_size_ == 2) return Dtype::UInt16;
-    if (type_ == 'u' && word_size_ == 4) return Dtype::UInt32;
-    if (type_ == 'u' && word_size_ == 8) return Dtype::UInt64;
-    if (type_ == 'b') return Dtype::Bool;
-
-    return Dtype::Undefined;
-}
-
-Tensor NumpyArray::ToTensor() const {
-    if (fortran_order_) {
-        utility::LogError("Cannot load Numpy array with fortran_order.");
-    }
-    Dtype dtype = GetDtype();
-    if (dtype.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
-        utility::LogError(
-                "Cannot load Numpy array with Numpy dtype={} and word_size={}.",
-                type_, word_size_);
-    }
-    // t.blob_ is the same as blob_, no need for memory copy.
-    Tensor t(shape_, shape_util::DefaultStrides(shape_),
-             const_cast<void*>(GetDataPtr<void>()), dtype, blob_);
-    return t;
-}
-
-NumpyArray NumpyArray::Load(const std::string& file_name) {
-    FILE* fp = fopen(file_name.c_str(), "rb");
-    if (!fp) {
-        utility::LogError("Load: Unable to open file {}.", file_name);
-        assert(fp);
-    }
-    SizeVector shape;
-    int64_t word_size;
-    bool fortran_order;
-    char type;
-    std::tie(type, word_size, shape, fortran_order) = ParseNumpyHeader(fp);
-    NumpyArray arr(shape, type, word_size, fortran_order);
-    size_t nread = fread(arr.GetDataPtr<char>(), 1,
-                         static_cast<size_t>(arr.NumBytes()), fp);
-    if (nread != static_cast<size_t>(arr.NumBytes())) {
-        utility::LogError("Load: failed fread");
-    }
-    fclose(fp);
-    return arr;
-}
-
-void NumpyArray::Save(std::string file_name) const {
-    FILE* fp = fopen(file_name.c_str(), "wb");
-    if (!fp) {
-        utility::LogError("Save: Unable to open file {}.", file_name);
-        return;
-    }
-    std::vector<char> header = CreateNumpyHeader(shape_, GetDtype());
-    fseek(fp, 0, SEEK_SET);
-    fwrite(&header[0], sizeof(char), header.size(), fp);
-    fseek(fp, 0, SEEK_END);
-    fwrite(GetDataPtr<void>(), static_cast<size_t>(GetDtype().ByteSize()),
-           static_cast<size_t>(shape_.NumElements()), fp);
-    fclose(fp);
-}
-
-}  // namespace core
+}  // namespace io
+}  // namespace t
 }  // namespace open3d

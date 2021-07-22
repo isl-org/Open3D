@@ -27,7 +27,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 

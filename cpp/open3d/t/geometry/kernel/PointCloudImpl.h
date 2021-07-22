@@ -27,6 +27,7 @@
 #include <atomic>
 #include <vector>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
@@ -86,23 +87,21 @@ void UnprojectCPU
     int64_t rows_strided = depth_indexer.GetShape(0) / stride;
     int64_t cols_strided = depth_indexer.GetShape(1) / stride;
 
-    points = core::Tensor({rows_strided * cols_strided, 3},
-                          core::Dtype::Float32, depth.GetDevice());
+    points = core::Tensor({rows_strided * cols_strided, 3}, core::Float32,
+                          depth.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
     NDArrayIndexer colors_indexer;
     if (have_colors) {
         const auto& imcol = image_colors.value().get();
         image_colors_indexer = NDArrayIndexer{imcol, 2};
-        colors.value().get() =
-                core::Tensor({rows_strided * cols_strided, 3},
-                             core::Dtype::Float32, imcol.GetDevice());
+        colors.value().get() = core::Tensor({rows_strided * cols_strided, 3},
+                                            core::Float32, imcol.GetDevice());
         colors_indexer = NDArrayIndexer(colors.value().get(), 1);
     }
 
     // Counter
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
-                       depth.GetDevice());
+    core::Tensor count(std::vector<int>{0}, {}, core::Int32, depth.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
     std::atomic<int> count_atomic(0);
@@ -482,7 +481,7 @@ OPEN3D_HOST_DEVICE void ComputeEigenvector1(const scalar_t* A,
     scalar_t max_abs_comp;
 
     if (absM00 >= absM11) {
-        max_abs_comp = OPEN3D_MAX(absM00, absM01);
+        max_abs_comp = max(absM00, absM01);
         if (max_abs_comp > 0) {
             if (absM00 >= absM01) {
                 m01 /= m00;
@@ -504,7 +503,7 @@ OPEN3D_HOST_DEVICE void ComputeEigenvector1(const scalar_t* A,
             return;
         }
     } else {
-        max_abs_comp = OPEN3D_MAX(absM11, absM01);
+        max_abs_comp = max(absM11, absM01);
         if (max_abs_comp > 0) {
             if (absM11 >= absM01) {
                 m01 /= m11;
@@ -579,7 +578,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
         scalar_t det = (b00 * c00 - A[1] * c01 + A[2] * c02) / (p * p * p);
 
         scalar_t half_det = det * 0.5;
-        half_det = OPEN3D_MIN(OPEN3D_MAX(half_det, -1.0), 1.0);
+        half_det = min(max(half_det, static_cast<scalar_t>(-1.0)),
+                       static_cast<scalar_t>(1.0));
 
         scalar_t angle = acos(half_det) / 3.0;
         const scalar_t two_thrids_pi = 2.09439510239319549;

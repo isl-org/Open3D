@@ -59,7 +59,7 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
     int dimension = GetDimension();
 
     // Check dtype.
-    dataset_points_.AssertDtype(Dtype::Float32);
+    dataset_points_.AssertDtype(core::Float32);
 
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
@@ -98,7 +98,7 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
 std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                                                 int knn) const {
     // Check dtype.
-    query_points.AssertDtype(Dtype::Float32);
+    query_points.AssertDtype(core::Float32);
 
     // Check shape.
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
@@ -113,9 +113,9 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
 
     auto *data_ptr = query_points.GetDataPtr<float>();
 
-    Tensor indices = Tensor::Empty({num_query_points * knn}, Dtype::Int64,
+    Tensor indices = Tensor::Empty({num_query_points * knn}, core::Int64,
                                    dataset_points_.GetDevice());
-    Tensor distances = Tensor::Empty({num_query_points * knn}, Dtype::Float32,
+    Tensor distances = Tensor::Empty({num_query_points * knn}, core::Float32,
                                      dataset_points_.GetDevice());
 
     index->search(num_query_points, data_ptr, knn,
@@ -129,7 +129,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
 std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
     // Check dtype.
-    query_points.AssertDtype(Dtype::Float32);
+    query_points.AssertDtype(core::Float32);
 
     // Check shape.
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
@@ -150,12 +150,12 @@ std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
 
     Tensor invalid = distances.Gt(radius);
 
-    Tensor counts = max_knn - invalid.To(core::Dtype::Int64).Sum({0});
+    Tensor counts = max_knn - invalid.To(core::Int64).Sum({0});
 
     Tensor invalid_indices = Tensor(std::vector<int64_t>({-1}), {1},
-                                    Dtype::Int64, indices.GetDevice());
+                                    core::Int64, indices.GetDevice());
     Tensor invalid_distances = Tensor(std::vector<float>({-1}), {1},
-                                      Dtype::Float32, distances.GetDevice());
+                                      core::Float32, distances.GetDevice());
 
     indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
     distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);

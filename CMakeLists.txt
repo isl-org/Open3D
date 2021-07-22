@@ -42,7 +42,6 @@ cmake_dependent_option(
        STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON
        "NOT BUILD_SHARED_LIBS"                                               OFF)
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
-option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
 if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
     cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
 else()
@@ -62,7 +61,7 @@ option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
-option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"           OFF)
+option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
@@ -525,6 +524,9 @@ function(open3d_set_global_properties target)
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
     )
 
+    # Required for static linking zeromq
+    target_compile_definitions(${target} PRIVATE ZMQ_STATIC)
+
     # Propagate build configuration into source code
     if (BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
@@ -537,9 +539,6 @@ function(open3d_set_global_properties target)
     endif()
     if (ENABLE_HEADLESS_RENDERING)
         target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
-    endif()
-    if (BUILD_RPC_INTERFACE)
-        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE ZMQ_STATIC)
     endif()
     if (BUILD_AZURE_KINECT)
         target_compile_definitions(${target} PRIVATE BUILD_AZURE_KINECT)
@@ -742,53 +741,51 @@ if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
 endif()
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
-open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
 if(GLIBCXX_USE_CXX11_ABI)
-    set(usage "1")
+    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "1")
 else()
-    set(usage "0")
+    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "0")
 endif()
-open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
+
 message(STATUS "================================================================================")
 message(STATUS "Third-Party Dependencies:")
-set(deps
-    EIGEN3
-    FAISS
-    FILAMENT
-    FMT
+set(3RDPARTY_DEPENDENCIES
+    Eigen3
+    faiss
+    filament
+    fmt
     GLEW
     GLFW
-    GOOGLETEST
-    IMGUI
-    IPPICV
+    googletest
+    imgui
+    ippicv
     JPEG
-    JSONCPP
-    LIBLZF
-    OPENGL
+    jsoncpp
+    liblzf
+    OpenGL
     PNG
-    PYBIND11
-    QHULL
-    LIBREALSENSE
-    TINYFILEDIALOGS
-    TINYGLTF
-    TINYOBJLOADER
-    WEBRTC
+    qhullcpp
+    librealsense
+    tinyfiledialogs
+    TinyGLTF
+    tinyobjloader
+    WebRTC
 )
-foreach(dep IN ITEMS ${deps})
-    if(${dep}_TARGET)
-        if(NOT USE_SYSTEM_${dep})
-            set(usage "yes (build from source)")
+foreach(dep IN LISTS 3RDPARTY_DEPENDENCIES)
+    string(TOLOWER "${dep}" dep_lower)
+    string(TOUPPER "${dep}" dep_upper)
+    if(TARGET Open3D::3rdparty_${dep_lower})
+        if(NOT USE_SYSTEM_${dep_upper})
+            open3d_aligned_print("${dep}" "yes (build from source)")
         else()
-            set(usage "yes")
-            if(${dep}_VERSION_STRING)
-                set(usage "${usage} (v${${dep}_VERSION_STRING})")
-            elseif(${dep}_VERSION)
-                set(usage "${usage} (v${${dep}_VERSION})")
+            if(3rdparty_${dep_lower}_VERSION)
+                open3d_aligned_print("${dep}" "yes (v${3rdparty_${dep_lower}_VERSION})")
+            else()
+                open3d_aligned_print("${dep}" "yes")
             endif()
         endif()
     else()
-        set(usage "no")
+        open3d_aligned_print("${dep}" "no")
     endif()
-    open3d_aligned_print("${dep}" "${usage}")
 endforeach()
 message(STATUS "================================================================================")

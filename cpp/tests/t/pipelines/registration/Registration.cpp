@@ -27,10 +27,18 @@
 #include "open3d/t/pipelines/registration/Registration.h"
 
 #include "core/CoreTest.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/pipelines/registration/Registration.h"
+#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/io/PointCloudIO.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
+#include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 #include "tests/UnitTest.h"
+
+namespace t_reg = open3d::t::pipelines::registration;
+namespace l_reg = open3d::pipelines::registration;
 
 namespace open3d {
 namespace tests {
@@ -42,7 +50,7 @@ INSTANTIATE_TEST_SUITE_P(Registration,
 
 TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
     // Constructor.
-    t::pipelines::registration::ICPConvergenceCriteria convergence_criteria;
+    t_reg::ICPConvergenceCriteria convergence_criteria;
     // Default values.
     EXPECT_EQ(convergence_criteria.max_iteration_, 30);
     EXPECT_DOUBLE_EQ(convergence_criteria.relative_fitness_, 1e-6);
@@ -51,225 +59,339 @@ TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
 
 TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::Float64;
 
     // Initial transformation input for tensor implementation.
     core::Tensor init_trans_t = core::Tensor::Eye(4, dtype, device);
 
-    t::pipelines::registration::RegistrationResult reg_result(init_trans_t);
+    t_reg::RegistrationResult reg_result(init_trans_t);
 
     EXPECT_DOUBLE_EQ(reg_result.inlier_rmse_, 0.0);
     EXPECT_DOUBLE_EQ(reg_result.fitness_, 0.0);
     EXPECT_TRUE(reg_result.transformation_.AllClose(init_trans_t));
 }
 
+static std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
+GetTestPointClouds(const core::Dtype& dtype, const core::Device& device) {
+    t::geometry::PointCloud source(device);
+    t::geometry::PointCloud target(device);
+
+    core::Tensor source_points =
+            core::Tensor::Init<float>(
+                    {{1.0, 0.5, 2.0}, {0.5, 0.5, 2.0}, {0.5, 0.5, 2.5},
+                     {3.0, 1.0, 1.5}, {3.5, 1.0, 1.0}, {0.5, 1.0, 2.0},
+                     {1.5, 1.0, 1.5}, {2.0, 1.0, 1.5}, {1.0, 1.0, 2.0},
+                     {2.5, 1.0, 1.5}, {3.0, 1.0, 1.0}, {0.5, 1.0, 2.5},
+                     {1.0, 1.0, 1.0}, {1.5, 1.0, 1.0}, {1.0, 1.5, 1.0},
+                     {3.0, 1.5, 1.0}, {3.5, 1.5, 1.0}, {3.0, 1.5, 1.5},
+                     {0.5, 1.5, 1.5}, {0.5, 1.5, 2.0}, {1.0, 1.5, 2.0},
+                     {2.5, 1.5, 1.5}, {1.5, 1.5, 1.0}, {1.5, 1.5, 1.5},
+                     {2.0, 1.5, 1.5}, {3.0, 1.5, 0.5}, {2.5, 1.5, 1.0},
+                     {2.0, 1.5, 1.0}, {3.0, 2.0, 0.5}, {0.5, 2.0, 1.5},
+                     {3.0, 2.0, 1.0}, {1.0, 2.0, 1.0}, {2.0, 1.5, 0.5},
+                     {0.5, 2.0, 2.0}, {2.5, 2.0, 1.0}, {2.5, 2.0, 0.5},
+                     {2.0, 2.0, 0.5}, {2.5, 1.5, 0.5}, {3.0, 2.0, 1.5},
+                     {2.0, 2.0, 1.0}, {1.0, 2.0, 2.0}, {1.5, 2.0, 1.0},
+                     {1.5, 2.0, 1.5}, {2.5, 2.0, 1.5}, {2.0, 2.0, 1.5},
+                     {1.0, 2.0, 0.5}, {0.5, 2.0, 1.0}, {1.5, 2.0, 0.5},
+                     {1.0, 2.0, 1.5}},
+                    device)
+                    .To(dtype);
+
+    core::Tensor target_points =
+            core::Tensor::Init<float>(
+                    {{1.5, 1.0, 1.5}, {2.5, 1.0, 1.5}, {1.5, 1.0, 1.0},
+                     {1.0, 1.0, 1.0}, {2.0, 1.0, 1.5}, {3.0, 1.0, 1.5},
+                     {1.0, 1.0, 0.5}, {1.0, 1.5, 1.0}, {1.0, 1.5, 0.5},
+                     {1.0, 1.0, 1.5}, {3.0, 1.0, 2.0}, {3.0, 1.5, 2.0},
+                     {3.0, 1.5, 1.5}, {1.0, 1.5, 1.5}, {1.5, 1.5, 1.5},
+                     {2.5, 1.5, 1.5}, {2.0, 1.5, 1.5}, {1.5, 1.5, 1.0},
+                     {2.5, 1.5, 2.0}, {1.0, 2.0, 1.0}, {1.0, 2.0, 0.5},
+                     {2.5, 1.5, 1.0}, {3.0, 2.0, 1.5}, {2.5, 2.0, 1.0},
+                     {2.5, 2.0, 1.5}, {1.5, 2.0, 1.0}, {2.0, 1.5, 1.0},
+                     {1.0, 2.0, 1.5}, {2.0, 2.0, 1.0}, {1.5, 2.0, 1.5},
+                     {1.5, 2.0, 0.5}, {2.0, 2.0, 1.5}, {2.0, 2.0, 0.5},
+                     {1.5, 2.5, 1.0}, {1.0, 2.5, 1.0}, {3.0, 2.0, 1.0},
+                     {2.0, 2.5, 1.0}, {2.5, 2.5, 1.0}},
+                    device)
+                    .To(dtype);
+
+    core::Tensor target_normals =
+            core::Tensor::Init<float>({{0.15597, -0.0463812, -0.986672},
+                                       {-0.213545, 0.887963, 0.407334},
+                                       {0.423193, -0.121977, -0.897792},
+                                       {0.202251, 0.27611, -0.939605},
+                                       {0.275452, 0.207216, -0.938716},
+                                       {0.326146, 0.0385317, -0.944534},
+                                       {0.983129, -0.174668, -0.0543011},
+                                       {0.898665, -0.0602029, 0.434485},
+                                       {0.711325, 0.193223, -0.675783},
+                                       {0.346158, 0.198724, -0.916888},
+                                       {0.302085, 0.28938, -0.908297},
+                                       {0.341044, 0.414138, -0.843907},
+                                       {0.212191, 0.213068, -0.953717},
+                                       {0.239759, 0.313187, -0.918929},
+                                       {0.302290, 0.27265, -0.913391},
+                                       {0.209796, 0.402747, -0.890944},
+                                       {0.267025, 0.218226, -0.938656},
+                                       {0.00126928, -0.976587, -0.21512},
+                                       {0.321912, 0.194736, -0.926526},
+                                       {0.831227, 0.236675, -0.503037},
+                                       {0.987006, -0.155324, 0.0411639},
+                                       {0.103384, -0.808796, -0.57893},
+                                       {0.181245, 0.66226, -0.727023},
+                                       {0.235471, 0.525053, -0.817846},
+                                       {0.231954, 0.446165, -0.864369},
+                                       {-0.261931, -0.725542, -0.636381},
+                                       {0.120953, -0.864985, -0.487003},
+                                       {0.858345, -0.227847, 0.459706},
+                                       {-0.416259, -0.367408, -0.831709},
+                                       {-0.476652, 0.206048, -0.854604},
+                                       {-0.211959, -0.523378, -0.825317},
+                                       {-0.964914, 0.0541031, -0.256931},
+                                       {-0.0653566, -0.913961, -0.400504},
+                                       {-0.846868, -0.170805, -0.503628},
+                                       {0.0366971, 0.515834, -0.855902},
+                                       {-0.0714554, -0.855019, -0.513651},
+                                       {-0.0217377, -0.957744, -0.286799},
+                                       {-0.0345231, -0.947096, -0.319088}},
+                                      device)
+                    .To(dtype);
+
+    source.SetPoints(source_points.To(dtype, false));
+
+    target.SetPoints(target_points.To(dtype, false));
+    target.SetPointNormals(target_normals.To(dtype, false));
+
+    return std::make_tuple(source, target);
+}
+
 TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> src_points_vec{
-            1.15495,  2.40671, 1.15061,  1.81481,  2.06281, 1.71927, 0.888322,
-            2.05068,  2.04879, 3.78842,  1.70788,  1.30246, 1.8437,  2.22894,
-            0.986237, 2.95706, 2.2018,   0.987878, 1.72644, 1.24356, 1.93486,
-            0.922024, 1.14872, 2.34317,  3.70293,  1.85134, 1.15357, 3.06505,
-            1.30386,  1.55279, 0.634826, 1.04995,  2.47046, 1.40107, 1.37469,
-            1.09687,  2.93002, 1.96242,  1.48532,  3.74384, 1.30258, 1.30244};
-    core::Tensor source_points(src_points_vec, {14, 3}, dtype, device);
-    t::geometry::PointCloud source_device(device);
-    source_device.SetPoints(source_points);
+    for (auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
+        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
-    std::vector<float> target_points_vec{
-            2.41766, 2.05397, 1.74994, 1.37848, 2.19793, 1.66553, 2.24325,
-            2.27183, 1.33708, 3.09898, 1.98482, 1.77401, 1.81615, 1.48337,
-            1.49697, 3.01758, 2.20312, 1.51502, 2.38836, 1.39096, 1.74914,
-            1.30911, 1.4252,  1.37429, 3.16847, 1.39194, 1.90959, 1.59412,
-            1.53304, 1.5804,  1.34342, 2.19027, 1.30075};
-    core::Tensor target_points(target_points_vec, {11, 3}, dtype, device);
+        open3d::geometry::PointCloud source_lpcd =
+                source_tpcd.ToLegacyPointCloud();
+        open3d::geometry::PointCloud target_lpcd =
+                target_tpcd.ToLegacyPointCloud();
 
-    std::vector<float> target_normals_vec{
-            -0.0085016, -0.22355,  -0.519574, 0.257463,   -0.0738755, -0.698319,
-            0.0574301,  -0.484248, -0.409929, -0.0123503, -0.230172,  -0.52072,
-            0.355904,   -0.142007, -0.720467, 0.0674038,  -0.418757,  -0.458602,
-            0.226091,   0.258253,  -0.874024, 0.43979,    0.122441,   -0.574998,
-            0.109144,   0.180992,  -0.762368, 0.273325,   0.292013,   -0.903111,
-            0.385407,   -0.212348, -0.277818};
-    core::Tensor target_normals(target_normals_vec, {11, 3}, dtype, device);
-    t::geometry::PointCloud target_device(device);
-    target_device.SetPoints(target_points);
-    target_device.SetPointNormals(target_normals);
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
 
-    open3d::geometry::PointCloud source_l_down =
-            source_device.ToLegacyPointCloud();
-    open3d::geometry::PointCloud target_l_down =
-            target_device.ToLegacyPointCloud();
+        // Initial transformation input for legacy implementation.
+        Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
 
-    // Initial transformation input for tensor implementation.
-    core::Tensor init_trans_t =
-            core::Tensor::Eye(4, core::Dtype::Float64, device);
+        // Identity transformation.
+        double max_correspondence_dist = 3.0;
 
-    // Initial transformation input for legacy implementation.
-    Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();
+        // Tensor evaluation.
+        t_reg::RegistrationResult evaluation_t = t_reg::EvaluateRegistration(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                initial_transform_t);
 
-    // Identity transformation.
-    double max_correspondence_dist = 1.25;
-
-    // Tensor evaluation.
-    t::pipelines::registration::RegistrationResult evaluation_t =
-            open3d::t::pipelines::registration::EvaluateRegistration(
-                    source_device, target_device, max_correspondence_dist,
-                    init_trans_t);
-
-    // Legacy evaluation.
-    open3d::pipelines::registration::RegistrationResult evaluation_l =
-            open3d::pipelines::registration::EvaluateRegistration(
-                    source_l_down, target_l_down, max_correspondence_dist,
-                    init_trans_l);
-
-    EXPECT_NEAR(evaluation_t.fitness_, evaluation_l.fitness_, 0.0005);
-    EXPECT_NEAR(evaluation_t.inlier_rmse_, evaluation_l.inlier_rmse_, 0.0005);
+        // Legacy evaluation.
+        l_reg::RegistrationResult evaluation_l = l_reg::EvaluateRegistration(
+                source_lpcd, target_lpcd, max_correspondence_dist,
+                initial_transform_l);
+        Eigen::Matrix4d::Identity();
+        EXPECT_NEAR(evaluation_t.fitness_, evaluation_l.fitness_, 0.0005);
+        EXPECT_NEAR(evaluation_t.inlier_rmse_, evaluation_l.inlier_rmse_,
+                    0.0005);
+    }
 }
 
 TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> src_points_vec{
-            1.15495,  2.40671, 1.15061,  1.81481,  2.06281, 1.71927, 0.888322,
-            2.05068,  2.04879, 3.78842,  1.70788,  1.30246, 1.8437,  2.22894,
-            0.986237, 2.95706, 2.2018,   0.987878, 1.72644, 1.24356, 1.93486,
-            0.922024, 1.14872, 2.34317,  3.70293,  1.85134, 1.15357, 3.06505,
-            1.30386,  1.55279, 0.634826, 1.04995,  2.47046, 1.40107, 1.37469,
-            1.09687,  2.93002, 1.96242,  1.48532,  3.74384, 1.30258, 1.30244};
-    core::Tensor source_points(src_points_vec, {14, 3}, dtype, device);
-    t::geometry::PointCloud source_device(device);
-    source_device.SetPoints(source_points);
+    for (auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
+        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
-    std::vector<float> target_points_vec{
-            2.41766, 2.05397, 1.74994, 1.37848, 2.19793, 1.66553, 2.24325,
-            2.27183, 1.33708, 3.09898, 1.98482, 1.77401, 1.81615, 1.48337,
-            1.49697, 3.01758, 2.20312, 1.51502, 2.38836, 1.39096, 1.74914,
-            1.30911, 1.4252,  1.37429, 3.16847, 1.39194, 1.90959, 1.59412,
-            1.53304, 1.5804,  1.34342, 2.19027, 1.30075};
-    core::Tensor target_points(target_points_vec, {11, 3}, dtype, device);
+        open3d::geometry::PointCloud source_lpcd =
+                source_tpcd.ToLegacyPointCloud();
+        open3d::geometry::PointCloud target_lpcd =
+                target_tpcd.ToLegacyPointCloud();
 
-    t::geometry::PointCloud target_device(device);
-    target_device.SetPoints(target_points);
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t =
+                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
+                                            {-0.139, 0.967, -0.215, 0.7},
+                                            {0.487, 0.255, 0.835, -1.4},
+                                            {0.0, 0.0, 0.0, 1.0}},
+                                           core::Device("CPU:0"));
 
-    open3d::geometry::PointCloud source_l_down =
-            source_device.ToLegacyPointCloud();
-    open3d::geometry::PointCloud target_l_down =
-            target_device.ToLegacyPointCloud();
+        // Initial transformation input for legacy implementation.
+        Eigen::Matrix4d initial_transform_l =
+                core::eigen_converter::TensorToEigenMatrixXd(
+                        initial_transform_t);
 
-    // Initial transformation input for tensor implementation.
-    core::Tensor init_trans_t =
-            core::Tensor::Eye(4, core::Dtype::Float64, device);
+        double max_correspondence_dist = 3.0;
+        double relative_fitness = 1e-6;
+        double relative_rmse = 1e-6;
+        int max_iterations = 2;
 
-    // Initial transformation input for legacy implementation.
-    Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();
+        // PointToPoint - Tensor.
+        t_reg::RegistrationResult reg_p2p_t = t_reg::RegistrationICP(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                initial_transform_t,
+                t_reg::TransformationEstimationPointToPoint(),
+                t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
 
-    double max_correspondence_dist = 1.25;
-    double relative_fitness = 1e-6;
-    double relative_rmse = 1e-6;
-    int max_iterations = 2;
+        // PointToPoint - Legacy.
+        l_reg::RegistrationResult reg_p2p_l = l_reg::RegistrationICP(
+                source_lpcd, target_lpcd, max_correspondence_dist,
+                initial_transform_l,
+                l_reg::TransformationEstimationPointToPoint(),
+                l_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
 
-    // PointToPoint - Tensor.
-    t::pipelines::registration::RegistrationResult reg_p2p_t =
-            open3d::t::pipelines::registration::RegistrationICP(
-                    source_device, target_device, max_correspondence_dist,
-                    init_trans_t,
-                    open3d::t::pipelines::registration::
-                            TransformationEstimationPointToPoint(),
-                    open3d::t::pipelines::registration::ICPConvergenceCriteria(
-                            relative_fitness, relative_rmse, max_iterations));
-
-    // PointToPoint - Legacy.
-    pipelines::registration::RegistrationResult reg_p2p_l =
-            open3d::pipelines::registration::RegistrationICP(
-                    source_l_down, target_l_down, max_correspondence_dist,
-                    init_trans_l,
-                    open3d::pipelines::registration::
-                            TransformationEstimationPointToPoint(),
-                    open3d::pipelines::registration::ICPConvergenceCriteria(
-                            relative_fitness, relative_rmse, max_iterations));
-
-    EXPECT_NEAR(reg_p2p_t.fitness_, reg_p2p_l.fitness_, 0.0005);
-    EXPECT_NEAR(reg_p2p_t.inlier_rmse_, reg_p2p_l.inlier_rmse_, 0.0005);
+        EXPECT_NEAR(reg_p2p_t.fitness_, reg_p2p_l.fitness_, 0.0005);
+        EXPECT_NEAR(reg_p2p_t.inlier_rmse_, reg_p2p_l.inlier_rmse_, 0.0005);
+    }
 }
 
 TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> src_points_vec{
-            1.15495,  2.40671, 1.15061,  1.81481,  2.06281, 1.71927, 0.888322,
-            2.05068,  2.04879, 3.78842,  1.70788,  1.30246, 1.8437,  2.22894,
-            0.986237, 2.95706, 2.2018,   0.987878, 1.72644, 1.24356, 1.93486,
-            0.922024, 1.14872, 2.34317,  3.70293,  1.85134, 1.15357, 3.06505,
-            1.30386,  1.55279, 0.634826, 1.04995,  2.47046, 1.40107, 1.37469,
-            1.09687,  2.93002, 1.96242,  1.48532,  3.74384, 1.30258, 1.30244};
-    core::Tensor source_points(src_points_vec, {14, 3}, dtype, device);
-    t::geometry::PointCloud source_device(device);
-    source_device.SetPoints(source_points);
+    for (auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
+        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
-    std::vector<float> target_points_vec{
-            2.41766, 2.05397, 1.74994, 1.37848, 2.19793, 1.66553, 2.24325,
-            2.27183, 1.33708, 3.09898, 1.98482, 1.77401, 1.81615, 1.48337,
-            1.49697, 3.01758, 2.20312, 1.51502, 2.38836, 1.39096, 1.74914,
-            1.30911, 1.4252,  1.37429, 3.16847, 1.39194, 1.90959, 1.59412,
-            1.53304, 1.5804,  1.34342, 2.19027, 1.30075};
-    core::Tensor target_points(target_points_vec, {11, 3}, dtype, device);
+        open3d::geometry::PointCloud source_lpcd =
+                source_tpcd.ToLegacyPointCloud();
+        open3d::geometry::PointCloud target_lpcd =
+                target_tpcd.ToLegacyPointCloud();
 
-    std::vector<float> target_normals_vec{
-            -0.0085016, -0.22355,  -0.519574, 0.257463,   -0.0738755, -0.698319,
-            0.0574301,  -0.484248, -0.409929, -0.0123503, -0.230172,  -0.52072,
-            0.355904,   -0.142007, -0.720467, 0.0674038,  -0.418757,  -0.458602,
-            0.226091,   0.258253,  -0.874024, 0.43979,    0.122441,   -0.574998,
-            0.109144,   0.180992,  -0.762368, 0.273325,   0.292013,   -0.903111,
-            0.385407,   -0.212348, -0.277818};
-    core::Tensor target_normals(target_normals_vec, {11, 3}, dtype, device);
-    t::geometry::PointCloud target_device(device);
-    target_device.SetPoints(target_points);
-    target_device.SetPointNormals(target_normals);
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t =
+                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
+                                            {-0.139, 0.967, -0.215, 0.7},
+                                            {0.487, 0.255, 0.835, -1.4},
+                                            {0.0, 0.0, 0.0, 1.0}},
+                                           core::Device("CPU:0"));
 
-    open3d::geometry::PointCloud source_l_down =
-            source_device.ToLegacyPointCloud();
-    open3d::geometry::PointCloud target_l_down =
-            target_device.ToLegacyPointCloud();
+        // Initial transformation input for legacy implementation.
+        Eigen::Matrix4d initial_transform_l =
+                core::eigen_converter::TensorToEigenMatrixXd(
+                        initial_transform_t);
 
-    // Initial transformation input for tensor implementation.
-    core::Tensor init_trans_t =
-            core::Tensor::Eye(4, core::Dtype::Float64, device);
+        double max_correspondence_dist = 1.5;
+        double relative_fitness = 1e-6;
+        double relative_rmse = 1e-6;
+        int max_iterations = 2;
 
-    // Initial transformation input for legacy implementation.
-    Eigen::Matrix4d init_trans_l = Eigen::Matrix4d::Identity();
+        // L1Loss Method:
 
-    double max_correspondence_dist = 2.0;
-    double relative_fitness = 1e-6;
-    double relative_rmse = 1e-6;
-    int max_iterations = 2;
+        // PointToPlane - Tensor.
+        t_reg::RegistrationResult reg_p2plane_t = t_reg::RegistrationICP(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                initial_transform_t,
+                t_reg::TransformationEstimationPointToPlane(
+                        t_reg::RobustKernel(t_reg::RobustKernelMethod::L1Loss,
+                                            /*scale parameter =*/1.0,
+                                            /*shape parameter =*/1.0)),
+                t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
 
-    // PointToPlane - Tensor.
-    t::pipelines::registration::RegistrationResult reg_p2plane_t =
-            open3d::t::pipelines::registration::RegistrationICP(
-                    source_device, target_device, max_correspondence_dist,
-                    init_trans_t,
-                    open3d::t::pipelines::registration::
-                            TransformationEstimationPointToPlane(),
-                    open3d::t::pipelines::registration::ICPConvergenceCriteria(
-                            relative_fitness, relative_rmse, max_iterations));
+        // PointToPlane - Legacy.
+        l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationICP(
+                source_lpcd, target_lpcd, max_correspondence_dist,
+                initial_transform_l,
+                l_reg::TransformationEstimationPointToPlane(
+                        std::make_shared<l_reg::L1Loss>()),
+                l_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
 
-    // PointToPlane - Legacy.
-    pipelines::registration::RegistrationResult reg_p2plane_l =
-            open3d::pipelines::registration::RegistrationICP(
-                    source_l_down, target_l_down, max_correspondence_dist,
-                    init_trans_l,
-                    open3d::pipelines::registration::
-                            TransformationEstimationPointToPlane(),
-                    open3d::pipelines::registration::ICPConvergenceCriteria(
-                            relative_fitness, relative_rmse, max_iterations));
+        EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.0005);
+        EXPECT_NEAR(reg_p2plane_t.inlier_rmse_, reg_p2plane_l.inlier_rmse_,
+                    0.0005);
+    }
+}
 
-    EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.0005);
-    EXPECT_NEAR(reg_p2plane_t.inlier_rmse_, reg_p2plane_l.inlier_rmse_, 0.0005);
+TEST_P(RegistrationPermuteDevices, RobustKernel) {
+    double scaling_parameter = 1.0;
+    double shape_parameter = 1.0;
+
+    std::unordered_map<int, double> expected_output = {
+            {0, 1.0},         // L2Loss [1.0]
+            {1, 1.0204},      // L1Loss [1.0 / abs(residual)]
+            {2, 1.0},         // HuberLoss [scale / max(abs(residual), scale)]
+            {3, 0.5101},      // CauchyLoss [1 / (1 + sq(residual / scale))]
+            {4, 0.260202},    // GMLoss [scale / sq(scale + sq(residual))]
+            {5, 0.00156816},  // TukeyLoss [sq(1 - sq(min(1, abs(r) / scale)))]
+            {6, 0.714213}     // GeneralizedLoss
+    };
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        for (auto loss_method : {t_reg::RobustKernelMethod::L2Loss,
+                                 t_reg::RobustKernelMethod::L1Loss,
+                                 t_reg::RobustKernelMethod::HuberLoss,
+                                 t_reg::RobustKernelMethod::CauchyLoss,
+                                 t_reg::RobustKernelMethod::GMLoss,
+                                 t_reg::RobustKernelMethod::TukeyLoss,
+                                 t_reg::RobustKernelMethod::GeneralizedLoss}) {
+            DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+                DISPATCH_ROBUST_KERNEL_FUNCTION(
+                        loss_method, scalar_t, scaling_parameter,
+                        shape_parameter, [&]() {
+                            auto weight = GetWeightFromRobustKernel(0.98);
+                            EXPECT_NEAR(weight,
+                                        expected_output[(int)loss_method],
+                                        1e-3);
+                        });
+            });
+        }
+
+        // GeneralizedLoss can behave as other loss methods by changing the
+        // shape_parameter (and adjusting the scaling_parameter).
+        // For shape_parameter = 2 : L2Loss.
+        // For shape_parameter = 0 : Cauchy or Lorentzian Loss.
+        // For shape_parameter = -2 : German-McClure or GM Loss.
+        // For shape_parameter = 1 : Charbonnier Loss or Pseudo-Huber loss or
+        // smoothened form of L1 Loss.
+        //
+        // Refer:
+        // @article{BarronCVPR2019,
+        //   Author = {Jonathan T. Barron},
+        //   Title = {A General and Adaptive Robust Loss Function},
+        //   Journal = {CVPR},
+        //   Year = {2019}
+        // }
+        DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+            DISPATCH_ROBUST_KERNEL_FUNCTION(
+                    t_reg::RobustKernelMethod::GeneralizedLoss, scalar_t,
+                    scaling_parameter, 2.0, [&]() {
+                        auto weight = GetWeightFromRobustKernel(0.98);
+                        EXPECT_NEAR(weight, 1.0, 1e-3);
+                    });
+
+            DISPATCH_ROBUST_KERNEL_FUNCTION(
+                    t_reg::RobustKernelMethod::GeneralizedLoss, scalar_t,
+                    scaling_parameter, 0.0, [&]() {
+                        auto weight = GetWeightFromRobustKernel(0.98);
+                        EXPECT_NEAR(weight, 0.675584, 1e-3);
+                    });
+
+            DISPATCH_ROBUST_KERNEL_FUNCTION(
+                    t_reg::RobustKernelMethod::GeneralizedLoss, scalar_t,
+                    scaling_parameter, -2.0, [&]() {
+                        auto weight = GetWeightFromRobustKernel(0.98);
+                        EXPECT_NEAR(weight, 0.650259, 1e-3);
+                    });
+
+            DISPATCH_ROBUST_KERNEL_FUNCTION(
+                    t_reg::RobustKernelMethod::GeneralizedLoss, scalar_t,
+                    scaling_parameter, 1.0, [&]() {
+                        auto weight = GetWeightFromRobustKernel(0.98);
+                        EXPECT_NEAR(weight, 0.714213, 1e-3);
+                    });
+        });
+    }
 }
 
 }  // namespace tests

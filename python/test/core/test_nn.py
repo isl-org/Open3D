@@ -40,7 +40,7 @@ np.random.seed(0)
                     reason="Need FAISS for nearest neighbors.")
 @pytest.mark.parametrize("device", list_devices())
 def test_knn_index(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     t = o3c.Tensor.zeros((10, 3), dtype, device=device)
     nns = o3c.nns.NearestNeighborSearch(t)
@@ -57,7 +57,7 @@ def test_knn_index(device):
                     reason="Need FAISS for nearest neighbors.")
 @pytest.mark.parametrize("device", list_devices())
 def test_knn_search(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     dataset_points = o3c.Tensor(
         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
@@ -98,7 +98,7 @@ def test_knn_search(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_fixed_radius_search(device, dtype):
     dataset_points = o3c.Tensor(
         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
@@ -144,7 +144,7 @@ def test_fixed_radius_search(device, dtype):
                             np.array([0, 2, 4], dtype=np.int64))
 
 
-@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_hybrid_search_random(dtype):
     if o3c.cuda.device_count() > 0:
         dataset_size, query_size = 1000, 100
@@ -179,7 +179,7 @@ def test_hybrid_search_random(dtype):
             np.testing.assert_equal(counts.numpy(), counts_cuda.cpu().numpy())
 
 
-@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_fixed_radius_search_random(dtype):
     if o3c.cuda.device_count() > 0:
         dataset_size, query_size = 1000, 100

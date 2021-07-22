@@ -76,13 +76,15 @@ public:
     void StartWebRTCServer();
 
     /// Client -> server message.
-    void OnDataChannelMessage(const std::string& message);
+    /// \return Message reply that should be sent back to the client.
+    std::string OnDataChannelMessage(const std::string& message);
 
-    /// When the data channel receives a valid JSON string, the "class_name"
+    /// When the data channel receives a valid JSON string, the \p class_name
     /// property of the JSON object will be examined and the corresponding
-    /// callback function will be called.
+    /// callback function will be called. The callback should return a string
+    /// reply, which will be sent back to the client.
     ///
-    /// \param class_name The value of of the "class_name" property of the JSON
+    /// \param class_name The value of the \p class_name property of the JSON
     /// object.
     /// \param callback The callback function that will be called when a JSON
     /// object with the matching \p class_name is received via the data channel.
@@ -94,11 +96,13 @@ public:
     /// ws->EnableWebRTC();
     /// ws->RegisterDataChannelMessageCallback("webapp/input", "input",
     ///     [](const std::string &data) {
-    ///     utility::LogInfo("Received dataChannel message for class_name "
-    ///             "'webapp/input' with data: {}", data);
+    ///         std::string reply = fmt::format("Received dataChannel message"
+    ///         " for class_name 'webapp/input' with data: {}", data);
+    ///         utility::LogInfo(reply);
+    ///         return reply;
     ///     });
     /// \endcode
-    ///
+    /// \n
     /// \code{.js}
     /// /* Send message in JavaScript to trigger callback. this is
     /// WebRTCStreamer object */
@@ -107,7 +111,7 @@ public:
     /// \endcode
     void RegisterDataChannelMessageCallback(
             const std::string& class_name,
-            const std::function<void(const std::string&)> callback);
+            const std::function<std::string(const std::string&)> callback);
 
     /// Server -> client frame.
     void OnFrame(const std::string& window_uid,
