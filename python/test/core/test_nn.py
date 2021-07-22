@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -36,9 +36,11 @@ from open3d_test import list_devices
 np.random.seed(0)
 
 
+@pytest.mark.skipif(not o3d._build_config['WITH_FAISS'],
+                    reason="Need FAISS for nearest neighbors.")
 @pytest.mark.parametrize("device", list_devices())
 def test_knn_index(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     t = o3c.Tensor.zeros((10, 3), dtype, device=device)
     nns = o3c.nns.NearestNeighborSearch(t)
@@ -47,13 +49,15 @@ def test_knn_index(device):
     assert nns.hybrid_index(0.1)
 
     # Multi radii search is only supported on CPU.
-    if device.get_type() == o3d.core.Device.DeviceType.CPU:
+    if device.get_type() == o3c.Device.DeviceType.CPU:
         assert nns.multi_radius_index()
 
 
+@pytest.mark.skipif(not o3d._build_config['WITH_FAISS'],
+                    reason="Need FAISS for nearest neighbors.")
 @pytest.mark.parametrize("device", list_devices())
 def test_knn_search(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     dataset_points = o3c.Tensor(
         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
@@ -94,7 +98,7 @@ def test_knn_search(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_fixed_radius_search(device, dtype):
     dataset_points = o3c.Tensor(
         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
@@ -140,9 +144,9 @@ def test_fixed_radius_search(device, dtype):
                             np.array([0, 2, 4], dtype=np.int64))
 
 
-@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_hybrid_search_random(dtype):
-    if o3d.core.cuda.device_count() > 0:
+    if o3c.cuda.device_count() > 0:
         dataset_size, query_size = 1000, 100
         radius, k = 0.1, 10
 
@@ -160,10 +164,11 @@ def test_hybrid_search_random(dtype):
             query_points_cuda = query_points.cuda()
 
             nns.hybrid_index(radius)
-            indices, distances = nns.hybrid_search(query_points, radius, k)
+            indices, distances, counts = nns.hybrid_search(
+                query_points, radius, k)
 
             nns_cuda.hybrid_index(radius)
-            indices_cuda, distances_cuda = nns_cuda.hybrid_search(
+            indices_cuda, distances_cuda, counts_cuda = nns_cuda.hybrid_search(
                 query_points_cuda, radius, k)
 
             np.testing.assert_allclose(distances.numpy(),
@@ -171,11 +176,12 @@ def test_hybrid_search_random(dtype):
                                        rtol=1e-5,
                                        atol=0)
             np.testing.assert_equal(indices.numpy(), indices_cuda.cpu().numpy())
+            np.testing.assert_equal(counts.numpy(), counts_cuda.cpu().numpy())
 
 
-@pytest.mark.parametrize("dtype", [o3c.Dtype.Float32, o3c.Dtype.Float64])
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_fixed_radius_search_random(dtype):
-    if o3d.core.cuda.device_count() > 0:
+    if o3c.cuda.device_count() > 0:
         dataset_size, query_size = 1000, 100
         radius = 0.1
 

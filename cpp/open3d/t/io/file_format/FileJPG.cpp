@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 // clang-format on
 
 #include "open3d/t/io/ImageIO.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/FileSystem.h"
 
 namespace open3d {
@@ -80,7 +80,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     jpeg_start_decompress(&cinfo);
     image.Clear();
     image.Reset(cinfo.output_height, cinfo.output_width, num_of_channels,
-                core::Dtype::UInt8, image.GetDevice());
+                core::UInt8, image.GetDevice());
 
     int row_stride = cinfo.output_width * cinfo.output_components;
     buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE,
@@ -106,7 +106,7 @@ bool WriteImageToJPG(const std::string &filename,
         utility::LogWarning("Write JPG failed: image has no data.");
         return false;
     }
-    if (image.GetDtype() != core::Dtype::UInt8 ||
+    if (image.GetDtype() != core::UInt8 ||
         (image.GetChannels() != 1 && image.GetChannels() != 3)) {
         utility::LogWarning("Write JPG failed: unsupported image data.");
         return false;

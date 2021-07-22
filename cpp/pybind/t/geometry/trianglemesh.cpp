@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ namespace geometry {
 
 void pybind_trianglemesh(py::module& m) {
     py::class_<TriangleMesh, PyGeometry<TriangleMesh>,
-               std::unique_ptr<TriangleMesh>, Geometry>
+               std::shared_ptr<TriangleMesh>, Geometry>
             triangle_mesh(
                     m, "TriangleMesh",
                     "A triangle mesh contains a set of 3d vertices and faces.");
@@ -91,8 +91,8 @@ void pybind_trianglemesh(py::module& m) {
                       "Rotate points and normals (if exist).");
     triangle_mesh.def_static(
             "from_legacy_triangle_mesh", &TriangleMesh::FromLegacyTriangleMesh,
-            "mesh_legacy"_a, "vertex_dtype"_a = core::Dtype::Float32,
-            "triangle_dtype"_a = core::Dtype::Int64,
+            "mesh_legacy"_a, "vertex_dtype"_a = core::Float32,
+            "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
     triangle_mesh.def("to_legacy_triangle_mesh",

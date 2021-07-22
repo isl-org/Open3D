@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ INSTANTIATE_TEST_SUITE_P(TensorMap,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
 TEST_P(TensorMapPermuteDevices, Constructor) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     core::Device device = GetParam();
 
     // Empty TensorMap.
@@ -76,7 +76,7 @@ TEST_P(TensorMapPermuteDevices, Constructor) {
 }
 
 TEST_P(TensorMapPermuteDevices, IsSizeSynchronized) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     core::Device device = GetParam();
 
     t::geometry::TensorMap tm(
@@ -89,7 +89,7 @@ TEST_P(TensorMapPermuteDevices, IsSizeSynchronized) {
 }
 
 TEST_P(TensorMapPermuteDevices, AssertSizeSynchronized) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     core::Device device = GetParam();
 
     t::geometry::TensorMap tm(
@@ -102,7 +102,7 @@ TEST_P(TensorMapPermuteDevices, AssertSizeSynchronized) {
 }
 
 TEST_P(TensorMapPermuteDevices, Contains) {
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
     core::Device device = GetParam();
 
     t::geometry::TensorMap tm(

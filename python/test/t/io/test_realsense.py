@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -37,8 +37,10 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import test_data_dir
 
 
-# @pytest.mark.skipif(not hasattr(o3d.t.io, 'RSBagReader'))
-@pytest.mark.skip(reason="Hangs in Github Actions, but succeeds locally")
+@pytest.mark.skipif(os.getenv('GITHUB_SHA') is not None or
+                    not hasattr(o3d.t.io, 'RSBagReader'),
+                    reason="Hangs in Github Actions, but succeeds locally or "
+                    "not built with librealsense")
 def test_RSBagReader():
 
     shutil.unpack_archive(test_data_dir +
@@ -50,9 +52,9 @@ def test_RSBagReader():
     # Metadata
     metadata = bag_reader.metadata
     assert metadata.color_channels == 3
-    assert metadata.color_dt == o3d.core.Dtype.UInt8
+    assert metadata.color_dt == o3d.core.uint8
     assert metadata.color_format == 'RGB8'
-    assert metadata.depth_dt == o3d.core.Dtype.UInt16
+    assert metadata.depth_dt == o3d.core.uint16
     assert metadata.depth_format == 'Z16'
     assert np.allclose(metadata.depth_scale, 3999.999755859375)
     assert metadata.device_name == "Intel RealSense L515"
@@ -69,18 +71,17 @@ def test_RSBagReader():
     im_rgbd = bag_reader.next_frame()
     assert not im_rgbd.is_empty() and im_rgbd.are_aligned()
     assert im_rgbd.color.channels == 3
-    assert im_rgbd.color.dtype == o3d.core.Dtype.UInt8
+    assert im_rgbd.color.dtype == o3d.core.uint8
     assert im_rgbd.color.rows == 540
     assert im_rgbd.color.columns == 960
     assert im_rgbd.depth.channels == 1
-    assert im_rgbd.depth.dtype == o3d.core.Dtype.UInt16
+    assert im_rgbd.depth.dtype == o3d.core.uint16
     assert im_rgbd.depth.rows == 540
     assert im_rgbd.depth.columns == 960
 
     n_frames = 0
     while not bag_reader.is_eof():
         n_frames = n_frames + 1
-        print(im_rgbd)
         im_rgbd = bag_reader.next_frame()
 
     bag_reader.close()
@@ -102,7 +103,8 @@ def test_RSBagReader():
     }.issubset(os.listdir('L515_test_s/color'))
 
     shutil.rmtree("L515_test_s")
-    # os.remove("L515_test_s.bag")  # Permission error in Windows
+    if os.name != 'nt':  # Permission error in Windows
+        os.remove("L515_test_s.bag")
 
 
 # Test recording from a RealSense camera, if one is connected
@@ -118,8 +120,8 @@ def test_RealSenseSensor():
         rs_cam.start_capture(True)  # true: start recording with capture
         im_rgbd = rs_cam.capture_frame(True,
                                        True)  # wait for frames and align them
-        assert im_rgbd.depth.rows == im_rgbd.color.rows
-        assert im_rgbd.depth.columns == im_rgbd.color.columns
+        assert im_rgbd.depth.rows == im_rgbd.color.rows > 0
+        assert im_rgbd.depth.columns == im_rgbd.color.columns > 0
         rs_cam.stop_capture()
         assert os.path.exists(bag_filename)
         os.remove(bag_filename)

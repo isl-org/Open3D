@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,8 @@
 
 #include "open3d/utility/Helper.h"
 
+#include <fmt/chrono.h>
+
 #include <algorithm>
 #include <cctype>
 #include <random>
@@ -40,10 +42,10 @@
 namespace open3d {
 namespace utility {
 
-void SplitString(std::vector<std::string>& tokens,
-                 const std::string& str,
-                 const std::string& delimiters /* = " "*/,
-                 bool trim_empty_str /* = true*/) {
+std::vector<std::string> SplitString(const std::string& str,
+                                     const std::string& delimiters /* = " "*/,
+                                     bool trim_empty_str /* = true*/) {
+    std::vector<std::string> tokens;
     std::string::size_type pos = 0, new_pos = 0, last_pos = 0;
     while (pos != std::string::npos) {
         pos = str.find_first_of(delimiters, last_pos);
@@ -53,6 +55,7 @@ void SplitString(std::vector<std::string>& tokens,
         }
         last_pos = new_pos + 1;
     }
+    return tokens;
 }
 
 std::string& LeftStripString(std::string& str, const std::string& chars) {
@@ -117,6 +120,11 @@ int UniformRandInt(const int min, const int max) {
     static thread_local std::mt19937 generator(std::random_device{}());
     std::uniform_int_distribution<int> distribution(min, max);
     return distribution(generator);
+}
+
+std::string GetCurrentTimeStamp() {
+    std::time_t t = std::time(nullptr);
+    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
 }
 
 }  // namespace utility

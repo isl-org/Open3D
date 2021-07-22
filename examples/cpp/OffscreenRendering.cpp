@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +61,7 @@ int main(int argc, const char *argv[]) {
     torus->PaintUniformColor({1.0f, 1.0f, 0.0f});
     scene->AddGeometry("torus", torus.get(), mat);
     scene->ShowAxes(true);
+
     scene->GetCamera()->SetProjection(60.0f, float(width) / float(height), 0.1f,
                                       10.0f, Camera::FovType::Vertical);
     scene->GetCamera()->LookAt({0.0f, 0.0f, 0.0f}, {3.0f, 3.0f, 3.0f},
@@ -79,7 +80,7 @@ int main(int argc, const char *argv[]) {
     delete scene;
     delete renderer;
 
-    // Cleanup Filament. Normally this is done by app.Run(), but since we not
-    // using that we need to do it ourselves.
+    // Cleanup Filament. Normally this is done by app.Run(), but since we are
+    // not using that we need to do it ourselves.
     app.OnTerminate();
 }

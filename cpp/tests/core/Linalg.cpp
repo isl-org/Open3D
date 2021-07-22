@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/utility/Helper.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
@@ -49,7 +50,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
     const float EPSILON = 1e-8;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     // Matmul test.
     core::Tensor A(std::vector<float>{1, 2, 3, 4, 5, 6}, {2, 3}, dtype, device);
@@ -71,7 +72,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
              core::TensorKey::Slice(1, core::None, core::None)});
     core::Tensor B_slice =
             B.IndexGet({core::Tensor(std::vector<int64_t>{0, 2}, {2},
-                                     core::Dtype::Int64, device)})
+                                     core::Int64, device)})
                     .GetItem({core::TensorKey::Slice(core::None, core::None,
                                                      core::None)});
     core::Tensor C_slice = A_slice.Matmul(B_slice);
@@ -90,7 +91,7 @@ TEST_P(LinalgPermuteDevices, Matmul) {
 
 TEST_P(LinalgPermuteDevices, LU) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     // LU test for 3x4 const 2D tensor of dtype Float32.
     const core::Tensor A_3x4cf = core::Tensor::Init<float>(
@@ -130,7 +131,7 @@ TEST_P(LinalgPermuteDevices, LU) {
 TEST_P(LinalgPermuteDevices, LUIpiv) {
     const float EPSILON = 1e-6;
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     // LU test for 3x3 square 2D tensor of dtype Float32.
     const core::Tensor A_3x3f = core::Tensor::Init<float>(
@@ -145,7 +146,7 @@ TEST_P(LinalgPermuteDevices, LUIpiv) {
                                                     {0.666667, 0.5, 0.166667}},
                                                    device),
                          EPSILON, EPSILON));
-    EXPECT_TRUE(ipiv3f.To(core::Dtype::Int32)
+    EXPECT_TRUE(ipiv3f.To(core::Int32)
                         .AllClose(core::Tensor::Init<int>({2, 3, 3}, device),
                                   EPSILON));
 
@@ -162,7 +163,7 @@ TEST_P(LinalgPermuteDevices, LUIpiv) {
                                                      {0.666667, 0.5, 0.166667}},
                                                     device),
                          EPSILON, EPSILON));
-    EXPECT_TRUE(ipiv3d.To(core::Dtype::Int32)
+    EXPECT_TRUE(ipiv3d.To(core::Int32)
                         .AllClose(core::Tensor::Init<int>({2, 3, 3}, device),
                                   EPSILON));
 
@@ -176,7 +177,7 @@ TEST_P(LinalgPermuteDevices, LUIpiv) {
 
 TEST_P(LinalgPermuteDevices, Triu) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     // Input 2D matrix of dtype Float32.
     const core::Tensor A_4x5f =
@@ -221,7 +222,7 @@ TEST_P(LinalgPermuteDevices, Triu) {
 
 TEST_P(LinalgPermuteDevices, Tril) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     // Input 2D matrix of dtype Float32.
     const core::Tensor A_4x5f =
@@ -273,7 +274,7 @@ TEST_P(LinalgPermuteDevices, Tril) {
 
 TEST_P(LinalgPermuteDevices, Triul) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     // Input 2D matrix of dtype Float32.
     const core::Tensor A_4x5f =
@@ -336,7 +337,7 @@ TEST_P(LinalgPermuteDevices, Inverse) {
     const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     // Inverse test.
     core::Tensor A(std::vector<float>{2, 3, 1, 3, 3, 1, 2, 4, 1}, {3, 3}, dtype,
@@ -364,9 +365,8 @@ TEST_P(LinalgPermuteDevices, SVD) {
     const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
-    // Matmul test.
     core::Tensor A(std::vector<float>{2, 4, 1, 3, 0, 0, 0, 0}, {4, 2}, dtype,
                    device);
 
@@ -409,7 +409,7 @@ TEST_P(LinalgPermuteDevices, Solve) {
     const float EPSILON = 1e-8;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     // Solve test.
     core::Tensor A(std::vector<float>{3, 1, 1, 2}, {2, 2}, dtype, device);
@@ -437,7 +437,7 @@ TEST_P(LinalgPermuteDevices, LeastSquares) {
     const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
+    core::Dtype dtype = core::Float32;
 
     // Solve test.
     core::Tensor A(std::vector<float>{1.44,  -7.84, -4.39, 4.53,  -9.96, -0.28,
@@ -460,5 +460,60 @@ TEST_P(LinalgPermuteDevices, LeastSquares) {
         EXPECT_TRUE(std::abs(X_data[i] - X_gt[i]) < EPSILON);
     }
 }
+
+TEST_P(LinalgPermuteDevices, KernelOps) {
+    core::Tensor A_3x3 =
+            core::Tensor::Init<float>({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}});
+    core::Tensor B_3x1 = core::Tensor::Init<float>({{1}, {3}, {6}});
+    core::Tensor I_3x3 = core::Tensor::Eye(3, core::Float32, core::HOST);
+
+    core::Tensor output3x3 =
+            core::Tensor::Empty({3, 3}, core::Float32, core::HOST);
+    core::Tensor output3x1 =
+            core::Tensor::Empty({3, 1}, core::Float32, core::HOST);
+
+    // {3, 3} x {3, 3} MatMul
+    auto matmul3x3_expected = A_3x3.Matmul(I_3x3);
+
+    core::linalg::kernel::matmul3x3_3x3(A_3x3.GetDataPtr<float>(),
+                                        I_3x3.GetDataPtr<float>(),
+                                        output3x3.GetDataPtr<float>());
+
+    EXPECT_TRUE(output3x3.AllClose(matmul3x3_expected));
+
+    // {3, 3} x {3, 1} MatMul
+    auto matmul3x1_expected = A_3x3.Matmul(B_3x1);
+
+    core::linalg::kernel::matmul3x3_3x1(A_3x3.GetDataPtr<float>(),
+                                        B_3x1.GetDataPtr<float>(),
+                                        output3x1.GetDataPtr<float>());
+    EXPECT_TRUE(output3x1.AllClose(matmul3x1_expected));
+
+    // Inverse 3x3
+    auto Ainv_expected = A_3x3.Inverse();
+    core::linalg::kernel::inverse3x3(A_3x3.GetDataPtr<float>(),
+                                     output3x3.GetDataPtr<float>());
+    EXPECT_TRUE(output3x3.AllClose(Ainv_expected));
+
+    // Transpose 3x3
+    auto AT_expected = A_3x3.T();
+    core::linalg::kernel::transpose3x3(A_3x3.GetDataPtr<float>(),
+                                       output3x3.GetDataPtr<float>());
+    EXPECT_TRUE(output3x3.AllClose(AT_expected));
+
+    // Det 3x3
+    double det_expected = A_3x3.Det();
+    double det_output = static_cast<double>(
+            core::linalg::kernel::det3x3(A_3x3.GetDataPtr<float>()));
+    EXPECT_EQ(det_output, det_expected);
+
+    // SVD Solver 3x3.
+    core::linalg::kernel::solve_svd3x3(A_3x3.GetDataPtr<float>(),
+                                       B_3x1.GetDataPtr<float>(),
+                                       output3x1.GetDataPtr<float>());
+    auto Solve_Expected = A_3x3.Solve(B_3x1);
+    EXPECT_TRUE(output3x1.AllClose(Solve_Expected));
+}
+
 }  // namespace tests
 }  // namespace open3d

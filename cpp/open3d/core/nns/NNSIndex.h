@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -105,12 +105,12 @@ public:
     /// \param radius Radius.
     /// \param max_knn Maximum number of
     /// neighbor to search per query point.
-    /// \return Pair of Tensors, (indices, distances):
+    /// \return Tuple of Tensors, (indices, distances, counts):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distances: Tensor of shape {n, knn}, with dtype Float32.
-    virtual std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                                   double radius,
-                                                   int max_knn) const = 0;
+    /// - counts: Tensor of shape {n, 1}, with dtype Int64.
+    virtual std::tuple<Tensor, Tensor, Tensor> SearchHybrid(
+            const Tensor &query_points, double radius, int max_knn) const = 0;
 
     /// Get dimension of the dataset points.
     /// \return dimension of dataset points.

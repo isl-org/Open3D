@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,8 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace geometry {
@@ -70,6 +71,9 @@ TriangleMesh &TriangleMesh::Rotate(const Eigen::Matrix3d &R,
 
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (mesh.IsEmpty()) return (*this);
+    bool add_textures = HasTriangleUvs() && HasTextures() &&
+                        HasTriangleMaterialIds() && mesh.HasTriangleUvs() &&
+                        mesh.HasTextures() && mesh.HasTriangleMaterialIds();
     size_t old_vert_num = vertices_.size();
     MeshBase::operator+=(mesh);
     size_t old_tri_num = triangles_.size();
@@ -92,11 +96,30 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    if (HasTriangleUvs() || HasTextures() || HasTriangleMaterialIds()) {
-        utility::LogError(
-                "[TriangleMesh] copy of uvs and texture and per-triangle "
-                "material ids is not implemented "
-                "yet");
+    if (add_textures) {
+        size_t old_tri_uv_num = triangle_uvs_.size();
+        triangle_uvs_.resize(old_tri_uv_num + mesh.triangle_uvs_.size());
+        for (size_t i = 0; i < mesh.triangle_uvs_.size(); i++) {
+            triangle_uvs_[old_tri_uv_num + i] = mesh.triangle_uvs_[i];
+        }
+
+        size_t old_tex_num = textures_.size();
+        textures_.resize(old_tex_num + mesh.textures_.size());
+        for (size_t i = 0; i < mesh.textures_.size(); i++) {
+            textures_[old_tex_num + i] = mesh.textures_[i];
+        }
+
+        size_t old_mat_id_num = triangle_material_ids_.size();
+        triangle_material_ids_.resize(old_mat_id_num +
+                                      mesh.triangle_material_ids_.size());
+        for (size_t i = 0; i < mesh.triangle_material_ids_.size(); i++) {
+            triangle_material_ids_[old_mat_id_num + i] =
+                    mesh.triangle_material_ids_[i] + (int)old_tex_num;
+        }
+    } else {
+        triangle_uvs_.clear();
+        textures_.clear();
+        triangle_material_ids_.clear();
     }
     return (*this);
 }
@@ -431,6 +454,11 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         double surface_area,
         bool use_triangle_normal,
         int seed) {
+    if (surface_area <= 0) {
+        utility::LogError("Invalid surface area {}, it must be > 0.",
+                          surface_area);
+    }
+
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
@@ -912,7 +940,8 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
     // precompute all neighbours
     utility::LogDebug("Precompute Neighbours");
     std::vector<std::vector<int>> nbs(vertices_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int idx = 0; idx < int(vertices_.size()); ++idx) {
         std::vector<double> dists2;
         kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
@@ -1207,7 +1236,7 @@ double TriangleMesh::GetVolume() const {
 
     double volume = 0;
     int64_t num_triangles = triangles_.size();
-#pragma omp parallel for reduction(+ : volume)
+#pragma omp parallel for reduction(+ : volume) num_threads(utility::EstimateMaxThreads())
     for (int64_t tidx = 0; tidx < num_triangles; ++tidx) {
         volume += GetSignedVolumeOfTriangle(tidx);
     }
@@ -1412,7 +1441,8 @@ TriangleMesh::ClusterConnectedTriangles() const {
     utility::LogDebug("[ClusterConnectedTriangles] Compute triangle adjacency");
     auto edges_to_triangles = GetEdgeToTrianglesMap();
     std::vector<std::unordered_set<int>> adjacency_list(triangles_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
         const auto &triangle = triangles_[tidx];
         for (auto tnb :
@@ -1473,7 +1503,7 @@ void TriangleMesh::RemoveTrianglesByIndex(
         const std::vector<size_t> &triangle_indices) {
     std::vector<bool> triangle_mask(triangles_.size(), false);
     for (auto tidx : triangle_indices) {
-        if (tidx >= 0 && tidx < triangles_.size()) {
+        if (tidx < triangles_.size()) {
             triangle_mask[tidx] = true;
         } else {
             utility::LogWarning(
@@ -1513,7 +1543,7 @@ void TriangleMesh::RemoveVerticesByIndex(
         const std::vector<size_t> &vertex_indices) {
     std::vector<bool> vertex_mask(vertices_.size(), false);
     for (auto vidx : vertex_indices) {
-        if (vidx >= 0 && vidx < vertices_.size()) {
+        if (vidx < vertices_.size()) {
             vertex_mask[vidx] = true;
         } else {
             utility::LogWarning(
@@ -1584,7 +1614,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectByIndex(
 
     std::vector<int> new_vert_ind(vertices_.size(), -1);
     for (const auto &sel_vidx : indices) {
-        if (sel_vidx < 0 || sel_vidx >= vertices_.size()) {
+        if (sel_vidx >= vertices_.size()) {
             utility::LogWarning(
                     "[SelectByIndex] indices contains index {} out of range. "
                     "It is ignored.",

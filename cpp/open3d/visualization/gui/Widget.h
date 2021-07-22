@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,9 +48,15 @@ struct KeyEvent;
 struct TickEvent;
 struct Theme;
 
+struct LayoutContext {
+    const Theme& theme;
+    FontContext& fonts;
+};
+
 struct DrawContext {
     const Theme& theme;
     visualization::rendering::Renderer& renderer;
+    FontContext& fonts;
     int uiOffsetX;
     int uiOffsetY;
     int screenWidth;
@@ -90,10 +96,20 @@ public:
     bool IsEnabled() const;
     virtual void SetEnabled(bool enabled);
 
-    static constexpr int DIM_GROW = 10000;
-    virtual Size CalcPreferredSize(const Theme& theme) const;
+    void SetTooltip(const char* text);
+    const char* GetTooltip() const;
 
-    virtual void Layout(const Theme& theme);
+    static constexpr int DIM_GROW = 10000;
+    struct Constraints {
+        int width = DIM_GROW;
+        int height = DIM_GROW;
+    };
+    virtual Size CalcPreferredSize(const LayoutContext& context,
+                                   const Constraints& constraints) const;
+
+    virtual Size CalcMinimumSize(const LayoutContext& context) const;
+
+    virtual void Layout(const LayoutContext& context);
 
     enum class DrawResult { NONE, REDRAW, RELAYOUT };
     /// Draws the widget. If this is a Dear ImGUI widget, this is where
@@ -123,6 +139,7 @@ public:
 protected:
     void DrawImGuiPushEnabledState();
     void DrawImGuiPopEnabledState();
+    void DrawImGuiTooltip();
 
 private:
     struct Impl;

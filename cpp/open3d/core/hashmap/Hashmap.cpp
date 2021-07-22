@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// High level non-templated hashmap interface for basic usages.
-
-// If BUILD_CUDA_MODULE, link DefaultHashmap.cu that contains everything, and
-// disable code inside DefaultHashmap.cpp
-// Else, link DefaultHashmap.cpp and disregard DefaultHashmap.cu
-
 #include "open3d/core/hashmap/Hashmap.h"
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -45,7 +39,8 @@ Hashmap::Hashmap(int64_t init_capacity,
                  const Dtype& dtype_value,
                  const SizeVector& element_shape_key,
                  const SizeVector& element_shape_value,
-                 const Device& device)
+                 const Device& device,
+                 const HashmapBackend& backend)
     : dtype_key_(dtype_key),
       dtype_value_(dtype_value),
       element_shape_key_(element_shape_key),
@@ -63,12 +58,9 @@ Hashmap::Hashmap(int64_t init_capacity,
                 "key/value.");
     }
 
-    device_hashmap_ = CreateDefaultDeviceHashmap(
-            std::max(init_capacity / kDefaultElemsPerBucket, int64_t(1)),
-            init_capacity,
-            dtype_key.ByteSize() * element_shape_key_.NumElements(),
-            dtype_value.ByteSize() * element_shape_value_.NumElements(),
-            device);
+    device_hashmap_ = CreateDeviceHashmap(init_capacity, dtype_key, dtype_value,
+                                          element_shape_key,
+                                          element_shape_value, device, backend);
 }
 
 void Hashmap::Rehash(int64_t buckets) {
@@ -108,8 +100,8 @@ void Hashmap::Insert(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
-    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+    output_addrs = Tensor({count}, core::Int32, GetDevice());
+    output_masks = Tensor({count}, core::Bool, GetDevice());
 
     device_hashmap_->Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
                             static_cast<addr_t*>(output_addrs.GetDataPtr()),
@@ -135,8 +127,8 @@ void Hashmap::Activate(const Tensor& input_keys,
 
     int64_t count = shape[0];
 
-    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
-    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+    output_addrs = Tensor({count}, core::Int32, GetDevice());
+    output_masks = Tensor({count}, core::Bool, GetDevice());
 
     device_hashmap_->Activate(input_keys.GetDataPtr(),
                               static_cast<addr_t*>(output_addrs.GetDataPtr()),
@@ -162,8 +154,8 @@ void Hashmap::Find(const Tensor& input_keys,
 
     int64_t count = shape[0];
 
-    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
-    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
+    output_masks = Tensor({count}, core::Bool, GetDevice());
+    output_addrs = Tensor({count}, core::Int32, GetDevice());
 
     device_hashmap_->Find(input_keys.GetDataPtr(),
                           static_cast<addr_t*>(output_addrs.GetDataPtr()),
@@ -186,7 +178,7 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
     }
 
     int64_t count = shape[0];
-    output_masks = Tensor({count}, Dtype::Bool, GetDevice());
+    output_masks = Tensor({count}, core::Bool, GetDevice());
 
     device_hashmap_->Erase(input_keys.GetDataPtr(),
                            output_masks.GetDataPtr<bool>(), count);
@@ -194,11 +186,13 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
 
 void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
     int64_t count = device_hashmap_->Size();
-    output_addrs = Tensor({count}, Dtype::Int32, GetDevice());
+    output_addrs = Tensor({count}, core::Int32, GetDevice());
 
     device_hashmap_->GetActiveIndices(
             static_cast<addr_t*>(output_addrs.GetDataPtr()));
 }
+
+void Hashmap::Clear() { device_hashmap_->Clear(); }
 
 Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
@@ -215,7 +209,7 @@ Hashmap Hashmap::To(const Device& device, bool copy) const {
 
     core::Tensor active_addrs;
     GetActiveIndices(active_addrs);
-    core::Tensor active_indices = active_addrs.To(core::Dtype::Int64);
+    core::Tensor active_indices = active_addrs.To(core::Int64);
 
     core::Tensor addrs, masks;
     new_hashmap.Insert(keys.IndexGet({active_indices}),
@@ -233,10 +227,13 @@ Hashmap Hashmap::CUDA(int device_id) const {
 int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
 
 int64_t Hashmap::GetCapacity() const { return device_hashmap_->GetCapacity(); }
+
 int64_t Hashmap::GetBucketCount() const {
     return device_hashmap_->GetBucketCount();
 }
+
 Device Hashmap::GetDevice() const { return device_hashmap_->GetDevice(); }
+
 int64_t Hashmap::GetKeyBytesize() const {
     return device_hashmap_->GetKeyBytesize();
 }
@@ -305,6 +302,5 @@ void Hashmap::AssertValueDtype(const Dtype& dtype_value,
                 stored_elem_byte_size, elem_byte_size);
     }
 }
-
 }  // namespace core
 }  // namespace open3d

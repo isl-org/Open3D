@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include <thread>
 
 #include "open3d/geometry/Image.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/MenuImgui.h"
 #include "open3d/visualization/gui/Window.h"
@@ -125,7 +125,7 @@ BitmapWindowSystem::BitmapWindowSystem(Rendering mode /*= Rendering::NORMAL*/)
         rendering::EngineInstance::EnableHeadless();
 #else
         utility::LogWarning(
-                "BitmapWindowSystem(): HEADLESS is only supported on Linux");
+                "BitmapWindowSystem(): HEADLESS is only supported on Linux.");
 #endif
     }
 }
@@ -166,12 +166,36 @@ WindowSystem::OSWindow BitmapWindowSystem::CreateOSWindow(Window *o3d_window,
                                                           int height,
                                                           const char *title,
                                                           int flags) {
-    std::cout << "[debug] BitmapWindowSystem::CreateOSWindow()" << std::endl;
     auto *w = new BitmapWindow(o3d_window, width, height);
     return (OSWindow *)w;
 }
 
-void BitmapWindowSystem::DestroyWindow(OSWindow w) { delete (BitmapWindow *)w; }
+void BitmapWindowSystem::DestroyWindow(OSWindow w) {
+    BitmapWindow *the_deceased = (BitmapWindow *)w;
+    // This window will soon go to its eternal repose, and since asking corpse-
+    // windows to perform events is ... unpleasant ..., we need to remove all
+    // events in the queue requested for this window. Unfortunately, std::queue
+    // seems to have fallen into the same trap as the first iteration of this
+    // code and not considered the possibility of item resources meeting an
+    // untimely end. As a result, we need to do some copying of queues.
+    std::queue<std::shared_ptr<BitmapEvent>> filtered_reversed;
+    while (!impl_->event_queue_.empty()) {
+        auto e = impl_->event_queue_.front();
+        impl_->event_queue_.pop();
+        if (e->event_target != the_deceased) {
+            filtered_reversed.push(e);
+        }
+    }
+    // The queue is now filtered but reversed. We can empty it back into the
+    // main queue and get the original queue, but filtered of references
+    // to this dying window.
+    while (!filtered_reversed.empty()) {
+        impl_->event_queue_.push(filtered_reversed.front());
+        filtered_reversed.pop();
+    }
+    // Requiem aeternam dona ei. Requiscat in pace.
+    delete (BitmapWindow *)w;
+}
 
 void BitmapWindowSystem::PostRedrawEvent(OSWindow w) {
     auto hw = (BitmapWindow *)w;
@@ -235,6 +259,8 @@ float BitmapWindowSystem::GetWindowScaleFactor(OSWindow w) const {
     return 1.0f;
 }
 
+float BitmapWindowSystem::GetUIScaleFactor(OSWindow w) const { return 1.0f; }
+
 void BitmapWindowSystem::SetWindowTitle(OSWindow w, const char *title) {}
 
 Point BitmapWindowSystem::GetMousePosInWindow(OSWindow w) const {
@@ -263,8 +289,7 @@ rendering::FilamentRenderer *BitmapWindowSystem::CreateRenderer(OSWindow w) {
         auto size = this->GetWindowSizePixels(w);
         Window *window = ((BitmapWindow *)w)->o3d_window;
 
-        auto on_pixels = [this,
-                          window](std::shared_ptr<geometry::Image> image) {
+        auto on_pixels = [this, window](std::shared_ptr<core::Tensor> image) {
             if (this->impl_->on_draw_) {
                 this->impl_->on_draw_(window, image);
             }

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,8 @@
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
@@ -149,25 +149,25 @@ static core::Dtype GetDtype(e_ply_type type) {
     // datatypes are not included.
 
     if (type == PLY_UINT8) {
-        return core::Dtype::UInt8;
+        return core::UInt8;
     } else if (type == PLY_UINT16) {
-        return core::Dtype::UInt16;
+        return core::UInt16;
     } else if (type == PLY_INT32) {
-        return core::Dtype::Int32;
+        return core::Int32;
     } else if (type == PLY_FLOAT32) {
-        return core::Dtype::Float32;
+        return core::Float32;
     } else if (type == PLY_FLOAT64) {
-        return core::Dtype::Float64;
+        return core::Float64;
     } else if (type == PLY_UCHAR) {
-        return core::Dtype::UInt8;
+        return core::UInt8;
     } else if (type == PLY_INT) {
-        return core::Dtype::Int32;
+        return core::Int32;
     } else if (type == PLY_FLOAT) {
-        return core::Dtype::Float32;
+        return core::Float32;
     } else if (type == PLY_DOUBLE) {
-        return core::Dtype::Float64;
+        return core::Float64;
     } else {
-        return core::Dtype::Undefined;
+        return core::Undefined;
     }
 }
 
@@ -214,7 +214,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         const char *name;
         ply_get_property_info(attribute, &name, &type, nullptr, nullptr);
 
-        if (GetDtype(type) == core::Dtype::Undefined) {
+        if (GetDtype(type) == core::Undefined) {
             utility::LogWarning(
                     "Read PLY warning: skipping property \"{}\", unsupported "
                     "datatype \"{}\".",
@@ -308,21 +308,21 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 }
 
 static e_ply_type GetPlyType(const core::Dtype &dtype) {
-    if (dtype == core::Dtype::UInt8) {
+    if (dtype == core::UInt8) {
         return PLY_UINT8;
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         return PLY_UINT16;
-    } else if (dtype == core::Dtype::Int32) {
+    } else if (dtype == core::Int32) {
         return PLY_INT32;
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         return PLY_FLOAT32;
-    } else if (dtype == core::Dtype::Float64) {
+    } else if (dtype == core::Float64) {
         return PLY_FLOAT64;
-    } else if (dtype == core::Dtype::UInt8) {
+    } else if (dtype == core::UInt8) {
         return PLY_UCHAR;
-    } else if (dtype == core::Dtype::Int32) {
+    } else if (dtype == core::Int32) {
         return PLY_INT32;
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         return PLY_FLOAT;
     } else {
         return PLY_DOUBLE;

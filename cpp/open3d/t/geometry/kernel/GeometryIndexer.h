@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +28,11 @@
 
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -42,26 +44,35 @@ class TransformIndexer {
 public:
     /// intrinsic: simple pinhole camera matrix, stored in fx, fy, cx, cy
     /// extrinsic: world to camera transform, stored in a 3x4 matrix
-    TransformIndexer(const core::Tensor& intrinsic,
-                     const core::Tensor& extrinsic = core::Tensor::Eye(
-                             4, core::Dtype::Float32, core::Device("CPU:0")),
+    TransformIndexer(const core::Tensor& intrinsics,
+                     const core::Tensor& extrinsics,
                      float scale = 1.0f) {
-        intrinsic.AssertShape({3, 3});
-        extrinsic.AssertShape({4, 4});
-        intrinsic.AssertDtype(core::Dtype::Float32);
-        extrinsic.AssertDtype(core::Dtype::Float32);
+        intrinsics.AssertShape({3, 3});
+        intrinsics.AssertDtype(core::Float64);
+        intrinsics.AssertDevice(core::Device("CPU:0"));
+        if (!intrinsics.IsContiguous()) {
+            utility::LogError("Intrinsics is not contiguous");
+        }
 
+        extrinsics.AssertShape({4, 4});
+        extrinsics.AssertDtype(core::Float64);
+        extrinsics.AssertDevice(core::Device("CPU:0"));
+        if (!extrinsics.IsContiguous()) {
+            utility::LogError("Extrinsics is not contiguous");
+        }
+
+        const double* intrinsic_ptr = intrinsics.GetDataPtr<double>();
+        const double* extrinsic_ptr = extrinsics.GetDataPtr<double>();
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 4; ++j) {
-                extrinsic_[i][j] = extrinsic[i][j].Item<float>();
+                extrinsic_[i][j] = extrinsic_ptr[i * 4 + j];
             }
         }
 
-        fx_ = intrinsic[0][0].Item<float>();
-        fy_ = intrinsic[1][1].Item<float>();
-        cx_ = intrinsic[0][2].Item<float>();
-        cy_ = intrinsic[1][2].Item<float>();
-
+        fx_ = intrinsic_ptr[0 * 3 + 0];
+        fy_ = intrinsic_ptr[1 * 3 + 1];
+        cx_ = intrinsic_ptr[0 * 3 + 2];
+        cy_ = intrinsic_ptr[1 * 3 + 2];
         scale_ = scale;
     }
 
@@ -82,6 +93,25 @@ public:
                  z_in * extrinsic_[1][2] + extrinsic_[1][3];
         *z_out = x_in * extrinsic_[2][0] + y_in * extrinsic_[2][1] +
                  z_in * extrinsic_[2][2] + extrinsic_[2][3];
+    }
+
+    /// Transform a 3D coordinate in camera coordinate to world coordinate
+    OPEN3D_HOST_DEVICE void Rotate(float x_in,
+                                   float y_in,
+                                   float z_in,
+                                   float* x_out,
+                                   float* y_out,
+                                   float* z_out) const {
+        x_in *= scale_;
+        y_in *= scale_;
+        z_in *= scale_;
+
+        *x_out = x_in * extrinsic_[0][0] + y_in * extrinsic_[0][1] +
+                 z_in * extrinsic_[0][2];
+        *y_out = x_in * extrinsic_[1][0] + y_in * extrinsic_[1][1] +
+                 z_in * extrinsic_[1][2];
+        *z_out = x_in * extrinsic_[2][0] + y_in * extrinsic_[2][1] +
+                 z_in * extrinsic_[2][2];
     }
 
     /// Project a 3D coordinate in camera coordinate to a 2D uv coordinate
@@ -105,6 +135,11 @@ public:
         *x_out = (u_in - cx_) * d_in / fx_;
         *y_out = (v_in - cy_) * d_in / fy_;
         *z_out = d_in;
+    }
+
+    OPEN3D_HOST_DEVICE void GetFocalLength(float* fx, float* fy) const {
+        *fx = fx_;
+        *fy = fy_;
     }
 
 private:
@@ -150,10 +185,9 @@ public:
         int64_t n = ndarray.NumDims();
         if (active_dims > MAX_RESOLUTION_DIMS || active_dims > n) {
             utility::LogError(
-                    "[NDArrayIndexer] Tensor shape too large, only <= {} "
-                    "is "
-                    "supported, but received {}.",
-                    MAX_RESOLUTION_DIMS, active_dims);
+                    "[NDArrayIndexer] Tensor shape too large, only <= {} and "
+                    "<= {} array dim is supported, but received {}.",
+                    MAX_RESOLUTION_DIMS, n, active_dims);
         }
 
         // Leading dimensions are coordinates
@@ -165,6 +199,11 @@ public:
         element_byte_size_ = ndarray.GetDtype().ByteSize();
         for (int64_t i = active_dims_; i < n; ++i) {
             element_byte_size_ *= shape[i];
+        }
+
+        // Fill-in rest to make compiler happy, not actually used.
+        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+            shape_[i] = 0;
         }
         ptr_ = const_cast<void*>(ndarray.GetDataPtr());
     }
@@ -181,6 +220,11 @@ public:
         active_dims_ = n;
         for (int64_t i = 0; i < active_dims_; ++i) {
             shape_[i] = shape[i];
+        }
+
+        // Fill-in rest to make compiler happy, not actually used.
+        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+            shape_[i] = 0;
         }
 
         // Reserved
@@ -278,14 +322,13 @@ public:
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x) const {
         return static_cast<T*>(static_cast<void*>(static_cast<uint8_t*>(ptr_) +
                                                   x * element_byte_size_));
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
-                                                     int64_t y) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x, int64_t y) const {
         int64_t workload;
         CoordToWorkload(x, y, &workload);
         return static_cast<T*>(static_cast<void*>(
@@ -293,9 +336,9 @@ public:
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
-                                                     int64_t y,
-                                                     int64_t z) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
+                                            int64_t y,
+                                            int64_t z) const {
         int64_t workload;
         CoordToWorkload(x, y, z, &workload);
         return static_cast<T*>(static_cast<void*>(
@@ -303,10 +346,10 @@ public:
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtrFromCoord(int64_t x,
-                                                     int64_t y,
-                                                     int64_t z,
-                                                     int64_t t) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
+                                            int64_t y,
+                                            int64_t z,
+                                            int64_t t) const {
         int64_t workload;
         CoordToWorkload(x, y, z, t, &workload);
         return static_cast<T*>(static_cast<void*>(

@@ -16,59 +16,60 @@
 
 if(NOT Pytorch_FOUND)
     # Searching for pytorch requires the python executable
-    find_package(PythonExecutable REQUIRED)
+    if (NOT Python3_EXECUTABLE)
+        message(FATAL_ERROR "Python 3 not found in top level file")
+    endif()
 
     message(STATUS "Getting PyTorch properties ...")
 
-    # Get Pytorch_VERSION
+    set(PyTorch_FETCH_PROPERTIES
+        "import os"
+        "import torch"
+        "print(torch.__version__, end=';')"
+        "print(os.path.dirname(torch.__file__), end=';')"
+        "print(torch._C._GLIBCXX_USE_CXX11_ABI, end=';')"
+    )
     execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} "-c"
-                "import torch; print(torch.__version__, end='')"
-        OUTPUT_VARIABLE Pytorch_VERSION)
+        COMMAND ${Python3_EXECUTABLE} "-c" "${PyTorch_FETCH_PROPERTIES}"
+        OUTPUT_VARIABLE PyTorch_PROPERTIES
+    )
 
-    # Get Pytorch_ROOT
-    execute_process(
-        COMMAND
-            ${PYTHON_EXECUTABLE} "-c"
-            "import os; import torch; print(os.path.dirname(torch.__file__), end='')"
-        OUTPUT_VARIABLE Pytorch_ROOT)
+    list(GET PyTorch_PROPERTIES 0 Pytorch_VERSION)
+    list(GET PyTorch_PROPERTIES 1 Pytorch_ROOT)
+    list(GET PyTorch_PROPERTIES 2 Pytorch_CXX11_ABI)
+
+    unset(PyTorch_FETCH_PROPERTIES)
+    unset(PyTorch_PROPERTIES)
 
     # Use the cmake config provided by torch
-    find_package(Torch REQUIRED PATHS "${Pytorch_ROOT}/share/cmake/Torch"
+    find_package(Torch REQUIRED PATHS "${Pytorch_ROOT}"
                  NO_DEFAULT_PATH)
 
-    # Note: older versions of PyTorch have hard-coded cuda library paths, see:
-    # https://github.com/pytorch/pytorch/issues/15476.
-    # This issue has been addressed but we observed for the conda packages for
-    # PyTorch 1.2.0 and 1.4.0 that there are still hardcoded paths in
-    #  ${TORCH_ROOT}/share/cmake/Caffe2/Caffe2Targets.cmake
-    # Try to fix those here
-    get_target_property( iface_link_libs torch INTERFACE_LINK_LIBRARIES )
-    string( REPLACE "/usr/local/cuda" "${CUDA_TOOLKIT_ROOT_DIR}" iface_link_libs "${iface_link_libs}" )
-    set_target_properties( torch PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
-    if( TARGET torch_cuda )
-        get_target_property( iface_link_libs torch_cuda INTERFACE_LINK_LIBRARIES )
-        string( REPLACE "/usr/local/cuda" "${CUDA_TOOLKIT_ROOT_DIR}" iface_link_libs "${iface_link_libs}" )
-        set_target_properties( torch_cuda PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
-    endif()
-    # if successful everything works :)
-    # if unsuccessful CMake will complain that there are no rules to make the targets with the hardcoded paths
+    if(BUILD_CUDA_MODULE)
+        # Note: older versions of PyTorch have hard-coded cuda library paths, see:
+        # https://github.com/pytorch/pytorch/issues/15476.
+        # This issue has been addressed but we observed for the conda packages for
+        # PyTorch 1.2.0 and 1.4.0 that there are still hardcoded paths in
+        #  ${TORCH_ROOT}/share/cmake/Caffe2/Caffe2Targets.cmake
+        # Try to fix those here
+        find_package(CUDAToolkit REQUIRED)
+        get_target_property( iface_link_libs torch INTERFACE_LINK_LIBRARIES )
+        string( REPLACE "/usr/local/cuda" "${CUDAToolkit_LIBRARY_ROOT}" iface_link_libs "${iface_link_libs}" )
+        set_target_properties( torch PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
+        if( TARGET torch_cuda )
+            get_target_property( iface_link_libs torch_cuda INTERFACE_LINK_LIBRARIES )
+            string( REPLACE "/usr/local/cuda" "${CUDAToolkit_LIBRARY_ROOT}" iface_link_libs "${iface_link_libs}" )
+            set_target_properties( torch_cuda PROPERTIES INTERFACE_LINK_LIBRARIES "${iface_link_libs}" )
+        endif()
+        # if successful everything works :)
+        # if unsuccessful CMake will complain that there are no rules to make the targets with the hardcoded paths
 
-    if( BUILD_CUDA_MODULE )
         # remove flags that nvcc does not understand
         get_target_property( iface_compile_options torch INTERFACE_COMPILE_OPTIONS )
         set_target_properties( torch PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
         set_target_properties( torch_cuda PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
         set_target_properties( torch_cpu PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
     endif()
-
-    # Get Pytorch_CXX11_ABI: True/False
-    execute_process(
-        COMMAND
-            ${PYTHON_EXECUTABLE} "-c"
-            "import torch; print(torch._C._GLIBCXX_USE_CXX11_ABI, end='')"
-        OUTPUT_VARIABLE Pytorch_CXX11_ABI
-    )
 endif()
 
 message(STATUS "PyTorch         version: ${Pytorch_VERSION}")

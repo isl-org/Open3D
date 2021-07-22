@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
 #include <unordered_set>
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293 4305)
@@ -73,7 +74,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/PointCloud.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/Light.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/Model.h"
@@ -88,7 +89,7 @@
 namespace {  // avoid polluting global namespace, since only used here
 /// @cond
 
-void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
+static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
     free(buffer);
 }
 
@@ -318,10 +319,18 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         return false;
     }
 
+    // Basic sanity checks
+    if (geometry.IsEmpty()) {
+        utility::LogDebug(
+                "Geometry for object {} is empty. Not adding geometry to scene",
+                object_name);
+        return false;
+    }
+
     auto tris = dynamic_cast<const geometry::TriangleMesh*>(&geometry);
     if (tris && tris->vertex_normals_.empty() &&
         tris->triangle_normals_.empty() &&
-        (material.shader == "defaultUnlit" ||
+        (material.shader == "defaultLit" ||
          material.shader == "defaultLitTransparency")) {
         utility::LogWarning(
                 "Using a shader with lighting but geometry has no normals.");
@@ -404,18 +413,24 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         return false;
     }
     const auto& points = point_cloud.GetPoints();
-    if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
-        utility::LogWarning(
-                "GPU resident tensor point clouds are not supported at this "
-                "time");
-        return false;
-    }
-    if (points.GetDtype() != core::Dtype::Float32) {
+    if (points.GetDtype() != core::Float32) {
         utility::LogWarning("tensor point cloud must have Dtype of Float32");
         return false;
     }
 
-    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(point_cloud);
+    t::geometry::PointCloud cpu_pcloud;
+    std::unique_ptr<GeometryBuffersBuilder> buffer_builder;
+    if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        utility::LogWarning(
+                "GPU resident tensor point clouds are not supported at this "
+                "time for direct visualization. Copying point cloud to CPU.");
+        cpu_pcloud = point_cloud.CPU();
+        buffer_builder = GeometryBuffersBuilder::GetBuilder(cpu_pcloud);
+    } else {
+        cpu_pcloud = point_cloud;
+        buffer_builder = GeometryBuffersBuilder::GetBuilder(point_cloud);
+    }
+
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
@@ -424,7 +439,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    filament::Box aabb = ComputeAABB(point_cloud);
+    filament::Box aabb = ComputeAABB(cpu_pcloud);
     bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
                                               aabb, vb, ib, material);
     if (success && ib_downsampled) {
@@ -552,12 +567,6 @@ bool FilamentScene::HasGeometry(const std::string& object_name) const {
     return (geom_entry != geometries_.end());
 }
 
-static void deallocate_vertex_buffer(void* buffer,
-                                     size_t size,
-                                     void* user_ptr) {
-    free(buffer);
-}
-
 void FilamentScene::UpdateGeometry(const std::string& object_name,
                                    const t::geometry::PointCloud& point_cloud,
                                    uint32_t update_flags) {
@@ -586,26 +595,58 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         }
 
         bool geometry_update_needed = n_vertices != vbuf->getVertexCount();
+        bool pcloud_is_gpu =
+                points.GetDevice().GetType() == core::Device::DeviceType::CUDA;
+        t::geometry::PointCloud cpu_pcloud;
+        if (pcloud_is_gpu) {
+            cpu_pcloud = point_cloud.CPU();
+        }
 
         // Update the each of the attribute requested
         if (update_flags & kUpdatePointsFlag) {
-            filament::VertexBuffer::BufferDescriptor pts_descriptor(
-                    points.GetDataPtr(), n_vertices * 3 * sizeof(float));
-            vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
+            const size_t vertex_array_size = n_vertices * 3 * sizeof(float);
+            if (pcloud_is_gpu) {
+                auto vertex_data =
+                        static_cast<float*>(malloc(vertex_array_size));
+                memcpy(vertex_data, cpu_pcloud.GetPoints().GetDataPtr(),
+                       vertex_array_size);
+                filament::VertexBuffer::BufferDescriptor pts_descriptor(
+                        vertex_data, vertex_array_size, DeallocateBuffer);
+                vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
+            } else {
+                filament::VertexBuffer::BufferDescriptor pts_descriptor(
+                        points.GetDataPtr(), vertex_array_size);
+                vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
+            }
         }
 
         if (update_flags & kUpdateColorsFlag && point_cloud.HasPointColors()) {
             const size_t color_array_size = n_vertices * 3 * sizeof(float);
-            filament::VertexBuffer::BufferDescriptor color_descriptor(
-                    point_cloud.GetPointColors().GetDataPtr(),
-                    color_array_size);
-            vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
+            if (pcloud_is_gpu) {
+                auto color_data = static_cast<float*>(malloc(color_array_size));
+                memcpy(color_data, cpu_pcloud.GetPoints().GetDataPtr(),
+                       color_array_size);
+                filament::VertexBuffer::BufferDescriptor color_descriptor(
+                        color_data, color_array_size, DeallocateBuffer);
+                vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
+            } else {
+                filament::VertexBuffer::BufferDescriptor color_descriptor(
+                        point_cloud.GetPointColors().GetDataPtr(),
+                        color_array_size);
+                vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
+            }
         }
 
         if (update_flags & kUpdateNormalsFlag &&
             point_cloud.HasPointNormals()) {
             const size_t normal_array_size = n_vertices * 4 * sizeof(float);
-            const auto& normals = point_cloud.GetPointNormals();
+            const void* normal_data = nullptr;
+            if (pcloud_is_gpu) {
+                const auto& normals = point_cloud.GetPointNormals();
+                normal_data = normals.GetDataPtr();
+            } else {
+                normal_data = cpu_pcloud.GetPointNormals().GetDataPtr();
+            }
 
             // Converting normals to Filament type - quaternions
             auto float4v_tangents = static_cast<filament::math::quatf*>(
@@ -614,13 +655,13 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                                        .vertexCount(n_vertices)
                                        .normals(reinterpret_cast<
                                                 const filament::math::float3*>(
-                                               normals.GetDataPtr()))
+                                               normal_data))
                                        .build();
             orientation->getQuats(float4v_tangents, n_vertices);
             filament::VertexBuffer::BufferDescriptor normals_descriptor(
-                    float4v_tangents, normal_array_size,
-                    deallocate_vertex_buffer);
+                    float4v_tangents, normal_array_size, DeallocateBuffer);
             vbuf->setBufferAt(engine_, 2, std::move(normals_descriptor));
+            delete orientation;
         }
 
         if (update_flags & kUpdateUv0Flag) {
@@ -874,9 +915,12 @@ void FilamentScene::UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi) {
 }
 
 void FilamentScene::UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi) {
+    float srgb = (geom_mi.properties.sRGB_vertex_color ? 1.f : 0.f);
+
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
             .SetParameter("pointSize", geom_mi.properties.point_size)
+            .SetParameter("srgbColor", srgb)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::Pretty())
             .Finish();
@@ -931,6 +975,7 @@ void FilamentScene::UpdateBackgroundShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
             .SetParameter("aspectRatio", geom_mi.properties.aspect_ratio)
+            .SetParameter("yOrigin", 1.0f)
             .SetTexture("albedo", geom_mi.maps.albedo_map,
                         rendering::TextureSamplerParameters::LinearClamp())
             .Finish();
@@ -1117,7 +1162,7 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
         UpdateLineShader(geom.mat);
     } else if (props.shader == "unlitPolygonOffset") {
         UpdateUnlitPolygonOffsetShader(geom.mat);
-    } else if (props.shader != "") {
+    } else {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
 }
@@ -1617,6 +1662,10 @@ void FilamentScene::ShowSkybox(bool show) {
     }
 }
 
+bool FilamentScene::GetSkyboxVisible() const {
+    return (scene_->getSkybox() != nullptr);
+}
+
 void FilamentScene::CreateBackgroundGeometry() {
     if (!HasGeometry(kBackgroundName)) {
         geometry::TriangleMesh quad;
@@ -1652,18 +1701,48 @@ void FilamentScene::SetBackground(
         const std::shared_ptr<geometry::Image> image) {
     // Make sure background geometry exists
     CreateBackgroundGeometry();
+
+    std::shared_ptr<geometry::Image> new_image;
+    if (image && image->width_ != 0 && image->height_ != 0) {
+        new_image = image;
+    }
+
     Material m;
     m.shader = "unlitBackground";
     m.base_color = color;
-    if (image) {
-        m.albedo_img = image;
-        m.aspect_ratio = static_cast<float>(image->width_) /
-                         static_cast<float>(image->height_);
+    if (new_image) {
+        m.albedo_img = new_image;
+        m.aspect_ratio = static_cast<float>(new_image->width_) /
+                         static_cast<float>(new_image->height_);
+        // See if we can replace the image data instead of re-creating the
+        // whole texture. We need to make sure that both old and new images
+        // actually exist, first. (The texture may exist, so we can't query it)
+        if (new_image && background_image_) {
+            auto geom_it = geometries_.find(kBackgroundName);
+            if (geom_it != geometries_.end()) {
+                // Try updating the texture. If the sizes are incorrect, this
+                // will fail.
+                if (resource_mgr_.UpdateTexture(
+                            geom_it->second.mat.maps.albedo_map, new_image,
+                            false /*not sRGB*/)) {
+                    return;
+                }
+            }
+        }
     } else {
         m.albedo_img = nullptr;
         m.aspect_ratio = 0.0;
     }
+    auto geom_it = geometries_.find(kBackgroundName);
+    if (geom_it != geometries_.end()) {
+        if (geom_it->second.mat.maps.albedo_map) {
+            resource_mgr_.Destroy(geom_it->second.mat.maps.albedo_map);
+            geom_it->second.mat.maps.albedo_map =
+                    FilamentResourceManager::kDefaultTexture;
+        }
+    }
     OverrideMaterial(kBackgroundName, m);
+    background_image_ = new_image;
 }
 
 void FilamentScene::SetBackground(TextureHandle image) {
@@ -1681,6 +1760,7 @@ void FilamentScene::SetBackground(TextureHandle image) {
 
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetParameter("aspectRatio", aspect)
+            .SetParameter("yOrigin", 0.0f)
             .SetTexture("albedo", image,
                         rendering::TextureSamplerParameters::LinearClamp())
             .Finish();
@@ -1754,6 +1834,12 @@ void FilamentScene::RenderToImage(
         std::function<void(std::shared_ptr<geometry::Image>)> callback) {
     auto view = views_.begin()->second.view.get();
     renderer_.RenderToImage(view, this, callback);
+}
+
+void FilamentScene::RenderToDepthImage(
+        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
+    auto view = views_.begin()->second.view.get();
+    renderer_.RenderToDepthImage(view, this, callback);
 }
 
 std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(

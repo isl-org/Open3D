@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
 #include "open3d/io/rpc/MessageUtils.h"
+#include "open3d/io/rpc/ZMQContext.h"
 #include "tests/UnitTest.h"
 
 using namespace open3d::io::rpc;
@@ -47,7 +48,12 @@ const std::string connection_address = "tcp://127.0.0.1:51454";
 const std::string connection_address = "ipc:///tmp/open3d_ipc";
 #endif
 
-TEST(RemoteFunctions, SendReceiveUnpackMessages) {
+class RemoteFunctions : public testing::Test {
+public:
+    virtual void TearDown() { DestroyZMQContext(); }
+};
+
+TEST_F(RemoteFunctions, SendReceiveUnpackMessages) {
     {
         // start receiver
         DummyReceiver receiver(connection_address, 500);
@@ -147,7 +153,7 @@ TEST(RemoteFunctions, SendReceiveUnpackMessages) {
     }
 }
 
-TEST(RemoteFunctions, SendGarbage) {
+TEST_F(RemoteFunctions, SendGarbage) {
     std::mt19937 rng;
     rng.seed(123);
 

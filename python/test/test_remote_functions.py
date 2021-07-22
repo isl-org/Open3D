@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,9 +29,6 @@ import open3d as o3d
 import numpy as np
 import pytest
 
-# skip all tests if the RPC interface was not built
-pytestmark = pytest.mark.skipif(not o3d._build_config['BUILD_RPC_INTERFACE'],
-                                reason='rpc interface not built.')
 if os.name == 'nt':
     address = 'tcp://127.0.0.1:51455'
 else:

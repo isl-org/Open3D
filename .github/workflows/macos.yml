@@ -15,7 +15,8 @@ on:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
 env:
-  NPROC: 2
+  # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+  NPROC: 3
 
 jobs:
   MacOS:
@@ -30,7 +31,6 @@ jobs:
       BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
       BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
       LOW_MEM_USAGE: ON
-      BUILD_RPC_INTERFACE: ON
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -76,7 +76,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -84,6 +84,8 @@ jobs:
             python_version: 3.7
           - is_master: false
             python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     env:
       BUILD_CUDA_MODULE: OFF
@@ -186,7 +188,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -194,6 +196,8 @@ jobs:
             python_version: 3.7
           - is_master: false
             python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML

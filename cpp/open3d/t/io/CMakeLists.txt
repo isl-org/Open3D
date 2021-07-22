@@ -1,36 +1,33 @@
-set(FILE_IO_SRC
-    PointCloudIO.cpp
+add_library(tio OBJECT)
+
+target_sources(tio PRIVATE
     ImageIO.cpp
-    file_format/FileXYZI.cpp
-    file_format/FilePLY.cpp
+    NumpyIO.cpp
+    PointCloudIO.cpp
+    TriangleMeshIO.cpp
+)
+
+target_sources(tio PRIVATE
     file_format/FileJPG.cpp
+    file_format/FilePLY.cpp
     file_format/FilePNG.cpp
-    )
+    file_format/FilePTS.cpp
+    file_format/FileXYZI.cpp
+)
 
-set(SENSOR_IO_SRC
-    sensor/RGBDVideoReader.cpp
+target_sources(tio PRIVATE
     sensor/RGBDVideoMetadata.cpp
-    )
+    sensor/RGBDVideoReader.cpp
+)
 
-set(IO_DEFINITIONS "")
 if (BUILD_LIBREALSENSE)
-    set(REALSENSE_SRC
-        sensor/realsense/RSBagReader.cpp
+    target_sources(tio PRIVATE
         sensor/realsense/RealSenseSensor.cpp
         sensor/realsense/RealSenseSensorConfig.cpp
-        )
-    list(APPEND IO_DEFINITIONS BUILD_LIBREALSENSE)
-endif ()
-
-# Create object library
-add_library(tio OBJECT
-    ${FILE_IO_SRC}
-    ${RPLY_SOURCE_FILES}
-    ${LIBLZF_SOURCE_FILES}
-    ${SENSOR_IO_SRC}
-    ${REALSENSE_SRC}
+        sensor/realsense/RSBagReader.cpp
     )
-target_compile_definitions(tio PRIVATE ${IO_DEFINITIONS})
+endif()
+
 open3d_show_and_abort_on_warning(tio)
 open3d_set_global_properties(tio)
 open3d_set_open3d_lib_properties(tio)

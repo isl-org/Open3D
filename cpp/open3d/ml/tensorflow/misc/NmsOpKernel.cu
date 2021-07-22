@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,9 +47,9 @@ public:
         int64_t* ret_keep_indices = nullptr;
         output_allocator.AllocKeepIndices(&ret_keep_indices,
                                           keep_indices.size());
-        OPEN3D_ML_CUDA_CHECK(cudaMemcpy(ret_keep_indices, keep_indices.data(),
-                                        keep_indices.size() * sizeof(int64_t),
-                                        cudaMemcpyHostToDevice));
+        OPEN3D_CUDA_CHECK(cudaMemcpy(ret_keep_indices, keep_indices.data(),
+                                     keep_indices.size() * sizeof(int64_t),
+                                     cudaMemcpyHostToDevice));
     }
 };
 

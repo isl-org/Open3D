@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,9 @@
 
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/PointCloudIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
 
 // References for PCD file IO
@@ -140,8 +140,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
         if (line == "") {
             continue;
         }
-        std::vector<std::string> st;
-        utility::SplitString(st, line, "\t\r\n ");
+        std::vector<std::string> st = utility::SplitString(line, "\t\r\n ");
         std::stringstream sstream(line);
         sstream.imbue(std::locale::classic());
         std::string line_type;
@@ -360,8 +359,8 @@ bool ReadPCDData(FILE *file,
         while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file) &&
                idx < header.points) {
             std::string line(line_buffer);
-            std::vector<std::string> strs;
-            utility::SplitString(strs, line, "\t\r\n ");
+            std::vector<std::string> strs =
+                    utility::SplitString(line, "\t\r\n ");
             if ((int)strs.size() < header.elementnum) {
                 continue;
             }

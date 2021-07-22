@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,9 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TetraMesh.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 
@@ -316,7 +317,8 @@ void PointCloud::EstimateNormals(
     } else {
         covariances = covariances_;
     }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)covariances.size(); i++) {
         auto normal = ComputeNormal(covariances[i], fast_normal_computation);
         if (normal.norm() == 0.0) {
@@ -341,7 +343,8 @@ void PointCloud::OrientNormalsToAlignWithDirection(
                 "[OrientNormalsToAlignWithDirection] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         auto &normal = normals_[i];
         if (normal.norm() == 0.0) {
@@ -359,7 +362,8 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
                 "[OrientNormalsTowardsCameraLocation] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         Eigen::Vector3d orientation_reference = camera_location - points_[i];
         auto &normal = normals_[i];
@@ -456,7 +460,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
     // find start node for tree traversal
     // init with node that maximizes z
     double max_z = std::numeric_limits<double>::lowest();
-    size_t v0;
+    size_t v0 = 0;
     for (size_t vidx = 0; vidx < points_.size(); ++vidx) {
         const Eigen::Vector3d &v = points_[vidx];
         if (v(2) > max_z) {

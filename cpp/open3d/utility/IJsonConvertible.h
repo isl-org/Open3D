@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,19 @@ class Value;
 
 namespace open3d {
 namespace utility {
+
+/// \brief Parse string and conver to Json::value. Throws exception if the
+/// conversion is invalid.
+///
+/// \param json_str String containing json value.
+/// \return A Json object.
+Json::Value StringToJson(const std::string &json_str);
+
+/// \brief Serialize a Json::Value to a string.
+///
+/// \param json The Json::Value object to be converted.
+/// \return A string containing the json value.
+std::string JsonToString(const Json::Value json);
 
 /// Class IJsonConvertible defines the behavior of a class that can convert
 /// itself to/from a json::Value.

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ namespace {
 
 template <class T>
 inline void hash_combine(std::size_t& seed, T const& v) {
-    seed ^= hash_tuple<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
@@ -106,10 +106,9 @@ struct hash_enum_class {
 
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
-void SplitString(std::vector<std::string>& tokens,
-                 const std::string& str,
-                 const std::string& delimiters = " ",
-                 bool trim_empty_str = true);
+std::vector<std::string> SplitString(const std::string& str,
+                                     const std::string& delimiters = " ",
+                                     bool trim_empty_str = true);
 
 /// String util: find length of current word staring from a position
 /// By default, alpha numeric chars and chars in valid_chars are considered
@@ -167,6 +166,9 @@ T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
     int n = UniformRandInt(0, p - 1);
     return static_cast<T>(1. / p * n);
 }
+
+/// Returns current time stamp.
+std::string GetCurrentTimeStamp();
 
 }  // namespace utility
 }  // namespace open3d

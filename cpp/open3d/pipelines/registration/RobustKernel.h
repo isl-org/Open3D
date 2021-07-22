@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,17 +43,17 @@ namespace registration {
 ///
 /// The kernels implemented so far and the notation has been inspired by the
 /// publication: "Analysis of Robust Functions for Registration Algorithms",
-/// Philippe Babin etal.
+/// Philippe Babin et al.
 ///
 /// We obtain the correspondendent weights for each residual and turn the
-/// non-linear least-square problem into a IRSL(Iteratively Reweighted
+/// non-linear least-square problem into a IRSL (Iteratively Reweighted
 /// Least-Squares) problem. Changing the weight of each residual is equivalent
 /// to changing the robust kernel used for outlier rejection.
 ///
 /// The different loss functions will only impact in the weight for each
 /// residual during the optimization step. For more information please see also:
 /// “Adaptive Robust Kernels for Non-Linear Least Squares Problems”, N.
-/// Chebrolu etal.
+/// Chebrolu et al.
 /// The weight w(r) for a given residual `r` and a given loss function `p(r)` is
 /// computed as follow:
 ///     w(r) = (1 / r) * (dp(r) / dr) , for all r
@@ -67,7 +67,7 @@ public:
     /// the different robust kernels.
     ///
     /// \param residual Residual value obtained during the optimization step.
-    virtual double Weight(double /*residual*/) const = 0;
+    virtual double Weight(double residual) const = 0;
 };
 
 /// \class L2Loss

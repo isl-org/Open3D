@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,7 @@
 
 #include "open3d/core/nns/NearestNeighborSearch.h"
 
-#include "open3d/core/CoreUtil.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -159,7 +158,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
     return nanoflann_index_->SearchRadius(query_points, radii);
 }
 
-std::pair<Tensor, Tensor> NearestNeighborSearch::HybridSearch(
+std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         const Tensor& query_points, double radius, int max_knn) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {

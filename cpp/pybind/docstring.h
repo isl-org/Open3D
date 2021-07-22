@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -82,50 +82,60 @@ class FunctionDoc {
 public:
     FunctionDoc(const std::string& pybind_doc);
 
-    /// Generate Google style python docstring
+    /// Generate Google style python docstring.
     std::string ToGoogleDocString() const;
 
     /// Apply fixes to namespace, e.g. "::" to "." for python
     static std::string NamespaceFix(const std::string& s);
 
 protected:
-    /// Parse the function name from docstring
-    void ParseFunctionName();
+    /// Parse the function name from docstring.
+    ///
+    /// \returns Position in docstring after the name or after the string
+    /// "Overloaded function.", if it exists.
+    size_t ParseFunctionName();
 
-    /// Parse the function "summary" docstring received from pybind
-    void ParseSummary();
+    /// Parse the function "summary" docstring received from pybind.
+    ///
+    /// \returns Position in docstring at the end of the summary. Used to set
+    /// limits for parsing the current overload.
+    size_t ParseSummary();
 
-    /// Parse ArgumentDoc for each argument
+    /// Parse ArgumentDoc for each argument.
     void ParseArguments();
 
-    /// Parse function return
+    /// Parse function return.
     void ParseReturn();
 
-    /// Split docstring to argument tokens
+    /// Split docstring to argument tokens.
     /// E.g. "cylinder_radius: float = 1.0", "cylinder_radius: float"
     static std::vector<std::string> GetArgumentTokens(
             const std::string& pybind_doc);
 
-    /// Parse individual argument token and returns a ArgumentDoc
+    /// Parse individual argument token and returns a ArgumentDoc.
     static ArgumentDoc ParseArgumentToken(const std::string& argument_token);
 
-    /// Runs all string cleanup functions
+    /// Runs all string cleanup functions.
     static std::string StringCleanAll(std::string& s,
                                       const std::string& white_space = " \t\n");
 
 public:
+    struct OverloadDocs {
+        std::vector<ArgumentDoc> argument_docs_;
+        ArgumentDoc return_doc_;
+        std::string summary_ = "";
+    };
     std::string name_ = "";
-    std::vector<ArgumentDoc> argument_docs_;
-    ArgumentDoc return_doc_;
-    std::string summary_ = "";
-    std::string body_ = "";
+    std::string preamble_ = "";
+    std::vector<OverloadDocs> overload_docs_;
 
 protected:
     std::string pybind_doc_ = "";
+    size_t doc_pos_[2] = {0, std::string::npos};
 };
 
 /// Parse pybind docstring to FunctionDoc and inject argument docstrings for
-/// functions
+/// functions.
 void FunctionDocInject(
         py::module& pybind_module,
         const std::string& function_name,
@@ -133,15 +143,14 @@ void FunctionDocInject(
                 std::unordered_map<std::string, std::string>());
 
 /// Parse pybind docstring to FunctionDoc and inject argument docstrings for
-/// class methods
+/// class methods.
 void ClassMethodDocInject(
         py::module& pybind_module,
         const std::string& class_name,
         const std::string& function_name,
         const std::unordered_map<std::string, std::string>&
                 map_parameter_body_docs =
-                        std::unordered_map<std::string, std::string>(),
-        bool skip_init = true);
+                        std::unordered_map<std::string, std::string>());
 
 extern py::handle static_property;
 

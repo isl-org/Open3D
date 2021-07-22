@@ -1,4 +1,4 @@
-macro(APP SRC_DIR APP_NAME TARGET_NAME)
+macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     set(APPS_DIR "${PROJECT_SOURCE_DIR}/cpp/apps")
     set(SOURCE_DIR "${APPS_DIR}/${SRC_DIR}")
 
@@ -22,7 +22,7 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
         set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (C) 2020 by Open3D")
+        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2021 www.open3d.org")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
         set_target_properties(${TARGET_NAME} PROPERTIES
                               MACOSX_BUNDLE TRUE
@@ -43,12 +43,8 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
                               OUTPUT_NAME ${APP_NAME}
                              )
     endif()
-    add_dependencies(${TARGET_NAME} GuiResources)
 
-    set(DEPENDENCIES "${ARGN}")
-    foreach(DEPENDENCY IN LISTS DEPENDENCIES)
-        target_link_libraries(${TARGET_NAME} PRIVATE ${DEPENDENCY})
-    endforeach()
+    target_link_libraries(${TARGET_NAME} PRIVATE Open3D::Open3D ${ARGN})
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     open3d_show_and_abort_on_warning(${TARGET_NAME})
@@ -120,8 +116,8 @@ macro(APP SRC_DIR APP_NAME TARGET_NAME)
                     USE_SOURCE_PERMISSIONS)
         endif()
     endif()
-endmacro(APP)
+endmacro()
 
 if (BUILD_GUI)
-    APP(Open3DViewer Open3D Open3DViewer ${CMAKE_PROJECT_NAME})
+    open3d_add_app(Open3DViewer Open3D Open3DViewer)
 endif()

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/LineSetIO.h"
 #include "open3d/io/ModelIO.h"
+#include "open3d/io/OctreeIO.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/PoseGraphIO.h"
@@ -89,6 +90,7 @@ static const std::unordered_map<std::string, std::string>
                 {"line_set", "The ``LineSet`` object for I/O"},
                 {"image", "The ``Image`` object for I/O"},
                 {"voxel_grid", "The ``VoxelGrid`` object for I/O"},
+                {"octree", "The ``Octree`` object for I/O"},
                 {"trajectory",
                  "The ``PinholeCameraTrajectory`` object for I/O"},
                 {"intrinsic", "The ``PinholeCameraIntrinsic`` object for I/O"},
@@ -215,8 +217,10 @@ void pybind_class_io(py::module &m_io) {
                bool print_progress) {
                 py::gil_scoped_release release;
                 geometry::TriangleMesh mesh;
-                ReadTriangleMesh(filename, mesh, enable_post_processing,
-                                 print_progress);
+                ReadTriangleMeshOptions opt;
+                opt.enable_post_processing = enable_post_processing;
+                opt.print_progress = print_progress;
+                ReadTriangleMesh(filename, mesh, opt);
                 return mesh;
             },
             "Function to read TriangleMesh from file", "filename"_a,
@@ -249,7 +253,9 @@ void pybind_class_io(py::module &m_io) {
             [](const std::string &filename, bool print_progress) {
                 py::gil_scoped_release release;
                 visualization::rendering::TriangleMeshModel model;
-                ReadTriangleModel(filename, model, print_progress);
+                ReadTriangleModelOptions opt;
+                opt.print_progress = print_progress;
+                ReadTriangleModel(filename, model, opt);
                 return model;
             },
             "Function to read visualization.rendering.TriangleMeshModel from "
@@ -286,6 +292,30 @@ void pybind_class_io(py::module &m_io) {
             "write_ascii"_a = false, "compressed"_a = false,
             "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_voxel_grid",
+                                 map_shared_argument_docstrings);
+
+    // open3d::geometry::Octree
+    m_io.def(
+            "read_octree",
+            [](const std::string &filename, const std::string &format) {
+                py::gil_scoped_release release;
+                geometry::Octree octree;
+                ReadOctree(filename, octree, format);
+                return octree;
+            },
+            "Function to read Octree from file", "filename"_a,
+            "format"_a = "auto");
+    docstring::FunctionDocInject(m_io, "read_octree",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "write_octree",
+            [](const std::string &filename, const geometry::Octree &octree) {
+                py::gil_scoped_release release;
+                return WriteOctree(filename, octree);
+            },
+            "Function to write Octree to file", "filename"_a, "octree"_a);
+    docstring::FunctionDocInject(m_io, "write_octree",
                                  map_shared_argument_docstrings);
 
     // open3d::camera

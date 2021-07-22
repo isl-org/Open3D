@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,15 +27,15 @@
 #pragma once
 
 #include "open3d/core/Dtype.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 /// Call a numerical templated function based on Dtype. Warp the function to
 /// a lambda function to use DISPATCH_DTYPE_TO_TEMPLATE.
 ///
 /// Before:
-///     if (dtype == Dtype::Float32) {
+///     if (dtype == core::Float32) {
 ///         func<float>(args);
-///     } else if (dtype == Dtype::Float64) {
+///     } else if (dtype == core::Float64) {
 ///         func<double>(args);
 ///     } else ...
 ///
@@ -46,40 +46,62 @@
 ///
 /// Inspired by:
 ///     https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/Dispatch.h
-#define DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, ...)              \
-    [&] {                                                   \
-        if (DTYPE == open3d::core::Dtype::Float32) {        \
-            using scalar_t = float;                         \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::Float64) { \
-            using scalar_t = double;                        \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::Int16) {   \
-            using scalar_t = int16_t;                       \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::Int32) {   \
-            using scalar_t = int32_t;                       \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::Int64) {   \
-            using scalar_t = int64_t;                       \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::UInt8) {   \
-            using scalar_t = uint8_t;                       \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::UInt16) {  \
-            using scalar_t = uint16_t;                      \
-            return __VA_ARGS__();                           \
-        } else {                                            \
-            utility::LogError("Unsupported data type.");    \
-        }                                                   \
+#define DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, ...)           \
+    [&] {                                                \
+        if (DTYPE == open3d::core::Float32) {            \
+            using scalar_t = float;                      \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Float64) {     \
+            using scalar_t = double;                     \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Int8) {        \
+            using scalar_t = int8_t;                     \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Int16) {       \
+            using scalar_t = int16_t;                    \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Int32) {       \
+            using scalar_t = int32_t;                    \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Int64) {       \
+            using scalar_t = int64_t;                    \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::UInt8) {       \
+            using scalar_t = uint8_t;                    \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::UInt16) {      \
+            using scalar_t = uint16_t;                   \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::UInt32) {      \
+            using scalar_t = uint32_t;                   \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::UInt64) {      \
+            using scalar_t = uint64_t;                   \
+            return __VA_ARGS__();                        \
+        } else {                                         \
+            utility::LogError("Unsupported data type."); \
+        }                                                \
     }()
 
 #define DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(DTYPE, ...)    \
     [&] {                                                   \
-        if (DTYPE == open3d::core::Dtype::Bool) {           \
+        if (DTYPE == open3d::core::Bool) {                  \
             using scalar_t = bool;                          \
             return __VA_ARGS__();                           \
         } else {                                            \
             DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, __VA_ARGS__); \
         }                                                   \
+    }()
+
+#define DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(DTYPE, ...)     \
+    [&] {                                                \
+        if (DTYPE == open3d::core::Float32) {            \
+            using scalar_t = float;                      \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Float64) {     \
+            using scalar_t = double;                     \
+            return __VA_ARGS__();                        \
+        } else {                                         \
+            utility::LogError("Unsupported data type."); \
+        }                                                \
     }()

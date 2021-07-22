@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -73,16 +73,18 @@ std::shared_ptr<Label> CheckableTextTreeCell::GetLabel() {
     return impl_->label_;
 }
 
-Size CheckableTextTreeCell::CalcPreferredSize(const Theme &theme) const {
-    auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
-    auto label_pref = impl_->label_->CalcPreferredSize(theme);
+Size CheckableTextTreeCell::CalcPreferredSize(
+        const LayoutContext &context, const Constraints &constraints) const {
+    auto check_pref = impl_->checkbox_->CalcPreferredSize(context, constraints);
+    auto label_pref = impl_->label_->CalcPreferredSize(context, constraints);
     return Size(check_pref.width + label_pref.width,
                 std::max(check_pref.height, label_pref.height));
 }
 
-void CheckableTextTreeCell::Layout(const Theme &theme) {
+void CheckableTextTreeCell::Layout(const LayoutContext &context) {
     auto &frame = GetFrame();
-    auto check_width = impl_->checkbox_->CalcPreferredSize(theme).width;
+    auto check_width =
+            impl_->checkbox_->CalcPreferredSize(context, Constraints()).width;
     impl_->checkbox_->SetFrame(
             Rect(frame.x, frame.y, check_width, frame.height));
     auto x = impl_->checkbox_->GetFrame().GetRight();
@@ -129,22 +131,24 @@ std::shared_ptr<Label> LUTTreeCell::GetLabel() { return impl_->label_; }
 
 std::shared_ptr<ColorEdit> LUTTreeCell::GetColorEdit() { return impl_->color_; }
 
-Size LUTTreeCell::CalcPreferredSize(const Theme &theme) const {
-    auto check_pref = impl_->checkbox_->CalcPreferredSize(theme);
-    auto label_pref = impl_->label_->CalcPreferredSize(theme);
-    auto color_pref = impl_->color_->CalcPreferredSize(theme);
+Size LUTTreeCell::CalcPreferredSize(const LayoutContext &context,
+                                    const Constraints &constraints) const {
+    auto check_pref = impl_->checkbox_->CalcPreferredSize(context, constraints);
+    auto label_pref = impl_->label_->CalcPreferredSize(context, constraints);
+    auto color_pref = impl_->color_->CalcPreferredSize(context, constraints);
     return Size(check_pref.width + label_pref.width + color_pref.width,
                 std::max(check_pref.height,
                          std::max(label_pref.height, color_pref.height)));
 }
 
-void LUTTreeCell::Layout(const Theme &theme) {
-    auto em = theme.font_size;
+void LUTTreeCell::Layout(const LayoutContext &context) {
+    auto em = context.theme.font_size;
     auto &frame = GetFrame();
-    auto check_width = impl_->checkbox_->CalcPreferredSize(theme).width;
+    auto check_width =
+            impl_->checkbox_->CalcPreferredSize(context, Constraints()).width;
     auto color_width =
             int(std::ceil(impl_->color_width_percent * float(frame.width)));
-    auto min_color_width = 8 * theme.font_size;
+    auto min_color_width = 8 * context.theme.font_size;
     color_width = std::max(min_color_width, color_width);
     if (frame.width - (color_width + check_width) < 8 * em) {
         color_width = frame.width - check_width - 8 * em;
@@ -192,16 +196,17 @@ std::shared_ptr<ColorEdit> ColormapTreeCell::GetColorEdit() {
     return impl_->color_;
 }
 
-Size ColormapTreeCell::CalcPreferredSize(const Theme &theme) const {
-    auto number_pref = impl_->value_->CalcPreferredSize(theme);
-    auto color_pref = impl_->color_->CalcPreferredSize(theme);
+Size ColormapTreeCell::CalcPreferredSize(const LayoutContext &context,
+                                         const Constraints &constraints) const {
+    auto number_pref = impl_->value_->CalcPreferredSize(context, constraints);
+    auto color_pref = impl_->color_->CalcPreferredSize(context, constraints);
     return Size(number_pref.width + color_pref.width,
                 std::max(number_pref.height, color_pref.height));
 }
 
-void ColormapTreeCell::Layout(const Theme &theme) {
+void ColormapTreeCell::Layout(const LayoutContext &context) {
     auto &frame = GetFrame();
-    auto number_pref = impl_->value_->CalcPreferredSize(theme);
+    auto number_pref = impl_->value_->CalcPreferredSize(context, Constraints());
     impl_->value_->SetFrame(
             Rect(frame.x, frame.y, number_pref.width, frame.height));
     auto x = impl_->value_->GetFrame().GetRight();
@@ -360,11 +365,16 @@ void TreeView::SetOnSelectionChanged(
     impl_->on_selection_changed_ = on_selection_changed;
 }
 
-Size TreeView::CalcPreferredSize(const Theme &theme) const {
-    return Size(Widget::DIM_GROW, Widget::DIM_GROW);
+Size TreeView::CalcPreferredSize(const LayoutContext &context,
+                                 const Constraints &constraints) const {
+    return Size(constraints.width, Widget::DIM_GROW);
 }
 
-void TreeView::Layout(const Theme &theme) {
+Size TreeView::CalcMinimumSize(const LayoutContext &context) const {
+    return Size(0, 3 * context.theme.font_size);
+}
+
+void TreeView::Layout(const LayoutContext &context) {
     // Nothing to do here. We don't know the x position because of the
     // indentations, which also means we don't know the size. So we need
     // to defer layout to Draw().
@@ -375,7 +385,9 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
 
     DrawImGuiPushEnabledState();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    float outer_scroll_y = ImGui::GetScrollY();
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - outer_scroll_y));
 
     // ImGUI's tree wants to highlight the row as the user moves over it.
     // There are several problems here. First, there seems to be a bug in
@@ -402,9 +414,12 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     Impl::Item *new_selection = nullptr;
 
     std::function<void(Impl::Item &)> DrawItem;
-    DrawItem = [&DrawItem, this, &frame, &context, &new_selection,
-                &result](Impl::Item &item) {
-        int height = item.cell->CalcPreferredSize(context.theme).height;
+    DrawItem = [&DrawItem, this, &frame, &context, &new_selection, &result,
+                outer_scroll_y](Impl::Item &item) {
+        int height = item.cell
+                             ->CalcPreferredSize({context.theme, context.fonts},
+                                                 Constraints())
+                             .height;
 
         // ImGUI's tree doesn't seem to support selected items,
         // so we have to draw our own selection.
@@ -413,7 +428,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             // of the tree's frame. To draw directly to the window list we
             // need to the absolute coordinates (relative the OS window's
             // upper left)
-            auto y = frame.y + ImGui::GetCursorPosY() - ImGui::GetScrollY();
+            auto y = frame.y - outer_scroll_y + ImGui::GetCursorPosY() -
+                     ImGui::GetScrollY();
             ImGui::GetWindowDrawList()->AddRectFilled(
                     ImVec2(float(frame.x), y),
                     ImVec2(float(frame.GetRight()), y + height),
@@ -436,16 +452,24 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
                                   bool is_selectable) {
             ImGui::SameLine(0, 0);
             auto x = int(std::round(ImGui::GetCursorScreenPos().x));
-            auto y = int(std::round(ImGui::GetCursorScreenPos().y));
+            auto y = int(std::round(
+                    ImGui::GetCursorScreenPos().y /*- ImGui::GetScrollY()*/));
+            auto scroll_y = ImGui::GetScrollY();
             auto scroll_width = int(ImGui::GetStyle().ScrollbarSize);
             auto indent = x - tree_frame.x;
-            item.cell->SetFrame(Rect(
-                    x, y, tree_frame.width - indent - scroll_width, height));
+            // Note that we add scroll_y to undo the Widget's Draw() subtracting
+            // it off. It needs to subtract it off if the whole ImGUI window
+            // is being scrolled, but not if it is in a TreeView, and it has no
+            // way of knowing the difference. Also it is necessary for clicks to
+            // work correctly.
+            item.cell->SetFrame(Rect(x, y + scroll_y,
+                                     tree_frame.width - indent - scroll_width,
+                                     height));
             // Now that we know the frame we can finally layout. It would be
             // nice to not relayout until something changed, which would
             // usually work, unless the cell changes shape in response to
             // something, which would be a problem. So do it every time.
-            item.cell->Layout(context.theme);
+            item.cell->Layout({context.theme, context.fonts});
 
             ImGui::BeginGroup();
             auto this_result = item.cell->Draw(context);

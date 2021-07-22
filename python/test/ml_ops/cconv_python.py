@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -229,7 +229,7 @@ def compute_filter_coordinates(pos, filter_xyz_size, inv_extents, offset,
 
 
 def window_function(pos, inv_extents, window, window_params):
-    """Implements 3 types of window functions
+    r"""Implements 3 types of window functions
 
     pos: A single 3D point. An array of shape [3] with x,y,z coordinates.
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,6 @@ class Visualizer;
 /// \param mesh_show_wireframe visualize mesh wireframe if set to true.
 /// \param mesh_show_back_face visualize also the back face of the mesh
 /// triangles.
-/// \param top The top margin of the visualization window.
 /// \param lookat The lookat vector of the camera.
 /// \param up The up vector of the camera.
 /// \param front The front vector of the camera.

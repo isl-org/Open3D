@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,13 @@
 
 #include "open3d/core/nns/NanoFlannIndex.h"
 
+#include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
 #include <nanoflann.hpp>
 
-#include "open3d/core/CoreUtil.h"
-#include "open3d/utility/Console.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
@@ -58,7 +59,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     int dimension = GetDimension();
     Dtype dtype = GetDtype();
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t *data_ptr = dataset_points.GetDataPtr<scalar_t>();
         holder_.reset(new NanoFlannIndexHolder<L2, scalar_t>(
                 dataset_size, dimension, data_ptr));
@@ -84,9 +85,9 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 
     Tensor indices;
     Tensor distances;
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         Tensor batch_indices =
-                Tensor::Full({num_query_points, knn}, -1, Dtype::Int64);
+                Tensor::Full({num_query_points, knn}, -1, core::Int64);
         Tensor batch_distances =
                 Tensor::Full({num_query_points, knn}, -1, dtype);
 
@@ -113,7 +114,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                 });
         // Check if the number of neighbors are same.
         Tensor check_valid =
-                batch_indices.Ge(0).To(Dtype::Int64).Sum({-1}, false);
+                batch_indices.Ge(0).To(core::Int64).Sum({-1}, false);
         int64_t num_neighbors = check_valid[0].Item<int64_t>();
         if (check_valid.Ne(num_neighbors).Any()) {
             utility::LogError(
@@ -145,7 +146,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     Tensor distances;
     Tensor neighbors_row_splits;
 
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         std::vector<std::vector<size_t>> batch_indices(num_query_points);
         std::vector<std::vector<scalar_t>> batch_distances(num_query_points);
         std::vector<int64_t> batch_nums;
@@ -154,6 +155,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
                 holder_.get());
 
         nanoflann::SearchParams params;
+        params.sorted = sort;
 
         // Check if the raii has negative values.
         Tensor below_zero = radii.Le(0);
@@ -202,17 +204,17 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
             batch_nums.push_back(batch_indices[i].size());
         }
         std::vector<int64_t> batch_row_splits(num_query_points + 1, 0);
-        utility::InclusivePrefixSum(&batch_nums[0],
-                                    &batch_nums[num_query_points],
+        utility::InclusivePrefixSum(batch_nums.data(),
+                                    batch_nums.data() + batch_nums.size(),
                                     &batch_row_splits[1]);
 
         // Make result Tensors.
         int64_t total_nums = batch_row_splits[num_query_points];
 
-        indices = Tensor(batch_indices2, {total_nums}, Dtype::Int64);
+        indices = Tensor(batch_indices2, {total_nums}, core::Int64);
         distances = Tensor(batch_distances2, {total_nums}, dtype);
         neighbors_row_splits =
-                Tensor(batch_row_splits, {num_query_points + 1}, Dtype::Int64);
+                Tensor(batch_row_splits, {num_query_points + 1}, core::Int64);
     });
     return std::make_tuple(indices, distances, neighbors_row_splits);
 };
@@ -222,21 +224,18 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     int64_t num_query_points = query_points.GetShape()[0];
     Dtype dtype = GetDtype();
     std::tuple<Tensor, Tensor, Tensor> result;
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         Tensor radii(std::vector<scalar_t>(num_query_points,
                                            static_cast<scalar_t>(radius)),
                      {num_query_points}, dtype);
-        result = SearchRadius(query_points, radii);
+        result = SearchRadius(query_points, radii, sort);
     });
     return result;
 };
 
-std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
+std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
-    // Check dtype.
     query_points.AssertDtype(GetDtype());
-
-    // Check shapes.
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
@@ -251,26 +250,64 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     }
 
     double radius_squared = radius * radius;
-
-    Tensor indices;
-    Tensor distances;
-    std::tie(indices, distances) = SearchKnn(query_points, max_knn);
-
+    int64_t num_query_points = query_points.GetShape()[0];
+    Tensor indices, distances, counts;
     Dtype dtype = GetDtype();
-    DISPATCH_FLOAT32_FLOAT64_DTYPE(dtype, [&]() {
-        Tensor invalid = distances.Gt(radius_squared);
-        Tensor invalid_indices =
-                Tensor(std::vector<int64_t>({-1}), {1}, indices.GetDtype(),
-                       indices.GetDevice());
-        Tensor invalid_distances =
-                Tensor(std::vector<scalar_t>({-1}), {1}, distances.GetDtype(),
-                       distances.GetDevice());
 
-        indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
-        distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        indices = Tensor::Empty({num_query_points, max_knn}, core::Int64);
+        auto indices_ptr = indices.GetDataPtr<int64_t>();
+        distances = Tensor::Empty({num_query_points, max_knn}, dtype);
+        auto distances_ptr = distances.GetDataPtr<scalar_t>();
+        counts = Tensor::Empty({num_query_points}, core::Int64);
+        auto counts_ptr = counts.GetDataPtr<int64_t>();
+
+        auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
+                holder_.get());
+
+        nanoflann::SearchParams params;
+
+        // Parallel search.
+        tbb::parallel_for(
+                tbb::blocked_range<size_t>(0, num_query_points),
+                [&](const tbb::blocked_range<size_t> &r) {
+                    std::vector<std::pair<int64_t, scalar_t>> ret_matches;
+                    for (size_t workload_idx = r.begin();
+                         workload_idx != r.end(); ++workload_idx) {
+                        int64_t result_idx = workload_idx * max_knn;
+
+                        size_t num_results = holder->index_->radiusSearch(
+                                static_cast<scalar_t *>(
+                                        query_points[workload_idx]
+                                                .GetDataPtr()),
+                                radius_squared, ret_matches, params);
+                        ret_matches.resize(num_results);
+
+                        int64_t result_count =
+                                static_cast<int64_t>(num_results);
+                        result_count =
+                                result_count < max_knn ? result_count : max_knn;
+
+                        counts_ptr[workload_idx] = result_count;
+
+                        int neighbour_idx = 0;
+                        for (auto it = ret_matches.begin();
+                             it < ret_matches.end() && neighbour_idx < max_knn;
+                             it++, neighbour_idx++) {
+                            indices_ptr[result_idx + neighbour_idx] = it->first;
+                            distances_ptr[result_idx + neighbour_idx] =
+                                    it->second;
+                        }
+
+                        while (neighbour_idx < max_knn) {
+                            indices_ptr[result_idx + neighbour_idx] = -1;
+                            distances_ptr[result_idx + neighbour_idx] = 0;
+                            neighbour_idx += 1;
+                        }
+                    }
+                });
     });
-
-    return std::make_pair(indices, distances);
+    return std::make_tuple(indices, distances, counts);
 }
 
 }  // namespace nns

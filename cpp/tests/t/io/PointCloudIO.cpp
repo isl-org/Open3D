@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 
 #include <gtest/gtest.h>
 
+#include "core/CoreTest.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
@@ -40,6 +41,11 @@ namespace open3d {
 namespace tests {
 
 namespace {
+
+class PointCloudIOPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(PointCloudIO,
+                         PointCloudIOPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
 
 struct TensorCtorData {
     std::vector<double> values;
@@ -84,7 +90,7 @@ INSTANTIATE_TEST_SUITE_P(ReadWritePC, ReadWriteTPC, testing::ValuesIn(pcArgs));
 TEST_P(ReadWriteTPC, Basic) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU", 0);
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::Float64;
     t::geometry::PointCloud pc1(device);
 
     for (const auto &attr_tensor : pc_data_1) {
@@ -129,7 +135,7 @@ TEST_P(ReadWriteTPC, Basic) {
 TEST_P(ReadWriteTPC, WriteBadData) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU", 0);
-    core::Dtype dtype = core::Dtype::Float64;
+    core::Dtype dtype = core::Float64;
     t::geometry::PointCloud pc1(device);
 
     for (const auto &attr_tensor : pc_data_bad) {
@@ -154,7 +160,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     EXPECT_EQ(pcd.GetPointNormals().GetLength(), 196133);
     EXPECT_EQ(pcd.GetPointColors().GetLength(), 196133);
     EXPECT_EQ(pcd.GetPointAttr("curvature").GetLength(), 196133);
-    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::Dtype::UInt8);
+    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::UInt8);
     EXPECT_FALSE(pcd.HasPointAttr("x"));
 }
 
@@ -184,6 +190,136 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
             {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPoints().GetLength(), 7);
     EXPECT_EQ(pcd.GetPointAttr("intensity").GetLength(), 7);
+}
+
+// Read write empty point cloud.
+TEST(TPointCloudIO, ReadWriteEmptyPTS) {
+    t::geometry::PointCloud pcd, pcd_read;
+    std::string file_name = std::string(TEST_DATA_DIR) + "/test_empty.pts";
+    EXPECT_TRUE(pcd.IsEmpty());
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
+    EXPECT_TRUE(pcd_read.IsEmpty());
+    std::remove(file_name.c_str());
+}
+
+// Read write pts with colors and intensities.
+TEST(TPointCloudIO, ReadWritePTS) {
+    t::geometry::PointCloud pcd, pcd_read, pcd_i, pcd_color;
+    EXPECT_TRUE(t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) +
+                    "/open3d_downloads/tests/point_cloud_sample1.pts",
+            pcd, {"auto", false, false, true}));
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 10);
+    EXPECT_EQ(pcd.GetPointColors().GetLength(), 10);
+    EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
+    EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::UInt8);
+    EXPECT_TRUE(pcd.GetPoints()[0].AllClose(
+            core::Tensor::Init<double>({4.24644, -6.42662, -50.2146})));
+    EXPECT_TRUE(pcd.GetPointColors()[0].AllClose(
+            core::Tensor::Init<uint8_t>({66, 50, 83})));
+    EXPECT_TRUE(pcd.GetPointAttr("intensities")[0].AllClose(
+            core::Tensor::Init<double>({10})));
+
+    // Write pointcloud and match it after read.
+    std::string file_name = std::string(TEST_DATA_DIR) + "/test_read.pts";
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
+    EXPECT_TRUE(pcd.GetPoints().AllClose(pcd_read.GetPoints()));
+    EXPECT_TRUE(pcd.GetPointColors().AllClose(pcd_read.GetPointColors()));
+    EXPECT_TRUE(pcd.GetPointAttr("intensities")
+                        .AllClose(pcd_read.GetPointAttr("intensities")));
+    std::remove(file_name.c_str());
+
+    // Write pointcloud with only colors and match it after read.
+    pcd_read.Clear();
+    pcd_color.SetPoints(pcd.GetPoints());
+    pcd_color.SetPointColors(pcd.GetPointColors());
+    file_name = std::string(TEST_DATA_DIR) + "/test_color.pts";
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd_color));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
+    EXPECT_TRUE(pcd_color.GetPoints().AllClose(pcd_read.GetPoints()));
+    EXPECT_TRUE(pcd_color.GetPointColors().AllClose(pcd_read.GetPointColors()));
+    EXPECT_FALSE(pcd_read.HasPointAttr("intensities"));
+    std::remove(file_name.c_str());
+
+    // Write pointcloud with only intensities and match it after read.
+    pcd_read.Clear();
+    pcd_i.SetPoints(pcd.GetPoints());
+    pcd_i.SetPointAttr("intensities", pcd.GetPointAttr("intensities"));
+    file_name = std::string(TEST_DATA_DIR) + "/test_intensities.pts";
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd_i));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
+    EXPECT_TRUE(pcd_i.GetPoints().AllClose(pcd_read.GetPoints()));
+    EXPECT_TRUE(pcd_i.GetPointAttr("intensities")
+                        .AllClose(pcd_read.GetPointAttr("intensities")));
+    EXPECT_FALSE(pcd_read.HasPointColors());
+    std::remove(file_name.c_str());
+}
+
+// Reading pts with intensities.
+TEST(TPointCloudIO, ReadPointCloudFromPTS1) {
+    t::geometry::PointCloud pcd;
+    EXPECT_TRUE(t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) +
+                    "/open3d_downloads/tests/point_cloud_sample2.pts",
+            pcd, {"auto", false, false, true}));
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 10);
+    EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
+}
+
+// Reading bunny pts.
+TEST(TPointCloudIO, ReadPointCloudFromPTS2) {
+    t::geometry::PointCloud pcd;
+    EXPECT_TRUE(t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) +
+                    "/open3d_downloads/tests/bunnyData.pts",
+            pcd, {"auto", false, false, true}));
+    EXPECT_EQ(pcd.GetPoints().GetLength(), 30571);
+}
+
+// Check PTS color float to uint8 conversion.
+TEST(TPointCloudIO, WritePTSColorConversion1) {
+    t::geometry::PointCloud pcd, pcd_read;
+    std::string file_name =
+            std::string(TEST_DATA_DIR) + "/test_color_conversion.pts";
+    pcd.SetPoints(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
+    pcd.SetPointColors(
+            core::Tensor::Init<float>({{-1, 0.25, 0.3}, {0, 4, 0.1}}));
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
+    EXPECT_EQ(pcd_read.GetPointColors().ToFlatVector<uint8_t>(),
+              std::vector<uint8_t>({0, 64, 77, 0, 255, 26}));
+    std::remove(file_name.c_str());
+}
+
+// Check PTS color boolean to uint8 conversion.
+TEST(TPointCloudIO, WritePTSColorConversion2) {
+    t::geometry::PointCloud pcd, pcd_read;
+    std::string file_name =
+            std::string(TEST_DATA_DIR) + "/test_color_conversion.pts";
+    pcd.SetPoints(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
+    pcd.SetPointColors(core::Tensor::Init<bool>({{1, 0, 0}, {1, 0, 1}}));
+    EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
+    EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
+                                      {"auto", false, false, true}));
+    EXPECT_EQ(pcd_read.GetPointColors().ToFlatVector<uint8_t>(),
+              std::vector<uint8_t>({255, 0, 0, 255, 0, 255}));
+    std::remove(file_name.c_str());
+}
+
+TEST_P(PointCloudIOPermuteDevices, WriteDeviceTestPLY) {
+    core::Device device = GetParam();
+    std::string filename = std::string(TEST_DATA_DIR) + "/test_write.ply";
+    core::Tensor points = core::Tensor::Ones({10, 3}, core::Float32, device);
+    t::geometry::PointCloud pcd(points);
+    EXPECT_TRUE(t::io::WritePointCloud(filename, pcd));
+    std::remove(filename.c_str());
 }
 
 }  // namespace tests

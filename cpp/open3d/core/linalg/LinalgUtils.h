@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,22 +33,22 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/LinalgHeadersCUDA.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
-#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)       \
-    [&] {                                                   \
-        if (DTYPE == open3d::core::Dtype::Float32) {        \
-            using scalar_t = float;                         \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::Float64) { \
-            using scalar_t = double;                        \
-            return __VA_ARGS__();                           \
-        } else {                                            \
-            utility::LogError("Unsupported data type.");    \
-        }                                                   \
+#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)    \
+    [&] {                                                \
+        if (DTYPE == open3d::core::Float32) {            \
+            using scalar_t = float;                      \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Float64) {     \
+            using scalar_t = double;                     \
+            return __VA_ARGS__();                        \
+        } else {                                         \
+            utility::LogError("Unsupported data type."); \
+        }                                                \
     }()
 
 inline void OPEN3D_LAPACK_CHECK(OPEN3D_CPU_LINALG_INT info,

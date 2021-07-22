@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -102,7 +102,8 @@ int main(int argc, char **argv) {
 
     auto source_ptr = io::CreatePointCloudFromFile(argv[1]);
     auto target_ptr = io::CreatePointCloudFromFile(argv[2]);
-    if (source_ptr->IsEmpty() || target_ptr->IsEmpty()) {
+    if (source_ptr == nullptr || target_ptr == nullptr ||
+        source_ptr->IsEmpty() || target_ptr->IsEmpty()) {
         utility::LogWarning("Failed to read one of the point clouds.");
         return 1;
     }
@@ -190,14 +191,22 @@ int main(int argc, char **argv) {
 
         io::WritePointCloud(source_filename, *source_ptr);
         auto source_dis = source_ptr->ComputePointCloudDistance(*target_ptr);
-        f = utility::filesystem::FOpen(source_binname, "wb");
-        fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
-        fclose(f);
+        if ((f = utility::filesystem::FOpen(source_binname, "wb"))) {
+            fwrite(source_dis.data(), sizeof(double), source_dis.size(), f);
+            fclose(f);
+        } else {
+            utility::LogError("Failed to open {} for writing.", source_binname);
+        }
+
         io::WritePointCloud(target_filename, *target_ptr);
         auto target_dis = target_ptr->ComputePointCloudDistance(*source_ptr);
-        f = utility::filesystem::FOpen(target_binname, "wb");
-        fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
-        fclose(f);
+        if ((f = utility::filesystem::FOpen(target_binname, "wb"))) {
+            fwrite(target_dis.data(), sizeof(double), target_dis.size(), f);
+            fclose(f);
+        } else {
+            utility::LogError("Failed to open {} for writing.", target_binname);
+        }
+
         return 1;
     }
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@
 #include "open3d/pipelines/registration/GeneralizedICP.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
 #include "pybind/pipelines/registration/registration.h"
 
@@ -609,14 +609,17 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for evaluating registration between point clouds",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
           "transformation"_a = Eigen::Matrix4d::Identity());
     docstring::FunctionDocInject(m, "evaluate_registration",
                                  map_shared_argument_docstrings);
 
-    m.def("registration_icp", &RegistrationICP, "Function for ICP registration",
-          "source"_a, "target"_a, "max_correspondence_distance"_a,
+    m.def("registration_icp", &RegistrationICP,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4d::Identity(),
           "estimation_method"_a = TransformationEstimationPointToPoint(false),
           "criteria"_a = ICPConvergenceCriteria());
@@ -624,6 +627,7 @@ void pybind_registration_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("registration_colored_icp", &RegistrationColoredICP,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for Colored ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4d::Identity(),
@@ -643,6 +647,7 @@ void pybind_registration_methods(py::module &m) {
 
     m.def("registration_ransac_based_on_correspondence",
           &RegistrationRANSACBasedOnCorrespondence,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for global RANSAC registration based on a set of "
           "correspondences",
           "source"_a, "target"_a, "corres"_a, "max_correspondence_distance"_a,
@@ -657,6 +662,7 @@ void pybind_registration_methods(py::module &m) {
 
     m.def("registration_ransac_based_on_feature_matching",
           &RegistrationRANSACBasedOnFeatureMatching,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for global RANSAC registration based on feature matching",
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
           "mutual_filter"_a, "max_correspondence_distance"_a,
@@ -670,7 +676,7 @@ void pybind_registration_methods(py::module &m) {
             map_shared_argument_docstrings);
 
     m.def("registration_fast_based_on_feature_matching",
-          &FastGlobalRegistration,
+          &FastGlobalRegistration, py::call_guard<py::gil_scoped_release>(),
           "Function for fast global registration based on feature matching",
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
           "option"_a = FastGlobalRegistrationOption());
@@ -680,6 +686,7 @@ void pybind_registration_methods(py::module &m) {
 
     m.def("get_information_matrix_from_point_clouds",
           &GetInformationMatrixFromPointClouds,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for computing information matrix from transformation "
           "matrix",
           "source"_a, "target"_a, "max_correspondence_distance"_a,

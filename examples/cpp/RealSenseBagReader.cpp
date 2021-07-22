@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,19 +83,29 @@ Json::Value GenerateDatasetConfig(const std::string &output_path,
     return value;
 }
 
-void PrintUsage() {
+void PrintHelp() {
+    using namespace open3d;
+
     PrintOpen3DVersion();
-    utility::LogInfo("Usage:");
     // clang-format off
-    utility::LogInfo("RealSenseBagReader [-V] --input input.bag [--output path]");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RealSenseBagReader [-V] --input input.bag [--output path]");
     // clang-format on
+    utility::LogInfo("");
 }
 
-int main(int argc, char **argv) {
-    if (!utility::ProgramOptionExists(argc, argv, "--input")) {
-        PrintUsage();
+int main(int argc, char *argv[]) {
+    using namespace open3d;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        !utility::ProgramOptionExists(argc, argv, "--input")) {
+        PrintHelp();
         return 1;
     }
+
     if (utility::ProgramOptionExists(argc, argv, "-V")) {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     } else {

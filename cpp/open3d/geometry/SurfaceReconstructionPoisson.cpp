@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 // clang-format off
 #ifdef _MSC_VER
@@ -190,7 +190,7 @@ struct FEMTreeProfiler {
     FEMTree<Dim, Real>& tree;
     double t;
 
-    FEMTreeProfiler(FEMTree<Dim, Real>& t) : tree(t) {}
+    FEMTreeProfiler(FEMTree<Dim, Real>& tree) : tree(tree), t(0.0) {}
     void start(void) {
         t = Time(), FEMTree<Dim, Real>::ResetLocalMemoryUsage();
     }
@@ -673,9 +673,9 @@ void Execute(const open3d::geometry::PointCloud& pcd,
             typename FEMTree<Dim, Real>::SolverInfo sInfo;
             sInfo.cgDepth = 0, sInfo.cascadic = true, sInfo.vCycles = 1,
             sInfo.iters = iters, sInfo.cgAccuracy = cg_solver_accuracy,
-            sInfo.verbose = utility::Logger::i().verbosity_level_ ==
+            sInfo.verbose = utility::GetVerbosityLevel() ==
                             utility::VerbosityLevel::Debug,
-            sInfo.showResidual = utility::Logger::i().verbosity_level_ ==
+            sInfo.showResidual = utility::GetVerbosityLevel() ==
                                  utility::VerbosityLevel::Debug,
             sInfo.showGlobalResidual = SHOW_GLOBAL_RESIDUAL_NONE,
             sInfo.sliceBlockSize = 1;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,12 @@
 namespace open3d {
 namespace t {
 namespace io {
+
+// If DEFAULT_BUFFER_SIZE is odr-uses, a definition is required.
+// For Fedora33, GCC10, CUDA11.2:
+// Fix undefined symble error in pybind-*-linux-gnu.so.
+// See: https://github.com/intel-isl/Open3D/issues/3141
+const size_t RSBagReader::DEFAULT_BUFFER_SIZE;
 
 RSBagReader::RSBagReader(size_t buffer_size)
     : frame_buffer_(buffer_size),

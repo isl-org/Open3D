@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,19 +26,37 @@
 
 #pragma once
 
+#include <cassert>
+
 #define OPEN3D_CONCATENATE_IMPL(s1, s2) s1##s2
 #define OPEN3D_CONCATENATE(s1, s2) OPEN3D_CONCATENATE_IMPL(s1, s2)
 
-#if defined _WIN32 || defined __CYGWIN__
+// https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
+#if defined(_WIN32) || defined(__CYGWIN__)
 #define OPEN3D_DLL_IMPORT __declspec(dllimport)
 #define OPEN3D_DLL_EXPORT __declspec(dllexport)
+#define OPEN3D_DLL_LOCAL
 #else
-#define OPEN3D_DLL_IMPORT
-#define OPEN3D_DLL_EXPORT
+#define OPEN3D_DLL_IMPORT [[gnu::visibility("default")]]
+#define OPEN3D_DLL_EXPORT [[gnu::visibility("default")]]
+#define OPEN3D_DLL_LOCAL [[gnu::visibility("hidden")]]
 #endif
 
-#ifdef OPEN3D_ENABLE_DLL_EXPORTS
+#ifdef OPEN3D_STATIC
+#define OPEN3D_API
+#define OPEN3D_LOCAL
+#else
+#define OPEN3D_LOCAL OPEN3D_DLL_LOCAL
+#if defined(OPEN3D_ENABLE_DLL_EXPORTS)
 #define OPEN3D_API OPEN3D_DLL_EXPORT
 #else
 #define OPEN3D_API OPEN3D_DLL_IMPORT
 #endif
+#endif
+
+// Assertion for CUDA device code.
+// Usage:
+//     OPEN3D_ASSERT(condition);
+//     OPEN3D_ASSERT(condition && "Error message");
+// For host-only code, consider using utility::LogError();
+#define OPEN3D_ASSERT(...) assert((__VA_ARGS__))

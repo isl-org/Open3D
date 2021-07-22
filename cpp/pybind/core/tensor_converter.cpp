@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include "pybind/core/tensor_converter.h"
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
@@ -161,7 +161,7 @@ Tensor PyTupleToTensor(const py::tuple& tuple,
 Tensor DoubleToTensor(double scalar_value,
                       utility::optional<Dtype> dtype,
                       utility::optional<Device> device) {
-    Dtype dtype_value = Dtype::Float64;
+    Dtype dtype_value = core::Float64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
     }
@@ -169,7 +169,7 @@ Tensor DoubleToTensor(double scalar_value,
     if (device.has_value()) {
         device_value = device.value();
     }
-    return Tensor(std::vector<double>{scalar_value}, {}, Dtype::Float64,
+    return Tensor(std::vector<double>{scalar_value}, {}, core::Float64,
                   device_value)
             .To(dtype_value);
 }
@@ -177,7 +177,7 @@ Tensor DoubleToTensor(double scalar_value,
 Tensor IntToTensor(int64_t scalar_value,
                    utility::optional<Dtype> dtype,
                    utility::optional<Device> device) {
-    Dtype dtype_value = Dtype::Int64;
+    Dtype dtype_value = core::Int64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
     }
@@ -185,8 +185,23 @@ Tensor IntToTensor(int64_t scalar_value,
     if (device.has_value()) {
         device_value = device.value();
     }
-    return Tensor(std::vector<int64_t>{scalar_value}, {}, Dtype::Int64,
+    return Tensor(std::vector<int64_t>{scalar_value}, {}, core::Int64,
                   device_value)
+            .To(dtype_value);
+}
+
+Tensor BoolToTensor(bool scalar_value,
+                    utility::optional<Dtype> dtype,
+                    utility::optional<Device> device) {
+    Dtype dtype_value = core::Bool;
+    if (dtype.has_value()) {
+        dtype_value = dtype.value();
+    }
+    Device device_value("CPU:0");
+    if (device.has_value()) {
+        device_value = device.value();
+    }
+    return Tensor(std::vector<bool>{scalar_value}, {}, core::Bool, device_value)
             .To(dtype_value);
 }
 
@@ -194,14 +209,18 @@ Tensor PyHandleToTensor(const py::handle& handle,
                         utility::optional<Dtype> dtype,
                         utility::optional<Device> device,
                         bool force_copy) {
-    /// 1) int
-    /// 2) float (double)
-    /// 3) list
-    /// 4) tuple
-    /// 5) numpy.ndarray (value will be copied)
-    /// 6) Tensor (value will be copied)
-    std::string class_name(handle.get_type().str());
-    if (class_name == "<class 'int'>") {
+    // 1) bool
+    // 2) int
+    // 3) float (double)
+    // 4) list
+    // 5) tuple
+    // 6) numpy.ndarray (value will be copied)
+    // 7) Tensor (value will be copied)
+    std::string class_name(py::str(handle.get_type()));
+    if (class_name == "<class 'bool'>") {
+        return BoolToTensor(static_cast<bool>(handle.cast<py::bool_>()), dtype,
+                            device);
+    } else if (class_name == "<class 'int'>") {
         return IntToTensor(static_cast<int64_t>(handle.cast<py::int_>()), dtype,
                            device);
     } else if (class_name == "<class 'float'>") {
@@ -228,15 +247,15 @@ Tensor PyHandleToTensor(const py::handle& handle,
             utility::LogError("Cannot cast index to Tensor.");
         }
     } else {
-        utility::LogError("PyHandleToTensor has invlaid input type {}.",
+        utility::LogError("PyHandleToTensor has invalid input type {}.",
                           class_name);
     }
 }
 
 SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
     SizeVector shape;
-    for (const py::handle& item : tuple) {
-        if (std::string(item.get_type().str()) == "<class 'int'>") {
+    for (const py::handle item : tuple) {
+        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
             utility::LogError(
@@ -249,8 +268,8 @@ SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
 
 SizeVector PyListToSizeVector(const py::list& list) {
     SizeVector shape;
-    for (const py::handle& item : list) {
-        if (std::string(item.get_type().str()) == "<class 'int'>") {
+    for (const py::handle item : list) {
+        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
             shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
         } else {
             utility::LogError(
@@ -262,7 +281,7 @@ SizeVector PyListToSizeVector(const py::list& list) {
 }
 
 SizeVector PyHandleToSizeVector(const py::handle& handle) {
-    std::string class_name(handle.get_type().str());
+    std::string class_name(py::str(handle.get_type()));
     if (class_name == "<class 'int'>") {
         return SizeVector{static_cast<int64_t>(handle.cast<py::int_>())};
     } else if (class_name == "<class 'list'>") {
@@ -279,7 +298,7 @@ SizeVector PyHandleToSizeVector(const py::handle& handle) {
         }
     } else {
         utility::LogError(
-                "PyHandleToSizeVector has invlaid input type {}. Only int, "
+                "PyHandleToSizeVector has invalid input type {}. Only int, "
                 "tuple and list are supported.",
                 class_name);
     }

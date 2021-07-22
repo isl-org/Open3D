@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,20 +28,28 @@
 
 #include <unordered_map>
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace io {
 
 bool ReadModelUsingAssimp(const std::string& filename,
                           visualization::rendering::TriangleMeshModel& model,
-                          bool print_progress);
+                          const ReadTriangleModelOptions& params /*={}*/);
 
 bool ReadTriangleModel(const std::string& filename,
                        visualization::rendering::TriangleMeshModel& model,
-                       bool print_progress) {
-    return ReadModelUsingAssimp(filename, model, print_progress);
+                       ReadTriangleModelOptions params /*={}*/) {
+    if (params.print_progress) {
+        auto progress_text = std::string("Reading model file") + filename;
+        auto pbar = utility::ConsoleProgressBar(100, progress_text, true);
+        params.update_progress = [pbar](double percent) mutable -> bool {
+            pbar.SetCurrentCount(size_t(percent));
+            return true;
+        };
+    }
+    return ReadModelUsingAssimp(filename, model, params);
 }
 
 }  // namespace io

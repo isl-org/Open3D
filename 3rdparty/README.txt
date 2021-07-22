@@ -110,3 +110,7 @@ https://github.com/zeromq/libzmq
 cppzmq                      4.6.0                                    MIT license
 Header-only C++ binding for libzmq
 https://github.com/zeromq/cppzmq
+--------------------------------------------------------------------------------
+embree                      3.13.0                              Apache-2 license
+Embree is a collection of high-performance ray tracing kernels
+https://github.com/embree/embree

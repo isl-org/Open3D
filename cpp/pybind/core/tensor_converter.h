@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -100,6 +100,13 @@ Tensor DoubleToTensor(double scalar_value,
 Tensor IntToTensor(int64_t scalar_value,
                    utility::optional<Dtype> dtype = utility::nullopt,
                    utility::optional<Device> device = utility::nullopt);
+
+/// Convert scalar bool value to Tensor.
+///
+/// The default dtype is Bool, unless specified.
+Tensor BoolToTensor(bool scalar_value,
+                    utility::optional<Dtype> dtype = utility::nullopt,
+                    utility::optional<Device> device = utility::nullopt);
 
 /// Convert supported python types to Tensor.
 ///

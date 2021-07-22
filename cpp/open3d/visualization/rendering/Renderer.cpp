@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include "open3d/visualization/rendering/Renderer.h"
 
 #include "open3d/geometry/Image.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/Material.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
 #include "open3d/visualization/rendering/Scene.h"
@@ -102,6 +102,10 @@ void Renderer::RenderToImage(
                 image->data_ = std::vector<uint8_t>(buffer.bytes,
                                                     buffer.bytes + buffer.size);
                 cb(image);
+                // This does not actually cause the object to be destroyed--
+                // the lambda still has a copy--but it does ensure that the
+                // object lives long enough for the callback to get executed.
+                // The object will be freed when the callback is unassigned.
                 render = nullptr;
             });
 }
@@ -126,7 +130,21 @@ void Renderer::RenderToDepthImage(
                                     image->num_of_channels_ *
                                     image->bytes_per_channel_);
                 memcpy(image->data_.data(), buffer.bytes, buffer.size);
+                // Filament's shaders calculate depth ranging from 1 (near)
+                // to 0 (far), which is reversed from what is normally done,
+                // so convert here so that users do not need to rediscover
+                // Filament internals. (And so we can change it back if Filament
+                // decides to swap how they do it again.)
+                float* pixels = (float*)image->data_.data();
+                int n_pixels = image->width_ * image->height_;
+                for (int i = 0; i < n_pixels; ++i) {
+                    pixels[i] = 1.0f - pixels[i];
+                }
                 cb(image);
+                // This does not actually cause the object to be destroyed--
+                // the lambda still has a copy--but it does ensure that the
+                // object lives long enough for the callback to get executed.
+                // The object will be freed when the callback is unassigned.
                 render = nullptr;
             });
 }

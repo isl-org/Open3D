@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ from open3d_test import list_devices
 
 @pytest.mark.parametrize("device", list_devices())
 def test_constructor_and_accessors(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     # Constructor.
     pcd = o3d.t.geometry.PointCloud(device)
@@ -64,7 +64,7 @@ def test_constructor_and_accessors(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_from_legacy_pointcloud(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     legacy_pcd = o3d.geometry.PointCloud()
     legacy_pcd.points = o3d.utility.Vector3dVector(
@@ -82,7 +82,7 @@ def test_from_legacy_pointcloud(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_to_legacy_pointcloud(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     pcd = o3d.t.geometry.PointCloud(device)
     pcd.point["points"] = o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype, device)
@@ -97,7 +97,7 @@ def test_to_legacy_pointcloud(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_member_functions(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     # get_min_bound, get_max_bound, get_center.
     pcd = o3d.t.geometry.PointCloud(device)
@@ -106,6 +106,27 @@ def test_member_functions(device):
     assert pcd.get_min_bound().allclose(o3c.Tensor([1, 2, 3], dtype, device))
     assert pcd.get_max_bound().allclose(o3c.Tensor([50, 60, 40], dtype, device))
     assert pcd.get_center().allclose(o3c.Tensor([27, 24, 21], dtype, device))
+
+    # append.
+    pcd = o3d.t.geometry.PointCloud(device)
+    pcd.point["points"] = o3c.Tensor.ones((2, 3), dtype, device)
+    pcd.point["normals"] = o3c.Tensor.ones((2, 3), dtype, device)
+
+    pcd2 = o3d.t.geometry.PointCloud(device)
+    pcd2.point["points"] = o3c.Tensor.ones((2, 3), dtype, device)
+    pcd2.point["normals"] = o3c.Tensor.ones((2, 3), dtype, device)
+    pcd2.point["labels"] = o3c.Tensor.ones((2, 3), dtype, device)
+
+    pcd3 = o3d.t.geometry.PointCloud(device)
+    pcd3 = pcd + pcd2
+
+    assert pcd3.point["points"].allclose(o3c.Tensor.ones((4, 3), dtype, device))
+    assert pcd3.point["normals"].allclose(o3c.Tensor.ones((4, 3), dtype,
+                                                          device))
+
+    with pytest.raises(RuntimeError) as excinfo:
+        pcd3 = pcd2 + pcd
+        assert 'The pointcloud is missing attribute' in str(excinfo.value)
 
     # transform.
     pcd = o3d.t.geometry.PointCloud(device)
@@ -149,3 +170,13 @@ def test_member_functions(device):
     pcd.rotate(rotation, center)
     assert pcd.point["points"].allclose(o3c.Tensor([[3, 3, 2]], dtype, device))
     assert pcd.point["normals"].allclose(o3c.Tensor([[2, 2, 1]], dtype, device))
+
+    # voxel_down_sample
+    pcd = o3d.t.geometry.PointCloud(device)
+    pcd.point["points"] = o3c.Tensor(
+        [[0.1, 0.3, 0.9], [0.9, 0.2, 0.4], [0.3, 0.6, 0.8], [0.2, 0.4, 0.2]],
+        dtype, device)
+
+    pcd_small_down = pcd.voxel_down_sample(1)
+    assert pcd_small_down.point["points"].allclose(
+        o3c.Tensor([[0, 0, 0]], dtype, device))

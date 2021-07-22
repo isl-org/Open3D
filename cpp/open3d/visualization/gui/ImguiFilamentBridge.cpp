@@ -21,7 +21,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -364,15 +364,19 @@ void ImguiFilamentBridge::Update(ImDrawData* imgui_data) {
                 auto skey =
                         ScissorRectKey(fbheight, pcmd.ClipRect, pcmd.TextureId);
                 auto miter = scissor_rects.find(skey);
-                assert(miter != scissor_rects.end());
-                rbuilder.geometry(prim_index,
-                                  RenderableManager::PrimitiveType::TRIANGLES,
-                                  impl_->vertex_buffers_[buffer_index],
-                                  impl_->index_buffers_[buffer_index],
-                                  indexOffset, pcmd.ElemCount)
-                        .blendOrder(prim_index, prim_index)
-                        .material(prim_index, miter->second);
-                prim_index++;
+                if (miter != scissor_rects.end()) {
+                    rbuilder.geometry(
+                                    prim_index,
+                                    RenderableManager::PrimitiveType::TRIANGLES,
+                                    impl_->vertex_buffers_[buffer_index],
+                                    impl_->index_buffers_[buffer_index],
+                                    indexOffset, pcmd.ElemCount)
+                            .blendOrder(prim_index, prim_index)
+                            .material(prim_index, miter->second);
+                    prim_index++;
+                } else {
+                    utility::LogError("Internal error: material not found.");
+                }
             }
             indexOffset += pcmd.ElemCount;
         }

@@ -27,7 +27,6 @@ the open-source community.
 [![Ubuntu CI](https://github.com/intel-isl/Open3D/workflows/Ubuntu%20CI/badge.svg)](https://github.com/intel-isl/Open3D/actions?query=workflow%3A%22Ubuntu+CI%22)
 [![macOS CI](https://github.com/intel-isl/Open3D/workflows/macOS%20CI/badge.svg)](https://github.com/intel-isl/Open3D/actions?query=workflow%3A%22macOS+CI%22)
 [![Windows CI](https://github.com/intel-isl/Open3D/workflows/Windows%20CI/badge.svg)](https://github.com/intel-isl/Open3D/actions?query=workflow%3A%22Windows+CI%22)
-[![Build Status](https://travis-ci.org/intel-isl/Open3D.svg?branch=master)](https://travis-ci.org/intel-isl/)
 
 **Core features of Open3D include:**
 
@@ -46,14 +45,11 @@ For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 ## Python quick start
 
 Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.14+ and
-Windows 10 (64-bit) with Python 3.6, 3.7 and 3.8.
+Windows 10 (64-bit) with Python 3.6-3.9.
 
 ```bash
-# Install Open3D stable release with pip
+# Install Open3D stable release with pip (including in conda virtual environments)
 $ pip install open3d
-
-# Install Open3D stable release with Conda
-$ conda install -c open3d-admin -c conda-forge open3d
 
 # Test the installation
 $ python -c "import open3d as o3d; print(o3d)"
@@ -69,7 +65,7 @@ To compile Open3D from source, refer to
 
 Checkout the following links to get started with Open3D C++ API
 
-* [Compiling Open3D frrom source](http://www.open3d.org/docs/release/compilation.html)
+* [Compiling Open3D from source](http://www.open3d.org/docs/release/compilation.html)
 * [Open3D C++ API](http://www.open3d.org/docs/release/cpp_api.html)
 
 To use Open3D in your C++ project, checkout the following examples

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,13 +49,15 @@ void PoseToTransformationCUDA(scalar_t *transformation_ptr,
 template <>
 void PoseToTransformationCUDA<float>(float *transformation_ptr,
                                      const float *X_ptr) {
-    PoseToTransformationKernel<float><<<1, 1>>>(transformation_ptr, X_ptr);
+    PoseToTransformationKernel<float>
+            <<<1, 1, 0, core::cuda::GetStream()>>>(transformation_ptr, X_ptr);
 }
 
 template <>
 void PoseToTransformationCUDA<double>(double *transformation_ptr,
                                       const double *X_ptr) {
-    PoseToTransformationKernel<double><<<1, 1>>>(transformation_ptr, X_ptr);
+    PoseToTransformationKernel<double>
+            <<<1, 1, 0, core::cuda::GetStream()>>>(transformation_ptr, X_ptr);
 }
 
 }  // namespace kernel

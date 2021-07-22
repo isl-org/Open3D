@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,10 @@
 #include <filament/Camera.h>
 #include <filament/Engine.h>
 #include <math/mat4.h>  // necessary for mat4f
+
+// Necessary for filament::utils::EntityManager::get(), replace with
+// engine_.getEntityManager() for Filament 1.9.23+
+#include <utils/EntityManager.h>
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -77,12 +81,15 @@ filament::math::mat4f CameraToFilamentTransformF(const Camera::Transform& t) {
 }  // namespace
 
 FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
-    camera_ = engine_.createCamera();
+    camera_entity_ = utils::EntityManager::get().create();
+    camera_ = engine_.createCamera(camera_entity_);
     projection_.is_ortho = false;
     projection_.is_intrinsic = false;
 }
 
-FilamentCamera::~FilamentCamera() { engine_.destroy(camera_); }
+FilamentCamera::~FilamentCamera() {
+    engine_.destroyCameraComponent(camera_entity_);
+}
 
 void FilamentCamera::CopyFrom(const Camera* camera) {
     SetModelMatrix(camera->GetModelMatrix());
@@ -200,18 +207,29 @@ double FilamentCamera::GetNear() const { return camera_->getNear(); }
 double FilamentCamera::GetFar() const { return camera_->getCullingFar(); }
 
 double FilamentCamera::GetFieldOfView() const {
-    if (projection_.is_ortho || projection_.is_intrinsic) {
+    if (projection_.is_ortho) {
         // technically orthographic projection is lim(fov->0) as dist->inf,
         // but it also serves as an obviously wrong value if you call
         // GetFieldOfView() after setting an orthographic projection
         return 0.0;
+    } else if (projection_.is_intrinsic) {
+        double fov_rad =
+                2.0 * std::atan(0.5 * projection_.proj.intrinsics.height /
+                                projection_.proj.intrinsics.fy);
+        return 180.0 / 3.141592 * fov_rad;
     } else {
         return projection_.proj.perspective.fov;
     }
 }
 
 Camera::FovType FilamentCamera::GetFieldOfViewType() const {
-    return projection_.proj.perspective.fov_type;
+    if (projection_.is_ortho) {
+        return Camera::FovType::Vertical;
+    } else if (projection_.is_intrinsic) {
+        return Camera::FovType::Vertical;
+    } else {
+        return projection_.proj.perspective.fov_type;
+    }
 }
 
 void FilamentCamera::LookAt(const Eigen::Vector3f& center,

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,10 +46,10 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
                           A.GetDtype().ToString(), B.GetDtype().ToString());
     }
 
-    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+    if (dtype != core::Float32 && dtype != core::Float64) {
         utility::LogDebug("Converting to Float32 dtype to from {}.",
                           dtype.ToString());
-        dtype = Dtype::Float32;
+        dtype = core::Float32;
     }
 
     // Check shapes

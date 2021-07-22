@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -120,13 +120,15 @@ public:
     /// d}.
     /// \param radius Radius.
     /// \param max_knn Maximum number of neighbor to search per query.
-    /// \return Pair of Tensors, (indices, distances):
+    /// \return Tuple of Tensors, (indices, distances, counts):
     /// - indices: Tensor of shape {n, knn}, with dtype Int64.
     /// - distainces: Tensor of shape {n, knn}, with same dtype with
     /// query_points. The distances are squared L2 distances.
-    std::pair<Tensor, Tensor> HybridSearch(const Tensor &query_points,
-                                           double radius,
-                                           int max_knn);
+    /// - counts: Counts of neighbour for each query points. [Tensor
+    /// of shape {n}, with dtype Int64].
+    std::tuple<Tensor, Tensor, Tensor> HybridSearch(const Tensor &query_points,
+                                                    double radius,
+                                                    int max_knn);
 
 private:
     bool SetIndex();

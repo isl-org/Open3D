@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,9 @@ TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
     io::WriteTriangleMesh("tmp.gltf", tm_gt);
 
     geometry::TriangleMesh tm_test;
-    io::ReadTriangleMesh("tmp.gltf", tm_test, false);
+    io::ReadTriangleMeshOptions opt;
+    opt.print_progress = false;
+    io::ReadTriangleMesh("tmp.gltf", tm_test, opt);
 
     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 
@@ -39,7 +38,7 @@ namespace visualization {
 namespace gui {
 
 namespace {
-static int g_next_tab_control_id_ = 1;
+static int g_next_tab_control_id = 1;
 
 int CalcTabHeight(const Theme& theme) {
     auto em = std::ceil(ImGui::GetTextLineHeight());
@@ -55,9 +54,8 @@ struct TabControl::Impl {
 };
 
 TabControl::TabControl() : impl_(new TabControl::Impl()) {
-    std::stringstream s;
-    s << "tabcontrol_" << g_next_tab_control_id_++;
-    impl_->imgui_id_ = s.str();
+    impl_->imgui_id_ =
+            "##tabcontrol_" + std::to_string(g_next_tab_control_id++);
 }
 
 TabControl::~TabControl() {}
@@ -72,19 +70,20 @@ void TabControl::SetOnSelectedTabChanged(std::function<void(int)> on_changed) {
     impl_->on_changed_ = on_changed;
 }
 
-Size TabControl::CalcPreferredSize(const Theme& theme) const {
+Size TabControl::CalcPreferredSize(const LayoutContext& context,
+                                   const Constraints& constraints) const {
     int width = 0, height = 0;
     for (auto& child : GetChildren()) {
-        auto size = child->CalcPreferredSize(theme);
+        auto size = child->CalcPreferredSize(context, constraints);
         width = std::max(width, size.width);
         height = std::max(height, size.height);
     }
 
-    return Size(width, height + CalcTabHeight(theme) + 2);
+    return Size(width, height + CalcTabHeight(context.theme) + 2);
 }
 
-void TabControl::Layout(const Theme& theme) {
-    auto tabHeight = CalcTabHeight(theme);
+void TabControl::Layout(const LayoutContext& context) {
+    auto tabHeight = CalcTabHeight(context.theme);
     auto frame = GetFrame();
     auto child_rect = Rect(frame.x, frame.y + tabHeight, frame.width,
                            frame.height - tabHeight);
@@ -93,12 +92,13 @@ void TabControl::Layout(const Theme& theme) {
         child->SetFrame(child_rect);
     }
 
-    Super::Layout(theme);
+    Super::Layout(context);
 }
 
 TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();

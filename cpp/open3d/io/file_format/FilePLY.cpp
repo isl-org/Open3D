@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
@@ -114,7 +114,7 @@ int ReadColorCallback(p_ply_argument argument) {
 namespace ply_trianglemesh_reader {
 
 struct PLYReaderState {
-    utility::ConsoleProgressBar *progress_bar;
+    utility::CountingProgressReporter *progress_bar;
     geometry::TriangleMesh *mesh_ptr;
     long vertex_index;
     long vertex_num;
@@ -538,8 +538,7 @@ bool WritePointCloudToPLY(const std::string &filename,
 
 bool ReadTriangleMeshFromPLY(const std::string &filename,
                              geometry::TriangleMesh &mesh,
-                             bool enable_post_processing,
-                             bool print_progress) {
+                             const ReadTriangleMeshOptions &params /*={}*/) {
     using namespace ply_trianglemesh_reader;
 
     p_ply ply_file = ply_open(filename.c_str(), NULL, 0, NULL);
@@ -594,9 +593,9 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
     mesh.vertex_normals_.resize(state.normal_num);
     mesh.vertex_colors_.resize(state.color_num);
 
-    utility::ConsoleProgressBar progress_bar(state.vertex_num + state.face_num,
-                                             "Reading PLY: ", print_progress);
-    state.progress_bar = &progress_bar;
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(state.vertex_num + state.face_num);
+    state.progress_bar = &reporter;
 
     if (!ply_read(ply_file)) {
         utility::LogWarning("Read PLY failed: unable to read file: {}",
@@ -606,6 +605,7 @@ bool ReadTriangleMeshFromPLY(const std::string &filename,
     }
 
     ply_close(ply_file);
+    reporter.Finish();
     return true;
 }
 

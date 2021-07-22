@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,7 @@ namespace visualization {
 
 namespace rendering {
 class Open3DScene;
+struct TriangleMeshModel;
 }  // namespace rendering
 
 namespace visualizer {
@@ -63,6 +64,7 @@ public:
         std::string name;
         std::shared_ptr<geometry::Geometry3D> geometry;
         std::shared_ptr<t::geometry::Geometry> tgeometry;
+        std::shared_ptr<rendering::TriangleMeshModel> model;
         rendering::Material material;
         std::string group;
         double time = 0.0;
@@ -115,14 +117,21 @@ public:
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<geometry::Geometry3D> geom,
-                     rendering::Material* material = nullptr,
+                     const rendering::Material* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
-                     rendering::Material* material = nullptr,
+                     const rendering::Material* material = nullptr,
+                     const std::string& group = "",
+                     double time = 0.0,
+                     bool is_visible = true);
+
+    void AddGeometry(const std::string& name,
+                     std::shared_ptr<rendering::TriangleMeshModel> tgeom,
+                     const rendering::Material* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
@@ -133,10 +142,20 @@ public:
 
     DrawObject GetGeometry(const std::string& name) const;
 
+    void Add3DLabel(const Eigen::Vector3f& pos, const char* text);
+    void Clear3DLabels();
+
     void SetupCamera(float fov,
                      const Eigen::Vector3f& center,
                      const Eigen::Vector3f& eye,
                      const Eigen::Vector3f& up);
+    void SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
+                     const Eigen::Matrix4d& extrinsic);
+    void SetupCamera(const Eigen::Matrix3d& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px);
+
     void ResetCameraToDefault();
 
     void ShowSettings(bool show);
@@ -183,7 +202,7 @@ public:
     void StopRPCInterface();
 
 protected:
-    void Layout(const gui::Theme& theme);
+    void Layout(const gui::LayoutContext& context);
 
 private:
     struct Impl;

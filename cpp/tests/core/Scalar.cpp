@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -110,6 +110,14 @@ TEST(Scalar, To) {
     EXPECT_EQ(ToScalar(1.25f).To<float>(), 1.25f);
     EXPECT_EQ(ToScalar(1.25f).To<int>(), 1);
     EXPECT_EQ(ToScalar(1.25f).To<bool>(), true);
+}
+
+TEST(Scalar, Constructor) {
+    // Test with int64_t limit.
+    core::Scalar a(9223372036854775807);
+    EXPECT_EQ(a.GetInt64(), 9223372036854775807);
+    core::Scalar b = ToScalar(9223372036854775807);
+    EXPECT_EQ(b.GetInt64(), 9223372036854775807);
 }
 
 }  // namespace tests

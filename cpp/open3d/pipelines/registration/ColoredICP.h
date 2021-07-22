@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -91,10 +91,11 @@ private:
 /// \param max_distance Maximum correspondence points-pair distance.
 /// \param init Initial transformation estimation.
 /// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
-/// [0., 0., 0., 1.]]). \param criteria  Convergence criteria. \param
+/// [0., 0., 0., 1.]]).
 /// \param estimation TransformationEstimationForColoredICP method. Can only
 /// change the lambda_geometric value and the robust kernel used in the
 /// optimization
+/// \param criteria  Convergence criteria.
 RegistrationResult RegistrationColoredICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

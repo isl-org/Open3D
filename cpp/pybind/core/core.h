@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,7 @@ void pybind_core_tensor_accessor(py::class_<Tensor>& t);
 void pybind_core_linalg(py::module& m);
 void pybind_core_kernel(py::module& m);
 void pybind_core_hashmap(py::module& m);
+void pybind_core_scalar(py::module& m);
 
 }  // namespace core
 }  // namespace open3d

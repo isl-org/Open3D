@@ -29,7 +29,6 @@ jobs:
       BUILD_CUDA_MODULE: OFF
       BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
       BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
-      BUILD_RPC_INTERFACE: ON
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -69,7 +68,9 @@ jobs:
       - name: Install dependencies
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
-          sudo apt-get --yes install ccache
+          wget https://github.com/intel-isl/open3d_downloads/releases/download/ccache/ccache
+          chmod +x ccache
+          sudo mv ccache /usr/local/bin
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build
@@ -86,7 +87,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -94,9 +95,12 @@ jobs:
             python_version: 3.7
           - is_master: false
             python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     env:
       BUILD_CUDA_MODULE: ON
+      BUILD_COMMON_CUDA_ARCHS: ${{ matrix.is_master && 'ON' || 'OFF' }}
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
     steps:
@@ -139,7 +143,9 @@ jobs:
         shell: bash -l {0}
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
-          sudo apt-get --yes install ccache
+          wget https://github.com/intel-isl/open3d_downloads/releases/download/ccache/ccache
+          chmod +x ccache
+          sudo mv ccache /usr/local/bin
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           source util/ci_utils.sh
           echo
@@ -150,7 +156,7 @@ jobs:
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
           echo
           echo "Installing CPU versions of packages"
-          install_python_dependencies with-conda
+          install_python_dependencies with-conda with-jupyter
           echo
           echo -n "Using conda"
           conda info
@@ -167,7 +173,7 @@ jobs:
           PATH=/usr/lib/ccache:$PATH
           ccache -s
           source util/ci_utils.sh
-          build_pip_conda_package build_azure_kinect
+          build_pip_conda_package build_azure_kinect build_jupyter
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
@@ -210,7 +216,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -218,6 +224,8 @@ jobs:
             python_version: 3.7
           - is_master: false
             python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,6 +70,7 @@ public:
     void ShowAxes(bool enable);
     void SetBackground(const Eigen::Vector4f& color,
                        std::shared_ptr<geometry::Image> image = nullptr);
+    const Eigen::Vector4f GetBackgroundColor() const;
     void ShowGroundPlane(bool enable, Scene::GroundPlane plane);
 
     enum class LightingProfile {
@@ -144,15 +145,12 @@ private:
 
     void SetGeometryToLOD(const GeometryData&, LOD lod);
 
-    View* GetWindowView() const;
-
 private:
     Renderer& renderer_;
     SceneHandle scene_;
-    SceneHandle window_scene_;
     ViewHandle view_;
-    ViewHandle window_view_;
 
+    Eigen::Vector4f background_color;
     LOD lod_ = LOD::HIGH_DETAIL;
     bool use_low_quality_if_available_ = false;
     bool axis_dirty_ = true;

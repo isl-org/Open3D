@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/Messages.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 using namespace open3d::utility;
 
@@ -180,8 +180,8 @@ bool SetMeshData(const core::Tensor& vertices,
                 vertices.NumDims());
         return false;
     }
-    if (vertices.GetDtype() != core::Dtype::Float32 &&
-        vertices.GetDtype() != core::Dtype::Float64) {
+    if (vertices.GetDtype() != core::Float32 &&
+        vertices.GetDtype() != core::Float64) {
         LogError(
                 "SetMeshData: vertices must have dtype Float32 or Float64 but "
                 "is {}",
@@ -224,8 +224,8 @@ bool SetMeshData(const core::Tensor& vertices,
     }
 
     if (faces.NumElements()) {
-        if (faces.GetDtype() != core::Dtype::Int32 &&
-            faces.GetDtype() != core::Dtype::Int64) {
+        if (faces.GetDtype() != core::Int32 &&
+            faces.GetDtype() != core::Int64) {
             LogError(
                     "SetMeshData: faces must have dtype Int32 or Int64 but "
                     "is {}",
@@ -258,8 +258,8 @@ bool SetMeshData(const core::Tensor& vertices,
     }
 
     if (lines.NumElements()) {
-        if (lines.GetDtype() != core::Dtype::Int32 &&
-            lines.GetDtype() != core::Dtype::Int64) {
+        if (lines.GetDtype() != core::Int32 &&
+            lines.GetDtype() != core::Int64) {
             LogError(
                     "SetMeshData: lines must have dtype Int32 or Int64 but "
                     "is {}",

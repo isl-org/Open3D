@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -142,6 +142,20 @@ public:
     ///
     /// \param mesh The input tetra mesh.
     static std::shared_ptr<LineSet> CreateFromTetraMesh(const TetraMesh &mesh);
+
+    /// Factory function to create a LineSet from intrinsic and extrinsic
+    /// matrices.
+    ///
+    /// \param view_width_px The width of the view, in pixels
+    /// \param view_height_px The height of the view, in pixels
+    /// \param intrinsic The intrinsic matrix
+    /// \param extrinsic The extrinsic matrix
+    static std::shared_ptr<LineSet> CreateCameraVisualization(
+            int view_width_px,
+            int view_height_px,
+            const Eigen::Matrix3d &intrinsic,
+            const Eigen::Matrix4d &extrinsic,
+            double scale = 1.0);
 
 public:
     /// Points coordinates.

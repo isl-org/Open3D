@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,8 +35,9 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace geometry {
@@ -139,7 +140,8 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     std::vector<double> distances(points_.size());
     KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices(1);
         std::vector<double> dists(1);
@@ -504,7 +506,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     std::vector<bool> mask = std::vector<bool>(points_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
@@ -539,7 +542,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     std::vector<size_t> indices;
     size_t valid_distances = 0;
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
@@ -626,7 +630,8 @@ std::vector<double> PointCloud::ComputeMahalanobisDistance() const {
     Eigen::Matrix3d covariance;
     std::tie(mean, covariance) = ComputeMeanAndCovariance();
     Eigen::Matrix3d cov_inv = covariance.inverse();
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         Eigen::Vector3d p = points_[i] - mean;
         mahalanobis[i] = std::sqrt(p.transpose() * cov_inv * p);
@@ -641,7 +646,8 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
 
     std::vector<double> nn_dis(points_.size());
     KDTreeFlann kdtree(*this);
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices(2);
         std::vector<double> dists(2);
@@ -693,8 +699,9 @@ PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
     size_t origin_vidx = pt_map.size();
     for (size_t vidx = 0; vidx < pt_map.size(); vidx++) {
         size_t pidx = pt_map[vidx];
-        visible_mesh->vertices_[vidx] = points_[pidx];
-        if (pidx == origin_pidx) {
+        if (pidx != origin_pidx) {
+            visible_mesh->vertices_[vidx] = points_[pidx];
+        } else {
             origin_vidx = vidx;
             visible_mesh->vertices_[vidx] = camera_location;
         }

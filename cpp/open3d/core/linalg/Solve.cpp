@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
                           A.GetDtype().ToString(), B.GetDtype().ToString());
     }
 
-    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+    if (dtype != core::Float32 && dtype != core::Float64) {
         utility::LogError(
                 "Only tensors with Float32 or Float64 are supported, but "
                 "received {}",
@@ -94,7 +94,7 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        Tensor ipiv = Tensor::Empty({n}, Dtype::Int32, device);
+        Tensor ipiv = Tensor::Empty({n}, core::Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
         SolveCUDA(A_data, B_data, ipiv_data, n, k, dtype, device);
@@ -104,9 +104,9 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     } else {
         Dtype ipiv_dtype;
         if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
-            ipiv_dtype = Dtype::Int32;
+            ipiv_dtype = core::Int32;
         } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
-            ipiv_dtype = Dtype::Int64;
+            ipiv_dtype = core::Int64;
         } else {
             utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,8 @@
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace geometry {
@@ -39,32 +40,34 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
                                            bool print_progress) const {
     KDTreeFlann kdtree(*this);
 
-    // precompute all neighbours
-    utility::LogDebug("Precompute Neighbours");
+    // Precompute all neighbors.
+    utility::LogDebug("Precompute neighbors.");
     utility::ConsoleProgressBar progress_bar(
-            points_.size(), "Precompute Neighbours", print_progress);
+            points_.size(), "Precompute neighbors.", print_progress);
     std::vector<std::vector<int>> nbs(points_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int idx = 0; idx < int(points_.size()); ++idx) {
         std::vector<double> dists2;
         kdtree.SearchRadius(points_[idx], eps, nbs[idx], dists2);
 
-#pragma omp critical
+#pragma omp critical(ClusterDBSCAN)
         { ++progress_bar; }
     }
-    utility::LogDebug("Done Precompute Neighbours");
+    utility::LogDebug("Done Precompute neighbors.");
 
-    // set all labels to undefined (-2)
+    // Set all labels to undefined (-2).
     utility::LogDebug("Compute Clusters");
-    progress_bar.reset(points_.size(), "Clustering", print_progress);
+    progress_bar.Reset(points_.size(), "Clustering", print_progress);
     std::vector<int> labels(points_.size(), -2);
     int cluster_label = 0;
     for (size_t idx = 0; idx < points_.size(); ++idx) {
-        if (labels[idx] != -2) {  // label is not undefined
+        // Label is not undefined.
+        if (labels[idx] != -2) {
             continue;
         }
 
-        // check density
+        // Check density.
         if (nbs[idx].size() < min_points) {
             labels[idx] = -1;
             continue;
@@ -81,11 +84,13 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
             nbs_next.erase(nbs_next.begin());
             nbs_visited.insert(nb);
 
-            if (labels[nb] == -1) {  // noise label
+            // Noise label.
+            if (labels[nb] == -1) {
                 labels[nb] = cluster_label;
                 ++progress_bar;
             }
-            if (labels[nb] != -2) {  // not undefined label
+            // Not undefined label.
+            if (labels[nb] != -2) {
                 continue;
             }
             labels[nb] = cluster_label;

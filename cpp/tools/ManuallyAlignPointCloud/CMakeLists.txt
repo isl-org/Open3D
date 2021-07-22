@@ -1,19 +1,16 @@
-set(HEADER_FILES
-    AlignmentSession.h
-    VisualizerForAlignment.h
-    )
-set(SOURCE_FILES
-    AlignmentSession.cpp
+add_executable(ManuallyAlignPointCloud)
+
+target_sources(ManuallyAlignPointCloud PRIVATE
     ManuallyAlignPointCloud.cpp
+    AlignmentSession.cpp
     VisualizerForAlignment.cpp
-    )
-
-include_directories(".")
-
-add_executable(ManuallyAlignPointCloud ${HEADER_FILES} ${SOURCE_FILES})
-open3d_show_and_abort_on_warning(ManuallyAlignPointCloud)
-open3d_set_global_properties(ManuallyAlignPointCloud)
-
-target_link_libraries(ManuallyAlignPointCloud PRIVATE ${PROJECT_NAME} ${JSONCPP_TARGET} ${TINYFILEDIALOGS_TARGET})
+)
+target_link_libraries(ManuallyAlignPointCloud PRIVATE
+    Open3D::Open3D
+    Open3D::3rdparty_jsoncpp
+    Open3D::3rdparty_tinyfiledialogs
+)
 
 set_target_properties(ManuallyAlignPointCloud PROPERTIES FOLDER "Tools")
+open3d_show_and_abort_on_warning(ManuallyAlignPointCloud)
+open3d_set_global_properties(ManuallyAlignPointCloud)

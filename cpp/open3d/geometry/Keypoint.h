@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,8 +52,8 @@ namespace keypoint {
 /// from the input data, taking into account the Model Resolution.
 /// \param gamma_21 The upper bound on the ratio between the second and the
 /// first eigenvalue
-/// \param gamma32 The upper bound on the ratio between the third and the second
-/// eigenvalue
+/// \param gamma_32 The upper bound on the ratio between the third and the
+/// second eigenvalue
 /// \param min_neighbors Minimum number of neighbors that has to be found to
 /// consider a keypoint.
 /// \authors Ignacio Vizzo and Cyrill Stachniss, University of Bonn.

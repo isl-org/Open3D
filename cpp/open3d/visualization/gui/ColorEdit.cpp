@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@
 #include <imgui.h>
 
 #include <cmath>
-#include <sstream>
 
 #include "open3d/visualization/gui/Theme.h"
 
@@ -48,9 +47,7 @@ struct ColorEdit::Impl {
 };
 
 ColorEdit::ColorEdit() : impl_(new ColorEdit::Impl()) {
-    std::stringstream s;
-    s << "##colorEdit_" << g_next_color_edit_id++;
-    impl_->id_ = s.str();
+    impl_->id_ = "##coloredit_" + std::to_string(g_next_color_edit_id++);
 }
 
 ColorEdit::~ColorEdit() {}
@@ -68,7 +65,8 @@ void ColorEdit::SetOnValueChanged(
     impl_->on_value_changed_ = on_value_changed;
 }
 
-Size ColorEdit::CalcPreferredSize(const Theme& theme) const {
+Size ColorEdit::CalcPreferredSize(const LayoutContext& context,
+                                  const Constraints& constraints) const {
     auto line_height = ImGui::GetTextLineHeight();
     auto height = line_height + 2.0 * ImGui::GetStyle().FramePadding.y;
 
@@ -77,7 +75,8 @@ Size ColorEdit::CalcPreferredSize(const Theme& theme) const {
 
 ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     auto new_value = impl_->value_;
     DrawImGuiPushEnabledState();
@@ -85,6 +84,7 @@ ColorEdit::DrawResult ColorEdit::Draw(const DrawContext& context) {
     ImGui::ColorEdit3(impl_->id_.c_str(), new_value.GetMutablePointer());
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     if (impl_->value_ != new_value) {
         impl_->value_ = new_value;

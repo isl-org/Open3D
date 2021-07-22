@@ -1,55 +1,21 @@
-cmake_minimum_required(VERSION 3.0)
-# Overide policy for hidden symbol visibility
-if(POLICY CMP0063)
-    cmake_policy(SET CMP0063 NEW)
-endif()
+add_executable(benchmarks)
 
-################################################################################
-#
-# build benchmark dependency here so we can pass the _GLIBCXX_USE_CXX11_ABI
-# definition
-#
+add_subdirectory(core)
+add_subdirectory(geometry)
+add_subdirectory(io)
+add_subdirectory(pipelines)
+add_subdirectory(t/geometry)
+add_subdirectory(t/pipelines)
 
-# turn off installing and testing of the benchmark lib
-set(BENCHMARK_ENABLE_INSTALL  OFF CACHE BOOL "This should be OFF. Enables installing the benchmark lib")
-set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "This should be OFF. Enables gtest framework for the benchmark lib")
-set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "This should be OFF. Enables tests for the benchmark lib")
-
-if(GLIBCXX_USE_CXX11_ABI)
-    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
-else()
-    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-endif()
-add_subdirectory(${Open3D_3RDPARTY_DIR}/benchmark ${CMAKE_BINARY_DIR}/3rdparty/benchmark2)
-# set the cache vars introduced by the benchmark lib as advanced to not
-# clutter the cmake interfaces
-mark_as_advanced(
-    BENCHMARK_ENABLE_INSTALL
-    BENCHMARK_ENABLE_GTEST_TESTS
-    BENCHMARK_ENABLE_TESTING
-    BENCHMARK_ENABLE_ASSEMBLY_TESTS
-    BENCHMARK_DOWNLOAD_DEPENDENCIES
-    BENCHMARK_BUILD_32_BITS
-    BENCHMARK_ENABLE_EXCEPTIONS
-    BENCHMARK_ENABLE_LTO
-    BENCHMARK_USE_LIBCXX
-)
-################################################################################
-
-
-set(BENCHMARK_SOURCE_FILES
-    core/Reduction.cpp
-    geometry/KDTreeFlann.cpp
-    geometry/SamplePoints.cpp
-    io/PointCloudIO.cpp
-    tgeometry/PointCloud.cpp
-)
-
-add_executable(benchmarks ${BENCHMARK_SOURCE_FILES})
 target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 target_compile_definitions(benchmarks PRIVATE BENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
 
-target_link_libraries(benchmarks PRIVATE ${CMAKE_PROJECT_NAME} benchmark::benchmark benchmark::benchmark_main)
+target_link_libraries(benchmarks PRIVATE Open3D::Open3D)
+if (BUILD_CUDA_MODULE)
+    find_package(CUDAToolkit REQUIRED)
+    target_link_libraries(benchmarks PRIVATE CUDA::cudart)
+endif()
+
 open3d_show_and_abort_on_warning(benchmarks)
 open3d_set_global_properties(benchmarks)
 open3d_link_3rdparty_libraries(benchmarks)
@@ -57,3 +23,14 @@ open3d_link_3rdparty_libraries(benchmarks)
 if (BUILD_CUDA_MODULE)
     target_include_directories(benchmarks SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 endif()
+
+if (WITH_IPPICV)
+    target_compile_definitions(benchmarks PRIVATE IPP_CONDITIONAL_TEST_STR=) # Empty string (test not disabled)
+else()
+    target_compile_definitions(benchmarks PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
+endif()
+
+target_sources(benchmarks PRIVATE
+    Main.cpp
+)
+target_link_libraries(benchmarks PRIVATE benchmark::benchmark)

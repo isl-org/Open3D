@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -118,8 +118,7 @@ void pybind_voxelgrid(py::module &m) {
                  "valid image location.")
             .def("to_octree", &VoxelGrid::ToOctree, "max_depth"_a,
                  "Convert to Octree.")
-            .def("create_from_octree", &VoxelGrid::CreateFromOctree,
-                 "octree"_a
+            .def("create_from_octree", &VoxelGrid::CreateFromOctree, "octree"_a,
                  "Convert from Octree.")
             .def_static("create_dense", &VoxelGrid::CreateDense,
                         "Creates a voxel grid where every voxel is set (hence "

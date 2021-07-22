@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -245,7 +245,7 @@ public:
     /// When called, the update function adds the point cloud point index to
     /// the corresponding node index list.
     ///
-    /// \param idx Point cloud point index associated with node.
+    /// \param index Point cloud point index associated with node.
     /// \param color Color of the node.
     static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     GetUpdateFunction(size_t index, const Eigen::Vector3d& color);

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ struct Material {
     float absorption_distance = 1.f;
 
     float point_size = 3.f;
-    float line_width = 1.f;
+    float line_width = 1.f;  // only used with shader = "unlitLine"
 
     std::shared_ptr<geometry::Image> albedo_img;
     std::shared_ptr<geometry::Image> normal_img;
@@ -85,8 +85,15 @@ struct Material {
 
     // Colors are assumed to be sRGB and tone-mapped accordingly.
     // If tone-mapping is disabled, then colors would be in linear RGB space,
-    // in which case this should be set to false.
+    // in which case this should be set to false. If necessary, colors will be
+    // linearized on the CPU.
     bool sRGB_color = true;
+
+    // Unlike the material property sRGB_color which is used to indicate that
+    // source colors are in sRGB colorspace, sRGB_vertex_color indicates that
+    // per-vertex colors are in sRGB space and should be passed to the GPU as
+    // sRGB color.
+    bool sRGB_vertex_color = false;
 
     // Background image (shader = "unlitBackground")
     float aspect_ratio = 0.0f;  // 0: uses base_color; >0: uses albedo_img
@@ -98,7 +105,7 @@ struct Material {
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;
 
-    std::string shader;
+    std::string shader = "defaultUnlit";
 };
 
 }  // namespace rendering

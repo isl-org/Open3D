@@ -1,34 +1,45 @@
-# Build
-set(REGISTRATION_SRC
+add_subdirectory(kernel)
+
+add_library(tpipelines OBJECT $<TARGET_OBJECTS:tpipelines_kernel>)
+
+target_sources(tpipelines PRIVATE
+    kernel/ComputeTransform.cpp
+    kernel/ComputeTransformCPU.cpp
+    kernel/FillInLinearSystem.cpp
+    kernel/FillInLinearSystemCPU.cpp
+    kernel/RGBDOdometry.cpp
+    kernel/RGBDOdometryCPU.cpp
+    kernel/TransformationConverter.cpp
+)
+
+if (BUILD_CUDA_MODULE)
+    target_sources(tpipelines PRIVATE
+        kernel/ComputeTransformCUDA.cu
+        kernel/FillInLinearSystemCUDA.cu
+        kernel/RGBDOdometryCUDA.cu
+        kernel/TransformationConverter.cu
+    )
+endif()
+
+target_sources(tpipelines PRIVATE
+    odometry/RGBDOdometry.cpp
+)
+
+target_sources(tpipelines PRIVATE
     registration/Registration.cpp
     registration/TransformationEstimation.cpp
 )
 
-set(KERNEL_SRC
-    kernel/TransformationConverter.cpp
-    kernel/ComputePosePointToPlane.cpp
-    kernel/ComputePosePointToPlaneCPU.cpp
+target_sources(tpipelines PRIVATE
+    slac/ControlGrid.cpp
+    slac/SLACOptimizer.cpp
+    slac/Visualization.cpp
 )
 
-set(KERNEL_CUDA_SRC
-    kernel/TransformationConverter.cu
-    kernel/ComputePosePointToPlaneCUDA.cu
+target_sources(tpipelines PRIVATE
+    voxelhashing/Model.cpp
 )
 
-set(ALL_PIPELINE_SRC
-    ${REGISTRATION_SRC}
-    ${KERNEL_SRC}
-)
-
-if(BUILD_CUDA_MODULE)
-    set(ALL_PIPELINE_SRC
-        ${ALL_PIPELINE_SRC}
-        ${KERNEL_CUDA_SRC}
-    )
-endif()
-
-# Create object library
-add_library(tpipelines OBJECT ${ALL_PIPELINE_SRC})
 open3d_show_and_abort_on_warning(tpipelines)
 open3d_set_global_properties(tpipelines)
 open3d_set_open3d_lib_properties(tpipelines)

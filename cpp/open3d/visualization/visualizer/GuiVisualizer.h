@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +68,7 @@ public:
 
     void ExportCurrentImage(const std::string& path);
 
-    void Layout(const gui::Theme& theme) override;
+    void Layout(const gui::LayoutContext& context) override;
 
     /// Starts the RPC interface. See io/rpc/ReceiverBase for the parameters.
     void StartRPCInterface(const std::string& address, int timeout);

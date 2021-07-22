@@ -19,7 +19,6 @@ CI_CONFIG_ID=${CI_CONFIG_ID%%-*} # '3-ML-bionic' -> '3'
 SHARED=(OFF ON OFF ON OFF OFF)
 BUILD_ML_OPS=(OFF ON OFF ON ON ON)
 BUILD_CUDA_MODULE=(OFF OFF ON ON ON ON)
-BUILD_RPC_INTERFACE=(ON ON OFF OFF ON ON)
 UBUNTU_VERSION_LIST=(bionic bionic bionic bionic bionic focal)
 UBUNTU_VERSION=${UBUNTU_VERSION:-${UBUNTU_VERSION_LIST[$CI_CONFIG_ID]}}
 BUILD_TENSORFLOW_OPS=("${BUILD_ML_OPS[@]}")
@@ -44,8 +43,8 @@ GCE_INSTANCE_ZONE=(us-west1-a us-west1-b
 GCE_ZID=${GCE_ZID:=0} # Persist between calls of this script
 GCE_GPU="count=1,type=nvidia-tesla-t4"
 GCE_BOOT_DISK_TYPE=pd-ssd
-GCE_BOOT_DISK_SIZE=48GB
-NVIDIA_DRIVER_VERSION=440 # Must be present in Ubuntu repos 20.04: {390, 418, 430, 435, 440}
+GCE_BOOT_DISK_SIZE=64GB
+NVIDIA_DRIVER_VERSION=460 # Must be present in Ubuntu repos 20.04
 GCE_VM_BASE_OS=ubuntu20.04
 GCE_VM_IMAGE_SPEC=(--image-project=ubuntu-os-cloud --image-family=ubuntu-2004-lts)
 GCE_VM_CUSTOM_IMAGE_FAMILY=ubuntu-os-docker-gpu-2004-lts
@@ -63,21 +62,13 @@ case "$1" in
 gcloud-setup)
     gcloud auth configure-docker
     gcloud info
-    # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
-    for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
-        echo "Removing ssh key"; \
-        gcloud compute os-login ssh-keys remove --key $i || true; \
-    done
     ;;
 
     # Build the Docker image
 docker-build)
-    # Pull previous image as cache
-    docker pull "$DC_IMAGE_LATEST_TAG" || true
     docker build -t "$DC_IMAGE_TAG" \
         -f util/docker/open3d-gpu/Dockerfile \
         --build-arg UBUNTU_VERSION="$UBUNTU_VERSION" \
-        --build-arg NVIDIA_DRIVER_VERSION="${NVIDIA_DRIVER_VERSION}" \
         .
     docker tag "$DC_IMAGE_TAG" "$DC_IMAGE_LATEST_TAG"
     ;;
@@ -144,14 +135,15 @@ create-vm)
 
 run-ci)
     gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" --command \
-        "sudo docker run --rm --gpus all \
+        "sudo docker run --detach --interactive --name open3d_gpu_ci --gpus all \
             --env NPROC=$NPROC \
             --env SHARED=${SHARED[$CI_CONFIG_ID]} \
             --env BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE[$CI_CONFIG_ID]} \
             --env BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS[$CI_CONFIG_ID]} \
             --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
-            --env BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE[$CI_CONFIG_ID]} \
-            $DC_IMAGE_TAG"
+            --env OPEN3D_ML_ROOT=/root/Open3D/Open3D-ML \
+            $DC_IMAGE_TAG; \
+            sudo docker exec --interactive  open3d_gpu_ci util/run_ci.sh"
     ;;
 
 delete-image)
@@ -163,6 +155,8 @@ delete-image)
 
 delete-vm)
     gcloud compute instances delete "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}"
+    # Remove ssh key to prevent metadata buildup in login profile
+    gcloud compute os-login ssh-keys remove --key-file "${HOME}"/.ssh/google_compute_engine.pub
     ;;
 
 ssh-vm)

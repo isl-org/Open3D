@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ py::class_<Vector, holder_type> bind_vector_without_repr(
 template <typename EigenVector>
 std::vector<EigenVector> py_array_to_vectors_double(
         py::array_t<double, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -74,7 +74,7 @@ std::vector<EigenVector> py_array_to_vectors_double(
 template <typename EigenVector>
 std::vector<EigenVector> py_array_to_vectors_int(
         py::array_t<int, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -91,7 +91,7 @@ template <typename EigenVector,
 std::vector<EigenVector, EigenAllocator>
 py_array_to_vectors_int_eigen_allocator(
         py::array_t<int, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
@@ -108,7 +108,7 @@ template <typename EigenVector,
 std::vector<EigenVector, EigenAllocator>
 py_array_to_vectors_int64_eigen_allocator(
         py::array_t<int64_t, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
+    int64_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }

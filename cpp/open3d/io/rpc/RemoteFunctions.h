@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -67,7 +67,7 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
                            std::shared_ptr<ConnectionBase>());
 
 /// Function for sending a TriangleMesh.
-/// \param pcd         The TriangleMesh object.
+/// \param mesh         The TriangleMesh object.
 ///
 /// \param path        Path descriptor defining a location in the scene tree.
 /// E.g., 'mygroup/mypoints'.
@@ -128,12 +128,10 @@ bool SetMeshData(const core::Tensor& vertices,
                  const std::string& layer = "",
                  const std::map<std::string, core::Tensor>& vertex_attributes =
                          std::map<std::string, core::Tensor>(),
-                 const core::Tensor& faces = core::Tensor({0},
-                                                          core::Dtype::Int32),
+                 const core::Tensor& faces = core::Tensor({0}, core::Int32),
                  const std::map<std::string, core::Tensor>& face_attributes =
                          std::map<std::string, core::Tensor>(),
-                 const core::Tensor& lines = core::Tensor({0},
-                                                          core::Dtype::Int32),
+                 const core::Tensor& lines = core::Tensor({0}, core::Int32),
                  const std::map<std::string, core::Tensor>& line_attributes =
                          std::map<std::string, core::Tensor>(),
                  const std::map<std::string, core::Tensor>& textures =

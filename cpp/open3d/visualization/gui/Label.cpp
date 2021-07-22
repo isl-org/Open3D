@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@
 #include <cmath>
 #include <string>
 
+#include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -53,6 +54,7 @@ static const Color DEFAULT_COLOR(0, 0, 0, 0);
 struct Label::Impl {
     std::string text_;
     Color color_ = DEFAULT_COLOR;
+    FontId font_id_ = Application::DEFAULT_FONT_ID;
     bool is_single_line = true;
 };
 
@@ -75,33 +77,42 @@ Color Label::GetTextColor() const { return impl_->color_; }
 
 void Label::SetTextColor(const Color& color) { impl_->color_ = color; }
 
-Size Label::CalcPreferredSize(const Theme& theme) const {
-    auto em = theme.font_size;
+FontId Label::GetFontId() const { return impl_->font_id_; }
+
+void Label::SetFontId(const FontId font_id) { impl_->font_id_ = font_id; }
+
+Size Label::CalcPreferredSize(const LayoutContext& context,
+                              const Constraints& constraints) const {
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
+
     auto padding = ImGui::GetStyle().FramePadding;
     auto* font = ImGui::GetFont();
+    Size pref;
 
     if (impl_->is_single_line) {
-        auto size = font->CalcTextSizeA(float(theme.font_size), 10000, 0.0,
-                                        impl_->text_.c_str());
-        return Size(int(std::ceil(size.x + 2.0f * padding.x)),
-                    int(std::ceil(em + 2.0f * padding.y)));
+        float wrap_width = float(constraints.width);
+        auto size =
+                font->CalcTextSizeA(font->FontSize, float(constraints.width),
+                                    wrap_width, impl_->text_.c_str());
+        pref = Size(int(std::ceil(size.x + 2.0f * padding.x)),
+                    int(std::ceil(size.y + 2.0f * padding.y)));
     } else {
         ImVec2 size(0, 0);
         size_t line_start = 0;
         auto line_end = impl_->text_.find('\n');
-        float wrap_width = float(PREFERRED_WRAP_WIDTH_EM * em);
+        auto em = int(std::round(font->FontSize));
+        float wrap_width = float(
+                std::min(constraints.width, PREFERRED_WRAP_WIDTH_EM * em));
         float spacing = ImGui::GetTextLineHeightWithSpacing() -
                         ImGui::GetTextLineHeight();
         do {
             ImVec2 sz;
             if (line_end == std::string::npos) {
-                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
-                                         wrap_width,
+                sz = font->CalcTextSizeA(font->FontSize, FLT_MAX, wrap_width,
                                          impl_->text_.c_str() + line_start);
                 line_start = line_end;
             } else {
-                sz = font->CalcTextSizeA(float(theme.font_size), FLT_MAX,
-                                         wrap_width,
+                sz = font->CalcTextSizeA(font->FontSize, FLT_MAX, wrap_width,
                                          impl_->text_.c_str() + line_start,
                                          impl_->text_.c_str() + line_end);
                 line_start = line_end + 1;
@@ -111,34 +122,39 @@ Size Label::CalcPreferredSize(const Theme& theme) const {
             size.y += sz.y + spacing;
         } while (line_start != std::string::npos);
 
-        return Size(int(std::ceil(size.x)) + int(std::ceil(2.0f * padding.x)),
+        pref = Size(int(std::ceil(size.x)) + int(std::ceil(2.0f * padding.x)),
                     int(std::ceil(size.y - spacing)) +
                             int(std::ceil(2.0f * padding.y)));
     }
+
+    ImGui::PopFont();
+    return pref;
 }
 
 Widget::DrawResult Label::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
     ImGui::PushItemWidth(float(frame.width));
     bool is_default_color = (impl_->color_ == DEFAULT_COLOR);
     if (!is_default_color) {
         ImGui::PushStyleColor(ImGuiCol_Text, colorToImgui(impl_->color_));
     }
-    if (impl_->is_single_line) {
-        ImGui::TextUnformatted(impl_->text_.c_str());
-    } else {
-        auto padding = ImGui::GetStyle().FramePadding;
-        float wrapX = ImGui::GetCursorPos().x + frame.width -
-                      std::ceil(2.0f * padding.x);
-        ImGui::PushTextWrapPos(wrapX);
-        ImGui::TextWrapped("%s", impl_->text_.c_str());
-        ImGui::PopTextWrapPos();
-    }
+    ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
+
+    auto padding = ImGui::GetStyle().FramePadding;
+    float wrapX = ImGui::GetCursorPos().x + frame.width - padding.x;
+    ImGui::PushTextWrapPos(wrapX);
+    ImGui::TextWrapped("%s", impl_->text_.c_str());
+    ImGui::PopTextWrapPos();
+
+    ImGui::PopFont();
     if (!is_default_color) {
         ImGui::PopStyleColor();
     }
     ImGui::PopItemWidth();
+    // Tooltip (if it exists) is in the system font, so do after popping font
+    DrawImGuiTooltip();
     return Widget::DrawResult::NONE;
 }
 

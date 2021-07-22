@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 #include <mutex>
 #include <thread>
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace zmq {
 class message_t;
@@ -85,11 +85,11 @@ protected:
     struct MsgpackObject;
 
     /// Function for processing a msg.
-    /// \param req  The Request object that accompanies the \param msg object.
+    /// \param req  The Request object that accompanies the \p msg object.
     ///
     /// \param msg  The message to be processed
     ///
-    /// \param obj  The object from which the \param msg was unpacked. Can be
+    /// \param obj  The object from which the \p msg was unpacked. Can be
     /// used for custom unpacking.
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,

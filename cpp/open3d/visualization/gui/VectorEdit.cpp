@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,6 @@
 
 #include <imgui.h>
 
-#include <sstream>
-
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
 
@@ -49,8 +47,7 @@ struct VectorEdit::Impl {
 };
 
 VectorEdit::VectorEdit() : impl_(new VectorEdit::Impl()) {
-    std::stringstream s;
-    s << "##vectoredit" << g_next_vector_edit_id++ << std::endl;
+    impl_->id_ = "##vectoredit_" + std::to_string(g_next_vector_edit_id++);
 }
 
 VectorEdit::~VectorEdit() {}
@@ -70,7 +67,8 @@ void VectorEdit::SetOnValueChanged(
     impl_->on_changed_ = on_changed;
 }
 
-Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
+Size VectorEdit::CalcPreferredSize(const LayoutContext& context,
+                                   const Constraints& constraints) const {
     auto em = std::ceil(ImGui::GetTextLineHeight());
     auto padding = ImGui::GetStyle().FramePadding;
     return Size(Widget::DIM_GROW, int(std::ceil(em + 2.0f * padding.y)));
@@ -78,7 +76,8 @@ Size VectorEdit::CalcPreferredSize(const Theme& theme) const {
 
 Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
     auto& frame = GetFrame();
-    ImGui::SetCursorScreenPos(ImVec2(float(frame.x), float(frame.y)));
+    ImGui::SetCursorScreenPos(
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text editing
@@ -101,6 +100,7 @@ Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
     }
     ImGui::PopItemWidth();
     DrawImGuiPopEnabledState();
+    DrawImGuiTooltip();
 
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar();

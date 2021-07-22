@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 
 #include "open3d/Macro.h"
 #include "open3d/core/Dispatch.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -41,11 +41,14 @@ public:
     static const Dtype Undefined;
     static const Dtype Float32;
     static const Dtype Float64;
+    static const Dtype Int8;
     static const Dtype Int16;
     static const Dtype Int32;
     static const Dtype Int64;
     static const Dtype UInt8;
     static const Dtype UInt16;
+    static const Dtype UInt32;
+    static const Dtype UInt64;
     static const Dtype Bool;
 
 public:
@@ -88,6 +91,19 @@ private:
     char name_[max_name_len_];  // MSVC warns if std::string is exported to DLL.
 };
 
+OPEN3D_API extern const Dtype Undefined;
+OPEN3D_API extern const Dtype Float32;
+OPEN3D_API extern const Dtype Float64;
+OPEN3D_API extern const Dtype Int8;
+OPEN3D_API extern const Dtype Int16;
+OPEN3D_API extern const Dtype Int32;
+OPEN3D_API extern const Dtype Int64;
+OPEN3D_API extern const Dtype UInt8;
+OPEN3D_API extern const Dtype UInt16;
+OPEN3D_API extern const Dtype UInt32;
+OPEN3D_API extern const Dtype UInt64;
+OPEN3D_API extern const Dtype Bool;
+
 template <>
 inline const Dtype Dtype::FromType<float>() {
     return Dtype::Float32;
@@ -96,6 +112,11 @@ inline const Dtype Dtype::FromType<float>() {
 template <>
 inline const Dtype Dtype::FromType<double>() {
     return Dtype::Float64;
+}
+
+template <>
+inline const Dtype Dtype::FromType<int8_t>() {
+    return Dtype::Int8;
 }
 
 template <>
@@ -121,6 +142,16 @@ inline const Dtype Dtype::FromType<uint8_t>() {
 template <>
 inline const Dtype Dtype::FromType<uint16_t>() {
     return Dtype::UInt16;
+}
+
+template <>
+inline const Dtype Dtype::FromType<uint32_t>() {
+    return Dtype::UInt32;
+}
+
+template <>
+inline const Dtype Dtype::FromType<uint64_t>() {
+    return Dtype::UInt64;
 }
 
 template <>

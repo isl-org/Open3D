@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
-#include "open3d/t/pipelines/kernel/ComputePosePointToPlane.h"
+#include "open3d/t/pipelines/kernel/ComputeTransform.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -37,73 +37,53 @@ namespace registration {
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const core::Tensor &correspondences) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
+
+    target.GetPoints().AssertDtype(source.GetPoints().GetDtype());
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
                 target.GetDevice().ToString(), device.ToString());
     }
 
-    double error;
-    // TODO: Revist to support Float32 and 64 without type conversion.
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
+    // TODO: Optimise using kernel.
+    core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
+    core::Tensor neighbour_indices =
+            correspondences.IndexGet({valid}).Reshape({-1});
+    core::Tensor source_points_indexed = source.GetPoints().IndexGet({valid});
+    core::Tensor target_points_indexed =
+            target.GetPoints().IndexGet({neighbour_indices});
 
-    core::Tensor error_t = (source_select - target_select);
+    core::Tensor error_t = (source_points_indexed - target_points_indexed);
     error_t.Mul_(error_t);
-    error = static_cast<double>(error_t.Sum({0, 1}).Item<float>());
-    return std::sqrt(error / static_cast<double>(corres.second.GetShape()[0]));
+    double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
+    return std::sqrt(error /
+                     static_cast<double>(neighbour_indices.GetLength()));
 }
 
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
-
-    // https://ieeexplore.ieee.org/document/88573
-    core::Tensor mux = source_select.Mean({0}, true);
-    core::Tensor muy = target_select.Mean({0}, true);
-    core::Tensor Sxy =
-            ((target_select - muy)
-                     .T()
-                     .Matmul(source_select - mux)
-                     .Div_(static_cast<float>(corres.second.GetShape()[0])));
-    core::Tensor U, D, VT;
-    std::tie(U, D, VT) = Sxy.SVD();
-    core::Tensor S = core::Tensor::Eye(3, dtype, device);
-    if (U.Det() * (VT.T()).Det() < 0) {
-        S[-1][-1] = -1;
-    }
+        const core::Tensor &correspondences) const {
     core::Tensor R, t;
-    R = U.Matmul(S.Matmul(VT));
-    t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1});
+    // Get tuple of Rotation {3, 3} and Translation {3} of type Float64.
+    // [Checks are added in kernel functions].
+    std::tie(R, t) = pipelines::kernel::ComputeRtPointToPoint(
+            source.GetPoints(), target.GetPoints(), correspondences);
 
+    // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
+    // device, from rotation {3, 3} and translation {3}.
     return t::pipelines::kernel::RtToTransformation(R, t);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
+        const core::Tensor &correspondences) const {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
+
+    target.GetPoints().AssertDtype(source.GetPoints().GetDtype());
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -111,47 +91,35 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     }
 
     if (!target.HasPointNormals()) return 0.0;
+    // TODO: Optimise using kernel.
+    core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
+    core::Tensor neighbour_indices =
+            correspondences.IndexGet({valid}).Reshape({-1});
+    core::Tensor source_points_indexed = source.GetPoints().IndexGet({valid});
+    core::Tensor target_points_indexed =
+            target.GetPoints().IndexGet({neighbour_indices});
+    core::Tensor target_normals_indexed =
+            target.GetPointNormals().IndexGet({neighbour_indices});
 
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
-    core::Tensor target_n_select =
-            target.GetPointNormals().IndexGet({corres.second});
-
-    core::Tensor error_t =
-            (source_select - target_select).Mul_(target_n_select);
+    core::Tensor error_t = (source_points_indexed - target_points_indexed)
+                                   .Mul_(target_normals_indexed);
     error_t.Mul_(error_t);
-    double error = static_cast<double>(error_t.Sum({0, 1}).Item<float>());
-    return std::sqrt(error / static_cast<double>(corres.second.GetShape()[0]));
+    double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
+    return std::sqrt(error /
+                     static_cast<double>(neighbour_indices.GetLength()));
 }
 
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
-
-    // Get indexed source and target points and target normals, according to
-    // correspondences.
-    core::Tensor source_indexed =
-            source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_indexed =
-            target.GetPoints().IndexGet({corres.second}).To(dtype);
-    core::Tensor target_norm_indexed =
-            target.GetPointNormals().IndexGet({corres.second}).To(dtype);
-
-    // Get pose {6} from correspondences indexed source and target point cloud.
+        const core::Tensor &correspondences) const {
+    // Get pose {6} of type Float64. [Checks are added in kernel functions].
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
-            source_indexed, target_indexed, target_norm_indexed);
+            source.GetPoints(), target.GetPoints(), target.GetPointNormals(),
+            correspondences, this->kernel_);
 
-    // Get transformation {4,4} from pose {6}.
+    // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
+    // device, from pose {6}.
     return pipelines::kernel::PoseToTransformation(pose);
 }
 

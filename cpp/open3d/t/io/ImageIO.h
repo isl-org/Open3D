@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -66,9 +66,9 @@ constexpr int kOpen3DImageIODefaultQuality = -1;
 ///
 /// Supported file extensions are png, jpg/jpeg. Data type and number of
 /// channels depends on the file extension.
-/// - PNG: Dtype should be one of core::Dtype::UInt8, core::Dtype::UInt16
+/// - PNG: Dtype should be one of core::UInt8, core::UInt16
 ///        Supported number of channels are 1, 3, and 4.
-/// - JPG: Dtyppe should be core::Dtype::UInt8
+/// - JPG: Dtyppe should be core::UInt8
 ///        Supported number of channels are 1 and 3.
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,

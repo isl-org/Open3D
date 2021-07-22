@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -121,11 +121,11 @@ struct ColoredVoxel16i {
         float inv_wsum = 1.0f / inc_wsum;
         tsdf = (weight * tsdf + dsdf) * inv_wsum;
         r = static_cast<uint16_t>(
-                round((weight * r + dr * kColorFactor) * inv_wsum));
+                roundf((weight * r + dr * kColorFactor) * inv_wsum));
         g = static_cast<uint16_t>(
-                round((weight * g + dg * kColorFactor) * inv_wsum));
+                roundf((weight * g + dg * kColorFactor) * inv_wsum));
         b = static_cast<uint16_t>(
-                round((weight * b + db * kColorFactor) * inv_wsum));
+                roundf((weight * b + db * kColorFactor) * inv_wsum));
         weight = static_cast<uint16_t>(inc_wsum < static_cast<float>(kMaxUint16)
                                                ? weight + 1
                                                : kMaxUint16);
@@ -182,21 +182,20 @@ inline OPEN3D_DEVICE voxel_t* DeviceGetVoxelAt(
     int yn = (yo + resolution) % resolution;
     int zn = (zo + resolution) % resolution;
 
-    int64_t dxb = sign(xo - xn);
-    int64_t dyb = sign(yo - yn);
-    int64_t dzb = sign(zo - zn);
+    int64_t dxb = Sign(xo - xn);
+    int64_t dyb = Sign(yo - yn);
+    int64_t dzb = Sign(zo - zn);
 
     int64_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-    bool block_mask_i = *nb_block_masks_indexer.GetDataPtrFromCoord<bool>(
-            curr_block_idx, nb_idx);
+    bool block_mask_i =
+            *nb_block_masks_indexer.GetDataPtr<bool>(curr_block_idx, nb_idx);
     if (!block_mask_i) return nullptr;
 
-    int64_t block_idx_i =
-            *nb_block_indices_indexer.GetDataPtrFromCoord<int64_t>(
-                    curr_block_idx, nb_idx);
+    int64_t block_idx_i = *nb_block_indices_indexer.GetDataPtr<int64_t>(
+            curr_block_idx, nb_idx);
 
-    return blocks_indexer.GetDataPtrFromCoord<voxel_t>(xn, yn, zn, block_idx_i);
+    return blocks_indexer.GetDataPtr<voxel_t>(xn, yn, zn, block_idx_i);
 }
 
 // Get TSDF gradient as normal in a certain voxel block given the block id with

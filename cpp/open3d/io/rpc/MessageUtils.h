@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,7 +51,7 @@ struct Status;
 /// \param ok      Output variable which will be set to true if the unpacking
 /// was successful.
 ///
-/// \return The extracted Status message object. Check \param ok to see if the
+/// \return The extracted Status message object. Check \p ok to see if the
 /// returned object is valid.
 std::shared_ptr<messages::Status> UnpackStatusFromReply(
         const zmq::message_t& msg, size_t& offset, bool& ok);

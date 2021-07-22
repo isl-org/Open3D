@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ from open3d_test import list_devices
 
 @pytest.mark.parametrize("device", list_devices())
 def test_tensormap(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     # Constructor.
     tl = o3d.t.geometry.TensorMap("points")
@@ -64,3 +64,8 @@ def test_tensormap(device):
     })
     assert "points" in tl
     assert "colors" in tl
+
+    # __delitem__ operator.
+    with pytest.raises(RuntimeError) as excinfo:
+        del tl["points"]
+        assert 'cannot be deleted' in str(excinfo.value)

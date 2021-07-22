@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ using open3d::io::WritePointCloudOption;
 
 /// Factory function to create a pointcloud from a file
 /// Return an empty pointcloud if fail to read the file.
-std::shared_ptr<geometry::PointCloud> CreatetPointCloudFromFile(
+std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename,
         const std::string &format = "auto",
         bool print_progress = false);
@@ -74,6 +74,14 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                            const ReadPointCloudOption &params);
 
 bool WritePointCloudToPLY(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params);
+
+bool ReadPointCloudFromPTS(const std::string &filename,
+                           geometry::PointCloud &pointcloud,
+                           const ReadPointCloudOption &params);
+
+bool WritePointCloudToPTS(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params);
 

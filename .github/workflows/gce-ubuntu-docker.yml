@@ -69,7 +69,7 @@ jobs:
 
 
   build-install-test:
-    name: Build and run on VM
+    name: Build and run
     runs-on: ubuntu-18.04
     needs: [skip-check, build-push-docker-image]
     if: needs.skip-check.outputs.skip == 'no'
@@ -78,7 +78,7 @@ jobs:
       max-parallel: 4     # Limit parallel runs to max GPU quota (4)
       matrix:
         # See gce-ubuntu-docker-run.sh for details. These need GPU.
-        CI_CONFIG_ID: ['2-bionic', '3-ML-bionic', '4-ML-RPC-bionic', '5-ML-RPC-focal']
+        CI_CONFIG_ID: ['2-bionic', '3-ML-SHARED-bionic', '4-ML-bionic', '5-ML-focal']
 
     env:
       CI_CONFIG_ID: ${{ matrix.CI_CONFIG_ID }}
@@ -108,14 +108,14 @@ jobs:
         run: ./util/docker/open3d-gpu/scripts/gce-ubuntu-docker-run.sh delete-vm
 
   cleanup:
-    name: Clean-up container image
+    name: Clean-up docker image
     runs-on: ubuntu-18.04
     needs: [skip-check, build-push-docker-image, build-install-test]
     if: always() && needs.skip-check.outputs.skip == 'no'
     strategy:
       fail-fast: false
       matrix:
-        UBUNTU_VERSION: ['bionic', 'focal']  # These configs have bionic and focal versions
+        UBUNTU_VERSION: ['bionic', 'focal']
     env:
       UBUNTU_VERSION: ${{ matrix.UBUNTU_VERSION }}
 

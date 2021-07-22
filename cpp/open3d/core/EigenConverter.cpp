@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,11 +28,74 @@
 
 #include <type_traits>
 
+#include "open3d/core/Indexer.h"
 #include "open3d/core/kernel/CPULauncher.h"
 
 namespace open3d {
 namespace core {
 namespace eigen_converter {
+
+/// Fills tensor[:][i] with func(i).
+///
+/// \param indexer The input tensor and output tensor to the indexer are the
+/// same (as a hack), since the tensor are filled in-place.
+/// \param func A function that takes pointer location and
+/// workload index i, computes the value to fill, and fills the value at the
+/// pointer location.
+template <typename func_t>
+static void LaunchIndexFillKernel(const Indexer &indexer, const func_t &func) {
+    kernel::cpu_launcher::ParallelFor(indexer.NumWorkloads(),
+                                      kernel::cpu_launcher::SMALL_OP_GRAIN_SIZE,
+                                      [&indexer, &func](int64_t i) {
+                                          func(indexer.GetInputPtr(0, i), i);
+                                      });
+}
+
+template <typename T>
+static Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrix(const core::Tensor &tensor) {
+    static_assert(std::is_same<T, double>::value ||
+                          std::is_same<T, float>::value ||
+                          std::is_same<T, int>::value,
+                  "Only supports double, float and int (MatrixXd, MatrixXf and "
+                  "MatrixXi).");
+    core::Dtype dtype = core::Dtype::FromType<T>();
+
+    core::SizeVector dim = tensor.GetShape();
+    if (dim.size() != 2) {
+        utility::LogError(
+                " [TensorToEigenMatrix]: Number of dimensions supported = 2, "
+                "but got {}.",
+                dim.size());
+    }
+
+    core::Tensor tensor_cpu_contiguous =
+            tensor.Contiguous().To(core::Device("CPU:0"), dtype);
+    T *data_ptr = tensor_cpu_contiguous.GetDataPtr<T>();
+
+    Eigen::Map<
+            Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+            eigen_matrix(data_ptr, dim[0], dim[1]);
+
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+            eigen_matrix_copy(eigen_matrix);
+    return eigen_matrix_copy;
+}
+
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXd(const core::Tensor &tensor) {
+    return TensorToEigenMatrix<double>(tensor);
+}
+
+Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXf(const core::Tensor &tensor) {
+    return TensorToEigenMatrix<float>(tensor);
+}
+
+Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXi(const core::Tensor &tensor) {
+    return TensorToEigenMatrix<int>(tensor);
+}
 
 template <typename T>
 static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
@@ -41,9 +104,9 @@ static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
                   "Only supports double and int (Vector3d and Vector3i).");
     core::Dtype dtype;
     if (std::is_same<T, double>::value) {
-        dtype = core::Dtype::Float64;
+        dtype = core::Float64;
     } else if (std::is_same<T, int>::value) {
-        dtype = core::Dtype::Int32;
+        dtype = core::Int32;
     }
     if (dtype.ByteSize() * 3 != sizeof(Eigen::Matrix<T, 3, 1>)) {
         utility::LogError("Internal error: dtype size mismatch {} != {}.",
@@ -80,14 +143,13 @@ static core::Tensor EigenVector3xVectorToTensor(
     core::Indexer indexer({tensor_cpu}, tensor_cpu,
                           core::DtypePolicy::ALL_SAME);
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        core::kernel::CPULauncher::LaunchIndexFillKernel(
-                indexer, [&](void *ptr, int64_t workload_idx) {
-                    // Fills the flattened tensor tensor_cpu[:] with dtype
-                    // casting. tensor_cpu[:][i] corresponds to the (i/3)-th
-                    // element's (i%3)-th coordinate value.
-                    *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
-                            values[workload_idx / 3](workload_idx % 3));
-                });
+        LaunchIndexFillKernel(indexer, [&](void *ptr, int64_t workload_idx) {
+            // Fills the flattened tensor tensor_cpu[:] with dtype
+            // casting. tensor_cpu[:][i] corresponds to the (i/3)-th
+            // element's (i%3)-th coordinate value.
+            *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
+                    values[workload_idx / 3](workload_idx % 3));
+        });
     });
 
     // Copy Tensor to device if necessary.

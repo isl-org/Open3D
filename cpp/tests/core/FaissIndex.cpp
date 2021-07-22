@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -55,11 +55,11 @@ TEST_P(FaissPermuteDevices, KnnSearch) {
     std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
                               0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
                               0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
+    core::Tensor ref(points, {size, 3}, core::Float32, device);
     core::nns::FaissIndex faiss_index(ref);
 
     core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Dtype::Float32);
+                       {1, 3}, core::Float32);
     std::pair<core::Tensor, core::Tensor> result;
     core::Tensor indices;
     core::Tensor distances;
@@ -90,7 +90,7 @@ TEST_P(FaissPermuteDevices, KnnSearch) {
     // Multiple points.
     query = core::Tensor(std::vector<float>({0.064705, 0.043921, 0.087843,
                                              0.064705, 0.043921, 0.087843}),
-                         {2, 3}, core::Dtype::Float32);
+                         {2, 3}, core::Float32);
     result = faiss_index.SearchKnn(query, 3);
     indices = result.first;
     distances = result.second;
@@ -101,7 +101,7 @@ TEST_P(FaissPermuteDevices, KnnSearch) {
                                  0.00747938, 0.0108912}));
 
     // Fails on double type.
-    EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Dtype::Float64)),
+    EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Float64)),
                  std::runtime_error);
 }
 
@@ -112,22 +112,22 @@ TEST_P(FaissPermuteDevices, HybridSearch) {
     std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
                               0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
                               0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Dtype::Float32, device);
+    core::Tensor ref(points, {size, 3}, core::Float32, device);
     core::nns::FaissIndex faiss_index(ref);
 
     core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Dtype::Float32);
+                       {1, 3}, core::Float32);
 
-    std::pair<core::Tensor, core::Tensor> result =
+    core::Tensor indices, distances, counts;
+    std::tie(indices, distances, counts) =
             faiss_index.SearchHybrid(query, 0.1, 1);
 
-    core::Tensor indices = result.first;
-    core::Tensor distainces = result.second;
     ExpectEQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
-    ExpectEQ(distainces.ToFlatVector<float>(),
-             std::vector<float>({0.00626358}));
+    ExpectEQ(distances.ToFlatVector<float>(), std::vector<float>({0.00626358}));
+    ExpectEQ(counts.ToFlatVector<int64_t>(), std::vector<int64_t>({1}));
+
     // Fails on double type.
-    EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Dtype::Float64)),
+    EXPECT_THROW(faiss_index.SetTensorData(ref.To(core::Float64)),
                  std::runtime_error);
 }
 

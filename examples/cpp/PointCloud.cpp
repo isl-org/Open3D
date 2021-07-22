@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,10 +61,27 @@ void PrintPointCloud(const open3d::geometry::PointCloud &pointcloud) {
     utility::LogInfo("End of the list.");
 }
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > PointCloud [pointcloud_filename]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char *argv[]) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
+    }
 
     auto pcd = io::CreatePointCloudFromFile(argv[1]);
     {

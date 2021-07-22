@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -76,7 +76,7 @@ public:
     void Draw() override;
     void RequestReadPixels(int width,
                            int height,
-                           std::function<void(std::shared_ptr<geometry::Image>)>
+                           std::function<void(std::shared_ptr<core::Tensor>)>
                                    callback) override;
     void EndFrame() override;
 
@@ -91,8 +91,16 @@ public:
 
     TextureHandle AddTexture(const ResourceLoadRequest& request,
                              bool srgb = false) override;
-    TextureHandle AddTexture(const std::shared_ptr<geometry::Image>& image,
+    TextureHandle AddTexture(const std::shared_ptr<geometry::Image> image,
                              bool srgb = false) override;
+    TextureHandle AddTexture(const t::geometry::Image& image,
+                             bool srgb = false) override;
+    bool UpdateTexture(TextureHandle texture,
+                       const std::shared_ptr<geometry::Image> image,
+                       bool srgb) override;
+    bool UpdateTexture(TextureHandle texture,
+                       const t::geometry::Image& image,
+                       bool srgb) override;
     void RemoveTexture(const TextureHandle& id) override;
 
     IndirectLightHandle AddIndirectLight(

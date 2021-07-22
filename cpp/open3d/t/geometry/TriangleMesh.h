@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -203,6 +203,12 @@ public:
         return vertex_attr_.at(key);
     }
 
+    /// Removes vertex attribute by key value. Primary attribute "vertices"
+    /// cannot be removed. Throws warning if attribute key does not exists.
+    ///
+    /// \param key Attribute name.
+    void RemoveVertexAttr(const std::string &key) { vertex_attr_.Erase(key); }
+
     /// Get the value of the "vertices" attribute in vertex_attr_.
     /// Convenience function.
     const core::Tensor &GetVertices() const {
@@ -227,6 +233,14 @@ public:
     /// \param key Attribute name.
     const core::Tensor &GetTriangleAttr(const std::string &key) const {
         return triangle_attr_.at(key);
+    }
+
+    /// Removes triangle attribute by key value. Primary attribute "triangles"
+    /// cannot be removed. Throws warning if attribute key does not exists.
+    ///
+    /// \param key Attribute name.
+    void RemoveTriangleAttr(const std::string &key) {
+        triangle_attr_.Erase(key);
     }
 
     /// Get the value of the "triangles" attribute in triangle_attr_.
@@ -376,28 +390,20 @@ public:
     /// Returns !HasVertices(), triangles are ignored.
     bool IsEmpty() const override { return !HasVertices(); }
 
-    core::Tensor GetMinBound() const { utility::LogError("Unimplemented"); }
+    core::Tensor GetMinBound() const { return GetVertices().Min({0}); }
 
-    core::Tensor GetMaxBound() const { utility::LogError("Unimplemented"); }
+    core::Tensor GetMaxBound() const { return GetVertices().Max({0}); }
 
-    core::Tensor GetCenter() const { utility::LogError("Unimplemented"); }
+    core::Tensor GetCenter() const { return GetVertices().Mean({0}); }
 
-    TriangleMesh &Transform(const core::Tensor &transformation) {
-        utility::LogError("Unimplemented");
-    }
+    TriangleMesh &Transform(const core::Tensor &transformation);
 
     TriangleMesh &Translate(const core::Tensor &translation,
-                            bool relative = true) {
-        utility::LogError("Unimplemented");
-    }
+                            bool relative = true);
 
-    TriangleMesh &Scale(double scale, const core::Tensor &center) {
-        utility::LogError("Unimplemented");
-    }
+    TriangleMesh &Scale(double scale, const core::Tensor &center);
 
-    TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center) {
-        utility::LogError("Unimplemented");
-    }
+    TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     core::Device GetDevice() const { return device_; }
 
@@ -410,8 +416,8 @@ public:
     /// \param device The device where the resulting TriangleMesh resides in.
     static geometry::TriangleMesh FromLegacyTriangleMesh(
             const open3d::geometry::TriangleMesh &mesh_legacy,
-            core::Dtype float_dtype = core::Dtype::Float32,
-            core::Dtype int_dtype = core::Dtype::Int64,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D TriangleMesh.

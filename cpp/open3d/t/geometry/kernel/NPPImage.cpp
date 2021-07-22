@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,42 +26,81 @@
 
 #include "open3d/t/geometry/kernel/NPPImage.h"
 
-#include <nppdefs.h>
-#include <nppi.h>
+#include <npp.h>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Image.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 namespace npp {
 
+static NppStreamContext MakeNPPContext() {
+    NppStreamContext context;
+    context.hStream = core::cuda::GetStream();
+    context.nCudaDeviceId = core::cuda::GetDevice();
+
+    cudaDeviceProp device_prop;
+    OPEN3D_CUDA_CHECK(
+            cudaGetDeviceProperties(&device_prop, core::cuda::GetDevice()));
+
+    context.nMultiProcessorCount = device_prop.multiProcessorCount;
+    context.nMaxThreadsPerMultiProcessor =
+            device_prop.maxThreadsPerMultiProcessor;
+    context.nSharedMemPerBlock = device_prop.sharedMemPerBlock;
+
+    int cc_major;
+    OPEN3D_CUDA_CHECK(cudaDeviceGetAttribute(&cc_major,
+                                             cudaDevAttrComputeCapabilityMajor,
+                                             core::cuda::GetDevice()));
+    context.nCudaDevAttrComputeCapabilityMajor = cc_major;
+
+    int cc_minor;
+    OPEN3D_CUDA_CHECK(cudaDeviceGetAttribute(&cc_minor,
+                                             cudaDevAttrComputeCapabilityMinor,
+                                             core::cuda::GetDevice()));
+    context.nCudaDevAttrComputeCapabilityMinor = cc_minor;
+
+// The NPP documentation incorrectly states that nStreamFlags becomes available
+// in NPP 10.2 (CUDA 10.2). Instead, NPP 11.1 (CUDA 11.0) is the first release
+// to expose this member variable.
+#if NPP_VERSION >= 11100
+    unsigned int stream_flags;
+    OPEN3D_CUDA_CHECK(
+            cudaStreamGetFlags(core::cuda::GetStream(), &stream_flags));
+    context.nStreamFlags = stream_flags;
+#endif
+
+    return context;
+}
+
 void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
     NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
                          static_cast<int>(dst_im.GetShape(0))};
 
     auto dtype = src_im.GetDtype();
+    auto context = MakeNPPContext();
 #define NPP_ARGS                                           \
     static_cast<const npp_dtype *>(src_im.GetDataPtr()),   \
             src_im.GetStride(0) * dtype.ByteSize(),        \
             static_cast<npp_dtype *>(dst_im.GetDataPtr()), \
-            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI
-    if (dtype == core::Dtype::UInt8) {
+            dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, context
+    if (dtype == core::UInt8) {
         using npp_dtype = Npp8u;
-        nppiRGBToGray_8u_C3C1R(NPP_ARGS);
-    } else if (dtype == core::Dtype::UInt16) {
+        nppiRGBToGray_8u_C3C1R_Ctx(NPP_ARGS);
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
-        nppiRGBToGray_16u_C3C1R(NPP_ARGS);
-    } else if (dtype == core::Dtype::Float32) {
+        nppiRGBToGray_16u_C3C1R_Ctx(NPP_ARGS);
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
-        nppiRGBToGray_32f_C3C1R(NPP_ARGS);
+        nppiRGBToGray_32f_C3C1R_Ctx(NPP_ARGS);
     } else {
-        utility::LogError("npp::FilterGaussian(): Unspported dtype {}",
+        utility::LogError("npp::FilterGaussian(): Unsupported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS
@@ -96,45 +135,45 @@ void Resize(const open3d::core::Tensor &src_im,
     if (it == type_dict.end()) {
         utility::LogError("Invalid interpolation type {}.", interp_type);
     }
-    utility::LogInfo("Interpolation type = {}", it->second);
 
     auto dtype = src_im.GetDtype();
+    auto context = MakeNPPContext();
 #define NPP_ARGS                                                       \
     static_cast<const npp_dtype *>(src_im.GetDataPtr()),               \
             src_im.GetStride(0) * dtype.ByteSize(), src_size, src_roi, \
             static_cast<npp_dtype *>(dst_im.GetDataPtr()),             \
             dst_im.GetStride(0) * dtype.ByteSize(), dst_size, dst_roi, \
-            it->second
+            it->second, context
 
-    if (dtype == core::Dtype::UInt8) {
+    if (dtype == core::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
-            nppiResize_8u_C1R(NPP_ARGS);
+            nppiResize_8u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiResize_8u_C3R(NPP_ARGS);
+            nppiResize_8u_C3R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiResize_8u_C4R(NPP_ARGS);
+            nppiResize_8u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
         if (src_im.GetShape(2) == 1) {
-            nppiResize_16u_C1R(NPP_ARGS);
+            nppiResize_16u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiResize_16u_C3R(NPP_ARGS);
+            nppiResize_16u_C3R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiResize_16u_C4R(NPP_ARGS);
+            nppiResize_16u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
         if (src_im.GetShape(2) == 1) {
-            nppiResize_32f_C1R(NPP_ARGS);
+            nppiResize_32f_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiResize_32f_C3R(NPP_ARGS);
+            nppiResize_32f_C3R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiResize_32f_C4R(NPP_ARGS);
+            nppiResize_32f_C4R_Ctx(NPP_ARGS);
         }
     } else {
-        utility::LogError("npp::Resize(): Unspported dtype {}",
+        utility::LogError("npp::Resize(): Unsupported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS
@@ -147,7 +186,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     // Create mask.
     core::Tensor mask =
             core::Tensor::Ones(core::SizeVector{kernel_size, kernel_size, 1},
-                               core::Dtype::UInt8, src_im.GetDevice());
+                               core::UInt8, src_im.GetDevice());
     NppiSize mask_size = {kernel_size, kernel_size};
 
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
@@ -160,42 +199,43 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     NppiPoint anchor = {kernel_size / 2, kernel_size / 2};
 
     auto dtype = src_im.GetDtype();
+    auto context = MakeNPPContext();
 #define NPP_ARGS                                                          \
     static_cast<const npp_dtype *>(src_im.GetDataPtr()),                  \
             src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
             static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI,             \
             static_cast<const uint8_t *>(mask.GetDataPtr()), mask_size,   \
-            anchor, NPP_BORDER_REPLICATE
-    if (dtype == core::Dtype::Bool || dtype == core::Dtype::UInt8) {
+            anchor, NPP_BORDER_REPLICATE, context
+    if (dtype == core::Bool || dtype == core::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
-            nppiDilateBorder_8u_C1R(NPP_ARGS);
+            nppiDilateBorder_8u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiDilateBorder_8u_C3R(NPP_ARGS);
+            nppiDilateBorder_8u_C3R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiDilateBorder_8u_C4R(NPP_ARGS);
+            nppiDilateBorder_8u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
         if (src_im.GetShape(2) == 1) {
-            nppiDilateBorder_16u_C1R(NPP_ARGS);
+            nppiDilateBorder_16u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiDilateBorder_16u_C3R(NPP_ARGS);
+            nppiDilateBorder_16u_C3R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiDilateBorder_16u_C4R(NPP_ARGS);
+            nppiDilateBorder_16u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
         if (src_im.GetShape(2) == 1) {
-            nppiDilateBorder_32f_C1R(NPP_ARGS);
+            nppiDilateBorder_32f_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiDilateBorder_32f_C3R(NPP_ARGS);
+            nppiDilateBorder_32f_C3R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiDilateBorder_32f_C4R(NPP_ARGS);
+            nppiDilateBorder_32f_C4R_Ctx(NPP_ARGS);
         }
     } else {
-        utility::LogError("npp::Dilate(): Unspported dtype {}",
+        utility::LogError("npp::Dilate(): Unsupported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS
@@ -226,41 +266,42 @@ void Filter(const open3d::core::Tensor &src_im,
             static_cast<const float *>(kernel_flipped.GetDataPtr());
 
     auto dtype = src_im.GetDtype();
+    auto context = MakeNPPContext();
 #define NPP_ARGS                                                          \
     static_cast<const npp_dtype *>(src_im.GetDataPtr()),                  \
             src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
             static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_ptr, \
-            kernel_size, anchor, NPP_BORDER_REPLICATE
-    if (dtype == core::Dtype::UInt8) {
+            kernel_size, anchor, NPP_BORDER_REPLICATE, context
+    if (dtype == core::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
-            nppiFilterBorder32f_8u_C1R(NPP_ARGS);
+            nppiFilterBorder32f_8u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiFilterBorder32f_8u_C3R(NPP_ARGS);
+            nppiFilterBorder32f_8u_C3R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiFilterBorder32f_8u_C4R(NPP_ARGS);
+            nppiFilterBorder32f_8u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
         if (src_im.GetShape(2) == 1) {
-            nppiFilterBorder32f_16u_C1R(NPP_ARGS);
+            nppiFilterBorder32f_16u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiFilterBorder32f_16u_C3R(NPP_ARGS);
+            nppiFilterBorder32f_16u_C3R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiFilterBorder32f_16u_C4R(NPP_ARGS);
+            nppiFilterBorder32f_16u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
         if (src_im.GetShape(2) == 1) {
-            nppiFilterBorder_32f_C1R(NPP_ARGS);
+            nppiFilterBorder_32f_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiFilterBorder_32f_C3R(NPP_ARGS);
+            nppiFilterBorder_32f_C3R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 4) {
-            nppiFilterBorder_32f_C4R(NPP_ARGS);
+            nppiFilterBorder_32f_C4R_Ctx(NPP_ARGS);
         }
     } else {
-        utility::LogError("npp::Filter(): Unspported dtype {}",
+        utility::LogError("npp::Filter(): Unsupported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS
@@ -282,36 +323,37 @@ void FilterBilateral(const core::Tensor &src_im,
                          static_cast<int>(dst_im.GetShape(0))};
 
     auto dtype = src_im.GetDtype();
+    auto context = MakeNPPContext();
 #define NPP_ARGS                                                               \
     static_cast<const npp_dtype *>(src_im.GetDataPtr()),                       \
             src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset,      \
             static_cast<npp_dtype *>(dst_im.GetDataPtr()),                     \
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_size / 2, \
             1, value_sigma *value_sigma, distance_sigma *distance_sigma,       \
-            NPP_BORDER_REPLICATE
-    if (dtype == core::Dtype::UInt8) {
+            NPP_BORDER_REPLICATE, context
+    if (dtype == core::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
-            nppiFilterBilateralGaussBorder_8u_C1R(NPP_ARGS);
+            nppiFilterBilateralGaussBorder_8u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiFilterBilateralGaussBorder_8u_C3R(NPP_ARGS);
+            nppiFilterBilateralGaussBorder_8u_C3R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
         if (src_im.GetShape(2) == 1) {
-            nppiFilterBilateralGaussBorder_16u_C1R(NPP_ARGS);
+            nppiFilterBilateralGaussBorder_16u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiFilterBilateralGaussBorder_16u_C3R(NPP_ARGS);
+            nppiFilterBilateralGaussBorder_16u_C3R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
         if (src_im.GetShape(2) == 1) {
-            nppiFilterBilateralGaussBorder_32f_C1R(NPP_ARGS);
+            nppiFilterBilateralGaussBorder_32f_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
-            nppiFilterBilateralGaussBorder_32f_C3R(NPP_ARGS);
+            nppiFilterBilateralGaussBorder_32f_C3R_Ctx(NPP_ARGS);
         }
     } else {
-        utility::LogError("npp::Filter(): Unspported dtype {}",
+        utility::LogError("npp::Filter(): Unsupported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS
@@ -325,7 +367,7 @@ void FilterGaussian(const core::Tensor &src_im,
     core::Tensor dist =
             core::Tensor::Arange(static_cast<float>(-kernel_size / 2),
                                  static_cast<float>(kernel_size / 2 + 1), 1.0f,
-                                 core::Dtype::Float32, src_im.GetDevice());
+                                 core::Float32, src_im.GetDevice());
     core::Tensor logval = (dist * dist).Mul(-0.5f / (sigma * sigma));
     core::Tensor mask = logval.Exp();
     mask = mask / mask.Sum({0});
@@ -364,30 +406,31 @@ void FilterSobel(const core::Tensor &src_im,
 
     // Counterintuitive conventions: dy: Horizontal,  dx: Vertical.
     // Probable reason: dy detects horizontal edges, dx detects vertical edges.
+    auto context = MakeNPPContext();
 #define NPP_ARGS_DX                                                       \
     static_cast<const npp_src_dtype *>(src_im.GetDataPtr()),              \
             src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
             static_cast<npp_dst_dtype *>(dst_im_dx.GetDataPtr()),         \
             dst_im_dx.GetStride(0) * dst_im_dx.GetDtype().ByteSize(),     \
-            size_ROI, it->second, NPP_BORDER_REPLICATE
+            size_ROI, it->second, NPP_BORDER_REPLICATE, context
 #define NPP_ARGS_DY                                                       \
     static_cast<const npp_src_dtype *>(src_im.GetDataPtr()),              \
             src_im.GetStride(0) * dtype.ByteSize(), src_size, src_offset, \
             static_cast<npp_dst_dtype *>(dst_im_dy.GetDataPtr()),         \
             dst_im_dy.GetStride(0) * dst_im_dy.GetDtype().ByteSize(),     \
-            size_ROI, it->second, NPP_BORDER_REPLICATE
-    if (dtype == core::Dtype::UInt8) {
+            size_ROI, it->second, NPP_BORDER_REPLICATE, context
+    if (dtype == core::UInt8) {
         using npp_src_dtype = Npp8u;
         using npp_dst_dtype = Npp16s;
-        nppiFilterSobelVertBorder_8u16s_C1R(NPP_ARGS_DX);
-        nppiFilterSobelHorizBorder_8u16s_C1R(NPP_ARGS_DY);
-    } else if (dtype == core::Dtype::Float32) {
+        nppiFilterSobelVertBorder_8u16s_C1R_Ctx(NPP_ARGS_DX);
+        nppiFilterSobelHorizBorder_8u16s_C1R_Ctx(NPP_ARGS_DY);
+    } else if (dtype == core::Float32) {
         using npp_src_dtype = Npp32f;
         using npp_dst_dtype = Npp32f;
-        nppiFilterSobelVertMaskBorder_32f_C1R(NPP_ARGS_DX);
-        nppiFilterSobelHorizMaskBorder_32f_C1R(NPP_ARGS_DY);
+        nppiFilterSobelVertMaskBorder_32f_C1R_Ctx(NPP_ARGS_DX);
+        nppiFilterSobelHorizMaskBorder_32f_C1R_Ctx(NPP_ARGS_DY);
     } else {
-        utility::LogError("npp::FilterSobel(): Unspported dtype {}",
+        utility::LogError("npp::FilterSobel(): Unsupported dtype {}",
                           dtype.ToString());
     }
 #undef NPP_ARGS_DX
