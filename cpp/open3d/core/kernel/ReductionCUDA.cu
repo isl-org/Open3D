@@ -37,7 +37,6 @@
 #include <type_traits>
 
 #include "open3d/core/Blob.h"
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"

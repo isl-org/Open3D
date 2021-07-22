@@ -26,18 +26,17 @@
 
 #ifdef BUILD_CUDA_MODULE
 
-#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/CUDAUtils.h"
 
 #include <thread>
 #include <vector>
 
-#include "open3d/core/CUDAUtils.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {
 
-TEST(CUDAState, InitState) {
+TEST(CUDAUtils, InitState) {
     std::shared_ptr<core::CUDAState> cuda_state =
             core::CUDAState::GetInstance();
     utility::LogInfo("Number of CUDA devices: {}", cuda_state->GetNumDevices());
@@ -114,15 +113,15 @@ void CheckScopedStreamMultiThreaded(const std::function<void()>& func) {
     }
 }
 
-TEST(CUDAState, ScopedStreamManually) { CheckScopedStreamManually(); }
+TEST(CUDAUtils, ScopedStreamManually) { CheckScopedStreamManually(); }
 
-TEST(CUDAState, ScopedStreamManuallyMultiThreaded) {
+TEST(CUDAUtils, ScopedStreamManuallyMultiThreaded) {
     CheckScopedStreamMultiThreaded(&CheckScopedStreamManually);
 }
 
-TEST(CUDAState, ScopedStreamAutomatically) { CheckScopedStreamAutomatically(); }
+TEST(CUDAUtils, ScopedStreamAutomatically) { CheckScopedStreamAutomatically(); }
 
-TEST(CUDAState, ScopedStreamAutomaticallyMultiThreaded) {
+TEST(CUDAUtils, ScopedStreamAutomaticallyMultiThreaded) {
     CheckScopedStreamMultiThreaded(&CheckScopedStreamAutomatically);
 }
 
