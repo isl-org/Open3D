@@ -63,6 +63,7 @@ target_sources(core PRIVATE
     nns/FixedRadiusIndex.cpp
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
+    nns/KnnIndex.cpp
     nns/NNSIndex.cpp
 )
 
@@ -100,6 +101,7 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(core PRIVATE
         nns/FixedRadiusSearch.cu
+        nns/KnnSearchOps.cu
     )
 endif()
 

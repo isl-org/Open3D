@@ -20,6 +20,7 @@ target_sources(tests PRIVATE
 if (BUILD_CUDA_MODULE)
     target_sources(tests PRIVATE
         FixedRadiusIndex.cpp
+        KnnIndex.cpp
     )
 endif()
 
