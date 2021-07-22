@@ -186,7 +186,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
         Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
 
         // Identity transformation.
-        double max_correspondence_dist = 1.5;
+        double max_correspondence_dist = 3.0;
 
         // Tensor evaluation.
         t_reg::RegistrationResult evaluation_t = t_reg::EvaluateRegistration(
@@ -229,7 +229,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
                 core::eigen_converter::TensorToEigenMatrixXd(
                         initial_transform_t);
 
-        double max_correspondence_dist = 1.5;
+        double max_correspondence_dist = 3.0;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;
