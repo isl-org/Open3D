@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
@@ -197,7 +196,8 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
             // For more optimized version, one can check if P2P from src to
             // dst is enabled, then put synchronization with streams on both
             // src and dst to wait for copy kernel to complete.
-            CUDADeviceSwitcher switcher(src_device);
+            CUDAScopedDevice scoped_device(src_device);
+
             Indexer indexer({src}, dst, DtypePolicy::NONE);
             if (src.GetDtype().IsObject()) {
                 int64_t object_byte_size = src.GetDtype().ByteSize();
@@ -251,7 +251,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     Dtype dst_dtype = dst.GetDtype();
 
     auto assert_dtype_is_float = [](Dtype dtype) -> void {
-        if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
+        if (dtype != core::Float32 && dtype != core::Float64) {
             utility::LogError(
                     "Only supports Float32 and Float64, but {} is used.",
                     dtype.ToString());
@@ -267,7 +267,7 @@ void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                                                      void* dst) {
                     CUDALogicalNotElementKernel<scalar_t, scalar_t>(src, dst);
                 });
-            } else if (dst_dtype == Dtype::Bool) {
+            } else if (dst_dtype == core::Bool) {
                 Indexer indexer({src}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
                 LaunchUnaryEWKernel(indexer, [] OPEN3D_HOST_DEVICE(

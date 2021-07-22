@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
@@ -243,7 +242,7 @@ void BinaryEWCUDA(const Tensor& lhs,
     Dtype src_dtype = lhs.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
 
-    CUDADeviceSwitcher switcher(src_device);
+    CUDAScopedDevice scoped_device(src_device);
 
     if (s_boolean_binary_ew_op_codes.find(op_code) !=
         s_boolean_binary_ew_op_codes.end()) {
@@ -255,7 +254,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                 Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
                 LaunchBoolBinaryEWCUDAKernel<scalar_t, scalar_t>(
                         lhs, rhs, dst, op_code, indexer);
-            } else if (dst_dtype == Dtype::Bool) {
+            } else if (dst_dtype == core::Bool) {
                 // By default, output is boolean type.
                 Indexer indexer({lhs, rhs}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);

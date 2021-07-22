@@ -138,14 +138,6 @@ set_target_properties(open3d_tf_ops PROPERTIES
 set_target_properties(open3d_tf_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
-# enable c++11
-set_target_properties(open3d_tf_ops PROPERTIES
-        CXX_STANDARD 11
-        CXX_STANDARD_REQUIRED ON
-        CXX_EXTENSIONS OFF
-        CUDA_STANDARD 11
-)
-
 target_compile_definitions(open3d_tf_ops PRIVATE "${Tensorflow_DEFINITIONS}")
 
 if (BUILD_CUDA_MODULE)
@@ -173,6 +165,7 @@ target_link_libraries(open3d_tf_ops PRIVATE
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_tf_ops PRIVATE
         Open3D::3rdparty_cutlass
+        CUDA::cuda_driver
     )
 
     if (TARGET Open3D::3rdparty_cub)

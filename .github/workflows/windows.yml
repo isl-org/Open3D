@@ -22,7 +22,7 @@ env:
   SCIPY_VER: "1.5.4"
   JEDI_VER: "0.17.2" # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8" # https://github.com/psf/requests/issues/5710
-  CONDA_BUILD_VER: "3.20.0"
+  CONDA_BUILD_VER: "3.21.4"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -106,7 +106,6 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
-            -DBUILD_RPC_INTERFACE=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
@@ -165,7 +164,7 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -173,6 +172,8 @@ jobs:
             python_version: 3.7
           - is_master: false
             python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
@@ -210,7 +211,6 @@ jobs:
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
-            -DBUILD_RPC_INTERFACE=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=ON `
@@ -285,7 +285,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8]
+        python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -293,6 +293,8 @@ jobs:
             python_version: 3.7
           - is_master: false
             python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     steps:
       - name: Checkout source code

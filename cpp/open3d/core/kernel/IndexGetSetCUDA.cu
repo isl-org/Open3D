@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
@@ -71,7 +70,8 @@ void IndexGetCUDA(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
-    CUDADeviceSwitcher switcher(src.GetDevice());
+
+    CUDAScopedDevice scoped_device(src.GetDevice());
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         LaunchAdvancedIndexerKernel(
@@ -98,7 +98,8 @@ void IndexSetCUDA(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
-    CUDADeviceSwitcher switcher(dst.GetDevice());
+
+    CUDAScopedDevice scoped_device(dst.GetDevice());
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         LaunchAdvancedIndexerKernel(

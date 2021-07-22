@@ -78,7 +78,7 @@ jobs:
       max-parallel: 4     # Limit parallel runs to max GPU quota (4)
       matrix:
         # See gce-ubuntu-docker-run.sh for details. These need GPU.
-        CI_CONFIG_ID: ['2-bionic', '3-ML-bionic', '4-ML-RPC-bionic', '5-ML-RPC-focal']
+        CI_CONFIG_ID: ['2-bionic', '3-ML-SHARED-bionic', '4-ML-bionic', '5-ML-focal']
 
     env:
       CI_CONFIG_ID: ${{ matrix.CI_CONFIG_ID }}

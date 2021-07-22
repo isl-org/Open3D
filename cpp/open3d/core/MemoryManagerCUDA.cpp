@@ -27,7 +27,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 
@@ -35,10 +34,16 @@ namespace open3d {
 namespace core {
 
 void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
-    CUDADeviceSwitcher switcher(device);
+    CUDAScopedDevice scoped_device(device);
+
     void* ptr;
     if (device.GetType() == Device::DeviceType::CUDA) {
+#if CUDART_VERSION >= 11020
+        OPEN3D_CUDA_CHECK(cudaMallocAsync(static_cast<void**>(&ptr), byte_size,
+                                          cuda::GetStream()));
+#else
         OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
+#endif
     } else {
         utility::LogError("CUDAMemoryManager::Malloc: Unimplemented device.");
     }
@@ -46,10 +51,15 @@ void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
 }
 
 void CUDAMemoryManager::Free(void* ptr, const Device& device) {
-    CUDADeviceSwitcher switcher(device);
+    CUDAScopedDevice scoped_device(device);
+
     if (device.GetType() == Device::DeviceType::CUDA) {
-        if (ptr && IsCUDAPointer(ptr)) {
+        if (ptr && IsCUDAPointer(ptr, device)) {
+#if CUDART_VERSION >= 11020
+            OPEN3D_CUDA_CHECK(cudaFreeAsync(ptr, cuda::GetStream()));
+#else
             OPEN3D_CUDA_CHECK(cudaFree(ptr));
+#endif
         }
     } else {
         utility::LogError("CUDAMemoryManager::Free: Unimplemented device.");
@@ -63,48 +73,55 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
                                size_t num_bytes) {
     if (dst_device.GetType() == Device::DeviceType::CUDA &&
         src_device.GetType() == Device::DeviceType::CPU) {
-        CUDADeviceSwitcher switcher(dst_device);
-        if (!IsCUDAPointer(dst_ptr)) {
+        if (!IsCUDAPointer(dst_ptr, dst_device)) {
             utility::LogError("dst_ptr is not a CUDA pointer.");
         }
-        OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
-                                     cudaMemcpyHostToDevice));
+        CUDAScopedDevice scoped_device(dst_device);
+        OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
+                                          cudaMemcpyHostToDevice,
+                                          cuda::GetStream()));
     } else if (dst_device.GetType() == Device::DeviceType::CPU &&
                src_device.GetType() == Device::DeviceType::CUDA) {
-        CUDADeviceSwitcher switcher(src_device);
-        if (!IsCUDAPointer(src_ptr)) {
+        if (!IsCUDAPointer(src_ptr, src_device)) {
             utility::LogError("src_ptr is not a CUDA pointer.");
         }
-        OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
-                                     cudaMemcpyDeviceToHost));
+        CUDAScopedDevice scoped_device(src_device);
+        OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
+                                          cudaMemcpyDeviceToHost,
+                                          cuda::GetStream()));
     } else if (dst_device.GetType() == Device::DeviceType::CUDA &&
                src_device.GetType() == Device::DeviceType::CUDA) {
-        CUDADeviceSwitcher switcher(dst_device);
-        if (!IsCUDAPointer(dst_ptr)) {
+        if (!IsCUDAPointer(dst_ptr, dst_device)) {
             utility::LogError("dst_ptr is not a CUDA pointer.");
         }
-        switcher.SwitchTo(src_device);
-        if (!IsCUDAPointer(src_ptr)) {
+        if (!IsCUDAPointer(src_ptr, src_device)) {
             utility::LogError("src_ptr is not a CUDA pointer.");
         }
 
         if (dst_device == src_device) {
-            switcher.SwitchTo(src_device);
-            OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, src_ptr, num_bytes,
-                                         cudaMemcpyDeviceToDevice));
+            CUDAScopedDevice scoped_device(src_device);
+            OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
+                                              cudaMemcpyDeviceToDevice,
+                                              cuda::GetStream()));
         } else if (CUDAState::GetInstance()->IsP2PEnabled(src_device.GetID(),
                                                           dst_device.GetID())) {
-            OPEN3D_CUDA_CHECK(cudaMemcpyPeer(dst_ptr, dst_device.GetID(),
-                                             src_ptr, src_device.GetID(),
-                                             num_bytes));
+            OPEN3D_CUDA_CHECK(cudaMemcpyPeerAsync(
+                    dst_ptr, dst_device.GetID(), src_ptr, src_device.GetID(),
+                    num_bytes, cuda::GetStream()));
         } else {
             void* cpu_buf = MemoryManager::Malloc(num_bytes, Device("CPU:0"));
-            switcher.SwitchTo(src_device);
-            OPEN3D_CUDA_CHECK(cudaMemcpy(cpu_buf, src_ptr, num_bytes,
-                                         cudaMemcpyDeviceToHost));
-            switcher.SwitchTo(dst_device);
-            OPEN3D_CUDA_CHECK(cudaMemcpy(dst_ptr, cpu_buf, num_bytes,
-                                         cudaMemcpyHostToDevice));
+            {
+                CUDAScopedDevice scoped_device(src_device);
+                OPEN3D_CUDA_CHECK(cudaMemcpyAsync(cpu_buf, src_ptr, num_bytes,
+                                                  cudaMemcpyDeviceToHost,
+                                                  cuda::GetStream()));
+            }
+            {
+                CUDAScopedDevice scoped_device(dst_device);
+                OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, cpu_buf, num_bytes,
+                                                  cudaMemcpyHostToDevice,
+                                                  cuda::GetStream()));
+            }
             MemoryManager::Free(cpu_buf, Device("CPU:0"));
         }
     } else {
@@ -112,13 +129,12 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
     }
 }
 
-bool CUDAMemoryManager::IsCUDAPointer(const void* ptr) {
+bool CUDAMemoryManager::IsCUDAPointer(const void* ptr, const Device& device) {
+    CUDAScopedDevice scoped_device(device);
+
     cudaPointerAttributes attributes;
     cudaPointerGetAttributes(&attributes, ptr);
-    if (attributes.devicePointer != nullptr) {
-        return true;
-    }
-    return false;
+    return attributes.devicePointer != nullptr ? true : false;
 }
 
 }  // namespace core

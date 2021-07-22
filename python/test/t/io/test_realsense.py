@@ -52,9 +52,9 @@ def test_RSBagReader():
     # Metadata
     metadata = bag_reader.metadata
     assert metadata.color_channels == 3
-    assert metadata.color_dt == o3d.core.Dtype.UInt8
+    assert metadata.color_dt == o3d.core.uint8
     assert metadata.color_format == 'RGB8'
-    assert metadata.depth_dt == o3d.core.Dtype.UInt16
+    assert metadata.depth_dt == o3d.core.uint16
     assert metadata.depth_format == 'Z16'
     assert np.allclose(metadata.depth_scale, 3999.999755859375)
     assert metadata.device_name == "Intel RealSense L515"
@@ -71,11 +71,11 @@ def test_RSBagReader():
     im_rgbd = bag_reader.next_frame()
     assert not im_rgbd.is_empty() and im_rgbd.are_aligned()
     assert im_rgbd.color.channels == 3
-    assert im_rgbd.color.dtype == o3d.core.Dtype.UInt8
+    assert im_rgbd.color.dtype == o3d.core.uint8
     assert im_rgbd.color.rows == 540
     assert im_rgbd.color.columns == 960
     assert im_rgbd.depth.channels == 1
-    assert im_rgbd.depth.dtype == o3d.core.Dtype.UInt16
+    assert im_rgbd.depth.dtype == o3d.core.uint16
     assert im_rgbd.depth.rows == 540
     assert im_rgbd.depth.columns == 960
 

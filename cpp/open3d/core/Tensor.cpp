@@ -33,7 +33,6 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
-#include "open3d/core/NumpyIO.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorKey.h"
@@ -47,22 +46,23 @@
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
 #include "open3d/core/linalg/Tri.h"
+#include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
 static DLDataTypeCode DtypeToDLDataTypeCode(const Dtype& dtype) {
-    if (dtype == Dtype::Float32) return DLDataTypeCode::kDLFloat;
-    if (dtype == Dtype::Float64) return DLDataTypeCode::kDLFloat;
-    if (dtype == Dtype::Int8) return DLDataTypeCode::kDLInt;
-    if (dtype == Dtype::Int16) return DLDataTypeCode::kDLInt;
-    if (dtype == Dtype::Int32) return DLDataTypeCode::kDLInt;
-    if (dtype == Dtype::Int64) return DLDataTypeCode::kDLInt;
-    if (dtype == Dtype::UInt8) return DLDataTypeCode::kDLUInt;
-    if (dtype == Dtype::UInt16) return DLDataTypeCode::kDLUInt;
-    if (dtype == Dtype::UInt32) return DLDataTypeCode::kDLUInt;
-    if (dtype == Dtype::UInt64) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::Float32) return DLDataTypeCode::kDLFloat;
+    if (dtype == core::Float64) return DLDataTypeCode::kDLFloat;
+    if (dtype == core::Int8) return DLDataTypeCode::kDLInt;
+    if (dtype == core::Int16) return DLDataTypeCode::kDLInt;
+    if (dtype == core::Int32) return DLDataTypeCode::kDLInt;
+    if (dtype == core::Int64) return DLDataTypeCode::kDLInt;
+    if (dtype == core::UInt8) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::UInt16) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::UInt32) return DLDataTypeCode::kDLUInt;
+    if (dtype == core::UInt64) return DLDataTypeCode::kDLUInt;
     utility::LogError("Unsupported data type");
     return DLDataTypeCode();
 }
@@ -76,13 +76,13 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
         case DLDataTypeCode::kDLUInt:
             switch (dltype.bits) {
                 case 8:
-                    return Dtype::UInt8;
+                    return core::UInt8;
                 case 16:
-                    return Dtype::UInt16;
+                    return core::UInt16;
                 case 32:
-                    return Dtype::UInt32;
+                    return core::UInt32;
                 case 64:
-                    return Dtype::UInt64;
+                    return core::UInt64;
                 default:
                     utility::LogError("Unsupported kDLUInt bits {}",
                                       dltype.bits);
@@ -91,13 +91,13 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
         case DLDataTypeCode::kDLInt:
             switch (dltype.bits) {
                 case 8:
-                    return Dtype::Int8;
+                    return core::Int8;
                 case 16:
-                    return Dtype::Int16;
+                    return core::Int16;
                 case 32:
-                    return Dtype::Int32;
+                    return core::Int32;
                 case 64:
-                    return Dtype::Int64;
+                    return core::Int64;
                 default:
                     utility::LogError("Unsupported kDLInt bits {}",
                                       dltype.bits);
@@ -106,9 +106,9 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
         case DLDataTypeCode::kDLFloat:
             switch (dltype.bits) {
                 case 32:
-                    return Dtype::Float32;
+                    return core::Float32;
                 case 64:
-                    return Dtype::Float64;
+                    return core::Float64;
                 default:
                     utility::LogError("Unsupported kDLFloat bits {}",
                                       dltype.bits);
@@ -117,7 +117,7 @@ static Dtype DLDataTypeToDtype(const DLDataType& dltype) {
         default:
             utility::LogError("Unsupported dtype code {}", dltype.code);
     }
-    return Dtype::Undefined;
+    return core::Undefined;
 }
 
 /// Open3D DLPack Tensor manager.
@@ -360,10 +360,10 @@ Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
             if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
                 index_tensors.push_back(
                         Tensor(std::vector<int64_t>({tk.GetIndex()}), {1},
-                               Dtype::Int64, GetDevice()));
+                               core::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
                 index_tensors.push_back(Tensor(std::vector<int64_t>{},
-                                               Dtype::Int64, GetDevice()));
+                                               core::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
                 index_tensors.push_back(tk.GetIndexTensor());
             } else {
@@ -431,10 +431,10 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
             if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
                 index_tensors.push_back(
                         Tensor(std::vector<int64_t>({tk.GetIndex()}), {1},
-                               Dtype::Int64, GetDevice()));
+                               core::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
                 index_tensors.push_back(Tensor(std::vector<int64_t>{},
-                                               Dtype::Int64, GetDevice()));
+                                               core::Int64, GetDevice()));
             } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
                 index_tensors.push_back(tk.GetIndexTensor());
             } else {
@@ -623,7 +623,7 @@ std::string Tensor::ToString(bool with_suffix,
 
 std::string Tensor::ScalarPtrToString(const void* ptr) const {
     std::string str = "";
-    if (dtype_ == Dtype::Bool) {
+    if (dtype_ == core::Bool) {
         str = *static_cast<const unsigned char*>(ptr) ? "True" : "False";
     } else if (dtype_.IsObject()) {
         str = fmt::format("{}", fmt::ptr(ptr));
@@ -702,8 +702,34 @@ Tensor Tensor::Slice(int64_t dim,
 }
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
+    if (NumDims() == 0) {
+        const std::string error_prefix =
+                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
+        if (index_tensors.size() != 1) {
+            utility::LogError("{}, but got {} index tensors.", error_prefix,
+                              index_tensors.size());
+        }
+        Tensor index_tensor = index_tensors[0];
+        index_tensor.AssertShape(
+                {}, fmt::format("{}, but got shape {}.", error_prefix,
+                                index_tensor.GetShape().ToString()));
+        index_tensor.AssertDtype(
+                core::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
+                                        index_tensor.GetDtype().ToString()));
+
+        if (index_tensor.IsNonZero()) {
+            // E.g. np.array(5)[np.array(True)].
+            return *this;
+        } else {
+            // E.g. np.array(5)[np.array(False)].
+            // The output tensor becomes 1D of 0 element.
+            return Tensor(/*shape=*/{0}, GetDtype(), GetDevice());
+        }
+    }
+
     AdvancedIndexPreprocessor aip(*this, index_tensors);
     Tensor dst = Tensor(aip.GetOutputShape(), dtype_, GetDevice());
+
     kernel::IndexGet(aip.GetTensor(), dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 
@@ -712,8 +738,59 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
+    if (NumDims() == 0) {
+        const std::string error_prefix =
+                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
+        if (index_tensors.size() != 1) {
+            utility::LogError("{}, but got {} index tensors.", error_prefix,
+                              index_tensors.size());
+        }
+        Tensor index_tensor = index_tensors[0];
+        index_tensor.AssertShape(
+                {}, fmt::format("{}, but got shape {}.", error_prefix,
+                                index_tensor.GetShape().ToString()));
+        index_tensor.AssertDtype(
+                core::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
+                                        index_tensor.GetDtype().ToString()));
+
+        // Example index set
+        // t = np.array(5)
+        // t[np.array(True)]  = 10                 // Works, assigned
+        // t[np.array(True)]  = np.array(10)       // Works, assigned
+        // t[np.array(True)]  = np.array([10])     // Works, assigned
+        // t[np.array(True)]  = np.array([[10]])   // Cannot assign 2D
+        // t[np.array(True)]  = np.array([10, 11]) // Cannot assign 1+ values
+        // t[np.array(False)] = 10                 // Works, unchanged
+        // t[np.array(False)] = np.array(10)       // Works, unchanged
+        // t[np.array(False)] = np.array([10])     // Works, unchanged
+        // t[np.array(False)] = np.array([[10]])   // Cannot assign 2D
+        // t[np.array(False)] = np.array([10, 11]) // Cannot assign 1+ values
+
+        // Assert 0-D or 1-D.
+        if (src_tensor.NumDims() > 1) {
+            utility::LogError(
+                    "Boolean indexing of a 0-D tensor can only be assigned "
+                    "with 0 or 1-dimensional input, but got {} dimensions.",
+                    src_tensor.NumDims());
+        }
+        // Assert single element.
+        if (src_tensor.NumElements() != 1) {
+            utility::LogError(
+                    "Boolean indexing of a 0-D tensor can only be assigned "
+                    "with input containing 1 element, but got {} elements.",
+                    src_tensor.NumElements());
+        }
+        if (index_tensors[0].IsNonZero()) {
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_tensor.GetDtype(), [&]() {
+                AsRvalue() = src_tensor.Item<scalar_t>();
+            });
+        }
+        return;
+    }
+
     AdvancedIndexPreprocessor aip(*this, index_tensors);
     Tensor pre_processed_dst = aip.GetTensor();
+
     kernel::IndexSet(src_tensor, pre_processed_dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 }
@@ -904,7 +981,7 @@ Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
 }
 
 Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
-    if (dtype_ != Dtype::Float32 && dtype_ != Dtype::Float64) {
+    if (dtype_ != core::Float32 && dtype_ != core::Float64) {
         utility::LogError(
                 "Can only compute mean for Float32 or Float64, got {} instead.",
                 dtype_.ToString());
@@ -943,14 +1020,14 @@ Tensor Tensor::Max(const SizeVector& dims, bool keepdim) const {
 }
 
 Tensor Tensor::ArgMin(const SizeVector& dims) const {
-    Tensor dst(shape_util::ReductionShape(shape_, dims, false), Dtype::Int64,
+    Tensor dst(shape_util::ReductionShape(shape_, dims, false), core::Int64,
                GetDevice());
     kernel::Reduction(*this, dst, dims, false, kernel::ReductionOpCode::ArgMin);
     return dst;
 }
 
 Tensor Tensor::ArgMax(const SizeVector& dims) const {
-    Tensor dst(shape_util::ReductionShape(shape_, dims, false), Dtype::Int64,
+    Tensor dst(shape_util::ReductionShape(shape_, dims, false), core::Int64,
                GetDevice());
     kernel::Reduction(*this, dst, dims, false, kernel::ReductionOpCode::ArgMax);
     return dst;
@@ -1023,32 +1100,32 @@ Tensor Tensor::Abs_() {
 }
 
 Tensor Tensor::IsNan() const {
-    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
-        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+    if (dtype_ == core::Float32 || dtype_ == core::Float64) {
+        Tensor dst_tensor(shape_, core::Bool, GetDevice());
         kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsNan);
         return dst_tensor;
     } else {
-        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
+        return Tensor::Zeros(shape_, core::Bool, GetDevice());
     }
 }
 
 Tensor Tensor::IsInf() const {
-    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
-        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+    if (dtype_ == core::Float32 || dtype_ == core::Float64) {
+        Tensor dst_tensor(shape_, core::Bool, GetDevice());
         kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsInf);
         return dst_tensor;
     } else {
-        return Tensor::Zeros(shape_, Dtype::Bool, GetDevice());
+        return Tensor::Zeros(shape_, core::Bool, GetDevice());
     }
 }
 
 Tensor Tensor::IsFinite() const {
-    if (dtype_ == Dtype::Float32 || dtype_ == Dtype::Float64) {
-        Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+    if (dtype_ == core::Float32 || dtype_ == core::Float64) {
+        Tensor dst_tensor(shape_, core::Bool, GetDevice());
         kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsFinite);
         return dst_tensor;
     } else {
-        return Tensor::Ones(shape_, Dtype::Bool, GetDevice());
+        return Tensor::Ones(shape_, core::Bool, GetDevice());
     }
 }
 
@@ -1103,7 +1180,7 @@ Device Tensor::GetDevice() const {
 }
 
 Tensor Tensor::LogicalNot() const {
-    Tensor dst_tensor(shape_, Dtype::Bool, GetDevice());
+    Tensor dst_tensor(shape_, core::Bool, GetDevice());
     kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::LogicalNot);
     return dst_tensor;
 }
@@ -1115,7 +1192,7 @@ Tensor Tensor::LogicalNot_() {
 
 Tensor Tensor::LogicalAnd(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      Dtype::Bool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
                      kernel::BinaryEWOpCode::LogicalAnd);
     return dst_tensor;
@@ -1145,7 +1222,7 @@ Tensor Tensor::LogicalAnd_(Scalar value) {
 
 Tensor Tensor::LogicalOr(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      Dtype::Bool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
                      kernel::BinaryEWOpCode::LogicalOr);
     return dst_tensor;
@@ -1174,7 +1251,7 @@ Tensor Tensor::LogicalOr_(Scalar value) {
 
 Tensor Tensor::LogicalXor(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      Dtype::Bool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
                      kernel::BinaryEWOpCode::LogicalXor);
     return dst_tensor;
@@ -1204,7 +1281,7 @@ Tensor Tensor::LogicalXor_(Scalar value) {
 
 Tensor Tensor::Gt(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      Dtype::Bool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Gt);
     return dst_tensor;
 }
@@ -1232,7 +1309,7 @@ Tensor Tensor::Gt_(Scalar value) {
 
 Tensor Tensor::Lt(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      Dtype::Bool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Lt);
     return dst_tensor;
 }
@@ -1260,7 +1337,7 @@ Tensor Tensor::Lt_(Scalar value) {
 
 Tensor Tensor::Ge(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      Dtype::Bool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ge);
     return dst_tensor;
 }
@@ -1288,7 +1365,7 @@ Tensor Tensor::Ge_(Scalar value) {
 
 Tensor Tensor::Le(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      Dtype::Bool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Le);
     return dst_tensor;
 }
@@ -1316,7 +1393,7 @@ Tensor Tensor::Le_(Scalar value) {
 
 Tensor Tensor::Eq(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      Dtype::Bool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Eq);
     return dst_tensor;
 }
@@ -1344,7 +1421,7 @@ Tensor Tensor::Eq_(Scalar value) {
 
 Tensor Tensor::Ne(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
-                      Dtype::Bool, GetDevice());
+                      core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ne);
     return dst_tensor;
 }
@@ -1457,11 +1534,11 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
 }
 
 void Tensor::Save(const std::string& file_name) const {
-    NumpyArray(*this).Save(file_name);
+    t::io::WriteNpy(file_name, *this);
 }
 
 Tensor Tensor::Load(const std::string& file_name) {
-    return NumpyArray::Load(file_name).ToTensor();
+    return t::io::ReadNpy(file_name);
 }
 
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
@@ -1482,8 +1559,8 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
         utility::LogError("Shape mismatch {} != {}.", shape_, other.shape_);
     }
 
-    Tensor lhs = this->To(Dtype::Float64);
-    Tensor rhs = other.To(Dtype::Float64);
+    Tensor lhs = this->To(core::Float64);
+    Tensor rhs = other.To(core::Float64);
     Tensor actual_error = (lhs - rhs).Abs();
     Tensor max_error = atol + rtol * rhs.Abs();
     return actual_error <= max_error;

@@ -67,31 +67,31 @@ static TensorKey ToTensorKey(const py::slice& key) {
 
 static TensorKey ToTensorKey(const py::list& key) {
     Tensor key_tensor = PyTupleToTensor(key);
-    if (key_tensor.GetDtype() != Dtype::Bool) {
-        key_tensor = key_tensor.To(Dtype::Int64);
+    if (key_tensor.GetDtype() != core::Bool) {
+        key_tensor = key_tensor.To(core::Int64);
     }
     return TensorKey::IndexTensor(key_tensor);
 }
 
 static TensorKey ToTensorKey(const py::tuple& key) {
     Tensor key_tensor = PyTupleToTensor(key);
-    if (key_tensor.GetDtype() != Dtype::Bool) {
-        key_tensor = key_tensor.To(Dtype::Int64);
+    if (key_tensor.GetDtype() != core::Bool) {
+        key_tensor = key_tensor.To(core::Int64);
     }
     return TensorKey::IndexTensor(key_tensor);
 }
 
 static TensorKey ToTensorKey(const py::array& key) {
     Tensor key_tensor = PyArrayToTensor(key, /*inplace=*/false);
-    if (key_tensor.GetDtype() != Dtype::Bool) {
-        key_tensor = key_tensor.To(Dtype::Int64);
+    if (key_tensor.GetDtype() != core::Bool) {
+        key_tensor = key_tensor.To(core::Int64);
     }
     return TensorKey::IndexTensor(key_tensor);
 }
 
 static TensorKey ToTensorKey(const Tensor& key_tensor) {
-    if (key_tensor.GetDtype() != Dtype::Bool) {
-        return TensorKey::IndexTensor(key_tensor.To(Dtype::Int64));
+    if (key_tensor.GetDtype() != core::Bool) {
+        return TensorKey::IndexTensor(key_tensor.To(core::Int64));
     } else {
         return TensorKey::IndexTensor(key_tensor);
     }
@@ -134,6 +134,10 @@ static TensorKey PyHandleToTensorKey(const py::handle& item) {
 }
 
 static void pybind_getitem(py::class_<Tensor>& tensor) {
+    tensor.def("__getitem__", [](const Tensor& tensor, bool key) {
+        return tensor.GetItem(ToTensorKey(Tensor::Init(key)));
+    });
+
     tensor.def("__getitem__", [](const Tensor& tensor, int key) {
         return tensor.GetItem(ToTensorKey(key));
     });
@@ -172,6 +176,14 @@ static void pybind_getitem(py::class_<Tensor>& tensor) {
 }
 
 static void pybind_setitem(py::class_<Tensor>& tensor) {
+    tensor.def("__setitem__", [](Tensor& tensor, bool key,
+                                 const py::handle& value) {
+        return tensor.SetItem(
+                ToTensorKey(Tensor::Init(key)),
+                PyHandleToTensor(value, tensor.GetDtype(), tensor.GetDevice(),
+                                 /*force_copy=*/false));
+    });
+
     tensor.def("__setitem__", [](Tensor& tensor, int key,
                                  const py::handle& value) {
         return tensor.SetItem(

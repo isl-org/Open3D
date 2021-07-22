@@ -146,15 +146,15 @@ void ComputeOdometryResultPointToPlaneCUDA(
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    core::Tensor global_sum =
-            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    core::Tensor global_sum = core::Tensor::Zeros({29}, core::Float32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
     const int kThreadSize = 16;
     const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
                       (rows + kThreadSize - 1) / kThreadSize);
     const dim3 threads(kThreadSize, kThreadSize);
-    ComputeOdometryResultPointToPlaneCUDAKernel<<<blocks, threads>>>(
+    ComputeOdometryResultPointToPlaneCUDAKernel<<<blocks, threads, 0,
+                                                  core::cuda::GetStream()>>>(
             source_vertex_indexer, target_vertex_indexer, target_normal_indexer,
             ti, global_sum_ptr, rows, cols, depth_outlier_trunc,
             depth_huber_delta);
@@ -253,15 +253,15 @@ void ComputeOdometryResultIntensityCUDA(
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    core::Tensor global_sum =
-            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    core::Tensor global_sum = core::Tensor::Zeros({29}, core::Float32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
     const int kThreadSize = 16;
     const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
                       (rows + kThreadSize - 1) / kThreadSize);
     const dim3 threads(kThreadSize, kThreadSize);
-    ComputeOdometryResultIntensityCUDAKernel<<<blocks, threads>>>(
+    ComputeOdometryResultIntensityCUDAKernel<<<blocks, threads, 0,
+                                               core::cuda::GetStream()>>>(
             source_depth_indexer, target_depth_indexer,
             source_intensity_indexer, target_intensity_indexer,
             target_intensity_dx_indexer, target_intensity_dy_indexer,
@@ -374,15 +374,15 @@ void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    core::Tensor global_sum =
-            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
+    core::Tensor global_sum = core::Tensor::Zeros({29}, core::Float32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
     const int kThreadSize = 16;
     const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
                       (rows + kThreadSize - 1) / kThreadSize);
     const dim3 threads(kThreadSize, kThreadSize);
-    ComputeOdometryResultHybridCUDAKernel<<<blocks, threads>>>(
+    ComputeOdometryResultHybridCUDAKernel<<<blocks, threads, 0,
+                                            core::cuda::GetStream()>>>(
             source_depth_indexer, target_depth_indexer,
             source_intensity_indexer, target_intensity_indexer,
             target_depth_dx_indexer, target_depth_dy_indexer,

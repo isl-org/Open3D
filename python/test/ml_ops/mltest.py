@@ -14,9 +14,10 @@ default_marks = [
                        reason='ml ops not built'),
 ]
 
-MLModules = namedtuple(
-    'MLModules',
-    ['module', 'ops', 'layers', 'device', 'cpu_device', 'device_is_gpu'])
+MLModules = namedtuple('MLModules', [
+    'module', 'ops', 'layers', 'classes', 'device', 'cpu_device',
+    'device_is_gpu'
+])
 
 # define the list of frameworks and devices for running the ops
 _ml_modules = {}
@@ -29,15 +30,15 @@ try:
         tf = importlib.import_module('tensorflow')
     ml3d_ops = importlib.import_module('open3d.ml.tf.ops')
     ml3d_layers = importlib.import_module('open3d.ml.tf.layers')
-    _ml_modules['tf'] = MLModules(tf, ml3d_ops, ml3d_layers, 'CPU:0', 'CPU:0',
-                                  False)
+    _ml_modules['tf'] = MLModules(tf, ml3d_ops, ml3d_layers, None, 'CPU:0',
+                                  'CPU:0', False)
     # check for GPUs and set memory growth to prevent tf from allocating all memory
     tf_gpu_devices = tf.config.experimental.list_physical_devices('GPU')
     for dev in tf_gpu_devices:
         tf.config.experimental.set_memory_growth(dev, True)
     if tf_gpu_devices and o3d._build_config['BUILD_CUDA_MODULE']:
-        _ml_modules['tf_gpu'] = MLModules(tf, ml3d_ops, ml3d_layers, 'GPU:0',
-                                          'CPU:0', True)
+        _ml_modules['tf_gpu'] = MLModules(tf, ml3d_ops, ml3d_layers, None,
+                                          'GPU:0', 'CPU:0', True)
 except ImportError:
     pass
 
@@ -45,11 +46,12 @@ try:
     torch = importlib.import_module('torch')
     ml3d_ops = importlib.import_module('open3d.ml.torch.ops')
     ml3d_layers = importlib.import_module('open3d.ml.torch.layers')
-    _ml_modules['torch'] = MLModules(torch, ml3d_ops, ml3d_layers, 'cpu', 'cpu',
-                                     False)
+    ml3d_classes = importlib.import_module('open3d.ml.torch.classes')
+    _ml_modules['torch'] = MLModules(torch, ml3d_ops, ml3d_layers, ml3d_classes,
+                                     'cpu', 'cpu', False)
     if torch.cuda.is_available() and o3d._build_config['BUILD_CUDA_MODULE']:
         _ml_modules['torch_cuda'] = MLModules(torch, ml3d_ops, ml3d_layers,
-                                              'cuda', 'cpu', True)
+                                              ml3d_classes, 'cuda', 'cpu', True)
 except ImportError:
     pass
 
