@@ -39,10 +39,6 @@
 
 namespace t_reg = open3d::t::pipelines::registration;
 namespace l_reg = open3d::pipelines::registration;
-static const std::string source_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
-static const std::string target_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
 
 namespace open3d {
 namespace tests {
@@ -77,20 +73,95 @@ TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
 
 static std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
 GetTestPointClouds(const core::Dtype& dtype, const core::Device& device) {
-    t::geometry::PointCloud source, target;
+    t::geometry::PointCloud source(device);
+    t::geometry::PointCloud target(device);
 
-    t::io::ReadPointCloud(source_pointcloud_filename, source,
-                          {"auto", false, false, true});
-    t::io::ReadPointCloud(target_pointcloud_filename, target,
-                          {"auto", false, false, true});
+    core::Tensor source_points =
+            core::Tensor::Init<float>(
+                    {{1.0, 0.5, 2.0}, {0.5, 0.5, 2.0}, {0.5, 0.5, 2.5},
+                     {3.0, 1.0, 1.5}, {3.5, 1.0, 1.0}, {0.5, 1.0, 2.0},
+                     {1.5, 1.0, 1.5}, {2.0, 1.0, 1.5}, {1.0, 1.0, 2.0},
+                     {2.5, 1.0, 1.5}, {3.0, 1.0, 1.0}, {0.5, 1.0, 2.5},
+                     {1.0, 1.0, 1.0}, {1.5, 1.0, 1.0}, {1.0, 1.5, 1.0},
+                     {3.0, 1.5, 1.0}, {3.5, 1.5, 1.0}, {3.0, 1.5, 1.5},
+                     {0.5, 1.5, 1.5}, {0.5, 1.5, 2.0}, {1.0, 1.5, 2.0},
+                     {2.5, 1.5, 1.5}, {1.5, 1.5, 1.0}, {1.5, 1.5, 1.5},
+                     {2.0, 1.5, 1.5}, {3.0, 1.5, 0.5}, {2.5, 1.5, 1.0},
+                     {2.0, 1.5, 1.0}, {3.0, 2.0, 0.5}, {0.5, 2.0, 1.5},
+                     {3.0, 2.0, 1.0}, {1.0, 2.0, 1.0}, {2.0, 1.5, 0.5},
+                     {0.5, 2.0, 2.0}, {2.5, 2.0, 1.0}, {2.5, 2.0, 0.5},
+                     {2.0, 2.0, 0.5}, {2.5, 1.5, 0.5}, {3.0, 2.0, 1.5},
+                     {2.0, 2.0, 1.0}, {1.0, 2.0, 2.0}, {1.5, 2.0, 1.0},
+                     {1.5, 2.0, 1.5}, {2.5, 2.0, 1.5}, {2.0, 2.0, 1.5},
+                     {1.0, 2.0, 0.5}, {0.5, 2.0, 1.0}, {1.5, 2.0, 0.5},
+                     {1.0, 2.0, 1.5}},
+                    device)
+                    .To(dtype);
 
-    source = source.To(device, false).VoxelDownSample(0.08);
-    source.SetPoints(source.GetPoints().To(dtype, false));
-    source.SetPointNormals(source.GetPointNormals().To(dtype, false));
+    core::Tensor target_points =
+            core::Tensor::Init<float>(
+                    {{1.5, 1.0, 1.5}, {2.5, 1.0, 1.5}, {1.5, 1.0, 1.0},
+                     {1.0, 1.0, 1.0}, {2.0, 1.0, 1.5}, {3.0, 1.0, 1.5},
+                     {1.0, 1.0, 0.5}, {1.0, 1.5, 1.0}, {1.0, 1.5, 0.5},
+                     {1.0, 1.0, 1.5}, {3.0, 1.0, 2.0}, {3.0, 1.5, 2.0},
+                     {3.0, 1.5, 1.5}, {1.0, 1.5, 1.5}, {1.5, 1.5, 1.5},
+                     {2.5, 1.5, 1.5}, {2.0, 1.5, 1.5}, {1.5, 1.5, 1.0},
+                     {2.5, 1.5, 2.0}, {1.0, 2.0, 1.0}, {1.0, 2.0, 0.5},
+                     {2.5, 1.5, 1.0}, {3.0, 2.0, 1.5}, {2.5, 2.0, 1.0},
+                     {2.5, 2.0, 1.5}, {1.5, 2.0, 1.0}, {2.0, 1.5, 1.0},
+                     {1.0, 2.0, 1.5}, {2.0, 2.0, 1.0}, {1.5, 2.0, 1.5},
+                     {1.5, 2.0, 0.5}, {2.0, 2.0, 1.5}, {2.0, 2.0, 0.5},
+                     {1.5, 2.5, 1.0}, {1.0, 2.5, 1.0}, {3.0, 2.0, 1.0},
+                     {2.0, 2.5, 1.0}, {2.5, 2.5, 1.0}},
+                    device)
+                    .To(dtype);
 
-    target = target.To(device, false).VoxelDownSample(0.08);
-    target.SetPoints(target.GetPoints().To(dtype, false));
-    target.SetPointNormals(target.GetPointNormals().To(dtype, false));
+    core::Tensor target_normals =
+            core::Tensor::Init<float>({{0.15597, -0.0463812, -0.986672},
+                                       {-0.213545, 0.887963, 0.407334},
+                                       {0.423193, -0.121977, -0.897792},
+                                       {0.202251, 0.27611, -0.939605},
+                                       {0.275452, 0.207216, -0.938716},
+                                       {0.326146, 0.0385317, -0.944534},
+                                       {0.983129, -0.174668, -0.0543011},
+                                       {0.898665, -0.0602029, 0.434485},
+                                       {0.711325, 0.193223, -0.675783},
+                                       {0.346158, 0.198724, -0.916888},
+                                       {0.302085, 0.28938, -0.908297},
+                                       {0.341044, 0.414138, -0.843907},
+                                       {0.212191, 0.213068, -0.953717},
+                                       {0.239759, 0.313187, -0.918929},
+                                       {0.302290, 0.27265, -0.913391},
+                                       {0.209796, 0.402747, -0.890944},
+                                       {0.267025, 0.218226, -0.938656},
+                                       {0.00126928, -0.976587, -0.21512},
+                                       {0.321912, 0.194736, -0.926526},
+                                       {0.831227, 0.236675, -0.503037},
+                                       {0.987006, -0.155324, 0.0411639},
+                                       {0.103384, -0.808796, -0.57893},
+                                       {0.181245, 0.66226, -0.727023},
+                                       {0.235471, 0.525053, -0.817846},
+                                       {0.231954, 0.446165, -0.864369},
+                                       {-0.261931, -0.725542, -0.636381},
+                                       {0.120953, -0.864985, -0.487003},
+                                       {0.858345, -0.227847, 0.459706},
+                                       {-0.416259, -0.367408, -0.831709},
+                                       {-0.476652, 0.206048, -0.854604},
+                                       {-0.211959, -0.523378, -0.825317},
+                                       {-0.964914, 0.0541031, -0.256931},
+                                       {-0.0653566, -0.913961, -0.400504},
+                                       {-0.846868, -0.170805, -0.503628},
+                                       {0.0366971, 0.515834, -0.855902},
+                                       {-0.0714554, -0.855019, -0.513651},
+                                       {-0.0217377, -0.957744, -0.286799},
+                                       {-0.0345231, -0.947096, -0.319088}},
+                                      device)
+                    .To(dtype);
+
+    source.SetPoints(source_points.To(dtype, false));
+
+    target.SetPoints(target_points.To(dtype, false));
+    target.SetPointNormals(target_normals.To(dtype, false));
 
     return std::make_tuple(source, target);
 }
