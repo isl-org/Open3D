@@ -32,9 +32,9 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
 
 namespace open3d {
 
@@ -45,14 +45,6 @@ class PointCloud;
 
 namespace pipelines {
 namespace registration {
-
-/// \brief CorrespondenceSet: pair of 2x Int64 tensors of shape {C,},
-/// where C is the number of good correspondences between source and
-/// target pointcloud. The first tensor is the source indices, and
-/// the second tensor is corresponding target indices. Such that,
-/// source[correspondence.first] and target[correspondence.second]
-/// is a correspondence pair.
-typedef std::pair<core::Tensor, core::Tensor> CorrespondenceSet;
 
 enum class TransformationEstimationType {
     Unspecified = 0,
@@ -81,25 +73,28 @@ public:
     ///
     /// \param source Source point cloud of type Float32.
     /// \param target Target point cloud of type Float32.
-    /// \param correspondences Correspondence set between source and target
-    /// point cloud.
-    virtual double ComputeRMSE(
-            const geometry::PointCloud &source,
-            const geometry::PointCloud &target,
-            const CorrespondenceSet &correspondences) const = 0;
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    virtual double ComputeRMSE(const geometry::PointCloud &source,
+                               const geometry::PointCloud &target,
+                               const core::Tensor &correspondences) const = 0;
     /// Compute transformation from source to target point cloud given
     /// correspondences.
     ///
     /// \param source Source point cloud of type Float32.
     /// \param target Target point cloud of type Float32.
-    /// \param correspondences Correspondence set between source and target
-    /// point cloud.
-    /// \return transformation between source to target, a tensor of shape
-    /// {4, 4}, type Float64 on CPU device.
+    /// \param correspondences tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const CorrespondenceSet &correspondences) const = 0;
+            const core::Tensor &correspondences) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -118,30 +113,34 @@ public:
         return type_;
     };
     /// \brief Computes RMSE (double) for PointToPoint method, between two
-    /// pointclouds of type Float32, given CorrespondenceSet.
+    /// pointclouds of type Float32, given core::Tensor.
     ///
     /// \param source Source pointcloud of dtype Float32.
-    /// \param source Target pointcloud of dtype Float32. It must contain
+    /// \param target Target pointcloud of dtype Float32. It must contain
     /// normals.
-    /// \param correspondences CorrespondenceSet: a pair of Int64 {C,}
-    /// shape tensor.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       const CorrespondenceSet &correspondences) const override;
+                       const core::Tensor &correspondences) const override;
 
     /// \brief Estimates the transformation matrix for PointToPoint method,
     /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
     ///
     /// \param source Source pointcloud of dtype Float32.
-    /// \param source Target pointcloud of dtype Float32.
-    /// \param correspondences CorrespondenceSet: a pair of Int64 {C,} shape
-    /// tensor.
+    /// \param target Target pointcloud of dtype Float32.
+    /// \param correspondences tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
     /// \return transformation between source to target, a tensor of
     /// shape {4, 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const CorrespondenceSet &correspondences) const override;
+            const core::Tensor &correspondences) const override;
 
 private:
     const TransformationEstimationType type_ =
@@ -158,37 +157,53 @@ public:
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
+    /// \brief Constructor that takes as input a RobustKernel
+    ///
+    /// \param kernel Any of the implemented statistical robust kernel for
+    /// outlier rejection.
+    explicit TransformationEstimationPointToPlane(const RobustKernel &kernel)
+        : kernel_(kernel) {}
+
 public:
     TransformationEstimationType GetTransformationEstimationType()
             const override {
         return type_;
     };
+
     /// \brief Computes RMSE (double) for PointToPlane method, between two
-    /// pointclouds of type Float32, given CorrespondenceSet.
+    /// pointclouds of type Float32, given correspondences.
     ///
     /// \param source Source pointcloud of dtype Float32.
-    /// \param source Target pointcloud of dtype Float32. It must contain
+    /// \param target Target pointcloud of dtype Float32. It must contain
     /// normals.
-    /// \param correspondences CorrespondenceSet: a pair of Int64 {C,}
-    /// shape tensor.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       const CorrespondenceSet &correspondences) const override;
+                       const core::Tensor &correspondences) const override;
 
     /// \brief Estimates the transformation matrix for PointToPlane method,
     /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
     ///
     /// \param source Source pointcloud of dtype Float32.
-    /// \param source Target pointcloud of dtype Float32. It must contain
+    /// \param target Target pointcloud of dtype Float32. It must contain
     /// normals.
-    /// \param correspondences CorrespondenceSet: a pair of Int64 {C,}
-    /// shape tensor.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
     /// \return transformation between source to target, a tensor
     /// of shape {4, 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const CorrespondenceSet &correspondences) const override;
+            const core::Tensor &correspondences) const override;
+
+public:
+    /// RobustKernel for outlier rejection.
+    RobustKernel kernel_ = RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
 
 private:
     const TransformationEstimationType type_ =

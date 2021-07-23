@@ -33,7 +33,7 @@
 #include "tests/UnitTest.h"
 
 #ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/CUDAUtils.h"
 #endif
 
 namespace open3d {

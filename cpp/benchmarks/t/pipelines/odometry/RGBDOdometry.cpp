@@ -82,7 +82,7 @@ static void ComputeOdometryResultPointToPlane(benchmark::State& state,
             dst_depth_processed.CreateVertexMap(intrinsic_t, NAN);
 
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
 
     for (int i = 0; i < 20; ++i) {
         auto result = t::pipelines::odometry::ComputeOdometryResultPointToPlane(
@@ -93,8 +93,8 @@ static void ComputeOdometryResultPointToPlane(benchmark::State& state,
     }
 
     for (auto _ : state) {
-        core::Tensor trans = core::Tensor::Eye(4, core::Dtype::Float64,
-                                               core::Device("CPU:0"));
+        core::Tensor trans =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
 
         for (int i = 0; i < 20; ++i) {
             auto result =
@@ -152,14 +152,14 @@ static void RGBDOdometryMultiScale(
     // Warp up
     RGBDOdometryMultiScale(
             source, target, intrinsic_t,
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")),
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
             depth_scale, depth_max, criteria, method, loss);
 
     for (auto _ : state) {
-        RGBDOdometryMultiScale(source, target, intrinsic_t,
-                               core::Tensor::Eye(4, core::Dtype::Float64,
-                                                 core::Device("CPU:0")),
-                               depth_scale, depth_max, criteria, method, loss);
+        RGBDOdometryMultiScale(
+                source, target, intrinsic_t,
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+                depth_scale, depth_max, criteria, method, loss);
     }
 }
 

@@ -33,6 +33,8 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/kernel/PointCloud.h"
+#include "open3d/t/geometry/kernel/Transform.h"
 
 namespace open3d {
 namespace t {
@@ -60,17 +62,63 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
     SetTriangles(triangles);
 }
 
+TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
+    kernel::transform::TransformPoints(transformation, GetVertices());
+    if (HasVertexNormals()) {
+        kernel::transform::TransformNormals(transformation, GetVertexNormals());
+    }
+    if (HasTriangleNormals()) {
+        kernel::transform::TransformNormals(transformation,
+                                            GetTriangleNormals());
+    }
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
+                                      bool relative) {
+    translation.AssertShape({3});
+    translation.AssertDevice(device_);
+
+    core::Tensor transform = translation;
+    if (!relative) {
+        transform -= GetCenter();
+    }
+    GetVertices() += transform;
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
+    center.AssertShape({3});
+    center.AssertDevice(device_);
+
+    core::Tensor points = GetVertices();
+    points.Sub_(center).Mul_(scale).Add_(center);
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
+                                   const core::Tensor &center) {
+    kernel::transform::RotatePoints(R, GetVertices(), center);
+    if (HasVertexNormals()) {
+        kernel::transform::RotateNormals(R, GetVertexNormals());
+    }
+    if (HasTriangleNormals()) {
+        kernel::transform::RotateNormals(R, GetTriangleNormals());
+    }
+    return *this;
+}
+
 geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
         const open3d::geometry::TriangleMesh &mesh_legacy,
         core::Dtype float_dtype,
         core::Dtype int_dtype,
         const core::Device &device) {
-    if (float_dtype != core::Dtype::Float32 &&
-        float_dtype != core::Dtype::Float64) {
+    if (float_dtype != core::Float32 && float_dtype != core::Float64) {
         utility::LogError("float_dtype must be Float32 or Float64, but got {}.",
                           float_dtype.ToString());
     }
-    if (int_dtype != core::Dtype::Int32 && int_dtype != core::Dtype::Int64) {
+    if (int_dtype != core::Int32 && int_dtype != core::Int64) {
         utility::LogError("int_dtype must be Int32 or Int64, but got {}.",
                           int_dtype.ToString());
     }

@@ -42,7 +42,7 @@ public:
     /// Constructor for primitive types, supporting element shapes.
     /// Example:
     /// Key is int<3> coordinate:
-    /// - dtype_key = Dtype::Int32
+    /// - dtype_key = core::Int32
     /// - element_shape_key = {3}
     Hashmap(int64_t init_capacity,
             const Dtype& dtype_key,

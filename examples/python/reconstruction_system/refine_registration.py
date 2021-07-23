@@ -85,6 +85,16 @@ def multiscale_icp(source,
                         relative_fitness=1e-6,
                         relative_rmse=1e-6,
                         max_iteration=iter))
+            if config["icp_method"] == "generalized":
+                result_icp = o3d.pipelines.registration.registration_generalized_icp(
+                    source_down, target_down, distance_threshold,
+                    current_transformation,
+                    o3d.pipelines.registration.
+                    TransformationEstimationForGeneralizedICP(),
+                    o3d.pipelines.registration.ICPConvergenceCriteria(
+                        relative_fitness=1e-6,
+                        relative_rmse=1e-6,
+                        max_iteration=iter))
         current_transformation = result_icp.transformation
         if i == len(max_iter) - 1:
             information_matrix = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
