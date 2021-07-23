@@ -1263,7 +1263,7 @@ if(USE_BLAS)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACK_LIBRARIES}")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACKE_LIBRARIES}")
         if(BUILD_CUDA_MODULE)
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cusolver_static CUDA::cublas_static CUDA::cublasLt_static)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cublas_static CUDA::cublasLt_static CUDA::cusolver_static)
         endif()
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
@@ -1280,7 +1280,7 @@ if(USE_BLAS)
         )
         target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads gfortran)
         if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_openblas INTERFACE CUDA::cusolver_static CUDA::cublas_static CUDA::cublasLt_static)
+            target_link_libraries(3rdparty_openblas INTERFACE CUDA::cublas_static CUDA::cublasLt_static CUDA::cusolver_static)
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openblas)
     endif()
@@ -1304,7 +1304,56 @@ else()
     target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
     # cuSOLVER and cuBLAS
     if(BUILD_CUDA_MODULE)
-        target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver_static CUDA::cublas_static CUDA::cublasLt_static)
+        # target_link_libraries(3rdparty_mkl INTERFACE CUDA::cublas_static CUDA::cublasLt_static CUDA::cusolver_static)  # Missing a lot
+        # target_link_libraries(3rdparty_mkl INTERFACE CUDA::cublas_static CUDA::cusolver_static CUDA::cublasLt_static)  # Missing quite a lot
+
+        # target_link_libraries(3rdparty_mkl INTERFACE CUDA::cublasLt_static CUDA::cublas_static CUDA::cusolver_static)  # Missing a lot
+        # target_link_libraries(3rdparty_mkl INTERFACE CUDA::cublasLt_static CUDA::cusolver_static CUDA::cublas_static)  # Missing quite a lot
+
+        # target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver_static CUDA::cublas_static CUDA::cublasLt_static)  # Missing 5
+        # target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver_static CUDA::cublasLt_static CUDA::cublas_static)  # Missing quite a lot
+
+        target_link_libraries(3rdparty_mkl INTERFACE
+            CUDA::nppc_static
+            CUDA::nppicc_static
+            CUDA::nppif_static
+            CUDA::nppig_static
+            CUDA::nppim_static
+            CUDA::nppial_static
+            CUDA::cusolver_static
+            CUDA::cublas_static
+            CUDA::cublasLt_static
+            CUDA::culibos
+            CUDA::cudart_static
+            pthread
+            dl
+
+            /usr/local/cuda/lib64/liblapack_static.a
+
+            # CUDA::cublasLt_static
+            # CUDA::cublas_static
+            # CUDA::cudart_static
+            # CUDA::cufft_static
+            # CUDA::culibos
+            # CUDA::cupti_static
+            # CUDA::curand_static
+            # CUDA::cusolver_static
+            # CUDA::cusparse_static
+            # CUDA::lapack_static
+            # CUDA::metis_static
+            # CUDA::nppc_static
+            # CUDA::nppial_static
+            # CUDA::nppicc_static
+            # CUDA::nppidei_static
+            # CUDA::nppif_static
+            # CUDA::nppig_static
+            # CUDA::nppim_static
+            # CUDA::nppist_static
+            # CUDA::nppisu_static
+            # CUDA::nppitc_static
+            # CUDA::npps_static
+            # CUDA::nvjpeg_static
+        )
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 endif()
@@ -1344,7 +1393,7 @@ if (BUILD_CUDA_MODULE)
         PACKAGE CUDAToolkit
         TARGETS CUDA::nppc_static CUDA::nppicc_static CUDA::nppif_static CUDA::nppig_static CUDA::nppim_static CUDA::nppial_static
     )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_cuda_npp)
+    # list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_cuda_npp)
 endif ()
 
 # IPP

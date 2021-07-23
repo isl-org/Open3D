@@ -55,5 +55,5 @@ if (BUILD_CUDA_MODULE)
     # We still need to explicitly link against CUDA libraries.
     # Consider removing dependencies of CUDA headers in the future.
     find_package(CUDAToolkit REQUIRED)
-    target_link_libraries(tests PRIVATE CUDA::cudart_static)
+    target_link_libraries(tests PRIVATE CUDA::cudart)
 endif()
