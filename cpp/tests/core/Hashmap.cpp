@@ -480,7 +480,7 @@ TEST_P(HashmapPermuteDevices, HashmapIO) {
     EXPECT_EQ(saved_key_tensor.GetLength(), slots);
     EXPECT_EQ(saved_value_tensor.GetLength(), slots);
 
-    core::Hashmap hashmap_loaded = core::Hashmap::Load(file_name, device);
+    core::Hashmap hashmap_loaded = core::Hashmap::Load(file_name);
     EXPECT_EQ(hashmap_loaded.Size(), hashmap.Size());
 
     core::Tensor active_indices;
