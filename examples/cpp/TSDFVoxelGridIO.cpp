@@ -29,8 +29,11 @@ int main(int argc, char* argv[]) {
     using namespace open3d;
     using MaskCode = t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
 
-    auto voxel_grid = *t::io::CreateTSDFVoxelGridFromFile(argv[1]);
+    auto hashmap = core::Hashmap::Load(std::string(argv[1]) + ".hash");
+    utility::LogInfo("hashmap keys = {}", hashmap.GetKeyTensor().ToString());
 
+    auto voxel_grid =
+            *t::io::CreateTSDFVoxelGridFromFile(std::string(argv[1]) + ".json");
     auto pcd = voxel_grid.ExtractSurfacePoints(
             -1, 3.0f,
             MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);

@@ -56,7 +56,7 @@ core::Hashmap ReadHashmap(const std::string& filename) {
     if (length_key != length_value) {
         utility::LogError("Incompatible key value length.");
     }
-    int init_capacity = length_key * 1.2;
+    int init_capacity = length_key;
 
     core::SizeVector shape_key = keys.GetShape();
     core::SizeVector shape_value = values.GetShape();
@@ -66,7 +66,9 @@ core::Hashmap ReadHashmap(const std::string& filename) {
     core::SizeVector element_shape_key(shape_key.begin() + 1, shape_key.end());
     core::SizeVector element_shape_value(shape_value.begin() + 1,
                                          shape_value.end());
-
+    utility::LogInfo("{} {}", dtype_key.ToString(), dtype_value.ToString());
+    utility::LogInfo("{} {}", element_shape_key.ToString(),
+                     element_shape_value.ToString());
     auto hashmap =
             core::Hashmap(init_capacity, dtype_key, dtype_value,
                           element_shape_key, element_shape_value, core::HOST);
