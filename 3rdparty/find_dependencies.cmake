@@ -1328,6 +1328,7 @@ else()
             # CUDA::cublas_static
 
             # cmake          : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
+            # cmake-dev      : https://github.com/svenevs/cmake-cuda-targets
             # cusolver latest: https://docs.nvidia.com/cuda/cusolver/index.html#link-dependency
             # cusolver 11.0  : https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
             # cublas 11.0    : https://docs.nvidia.com/cuda/archive/11.0/cublas/index.html#cublasLt-general-description
