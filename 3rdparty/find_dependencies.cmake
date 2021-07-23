@@ -1323,12 +1323,13 @@ else()
             CUDA::cusolver_static
             CUDA::cublas_static
             CUDA::cublasLt_static
+            /usr/local/cuda/lib64/liblapack_static.a
             CUDA::culibos
             CUDA::cudart_static
             pthread
             dl
 
-            /usr/local/cuda/lib64/liblapack_static.a
+
 
             # CUDA::cublasLt_static
             # CUDA::cublas_static
