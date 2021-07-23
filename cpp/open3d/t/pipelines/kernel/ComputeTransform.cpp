@@ -84,6 +84,56 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     return pose;
 }
 
+core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
+                                   const core::Tensor &source_colors,
+                                   const core::Tensor &target_points,
+                                   const core::Tensor &target_normals,
+                                   const core::Tensor &target_colors,
+                                   const core::Tensor &target_color_gradients,
+                                   const core::Tensor &correspondence_indices,
+                                   const registration::RobustKernel &kernel,
+                                   const float &lambda_geometric) {
+    // Get dtype and device.
+    core::Dtype dtype = source_points.GetDtype();
+    core::Device device = source_points.GetDevice();
+
+    // Pose {6,} tensor [ouput].
+    core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
+
+    core::Tensor source_points_contiguous = source_points.Contiguous();
+    core::Tensor source_colors_contiguous = source_colors.Contiguous();
+    core::Tensor target_points_contiguous = target_points.Contiguous();
+    core::Tensor target_normals_contiguous = target_normals.Contiguous();
+    core::Tensor target_colors_contiguous = target_colors.Contiguous();
+    core::Tensor target_color_gradients_contiguous =
+            target_color_gradients.Contiguous();
+    core::Tensor corres_contiguous = correspondence_indices.Contiguous();
+
+    float residual = 0;
+    int inlier_count = 0;
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        ComputePoseColoredICPCPU(
+                source_points_contiguous, source_colors_contiguous,
+                target_points_contiguous, target_normals_contiguous,
+                target_colors_contiguous, target_color_gradients_contiguous,
+                corres_contiguous, pose, residual, inlier_count, dtype, device,
+                kernel, lambda_geometric);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(ComputePoseColoredICPCUDA, source_points_contiguous,
+                  source_colors_contiguous, target_points_contiguous,
+                  target_normals_contiguous, target_colors_contiguous,
+                  target_color_gradients_contiguous, corres_contiguous, pose,
+                  residual, inlier_count, dtype, device, kernel,
+                  lambda_geometric);
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+
+    return pose;
+}
+
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,

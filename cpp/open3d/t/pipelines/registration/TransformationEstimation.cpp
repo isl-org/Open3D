@@ -123,6 +123,57 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     return pipelines::kernel::PoseToTransformation(pose);
 }
 
+double TransformationEstimationForColoredICP::ComputeRMSE(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences) const {
+    utility::LogError("Unimplemented.");
+    return 0.0;
+}
+
+core::Tensor TransformationEstimationForColoredICP::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences) const {
+    core::Device device = source.GetDevice();
+
+    if (target.GetDevice() != device) {
+        utility::LogError(
+                "Target Pointcloud's device {} != Source Pointcloud's device "
+                "{}.",
+                target.GetDevice().ToString(), device.ToString());
+    }
+
+    if (!target.HasPointAttr("color_gradients") || !target.HasPointColors() ||
+        !target.HasPointNormals() || !source.HasPointColors()) {
+        utility::LogError(
+                "ColoredICP::ComputeTransform requires source pointcloud to "
+                "have colors attributes and target pointcloud to have colors, "
+                "normals, and color_gradients attributes.");
+    }
+    if ((target.GetPointColors().GetDtype() != core::Dtype::Float32 &&
+         target.GetPointColors().GetDtype() != core::Dtype::Float64) ||
+        (source.GetPointColors().GetDtype() != core::Dtype::Float32 &&
+         source.GetPointColors().GetDtype() != core::Dtype::Float64)) {
+        utility::LogError(
+                "Colors attributes of source and target pointcloud must be of "
+                "Float32 or Float64 type.");
+    }
+
+    // Get pose {6} of type Float64 from correspondences indexed source and
+    // target point cloud.
+    core::Tensor pose = pipelines::kernel::ComputePoseColoredICP(
+            source.GetPoints(), source.GetPointColors(), target.GetPoints(),
+            target.GetPointNormals(), target.GetPointColors(),
+            target.GetPointAttr("color_gradients"), correspondences,
+            this->kernel_, this->lambda_geometric_);
+
+    // Get transformation {4,4} of type Float64 from pose {6}.
+    core::Tensor transform = pipelines::kernel::PoseToTransformation(pose);
+
+    return transform;
+}
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

@@ -146,6 +146,126 @@ void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
 
+template <typename scalar_t, typename funct_t>
+static void ComputePoseColoredICPKernelCPU(
+        const scalar_t *source_points_ptr,
+        const scalar_t *source_colors_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *target_normals_ptr,
+        const scalar_t *target_colors_ptr,
+        const scalar_t *target_color_gradients_ptr,
+        const int64_t *correspondence_indices,
+        const scalar_t &sqrt_lambda_geometric,
+        const scalar_t &sqrt_lambda_photometric,
+        const int n,
+        scalar_t *global_sum,
+        funct_t GetWeightFromRobustKernel) {
+    // As, AtA is a symmetric matrix, we only need 21 elements instead of 36.
+    // Atb is of shape {6,1}. Combining both, A_1x29 is a temp. storage
+    // with [0:21] elements as AtA, [21:27] elements as Atb, 27th as residual
+    // and 28th as inlier_count.
+    std::vector<scalar_t> A_1x29(29, 0.0);
+
+#ifdef _WIN32
+    std::vector<scalar_t> zeros_29(29, 0.0);
+    A_1x29 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), zeros_29,
+            [&](tbb::blocked_range<int> r, std::vector<scalar_t> A) {
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     ++workload_idx) {
+#else
+    scalar_t *A = A_1x29.data();
+#pragma omp parallel for reduction(+ : A[:29]) schedule(auto)
+    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
+#endif
+                    scalar_t J_G[6] = {0}, J_I[6] = {0};
+                    scalar_t r_G = 0, r_I = 0;
+
+                    bool valid = GetJacobianColoredICP<scalar_t>(
+                            workload_idx, source_points_ptr, source_colors_ptr,
+                            target_points_ptr, target_normals_ptr,
+                            target_colors_ptr, target_color_gradients_ptr,
+                            correspondence_indices, sqrt_lambda_geometric,
+                            sqrt_lambda_photometric, J_G, J_I, r_G, r_I);
+
+                    scalar_t w_G = GetWeightFromRobustKernel(r_G);
+                    scalar_t w_I = GetWeightFromRobustKernel(r_I);
+
+                    if (valid) {
+                        // Dump J, r into JtJ and Jtr
+                        int i = 0;
+                        for (int j = 0; j < 6; ++j) {
+                            for (int k = 0; k <= j; ++k) {
+                                A[i] += J_G[j] * w_G * J_G[k] +
+                                        J_I[j] * w_I * J_I[k];
+                                ++i;
+                            }
+                            A[21 + j] +=
+                                    J_G[j] * w_G * r_G + J_I[j] * w_I * r_I;
+                        }
+                        A[27] += r_G * r_G + r_I * r_I;
+                        A[28] += 1;
+                    }
+                }
+#ifdef _WIN32
+                return A;
+            },
+            // TBB: Defining reduction operation.
+            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
+                std::vector<scalar_t> result(29);
+                for (int j = 0; j < 29; j++) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
+#endif
+
+    for (int i = 0; i < 29; i++) {
+        global_sum[i] = A_1x29[i];
+    }
+}
+
+void ComputePoseColoredICPCPU(const core::Tensor &source_points,
+                              const core::Tensor &source_colors,
+                              const core::Tensor &target_points,
+                              const core::Tensor &target_normals,
+                              const core::Tensor &target_colors,
+                              const core::Tensor &target_color_gradients,
+                              const core::Tensor &correspondence_indices,
+                              core::Tensor &pose,
+                              float &residual,
+                              int &inlier_count,
+                              const core::Dtype &dtype,
+                              const core::Device &device,
+                              const registration::RobustKernel &kernel,
+                              const float &lambda_geometric) {
+    int n = source_points.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t sqrt_lambda_geometric =
+                static_cast<scalar_t>(sqrt(lambda_geometric));
+        scalar_t sqrt_lambda_photometric =
+                static_cast<scalar_t>(sqrt(1.0 - lambda_geometric));
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                kernel.type_, scalar_t, kernel.scaling_parameter_,
+                kernel.shape_parameter_, [&]() {
+                    kernel::ComputePoseColoredICPKernelCPU(
+                            source_points.GetDataPtr<scalar_t>(),
+                            source_colors.GetDataPtr<scalar_t>(),
+                            target_points.GetDataPtr<scalar_t>(),
+                            target_normals.GetDataPtr<scalar_t>(),
+                            target_colors.GetDataPtr<scalar_t>(),
+                            target_color_gradients.GetDataPtr<scalar_t>(),
+                            correspondence_indices.GetDataPtr<int64_t>(),
+                            sqrt_lambda_geometric, sqrt_lambda_photometric, n,
+                            global_sum.GetDataPtr<scalar_t>(),
+                            GetWeightFromRobustKernel);
+                });
+    });
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
+}
+
 template <typename scalar_t>
 static void Get3x3SxyLinearSystem(const scalar_t *source_points_ptr,
                                   const scalar_t *target_points_ptr,
