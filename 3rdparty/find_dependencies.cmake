@@ -1314,46 +1314,11 @@ else()
         # target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver_static CUDA::cublasLt_static CUDA::cublas_static)  # Missing quite a lot
 
         target_link_libraries(3rdparty_mkl INTERFACE
-            CUDA::nppc_static
-            CUDA::nppicc_static
-            CUDA::nppif_static
-            CUDA::nppig_static
-            CUDA::nppim_static
-            CUDA::nppial_static
             CUDA::cusolver_static
             CUDA::cublas_static
             CUDA::cublasLt_static
             /usr/local/cuda/lib64/liblapack_static.a
             CUDA::culibos
-            CUDA::cudart_static
-            pthread
-            dl
-
-
-
-            # CUDA::cublasLt_static
-            # CUDA::cublas_static
-            # CUDA::cudart_static
-            # CUDA::cufft_static
-            # CUDA::culibos
-            # CUDA::cupti_static
-            # CUDA::curand_static
-            # CUDA::cusolver_static
-            # CUDA::cusparse_static
-            # CUDA::lapack_static
-            # CUDA::metis_static
-            # CUDA::nppc_static
-            # CUDA::nppial_static
-            # CUDA::nppicc_static
-            # CUDA::nppidei_static
-            # CUDA::nppif_static
-            # CUDA::nppig_static
-            # CUDA::nppim_static
-            # CUDA::nppist_static
-            # CUDA::nppisu_static
-            # CUDA::nppitc_static
-            # CUDA::npps_static
-            # CUDA::nvjpeg_static
         )
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
@@ -1394,7 +1359,7 @@ if (BUILD_CUDA_MODULE)
         PACKAGE CUDAToolkit
         TARGETS CUDA::nppc_static CUDA::nppicc_static CUDA::nppif_static CUDA::nppig_static CUDA::nppim_static CUDA::nppial_static
     )
-    # list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_cuda_npp)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_cuda_npp)
 endif ()
 
 # IPP
