@@ -29,6 +29,7 @@
 #include <json/json.h>
 
 #include "open3d/io/IJsonConvertibleIO.h"
+#include "open3d/t/io/HashmapIO.h"
 #include "open3d/utility/FileSystem.h"
 namespace open3d {
 namespace t {
@@ -86,7 +87,7 @@ public:
             std::string key = member_name;
             std::string val = attr_dtype_map[key].asString();
             attr_dtype_map_[key] = map_str_dtype[val];
-            utility::LogInfo("{} -> {}", key, val);
+            utility::LogDebug("{} -> {}", key, val);
         }
         return true;
     }
@@ -119,15 +120,20 @@ bool ReadTSDFVoxelGrid(const std::string &filename,
         utility::LogError("Unable to read TSDFVoxelGrid's metadata!");
     }
 
+    std::string parent_dir =
+            utility::filesystem::GetFileParentDirectory(filename);
+    if (parent_dir == "") {
+        parent_dir = ".";
+    }
+
+    std::string filename_prefix = parent_dir + "/" + metadata.hashmap_filename_;
     auto device = core::Device(metadata.device_);
     tsdf_voxelgrid = geometry::TSDFVoxelGrid(
             metadata.attr_dtype_map_, metadata.voxel_size_, metadata.sdf_trunc_,
             metadata.block_resolution_, metadata.block_count_, device);
 
-    auto keys = core::Tensor::Load(metadata.hashmap_filename_ + ".key.npy")
-                        .To(device);
-    auto values = core::Tensor::Load(metadata.hashmap_filename_ + ".value.npy")
-                          .To(device);
+    auto keys = core::Tensor::Load(filename_prefix + ".key.npy").To(device);
+    auto values = core::Tensor::Load(filename_prefix + ".value.npy").To(device);
 
     core::Tensor addrs, masks;
     tsdf_voxelgrid.GetBlockHashmap()->Insert(keys, values, addrs, masks);
@@ -147,7 +153,8 @@ bool WriteTSDFVoxelGrid(const std::string &filename,
     if (!success) {
         utility::LogError("Unable to write TSDFVoxelGrid's metadata!");
     }
-    tsdf_voxelgrid.GetBlockHashmap()->Save(metadata.hashmap_filename_);
+
+    WriteHashmap(metadata.hashmap_filename_, *tsdf_voxelgrid.GetBlockHashmap());
 
     return true;
 }
