@@ -41,8 +41,8 @@ bool NearestNeighborSearch::SetIndex() {
 
 bool NearestNeighborSearch::KnnIndex() {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
-#ifdef WITH_FAISS
-        knn_index_.reset(new KnnIndex());
+#ifdef BUILD_CUDA_MODULE
+        knn_index_.reset(new nns::KnnIndex());
         return knn_index_->SetTensorData(dataset_points_);
 #else
         utility::LogError(
@@ -102,7 +102,7 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
-#ifdef WITH_FAISS
+#ifdef BUILD_CUDA_MODULE
     if (knn_index_) {
         return knn_index_->SearchKnn(query_points, knn);
     }
