@@ -1,0 +1,33 @@
+#!/bin/bash
+
+nm -D -C /usr/local/cuda/lib64/libaccinj64.so       | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcublasLt.so       | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcublas.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcudart.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcufft.so          | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcufftw.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcuinj64.so        | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcupti.so          | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcurand.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcusolverMg.so     | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcusolver.so       | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libcusparse.so       | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppc.so           | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppial.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppicc.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppidei.so        | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppif.so          | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppig.so          | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppim.so          | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppist.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppisu.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnppitc.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnpps.so           | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnvblas.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnvjpeg.so         | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnvperf_host.so    | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnvperf_target.so  | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnvrtc-builtins.so | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnvrtc.so          | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libnvToolsExt.so     | grep cublasSgemmEx
+nm -D -C /usr/local/cuda/lib64/libOpenCL.so         | grep cublasSgemmEx
