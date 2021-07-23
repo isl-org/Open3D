@@ -1314,12 +1314,19 @@ else()
         # target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver_static CUDA::cublasLt_static CUDA::cublas_static)  # Missing quite a lot
 
         target_link_libraries(3rdparty_mkl INTERFACE
-            CUDA::cusolver_static
+            # CUDA::cusolver_static
+            # /usr/local/cuda/lib64/liblapack_static.a
+            # CUDA::cusparse_static
+            # CUDA::cublas_static
+            # CUDA::cublasLt_static
+            # CUDA::culibos
+
+            /usr/local/cuda/lib64/libcusolver_static.a
             /usr/local/cuda/lib64/liblapack_static.a
-            CUDA::cusparse_static
-            CUDA::cublas_static
-            CUDA::cublasLt_static
-            CUDA::culibos
+            /usr/local/cuda/lib64/libcusparse_static.a
+            /usr/local/cuda/lib64/libcublas_static.a
+            /usr/local/cuda/lib64/libcublasLt_static.a
+            /usr/local/cuda/lib64/libculibos.a
 
             # CUDA::cudart_static
             # CUDA::culibos
