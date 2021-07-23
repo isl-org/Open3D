@@ -1314,11 +1314,12 @@ else()
         # target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver_static CUDA::cublasLt_static CUDA::cublas_static)  # Missing quite a lot
 
         target_link_libraries(3rdparty_mkl INTERFACE
-            CUDA::cusolver_static
-            CUDA::cublas_static
-            CUDA::cublasLt_static
-            /usr/local/cuda/lib64/liblapack_static.a
-            CUDA::culibos
+            # CUDA::cublas_static
+            # CUDA::cusolver_static
+            # CUDA::cublasLt_static
+            # /usr/local/cuda/lib64/liblapack_static.a
+            # CUDA::culibos
+            /home/yixing/repo/Open3D/cuda_lib/lib/libcuda_merged.a
         )
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
