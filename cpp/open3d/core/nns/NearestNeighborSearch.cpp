@@ -42,8 +42,8 @@ bool NearestNeighborSearch::SetIndex() {
 bool NearestNeighborSearch::KnnIndex() {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
 #ifdef WITH_FAISS
-        faiss_index_.reset(new FaissIndex());
-        return faiss_index_->SetTensorData(dataset_points_);
+        knn_index_.reset(new KnnIndex());
+        return knn_index_->SetTensorData(dataset_points_);
 #else
         utility::LogError(
                 "[NearestNeighborSearch::KnnIndex] Currently, Faiss is "
@@ -103,8 +103,8 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
 #ifdef WITH_FAISS
-    if (faiss_index_) {
-        return faiss_index_->SearchKnn(query_points, knn);
+    if (knn_index_) {
+        return knn_index_->SearchKnn(query_points, knn);
     }
 #endif
     if (nanoflann_index_) {
