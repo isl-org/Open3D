@@ -14,4 +14,8 @@ pushd cuda_lib
     cp libculibos/*.o         .
     ls -al *.o | wc -l
     rm -rf *.o
+
+    ar -qc lib/libcuda_merged.a libcublas_static/*.o libcublasLt_static/*.o liblapack_static/*.o libculibos/*.o
+    echo "lib/libcuda_merged.a  : " && nm -C lib/libcuda_merged.a   | grep cublasSgemmEx
+    echo "lib/libcublas_static.a: " && nm -C lib/libcublas_static.a | grep cublasSgemmEx
 popd
