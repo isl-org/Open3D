@@ -94,7 +94,7 @@ TEST_P(NNSPermuteDevicesWithFaiss, KnnSearch) {
     // Multiple points.
     query = core::Tensor(std::vector<float>({0.064705, 0.043921, 0.087843,
                                              0.064705, 0.043921, 0.087843}),
-                         {2, 3}, core::Float32);
+                         {2, 3}, core::Float32, device);
     result = nns.KnnSearch(query, 3);
     indices = result.first;
     distances = result.second;
