@@ -27,8 +27,6 @@ macro(open3d_add_example EXAMPLE_CPP_NAME)
     list(APPEND EXAMPLE_TARGETS ${EXAMPLE_CPP_NAME})
 endmacro()
 
-open3d_add_example(TSDFVoxelGridIO)
-
 open3d_add_example(CameraPoseTrajectory)
 open3d_add_example(ColorMapOptimization)
 open3d_add_example(DepthCapture)
