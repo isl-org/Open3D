@@ -33,6 +33,8 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/kernel/PointCloud.h"
+#include "open3d/t/geometry/kernel/Transform.h"
 
 namespace open3d {
 namespace t {
@@ -58,6 +60,53 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertices,
       }()) {
     SetVertices(vertices);
     SetTriangles(triangles);
+}
+
+TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
+    kernel::transform::TransformPoints(transformation, GetVertices());
+    if (HasVertexNormals()) {
+        kernel::transform::TransformNormals(transformation, GetVertexNormals());
+    }
+    if (HasTriangleNormals()) {
+        kernel::transform::TransformNormals(transformation,
+                                            GetTriangleNormals());
+    }
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
+                                      bool relative) {
+    translation.AssertShape({3});
+    translation.AssertDevice(device_);
+
+    core::Tensor transform = translation;
+    if (!relative) {
+        transform -= GetCenter();
+    }
+    GetVertices() += transform;
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
+    center.AssertShape({3});
+    center.AssertDevice(device_);
+
+    core::Tensor points = GetVertices();
+    points.Sub_(center).Mul_(scale).Add_(center);
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
+                                   const core::Tensor &center) {
+    kernel::transform::RotatePoints(R, GetVertices(), center);
+    if (HasVertexNormals()) {
+        kernel::transform::RotateNormals(R, GetVertexNormals());
+    }
+    if (HasTriangleNormals()) {
+        kernel::transform::RotateNormals(R, GetTriangleNormals());
+    }
+    return *this;
 }
 
 geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(

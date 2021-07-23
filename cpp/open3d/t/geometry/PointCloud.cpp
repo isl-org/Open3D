@@ -38,6 +38,7 @@
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
+#include "open3d/t/geometry/kernel/Transform.h"
 
 namespace open3d {
 namespace t {
@@ -154,29 +155,11 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    transformation.AssertShape({4, 4});
-    transformation.AssertDevice(device_);
-
-    if (transformation.AllClose(core::Tensor::Eye(
-                4, transformation.GetDtype(), transformation.GetDevice()))) {
-        return *this;
-    }
-
-    core::Tensor R = transformation.Slice(0, 0, 3).Slice(1, 0, 3);
-    core::Tensor t = transformation.Slice(0, 0, 3).Slice(1, 3, 4);
-    // TODO: Make it more generalised [4x4][4xN] transformation.
-
-    // TODO: Consider adding a new op extending MatMul to support `AB + C`
-    // GEMM operation. Also, a parallel joint optimimsed kernel for
-    // independent MatMul operation with common matrix like AB and AC
-    // with fusion based cache optimisation.
-    core::Tensor &points = GetPoints();
-    points = (R.Matmul(points.T())).Add_(t).T();
-
+    kernel::transform::TransformPoints(transformation, GetPoints());
     if (HasPointNormals()) {
-        core::Tensor &normals = GetPointNormals();
-        normals = (R.Matmul(normals.T())).T();
+        kernel::transform::TransformNormals(transformation, GetPointNormals());
     }
+
     return *this;
 }
 
@@ -204,18 +187,10 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    R.AssertShape({3, 3});
-    R.AssertDevice(device_);
-    center.AssertShape({3});
-    center.AssertDevice(device_);
-
-    core::Tensor Rot = R;
-    core::Tensor &points = GetPoints();
-    points = ((Rot.Matmul((points.Sub_(center)).T())).T()).Add_(center);
+    kernel::transform::RotatePoints(R, GetPoints(), center);
 
     if (HasPointNormals()) {
-        core::Tensor &normals = GetPointNormals();
-        normals = (Rot.Matmul(normals.T())).T();
+        kernel::transform::RotateNormals(R, GetPointNormals());
     }
     return *this;
 }
