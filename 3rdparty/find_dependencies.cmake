@@ -1343,6 +1343,7 @@ else()
             # libcudart_static.a, libculibos.a liblapack_static.a, libmetis_static.a, libcublas_static.a and libcusparse_static.a.
             # /home/yixing/repo/Open3D/cuda_lib/lib/libcuda_merged.a
 
+            # When -DBUILD_SHARED_LIBS=OFF, get the following error:
             # /usr/bin/ld: ../../mkl_install/lib/libfaiss.a(Distance.cu.o): in function `cublasStatus_t faiss::gpu::rawGemm<float, float>(cublasContext*, cublasOperation_t, cublasOperation_t, int, int, int, float, void const*, int, void const*, int, float, float*, int)':
             # /home/yixing/repo/Open3D/build/faiss/src/ext_faiss/faiss/gpu/utils/MatrixMult-inl.cuh:52: undefined reference to `cublasSgemmEx'
             # /usr/bin/ld: /home/yixing/repo/Open3D/build/faiss/src/ext_faiss/faiss/gpu/utils/MatrixMult-inl.cuh:52: undefined reference to `cublasSgemmEx'
