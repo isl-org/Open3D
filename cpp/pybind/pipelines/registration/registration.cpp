@@ -145,8 +145,9 @@ void pybind_registration_classes(py::module &m) {
                            "Maximum iteration before iteration stops.")
             .def_readwrite(
                     "confidence", &RANSACConvergenceCriteria::confidence_,
-                    "Maximum times the validation has been run before the "
-                    "iteration stops.")
+                    "Desired probability of success. Used for estimating early "
+                    "termination by k = log(1 - confidence)/log(1 - "
+                    "inlier_ratio^{ransac_n}).")
             .def("__repr__", [](const RANSACConvergenceCriteria &c) {
                 return fmt::format(
                         "RANSACConvergenceCriteria "
