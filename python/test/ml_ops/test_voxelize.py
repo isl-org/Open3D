@@ -165,7 +165,7 @@ def test_voxelize_simple(ml, point_dtype, point_range_max, max_voxels,
 @mltest.parametrize.ml
 @point_dtypes
 @ndims
-@pytest.mark.parametrize('batch_size', [2, 3, 8, 16])
+@pytest.mark.parametrize('batch_size', [1, 2, 3, 8, 16])
 @pytest.mark.parametrize('max_voxels', [10000, 16, 1, 0])
 @pytest.mark.parametrize('max_points_per_voxel', [10000, 16, 1, 0])
 def test_voxelize_random(ml, point_dtype, ndim, batch_size, max_voxels,
