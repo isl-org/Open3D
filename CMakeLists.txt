@@ -426,7 +426,7 @@ if(BUILD_CUDA_MODULE)
                 DETECTION_RETURN_VALUE DETECTION_COMPILED
                 "${CMAKE_CURRENT_BINARY_DIR}"
                 "${CMAKE_CURRENT_BINARY_DIR}/cuda_architectures.c"
-                LINK_LIBRARIES CUDA::cudart
+                LINK_LIBRARIES CUDA::cudart_static
                 RUN_OUTPUT_VARIABLE DETECTED_ARCHITECTURES)
             if(DETECTED_ARCHITECTURES)
                 message(STATUS "Building with detected architectures.")

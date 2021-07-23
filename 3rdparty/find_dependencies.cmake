@@ -1263,8 +1263,8 @@ if(USE_BLAS)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACK_LIBRARIES}")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACKE_LIBRARIES}")
         if(BUILD_CUDA_MODULE)
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cusolver)
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cublas)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cusolver_static)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cublas_static)
         endif()
     else()
         # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
@@ -1281,7 +1281,7 @@ if(USE_BLAS)
         )
         target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads gfortran)
         if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_openblas INTERFACE CUDA::cusolver CUDA::cublas)
+            target_link_libraries(3rdparty_openblas INTERFACE CUDA::cusolver_static CUDA::cublas_static)
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openblas)
     endif()
@@ -1305,7 +1305,7 @@ else()
     target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
     # cuSOLVER and cuBLAS
     if(BUILD_CUDA_MODULE)
-        target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver CUDA::cublas)
+        target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver_static CUDA::cublas_static)
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 endif()
@@ -1343,7 +1343,7 @@ if (BUILD_CUDA_MODULE)
     open3d_find_package_3rdparty_library(3rdparty_cuda_npp
         REQUIRED
         PACKAGE CUDAToolkit
-        TARGETS CUDA::nppc CUDA::nppicc CUDA::nppif CUDA::nppig CUDA::nppim CUDA::nppial
+        TARGETS CUDA::nppc_static CUDA::nppicc_static CUDA::nppif_static CUDA::nppig_static CUDA::nppim_static CUDA::nppial_static
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_cuda_npp)
 endif ()
