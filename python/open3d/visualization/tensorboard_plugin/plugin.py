@@ -2,8 +2,8 @@
 import os
 import threading
 from collections import namedtuple
-import logging as log
 import functools
+import json
 
 from tensorboard import errors
 from tensorboard.plugins import base_plugin
@@ -20,7 +20,7 @@ import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 from open3d.visualization.tensorboard_plugin import metadata
 # Set window system before the GUI event loop
-# o3d.visualization.webrtc_server.enable_webrtc()
+o3d.visualization.webrtc_server.enable_webrtc()
 # Note: the _AsyncEventLoop is started whenever this module is imported.
 from open3d.visualization._async_event_loop import _async_event_loop
 
@@ -41,140 +41,341 @@ class Open3DPluginWindow:
                  width=1024,
                  height=768,
                  font_size=12):
-        print(
-            f"Function {self.__class__.__name__}.__init__() in thread {threading.get_ident()}"
-        )
         self.event_mux = event_mux
         self.logdir = logdir
-        self.run = None
-        self.tag = None
+        self.run = "."
         self.tags = []
         self.batch_idx = 0
-        self.batch_size = 0
+        self.batch_size = 1
         self.step = 0
         self.step_limits = [0, 0]
         self.wall_time = 0
-        self.idx = 0  # self.all_tensor_events[self.idx].step == self.step
-        self.step_to_idx = {}
-        self.all_tensor_events = {
-            prop: None for prop in metadata.MESH_PROPERTIES
-        }
-        self.mesh = o3d.geometry.TriangleMesh()
+        # self.all_tensor_events[self.tags[0]][self.idx].step == self.step
+        self.idx = 0
+        self.step_to_idx = dict()
+        self.all_tensor_events = dict()
 
         self.window_id = window_id
-        self.event_mux.Reload()
-        self.run_to_tags = self.event_mux.PluginRunToTagToContent(
-            metadata.PLUGIN_NAME)
         self.geometry_list = []
 
         self.init_done = threading.Event()  # Notify when WebRTC is ready
+
+        # Register client callbacks
+        class_name_base = f"tensorboard/window_{window_id}"
+        o3d.visualization.webrtc_server.register_data_channel_message_callback(
+            class_name_base + "/get_run_tags", self._get_run_tags)
+        o3d.visualization.webrtc_server.register_data_channel_message_callback(
+            class_name_base + "/update_geometry", self._update_geometry)
 
         _async_event_loop.run_sync(
             lambda: self._create_ui(title, width, height))
         _async_event_loop.run_sync(self._update_scene)
 
-    def reload_events(self):
+    def _get_run_tags(self, message):
+        """ JSON message format:
+        {
+          "messageId": 0,
+          "class_name": "tensorboard/window_0/get_run_tags",
+        }
+        Response:
+        {
+          "messageId": 0,
+          "class_name": "tensorboard/window_0/get_run_tags",
+          "run_to_tags": {
+            "run_0" : ["tag_0", "tag_1", ...],
+            "run_1" : ["tag_0", "tag_1", ...],
+            ...
+          }
+          "current": {
+            "run": "run_0",
+            "tags": ["tag_0", "tag_1", ...],
+            "step_limits": [0, 100],
+            "step": 0
+            "batch_size": 8,
+            "batch_idx": 0,
+            "wall_time": wall_time
+          }
+        }
+        """
+        print(f"[DC message recv] {message}")
+        self._reload_events()
+        self._validate_run(self.run)
+        self._validate_tags(self.tags)
+        self._validate_step(self.step)
+        self._validate_batch_idx(self.batch_idx)
+        # Compose reply
+        message = json.loads(message)
+        message["run_to_tags"] = self.run_to_tags
+        message["current"] = {
+            "run": self.run,
+            "tags": self.tags,
+            "step_limits": self.step_limits,
+            "step": self.step,
+            "batch_size": self.batch_size,
+            "batch_idx": self.batch_idx,
+            "wall_time": self.wall_time
+        }
+        return json.dumps(message)
+
+    def _reload_events(self):
         self.event_mux.Reload()
-        self.run_to_tags = self.event_mux.PluginRunToTagToContent(
+        self.run_to_tags_prop = self.event_mux.PluginRunToTagToContent(
             metadata.PLUGIN_NAME)
-        self._on_run_select(self.run, False)
-
-    def _create_ui(self, title, width, height):
-        print(
-            f"Function {self.__class__.__name__}._create_ui() in thread {threading.get_ident()}"
-        )
-        self.window = gui.Application.instance.create_window(
-            title, width, height)
-        em = self.window.theme.font_size
-
-        layout = gui.Horiz()
-        self.window.add_child(layout)
-        # layout.background_color = self.BG_COLOR
-
-        # Setup the run selector
-        run_selector = gui.Vert()
-        layout.add_child(run_selector)
-        run_selector.add_stretch()
-        run_selector.add_child(gui.Label('Runs'))
-        self.run_list = gui.ListView()
-        run_selector.add_child(self.run_list)
-        run_list = list(self.run_to_tags.keys())
-        self.run_list.set_items(run_list)
-        try:
-            self.run_list.selected_index = run_list.index(self.run)
-        except ValueError:  # self.run is None or not in list
-            self.run_list.selected_index = 0
-            self.run = run_list[0]
-        self.run_list.set_on_selection_changed(self._on_run_select)
-        logdir = gui.Label(self.logdir)
-        # logdir.text_color = self.FONT_COLOR
-        run_selector.add_child(logdir)
-        run_selector.add_stretch()
-
-        # Setup the tag selector
-        tag_selector = gui.Vert()
-        layout.add_child(tag_selector)
-        tag_selector.add_stretch()
-        tag_selector.add_child(gui.Label('Tags'))
-        self.tag_list = gui.ListView()
-        tag_selector.add_child(self.tag_list)
-        tag_selector.add_stretch()
-        self.tags = [
-            tag[:-9]
-            for tag in self.run_to_tags[self.run]
-            if tag.endswith('_vertices')
-        ]
-        self.tag_list.set_items(self.tags)
-        try:
-            self.tag_list.selected_index = self.tags.index(self.tag)
-        except ValueError:  # self.tag is None or not in list
-            self.tag_list.selected_index = 0
-            self.tag = self.tags[0]
-        self.tag_list.set_on_selection_changed(self._on_tag_select)
-
-        for prop in metadata.MESH_PROPERTIES:
-            if self.tag + '_' + prop in self.run_to_tags[self.run]:
-                self.all_tensor_events[prop] = self.event_mux.Tensors(
-                    self.run, self.tag + '_' + prop)  # slow
-        self.step_to_idx = {
-            vtx_te.step: idx
-            for idx, vtx_te in enumerate(self.all_tensor_events['vertices'])
+        self.run_to_tags = {
+            run:
+            [tag[:-9] for tag in tagdict.keys() if tag.endswith("_vertices")]
+            for run, tagdict in self.run_to_tags_prop.items()
         }
 
-        self.step = self.all_tensor_events['vertices'][0].step
-        self.wall_time = self.all_tensor_events['vertices'][0].wall_time
-        self.batch_size = self.all_tensor_events['vertices'][
-            0].tensor_proto.tensor_shape.dim[0].size
+    def _validate_run(self, selected_run):
+        """ Validate selected_run. Use self.run or the first valid run in case
+        selected run is invalid. Clear cached data.
+        """
+        if selected_run not in self.run_to_tags:
+            selected_run = self.run
+        if selected_run not in self.run_to_tags:
+            selected_run = next(iter(self.run_to_tags))
+        self.run = selected_run
+        self.all_tensor_events = dict()
 
-        # Setup the step selector
-        sequence_ui = gui.Vert()
-        layout.add_child(sequence_ui)
-        step = gui.Horiz()
-        sequence_ui.add_child(step)
-        step.add_stretch()
-        step.add_child(gui.Label("Step"))
-        self.step_slider = gui.Slider(gui.Slider.INT)
-        step.add_child(self.step_slider)
-        step.add_stretch()
-        # Assume steps are monotonic
-        self.step_limits = [
-            self.all_tensor_events['vertices'][0].step,
-            self.all_tensor_events['vertices'][-1].step
+    def _validate_tags(self, selected_tags):
+        """ Validate tags assuming self.run is valid. Use self.tags or first
+        valid tag in case selected tags are invalid. Also loads all tensor
+        data for validated run-tags combination and unloads data for unselected
+        tags.
+        """
+        selected_tags = [
+            t for t in selected_tags if t in self.run_to_tags[self.run]
         ]
-        self.step_slider.set_limits(*self.step_limits)
-        self.step_slider.set_on_value_changed(self._on_step_changed)
+        if len(selected_tags) == 0:
+            selected_tags = [
+                t for t in self.tags if t in self.run_to_tags[self.run]
+            ]
+        if len(selected_tags) == 0:
+            selected_tags = self.run_to_tags[
+                self.run][:1]  # Only first tag default
+        # Unload tags not selected any more
+        for tag in list(self.all_tensor_events.keys()):
+            if tag not in selected_tags:
+                del self.all_tensor_events[tag]
+        # Load selected tags
+        for tag in selected_tags:
+            if tag not in self.all_tensor_events:
+                self.all_tensor_events[tag] = dict()
+                for prop in metadata.MESH_PROPERTIES:
+                    if tag + '_' + prop in self.run_to_tags_prop[self.run]:
+                        self.all_tensor_events[tag][
+                            prop] = self.event_mux.Tensors(
+                                self.run, tag + '_' + prop)  # slow
+        self.tags = selected_tags
+        self.step_to_idx = {
+            vtx_te.step: idx for idx, vtx_te in enumerate(
+                self.all_tensor_events[self.tags[0]]['vertices'])
+        }
+        self.step_limits = [min(self.step_to_idx), max(self.step_to_idx)]
 
-        # Setup the batch index selector
-        self.batch_idx = 0
-        batch_idx = gui.Horiz()
-        sequence_ui.add_child(batch_idx)
-        batch_idx.add_stretch()
-        batch_idx.add_child(gui.Label("Batch index"))
-        self.batch_idx_slider = gui.Slider(gui.Slider.INT)
-        batch_idx.add_child(self.batch_idx_slider)
-        batch_idx.add_stretch()
-        self.batch_idx_slider.set_limits(0, self.batch_size)
-        self.batch_idx_slider.set_on_value_changed(self._on_batch_idx_changed)
+    def _validate_step(self, selected_step):
+        """ Validate step assuming self.run and self.tags are valid. Use
+        self.step or first valid step if selected_step is invalid."""
+        if selected_step not in self.step_to_idx:
+            selected_step = self.step
+        if selected_step not in self.step_to_idx:
+            selected_step = self.step_limits[0]  # Set to first step
+        self.step = selected_step
+        self.idx = self.step_to_idx[self.step]
+        self.wall_time = self.all_tensor_events[self.tags[0]]['vertices'][
+            self.idx].wall_time
+        self.batch_size = self.all_tensor_events[self.tags[0]]['vertices'][
+            self.idx].tensor_proto.tensor_shape.dim[0].size
+
+    def _validate_batch_idx(self, selected_batch_idx):
+        """ Validate batch_idx assuming self.run, self.tags and self.step are
+        valid. Use self.batch_idx or 0 if selected_batch_idx is invalud.
+        """
+        if selected_batch_idx < 0 or selected_batch_idx >= self.batch_size:
+            selected_batch_idx = self.batch_idx
+        if selected_batch_idx < 0 or selected_batch_idx >= self.batch_size:
+            selected_batch_idx = 0
+        self.batch_idx = selected_batch_idx
+
+    def _update_geometry(self, message):
+        """ JSON message format:
+        {
+          "messageId": 0,
+          "class_name": "tensorboard/window_0/update_geometry",
+          "run": "run_0",
+          "tags": ["tag_0", "tag_1"],
+          "batch_idx": 0,
+          "step": 0
+        }
+        Response:
+        {
+          "messageId": 0,
+          "class_name": "tensorboard/window_0/update_geometry",
+          "current": {
+            "run": "run_0",
+            "tags": ["tag_0", "tag_1", ...],
+            "step_limits": [0, 100],
+            "step": 0
+            "batch_size": 8,
+            "batch_idx": 0,
+            "wall_time": wall_time
+          }
+          "status": OK
+        }
+        """
+        print(f"[DC message recv] {message}")
+        message = json.loads(message)
+        self._validate_run(message["run"])
+        self._validate_tags(message["tags"])
+        self._validate_step(int(message["step"]))
+        self._validate_batch_idx(int(message["batch_idx"]))
+
+        self._update_scene()
+
+        # Compose reply
+        message["current"] = {
+            "run": self.run,
+            "tags": self.tags,
+            "step_limits": self.step_limits,
+            "step": self.step,
+            "batch_size": self.batch_size,
+            "batch_idx": self.batch_idx,
+            "wall_time": self.wall_time,
+            "status": "OK"
+        }
+        return json.dumps(message)
+
+    def _update_scene(self):
+
+        new_geometry_list = []
+        for tag in self.tags:
+            geometry_name = f"{self.run}/{tag}/b{self.batch_idx}/s{self.step}"
+            new_geometry_list.append(geometry_name)
+            if geometry_name not in self.geometry_list:
+                mesh = o3d.geometry.TriangleMesh()
+                mesh.vertices = o3d.utility.Vector3dVector(
+                    tensor_util.make_ndarray(
+                        self.all_tensor_events[tag]['vertices'][
+                            self.idx].tensor_proto)[self.batch_idx, ...])
+                for prop, val in self.all_tensor_events[tag].items():
+                    if val is not None:
+                        prop_value = tensor_util.make_ndarray(
+                            val[self.idx].tensor_proto)[self.batch_idx, ...]
+                        setattr(
+                            mesh, prop,
+                            o3d.utility.Vector3iVector(prop_value.astype(int))
+                            if prop == 'triangles' else
+                            o3d.utility.Vector3dVector(prop_value))
+                print(f"Displaying geometry {geometry_name}:{mesh}")
+                self.scene_widget.scene.add_geometry(geometry_name, mesh,
+                                                     self.material)
+        for current_item in self.geometry_list:
+            if current_item not in new_geometry_list:
+                print(f"Removing geometry {current_item}")
+                self.scene_widget.scene.remove_geometry(current_item)
+        self.geometry_list = new_geometry_list
+
+        self.scene_widget.force_redraw()
+        # ipdb.set_trace()
+
+        if not self.init_done.is_set():
+            self.init_done.set()
+        print(f"Displaying complete!")
+
+    def _create_ui(self, title, width, height):
+        self.window = gui.Application.instance.create_window(
+            title, width, height)
+        # em = self.window.theme.font_size
+
+        # layout = gui.Horiz()
+        # self.window.add_child(layout)
+        # # layout.background_color = self.BG_COLOR
+
+        # # Setup the run selector
+        # run_selector = gui.Vert()
+        # layout.add_child(run_selector)
+        # run_selector.add_stretch()
+        # run_selector.add_child(gui.Label('Runs'))
+        # self.run_list = gui.ListView()
+        # run_selector.add_child(self.run_list)
+        # run_list = list(self.run_to_tags.keys())
+        # self.run_list.set_items(run_list)
+        # try:
+        #     self.run_list.selected_index = run_list.index(self.run)
+        # except ValueError:  # self.run is None or not in list
+        #     self.run_list.selected_index = 0
+        #     self.run = run_list[0]
+        # self.run_list.set_on_selection_changed(self._on_run_select)
+        # logdir = gui.Label(self.logdir)
+        # # logdir.text_color = self.FONT_COLOR
+        # run_selector.add_child(logdir)
+        # run_selector.add_stretch()
+
+        # # Setup the tag selector
+        # tag_selector = gui.Vert()
+        # layout.add_child(tag_selector)
+        # tag_selector.add_stretch()
+        # tag_selector.add_child(gui.Label('Tags'))
+        # self.tag_list = gui.ListView()
+        # tag_selector.add_child(self.tag_list)
+        # tag_selector.add_stretch()
+        # self.tags = [
+        #     tag[:-9]
+        #     for tag in self.run_to_tags[self.run]
+        #     if tag.endswith('_vertices')
+        # ]
+        # self.tag_list.set_items(self.tags)
+        # try:
+        #     self.tag_list.selected_index = self.tags.index(self.tag)
+        # except ValueError:  # self.tag is None or not in list
+        #     self.tag_list.selected_index = 0
+        #     self.tag = self.tags[0]
+        # self.tag_list.set_on_selection_changed(self._on_tag_select)
+
+        # for prop in metadata.MESH_PROPERTIES:
+        #     if self.tag + '_' + prop in self.run_to_tags[self.run]:
+        #         self.all_tensor_events[prop] = self.event_mux.Tensors(
+        #             self.run, self.tag + '_' + prop)  # slow
+        # self.step_to_idx = {
+        #     vtx_te.step: idx
+        #     for idx, vtx_te in enumerate(self.all_tensor_events['vertices'])
+        # }
+
+        # self.step = self.all_tensor_events['vertices'][0].step
+        # self.wall_time = self.all_tensor_events['vertices'][0].wall_time
+        # self.batch_size = self.all_tensor_events['vertices'][
+        #     0].tensor_proto.tensor_shape.dim[0].size
+
+        # # Setup the step selector
+        # sequence_ui = gui.Vert()
+        # layout.add_child(sequence_ui)
+        # step = gui.Horiz()
+        # sequence_ui.add_child(step)
+        # step.add_stretch()
+        # step.add_child(gui.Label("Step"))
+        # self.step_slider = gui.Slider(gui.Slider.INT)
+        # step.add_child(self.step_slider)
+        # step.add_stretch()
+        # # Assume steps are monotonic
+        # self.step_limits = [
+        #     self.all_tensor_events['vertices'][0].step,
+        #     self.all_tensor_events['vertices'][-1].step
+        # ]
+        # self.step_slider.set_limits(*self.step_limits)
+        # self.step_slider.set_on_value_changed(self._on_step_changed)
+
+        # # Setup the batch index selector
+        # self.batch_idx = 0
+        # batch_idx = gui.Horiz()
+        # sequence_ui.add_child(batch_idx)
+        # batch_idx.add_stretch()
+        # batch_idx.add_child(gui.Label("Batch index"))
+        # self.batch_idx_slider = gui.Slider(gui.Slider.INT)
+        # batch_idx.add_child(self.batch_idx_slider)
+        # batch_idx.add_stretch()
+        # self.batch_idx_slider.set_limits(0, self.batch_size)
+        # self.batch_idx_slider.set_on_value_changed(self._on_batch_idx_changed)
 
         # Add 3D scene
         self.material = o3d.visualization.rendering.Material()
@@ -182,127 +383,94 @@ class Open3DPluginWindow:
         # Set n_pixels displayed for each 3D point, accounting for HiDPI scaling
         self.material.point_size = 2 * self.window.scaling
         self.scene_widget = gui.SceneWidget()
-        sequence_ui.add_child(self.scene_widget)
+        # sequence_ui.add_child(self.scene_widget)
+        self.window.add_child(self.scene_widget)
         self.scene_widget.enable_scene_caching(True)
         self.scene_widget.scene = rendering.Open3DScene(self.window.renderer)
         self.scene_widget.scene.set_background([1, 1, 1, 1])  # White background
         self.scene_widget.scene.set_lighting(
             rendering.Open3DScene.LightingProfile.SOFT_SHADOWS, [0, -6, 0])
 
-    def _on_run_select(self, selected_run, unused_is_double_click):
-        if selected_run not in self.run_to_tags:
-            log.warning(
-                f"Run {selected_run} nmay have been deleted. Pick a new run.")
-            self._update_selectors()
-            return
-        self.run = selected_run
-        self.tags = [
-            tag[:-9]
-            for tag in self.run_to_tags[self.run]
-            if tag.endswith('_vertices')
-        ]
+    # def _on_run_select(self, selected_run, unused_is_double_click):
+    #     if selected_run not in self.run_to_tags:
+    #         log.warning(
+    #             f"Run {selected_run} nmay have been deleted. Pick a new run.")
+    #         self._update_selectors()
+    #         return
+    #     self.run = selected_run
+    #     self.tags = [
+    #         tag[:-9]
+    #         for tag in self.run_to_tags[self.run]
+    #         if tag.endswith('_vertices')
+    #     ]
 
-        # Update tags, steps, batch, validate and update scene
-        self._on_tag_select(self.tag, False)
+    #     # Update tags, steps, batch, validate and update scene
+    #     self._on_tag_select(self.tag, False)
 
-    def _on_tag_select(self, selected_tag, unused_is_double_click):
-        print(
-            f"Function {self.__class__.__name__}._on_tag_select() in thread {threading.get_ident()}"
-        )
-        if selected_tag not in self.tags:
-            log.warning(f"Tag {selected_tag} not in current run. Skipping.")
-            self._update_selectors()
-            return
-        self.tag = selected_tag
-        for prop in metadata.MESH_PROPERTIES:
-            if self.tag + '_' + prop in self.run_to_tags[self.run]:
-                self.all_tensor_events[prop] = self.event_mux.Tensors(
-                    self.run, self.tag + '_' + prop)  # slow
-            else:
-                self.all_tensor_events[prop] = None
+    # def _on_tag_select(self, selected_tag, unused_is_double_click):
+    #     print(
+    #         f"Function {self.__class__.__name__}._on_tag_select() in thread {threading.get_ident()}"
+    #     )
+    #     if selected_tag not in self.tags:
+    #         log.warning(f"Tag {selected_tag} not in current run. Skipping.")
+    #         self._update_selectors()
+    #         return
+    #     self.tag = selected_tag
+    #     for prop in metadata.MESH_PROPERTIES:
+    #         if self.tag + '_' + prop in self.run_to_tags[self.run]:
+    #             self.all_tensor_events[prop] = self.event_mux.Tensors(
+    #                 self.run, self.tag + '_' + prop)  # slow
+    #         else:
+    #             self.all_tensor_events[prop] = None
 
-        self.step_to_idx = {
-            vtx_te.step: idx
-            for idx, vtx_te in enumerate(self.all_tensor_events['vertices'])
-        }
-        # Assume steps are monotonic
-        self.step_limits = [
-            self.all_tensor_events['vertices'][0].step,
-            self.all_tensor_events['vertices'][-1].step
-        ]
+    #     self.step_to_idx = {
+    #         vtx_te.step: idx
+    #         for idx, vtx_te in enumerate(self.all_tensor_events['vertices'])
+    #     }
+    #     # Assume steps are monotonic
+    #     self.step_limits = [
+    #         self.all_tensor_events['vertices'][0].step,
+    #         self.all_tensor_events['vertices'][-1].step
+    #     ]
 
-        # Validate step, batch_idx and update scene
-        self._on_step_changed(self.step)
+    #     # Validate step, batch_idx and update scene
+    #     self._on_step_changed(self.step)
 
-    def _on_step_changed(self, new_step):
-        print(
-            f"Function {self.__class__.__name__}._on_step_changed() in thread {threading.get_ident()}"
-        )
-        if new_step not in self.step_to_idx:
-            log.warning(
-                f"Step {new_step} missing in event file for run {self.run}, tag {self.tag}. Skipping."
-            )
-            self._update_selectors()
-            return
-        self.step = new_step
-        self.idx = self.step_to_idx[self.step]
-        self.wall_time = self.all_tensor_events['vertices'][self.idx].wall_time
-        self.batch_size = self.all_tensor_events['vertices'][
-            self.idx].tensor_proto.tensor_shape.dim[0].size
-        # Check if batch_idx is still valid and update scene
-        self._on_batch_idx_changed(self.batch_idx)
+    # def _on_step_changed(self, new_step):
+    #     print(
+    #         f"Function {self.__class__.__name__}._on_step_changed() in thread {threading.get_ident()}"
+    #     )
+    #     if new_step not in self.step_to_idx:
+    #         log.warning(
+    #             f"Step {new_step} missing in event file for run {self.run}, tag {self.tag}. Skipping."
+    #         )
+    #         self._update_selectors()
+    #         return
+    #     self.step = new_step
+    #     self.idx = self.step_to_idx[self.step]
+    #     self.wall_time = self.all_tensor_events['vertices'][self.idx].wall_time
+    #     self.batch_size = self.all_tensor_events['vertices'][
+    #         self.idx].tensor_proto.tensor_shape.dim[0].size
+    #     # Check if batch_idx is still valid and update scene
+    #     self._on_batch_idx_changed(self.batch_idx)
 
-    def _on_batch_idx_changed(self, new_batch_idx):
-        print(
-            f"Function {self.__class__.__name__}._on_batch_idx_changed() in thread {threading.get_ident()}"
-        )
-        this_batch_size = self.all_tensor_events['vertices'][
-            self.idx].tensor_proto.tensor_shape.dim[0].size
-        self.batch_idx = max(0, min(new_batch_idx, this_batch_size - 1))
-        self._update_selectors()
-        self._update_scene()
+    # def _on_batch_idx_changed(self, new_batch_idx):
+    #     print(
+    #         f"Function {self.__class__.__name__}._on_batch_idx_changed() in thread {threading.get_ident()}"
+    #     )
+    #     this_batch_size = self.all_tensor_events['vertices'][
+    #         self.idx].tensor_proto.tensor_shape.dim[0].size
+    #     self.batch_idx = max(0, min(new_batch_idx, this_batch_size - 1))
+    #     self._update_selectors()
+    #     self._update_scene()
 
-    def _update_selectors(self):
-        print(
-            f"Function {self.__class__.__name__}._update_selectors() in thread {threading.get_ident()}"
-        )
-        self.tag_list.set_items(self.tags)
-        self.step_slider.set_limits(*self.step_limits)
-        self.batch_idx_slider.set_limits(0, self.batch_size)
-
-    def _update_scene(self):
-        print(
-            f"Function {self.__class__.__name__}._update_scene() in thread {threading.get_ident()}"
-        )
-
-        self.mesh.vertices = o3d.utility.Vector3dVector(
-            tensor_util.make_ndarray(self.all_tensor_events['vertices'][
-                self.idx].tensor_proto)[self.batch_idx, ...])
-        for prop in metadata.MESH_PROPERTIES:
-            if self.all_tensor_events[prop] is not None:
-                prop_value = tensor_util.make_ndarray(
-                    self.all_tensor_events[prop][self.idx].tensor_proto)[
-                        self.batch_idx, ...]
-                setattr(
-                    self.mesh, prop,
-                    o3d.utility.Vector3iVector(prop_value.astype(int)) if prop
-                    == 'triangles' else o3d.utility.Vector3dVector(prop_value))
-        geometry_name = f"{self.tag}_b{self.batch_idx}_s{self.step}"
-        for current_item in self.geometry_list:
-            if current_item != geometry_name:
-                print(f"Removing geometry {current_item}")
-                self.scene_widget.scene.remove_geometry(current_item)
-
-        print(f"Displaying geometry {geometry_name}:{self.mesh}")
-        self.geometry_list = [geometry_name]
-        self.scene_widget.scene.add_geometry(geometry_name, self.mesh,
-                                             self.material)
-        self.scene_widget.force_redraw()
-        ipdb.set_trace()
-
-        if not self.init_done.is_set():
-            self.init_done.set()
-        print(f"Displaying complete!")
+    # def _update_selectors(self):
+    #     print(
+    #         f"Function {self.__class__.__name__}._update_selectors() in thread {threading.get_ident()}"
+    #     )
+    #     self.tag_list.set_items(self.tags)
+    #     self.step_slider.set_limits(*self.step_limits)
+    #     self.batch_idx_slider.set_limits(0, self.batch_size)
 
 
 class Open3DPlugin(base_plugin.TBPlugin):
@@ -356,12 +524,12 @@ class Open3DPlugin(base_plugin.TBPlugin):
                 "Open3D plugin does not currently run on a multi-process web server."
             )
 
-        win_width = min(3840, max(640, int(request.args.get('width',
-                                                            1024)))) - 60
-        win_height = min(2400, max(480, int(request.args.get('height',
-                                                             768)))) - 40
-        font_size = min(20,
-                        max(6, int(request.args.get('fontsize', '12px')[:-2])))
+        win_width = min(3840,
+                        max(640, int(float(request.args.get('width', 1024)))))
+        win_height = min(2400,
+                         max(480, int(float(request.args.get('height', 768)))))
+        font_size = min(
+            20, max(6, int(float(request.args.get('fontsize', '12px')[:-2]))))
         with self.window_lock:
             this_window_id = self._next_wid
             self._next_wid += 1
@@ -389,6 +557,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
         self._window[this_window_id].close()
         with self.window_lock:
             del self._window[this_window_id]
+        print(f"Window {this_window_id} closed.")
 
         return werkzeug.Response(f"Closed window_{this_window_id}")
 
@@ -415,9 +584,9 @@ class Open3DPlugin(base_plugin.TBPlugin):
         """
         return {
             "/index.js": self._serve_js,
+            "/style.css": self._serve_css,
             "/new_window": self._new_window,
             "/close_window": self._close_window,
-            "/tags": self._serve_tags,
             "/api/*": self._webrtc_http_api,
         }
 
@@ -477,43 +646,15 @@ class Open3DPlugin(base_plugin.TBPlugin):
                                     "index.js")):
             with open(js_lib) as infile:
                 contents += '\n' + infile.read()
-        log.info(contents)
         return werkzeug.Response(contents,
                                  content_type="application/javascript")
 
     @wrappers.Request.application
-    def _serve_tags(self, request):
-        """Serves run to tag info.
-
-        Frontend clients can use the Multiplexer's run+tag structure to request
-        data for a specific run+tag. Responds with a map of the form:
-        {runName: [tagName, tagName, ...]}
-        """
-        ctx = plugin_util.context(request.environ)
-        experiment = plugin_util.experiment_id(request.environ)
-        lp = self._data_provider.list_plugins(ctx, experiment_id=experiment)
-        em = self._data_provider.experiment_metadata(ctx,
-                                                     experiment_id=experiment)
-        log.info(lp)
-        log.info(em)
-        run_tag_mapping = self._data_provider.list_tensors(
-            ctx,
-            experiment_id=experiment,
-            plugin_name=metadata.PLUGIN_NAME,
-        )
-        run_info = {run: list(tags) for (run, tags) in run_tag_mapping.items()}
-        log.info(run_info)
-        blob_run_tag_mapping = self._data_provider.list_blob_sequences(
-            ctx,
-            experiment_id=experiment,
-            plugin_name=metadata.PLUGIN_NAME,
-        )
-        blob_run_info = {
-            run: list(tags) for (run, tags) in blob_run_tag_mapping.items()
-        }
-        log.info(blob_run_info)
-
-        return http_util.Respond(request, run_info, "application/json")
+    def _serve_css(self, unused_request):
+        with open(
+                os.path.join(os.path.dirname(__file__), "frontend",
+                             "style.css")) as cssfile:
+            return werkzeug.Response(cssfile.read(), content_type="text/css")
 
     # @wrappers.Request.application
     # def _serve_static_file(self, request):
@@ -567,18 +708,8 @@ class Open3DPlugin(base_plugin.TBPlugin):
             run_tag_filter=provider.RunTagFilter(runs=[run], tags=[tag]),
         )
         tensors = all_tensors.get(run, {}).get(tag, None)
-        log.info(tensors)
+        print(tensors)
         if tensors is None:
             raise errors.NotFoundError("No tensors data for run=%r, tag=%r" %
                                        (run, tag))
         return [(x.wall_time, x.step, x.value) for x in tensors]
-
-    @wrappers.Request.application
-    def _serve_greetings(self, request):
-        """Given a tag and single run, return array of TensorEvents."""
-        tag = request.args.get("tag")
-        run = request.args.get("run")
-        ctx = plugin_util.context(request.environ)
-        experiment = plugin_util.experiment_id(request.environ)
-        body = self.tensors_impl(ctx, experiment, tag, run)
-        return http_util.Respond(request, body, "application/json")

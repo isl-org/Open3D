@@ -9,8 +9,8 @@ PLUGIN_NAME = "Open3D"
 _PROTO_VERSION = 14
 
 MESH_PROPERTIES = ('vertices', 'vertex_normals', 'vertex_colors', 'triangles',
-                   'triangle_normals', 'triangle_material_ids', 'triangle_uvs',
-                   'adjacency_list', 'textures')
+                   'triangle_uvs')
+POINT_CLOUD_PROPERTIES = ('points', 'normals', 'colors')
 
 
 def create_summary_metadata(description):

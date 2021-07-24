@@ -387,6 +387,9 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
 void WebRTCWindowSystem::RegisterDataChannelMessageCallback(
         const std::string &class_name,
         const std::function<std::string(const std::string &)> callback) {
+    utility::LogDebug(
+            "WebRTCWindowSystem::RegisterDataChannelMessageCallback: {}",
+            class_name);
     impl_->data_channel_message_callbacks_[class_name] = callback;
 }
 

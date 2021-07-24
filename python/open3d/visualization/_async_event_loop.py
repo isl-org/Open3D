@@ -1,3 +1,13 @@
+"""Run the GUI event loop in a non-main thread. This allows using the
+GUI from plugins to other apps (e.g.: Jupyter or Tensorboard) where the GUI
+cannot be started in the main thread. Currently does not work in macOS.
+
+.. note:: This is a singleton class implemented with this module as a
+   holder. The ``_async_event_loop`` singleton is started whenever this
+   module is imported.  If you are using remote visualization with WebRTC,
+   you must call ``enable_webrtc()`` before importing this module.
+"""
+
 import threading
 import functools
 import open3d as o3d
@@ -34,18 +44,15 @@ class _AsyncEventLoop:
 
     def run_sync(self, f):
         with self._lock:
-            print(f"AEL: Adding {f.__name__}")
             task = _AsyncEventLoop._Task(f)
             self._run_queue.append(task)
 
         while True:
             with self._lock:
                 if task.task_id in self._return_vals:
-                    print(f"AEL: Completed {f.__name__}")
                     return self._return_vals[task.task_id]
 
     def _thread_main(self):
-        print(f"Initializing GUi in thread {threading.get_ident()}")
         app = o3d.visualization.gui.Application.instance
         app.initialize()
 
@@ -53,11 +60,8 @@ class _AsyncEventLoop:
         while not done:
             with self._lock:
                 for task in self._run_queue:
-                    print(f"AEL: running {task.func.__name__}")
                     retval = task.func()
                     self._return_vals[task.task_id] = retval
-                if len(self._run_queue) > 0:
-                    print("AEL: Queue completed!")
                 self._run_queue.clear()
 
             done = not app.run_one_tick()
@@ -66,6 +70,4 @@ class _AsyncEventLoop:
 # The _AsyncEventLoop class shall only be used to create a singleton instance.
 # There are different ways to achieve this, here we use the module as a holder
 # for singleton variables, see: https://stackoverflow.com/a/31887/1255535.
-#
-# Note: the _AsyncEventLoop is started whenever this module is imported.
 _async_event_loop = _AsyncEventLoop()

@@ -1,0 +1,178 @@
+/* ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+*/
+
+/* Styles for the Open3D Tensorboard plugin */
+
+#open3d-dashboard {
+  display: flex;
+  flex-direction: row;
+  padding: 2em;
+}
+
+.run-tag-selector {
+  flex: 1 16em;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 10em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 5px;
+  color: #424242;  /*TB --paper-grey-800 */
+}
+
+/* width is 6x left selctor, min-width=576px*/
+.main-view {
+  flex: 6 576;
+}
+
+.run-selector, .tag-selector{
+  height: 40%;
+  padding: 5px;
+}
+
+.batchidx-step-selector {
+  display: flex;
+  flex-direction: column;
+  width: 40%;
+  padding: 5px;
+  align-items: end;
+  color: #424242;  /*TB --paper-grey-800 */
+}
+
+.batchidx-step-selector input {
+  vertical-align: middle;
+}
+
+.batchidx-step-selector label {
+  width: 20em;
+  font-weight: bold;
+}
+
+.batchidx-step-selector output {
+  width: 4em;
+  text-indent: 2em;
+  font-weight: bold;
+  display: inline-block;
+}
+
+
+#webrtc {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 5px;
+}
+
+/* Adapted from: https://www.w3schools.com/howto/howto_css_custom_checkbox.asp */
+
+/* Customize the label (the container) */
+.container {
+  display: block;
+  position: relative;
+  padding-left: 2.5em;
+  margin-bottom: 1em;
+  cursor: pointer;
+  text-transform: capitalize;
+  /* -webkit-user-select: none; */
+  /* -moz-user-select: none; */
+  /* -ms-user-select: none; */
+  user-select: none;
+}
+
+/* Hide the browser's default checkbox */
+/* Hide the browser's default radio button */
+.container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* Create a custom checkbox */
+/* Create a custom radio button */
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 1.5em;
+  width: 1.5em;
+  background-color: #eee;
+}
+/* Additional style for radio button */
+input[type="radio"] ~ .checkmark {
+  border-radius: 50%;
+}
+
+/* On mouse-over, add a grey background color */
+.container:hover input ~ .checkmark {
+  background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.container input:checked ~ .checkmark {
+  background-color: #2196F3;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+/* Create the indicator (the dot/circle - hidden when not checked) */
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+/* Show the indicator (dot/circle) when checked */
+.container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* Style the checkmark/indicator */
+.container input[type="checkbox"] ~ .checkmark:after {
+  left: 0.6em;
+  top: 0.3em;
+  width: 0.3em;
+  height: 0.6em;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  /* -webkit-transform: rotate(45deg); */
+  /* -ms-transform: rotate(45deg); */
+  transform: rotate(45deg);
+}
+
+/* Style the indicator (dot/circle) */
+.container input[type="radio"] ~ .checkmark:after {
+  left: 0.45em;
+  top: 0.45em;
+  width: 0.6em;
+  height: 0.6em;
+  border-radius: 50%;
+  background: white;
+}

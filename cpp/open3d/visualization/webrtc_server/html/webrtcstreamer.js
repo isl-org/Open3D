@@ -36,7 +36,6 @@ var WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
 
   // Query style from the user's browser and match Open3D style
-
     function css( element, property ) {
     return window.getComputedStyle( element, null ).getPropertyValue( property );
 }
@@ -483,7 +482,7 @@ var WebRtcStreamer = (function () {
       try {
         this.pc.close();
       } catch (e) {
-        console.log("Failure close peer connection:" + e);
+        console.warn("Failure close peer connection:" + e);
       }
       this.pc = null;
       this.dataChannel = null;
@@ -551,7 +550,7 @@ var WebRtcStreamer = (function () {
                 .catch((error) => bind.onError("call " + error));
             },
             function (error) {
-              console.log("setLocalDescription error:" + JSON.stringify(error));
+              console.warn("setLocalDescription error:" + JSON.stringify(error));
             }
           );
         },
@@ -595,7 +594,7 @@ var WebRtcStreamer = (function () {
     pc.onicecandidate = function (evt) {
       bind.onIceCandidate.call(bind, evt);
     };
-    pc.onaddstream = function (evt) {
+    pc.onaddstream = function (evt) {   // TODO: Deprecated. Switch to ontrack.
       bind.onAddStream.call(bind, evt);
     };
     pc.oniceconnectionstatechange = function (evt) {
@@ -617,11 +616,14 @@ var WebRtcStreamer = (function () {
         }
       }
     };
+      // Remote data channel receives data
     pc.ondatachannel = function (evt) {
       console.log("remote datachannel created:" + JSON.stringify(evt));
 
       evt.channel.onopen = function () {
         console.log("remote datachannel open");
+          // Forward event to others who want to access remote data
+        bind.videoElt.dispatchEvent(new CustomEvent("RemoteDataChannelOpen", {detail: evt}));
       };
       evt.channel.onmessage = function (event) {
         console.log("remote datachannel recv:" + JSON.stringify(event.data));
@@ -641,11 +643,16 @@ var WebRtcStreamer = (function () {
       }
     };
 
+      // Local datachannel sends data
     try {
       this.dataChannel = pc.createDataChannel("ClientDataChannel");
       var dataChannel = this.dataChannel;
       dataChannel.onopen = function () {
         console.log("local datachannel open");
+          // Forward event to others who want to access remote data
+        bind.videoElt.dispatchEvent(new CustomEvent("LocalDataChannelOpen", {
+            detail: {channel: dataChannel}
+        }));
       };
       dataChannel.onmessage = function (evt) {
         console.log("local datachannel recv:" + JSON.stringify(evt.data));
@@ -655,7 +662,7 @@ var WebRtcStreamer = (function () {
         bind.onClose();
       };
     } catch (e) {
-      console.log("Cannot create datachannel error: " + e);
+      console.warn("Cannot create datachannel error: " + e);
     }
 
     console.log(
@@ -735,7 +742,7 @@ var WebRtcStreamer = (function () {
         bind.getIceCandidate.call(bind);
       },
       function (error) {
-        console.log("setRemoteDescription error:" + JSON.stringify(error));
+        console.warn("setRemoteDescription error:" + JSON.stringify(error));
       }
     );
   };
@@ -756,7 +763,7 @@ var WebRtcStreamer = (function () {
             console.log("addIceCandidate OK");
           },
           function (error) {
-            console.log("addIceCandidate error:" + JSON.stringify(error));
+            console.warn("addIceCandidate error:" + JSON.stringify(error));
           }
         );
       }
@@ -768,7 +775,7 @@ var WebRtcStreamer = (function () {
    * AJAX callback for Error
    */
   WebRtcStreamer.prototype.onError = function (status) {
-    console.log("onError:" + status);
+    console.warn("onError:" + status);
   };
 
   return WebRtcStreamer;
