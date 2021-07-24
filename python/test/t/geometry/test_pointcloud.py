@@ -37,7 +37,7 @@ from open3d_test import list_devices
 
 @pytest.mark.parametrize("device", list_devices())
 def test_constructor_and_accessors(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     # Constructor.
     pcd = o3d.t.geometry.PointCloud(device)
@@ -64,7 +64,7 @@ def test_constructor_and_accessors(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_from_legacy_pointcloud(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     legacy_pcd = o3d.geometry.PointCloud()
     legacy_pcd.points = o3d.utility.Vector3dVector(
@@ -82,7 +82,7 @@ def test_from_legacy_pointcloud(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_to_legacy_pointcloud(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     pcd = o3d.t.geometry.PointCloud(device)
     pcd.point["points"] = o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype, device)
@@ -97,7 +97,7 @@ def test_to_legacy_pointcloud(device):
 
 @pytest.mark.parametrize("device", list_devices())
 def test_member_functions(device):
-    dtype = o3c.Dtype.Float32
+    dtype = o3c.float32
 
     # get_min_bound, get_max_bound, get_center.
     pcd = o3d.t.geometry.PointCloud(device)
@@ -127,7 +127,6 @@ def test_member_functions(device):
     with pytest.raises(RuntimeError) as excinfo:
         pcd3 = pcd2 + pcd
         assert 'The pointcloud is missing attribute' in str(excinfo.value)
-    return
 
     # transform.
     pcd = o3d.t.geometry.PointCloud(device)

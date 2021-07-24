@@ -30,73 +30,70 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputePosePointToPlaneCPU(const float *source_points_ptr,
-                                const float *target_points_ptr,
-                                const float *target_normals_ptr,
-                                const int64_t *correspondences_first,
-                                const int64_t *correspondences_second,
-                                const int n,
+void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
+                                const core::Tensor &target_points,
+                                const core::Tensor &target_normals,
+                                const core::Tensor &correspondence_indices,
                                 core::Tensor &pose,
+                                float &residual,
+                                int &inlier_count,
                                 const core::Dtype &dtype,
-                                const core::Device &device);
+                                const core::Device &device,
+                                const registration::RobustKernel &kernel);
 
 #ifdef BUILD_CUDA_MODULE
-void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
-                                 const float *target_points_ptr,
-                                 const float *target_normals_ptr,
-                                 const int64_t *correspondences_first,
-                                 const int64_t *correspondences_second,
-                                 const int n,
+void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
+                                 const core::Tensor &target_points,
+                                 const core::Tensor &target_normals,
+                                 const core::Tensor &correspondence_indices,
                                  core::Tensor &pose,
+                                 float &residual,
+                                 int &inlier_count,
                                  const core::Dtype &dtype,
-                                 const core::Device &device);
+                                 const core::Device &device,
+                                 const registration::RobustKernel &kernel);
 #endif
 
-void ComputeRtPointToPointCPU(const float *source_points_ptr,
-                              const float *target_points_ptr,
-                              const int64_t *correspondences_first,
-                              const int64_t *correspondences_second,
-                              const int n,
+void ComputeRtPointToPointCPU(const core::Tensor &source_points,
+                              const core::Tensor &target_points,
+                              const core::Tensor &correspondence_indices,
                               core::Tensor &R,
                               core::Tensor &t,
-                              const core::Dtype dtype,
-                              const core::Device device);
+                              int &inlier_count,
+                              const core::Dtype &dtype,
+                              const core::Device &device);
 
+template <typename scalar_t>
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         int64_t workload_idx,
-        const float *source_points_ptr,
-        const float *target_points_ptr,
-        const float *target_normals_ptr,
-        const int64_t *correspondence_first,
-        const int64_t *correspondence_second,
-        float *J_ij,
-        float &r) {
-    // TODO (@rishabh): Pass correspondence without eliminating -1
-    // in registration::GetRegistationResultAndCorrespondences,
-    // and directly check if valid (index != -1) here.
-    // In that case, only use correspondence_second as index for
-    // target, and workload_idx as index for source pointcloud.
+        const scalar_t *source_points_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *target_normals_ptr,
+        const int64_t *correspondence_indices,
+        scalar_t *J_ij,
+        scalar_t &r) {
+    const int64_t target_idx = 3 * correspondence_indices[workload_idx];
+    const int64_t source_idx = 3 * workload_idx;
 
-    const int64_t source_idx = 3 * correspondence_first[workload_idx];
-    const int64_t target_idx = 3 * correspondence_second[workload_idx];
-
-    const float &sx = source_points_ptr[source_idx + 0];
-    const float &sy = source_points_ptr[source_idx + 1];
-    const float &sz = source_points_ptr[source_idx + 2];
-    const float &tx = target_points_ptr[target_idx + 0];
-    const float &ty = target_points_ptr[target_idx + 1];
-    const float &tz = target_points_ptr[target_idx + 2];
-    const float &nx = target_normals_ptr[target_idx + 0];
-    const float &ny = target_normals_ptr[target_idx + 1];
-    const float &nz = target_normals_ptr[target_idx + 2];
+    const scalar_t &sx = source_points_ptr[source_idx + 0];
+    const scalar_t &sy = source_points_ptr[source_idx + 1];
+    const scalar_t &sz = source_points_ptr[source_idx + 2];
+    const scalar_t &tx = target_points_ptr[target_idx + 0];
+    const scalar_t &ty = target_points_ptr[target_idx + 1];
+    const scalar_t &tz = target_points_ptr[target_idx + 2];
+    const scalar_t &nx = target_normals_ptr[target_idx + 0];
+    const scalar_t &ny = target_normals_ptr[target_idx + 1];
+    const scalar_t &nz = target_normals_ptr[target_idx + 2];
 
     r = (sx - tx) * nx + (sy - ty) * ny + (sz - tz) * nz;
+
     J_ij[0] = nz * sy - ny * sz;
     J_ij[1] = nx * sz - nz * sx;
     J_ij[2] = ny * sx - nx * sy;
@@ -106,6 +103,22 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
 
     return true;
 }
+
+template bool GetJacobianPointToPlane(int64_t workload_idx,
+                                      const float *source_points_ptr,
+                                      const float *target_points_ptr,
+                                      const float *target_normals_ptr,
+                                      const int64_t *correspondence_indices,
+                                      float *J_ij,
+                                      float &r);
+
+template bool GetJacobianPointToPlane(int64_t workload_idx,
+                                      const double *source_points_ptr,
+                                      const double *target_points_ptr,
+                                      const double *target_normals_ptr,
+                                      const int64_t *correspondence_indices,
+                                      double *J_ij,
+                                      double &r);
 
 }  // namespace kernel
 }  // namespace pipelines

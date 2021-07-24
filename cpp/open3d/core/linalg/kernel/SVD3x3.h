@@ -43,6 +43,8 @@
 
 #pragma once
 
+#include <cmath>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 
@@ -804,8 +806,8 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
 
     Stmp5.f = 0.f;
     Sch.f = __dsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa11.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -909,8 +911,8 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
 
     Stmp5.f = 0.f;
     Sch.f = __dsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa11.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1014,8 +1016,8 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<double>(const double *A_3x3,
 
     Stmp5.f = 0.f;
     Sch.f = __dsub_rn(Stmp5.f, Sa22.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa22.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa22.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa22.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1841,8 +1843,8 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa11.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -1946,8 +1948,8 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa11.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa11.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa11.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;
@@ -2051,8 +2053,8 @@ OPEN3D_DEVICE OPEN3D_FORCE_INLINE void svd3x3<float>(const float *A_3x3,
 
     Stmp5.f = 0.f;
     Sch.f = __fsub_rn(Stmp5.f, Sa22.f);
-    Sch.f = OPEN3D_MAX(Sch.f, Sa22.f);
-    Sch.f = OPEN3D_MAX(Sch.f, gsmall_number);
+    Sch.f = fmax(Sch.f, Sa22.f);
+    Sch.f = fmax(Sch.f, gsmall_number);
     Stmp5.ui = (Sa22.f >= Stmp5.f) ? 0xffffffff : 0;
 
     Stmp1.f = Sch.f * Sch.f;

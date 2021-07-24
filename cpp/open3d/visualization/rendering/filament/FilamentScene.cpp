@@ -413,7 +413,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         return false;
     }
     const auto& points = point_cloud.GetPoints();
-    if (points.GetDtype() != core::Dtype::Float32) {
+    if (points.GetDtype() != core::Float32) {
         utility::LogWarning("tensor point cloud must have Dtype of Float32");
         return false;
     }

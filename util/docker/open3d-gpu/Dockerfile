@@ -9,7 +9,6 @@
 #        --env NPROC=4 \
 #        --env SHARED=OFF \
 #        --env BUILD_CUDA_MODULE=ON \
-#        --env BUILD_RPC_INTERFACE=ON \
 #        --env BUILD_TENSORFLOW_OPS=ON \
 #        --env BUILD_PYTORCH_OPS=ON \
 #        --env OPEN3D_ML_ROOT=/root/Open3D/Open3D-ML \

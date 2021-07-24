@@ -27,6 +27,7 @@
 #include <atomic>
 #include <vector>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
@@ -37,7 +38,6 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -72,23 +72,21 @@ void UnprojectCPU
     int64_t rows_strided = depth_indexer.GetShape(0) / stride;
     int64_t cols_strided = depth_indexer.GetShape(1) / stride;
 
-    points = core::Tensor({rows_strided * cols_strided, 3},
-                          core::Dtype::Float32, depth.GetDevice());
+    points = core::Tensor({rows_strided * cols_strided, 3}, core::Float32,
+                          depth.GetDevice());
     NDArrayIndexer point_indexer(points, 1);
     NDArrayIndexer colors_indexer;
     if (have_colors) {
         const auto& imcol = image_colors.value().get();
         image_colors_indexer = NDArrayIndexer{imcol, 2};
-        colors.value().get() =
-                core::Tensor({rows_strided * cols_strided, 3},
-                             core::Dtype::Float32, imcol.GetDevice());
+        colors.value().get() = core::Tensor({rows_strided * cols_strided, 3},
+                                            core::Float32, imcol.GetDevice());
         colors_indexer = NDArrayIndexer(colors.value().get(), 1);
     }
 
     // Counter
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
-                       depth.GetDevice());
+    core::Tensor count(std::vector<int>{0}, {}, core::Int32, depth.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
     std::atomic<int> count_atomic(0);
@@ -145,6 +143,7 @@ void UnprojectCPU
                 colors.value().get().Slice(0, 0, total_pts_count);
     }
 }
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry

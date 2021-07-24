@@ -85,10 +85,12 @@ if it is not empty.
     # Register callback in Python
     import open3d as o3d
     o3d.visualization.webrtc_server.enable_webrtc()
+    def send_ack(data):
+        print(data)
+        return "Received WebRTC data channel message with data: " + data
+
     o3d.visualization.webrtc_server.register_data_channel_message_callback(
-        "webapp/input",
-        lambda data: (print(data),
-            f"Received WebRTC data channel message with data: {data}")[1])
+        "webapp/input", send_ack)
 
 .. code:: js
 

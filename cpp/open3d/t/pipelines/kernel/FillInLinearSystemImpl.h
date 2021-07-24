@@ -56,9 +56,8 @@ void FillInRigidAlignmentTermCPU
 
     // First fill in a small 12 x 12 linear system
     core::Tensor AtA_local =
-            core::Tensor::Zeros({12, 12}, core::Dtype::Float32, device);
-    core::Tensor Atb_local =
-            core::Tensor::Zeros({12}, core::Dtype::Float32, device);
+            core::Tensor::Zeros({12, 12}, core::Float32, device);
+    core::Tensor Atb_local = core::Tensor::Zeros({12}, core::Float32, device);
 
     float *AtA_local_ptr = static_cast<float *>(AtA_local.GetDataPtr());
     float *Atb_local_ptr = static_cast<float *>(Atb_local.GetDataPtr());
@@ -140,11 +139,9 @@ void FillInRigidAlignmentTermCPU
         }
     }
 
-    core::Tensor indices(indices_vec, {12}, core::Dtype::Int64, device);
-    core::Tensor indices_i(indices_i_vec, {12 * 12}, core::Dtype::Int64,
-                           device);
-    core::Tensor indices_j(indices_j_vec, {12 * 12}, core::Dtype::Int64,
-                           device);
+    core::Tensor indices(indices_vec, {12}, core::Int64, device);
+    core::Tensor indices_i(indices_i_vec, {12 * 12}, core::Int64, device);
+    core::Tensor indices_j(indices_j_vec, {12 * 12}, core::Int64, device);
 
     core::Tensor AtA_sub = AtA.IndexGet({indices_i, indices_j});
     AtA.IndexSet({indices_i, indices_j}, AtA_sub + AtA_local.View({12 * 12}));

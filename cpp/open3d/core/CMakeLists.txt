@@ -10,7 +10,6 @@ target_sources(core PRIVATE
     MemoryManagerCached.cpp
     MemoryManagerCPU.cpp
     MemoryManagerStatistic.cpp
-    NumpyIO.cpp
     ShapeUtil.cpp
     Tensor.cpp
     TensorKey.cpp
@@ -69,8 +68,7 @@ target_sources(core PRIVATE
 
 if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
-        CUDAState.cu
-        MemoryManagerCUDA.cu
+        MemoryManagerCUDA.cpp
     )
 
     target_sources(core PRIVATE

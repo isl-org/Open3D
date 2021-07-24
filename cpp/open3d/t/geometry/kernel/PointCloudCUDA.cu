@@ -124,6 +124,7 @@ void ProjectCUDA(
         }
     });
 }
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry

@@ -1861,7 +1861,6 @@ Open3DScene *O3DVisualizer::GetScene() const {
 }
 
 void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-#ifdef BUILD_RPC_INTERFACE
     auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
                               const std::string &path, int time,
                               const std::string &layer) {
@@ -1880,22 +1879,13 @@ void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
     } catch (std::exception &e) {
         utility::LogWarning("Failed to start RPC interface: {}", e.what());
     }
-#else
-    utility::LogWarning(
-            "O3DVisualizer::StartRPCInterface: RPC interface not built");
-#endif
 }
 
 void O3DVisualizer::StopRPCInterface() {
-#ifdef BUILD_RPC_INTERFACE
     if (impl_->receiver_) {
         utility::LogInfo("Stopping RPC interface");
     }
     impl_->receiver_.reset();
-#else
-    utility::LogWarning(
-            "O3DVisualizer::StopRPCInterface: RPC interface not built");
-#endif
 }
 
 void O3DVisualizer::AddAction(const std::string &name,

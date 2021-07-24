@@ -185,7 +185,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                                 "ignored.",
                                 height, width);
                         utility::LogWarning("{}", reply);
-                        return "[Open3D ERROR] " + reply;
+                        return "[Open3D WARNING] " + reply;
                     } else {
                         utility::LogDebug("ResizeEvent {}: ({}, {})",
                                           window_uid, height, width);
@@ -381,7 +381,8 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
                 message);
     }
     utility::LogInfo("{}", reply);
-    return "[Open3D ERROR] " + reply;  // Add tag for detecting error in client
+    return "[Open3D WARNING] " +
+           reply;  // Add tag for detecting error in client
 }
 
 void WebRTCWindowSystem::RegisterDataChannelMessageCallback(

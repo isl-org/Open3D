@@ -90,13 +90,13 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
             src_im.GetStride(0) * dtype.ByteSize(),        \
             static_cast<npp_dtype *>(dst_im.GetDataPtr()), \
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, context
-    if (dtype == core::Dtype::UInt8) {
+    if (dtype == core::UInt8) {
         using npp_dtype = Npp8u;
         nppiRGBToGray_8u_C3C1R_Ctx(NPP_ARGS);
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
         nppiRGBToGray_16u_C3C1R_Ctx(NPP_ARGS);
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
         nppiRGBToGray_32f_C3C1R_Ctx(NPP_ARGS);
     } else {
@@ -145,7 +145,7 @@ void Resize(const open3d::core::Tensor &src_im,
             dst_im.GetStride(0) * dtype.ByteSize(), dst_size, dst_roi, \
             it->second, context
 
-    if (dtype == core::Dtype::UInt8) {
+    if (dtype == core::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
             nppiResize_8u_C1R_Ctx(NPP_ARGS);
@@ -154,7 +154,7 @@ void Resize(const open3d::core::Tensor &src_im,
         } else if (src_im.GetShape(2) == 4) {
             nppiResize_8u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
         if (src_im.GetShape(2) == 1) {
             nppiResize_16u_C1R_Ctx(NPP_ARGS);
@@ -163,7 +163,7 @@ void Resize(const open3d::core::Tensor &src_im,
         } else if (src_im.GetShape(2) == 4) {
             nppiResize_16u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
         if (src_im.GetShape(2) == 1) {
             nppiResize_32f_C1R_Ctx(NPP_ARGS);
@@ -186,7 +186,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
     // Create mask.
     core::Tensor mask =
             core::Tensor::Ones(core::SizeVector{kernel_size, kernel_size, 1},
-                               core::Dtype::UInt8, src_im.GetDevice());
+                               core::UInt8, src_im.GetDevice());
     NppiSize mask_size = {kernel_size, kernel_size};
 
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
@@ -207,7 +207,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI,             \
             static_cast<const uint8_t *>(mask.GetDataPtr()), mask_size,   \
             anchor, NPP_BORDER_REPLICATE, context
-    if (dtype == core::Dtype::Bool || dtype == core::Dtype::UInt8) {
+    if (dtype == core::Bool || dtype == core::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
             nppiDilateBorder_8u_C1R_Ctx(NPP_ARGS);
@@ -216,7 +216,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
         } else if (src_im.GetShape(2) == 4) {
             nppiDilateBorder_8u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
         if (src_im.GetShape(2) == 1) {
             nppiDilateBorder_16u_C1R_Ctx(NPP_ARGS);
@@ -225,7 +225,7 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
         } else if (src_im.GetShape(2) == 4) {
             nppiDilateBorder_16u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
         if (src_im.GetShape(2) == 1) {
             nppiDilateBorder_32f_C1R_Ctx(NPP_ARGS);
@@ -273,7 +273,7 @@ void Filter(const open3d::core::Tensor &src_im,
             static_cast<npp_dtype *>(dst_im.GetDataPtr()),                \
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_ptr, \
             kernel_size, anchor, NPP_BORDER_REPLICATE, context
-    if (dtype == core::Dtype::UInt8) {
+    if (dtype == core::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
             nppiFilterBorder32f_8u_C1R_Ctx(NPP_ARGS);
@@ -282,7 +282,7 @@ void Filter(const open3d::core::Tensor &src_im,
         } else if (src_im.GetShape(2) == 4) {
             nppiFilterBorder32f_8u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
         if (src_im.GetShape(2) == 1) {
             nppiFilterBorder32f_16u_C1R_Ctx(NPP_ARGS);
@@ -291,7 +291,7 @@ void Filter(const open3d::core::Tensor &src_im,
         } else if (src_im.GetShape(2) == 4) {
             nppiFilterBorder32f_16u_C4R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
         if (src_im.GetShape(2) == 1) {
             nppiFilterBorder_32f_C1R_Ctx(NPP_ARGS);
@@ -331,21 +331,21 @@ void FilterBilateral(const core::Tensor &src_im,
             dst_im.GetStride(0) * dtype.ByteSize(), size_ROI, kernel_size / 2, \
             1, value_sigma *value_sigma, distance_sigma *distance_sigma,       \
             NPP_BORDER_REPLICATE, context
-    if (dtype == core::Dtype::UInt8) {
+    if (dtype == core::UInt8) {
         using npp_dtype = Npp8u;
         if (src_im.GetShape(2) == 1) {
             nppiFilterBilateralGaussBorder_8u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
             nppiFilterBilateralGaussBorder_8u_C3R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::UInt16) {
+    } else if (dtype == core::UInt16) {
         using npp_dtype = Npp16u;
         if (src_im.GetShape(2) == 1) {
             nppiFilterBilateralGaussBorder_16u_C1R_Ctx(NPP_ARGS);
         } else if (src_im.GetShape(2) == 3) {
             nppiFilterBilateralGaussBorder_16u_C3R_Ctx(NPP_ARGS);
         }
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_dtype = Npp32f;
         if (src_im.GetShape(2) == 1) {
             nppiFilterBilateralGaussBorder_32f_C1R_Ctx(NPP_ARGS);
@@ -367,7 +367,7 @@ void FilterGaussian(const core::Tensor &src_im,
     core::Tensor dist =
             core::Tensor::Arange(static_cast<float>(-kernel_size / 2),
                                  static_cast<float>(kernel_size / 2 + 1), 1.0f,
-                                 core::Dtype::Float32, src_im.GetDevice());
+                                 core::Float32, src_im.GetDevice());
     core::Tensor logval = (dist * dist).Mul(-0.5f / (sigma * sigma));
     core::Tensor mask = logval.Exp();
     mask = mask / mask.Sum({0});
@@ -419,12 +419,12 @@ void FilterSobel(const core::Tensor &src_im,
             static_cast<npp_dst_dtype *>(dst_im_dy.GetDataPtr()),         \
             dst_im_dy.GetStride(0) * dst_im_dy.GetDtype().ByteSize(),     \
             size_ROI, it->second, NPP_BORDER_REPLICATE, context
-    if (dtype == core::Dtype::UInt8) {
+    if (dtype == core::UInt8) {
         using npp_src_dtype = Npp8u;
         using npp_dst_dtype = Npp16s;
         nppiFilterSobelVertBorder_8u16s_C1R_Ctx(NPP_ARGS_DX);
         nppiFilterSobelHorizBorder_8u16s_C1R_Ctx(NPP_ARGS_DY);
-    } else if (dtype == core::Dtype::Float32) {
+    } else if (dtype == core::Float32) {
         using npp_src_dtype = Npp32f;
         using npp_dst_dtype = Npp32f;
         nppiFilterSobelVertMaskBorder_32f_C1R_Ctx(NPP_ARGS_DX);
