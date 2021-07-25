@@ -35,7 +35,6 @@
 
 namespace open3d {
 namespace core {
-
 namespace cuda {
 
 int DeviceCount() {
@@ -71,8 +70,22 @@ void ReleaseCache() {
 #endif
 }
 
+void Synchronize() {
 #ifdef BUILD_CUDA_MODULE
+    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+#endif
+}
 
+void Synchronize(const Device& device) {
+#ifdef BUILD_CUDA_MODULE
+    if (device.GetType() == Device::DeviceType::CUDA) {
+        CUDAScopedDevice scoped_device(device);
+        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    }
+#endif
+}
+
+#ifdef BUILD_CUDA_MODULE
 int GetDevice() {
     int device;
     OPEN3D_CUDA_CHECK(cudaGetDevice(&device));

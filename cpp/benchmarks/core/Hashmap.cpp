@@ -31,6 +31,7 @@
 #include <random>
 
 #include "open3d/core/AdvancedIndexing.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
@@ -87,11 +88,15 @@ void HashInsertInt(benchmark::State& state,
         Hashmap hashmap(capacity, core::Int32, core::Int32, {1}, {1}, device,
                         backend);
         Tensor addrs, masks;
+
+        cuda::Synchronize(device);
         state.ResumeTiming();
 
         hashmap.Insert(keys, values, addrs, masks);
 
+        cuda::Synchronize(device);
         state.PauseTiming();
+
         int64_t s = hashmap.Size();
         if (s != slots) {
             utility::LogError(
@@ -124,11 +129,15 @@ void HashEraseInt(benchmark::State& state,
                         backend);
         Tensor addrs, masks;
         hashmap.Insert(keys, values, addrs, masks);
+
+        cuda::Synchronize(device);
         state.ResumeTiming();
 
         hashmap.Erase(keys, masks);
 
+        cuda::Synchronize(device);
         state.PauseTiming();
+
         int64_t s = hashmap.Size();
         if (s != 0) {
             utility::LogError(
@@ -158,6 +167,7 @@ void HashFindInt(benchmark::State& state,
 
     for (auto _ : state) {
         hashmap.Find(keys, addrs, masks);
+        cuda::Synchronize(device);
     }
 }
 
@@ -191,11 +201,15 @@ void HashClearInt(benchmark::State& state,
                     "Error returning hashmap size, expected {}, but got {}.",
                     slots, s);
         }
+
+        cuda::Synchronize(device);
         state.ResumeTiming();
 
         hashmap.Clear();
 
+        cuda::Synchronize(device);
         state.PauseTiming();
+
         s = hashmap.Size();
         if (s != 0) {
             utility::LogError(
@@ -242,11 +256,15 @@ void HashInsertInt3(benchmark::State& state,
         Hashmap hashmap(capacity, core::Int32, core::Int32, {3}, {1}, device,
                         backend);
         Tensor addrs, masks;
+
+        cuda::Synchronize(device);
         state.ResumeTiming();
 
         hashmap.Insert(keys, values, addrs, masks);
 
+        cuda::Synchronize(device);
         state.PauseTiming();
+
         int64_t s = hashmap.Size();
         if (s != slots) {
             utility::LogError(
@@ -282,11 +300,15 @@ void HashEraseInt3(benchmark::State& state,
                         backend);
         Tensor addrs, masks;
         hashmap.Insert(keys, values, addrs, masks);
+
+        cuda::Synchronize(device);
         state.ResumeTiming();
 
         hashmap.Erase(keys, masks);
 
+        cuda::Synchronize(device);
         state.PauseTiming();
+
         int64_t s = hashmap.Size();
         if (s != 0) {
             utility::LogError(
@@ -318,6 +340,7 @@ void HashFindInt3(benchmark::State& state,
 
     for (auto _ : state) {
         hashmap.Find(keys, addrs, masks);
+        cuda::Synchronize(device);
     }
 }
 
@@ -354,11 +377,15 @@ void HashClearInt3(benchmark::State& state,
                     "Error returning hashmap size, expected {}, but got {}.",
                     slots, s);
         }
+
+        cuda::Synchronize(device);
         state.ResumeTiming();
 
         hashmap.Clear();
 
         state.PauseTiming();
+        cuda::Synchronize(device);
+
         s = hashmap.Size();
         if (s != 0) {
             utility::LogError(

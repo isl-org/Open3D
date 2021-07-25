@@ -1002,7 +1002,7 @@ private:
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
                 <<<config.GridDim(), config.BlockDim(), shared_memory,
                    core::cuda::GetStream()>>>(reduce_op);
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+        cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 

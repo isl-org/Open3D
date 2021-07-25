@@ -158,7 +158,7 @@ void ComputeOdometryResultPointToPlaneCUDA(
             source_vertex_indexer, target_vertex_indexer, target_normal_indexer,
             ti, global_sum_ptr, rows, cols, depth_outlier_trunc,
             depth_huber_delta);
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
@@ -267,7 +267,7 @@ void ComputeOdometryResultIntensityCUDA(
             target_intensity_dx_indexer, target_intensity_dy_indexer,
             source_vertex_indexer, ti, global_sum_ptr, rows, cols,
             depth_outlier_trunc, intensity_huber_delta);
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
@@ -389,7 +389,7 @@ void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
             target_intensity_dx_indexer, target_intensity_dy_indexer,
             source_vertex_indexer, ti, global_sum_ptr, rows, cols,
             depth_outlier_trunc, depth_huber_delta, intensity_huber_delta);
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 

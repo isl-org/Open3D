@@ -60,7 +60,7 @@ public:
         values_ = values.GetDataPtr<uint8_t>();
         heap_ = static_cast<addr_t *>(heap.GetDataPtr());
         OPEN3D_CUDA_CHECK(cudaMemset(values_, 0, capacity_ * dsize_value_));
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+        cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 
@@ -73,7 +73,7 @@ public:
                 (capacity_ + kThreadsPerBlock - 1) / kThreadsPerBlock;
         ResetHashmapBufferKernel<<<blocks, kThreadsPerBlock, 0,
                                    core::cuda::GetStream()>>>(heap_, capacity_);
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+        cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 

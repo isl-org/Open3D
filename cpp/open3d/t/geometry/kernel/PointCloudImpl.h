@@ -135,7 +135,7 @@ void UnprojectCPU
 #endif
 
 #ifdef __CUDACC__
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
     points = points.Slice(0, 0, total_pts_count);
     if (have_colors) {

@@ -125,7 +125,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
                 });
     });
 
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
