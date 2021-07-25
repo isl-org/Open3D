@@ -214,7 +214,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
     using namespace open3d::utility;
 
     // number of elements for vectorization
-    const int VECSIZE = 8;
+    constexpr int VECSIZE = 8;
     typedef MiniVec<T, 3> Vec3_t;
     typedef Eigen::Array<T, VECSIZE, 1> Vec_t;
     typedef Eigen::Array<int32_t, VECSIZE, 1> Veci_t;
@@ -308,8 +308,9 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                 ++vec_i;
                                 if (VECSIZE == vec_i) {
                                     Pos_t pos_arr(pos[0], pos[1], pos[2]);
-                                    Vec_t dist = NeighborsDist<METRIC, Pos_t>(
-                                            pos_arr, xyz);
+                                    Vec_t dist = NeighborsDist<METRIC, Pos_t,
+                                                               VECSIZE>(pos_arr,
+                                                                        xyz);
                                     Result_t test_result = dist <= threshold;
                                     neighbors_count += test_result.count();
                                     vec_i = 0;
@@ -319,8 +320,8 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                         // process the tail
                         if (vec_i) {
                             Pos_t pos_arr(pos[0], pos[1], pos[2]);
-                            Vec_t dist =
-                                    NeighborsDist<METRIC, Pos_t>(pos_arr, xyz);
+                            Vec_t dist = NeighborsDist<METRIC, Pos_t, VECSIZE>(
+                                    pos_arr, xyz);
                             Result_t test_result = dist <= threshold;
                             for (int k = 0; k < vec_i; ++k) {
                                 neighbors_count += int(test_result(k));
@@ -416,8 +417,9 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                 ++vec_i;
                                 if (VECSIZE == vec_i) {
                                     Pos_t pos_arr(pos[0], pos[1], pos[2]);
-                                    Vec_t dist = NeighborsDist<METRIC, Pos_t>(
-                                            pos_arr, xyz);
+                                    Vec_t dist = NeighborsDist<METRIC, Pos_t,
+                                                               VECSIZE>(pos_arr,
+                                                                        xyz);
                                     Result_t test_result = dist <= threshold;
                                     for (int k = 0; k < vec_i; ++k) {
                                         if (test_result(k)) {
@@ -439,8 +441,8 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                         // process the tail
                         if (vec_i) {
                             Pos_t pos_arr(pos[0], pos[1], pos[2]);
-                            Vec_t dist =
-                                    NeighborsDist<METRIC, Pos_t>(pos_arr, xyz);
+                            Vec_t dist = NeighborsDist<METRIC, Pos_t, VECSIZE>(
+                                    pos_arr, xyz);
                             Result_t test_result = dist <= threshold;
                             for (int k = 0; k < vec_i; ++k) {
                                 if (test_result(k)) {
