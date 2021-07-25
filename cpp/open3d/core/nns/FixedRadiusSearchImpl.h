@@ -213,8 +213,8 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                            OUTPUT_ALLOCATOR& output_allocator) {
     using namespace open3d::utility;
 
-    // number of elements for vectorization
-    constexpr int VECSIZE = 8;
+// number of elements for vectorization
+#define VECSIZE 8
     typedef MiniVec<T, 3> Vec3_t;
     typedef Eigen::Array<T, VECSIZE, 1> Vec_t;
     typedef Eigen::Array<int32_t, VECSIZE, 1> Veci_t;
@@ -461,6 +461,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                     }
                 });
     }
+#undef VECSIZE
 }
 
 }  // namespace
