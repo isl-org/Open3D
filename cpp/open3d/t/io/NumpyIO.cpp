@@ -350,14 +350,6 @@ static void WriteNpzOneTensor(const std::string& file_name,
     const core::Dtype dtype = tensor.GetDtype();
     const int64_t element_byte_size = dtype.ByteSize();
 
-    // The ".npy" suffix will be removed when npz is read.
-    std::string var_name = tensor_name + ".npy";
-
-    // now, on with the show
-    uint16_t nrecs = 0;
-    size_t global_header_offset = 0;
-    std::vector<char> global_header;
-
     FILE* fp = nullptr;
     if (append) {
         fp = fopen(file_name.c_str(), "r+b");
@@ -367,6 +359,10 @@ static void WriteNpzOneTensor(const std::string& file_name,
     if (!fp) {
         utility::LogError("Unable to open file {}.", file_name);
     }
+
+    uint16_t nrecs = 0;
+    size_t global_header_offset = 0;
+    std::vector<char> global_header;
 
     if (append) {
         // Zip file exists. we need to add a new npy file to it. First read the
@@ -398,6 +394,9 @@ static void WriteNpzOneTensor(const std::string& file_name,
                          npy_header.size());
     crc = crc32(crc, static_cast<const uint8_t*>(data),
                 nels * element_byte_size);
+
+    // The ".npy" suffix will be removed when npz is read.
+    std::string var_name = tensor_name + ".npy";
 
     // Build the local header.
     std::vector<char> local_header;
