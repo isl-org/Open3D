@@ -27,8 +27,8 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
