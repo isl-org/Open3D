@@ -32,6 +32,8 @@
 #include <tuple>
 #include <vector>
 
+#include "open3d/utility/Optional.h"
+
 namespace open3d {
 
 namespace geometry {
@@ -63,14 +65,15 @@ public:
     /// \param tuple_scale Similarity measure used for tuples of feature points.
     /// \param maximum_tuple_count Maximum numer of tuples.
     /// \param seed Random seed.
-    FastGlobalRegistrationOption(double division_factor = 1.4,
-                                 bool use_absolute_scale = false,
-                                 bool decrease_mu = true,
-                                 double maximum_correspondence_distance = 0.025,
-                                 int iteration_number = 64,
-                                 double tuple_scale = 0.95,
-                                 int maximum_tuple_count = 1000,
-                                 unsigned int seed = std::random_device{}())
+    FastGlobalRegistrationOption(
+            double division_factor = 1.4,
+            bool use_absolute_scale = false,
+            bool decrease_mu = true,
+            double maximum_correspondence_distance = 0.025,
+            int iteration_number = 64,
+            double tuple_scale = 0.95,
+            int maximum_tuple_count = 1000,
+            utility::optional<unsigned int> seed = utility::nullopt)
         : division_factor_(division_factor),
           use_absolute_scale_(use_absolute_scale),
           decrease_mu_(decrease_mu),
@@ -100,7 +103,7 @@ public:
     /// Maximum number of tuples..
     int maximum_tuple_count_;
     /// Random seed
-    unsigned int seed_;
+    utility::optional<unsigned int> seed_;
 };
 
 RegistrationResult FastGlobalRegistration(

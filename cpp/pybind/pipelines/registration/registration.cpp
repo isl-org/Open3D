@@ -469,19 +469,10 @@ must hold true for all edges.)");
                              int iteration_number, double tuple_scale,
                              int maximum_tuple_count,
                              utility::optional<unsigned int> seed) {
-                     if (!seed.has_value()) {
-                         return new FastGlobalRegistrationOption(
-                                 division_factor, use_absolute_scale,
-                                 decrease_mu, maximum_correspondence_distance,
-                                 iteration_number, tuple_scale,
-                                 maximum_tuple_count);
-                     } else {
-                         return new FastGlobalRegistrationOption(
-                                 division_factor, use_absolute_scale,
-                                 decrease_mu, maximum_correspondence_distance,
-                                 iteration_number, tuple_scale,
-                                 maximum_tuple_count, seed.value());
-                     }
+                     return new FastGlobalRegistrationOption(
+                             division_factor, use_absolute_scale, decrease_mu,
+                             maximum_correspondence_distance, iteration_number,
+                             tuple_scale, maximum_tuple_count, seed);
                  }),
                  "division_factor"_a = 1.4, "use_absolute_scale"_a = false,
                  "decrease_mu"_a = false,
@@ -531,7 +522,9 @@ must hold true for all edges.)");
                         "\nseed={}", c.division_factor_, c.use_absolute_scale_,
                         c.decrease_mu_, c.maximum_correspondence_distance_,
                         c.iteration_number_, c.tuple_scale_,
-                        c.maximum_tuple_count_, c.seed_);
+                        c.maximum_tuple_count_,
+                        c.seed_.has_value() ? std::to_string(c.seed_.value())
+                                            : "None");
             });
 
     // open3d.registration.RegistrationResult
