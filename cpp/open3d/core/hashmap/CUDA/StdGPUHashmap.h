@@ -36,9 +36,9 @@
 #include <stdgpu/unordered_map.cuh>  // stdgpu::unordered_map
 #include <unordered_map>
 
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/hashmap/CUDA/CUDAHashmapBufferAccessor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 
 namespace open3d {
 namespace core {

@@ -26,8 +26,8 @@
 
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/core/kernel/IndexGetSet.h"
 #include "open3d/utility/Logging.h"
 
@@ -38,11 +38,10 @@ namespace kernel {
 template <typename func_t>
 static void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
                                         const func_t& func) {
-    cpu_launcher::ParallelFor(
-            indexer.NumWorkloads(), cpu_launcher::SMALL_OP_GRAIN_SIZE,
-            [&indexer, &func](int64_t i) {
-                func(indexer.GetInputPtr(i), indexer.GetOutputPtr(i));
-            });
+    ParallelFor(Device("CPU:0"), indexer.NumWorkloads(),
+                [&indexer, &func](int64_t i) {
+                    func(indexer.GetInputPtr(i), indexer.GetOutputPtr(i));
+                });
 }
 
 template <typename scalar_t>
