@@ -62,6 +62,8 @@ public:
 
 public:
     bool SetTensorData(const Tensor& dataset_points) override;
+    bool SetTensorData(const Tensor& dataset_points,
+                       const Tensor& points_row_splits);
     bool SetTensorData(const Tensor& dataset_points, double radius) override {
         utility::LogError(
                 "[KnnIndex::SetTensorData with radius not implemented.");
@@ -69,6 +71,9 @@ public:
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override;
+    std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
+                                        const Tensor& queries_row_splits,
+                                        int knn) const;
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor& query_points,
                                                     const Tensor& radii,
