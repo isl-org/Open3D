@@ -44,24 +44,47 @@ FixedRadiusIndex::~FixedRadiusIndex(){};
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
+    int64_t num_dataset_points = dataset_points.GetShape()[0];
+    Tensor points_row_splits(std::vector<int64_t>({0, num_dataset_points}), {2},
+                             Int64);
+    return SetTensorData(dataset_points, points_row_splits, radius);
+}
+
+bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
+                                     const Tensor &points_row_splits,
+                                     double radius) {
     if (radius <= 0) {
         utility::LogError(
                 "[FixedRadiusIndex::SetTensorData] radius should be positive.");
     }
+    if (dataset_points.GetShape()[0] != points_row_splits[-1].Item<int64_t>()) {
+        utility::LogError(
+                "[FixedRadiusIndex::SetTensorData] dataset_points and "
+                "points_row_splits have incompatible shapes.");
+    }
+
     dataset_points_ = dataset_points.Contiguous();
+    points_row_splits_ = points_row_splits.Contiguous();
+
+    int64_t num_dataset_points = GetDatasetSize();
+    int64_t num_batch = points_row_splits.GetShape()[0] - 1;
     Device device = GetDevice();
     Dtype dtype = GetDtype();
 
-    int64_t num_dataset_points = GetDatasetSize();
-    int64_t hash_table_size = std::min<int64_t>(
-            std::max<int64_t>(hash_table_size_factor * num_dataset_points, 1),
-            max_hash_tabls_size);
+    std::vector<uint32_t> hash_table_splits(num_batch + 1, 0);
+    for (int i = 0; i < num_batch; ++i) {
+        int64_t num_dataset_points_i =
+                points_row_splits_[i + 1].Item<int64_t>() -
+                points_row_splits_[i].Item<int64_t>();
+        int64_t hash_table_size = std::min<int64_t>(
+                std::max<int64_t>(hash_table_size_factor * num_dataset_points_i,
+                                  1),
+                max_hash_tabls_size);
+        hash_table_splits[i + 1] =
+                hash_table_splits[i] + (uint32_t)hash_table_size;
+    }
 
-    std::vector<int64_t> points_row_splits({0, num_dataset_points});
-    points_row_splits_ = Tensor(points_row_splits, {2}, Int64);
-    std::vector<uint32_t> hash_table_splits({0, (uint32_t)hash_table_size});
-    hash_table_splits_ = Tensor(hash_table_splits, {2}, UInt32);
-
+    hash_table_splits_ = Tensor(hash_table_splits, {num_batch + 1}, UInt32);
     hash_table_index_ = Tensor::Empty({num_dataset_points}, UInt32, device);
     hash_table_cell_splits_ =
             Tensor::Empty({hash_table_splits.back() + 1}, UInt32, device);
@@ -94,14 +117,32 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         const Tensor &query_points, double radius, bool sort) const {
+    int64_t num_query_points = query_points.GetShape()[0];
+    Tensor queries_row_splits(std::vector<int64_t>({0, num_query_points}), {2},
+                              Int64);
+    return SearchRadius(query_points, queries_row_splits, radius, sort);
+}
+
+std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
+        const Tensor &query_points,
+        const Tensor &queries_row_splits,
+        double radius,
+        bool sort) const {
     Dtype dtype = GetDtype();
     Device device = GetDevice();
+    int64_t num_query_points = query_points.GetShape()[0];
 
     // Check dtype.
     query_points.AssertDtype(dtype);
 
     // Check shape.
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    queries_row_splits.AssertShape(points_row_splits_.GetShape());
+    if (num_query_points != queries_row_splits[-1].Item<int64_t>()) {
+        utility::LogError(
+                "[FixedRadiusIndex::SearchRadius] query_points and "
+                "queries_row_splits have incompatible shapes.");
+    }
 
     // Check device.
     query_points.AssertDevice(device);
@@ -112,10 +153,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     }
 
     Tensor query_points_ = query_points.Contiguous();
-    int64_t num_query_points = query_points_.GetShape()[0];
-
-    std::vector<int64_t> queries_row_splits({0, num_query_points});
-    Tensor queries_row_splits_(queries_row_splits, {2}, Int64);
+    Tensor queries_row_splits_ = queries_row_splits.Contiguous();
 
     Tensor neighbors_index, neighbors_distance;
     Tensor neighbors_row_splits =
@@ -152,14 +190,32 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
+    int64_t num_query_points = query_points.GetShape()[0];
+    Tensor queries_row_splits(std::vector<int64_t>({0, num_query_points}), {2},
+                              Int64);
+    return SearchHybrid(query_points, queries_row_splits, radius, max_knn);
+}
+
+std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
+        const Tensor &query_points,
+        const Tensor &queries_row_splits,
+        double radius,
+        int max_knn) const {
     Dtype dtype = GetDtype();
     Device device = GetDevice();
+    int64_t num_query_points = query_points.GetShape()[0];
 
     // Check dtype.
     query_points.AssertDtype(dtype);
 
     // Check shape.
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    queries_row_splits.AssertShape(points_row_splits_.GetShape());
+    if (num_query_points != queries_row_splits[-1].Item<int64_t>()) {
+        utility::LogError(
+                "[FixedRadiusIndex::SearchRadius] query_points and "
+                "queries_row_splits have incompatible shapes.");
+    }
 
     // Check device.
     query_points.AssertDevice(device);
@@ -170,10 +226,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     }
 
     Tensor query_points_ = query_points.Contiguous();
-    int64_t num_query_points = query_points_.GetShape()[0];
-
-    std::vector<int64_t> queries_row_splits({0, num_query_points});
-    Tensor queries_row_splits_(queries_row_splits, {2}, Int64);
+    Tensor queries_row_splits_ = queries_row_splits.Contiguous();
 
     Tensor neighbors_index, neighbors_distance, neighbors_count;
 
