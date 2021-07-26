@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/io/PointCloudIO.h"
@@ -54,6 +55,7 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
         t::geometry::PointCloud pcd =
                 t::geometry::PointCloud::FromLegacyPointCloud(
                         legacy_pcd, core::Float32, device);
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -69,6 +71,7 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 
     for (auto _ : state) {
         open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -96,6 +99,7 @@ void VoxelDownSample(benchmark::State& state,
 
     for (auto _ : state) {
         pcd.VoxelDownSample(voxel_size, backend);
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -117,6 +121,7 @@ void Transform(benchmark::State& state, const core::Device& device) {
 
     for (auto _ : state) {
         pcd_transformed = pcd.Transform(transformation);
+        core::cuda::Synchronize(device);
     }
 }
 

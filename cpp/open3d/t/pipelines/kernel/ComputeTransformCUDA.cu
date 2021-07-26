@@ -27,8 +27,8 @@
 #include <cuda.h>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
@@ -125,7 +125,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
                 });
     });
 
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }

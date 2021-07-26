@@ -59,24 +59,19 @@ void ClipTransformCPU
     int64_t cols = dst.GetShape(1);
     int64_t n = rows * cols;
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
-#endif
-
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-            int64_t y = workload_idx / cols;
-            int64_t x = workload_idx % cols;
+        core::ParallelFor(src.GetDevice(), n,
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                              int64_t y = workload_idx / cols;
+                              int64_t x = workload_idx % cols;
 
-            float in =
-                    static_cast<float>(*src_indexer.GetDataPtr<scalar_t>(x, y));
-            float out = in / scale;
-            out = out <= min_value ? clip_fill : out;
-            out = out >= max_value ? clip_fill : out;
-            *dst_indexer.GetDataPtr<float>(x, y) = out;
-        });
+                              float in = static_cast<float>(
+                                      *src_indexer.GetDataPtr<scalar_t>(x, y));
+                              float out = in / scale;
+                              out = out <= min_value ? clip_fill : out;
+                              out = out >= max_value ? clip_fill : out;
+                              *dst_indexer.GetDataPtr<float>(x, y) = out;
+                          });
     });
 }
 
@@ -107,53 +102,52 @@ void PyrDownDepthCPU
     const int gkernel_size_2 = gkernel_size / 2;
     const float gweights[3] = {0.375f, 0.25f, 0.0625f};
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
+#ifndef __CUDACC__
     using std::abs;
     using std::max;
     using std::min;
 #endif
 
-    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-        int y = workload_idx / cols_down;
-        int x = workload_idx % cols_down;
+    core::ParallelFor(
+            src.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int y = workload_idx / cols_down;
+                int x = workload_idx % cols_down;
 
-        int y_src = 2 * y;
-        int x_src = 2 * x;
+                int y_src = 2 * y;
+                int x_src = 2 * x;
 
-        float v_center = *src_indexer.GetDataPtr<float>(x_src, y_src);
-        if (v_center == invalid_fill) {
-            *dst_indexer.GetDataPtr<float>(x, y) = invalid_fill;
-            return;
-        }
-
-        int x_min = max(0, x_src - gkernel_size_2);
-        int y_min = max(0, y_src - gkernel_size_2);
-
-        int x_max = min(cols - 1, x_src + gkernel_size_2);
-        int y_max = min(rows - 1, y_src + gkernel_size_2);
-
-        float v_sum = 0;
-        float w_sum = 0;
-        for (int yk = y_min; yk <= y_max; ++yk) {
-            for (int xk = x_min; xk <= x_max; ++xk) {
-                float v = *src_indexer.GetDataPtr<float>(xk, yk);
-                int dy = abs(yk - y_src);
-                int dx = abs(xk - x_src);
-
-                if (v != invalid_fill && abs(v - v_center) < depth_diff) {
-                    float w = gweights[dx] * gweights[dy];
-                    v_sum += w * v;
-                    w_sum += w;
+                float v_center = *src_indexer.GetDataPtr<float>(x_src, y_src);
+                if (v_center == invalid_fill) {
+                    *dst_indexer.GetDataPtr<float>(x, y) = invalid_fill;
+                    return;
                 }
-            }
-        }
 
-        *dst_indexer.GetDataPtr<float>(x, y) =
-                w_sum == 0 ? invalid_fill : v_sum / w_sum;
-    });
+                int x_min = max(0, x_src - gkernel_size_2);
+                int y_min = max(0, y_src - gkernel_size_2);
+
+                int x_max = min(cols - 1, x_src + gkernel_size_2);
+                int y_max = min(rows - 1, y_src + gkernel_size_2);
+
+                float v_sum = 0;
+                float w_sum = 0;
+                for (int yk = y_min; yk <= y_max; ++yk) {
+                    for (int xk = x_min; xk <= x_max; ++xk) {
+                        float v = *src_indexer.GetDataPtr<float>(xk, yk);
+                        int dy = abs(yk - y_src);
+                        int dx = abs(xk - x_src);
+
+                        if (v != invalid_fill &&
+                            abs(v - v_center) < depth_diff) {
+                            float w = gweights[dx] * gweights[dy];
+                            v_sum += w * v;
+                            w_sum += w;
+                        }
+                    }
+                }
+
+                *dst_indexer.GetDataPtr<float>(x, y) =
+                        w_sum == 0 ? invalid_fill : v_sum / w_sum;
+            });
 }
 
 #ifdef __CUDACC__
@@ -174,36 +168,34 @@ void CreateVertexMapCPU
     int64_t cols = src.GetShape(1);
     int64_t n = rows * cols;
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
+#ifndef __CUDACC__
     using std::isinf;
     using std::isnan;
 #endif
 
-    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-        auto is_invalid = [invalid_fill] OPEN3D_DEVICE(float v) {
-            if (isinf(invalid_fill)) return isinf(v);
-            if (isnan(invalid_fill)) return isnan(v);
-            return v == invalid_fill;
-        };
+    core::ParallelFor(
+            src.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                auto is_invalid = [invalid_fill] OPEN3D_DEVICE(float v) {
+                    if (isinf(invalid_fill)) return isinf(v);
+                    if (isnan(invalid_fill)) return isnan(v);
+                    return v == invalid_fill;
+                };
 
-        int64_t y = workload_idx / cols;
-        int64_t x = workload_idx % cols;
+                int64_t y = workload_idx / cols;
+                int64_t x = workload_idx % cols;
 
-        float d = *src_indexer.GetDataPtr<float>(x, y);
+                float d = *src_indexer.GetDataPtr<float>(x, y);
 
-        float* vertex = dst_indexer.GetDataPtr<float>(x, y);
-        if (!is_invalid(d)) {
-            ti.Unproject(static_cast<float>(x), static_cast<float>(y), d,
-                         vertex + 0, vertex + 1, vertex + 2);
-        } else {
-            vertex[0] = invalid_fill;
-            vertex[1] = invalid_fill;
-            vertex[2] = invalid_fill;
-        }
-    });
+                float* vertex = dst_indexer.GetDataPtr<float>(x, y);
+                if (!is_invalid(d)) {
+                    ti.Unproject(static_cast<float>(x), static_cast<float>(y),
+                                 d, vertex + 0, vertex + 1, vertex + 2);
+                } else {
+                    vertex[0] = invalid_fill;
+                    vertex[1] = invalid_fill;
+                    vertex[2] = invalid_fill;
+                }
+            });
 }
 #ifdef __CUDACC__
 void CreateNormalMapCUDA
@@ -218,59 +210,54 @@ void CreateNormalMapCPU
     int64_t cols = src_indexer.GetShape(1);
     int64_t n = rows * cols;
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
-#endif
+    core::ParallelFor(
+            src.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int64_t y = workload_idx / cols;
+                int64_t x = workload_idx % cols;
 
-    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-        int64_t y = workload_idx / cols;
-        int64_t x = workload_idx % cols;
+                float* normal = dst_indexer.GetDataPtr<float>(x, y);
 
-        float* normal = dst_indexer.GetDataPtr<float>(x, y);
+                if (y < rows - 1 && x < cols - 1) {
+                    float* v00 = src_indexer.GetDataPtr<float>(x, y);
+                    float* v10 = src_indexer.GetDataPtr<float>(x + 1, y);
+                    float* v01 = src_indexer.GetDataPtr<float>(x, y + 1);
 
-        if (y < rows - 1 && x < cols - 1) {
-            float* v00 = src_indexer.GetDataPtr<float>(x, y);
-            float* v10 = src_indexer.GetDataPtr<float>(x + 1, y);
-            float* v01 = src_indexer.GetDataPtr<float>(x, y + 1);
+                    if ((v00[0] == invalid_fill && v00[1] == invalid_fill &&
+                         v00[2] == invalid_fill) ||
+                        (v01[0] == invalid_fill && v01[1] == invalid_fill &&
+                         v01[2] == invalid_fill) ||
+                        (v10[0] == invalid_fill && v10[1] == invalid_fill &&
+                         v10[2] == invalid_fill)) {
+                        normal[0] = invalid_fill;
+                        normal[1] = invalid_fill;
+                        normal[2] = invalid_fill;
+                        return;
+                    }
 
-            if ((v00[0] == invalid_fill && v00[1] == invalid_fill &&
-                 v00[2] == invalid_fill) ||
-                (v01[0] == invalid_fill && v01[1] == invalid_fill &&
-                 v01[2] == invalid_fill) ||
-                (v10[0] == invalid_fill && v10[1] == invalid_fill &&
-                 v10[2] == invalid_fill)) {
-                normal[0] = invalid_fill;
-                normal[1] = invalid_fill;
-                normal[2] = invalid_fill;
-                return;
-            }
+                    float dx0 = v01[0] - v00[0];
+                    float dy0 = v01[1] - v00[1];
+                    float dz0 = v01[2] - v00[2];
 
-            float dx0 = v01[0] - v00[0];
-            float dy0 = v01[1] - v00[1];
-            float dz0 = v01[2] - v00[2];
+                    float dx1 = v10[0] - v00[0];
+                    float dy1 = v10[1] - v00[1];
+                    float dz1 = v10[2] - v00[2];
 
-            float dx1 = v10[0] - v00[0];
-            float dy1 = v10[1] - v00[1];
-            float dz1 = v10[2] - v00[2];
+                    normal[0] = dy0 * dz1 - dz0 * dy1;
+                    normal[1] = dz0 * dx1 - dx0 * dz1;
+                    normal[2] = dx0 * dy1 - dy0 * dx1;
 
-            normal[0] = dy0 * dz1 - dz0 * dy1;
-            normal[1] = dz0 * dx1 - dx0 * dz1;
-            normal[2] = dx0 * dy1 - dy0 * dx1;
-
-            float normal_norm =
-                    sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
-                         normal[2] * normal[2]);
-            normal[0] /= normal_norm;
-            normal[1] /= normal_norm;
-            normal[2] /= normal_norm;
-        } else {
-            normal[0] = invalid_fill;
-            normal[1] = invalid_fill;
-            normal[2] = invalid_fill;
-        }
-    });
+                    float normal_norm =
+                            sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
+                                 normal[2] * normal[2]);
+                    normal[0] /= normal_norm;
+                    normal[1] /= normal_norm;
+                    normal[2] /= normal_norm;
+                } else {
+                    normal[0] = invalid_fill;
+                    normal[1] = invalid_fill;
+                    normal[2] = invalid_fill;
+                }
+            });
 }
 
 #ifdef __CUDACC__
@@ -290,30 +277,26 @@ void ColorizeDepthCPU
     int64_t cols = dst.GetShape(1);
     int64_t n = rows * cols;
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
-#endif
-
     float inv_interval = 255.0f / (max_value - min_value);
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-            int64_t y = workload_idx / cols;
-            int64_t x = workload_idx % cols;
+        core::ParallelFor(
+                src.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int64_t y = workload_idx / cols;
+                    int64_t x = workload_idx % cols;
 
-            float in =
-                    static_cast<float>(*src_indexer.GetDataPtr<scalar_t>(x, y));
-            float out = in / scale;
-            out = out <= min_value ? min_value : out;
-            out = out >= max_value ? max_value : out;
+                    float in = static_cast<float>(
+                            *src_indexer.GetDataPtr<scalar_t>(x, y));
+                    float out = in / scale;
+                    out = out <= min_value ? min_value : out;
+                    out = out >= max_value ? max_value : out;
 
-            int idx = static_cast<int>(inv_interval * (out - min_value));
-            uint8_t* out_ptr = dst_indexer.GetDataPtr<uint8_t>(x, y);
-            out_ptr[0] = turbo_srgb_bytes[idx][0];
-            out_ptr[1] = turbo_srgb_bytes[idx][1];
-            out_ptr[2] = turbo_srgb_bytes[idx][2];
-        });
+                    int idx =
+                            static_cast<int>(inv_interval * (out - min_value));
+                    uint8_t* out_ptr = dst_indexer.GetDataPtr<uint8_t>(x, y);
+                    out_ptr[0] = turbo_srgb_bytes[idx][0];
+                    out_ptr[1] = turbo_srgb_bytes[idx][1];
+                    out_ptr[2] = turbo_srgb_bytes[idx][2];
+                });
     });
 }
 

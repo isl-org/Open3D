@@ -36,9 +36,9 @@
 #include <stdgpu/unordered_map.cuh>  // stdgpu::unordered_map
 #include <unordered_map>
 
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/hashmap/CUDA/CUDAHashmapBufferAccessor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 
 namespace open3d {
 namespace core {
@@ -177,7 +177,7 @@ void StdGPUHashmap<Key, Hash>::Find(const void* input_keys,
     STDGPUFindKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
             impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
             output_addrs, output_masks, count);
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    cuda::Synchronize();
 }
 
 // Need an explicit kernel for non-const access to map
@@ -219,7 +219,7 @@ void StdGPUHashmap<Key, Hash>::Erase(const void* input_keys,
     STDGPUEraseKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
             impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
             output_addrs, output_masks, count);
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    cuda::Synchronize();
 }
 
 template <typename Key>
@@ -357,7 +357,7 @@ void StdGPUHashmap<Key, Hash>::InsertImpl(const void* input_keys,
             impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
             input_values, this->dsize_value_, output_addrs, output_masks,
             count);
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    cuda::Synchronize();
 }
 
 template <typename Key, typename Hash>
@@ -380,7 +380,7 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
 
     impl_ = stdgpu::unordered_map<Key, addr_t, Hash>::createDeviceObject(
             this->capacity_);
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    cuda::Synchronize();
 }
 
 template <typename Key, typename Hash>

@@ -29,6 +29,7 @@
 #include <benchmark/benchmark.h>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
@@ -105,6 +106,7 @@ static void ComputeOdometryResultPointToPlane(benchmark::State& state,
                             depth_diff, depth_diff * 0.5);
             trans = result.transformation_.Matmul(trans).Contiguous();
         }
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -160,6 +162,7 @@ static void RGBDOdometryMultiScale(
                 source, target, intrinsic_t,
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
                 depth_scale, depth_max, criteria, method, loss);
+        core::cuda::Synchronize(device);
     }
 }
 
