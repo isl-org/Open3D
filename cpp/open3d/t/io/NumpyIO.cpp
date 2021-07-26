@@ -287,7 +287,7 @@ ParseNpyHeaderFromBuffer(const char* buffer) {
 }
 
 static std::tuple<uint16_t, size_t, size_t> ParseZipFooter(FILE* fp) {
-    const size_t footer_len = 22;
+    size_t footer_len = 22;
     std::vector<char> footer(footer_len);
     fseek(fp, -footer_len, SEEK_END);
     if (fread(footer.data(), sizeof(char), footer_len, fp) != footer_len) {
