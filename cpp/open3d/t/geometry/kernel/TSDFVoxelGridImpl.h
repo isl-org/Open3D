@@ -168,7 +168,7 @@ void IntegrateCPU
                         });
             });
 #if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
 }
 
@@ -494,7 +494,7 @@ void ExtractSurfacePointsCPU
     valid_size = total_count;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
 }
 
@@ -1117,7 +1117,7 @@ void EstimateRangeCPU
 #endif
             });
 #if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
 }
 
@@ -1538,7 +1538,7 @@ void RayCastCPU
     });
 
 #if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
 }
 

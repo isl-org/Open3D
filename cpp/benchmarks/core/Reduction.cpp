@@ -27,6 +27,7 @@
 #include <benchmark/benchmark.h>
 
 #include "open3d/core/AdvancedIndexing.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
@@ -44,6 +45,7 @@ void Reduction(benchmark::State& state, const Device& device) {
     (void)warm_up;
     for (auto _ : state) {
         Tensor dst = src.Sum({1});
+        cuda::Synchronize(device);
     }
 }
 

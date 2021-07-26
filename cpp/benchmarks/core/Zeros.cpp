@@ -26,6 +26,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
@@ -39,6 +40,7 @@ void Zeros(benchmark::State& state, const Device& device) {
     (void)warm_up;
     for (auto _ : state) {
         Tensor dst = Tensor::Zeros(shape, core::Float32, device);
+        cuda::Synchronize(device);
     }
 }
 
