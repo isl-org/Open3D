@@ -66,6 +66,7 @@ option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
+option(WITH_RAYCASTING            "Enable Raycasting support with Embree"    ON )
 option(WITH_FAISS                 "Enable Faiss"                             ON )
 
 # Sensor options

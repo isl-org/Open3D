@@ -163,7 +163,9 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    # Always build 3rd party code in Release mode. Ignored by multi-config
+    # generators (XCode, MSVC). MSVC needs matching config anyway.
+    -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
     -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
@@ -1428,12 +1430,14 @@ else()
 endif()
 
 # embree
-include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-open3d_import_3rdparty_library(3rdparty_embree
-    HIDDEN
-    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-    LIB_DIR      ${EMBREE_LIB_DIR}
-    LIBRARIES    ${EMBREE_LIBRARIES}
-    DEPENDS      ext_embree
-)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
+if (WITH_RAYCASTING)
+    include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+    open3d_import_3rdparty_library(3rdparty_embree
+        HIDDEN
+        INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+        LIB_DIR      ${EMBREE_LIB_DIR}
+        LIBRARIES    ${EMBREE_LIBRARIES}
+        DEPENDS      ext_embree
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
+endif()

@@ -5,12 +5,15 @@ add_library(tgeometry OBJECT $<TARGET_OBJECTS:tgeometry_kernel>)
 target_sources(tgeometry PRIVATE
     Image.cpp
     PointCloud.cpp
-    RaycastingScene.cpp
     RGBDImage.cpp
     TensorMap.cpp
     TriangleMesh.cpp
     TSDFVoxelGrid.cpp
 )
+
+if (TARGET Open3D::3rdparty_embree)
+    target_sources(tgeometry PRIVATE RaycastingScene.cpp)
+endif()
 
 open3d_show_and_abort_on_warning(tgeometry)
 open3d_set_global_properties(tgeometry)

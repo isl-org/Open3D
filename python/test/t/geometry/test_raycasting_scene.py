@@ -28,6 +28,10 @@ import open3d as o3d
 import numpy as np
 import pytest
 
+# skipif for all tests
+pytestmark = pytest.mark.skipif('RaycastingScene' not in dir(o3d.t.geometry),
+                                reason="Open3D not built with RaycastingScene.")
+
 
 # test intersection with a single triangle
 def test_cast_rays():
