@@ -52,8 +52,8 @@ void pybind_cuda_utils(py::module& m) {
                     cuda::Synchronize();
                 }
             },
-            "Synchronize CUDA device(s). If no device is specified, all CUDA "
-            "device(s) will be syncrhonized. No effect if the specified device "
+            "Synchronizes CUDA devices. If no device is specified, all CUDA "
+            "devices will be synchronized. No effect if the specified device "
             "is not a CUDA device. No effect if Open3D is not compiled with "
             "CUDA support."
             "device"_a = py::none());

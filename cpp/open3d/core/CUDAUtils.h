@@ -244,7 +244,7 @@ bool IsAvailable();
 /// Releases CUDA memory manager cache. This is typically used for debugging.
 void ReleaseCache();
 
-/// Calls cudaDeviceSynchronize() for all CUDA device(s). If Open3D is not
+/// Calls cudaDeviceSynchronize() for all CUDA devices. If Open3D is not
 /// compiled with CUDA this function has no effect.
 void Synchronize();
 
