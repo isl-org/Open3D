@@ -125,7 +125,9 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
 
-    utility::UniformRandInt dist_gen(0, ncorr - 1, option.seed_);
+    unsigned int seed_val = option.seed_.has_value() ? option.seed_.value()
+                                                     : std::random_device{}();
+    utility::UniformRandInt dist_gen(0, ncorr - 1, seed_val);
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
         rand0 = dist_gen();
