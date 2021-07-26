@@ -72,7 +72,10 @@ void ReleaseCache() {
 
 void Synchronize() {
 #ifdef BUILD_CUDA_MODULE
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    for (int i = 0; i < DeviceCount(); ++i) {
+        CUDAScopedDevice scoped_device(Device("CUDA", i));
+        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    }
 #endif
 }
 

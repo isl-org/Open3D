@@ -41,7 +41,7 @@ void pybind_cuda_utils(py::module& m) {
                "Returns true if Open3D is compiled with CUDA support and at "
                "least one compatible CUDA device is detected.");
     m_cuda.def("release_cache", cuda::ReleaseCache,
-               "Release CUDA memory manger cache. This is typically used for "
+               "Releases CUDA memory manager cache. This is typically used for "
                "debugging.");
     m_cuda.def(
             "synchronize",
@@ -52,9 +52,10 @@ void pybind_cuda_utils(py::module& m) {
                     cuda::Synchronize();
                 }
             },
-            "Wait for the CUDA device to finish. If the device is not "
-            "specified, the current CUDA device will be assumed. No effect if "
-            "the deive is not a CUDA device."
+            "Synchronize CUDA device(s). If no device is specified, all CUDA "
+            "device(s) will be syncrhonized. No effect if the specified device "
+            "is not a CUDA device. No effect if Open3D is not compiled with "
+            "CUDA support."
             "device"_a = py::none());
 }
 

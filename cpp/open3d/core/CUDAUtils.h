@@ -241,14 +241,14 @@ int DeviceCount();
 /// compatible CUDA device is detected.
 bool IsAvailable();
 
-/// Release CUDA memory manger cache. This is typically used for debugging.
+/// Releases CUDA memory manager cache. This is typically used for debugging.
 void ReleaseCache();
 
-/// Call cudaDeviceSynchronize() for the current CUDA device. If Open3D is not
+/// Calls cudaDeviceSynchronize() for all CUDA device(s). If Open3D is not
 /// compiled with CUDA this function has no effect.
 void Synchronize();
 
-/// Call cudaDeviceSynchronize() for the specified device. If Open3D is not
+/// Calls cudaDeviceSynchronize() for the specified device. If Open3D is not
 /// compiled with CUDA or if \p device is not a CUDA device, this function has
 /// no effect.
 /// \param device The device to be synchronized.
