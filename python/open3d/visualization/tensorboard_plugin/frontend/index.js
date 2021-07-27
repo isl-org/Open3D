@@ -174,12 +174,14 @@ class TensorboardOpen3DPluginClient {
      * Event handler for window close. Disconnect server data channel
      * connection and close server window.
      */
-    CloseWindow = () => {
-        fetch(this.url_route_prefix + "/close_window?window_id=" + this.windowUId, null);
-        if (this.webRtcClient) {
-            this.webRtcClient.disconnect();
-            this.webRtcClient = undefined;
-        }
+    closeWindow = () => {
+        fetch(this.url_route_prefix + "/close_window?window_id=" + this.windowUId, null)
+            .then(() => {;
+                if (this.webRtcClient) {
+                    this.webRtcClient.disconnect();
+                    this.webRtcClient = undefined;
+                }
+            });
     };
 
     /**
@@ -189,8 +191,9 @@ class TensorboardOpen3DPluginClient {
     reloadRunTags = () => {
         this.messageId += 1;
         const getRunTagsMessage = {
-            "messageId": this.messageId,
-            "class_name": "tensorboard/" + this.windowUId + "/get_run_tags"
+            messageId: this.messageId,
+            window_uid: this.windowUId,
+            class_name: "tensorboard/" + this.windowUId + "/get_run_tags"
         }
         console.log(getRunTagsMessage);
         if (this.webRtcClient) {
@@ -207,12 +210,13 @@ class TensorboardOpen3DPluginClient {
     requestGeometryUpdate = () => {
         this.messageId += 1;
         const updateGeometryMessage = {
-            "messageId": this.messageId,
-            "class_name": "tensorboard/" + this.windowUId + "/update_geometry",
-            "run": this.current.run,
-            "tags": this.current.tags,
-            "batch_idx": this.current.batch_idx,
-            "step": this.current.step
+            messageId: this.messageId,
+            window_uid: this.windowUId,
+            class_name: "tensorboard/" + this.windowUId + "/update_geometry",
+            run: this.current.run,
+            tags: this.current.tags,
+            batch_idx: this.current.batch_idx,
+            step: this.current.step
         };
         console.info(updateGeometryMessage);
         this.webRtcClient.dataChannel.send(JSON.stringify(updateGeometryMessage));
@@ -323,10 +327,7 @@ class TensorboardOpen3DPluginClient {
             console.info("[addConnection] windowUId: " + this.windowUId);
             console.info("[addConnection] options: " + this.webRtcOptions);
             window.onresize = this.ResizeEvent;
-            window.onbeforeunload = this.CloseWindow;
-            videoElt.addEventListener('RemoteDataChannelOpen', (evt) => {
-                evt.detail.channel.addEventListener('message', this.processDCMessage);
-            });
+            window.onbeforeunload = this.closeWindow;
             videoElt.addEventListener('LocalDataChannelOpen', (evt) => {
                 evt.detail.channel.addEventListener('message', this.processDCMessage);
             });

@@ -360,10 +360,14 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
     try {
         const Json::Value value = utility::StringToJson(message);
         const std::string class_name = value.get("class_name", "").asString();
+        const std::string window_uid = value.get("window_uid", "").asString();
 
         if (impl_->data_channel_message_callbacks_.count(class_name) != 0) {
-            return impl_->data_channel_message_callbacks_.at(class_name)(
+            reply = impl_->data_channel_message_callbacks_.at(class_name)(
                     message);
+            if (!window_uid.empty())
+                PostRedrawEvent(GetOSWindowByUID(window_uid));
+            return reply;
         } else {
             reply = fmt::format(
                     "OnDataChannelMessage: {}. Message cannot be parsed, as "
