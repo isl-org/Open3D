@@ -30,28 +30,38 @@
 
 #ifdef MSC_VER
 #include <intrin.h>
-#pragma intrinsic(_InterlockedExchangeAdd)
-#pragma intrinsic(_InterlockedExchangeAdd64)
+#pragma intrinsic(_InterlockedExchangeAdd_nf)
+#pragma intrinsic(_InterlockedExchangeAdd64_nf)
 #endif
 
 namespace open3d {
 namespace core {
 
+/// Adds \p val to the value stored at \p address and returns the previous
+/// stored value as an atomic operation. This function does not impose any
+/// ordering on concurrent memory accesses.
+/// \warning This function will treat all values as signed integers on Windows!
 inline uint32_t AtomicFetchAddRelaxed(uint32_t* address, uint32_t val) {
 #ifdef __GNUC__
     return __atomic_fetch_add(address, val, __ATOMIC_RELAXED);
 #elif _MSC_VER
-    return _InterlockedExchangeAdd(address, val);
+    return static_cast<uint32_t>(_InterlockedExchangeAdd_nf(
+            reinterpret_cast<int32_t*>(address), static_cast<int32_t>(val)));
 #else
     static_assert(false, "AtomicFetchAddRelaxed not implemented for platform");
 #endif
 }
 
+/// Adds \p val to the value stored at \p address and returns the previous
+/// stored value as an atomic operation. This function does not impose any
+/// ordering on concurrent memory accesses.
+/// \warning This function will treat all values as signed integers on Windows!
 inline uint64_t AtomicFetchAddRelaxed(uint64_t* address, uint64_t val) {
 #ifdef __GNUC__
     return __atomic_fetch_add(address, val, __ATOMIC_RELAXED);
 #elif _MSC_VER
-    return (uint64_t)_InterlockedExchangeAdd64((int64_t*)address, (int64_t)val);
+    return static_cast<uint64_t>(_InterlockedExchangeAdd64_nf(
+            reinterpret_cast<int64_t*>(address), static_cast<int64_t>(val)));
 #else
     static_assert(false, "AtomicFetchAddRelaxed not implemented for platform");
 #endif
