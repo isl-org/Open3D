@@ -342,9 +342,7 @@ void EstimateCovariancesUsingHybridSearchCPU
                 });
     });
 
-#ifdef __CUDACC__
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-#endif
+    core::cuda::Synchronize(points.GetDevice());
 }
 
 #if defined(__CUDACC__)
@@ -396,9 +394,7 @@ void EstimateCovariancesUsingKNNSearchCPU
                 });
     });
 
-#ifdef __CUDACC__
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
-#endif
+    core::cuda::Synchronize(points.GetDevice());
 }
 
 template <typename scalar_t>
@@ -665,6 +661,60 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
             return;
         }
     }
+}
+
+#if defined(__CUDACC__)
+void EstimateNormalsFromCovariancesCUDA
+#else
+void EstimateNormalsFromCovariancesCPU
+#endif
+        (const core::Tensor& covariances,
+         core::Tensor& normals,
+         const bool has_normals) {
+    core::Dtype dtype = covariances.GetDtype();
+    int64_t n = covariances.GetLength();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        const scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
+        scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(
+                covariances.GetDevice(), n,
+                [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int64_t covariances_offset = 9 * workload_idx;
+                    int64_t normals_offset = 3 * workload_idx;
+                    scalar_t normals_output[3] = {0};
+                    EstimatePointWiseNormalsWithFastEigen3x3<scalar_t>(
+                            covariances_ptr + covariances_offset,
+                            normals_output);
+
+                    if ((normals_output[0] * normals_output[0] +
+                         normals_output[1] * normals_output[1] +
+                         normals_output[2] * normals_output[2]) == 0.0 &&
+                        !has_normals) {
+                        normals_output[0] = 0.0;
+                        normals_output[1] = 0.0;
+                        normals_output[2] = 1.0;
+                    }
+                    if (has_normals) {
+                        if ((normals_ptr[normals_offset] * normals_output[0] +
+                             normals_ptr[normals_offset + 1] *
+                                     normals_output[1] +
+                             normals_ptr[normals_offset + 2] *
+                                     normals_output[2]) < 0.0) {
+                            normals_output[0] *= -1;
+                            normals_output[1] *= -1;
+                            normals_output[2] *= -1;
+                        }
+                    }
+
+                    normals_ptr[normals_offset] = normals_output[0];
+                    normals_ptr[normals_offset + 1] = normals_output[1];
+                    normals_ptr[normals_offset + 2] = normals_output[2];
+                });
+    });
+
+    core::cuda::Synchronize(covariances.GetDevice());
 }
 
 }  // namespace pointcloud

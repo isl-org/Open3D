@@ -117,61 +117,6 @@ void ProjectCUDA(
             });
 }
 
-template <typename scalar_t>
-__global__ void EstimateNormalsFromCovariancesCUDAKernel(
-        const scalar_t* covariances_ptr,
-        scalar_t* normals_ptr,
-        const bool has_normals,
-        const int64_t n) {
-    const int64_t workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (workload_idx >= n) return;
-
-    int64_t covariances_offset = 9 * workload_idx;
-    int64_t normals_offset = 3 * workload_idx;
-    scalar_t normals_output[3] = {0};
-    EstimatePointWiseNormalsWithFastEigen3x3<scalar_t>(
-            covariances_ptr + covariances_offset, normals_output);
-
-    if ((normals_output[0] * normals_output[0] +
-         normals_output[1] * normals_output[1] +
-         normals_output[2] * normals_output[2]) == 0.0 &&
-        !has_normals) {
-        normals_output[0] = 0.0;
-        normals_output[1] = 0.0;
-        normals_output[2] = 1.0;
-    }
-    if (has_normals) {
-        if ((normals_ptr[normals_offset] * normals_output[0] +
-             normals_ptr[normals_offset + 1] * normals_output[1] +
-             normals_ptr[normals_offset + 2] * normals_output[2]) < 0.0) {
-            normals_output[0] *= -1;
-            normals_output[1] *= -1;
-            normals_output[2] *= -1;
-        }
-    }
-
-    normals_ptr[normals_offset] = normals_output[0];
-    normals_ptr[normals_offset + 1] = normals_output[1];
-    normals_ptr[normals_offset + 2] = normals_output[2];
-}
-
-void EstimateNormalsFromCovariancesCUDA(const core::Tensor& covariances,
-                                        core::Tensor& normals,
-                                        const bool has_normals) {
-    core::Dtype dtype = covariances.GetDtype();
-    int64_t n = covariances.GetLength();
-
-    const dim3 blocks((n + 512 - 1) / 512);
-    const dim3 threads(512);
-
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        EstimateNormalsFromCovariancesCUDAKernel<<<blocks, threads, 0,
-                                                   core::cuda::GetStream()>>>(
-                covariances.GetDataPtr<scalar_t>(),
-                normals.GetDataPtr<scalar_t>(), has_normals, n);
-    });
-}
-
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry
