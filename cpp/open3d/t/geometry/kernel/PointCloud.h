@@ -103,13 +103,6 @@ void ProjectCUDA(
         float depth_max);
 #endif
 
-void EstimateColorGradientsUsingHybridSearchCPU(const core::Tensor& points,
-                                                const core::Tensor& normals,
-                                                const core::Tensor& colors,
-                                                core::Tensor& color_gradient,
-                                                const double& radius,
-                                                const int64_t& max_nn);
-
 void EstimateCovariancesUsingHybridSearchCPU(const core::Tensor& points,
                                              core::Tensor& covariances,
                                              const double& radius,
@@ -124,13 +117,6 @@ void EstimateNormalsFromCovariancesCPU(const core::Tensor& covariances,
                                        const bool has_normals);
 
 #ifdef BUILD_CUDA_MODULE
-void EstimateColorGradientsUsingHybridSearchCUDA(const core::Tensor& points,
-                                                 const core::Tensor& normals,
-                                                 const core::Tensor& colors,
-                                                 core::Tensor& color_gradient,
-                                                 const double& radius,
-                                                 const int64_t& max_nn);
-
 void EstimateCovariancesUsingHybridSearchCUDA(const core::Tensor& points,
                                               core::Tensor& covariances,
                                               const double& radius,

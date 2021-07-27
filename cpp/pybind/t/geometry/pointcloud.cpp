@@ -135,14 +135,6 @@ void pybind_pointcloud(py::module& m) {
                    "with respect to the input point cloud if normals exist. It "
                    "uses KNN search if only max_nn parameter is provided, and "
                    "HybridSearch if radius parameter is also provided.");
-    pointcloud.def(
-            "estimate_color_gradients", &PointCloud::EstimateColorGradients,
-            py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
-            py::arg("radius") = py::none(),
-            "Function to estimate point color gradients. The pointcloud must "
-            "have colors and normals attributes. It uses KNN search if "
-            "only max_nn parameter is provided, and HybridSearch if "
-            "radius parameter is also provided.");
 
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,

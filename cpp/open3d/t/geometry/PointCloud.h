@@ -334,17 +334,6 @@ public:
             const int max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
 
-    /// \brief Function to compute point color gradients. If radius is provided,
-    /// then HybridSearch is used, otherwise KNN-Search is used.
-    /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
-    /// Colored Point Cloud Registration Revisited, ICCV, 2017.
-    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    /// \param radius [optional] NeighbourSearch radius parameter to use
-    /// HybridSearch. [Recommended ~1.4x voxel size].
-    void EstimateColorGradients(
-            const int max_nn = 30,
-            const utility::optional<double> radius = utility::nullopt);
-
 public:
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.

@@ -136,6 +136,9 @@ void EstimateNormals(benchmark::State& state,
 
     pcd = pcd.To(device).VoxelDownSample(voxel_size);
     pcd.SetPoints(pcd.GetPoints().To(dtype));
+    if (pcd.HasPointNormals()) {
+        pcd.RemovePointAttr("normals");
+    }
 
     // Warp up
     pcd.EstimateNormals(max_nn, radius);
@@ -144,30 +147,6 @@ void EstimateNormals(benchmark::State& state,
     for (auto _ : state) {
         pcd.EstimateNormals(max_nn, radius);
         pcd.RemovePointAttr("normals");
-    }
-}
-
-void EstimateColorGradients(benchmark::State& state,
-                            const core::Device& device,
-                            const core::Dtype& dtype,
-                            const double voxel_size,
-                            const int max_nn,
-                            const utility::optional<double> radius) {
-    t::geometry::PointCloud pcd;
-
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
-
-    pcd = pcd.To(device).VoxelDownSample(voxel_size);
-    pcd.SetPoints(pcd.GetPoints().To(dtype));
-    pcd.SetPointColors(pcd.GetPointColors().To(dtype).Div(255.0));
-    pcd.EstimateNormals(max_nn, radius);
-
-    // Warp up
-    pcd.EstimateColorGradients(max_nn, radius);
-    pcd.RemovePointAttr("color_gradients");
-    for (auto _ : state) {
-        pcd.EstimateColorGradients(max_nn, radius);
-        pcd.RemovePointAttr("color_gradients");
     }
 }
 
@@ -307,49 +286,7 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   30,
                   utility::nullopt)
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateNormals,
-                  CUDA F64 KNN[0.02 | 30],
-                  core::Device("CUDA:0"),
-                  core::Float64,
-                  0.02,
-                  30,
-                  utility::nullopt)
-        ->Unit(benchmark::kMillisecond);
-#endif
-
-BENCHMARK_CAPTURE(EstimateColorGradients,
-                  CPU F32 Hybrid[0.02 | 30 | 0.06],
-                  core::Device("CPU:0"),
-                  core::Float32,
-                  0.02,
-                  30,
-                  0.06)
-        ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateColorGradients,
-                  CPU F64 Hybrid[0.02 | 30 | 0.06],
-                  core::Device("CPU:0"),
-                  core::Float64,
-                  0.02,
-                  30,
-                  0.06)
-        ->Unit(benchmark::kMillisecond);
-#ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(EstimateColorGradients,
-                  CUDA F32 Hybrid[0.02 | 30 | 0.06],
-                  core::Device("CUDA:0"),
-                  core::Float32,
-                  0.02,
-                  30,
-                  0.06)
-        ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateColorGradients,
-                  CUDA F64 Hybrid[0.02 | 30 | 0.06],
-                  core::Device("CUDA:0"),
-                  core::Float64,
-                  0.02,
-                  30,
-                  0.06)
-        ->Unit(benchmark::kMillisecond);
+// KNN Support for Float64 is missing on CUDA.
 #endif
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,

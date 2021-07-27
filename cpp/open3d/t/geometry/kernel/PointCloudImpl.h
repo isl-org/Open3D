@@ -290,12 +290,10 @@ void EstimateCovariancesUsingHybridSearchCPU
          core::Tensor& covariances,
          const double& radius,
          const int64_t& max_nn) {
-
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
     core::nns::NearestNeighborSearch tree(points);
-
     bool check = tree.HybridIndex(radius);
     if (!check) {
         utility::LogError(
@@ -361,7 +359,6 @@ void EstimateCovariancesUsingKNNSearchCPU
     int64_t n = points.GetLength();
 
     core::nns::NearestNeighborSearch tree(points);
-
     bool check = tree.KnnIndex();
     if (!check) {
         utility::LogError("KnnIndex is not set.");
@@ -599,7 +596,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
         eval[2] = q + p * beta2;
 
         if (half_det >= 0) {
-            ComputeEigenvector0(A, eval[2], evec2);
+            ComputeEigenvector0<scalar_t>(A, eval[2], evec2);
 
             if (eval[2] < eval[0] && eval[2] < eval[1]) {
                 normals_ptr[0] = evec2[0];
@@ -609,7 +606,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
                 return;
             }
 
-            ComputeEigenvector1(A, evec2, eval[1], evec1);
+            ComputeEigenvector1<scalar_t>(A, evec2, eval[1], evec1);
 
             if (eval[1] < eval[0] && eval[1] < eval[2]) {
                 normals_ptr[0] = evec1[0];
@@ -625,7 +622,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
 
             return;
         } else {
-            ComputeEigenvector0(A, eval[0], evec0);
+            ComputeEigenvector0<scalar_t>(A, eval[0], evec0);
 
             if (eval[0] < eval[1] && eval[0] < eval[2]) {
                 normals_ptr[0] = evec0[0];
@@ -634,7 +631,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
                 return;
             }
 
-            ComputeEigenvector1(A, evec0, eval[1], evec1);
+            ComputeEigenvector1<scalar_t>(A, evec0, eval[1], evec1);
 
             if (eval[1] < eval[0] && eval[1] < eval[2]) {
                 normals_ptr[0] = evec1[0];
