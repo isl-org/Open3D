@@ -79,18 +79,6 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         const int64_t *correspondence_indices,
         scalar_t *J_ij,
         scalar_t &r) {
-    utility::LogError(" GetJacobianPointToPlane: Dtype not supported.");
-}
-
-template <>
-OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane<float>(
-        int64_t workload_idx,
-        const float *source_points_ptr,
-        const float *target_points_ptr,
-        const float *target_normals_ptr,
-        const int64_t *correspondence_indices,
-        float *J_ij,
-        float &r) {
     if (correspondence_indices[workload_idx] == -1) {
         return false;
     }
@@ -98,15 +86,15 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane<float>(
     const int64_t target_idx = 3 * correspondence_indices[workload_idx];
     const int64_t source_idx = 3 * workload_idx;
 
-    const float &sx = source_points_ptr[source_idx + 0];
-    const float &sy = source_points_ptr[source_idx + 1];
-    const float &sz = source_points_ptr[source_idx + 2];
-    const float &tx = target_points_ptr[target_idx + 0];
-    const float &ty = target_points_ptr[target_idx + 1];
-    const float &tz = target_points_ptr[target_idx + 2];
-    const float &nx = target_normals_ptr[target_idx + 0];
-    const float &ny = target_normals_ptr[target_idx + 1];
-    const float &nz = target_normals_ptr[target_idx + 2];
+    const scalar_t &sx = source_points_ptr[source_idx + 0];
+    const scalar_t &sy = source_points_ptr[source_idx + 1];
+    const scalar_t &sz = source_points_ptr[source_idx + 2];
+    const scalar_t &tx = target_points_ptr[target_idx + 0];
+    const scalar_t &ty = target_points_ptr[target_idx + 1];
+    const scalar_t &tz = target_points_ptr[target_idx + 2];
+    const scalar_t &nx = target_normals_ptr[target_idx + 0];
+    const scalar_t &ny = target_normals_ptr[target_idx + 1];
+    const scalar_t &nz = target_normals_ptr[target_idx + 2];
 
     r = (sx - tx) * nx + (sy - ty) * ny + (sz - tz) * nz;
 
@@ -120,43 +108,21 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane<float>(
     return true;
 }
 
-template <>
-OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane<double>(
-        int64_t workload_idx,
-        const double *source_points_ptr,
-        const double *target_points_ptr,
-        const double *target_normals_ptr,
-        const int64_t *correspondence_indices,
-        double *J_ij,
-        double &r) {
-    if (correspondence_indices[workload_idx] == -1) {
-        return false;
-    }
+template bool GetJacobianPointToPlane(int64_t workload_idx,
+                                      const float *source_points_ptr,
+                                      const float *target_points_ptr,
+                                      const float *target_normals_ptr,
+                                      const int64_t *correspondence_indices,
+                                      float *J_ij,
+                                      float &r);
 
-    const int64_t target_idx = 3 * correspondence_indices[workload_idx];
-    const int64_t source_idx = 3 * workload_idx;
-
-    const double &sx = source_points_ptr[source_idx + 0];
-    const double &sy = source_points_ptr[source_idx + 1];
-    const double &sz = source_points_ptr[source_idx + 2];
-    const double &tx = target_points_ptr[target_idx + 0];
-    const double &ty = target_points_ptr[target_idx + 1];
-    const double &tz = target_points_ptr[target_idx + 2];
-    const double &nx = target_normals_ptr[target_idx + 0];
-    const double &ny = target_normals_ptr[target_idx + 1];
-    const double &nz = target_normals_ptr[target_idx + 2];
-
-    r = (sx - tx) * nx + (sy - ty) * ny + (sz - tz) * nz;
-
-    J_ij[0] = nz * sy - ny * sz;
-    J_ij[1] = nx * sz - nz * sx;
-    J_ij[2] = ny * sx - nx * sy;
-    J_ij[3] = nx;
-    J_ij[4] = ny;
-    J_ij[5] = nz;
-
-    return true;
-}
+template bool GetJacobianPointToPlane(int64_t workload_idx,
+                                      const double *source_points_ptr,
+                                      const double *target_points_ptr,
+                                      const double *target_normals_ptr,
+                                      const int64_t *correspondence_indices,
+                                      double *J_ij,
+                                      double &r);
 
 }  // namespace kernel
 }  // namespace pipelines
