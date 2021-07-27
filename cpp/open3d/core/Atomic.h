@@ -45,8 +45,10 @@ inline uint32_t AtomicFetchAddRelaxed(uint32_t* address, uint32_t val) {
 #ifdef __GNUC__
     return __atomic_fetch_add(address, val, __ATOMIC_RELAXED);
 #elif _MSC_VER
+    static_assert(sizeof(long) == sizeof(uint32_t),
+                  "Expected long to be a 32 bit type");
     return static_cast<uint32_t>(_InterlockedExchangeAdd(
-            reinterpret_cast<int32_t*>(address), static_cast<int32_t>(val)));
+            reinterpret_cast<long*>(address), static_cast<long>(val)));
 #else
     static_assert(false, "AtomicFetchAddRelaxed not implemented for platform");
 #endif
