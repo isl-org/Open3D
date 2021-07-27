@@ -30,8 +30,8 @@
 
 #ifdef MSC_VER
 #include <intrin.h>
-#pragma intrinsic(_InterlockedExchangeAdd_nf)
-#pragma intrinsic(_InterlockedExchangeAdd64_nf)
+#pragma intrinsic(_InterlockedExchangeAdd)
+#pragma intrinsic(_InterlockedExchangeAdd64)
 #endif
 
 namespace open3d {
@@ -45,7 +45,7 @@ inline uint32_t AtomicFetchAddRelaxed(uint32_t* address, uint32_t val) {
 #ifdef __GNUC__
     return __atomic_fetch_add(address, val, __ATOMIC_RELAXED);
 #elif _MSC_VER
-    return static_cast<uint32_t>(_InterlockedExchangeAdd_nf(
+    return static_cast<uint32_t>(_InterlockedExchangeAdd(
             reinterpret_cast<int32_t*>(address), static_cast<int32_t>(val)));
 #else
     static_assert(false, "AtomicFetchAddRelaxed not implemented for platform");
@@ -60,7 +60,7 @@ inline uint64_t AtomicFetchAddRelaxed(uint64_t* address, uint64_t val) {
 #ifdef __GNUC__
     return __atomic_fetch_add(address, val, __ATOMIC_RELAXED);
 #elif _MSC_VER
-    return static_cast<uint64_t>(_InterlockedExchangeAdd64_nf(
+    return static_cast<uint64_t>(_InterlockedExchangeAdd64(
             reinterpret_cast<int64_t*>(address), static_cast<int64_t>(val)));
 #else
     static_assert(false, "AtomicFetchAddRelaxed not implemented for platform");
