@@ -24,12 +24,42 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/utility/Helper.h"
+
 #include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {
 
-TEST(Helper, DISABLED_SplitString) { NotImplemented(); }
+TEST(Helper, UniformRandIntGeneratorWithFixedSeed) {
+    std::array<int, 1024> values;
+    utility::UniformRandIntGenerator rand_generator(0, 9, 42);
+    for (auto it = values.begin(); it != values.end(); ++it)
+        *it = rand_generator();
+
+    for (int i = 0; i < 10; i++) {
+        std::array<int, 1024> new_values;
+        utility::UniformRandIntGenerator new_rand_generator(0, 9, 42);
+        for (auto it = new_values.begin(); it != new_values.end(); ++it)
+            *it = new_rand_generator();
+        EXPECT_TRUE(values == new_values);
+    }
+}
+
+TEST(Helper, UniformRandIntGeneratorWithRandomSeed) {
+    std::array<int, 1024> values;
+    utility::UniformRandIntGenerator rand_generator(0, 9);
+    for (auto it = values.begin(); it != values.end(); ++it)
+        *it = rand_generator();
+
+    for (int i = 0; i < 10; i++) {
+        std::array<int, 1024> new_values;
+        utility::UniformRandIntGenerator new_rand_generator(0, 9);
+        for (auto it = new_values.begin(); it != new_values.end(); ++it)
+            *it = new_rand_generator();
+        EXPECT_FALSE(values == new_values);
+    }
+}
 
 }  // namespace tests
 }  // namespace open3d
