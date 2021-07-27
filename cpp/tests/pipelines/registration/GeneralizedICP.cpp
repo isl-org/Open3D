@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,32 +23,18 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+// @author Ignacio Vizzo     [ivizzo@uni-bonn.de]
+//
+// Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
+// ----------------------------------------------------------------------------
 
-#include <benchmark/benchmark.h>
-
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/Tensor.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
-namespace core {
+namespace tests {
 
-void Zeros(benchmark::State& state, const Device& device) {
-    int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
+TEST(GeneralizedICP, DISABLED_RegistrationGeneralizedICP) { NotImplemented(); }
+TEST(GeneralizedICP, DISABLED_ICPConvergenceCriteria) { NotImplemented(); }
 
-    Tensor warm_up = Tensor::Zeros(shape, core::Float32, device);
-    (void)warm_up;
-    for (auto _ : state) {
-        Tensor dst = Tensor::Zeros(shape, core::Float32, device);
-        cuda::Synchronize(device);
-    }
-}
-
-BENCHMARK_CAPTURE(Zeros, CPU, Device("CPU:0"))->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(Zeros, CUDA, Device("CUDA:0"))->Unit(benchmark::kMillisecond);
-#endif
-
-}  // namespace core
+}  // namespace tests
 }  // namespace open3d

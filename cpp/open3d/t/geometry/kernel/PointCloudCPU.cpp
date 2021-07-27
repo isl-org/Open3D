@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
 
 namespace open3d {
@@ -58,7 +57,7 @@ void ProjectCPU(
         color_indexer = NDArrayIndexer(image_colors.value().get(), 2);
     }
 
-    core::kernel::cpu_launcher::ParallelFor(n, [&](int64_t workload_idx) {
+    ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
         float x = points_ptr[3 * workload_idx + 0];
         float y = points_ptr[3 * workload_idx + 1];
         float z = points_ptr[3 * workload_idx + 2];
@@ -76,6 +75,7 @@ void ProjectCPU(
         float* depth_ptr = depth_indexer.GetDataPtr<float>(
                 static_cast<int64_t>(u), static_cast<int64_t>(v));
         float d = zc * depth_scale;
+        // TODO: this can be wrong if ParallelFor is not implmented with OpenMP.
 #pragma omp critical(ProjectCPU)
         {
             if (*depth_ptr == 0 || *depth_ptr >= d) {
@@ -126,7 +126,7 @@ void EstimateColorGradientsUsingHybridSearchCPU(const core::Tensor& points,
         auto neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
         auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
 
-        core::kernel::cpu_launcher::ParallelFor(n, [&](int64_t workload_idx) {
+        core::ParallelFor(points.GetDevice(), n, [&](int64_t workload_idx) {
             int64_t neighbour_offset = max_nn * workload_idx;
             int64_t neighbour_count = neighbour_counts_ptr[workload_idx];
             int64_t point_idx = 3 * workload_idx;
@@ -236,39 +236,42 @@ void EstimateNormalsFromCovariancesCPU(const core::Tensor& covariances,
     int64_t n = covariances.GetLength();
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
-        auto normals_ptr = normals.GetDataPtr<scalar_t>();
+        const scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
+        scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
 
-        core::kernel::cpu_launcher::ParallelFor(n, [&](int64_t workload_idx) {
-            int64_t covariances_offset = 9 * workload_idx;
-            int64_t normals_offset = 3 * workload_idx;
-            scalar_t normals_output[3] = {0};
-            EstimatePointWiseNormalsWithFastEigen3x3(
-                    covariances_ptr + covariances_offset, normals_output);
+        core::ParallelFor(
+                covariances.GetDevice(), n, [&](int64_t workload_idx) {
+                    int64_t covariances_offset = 9 * workload_idx;
+                    int64_t normals_offset = 3 * workload_idx;
+                    scalar_t normals_output[3] = {0};
+                    EstimatePointWiseNormalsWithFastEigen3x3<scalar_t>(
+                            covariances_ptr + covariances_offset,
+                            normals_output);
 
-            if ((normals_output[0] * normals_output[0] +
-                 normals_output[1] * normals_output[1] +
-                 normals_output[2] * normals_output[2]) == 0.0 &&
-                !has_normals) {
-                normals_output[0] = 0.0;
-                normals_output[1] = 0.0;
-                normals_output[2] = 1.0;
-            }
-            if (has_normals) {
-                if ((normals_ptr[normals_offset] * normals_output[0] +
-                     normals_ptr[normals_offset + 1] * normals_output[1] +
-                     normals_ptr[normals_offset + 2] * normals_output[2]) <
-                    0.0) {
-                    normals_output[0] *= -1;
-                    normals_output[1] *= -1;
-                    normals_output[2] *= -1;
-                }
-            }
+                    if ((normals_output[0] * normals_output[0] +
+                         normals_output[1] * normals_output[1] +
+                         normals_output[2] * normals_output[2]) == 0.0 &&
+                        !has_normals) {
+                        normals_output[0] = 0.0;
+                        normals_output[1] = 0.0;
+                        normals_output[2] = 1.0;
+                    }
+                    if (has_normals) {
+                        if ((normals_ptr[normals_offset] * normals_output[0] +
+                             normals_ptr[normals_offset + 1] *
+                                     normals_output[1] +
+                             normals_ptr[normals_offset + 2] *
+                                     normals_output[2]) < 0.0) {
+                            normals_output[0] *= -1;
+                            normals_output[1] *= -1;
+                            normals_output[2] *= -1;
+                        }
+                    }
 
-            normals_ptr[normals_offset] = normals_output[0];
-            normals_ptr[normals_offset + 1] = normals_output[1];
-            normals_ptr[normals_offset + 2] = normals_output[2];
-        });
+                    normals_ptr[normals_offset] = normals_output[0];
+                    normals_ptr[normals_offset + 1] = normals_output[1];
+                    normals_ptr[normals_offset + 2] = normals_output[2];
+                });
     });
 }
 

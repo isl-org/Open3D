@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/io/PointCloudIO.h"
@@ -54,6 +55,7 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
         t::geometry::PointCloud pcd =
                 t::geometry::PointCloud::FromLegacyPointCloud(
                         legacy_pcd, core::Float32, device);
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -69,6 +71,7 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 
     for (auto _ : state) {
         open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -96,6 +99,7 @@ void VoxelDownSample(benchmark::State& state,
 
     for (auto _ : state) {
         pcd.VoxelDownSample(voxel_size, backend);
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -117,50 +121,53 @@ void Transform(benchmark::State& state, const core::Device& device) {
 
     for (auto _ : state) {
         pcd_transformed = pcd.Transform(transformation);
+        core::cuda::Synchronize(device);
     }
 }
 
 void EstimateNormals(benchmark::State& state,
                      const core::Device& device,
+                     const core::Dtype& dtype,
                      const double voxel_size,
                      const int max_nn,
                      const utility::optional<double> radius) {
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
-    pcd = pcd.To(device);
 
-    auto pcd_down = pcd.VoxelDownSample(voxel_size);
+    pcd = pcd.To(device).VoxelDownSample(voxel_size);
+    pcd.SetPoints(pcd.GetPoints().To(dtype));
 
     // Warp up
-    pcd_down.EstimateNormals(max_nn, radius);
-    pcd_down.RemovePointAttr("normals");
+    pcd.EstimateNormals(max_nn, radius);
+    pcd.RemovePointAttr("normals");
 
     for (auto _ : state) {
-        pcd_down.EstimateNormals(max_nn, radius);
-        pcd_down.RemovePointAttr("normals");
+        pcd.EstimateNormals(max_nn, radius);
+        pcd.RemovePointAttr("normals");
     }
 }
 
 void EstimateColorGradients(benchmark::State& state,
                             const core::Device& device,
+                            const core::Dtype& dtype,
                             const double voxel_size,
                             const int max_nn,
                             const utility::optional<double> radius) {
     t::geometry::PointCloud pcd;
 
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
-    pcd = pcd.To(device);
 
-    auto pcd_down = pcd.VoxelDownSample(voxel_size);
-    pcd_down.SetPointColors(pcd_down.GetPointColors()
-                                    .To(pcd_down.GetPoints().GetDtype())
-                                    .Div(255.0));
-    pcd_down.EstimateNormals(max_nn, radius);
+    pcd = pcd.To(device).VoxelDownSample(voxel_size);
+    pcd.SetPoints(pcd.GetPoints().To(dtype));
+    pcd.SetPointColors(pcd.GetPointColors().To(dtype).Div(255.0));
+    pcd.EstimateNormals(max_nn, radius);
 
     // Warp up
-    pcd_down.EstimateColorGradients(max_nn, radius);
+    pcd.EstimateColorGradients(max_nn, radius);
+    pcd.RemovePointAttr("color_gradients");
     for (auto _ : state) {
-        pcd_down.EstimateColorGradients(max_nn, radius);
+        pcd.EstimateColorGradients(max_nn, radius);
+        pcd.RemovePointAttr("color_gradients");
     }
 }
 
@@ -244,31 +251,66 @@ BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
 #endif
 
 BENCHMARK_CAPTURE(EstimateNormals,
-                  CPU Hybrid[0.02 | 30 | 0.08],
+                  CPU F32 Hybrid[0.02 | 30 | 0.06],
                   core::Device("CPU:0"),
+                  core::Float32,
                   0.02,
                   30,
-                  0.08)
+                  0.06)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
-                  CPU KNN[0.02 | 30],
+                  CPU F64 Hybrid[0.02 | 30 | 0.06],
                   core::Device("CPU:0"),
+                  core::Float64,
+                  0.02,
+                  30,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CPU F32 KNN[0.02 | 30],
+                  core::Device("CPU:0"),
+                  core::Float32,
                   0.02,
                   30,
                   utility::nullopt)
         ->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(EstimateNormals,
-                  CUDA Hybrid[0.02 | 30 | 0.08],
-                  core::Device("CUDA:0"),
+                  CPU F64 KNN[0.02 | 30],
+                  core::Device("CPU:0"),
+                  core::Float64,
                   0.02,
                   30,
-                  0.08)
+                  utility::nullopt)
+        ->Unit(benchmark::kMillisecond);
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F32 Hybrid[0.02 | 30 | 0.06],
+                  core::Device("CUDA:0"),
+                  core::Float32,
+                  0.02,
+                  30,
+                  0.06)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
-                  CUDA KNN[0.02 | 30],
+                  CUDA F64 Hybrid[0.02 | 30 | 0.06],
                   core::Device("CUDA:0"),
+                  core::Float64,
+                  0.02,
+                  30,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F32 KNN[0.02 | 30],
+                  core::Device("CUDA:0"),
+                  core::Float32,
+                  0.02,
+                  30,
+                  utility::nullopt)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F64 KNN[0.02 | 30],
+                  core::Device("CUDA:0"),
+                  core::Float64,
                   0.02,
                   30,
                   utility::nullopt)
@@ -276,26 +318,44 @@ BENCHMARK_CAPTURE(EstimateNormals,
 #endif
 
 BENCHMARK_CAPTURE(EstimateColorGradients,
-                  CPU Hybrid[0.02 | 30 | 0.08],
+                  CPU F32 Hybrid[0.02 | 30 | 0.06],
                   core::Device("CPU:0"),
+                  core::Float32,
                   0.02,
                   30,
-                  0.08)
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateColorGradients,
+                  CPU F64 Hybrid[0.02 | 30 | 0.06],
+                  core::Device("CPU:0"),
+                  core::Float64,
+                  0.02,
+                  30,
+                  0.06)
         ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(EstimateColorGradients,
-                  CUDA Hybrid[0.02 | 30 | 0.08],
+                  CUDA F32 Hybrid[0.02 | 30 | 0.06],
                   core::Device("CUDA:0"),
+                  core::Float32,
                   0.02,
                   30,
-                  0.08)
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateColorGradients,
+                  CUDA F64 Hybrid[0.02 | 30 | 0.06],
+                  core::Device("CUDA:0"),
+                  core::Float64,
+                  0.02,
+                  30,
+                  0.06)
         ->Unit(benchmark::kMillisecond);
 #endif
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,
-                  Legacy Hybrid[0.02 | 30 | 0.08],
+                  Legacy Hybrid[0.02 | 30 | 0.06],
                   0.02,
-                  open3d::geometry::KDTreeSearchParamHybrid(0.08, 30))
+                  open3d::geometry::KDTreeSearchParamHybrid(0.06, 30))
         ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,

@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
 
 namespace open3d {
@@ -54,66 +53,68 @@ void ProjectCUDA(
     NDArrayIndexer depth_indexer(depth, 2);
 
     // Pass 1: depth map
-    core::kernel::cuda_launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
-                                                        int64_t workload_idx) {
-        float x = points_ptr[3 * workload_idx + 0];
-        float y = points_ptr[3 * workload_idx + 1];
-        float z = points_ptr[3 * workload_idx + 2];
+    core::ParallelFor(
+            depth.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                float x = points_ptr[3 * workload_idx + 0];
+                float y = points_ptr[3 * workload_idx + 1];
+                float z = points_ptr[3 * workload_idx + 2];
 
-        // coordinate in camera (in voxel -> in meter)
-        float xc, yc, zc, u, v;
-        transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
+                // coordinate in camera (in voxel -> in meter)
+                float xc, yc, zc, u, v;
+                transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
 
-        // coordinate in image (in pixel)
-        transform_indexer.Project(xc, yc, zc, &u, &v);
-        if (!depth_indexer.InBoundary(u, v) || zc <= 0 || zc > depth_max) {
-            return;
-        }
+                // coordinate in image (in pixel)
+                transform_indexer.Project(xc, yc, zc, &u, &v);
+                if (!depth_indexer.InBoundary(u, v) || zc <= 0 ||
+                    zc > depth_max) {
+                    return;
+                }
 
-        float* depth_ptr = depth_indexer.GetDataPtr<float>(
-                static_cast<int64_t>(u), static_cast<int64_t>(v));
-        float d = zc * depth_scale;
-        float d_old = atomicExch(depth_ptr, d);
-        if (d_old > 0) {
-            atomicMinf(depth_ptr, d_old);
-        }
-    });
+                float* depth_ptr = depth_indexer.GetDataPtr<float>(
+                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+                float d = zc * depth_scale;
+                float d_old = atomicExch(depth_ptr, d);
+                if (d_old > 0) {
+                    atomicMinf(depth_ptr, d_old);
+                }
+            });
 
     // Pass 2: color map
     if (!has_colors) return;
 
     NDArrayIndexer color_indexer(image_colors.value().get(), 2);
     float precision_bound = depth_scale * 1e-4;
-    core::kernel::cuda_launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
-                                                        int64_t workload_idx) {
-        float x = points_ptr[3 * workload_idx + 0];
-        float y = points_ptr[3 * workload_idx + 1];
-        float z = points_ptr[3 * workload_idx + 2];
+    core::ParallelFor(
+            depth.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                float x = points_ptr[3 * workload_idx + 0];
+                float y = points_ptr[3 * workload_idx + 1];
+                float z = points_ptr[3 * workload_idx + 2];
 
-        // coordinate in camera (in voxel -> in meter)
-        float xc, yc, zc, u, v;
-        transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
+                // coordinate in camera (in voxel -> in meter)
+                float xc, yc, zc, u, v;
+                transform_indexer.RigidTransform(x, y, z, &xc, &yc, &zc);
 
-        // coordinate in image (in pixel)
-        transform_indexer.Project(xc, yc, zc, &u, &v);
-        if (!depth_indexer.InBoundary(u, v) || zc <= 0 || zc > depth_max) {
-            return;
-        }
+                // coordinate in image (in pixel)
+                transform_indexer.Project(xc, yc, zc, &u, &v);
+                if (!depth_indexer.InBoundary(u, v) || zc <= 0 ||
+                    zc > depth_max) {
+                    return;
+                }
 
-        float dmap = *depth_indexer.GetDataPtr<float>(static_cast<int64_t>(u),
-                                                      static_cast<int64_t>(v));
-        float d = zc * depth_scale;
-        if (d < dmap + precision_bound) {
-            uint8_t* color_ptr = color_indexer.GetDataPtr<uint8_t>(
-                    static_cast<int64_t>(u), static_cast<int64_t>(v));
-            color_ptr[0] = static_cast<uint8_t>(
-                    point_colors_ptr[3 * workload_idx + 0] * 255.0);
-            color_ptr[1] = static_cast<uint8_t>(
-                    point_colors_ptr[3 * workload_idx + 1] * 255.0);
-            color_ptr[2] = static_cast<uint8_t>(
-                    point_colors_ptr[3 * workload_idx + 2] * 255.0);
-        }
-    });
+                float dmap = *depth_indexer.GetDataPtr<float>(
+                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+                float d = zc * depth_scale;
+                if (d < dmap + precision_bound) {
+                    uint8_t* color_ptr = color_indexer.GetDataPtr<uint8_t>(
+                            static_cast<int64_t>(u), static_cast<int64_t>(v));
+                    color_ptr[0] = static_cast<uint8_t>(
+                            point_colors_ptr[3 * workload_idx + 0] * 255.0);
+                    color_ptr[1] = static_cast<uint8_t>(
+                            point_colors_ptr[3 * workload_idx + 1] * 255.0);
+                    color_ptr[2] = static_cast<uint8_t>(
+                            point_colors_ptr[3 * workload_idx + 2] * 255.0);
+                }
+            });
 }
 
 template <typename scalar_t>
@@ -270,7 +271,7 @@ __global__ void EstimateNormalsFromCovariancesCUDAKernel(
     int64_t covariances_offset = 9 * workload_idx;
     int64_t normals_offset = 3 * workload_idx;
     scalar_t normals_output[3] = {0};
-    EstimatePointWiseNormalsWithFastEigen3x3(
+    EstimatePointWiseNormalsWithFastEigen3x3<scalar_t>(
             covariances_ptr + covariances_offset, normals_output);
 
     if ((normals_output[0] * normals_output[0] +

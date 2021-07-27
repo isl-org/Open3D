@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include "open3d/core/Device.h"
 #include "open3d/utility/Logging.h"
 
 #ifdef BUILD_CUDA_MODULE
@@ -42,7 +43,7 @@
 #include <memory>
 #include <vector>
 
-#include "open3d/core/Device.h"
+#include "open3d/utility/Optional.h"
 
 #define OPEN3D_FORCE_INLINE __forceinline__
 #define OPEN3D_HOST_DEVICE __host__ __device__
@@ -232,9 +233,26 @@ int GetCUDACurrentDeviceTextureAlignment();
 
 namespace cuda {
 
+/// Returns the number of available CUDA devices. Returns 0 if Open3D is not
+/// compiled with CUDA support.
 int DeviceCount();
+
+/// Returns true if Open3D is compiled with CUDA support and at least one
+/// compatible CUDA device is detected.
 bool IsAvailable();
+
+/// Releases CUDA memory manager cache. This is typically used for debugging.
 void ReleaseCache();
+
+/// Calls cudaDeviceSynchronize() for all CUDA devices. If Open3D is not
+/// compiled with CUDA this function has no effect.
+void Synchronize();
+
+/// Calls cudaDeviceSynchronize() for the specified device. If Open3D is not
+/// compiled with CUDA or if \p device is not a CUDA device, this function has
+/// no effect.
+/// \param device The device to be synchronized.
+void Synchronize(const Device& device);
 
 #ifdef BUILD_CUDA_MODULE
 

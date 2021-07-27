@@ -31,6 +31,7 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/linalg/kernel/SVD3x3.h"
@@ -52,12 +53,6 @@ using std::abs;
 using std::max;
 using std::min;
 using std::sqrt;
-#endif
-
-#if defined(__CUDACC__)
-namespace launcher = core::kernel::cuda_launcher;
-#else
-namespace launcher = core::kernel::cpu_launcher;
 #endif
 
 #if defined(__CUDACC__)
@@ -111,31 +106,36 @@ void UnprojectCPU
     int64_t n = rows_strided * cols_strided;
 
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-            int64_t y = (workload_idx / cols_strided) * stride;
-            int64_t x = (workload_idx % cols_strided) * stride;
+        core::ParallelFor(
+                depth.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int64_t y = (workload_idx / cols_strided) * stride;
+                    int64_t x = (workload_idx % cols_strided) * stride;
 
-            float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) / depth_scale;
-            if (d > 0 && d < depth_max) {
-                int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                    float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) /
+                              depth_scale;
+                    if (d > 0 && d < depth_max) {
+                        int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
-                float x_c = 0, y_c = 0, z_c = 0;
-                ti.Unproject(static_cast<float>(x), static_cast<float>(y), d,
-                             &x_c, &y_c, &z_c);
+                        float x_c = 0, y_c = 0, z_c = 0;
+                        ti.Unproject(static_cast<float>(x),
+                                     static_cast<float>(y), d, &x_c, &y_c,
+                                     &z_c);
 
-                float* vertex = point_indexer.GetDataPtr<float>(idx);
-                ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
-                                  vertex + 2);
-                if (have_colors) {
-                    float* pcd_pixel = colors_indexer.GetDataPtr<float>(idx);
-                    float* image_pixel =
-                            image_colors_indexer.GetDataPtr<float>(x, y);
-                    *pcd_pixel = *image_pixel;
-                    *(pcd_pixel + 1) = *(image_pixel + 1);
-                    *(pcd_pixel + 2) = *(image_pixel + 2);
-                }
-            }
-        });
+                        float* vertex = point_indexer.GetDataPtr<float>(idx);
+                        ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
+                                          vertex + 2);
+                        if (have_colors) {
+                            float* pcd_pixel =
+                                    colors_indexer.GetDataPtr<float>(idx);
+                            float* image_pixel =
+                                    image_colors_indexer.GetDataPtr<float>(x,
+                                                                           y);
+                            *pcd_pixel = *image_pixel;
+                            *(pcd_pixel + 1) = *(image_pixel + 1);
+                            *(pcd_pixel + 2) = *(image_pixel + 2);
+                        }
+                    }
+                });
     });
 #if defined(__CUDACC__)
     int total_pts_count = count.Item<int>();
@@ -144,7 +144,7 @@ void UnprojectCPU
 #endif
 
 #ifdef __CUDACC__
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
     points = points.Slice(0, 0, total_pts_count);
     if (have_colors) {
@@ -307,37 +307,41 @@ void EstimateCovariancesUsingHybridSearchCPU
             tree.HybridSearch(points, radius, max_nn);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        auto points_ptr = points.GetDataPtr<scalar_t>();
-        auto neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
-        auto neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
-        auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        int64_t* neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
+        int64_t* neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
+        scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-            // NNS [Hybrid Search].
-            int64_t neighbour_offset = max_nn * workload_idx;
-            // Count of valid correspondences per point.
-            int64_t neighbour_count = neighbour_counts_ptr[workload_idx];
-            // Covariance is of shape {3, 3}, so it has an offset factor
-            // of 9 x workload_idx.
-            int64_t covariances_offset = 9 * workload_idx;
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    // NNS [Hybrid Search].
+                    int64_t neighbour_offset = max_nn * workload_idx;
+                    // Count of valid correspondences per point.
+                    int64_t neighbour_count =
+                            neighbour_counts_ptr[workload_idx];
+                    // Covariance is of shape {3, 3}, so it has an offset factor
+                    // of 9 x workload_idx.
+                    int64_t covariances_offset = 9 * workload_idx;
 
-            if (neighbour_count >= 3) {
-                EstimatePointWiseRobustNormalizedCovarianceKernel(
-                        points_ptr, neighbour_indices_ptr + neighbour_offset,
-                        neighbour_count, covariances_ptr + covariances_offset);
-            } else {
-                // Identity.
-                covariances_ptr[covariances_offset] = 1.0;
-                covariances_ptr[covariances_offset + 1] = 0.0;
-                covariances_ptr[covariances_offset + 2] = 0.0;
-                covariances_ptr[covariances_offset + 3] = 0.0;
-                covariances_ptr[covariances_offset + 4] = 1.0;
-                covariances_ptr[covariances_offset + 5] = 0.0;
-                covariances_ptr[covariances_offset + 6] = 0.0;
-                covariances_ptr[covariances_offset + 7] = 0.0;
-                covariances_ptr[covariances_offset + 8] = 1.0;
-            }
-        });
+                    if (neighbour_count >= 3) {
+                        EstimatePointWiseRobustNormalizedCovarianceKernel(
+                                points_ptr,
+                                neighbour_indices_ptr + neighbour_offset,
+                                neighbour_count,
+                                covariances_ptr + covariances_offset);
+                    } else {
+                        // Identity.
+                        covariances_ptr[covariances_offset] = 1.0;
+                        covariances_ptr[covariances_offset + 1] = 0.0;
+                        covariances_ptr[covariances_offset + 2] = 0.0;
+                        covariances_ptr[covariances_offset + 3] = 0.0;
+                        covariances_ptr[covariances_offset + 4] = 1.0;
+                        covariances_ptr[covariances_offset + 5] = 0.0;
+                        covariances_ptr[covariances_offset + 6] = 0.0;
+                        covariances_ptr[covariances_offset + 7] = 0.0;
+                        covariances_ptr[covariances_offset + 8] = 1.0;
+                    }
+                });
     });
 
 #ifdef __CUDACC__
@@ -380,17 +384,19 @@ void EstimateCovariancesUsingKNNSearchCPU
         auto neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
         auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-            // NNS [KNN Search].
-            int64_t neighbour_offset = nn_count * workload_idx;
-            // Covariance is of shape {3, 3}, so it has an offset factor
-            // of 9 x workload_idx.
-            int64_t covariances_offset = 9 * workload_idx;
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    // NNS [KNN Search].
+                    int64_t neighbour_offset = nn_count * workload_idx;
+                    // Covariance is of shape {3, 3}, so it has an offset factor
+                    // of 9 x workload_idx.
+                    int64_t covariances_offset = 9 * workload_idx;
 
-            EstimatePointWiseRobustNormalizedCovarianceKernel(
-                    points_ptr, neighbour_indices_ptr + neighbour_offset,
-                    nn_count, covariances_ptr + covariances_offset);
-        });
+                    EstimatePointWiseRobustNormalizedCovarianceKernel(
+                            points_ptr,
+                            neighbour_indices_ptr + neighbour_offset, nn_count,
+                            covariances_ptr + covariances_offset);
+                });
     });
 
 #ifdef __CUDACC__
