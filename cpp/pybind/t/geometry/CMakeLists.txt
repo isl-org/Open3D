@@ -8,5 +8,5 @@ target_sources(pybind PRIVATE
 )
 
 if (TARGET Open3D::3rdparty_embree)
-    target_sources(tgeometry PRIVATE raycasting_scene.cpp)
+    target_sources(pybind PRIVATE raycasting_scene.cpp)
 endif()
