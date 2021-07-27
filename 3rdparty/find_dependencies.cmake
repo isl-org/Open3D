@@ -1430,14 +1430,12 @@ else()
 endif()
 
 # embree
-if (WITH_RAYCASTING)
-    include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-    open3d_import_3rdparty_library(3rdparty_embree
+include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+open3d_import_3rdparty_library(3rdparty_embree
         HIDDEN
         INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
         LIB_DIR      ${EMBREE_LIB_DIR}
         LIBRARIES    ${EMBREE_LIBRARIES}
         DEPENDS      ext_embree
-    )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
-endif()
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
