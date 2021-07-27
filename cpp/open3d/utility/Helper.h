@@ -143,15 +143,16 @@ inline int DivUp(int x, int y) {
     return tmp.quot + (tmp.rem != 0 ? 1 : 0);
 }
 
-/// \class UniformRandInt
+/// \class UniformRandIntGenerator
 ///
 /// \brief Draw pseudo-random integers bounded by min and max (inclusive)
 /// from a uniform distribution
-class UniformRandInt {
+class UniformRandIntGenerator {
 public:
-    UniformRandInt(const int min,
-                   const int max,
-                   std::mt19937::result_type seed = std::random_device{}())
+    UniformRandIntGenerator(
+            const int min,
+            const int max,
+            std::mt19937::result_type seed = std::random_device{}())
         : distribution_(min, max), generator_(seed) {}
     int operator()() { return distribution_(generator_); }
 

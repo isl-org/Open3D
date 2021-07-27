@@ -223,14 +223,14 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         int exit_itr_local = criteria.max_iteration_;
         unsigned int seed_val =
                 seed.has_value() ? seed.value() : std::random_device{}();
-        utility::UniformRandInt dist_gen(0, static_cast<int>(corres.size()) - 1,
-                                         seed_val);
+        utility::UniformRandIntGenerator rand_generator(
+                0, static_cast<int>(corres.size()) - 1, seed_val);
 
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
             if (itr < exit_itr_local) {
                 for (int j = 0; j < ransac_n; j++) {
-                    ransac_corres[j] = corres[dist_gen()];
+                    ransac_corres[j] = corres[rand_generator()];
                 }
 
                 Eigen::Matrix4d transformation =
