@@ -163,7 +163,9 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    # Always build 3rd party code in Release mode. Ignored by multi-config
+    # generators (XCode, MSVC). MSVC needs matching config anyway.
+    -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
     -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
@@ -1010,37 +1012,19 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_poisson)
 
 # Googletest
 if (BUILD_UNIT_TESTS)
-    if(USE_SYSTEM_GOOGLETEST)
-        find_path(gtest_INCLUDE_DIRS gtest/gtest.h)
-        find_library(gtest_LIBRARY gtest)
-        find_path(gmock_INCLUDE_DIRS gmock/gmock.h)
-        find_library(gmock_LIBRARY gmock)
-        if(gtest_INCLUDE_DIRS AND gtest_LIBRARY AND gmock_INCLUDE_DIRS AND gmock_LIBRARY)
-            message(STATUS "Using installed googletest")
-            add_library(3rdparty_googletest INTERFACE)
-            target_include_directories(3rdparty_googletest INTERFACE ${gtest_INCLUDE_DIRS} ${gmock_INCLUDE_DIRS})
-            target_link_libraries(3rdparty_googletest INTERFACE ${gtest_LIBRARY} ${gmock_LIBRARY})
-            add_library(Open3D::3rdparty_googletest ALIAS 3rdparty_googletest)
-        else()
-            message(STATUS "Unable to find installed googletest")
-            set(USE_SYSTEM_GOOGLETEST OFF)
-        endif()
-    endif()
-    if(NOT USE_SYSTEM_GOOGLETEST)
-        include(${Open3D_3RDPARTY_DIR}/googletest/googletest.cmake)
-        open3d_build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
-            SOURCES
-                googletest/src/gtest-all.cc
-                googlemock/src/gmock-all.cc
-            INCLUDE_DIRS
-                googletest/include/
-                googletest/
-                googlemock/include/
-                googlemock/
-            DEPENDS
-                ext_googletest
-        )
-    endif()
+    include(${Open3D_3RDPARTY_DIR}/googletest/googletest.cmake)
+    open3d_build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
+        SOURCES
+            googletest/src/gtest-all.cc
+            googlemock/src/gmock-all.cc
+        INCLUDE_DIRS
+            googletest/include/
+            googletest/
+            googlemock/include/
+            googlemock/
+        DEPENDS
+            ext_googletest
+    )
 endif()
 
 # Google benchmark
