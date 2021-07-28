@@ -127,7 +127,7 @@ jobs:
       - name: Linking to Open3D
         run: |
           $ErrorActionPreference = 'Stop'
-          git clone https://github.com/intel-isl/open3d-cmake-find-package.git
+          git clone https://github.com/isl-org/open3d-cmake-find-package.git
           cd open3d-cmake-find-package
           mkdir build
           cd build

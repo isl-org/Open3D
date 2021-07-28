@@ -85,7 +85,7 @@ Example:
     ./DrawWebRTC
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
-Checkout `examples/cpp/DrawWebRTC.cpp <https://github.com/intel-isl/Open3D/blob/master/examples/cpp/DrawWebRTC.cpp>`_
+Checkout `examples/cpp/DrawWebRTC.cpp <https://github.com/isl-org/Open3D/blob/master/examples/cpp/DrawWebRTC.cpp>`_
 for the complete source code.
 
 Python server
@@ -105,7 +105,7 @@ Example:
     python examples/python/gui/draw_webrtc.py
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
-Checkout `examples/python/gui/draw_webrtc.py <https://github.com/intel-isl/Open3D/blob/master/examples/python/gui/draw_webrtc.py>`_
+Checkout `examples/python/gui/draw_webrtc.py <https://github.com/isl-org/Open3D/blob/master/examples/python/gui/draw_webrtc.py>`_
 for the complete source code.
 
 IP/port binding
@@ -164,7 +164,7 @@ or, you may also install JupyterLab instead:
     jupyter-lab
 
 Then, run the example notebook
-`examples/python/visualization/jupyter_visualization.ipynb <https://github.com/intel-isl/Open3D/blob/master/examples/python/visualization/jupyter_visualization.ipynb>`_.
+`examples/python/visualization/jupyter_visualization.ipynb <https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/jupyter_visualization.ipynb>`_.
 
 Unlike standalone mode, ``WEBRTC_IP`` and ``WEBRTC_PORT`` are not used in
 Jupyter mode. However, you might want to

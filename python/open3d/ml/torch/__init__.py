@@ -41,7 +41,7 @@ if _torch.__version__.split('.')[:2] != _o3d_torch_version[:2]:
                                                       _torch.__version__))
 
 # Precompiled wheels at
-# https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.8.1
+# https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1
 # have been compiled with '-Xcompiler -fno-gnu-unique' and have an additional
 # attribute that we test here. Print a warning if the attribute is missing.
 if _build_config["BUILD_CUDA_MODULE"] and not hasattr(_torch,
@@ -55,13 +55,13 @@ if _build_config["BUILD_CUDA_MODULE"] and not hasattr(_torch,
    '-Xcompiler -fno-gnu-unique'
 
  or use the PyTorch wheels at
-   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.8.1
+   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1
 
 
  Ignore this message if PyTorch has been compiled with the aforementioned
  flags.
 
- See https://github.com/intel-isl/Open3D/issues/3324 and
+ See https://github.com/isl-org/Open3D/issues/3324 and
  https://github.com/pytorch/pytorch/issues/52663 for more information on this
  problem.
 

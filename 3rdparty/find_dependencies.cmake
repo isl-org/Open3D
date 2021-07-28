@@ -744,7 +744,7 @@ if (BUILD_LIBREALSENSE)
     if(USE_SYSTEM_LIBREALSENSE AND NOT GLIBCXX_USE_CXX11_ABI)
         # Turn off USE_SYSTEM_LIBREALSENSE.
         # Because it is affected by libraries built with different CXX ABIs.
-        # See details: https://github.com/intel-isl/Open3D/pull/2876
+        # See details: https://github.com/isl-org/Open3D/pull/2876
         message(STATUS "Set USE_SYSTEM_LIBREALSENSE=OFF, because GLIBCXX_USE_CXX11_ABI is OFF.")
         set(USE_SYSTEM_LIBREALSENSE OFF)
     endif()

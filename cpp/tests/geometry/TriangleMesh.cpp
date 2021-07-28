@@ -1871,9 +1871,9 @@ TEST(TriangleMesh, CreateFromPointCloudPoisson) {
     // TODO: To be investigated.
     //
     // macOS could sometimes be stuck on this test. Examples:
-    // - https://github.com/intel-isl/Open3D/runs/844549493#step:6:3150
-    // - https://github.com/intel-isl/Open3D/runs/741891346#step:5:3146
-    // - https://github.com/intel-isl/Open3D/runs/734021844#step:5:3169
+    // - https://github.com/isl-org/Open3D/runs/844549493#step:6:3150
+    // - https://github.com/isl-org/Open3D/runs/741891346#step:5:3146
+    // - https://github.com/isl-org/Open3D/runs/734021844#step:5:3169
     //
     // We suspect that this is related to threading. Here we set n_threads=1,
     // and if the macOS CI still stuck on this test occasionally, we might need
