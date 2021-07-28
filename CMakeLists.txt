@@ -55,7 +55,6 @@ option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
 option(USE_SYSTEM_GLEW            "Use system pre-installed glew"            OFF)
 option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"            OFF)
-option(USE_SYSTEM_GOOGLETEST      "Use system pre-installed googletest"      OFF)
 option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"           OFF)
 option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF)
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
@@ -756,7 +755,6 @@ set(3RDPARTY_DEPENDENCIES
     fmt
     GLEW
     GLFW
-    googletest
     imgui
     ippicv
     JPEG
