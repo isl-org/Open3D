@@ -220,6 +220,51 @@ void HashClearInt(benchmark::State& state,
     }
 }
 
+void HashRehashInt(benchmark::State& state,
+                   int capacity,
+                   int duplicate_factor,
+                   const Device& device,
+                   const HashmapBackend& backend) {
+    int slots = std::max(1, capacity / duplicate_factor);
+    HashData<int, int> data(capacity, slots);
+
+    Tensor keys(data.keys_, {capacity}, core::Int32, device);
+    Tensor values(data.vals_, {capacity}, core::Int32, device);
+
+    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {1}, {1}, device,
+                           backend);
+    Tensor addrs, masks;
+    hashmap_warmup.Insert(keys, values, addrs, masks);
+
+    for (auto _ : state) {
+        state.PauseTiming();
+        Hashmap hashmap(capacity, core::Int32, core::Int32, {1}, {1}, device,
+                        backend);
+        Tensor addrs, masks;
+
+        hashmap.Insert(keys, values, addrs, masks);
+
+        int64_t s = hashmap.Size();
+        if (s != slots) {
+            utility::LogError(
+                    "Error returning hashmap size, expected {}, but got {}.",
+                    slots, s);
+        }
+        state.ResumeTiming();
+
+        hashmap.Rehash(2 * capacity);
+
+        state.PauseTiming();
+        s = hashmap.Size();
+        if (s != slots) {
+            utility::LogError(
+                    "Error returning hashmap size, expected {}, but got {}.",
+                    slots, s);
+        }
+        state.ResumeTiming();
+    }
+}
+
 class Int3 {
 public:
     Int3() : x_(0), y_(0), z_(0){};
@@ -396,6 +441,54 @@ void HashClearInt3(benchmark::State& state,
     }
 }
 
+void HashRehashInt3(benchmark::State& state,
+                    int capacity,
+                    int duplicate_factor,
+                    const Device& device,
+                    const HashmapBackend& backend) {
+    int slots = std::max(1, capacity / duplicate_factor);
+    HashData<Int3, int> data(capacity, slots);
+
+    std::vector<int> keys_Int3;
+    keys_Int3.assign(reinterpret_cast<int*>(data.keys_.data()),
+                     reinterpret_cast<int*>(data.keys_.data()) + 3 * capacity);
+    Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
+    Tensor values(data.vals_, {capacity}, core::Int32, device);
+
+    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {3}, {1}, device,
+                           backend);
+    Tensor addrs, masks;
+    hashmap_warmup.Insert(keys, values, addrs, masks);
+
+    for (auto _ : state) {
+        state.PauseTiming();
+        Hashmap hashmap(capacity, core::Int32, core::Int32, {3}, {1}, device,
+                        backend);
+        Tensor addrs, masks;
+
+        hashmap.Insert(keys, values, addrs, masks);
+
+        int64_t s = hashmap.Size();
+        if (s != slots) {
+            utility::LogError(
+                    "Error returning hashmap size, expected {}, but got {}.",
+                    slots, s);
+        }
+        state.ResumeTiming();
+
+        hashmap.Rehash(2 * capacity);
+
+        state.PauseTiming();
+        s = hashmap.Size();
+        if (s != slots) {
+            utility::LogError(
+                    "Error returning hashmap size, expected {}, but got {}.",
+                    slots, s);
+        }
+        state.ResumeTiming();
+    }
+}
+
 // Note: to enable large scale insertion (> 1M entries), change
 // default_max_load_factor() in stdgpu from 1.0 to 1.2~1.4.
 #define ENUM_BM_CAPACITY(FN, FACTOR, DEVICE, BACKEND)                          \
@@ -441,6 +534,8 @@ ENUM_BM_BACKEND(HashFindInt)
 ENUM_BM_BACKEND(HashFindInt3)
 ENUM_BM_BACKEND(HashClearInt)
 ENUM_BM_BACKEND(HashClearInt3)
+ENUM_BM_BACKEND(HashRehashInt)
+ENUM_BM_BACKEND(HashRehashInt3)
 
 }  // namespace core
 }  // namespace open3d
