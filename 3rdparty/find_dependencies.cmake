@@ -1252,6 +1252,33 @@ open3d_import_3rdparty_library(3rdparty_parallelstl
 )
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
 
+# Faiss
+if (WITH_FAISS AND WIN32)
+    message(STATUS "Faiss is not supported on Windows")
+    set(WITH_FAISS OFF)
+elseif(WITH_FAISS)
+    message(STATUS "Building third-party library faiss from source")
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
+endif()
+if (WITH_FAISS)
+    if (USE_BLAS)
+        if (BLAS_BUILD_FROM_SOURCE)
+            set(FAISS_EXTRA_DEPENDENCIES 3rdparty_openblas)
+        endif()
+    else()
+        set(FAISS_EXTRA_LIBRARIES ${STATIC_MKL_LIBRARIES})
+        set(FAISS_EXTRA_DEPENDENCIES 3rdparty_mkl)
+    endif()
+    open3d_import_3rdparty_library(3rdparty_faiss
+        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
+        LIBRARIES    ${FAISS_LIBRARIES} ${FAISS_EXTRA_LIBRARIES}
+        LIB_DIR      ${FAISS_LIB_DIR}
+        DEPENDS      ext_faiss ${FAISS_EXTRA_DEPENDENCIES}
+    )
+    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
+endif()
+
 if(USE_BLAS)
     # Try to locate system BLAS/LAPACK
     find_package(BLAS)
@@ -1354,33 +1381,6 @@ else()
         )
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
-endif()
-
-# Faiss
-if (WITH_FAISS AND WIN32)
-    message(STATUS "Faiss is not supported on Windows")
-    set(WITH_FAISS OFF)
-elseif(WITH_FAISS)
-    message(STATUS "Building third-party library faiss from source")
-    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
-endif()
-if (WITH_FAISS)
-    if (USE_BLAS)
-        if (BLAS_BUILD_FROM_SOURCE)
-            set(FAISS_EXTRA_DEPENDENCIES 3rdparty_openblas)
-        endif()
-    else()
-        set(FAISS_EXTRA_LIBRARIES ${STATIC_MKL_LIBRARIES})
-        set(FAISS_EXTRA_DEPENDENCIES 3rdparty_mkl)
-    endif()
-    open3d_import_3rdparty_library(3rdparty_faiss
-        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
-        LIBRARIES    ${FAISS_LIBRARIES} ${FAISS_EXTRA_LIBRARIES}
-        LIB_DIR      ${FAISS_LIB_DIR}
-        DEPENDS      ext_faiss ${FAISS_EXTRA_DEPENDENCIES}
-    )
-    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
 endif()
 
 # NPP
