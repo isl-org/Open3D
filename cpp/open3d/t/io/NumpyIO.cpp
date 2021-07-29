@@ -63,6 +63,7 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -336,15 +337,13 @@ static void WriteNpzOneTensor(const std::string& file_name,
     const core::Dtype dtype = tensor.GetDtype();
     const int64_t element_byte_size = dtype.ByteSize();
 
-    FILE* fp = nullptr;
-    if (append) {
-        fp = fopen(file_name.c_str(), "r+b");
-    } else {
-        fp = fopen(file_name.c_str(), "wb");
+    utility::filesystem::CFile cfile;
+    const std::string mode = append ? "r+b" : "wb";
+    if (!cfile.Open(file_name, mode)) {
+        utility::LogError("Failed to open file {}, error: {}.", file_name,
+                          cfile.GetError());
     }
-    if (!fp) {
-        utility::LogError("Unable to open file {}.", file_name);
-    }
+    FILE* fp = cfile.GetFILE();
 
     uint16_t nrecs = 0;
     size_t global_header_offset = 0;
@@ -439,7 +438,6 @@ static void WriteNpzOneTensor(const std::string& file_name,
     fwrite(data, element_byte_size, nels, fp);
     fwrite(global_header.data(), sizeof(char), global_header.size(), fp);
     fwrite(footer.data(), sizeof(char), footer.size(), fp);
-    fclose(fp);
 }
 
 class NumpyArray {
@@ -515,18 +513,19 @@ public:
     }
 
     void Save(std::string file_name) const {
-        FILE* fp = fopen(file_name.c_str(), "wb");
-        if (!fp) {
-            utility::LogError("Save: Unable to open file {}.", file_name);
-            return;
+        utility::filesystem::CFile cfile;
+        if (!cfile.Open(file_name, "wb")) {
+            utility::LogError("Failed to open file {}, error: {}.", file_name,
+                              cfile.GetError());
         }
+        FILE* fp = cfile.GetFILE();
+
         std::vector<char> header = CreateNumpyHeader(shape_, GetDtype());
         fseek(fp, 0, SEEK_SET);
         fwrite(header.data(), sizeof(char), header.size(), fp);
         fseek(fp, 0, SEEK_END);
         fwrite(GetDataPtr<void>(), static_cast<size_t>(GetDtype().ByteSize()),
                static_cast<size_t>(shape_.NumElements()), fp);
-        fclose(fp);
     }
 
 private:
@@ -609,14 +608,12 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
 }
 
 core::Tensor ReadNpy(const std::string& file_name) {
-    FILE* fp = fopen(file_name.c_str(), "rb");
-    if (fp) {
-        NumpyArray arr = CreateNumpyArrayFromFile(fp);
-        fclose(fp);
-        return arr.ToTensor();
-    } else {
-        utility::LogError("Unable to open file {}.", file_name);
+    utility::filesystem::CFile cfile;
+    if (!cfile.Open(file_name, "rb")) {
+        utility::LogError("Failed to open file {}, error: {}.", file_name,
+                          cfile.GetError());
     }
+    return CreateNumpyArrayFromFile(cfile.GetFILE()).ToTensor();
 }
 
 void WriteNpy(const std::string& file_name, const core::Tensor& tensor) {
@@ -625,10 +622,12 @@ void WriteNpy(const std::string& file_name, const core::Tensor& tensor) {
 
 std::unordered_map<std::string, core::Tensor> ReadNpz(
         const std::string& file_name) {
-    FILE* fp = fopen(file_name.c_str(), "rb");
-    if (!fp) {
-        utility::LogError("Unable to open {}.", file_name);
+    utility::filesystem::CFile cfile;
+    if (!cfile.Open(file_name, "rb")) {
+        utility::LogError("Failed to open file {}, error: {}.", file_name,
+                          cfile.GetError());
     }
+    FILE* fp = cfile.GetFILE();
 
     std::unordered_map<std::string, core::Tensor> tensor_map;
 
@@ -687,7 +686,6 @@ std::unordered_map<std::string, core::Tensor> ReadNpz(
         }
     }
 
-    fclose(fp);
     return tensor_map;
 }
 
