@@ -1,0 +1,52 @@
+{
+    "name": "Default reconstruction system configuration",
+    "path_dataset": "",
+    "path_intrinsic": "",
+    "fragment_size": 100,
+    "device": "CUDA:0",
+
+    "engine": "legacy",
+    "engine_candidates": ["legacy", "tensor"],
+
+    "python_multi_threading": true,
+
+    "preprocess": {
+        "min_depth": 0.1,
+        "max_depth": 3.0,
+        "depth_scale": 1000.0
+    },
+
+    "odometry": {
+        "method": "colored",
+        "method_candidates": ["colored", "point2plane", "intensity", "hybrid"],
+        "keyframe_interval": 5,
+        "corres_distance_trunc": 0.07
+    },
+
+    "icp": {
+        "method"   : "colored",
+        "method_candidates": ["colored", "point2point", "point2plane"],
+        "downsample_voxel_size": 0.05,
+        "corres_distance_trunc": 0.07
+    },
+
+    "global_registration": {
+        "method"   : "ransac",
+        "method_candidates": ["fgr", "ransac"],
+        "downsample_voxel_size": 0.05
+    },
+
+    "pose_graph": {
+        "preference_loop_closure_odometry": 0.1,
+        "preference_loop_closure_registration": 5.0
+    },
+
+    "integration": {
+        "mode": "color",
+        "mode_candidates": ["depth", "color"],
+        "voxel_size": 0.0058,
+        "sdf_trunc": 0.04,
+        "scene_block_count": 40000,
+        "fragment_block_count": 20000
+    }
+}
