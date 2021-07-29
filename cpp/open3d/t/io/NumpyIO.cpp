@@ -172,7 +172,7 @@ static std::vector<char> CreateNumpyHeader(const core::SizeVector& shape,
     header << static_cast<uint16_t>(property_dict.size());
     header << property_dict;
 
-    return header;
+    return std::move(header);  // Use move since ByteSerializer is inherited.
 }
 
 static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
