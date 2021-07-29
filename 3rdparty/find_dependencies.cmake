@@ -1313,37 +1313,62 @@ else()
         target_link_libraries(3rdparty_blas INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
     endif()
     target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
-
 endif()
 if(BUILD_CUDA_MODULE)
-    # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
-    # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
-    # cublas   11.0: https://docs.nvidia.com/cuda/archive/11.0/cublas/index.html#static-library
-    # The link order below is important.
-    target_link_libraries(3rdparty_blas INTERFACE
-        CUDA::cusolver_static
-        ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
-        CUDA::cusparse_static
-        CUDA::cublas_static
-        CUDA::cublasLt_static
-        CUDA::culibos
-    )
+    if(WIN32)
+        # Nvidia does not provide static libraries for Windows. We don't release
+        # pip wheels for Windows with CUDA support at the moment. For the pip
+        # wheels to support CUDA on Windows out-of-the-box, we need to either
+        # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
+        # cudatoolkit conda package), or have a mechanism to locate the CUDA
+        # toolkit from the system.
+        target_link_libraries(3rdparty_blas INTERFACE
+            CUDA::cusolver
+            CUDA::cublas
+        )
+    else()
+        # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
+        # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
+        # cublas   11.0: https://docs.nvidia.com/cuda/archive/11.0/cublas/index.html#static-library
+        # The link order below is important.
+        target_link_libraries(3rdparty_blas INTERFACE
+            CUDA::cusolver_static
+            ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
+            CUDA::cusparse_static
+            CUDA::cublas_static
+            CUDA::cublasLt_static
+            CUDA::culibos
+        )
+    endif()
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
 
 # NPP
 if (BUILD_CUDA_MODULE)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
-    open3d_find_package_3rdparty_library(3rdparty_cuda_npp
-        REQUIRED
-        PACKAGE CUDAToolkit
-        TARGETS CUDA::nppc_static
-                CUDA::nppicc_static
-                CUDA::nppif_static
-                CUDA::nppig_static
-                CUDA::nppim_static
-                CUDA::nppial_static
-    )
+    if(WIN32)
+        open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+            REQUIRED
+            PACKAGE CUDAToolkit
+            TARGETS CUDA::nppc
+                    CUDA::nppicc
+                    CUDA::nppif
+                    CUDA::nppig
+                    CUDA::nppim
+                    CUDA::nppial
+        )
+    else()
+        open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+            REQUIRED
+            PACKAGE CUDAToolkit
+            TARGETS CUDA::nppc_static
+                    CUDA::nppicc_static
+                    CUDA::nppif_static
+                    CUDA::nppig_static
+                    CUDA::nppim_static
+                    CUDA::nppial_static
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_cuda_npp)
 endif ()
 
