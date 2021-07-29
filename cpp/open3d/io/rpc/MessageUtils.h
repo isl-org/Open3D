@@ -26,7 +26,12 @@
 
 #pragma once
 
+#include <tuple>
+
+#include "open3d/core/Tensor.h"
 #include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 
 namespace zmq {
 class message_t;
@@ -37,8 +42,10 @@ namespace io {
 namespace rpc {
 
 namespace messages {
+struct Array;
 struct Status;
-}
+struct MeshData;
+}  // namespace messages
 
 /// Helper function for unpacking the Status message from a reply.
 /// \param msg     The message that contains the Reply and the Status messages.
@@ -73,6 +80,44 @@ std::tuple<int32_t, std::string> GetStatusCodeAndStr(
         const messages::Status& status);
 
 std::shared_ptr<zmq::message_t> CreateStatusOKMsg();
+
+/// Creates a Tensor from an Array. This function also returns a contiguous CPU
+/// Tensor. Note that the msgpack object backing the memory for \p array must be
+/// alive for calling this function.
+core::Tensor ArrayToTensor(const messages::Array& array);
+
+/// Creates an Array from a Tensor. This function also returns a contiguous CPU
+/// Tensor which needs to be kept alive until the Array has been serialized.
+/// The Array references the memory of this returned Tensor.
+std::tuple<messages::Array, core::Tensor> TensorToArray(
+        const core::Tensor& tensor);
+
+/// Converts MeshData to a geometry type. MeshData can store TriangleMesh,
+/// PointCloud, and LineSet. The function returns a pointer to the base class
+/// Geometry. The pointer is null if the conversion is not successful. Note that
+/// the msgpack object backing the memory for \p mesh_data must be alive for
+/// calling this function.
+std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
+        const messages::MeshData& mesh_data);
+
+/// Creates MeshData from a TriangleMesh. This function returns the MeshData
+/// object for serialization and a vector of Tensors which need to be kept alive
+/// until MeshData has been serialized.
+std::tuple<messages::MeshData, std::vector<core::Tensor>>
+TriangleMeshToMeshData(const t::geometry::TriangleMesh& trimesh);
+
+/// Creates MeshData from a TriangleMesh. This function returns the MeshData
+/// object for serialization and a vector of Tensors which need to be kept alive
+/// until MeshData has been serialized.
+std::tuple<messages::MeshData, std::vector<core::Tensor>> PointCloudToMeshData(
+        const t::geometry::PointCloud& pcd);
+
+/// This function returns the geometry, the path and the time stored in a
+/// SetMeshData message. \p data must contain the Request header message
+/// followed by the SetMeshData message. The function returns a null pointer for
+/// the geometry if not successful.
+std::tuple<std::string, double, std::shared_ptr<t::geometry::Geometry>>
+GetDataFromSetMeshDataBuffer(std::string& data);
 
 }  // namespace rpc
 }  // namespace io

@@ -80,9 +80,9 @@ public:
     std::runtime_error GetLastError();
 
 protected:
-    // Opaque type for providing the original msgpack::object to the
+    // Opaque type for providing the original msgpack::object_handle to the
     // ProcessMessage functions
-    struct MsgpackObject;
+    struct MsgpackObjectHandle;
 
     /// Function for processing a msg.
     /// \param req  The Request object that accompanies the \p msg object.
@@ -94,27 +94,27 @@ protected:
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetMeshData& msg,
-            const MsgpackObject& obj);
+            const MsgpackObjectHandle& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::GetMeshData& msg,
-            const MsgpackObject& obj);
+            const MsgpackObjectHandle& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetCameraData& msg,
-            const MsgpackObject& obj);
+            const MsgpackObjectHandle& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetProperties& msg,
-            const MsgpackObject& obj);
+            const MsgpackObjectHandle& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetActiveCamera& msg,
-            const MsgpackObject& obj);
+            const MsgpackObjectHandle& obj);
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetTime& msg,
-            const MsgpackObject& obj);
+            const MsgpackObjectHandle& obj);
 
 private:
     void Mainloop();

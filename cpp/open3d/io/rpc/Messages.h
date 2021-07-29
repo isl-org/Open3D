@@ -249,6 +249,12 @@ struct Array {
 struct MeshData {
     static std::string MsgId() { return "mesh_data"; }
 
+    /// The original Open3D geometry type from which the MeshData object has
+    /// been created. This is one of "PointCloud", "LineSet", "TriangleMesh". If
+    /// this field is empty Open3D will infer the type based on the presence of
+    /// lines and faces.
+    std::string o3d_type;
+
     /// shape must be [num_verts,3]
     Array vertices;
     /// stores arbitrary attributes for each vertex, hence the first dim must
@@ -325,14 +331,31 @@ struct MeshData {
         return status;
     }
 
+    bool CheckO3DType(std::string& errstr) const {
+        if (o3d_type.empty()) return true;
+
+        if ("PointCloud" == o3d_type || "TriangleMesh" == o3d_type ||
+            "LineSet" == o3d_type) {
+            return true;
+        } else {
+            errstr +=
+                    " invalid o3d_type. Expected 'PointCloud', 'TriangleMesh', "
+                    "or 'LineSet' but got '" +
+                    o3d_type + "'.";
+            return false;
+        }
+    }
+
     bool CheckMessage(std::string& errstr) const {
         std::string tmp = "invalid mesh_data message:";
-        bool status = CheckVertices(errstr) && CheckFaces(errstr);
+        bool status = CheckO3DType(errstr) && CheckVertices(errstr) &&
+                      CheckFaces(errstr);
         if (!status) errstr += tmp;
         return status;
     }
 
-    MSGPACK_DEFINE_MAP(vertices,
+    MSGPACK_DEFINE_MAP(o3d_type,
+                       vertices,
                        vertex_attributes,
                        faces,
                        face_attributes,

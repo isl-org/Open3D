@@ -43,37 +43,37 @@ public:
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetMeshData& msg,
-            const MsgpackObject& obj) override {
+            const MsgpackObjectHandle& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::GetMeshData& msg,
-            const MsgpackObject& obj) override {
+            const MsgpackObjectHandle& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetCameraData& msg,
-            const MsgpackObject& obj) override {
+            const MsgpackObjectHandle& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetProperties& msg,
-            const MsgpackObject& obj) override {
+            const MsgpackObjectHandle& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetActiveCamera& msg,
-            const MsgpackObject& obj) override {
+            const MsgpackObjectHandle& obj) override {
         return CreateStatusOKMsg();
     }
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetTime& msg,
-            const MsgpackObject& obj) override {
+            const MsgpackObjectHandle& obj) override {
         return CreateStatusOKMsg();
     }
 };

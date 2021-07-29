@@ -60,7 +60,7 @@ public:
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const io::rpc::messages::Request& req,
             const io::rpc::messages::SetMeshData& msg,
-            const MsgpackObject& obj) override;
+            const MsgpackObjectHandle& obj) override;
 
 private:
     gui::Window* window_;

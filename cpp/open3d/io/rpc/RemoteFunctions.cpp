@@ -205,21 +205,22 @@ bool SetMeshData(const core::Tensor& vertices,
     msg.time = time;
     msg.layer = layer;
 
-    const core::Tensor vertices_ok = PrepareTensor(vertices);
-    msg.data.vertices = CreateArray(vertices_ok);
+    core::Tensor vertices_ok;
+    std::tie(msg.data.vertices, vertices_ok) = TensorToArray(vertices);
 
     // store tensors in this vector to make sure the memory blob is alive
     // for tensors where a deep copy was necessary.
     std::vector<core::Tensor> tensor_cache;
     for (const auto& item : vertex_attributes) {
-        tensor_cache.push_back(PrepareTensor(item.second));
-        const core::Tensor& tensor = tensor_cache.back();
-        if (tensor.NumDims() >= 1 &&
-            tensor.GetShape()[0] == vertices.GetShape()[0]) {
-            msg.data.vertex_attributes[item.first] = CreateArray(tensor);
+        if (item.second.NumDims() >= 1 &&
+            item.second.GetShape()[0] == vertices.GetShape()[0]) {
+            core::Tensor tensor;
+            std::tie(msg.data.vertex_attributes[item.first], tensor) =
+                    TensorToArray(item.second);
+            tensor_cache.push_back(tensor);
         } else {
             LogError("SetMeshData: Attribute {} has incompatible shape {}",
-                     item.first, tensor.GetShape().ToString());
+                     item.first, item.second.GetShape().ToString());
         }
     }
 
@@ -237,21 +238,21 @@ bool SetMeshData(const core::Tensor& vertices,
             LogError("SetMeshData: last dim of faces must be >=3 but is {}",
                      faces.GetShape()[1]);
         } else {
-            tensor_cache.push_back(PrepareTensor(faces));
-            const core::Tensor& faces_ok = tensor_cache.back();
-            msg.data.faces = CreateArray(faces_ok);
+            core::Tensor faces_ok;
+            std::tie(msg.data.faces, faces_ok) = TensorToArray(faces);
 
             for (const auto& item : face_attributes) {
-                tensor_cache.push_back(PrepareTensor(item.second));
-                const core::Tensor& tensor = tensor_cache.back();
-                if (tensor.NumDims() >= 1 &&
-                    tensor.GetShape()[0] == faces.GetShape()[0]) {
-                    msg.data.face_attributes[item.first] = CreateArray(tensor);
+                if (item.second.NumDims() >= 1 &&
+                    item.second.GetShape()[0] == faces.GetShape()[0]) {
+                    core::Tensor tensor;
+                    std::tie(msg.data.face_attributes[item.first], tensor) =
+                            TensorToArray(item.second);
+                    tensor_cache.push_back(tensor);
                 } else {
                     LogError(
                             "SetMeshData: Attribute {} has incompatible shape "
                             "{}",
-                            item.first, tensor.GetShape().ToString());
+                            item.first, item.second.GetShape().ToString());
                 }
             }
         }

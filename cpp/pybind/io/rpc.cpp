@@ -27,6 +27,7 @@
 #include "open3d/io/rpc/BufferConnection.h"
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
+#include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
 #include "open3d/io/rpc/ZMQContext.h"
 #include "pybind/core/tensor_type_caster.h"
@@ -191,6 +192,13 @@ void pybind_rpc(py::module& m_io) {
                      "A Connection object. Use None to automatically create "
                      "the connection."},
             });
+
+    m.def("get_data_from_set_mesh_data_buffer",
+          &rpc::GetDataFromSetMeshDataBuffer, "data"_a,
+          "This function returns the geometry, the path and the time stored in "
+          "a SetMeshData message. data must contain the Request header message "
+          "followed by the SetMeshData message. The function returns None for "
+          "the geometry if not successful.");
 }
 
 }  // namespace io
