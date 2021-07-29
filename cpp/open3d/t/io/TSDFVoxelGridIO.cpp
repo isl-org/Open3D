@@ -30,6 +30,7 @@
 
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/t/io/HashmapIO.h"
+#include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
 namespace open3d {
 namespace t {
@@ -56,7 +57,7 @@ public:
         value["block_resolution"] = block_resolution_;
         value["block_count"] = block_count_;
         value["device"] = device_;
-        value["hashmap_filename"] = hashmap_filename_;
+        value["hashmap_file_name"] = hashmap_file_name_;
 
         Json::Value attr_dtype_map;
         for (auto it : attr_dtype_map_) {
@@ -74,7 +75,7 @@ public:
         block_resolution_ = value["block_resolution"].asInt64();
         block_count_ = value["block_count"].asInt64();
         device_ = value["device"].asString();
-        hashmap_filename_ = value["hashmap_filename"].asString();
+        hashmap_file_name_ = value["hashmap_file_name"].asString();
 
         const Json::Value &attr_dtype_map = value["attr_dtype_map"];
         attr_dtype_map_.clear();
@@ -99,41 +100,44 @@ public:
     int block_count_;
 
     std::string device_;
-    std::string hashmap_filename_;
+    std::string hashmap_file_name_;
 
     std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
 };
 
 std::shared_ptr<geometry::TSDFVoxelGrid> CreateTSDFVoxelGridFromFile(
-        const std::string &filename) {
+        const std::string &file_name) {
     auto voxel_grid_ptr = std::make_shared<geometry::TSDFVoxelGrid>();
-    ReadTSDFVoxelGrid(filename, *voxel_grid_ptr);
+    ReadTSDFVoxelGrid(file_name, *voxel_grid_ptr);
     return voxel_grid_ptr;
 }
 
-bool ReadTSDFVoxelGrid(const std::string &filename,
+bool ReadTSDFVoxelGrid(const std::string &file_name,
                        geometry::TSDFVoxelGrid &tsdf_voxelgrid) {
     TSDFVoxelGridMetadata metadata;
-    bool success = open3d::io::ReadIJsonConvertible(filename, metadata);
+    bool success = open3d::io::ReadIJsonConvertible(file_name, metadata);
 
     if (!success) {
         utility::LogError("Unable to read TSDFVoxelGrid's metadata!");
     }
 
     std::string parent_dir =
-            utility::filesystem::GetFileParentDirectory(filename);
+            utility::filesystem::GetFileParentDirectory(file_name);
     if (parent_dir == "") {
         parent_dir = ".";
     }
 
-    std::string filename_prefix = parent_dir + "/" + metadata.hashmap_filename_;
+    std::string hashmap_file_name =
+            parent_dir + "/" + metadata.hashmap_file_name_;
     auto device = core::Device(metadata.device_);
     tsdf_voxelgrid = geometry::TSDFVoxelGrid(
             metadata.attr_dtype_map_, metadata.voxel_size_, metadata.sdf_trunc_,
             metadata.block_resolution_, metadata.block_count_, device);
 
-    auto keys = core::Tensor::Load(filename_prefix + ".key.npy").To(device);
-    auto values = core::Tensor::Load(filename_prefix + ".value.npy").To(device);
+    std::unordered_map<std::string, core::Tensor> tensor_map =
+            t::io::ReadNpz(hashmap_file_name);
+    core::Tensor keys = tensor_map.at("key").To(device);
+    core::Tensor values = tensor_map.at("value").To(device);
 
     core::Tensor addrs, masks;
     tsdf_voxelgrid.GetBlockHashmap()->Insert(keys, values, addrs, masks);
@@ -141,20 +145,22 @@ bool ReadTSDFVoxelGrid(const std::string &filename,
     return true;
 }
 
-bool WriteTSDFVoxelGrid(const std::string &filename,
+bool WriteTSDFVoxelGrid(const std::string &file_name,
                         const geometry::TSDFVoxelGrid &tsdf_voxelgrid) {
     TSDFVoxelGridMetadata metadata(tsdf_voxelgrid);
-    auto extension = utility::filesystem::GetFileExtensionInLowerCase(filename);
-    auto filename_noext =
-            utility::filesystem::GetFileNameWithoutExtension(filename);
+    auto extension =
+            utility::filesystem::GetFileExtensionInLowerCase(file_name);
+    auto file_name_noext =
+            utility::filesystem::GetFileNameWithoutExtension(file_name);
 
-    metadata.hashmap_filename_ = filename_noext + ".hash";
-    bool success = open3d::io::WriteIJsonConvertibleToJSON(filename, metadata);
+    metadata.hashmap_file_name_ = file_name_noext + ".npz";
+    bool success = open3d::io::WriteIJsonConvertibleToJSON(file_name, metadata);
     if (!success) {
         utility::LogError("Unable to write TSDFVoxelGrid's metadata!");
     }
 
-    WriteHashmap(metadata.hashmap_filename_, *tsdf_voxelgrid.GetBlockHashmap());
+    WriteHashmap(metadata.hashmap_file_name_,
+                 *tsdf_voxelgrid.GetBlockHashmap());
 
     return true;
 }

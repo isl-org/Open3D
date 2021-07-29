@@ -26,11 +26,12 @@
 
 #include "open3d/t/io/HashmapIO.h"
 
+#include "open3d/t/io/NumpyIO.h"
 namespace open3d {
 namespace t {
 namespace io {
 
-void WriteHashmap(const std::string& filename, const core::Hashmap& hashmap) {
+void WriteHashmap(const std::string& file_name, const core::Hashmap& hashmap) {
     core::Tensor keys = hashmap.GetKeyTensor().To(core::HOST);
     core::Tensor values = hashmap.GetValueTensor().To(core::HOST);
 
@@ -39,14 +40,17 @@ void WriteHashmap(const std::string& filename, const core::Hashmap& hashmap) {
     core::Tensor active_indices =
             active_addrs.To(core::HOST, core::Dtype::Int64);
 
-    keys.IndexGet({active_indices}).Save(filename + ".key.npy");
-    values.IndexGet({active_indices}).Save(filename + ".value.npy");
+    core::Tensor active_keys = keys.IndexGet({active_indices});
+    core::Tensor active_values = values.IndexGet({active_indices});
+
+    WriteNpz(file_name, {{"key", active_keys}, {"value", active_values}});
 }
 
-core::Hashmap ReadHashmap(const std::string& filename) {
-    core::Tensor keys = core::Tensor::Load(fmt::format("{}.key.npy", filename));
-    core::Tensor values =
-            core::Tensor::Load(fmt::format("{}.value.npy", filename));
+core::Hashmap ReadHashmap(const std::string& file_name) {
+    std::unordered_map<std::string, core::Tensor> tensor_map =
+            t::io::ReadNpz(file_name);
+    core::Tensor keys = tensor_map.at("key");
+    core::Tensor values = tensor_map.at("value");
 
     core::Dtype dtype_key = keys.GetDtype();
     core::Dtype dtype_value = values.GetDtype();
