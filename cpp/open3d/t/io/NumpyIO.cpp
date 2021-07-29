@@ -440,6 +440,33 @@ static void WriteNpzOneTensor(const std::string& file_name,
     fwrite(footer.data(), sizeof(char), footer.size(), fp);
 }
 
+static void WriteNpzEmpty(const std::string& file_name) {
+    utility::filesystem::CFile cfile;
+    if (!cfile.Open(file_name, "wb")) {
+        utility::LogError("Failed to open file {}, error: {}.", file_name,
+                          cfile.GetError());
+    }
+    FILE* fp = cfile.GetFILE();
+
+    // Build footer.
+    ByteSerializer footer;
+    footer << "PK";                           // First part of sig
+    footer << static_cast<uint16_t>(0x0605);  // Second part of sig
+    footer << static_cast<uint16_t>(0);       // Number of this disk
+    footer << static_cast<uint16_t>(0);       // Disk where footer starts
+    footer << static_cast<uint16_t>(0);       // Number of records on this disk
+    footer << static_cast<uint16_t>(0);       // Total number of records
+    footer << static_cast<uint32_t>(0);       // Nbytes of global headers
+    footer << static_cast<uint32_t>(0);       // External file attributes
+    footer << static_cast<uint16_t>(0);       // Zip file comment length.
+    if (footer.size() != 22) {
+        utility::LogError("Internal error: empty zip file must have size 22.");
+    }
+
+    // Write everything.
+    fwrite(footer.data(), sizeof(char), footer.size(), fp);
+}
+
 class NumpyArray {
 public:
     NumpyArray(const core::Tensor& t)
@@ -635,8 +662,23 @@ std::unordered_map<std::string, core::Tensor> ReadNpz(
     // here we load all of them.
     while (true) {
         std::vector<char> local_header(30);
-        size_t headerres = fread(local_header.data(), sizeof(char), 30, fp);
-        if (headerres != 30) {
+        size_t local_header_bytes =
+                fread(local_header.data(), sizeof(char), 30, fp);
+
+        // An empty zip file has exactly 22 bytes.
+        if (local_header_bytes == 22) {
+            const char empty_zip_bytes[22] = {
+                    0x50, 0x4b, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+            if (std::memcmp(empty_zip_bytes, local_header.data(), 22) == 0) {
+                break;
+            } else {
+                utility::LogError("Inalid empty .npz file.");
+            }
+        }
+
+        if (local_header_bytes != 30) {
             utility::LogError("Failed to read local header in npz.");
         }
 
@@ -691,6 +733,10 @@ std::unordered_map<std::string, core::Tensor> ReadNpz(
 
 void WriteNpz(const std::string& file_name,
               const std::unordered_map<std::string, core::Tensor>& tensor_map) {
+    if (tensor_map.empty()) {
+        WriteNpzEmpty(file_name);
+    }
+
     std::unordered_map<std::string, core::Tensor> contiguous_tensor_map;
     for (auto it = tensor_map.begin(); it != tensor_map.end(); ++it) {
         contiguous_tensor_map[it->first] =

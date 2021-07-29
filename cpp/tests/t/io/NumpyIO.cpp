@@ -103,6 +103,12 @@ TEST_P(NumpyIOPermuteDevices, NpzWriteRead) {
     const core::Device device = GetParam();
     const std::string file_name = "tensors.npz";
 
+    // Empty map.
+    t::io::WriteNpz(file_name, {});
+    std::unordered_map<std::string, core::Tensor> empty_tensor_map =
+            t::io::ReadNpz(file_name);
+    EXPECT_EQ(empty_tensor_map.size(), 0);
+
     core::Tensor t;
     core::Tensor t_load;
 
