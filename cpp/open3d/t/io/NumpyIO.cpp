@@ -69,6 +69,34 @@ namespace open3d {
 namespace t {
 namespace io {
 
+class ByteSerializer : public std::vector<char> {
+public:
+    template <typename T>
+    ByteSerializer& operator<<(const T& rhs) {
+        // Write in little endian.
+        const char* rhs_ptr = reinterpret_cast<const char*>(&rhs);
+        for (size_t byte = 0; byte < sizeof(T); byte++) {
+            char val = *(rhs_ptr + byte);
+            this->push_back(val);
+        }
+        return *this;
+    }
+
+    ByteSerializer& operator<<(const std::string& rhs) {
+        this->insert(this->end(), rhs.begin(), rhs.end());
+        return *this;
+    }
+
+    ByteSerializer& operator<<(const char* rhs) {
+        // Write in little endian.
+        size_t len = strlen(rhs);
+        for (size_t byte = 0; byte < len; byte++) {
+            this->push_back(rhs[byte]);
+        }
+        return *this;
+    }
+};
+
 static char BigEndianChar() {
     int x = 1;
     return ((reinterpret_cast<char*>(&x))[0]) ? '<' : '>';
@@ -99,16 +127,6 @@ static char DtypeToChar(const core::Dtype& dtype) {
     return '\0';
 }
 
-template <typename T>
-static std::string ToByteString(const T& rhs) {
-    std::stringstream ss;
-    for (size_t i = 0; i < sizeof(T); i++) {
-        char val = *(reinterpret_cast<const char*>(&rhs) + i);
-        ss << val;
-    }
-    return ss.str();
-}
-
 static std::vector<char> CreateNumpyHeader(const core::SizeVector& shape,
                                            const core::Dtype& dtype) {
     // {}     -> "()"
@@ -136,29 +154,24 @@ static std::vector<char> CreateNumpyHeader(const core::SizeVector& shape,
     // - Preamble is 10 bytes.
     // - Dict needs to end with '\n'.
     // - Header dict size includes the padding size and '\n'.
-    std::string dict = fmt::format(
+    std::string property_dict = fmt::format(
             "{{'descr': '{}{}{}', 'fortran_order': False, 'shape': {}, }}",
             BigEndianChar(), DtypeToChar(dtype), dtype.ByteSize(),
             shape_ss.str());
-    size_t space_padding = 16 - (10 + dict.size()) % 16 - 1;  // {0, 1, ..., 15}
-    dict.insert(dict.end(), space_padding, ' ');
-    dict += '\n';
+    size_t space_padding =
+            16 - (10 + property_dict.size()) % 16 - 1;  // {0, 1, ..., 15}
+    property_dict.insert(property_dict.end(), space_padding, ' ');
+    property_dict += '\n';
 
-    std::stringstream ss;
-    // "Magic" values.
-    ss << static_cast<char>(0x93);
-    ss << "NUMPY";
-    // Major version of numpy format.
-    ss << static_cast<char>(0x01);
-    // Minor version of numpy format.
-    ss << static_cast<char>(0x00);
-    // Header dict size (full header size - 10).
-    ss << ToByteString(static_cast<uint16_t>(dict.size()));
-    // Header dict.
-    ss << dict;
+    ByteSerializer header;
+    header << static_cast<char>(0x93);  // Magic value
+    header << "NUMPY";                  // Magic value
+    header << static_cast<char>(0x01);  // Major version
+    header << static_cast<char>(0x00);  // Minor version
+    header << static_cast<uint16_t>(property_dict.size());
+    header << property_dict;
 
-    std::string s = ss.str();
-    return std::vector<char>(s.begin(), s.end());
+    return header;
 }
 
 static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
@@ -235,7 +248,7 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
 // - Version 2.0+ supports up to 4GiB HEADER_LEN and the HEADER_LEN is
 //   replaced from uint16_t to uint32_t.
 // - Version 3.0 uses utf8-encoded header string.
-static uint16_t ParseNpyPreamble(const char* preamble) {
+static size_t ParseNpyPreamble(const char* preamble) {
     if (preamble[0] != static_cast<char>(0x93) || preamble[1] != 'N' ||
         preamble[2] != 'U' || preamble[3] != 'M' || preamble[4] != 'P' ||
         preamble[5] != 'Y') {
@@ -251,7 +264,7 @@ static uint16_t ParseNpyPreamble(const char* preamble) {
                 preamble[6], preamble[7]);
     }
     uint16_t header_len = *reinterpret_cast<const uint16_t*>(&preamble[8]);
-    return header_len;
+    return static_cast<size_t>(header_len);
 }
 
 // Retruns {shape, type(char), word_size, fortran_order}.
@@ -264,7 +277,7 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParseNpyHeaderFromFile(
         preamble_len) {
         utility::LogError("Header preamble cannot be read.");
     }
-    uint16_t header_len = ParseNpyPreamble(preamble.data());
+    const size_t header_len = ParseNpyPreamble(preamble.data());
 
     std::vector<char> header_chars(header_len, 0);
     if (fread(header_chars.data(), sizeof(char), header_len, fp) !=
@@ -281,7 +294,7 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParseNpyHeaderFromFile(
 
 static std::tuple<core::SizeVector, char, int64_t, bool>
 ParseNpyHeaderFromBuffer(const char* buffer) {
-    const uint16_t header_len = ParseNpyPreamble(buffer);
+    const size_t header_len = ParseNpyPreamble(buffer);
     std::string header(reinterpret_cast<const char*>(buffer + 10), header_len);
     return ParsePropertyDict(header);
 }
@@ -314,33 +327,6 @@ static std::tuple<uint16_t, size_t, size_t> ParseZipFooter(FILE* fp) {
     return std::make_tuple(nrecs, global_header_size, global_header_offset);
 }
 
-template <typename T>
-static std::vector<char>& operator+=(std::vector<char>& lhs, const T rhs) {
-    // Write in little endian.
-    for (size_t byte = 0; byte < sizeof(T); byte++) {
-        char val = *((char*)&rhs + byte);
-        lhs.push_back(val);
-    }
-    return lhs;
-}
-
-template <>
-std::vector<char>& operator+=(std::vector<char>& lhs, const std::string rhs) {
-    lhs.insert(lhs.end(), rhs.begin(), rhs.end());
-    return lhs;
-}
-
-template <>
-std::vector<char>& operator+=(std::vector<char>& lhs, const char* rhs) {
-    // Write in little endian.
-    size_t len = strlen(rhs);
-    lhs.reserve(len);
-    for (size_t byte = 0; byte < len; byte++) {
-        lhs.push_back(rhs[byte]);
-    }
-    return lhs;
-}
-
 static void WriteNpzOneTensor(const std::string& file_name,
                               const std::string& tensor_name,
                               const core::Tensor& tensor,
@@ -362,7 +348,7 @@ static void WriteNpzOneTensor(const std::string& file_name,
 
     uint16_t nrecs = 0;
     size_t global_header_offset = 0;
-    std::vector<char> global_header;
+    ByteSerializer global_header;
 
     if (append) {
         // Zip file exists. we need to add a new npy file to it. First read the
@@ -399,53 +385,53 @@ static void WriteNpzOneTensor(const std::string& file_name,
     std::string var_name = tensor_name + ".npy";
 
     // Build the local header.
-    std::vector<char> local_header;
-    local_header += "PK";                           // First part of sig
-    local_header += static_cast<uint16_t>(0x0403);  // Second part of sig
-    local_header += static_cast<uint16_t>(20);      // Min version to extract
-    local_header += static_cast<uint16_t>(0);       // General purpose bit flag
-    local_header += static_cast<uint16_t>(0);       // Compression method
-    local_header += static_cast<uint16_t>(0);       // File last mod time
-    local_header += static_cast<uint16_t>(0);       // File last mod date
-    local_header += static_cast<uint32_t>(crc);     // CRC
-    local_header += static_cast<uint32_t>(nbytes);  // Compressed size
-    local_header += static_cast<uint32_t>(nbytes);  // Uncompressed size
-    local_header +=
-            static_cast<uint16_t>(var_name.size());  // Varaible's name length
-    local_header += static_cast<uint16_t>(0);        // Extra field length
-    local_header += var_name;
+    ByteSerializer local_header;
+    local_header << "PK";                           // First part of sig
+    local_header << static_cast<uint16_t>(0x0403);  // Second part of sig
+    local_header << static_cast<uint16_t>(20);      // Min version to extract
+    local_header << static_cast<uint16_t>(0);       // General purpose bit flag
+    local_header << static_cast<uint16_t>(0);       // Compression method
+    local_header << static_cast<uint16_t>(0);       // File last mod time
+    local_header << static_cast<uint16_t>(0);       // File last mod date
+    local_header << static_cast<uint32_t>(crc);     // CRC
+    local_header << static_cast<uint32_t>(nbytes);  // Compressed size
+    local_header << static_cast<uint32_t>(nbytes);  // Uncompressed size
+    local_header << static_cast<uint16_t>(
+            var_name.size());                  // Varaible's name length
+    local_header << static_cast<uint16_t>(0);  // Extra field length
+    local_header << var_name;
 
     // Build global header.
-    global_header += "PK";                           // First part of sig
-    global_header += static_cast<uint16_t>(0x0201);  // Second part of sig
-    global_header += static_cast<uint16_t>(20);      // Version made by
+    global_header << "PK";                           // First part of sig
+    global_header << static_cast<uint16_t>(0x0201);  // Second part of sig
+    global_header << static_cast<uint16_t>(20);      // Version made by
     global_header.insert(global_header.end(), local_header.begin() + 4,
                          local_header.begin() + 30);
-    global_header += static_cast<uint16_t>(0);  // File comment length
-    global_header += static_cast<uint16_t>(0);  // Disk number where file starts
-    global_header += static_cast<uint16_t>(0);  // Internal file attributes
-    global_header += static_cast<uint32_t>(0);  // External file attributes
+    global_header << static_cast<uint16_t>(0);  // File comment length
+    global_header << static_cast<uint16_t>(0);  // Disk number where file starts
+    global_header << static_cast<uint16_t>(0);  // Internal file attributes
+    global_header << static_cast<uint32_t>(0);  // External file attributes
     // Relative offset of local file header, since it begins where the global
     // header used to begin.
-    global_header += static_cast<uint32_t>(global_header_offset);
-    global_header += var_name;
+    global_header << static_cast<uint32_t>(global_header_offset);
+    global_header << var_name;
 
     // Build footer.
-    std::vector<char> footer;
-    footer += "PK";                           // First part of sig
-    footer += static_cast<uint16_t>(0x0605);  // Second part of sig
-    footer += static_cast<uint16_t>(0);       // Number of this disk
-    footer += static_cast<uint16_t>(0);       // Disk where footer starts
-    footer +=
-            static_cast<uint16_t>(nrecs + 1);  // Number of records on this disk
-    footer += static_cast<uint16_t>(nrecs + 1);  // Total number of records
-    footer += static_cast<uint32_t>(
+    ByteSerializer footer;
+    footer << "PK";                           // First part of sig
+    footer << static_cast<uint16_t>(0x0605);  // Second part of sig
+    footer << static_cast<uint16_t>(0);       // Number of this disk
+    footer << static_cast<uint16_t>(0);       // Disk where footer starts
+    footer << static_cast<uint16_t>(nrecs +
+                                    1);  // Number of records on this disk
+    footer << static_cast<uint16_t>(nrecs + 1);  // Total number of records
+    footer << static_cast<uint32_t>(
             global_header.size());  // Nbytes of global headers
     // Offset of start of global headers, since global header now starts after
     // newly written array.
-    footer += static_cast<uint32_t>(global_header_offset + nbytes +
+    footer << static_cast<uint32_t>(global_header_offset + nbytes +
                                     local_header.size());
-    footer += static_cast<uint16_t>(0);  // Zip file comment length.
+    footer << static_cast<uint16_t>(0);  // Zip file comment length.
 
     // Write everything.
     fwrite(local_header.data(), sizeof(char), local_header.size(), fp);
@@ -648,7 +634,7 @@ std::unordered_map<std::string, core::Tensor> ReadNpz(
 
     // It's possible to check tensor_name and only one selected numpy array,
     // here we load all of them.
-    while (1) {
+    while (true) {
         std::vector<char> local_header(30);
         size_t headerres = fread(local_header.data(), sizeof(char), 30, fp);
         if (headerres != 30) {
@@ -714,8 +700,8 @@ void WriteNpz(const std::string& file_name,
     }
 
     // TODO: WriteNpzOneTensor is called multiple times inorder to write
-    // multiple tensors. This reqruies opening/closing files multiple times,
-    // which is not optimal.
+    // multiple tensors. This requires opening/closing the npz file for multiple
+    // times, which is not optimal.
     // TODO: Support writing in compressed mode: np.savez_compressed().
     bool is_first_tensor = true;
     for (auto it = tensor_map.begin(); it != tensor_map.end(); ++it) {
