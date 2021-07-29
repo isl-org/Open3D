@@ -256,8 +256,8 @@ endif()
 set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")
 set(PROJECT_DOCS    "http://www.open3d.org/docs")
-set(PROJECT_CODE    "https://github.com/intel-isl/Open3D")
-set(PROJECT_ISSUES  "https://github.com/intel-isl/Open3D/issues")
+set(PROJECT_CODE    "https://github.com/isl-org/Open3D")
+set(PROJECT_ISSUES  "https://github.com/isl-org/Open3D/issues")
 
 # Set installation paths
 if(UNIX OR CYGWIN)
@@ -467,7 +467,7 @@ if(WIN32)
     endif()
 endif()
 
-# Downloads files from https://github.com/intel-isl/open3d_downloads to
+# Downloads files from https://github.com/isl-org/open3d_downloads to
 # Open3D/examples/test_data/open3d_downloads.
 add_custom_target(open3d_downloads
     COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
@@ -725,7 +725,7 @@ if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
         "--------------------------------------------------------------------------------\n"
         "                                                                                \n"
         " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
-        " stability issues. See https://github.com/intel-isl/Open3D/issues/3324 and      \n"
+        " stability issues. See https://github.com/isl-org/Open3D/issues/3324 and        \n"
         " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
         " problem.                                                                       \n"
         "                                                                                \n"
@@ -733,7 +733,7 @@ if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
         "   '-Xcompiler -fno-gnu-unique'                                                 \n"
         "                                                                                \n"
         " or use the PyTorch wheels at                                                   \n"
-        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.8.1        \n"
+        "   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1          \n"
         "                                                                                \n"
         "--------------------------------------------------------------------------------\n"
     )
