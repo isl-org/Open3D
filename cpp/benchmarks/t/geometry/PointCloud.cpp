@@ -142,11 +142,8 @@ void EstimateNormals(benchmark::State& state,
 
     // Warp up
     pcd.EstimateNormals(max_nn, radius);
-    pcd.RemovePointAttr("normals");
-
     for (auto _ : state) {
         pcd.EstimateNormals(max_nn, radius);
-        pcd.RemovePointAttr("normals");
     }
 }
 
@@ -162,10 +159,8 @@ void LegacyEstimateNormals(
     // Warp up
     pcd_down->EstimateNormals(search_param, true);
 
-    pcd_down->normals_.clear();
     for (auto _ : state) {
         pcd_down->EstimateNormals(search_param, true);
-        pcd_down->normals_.clear();
     }
 }
 
