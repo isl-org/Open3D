@@ -70,7 +70,7 @@ namespace open3d {
 namespace t {
 namespace io {
 
-class ByteSerializer {
+class ByteSerializer : public std::vector<char> {
 public:
     template <typename T>
     ByteSerializer& Append(const T& rhs) {
@@ -78,13 +78,13 @@ public:
         const char* rhs_ptr = reinterpret_cast<const char*>(&rhs);
         for (size_t byte = 0; byte < sizeof(T); byte++) {
             char val = *(rhs_ptr + byte);
-            buffer_.push_back(val);
+            this->push_back(val);
         }
         return *this;
     }
 
     ByteSerializer& Append(const std::string& rhs) {
-        buffer_.insert(buffer_.end(), rhs.begin(), rhs.end());
+        this->insert(this->end(), rhs.begin(), rhs.end());
         return *this;
     }
 
@@ -92,14 +92,14 @@ public:
         // Write in little endian.
         size_t len = strlen(rhs);
         for (size_t byte = 0; byte < len; byte++) {
-            buffer_.push_back(rhs[byte]);
+            this->push_back(rhs[byte]);
         }
         return *this;
     }
 
     template <typename InputIt>
     ByteSerializer& Append(InputIt first, InputIt last) {
-        buffer_.insert(buffer_.end(), first, last);
+        this->insert(this->end(), first, last);
         return *this;
     }
 
@@ -112,23 +112,9 @@ public:
     }
 
     ByteSerializer& Append(const ByteSerializer& other) {
-        buffer_.insert(buffer_.end(), other.buffer_.begin(),
-                       other.buffer_.end());
+        this->insert(this->end(), other.begin(), other.end());
         return *this;
     }
-
-    std::vector<char>::iterator Begin() { return buffer_.begin(); }
-
-    size_t Size() const { return buffer_.size(); }
-
-    void Resize(size_t count) { buffer_.resize(count); }
-
-    char* Data() { return buffer_.data(); }
-
-    const char* Data() const { return buffer_.data(); }
-
-private:
-    std::vector<char> buffer_;
 };
 
 static char BigEndianChar() {
@@ -161,8 +147,8 @@ static char DtypeToChar(const core::Dtype& dtype) {
     return '\0';
 }
 
-static ByteSerializer CreateNumpyHeader(const core::SizeVector& shape,
-                                        const core::Dtype& dtype) {
+static std::vector<char> CreateNumpyHeader(const core::SizeVector& shape,
+                                           const core::Dtype& dtype) {
     // {}     -> "()"
     // {1}    -> "(1,)"
     // {1, 2} -> "(1, 2)"
@@ -196,7 +182,7 @@ static ByteSerializer CreateNumpyHeader(const core::SizeVector& shape,
     ByteSerializer property_dict;
     property_dict.Append(property_dict_body);
     // {0, 1, ..., 15}
-    size_t padding_count = 16 - (10 + property_dict.Size()) % 16 - 1;
+    size_t padding_count = 16 - (10 + property_dict.size()) % 16 - 1;
     property_dict.Append(padding_count, ' ');
     property_dict.Append('\n');
 
@@ -205,10 +191,10 @@ static ByteSerializer CreateNumpyHeader(const core::SizeVector& shape,
     header.Append("NUMPY");     // Magic value
     header.Append<char>(0x01);  // Major version
     header.Append<char>(0x00);  // Minor version
-    header.Append<uint16_t>(property_dict.Size());
+    header.Append<uint16_t>(property_dict.size());
     header.Append(property_dict);
 
-    return header;
+    return std::move(header);  // Use move since ByteSerializer is inherited.
 }
 
 static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
@@ -396,8 +382,8 @@ static void WriteNpzOneTensor(const std::string& file_name,
         std::tie(nrecs, global_header_size, global_header_offset) =
                 ParseZipFooter(fp);
         fseek(fp, global_header_offset, SEEK_SET);
-        global_header.Resize(global_header_size);
-        size_t res = fread(global_header.Data(), sizeof(char),
+        global_header.resize(global_header_size);
+        size_t res = fread(global_header.data(), sizeof(char),
                            global_header_size, fp);
         if (res != global_header_size) {
             utility::LogError("Header read error while saving to npz.");
@@ -405,15 +391,15 @@ static void WriteNpzOneTensor(const std::string& file_name,
         fseek(fp, global_header_offset, SEEK_SET);
     }
 
-    ByteSerializer npy_header = CreateNumpyHeader(shape, dtype);
+    std::vector<char> npy_header = CreateNumpyHeader(shape, dtype);
 
     size_t nels = std::accumulate(shape.begin(), shape.end(), 1,
                                   std::multiplies<size_t>());
-    size_t nbytes = nels * element_byte_size + npy_header.Size();
+    size_t nbytes = nels * element_byte_size + npy_header.size();
 
     // Get the CRC of the data to be added.
-    uint32_t crc = crc32(0L, reinterpret_cast<uint8_t*>(npy_header.Data()),
-                         npy_header.Size());
+    uint32_t crc = crc32(0L, reinterpret_cast<uint8_t*>(npy_header.data()),
+                         npy_header.size());
     crc = crc32(crc, static_cast<const uint8_t*>(data),
                 nels * element_byte_size);
 
@@ -440,7 +426,7 @@ static void WriteNpzOneTensor(const std::string& file_name,
     global_header.Append("PK");              // First part of sig
     global_header.Append<uint16_t>(0x0201);  // Second part of sig
     global_header.Append<uint16_t>(20);      // Version made by
-    global_header.Append(local_header.Begin() + 4, local_header.Begin() + 30);
+    global_header.Append(local_header.begin() + 4, local_header.begin() + 30);
     global_header.Append<uint16_t>(0);  // File comment length
     global_header.Append<uint16_t>(0);  // Disk number where file starts
     global_header.Append<uint16_t>(0);  // Internal file attributes
@@ -458,19 +444,19 @@ static void WriteNpzOneTensor(const std::string& file_name,
     footer.Append<uint16_t>(0);          // Disk where footer starts
     footer.Append<uint16_t>(nrecs + 1);  // Number of records on this disk
     footer.Append<uint16_t>(nrecs + 1);  // Total number of records
-    footer.Append<uint32_t>(global_header.Size());  // Nbytes of global headers
+    footer.Append<uint32_t>(global_header.size());  // Nbytes of global headers
     // Offset of start of global headers, since global header now starts after
     // newly written array.
     footer.Append<uint32_t>(global_header_offset + nbytes +
-                            local_header.Size());
+                            local_header.size());
     footer.Append<uint16_t>(0);  // Zip file comment length.
 
     // Write everything.
-    fwrite(local_header.Data(), sizeof(char), local_header.Size(), fp);
-    fwrite(npy_header.Data(), sizeof(char), npy_header.Size(), fp);
+    fwrite(local_header.data(), sizeof(char), local_header.size(), fp);
+    fwrite(npy_header.data(), sizeof(char), npy_header.size(), fp);
     fwrite(data, element_byte_size, nels, fp);
-    fwrite(global_header.Data(), sizeof(char), global_header.Size(), fp);
-    fwrite(footer.Data(), sizeof(char), footer.Size(), fp);
+    fwrite(global_header.data(), sizeof(char), global_header.size(), fp);
+    fwrite(footer.data(), sizeof(char), footer.size(), fp);
 }
 
 static void WriteNpzEmpty(const std::string& file_name) {
@@ -492,12 +478,12 @@ static void WriteNpzEmpty(const std::string& file_name) {
     footer.Append<uint32_t>(0);       // Nbytes of global headers
     footer.Append<uint32_t>(0);       // External file attributes
     footer.Append<uint16_t>(0);       // Zip file comment length.
-    if (footer.Size() != 22) {
+    if (footer.size() != 22) {
         utility::LogError("Internal error: empty zip file must have size 22.");
     }
 
     // Write everything.
-    fwrite(footer.Data(), sizeof(char), footer.Size(), fp);
+    fwrite(footer.data(), sizeof(char), footer.size(), fp);
 }
 
 class NumpyArray {
@@ -580,9 +566,9 @@ public:
         }
         FILE* fp = cfile.GetFILE();
 
-        ByteSerializer header = CreateNumpyHeader(shape_, GetDtype());
+        std::vector<char> header = CreateNumpyHeader(shape_, GetDtype());
         fseek(fp, 0, SEEK_SET);
-        fwrite(header.Data(), sizeof(char), header.Size(), fp);
+        fwrite(header.data(), sizeof(char), header.size(), fp);
         fseek(fp, 0, SEEK_END);
         fwrite(GetDataPtr<void>(), static_cast<size_t>(GetDtype().ByteSize()),
                static_cast<size_t>(shape_.NumElements()), fp);
