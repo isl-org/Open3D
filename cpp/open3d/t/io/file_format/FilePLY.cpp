@@ -422,7 +422,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     for (int64_t i = 0; i < num_points; i++) {
         for (auto it : attribute_ptr) {
             DISPATCH_DTYPE_TO_TEMPLATE(it.first, [&]() {
-                auto data_ptr = (scalar_t *)it.second;
+                const scalar_t *data_ptr =
+                        static_cast<const scalar_t *>(it.second);
                 ply_write(ply_file, data_ptr[3 * i]);
                 ply_write(ply_file, data_ptr[3 * i + 1]);
                 ply_write(ply_file, data_ptr[3 * i + 2]);
