@@ -126,12 +126,17 @@ void pybind_registration_classes(py::module &m) {
             m, "RANSACConvergenceCriteria",
             "Class that defines the convergence criteria of "
             "RANSAC. RANSAC algorithm stops if the iteration "
-            "number hits ``max_iteration``, or the validation "
-            "has been run for ``max_validation`` times. Note "
+            "number hits ``max_iteration``, or the fitness "
+            "measured during validation suggests that the "
+            "algorithm can be terminated early with some "
+            "``confidence``. The early termination criteria "
+            "is calculated by ``k = log(1 - confidence)/log(1 - "
+            "fitness^{ransac_n})``, where ``ransac_n`` is the "
+            "number of points used during a ransac iteration. Note "
             "that the validation is the most computational "
             "expensive operator in an iteration. Most "
             "iterations do not do full validation. It is "
-            "crucial to control ``max_validation`` so that the "
+            "crucial to control confidence_ so that the "
             "computation time is acceptable.");
     py::detail::bind_copy_functions<RANSACConvergenceCriteria>(ransac_criteria);
     ransac_criteria
@@ -146,8 +151,7 @@ void pybind_registration_classes(py::module &m) {
             .def_readwrite(
                     "confidence", &RANSACConvergenceCriteria::confidence_,
                     "Desired probability of success. Used for estimating early "
-                    "termination by k = log(1 - confidence)/log(1 - "
-                    "inlier_ratio^{ransac_n}).")
+                    "termination.")
             .def("__repr__", [](const RANSACConvergenceCriteria &c) {
                 return fmt::format(
                         "RANSACConvergenceCriteria "
