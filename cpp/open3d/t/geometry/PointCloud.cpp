@@ -249,14 +249,13 @@ void PointCloud::EstimateNormals(
         this->SetPointNormals(GetPointNormals().Contiguous());
     }
 
-    // Computes and set `covariances` attribute using Hybrid or KNN Search.
     this->SetPointAttr("covariances",
                        core::Tensor::Empty({GetPoints().GetLength(), 3, 3},
                                            dtype, device));
 
     if (radius.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing covariances");
-        // Computes and set `covariances` attribute using Hybrid Search
+        // Computes and sets `covariances` attribute using Hybrid Search
         // mehtod.
         if (device_type == core::Device::DeviceType::CPU) {
             kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
@@ -273,7 +272,7 @@ void PointCloud::EstimateNormals(
         }
     } else {
         utility::LogDebug("Using KNN Search for computing covariances");
-        // Computes and set `covariances` attribute using KNN Search method.
+        // Computes and sets `covariances` attribute using KNN Search method.
         if (device_type == core::Device::DeviceType::CPU) {
             kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
                     this->GetPoints().Contiguous(),
@@ -292,7 +291,7 @@ void PointCloud::EstimateNormals(
         }
     }
 
-    // Estiamte `normal` of each point using it's `covariance` matrix.
+    // Estimate `normal` of each point using its `covariance` matrix.
     if (device_type == core::Device::DeviceType::CPU) {
         kernel::pointcloud::EstimateNormalsFromCovariancesCPU(
                 this->GetPointAttr("covariances"), this->GetPointNormals(),

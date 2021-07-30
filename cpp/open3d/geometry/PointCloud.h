@@ -217,7 +217,8 @@ public:
     /// exist.
     ///
     /// \param search_param The KDTree search parameters for neighborhood
-    /// search. \param fast_normal_computation If true, the normal estiamtion
+    /// search.
+    /// \param fast_normal_computation If true, the normal estimation
     /// uses a non-iterative method to extract the eigenvector from the
     /// covariance matrix. This is faster, but is not as numerical stable.
     void EstimateNormals(

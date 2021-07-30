@@ -153,69 +153,6 @@ void UnprojectCPU
     }
 }
 
-// This is the `textbook` or the `single-pass` method for covariance
-// computation.
-template <typename scalar_t>
-OPEN3D_HOST_DEVICE void EstimatePointWiseNormalizedCovarianceKernel(
-        const scalar_t* points_ptr,
-        const int64_t* indices_ptr,
-        const int64_t& indices_count,
-        scalar_t* covariance_ptr) {
-    // cumulants must always be Float64 to ensure precision.
-    double cumulants[9] = {0};
-
-    for (int64_t i = 0; i < indices_count; i++) {
-        int64_t idx = 3 * indices_ptr[i];
-        double x = static_cast<double>(points_ptr[idx]);
-        double y = static_cast<double>(points_ptr[idx + 1]);
-        double z = static_cast<double>(points_ptr[idx + 2]);
-        cumulants[0] += x;
-        cumulants[1] += y;
-        cumulants[2] += z;
-        cumulants[3] += x * x;
-        cumulants[4] += x * y;
-        cumulants[5] += x * z;
-        cumulants[6] += y * y;
-        cumulants[7] += y * z;
-        cumulants[8] += z * z;
-    }
-
-    double num_indices = static_cast<double>(indices_count);
-    cumulants[0] /= num_indices;
-    cumulants[1] /= num_indices;
-    cumulants[2] /= num_indices;
-    cumulants[3] /= num_indices;
-    cumulants[4] /= num_indices;
-    cumulants[5] /= num_indices;
-    cumulants[6] /= num_indices;
-    cumulants[7] /= num_indices;
-    cumulants[8] /= num_indices;
-
-    // Covariances(0, 0)
-    covariance_ptr[0] =
-            static_cast<scalar_t>(cumulants[3] - cumulants[0] * cumulants[0]);
-    // Covariances(1, 1)
-    covariance_ptr[4] =
-            static_cast<scalar_t>(cumulants[6] - cumulants[1] * cumulants[1]);
-    // Covariances(2, 2)
-    covariance_ptr[8] =
-            static_cast<scalar_t>(cumulants[8] - cumulants[2] * cumulants[2]);
-
-    covariance_ptr[1] =
-            static_cast<scalar_t>(cumulants[4] - cumulants[0] * cumulants[1]);
-    covariance_ptr[2] =
-            static_cast<scalar_t>(cumulants[5] - cumulants[0] * cumulants[2]);
-    covariance_ptr[5] =
-            static_cast<scalar_t>(cumulants[7] - cumulants[1] * cumulants[2]);
-
-    // Covariances(0, 1) = Covariances(1, 0)
-    covariance_ptr[3] = covariance_ptr[1];
-    // Covariances(0, 2) = Covariances(2, 0)
-    covariance_ptr[6] = covariance_ptr[2];
-    // Covariances(1, 2) = Covariances(2, 1)
-    covariance_ptr[7] = covariance_ptr[5];
-}
-
 // This is a `two-pass` estimate method for covariance which is numerically more
 // robust than the `textbook` method generally used for covariance computation.
 template <typename scalar_t>
@@ -224,26 +161,39 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
         const int64_t* indices_ptr,
         const int64_t& indices_count,
         scalar_t* covariance_ptr) {
-    double centeroid[3] = {0};
+    if (indices_count < 3) {
+        covariance_ptr[0] = 1.0;
+        covariance_ptr[1] = 0.0;
+        covariance_ptr[2] = 0.0;
+        covariance_ptr[3] = 0.0;
+        covariance_ptr[4] = 1.0;
+        covariance_ptr[5] = 0.0;
+        covariance_ptr[6] = 0.0;
+        covariance_ptr[7] = 0.0;
+        covariance_ptr[8] = 1.0;
+        return;
+    }
+
+    double centroid[3] = {0};
     for (int64_t i = 0; i < indices_count; i++) {
         int64_t idx = 3 * indices_ptr[i];
-        centeroid[0] += points_ptr[idx];
-        centeroid[1] += points_ptr[idx + 1];
-        centeroid[2] += points_ptr[idx + 2];
+        centroid[0] += points_ptr[idx];
+        centroid[1] += points_ptr[idx + 1];
+        centroid[2] += points_ptr[idx + 2];
     }
 
     double num_indices = static_cast<double>(indices_count);
-    centeroid[0] /= num_indices;
-    centeroid[1] /= num_indices;
-    centeroid[2] /= num_indices;
+    centroid[0] /= num_indices;
+    centroid[1] /= num_indices;
+    centroid[2] /= num_indices;
 
     // cumulants must always be Float64 to ensure precision.
-    scalar_t cumulants[6] = {0};
+    double cumulants[6] = {0};
     for (int64_t i = 0; i < indices_count; i++) {
         int64_t idx = 3 * indices_ptr[i];
-        double x = static_cast<double>(points_ptr[idx]) - centeroid[0];
-        double y = static_cast<double>(points_ptr[idx + 1]) - centeroid[1];
-        double z = static_cast<double>(points_ptr[idx + 2]) - centeroid[2];
+        double x = static_cast<double>(points_ptr[idx]) - centroid[0];
+        double y = static_cast<double>(points_ptr[idx + 1]) - centroid[1];
+        double z = static_cast<double>(points_ptr[idx + 2]) - centroid[2];
 
         cumulants[0] += x * x;
         cumulants[1] += y * y;
@@ -254,12 +204,14 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
         cumulants[5] += y * z;
     }
 
-    cumulants[0] /= num_indices;
-    cumulants[1] /= num_indices;
-    cumulants[2] /= num_indices;
-    cumulants[3] /= num_indices;
-    cumulants[4] /= num_indices;
-    cumulants[5] /= num_indices;
+    // Using Bessel's correction (dividing by (n - 1) instead of n).
+    // Refer: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+    cumulants[0] /= (num_indices - 1.0);
+    cumulants[1] /= (num_indices - 1.0);
+    cumulants[2] /= (num_indices - 1.0);
+    cumulants[3] /= (num_indices - 1.0);
+    cumulants[4] /= (num_indices - 1.0);
+    cumulants[5] /= (num_indices - 1.0);
 
     // Covariances(0, 0)
     covariance_ptr[0] = static_cast<scalar_t>(cumulants[0]);
@@ -310,36 +262,23 @@ void EstimateCovariancesUsingHybridSearchCPU
         int64_t* neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
         scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
-        core::ParallelFor(
-                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    // NNS [Hybrid Search].
-                    int64_t neighbour_offset = max_nn * workload_idx;
-                    // Count of valid correspondences per point.
-                    int64_t neighbour_count =
-                            neighbour_counts_ptr[workload_idx];
-                    // Covariance is of shape {3, 3}, so it has an offset factor
-                    // of 9 x workload_idx.
-                    int64_t covariances_offset = 9 * workload_idx;
+        core::ParallelFor(points.GetDevice(), n,
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                              // NNS [Hybrid Search].
+                              int64_t neighbour_offset = max_nn * workload_idx;
+                              // Count of valid correspondences per point.
+                              int64_t neighbour_count =
+                                      neighbour_counts_ptr[workload_idx];
+                              // Covariance is of shape {3, 3}, so it has an
+                              // offset factor of 9 x workload_idx.
+                              int64_t covariances_offset = 9 * workload_idx;
 
-                    if (neighbour_count >= 3) {
-                        EstimatePointWiseRobustNormalizedCovarianceKernel(
-                                points_ptr,
-                                neighbour_indices_ptr + neighbour_offset,
-                                neighbour_count,
-                                covariances_ptr + covariances_offset);
-                    } else {
-                        // Identity.
-                        covariances_ptr[covariances_offset] = 1.0;
-                        covariances_ptr[covariances_offset + 1] = 0.0;
-                        covariances_ptr[covariances_offset + 2] = 0.0;
-                        covariances_ptr[covariances_offset + 3] = 0.0;
-                        covariances_ptr[covariances_offset + 4] = 1.0;
-                        covariances_ptr[covariances_offset + 5] = 0.0;
-                        covariances_ptr[covariances_offset + 6] = 0.0;
-                        covariances_ptr[covariances_offset + 7] = 0.0;
-                        covariances_ptr[covariances_offset + 8] = 1.0;
-                    }
-                });
+                              EstimatePointWiseRobustNormalizedCovarianceKernel(
+                                      points_ptr,
+                                      neighbour_indices_ptr + neighbour_offset,
+                                      neighbour_count,
+                                      covariances_ptr + covariances_offset);
+                          });
     });
 
     core::cuda::Synchronize(points.GetDevice());

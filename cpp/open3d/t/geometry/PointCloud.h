@@ -325,8 +325,10 @@ public:
     core::Device GetDevice() const { return device_; }
 
 public:
-    /// \brief Function to compute point normals. If radius is provided, then
-    /// HybridSearch is used, otherwise KNN-Search is used.
+    /// \brief Function to estimate point normals. If the pointcloud normals
+    /// exists, the estimated normals are oriented with respect to the same.
+    /// It uses KNN search if only max_nn parameter is provided, and
+    /// HybridSearch if radius parameter is also provided.
     /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
     /// \param radius [optional] NeighbourSearch radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
