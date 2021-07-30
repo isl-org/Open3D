@@ -4,30 +4,199 @@
 
 # examples/python/reconstruction_system/integrate_scene.py
 
+import sys, os
+import time
 import numpy as np
 import open3d as o3d
 import argparse
-from config import Config
+from config import Config, recursive_print
+import glob
 
-def integrate(depths, colors, intrinsics, extrinsics, config):
-    volume = o3d.t.geometry.TSDFVoxelGrid(
-        {
-            'tsdf': o3d.core.Dtype.Float32,
-            'weight': o3d.core.Dtype.UInt16,
-            'color': o3d.core.Dtype.UInt16
-        },
-        voxel_size=config.voxel_size,
-        sdf_trunc=config.sdf_trunc,
-        block_resolution=16,
-        block_count=config.block_count,
-        device=config.device)
 
-    volume = o3d.pipelines.integration.ScalableTSDFVolume(
-        voxel_length=config.voxel_size,
-        sdf_trunc=config.sdf_trunc,
-        color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
+def load_image_file_names(path_dataset, config):
+    depth_folder = os.path.join(path_dataset, config.input.depth_folder)
+    color_folder = os.path.join(path_dataset, config.input.color_folder)
 
-    return tsdf_volume
+    # Only 16-bit png depth is supported
+    depth_file_names = glob.glob(os.path.join(depth_folder, '*.png'))
+    n_depth = len(depth_file_names)
+    if n_depth == 0:
+        print('Depth image not found in {}, abort!'.format(depth_folder))
+        return [], []
+
+    # Try png
+    extensions = ['*.png', '*.jpg']
+    for ext in extensions:
+        color_file_names = glob.glob(os.path.join(color_folder, ext))
+        if len(color_file_names) == n_depth:
+            return sorted(depth_file_names), sorted(color_file_names)
+
+    print(
+        'Found {} depth images, but cannot find matched number of color images with extensions {}, abort!'
+        .format(n_depth, extensions))
+    return [], []
+
+
+def load_intrinsic(path_intrinsic, config):
+    if path_intrinsic is None or path_intrinsic == '':
+        intrinsic = o3d.camera.PinholeCameraIntrinsic(
+            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+    else:
+        intrinsic = o3d.io.read_pinhole_camera_intrinsic(path_intrinsic)
+
+    if config.engine == 'legacy':
+        return intrinsic
+    elif config.engine == 'tensor':
+        return o3d.core.Tensor(intrinsic.intrinsic_matrix,
+                               o3d.core.Dtype.Float32)
+    else:
+        print('Unsupported engine {}'.format(config.engine))
+
+
+def load_extrinsics(path_trajectory, config):
+    extrinsics = []
+
+    # For either a fragment or a scene
+    if path_trajectory.endswith('log'):
+        data = o3d.io.read_pinhole_camera_trajectory(path_trajectory)
+        for param in data.parameters:
+            extrinsics.append(param.extrinsic)
+
+    # Only for a fragment
+    elif path_trajectory.endswith('json'):
+        data = o3d.io.read_pose_graph(path_trajectory)
+        for node in data.nodes:
+            extrinsics.append(np.linalg.inv(node.pose))
+
+    if config.engine == 'legacy':
+        return extrinsics
+    elif config.engine == 'tensor':
+        return list(
+            map(lambda x: o3d.core.Tensor(x, o3d.core.Dtype.Float64),
+                extrinsics))
+    else:
+        print('Unsupported engine {}'.format(config.engine))
+
+
+def init_volume(mode, config):
+    if config.engine == 'legacy':
+        return o3d.pipelines.integration.ScalableTSDFVolume(
+            voxel_length=config.integration.voxel_size,
+            sdf_trunc=config.integration.sdf_trunc,
+            color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
+
+    elif config.engine == 'tensor':
+        if mode == 'scene':
+            block_count = config.integration.scene_block_count
+        else:
+            block_count = config.integration.fragment_block_count
+        return o3d.t.geometry.TSDFVoxelGrid(
+            {
+                'tsdf': o3d.core.Dtype.Float32,
+                'weight': o3d.core.Dtype.UInt16,
+                'color': o3d.core.Dtype.UInt16
+            },
+            voxel_size=config.integration.voxel_size,
+            sdf_trunc=config.integration.sdf_trunc,
+            block_resolution=16,
+            block_count=block_count,
+            device=o3d.core.Device(config.device))
+    else:
+        print('Unsupported engine {}'.format(config.engine))
+
+
+def integrate(depth_filenames,
+              color_filenames,
+              extrinsics,
+              intrinsic,
+              config,
+              mode='scene'):
+
+    n_files = len(color_file_names)
+    n_extrinsics = len(extrinsics)
+    n = n_files
+    if n_files != n_extrinsics:
+        print(
+            'Number of RGBD images ({}) and length of trajectory ({}) mismatch, using the smaller one.'
+            .format(n_files, n_extrinsics))
+        n = min(n_files, n_extrinsics)
+
+    volume = init_volume(mode, config)
+    device = o3d.core.Device(config.device)
+
+    def legacy_integrate(i):
+        depth = o3d.io.read_image(depth_file_names[i])
+        color = o3d.io.read_image(color_file_names[i])
+        rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            color,
+            depth,
+            depth_scale=config.input.depth_scale,
+            depth_trunc=config.input.depth_max,
+            convert_rgb_to_intensity=False)
+
+        volume.integrate(rgbd, intrinsic, extrinsics[i])
+
+    def tensor_integrate(i):
+        depth = o3d.t.io.read_image(depth_file_names[i]).to(device)
+        color = o3d.t.io.read_image(color_file_names[i]).to(device)
+
+        volume.integrate(depth, color, intrinsic, extrinsics[i],
+                         config.input.depth_scale, config.input.depth_max)
+
+    if config.engine == 'legacy':
+        fn_integrate = legacy_integrate
+    elif config.engine == 'tensor':
+        fn_integrate = tensor_integrate
+
+    for i in range(n):
+        start = time.time()
+        fn_integrate(i)
+        stop = time.time()
+        print('{:04d}/{:04d} integration takes {:.4}s'.format(
+            i, n, stop - start))
+
+    return volume
+
+
+def extract_pointcloud(volume, config, file_name=None):
+    if config.engine == 'legacy':
+        mesh = volume.extract_triangle_mesh()
+
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = mesh.vertices
+        pcd.colors = mesh.vertex_colors
+
+        if file_name is not None:
+            o3d.io.write_point_cloud(file_name, pcd)
+
+    elif config.engine == 'tensor':
+        pcd = volume.extract_surface_points(
+            weight_threshold=config.integration.surface_weight_threshold)
+
+        if file_name is not None:
+            o3d.t.io.write_point_cloud(file_name, pcd)
+
+    return pcd
+
+
+def extract_trianglemesh(volume, config, file_name=None):
+    if config.engine == 'legacy':
+        mesh = volume.extract_triangle_mesh()
+        mesh.compute_vertex_normals()
+        mesh.compute_triangle_normals()
+        if file_name is not None:
+            o3d.io.write_triangle_mesh(file_name, mesh)
+
+    elif config.engine == 'tensor':
+        mesh = volume.extract_surface_mesh(
+            weight_threshold=config.integration.surface_weight_threshold)
+        mesh = mesh.to_legacy_triangle_mesh()
+
+        if file_name is not None:
+            o3d.io.write_triangle_mesh(file_name, mesh)
+
+    return mesh
+
 
 if __name__ == '__main__':
     #yapf: disable
@@ -45,11 +214,34 @@ if __name__ == '__main__':
                         type=str,
                         help='path to the config json file.'
                         'If provided, all the following arguments will be overrided.')
+
+    # Engine
+    parser.add_argument('--engine',
+                        type=str,
+                        default='tensor',
+                        choices=['tensor', 'legacy'],
+                        help='Engine to choose from.')
+    parser.add_argument('--device',
+                        type=str,
+                        default='CUDA:0',
+                        help='Device to choose from. Only works for the tensor engine.')
+
+    # RGBD
     parser.add_argument('--path_intrinsic',
                         type=str,
+                        default='',
                         help='path to the intrinsic.json config file.'
                         'By default PrimeSense intrinsics is used.')
+    parser.add_argument('--depth_scale',
+                        type=float,
+                        default=1000.0,
+                        help='depth factor. Converting from a uint16 depth image to meter.')
+    parser.add_argument('--depth_max',
+                        type=float,
+                        default=3.0,
+                        help='max range in the scene to integrate.')
 
+    # Volume
     parser.add_argument('--block_count',
                         type=int,
                         default=10000,
@@ -65,88 +257,39 @@ if __name__ == '__main__':
                         help='voxel resolution.'
                         'For small scenes, 6mm preserves fine details.'
                         'For large indoor scenes, 1cm or larger will be reasonable for limited memory.')
-    parser.add_argument('--depth_scale',
-                        type=float,
-                        default=1000.0,
-                        help='depth factor. Converting from a uint16 depth image to meter.')
-    parser.add_argument('--max_depth',
-                        type=float,
-                        default=3.0,
-                        help='max range in the scene to integrate.')
     parser.add_argument('--sdf_trunc',
                         type=float,
                         default=0.04,
                         help='SDF truncation threshold.')
-    parser.add_argument('--device', type=str, default='cuda:0')
+    parser.add_argument('--surface_weight_threshold',
+                        type=float,
+                        default=3.0,
+                        help='SDF weight truncation threshold during surface extraction.')
     args = parser.parse_args()
     #yapf: enable
 
     if args.config:
         config = Config(args.config)
+        recursive_print(config)
+        print('Config loaded from file {}'.format(args.config))
     else:
         config = Config()
-        config.
+        config.engine = args.engine
+        config.device = args.device
+        config.input.depth_scale = args.depth_scale
+        config.input.depth_max = args.depth_max
+        config.integration.voxel_size = args.voxel_size
+        config.integration.sdf_trunc = args.sdf_trunc
+        config.integration.surface_weight_threshold = args.surface_weight_threshold
+        recursive_print(config)
+        print('Config loaded from args.')
 
-    device = o3d.core.Device(args.device)
+    depth_file_names, color_file_names = load_image_file_names(
+        args.path_dataset, config)
+    extrinsics = load_extrinsics(args.path_trajectory, config)
+    intrinsic = load_intrinsic(args.path_intrinsic, config)
+    volume = integrate(depth_file_names, color_file_names, extrinsics,
+                       intrinsic, config)
 
-    # Load RGBD
-    [color_files, depth_files] = get_rgbd_file_lists(args.dataset_path)
-
-    # Load intrinsics
-    if args.intrinsic_path is None:
-        intrinsic = o3d.camera.PinholeCameraIntrinsic(
-            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    else:
-        intrinsic = o3d.io.read_pinhole_camera_intrinsic(args.intrinsic_path)
-
-    intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix,
-                                o3d.core.Dtype.Float32, device)
-
-    # Load extrinsics
-    trajectory = read_poses_from_log(args.trajectory_path)
-
-    n_files = len(color_files)
-
-    # Setup volume
-
-    # For cblas-enabled Numpy, calling np.linalg.inv inside the for loop can
-    # slow down subsequent computations. This needs to be further investigated.
-    # Check `np.show_config()` and make sure MKL runtime `mkl_rt` is enabled.
-    extrinsics = [np.linalg.inv(trajectory[i]) for i in range(n_files)]
-
-    for i in range(n_files):
-        rgb = o3d.io.read_image(color_files[i])
-        rgb = o3d.t.geometry.Image.from_legacy_image(rgb, device=device)
-
-        depth = o3d.io.read_image(depth_files[i])
-        depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
-
-        extrinsic = o3d.core.Tensor(extrinsics[i], o3d.core.Dtype.Float32,
-                                    device)
-
-        start = time.time()
-        volume.integrate(depth, rgb, intrinsic, extrinsic, args.depth_scale,
-                         args.max_depth)
-        if args.raycast and i % 100 == 0:
-            colormap_code = int(o3d.t.geometry.SurfaceMaskCode.ColorMap)
-            vertexmap_code = int(o3d.t.geometry.SurfaceMaskCode.VertexMap)
-
-            result = volume.raycast(intrinsic, extrinsic, depth.columns,
-                                    depth.rows,
-                                    args.depth_scale, 0.1, args.max_depth,
-                                    min(i * 1.0,
-                                        3.0), colormap_code | vertexmap_code)
-            vertexmap = result[o3d.t.geometry.SurfaceMaskCode.VertexMap]
-            colormap = result[o3d.t.geometry.SurfaceMaskCode.ColorMap]
-
-            o3d.visualization.draw_geometries(
-                [o3d.t.geometry.Image(vertexmap).to_legacy_image()])
-            o3d.visualization.draw_geometries(
-                [o3d.t.geometry.Image(colormap).to_legacy_image()])
-
-        end = time.time()
-        print('Integration {:04d}/{:04d} takes {:.3f} ms'.format(
-            i, n_files, (end - start) * 1000.0))
-
-    mesh = volume.cpu().extract_surface_mesh().to_legacy_triangle_mesh()
-    o3d.io.write_triangle_mesh(args.mesh_name, mesh, False, True)
+    mesh = extract_trianglemesh(volume, config, 'output.ply')
+    o3d.visualization.draw([mesh])

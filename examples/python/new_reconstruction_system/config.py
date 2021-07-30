@@ -10,17 +10,19 @@ default_json_content = {
     "path_intrinsic": "",
     "fragment_size": 100,
     "device": "CUDA:0",
-    "engine": "legacy",
+    "engine": "tensor",
     "engine_candidates": ["legacy", "tensor"],
     "multiprocessing": True,
-    "preprocess": {
-        "min_depth": 0.1,
-        "max_depth": 3.0,
+    "input": {
+        "depth_folder": "depth",
+        "color_folder": "color",
+        "depth_min": 0.1,
+        "depth_max": 3.0,
         "depth_scale": 1000.0
     },
     "odometry": {
         "method": "colored",
-        "method_candidates": ["colored", "point2plane", "intensity", "hybrid"],
+        "method_candidates": ["colored", "point2plane", "intensity", "hybrid", "frame2model"],
         "keyframe_interval": 5,
         "corres_distance_trunc": 0.07
     },
@@ -45,7 +47,8 @@ default_json_content = {
         "voxel_size": 0.0058,
         "sdf_trunc": 0.04,
         "scene_block_count": 40000,
-        "fragment_block_count": 20000
+        "fragment_block_count": 20000,
+        "surface_weight_threshold": 3.0
     }
 }
 

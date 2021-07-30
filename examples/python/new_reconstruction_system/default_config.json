@@ -5,14 +5,17 @@
     "fragment_size": 100,
     "device": "CUDA:0",
 
-    "engine": "legacy",
+    "engine": "tensor",
     "engine_candidates": ["legacy", "tensor"],
 
     "python_multi_threading": true,
 
-    "preprocess": {
-        "min_depth": 0.1,
-        "max_depth": 3.0,
+    "input": {
+        "depth_folder": "depth",
+        "color_folder": "color",
+
+        "depth_min": 0.1,
+        "depth_max": 3.0,
         "depth_scale": 1000.0
     },
 
@@ -37,8 +40,8 @@
     },
 
     "pose_graph": {
-        "preference_loop_closure_odometry": 0.1,
-        "preference_loop_closure_registration": 5.0
+        "loop_closure_odometry_weight": 0.1,
+        "loop_closure_registration_weight": 5.0
     },
 
     "integration": {
@@ -47,6 +50,7 @@
         "voxel_size": 0.0058,
         "sdf_trunc": 0.04,
         "scene_block_count": 40000,
-        "fragment_block_count": 20000
+        "fragment_block_count": 20000,
+        "surface_weight_threshold": 3.0
     }
 }
