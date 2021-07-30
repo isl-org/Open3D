@@ -39,11 +39,11 @@
 #include "open3d/utility/Console.h"
 
 namespace open3d {
-namespace benchmarks {
+namespace core {
 
-std::pair<core::Tensor, core::Tensor> PrepareInput(const core::Device& device,
-                                                   const core::Dtype& dtype,
-                                                   double voxel_size) {
+std::pair<Tensor, Tensor> PrepareInput(const Device& device,
+                                       const Dtype& dtype,
+                                       double voxel_size) {
     // Test data.
     static const std::string source_filename =
             fmt::format("{}/fragment.pcd", std::string(TEST_DATA_DIR));
@@ -63,92 +63,84 @@ std::pair<core::Tensor, core::Tensor> PrepareInput(const core::Device& device,
     }
 
     // Build Tensor.
-    core::Tensor dataset_points =
+    Tensor dataset_points =
             dataset_pc.GetPoints().To(device, dtype, /*copy*/ true);
-    core::Tensor query_points =
-            query_pc.GetPoints().To(device, dtype, /*copy*/ true);
+    Tensor query_points = query_pc.GetPoints().To(device, dtype, /*copy*/ true);
 
     return std::make_pair(dataset_points, query_points);
 }
 
-static void BM_TestNNS_Hybrid(benchmark::State& state,
-                              const core::Device& device) {
+static void BM_TestNNS_Hybrid(benchmark::State& state, const Device& device) {
     // state.range(n) are arguments that are passed to us
     double radius = state.range(0) / 1000.0;
     int max_knn = state.range(1);
 
     // Prepare input data.
-    core::Tensor dataset_points, query_points;
+    Tensor dataset_points, query_points;
     std::tie(dataset_points, query_points) =
-            PrepareInput(device, core::Dtype::Float32, -1);
+            PrepareInput(device, core::Float32, -1);
 
     // Setup NNS.
-    core::nns::NearestNeighborSearch nns(dataset_points);
+    nns::NearestNeighborSearch nns(dataset_points);
     nns.HybridIndex(radius);
 
     // Search.
-    core::Tensor indices, distances, num_neighbors;
+    Tensor indices, distances, num_neighbors;
     for (auto _ : state) {
         std::tie(indices, distances, num_neighbors) =
                 nns.HybridSearch(query_points, radius, max_knn);
-#ifdef BUILD_CUDA_MODULE
-        core::CudaDeviceSynchronize();
-#endif
+        cuda::Synchronize(device);
     }
 }
 
 static void BM_TestNNS_Radius(benchmark::State& state,
-                              const core::Device& device,
+                              const Device& device,
                               bool sort) {
     // state.range(n) are arguments that are passed to us
     double radius = state.range(0) / 1000.0;
 
     // Prepare input data.
-    core::Tensor dataset_points, query_points;
+    Tensor dataset_points, query_points;
     std::tie(dataset_points, query_points) =
-            PrepareInput(device, core::Dtype::Float32, -1);
+            PrepareInput(device, core::Float32, -1);
 
     // Setup NNS.
-    core::nns::NearestNeighborSearch nns(dataset_points);
+    nns::NearestNeighborSearch nns(dataset_points);
     nns.FixedRadiusIndex(radius);
 
     // Search.
-    core::Tensor indices, distances, neighbors_row_splits;
+    Tensor indices, distances, neighbors_row_splits;
     for (auto _ : state) {
         std::tie(indices, distances, neighbors_row_splits) =
                 nns.FixedRadiusSearch(query_points, radius, sort);
-#ifdef BUILD_CUDA_MODULE
-        core::CudaDeviceSynchronize();
-#endif
+        cuda::Synchronize(device);
     }
 }
 
 static void BM_TestNNS_Knn(benchmark::State& state,
-                           const core::Device& device,
+                           const Device& device,
                            double voxel_size) {
     // state.range(n) are arguments that are passed to us
     int knn = state.range(0);
 
     // Prepare input data.
-    core::Tensor dataset_points, query_points;
+    Tensor dataset_points, query_points;
     std::tie(dataset_points, query_points) =
-            PrepareInput(device, core::Dtype::Float32, voxel_size);
+            PrepareInput(device, core::Float32, voxel_size);
 
     // Setup NNS.
-    core::nns::NearestNeighborSearch nns(dataset_points);
+    nns::NearestNeighborSearch nns(dataset_points);
     nns.KnnIndex();
 
     // Search.
-    core::Tensor indices, distances;
+    Tensor indices, distances;
     for (auto _ : state) {
         std::tie(indices, distances) = nns.KnnSearch(query_points, knn);
-#ifdef BUILD_CUDA_MODULE
-        core::CudaDeviceSynchronize();
-#endif
+        cuda::Synchronize();
     }
 }
 
-BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, core::Device("CPU:0"))
+BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, Device("CPU:0"))
         ->Args({100, 1})
         ->Args({100, 64})
         ->Args({100, 256})
@@ -156,41 +148,32 @@ BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, CPU, core::Device("CPU:0"))
         ->Args({200, 64})
         ->Args({200, 256})
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BM_TestNNS_Radius, CPU, core::Device("CPU:0"), true)
+BENCHMARK_CAPTURE(BM_TestNNS_Radius, CPU, Device("CPU:0"), true)
         ->Args({10})
         ->Args({50})
         ->Args({100})
         ->Args({200})
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BM_TestNNS_Knn,
-                  CPU_without_downsample,
-                  core::Device("CPU:0"),
-                  -1.0)
+BENCHMARK_CAPTURE(BM_TestNNS_Knn, CPU_without_downsample, Device("CPU:0"), -1.0)
         ->Args({1})
         ->Args({16})
         ->Args({64})
         ->Args({128})
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BM_TestNNS_Knn,
-                  CPU_downsample_0 .005,
-                  core::Device("CPU:0"),
-                  0.005)
+BENCHMARK_CAPTURE(BM_TestNNS_Knn, CPU_downsample_0 .005, Device("CPU:0"), 0.005)
         ->Args({1})
         ->Args({16})
         ->Args({64})
         ->Args({128})
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BM_TestNNS_Knn,
-                  CPU_downsample_0 .05,
-                  core::Device("CPU:0"),
-                  0.05)
+BENCHMARK_CAPTURE(BM_TestNNS_Knn, CPU_downsample_0 .05, Device("CPU:0"), 0.05)
         ->Args({1})
         ->Args({16})
         ->Args({64})
         ->Args({128})
         ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, GPU, core::Device("CUDA:0"))
+BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, GPU, Device("CUDA:0"))
         ->Args({100, 1})
         ->Args({100, 64})
         ->Args({100, 256})
@@ -198,13 +181,13 @@ BENCHMARK_CAPTURE(BM_TestNNS_Hybrid, GPU, core::Device("CUDA:0"))
         ->Args({200, 64})
         ->Args({200, 256})
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU_SORT, core::Device("CUDA:0"), true)
+BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU_SORT, Device("CUDA:0"), true)
         ->Args({10})
         ->Args({50})
         ->Args({100})
         ->Args({200})
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU_UNSORT, core::Device("CUDA:0"), false)
+BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU_UNSORT, Device("CUDA:0"), false)
         ->Args({10})
         ->Args({50})
         ->Args({100})
@@ -212,7 +195,7 @@ BENCHMARK_CAPTURE(BM_TestNNS_Radius, GPU_UNSORT, core::Device("CUDA:0"), false)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(BM_TestNNS_Knn,
                   GPU_without_downsample,
-                  core::Device("CUDA:0"),
+                  Device("CUDA:0"),
                   -1.0)
         ->Args({1})
         ->Args({16})
@@ -221,22 +204,19 @@ BENCHMARK_CAPTURE(BM_TestNNS_Knn,
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(BM_TestNNS_Knn,
                   GPU_downsample_0 .005,
-                  core::Device("CUDA:0"),
+                  Device("CUDA:0"),
                   0.005)
         ->Args({1})
         ->Args({16})
         ->Args({64})
         ->Args({128})
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(BM_TestNNS_Knn,
-                  GPU_downsample_0 .05,
-                  core::Device("CUDA:0"),
-                  0.05)
+BENCHMARK_CAPTURE(BM_TestNNS_Knn, GPU_downsample_0 .05, Device("CUDA:0"), 0.05)
         ->Args({1})
         ->Args({16})
         ->Args({64})
         ->Args({128})
         ->Unit(benchmark::kMillisecond);
 #endif
-}  // namespace benchmarks
+}  // namespace core
 }  // namespace open3d
