@@ -194,10 +194,10 @@ static CharVector CreateNumpyHeader(const core::SizeVector& shape,
     property_dict.Append('\n');
 
     CharVector header;
-    header.Append<char>(0x93);  // Magic value
-    header.Append("NUMPY");     // Magic value
-    header.Append<char>(0x01);  // Major version
-    header.Append<char>(0x00);  // Minor version
+    header.Append<unsigned char>(0x93);  // Magic value
+    header.Append("NUMPY");              // Magic value
+    header.Append<uint8_t>(0x01);        // Major version
+    header.Append<uint8_t>(0x00);        // Minor version
     header.Append<uint16_t>(property_dict.size());
     header.Append(property_dict);
 
@@ -267,10 +267,10 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
 // The preamble must be at least 10 bytes.
 // Ref: https://numpy.org/devdocs/reference/generated/numpy.lib.format.html
 //
-// - bytes[0]  to bytes[5]            : \x93NUMPY # Magic string
-// - bytes[6]                         : \x01      # Major version number
-// - bytes[7]                         : \x00      # Minor version number
-// - bytes[8]  to bytes[9]            : HEADER_LEN little-endian uint16_t
+// - bytes[0] to bytes[5]             : \x93NUMPY # Magic string
+// - bytes[6]                         : \x01      # Major version, unsigned
+// - bytes[7]                         : \x00      # Minor version, unsigned
+// - bytes[8] to bytes[9]             : HEADER_LEN little-endian uint16_t
 // - bytes[10] to bytes[10+HEADER_LEN]: Dict, padded, terminated by '\n'
 // - (10 + HEADER_LEN) % 64 == 0      : Guranteed
 //
@@ -279,15 +279,15 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
 //   replaced from uint16_t to uint32_t.
 // - Version 3.0 uses utf8-encoded header string.
 static size_t ParseNpyPreamble(const char* preamble) {
-    if (preamble[0] != static_cast<char>(0x93) || preamble[1] != 'N' ||
-        preamble[2] != 'U' || preamble[3] != 'M' || preamble[4] != 'P' ||
-        preamble[5] != 'Y') {
+    if ((preamble[0] ^ static_cast<unsigned char>(0x93)) == 0 ||
+        preamble[1] != 'N' || preamble[2] != 'U' || preamble[3] != 'M' ||
+        preamble[4] != 'P' || preamble[5] != 'Y') {
         utility::LogError("Invalid Numpy preamble {}{}{}{}{}{}.", preamble[0],
                           preamble[1], preamble[2], preamble[3], preamble[4],
                           preamble[5]);
     }
-    if (preamble[6] != static_cast<char>(0x01) ||
-        preamble[7] != static_cast<char>(0x00)) {
+    if (preamble[6] != static_cast<uint8_t>(0x01) ||
+        preamble[7] != static_cast<uint8_t>(0x00)) {
         utility::LogError(
                 "Not supported Numpy format version: {}.{}. Only version 1.0 "
                 "is supported.",
