@@ -32,7 +32,6 @@
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
 #include "open3d/t/pipelines/odometry/RGBDOdometry.h"
 #include "open3d/t/pipelines/voxelhashing/Frame.h"
-#include "open3d/t/pipelines/voxelhashing/Option.h"
 
 namespace open3d {
 namespace t {
