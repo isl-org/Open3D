@@ -76,6 +76,7 @@ public:
     ByteSerializer& Append(const T& rhs) {
         // Write in little endian.
         const char* rhs_ptr = reinterpret_cast<const char*>(&rhs);
+        this->reserve(this->size() + sizeof(T));
         for (size_t byte = 0; byte < sizeof(T); byte++) {
             char val = *(rhs_ptr + byte);
             this->push_back(val);
@@ -91,6 +92,7 @@ public:
     ByteSerializer& Append(const char* rhs) {
         // Write in little endian.
         size_t len = strlen(rhs);
+        this->reserve(this->size() + len);
         for (size_t byte = 0; byte < len; byte++) {
             this->push_back(rhs[byte]);
         }
