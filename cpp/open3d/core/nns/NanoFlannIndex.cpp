@@ -39,6 +39,8 @@ namespace open3d {
 namespace core {
 namespace nns {
 
+typedef int32_t index_t;
+
 NanoFlannIndex::NanoFlannIndex(){};
 
 NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
@@ -61,7 +63,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t *data_ptr = dataset_points.GetDataPtr<scalar_t>();
-        holder_.reset(new NanoFlannIndexHolder<L2, scalar_t>(
+        holder_.reset(new NanoFlannIndexHolder<L2, scalar_t, index_t>(
                 dataset_size, dimension, data_ptr));
     });
     return true;
@@ -86,36 +88,36 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     Tensor indices;
     Tensor distances;
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        Tensor batch_indices =
-                Tensor::Full({num_query_points, knn}, -1, core::Int64);
+        Tensor batch_indices = Tensor::Full({num_query_points, knn}, -1,
+                                            Dtype::FromType<index_t>());
         Tensor batch_distances =
                 Tensor::Full({num_query_points, knn}, -1, dtype);
 
-        auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
-                holder_.get());
+        auto holder =
+                static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
+                        holder_.get());
 
         // Parallel search.
         tbb::parallel_for(
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
                     for (size_t i = r.begin(); i != r.end(); ++i) {
-                        auto single_indices = static_cast<int64_t *>(
-                                batch_indices[i].GetDataPtr());
-                        auto single_distances = static_cast<scalar_t *>(
-                                batch_distances[i].GetDataPtr());
+                        auto single_indices =
+                                batch_indices[i].GetDataPtr<index_t>();
+                        auto single_distances =
+                                batch_distances[i].GetDataPtr<scalar_t>();
 
                         // search
                         holder->index_->knnSearch(
-                                static_cast<scalar_t *>(
-                                        query_points[i].GetDataPtr()),
-                                static_cast<size_t>(knn), single_indices,
-                                single_distances);
+                                query_points[i].GetDataPtr<scalar_t>(),
+                                (size_t)knn, single_indices, single_distances);
                     }
                 });
         // Check if the number of neighbors are same.
-        Tensor check_valid =
-                batch_indices.Ge(0).To(core::Int64).Sum({-1}, false);
-        int64_t num_neighbors = check_valid[0].Item<int64_t>();
+        Tensor check_valid = batch_indices.Ge(0)
+                                     .To(Dtype::FromType<index_t>())
+                                     .Sum({-1}, false);
+        int64_t num_neighbors = check_valid[0].Item<index_t>();
         if (check_valid.Ne(num_neighbors).Any()) {
             utility::LogError(
                     "[NanoFlannIndex::SearchKnn] The number of neighbors are "
@@ -147,12 +149,13 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     Tensor neighbors_row_splits;
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        std::vector<std::vector<size_t>> batch_indices(num_query_points);
+        std::vector<std::vector<index_t>> batch_indices(num_query_points);
         std::vector<std::vector<scalar_t>> batch_distances(num_query_points);
         std::vector<int64_t> batch_nums;
 
-        auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
-                holder_.get());
+        auto holder =
+                static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
+                        holder_.get());
 
         nanoflann::SearchParams params;
         params.sorted = sort;
@@ -169,17 +172,16 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         tbb::parallel_for(
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
-                    std::vector<std::pair<int64_t, scalar_t>> ret_matches;
+                    std::vector<std::pair<index_t, scalar_t>> ret_matches;
                     for (size_t i = r.begin(); i != r.end(); ++i) {
                         scalar_t radius = radii[i].Item<scalar_t>();
                         scalar_t radius_squared = radius * radius;
 
                         size_t num_results = holder->index_->radiusSearch(
-                                static_cast<scalar_t *>(
-                                        query_points[i].GetDataPtr()),
+                                query_points[i].GetDataPtr<scalar_t>(),
                                 radius_squared, ret_matches, params);
                         ret_matches.resize(num_results);
-                        std::vector<size_t> single_indices;
+                        std::vector<index_t> single_indices;
                         std::vector<scalar_t> single_distances;
                         for (auto it = ret_matches.begin();
                              it < ret_matches.end(); it++) {
@@ -192,7 +194,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
                 });
 
         // Flatten.
-        std::vector<int64_t> batch_indices2;
+        std::vector<index_t> batch_indices2;
         std::vector<scalar_t> batch_distances2;
         for (auto i = 0; i < num_query_points; i++) {
             batch_indices2.insert(batch_indices2.end(),
@@ -211,7 +213,8 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         // Make result Tensors.
         int64_t total_nums = batch_row_splits[num_query_points];
 
-        indices = Tensor(batch_indices2, {total_nums}, core::Int64);
+        indices = Tensor(batch_indices2, {total_nums},
+                         Dtype::FromType<index_t>());
         distances = Tensor(batch_distances2, {total_nums}, dtype);
         neighbors_row_splits =
                 Tensor(batch_row_splits, {num_query_points + 1}, core::Int64);
@@ -225,8 +228,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     Dtype dtype = GetDtype();
     std::tuple<Tensor, Tensor, Tensor> result;
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        Tensor radii(std::vector<scalar_t>(num_query_points,
-                                           static_cast<scalar_t>(radius)),
+        Tensor radii(std::vector<scalar_t>(num_query_points, (scalar_t)radius),
                      {num_query_points}, dtype);
         result = SearchRadius(query_points, radii, sort);
     });
@@ -255,15 +257,17 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     Dtype dtype = GetDtype();
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        indices = Tensor::Empty({num_query_points, max_knn}, core::Int64);
-        auto indices_ptr = indices.GetDataPtr<int64_t>();
+        indices = Tensor::Empty({num_query_points, max_knn},
+                                Dtype::FromType<index_t>());
+        auto indices_ptr = indices.GetDataPtr<index_t>();
         distances = Tensor::Empty({num_query_points, max_knn}, dtype);
         auto distances_ptr = distances.GetDataPtr<scalar_t>();
-        counts = Tensor::Empty({num_query_points}, core::Int64);
-        auto counts_ptr = counts.GetDataPtr<int64_t>();
+        counts = Tensor::Empty({num_query_points}, Dtype::FromType<index_t>());
+        auto counts_ptr = counts.GetDataPtr<index_t>();
 
-        auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(
-                holder_.get());
+        auto holder =
+                static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
+                        holder_.get());
 
         nanoflann::SearchParams params;
 
@@ -271,20 +275,18 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         tbb::parallel_for(
                 tbb::blocked_range<size_t>(0, num_query_points),
                 [&](const tbb::blocked_range<size_t> &r) {
-                    std::vector<std::pair<int64_t, scalar_t>> ret_matches;
+                    std::vector<std::pair<index_t, scalar_t>> ret_matches;
                     for (size_t workload_idx = r.begin();
                          workload_idx != r.end(); ++workload_idx) {
                         int64_t result_idx = workload_idx * max_knn;
 
                         size_t num_results = holder->index_->radiusSearch(
-                                static_cast<scalar_t *>(
-                                        query_points[workload_idx]
-                                                .GetDataPtr()),
+                                query_points[workload_idx]
+                                        .GetDataPtr<scalar_t>(),
                                 radius_squared, ret_matches, params);
                         ret_matches.resize(num_results);
 
-                        int64_t result_count =
-                                static_cast<int64_t>(num_results);
+                        index_t result_count = (index_t)num_results;
                         result_count =
                                 result_count < max_knn ? result_count : max_knn;
 

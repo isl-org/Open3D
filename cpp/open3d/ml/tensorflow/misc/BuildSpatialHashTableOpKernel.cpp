@@ -27,9 +27,8 @@
 
 #include "BuildSpatialHashTableOpKernel.h"
 
-#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
+#include "open3d/core/nns/FixedRadiusSearchImpl.h"
 
-using namespace open3d::ml::impl;
 using namespace tensorflow;
 
 template <class T>
@@ -46,7 +45,7 @@ public:
                 const std::vector<uint32_t>& hash_table_splits,
                 tensorflow::Tensor& hash_table_index,
                 tensorflow::Tensor& hash_table_cell_splits) {
-        BuildSpatialHashTableCPU(
+        open3d::core::nns::impl::BuildSpatialHashTableCPU(
                 points.shape().dim_size(0), points.flat<T>().data(),
                 radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
                 (int64_t*)points_row_splits.flat<int64>().data(),
