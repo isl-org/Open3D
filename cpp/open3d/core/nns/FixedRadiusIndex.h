@@ -120,7 +120,7 @@ void BuildSpatialHashTableCPU(const Tensor& points,
 ///        as the indices.
 ///        Note that for the L2 metric the squared distances will be returned!!
 ///
-/// \param sort                If true then sort the results in ascening order
+/// \param sort                If true then sort the results in ascending order
 ///        of distance
 ///
 /// \param neighbors_index     The output tensor that saves the resulting
@@ -150,7 +150,7 @@ void FixedRadiusSearchCPU(const Tensor& points,
                           Tensor& neighbors_row_splits,
                           Tensor& neighbors_distance);
 
-// Hybrid search. This function computes a list of neighbor indices
+/// Hybrid search. This function computes a list of neighbor indices
 /// for each query point. The lists are stored linearly and if there is less
 /// neighbors than requested, the output tensor will be assigned with default
 /// values, -1 for indices and 0 for distances. In addition the function
@@ -191,17 +191,6 @@ void FixedRadiusSearchCPU(const Tensor& points,
 ///
 /// \param metric    One of L1, L2, Linf. Defines the distance metric for the
 ///        search.
-///
-/// \param ignore_query_point    If true then points with the same position as
-///        the query point will be ignored.
-///
-/// \param return_distances    If true then this function will return the
-///        distances for each neighbor to its query point in the same format
-///        as the indices.
-///        Note that for the L2 metric the squared distances will be returned!!
-///
-/// \param sort                If true then sort the results in ascening order
-///        of distance
 ///
 /// \param neighbors_index     The output tensor that saves the resulting
 ///        neighbor indices
@@ -310,7 +299,7 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
 ///        as the indices.
 ///        Note that for the L2 metric the squared distances will be returned!!
 ///
-/// \param sort                If true then sort the results in ascening order
+/// \param sort                If true then sort the results in ascending order
 /// of distance
 ///
 /// \param neighbors_index     The output tensor that saves the resulting
@@ -380,17 +369,6 @@ void FixedRadiusSearchCUDA(const Tensor& points,
 ///
 /// \param metric    One of L1, L2, Linf. Defines the distance metric for the
 ///        search.
-///
-/// \param ignore_query_point    If true then points with the same position as
-///        the query point will be ignored.
-///
-/// \param return_distances    If true then this function will return the
-///        distances for each neighbor to its query point in the same format
-///        as the indices.
-///        Note that for the L2 metric the squared distances will be returned!!
-///
-/// \param sort                If true then sort the results in ascening order
-///        of distance
 ///
 /// \param neighbors_index     The output tensor that saves the resulting
 ///        neighbor indices
