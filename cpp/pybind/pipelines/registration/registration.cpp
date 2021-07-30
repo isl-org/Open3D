@@ -136,7 +136,7 @@ void pybind_registration_classes(py::module &m) {
             "that the validation is the most computational "
             "expensive operator in an iteration. Most "
             "iterations do not do full validation. It is "
-            "crucial to control confidence_ so that the "
+            "crucial to control ``confidence`` so that the "
             "computation time is acceptable.");
     py::detail::bind_copy_functions<RANSACConvergenceCriteria>(ransac_criteria);
     ransac_criteria
