@@ -73,7 +73,7 @@ namespace io {
 class ByteSerializer : public std::vector<char> {
 public:
     template <typename T>
-    ByteSerializer& operator<<(const T& rhs) {
+    ByteSerializer& Append(const T& rhs) {
         // Write in little endian.
         const char* rhs_ptr = reinterpret_cast<const char*>(&rhs);
         for (size_t byte = 0; byte < sizeof(T); byte++) {
@@ -83,17 +83,36 @@ public:
         return *this;
     }
 
-    ByteSerializer& operator<<(const std::string& rhs) {
+    ByteSerializer& Append(const std::string& rhs) {
         this->insert(this->end(), rhs.begin(), rhs.end());
         return *this;
     }
 
-    ByteSerializer& operator<<(const char* rhs) {
+    ByteSerializer& Append(const char* rhs) {
         // Write in little endian.
         size_t len = strlen(rhs);
         for (size_t byte = 0; byte < len; byte++) {
             this->push_back(rhs[byte]);
         }
+        return *this;
+    }
+
+    template <typename InputIt>
+    ByteSerializer& Append(InputIt first, InputIt last) {
+        this->insert(this->end(), first, last);
+        return *this;
+    }
+
+    template <typename T>
+    ByteSerializer& Append(size_t count, const T& value) {
+        for (size_t i = 0; i < count; ++i) {
+            Append(value);
+        }
+        return *this;
+    }
+
+    ByteSerializer& Append(const ByteSerializer& other) {
+        this->insert(this->end(), other.begin(), other.end());
         return *this;
     }
 };
@@ -155,22 +174,25 @@ static std::vector<char> CreateNumpyHeader(const core::SizeVector& shape,
     // - Preamble is 10 bytes.
     // - Dict needs to end with '\n'.
     // - Header dict size includes the padding size and '\n'.
-    std::string property_dict = fmt::format(
+    std::string property_dict_body = fmt::format(
             "{{'descr': '{}{}{}', 'fortran_order': False, 'shape': {}, }}",
             BigEndianChar(), DtypeToChar(dtype), dtype.ByteSize(),
             shape_ss.str());
-    size_t space_padding =
-            16 - (10 + property_dict.size()) % 16 - 1;  // {0, 1, ..., 15}
-    property_dict.insert(property_dict.end(), space_padding, ' ');
-    property_dict += '\n';
+
+    ByteSerializer property_dict;
+    property_dict.Append(property_dict_body);
+    // {0, 1, ..., 15}
+    size_t padding_count = 16 - (10 + property_dict.size()) % 16 - 1;
+    property_dict.Append(padding_count, ' ');
+    property_dict.Append('\n');
 
     ByteSerializer header;
-    header << static_cast<char>(0x93);  // Magic value
-    header << "NUMPY";                  // Magic value
-    header << static_cast<char>(0x01);  // Major version
-    header << static_cast<char>(0x00);  // Minor version
-    header << static_cast<uint16_t>(property_dict.size());
-    header << property_dict;
+    header.Append<char>(0x93);  // Magic value
+    header.Append("NUMPY");     // Magic value
+    header.Append<char>(0x01);  // Major version
+    header.Append<char>(0x00);  // Minor version
+    header.Append<uint16_t>(property_dict.size());
+    header.Append(property_dict);
 
     return std::move(header);  // Use move since ByteSerializer is inherited.
 }
@@ -300,7 +322,7 @@ ParseNpyHeaderFromBuffer(const char* buffer) {
     return ParsePropertyDict(header);
 }
 
-static std::tuple<uint16_t, size_t, size_t> ParseZipFooter(FILE* fp) {
+static std::tuple<size_t, size_t, size_t> ParseZipFooter(FILE* fp) {
     size_t footer_len = 22;
     std::vector<char> footer(footer_len);
     fseek(fp, -static_cast<int64_t>(footer_len), SEEK_END);
@@ -325,7 +347,8 @@ static std::tuple<uint16_t, size_t, size_t> ParseZipFooter(FILE* fp) {
         utility::LogError("Unsupported zip footer.");
     }
 
-    return std::make_tuple(nrecs, global_header_size, global_header_offset);
+    return std::make_tuple(static_cast<size_t>(nrecs), global_header_size,
+                           global_header_offset);
 }
 
 static void WriteNpzOneTensor(const std::string& file_name,
@@ -345,7 +368,7 @@ static void WriteNpzOneTensor(const std::string& file_name,
     }
     FILE* fp = cfile.GetFILE();
 
-    uint16_t nrecs = 0;
+    size_t nrecs = 0;
     size_t global_header_offset = 0;
     ByteSerializer global_header;
 
@@ -385,52 +408,48 @@ static void WriteNpzOneTensor(const std::string& file_name,
 
     // Build the local header.
     ByteSerializer local_header;
-    local_header << "PK";                           // First part of sig
-    local_header << static_cast<uint16_t>(0x0403);  // Second part of sig
-    local_header << static_cast<uint16_t>(20);      // Min version to extract
-    local_header << static_cast<uint16_t>(0);       // General purpose bit flag
-    local_header << static_cast<uint16_t>(0);       // Compression method
-    local_header << static_cast<uint16_t>(0);       // File last mod time
-    local_header << static_cast<uint16_t>(0);       // File last mod date
-    local_header << static_cast<uint32_t>(crc);     // CRC
-    local_header << static_cast<uint32_t>(nbytes);  // Compressed size
-    local_header << static_cast<uint32_t>(nbytes);  // Uncompressed size
-    local_header << static_cast<uint16_t>(
-            var_name.size());                  // Varaible's name length
-    local_header << static_cast<uint16_t>(0);  // Extra field length
-    local_header << var_name;
+    local_header.Append("PK");                       // First part of sig
+    local_header.Append<uint16_t>(0x0403);           // Second part of sig
+    local_header.Append<uint16_t>(20);               // Min version to extract
+    local_header.Append<uint16_t>(0);                // General purpose bit flag
+    local_header.Append<uint16_t>(0);                // Compression method
+    local_header.Append<uint16_t>(0);                // File last mod time
+    local_header.Append<uint16_t>(0);                // File last mod date
+    local_header.Append<uint32_t>(crc);              // CRC
+    local_header.Append<uint32_t>(nbytes);           // Compressed size
+    local_header.Append<uint32_t>(nbytes);           // Uncompressed size
+    local_header.Append<uint16_t>(var_name.size());  // Varaible's name length
+    local_header.Append<uint16_t>(0);                // Extra field length
+    local_header.Append(var_name);
 
     // Build global header.
-    global_header << "PK";                           // First part of sig
-    global_header << static_cast<uint16_t>(0x0201);  // Second part of sig
-    global_header << static_cast<uint16_t>(20);      // Version made by
-    global_header.insert(global_header.end(), local_header.begin() + 4,
-                         local_header.begin() + 30);
-    global_header << static_cast<uint16_t>(0);  // File comment length
-    global_header << static_cast<uint16_t>(0);  // Disk number where file starts
-    global_header << static_cast<uint16_t>(0);  // Internal file attributes
-    global_header << static_cast<uint32_t>(0);  // External file attributes
+    global_header.Append("PK");              // First part of sig
+    global_header.Append<uint16_t>(0x0201);  // Second part of sig
+    global_header.Append<uint16_t>(20);      // Version made by
+    global_header.Append(local_header.begin() + 4, local_header.begin() + 30);
+    global_header.Append<uint16_t>(0);  // File comment length
+    global_header.Append<uint16_t>(0);  // Disk number where file starts
+    global_header.Append<uint16_t>(0);  // Internal file attributes
+    global_header.Append<uint32_t>(0);  // External file attributes
     // Relative offset of local file header, since it begins where the global
     // header used to begin.
-    global_header << static_cast<uint32_t>(global_header_offset);
-    global_header << var_name;
+    global_header.Append<uint32_t>(global_header_offset);
+    global_header.Append(var_name);
 
     // Build footer.
     ByteSerializer footer;
-    footer << "PK";                           // First part of sig
-    footer << static_cast<uint16_t>(0x0605);  // Second part of sig
-    footer << static_cast<uint16_t>(0);       // Number of this disk
-    footer << static_cast<uint16_t>(0);       // Disk where footer starts
-    footer << static_cast<uint16_t>(nrecs +
-                                    1);  // Number of records on this disk
-    footer << static_cast<uint16_t>(nrecs + 1);  // Total number of records
-    footer << static_cast<uint32_t>(
-            global_header.size());  // Nbytes of global headers
+    footer.Append("PK");                 // First part of sig
+    footer.Append<uint16_t>(0x0605);     // Second part of sig
+    footer.Append<uint16_t>(0);          // Number of this disk
+    footer.Append<uint16_t>(0);          // Disk where footer starts
+    footer.Append<uint16_t>(nrecs + 1);  // Number of records on this disk
+    footer.Append<uint16_t>(nrecs + 1);  // Total number of records
+    footer.Append<uint32_t>(global_header.size());  // Nbytes of global headers
     // Offset of start of global headers, since global header now starts after
     // newly written array.
-    footer << static_cast<uint32_t>(global_header_offset + nbytes +
-                                    local_header.size());
-    footer << static_cast<uint16_t>(0);  // Zip file comment length.
+    footer.Append<uint32_t>(global_header_offset + nbytes +
+                            local_header.size());
+    footer.Append<uint16_t>(0);  // Zip file comment length.
 
     // Write everything.
     fwrite(local_header.data(), sizeof(char), local_header.size(), fp);
@@ -450,15 +469,15 @@ static void WriteNpzEmpty(const std::string& file_name) {
 
     // Build footer.
     ByteSerializer footer;
-    footer << "PK";                           // First part of sig
-    footer << static_cast<uint16_t>(0x0605);  // Second part of sig
-    footer << static_cast<uint16_t>(0);       // Number of this disk
-    footer << static_cast<uint16_t>(0);       // Disk where footer starts
-    footer << static_cast<uint16_t>(0);       // Number of records on this disk
-    footer << static_cast<uint16_t>(0);       // Total number of records
-    footer << static_cast<uint32_t>(0);       // Nbytes of global headers
-    footer << static_cast<uint32_t>(0);       // External file attributes
-    footer << static_cast<uint16_t>(0);       // Zip file comment length.
+    footer.Append("PK");              // First part of sig
+    footer.Append<uint16_t>(0x0605);  // Second part of sig
+    footer.Append<uint16_t>(0);       // Number of this disk
+    footer.Append<uint16_t>(0);       // Disk where footer starts
+    footer.Append<uint16_t>(0);       // Number of records on this disk
+    footer.Append<uint16_t>(0);       // Total number of records
+    footer.Append<uint32_t>(0);       // Nbytes of global headers
+    footer.Append<uint32_t>(0);       // External file attributes
+    footer.Append<uint16_t>(0);       // Zip file comment length.
     if (footer.size() != 22) {
         utility::LogError("Internal error: empty zip file must have size 22.");
     }
