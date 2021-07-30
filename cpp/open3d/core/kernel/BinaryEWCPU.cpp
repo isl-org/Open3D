@@ -28,10 +28,10 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/BinaryEW.h"
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -40,12 +40,11 @@ namespace kernel {
 
 template <typename func_t>
 static void LaunchBinaryEWKernel(const Indexer& indexer, const func_t& func) {
-    cpu_launcher::ParallelFor(
-            indexer.NumWorkloads(), cpu_launcher::SMALL_OP_GRAIN_SIZE,
-            [&indexer, &func](int64_t i) {
-                func(indexer.GetInputPtr(0, i), indexer.GetInputPtr(1, i),
-                     indexer.GetOutputPtr(i));
-            });
+    ParallelFor(Device("CPU:0"), indexer.NumWorkloads(),
+                [&indexer, &func](int64_t i) {
+                    func(indexer.GetInputPtr(0, i), indexer.GetInputPtr(1, i),
+                         indexer.GetOutputPtr(i));
+                });
 }
 
 template <typename scalar_t>
@@ -194,7 +193,7 @@ void BinaryEWCPU(const Tensor& lhs,
                 Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
                 LaunchBoolBinaryEWCPUKernel<scalar_t, scalar_t>(
                         lhs, rhs, dst, op_code, indexer);
-            } else if (dst_dtype == Dtype::Bool) {
+            } else if (dst_dtype == core::Bool) {
                 // By default, output is boolean type.
                 Indexer indexer({lhs, rhs}, dst,
                                 DtypePolicy::INPUT_SAME_OUTPUT_BOOL);

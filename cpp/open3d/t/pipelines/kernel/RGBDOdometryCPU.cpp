@@ -27,8 +27,8 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
@@ -119,8 +119,7 @@ void ComputeOdometryResultPointToPlaneCPU(
                 return result;
             });
 #endif
-    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
-                                    device);
+    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
 
@@ -216,8 +215,7 @@ void ComputeOdometryResultIntensityCPU(
                 return result;
             });
 #endif
-    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
-                                    device);
+    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
 
@@ -324,8 +322,7 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
                 return result;
             });
 #endif
-    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Dtype::Float32,
-                                    device);
+    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
 

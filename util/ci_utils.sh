@@ -19,7 +19,6 @@ BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$BUILD_CUDA_MODULE" == OFF ]; then
     BUILD_PYTORCH_OPS=OFF # PyTorch Ops requires CUDA + CUDNN to build
 fi
-BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
@@ -40,14 +39,14 @@ else
     GCC_MAX_VER=7
 fi
 # ML
-TENSORFLOW_VER="2.4.1"
-# TORCH_CUDA_GLNX_VER="1.7.1+cu110"
-# TORCH_CPU_GLNX_VER="1.7.1+cpu"
+TENSORFLOW_VER="2.5.0"
+# TORCH_CUDA_GLNX_VER="1.8.1+cu110"
+# TORCH_CPU_GLNX_VER="1.8.1+cpu"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
-TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_MACOS_VER="1.7.1"
+TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.1/torch-1.8.1-${PYTHON_VER}-linux_x86_64.whl"
+TORCH_MACOS_VER="1.8.1"
 # Python
-CONDA_BUILD_VER="3.20.0"
+CONDA_BUILD_VER="3.21.4"
 PIP_VER="21.1.1"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
@@ -227,7 +226,6 @@ build_all() {
         -DBUILD_COMMON_CUDA_ARCHS=OFF
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
-        -DBUILD_RPC_INTERFACE="$BUILD_RPC_INTERFACE"
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
         -DBUILD_UNIT_TESTS=ON
         -DBUILD_BENCHMARKS=ON
@@ -296,7 +294,6 @@ build_pip_conda_package() {
         "-DBUILD_LIBREALSENSE=ON"
         "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
-        "-DBUILD_RPC_INTERFACE=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
         "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
@@ -421,7 +418,7 @@ run_cpp_unit_tests() {
 test_cpp_example() {
     # Now I am in Open3D/build/
     cd ..
-    git clone https://github.com/intel-isl/open3d-cmake-find-package.git
+    git clone https://github.com/isl-org/open3d-cmake-find-package.git
     cd open3d-cmake-find-package
     mkdir build
     cd build
@@ -473,7 +470,8 @@ install_docs_dependencies() {
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-torch.txt"
-        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt"
+        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt" ||
+            python -m pip install tensorflow # FIXME: Remove after Open3D-ML update
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
     fi
@@ -506,7 +504,6 @@ build_docs() {
         "-DBUILD_LIBREALSENSE=ON"
         "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
-        "-DBUILD_RPC_INTERFACE=ON"
         "-DBUNDLE_OPEN3D_ML=ON"
     )
     set -x # Echo commands on

@@ -68,6 +68,10 @@ void MemoryManagerStatistic::SetPrintAtProgramEnd(bool print) {
     print_at_program_end_ = print;
 }
 
+void MemoryManagerStatistic::SetPrintAtMallocFree(bool print) {
+    print_at_malloc_free_ = print;
+}
+
 void MemoryManagerStatistic::Print() const {
     if (level_ == PrintLevel::None) {
         return;
@@ -143,6 +147,11 @@ void MemoryManagerStatistic::CountMalloc(void* ptr,
     auto it = statistics_[device].active_allocations_.emplace(ptr, byte_size);
     if (it.second) {
         statistics_[device].count_malloc_++;
+        if (print_at_malloc_free_) {
+            utility::LogInfo("[Malloc] {}: {} @ {} bytes",
+                             fmt::sprintf("%6s", device.ToString()),
+                             fmt::ptr(ptr), byte_size);
+        }
     } else {
         utility::LogError(
                 "{} @ {} bytes on {} is still active and was not freed before",
@@ -158,17 +167,24 @@ void MemoryManagerStatistic::CountFree(void* ptr, const Device& device) {
         return;
     }
 
-    auto num_erased = statistics_[device].active_allocations_.erase(ptr);
-    if (num_erased == 1) {
+    auto num_to_erase = statistics_[device].active_allocations_.count(ptr);
+    if (num_to_erase == 1) {
+        if (print_at_malloc_free_) {
+            utility::LogInfo("[ Free ] {}: {} @ {} bytes",
+                             fmt::sprintf("%6s", device.ToString()),
+                             fmt::ptr(ptr),
+                             statistics_[device].active_allocations_.at(ptr));
+        }
+        statistics_[device].active_allocations_.erase(ptr);
         statistics_[device].count_free_++;
-    } else if (num_erased == 0) {
+    } else if (num_to_erase == 0) {
         // Either the statistics were reset before or the given pointer is
         // invalid. Do not increase any counts and ignore both cases.
     } else {
         // Should never reach here.
         utility::LogError(
                 "Invalid number of erased allocations {} for {} on {}",
-                num_erased, fmt::ptr(ptr), device.ToString());
+                num_to_erase, fmt::ptr(ptr), device.ToString());
     }
 }
 

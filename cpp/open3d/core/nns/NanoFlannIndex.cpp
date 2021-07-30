@@ -87,7 +87,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     Tensor distances;
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         Tensor batch_indices =
-                Tensor::Full({num_query_points, knn}, -1, Dtype::Int64);
+                Tensor::Full({num_query_points, knn}, -1, core::Int64);
         Tensor batch_distances =
                 Tensor::Full({num_query_points, knn}, -1, dtype);
 
@@ -114,7 +114,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                 });
         // Check if the number of neighbors are same.
         Tensor check_valid =
-                batch_indices.Ge(0).To(Dtype::Int64).Sum({-1}, false);
+                batch_indices.Ge(0).To(core::Int64).Sum({-1}, false);
         int64_t num_neighbors = check_valid[0].Item<int64_t>();
         if (check_valid.Ne(num_neighbors).Any()) {
             utility::LogError(
@@ -211,10 +211,10 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         // Make result Tensors.
         int64_t total_nums = batch_row_splits[num_query_points];
 
-        indices = Tensor(batch_indices2, {total_nums}, Dtype::Int64);
+        indices = Tensor(batch_indices2, {total_nums}, core::Int64);
         distances = Tensor(batch_distances2, {total_nums}, dtype);
         neighbors_row_splits =
-                Tensor(batch_row_splits, {num_query_points + 1}, Dtype::Int64);
+                Tensor(batch_row_splits, {num_query_points + 1}, core::Int64);
     });
     return std::make_tuple(indices, distances, neighbors_row_splits);
 };
@@ -255,11 +255,11 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     Dtype dtype = GetDtype();
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        indices = Tensor::Empty({num_query_points, max_knn}, Dtype::Int64);
+        indices = Tensor::Empty({num_query_points, max_knn}, core::Int64);
         auto indices_ptr = indices.GetDataPtr<int64_t>();
         distances = Tensor::Empty({num_query_points, max_knn}, dtype);
         auto distances_ptr = distances.GetDataPtr<scalar_t>();
-        counts = Tensor::Empty({num_query_points}, Dtype::Int64);
+        counts = Tensor::Empty({num_query_points}, core::Int64);
         auto counts_ptr = counts.GetDataPtr<int64_t>();
 
         auto holder = static_cast<NanoFlannIndexHolder<L2, scalar_t> *>(

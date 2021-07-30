@@ -24,7 +24,7 @@ jobs:
       - name: Skip check
         id: check
         run: |
-          if [ "$GITHUB_REPOSITORY" == "intel-isl/Open3D" ] && [ -n "$GCE_GPU_CI_SA" ] ; then
+          if [ "$GITHUB_REPOSITORY" == "isl-org/Open3D" ] && [ -n "$GCE_GPU_CI_SA" ] ; then
             echo "Secrets available: performing GCE test"
             echo "::set-output name=skip::no"
           else
@@ -78,7 +78,7 @@ jobs:
       max-parallel: 4     # Limit parallel runs to max GPU quota (4)
       matrix:
         # See gce-ubuntu-docker-run.sh for details. These need GPU.
-        CI_CONFIG_ID: ['2-bionic', '3-ML-bionic', '4-ML-RPC-bionic', '5-ML-RPC-focal']
+        CI_CONFIG_ID: ['2-bionic', '3-ML-SHARED-bionic', '4-ML-bionic', '5-ML-focal']
 
     env:
       CI_CONFIG_ID: ${{ matrix.CI_CONFIG_ID }}

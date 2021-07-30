@@ -27,13 +27,13 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/CUDA/StdGPUHashmap.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
 #include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/core/hashmap/Hashmap.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
@@ -69,35 +69,41 @@ void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
     const float* pcd_ptr = static_cast<const float*>(points.GetDataPtr());
 
     core::Device device = points.GetDevice();
-    core::Tensor block_coordi({8 * n, 3}, core::Dtype::Int32, device);
+    core::Tensor block_coordi({8 * n, 3}, core::Int32, device);
     int* block_coordi_ptr = static_cast<int*>(block_coordi.GetDataPtr());
-    core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32, device);
+    core::Tensor count(std::vector<int>{0}, {}, core::Int32, device);
     int* count_ptr = static_cast<int*>(count.GetDataPtr());
 
-    core::kernel::cuda_launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
-                                                        int64_t workload_idx) {
-        float x = pcd_ptr[3 * workload_idx + 0];
-        float y = pcd_ptr[3 * workload_idx + 1];
-        float z = pcd_ptr[3 * workload_idx + 2];
+    core::ParallelFor(
+            hashmap->GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                float x = pcd_ptr[3 * workload_idx + 0];
+                float y = pcd_ptr[3 * workload_idx + 1];
+                float z = pcd_ptr[3 * workload_idx + 2];
 
-        int xb_lo = static_cast<int>(floorf((x - sdf_trunc) / block_size));
-        int xb_hi = static_cast<int>(floorf((x + sdf_trunc) / block_size));
-        int yb_lo = static_cast<int>(floorf((y - sdf_trunc) / block_size));
-        int yb_hi = static_cast<int>(floorf((y + sdf_trunc) / block_size));
-        int zb_lo = static_cast<int>(floorf((z - sdf_trunc) / block_size));
-        int zb_hi = static_cast<int>(floorf((z + sdf_trunc) / block_size));
+                int xb_lo =
+                        static_cast<int>(floorf((x - sdf_trunc) / block_size));
+                int xb_hi =
+                        static_cast<int>(floorf((x + sdf_trunc) / block_size));
+                int yb_lo =
+                        static_cast<int>(floorf((y - sdf_trunc) / block_size));
+                int yb_hi =
+                        static_cast<int>(floorf((y + sdf_trunc) / block_size));
+                int zb_lo =
+                        static_cast<int>(floorf((z - sdf_trunc) / block_size));
+                int zb_hi =
+                        static_cast<int>(floorf((z + sdf_trunc) / block_size));
 
-        for (int xb = xb_lo; xb <= xb_hi; ++xb) {
-            for (int yb = yb_lo; yb <= yb_hi; ++yb) {
-                for (int zb = zb_lo; zb <= zb_hi; ++zb) {
-                    int idx = atomicAdd(count_ptr, 1);
-                    block_coordi_ptr[3 * idx + 0] = xb;
-                    block_coordi_ptr[3 * idx + 1] = yb;
-                    block_coordi_ptr[3 * idx + 2] = zb;
+                for (int xb = xb_lo; xb <= xb_hi; ++xb) {
+                    for (int yb = yb_lo; yb <= yb_hi; ++yb) {
+                        for (int zb = zb_lo; zb <= zb_hi; ++zb) {
+                            int idx = atomicAdd(count_ptr, 1);
+                            block_coordi_ptr[3 * idx + 0] = xb;
+                            block_coordi_ptr[3 * idx + 1] = yb;
+                            block_coordi_ptr[3 * idx + 2] = zb;
+                        }
+                    }
                 }
-            }
-        }
-    });
+            });
 
     int total_block_count = count.Item<int>();
     if (total_block_count == 0) {

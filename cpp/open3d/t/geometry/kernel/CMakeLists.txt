@@ -5,6 +5,8 @@ target_sources(tgeometry_kernel PRIVATE
     ImageCPU.cpp
     PointCloud.cpp
     PointCloudCPU.cpp
+    Transform.cpp
+    TransformCPU.cpp
     TSDFVoxelGrid.cpp
     TSDFVoxelGridCPU.cpp
 )
@@ -14,6 +16,7 @@ if (BUILD_CUDA_MODULE)
         ImageCUDA.cu
         NPPImage.cpp
         PointCloudCUDA.cu
+        TransformCUDA.cu
         TSDFVoxelGridCUDA.cu
     )
 endif()

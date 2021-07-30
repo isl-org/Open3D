@@ -37,16 +37,15 @@
 #include <type_traits>
 
 #include "open3d/core/Blob.h"
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/FunctionTraits.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/core/kernel/Reduction.h"
 #include "open3d/utility/Logging.h"
 
@@ -847,7 +846,7 @@ public:
             numerator_ = 1;
             denominator_ = 1;
         } else {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
+            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
             buffer_ = std::make_unique<Blob>(size, device);
             acc_ptr_ = (char*)buffer_->GetDataPtr();
@@ -973,7 +972,7 @@ private:
         void* buffer = nullptr;
         void* semaphores = nullptr;
         if (config.ShouldGlobalReduce()) {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
+            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
 
             buffer_blob =
@@ -1001,9 +1000,9 @@ private:
         // Launch reduce kernel
         int shared_memory = config.SharedMemorySize();
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
-                <<<config.GridDim(), config.BlockDim(), shared_memory>>>(
-                        reduce_op);
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+                <<<config.GridDim(), config.BlockDim(), shared_memory,
+                   core::cuda::GetStream()>>>(reduce_op);
+        cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 
@@ -1020,7 +1019,8 @@ void ReductionCUDA(const Tensor& src,
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         CUDAReductionEngine re(indexer);
         Dtype dtype = src.GetDtype();
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             switch (op_code) {
                 case ReductionOpCode::Sum:
@@ -1072,13 +1072,14 @@ void ReductionCUDA(const Tensor& src,
             }
         });
     } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
-        if (dst.GetDtype() != Dtype::Int64) {
+        if (dst.GetDtype() != core::Int64) {
             utility::LogError("Arg-reduction must have int64 output dtype.");
         }
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME, dims);
         CUDAReductionEngine re(indexer);
         Dtype dtype = src.GetDtype();
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             switch (op_code) {
                 case ReductionOpCode::ArgMin:
@@ -1110,17 +1111,18 @@ void ReductionCUDA(const Tensor& src,
         });
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
-        if (src.GetDtype() != Dtype::Bool) {
+        if (src.GetDtype() != core::Bool) {
             utility::LogError(
                     "Boolean reduction only supports boolean input tensor.");
         }
-        if (dst.GetDtype() != Dtype::Bool) {
+        if (dst.GetDtype() != core::Bool) {
             utility::LogError(
                     "Boolean reduction only supports boolean output tensor.");
         }
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         CUDAReductionEngine re(indexer);
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         switch (op_code) {
             case ReductionOpCode::All:
                 if (indexer.NumWorkloads() == 0) {

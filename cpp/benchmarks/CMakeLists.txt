@@ -11,6 +11,11 @@ target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DI
 target_compile_definitions(benchmarks PRIVATE BENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
 
 target_link_libraries(benchmarks PRIVATE Open3D::Open3D)
+if (BUILD_CUDA_MODULE)
+    find_package(CUDAToolkit REQUIRED)
+    target_link_libraries(benchmarks PRIVATE CUDA::cudart)
+endif()
+
 open3d_show_and_abort_on_warning(benchmarks)
 open3d_set_global_properties(benchmarks)
 open3d_link_3rdparty_libraries(benchmarks)

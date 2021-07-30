@@ -90,82 +90,85 @@ void IntegrateCPU
 
     int64_t n = indices.GetLength() * resolution3;
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
-#endif
-
     DISPATCH_BYTESIZE_TO_VOXEL(
             voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
-                                                 int64_t workload_idx) {
-                    // Natural index (0, N) -> (block_idx, voxel_idx)
-                    int block_idx = indices_ptr[workload_idx / resolution3];
-                    int voxel_idx = workload_idx % resolution3;
+                core::ParallelFor(
+                        depth.GetDevice(), n,
+                        [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                            // Natural index (0, N) -> (block_idx, voxel_idx)
+                            int block_idx =
+                                    indices_ptr[workload_idx / resolution3];
+                            int voxel_idx = workload_idx % resolution3;
 
-                    /// Coordinate transform
-                    // block_idx -> (x_block, y_block, z_block)
-                    int* block_key_ptr =
-                            block_keys_indexer.GetDataPtr<int>(block_idx);
-                    int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
-                    int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
-                    int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
+                            /// Coordinate transform
+                            // block_idx -> (x_block, y_block, z_block)
+                            int* block_key_ptr =
+                                    block_keys_indexer.GetDataPtr<int>(
+                                            block_idx);
+                            int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
+                            int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
+                            int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
 
-                    // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-                    int64_t xv, yv, zv;
-                    voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+                            // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                            int64_t xv, yv, zv;
+                            voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv,
+                                                          &zv);
 
-                    // coordinate in world (in voxel)
-                    int64_t x = (xb * resolution + xv);
-                    int64_t y = (yb * resolution + yv);
-                    int64_t z = (zb * resolution + zv);
+                            // coordinate in world (in voxel)
+                            int64_t x = (xb * resolution + xv);
+                            int64_t y = (yb * resolution + yv);
+                            int64_t z = (zb * resolution + zv);
 
-                    // coordinate in camera (in voxel -> in meter)
-                    float xc, yc, zc, u, v;
-                    transform_indexer.RigidTransform(
-                            static_cast<float>(x), static_cast<float>(y),
-                            static_cast<float>(z), &xc, &yc, &zc);
+                            // coordinate in camera (in voxel -> in meter)
+                            float xc, yc, zc, u, v;
+                            transform_indexer.RigidTransform(
+                                    static_cast<float>(x),
+                                    static_cast<float>(y),
+                                    static_cast<float>(z), &xc, &yc, &zc);
 
-                    // coordinate in image (in pixel)
-                    transform_indexer.Project(xc, yc, zc, &u, &v);
-                    if (!depth_indexer.InBoundary(u, v)) {
-                        return;
-                    }
+                            // coordinate in image (in pixel)
+                            transform_indexer.Project(xc, yc, zc, &u, &v);
+                            if (!depth_indexer.InBoundary(u, v)) {
+                                return;
+                            }
 
-                    // Associate image workload and compute SDF and TSDF.
-                    float depth = *depth_indexer.GetDataPtr<float>(
-                                          static_cast<int64_t>(u),
-                                          static_cast<int64_t>(v)) /
-                                  depth_scale;
+                            // Associate image workload and compute SDF and
+                            // TSDF.
+                            float depth = *depth_indexer.GetDataPtr<float>(
+                                                  static_cast<int64_t>(u),
+                                                  static_cast<int64_t>(v)) /
+                                          depth_scale;
 
-                    float sdf = (depth - zc);
-                    if (depth <= 0 || depth > depth_max || zc <= 0 ||
-                        sdf < -sdf_trunc) {
-                        return;
-                    }
-                    sdf = sdf < sdf_trunc ? sdf : sdf_trunc;
-                    sdf /= sdf_trunc;
+                            float sdf = (depth - zc);
+                            if (depth <= 0 || depth > depth_max || zc <= 0 ||
+                                sdf < -sdf_trunc) {
+                                return;
+                            }
+                            sdf = sdf < sdf_trunc ? sdf : sdf_trunc;
+                            sdf /= sdf_trunc;
 
-                    // Associate voxel workload and update TSDF/Weights
-                    voxel_t* voxel_ptr =
-                            voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
-                                    xv, yv, zv, block_idx);
+                            // Associate voxel workload and update TSDF/Weights
+                            voxel_t* voxel_ptr =
+                                    voxel_block_buffer_indexer
+                                            .GetDataPtr<voxel_t>(xv, yv, zv,
+                                                                 block_idx);
 
-                    if (integrate_color) {
-                        float* color_ptr = color_indexer.GetDataPtr<float>(
-                                static_cast<int64_t>(u),
-                                static_cast<int64_t>(v));
+                            if (integrate_color) {
+                                float* color_ptr =
+                                        color_indexer.GetDataPtr<float>(
+                                                static_cast<int64_t>(u),
+                                                static_cast<int64_t>(v));
 
-                        voxel_ptr->Integrate(sdf, color_ptr[0], color_ptr[1],
-                                             color_ptr[2]);
-                    } else {
-                        voxel_ptr->Integrate(sdf);
-                    }
-                });
+                                voxel_ptr->Integrate(sdf, color_ptr[0],
+                                                     color_ptr[1],
+                                                     color_ptr[2]);
+                            } else {
+                                voxel_ptr->Integrate(sdf);
+                            }
+                        });
             });
 #if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
 }
 
@@ -206,18 +209,12 @@ void ExtractSurfacePointsCPU
 
     // Output
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32,
+    core::Tensor count(std::vector<int>{0}, {1}, core::Int32,
                        block_values.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
     std::atomic<int> count_atomic(0);
     std::atomic<int>* count_ptr = &count_atomic;
-#endif
-
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
 #endif
 
     if (valid_size < 0) {
@@ -227,55 +224,62 @@ void ExtractSurfacePointsCPU
         // This pass determines valid number of points.
         DISPATCH_BYTESIZE_TO_VOXEL(
                 voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
-                                                     int64_t workload_idx) {
-                        auto GetVoxelAt =
-                                [&] OPEN3D_DEVICE(
-                                        int xo, int yo, int zo,
-                                        int curr_block_idx) -> voxel_t* {
-                            return DeviceGetVoxelAt<voxel_t>(
-                                    xo, yo, zo, curr_block_idx,
-                                    static_cast<int>(resolution),
-                                    nb_block_masks_indexer,
-                                    nb_block_indices_indexer,
-                                    voxel_block_buffer_indexer);
-                        };
+                    core::ParallelFor(
+                            indices.GetDevice(), n,
+                            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                                auto GetVoxelAt = [&] OPEN3D_DEVICE(
+                                                          int xo, int yo,
+                                                          int zo,
+                                                          int curr_block_idx)
+                                        -> voxel_t* {
+                                    return DeviceGetVoxelAt<voxel_t>(
+                                            xo, yo, zo, curr_block_idx,
+                                            static_cast<int>(resolution),
+                                            nb_block_masks_indexer,
+                                            nb_block_indices_indexer,
+                                            voxel_block_buffer_indexer);
+                                };
 
-                        // Natural index (0, N) -> (block_idx,
-                        // voxel_idx)
-                        int64_t workload_block_idx = workload_idx / resolution3;
-                        int64_t block_idx = indices_ptr[workload_block_idx];
-                        int64_t voxel_idx = workload_idx % resolution3;
+                                // Natural index (0, N) -> (block_idx,
+                                // voxel_idx)
+                                int64_t workload_block_idx =
+                                        workload_idx / resolution3;
+                                int64_t block_idx =
+                                        indices_ptr[workload_block_idx];
+                                int64_t voxel_idx = workload_idx % resolution3;
 
-                        // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-                        int64_t xv, yv, zv;
-                        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+                                // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                                int64_t xv, yv, zv;
+                                voxel_indexer.WorkloadToCoord(voxel_idx, &xv,
+                                                              &yv, &zv);
 
-                        voxel_t* voxel_ptr =
-                                voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
-                                        xv, yv, zv, block_idx);
-                        float tsdf_o = voxel_ptr->GetTSDF();
-                        float weight_o = voxel_ptr->GetWeight();
-                        if (weight_o <= weight_threshold) return;
+                                voxel_t* voxel_ptr =
+                                        voxel_block_buffer_indexer
+                                                .GetDataPtr<voxel_t>(xv, yv, zv,
+                                                                     block_idx);
+                                float tsdf_o = voxel_ptr->GetTSDF();
+                                float weight_o = voxel_ptr->GetWeight();
+                                if (weight_o <= weight_threshold) return;
 
-                        // Enumerate x-y-z directions
-                        for (int i = 0; i < 3; ++i) {
-                            voxel_t* ptr = GetVoxelAt(
-                                    static_cast<int>(xv) + (i == 0),
-                                    static_cast<int>(yv) + (i == 1),
-                                    static_cast<int>(zv) + (i == 2),
-                                    static_cast<int>(workload_block_idx));
-                            if (ptr == nullptr) continue;
+                                // Enumerate x-y-z directions
+                                for (int i = 0; i < 3; ++i) {
+                                    voxel_t* ptr = GetVoxelAt(
+                                            static_cast<int>(xv) + (i == 0),
+                                            static_cast<int>(yv) + (i == 1),
+                                            static_cast<int>(zv) + (i == 2),
+                                            static_cast<int>(
+                                                    workload_block_idx));
+                                    if (ptr == nullptr) continue;
 
-                            float tsdf_i = ptr->GetTSDF();
-                            float weight_i = ptr->GetWeight();
+                                    float tsdf_i = ptr->GetTSDF();
+                                    float weight_i = ptr->GetWeight();
 
-                            if (weight_i > weight_threshold &&
-                                tsdf_i * tsdf_o < 0) {
-                                OPEN3D_ATOMIC_ADD(count_ptr, 1);
-                            }
-                        }
-                    });
+                                    if (weight_i > weight_threshold &&
+                                        tsdf_i * tsdf_o < 0) {
+                                        OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                                    }
+                                }
+                            });
                 });
 
 #if defined(__CUDACC__)
@@ -289,7 +293,7 @@ void ExtractSurfacePointsCPU
 
     int max_count = valid_size;
     if (points.GetLength() == 0) {
-        points = core::Tensor({max_count, 3}, core::Dtype::Float32,
+        points = core::Tensor({max_count, 3}, core::Float32,
                               block_values.GetDevice());
     }
     NDArrayIndexer point_indexer(points, 1);
@@ -300,9 +304,8 @@ void ExtractSurfacePointsCPU
     if (normals.has_value()) {
         extract_normal = true;
         if (normals.value().get().GetLength() == 0) {
-            normals.value().get() =
-                    core::Tensor({max_count, 3}, core::Dtype::Float32,
-                                 block_values.GetDevice());
+            normals.value().get() = core::Tensor({max_count, 3}, core::Float32,
+                                                 block_values.GetDevice());
         }
         normal_indexer = NDArrayIndexer(normals.value().get(), 1);
     }
@@ -316,151 +319,170 @@ void ExtractSurfacePointsCPU
                 if (voxel_t::HasColor() && colors.has_value()) {
                     extract_color = true;
                     if (colors.value().get().GetLength() == 0) {
-                        colors.value().get() = core::Tensor(
-                                {max_count, 3}, core::Dtype::Float32,
-                                block_values.GetDevice());
+                        colors.value().get() =
+                                core::Tensor({max_count, 3}, core::Float32,
+                                             block_values.GetDevice());
                     }
                     color_indexer = NDArrayIndexer(colors.value().get(), 1);
                 }
 
-                launcher::ParallelFor(n, [=] OPEN3D_DEVICE(
-                                                 int64_t workload_idx) {
-                    auto GetVoxelAt = [&] OPEN3D_DEVICE(
-                                              int xo, int yo, int zo,
-                                              int curr_block_idx) -> voxel_t* {
-                        return DeviceGetVoxelAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx,
-                                static_cast<int>(resolution),
-                                nb_block_masks_indexer,
-                                nb_block_indices_indexer,
-                                voxel_block_buffer_indexer);
-                    };
-                    auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
-                                                         int curr_block_idx,
-                                                         float* n) {
-                        return DeviceGetNormalAt<voxel_t>(
-                                xo, yo, zo, curr_block_idx, n,
-                                static_cast<int>(resolution), voxel_size,
-                                nb_block_masks_indexer,
-                                nb_block_indices_indexer,
-                                voxel_block_buffer_indexer);
-                    };
+                core::ParallelFor(
+                        indices.GetDevice(), n,
+                        [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                            auto GetVoxelAt =
+                                    [&] OPEN3D_DEVICE(
+                                            int xo, int yo, int zo,
+                                            int curr_block_idx) -> voxel_t* {
+                                return DeviceGetVoxelAt<voxel_t>(
+                                        xo, yo, zo, curr_block_idx,
+                                        static_cast<int>(resolution),
+                                        nb_block_masks_indexer,
+                                        nb_block_indices_indexer,
+                                        voxel_block_buffer_indexer);
+                            };
+                            auto GetNormalAt = [&] OPEN3D_DEVICE(
+                                                       int xo, int yo, int zo,
+                                                       int curr_block_idx,
+                                                       float* n) {
+                                return DeviceGetNormalAt<voxel_t>(
+                                        xo, yo, zo, curr_block_idx, n,
+                                        static_cast<int>(resolution),
+                                        voxel_size, nb_block_masks_indexer,
+                                        nb_block_indices_indexer,
+                                        voxel_block_buffer_indexer);
+                            };
 
-                    // Natural index (0, N) -> (block_idx, voxel_idx)
-                    int64_t workload_block_idx = workload_idx / resolution3;
-                    int64_t block_idx = indices_ptr[workload_block_idx];
-                    int64_t voxel_idx = workload_idx % resolution3;
+                            // Natural index (0, N) -> (block_idx, voxel_idx)
+                            int64_t workload_block_idx =
+                                    workload_idx / resolution3;
+                            int64_t block_idx = indices_ptr[workload_block_idx];
+                            int64_t voxel_idx = workload_idx % resolution3;
 
-                    /// Coordinate transform
-                    // block_idx -> (x_block, y_block, z_block)
-                    int* block_key_ptr =
-                            block_keys_indexer.GetDataPtr<int>(block_idx);
-                    int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
-                    int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
-                    int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
+                            /// Coordinate transform
+                            // block_idx -> (x_block, y_block, z_block)
+                            int* block_key_ptr =
+                                    block_keys_indexer.GetDataPtr<int>(
+                                            block_idx);
+                            int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
+                            int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
+                            int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
 
-                    // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-                    int64_t xv, yv, zv;
-                    voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+                            // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                            int64_t xv, yv, zv;
+                            voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv,
+                                                          &zv);
 
-                    voxel_t* voxel_ptr =
-                            voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
-                                    xv, yv, zv, block_idx);
-                    float tsdf_o = voxel_ptr->GetTSDF();
-                    float weight_o = voxel_ptr->GetWeight();
+                            voxel_t* voxel_ptr =
+                                    voxel_block_buffer_indexer
+                                            .GetDataPtr<voxel_t>(xv, yv, zv,
+                                                                 block_idx);
+                            float tsdf_o = voxel_ptr->GetTSDF();
+                            float weight_o = voxel_ptr->GetWeight();
 
-                    if (weight_o <= weight_threshold) return;
+                            if (weight_o <= weight_threshold) return;
 
-                    int64_t x = xb * resolution + xv;
-                    int64_t y = yb * resolution + yv;
-                    int64_t z = zb * resolution + zv;
+                            int64_t x = xb * resolution + xv;
+                            int64_t y = yb * resolution + yv;
+                            int64_t z = zb * resolution + zv;
 
-                    float no[3] = {0}, ni[3] = {0};
-                    if (extract_normal) {
-                        GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
-                                    static_cast<int>(zv),
-                                    static_cast<int>(workload_block_idx), no);
-                    }
-
-                    // Enumerate x-y-z axis
-                    for (int i = 0; i < 3; ++i) {
-                        voxel_t* ptr = GetVoxelAt(
-                                static_cast<int>(xv) + (i == 0),
-                                static_cast<int>(yv) + (i == 1),
-                                static_cast<int>(zv) + (i == 2),
-                                static_cast<int>(workload_block_idx));
-                        if (ptr == nullptr) continue;
-
-                        float tsdf_i = ptr->GetTSDF();
-                        float weight_i = ptr->GetWeight();
-
-                        if (weight_i > weight_threshold &&
-                            tsdf_i * tsdf_o < 0) {
-                            float ratio = (0 - tsdf_o) / (tsdf_i - tsdf_o);
-
-                            int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
-                            if (idx >= valid_size) {
-                                printf("Point cloud size larger than "
-                                       "estimated, please increase the "
-                                       "estimation!\n");
-                                return;
-                            }
-
-                            float* point_ptr =
-                                    point_indexer.GetDataPtr<float>(idx);
-                            point_ptr[0] =
-                                    voxel_size * (x + ratio * int(i == 0));
-                            point_ptr[1] =
-                                    voxel_size * (y + ratio * int(i == 1));
-                            point_ptr[2] =
-                                    voxel_size * (z + ratio * int(i == 2));
-
-                            if (extract_color) {
-                                float* color_ptr =
-                                        color_indexer.GetDataPtr<float>(idx);
-
-                                float r_o = voxel_ptr->GetR();
-                                float g_o = voxel_ptr->GetG();
-                                float b_o = voxel_ptr->GetB();
-
-                                float r_i = ptr->GetR();
-                                float g_i = ptr->GetG();
-                                float b_i = ptr->GetB();
-
-                                color_ptr[0] =
-                                        ((1 - ratio) * r_o + ratio * r_i) /
-                                        255.0f;
-                                color_ptr[1] =
-                                        ((1 - ratio) * g_o + ratio * g_i) /
-                                        255.0f;
-                                color_ptr[2] =
-                                        ((1 - ratio) * b_o + ratio * b_i) /
-                                        255.0f;
-                            }
-
+                            float no[3] = {0}, ni[3] = {0};
                             if (extract_normal) {
                                 GetNormalAt(
+                                        static_cast<int>(xv),
+                                        static_cast<int>(yv),
+                                        static_cast<int>(zv),
+                                        static_cast<int>(workload_block_idx),
+                                        no);
+                            }
+
+                            // Enumerate x-y-z axis
+                            for (int i = 0; i < 3; ++i) {
+                                voxel_t* ptr = GetVoxelAt(
                                         static_cast<int>(xv) + (i == 0),
                                         static_cast<int>(yv) + (i == 1),
                                         static_cast<int>(zv) + (i == 2),
-                                        static_cast<int>(workload_block_idx),
-                                        ni);
+                                        static_cast<int>(workload_block_idx));
+                                if (ptr == nullptr) continue;
 
-                                float* normal_ptr =
-                                        normal_indexer.GetDataPtr<float>(idx);
-                                float nx = (1 - ratio) * no[0] + ratio * ni[0];
-                                float ny = (1 - ratio) * no[1] + ratio * ni[1];
-                                float nz = (1 - ratio) * no[2] + ratio * ni[2];
-                                float norm = static_cast<float>(
-                                        sqrt(nx * nx + ny * ny + nz * nz) +
-                                        1e-5);
-                                normal_ptr[0] = nx / norm;
-                                normal_ptr[1] = ny / norm;
-                                normal_ptr[2] = nz / norm;
+                                float tsdf_i = ptr->GetTSDF();
+                                float weight_i = ptr->GetWeight();
+
+                                if (weight_i > weight_threshold &&
+                                    tsdf_i * tsdf_o < 0) {
+                                    float ratio =
+                                            (0 - tsdf_o) / (tsdf_i - tsdf_o);
+
+                                    int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                                    if (idx >= valid_size) {
+                                        printf("Point cloud size larger than "
+                                               "estimated, please increase the "
+                                               "estimation!\n");
+                                        return;
+                                    }
+
+                                    float* point_ptr =
+                                            point_indexer.GetDataPtr<float>(
+                                                    idx);
+                                    point_ptr[0] = voxel_size *
+                                                   (x + ratio * int(i == 0));
+                                    point_ptr[1] = voxel_size *
+                                                   (y + ratio * int(i == 1));
+                                    point_ptr[2] = voxel_size *
+                                                   (z + ratio * int(i == 2));
+
+                                    if (extract_color) {
+                                        float* color_ptr =
+                                                color_indexer.GetDataPtr<float>(
+                                                        idx);
+
+                                        float r_o = voxel_ptr->GetR();
+                                        float g_o = voxel_ptr->GetG();
+                                        float b_o = voxel_ptr->GetB();
+
+                                        float r_i = ptr->GetR();
+                                        float g_i = ptr->GetG();
+                                        float b_i = ptr->GetB();
+
+                                        color_ptr[0] = ((1 - ratio) * r_o +
+                                                        ratio * r_i) /
+                                                       255.0f;
+                                        color_ptr[1] = ((1 - ratio) * g_o +
+                                                        ratio * g_i) /
+                                                       255.0f;
+                                        color_ptr[2] = ((1 - ratio) * b_o +
+                                                        ratio * b_i) /
+                                                       255.0f;
+                                    }
+
+                                    if (extract_normal) {
+                                        GetNormalAt(
+                                                static_cast<int>(xv) + (i == 0),
+                                                static_cast<int>(yv) + (i == 1),
+                                                static_cast<int>(zv) + (i == 2),
+                                                static_cast<int>(
+                                                        workload_block_idx),
+                                                ni);
+
+                                        float* normal_ptr =
+                                                normal_indexer
+                                                        .GetDataPtr<float>(idx);
+                                        float nx = (1 - ratio) * no[0] +
+                                                   ratio * ni[0];
+                                        float ny = (1 - ratio) * no[1] +
+                                                   ratio * ni[1];
+                                        float nz = (1 - ratio) * no[2] +
+                                                   ratio * ni[2];
+                                        float norm = static_cast<float>(
+                                                sqrt(nx * nx + ny * ny +
+                                                     nz * nz) +
+                                                1e-5);
+                                        normal_ptr[0] = nx / norm;
+                                        normal_ptr[1] = ny / norm;
+                                        normal_ptr[2] = nz / norm;
+                                    }
+                                }
                             }
-                        }
-                    }
-                });
+                        });
             });
 #if defined(__CUDACC__)
     int total_count = count.Item<int>();
@@ -472,7 +494,7 @@ void ExtractSurfacePointsCPU
     valid_size = total_count;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
 }
 
@@ -508,8 +530,8 @@ void ExtractSurfaceMeshCPU
     core::Tensor mesh_structure;
     try {
         mesh_structure = core::Tensor::Zeros(
-                {n_blocks, resolution, resolution, resolution, 4},
-                core::Dtype::Int32, block_keys.GetDevice());
+                {n_blocks, resolution, resolution, resolution, 4}, core::Int32,
+                block_keys.GetDevice());
     } catch (const std::runtime_error&) {
         utility::LogError(
                 "[MeshExtractionKernel] Unable to allocate assistance mesh "
@@ -532,90 +554,94 @@ void ExtractSurfaceMeshCPU
     const int64_t* inv_indices_ptr = inv_indices.GetDataPtr<int64_t>();
     int64_t n = n_blocks * resolution3;
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
-#endif
     int64_t voxel_bytesize = voxel_block_buffer_indexer.ElementByteSize();
     // Pass 0: analyze mesh structure, set up one-on-one correspondences
     // from edges to vertices.
     DISPATCH_BYTESIZE_TO_VOXEL(voxel_bytesize, [&]() {
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
-            auto GetVoxelAt = [&] OPEN3D_DEVICE(
-                                      int xo, int yo, int zo,
-                                      int curr_block_idx) -> voxel_t* {
-                return DeviceGetVoxelAt<voxel_t>(
-                        xo, yo, zo, curr_block_idx,
-                        static_cast<int>(resolution), nb_block_masks_indexer,
-                        nb_block_indices_indexer, voxel_block_buffer_indexer);
-            };
+        core::ParallelFor(
+                indices.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t widx) {
+                    auto GetVoxelAt = [&] OPEN3D_DEVICE(
+                                              int xo, int yo, int zo,
+                                              int curr_block_idx) -> voxel_t* {
+                        return DeviceGetVoxelAt<voxel_t>(
+                                xo, yo, zo, curr_block_idx,
+                                static_cast<int>(resolution),
+                                nb_block_masks_indexer,
+                                nb_block_indices_indexer,
+                                voxel_block_buffer_indexer);
+                    };
 
-            // Natural index (0, N) -> (block_idx, voxel_idx)
-            int64_t workload_block_idx = widx / resolution3;
-            int64_t voxel_idx = widx % resolution3;
+                    // Natural index (0, N) -> (block_idx, voxel_idx)
+                    int64_t workload_block_idx = widx / resolution3;
+                    int64_t voxel_idx = widx % resolution3;
 
-            // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-            int64_t xv, yv, zv;
-            voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+                    // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                    int64_t xv, yv, zv;
+                    voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-            // Check per-vertex sign in the cube to determine cube
-            // type
-            int table_idx = 0;
-            for (int i = 0; i < 8; ++i) {
-                voxel_t* voxel_ptr_i =
-                        GetVoxelAt(static_cast<int>(xv) + vtx_shifts[i][0],
-                                   static_cast<int>(yv) + vtx_shifts[i][1],
-                                   static_cast<int>(zv) + vtx_shifts[i][2],
-                                   static_cast<int>(workload_block_idx));
-                if (voxel_ptr_i == nullptr) return;
+                    // Check per-vertex sign in the cube to determine cube
+                    // type
+                    int table_idx = 0;
+                    for (int i = 0; i < 8; ++i) {
+                        voxel_t* voxel_ptr_i = GetVoxelAt(
+                                static_cast<int>(xv) + vtx_shifts[i][0],
+                                static_cast<int>(yv) + vtx_shifts[i][1],
+                                static_cast<int>(zv) + vtx_shifts[i][2],
+                                static_cast<int>(workload_block_idx));
+                        if (voxel_ptr_i == nullptr) return;
 
-                float tsdf_i = voxel_ptr_i->GetTSDF();
-                float weight_i = voxel_ptr_i->GetWeight();
-                if (weight_i <= weight_threshold) return;
+                        float tsdf_i = voxel_ptr_i->GetTSDF();
+                        float weight_i = voxel_ptr_i->GetWeight();
+                        if (weight_i <= weight_threshold) return;
 
-                table_idx |= ((tsdf_i < 0) ? (1 << i) : 0);
-            }
+                        table_idx |= ((tsdf_i < 0) ? (1 << i) : 0);
+                    }
 
-            int* mesh_struct_ptr = mesh_structure_indexer.GetDataPtr<int>(
-                    xv, yv, zv, workload_block_idx);
-            mesh_struct_ptr[3] = table_idx;
+                    int* mesh_struct_ptr =
+                            mesh_structure_indexer.GetDataPtr<int>(
+                                    xv, yv, zv, workload_block_idx);
+                    mesh_struct_ptr[3] = table_idx;
 
-            if (table_idx == 0 || table_idx == 255) return;
+                    if (table_idx == 0 || table_idx == 255) return;
 
-            // Check per-edge sign determine the cube type
-            int edges_with_vertices = edge_table[table_idx];
-            for (int i = 0; i < 12; ++i) {
-                if (edges_with_vertices & (1 << i)) {
-                    int64_t xv_i = xv + edge_shifts[i][0];
-                    int64_t yv_i = yv + edge_shifts[i][1];
-                    int64_t zv_i = zv + edge_shifts[i][2];
-                    int edge_i = edge_shifts[i][3];
+                    // Check per-edge sign determine the cube type
+                    int edges_with_vertices = edge_table[table_idx];
+                    for (int i = 0; i < 12; ++i) {
+                        if (edges_with_vertices & (1 << i)) {
+                            int64_t xv_i = xv + edge_shifts[i][0];
+                            int64_t yv_i = yv + edge_shifts[i][1];
+                            int64_t zv_i = zv + edge_shifts[i][2];
+                            int edge_i = edge_shifts[i][3];
 
-                    int dxb = static_cast<int>(xv_i / resolution);
-                    int dyb = static_cast<int>(yv_i / resolution);
-                    int dzb = static_cast<int>(zv_i / resolution);
+                            int dxb = static_cast<int>(xv_i / resolution);
+                            int dyb = static_cast<int>(yv_i / resolution);
+                            int dzb = static_cast<int>(zv_i / resolution);
 
-                    int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+                            int nb_idx =
+                                    (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-                    int64_t block_idx_i =
-                            *nb_block_indices_indexer.GetDataPtr<int64_t>(
-                                    workload_block_idx, nb_idx);
-                    int* mesh_ptr_i = mesh_structure_indexer.GetDataPtr<int>(
-                            xv_i - dxb * resolution, yv_i - dyb * resolution,
-                            zv_i - dzb * resolution,
-                            inv_indices_ptr[block_idx_i]);
+                            int64_t block_idx_i =
+                                    *nb_block_indices_indexer
+                                             .GetDataPtr<int64_t>(
+                                                     workload_block_idx,
+                                                     nb_idx);
+                            int* mesh_ptr_i =
+                                    mesh_structure_indexer.GetDataPtr<int>(
+                                            xv_i - dxb * resolution,
+                                            yv_i - dyb * resolution,
+                                            zv_i - dzb * resolution,
+                                            inv_indices_ptr[block_idx_i]);
 
-                    // Non-atomic write, but we are safe
-                    mesh_ptr_i[edge_i] = -1;
-                }
-            }
-        });
+                            // Non-atomic write, but we are safe
+                            mesh_ptr_i[edge_i] = -1;
+                        }
+                    }
+                });
     });
 
     // Pass 1: determine valid number of vertices (if not preset)
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {}, core::Dtype::Int32,
+    core::Tensor count(std::vector<int>{0}, {}, core::Int32,
                        block_values.GetDevice());
 
     int* count_ptr = count.GetDataPtr<int>();
@@ -625,33 +651,35 @@ void ExtractSurfaceMeshCPU
 #endif
 
     if (vertex_count < 0) {
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
-            // Natural index (0, N) -> (block_idx, voxel_idx)
-            int64_t workload_block_idx = widx / resolution3;
-            int64_t voxel_idx = widx % resolution3;
+        core::ParallelFor(
+                indices.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t widx) {
+                    // Natural index (0, N) -> (block_idx, voxel_idx)
+                    int64_t workload_block_idx = widx / resolution3;
+                    int64_t voxel_idx = widx % resolution3;
 
-            // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-            int64_t xv, yv, zv;
-            voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+                    // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                    int64_t xv, yv, zv;
+                    voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-            // Obtain voxel's mesh struct ptr
-            int* mesh_struct_ptr = mesh_structure_indexer.GetDataPtr<int>(
-                    xv, yv, zv, workload_block_idx);
+                    // Obtain voxel's mesh struct ptr
+                    int* mesh_struct_ptr =
+                            mesh_structure_indexer.GetDataPtr<int>(
+                                    xv, yv, zv, workload_block_idx);
 
-            // Early quit -- no allocated vertex to compute
-            if (mesh_struct_ptr[0] != -1 && mesh_struct_ptr[1] != -1 &&
-                mesh_struct_ptr[2] != -1) {
-                return;
-            }
+                    // Early quit -- no allocated vertex to compute
+                    if (mesh_struct_ptr[0] != -1 && mesh_struct_ptr[1] != -1 &&
+                        mesh_struct_ptr[2] != -1) {
+                        return;
+                    }
 
-            // Enumerate 3 edges in the voxel
-            for (int e = 0; e < 3; ++e) {
-                int vertex_idx = mesh_struct_ptr[e];
-                if (vertex_idx != -1) continue;
+                    // Enumerate 3 edges in the voxel
+                    for (int e = 0; e < 3; ++e) {
+                        int vertex_idx = mesh_struct_ptr[e];
+                        if (vertex_idx != -1) continue;
 
-                OPEN3D_ATOMIC_ADD(count_ptr, 1);
-            }
-        });
+                        OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                    }
+                });
 
 #if defined(__CUDACC__)
         vertex_count = count.Item<int>();
@@ -661,16 +689,15 @@ void ExtractSurfaceMeshCPU
     }
 
     utility::LogDebug("Total vertex count = {}", vertex_count);
-    vertices = core::Tensor({vertex_count, 3}, core::Dtype::Float32,
+    vertices = core::Tensor({vertex_count, 3}, core::Float32,
                             block_values.GetDevice());
 
     bool extract_normal = false;
     NDArrayIndexer normal_indexer;
     if (normals.has_value()) {
         extract_normal = true;
-        normals.value().get() =
-                core::Tensor({vertex_count, 3}, core::Dtype::Float32,
-                             block_values.GetDevice());
+        normals.value().get() = core::Tensor({vertex_count, 3}, core::Float32,
+                                             block_values.GetDevice());
         normal_indexer = NDArrayIndexer(normals.value().get(), 1);
     }
 
@@ -678,7 +705,7 @@ void ExtractSurfaceMeshCPU
     NDArrayIndexer vertex_indexer(vertices, 1);
 
 #if defined(__CUDACC__)
-    count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
+    count = core::Tensor(std::vector<int>{0}, {}, core::Int32,
                          block_values.GetDevice());
     count_ptr = count.GetDataPtr<int>();
 #else
@@ -691,147 +718,162 @@ void ExtractSurfaceMeshCPU
         NDArrayIndexer color_indexer;
         if (voxel_t::HasColor() && colors.has_value()) {
             extract_color = true;
-            colors.value().get() =
-                    core::Tensor({vertex_count, 3}, core::Dtype::Float32,
-                                 block_values.GetDevice());
+            colors.value().get() = core::Tensor(
+                    {vertex_count, 3}, core::Float32, block_values.GetDevice());
             color_indexer = NDArrayIndexer(colors.value().get(), 1);
         }
 
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
-            auto GetVoxelAt = [&] OPEN3D_DEVICE(
-                                      int xo, int yo, int zo,
-                                      int curr_block_idx) -> voxel_t* {
-                return DeviceGetVoxelAt<voxel_t>(
-                        xo, yo, zo, curr_block_idx,
-                        static_cast<int>(resolution), nb_block_masks_indexer,
-                        nb_block_indices_indexer, voxel_block_buffer_indexer);
-            };
+        core::ParallelFor(
+                indices.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t widx) {
+                    auto GetVoxelAt = [&] OPEN3D_DEVICE(
+                                              int xo, int yo, int zo,
+                                              int curr_block_idx) -> voxel_t* {
+                        return DeviceGetVoxelAt<voxel_t>(
+                                xo, yo, zo, curr_block_idx,
+                                static_cast<int>(resolution),
+                                nb_block_masks_indexer,
+                                nb_block_indices_indexer,
+                                voxel_block_buffer_indexer);
+                    };
 
-            auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
-                                                 int curr_block_idx, float* n) {
-                return DeviceGetNormalAt<voxel_t>(
-                        xo, yo, zo, curr_block_idx, n,
-                        static_cast<int>(resolution), voxel_size,
-                        nb_block_masks_indexer, nb_block_indices_indexer,
-                        voxel_block_buffer_indexer);
-            };
+                    auto GetNormalAt = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                                         int curr_block_idx,
+                                                         float* n) {
+                        return DeviceGetNormalAt<voxel_t>(
+                                xo, yo, zo, curr_block_idx, n,
+                                static_cast<int>(resolution), voxel_size,
+                                nb_block_masks_indexer,
+                                nb_block_indices_indexer,
+                                voxel_block_buffer_indexer);
+                    };
 
-            // Natural index (0, N) -> (block_idx, voxel_idx)
-            int64_t workload_block_idx = widx / resolution3;
-            int64_t block_idx = indices_ptr[workload_block_idx];
-            int64_t voxel_idx = widx % resolution3;
+                    // Natural index (0, N) -> (block_idx, voxel_idx)
+                    int64_t workload_block_idx = widx / resolution3;
+                    int64_t block_idx = indices_ptr[workload_block_idx];
+                    int64_t voxel_idx = widx % resolution3;
 
-            // block_idx -> (x_block, y_block, z_block)
-            int* block_key_ptr = block_keys_indexer.GetDataPtr<int>(block_idx);
-            int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
-            int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
-            int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
+                    // block_idx -> (x_block, y_block, z_block)
+                    int* block_key_ptr =
+                            block_keys_indexer.GetDataPtr<int>(block_idx);
+                    int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
+                    int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
+                    int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
 
-            // voxel_idx -> (x_voxel, y_voxel, z_voxel)
-            int64_t xv, yv, zv;
-            voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+                    // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                    int64_t xv, yv, zv;
+                    voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-            // global coordinate (in voxels)
-            int64_t x = xb * resolution + xv;
-            int64_t y = yb * resolution + yv;
-            int64_t z = zb * resolution + zv;
+                    // global coordinate (in voxels)
+                    int64_t x = xb * resolution + xv;
+                    int64_t y = yb * resolution + yv;
+                    int64_t z = zb * resolution + zv;
 
-            // Obtain voxel's mesh struct ptr
-            int* mesh_struct_ptr = mesh_structure_indexer.GetDataPtr<int>(
-                    xv, yv, zv, workload_block_idx);
+                    // Obtain voxel's mesh struct ptr
+                    int* mesh_struct_ptr =
+                            mesh_structure_indexer.GetDataPtr<int>(
+                                    xv, yv, zv, workload_block_idx);
 
-            // Early quit -- no allocated vertex to compute
-            if (mesh_struct_ptr[0] != -1 && mesh_struct_ptr[1] != -1 &&
-                mesh_struct_ptr[2] != -1) {
-                return;
-            }
+                    // Early quit -- no allocated vertex to compute
+                    if (mesh_struct_ptr[0] != -1 && mesh_struct_ptr[1] != -1 &&
+                        mesh_struct_ptr[2] != -1) {
+                        return;
+                    }
 
-            // Obtain voxel ptr
-            voxel_t* voxel_ptr = voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
-                    xv, yv, zv, block_idx);
-            float tsdf_o = voxel_ptr->GetTSDF();
-            float no[3] = {0}, ne[3] = {0};
+                    // Obtain voxel ptr
+                    voxel_t* voxel_ptr =
+                            voxel_block_buffer_indexer.GetDataPtr<voxel_t>(
+                                    xv, yv, zv, block_idx);
+                    float tsdf_o = voxel_ptr->GetTSDF();
+                    float no[3] = {0}, ne[3] = {0};
 
-            if (extract_normal) {
-                GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
-                            static_cast<int>(zv),
-                            static_cast<int>(workload_block_idx), no);
-            }
+                    if (extract_normal) {
+                        GetNormalAt(static_cast<int>(xv), static_cast<int>(yv),
+                                    static_cast<int>(zv),
+                                    static_cast<int>(workload_block_idx), no);
+                    }
 
-            // Enumerate 3 edges in the voxel
-            for (int e = 0; e < 3; ++e) {
-                int vertex_idx = mesh_struct_ptr[e];
-                if (vertex_idx != -1) continue;
+                    // Enumerate 3 edges in the voxel
+                    for (int e = 0; e < 3; ++e) {
+                        int vertex_idx = mesh_struct_ptr[e];
+                        if (vertex_idx != -1) continue;
 
-                voxel_t* voxel_ptr_e =
-                        GetVoxelAt(static_cast<int>(xv) + (e == 0),
-                                   static_cast<int>(yv) + (e == 1),
-                                   static_cast<int>(zv) + (e == 2),
-                                   static_cast<int>(workload_block_idx));
-                OPEN3D_ASSERT(voxel_ptr_e != nullptr &&
-                              "Internal error: GetVoxelAt returns nullptr.");
-                float tsdf_e = voxel_ptr_e->GetTSDF();
-                float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
-
-                int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
-                mesh_struct_ptr[e] = idx;
-
-                float ratio_x = ratio * int(e == 0);
-                float ratio_y = ratio * int(e == 1);
-                float ratio_z = ratio * int(e == 2);
-
-                float* vertex_ptr = vertex_indexer.GetDataPtr<float>(idx);
-                vertex_ptr[0] = voxel_size * (x + ratio_x);
-                vertex_ptr[1] = voxel_size * (y + ratio_y);
-                vertex_ptr[2] = voxel_size * (z + ratio_z);
-
-                if (extract_normal) {
-                    float* normal_ptr = normal_indexer.GetDataPtr<float>(idx);
-                    GetNormalAt(static_cast<int>(xv) + (e == 0),
+                        voxel_t* voxel_ptr_e = GetVoxelAt(
+                                static_cast<int>(xv) + (e == 0),
                                 static_cast<int>(yv) + (e == 1),
                                 static_cast<int>(zv) + (e == 2),
-                                static_cast<int>(workload_block_idx), ne);
-                    float nx = (1 - ratio) * no[0] + ratio * ne[0];
-                    float ny = (1 - ratio) * no[1] + ratio * ne[1];
-                    float nz = (1 - ratio) * no[2] + ratio * ne[2];
-                    float norm = static_cast<float>(
-                            sqrt(nx * nx + ny * ny + nz * nz) + 1e-5);
-                    normal_ptr[0] = nx / norm;
-                    normal_ptr[1] = ny / norm;
-                    normal_ptr[2] = nz / norm;
-                }
+                                static_cast<int>(workload_block_idx));
+                        OPEN3D_ASSERT(
+                                voxel_ptr_e != nullptr &&
+                                "Internal error: GetVoxelAt returns nullptr.");
+                        float tsdf_e = voxel_ptr_e->GetTSDF();
+                        float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 
-                if (extract_color) {
-                    float* color_ptr = color_indexer.GetDataPtr<float>(idx);
-                    float r_o = voxel_ptr->GetR();
-                    float g_o = voxel_ptr->GetG();
-                    float b_o = voxel_ptr->GetB();
+                        int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                        mesh_struct_ptr[e] = idx;
 
-                    float r_e = voxel_ptr_e->GetR();
-                    float g_e = voxel_ptr_e->GetG();
-                    float b_e = voxel_ptr_e->GetB();
-                    color_ptr[0] = ((1 - ratio) * r_o + ratio * r_e) / 255.0f;
-                    color_ptr[1] = ((1 - ratio) * g_o + ratio * g_e) / 255.0f;
-                    color_ptr[2] = ((1 - ratio) * b_o + ratio * b_e) / 255.0f;
-                }
-            }
-        });
+                        float ratio_x = ratio * int(e == 0);
+                        float ratio_y = ratio * int(e == 1);
+                        float ratio_z = ratio * int(e == 2);
+
+                        float* vertex_ptr =
+                                vertex_indexer.GetDataPtr<float>(idx);
+                        vertex_ptr[0] = voxel_size * (x + ratio_x);
+                        vertex_ptr[1] = voxel_size * (y + ratio_y);
+                        vertex_ptr[2] = voxel_size * (z + ratio_z);
+
+                        if (extract_normal) {
+                            float* normal_ptr =
+                                    normal_indexer.GetDataPtr<float>(idx);
+                            GetNormalAt(static_cast<int>(xv) + (e == 0),
+                                        static_cast<int>(yv) + (e == 1),
+                                        static_cast<int>(zv) + (e == 2),
+                                        static_cast<int>(workload_block_idx),
+                                        ne);
+                            float nx = (1 - ratio) * no[0] + ratio * ne[0];
+                            float ny = (1 - ratio) * no[1] + ratio * ne[1];
+                            float nz = (1 - ratio) * no[2] + ratio * ne[2];
+                            float norm = static_cast<float>(
+                                    sqrt(nx * nx + ny * ny + nz * nz) + 1e-5);
+                            normal_ptr[0] = nx / norm;
+                            normal_ptr[1] = ny / norm;
+                            normal_ptr[2] = nz / norm;
+                        }
+
+                        if (extract_color) {
+                            float* color_ptr =
+                                    color_indexer.GetDataPtr<float>(idx);
+                            float r_o = voxel_ptr->GetR();
+                            float g_o = voxel_ptr->GetG();
+                            float b_o = voxel_ptr->GetB();
+
+                            float r_e = voxel_ptr_e->GetR();
+                            float g_e = voxel_ptr_e->GetG();
+                            float b_e = voxel_ptr_e->GetB();
+                            color_ptr[0] =
+                                    ((1 - ratio) * r_o + ratio * r_e) / 255.0f;
+                            color_ptr[1] =
+                                    ((1 - ratio) * g_o + ratio * g_e) / 255.0f;
+                            color_ptr[2] =
+                                    ((1 - ratio) * b_o + ratio * b_e) / 255.0f;
+                        }
+                    }
+                });
     });
 
     // Pass 3: connect vertices and form triangles.
     int triangle_count = vertex_count * 3;
-    triangles = core::Tensor({triangle_count, 3}, core::Dtype::Int64,
+    triangles = core::Tensor({triangle_count, 3}, core::Int64,
                              block_values.GetDevice());
     NDArrayIndexer triangle_indexer(triangles, 1);
 
 #if defined(__CUDACC__)
-    count = core::Tensor(std::vector<int>{0}, {}, core::Dtype::Int32,
+    count = core::Tensor(std::vector<int>{0}, {}, core::Int32,
                          block_values.GetDevice());
     count_ptr = count.GetDataPtr<int>();
 #else
     (*count_ptr) = 0;
 #endif
-    launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t widx) {
+    core::ParallelFor(indices.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t widx) {
         // Natural index (0, N) -> (block_idx, voxel_idx)
         int64_t workload_block_idx = widx / resolution3;
         int64_t voxel_idx = widx % resolution3;
@@ -911,7 +953,7 @@ void EstimateRangeCPU
     // Every 2 channels: (min, max)
     int h_down = h / down_factor;
     int w_down = w / down_factor;
-    range_minmax_map = core::Tensor({h_down, w_down, 2}, core::Dtype::Float32,
+    range_minmax_map = core::Tensor({h_down, w_down, 2}, core::Float32,
                                     block_keys.GetDevice());
     NDArrayIndexer range_map_indexer(range_minmax_map, 2);
 
@@ -920,15 +962,14 @@ void EstimateRangeCPU
     const int frag_buffer_size = 65535;
 
     // TODO(wei): explicit buffer
-    core::Tensor fragment_buffer =
-            core::Tensor({frag_buffer_size, 6}, core::Dtype::Float32,
-                         block_keys.GetDevice());
+    core::Tensor fragment_buffer = core::Tensor(
+            {frag_buffer_size, 6}, core::Float32, block_keys.GetDevice());
 
     NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
 #if defined(__CUDACC__)
-    core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32,
+    core::Tensor count(std::vector<int>{0}, {1}, core::Int32,
                        block_keys.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
@@ -936,17 +977,15 @@ void EstimateRangeCPU
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
+#ifndef __CUDACC__
     using std::max;
     using std::min;
 #endif
 
     // Pass 0: iterate over blocks, fill-in an rendering fragment array
-    launcher::ParallelFor(
-            block_keys.GetLength(), [=] OPEN3D_DEVICE(int64_t workload_idx) {
+    core::ParallelFor(
+            block_keys.GetDevice(), block_keys.GetLength(),
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 int* key = block_keys_indexer.GetDataPtr<int>(workload_idx);
 
                 int u_min = w_down - 1, v_min = h_down - 1, u_max = 0,
@@ -1033,18 +1072,19 @@ void EstimateRangeCPU
 #endif
 
     // Pass 0.5: Fill in range map to prepare for atomic min/max
-    launcher::ParallelFor(
-            h_down * w_down, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                int v = workload_idx / w_down;
-                int u = workload_idx % w_down;
-                float* range_ptr = range_map_indexer.GetDataPtr<float>(u, v);
-                range_ptr[0] = depth_max;
-                range_ptr[1] = depth_min;
-            });
+    core::ParallelFor(block_keys.GetDevice(), h_down * w_down,
+                      [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                          int v = workload_idx / w_down;
+                          int u = workload_idx % w_down;
+                          float* range_ptr =
+                                  range_map_indexer.GetDataPtr<float>(u, v);
+                          range_ptr[0] = depth_max;
+                          range_ptr[1] = depth_min;
+                      });
 
     // Pass 1: iterate over rendering fragment array, fill-in range
-    launcher::ParallelFor(
-            frag_count * fragment_size * fragment_size,
+    core::ParallelFor(
+            block_keys.GetDevice(), frag_count * fragment_size * fragment_size,
             [=] OPEN3D_DEVICE(int64_t workload_idx) {
                 int frag_idx = workload_idx / (fragment_size * fragment_size);
                 int local_idx = workload_idx % (fragment_size * fragment_size);
@@ -1077,7 +1117,7 @@ void EstimateRangeCPU
 #endif
             });
 #if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
 }
 
@@ -1181,17 +1221,14 @@ void RayCastCPU
 
     float block_size = voxel_size * block_resolution;
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
+#ifndef __CUDACC__
     using std::max;
 #endif
 
-    DISPATCH_BYTESIZE_TO_VOXEL(
-            voxel_block_buffer_indexer.ElementByteSize(), [&]() {
-                launcher::ParallelFor(rows * cols, [=] OPEN3D_DEVICE(
-                                                           int64_t workload_idx) {
+    DISPATCH_BYTESIZE_TO_VOXEL(voxel_block_buffer_indexer.ElementByteSize(), [&]() {
+        core::ParallelFor(
+                hashmap->GetDevice(), rows * cols,
+                [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     auto GetVoxelAtP = [&] OPEN3D_DEVICE(
                                                int x_b, int y_b, int z_b,
                                                int x_v, int y_v, int z_v,
@@ -1498,10 +1535,10 @@ void RayCastCPU
                         }  // if (color or normal)
                     }      // if (tsdf < 0)
                 });
-            });
+    });
 
 #if defined(__CUDACC__)
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
 }
 

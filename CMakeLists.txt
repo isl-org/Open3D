@@ -42,7 +42,6 @@ cmake_dependent_option(
        STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON
        "NOT BUILD_SHARED_LIBS"                                               OFF)
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
-option(BUILD_RPC_INTERFACE        "Build the RPC interface"                  OFF)
 if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
     cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
 else()
@@ -56,13 +55,12 @@ option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
 option(USE_SYSTEM_GLEW            "Use system pre-installed glew"            OFF)
 option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"            OFF)
-option(USE_SYSTEM_GOOGLETEST      "Use system pre-installed googletest"      OFF)
 option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"           OFF)
 option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF)
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
-option(USE_SYSTEM_QHULL           "Use system pre-installed qhull"           OFF)
+option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
@@ -223,7 +221,7 @@ if(NOT DEFINED Python3_FIND_REGISTRY)
     # Only consider PATH variable on Windows by default
     set(Python3_FIND_REGISTRY NEVER)
 endif()
-find_package(Python3 3.6...<3.9
+find_package(Python3 3.6...<3.10
              COMPONENTS Interpreter Development
 )
 if (Python3_FOUND)
@@ -233,7 +231,7 @@ if (Python3_FOUND)
         "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
 else()
     if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.8. Please ensure it is in PATH.")
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")
     endif()
 endif()
 
@@ -258,8 +256,8 @@ endif()
 set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")
 set(PROJECT_DOCS    "http://www.open3d.org/docs")
-set(PROJECT_CODE    "https://github.com/intel-isl/Open3D")
-set(PROJECT_ISSUES  "https://github.com/intel-isl/Open3D/issues")
+set(PROJECT_CODE    "https://github.com/isl-org/Open3D")
+set(PROJECT_ISSUES  "https://github.com/isl-org/Open3D/issues")
 
 # Set installation paths
 if(UNIX OR CYGWIN)
@@ -469,7 +467,7 @@ if(WIN32)
     endif()
 endif()
 
-# Downloads files from https://github.com/intel-isl/open3d_downloads to
+# Downloads files from https://github.com/isl-org/open3d_downloads to
 # Open3D/examples/test_data/open3d_downloads.
 add_custom_target(open3d_downloads
     COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
@@ -510,12 +508,6 @@ int main() { return _GLIBCXX_USE_CXX11_ABI; }" HAS_GLIBCXX_USE_CXX11_ABI)
 
 # Convenience function to set important target properties
 function(open3d_set_global_properties target)
-    # Libraries need to be compiled with position independent code
-    get_target_property(target_type ${target} TYPE)
-    if (NOT target_type STREQUAL "EXECUTABLE")
-        set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    endif()
-
     # Tell CMake we want a compiler that supports C++14 features
     target_compile_features(${target} PUBLIC cxx_std_14)
 
@@ -531,6 +523,9 @@ function(open3d_set_global_properties target)
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
     )
 
+    # Required for static linking zeromq
+    target_compile_definitions(${target} PRIVATE ZMQ_STATIC)
+
     # Propagate build configuration into source code
     if (BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
@@ -543,9 +538,6 @@ function(open3d_set_global_properties target)
     endif()
     if (ENABLE_HEADLESS_RENDERING)
         target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
-    endif()
-    if (BUILD_RPC_INTERFACE)
-        target_compile_definitions(${target} PRIVATE BUILD_RPC_INTERFACE ZMQ_STATIC)
     endif()
     if (BUILD_AZURE_KINECT)
         target_compile_definitions(${target} PRIVATE BUILD_AZURE_KINECT)
@@ -733,7 +725,7 @@ if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
         "--------------------------------------------------------------------------------\n"
         "                                                                                \n"
         " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
-        " stability issues. See https://github.com/intel-isl/Open3D/issues/3324 and      \n"
+        " stability issues. See https://github.com/isl-org/Open3D/issues/3324 and        \n"
         " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
         " problem.                                                                       \n"
         "                                                                                \n"
@@ -741,60 +733,57 @@ if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
         "   '-Xcompiler -fno-gnu-unique'                                                 \n"
         "                                                                                \n"
         " or use the PyTorch wheels at                                                   \n"
-        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1        \n"
+        "   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1          \n"
         "                                                                                \n"
         "--------------------------------------------------------------------------------\n"
     )
 endif()
 open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
 open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
-open3d_aligned_print("Build RPC interface" "${BUILD_RPC_INTERFACE}")
 if(GLIBCXX_USE_CXX11_ABI)
-    set(usage "1")
+    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "1")
 else()
-    set(usage "0")
+    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "0")
 endif()
-open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "${usage}")
+
 message(STATUS "================================================================================")
 message(STATUS "Third-Party Dependencies:")
-set(deps
-    EIGEN3
-    FAISS
-    FILAMENT
-    FMT
+set(3RDPARTY_DEPENDENCIES
+    Eigen3
+    faiss
+    filament
+    fmt
     GLEW
     GLFW
-    GOOGLETEST
-    IMGUI
-    IPPICV
+    imgui
+    ippicv
     JPEG
-    JSONCPP
-    LIBLZF
-    OPENGL
+    jsoncpp
+    liblzf
+    OpenGL
     PNG
-    PYBIND11
-    QHULL
-    LIBREALSENSE
-    TINYFILEDIALOGS
-    TINYGLTF
-    TINYOBJLOADER
-    WEBRTC
+    qhullcpp
+    librealsense
+    tinyfiledialogs
+    TinyGLTF
+    tinyobjloader
+    WebRTC
 )
-foreach(dep IN ITEMS ${deps})
-    if(${dep}_TARGET)
-        if(NOT USE_SYSTEM_${dep})
-            set(usage "yes (build from source)")
+foreach(dep IN LISTS 3RDPARTY_DEPENDENCIES)
+    string(TOLOWER "${dep}" dep_lower)
+    string(TOUPPER "${dep}" dep_upper)
+    if(TARGET Open3D::3rdparty_${dep_lower})
+        if(NOT USE_SYSTEM_${dep_upper})
+            open3d_aligned_print("${dep}" "yes (build from source)")
         else()
-            set(usage "yes")
-            if(${dep}_VERSION_STRING)
-                set(usage "${usage} (v${${dep}_VERSION_STRING})")
-            elseif(${dep}_VERSION)
-                set(usage "${usage} (v${${dep}_VERSION})")
+            if(3rdparty_${dep_lower}_VERSION)
+                open3d_aligned_print("${dep}" "yes (v${3rdparty_${dep_lower}_VERSION})")
+            else()
+                open3d_aligned_print("${dep}" "yes")
             endif()
         endif()
     else()
-        set(usage "no")
+        open3d_aligned_print("${dep}" "no")
     endif()
-    open3d_aligned_print("${dep}" "${usage}")
 endforeach()
 message(STATUS "================================================================================")

@@ -25,12 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/core/kernel/IndexGetSet.h"
 
 namespace open3d {
@@ -38,13 +37,14 @@ namespace core {
 namespace kernel {
 
 template <typename func_t>
-void LaunchAdvancedIndexerKernel(const AdvancedIndexer& indexer,
+void LaunchAdvancedIndexerKernel(const Device& device,
+                                 const AdvancedIndexer& indexer,
                                  const func_t& element_kernel) {
     OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(func_t);
     auto element_func = [=] OPEN3D_HOST_DEVICE(int64_t i) {
         element_kernel(indexer.GetInputPtr(i), indexer.GetOutputPtr(i));
     };
-    cuda_launcher::ParallelFor(indexer.NumWorkloads(), element_func);
+    ParallelFor(device, indexer.NumWorkloads(), element_func);
     OPEN3D_GET_LAST_CUDA_ERROR("LaunchAdvancedIndexerKernel failed.");
 }
 
@@ -71,17 +71,18 @@ void IndexGetCUDA(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
-    CUDADeviceSwitcher switcher(src.GetDevice());
+
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         LaunchAdvancedIndexerKernel(
-                ai, [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                src.GetDevice(), ai,
+                [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             LaunchAdvancedIndexerKernel(
-                    ai,
+                    src.GetDevice(), ai,
                     // Need to wrap as extended CUDA lambda function
                     [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                         CUDACopyElementKernel<scalar_t>(src, dst);
@@ -98,17 +99,18 @@ void IndexSetCUDA(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
-    CUDADeviceSwitcher switcher(dst.GetDevice());
+
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         LaunchAdvancedIndexerKernel(
-                ai, [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
+                src.GetDevice(), ai,
+                [=] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             LaunchAdvancedIndexerKernel(
-                    ai,
+                    src.GetDevice(), ai,
                     // Need to wrap as extended CUDA lambda function
                     [] OPEN3D_HOST_DEVICE(const void* src, void* dst) {
                         CUDACopyElementKernel<scalar_t>(src, dst);

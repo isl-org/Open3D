@@ -29,11 +29,11 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/CPU/TBBHashmap.h"
 #include "open3d/core/hashmap/Dispatch.h"
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
@@ -82,7 +82,7 @@ void TouchCPU(std::shared_ptr<core::Hashmap>&
     const float* pcd_ptr = static_cast<const float*>(points.GetDataPtr());
 
     tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
-    core::kernel::cpu_launcher::ParallelFor(n, [&](int64_t workload_idx) {
+    core::ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
         float x = pcd_ptr[3 * workload_idx + 0];
         float y = pcd_ptr[3 * workload_idx + 1];
         float z = pcd_ptr[3 * workload_idx + 2];
@@ -110,8 +110,8 @@ void TouchCPU(std::shared_ptr<core::Hashmap>&
                 "especially depth_scale and voxel_size");
     }
 
-    voxel_block_coords = core::Tensor({block_count, 3}, core::Dtype::Int32,
-                                      points.GetDevice());
+    voxel_block_coords =
+            core::Tensor({block_count, 3}, core::Int32, points.GetDevice());
     int* block_coords_ptr = static_cast<int*>(voxel_block_coords.GetDataPtr());
     int count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {

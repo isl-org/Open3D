@@ -28,6 +28,8 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/core/CUDAUtils.h"
+
 namespace open3d {
 namespace core {
 
@@ -77,13 +79,16 @@ void Malloc(benchmark::State& state,
     {
         void* ptr = device_mm->Malloc(size, device);
         device_mm->Free(ptr, device);
+        cuda::Synchronize(device);
     }
 
     for (auto _ : state) {
         void* ptr = device_mm->Malloc(size, device);
+        cuda::Synchronize(device);
 
         state.PauseTiming();
         device_mm->Free(ptr, device);
+        cuda::Synchronize(device);
         state.ResumeTiming();
     }
 
@@ -102,14 +107,17 @@ void Free(benchmark::State& state,
     {
         void* ptr = device_mm->Malloc(size, device);
         device_mm->Free(ptr, device);
+        cuda::Synchronize(device);
     }
 
     for (auto _ : state) {
         state.PauseTiming();
         void* ptr = device_mm->Malloc(size, device);
+        cuda::Synchronize(device);
         state.ResumeTiming();
 
         device_mm->Free(ptr, device);
+        cuda::Synchronize(device);
     }
 
     CachedMemoryManager::ReleaseCache(device);

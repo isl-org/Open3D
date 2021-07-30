@@ -26,6 +26,7 @@ target_sources(visualization PRIVATE
 )
 
 target_sources(visualization PRIVATE
+    visualizer/Receiver.cpp
     visualizer/RenderOption.cpp
     visualizer/RenderOptionWithEditing.cpp
     visualizer/ViewControl.cpp
@@ -86,12 +87,6 @@ if (BUILD_GUI)
         visualizer/GuiWidgets.cpp
         visualizer/O3DVisualizer.cpp
         visualizer/O3DVisualizerSelections.cpp
-    )
-endif()
-
-if (BUILD_RPC_INTERFACE)
-    target_sources(visualization PRIVATE
-        visualizer/Receiver.cpp
     )
 endif()
 

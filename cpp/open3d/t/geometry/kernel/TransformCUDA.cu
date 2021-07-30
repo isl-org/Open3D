@@ -24,28 +24,5 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#ifdef BUILD_CUDA_MODULE
-
-#include "open3d/core/CUDAState.cuh"
-
-#include "tests/UnitTest.h"
-
-namespace open3d {
-namespace tests {
-
-TEST(CUDAState, InitState) {
-    std::shared_ptr<core::CUDAState> cuda_state =
-            core::CUDAState::GetInstance();
-    utility::LogInfo("Number of CUDA devices: {}", cuda_state->GetNumDevices());
-    for (int i = 0; i < cuda_state->GetNumDevices(); ++i) {
-        for (int j = 0; j < cuda_state->GetNumDevices(); ++j) {
-            utility::LogInfo("P2PEnabled {}->{}: {}", i, j,
-                             cuda_state->GetP2PEnabled()[i][j]);
-        }
-    }
-}
-
-}  // namespace tests
-}  // namespace open3d
-
-#endif
+#include "open3d/core/ParallelFor.h"
+#include "open3d/t/geometry/kernel/TransformImpl.h"

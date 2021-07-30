@@ -3,6 +3,7 @@ open3d.camera
 open3d.core
 open3d.geometry
 open3d.io
+open3d.io.rpc
 open3d.t
 open3d.t.geometry
 open3d.t.io
@@ -25,6 +26,7 @@ open3d.ml.tf.pipelines
 open3d.ml.torch
 open3d.ml.torch.layers
 open3d.ml.torch.ops
+open3d.ml.torch.classes
 open3d.ml.torch.configs
 open3d.ml.torch.datasets
 open3d.ml.torch.utils
@@ -42,3 +44,4 @@ open3d.utility
 open3d.visualization
 open3d.visualization.gui
 open3d.visualization.rendering
+open3d.visualization.webrtc_server

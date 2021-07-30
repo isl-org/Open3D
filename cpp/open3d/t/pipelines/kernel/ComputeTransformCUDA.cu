@@ -27,11 +27,13 @@
 #include <cuda.h>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
+#include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 
 namespace open3d {
 namespace t {
@@ -40,17 +42,18 @@ namespace kernel {
 
 const int kThread1DUnit = 256;
 
-__global__ void ComputePosePointToPlaneCUDAKernel(
-        const float *source_points_ptr,
-        const float *target_points_ptr,
-        const float *target_normals_ptr,
-        const int64_t *correspondences_first,
-        const int64_t *correspondences_second,
+template <typename scalar_t, typename func_t>
+__global__ void ComputePosePointToPlaneKernelCUDA(
+        const scalar_t *source_points_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *target_normals_ptr,
+        const int64_t *correspondence_indices,
         const int n,
-        float *global_sum) {
-    __shared__ float local_sum0[kThread1DUnit];
-    __shared__ float local_sum1[kThread1DUnit];
-    __shared__ float local_sum2[kThread1DUnit];
+        scalar_t *global_sum,
+        func_t GetWeightFromRobustKernel) {
+    __shared__ scalar_t local_sum0[kThread1DUnit];
+    __shared__ scalar_t local_sum1[kThread1DUnit];
+    __shared__ scalar_t local_sum2[kThread1DUnit];
 
     const int tid = threadIdx.x;
 
@@ -62,57 +65,68 @@ __global__ void ComputePosePointToPlaneCUDAKernel(
 
     if (workload_idx >= n) return;
 
-    float J[6] = {0}, reduction[21 + 6 + 2];
-    float r = 0;
+    scalar_t J_ij[6] = {0}, reduction[29] = {0};
+    scalar_t r = 0;
 
-    bool valid = GetJacobianPointToPlane(workload_idx, source_points_ptr,
-                                         target_points_ptr, target_normals_ptr,
-                                         correspondences_first,
-                                         correspondences_second, J, r);
+    bool valid = GetJacobianPointToPlane<scalar_t>(
+            workload_idx, source_points_ptr, target_points_ptr,
+            target_normals_ptr, correspondence_indices, J_ij, r);
 
-    // Dump J, r into JtJ and Jtr
-    int offset = 0;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j <= i; ++j) {
-            reduction[offset++] = J[i] * J[j];
+    scalar_t w = GetWeightFromRobustKernel(r);
+
+    if (valid) {
+        // Dump J, r into JtJ and Jtr
+        int i = 0;
+        for (int j = 0; j < 6; ++j) {
+            for (int k = 0; k <= j; ++k) {
+                reduction[i] += J_ij[j] * w * J_ij[k];
+                ++i;
+            }
+            reduction[21 + j] += J_ij[j] * w * r;
         }
+        reduction[27] += r;
+        reduction[28] += 1;
     }
-    for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * r;
-    }
-    reduction[offset++] = r * r;
-    reduction[offset++] = valid;
 
-    ReduceSum6x6LinearSystem<float, kThread1DUnit>(tid, valid, reduction,
-                                                   local_sum0, local_sum1,
-                                                   local_sum2, global_sum);
+    ReduceSum6x6LinearSystem<scalar_t, kThread1DUnit>(tid, valid, reduction,
+                                                      local_sum0, local_sum1,
+                                                      local_sum2, global_sum);
 }
 
-void ComputePosePointToPlaneCUDA(const float *source_points_ptr,
-                                 const float *target_points_ptr,
-                                 const float *target_normals_ptr,
-                                 const int64_t *correspondences_first,
-                                 const int64_t *correspondences_second,
-                                 const int n,
+void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
+                                 const core::Tensor &target_points,
+                                 const core::Tensor &target_normals,
+                                 const core::Tensor &correspondence_indices,
                                  core::Tensor &pose,
+                                 float &residual,
+                                 int &inlier_count,
                                  const core::Dtype &dtype,
-                                 const core::Device &device) {
-    core::Tensor global_sum =
-            core::Tensor::Zeros({29}, core::Dtype::Float32, device);
-    float *global_sum_ptr = global_sum.GetDataPtr<float>();
+                                 const core::Device &device,
+                                 const registration::RobustKernel &kernel) {
+    int n = source_points.GetLength();
 
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
     const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
     const dim3 threads(kThread1DUnit);
 
-    ComputePosePointToPlaneCUDAKernel<<<blocks, threads>>>(
-            source_points_ptr, target_points_ptr, target_normals_ptr,
-            correspondences_first, correspondences_second, n, global_sum_ptr);
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
 
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                kernel.type_, scalar_t, kernel.scaling_parameter_,
+                kernel.shape_parameter_, [&]() {
+                    ComputePosePointToPlaneKernelCUDA<<<
+                            blocks, threads, 0, core::cuda::GetStream()>>>(
+                            source_points.GetDataPtr<scalar_t>(),
+                            target_points.GetDataPtr<scalar_t>(),
+                            target_normals.GetDataPtr<scalar_t>(),
+                            correspondence_indices.GetDataPtr<int64_t>(), n,
+                            global_sum_ptr, GetWeightFromRobustKernel);
+                });
+    });
 
-    // TODO (@rishabh), residual will be used for adding robust kernel support.
-    float residual;
-    int inlier_count;
+    core::cuda::Synchronize();
+
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
 

@@ -29,7 +29,7 @@
 #include <type_traits>
 
 #include "open3d/core/Indexer.h"
-#include "open3d/core/kernel/CPULauncher.h"
+#include "open3d/core/ParallelFor.h"
 
 namespace open3d {
 namespace core {
@@ -44,11 +44,10 @@ namespace eigen_converter {
 /// pointer location.
 template <typename func_t>
 static void LaunchIndexFillKernel(const Indexer &indexer, const func_t &func) {
-    kernel::cpu_launcher::ParallelFor(indexer.NumWorkloads(),
-                                      kernel::cpu_launcher::SMALL_OP_GRAIN_SIZE,
-                                      [&indexer, &func](int64_t i) {
-                                          func(indexer.GetInputPtr(0, i), i);
-                                      });
+    ParallelFor(Device("CPU:0"), indexer.NumWorkloads(),
+                [&indexer, &func](int64_t i) {
+                    func(indexer.GetInputPtr(0, i), i);
+                });
 }
 
 template <typename T>
@@ -104,9 +103,9 @@ static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
                   "Only supports double and int (Vector3d and Vector3i).");
     core::Dtype dtype;
     if (std::is_same<T, double>::value) {
-        dtype = core::Dtype::Float64;
+        dtype = core::Float64;
     } else if (std::is_same<T, int>::value) {
-        dtype = core::Dtype::Int32;
+        dtype = core::Int32;
     }
     if (dtype.ByteSize() * 3 != sizeof(Eigen::Matrix<T, 3, 1>)) {
         utility::LogError("Internal error: dtype size mismatch {} != {}.",

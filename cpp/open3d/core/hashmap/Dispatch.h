@@ -32,7 +32,7 @@
 // TODO: dispatch more combinations.
 #define DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(DTYPE, DIM, ...)                  \
     [&] {                                                                    \
-        if (DTYPE == open3d::core::Dtype::Int32) {                           \
+        if (DTYPE == open3d::core::Int32) {                                  \
             if (DIM == 1) {                                                  \
                 using key_t = Block<int, 1>;                                 \
                 using hash_t = BlockHash<int, 1>;                            \
@@ -46,7 +46,7 @@
                 using hash_t = BlockHash<int, 3>;                            \
                 return __VA_ARGS__();                                        \
             }                                                                \
-        } else if (DTYPE == open3d::core::Dtype::Int64) {                    \
+        } else if (DTYPE == open3d::core::Int64) {                           \
             if (DIM == 1) {                                                  \
                 using key_t = Block<int64_t, 1>;                             \
                 using hash_t = BlockHash<int64_t, 1>;                        \

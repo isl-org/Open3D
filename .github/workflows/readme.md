@@ -73,7 +73,7 @@
 
 1.  Encode the private key json file with `base64 ~/open3d-ci-sa-key.json` and
     add the output text to the
-    [GitHub repository secrets](https://github.com/intel-isl/Open3D/settings/secrets)
+    [GitHub repository secrets](https://github.com/isl-org/Open3D/settings/secrets)
     with name `GCE_SA_KEY_DOCS_CI`
 
 2.  Also add secret `GCE_DOCS_PROJECT: isl-buckets`
@@ -155,7 +155,7 @@ used for running CI.
 
 1.  Encode the private key json file with `base64 ~/open3d-ci-sa-key.json` and
     add the output text to the
-    [GitHub repository secrets](https://github.com/intel-isl/Open3D/settings/secrets)
+    [GitHub repository secrets](https://github.com/isl-org/Open3D/settings/secrets)
     with name `GCE_SA_KEY_GPU_CI`
 
 2.  Also add secret `GCE_PROJECT: open3d-dev`
