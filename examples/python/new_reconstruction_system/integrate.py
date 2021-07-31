@@ -183,8 +183,9 @@ def voxelhashing(depth_filenames,
     input_frame = o3d.t.pipelines.voxelhashing.Frame(depth_ref.rows,
                                                      depth_ref.columns,
                                                      intrinsic, device)
-    raycast_frame = o3d.t.pipelines.voxelhashing.Frame(
-        depth_ref.rows, depth_ref.columns, intrinsic, device)
+    raycast_frame = o3d.t.pipelines.voxelhashing.Frame(depth_ref.rows,
+                                                       depth_ref.columns,
+                                                       intrinsic, device)
 
     for i in range(n):
         start = time.time()
@@ -204,12 +205,14 @@ def voxelhashing(depth_filenames,
         model.update_frame_pose(i, T_frame_to_model)
         model.integrate(input_frame, config.input.depth_scale,
                         config.input.depth_max)
-        model.synthesize_model_frame(raycast_frame, config.input.depth_scale, config.input.depth_min, config.input.depth_max, True)
+        model.synthesize_model_frame(raycast_frame, config.input.depth_scale,
+                                     config.input.depth_min,
+                                     config.input.depth_max, False)
         stop = time.time()
         print('{:04d}/{:04d} voxelhashing takes {:.4}s'.format(
             i, n, stop - start))
 
-    pcd = model.extract_pointcloud(-1, 3.0)
+    pcd = model.extract_pointcloud()
     o3d.visualization.draw([pcd])
 
 

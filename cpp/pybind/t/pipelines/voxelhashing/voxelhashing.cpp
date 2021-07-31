@@ -40,19 +40,41 @@ void pybind_voxelhashing_model(py::module &m) {
 
     model.def(py::init<>());
     model.def(py::init<float, float, int, int, core::Tensor, core::Device>(),
-              "voxel_size"_a, "sdf_trunc"_a, "block_resolution"_a = 16,
-              "block_count"_a = 10000,
+              "Constructor of a TSDFVoxelGrid", "voxel_size"_a, "sdf_trunc"_a,
+              "block_resolution"_a = 16, "block_count"_a = 10000,
               "transformation"_a = core::Tensor::Eye(4, core::Float64,
                                                      core::Device("CPU:0")),
               "device"_a = core::Device("CUDA:0"));
 
     model.def("get_current_frame_pose", &Model::GetCurrentFramePose);
     model.def("update_frame_pose", &Model::UpdateFramePose);
-    model.def("synthesize_model_frame", &Model::SynthesizeModelFrame);
-    model.def("track_frame_to_model", &Model::TrackFrameToModel);
-    model.def("integrate", &Model::Integrate);
-    model.def("extract_pointcloud", &Model::ExtractPointCloud);
-    model.def("extract_trianglemesh", &Model::ExtractTriangleMesh);
+
+    model.def("synthesize_model_frame", &Model::SynthesizeModelFrame,
+              py::call_guard<py::gil_scoped_release>(),
+              "Synthesize frame from the volumetric model using ray casting.",
+              "model_frame"_a, "depth_scale"_a = 1000.0, "depth_min"_a = 0.1,
+              "depth_max"_a = 3.0, "enable_color"_a = false);
+
+    model.def("track_frame_to_model", &Model::TrackFrameToModel,
+              py::call_guard<py::gil_scoped_release>(),
+              "Track input frame against raycasted frame from model.",
+              "input_frame"_a, "model_frame"_a, "depth_scale"_a = 1000.0,
+              "depth_max"_a = 3.0, "depth_diff"_a = 0.07);
+
+    model.def("integrate", &Model::Integrate,
+              py::call_guard<py::gil_scoped_release>(),
+              "Integrate an input frame to a volume.", "input_frame"_a,
+              "depth_scale"_a = 1000.0, "depth_max"_a = 3.0);
+
+    model.def("extract_pointcloud", &Model::ExtractPointCloud,
+              py::call_guard<py::gil_scoped_release>(),
+              "Extract point cloud from the volumetric model.",
+              "estimated_number"_a = -1, "weight_threshold"_a = 3.0);
+
+    model.def("extract_trianglemesh", &Model::ExtractTriangleMesh,
+              py::call_guard<py::gil_scoped_release>(),
+              "Extract triangle mesh from the volumetric model.",
+              "estimated_number"_a = -1, "weight_threshold"_a = 3.0);
 
     model.def("get_hashmap", &Model::GetHashmap);
 

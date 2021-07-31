@@ -831,7 +831,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::string intrinsic_path = utility::GetProgramOptionAsString(
-            argc, argv, "--intrinsics_json", "");
+            argc, argv, "--intrinsics_path", "");
 
     std::string device_code =
             utility::GetProgramOptionAsString(argc, argv, "--device", "CUDA:0");

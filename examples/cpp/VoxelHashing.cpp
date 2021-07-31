@@ -180,7 +180,8 @@ int main(int argc, char* argv[]) {
         if (tracking_success) {
             model.Integrate(input_frame, depth_scale, depth_max);
         }
-        model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max);
+        model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max,
+                                   false);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {

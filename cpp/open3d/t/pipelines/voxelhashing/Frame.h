@@ -62,7 +62,9 @@ public:
     }
     core::Tensor GetData(const std::string& name) const {
         if (data_.count(name) == 0) {
-            utility::LogError("Property not found for {}!", name);
+            utility::LogWarning(
+                    "Property not found for {}, return an empty tensor!", name);
+            return core::Tensor();
         }
         return data_.at(name);
     }
