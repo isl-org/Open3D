@@ -1251,7 +1251,7 @@ if (WITH_FAISS)
         INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
         LIBRARIES    ${FAISS_LIBRARIES}
         LIB_DIR      ${FAISS_LIB_DIR}
-        DEPENDS      ext_faiss ${FAISS_EXTRA_DEPENDENCIES}
+        DEPENDS      ext_faiss
     )
     target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
