@@ -53,7 +53,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     std::tie(result.correspondences_, distances, counts) =
             target_nns.HybridSearch(source.GetPoints(),
                                     max_correspondence_distance, 1);
-
+    result.correspondences_ = result.correspondences_.To(core::Int64);
     double num_correspondences =
             counts.Sum({0}).To(core::Float64).Item<double>();
 
