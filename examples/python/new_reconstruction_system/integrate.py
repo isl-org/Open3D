@@ -158,6 +158,61 @@ def integrate(depth_filenames,
     return volume
 
 
+def voxelhashing(depth_filenames,
+                 color_filenames,
+                 intrinsic,
+                 config,
+                 mode='scene'):
+
+    n_files = len(color_file_names)
+    n_extrinsics = len(extrinsics)
+    n = n_files
+    if n_files != n_extrinsics:
+        print(
+            'Number of RGBD images ({}) and length of trajectory ({}) mismatch, using the smaller one.'
+            .format(n_files, n_extrinsics))
+        n = min(n_files, n_extrinsics)
+
+    device = o3d.core.Device(config.device)
+
+    T_frame_to_model = o3d.core.Tensor(np.identity(4))
+    model = o3d.t.pipelines.voxelhashing.Model(
+        config.integration.voxel_size, config.integration.sdf_trunc, 16,
+        config.integration.scene_block_count, T_frame_to_model, device)
+    depth_ref = o3d.t.io.read_image(depth_file_names[0])
+    input_frame = o3d.t.pipelines.voxelhashing.Frame(depth_ref.rows,
+                                                     depth_ref.columns,
+                                                     intrinsic, device)
+    raycast_frame = o3d.t.pipelines.voxelhashing.Frame(
+        depth_ref.rows, depth_ref.columns, intrinsic, device)
+
+    for i in range(n):
+        start = time.time()
+
+        depth = o3d.t.io.read_image(depth_file_names[i]).to(device)
+        color = o3d.t.io.read_image(color_file_names[i]).to(device)
+
+        input_frame.set_data_from_image('depth', depth)
+        input_frame.set_data_from_image('color', color)
+
+        if i > 0:
+            result = model.track_frame_to_model(
+                input_frame, raycast_frame, config.input.depth_scale,
+                config.input.depth_max, config.odometry.corres_distance_trunc)
+            T_frame_to_model = T_frame_to_model @ result.transformation
+
+        model.update_frame_pose(i, T_frame_to_model)
+        model.integrate(input_frame, config.input.depth_scale,
+                        config.input.depth_max)
+        model.synthesize_model_frame(raycast_frame, config.input.depth_scale, config.input.depth_min, config.input.depth_max, True)
+        stop = time.time()
+        print('{:04d}/{:04d} voxelhashing takes {:.4}s'.format(
+            i, n, stop - start))
+
+    pcd = model.extract_pointcloud(-1, 3.0)
+    o3d.visualization.draw([pcd])
+
+
 def extract_pointcloud(volume, config, file_name=None):
     if config.engine == 'legacy':
         mesh = volume.extract_triangle_mesh()
@@ -288,8 +343,11 @@ if __name__ == '__main__':
         args.path_dataset, config)
     extrinsics = load_extrinsics(args.path_trajectory, config)
     intrinsic = load_intrinsic(args.path_intrinsic, config)
-    volume = integrate(depth_file_names, color_file_names, extrinsics,
-                       intrinsic, config)
 
-    mesh = extract_trianglemesh(volume, config, 'output.ply')
-    o3d.visualization.draw([mesh])
+    volume = voxelhashing(depth_file_names, color_file_names, intrinsic, config)
+
+    # volume = integrate(depth_file_names, color_file_names, extrinsics,
+    #                    intrinsic, config)
+
+    # mesh = extract_trianglemesh(volume, config, 'output.ply')
+    # o3d.visualization.draw([mesh])
