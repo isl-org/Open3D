@@ -298,7 +298,8 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
 //   replaced from uint16_t to uint32_t.
 // - Version 3.0 uses utf8-encoded header string.
 static size_t ParseNpyPreamble(const char* preamble) {
-    if ((preamble[0] ^ static_cast<unsigned char>(0x93)) == 0 ||
+    if (*reinterpret_cast<const unsigned char*>(&preamble[0]) !=
+                static_cast<unsigned char>(0x93) ||
         preamble[1] != 'N' || preamble[2] != 'U' || preamble[3] != 'M' ||
         preamble[4] != 'P' || preamble[5] != 'Y') {
         utility::LogError("Invalid Numpy preamble {}{}{}{}{}{}.", preamble[0],
