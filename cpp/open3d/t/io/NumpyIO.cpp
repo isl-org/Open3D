@@ -787,7 +787,7 @@ void WriteNpz(const std::string& file_name,
                 it->second.To(core::Device("CPU:0")).Contiguous();
     }
 
-    // TODO: WriteNpzOneTensor is called multiple times inorder to write
+    // TODO: WriteNpzOneTensor is called multiple times in order to write
     // multiple tensors. This requires opening/closing the npz file for multiple
     // times, which is not optimal.
     // TODO: Support writing in compressed mode: np.savez_compressed().
