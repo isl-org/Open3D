@@ -100,11 +100,16 @@ TEST_P(ReadWriteTPC, Basic) {
                 attr, core::Tensor(tensor.values, tensor.size, dtype, device));
     }
 
+    std::cout << " TEST write start " << std::endl;
+
     // we loose some precision when saving generated data
     // test writing if we have point, normal, and colors in pc
     EXPECT_TRUE(t::io::WritePointCloud(
             args.filename, pc1,
             {bool(args.write_ascii), bool(args.compressed), true}));
+
+    std::cout << " TEST write end " << std::endl;
+
     t::geometry::PointCloud pc2(device);
     EXPECT_TRUE(t::io::ReadPointCloud(args.filename, pc2,
                                       {"auto", false, false, true}));

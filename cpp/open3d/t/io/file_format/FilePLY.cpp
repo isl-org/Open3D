@@ -26,6 +26,9 @@
 
 #include <rply.h>
 
+#include <tuple>
+#include <vector>
+
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/io/FileFormatIO.h"
@@ -296,6 +299,11 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         pointcloud.SetPointColors(colors);
     }
 
+    // Add rest of the attributes.
+    for (auto const &it : state.name_to_attr_state_) {
+        pointcloud.SetPointAttr(it.second->name_,
+                                it.second->data_.Reshape({element_size, 1}));
+    }
     ply_close(ply_file);
     reporter.Finish();
 
@@ -333,27 +341,36 @@ bool WritePointCloudToPLY(const std::string &filename,
     }
 
     geometry::TensorMap t_map = pointcloud.GetPointAttr();
+    geometry::TensorMap t_map_contiguous(t_map.GetPrimaryKey());
+
     long num_points = static_cast<long>(pointcloud.GetPoints().GetLength());
 
     // Make sure all the attributes have same size.
-    if (!t_map.IsSizeSynchronized()) {
-        for (auto const &it : t_map) {
-            if (it.first == "points" || it.first == "normals" ||
-                it.first == "colors") {
-                if (it.second.GetLength() != num_points) {
-                    utility::LogWarning(
-                            "Write PLY failed: Points ({}) and {} ({}) have "
-                            "different lengths.",
-                            num_points, it.first, it.second.GetLength());
-                    return false;
-                }
-            } else {
+    for (auto const &it : t_map) {
+        if (it.first == "points" || it.first == "normals" ||
+            it.first == "colors") {
+            if (it.second.GetLength() != num_points) {
                 utility::LogWarning(
-                        "PointCloud contains {} attribute which is not "
-                        "supported by PLY IO. Only points, normals and colors "
-                        "are supported.",
-                        it.first);
+                        "Write PLY failed: Points ({}) and {} ({}) have "
+                        "different lengths.",
+                        num_points, it.first, it.second.GetLength());
+                return false;
+            } else {
+                t_map_contiguous[it.first] =
+                        it.second.To(core::Device("CPU:0")).Contiguous();
             }
+        } else if (it.second.GetShape() == core::SizeVector({num_points, 1}) ||
+                   it.second.GetShape() == core::SizeVector({num_points})) {
+            t_map_contiguous[it.first] =
+                    it.second.To(core::Device("CPU:0")).Contiguous();
+        } else {
+            utility::LogWarning(
+                    "PointCloud contains {} attribute which is not "
+                    "supported by PLY IO. Only points, normals, colors and "
+                    "attributes with shape (N, 1) are supported, where N "
+                    "is the length of points attributes.",
+                    it.first);
+            return false;
         }
     }
 
@@ -370,23 +387,24 @@ bool WritePointCloudToPLY(const std::string &filename,
     ply_add_comment(ply_file, "Created by Open3D");
     ply_add_element(ply_file, "vertex", num_points);
 
-    std::vector<std::pair<core::Dtype, const void *>> attribute_ptr;
+    std::vector<std::tuple<const core::Dtype, const void *, const int>>
+            attribute_ptr;
     attribute_ptr.push_back(
-            std::make_pair(pointcloud.GetPoints().GetDtype(),
-                           pointcloud.GetPoints().GetDataPtr()));
+            std::make_tuple(t_map_contiguous["points"].GetDtype(),
+                            t_map_contiguous["points"].GetDataPtr(), 3));
 
-    e_ply_type pointType = GetPlyType(pointcloud.GetPoints().GetDtype());
+    e_ply_type pointType = GetPlyType(t_map_contiguous["points"].GetDtype());
     ply_add_property(ply_file, "x", pointType, pointType, pointType);
     ply_add_property(ply_file, "y", pointType, pointType, pointType);
     ply_add_property(ply_file, "z", pointType, pointType, pointType);
 
     if (pointcloud.HasPointNormals()) {
         attribute_ptr.push_back(
-                std::make_pair(pointcloud.GetPointNormals().GetDtype(),
-                               pointcloud.GetPointNormals().GetDataPtr()));
+                std::make_tuple(t_map_contiguous["normals"].GetDtype(),
+                                t_map_contiguous["normals"].GetDataPtr(), 3));
 
         e_ply_type pointNormalsType =
-                GetPlyType(pointcloud.GetPointNormals().GetDtype());
+                GetPlyType(t_map_contiguous["normals"].GetDtype());
         ply_add_property(ply_file, "nx", pointNormalsType, pointNormalsType,
                          pointNormalsType);
         ply_add_property(ply_file, "ny", pointNormalsType, pointNormalsType,
@@ -397,17 +415,30 @@ bool WritePointCloudToPLY(const std::string &filename,
 
     if (pointcloud.HasPointColors()) {
         attribute_ptr.push_back(
-                std::make_pair(pointcloud.GetPointColors().GetDtype(),
-                               pointcloud.GetPointColors().GetDataPtr()));
+                std::make_tuple(t_map_contiguous["colors"].GetDtype(),
+                                t_map_contiguous["colors"].GetDataPtr(), 3));
 
         e_ply_type pointColorType =
-                GetPlyType(pointcloud.GetPointColors().GetDtype());
+                GetPlyType(t_map_contiguous["colors"].GetDtype());
         ply_add_property(ply_file, "red", pointColorType, pointColorType,
                          pointColorType);
         ply_add_property(ply_file, "green", pointColorType, pointColorType,
                          pointColorType);
         ply_add_property(ply_file, "blue", pointColorType, pointColorType,
                          pointColorType);
+    }
+
+    e_ply_type attributeType;
+    for (auto const &it : t_map_contiguous) {
+        if (it.first != "points" && it.first != "colors" &&
+            it.first != "normals") {
+            attribute_ptr.push_back(std::make_tuple(it.second.GetDtype(),
+                                                    it.second.GetDataPtr(), 1));
+
+            attributeType = GetPlyType(it.second.GetDtype());
+            ply_add_property(ply_file, it.first.c_str(), attributeType,
+                             attributeType, attributeType);
+        }
     }
 
     if (!ply_write_header(ply_file)) {
@@ -421,12 +452,13 @@ bool WritePointCloudToPLY(const std::string &filename,
 
     for (int64_t i = 0; i < num_points; i++) {
         for (auto it : attribute_ptr) {
-            DISPATCH_DTYPE_TO_TEMPLATE(it.first, [&]() {
+            DISPATCH_DTYPE_TO_TEMPLATE(std::get<0>(it), [&]() {
                 const scalar_t *data_ptr =
-                        static_cast<const scalar_t *>(it.second);
-                ply_write(ply_file, data_ptr[3 * i]);
-                ply_write(ply_file, data_ptr[3 * i + 1]);
-                ply_write(ply_file, data_ptr[3 * i + 2]);
+                        static_cast<const scalar_t *>(std::get<1>(it));
+                const int idx_offset = std::get<2>(it) * i;
+                for (int j = 0; j < std::get<2>(it); ++j) {
+                    ply_write(ply_file, data_ptr[idx_offset + j]);
+                }
             });
         }
 
@@ -437,6 +469,7 @@ bool WritePointCloudToPLY(const std::string &filename,
 
     reporter.Finish();
     ply_close(ply_file);
+
     return true;
 }
 
