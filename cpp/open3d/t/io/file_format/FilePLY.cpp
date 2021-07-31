@@ -365,11 +365,13 @@ bool WritePointCloudToPLY(const std::string &filename,
                     it.second.To(core::Device("CPU:0")).Contiguous();
         } else {
             utility::LogWarning(
-                    "PointCloud contains {} attribute which is not "
-                    "supported by PLY IO. Only points, normals, colors and "
-                    "attributes with shape (N, 1) are supported, where N "
-                    "is the length of points attributes.",
-                    it.first);
+                    "Write PLY failed. PointCloud contains {} attribute which "
+                    "is not supported by PLY IO. Only points, normals, colors "
+                    "and attributes with shape (N, 1) are supported, where N "
+                    "is the length of points attributes. Expected shape: {} "
+                    "but got {}.",
+                    it.first, core::SizeVector({num_points, 1}).ToString(),
+                    it.second.GetShape().ToString());
             return false;
         }
     }
