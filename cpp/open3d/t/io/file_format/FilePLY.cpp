@@ -471,7 +471,6 @@ bool WritePointCloudToPLY(const std::string &filename,
 
     reporter.Finish();
     ply_close(ply_file);
-
     return true;
 }
 
