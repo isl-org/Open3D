@@ -23,7 +23,8 @@
 #pragma once
 
 #include "../TensorFlowHelper.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
+#include "open3d/core/nns/FixedRadiusSearchImpl.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -38,14 +39,16 @@ class OutputAllocator {
 public:
     OutputAllocator(tensorflow::OpKernelContext* context) : context(context) {}
 
-    void AllocIndices(tensorflow::int32** ptr, size_t num) {
+    void AllocIndices(int32_t** ptr, size_t num) {
         using namespace tensorflow;
         *ptr = nullptr;
         Tensor* tensor = 0;
         TensorShape shape({int64_t(num)});
         OP_REQUIRES_OK(context, context->allocate_output(0, shape, &tensor));
         auto flat_tensor = tensor->flat<int32>();
-        *ptr = flat_tensor.data();
+        static_assert(sizeof(int32) == sizeof(int32_t),
+                      "int32 and int32_t not compatible");
+        *ptr = (int32_t*)flat_tensor.data();
     }
 
     void AllocDistances(T** ptr, size_t num) {
@@ -68,7 +71,7 @@ public:
             tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
         using namespace tensorflow;
-        using namespace open3d::ml::impl;
+        using namespace open3d::core::nns;
 
         std::string metric_str;
         OP_REQUIRES_OK(construction,
@@ -147,7 +150,7 @@ public:
                         tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
-    open3d::ml::impl::Metric metric;
+    open3d::core::nns::Metric metric;
     bool ignore_query_point;
     bool return_distances;
 };

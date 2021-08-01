@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NNSIndex.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Logging.h"
 
 // Forward declarations.
@@ -52,7 +53,7 @@ namespace core {
 namespace nns {
 
 /// Distance metric enum.
-enum Metric { L1, L2, Linf };
+// enum Metric { L1, L2, Linf };
 
 /// Base struct for Index holder
 struct NanoFlannIndexHolderBase {
@@ -60,18 +61,20 @@ struct NanoFlannIndexHolderBase {
 };
 
 /// NanoFlann Index Holder.
-template <int METRIC, class T>
+template <int METRIC, class TReal, class TIndex>
 struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
     /// This class is the Adaptor for connecting Open3D Tensor and NanoFlann.
     struct DataAdaptor {
-        DataAdaptor(size_t dataset_size, int dimension, const T *const data_ptr)
+        DataAdaptor(size_t dataset_size,
+                    int dimension,
+                    const TReal *const data_ptr)
             : dataset_size_(dataset_size),
               dimension_(dimension),
               data_ptr_(data_ptr) {}
 
         inline size_t kdtree_get_point_count() const { return dataset_size_; }
 
-        inline T kdtree_get_pt(const size_t idx, const size_t dim) const {
+        inline TReal kdtree_get_pt(const size_t idx, const size_t dim) const {
             return data_ptr_[idx * dimension_ + dim];
         }
 
@@ -82,7 +85,7 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
 
         size_t dataset_size_ = 0;
         int dimension_ = 0;
-        const T *const data_ptr_;
+        const TReal *const data_ptr_;
     };
 
     /// Adaptor Selector.
@@ -91,12 +94,12 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
 
     template <typename fake>
     struct SelectNanoflannAdaptor<L2, fake> {
-        typedef nanoflann::L2_Adaptor<T, DataAdaptor, T> adaptor_t;
+        typedef nanoflann::L2_Adaptor<TReal, DataAdaptor, TReal> adaptor_t;
     };
 
     template <typename fake>
     struct SelectNanoflannAdaptor<L1, fake> {
-        typedef nanoflann::L1_Adaptor<T, DataAdaptor, T> adaptor_t;
+        typedef nanoflann::L1_Adaptor<TReal, DataAdaptor, TReal> adaptor_t;
     };
 
     /// typedef for KDtree.
@@ -104,12 +107,12 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
             typename SelectNanoflannAdaptor<METRIC>::adaptor_t,
             DataAdaptor,
             -1,
-            int64_t>
+            TIndex>
             KDTree_t;
 
     NanoFlannIndexHolder(size_t dataset_size,
                          int dimension,
-                         const T *data_ptr) {
+                         const TReal *data_ptr) {
         adaptor_.reset(new DataAdaptor(dataset_size, dimension, data_ptr));
         index_.reset(new KDTree_t(dimension, *adaptor_.get()));
         index_->buildIndex();

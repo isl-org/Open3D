@@ -63,11 +63,85 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
 namespace io {
+
+class CharVector {
+public:
+    CharVector() {}
+    CharVector(size_t size) : buffer_(size) {}
+    CharVector(size_t size, const char value) : buffer_(size, value) {}
+
+    template <typename T>
+    CharVector& Append(const T& rhs) {
+        // Write in little endian.
+        const char* rhs_ptr = reinterpret_cast<const char*>(&rhs);
+        buffer_.reserve(buffer_.size() + sizeof(T));
+        for (size_t byte = 0; byte < sizeof(T); byte++) {
+            char val = *(rhs_ptr + byte);
+            buffer_.push_back(val);
+        }
+        return *this;
+    }
+
+    CharVector& Append(const std::string& rhs) {
+        buffer_.insert(buffer_.end(), rhs.begin(), rhs.end());
+        return *this;
+    }
+
+    CharVector& Append(const char* rhs) {
+        // Write in little endian.
+        size_t len = strlen(rhs);
+        buffer_.reserve(buffer_.size() + len);
+        for (size_t byte = 0; byte < len; byte++) {
+            buffer_.push_back(rhs[byte]);
+        }
+        return *this;
+    }
+
+    template <typename InputIt>
+    CharVector& Append(InputIt first, InputIt last) {
+        buffer_.insert(buffer_.end(), first, last);
+        return *this;
+    }
+
+    template <typename T>
+    CharVector& Append(size_t count, const T& value) {
+        for (size_t i = 0; i < count; ++i) {
+            Append(value);
+        }
+        return *this;
+    }
+
+    CharVector& Append(const CharVector& other) {
+        buffer_.insert(buffer_.end(), other.buffer_.begin(),
+                       other.buffer_.end());
+        return *this;
+    }
+
+    std::vector<char>::iterator Begin() { return buffer_.begin(); }
+
+    std::vector<char>::iterator End() { return buffer_.end(); }
+
+    size_t Size() const { return buffer_.size(); }
+
+    void Resize(size_t count) { buffer_.resize(count); }
+
+    char* Data() { return buffer_.data(); }
+
+    const char* Data() const { return buffer_.data(); }
+
+    char& operator[](size_t index) { return buffer_[index]; }
+
+    const char& operator[](size_t index) const { return buffer_[index]; }
+
+private:
+    std::vector<char> buffer_;
+};
 
 static char BigEndianChar() {
     int x = 1;
@@ -99,18 +173,8 @@ static char DtypeToChar(const core::Dtype& dtype) {
     return '\0';
 }
 
-template <typename T>
-static std::string ToByteString(const T& rhs) {
-    std::stringstream ss;
-    for (size_t i = 0; i < sizeof(T); i++) {
-        char val = *(reinterpret_cast<const char*>(&rhs) + i);
-        ss << val;
-    }
-    return ss.str();
-}
-
-static std::vector<char> CreateNumpyHeader(const core::SizeVector& shape,
-                                           const core::Dtype& dtype) {
+static CharVector CreateNumpyHeader(const core::SizeVector& shape,
+                                    const core::Dtype& dtype) {
     // {}     -> "()"
     // {1}    -> "(1,)"
     // {1, 2} -> "(1, 2)"
@@ -136,29 +200,27 @@ static std::vector<char> CreateNumpyHeader(const core::SizeVector& shape,
     // - Preamble is 10 bytes.
     // - Dict needs to end with '\n'.
     // - Header dict size includes the padding size and '\n'.
-    std::string dict = fmt::format(
+    std::string property_dict_body = fmt::format(
             "{{'descr': '{}{}{}', 'fortran_order': False, 'shape': {}, }}",
             BigEndianChar(), DtypeToChar(dtype), dtype.ByteSize(),
             shape_ss.str());
-    size_t space_padding = 16 - (10 + dict.size()) % 16 - 1;  // {0, 1, ..., 15}
-    dict.insert(dict.end(), space_padding, ' ');
-    dict += '\n';
 
-    std::stringstream ss;
-    // "Magic" values.
-    ss << static_cast<char>(0x93);
-    ss << "NUMPY";
-    // Major version of numpy format.
-    ss << static_cast<char>(0x01);
-    // Minor version of numpy format.
-    ss << static_cast<char>(0x00);
-    // Header dict size (full header size - 10).
-    ss << ToByteString(static_cast<uint16_t>(dict.size()));
-    // Header dict.
-    ss << dict;
+    CharVector property_dict;
+    property_dict.Append(property_dict_body);
+    // {0, 1, ..., 15}
+    size_t padding_count = 16 - (10 + property_dict.Size()) % 16 - 1;
+    property_dict.Append(padding_count, ' ');
+    property_dict.Append('\n');
 
-    std::string s = ss.str();
-    return std::vector<char>(s.begin(), s.end());
+    CharVector header;
+    header.Append<unsigned char>(0x93);  // Magic value
+    header.Append("NUMPY");              // Magic value
+    header.Append<uint8_t>(0x01);        // Major version
+    header.Append<uint8_t>(0x00);        // Minor version
+    header.Append<uint16_t>(property_dict.Size());
+    header.Append(property_dict);
+
+    return header;  // Use move since CharVector is inherited.
 }
 
 static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
@@ -224,10 +286,10 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
 // The preamble must be at least 10 bytes.
 // Ref: https://numpy.org/devdocs/reference/generated/numpy.lib.format.html
 //
-// - bytes[0]  to bytes[5]            : \x93NUMPY # Magic string
-// - bytes[6]                         : \x01      # Major version number
-// - bytes[7]                         : \x00      # Minor version number
-// - bytes[8]  to bytes[9]            : HEADER_LEN little-endian uint16_t
+// - bytes[0] to bytes[5]             : \x93NUMPY # Magic string
+// - bytes[6]                         : \x01      # Major version, unsigned
+// - bytes[7]                         : \x00      # Minor version, unsigned
+// - bytes[8] to bytes[9]             : HEADER_LEN little-endian uint16_t
 // - bytes[10] to bytes[10+HEADER_LEN]: Dict, padded, terminated by '\n'
 // - (10 + HEADER_LEN) % 64 == 0      : Guranteed
 //
@@ -235,23 +297,24 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
 // - Version 2.0+ supports up to 4GiB HEADER_LEN and the HEADER_LEN is
 //   replaced from uint16_t to uint32_t.
 // - Version 3.0 uses utf8-encoded header string.
-static uint16_t ParseNpyPreamble(const char* preamble) {
-    if (preamble[0] != static_cast<char>(0x93) || preamble[1] != 'N' ||
-        preamble[2] != 'U' || preamble[3] != 'M' || preamble[4] != 'P' ||
-        preamble[5] != 'Y') {
+static size_t ParseNpyPreamble(const char* preamble) {
+    if (*reinterpret_cast<const unsigned char*>(&preamble[0]) !=
+                static_cast<unsigned char>(0x93) ||
+        preamble[1] != 'N' || preamble[2] != 'U' || preamble[3] != 'M' ||
+        preamble[4] != 'P' || preamble[5] != 'Y') {
         utility::LogError("Invalid Numpy preamble {}{}{}{}{}{}.", preamble[0],
                           preamble[1], preamble[2], preamble[3], preamble[4],
                           preamble[5]);
     }
-    if (preamble[6] != static_cast<char>(0x01) ||
-        preamble[7] != static_cast<char>(0x00)) {
+    if (preamble[6] != static_cast<uint8_t>(0x01) ||
+        preamble[7] != static_cast<uint8_t>(0x00)) {
         utility::LogError(
                 "Not supported Numpy format version: {}.{}. Only version 1.0 "
                 "is supported.",
                 preamble[6], preamble[7]);
     }
     uint16_t header_len = *reinterpret_cast<const uint16_t*>(&preamble[8]);
-    return header_len;
+    return static_cast<size_t>(header_len);
 }
 
 // Retruns {shape, type(char), word_size, fortran_order}.
@@ -259,38 +322,36 @@ static uint16_t ParseNpyPreamble(const char* preamble) {
 static std::tuple<core::SizeVector, char, int64_t, bool> ParseNpyHeaderFromFile(
         FILE* fp) {
     const size_t preamble_len = 10;  // Version 1.0 assumed.
-    std::vector<char> preamble(preamble_len);
-    if (fread(preamble.data(), sizeof(char), preamble_len, fp) !=
+    CharVector preamble(preamble_len);
+    if (fread(preamble.Data(), sizeof(char), preamble_len, fp) !=
         preamble_len) {
         utility::LogError("Header preamble cannot be read.");
     }
-    uint16_t header_len = ParseNpyPreamble(preamble.data());
+    const size_t header_len = ParseNpyPreamble(preamble.Data());
 
-    std::vector<char> header_chars(header_len, 0);
-    if (fread(header_chars.data(), sizeof(char), header_len, fp) !=
-        header_len) {
+    CharVector header(header_len, 0);
+    if (fread(header.Data(), sizeof(char), header_len, fp) != header_len) {
         utility::LogError("Failed to read header dictionary.");
     }
-    if (header_chars[header_len - 1] != '\n') {
+    if (header[header_len - 1] != '\n') {
         utility::LogError("Numpy header not terminated by null character.");
     }
-    std::string header(header_chars.data(), header_len);
 
-    return ParsePropertyDict(header);
+    return ParsePropertyDict(std::string(header.Data(), header_len));
 }
 
 static std::tuple<core::SizeVector, char, int64_t, bool>
 ParseNpyHeaderFromBuffer(const char* buffer) {
-    const uint16_t header_len = ParseNpyPreamble(buffer);
+    const size_t header_len = ParseNpyPreamble(buffer);
     std::string header(reinterpret_cast<const char*>(buffer + 10), header_len);
     return ParsePropertyDict(header);
 }
 
-static std::tuple<uint16_t, size_t, size_t> ParseZipFooter(FILE* fp) {
+static std::tuple<size_t, size_t, size_t> ParseZipFooter(FILE* fp) {
     size_t footer_len = 22;
-    std::vector<char> footer(footer_len);
+    CharVector footer(footer_len);
     fseek(fp, -static_cast<int64_t>(footer_len), SEEK_END);
-    if (fread(footer.data(), sizeof(char), footer_len, fp) != footer_len) {
+    if (fread(footer.Data(), sizeof(char), footer_len, fp) != footer_len) {
         utility::LogError("Footer fread failed.");
     }
 
@@ -311,34 +372,8 @@ static std::tuple<uint16_t, size_t, size_t> ParseZipFooter(FILE* fp) {
         utility::LogError("Unsupported zip footer.");
     }
 
-    return std::make_tuple(nrecs, global_header_size, global_header_offset);
-}
-
-template <typename T>
-static std::vector<char>& operator+=(std::vector<char>& lhs, const T rhs) {
-    // Write in little endian.
-    for (size_t byte = 0; byte < sizeof(T); byte++) {
-        char val = *((char*)&rhs + byte);
-        lhs.push_back(val);
-    }
-    return lhs;
-}
-
-template <>
-std::vector<char>& operator+=(std::vector<char>& lhs, const std::string rhs) {
-    lhs.insert(lhs.end(), rhs.begin(), rhs.end());
-    return lhs;
-}
-
-template <>
-std::vector<char>& operator+=(std::vector<char>& lhs, const char* rhs) {
-    // Write in little endian.
-    size_t len = strlen(rhs);
-    lhs.reserve(len);
-    for (size_t byte = 0; byte < len; byte++) {
-        lhs.push_back(rhs[byte]);
-    }
-    return lhs;
+    return std::make_tuple(static_cast<size_t>(nrecs), global_header_size,
+                           global_header_offset);
 }
 
 static void WriteNpzOneTensor(const std::string& file_name,
@@ -350,19 +385,17 @@ static void WriteNpzOneTensor(const std::string& file_name,
     const core::Dtype dtype = tensor.GetDtype();
     const int64_t element_byte_size = dtype.ByteSize();
 
-    FILE* fp = nullptr;
-    if (append) {
-        fp = fopen(file_name.c_str(), "r+b");
-    } else {
-        fp = fopen(file_name.c_str(), "wb");
+    utility::filesystem::CFile cfile;
+    const std::string mode = append ? "r+b" : "wb";
+    if (!cfile.Open(file_name, mode)) {
+        utility::LogError("Failed to open file {}, error: {}.", file_name,
+                          cfile.GetError());
     }
-    if (!fp) {
-        utility::LogError("Unable to open file {}.", file_name);
-    }
+    FILE* fp = cfile.GetFILE();
 
-    uint16_t nrecs = 0;
+    size_t nrecs = 0;
     size_t global_header_offset = 0;
-    std::vector<char> global_header;
+    CharVector global_header;
 
     if (append) {
         // Zip file exists. we need to add a new npy file to it. First read the
@@ -374,8 +407,8 @@ static void WriteNpzOneTensor(const std::string& file_name,
         std::tie(nrecs, global_header_size, global_header_offset) =
                 ParseZipFooter(fp);
         fseek(fp, global_header_offset, SEEK_SET);
-        global_header.resize(global_header_size);
-        size_t res = fread(global_header.data(), sizeof(char),
+        global_header.Resize(global_header_size);
+        size_t res = fread(global_header.Data(), sizeof(char),
                            global_header_size, fp);
         if (res != global_header_size) {
             utility::LogError("Header read error while saving to npz.");
@@ -383,15 +416,15 @@ static void WriteNpzOneTensor(const std::string& file_name,
         fseek(fp, global_header_offset, SEEK_SET);
     }
 
-    std::vector<char> npy_header = CreateNumpyHeader(shape, dtype);
+    CharVector npy_header = CreateNumpyHeader(shape, dtype);
 
     size_t nels = std::accumulate(shape.begin(), shape.end(), 1,
                                   std::multiplies<size_t>());
-    size_t nbytes = nels * element_byte_size + npy_header.size();
+    size_t nbytes = nels * element_byte_size + npy_header.Size();
 
     // Get the CRC of the data to be added.
-    uint32_t crc = crc32(0L, reinterpret_cast<uint8_t*>(npy_header.data()),
-                         npy_header.size());
+    uint32_t crc = crc32(0L, reinterpret_cast<uint8_t*>(npy_header.Data()),
+                         npy_header.Size());
     crc = crc32(crc, static_cast<const uint8_t*>(data),
                 nels * element_byte_size);
 
@@ -399,61 +432,83 @@ static void WriteNpzOneTensor(const std::string& file_name,
     std::string var_name = tensor_name + ".npy";
 
     // Build the local header.
-    std::vector<char> local_header;
-    local_header += "PK";                           // First part of sig
-    local_header += static_cast<uint16_t>(0x0403);  // Second part of sig
-    local_header += static_cast<uint16_t>(20);      // Min version to extract
-    local_header += static_cast<uint16_t>(0);       // General purpose bit flag
-    local_header += static_cast<uint16_t>(0);       // Compression method
-    local_header += static_cast<uint16_t>(0);       // File last mod time
-    local_header += static_cast<uint16_t>(0);       // File last mod date
-    local_header += static_cast<uint32_t>(crc);     // CRC
-    local_header += static_cast<uint32_t>(nbytes);  // Compressed size
-    local_header += static_cast<uint32_t>(nbytes);  // Uncompressed size
-    local_header +=
-            static_cast<uint16_t>(var_name.size());  // Varaible's name length
-    local_header += static_cast<uint16_t>(0);        // Extra field length
-    local_header += var_name;
+    CharVector local_header;
+    local_header.Append("PK");                       // First part of sig
+    local_header.Append<uint16_t>(0x0403);           // Second part of sig
+    local_header.Append<uint16_t>(20);               // Min version to extract
+    local_header.Append<uint16_t>(0);                // General purpose bit flag
+    local_header.Append<uint16_t>(0);                // Compression method
+    local_header.Append<uint16_t>(0);                // File last mod time
+    local_header.Append<uint16_t>(0);                // File last mod date
+    local_header.Append<uint32_t>(crc);              // CRC
+    local_header.Append<uint32_t>(nbytes);           // Compressed size
+    local_header.Append<uint32_t>(nbytes);           // Uncompressed size
+    local_header.Append<uint16_t>(var_name.size());  // Varaible's name length
+    local_header.Append<uint16_t>(0);                // Extra field length
+    local_header.Append(var_name);
 
     // Build global header.
-    global_header += "PK";                           // First part of sig
-    global_header += static_cast<uint16_t>(0x0201);  // Second part of sig
-    global_header += static_cast<uint16_t>(20);      // Version made by
-    global_header.insert(global_header.end(), local_header.begin() + 4,
-                         local_header.begin() + 30);
-    global_header += static_cast<uint16_t>(0);  // File comment length
-    global_header += static_cast<uint16_t>(0);  // Disk number where file starts
-    global_header += static_cast<uint16_t>(0);  // Internal file attributes
-    global_header += static_cast<uint32_t>(0);  // External file attributes
+    global_header.Append("PK");              // First part of sig
+    global_header.Append<uint16_t>(0x0201);  // Second part of sig
+    global_header.Append<uint16_t>(20);      // Version made by
+    global_header.Append(local_header.Begin() + 4, local_header.Begin() + 30);
+    global_header.Append<uint16_t>(0);  // File comment length
+    global_header.Append<uint16_t>(0);  // Disk number where file starts
+    global_header.Append<uint16_t>(0);  // Internal file attributes
+    global_header.Append<uint32_t>(0);  // External file attributes
     // Relative offset of local file header, since it begins where the global
     // header used to begin.
-    global_header += static_cast<uint32_t>(global_header_offset);
-    global_header += var_name;
+    global_header.Append<uint32_t>(global_header_offset);
+    global_header.Append(var_name);
 
     // Build footer.
-    std::vector<char> footer;
-    footer += "PK";                           // First part of sig
-    footer += static_cast<uint16_t>(0x0605);  // Second part of sig
-    footer += static_cast<uint16_t>(0);       // Number of this disk
-    footer += static_cast<uint16_t>(0);       // Disk where footer starts
-    footer +=
-            static_cast<uint16_t>(nrecs + 1);  // Number of records on this disk
-    footer += static_cast<uint16_t>(nrecs + 1);  // Total number of records
-    footer += static_cast<uint32_t>(
-            global_header.size());  // Nbytes of global headers
+    CharVector footer;
+    footer.Append("PK");                 // First part of sig
+    footer.Append<uint16_t>(0x0605);     // Second part of sig
+    footer.Append<uint16_t>(0);          // Number of this disk
+    footer.Append<uint16_t>(0);          // Disk where footer starts
+    footer.Append<uint16_t>(nrecs + 1);  // Number of records on this disk
+    footer.Append<uint16_t>(nrecs + 1);  // Total number of records
+    footer.Append<uint32_t>(global_header.Size());  // Nbytes of global headers
     // Offset of start of global headers, since global header now starts after
     // newly written array.
-    footer += static_cast<uint32_t>(global_header_offset + nbytes +
-                                    local_header.size());
-    footer += static_cast<uint16_t>(0);  // Zip file comment length.
+    footer.Append<uint32_t>(global_header_offset + nbytes +
+                            local_header.Size());
+    footer.Append<uint16_t>(0);  // Zip file comment length.
 
     // Write everything.
-    fwrite(local_header.data(), sizeof(char), local_header.size(), fp);
-    fwrite(npy_header.data(), sizeof(char), npy_header.size(), fp);
+    fwrite(local_header.Data(), sizeof(char), local_header.Size(), fp);
+    fwrite(npy_header.Data(), sizeof(char), npy_header.Size(), fp);
     fwrite(data, element_byte_size, nels, fp);
-    fwrite(global_header.data(), sizeof(char), global_header.size(), fp);
-    fwrite(footer.data(), sizeof(char), footer.size(), fp);
-    fclose(fp);
+    fwrite(global_header.Data(), sizeof(char), global_header.Size(), fp);
+    fwrite(footer.Data(), sizeof(char), footer.Size(), fp);
+}
+
+static void WriteNpzEmpty(const std::string& file_name) {
+    utility::filesystem::CFile cfile;
+    if (!cfile.Open(file_name, "wb")) {
+        utility::LogError("Failed to open file {}, error: {}.", file_name,
+                          cfile.GetError());
+    }
+    FILE* fp = cfile.GetFILE();
+
+    // Build footer.
+    CharVector footer;
+    footer.Append("PK");              // First part of sig
+    footer.Append<uint16_t>(0x0605);  // Second part of sig
+    footer.Append<uint16_t>(0);       // Number of this disk
+    footer.Append<uint16_t>(0);       // Disk where footer starts
+    footer.Append<uint16_t>(0);       // Number of records on this disk
+    footer.Append<uint16_t>(0);       // Total number of records
+    footer.Append<uint32_t>(0);       // Nbytes of global headers
+    footer.Append<uint32_t>(0);       // External file attributes
+    footer.Append<uint16_t>(0);       // Zip file comment length.
+    if (footer.Size() != 22) {
+        utility::LogError("Internal error: empty zip file must have size 22.");
+    }
+
+    // Write everything.
+    fwrite(footer.Data(), sizeof(char), footer.Size(), fp);
 }
 
 class NumpyArray {
@@ -529,18 +584,19 @@ public:
     }
 
     void Save(std::string file_name) const {
-        FILE* fp = fopen(file_name.c_str(), "wb");
-        if (!fp) {
-            utility::LogError("Save: Unable to open file {}.", file_name);
-            return;
+        utility::filesystem::CFile cfile;
+        if (!cfile.Open(file_name, "wb")) {
+            utility::LogError("Failed to open file {}, error: {}.", file_name,
+                              cfile.GetError());
         }
-        std::vector<char> header = CreateNumpyHeader(shape_, GetDtype());
+        FILE* fp = cfile.GetFILE();
+
+        CharVector header = CreateNumpyHeader(shape_, GetDtype());
         fseek(fp, 0, SEEK_SET);
-        fwrite(header.data(), sizeof(char), header.size(), fp);
+        fwrite(header.Data(), sizeof(char), header.Size(), fp);
         fseek(fp, 0, SEEK_END);
         fwrite(GetDataPtr<void>(), static_cast<size_t>(GetDtype().ByteSize()),
                static_cast<size_t>(shape_.NumElements()), fp);
-        fclose(fp);
     }
 
 private:
@@ -576,9 +632,9 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
         FILE* fp,
         uint32_t num_compressed_bytes,
         uint32_t num_uncompressed_bytes) {
-    std::vector<char> buffer_compressed(num_compressed_bytes);
-    std::vector<char> buffer_uncompressed(num_uncompressed_bytes);
-    size_t nread = fread(buffer_compressed.data(), 1, num_compressed_bytes, fp);
+    CharVector buffer_compressed(num_compressed_bytes);
+    CharVector buffer_uncompressed(num_uncompressed_bytes);
+    size_t nread = fread(buffer_compressed.Data(), 1, num_compressed_bytes, fp);
     if (nread != num_compressed_bytes) {
         utility::LogError("Failed to read compressed data.");
     }
@@ -595,10 +651,10 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
 
     d_stream.avail_in = num_compressed_bytes;
     d_stream.next_in =
-            reinterpret_cast<unsigned char*>(buffer_compressed.data());
+            reinterpret_cast<unsigned char*>(buffer_compressed.Data());
     d_stream.avail_out = num_uncompressed_bytes;
     d_stream.next_out =
-            reinterpret_cast<unsigned char*>(buffer_uncompressed.data());
+            reinterpret_cast<unsigned char*>(buffer_uncompressed.Data());
 
     err = inflate(&d_stream, Z_FINISH);
     err = inflateEnd(&d_stream);
@@ -611,26 +667,24 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
     size_t word_size;
     bool fortran_order;
     std::tie(shape, type, word_size, fortran_order) =
-            ParseNpyHeaderFromBuffer(buffer_uncompressed.data());
+            ParseNpyHeaderFromBuffer(buffer_uncompressed.Data());
 
     NumpyArray array(shape, type, word_size, fortran_order);
 
     size_t offset = num_uncompressed_bytes - array.NumBytes();
-    memcpy(array.GetDataPtr<char>(), buffer_uncompressed.data() + offset,
+    memcpy(array.GetDataPtr<char>(), buffer_uncompressed.Data() + offset,
            array.NumBytes());
 
     return array;
 }
 
 core::Tensor ReadNpy(const std::string& file_name) {
-    FILE* fp = fopen(file_name.c_str(), "rb");
-    if (fp) {
-        NumpyArray arr = CreateNumpyArrayFromFile(fp);
-        fclose(fp);
-        return arr.ToTensor();
-    } else {
-        utility::LogError("Unable to open file {}.", file_name);
+    utility::filesystem::CFile cfile;
+    if (!cfile.Open(file_name, "rb")) {
+        utility::LogError("Failed to open file {}, error: {}.", file_name,
+                          cfile.GetError());
     }
+    return CreateNumpyArrayFromFile(cfile.GetFILE()).ToTensor();
 }
 
 void WriteNpy(const std::string& file_name, const core::Tensor& tensor) {
@@ -639,19 +693,36 @@ void WriteNpy(const std::string& file_name, const core::Tensor& tensor) {
 
 std::unordered_map<std::string, core::Tensor> ReadNpz(
         const std::string& file_name) {
-    FILE* fp = fopen(file_name.c_str(), "rb");
-    if (!fp) {
-        utility::LogError("Unable to open {}.", file_name);
+    utility::filesystem::CFile cfile;
+    if (!cfile.Open(file_name, "rb")) {
+        utility::LogError("Failed to open file {}, error: {}.", file_name,
+                          cfile.GetError());
     }
+    FILE* fp = cfile.GetFILE();
 
     std::unordered_map<std::string, core::Tensor> tensor_map;
 
     // It's possible to check tensor_name and only one selected numpy array,
     // here we load all of them.
-    while (1) {
-        std::vector<char> local_header(30);
-        size_t headerres = fread(local_header.data(), sizeof(char), 30, fp);
-        if (headerres != 30) {
+    while (true) {
+        CharVector local_header(30);
+        size_t local_header_bytes =
+                fread(local_header.Data(), sizeof(char), 30, fp);
+
+        // An empty zip file has exactly 22 bytes.
+        if (local_header_bytes == 22) {
+            const char empty_zip_bytes[22] = {
+                    0x50, 0x4b, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+            if (std::memcmp(empty_zip_bytes, local_header.Data(), 22) == 0) {
+                break;
+            } else {
+                utility::LogError("Inalid empty .npz file.");
+            }
+        }
+
+        if (local_header_bytes != 30) {
             utility::LogError("Failed to read local header in npz.");
         }
 
@@ -663,22 +734,22 @@ std::unordered_map<std::string, core::Tensor> ReadNpz(
         // Read tensor name.
         uint16_t tensor_name_len =
                 *reinterpret_cast<uint16_t*>(&local_header[26]);
-        std::vector<char> tensor_name_buf(tensor_name_len, ' ');
-        if (fread(tensor_name_buf.data(), sizeof(char), tensor_name_len, fp) !=
+        CharVector tensor_name_buf(tensor_name_len, ' ');
+        if (fread(tensor_name_buf.Data(), sizeof(char), tensor_name_len, fp) !=
             tensor_name_len) {
             utility::LogError("Failed to read tensor name in npz.");
         }
 
         // Erase the trailing ".npy".
-        std::string tensor_name(tensor_name_buf.begin(), tensor_name_buf.end());
+        std::string tensor_name(tensor_name_buf.Begin(), tensor_name_buf.End());
         tensor_name.erase(tensor_name.end() - 4, tensor_name.end());
 
         // Read extra field.
         uint16_t extra_field_len =
                 *reinterpret_cast<uint16_t*>(&local_header[28]);
         if (extra_field_len > 0) {
-            std::vector<char> buff(extra_field_len);
-            if (fread(buff.data(), sizeof(char), extra_field_len, fp) !=
+            CharVector buff(extra_field_len);
+            if (fread(buff.Data(), sizeof(char), extra_field_len, fp) !=
                 extra_field_len) {
                 utility::LogError("Failed to read extra field in npz.");
             }
@@ -701,21 +772,24 @@ std::unordered_map<std::string, core::Tensor> ReadNpz(
         }
     }
 
-    fclose(fp);
     return tensor_map;
 }
 
 void WriteNpz(const std::string& file_name,
               const std::unordered_map<std::string, core::Tensor>& tensor_map) {
+    if (tensor_map.empty()) {
+        WriteNpzEmpty(file_name);
+    }
+
     std::unordered_map<std::string, core::Tensor> contiguous_tensor_map;
     for (auto it = tensor_map.begin(); it != tensor_map.end(); ++it) {
         contiguous_tensor_map[it->first] =
                 it->second.To(core::Device("CPU:0")).Contiguous();
     }
 
-    // TODO: WriteNpzOneTensor is called multiple times inorder to write
-    // multiple tensors. This reqruies opening/closing files multiple times,
-    // which is not optimal.
+    // TODO: WriteNpzOneTensor is called multiple times in order to write
+    // multiple tensors. This requires opening/closing the npz file for multiple
+    // times, which is not optimal.
     // TODO: Support writing in compressed mode: np.savez_compressed().
     bool is_first_tensor = true;
     for (auto it = tensor_map.begin(); it != tensor_map.end(); ++it) {

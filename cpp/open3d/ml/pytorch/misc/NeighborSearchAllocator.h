@@ -31,17 +31,17 @@
 // These classes implement functors that can be passed to the neighbor search
 // functions.
 
-template <class T>
+template <class T, class TIndex = int32_t>
 class NeighborSearchAllocator {
 public:
     NeighborSearchAllocator(torch::DeviceType device_type, int device_idx)
         : device_type(device_type), device_idx(device_idx) {}
 
-    void AllocIndices(int32_t** ptr, size_t num) {
+    void AllocIndices(TIndex** ptr, size_t num) {
         neighbors_index = torch::empty(
-                {int64_t(num)}, torch::dtype(ToTorchDtype<int32_t>())
+                {int64_t(num)}, torch::dtype(ToTorchDtype<TIndex>())
                                         .device(device_type, device_idx));
-        *ptr = neighbors_index.data_ptr<int32_t>();
+        *ptr = neighbors_index.data_ptr<TIndex>();
     }
 
     void AllocDistances(T** ptr, size_t num) {
@@ -51,8 +51,8 @@ public:
         *ptr = neighbors_distance.data_ptr<T>();
     }
 
-    const int32_t* IndicesPtr() const {
-        return neighbors_index.data_ptr<int32_t>();
+    const TIndex* IndicesPtr() const {
+        return neighbors_index.data_ptr<TIndex>();
     }
 
     const T* DistancesPtr() const { return neighbors_distance.data_ptr<T>(); }

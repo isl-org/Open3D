@@ -31,13 +31,14 @@
 #include <set>
 
 #include "open3d/core/Atomic.h"
-#include "open3d/ml/impl/misc/NeighborSearchCommon.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
-namespace ml {
+namespace core {
+namespace nns {
 namespace impl {
 
 namespace {
@@ -74,26 +75,25 @@ namespace {
 ///        hash table, which are the indices to the points. The size of the
 ///        array must be equal to the number of points.
 ///
-template <class TReal, class TIndex>
+template <class T>
 void BuildSpatialHashTableCPU(const size_t num_points,
-                              const TReal* const points,
-                              const TReal radius,
+                              const T* const points,
+                              const T radius,
                               const size_t points_row_splits_size,
                               const int64_t* points_row_splits,
-                              const TIndex* hash_table_splits,
+                              const uint32_t* hash_table_splits,
                               const size_t hash_table_cell_splits_size,
-                              TIndex* hash_table_cell_splits,
-                              TIndex* hash_table_index) {
+                              uint32_t* hash_table_cell_splits,
+                              uint32_t* hash_table_index) {
     using namespace open3d::utility;
-    typedef MiniVec<TReal, 3> Vec3_t;
-    // typedef Eigen::Array<TReal, 3, 1> Vec3_t;
+    typedef MiniVec<T, 3> Vec3_t;
 
     const int batch_size = points_row_splits_size - 1;
-    const TReal voxel_size = 2 * radius;
-    const TReal inv_voxel_size = 1 / voxel_size;
+    const T voxel_size = 2 * radius;
+    const T inv_voxel_size = 1 / voxel_size;
 
     memset(&hash_table_cell_splits[0], 0,
-           sizeof(TIndex) * hash_table_cell_splits_size);
+           sizeof(uint32_t) * hash_table_cell_splits_size);
 
     // compute number of points that map to each hash
     for (int i = 0; i < batch_size; ++i) {
@@ -112,7 +112,8 @@ void BuildSpatialHashTableCPU(const size_t num_points,
                         size_t hash =
                                 SpatialHash(voxel_index) % hash_table_size;
 
-                        // note the +1 because we want the first element to be 0
+                        // note the +1 because we want the first
+                        // element to be 0
                         core::AtomicFetchAddRelaxed(
                                 &hash_table_cell_splits[first_cell_idx + hash +
                                                         1],
@@ -212,11 +213,15 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                            OUTPUT_ALLOCATOR& output_allocator) {
     using namespace open3d::utility;
 
-    // number of elements for vectorization
-    const int VECSIZE = 8;
+// number of elements for vectorization
+#define VECSIZE 8
     typedef MiniVec<T, 3> Vec3_t;
     typedef Eigen::Array<T, VECSIZE, 1> Vec_t;
     typedef Eigen::Array<int32_t, VECSIZE, 1> Veci_t;
+
+    typedef Eigen::Array<T, 3, 1> Pos_t;
+    typedef Eigen::Array<T, VECSIZE, 3> Poslist_t;
+    typedef Eigen::Array<bool, VECSIZE, 1> Result_t;
 
     const int batch_size = points_row_splits_size - 1;
 
@@ -282,7 +287,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                     bins_to_visit.insert(first_cell_idx + hash);
                                 }
 
-                        Eigen::Array<T, VECSIZE, 3> xyz;
+                        Poslist_t xyz;
                         int vec_i = 0;
 
                         for (size_t bin : bins_to_visit) {
@@ -302,12 +307,11 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                 xyz(vec_i, 2) = points[idx * 3 + 2];
                                 ++vec_i;
                                 if (VECSIZE == vec_i) {
-                                    Eigen::Array<T, 3, 1> pos_arr(
-                                            pos[0], pos[1], pos[2]);
-                                    Vec_t dist =
-                                            NeighborsDist<METRIC>(pos_arr, xyz);
-                                    Eigen::Array<bool, VECSIZE, 1> test_result =
-                                            dist <= threshold;
+                                    Pos_t pos_arr(pos[0], pos[1], pos[2]);
+                                    Vec_t dist = NeighborsDist<METRIC, Pos_t,
+                                                               VECSIZE>(pos_arr,
+                                                                        xyz);
+                                    Result_t test_result = dist <= threshold;
                                     neighbors_count += test_result.count();
                                     vec_i = 0;
                                 }
@@ -315,12 +319,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                         }
                         // process the tail
                         if (vec_i) {
-                            Eigen::Array<T, 3, 1> pos_arr(pos[0], pos[1],
-                                                          pos[2]);
-                            Eigen::Array<T, VECSIZE, 1> dist =
-                                    NeighborsDist<METRIC>(pos_arr, xyz);
-                            Eigen::Array<bool, VECSIZE, 1> test_result =
-                                    dist <= threshold;
+                            Pos_t pos_arr(pos[0], pos[1], pos[2]);
+                            Vec_t dist = NeighborsDist<METRIC, Pos_t, VECSIZE>(
+                                    pos_arr, xyz);
+                            Result_t test_result = dist <= threshold;
                             for (int k = 0; k < vec_i; ++k) {
                                 neighbors_count += int(test_result(k));
                             }
@@ -392,7 +394,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                     bins_to_visit.insert(first_cell_idx + hash);
                                 }
 
-                        Eigen::Array<T, VECSIZE, 3> xyz;
+                        Poslist_t xyz;
                         Veci_t idx_vec;
                         int vec_i = 0;
 
@@ -401,7 +403,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                             size_t end_idx = hash_table_cell_splits[bin + 1];
 
                             for (size_t j = begin_idx; j < end_idx; ++j) {
-                                uint32_t idx = hash_table_index[j];
+                                int64_t idx = hash_table_index[j];
                                 if (IGNORE_QUERY_POINT) {
                                     if (points[idx * 3 + 0] == pos[0] &&
                                         points[idx * 3 + 1] == pos[1] &&
@@ -414,12 +416,11 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                                 idx_vec(vec_i) = idx;
                                 ++vec_i;
                                 if (VECSIZE == vec_i) {
-                                    Eigen::Array<T, 3, 1> pos_arr(
-                                            pos[0], pos[1], pos[2]);
-                                    Eigen::Array<T, VECSIZE, 1> dist =
-                                            NeighborsDist<METRIC>(pos_arr, xyz);
-                                    Eigen::Array<bool, VECSIZE, 1> test_result =
-                                            dist <= threshold;
+                                    Pos_t pos_arr(pos[0], pos[1], pos[2]);
+                                    Vec_t dist = NeighborsDist<METRIC, Pos_t,
+                                                               VECSIZE>(pos_arr,
+                                                                        xyz);
+                                    Result_t test_result = dist <= threshold;
                                     for (int k = 0; k < vec_i; ++k) {
                                         if (test_result(k)) {
                                             indices_ptr[indices_offset +
@@ -439,12 +440,10 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                         }
                         // process the tail
                         if (vec_i) {
-                            Eigen::Array<T, 3, 1> pos_arr(pos[0], pos[1],
-                                                          pos[2]);
-                            Eigen::Array<T, VECSIZE, 1> dist =
-                                    NeighborsDist<METRIC>(pos_arr, xyz);
-                            Eigen::Array<bool, VECSIZE, 1> test_result =
-                                    dist <= threshold;
+                            Pos_t pos_arr(pos[0], pos[1], pos[2]);
+                            Vec_t dist = NeighborsDist<METRIC, Pos_t, VECSIZE>(
+                                    pos_arr, xyz);
+                            Result_t test_result = dist <= threshold;
                             for (int k = 0; k < vec_i; ++k) {
                                 if (test_result(k)) {
                                     indices_ptr[indices_offset +
@@ -462,6 +461,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
                     }
                 });
     }
+#undef VECSIZE
 }
 
 }  // namespace
@@ -537,7 +537,7 @@ void _FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 ///
 /// \param output_allocator    An object that implements functions for
 ///         allocating the output arrays. The object must implement functions
-///         AllocIndices(int32_t** ptr, size_t size) and
+///         AllocIndices(int64_t** ptr, size_t size) and
 ///         AllocDistances(T** ptr, size_t size). Both functions should
 ///         allocate memory and return a pointer to that memory in ptr.
 ///         Argument size specifies the size of the array as the number of
@@ -598,5 +598,6 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
 }
 
 }  // namespace impl
-}  // namespace ml
+}  // namespace nns
+}  // namespace core
 }  // namespace open3d
