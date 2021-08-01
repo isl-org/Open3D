@@ -68,7 +68,7 @@ static std::vector<std::pair<int, int>> InitialMatching(
 
     utility::LogDebug("\t[cross check] ");
     std::vector<std::pair<int, int>> corres_cross;
-    for (const std::pair<int, int>& ij : corres_ij) {
+    for (const std::pair<const int, int>& ij : corres_ij) {
         int i = ij.first;
         int j = ij.second;
         auto i_ptr = corres_ji.find(j);
