@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
@@ -137,6 +138,7 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
                 *estimation,
                 ICPConvergenceCriteria(relative_fitness, relative_rmse,
                                        max_iterations));
+        core::cuda::Synchronize(device);
     }
 
     utility::LogDebug(" PointCloud Size: Source: {}  Target: {}",

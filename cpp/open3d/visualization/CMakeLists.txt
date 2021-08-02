@@ -91,7 +91,7 @@ if (BUILD_GUI)
 endif()
 
 
-include(add_encoded_shader)
+include(Open3DAddEncodedShader)
 
 open3d_add_encoded_shader(shader
     OUTPUT_HEADER
