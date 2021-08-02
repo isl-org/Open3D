@@ -29,6 +29,7 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -49,6 +50,7 @@ static const std::unordered_map<
                 {"ply", ReadPointCloudFromPLY},
                 {"pcd", ReadPointCloudFromPCD},
                 {"pts", ReadPointCloudFromPTS},
+                {"npz", ReadPointCloudFromNPZ},
         };
 
 static const std::unordered_map<
@@ -63,6 +65,7 @@ static const std::unordered_map<
                 {"ply", WritePointCloudToPLY},
                 {"pcd", WritePointCloudToPCD},
                 {"pts", WritePointCloudToPTS},
+                {"npz", WritePointCloudToNPZ},
         };
 
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
@@ -159,6 +162,30 @@ bool WritePointCloud(const std::string &filename,
             print_progress);
     p.update_progress = progress_updater;
     return WritePointCloud(filename, pointcloud, p);
+}
+
+bool ReadPointCloudFromNPZ(const std::string &filename,
+                           geometry::PointCloud &pointcloud,
+                           const ReadPointCloudOption &params) {
+    utility::LogWarning(
+            "Legacy support for NPZ is unavailable. PointCloud will be loaded "
+            "as TPointCloud and converted to Legacy-PointCloud. Dtypes will be "
+            "converted to Float64 and any custom attributes will not be "
+            "loaded.");
+    t::geometry::PointCloud tpcd;
+    t::io::ReadPointCloudFromNPZ(filename, tpcd, params);
+    pointcloud = tpcd.ToLegacyPointCloud();
+    return true;
+}
+
+bool WritePointCloudToNPZ(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params) {
+    t::io::WritePointCloudToNPZ(
+            filename, t::geometry::PointCloud::FromLegacyPointCloud(pointcloud),
+            params);
+
+    return true;
 }
 
 }  // namespace io
