@@ -1,16 +1,32 @@
 """Internal information about the Open3D plugin."""
 
+import json
 from tensorboard.compat.proto import summary_pb2
+from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 
 PLUGIN_NAME = "Open3D"
 
 # The most recent value for the `version` field of the
 # `Open3DPluginData` proto. Sync with Open3D version (MAJOR*100 + MINOR)
-_PROTO_VERSION = 14
+_VERSION = 14
 
-MESH_PROPERTIES = ('vertices', 'vertex_normals', 'vertex_colors', 'triangles',
-                   'triangle_uvs')
-POINT_CLOUD_PROPERTIES = ('points', 'normals', 'colors')
+SUPPORTED_FILEFOPRMAT_VERSIONS = [14]
+
+GEOMETRY_PROPERTY_DIMS = {
+    'vertex_positions': 3,
+    'vertex_normals': 3,
+    'vertex_colors': 3,
+    # 'vertex_uvs': 2,
+    'triangle_indices': 3,
+    'line_indices': 2
+}
+VERTEX_PROPERTIES = (
+    'vertex_normals',
+    'vertex_colors',
+    # 'vertex_uvs'
+)
+TRIANGLE_PROPERTIES = ()
+LINE_PROPERTIES = ()
 
 
 def create_summary_metadata(description):
@@ -25,9 +41,7 @@ def create_summary_metadata(description):
     return summary_pb2.SummaryMetadata(
         summary_description=description,
         plugin_data=summary_pb2.SummaryMetadata.PluginData(
-            plugin_name=PLUGIN_NAME,
-            content=b"",  # no need for summary-specific metadata
-        ),
+            plugin_name=PLUGIN_NAME, content=b''),
     )
 
 
@@ -44,4 +58,14 @@ def parse_plugin_metadata(content):
     Raises:
       Error if the version of the plugin is not supported.
     """
-    return b""
+    return b''
+    # if not isinstance(content, bytes):
+    #     raise TypeError("Content type must be bytes.")
+    # result = plugin_data_pb2.Open3DPluginData.FromString(content)
+
+    # if result.version not in SUPPORTED_FILEFOPRMAT_VERSIONS:
+    #     raise RuntimeError(
+    #         f"Open3D plugin fileformat version {result.version} is not " +
+    #         f"supported. Supported versions are {SUPPORTED_FILEFOPRMAT_VERSIONS}."
+    #     )
+    # return result

@@ -6,13 +6,13 @@ from open3d.visualization.tensorboard_plugin import summary
 
 def summary_format(o3d_trimesh):
     return {
-        'vertices':
+        'vertex_positions':
             np.expand_dims(np.asarray(o3d_trimesh.vertices), axis=0),
         'vertex_colors':
             np.expand_dims(np.asarray(o3d_trimesh.vertex_colors), axis=0),
         'vertex_normals':
             np.expand_dims(np.asarray(o3d_trimesh.vertex_normals), axis=0),
-        'triangles':
+        'triangle_indices':
             np.expand_dims(np.asarray(o3d_trimesh.triangles), axis=0)
     }
 

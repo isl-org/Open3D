@@ -9,6 +9,36 @@ message Open3DPluginData {
   // Version 14 is the only supported version.
   int32 version = 1;
 
-  // Shape of underlying data. Cache it here for performance reasons.
-  repeated int32 shape = 2;
+  enum GeometryProperty {
+    vertex_positions = 0;
+    vertex_normals = 1;
+    vertex_colors = 2;
+    vertex_uvs = 3;
+    triangle_indices = 4;
+    triangle_colors = 5;
+    triangle_normals = 6;
+    line_indices = 7;
+    line_colors = 8;
+}
+
+// Pick up the tensor for a property (geometry_property) from a previous step (step_ref)
+  message PropertyReference {
+      GeometryProperty geometry_property = 1;
+      uint64 step_ref = 2;
+  }
+
+// Data start and data size for a single geometry msgpack
+  message StartSize {
+      uint64 start = 1;
+      uint64 size = 2;
+  }
+
+// Index for a batch of geometry data
+  message BatchIndex {
+      string filename = 1;
+      repeated StartSize start_size = 2;
+  }
+
+  repeated PropertyReference property_references = 2;
+  BatchIndex batch_index = 3;
 }
