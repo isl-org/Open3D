@@ -45,7 +45,7 @@ namespace visualization {
 std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
         const messages::Request& req,
         const messages::SetMeshData& msg,
-        const MsgpackObject& obj) {
+        const MsgpackObjectHandle& obj) {
     std::string errstr(":");
     if (!msg.data.CheckMessage(errstr)) {
         auto status_err = messages::Status::ErrorProcessingMessage();

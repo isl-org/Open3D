@@ -51,9 +51,9 @@ namespace open3d {
 namespace io {
 namespace rpc {
 
-struct ReceiverBase::MsgpackObject {
-    explicit MsgpackObject(msgpack::object& obj) : obj_(obj) {}
-    msgpack::object& obj_;
+struct ReceiverBase::MsgpackObjectHandle {
+    explicit MsgpackObjectHandle(msgpack::object_handle& obj) : obj_(obj) {}
+    msgpack::object_handle& obj_;
 };
 
 ReceiverBase::ReceiverBase(const std::string& address, int timeout)
@@ -177,7 +177,7 @@ void ReceiverBase::Mainloop() {
         auto obj = oh.get();                                            \
         MSGTYPE msg;                                                    \
         msg = obj.as<MSGTYPE>();                                        \
-        auto reply = ProcessMessage(req, msg, MsgpackObject(obj));      \
+        auto reply = ProcessMessage(req, msg, MsgpackObjectHandle(oh)); \
         if (reply) {                                                    \
             replies.push_back(reply);                                   \
         } else {                                                        \
@@ -233,7 +233,7 @@ void ReceiverBase::Mainloop() {
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetMeshData& msg,
-        const MsgpackObject& obj) {
+        const MsgpackObjectHandle& obj) {
     utility::LogInfo(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
@@ -245,7 +245,7 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
         const messages::GetMeshData& msg,
-        const MsgpackObject& obj) {
+        const MsgpackObjectHandle& obj) {
     utility::LogInfo(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
@@ -257,7 +257,7 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetCameraData& msg,
-        const MsgpackObject& obj) {
+        const MsgpackObjectHandle& obj) {
     utility::LogInfo(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
@@ -269,7 +269,7 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetProperties& msg,
-        const MsgpackObject& obj) {
+        const MsgpackObjectHandle& obj) {
     utility::LogInfo(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
@@ -281,7 +281,7 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetActiveCamera& msg,
-        const MsgpackObject& obj) {
+        const MsgpackObjectHandle& obj) {
     utility::LogInfo(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
@@ -293,7 +293,7 @@ std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
 std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetTime& msg,
-        const MsgpackObject& obj) {
+        const MsgpackObjectHandle& obj) {
     utility::LogInfo(
             "ReceiverBase::ProcessMessage: messages with id {} will be "
             "ignored",
