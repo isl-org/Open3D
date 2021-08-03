@@ -1,6 +1,6 @@
 target_sources(tests PRIVATE
     Blob.cpp
-    CUDAState.cpp
+    CUDAUtils.cpp
     Device.cpp
     EigenConverter.cpp
     Hashmap.cpp

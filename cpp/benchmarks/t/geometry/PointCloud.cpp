@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/io/PointCloudIO.h"
@@ -54,6 +55,7 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
         t::geometry::PointCloud pcd =
                 t::geometry::PointCloud::FromLegacyPointCloud(
                         legacy_pcd, core::Float32, device);
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -69,6 +71,7 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 
     for (auto _ : state) {
         open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -96,6 +99,29 @@ void VoxelDownSample(benchmark::State& state,
 
     for (auto _ : state) {
         pcd.VoxelDownSample(voxel_size, backend);
+        core::cuda::Synchronize(device);
+    }
+}
+
+void Transform(benchmark::State& state, const core::Device& device) {
+    PointCloud pcd;
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    core::Dtype dtype = pcd.GetPoints().GetDtype();
+    core::Tensor transformation = core::Tensor::Init<double>({{1, 0, 0, 1.0},
+                                                              {0, 1, 0, 2.0},
+                                                              {0, 0, 1, 3.0},
+                                                              {0, 0, 0, 1}},
+                                                             device)
+                                          .To(dtype);
+
+    // Warm Up.
+    PointCloud pcd_transformed = pcd.Transform(transformation);
+
+    for (auto _ : state) {
+        pcd_transformed = pcd.Transform(transformation);
+        core::cuda::Synchronize(device);
     }
 }
 
@@ -150,6 +176,14 @@ BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_16, 0.16)
 BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_32, 0.32)
         ->Unit(benchmark::kMillisecond);
 ENUM_VOXELDOWNSAMPLE_BACKEND()
+
+BENCHMARK_CAPTURE(Transform, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+#endif
 
 }  // namespace geometry
 }  // namespace t

@@ -24,13 +24,5 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/CUDAState.cuh"
-
-namespace open3d {
-namespace core {
-
-constexpr CUDAScopedStream::CreateNewStreamTag
-        CUDAScopedStream::CreateNewStream;
-
-}  // namespace core
-}  // namespace open3d
+#include "open3d/core/ParallelFor.h"
+#include "open3d/t/geometry/kernel/TransformImpl.h"

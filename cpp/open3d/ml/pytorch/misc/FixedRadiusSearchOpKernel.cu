@@ -26,12 +26,13 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
+#include "open3d/core/nns/FixedRadiusSearchImpl.cuh"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace open3d::core::nns;
 
 template <class T>
 void FixedRadiusSearchCUDA(const torch::Tensor& points,
@@ -60,7 +61,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     size_t temp_size = 0;
 
     // determine temp_size
-    FixedRadiusSearchCUDA(
+    open3d::core::nns::impl::FixedRadiusSearchCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
@@ -76,7 +77,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     auto temp_tensor = CreateTempTensor(temp_size, points.device(), &temp_ptr);
 
     // actually run the search
-    FixedRadiusSearchCUDA(
+    open3d::core::nns::impl::FixedRadiusSearchCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),

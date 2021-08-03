@@ -37,16 +37,15 @@
 #include <type_traits>
 
 #include "open3d/core/Blob.h"
-#include "open3d/core/CUDAState.cuh"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/FunctionTraits.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/core/kernel/Reduction.h"
 #include "open3d/utility/Logging.h"
 
@@ -1003,7 +1002,7 @@ private:
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
                 <<<config.GridDim(), config.BlockDim(), shared_memory,
                    core::cuda::GetStream()>>>(reduce_op);
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+        cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 

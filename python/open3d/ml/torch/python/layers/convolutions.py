@@ -25,6 +25,7 @@
 # ----------------------------------------------------------------------------
 
 from ...python import ops
+from ....torch import classes
 from .neighbor_search import FixedRadiusSearch, RadiusSearch
 import torch
 from torch.nn.parameter import Parameter
@@ -478,6 +479,13 @@ class SparseConv(torch.nn.Module):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
+        if isinstance(inp_features, classes.RaggedTensor):
+            if not (isinstance(inp_positions, classes.RaggedTensor) and
+                    isinstance(out_positions, classes.RaggedTensor)):
+                raise Exception(
+                    "All of inp_positions, inp_features and out_positions must be torch.Tensor, or ml3d.classes.RaggedTensor"
+                )
+
         offset = self.offset
         if isinstance(voxel_size, (float, int)):
             voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
@@ -496,6 +504,13 @@ class SparseConv(torch.nn.Module):
             radius=self.kernel_size[0] * voxel_size * 0.51,
             hash_table_size_factor=hash_table_size_factor,
             hash_table=fixed_radius_search_hash_table)
+
+        out_positions_split = None
+        if isinstance(inp_positions, classes.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
 
         # for stats and debugging
         num_pairs = self.nns.neighbors_index.shape[0]
@@ -528,6 +543,10 @@ class SparseConv(torch.nn.Module):
             out_features += self.bias
         if self.activation:
             out_features = self.activation(out_features)
+
+        if out_positions_split is not None:
+            out_features = classes.RaggedTensor.from_row_splits(
+                out_features, out_positions_split, validate=False, copy=False)
 
         return out_features
 
@@ -655,6 +674,13 @@ class SparseConvTranspose(torch.nn.Module):
         Returns: A tensor of shape [num output points, filters] with the output
           features.
         """
+        if isinstance(inp_features, classes.RaggedTensor):
+            if not (isinstance(inp_positions, classes.RaggedTensor) and
+                    isinstance(out_positions, classes.RaggedTensor)):
+                raise Exception(
+                    "All of inp_positions, inp_features and out_positions must be torch.Tensor, or ml3d.classes.RaggedTensor"
+                )
+
         offset = self.offset
         if isinstance(voxel_size, (float, int)):
             voxel_size = torch.tensor(voxel_size, dtype=inp_positions.dtype)
@@ -677,6 +703,13 @@ class SparseConvTranspose(torch.nn.Module):
             radius=self.kernel_size[0] * voxel_size * 0.51,
             hash_table_size_factor=hash_table_size_factor,
             hash_table=fixed_radius_search_hash_table)
+
+        out_positions_split = None
+        if isinstance(inp_positions, classes.RaggedTensor):
+            inp_positions = inp_positions.values
+            inp_features = inp_features.values
+            out_positions_split = out_positions.row_splits
+            out_positions = out_positions.values
 
         num_out = out_positions.shape[0]
 
@@ -718,5 +751,9 @@ class SparseConvTranspose(torch.nn.Module):
             out_features += self.bias
         if self.activation:
             out_features = self.activation(out_features)
+
+        if out_positions_split is not None:
+            out_features = classes.RaggedTensor.from_row_splits(
+                out_features, out_positions_split, validate=False, copy=False)
 
         return out_features

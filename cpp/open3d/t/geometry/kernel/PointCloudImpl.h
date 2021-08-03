@@ -27,6 +27,7 @@
 #include <atomic>
 #include <vector>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
@@ -37,7 +38,6 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -95,38 +95,37 @@ void UnprojectCPU
 
     int64_t n = rows_strided * cols_strided;
 
-#if defined(__CUDACC__)
-    namespace launcher = core::kernel::cuda_launcher;
-#else
-    namespace launcher = core::kernel::cpu_launcher;
-#endif
-
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        launcher::ParallelFor(n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-            int64_t y = (workload_idx / cols_strided) * stride;
-            int64_t x = (workload_idx % cols_strided) * stride;
+        core::ParallelFor(
+                depth.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int64_t y = (workload_idx / cols_strided) * stride;
+                    int64_t x = (workload_idx % cols_strided) * stride;
 
-            float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) / depth_scale;
-            if (d > 0 && d < depth_max) {
-                int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                    float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) /
+                              depth_scale;
+                    if (d > 0 && d < depth_max) {
+                        int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
-                float x_c = 0, y_c = 0, z_c = 0;
-                ti.Unproject(static_cast<float>(x), static_cast<float>(y), d,
-                             &x_c, &y_c, &z_c);
+                        float x_c = 0, y_c = 0, z_c = 0;
+                        ti.Unproject(static_cast<float>(x),
+                                     static_cast<float>(y), d, &x_c, &y_c,
+                                     &z_c);
 
-                float* vertex = point_indexer.GetDataPtr<float>(idx);
-                ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
-                                  vertex + 2);
-                if (have_colors) {
-                    float* pcd_pixel = colors_indexer.GetDataPtr<float>(idx);
-                    float* image_pixel =
-                            image_colors_indexer.GetDataPtr<float>(x, y);
-                    *pcd_pixel = *image_pixel;
-                    *(pcd_pixel + 1) = *(image_pixel + 1);
-                    *(pcd_pixel + 2) = *(image_pixel + 2);
-                }
-            }
-        });
+                        float* vertex = point_indexer.GetDataPtr<float>(idx);
+                        ti.RigidTransform(x_c, y_c, z_c, vertex + 0, vertex + 1,
+                                          vertex + 2);
+                        if (have_colors) {
+                            float* pcd_pixel =
+                                    colors_indexer.GetDataPtr<float>(idx);
+                            float* image_pixel =
+                                    image_colors_indexer.GetDataPtr<float>(x,
+                                                                           y);
+                            *pcd_pixel = *image_pixel;
+                            *(pcd_pixel + 1) = *(image_pixel + 1);
+                            *(pcd_pixel + 2) = *(image_pixel + 2);
+                        }
+                    }
+                });
     });
 #if defined(__CUDACC__)
     int total_pts_count = count.Item<int>();
@@ -135,7 +134,7 @@ void UnprojectCPU
 #endif
 
 #ifdef __CUDACC__
-    OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+    core::cuda::Synchronize();
 #endif
     points = points.Slice(0, 0, total_pts_count);
     if (have_colors) {
@@ -143,6 +142,7 @@ void UnprojectCPU
                 colors.value().get().Slice(0, 0, total_pts_count);
     }
 }
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry

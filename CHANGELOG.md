@@ -4,7 +4,7 @@
 
 ## 0.13
 
-* CUDA support 10.1 -> 11.0. Tensorflow 2.3.1 -> 2.4.1. PyTorch 1.6.0 -> 1.7.1 (PR #3049). This requires a custom PyTorch wheel from https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.7.1 due to PyTorch issue #52663
+* CUDA support 10.1 -> 11.0. Tensorflow 2.3.1 -> 2.4.1. PyTorch 1.6.0 -> 1.7.1 (PR #3049). This requires a custom PyTorch wheel from https://github.com/isl-org/open3d_downloads/releases/tag/torch1.7.1 due to PyTorch issue #52663
 
 ## 0.12
 
@@ -43,6 +43,8 @@
 * Updated Open3D.h.in to add certain missing header files
 * Add Open3D-ML to Open3D wheel
 * Fix a bug in PointCloud file format, use `float` instead of `float_t`
+* Add per-point covariance member for geometry::PointCloud class.
+* Add Generalized ICP implementation.
 
 ## 0.9.0
 

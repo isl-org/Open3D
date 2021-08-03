@@ -34,13 +34,13 @@ else()
         string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
         if(${glibc_version} VERSION_LESS "2.31")
             set(FILAMENT_URL
-                https://github.com/intel-isl/open3d_downloads/releases/download/filament/filament-v1.9.19-linux.tgz)
+                https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux.tgz)
             set(FILAMENT_SHA256 f0c0b05a543dd0c82b1cd571957a90f28e72cfeee36d19a527c17ac9de4733d5)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
                 "Google Filament binary.")
         else()
             set(FILAMENT_URL
-                https://github.com/intel-isl/open3d_downloads/releases/download/filament/filament-v1.9.19-linux-20.04.tgz)
+                https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.9.19-linux-20.04.tgz)
             set(FILAMENT_SHA256 c756fd76f5c6a40ca554f8c3cca424354a2a22ea6fce3c8ea893d4c4aa39514c)
             message(STATUS "GLIBC version ${glibc_version} found: Using "
                 "Open3D Filament binary.")
