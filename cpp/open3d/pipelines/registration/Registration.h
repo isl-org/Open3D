@@ -84,19 +84,21 @@ public:
 ///
 /// \brief Class that defines the convergence criteria of RANSAC.
 ///
-/// RANSAC algorithm stops if the iteration number hits max_iteration_, or the
-/// validation has been run for max_validation_ times.
-/// Note that the validation is the most computational expensive operator in an
-/// iteration. Most iterations do not do full validation. It is crucial to
-/// control max_validation_ so that the computation time is acceptable.
+/// RANSAC algorithm stops if the iteration number hits max_iteration_, or the 
+/// fitness measured during validation suggests that the algorithm can be 
+/// terminated early with some confidence_. Early termination takes place when the 
+/// number of iteration reaches k = log(1 - confidence)/log(1 - fitness^{ransac_n}), 
+/// where ransac_n is the number of points used during a ransac iteration.
+/// Note that the validation is the most computational expensive operator in an 
+/// iteration. Most iterations do not do full validation. It is crucial to 
+/// control confidence_ so that the computation time is acceptable.
 class RANSACConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
     ///
     /// \param max_iteration Maximum iteration before iteration stops.
     /// \param confidence Desired probability of success. Used for estimating
-    /// early termination by k = log(1 - confidence)/log(1 -
-    /// inlier_ratio^{ransac_n}).
+    /// early termination.
     RANSACConvergenceCriteria(int max_iteration = 100000,
                               double confidence = 0.999)
         : max_iteration_(max_iteration), confidence_(confidence) {}
