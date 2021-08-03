@@ -35,6 +35,7 @@
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/TSDFVoxelGridIO.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
@@ -127,12 +128,15 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 TEST_P(TSDFVoxelGridPermuteDevices, IO) {
     core::Device device = GetParam();
     std::string file_name = "test_tsdf.json";
+    std::string npz_file_name = "test_tsdf.npz";
     const float dist_threshold = 0.004;
 
     auto voxel_grid = IntegrateTestScene(device);
     auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();
 
     t::io::WriteTSDFVoxelGrid(file_name, voxel_grid);
+    EXPECT_TRUE(utility::filesystem::FileExists(file_name));
+    EXPECT_TRUE(utility::filesystem::FileExists(npz_file_name));
 
     auto loaded_voxel_grid = *t::io::CreateTSDFVoxelGridFromFile(file_name);
     auto pcd_from_loaded_voxel_grid =
@@ -144,6 +148,9 @@ TEST_P(TSDFVoxelGridPermuteDevices, IO) {
     // Allow some numerical noise
     EXPECT_NEAR(result.fitness_, 1.0, 1e-5);
     EXPECT_NEAR(result.inlier_rmse_, 0, 1e-5);
+
+    utility::filesystem::RemoveFile(file_name);
+    utility::filesystem::RemoveFile(npz_file_name);
 }
 
 TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {

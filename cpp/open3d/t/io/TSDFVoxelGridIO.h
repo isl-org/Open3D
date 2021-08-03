@@ -34,23 +34,23 @@ namespace open3d {
 namespace t {
 namespace io {
 
-/// Factory function to create a TSDFVoxelGrid from a file
-/// Return an empty TSDFVoxelGrid if fail to read the file.
+/// Factory function to create a TSDFVoxelGrid from a file.
+/// \return An empty TSDFVoxelGrid if fail to read the file.
 std::shared_ptr<geometry::TSDFVoxelGrid> CreateTSDFVoxelGridFromFile(
         const std::string &filename);
 
 /// The general entrance for reading a TSDFVoxelGrid from a file.
-/// The entry is a json file, storing metadata and the path to .key.npy and
-/// .value.npy for a hashmap.
-/// \return return true if the read function is
-/// successful, false otherwise.
+/// The entry is a json file, storing metadata and the path to npz for the
+/// underlying volumetric hashmap.
+/// \return True if reading is successful, false
+/// otherwise.
 bool ReadTSDFVoxelGrid(const std::string &filename,
                        geometry::TSDFVoxelGrid &tsdf_voxelgrid);
 
-/// The general entrance for writing a TSDFVoxelGrid to a file
-/// The entry is a json file, storing metadata and the path to .key.npy and
-/// .value.npy for a hashmap.
-/// \return return true if the write function is successful, false otherwise.
+/// The general entrance for writing a TSDFVoxelGrid to a file.
+/// The entry is a json file, storing metadata and the path to npz for the
+/// underlying volumetric hashmap.
+/// \return True if writing is successful, false otherwise.
 bool WriteTSDFVoxelGrid(const std::string &filename,
                         const geometry::TSDFVoxelGrid &tsdf_voxelgrid);
 

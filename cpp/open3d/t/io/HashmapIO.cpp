@@ -27,6 +27,7 @@
 #include "open3d/t/io/HashmapIO.h"
 
 #include "open3d/t/io/NumpyIO.h"
+#include "open3d/utility/FileSystem.h"
 namespace open3d {
 namespace t {
 namespace io {
@@ -43,7 +44,11 @@ void WriteHashmap(const std::string& file_name, const core::Hashmap& hashmap) {
     core::Tensor active_keys = keys.IndexGet({active_indices});
     core::Tensor active_values = values.IndexGet({active_indices});
 
-    WriteNpz(file_name, {{"key", active_keys}, {"value", active_values}});
+    std::string ext =
+            utility::filesystem::GetFileExtensionInLowerCase(file_name);
+    std::string postfix = ext != "npz" ? ".npz" : "";
+    WriteNpz(file_name + postfix,
+             {{"key", active_keys}, {"value", active_values}});
 }
 
 core::Hashmap ReadHashmap(const std::string& file_name) {
@@ -58,7 +63,8 @@ core::Hashmap ReadHashmap(const std::string& file_name) {
     int length_key = keys.GetLength();
     int length_value = values.GetLength();
     if (length_key != length_value) {
-        utility::LogError("Incompatible key value length.");
+        utility::LogError("Incompatible key length ({}) and value length ({}).",
+                          length_key, length_value);
     }
     int init_capacity = length_key;
 
@@ -70,9 +76,7 @@ core::Hashmap ReadHashmap(const std::string& file_name) {
     core::SizeVector element_shape_key(shape_key.begin() + 1, shape_key.end());
     core::SizeVector element_shape_value(shape_value.begin() + 1,
                                          shape_value.end());
-    utility::LogInfo("{} {}", dtype_key.ToString(), dtype_value.ToString());
-    utility::LogInfo("{} {}", element_shape_key.ToString(),
-                     element_shape_value.ToString());
+
     auto hashmap =
             core::Hashmap(init_capacity, dtype_key, dtype_value,
                           element_shape_key, element_shape_value, core::HOST);

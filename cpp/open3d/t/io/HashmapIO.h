@@ -35,17 +35,15 @@ namespace open3d {
 namespace t {
 namespace io {
 
-/// Read a hash map's keys and values to .npy files.
+/// Read a hash map's keys and values from a npz file at 'key' and 'value'.
 /// Return a hash map on CPU.
-/// TODO: change to .npz when supported.
 ///
-/// \param filename File name to read from.
+/// \param filename The npz file name to read from.
 core::Hashmap ReadHashmap(const std::string& filename);
 
-/// Save a hash map's keys and values to a .npy files.
-/// TODO: change to .npz when supported.
+/// Save a hash map's keys and values to a npz file at 'key' and 'value'.
 ///
-/// \param filename File name to write to.
+/// \param filename The npz file name to write to.
 /// \param hashmap Hashmap to save.
 void WriteHashmap(const std::string& filename, const core::Hashmap& hashmap);
 

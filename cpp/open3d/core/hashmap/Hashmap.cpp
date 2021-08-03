@@ -194,12 +194,12 @@ void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
 
 void Hashmap::Clear() { device_hashmap_->Clear(); }
 
-void Hashmap::Save(const std::string& filename) {
-    t::io::WriteHashmap(filename, *this);
+void Hashmap::Save(const std::string& file_name) {
+    t::io::WriteHashmap(file_name, *this);
 }
 
-Hashmap Hashmap::Load(const std::string& filename) {
-    return t::io::ReadHashmap(filename);
+Hashmap Hashmap::Load(const std::string& file_name) {
+    return t::io::ReadHashmap(file_name);
 }
 
 Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }

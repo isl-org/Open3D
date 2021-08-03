@@ -168,7 +168,14 @@ public:
         return block_hashmap_;
     }
 
-    friend class io::TSDFVoxelGridMetadata;
+    float voxel_size_;
+    float sdf_trunc_;
+
+    int64_t block_resolution_;
+    int64_t block_count_;
+
+    core::Device device_ = core::Device("CPU:0");
+    std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
 
 protected:
     /// Return  addrs and masks for radius (3) neighbor entries.
@@ -183,22 +190,12 @@ protected:
     std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
             const core::Tensor &active_addrs);
 
-    float voxel_size_;
-    float sdf_trunc_;
-
-    int64_t block_resolution_;
-    int64_t block_count_;
-
-    core::Device device_ = core::Device("CPU:0");
-
     // Global hashmap
     std::shared_ptr<core::Hashmap> block_hashmap_;
 
     // Local hashmap for the `unique` operation of input points
     std::shared_ptr<core::Hashmap> point_hashmap_;
     core::Tensor active_block_coords_;
-
-    std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
 };
 }  // namespace geometry
 }  // namespace t
