@@ -24,8 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
+#include "open3d/core/Tensor.h"
+#include "open3d/core/nns/KnnIndex.h"
+#include "pybind/core/nns/nearest_neighbor_search.h"
+#include "pybind/core/tensor_converter.h"
+#include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
 
@@ -33,9 +36,32 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-void pybind_core_nns(py::module &m);
-void pybind_core_knn(py::module &m);
-void pybind_core_faiss(py::module &m);
+void pybind_core_knn(py::module &m_nns) {
+    py::class_<KnnIndex, std::shared_ptr<KnnIndex>> knn(
+            m_nns, "KnnIndex",
+            "KnnIndex class for nearest neighbor search. "
+            "Construct a NearestNeighborSearch object with input "
+            "dataset_points of shape {n_dataset, d}.");
+
+    // Constructors.
+    knn.def(py::init<>());
+
+    // Index functions.
+    knn.def(
+            "set_tensor_data",
+            [](KnnIndex &self, Tensor dataset_points) {
+                return self.SetTensorData(dataset_points);
+            },
+            py::arg("dataset_points"));
+
+    // Search functions.
+    knn.def(
+            "knn_search",
+            [](KnnIndex &self, Tensor query_points, int knn) {
+                return self.SearchKnn(query_points, knn);
+            },
+            py::arg("query_points"), py::arg("knn"));
+}
 
 }  // namespace nns
 }  // namespace core
