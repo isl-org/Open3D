@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/KnnIndex.h"
 #include "open3d/core/nns/KnnSearchImpl.cuh"
+#include "open3d/core/nns/NeighborSearchAllocator.h"
 
 namespace open3d {
 namespace core {

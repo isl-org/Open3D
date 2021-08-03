@@ -185,7 +185,7 @@ void KnnSearchCUDA(const cudaStream_t stream,
 
     const size_t num_indices = num_queries * knn;
 
-    int64_t *indices_ptr;
+    int32_t *indices_ptr;
     T *distances_ptr;
 
     output_allocator.AllocIndices(&indices_ptr, num_indices);
@@ -199,7 +199,7 @@ void KnnSearchCUDA(const cudaStream_t stream,
 
         const T *const points_i = points + 3 * points_row_splits[i];
         const T *const queries_i = queries + 3 * queries_row_splits[i];
-        int64_t *indices_ptr_i = indices_ptr + queries_row_splits[i] * knn;
+        int32_t *indices_ptr_i = indices_ptr + queries_row_splits[i] * knn;
         T *distances_ptr_i = distances_ptr + queries_row_splits[i] * knn;
         knnquery_cuda_launcher(stream, indices_ptr_i, distances_ptr_i,
                                num_points_i, points_i, num_queries_i, queries_i,

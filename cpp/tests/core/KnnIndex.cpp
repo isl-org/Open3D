@@ -69,14 +69,14 @@ TEST(KnnIndex, KnnSearch) {
     shape = core::SizeVector{1, 3};
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
-    EXPECT_EQ(indices.ToFlatVector<int64_t>(), std::vector<int64_t>({1, 4, 9}));
+    EXPECT_EQ(indices.ToFlatVector<int32_t>(), std::vector<int32_t>({1, 4, 9}));
     ExpectEQ(distances.ToFlatVector<float>(),
              std::vector<float>({0.00626358, 0.00747938, 0.0108912}));
 
     // If k > size.result.
     std::tie(indices, distances) = knn_index.SearchKnn(query_points, 12);
-    EXPECT_EQ(indices.ToFlatVector<int64_t>(),
-              std::vector<int64_t>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8}));
+    EXPECT_EQ(indices.ToFlatVector<int32_t>(),
+              std::vector<int32_t>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8}));
     ExpectEQ(distances.ToFlatVector<float>(),
              std::vector<float>({0.00626358, 0.00747938, 0.0108912, 0.0138322,
                                  0.015048, 0.018695, 0.0199108, 0.0286952,
@@ -88,8 +88,8 @@ TEST(KnnIndex, KnnSearch) {
                                              0.064705, 0.043921, 0.087843}),
                          {2, 3}, core::Float32, device);
     std::tie(indices, distances) = knn_index.SearchKnn(query_points, 3);
-    EXPECT_EQ(indices.ToFlatVector<int64_t>(),
-              std::vector<int64_t>({1, 4, 9, 1, 4, 9}));
+    EXPECT_EQ(indices.ToFlatVector<int32_t>(),
+              std::vector<int32_t>({1, 4, 9, 1, 4, 9}));
     ExpectEQ(distances.ToFlatVector<float>(),
              std::vector<float>({0.00626358, 0.00747938, 0.0108912, 0.00626358,
                                  0.00747938, 0.0108912}));
@@ -133,8 +133,8 @@ TEST(KnnIndex, SearchKnnBatch) {
 
     std::tie(indices, distances) =
             index.SearchKnn(query_points, queries_row_splits, knn);
-    ExpectEQ(indices.ToFlatVector<int64_t>(),
-             std::vector<int64_t>{3, 1, 9, 7, 6, 0, 2, 8, 1, 8, 2, 5, 7, 0, 4,
+    ExpectEQ(indices.ToFlatVector<int32_t>(),
+             std::vector<int32_t>{3, 1, 9, 7, 6, 0, 2, 8, 1, 8, 2, 5, 7, 0, 4,
                                   2, 0, 5, 5, 7, 8, 0, 5, 7, 4, 0, 7, 7, 5, 0,
                                   8, 6, 9, 9, 6, 3, 8, 2, 6, 7, 0, 4, 9, 6, 8,
                                   4, 5, 7, 5, 4, 7, 4, 5, 7, 5, 4, 7, 0, 6, 2,
