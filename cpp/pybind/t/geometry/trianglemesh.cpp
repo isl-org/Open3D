@@ -69,26 +69,14 @@ void pybind_trianglemesh(py::module& m) {
     triangle_mesh.def(
             "cpu",
             [](const TriangleMesh& triangle_mesh) {
-                return triangle_mesh.To(
-                        core::Device(core::Device::DeviceType::CPU, 0));
+                return triangle_mesh.To(core::Device("CPU:0"));
             },
             "Transfer the triangle mesh to CPU. If the triangle mesh "
             "is already on CPU, no copy will be performed.");
     triangle_mesh.def(
             "cuda",
             [](const TriangleMesh& triangle_mesh, int device_id) {
-                if (!core::cuda::IsAvailable()) {
-                    utility::LogError(
-                            "CUDA is not available, cannot copy TriangleMesh.");
-                }
-                if (device_id < 0 || device_id >= core::cuda::DeviceCount()) {
-                    utility::LogError(
-                            "Invalid device_id {}, must satisfy 0 <= "
-                            "device_id < {}",
-                            device_id, core::cuda::DeviceCount());
-                }
-                return triangle_mesh.To(core::Device(
-                        core::Device::DeviceType::CUDA, device_id));
+                return triangle_mesh.To(core::Device("CUDA", device_id));
             },
             "Transfer the triangle mesh to a CUDA device. If the triangle mesh "
             "is already on the specified CUDA device, no copy will be "

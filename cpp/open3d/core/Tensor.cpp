@@ -30,6 +30,7 @@
 
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Blob.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -537,7 +538,7 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     }
 }
 
-Tensor Tensor::To(Dtype dtype, bool copy) const {
+Tensor Tensor::To(Dtype dtype, bool copy /*= false*/) const {
     if (!copy && dtype_ == dtype) {
         return *this;
     }
@@ -551,16 +552,40 @@ Tensor Tensor::To(Dtype dtype, bool copy) const {
     return dst_tensor;
 }
 
-Tensor Tensor::To(const Device& device, bool copy) const {
+// Checks if the device_id for CUDA is valid. For CPU Device ID == 0 is verified
+// in the Device constructor itself.
+static void AssertCUDADeviceID(const Device& device) {
+    if (device.GetType() == Device::DeviceType::CUDA) {
+        const int cuda_device_count = core::cuda::DeviceCount();
+        if (cuda_device_count) {
+            if (device.GetID() < 0 || device.GetID() > cuda_device_count - 1) {
+                utility::LogError(
+                        "CUDA has device_id {}, but device_id must be 0 to "
+                        "{}.",
+                        device.GetID(), cuda_device_count - 1);
+            }
+        } else {
+            utility::LogError("CUDA device not available.");
+        }
+    }
+}
+
+Tensor Tensor::To(const Device& device, bool copy /*= false*/) const {
     if (!copy && GetDevice() == device) {
         return *this;
     }
+    AssertCUDADeviceID(device);
+
     Tensor dst_tensor(shape_, dtype_, device);
     kernel::Copy(*this, dst_tensor);
     return dst_tensor;
 }
 
-Tensor Tensor::To(const Device& device, Dtype dtype, bool copy) const {
+Tensor Tensor::To(const Device& device,
+                  Dtype dtype,
+                  bool copy /*= false*/) const {
+    AssertCUDADeviceID(device);
+
     Tensor dst_tensor = To(dtype, copy);
     dst_tensor = dst_tensor.To(device, copy);
     return dst_tensor;

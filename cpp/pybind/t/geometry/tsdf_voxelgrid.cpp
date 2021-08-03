@@ -104,27 +104,14 @@ void pybind_tsdf_voxelgrid(py::module& m) {
     tsdf_voxelgrid.def(
             "cpu",
             [](const TSDFVoxelGrid& tsdf_voxelgrid) {
-                return tsdf_voxelgrid.To(
-                        core::Device(core::Device::DeviceType::CPU, 0));
+                return tsdf_voxelgrid.To(core::Device("CPU:0"));
             },
             "Transfer the tsdf voxelgrid to CPU. If the tsdf voxelgrid "
             "is already on CPU, no copy will be performed.");
     tsdf_voxelgrid.def(
             "cuda",
             [](const TSDFVoxelGrid& tsdf_voxelgrid, int device_id) {
-                if (!core::cuda::IsAvailable()) {
-                    utility::LogError(
-                            "CUDA is not available, cannot copy "
-                            "TSDFVoxelGrid.");
-                }
-                if (device_id < 0 || device_id >= core::cuda::DeviceCount()) {
-                    utility::LogError(
-                            "Invalid device_id {}, must satisfy 0 <= "
-                            "device_id < {}",
-                            device_id, core::cuda::DeviceCount());
-                }
-                return tsdf_voxelgrid.To(core::Device(
-                        core::Device::DeviceType::CUDA, device_id));
+                return tsdf_voxelgrid.To(core::Device("CUDA", device_id));
             },
             "Transfer the tsdf voxelgrid to a CUDA device. If the tsdf "
             "voxelgrid is already on the specified CUDA device, no copy will "

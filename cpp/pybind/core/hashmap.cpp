@@ -109,26 +109,14 @@ void pybind_core_hashmap(py::module& m) {
     hashmap.def(
             "cpu",
             [](const Hashmap& hashmap) {
-                return hashmap.To(
-                        core::Device(core::Device::DeviceType::CPU, 0));
+                return hashmap.To(core::Device("CPU:0"));
             },
             "Transfer the hashmap to CPU. If the hashmap "
             "is already on CPU, no copy will be performed.");
     hashmap.def(
             "cuda",
             [](const Hashmap& hashmap, int device_id) {
-                if (!core::cuda::IsAvailable()) {
-                    utility::LogError(
-                            "CUDA is not available, cannot copy Hashmap.");
-                }
-                if (device_id < 0 || device_id >= core::cuda::DeviceCount()) {
-                    utility::LogError(
-                            "Invalid device_id {}, must satisfy 0 <= "
-                            "device_id < {}",
-                            device_id, core::cuda::DeviceCount());
-                }
-                return hashmap.To(core::Device(core::Device::DeviceType::CUDA,
-                                               device_id));
+                return hashmap.To(core::Device("CUDA", device_id));
             },
             "Transfer the hashmap to a CUDA device. If the hashmap is already "
             "on the specified CUDA device, no copy will be performed.",

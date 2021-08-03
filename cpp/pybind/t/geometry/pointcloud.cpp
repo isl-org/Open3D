@@ -90,26 +90,14 @@ void pybind_pointcloud(py::module& m) {
     pointcloud.def(
             "cpu",
             [](const PointCloud& pointcloud) {
-                return pointcloud.To(
-                        core::Device(core::Device::DeviceType::CPU, 0));
+                return pointcloud.To(core::Device("CPU:0"));
             },
             "Transfer the point cloud to CPU. If the point cloud is "
             "already on CPU, no copy will be performed.");
     pointcloud.def(
             "cuda",
             [](const PointCloud& pointcloud, int device_id) {
-                if (!core::cuda::IsAvailable()) {
-                    utility::LogError(
-                            "CUDA is not available, cannot copy PointCloud.");
-                }
-                if (device_id < 0 || device_id >= core::cuda::DeviceCount()) {
-                    utility::LogError(
-                            "Invalid device_id {}, must satisfy 0 <= "
-                            "device_id < {}",
-                            device_id, core::cuda::DeviceCount());
-                }
-                return pointcloud.To(core::Device(
-                        core::Device::DeviceType::CUDA, device_id));
+                return pointcloud.To(core::Device("CUDA", device_id));
             },
             "Transfer the point cloud to a CUDA device. If the point cloud is "
             "already on the specified CUDA device, no copy will be performed.",

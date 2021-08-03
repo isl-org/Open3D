@@ -217,26 +217,13 @@ void pybind_image(py::module &m) {
               "Returns a copy of the Image on the same device.");
     image.def(
             "cpu",
-            [](const Image &image) {
-                return image.To(core::Device(core::Device::DeviceType::CPU, 0));
-            },
+            [](const Image &image) { return image.To(core::Device("CPU:0")); },
             "Transfer the image to CPU. If the image "
             "is already on CPU, no copy will be performed.");
     image.def(
             "cuda",
             [](const Image &image, int device_id) {
-                if (!core::cuda::IsAvailable()) {
-                    utility::LogError(
-                            "CUDA is not available, cannot copy Image.");
-                }
-                if (device_id < 0 || device_id >= core::cuda::DeviceCount()) {
-                    utility::LogError(
-                            "Invalid device_id {}, must satisfy 0 <= "
-                            "device_id < {}",
-                            device_id, core::cuda::DeviceCount());
-                }
-                return image.To(core::Device(core::Device::DeviceType::CUDA,
-                                             device_id));
+                return image.To(core::Device("CUDA", device_id));
             },
             "Transfer the image to a CUDA device. If the image is already "
             "on the specified CUDA device, no copy will be performed.",
@@ -313,28 +300,14 @@ void pybind_image(py::module &m) {
             .def(
                     "cpu",
                     [](const RGBDImage &rgbd_image) {
-                        return rgbd_image.To(
-                                core::Device(core::Device::DeviceType::CPU, 0));
+                        return rgbd_image.To(core::Device("CPU:0"));
                     },
                     "Transfer the RGBD image to CPU. If the RGBD image "
                     "is already on CPU, no copy will be performed.")
             .def(
                     "cuda",
                     [](const RGBDImage &rgbd_image, int device_id) {
-                        if (!core::cuda::IsAvailable()) {
-                            utility::LogError(
-                                    "CUDA is not available, cannot copy RGBD "
-                                    "Image.");
-                        }
-                        if (device_id < 0 ||
-                            device_id >= core::cuda::DeviceCount()) {
-                            utility::LogError(
-                                    "Invalid device_id {}, must satisfy 0 <= "
-                                    "device_id < {}",
-                                    device_id, core::cuda::DeviceCount());
-                        }
-                        return rgbd_image.To(core::Device(
-                                core::Device::DeviceType::CUDA, device_id));
+                        return rgbd_image.To(core::Device("CUDA", device_id));
                     },
                     "Transfer the RGBD image to a CUDA device. If the RGBD "
                     "image is already "
