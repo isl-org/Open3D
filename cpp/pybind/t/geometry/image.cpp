@@ -240,10 +240,9 @@ void pybind_image(py::module &m) {
               "If true, a new tensor is always created; if false, the copy is "
               "avoided when the original tensor already has the targeted "
               "dtype."}});
-    image.def("to_legacy_image", &Image::ToLegacyImage,
-              "Convert to legacy Image type.");
-    image.def_static("from_legacy_image", &Image::FromLegacyImage,
-                     "image_legacy"_a, "device"_a = core::Device("CPU:0"),
+    image.def("to_legacy", &Image::ToLegacy, "Convert to legacy Image type.");
+    image.def_static("from_legacy", &Image::FromLegacy, "image_legacy"_a,
+                     "device"_a = core::Device("CPU:0"),
                      "Create a Image from a legacy Open3D Image.");
     image.def("as_tensor", &Image::AsTensor);
 
@@ -300,7 +299,7 @@ void pybind_image(py::module &m) {
                  "performed.",
                  "device_id"_a = 0)
             // Conversion.
-            .def("to_legacy_rgbd_image", &RGBDImage::ToLegacyRGBDImage,
+            .def("to_legacy", &RGBDImage::ToLegacy,
                  "Convert to legacy RGBDImage type.")
             // Description.
             .def("__repr__", &RGBDImage::ToString);

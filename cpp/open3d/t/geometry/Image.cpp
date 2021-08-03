@@ -558,8 +558,8 @@ Image Image::ColorizeDepth(float scale, float min_value, float max_value) {
     return dst_im;
 }
 
-Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
-                             const core::Device &device) {
+Image Image::FromLegacy(const open3d::geometry::Image &image_legacy,
+                        const core::Device &device) {
     static const std::unordered_map<int, core::Dtype> kBytesToDtypeMap = {
             {1, core::UInt8},
             {2, core::UInt16},
@@ -587,7 +587,7 @@ Image Image::FromLegacyImage(const open3d::geometry::Image &image_legacy,
     return image;
 }
 
-open3d::geometry::Image Image::ToLegacyImage() const {
+open3d::geometry::Image Image::ToLegacy() const {
     auto dtype = GetDtype();
     if (!(dtype == core::UInt8 || dtype == core::UInt16 ||
           dtype == core::Float32))
