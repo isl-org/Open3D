@@ -29,6 +29,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/Material.h"
 #include "open3d/t/geometry/TensorMap.h"
 
 namespace open3d {
@@ -202,6 +203,9 @@ public:
     const core::Tensor &GetVertexAttr(const std::string &key) const {
         return vertex_attr_.at(key);
     }
+
+    /// Get mesh material properties.
+    Material &GetMaterial();
 
     /// Removes vertex attribute by key value. Primary attribute "vertices"
     /// cannot be removed. Throws warning if attribute key does not exists.
