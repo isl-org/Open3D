@@ -163,15 +163,15 @@ public:
 
     /// Get the value of the "vertices" attribute in vertex_attr_.
     /// Convenience function.
-    core::Tensor &GetVertices() { return GetVertexAttr("vertices"); }
+    core::Tensor &GetVertices() { return GetVertexAttr("vertex_positions"); }
 
     /// Get the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
-    core::Tensor &GetVertexColors() { return GetVertexAttr("colors"); }
+    core::Tensor &GetVertexColors() { return GetVertexAttr("vertex_colors"); }
 
     /// Get the value of the "normals" attribute in vertex_attr_.
     /// Convenience function.
-    core::Tensor &GetVertexNormals() { return GetVertexAttr("normals"); }
+    core::Tensor &GetVertexNormals() { return GetVertexAttr("vertex_normals"); }
 
     /// Getter for triangle_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetTriangleAttr() const { return triangle_attr_; }
@@ -186,15 +186,19 @@ public:
 
     /// Get the value of the "triangles" attribute in triangle_attr_.
     /// Convenience function.
-    core::Tensor &GetTriangles() { return GetTriangleAttr("triangles"); }
+    core::Tensor &GetTriangles() { return GetTriangleAttr("triangle_indices"); }
 
     /// Get the value of the "normals" attribute in triangle_attr_.
     /// Convenience function.
-    core::Tensor &GetTriangleNormals() { return GetTriangleAttr("normals"); }
+    core::Tensor &GetTriangleNormals() {
+        return GetTriangleAttr("triangle_normals");
+    }
 
     /// Get the value of the "colors" attribute in triangle_attr_.
     /// Convenience function.
-    core::Tensor &GetTriangleColors() { return GetTriangleAttr("colors"); }
+    core::Tensor &GetTriangleColors() {
+        return GetTriangleAttr("triangle_colors");
+    }
 
     /// Get vertex attributes. Throws exception if the attribute does not exist.
     ///
@@ -212,19 +216,19 @@ public:
     /// Get the value of the "vertices" attribute in vertex_attr_.
     /// Convenience function.
     const core::Tensor &GetVertices() const {
-        return GetVertexAttr("vertices");
+        return GetVertexAttr("vertex_positions");
     }
 
     /// Get the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
     const core::Tensor &GetVertexColors() const {
-        return GetVertexAttr("colors");
+        return GetVertexAttr("vertex_colors");
     }
 
     /// Get the value of the "normals" attribute in vertex_attr_.
     /// Convenience function.
     const core::Tensor &GetVertexNormals() const {
-        return GetVertexAttr("normals");
+        return GetVertexAttr("vertex_normals");
     }
 
     /// Get triangle attributes in triangle_attr_. Throws exception if the
@@ -246,19 +250,19 @@ public:
     /// Get the value of the "triangles" attribute in triangle_attr_.
     /// Convenience function.
     const core::Tensor &GetTriangles() const {
-        return GetTriangleAttr("triangles");
+        return GetTriangleAttr("triangle_indices");
     }
 
     /// Get the value of the "normals" attribute in triangle_attr_.
     /// Convenience function.
     const core::Tensor &GetTriangleNormals() const {
-        return GetTriangleAttr("normals");
+        return GetTriangleAttr("triangle_normals");
     }
 
     /// Get the value of the "colors" attribute in triangle_attr_.
     /// Convenience function.
     const core::Tensor &GetTriangleColors() const {
-        return GetTriangleAttr("colors");
+        return GetTriangleAttr("triangle_colors");
     }
 
     /// Set vertex attributes. If the attribute key already exists, its value
@@ -275,21 +279,21 @@ public:
     /// Convenience function.
     void SetVertices(const core::Tensor &value) {
         value.AssertShapeCompatible({utility::nullopt, 3});
-        SetVertexAttr("vertices", value);
+        SetVertexAttr("vertex_positions", value);
     }
 
     /// Set the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
     void SetVertexColors(const core::Tensor &value) {
         value.AssertShapeCompatible({utility::nullopt, 3});
-        SetVertexAttr("colors", value);
+        SetVertexAttr("vertex_colors", value);
     }
 
     /// Set the value of the "normals" attribute in vertex_attr_.
     /// This is a convenience function.
     void SetVertexNormals(const core::Tensor &value) {
         value.AssertShapeCompatible({utility::nullopt, 3});
-        SetVertexAttr("normals", value);
+        SetVertexAttr("vertex_normals", value);
     }
 
     /// Set triangle attributes. If the attribute key already exists, its value
@@ -305,21 +309,21 @@ public:
     /// Set the vlaue of the "triangles" attribute in triangle_attr_.
     void SetTriangles(const core::Tensor &value) {
         value.AssertShapeCompatible({utility::nullopt, 3});
-        SetTriangleAttr("triangles", value);
+        SetTriangleAttr("triangle_indices", value);
     }
 
     /// Set the value of the "normals" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleNormals(const core::Tensor &value) {
         value.AssertShapeCompatible({utility::nullopt, 3});
-        SetTriangleAttr("normals", value);
+        SetTriangleAttr("triangle_normals", value);
     }
 
     /// Set the value of the "colors" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleColors(const core::Tensor &value) {
         value.AssertShapeCompatible({utility::nullopt, 3});
-        SetTriangleAttr("colors", value);
+        SetTriangleAttr("triangle_colors", value);
     }
 
     /// Returns true if all of the followings are true in vertex_attr_:
@@ -334,21 +338,21 @@ public:
 
     /// Check if the "vertices" attribute's value in vertex_attr_ has length >
     /// 0. Convenience function.
-    bool HasVertices() const { return HasVertexAttr("vertices"); }
+    bool HasVertices() const { return HasVertexAttr("vertex_positions"); }
 
     /// Returns true if all of the followings are true in vertex_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as vertices' length
     /// 3) attribute "colors"'s length > 0
     /// Convenience function.
-    bool HasVertexColors() const { return HasVertexAttr("colors"); }
+    bool HasVertexColors() const { return HasVertexAttr("vertex_colors"); }
 
     /// Returns true if all of the followings are true in vertex_attr_:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as vertices' length
     /// 3) attribute "normals"'s length > 0
     /// Convenience function.
-    bool HasVertexNormals() const { return HasVertexAttr("normals"); }
+    bool HasVertexNormals() const { return HasVertexAttr("vertex_normals"); }
 
     /// Returns true if all of the followings are true in triangle_attr_:
     /// 1) attribute key exist
@@ -363,21 +367,25 @@ public:
     /// Check if the "triangles" attribute's value in triangle_attr_ has length
     /// > 0.
     /// Convenience function.
-    bool HasTriangles() const { return HasTriangleAttr("triangles"); }
+    bool HasTriangles() const { return HasTriangleAttr("triangle_indices"); }
 
     /// Returns true if all of the followings are true in triangle_attr_:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as vertices' length
     /// 3) attribute "normals"'s length > 0
     /// Convenience function.
-    bool HasTriangleNormals() const { return HasTriangleAttr("normals"); }
+    bool HasTriangleNormals() const {
+        return HasTriangleAttr("triangle_normals");
+    }
 
     /// Returns true if all of the followings are true in triangle_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as vertices' length
     /// 3) attribute "colors"'s length > 0
     /// Convenience function.
-    bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
+    bool HasTriangleColors() const {
+        return HasTriangleAttr("triangle_colors");
+    }
 
 public:
     /// Clear all data in the trianglemesh.

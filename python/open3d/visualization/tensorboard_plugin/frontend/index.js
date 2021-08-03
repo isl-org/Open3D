@@ -41,6 +41,7 @@ class TensorboardOpen3DPluginClient {
         `<link  href="style.css" rel="stylesheet">
         <div class="run-tag-selector">
             <h3>Runs</h3>
+            <p id="logdir"></p>
             <div id="run-selector"></div>
 
             <h3>Tags</h3>
@@ -74,8 +75,8 @@ class TensorboardOpen3DPluginClient {
         const fontsize = window.getComputedStyle(document.body).fontSize;
         fetch(this.url_route_prefix + "/new_window?width=" + width + "&height="
             + height + "&fontsize=" + fontsize, null)
-            .then((response) => response.text())
-            .then((response) => this.addConnection("window_" + response))
+            .then((response) => response.json())
+            .then((response) => this.addConnection(response.window_id, response.logdir))
             .catch(err => console.error("Error: /new_window failed:" + err));
     }
 
@@ -266,6 +267,7 @@ class TensorboardOpen3DPluginClient {
         if (message.class_name.endsWith("get_run_tags")) {
             this.run_to_tags = message.run_to_tags;
             this.current = message.current;
+
             this.createSelector("run-selector-radio-buttons", "run-selector",
                 Object.getOwnPropertyNames(this.run_to_tags), "radio", this.current.run);
             this.createSelector("tag-selector-checkboxes", "tag-selector",
@@ -294,12 +296,14 @@ class TensorboardOpen3DPluginClient {
      * Create a video element to display geometry and initiate WebRTC connection
      * with server. Attach listeners to process data channel messages.
      */
-    addConnection = (windowUId) => {
-        this.windowUId = windowUId;
+    addConnection = (windowUId, logdir) => {
+        this.windowUId = "window_" + windowUId;
         const videoId = "video_" + this.windowUId;
+        let logdir_el = document.getElementById("logdir");
+        logdir_el.innerText = logdir;
 
         // Add a video element to display WebRTC stream.
-        if (document.getElementById(videoId) === null) {
+        if (document.getElementById(videoId) == null) {
             let webrtcDiv = document.getElementById("webrtc");
             if (webrtcDiv) {
                 let divElt = document.createElement("div");

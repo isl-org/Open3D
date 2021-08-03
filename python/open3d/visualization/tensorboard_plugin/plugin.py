@@ -14,6 +14,7 @@ _h.setLevel(logging.DEBUG)
 _h.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
 _log.addHandler(_h)
 
+import numpy as np
 from tensorboard import errors
 from tensorboard.plugins import base_plugin
 from tensorboard.util import tensor_util
@@ -82,8 +83,8 @@ class LRUCache:
 
     def __str__(self):
         return (
-            f"Items: {len(self.cache)}/{self.max_items}, " +
-            f"Size: {self.cur_size}/{self.max_size}bytes, Hits: {self.hits}," +
+            f"Items: {len(self.cache)}/{self.max_items}, "
+            f"Size: {self.cur_size}/{self.max_size}bytes, Hits: {self.hits},"
             f" Misses: {self.misses}")
 
 
@@ -120,7 +121,8 @@ class Open3DPluginWindow:
         self.geometry_cache = LRUCache(max_items=128, max_size=1 << 20)
 
         # Geometry data reading
-        self.data_dir = PluginDirectory(logdir, metadata.PLUGIN_NAME)
+        self.data_dir = PluginDirectory(os.path.join(self.logdir, self.run),
+                                        metadata.PLUGIN_NAME)
         self._file_handles = {}
 
         self.init_done = threading.Event()  # Notify when WebRTC is ready
@@ -201,6 +203,8 @@ class Open3DPluginWindow:
         if selected_run not in self.run_to_tags:
             selected_run = next(iter(self.run_to_tags))
         self.run = selected_run
+        self.data_dir = PluginDirectory(os.path.join(self.logdir, self.run),
+                                        metadata.PLUGIN_NAME)
         self.all_tensor_events = dict()
 
     def _validate_tags(self, selected_tags):
@@ -216,7 +220,7 @@ class Open3DPluginWindow:
             selected_tags = [
                 t for t in self.tags if t in self.run_to_tags[self.run]
             ]
-        if len(selected_tags) == 0:
+        if len(selected_tags) == 0 and len(self.run_to_tags[self.run]) > 0:
             selected_tags = self.run_to_tags[
                 self.run][:1]  # Only first tag default
         # Unload tags not selected any more
@@ -229,6 +233,8 @@ class Open3DPluginWindow:
                 self.all_tensor_events[tag] = self.event_mux.Tensors(
                     self.run, tag)
         self.tags = selected_tags
+        if len(selected_tags) == 0:  # No tags in this run
+            return
         self.step_to_idx = {
             tevt.step: idx
             for idx, tevt in enumerate(self.all_tensor_events[self.tags[0]])
@@ -238,6 +244,8 @@ class Open3DPluginWindow:
     def _validate_step(self, selected_step):
         """ Validate step assuming self.run and self.tags are valid. Use
         self.step or first valid step if selected_step is invalid."""
+        if len(self.tags) == 0:  # No tags in this run
+            return
         if selected_step not in self.step_to_idx:
             selected_step = self.step
         if selected_step not in self.step_to_idx:
@@ -256,6 +264,8 @@ class Open3DPluginWindow:
         """ Validate batch_idx assuming self.run, self.tags and self.step are
         valid. Use self.batch_idx or 0 if selected_batch_idx is invalud.
         """
+        if len(self.tags) == 0:  # No tags in this run
+            return
         if selected_batch_idx < 0 or selected_batch_idx >= self.batch_size:
             selected_batch_idx = self.batch_idx
         if selected_batch_idx < 0 or selected_batch_idx >= self.batch_size:
@@ -338,17 +348,13 @@ class Open3DPluginWindow:
                     " does not support seeking. This storage is not supported.")
         self._file_handles[filename].seek(offset=read_location)
         buf = self._file_handles[filename].read(read_size)
-        # msg_tag, msg_step, geometry = o3d.io.rpc.get_data_from_set_mesh_data_buffer(
-        #     buf)
-        cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
-        cube.compute_vertex_normals()
-        cube.paint_uniform_color((1.0, 0.0, 0.0))
-        msg_tag, msg_step, geometry = tag, step, cube
+        msg_tag, msg_step, geometry = o3d.io.rpc.get_data_from_set_mesh_data_buffer(
+            buf)
         if tag != msg_tag or step != msg_step:
             _log.warning(
-                f"Mismatch between TF event (tag={tag}, step={step}) and " +
+                f"Mismatch between TF event (tag={tag}, step={step}) and "
                 f"mesgpack (tag={msg_tag}, step={msg_step}) data. Possible data"
-                + " corruption.")
+                " corruption.")
         _log.debug(f"Geometry {cache_key} reading successful!")
         # Fill in properties by reference
         for (prop_enum, step_ref) in metadata_proto.property_references:
@@ -356,7 +362,7 @@ class Open3DPluginWindow:
                 prop_enum)
             if step_ref >= step:
                 _log.warning(
-                    f"Incorrect future step reference {step_ref} for" +
+                    f"Incorrect future step reference {step_ref} for"
                     f" property {prop} of geometry at step {step}. Ignoring.")
                 continue
             geometry_ref = self._read_geometry(tag, step_ref, batch_idx)
@@ -375,7 +381,13 @@ class Open3DPluginWindow:
 
                 geometry = self._read_geometry(tag, self.step, self.batch_idx)
                 _log.debug(f"Displaying geometry {geometry_name}:{geometry}")
-                self.scene_widget.scene.add_geometry(geometry_name, geometry,
+                # TODO: Switch to `to_legacy()`
+                # ipdb.set_trace()
+                legacy = geometry.to_legacy_triangle_mesh()
+                # FLoat64 but range is not scaled!
+                legacy.vertex_colors = o3d.utility.Vector3dVector(
+                    np.array(legacy.vertex_colors) / 255)
+                self.scene_widget.scene.add_geometry(geometry_name, legacy,
                                                      self.material)
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
@@ -427,7 +439,6 @@ class Open3DPlugin(base_plugin.TBPlugin):
     _RESOURCE_PATH = os.path.join(os.path.dirname(__file__), "..", "..",
                                   "resources")
     _DEFAULT_DOWNSAMPLING = 100  # meshes per time series
-    _MAX_SAMPLES_IN_RAM = 10
     _PLUGIN_DIRECTORY_PATH_PART = "/data/plugin/" + metadata.PLUGIN_NAME + "/"
 
     def __init__(self, context):
@@ -442,7 +453,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
                                        self._DEFAULT_DOWNSAMPLING)
         self._logdir = context.logdir
         self.event_mux = EventMultiplexer(tensor_size_guidance={
-            metadata.PLUGIN_NAME: self._MAX_SAMPLES_IN_RAM
+            metadata.PLUGIN_NAME: 0  # Store all metadata in RAM
         }).AddRunsFromDirectory(self._logdir)
         self.window_lock = threading.Lock()  # protect _windows and _next_wid
         self._windows = {}
@@ -475,10 +486,9 @@ class Open3DPlugin(base_plugin.TBPlugin):
         with self.window_lock:
             self._windows[this_window_id] = this_window
 
-        response = str(this_window_id)
-        # Wait for WebRTC initialization
-        this_window.init_done.wait()
-        return werkzeug.Response(response, content_type="text/plain")
+        response = f'{{"window_id": {this_window_id}, "logdir": "{self._logdir}"}}'
+        this_window.init_done.wait()  # Wait for WebRTC initialization
+        return werkzeug.Response(response, content_type="application/json")
 
     @wrappers.Request.application
     def _close_window(self, request):

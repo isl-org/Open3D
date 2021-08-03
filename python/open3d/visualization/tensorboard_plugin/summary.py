@@ -3,7 +3,13 @@ import os
 import socket
 import time
 import queue
-import logging as log
+import logging
+_log = logging.getLogger(__name__)
+_log.setLevel(logging.DEBUG)
+_h = logging.StreamHandler()
+_h.setLevel(logging.DEBUG)
+_h.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
+_log.addHandler(_h)
 
 import numpy as np
 
@@ -68,9 +74,9 @@ class _AsyncDataWriter:
 
         while True:
             tagfilepath, data = self._write_queue.get()
-            log.warning(
-                "Writing data at " +
-                f"{tagfilepath},{self._file_handles[tagfilepath].tell()}")
+            _log.debug(
+                f"Writing {len(data)}bytes data at "
+                f"{tagfilepath}+{self._file_handles[tagfilepath].tell()}")
             with self._file_lock:
                 handle = self._file_handles[tagfilepath]
             handle.write(data)  # release lock for expensive I/O op
@@ -112,7 +118,7 @@ class _AsyncDataWriter:
                 tf.io.gfile.makedirs(os.path.dirname(fullfilepath))
                 self._file_handles[tagfilepath] = tf.io.gfile.GFile(
                     fullfilepath, 'wb')
-                log.warning(f"msgpack file {fullfilepath} opened for writing.")
+                _log.debug(f"msgpack file {fullfilepath} opened for writing.")
                 this_write_loc = 0
                 self._file_next_write_pos[tagfilepath] = len(data)
             else:
@@ -152,7 +158,12 @@ def _to_uint8(color_data):
         color_data with the same shape, but as uint8 dtype.
 
     """
-    return o3d.t.geometry.Image(color_data).to(dtype=o3d.core.uint8).as_tensor()
+    if color_data.dtype == o3d.core.uint8:
+        return color_data
+    elif color_data.dtype == o3d.core.uint16:
+        return (color_data / 256).to(dtype=o3d.core.uint8)
+    else:
+        return (255 * color_data).to(dtype=o3d.core.uint8)
 
 
 def _to_integer(tensor):
@@ -173,21 +184,21 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
     TODO(ssheorey): Convert to half precision, compression, etc.
     """
     save_tensor = _to_o3d(tensor[:max_outputs, ...])
-    if prop.endswith("_colors"):
+    if prop.endswith("_colors") and save_tensor.dtype != o3d.core.uint8:
         save_tensor = _to_uint8(save_tensor)
     step_ref = _to_integer(save_tensor)
     if step_ref is not None:
         if step_ref < 0 or step_ref >= step:
-            raise ValueError(f"Out of order step refernce {step_ref} for " +
-                             "property {prop} at step {step}")
+            raise ValueError(f"Out of order step refernce {step_ref} for "
+                             f"property {prop} at step {step}")
         geometry_metadata.property_references.add(
             geometry_property=plugin_data_pb2.Open3DPluginData.GeometryProperty.
             Value(prop),
             step_ref=step_ref)
         return None
     if save_tensor.ndim != 3:
-        raise ValueError(f"Property {prop} tensor should be of shape " +
-                         "BxNxNp but is {save_tensor.shape}.")
+        raise ValueError(f"Property {prop} tensor should be of shape "
+                         f"BxNxNp but is {save_tensor.shape}.")
     return save_tensor
 
 
@@ -234,6 +245,10 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     line_data = {}
     geometry_metadata = plugin_data_pb2.Open3DPluginData(
         version=metadata._VERSION)
+    _log.debug(f"Writing data with shape: vertices:" +
+               f"{data['vertex_positions'].shape}" +
+               f", triangles:{data['triangle_indices'].shape}"
+               if 'triangle_indices' in data else "")
     for prop, tensor in data.items():
         if prop in ('vertex_positions',) + metadata.VERTEX_PROPERTIES:
             vertex_data[prop] = _preprocess(prop, tensor, step, max_outputs,
