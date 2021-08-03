@@ -20,6 +20,7 @@ target_sources(tests PRIVATE
 target_include_directories(tests PRIVATE ".")
 
 target_compile_definitions(tests PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
+target_compile_definitions(tests PRIVATE TEST_DATA_DIR_NEW="${PROJECT_SOURCE_DIR}/data")
 
 # If gpu not available, add "DISABLED_" to the gpu test names
 if (BUILD_CUDA_MODULE)

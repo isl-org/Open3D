@@ -33,7 +33,7 @@ import os
 
 test_path = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 sys.path.append(test_path)
-test_data_path = test_path + "../../examples/test_data/"
+test_data_path = test_path + "../../data/"
 
 from open3d_test import list_devices
 
@@ -164,7 +164,7 @@ def test_raycast(device):
                                              3.0, min(i * 1.0, 3.0))
             vertexmap_gt = np.load(
                 test_data_path +
-                "open3d_downloads/RGBD/raycast_vtx_{:03d}.npy".format(i))
+                "downloads/RGBD/raycast_vtx_{:03d}.npy".format(i))
             discrepancy_count = ((vertexmap.cpu().numpy() - vertexmap_gt) >
                                  1e-5).sum()
             # Be tolerant to numerical differences

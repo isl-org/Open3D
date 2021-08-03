@@ -56,7 +56,7 @@ option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF
 option(USE_SYSTEM_GLEW            "Use system pre-installed glew"            OFF)
 option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"            OFF)
 option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"           OFF)
-option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF)
+option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            ON)
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
@@ -335,9 +335,9 @@ if(WIN32)
 endif()
 
 # Downloads files from https://github.com/isl-org/open3d_downloads to
-# Open3D/examples/test_data/open3d_downloads.
-add_custom_target(open3d_downloads
-    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
+# Open3D/data/downloads.
+add_custom_target(downloads
+    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/data/download_test_data.cmake
     COMMENT ""
 )
 
