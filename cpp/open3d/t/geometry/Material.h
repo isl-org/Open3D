@@ -36,7 +36,11 @@ namespace geometry {
 
 class Material {
 public:
+    /// Creates an invalid material
+    Material();
     Material(const std::string &shader);
+
+    bool IsValid() const { return shader_ != "INVALID"; }
 
     const std::string &GetShaderName() const { return shader_; }
 
