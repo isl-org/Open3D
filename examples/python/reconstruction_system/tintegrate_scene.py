@@ -13,6 +13,7 @@ import argparse
 
 sys.path.append("../utility")
 from file import *
+
 sys.path.append(".")
 
 if __name__ == '__main__':
@@ -113,10 +114,10 @@ if __name__ == '__main__':
 
     for i in range(n_files):
         rgb = o3d.io.read_image(color_files[i])
-        rgb = o3d.t.geometry.Image.from_legacy_image(rgb, device=device)
+        rgb = o3d.t.geometry.Image.from_legacy(rgb, device=device)
 
         depth = o3d.io.read_image(depth_files[i])
-        depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
+        depth = o3d.t.geometry.Image.from_legacy(depth, device=device)
 
         extrinsic = o3d.core.Tensor(extrinsics[i], o3d.core.Dtype.Float32,
                                     device)
@@ -137,13 +138,13 @@ if __name__ == '__main__':
             colormap = result[o3d.t.geometry.SurfaceMaskCode.ColorMap]
 
             o3d.visualization.draw_geometries(
-                [o3d.t.geometry.Image(vertexmap).to_legacy_image()])
+                [o3d.t.geometry.Image(vertexmap).to_legacy()])
             o3d.visualization.draw_geometries(
-                [o3d.t.geometry.Image(colormap).to_legacy_image()])
+                [o3d.t.geometry.Image(colormap).to_legacy()])
 
         end = time.time()
         print('Integration {:04d}/{:04d} takes {:.3f} ms'.format(
             i, n_files, (end - start) * 1000.0))
 
-    mesh = volume.cpu().extract_surface_mesh().to_legacy_triangle_mesh()
+    mesh = volume.cpu().extract_surface_mesh().to_legacy()
     o3d.io.write_triangle_mesh(args.mesh_name, mesh, False, True)

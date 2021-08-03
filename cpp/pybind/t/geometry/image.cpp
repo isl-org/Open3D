@@ -250,7 +250,7 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "get_max_bound");
     docstring::ClassMethodDocInject(m, "Image", "clear");
     docstring::ClassMethodDocInject(m, "Image", "is_empty");
-    docstring::ClassMethodDocInject(m, "Image", "to_legacy_image");
+    docstring::ClassMethodDocInject(m, "Image", "to_legacy");
 
     py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
                Geometry>
@@ -308,7 +308,7 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "RGBDImage", "get_max_bound");
     docstring::ClassMethodDocInject(m, "RGBDImage", "clear");
     docstring::ClassMethodDocInject(m, "RGBDImage", "is_empty");
-    docstring::ClassMethodDocInject(m, "RGBDImage", "to_legacy_rgbd_image");
+    docstring::ClassMethodDocInject(m, "RGBDImage", "to_legacy");
     docstring::ClassMethodDocInject(m, "RGBDImage", "__init__",
                                     map_shared_argument_docstrings);
 }
