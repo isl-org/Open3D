@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-
 #include <string>
 #include <vector>
 
@@ -48,7 +47,7 @@ public:
     /// Constructor with device specified.
     Device(DeviceType device_type, int device_id)
         : device_type_(device_type), device_id_(device_id) {
-        AssertDeviceID();
+        AssertCPUDeviceIDIsZero();
     }
 
     /// Constructor from device type string and device id.
@@ -59,7 +58,7 @@ public:
     Device(const std::string& type_colon_id)
         : device_type_(StringToDeviceType(type_colon_id)),
           device_id_(StringToDeviceId(type_colon_id)) {
-        AssertDeviceID();
+        AssertCPUDeviceIDIsZero();
     }
 
     bool operator==(const Device& other) const {
@@ -94,21 +93,8 @@ public:
     int GetID() const { return device_id_; }
 
 protected:
-    void AssertDeviceID() {
-        if (device_type_ == Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-            if (device_id_ < 0) {
-                utility::LogError(
-                        "Invalid device_id {}. Device id must be between 0 to "
-                        "CUDA Device Count.",
-                        device_id_);
-            }
-#else
-            utility::LogError(
-                    "CUDA device not available with BUILD_CUDA_MODULE=OFF. "
-                    "Please recompile Open3D with BUILD_CUDA_MODULE=ON");
-#endif
-        } else if (device_type_ == DeviceType::CPU && device_id_ != 0) {
+    void AssertCPUDeviceIDIsZero() {
+        if (device_type_ == DeviceType::CPU && device_id_ != 0) {
             utility::LogError("CPU has device_id {}, but it must be 0.",
                               device_id_);
         }
