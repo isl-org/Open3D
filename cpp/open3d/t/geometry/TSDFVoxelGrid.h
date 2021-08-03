@@ -147,15 +147,6 @@ public:
     /// Clone TSDFVoxelGrid on the same device.
     TSDFVoxelGrid Clone() const { return To(GetDevice(), true); }
 
-    /// Copy TSDFVoxelGrid to CPU.
-    TSDFVoxelGrid CPU() const { return To(core::Device("CPU:0"), false); }
-
-    /// Copy TSDFVoxelGrid to CUDA.
-    TSDFVoxelGrid CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id),
-                  false);
-    }
-
     core::Device GetDevice() const { return device_; }
 
     std::shared_ptr<core::Hashmap> GetBlockHashmap() { return block_hashmap_; }

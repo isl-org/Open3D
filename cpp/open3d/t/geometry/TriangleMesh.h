@@ -137,19 +137,6 @@ public:
     /// Returns copy of the triangle mesh on the same device.
     TriangleMesh Clone() const { return To(GetDevice()); }
 
-    /// Transfer the triangle mesh to CPU.
-    ///
-    /// If the triangle mesh is already on CPU, no copy will be performed.
-    TriangleMesh CPU() const { return To(core::Device("CPU:0")); };
-
-    /// Transfer the triangle mesh to a CUDA device.
-    ///
-    /// If the triangle mesh is already on the specified CUDA device, no copy
-    /// will be performed.
-    TriangleMesh CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    };
-
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }
 

@@ -137,7 +137,8 @@ bool WritePointCloud(const std::string &filename,
                 filename, pointcloud.ToLegacyPointCloud(), params);
     }
 
-    bool success = map_itr->second(filename, pointcloud.CPU(), params);
+    bool success = map_itr->second(
+            filename, pointcloud.To(core::Device("CPU:0")), params);
     if (!pointcloud.IsEmpty()) {
         utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
                           (int)pointcloud.GetPoints().GetLength());

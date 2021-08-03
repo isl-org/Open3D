@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
@@ -85,11 +86,31 @@ void pybind_pointcloud(py::module& m) {
                    "device"_a, "copy"_a = false);
     pointcloud.def("clone", &PointCloud::Clone,
                    "Returns a copy of the point cloud on the same device.");
-    pointcloud.def("cpu", &PointCloud::CPU,
-                   "Transfer the point cloud to CPU. If the point cloud is "
-                   "already on CPU, no copy will be performed.");
+
     pointcloud.def(
-            "cuda", &PointCloud::CUDA,
+            "cpu",
+            [](const PointCloud& pointcloud) {
+                return pointcloud.To(
+                        core::Device(core::Device::DeviceType::CPU, 0));
+            },
+            "Transfer the point cloud to CPU. If the point cloud is "
+            "already on CPU, no copy will be performed.");
+    pointcloud.def(
+            "cuda",
+            [](const PointCloud& pointcloud, int device_id) {
+                if (!core::cuda::IsAvailable()) {
+                    utility::LogError(
+                            "CUDA is not available, cannot copy PointCloud.");
+                }
+                if (device_id < 0 || device_id >= core::cuda::DeviceCount()) {
+                    utility::LogError(
+                            "Invalid device_id {}, must satisfy 0 <= "
+                            "device_id < {}",
+                            device_id, core::cuda::DeviceCount());
+                }
+                return pointcloud.To(core::Device(
+                        core::Device::DeviceType::CUDA, device_id));
+            },
             "Transfer the point cloud to a CUDA device. If the point cloud is "
             "already on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);

@@ -155,19 +155,6 @@ public:
     /// \brief Returns copy of the image on the same device.
     Image Clone() const { return To(GetDevice(), /*copy=*/true); }
 
-    /// \brief Transfer the image to CPU.
-    ///
-    /// If the image is already on CPU, no copy will be performed.
-    Image CPU() const { return To(core::Device("CPU:0")); }
-
-    /// \brief Transfer the image to a CUDA device.
-    ///
-    /// If the image is already on the specified CUDA device, no copy will
-    /// be performed.
-    Image CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    }
-
     /// \brief Returns an Image with the specified \p dtype.
     ///
     /// \param dtype The targeted dtype to convert to.
