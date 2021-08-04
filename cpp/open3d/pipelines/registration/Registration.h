@@ -33,6 +33,7 @@
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 
@@ -84,18 +85,21 @@ public:
 /// \brief Class that defines the convergence criteria of RANSAC.
 ///
 /// RANSAC algorithm stops if the iteration number hits max_iteration_, or the
-/// validation has been run for max_validation_ times.
-/// Note that the validation is the most computational expensive operator in an
-/// iteration. Most iterations do not do full validation. It is crucial to
-/// control max_validation_ so that the computation time is acceptable.
+/// fitness measured during validation suggests that the algorithm can be
+/// terminated early with some confidence_. Early termination takes place when
+/// the number of iteration reaches k = log(1 - confidence)/log(1 -
+/// fitness^{ransac_n}), where ransac_n is the number of points used during a
+/// ransac iteration. Note that the validation is the most computational
+/// expensive operator in an iteration. Most iterations do not do full
+/// validation. It is crucial to control confidence_ so that the computation
+/// time is acceptable.
 class RANSACConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
     ///
     /// \param max_iteration Maximum iteration before iteration stops.
     /// \param confidence Desired probability of success. Used for estimating
-    /// early termination by k = log(1 - confidence)/log(1 -
-    /// inlier_ratio^{ransac_n}).
+    /// early termination.
     RANSACConvergenceCriteria(int max_iteration = 100000,
                               double confidence = 0.999)
         : max_iteration_(max_iteration), confidence_(confidence) {}
@@ -185,6 +189,7 @@ RegistrationResult RegistrationICP(
 /// \param ransac_n Fit ransac with `ransac_n` correspondences.
 /// \param checkers Correspondence checker.
 /// \param criteria Convergence criteria.
+/// \param seed Random seed.
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -195,8 +200,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         int ransac_n = 3,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers = {},
-        const RANSACConvergenceCriteria &criteria =
-                RANSACConvergenceCriteria());
+        const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
+        utility::optional<unsigned int> seed = utility::nullopt);
 
 /// \brief Function for global RANSAC registration based on feature matching.
 ///
@@ -211,6 +216,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 /// \param ransac_n Fit ransac with `ransac_n` correspondences.
 /// \param checkers Correspondence checker.
 /// \param criteria Convergence criteria.
+/// \param seed Random seed.
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -223,8 +229,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         int ransac_n = 3,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers = {},
-        const RANSACConvergenceCriteria &criteria =
-                RANSACConvergenceCriteria());
+        const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
+        utility::optional<unsigned int> seed = utility::nullopt);
 
 /// \param source The source point cloud.
 /// \param target The target point cloud.

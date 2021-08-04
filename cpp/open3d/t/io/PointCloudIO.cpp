@@ -87,8 +87,8 @@ bool ReadPointCloud(const std::string &filename,
         success =
                 open3d::io::ReadPointCloud(filename, legacy_pointcloud, params);
         if (!success) return false;
-        pointcloud = geometry::PointCloud::FromLegacyPointCloud(
-                legacy_pointcloud, core::Float64);
+        pointcloud = geometry::PointCloud::FromLegacy(legacy_pointcloud,
+                                                      core::Float64);
     } else {
         success = map_itr->second(filename, pointcloud, params);
         utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
@@ -133,8 +133,8 @@ bool WritePointCloud(const std::string &filename,
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     auto map_itr = file_extension_to_pointcloud_write_function.find(format);
     if (map_itr == file_extension_to_pointcloud_write_function.end()) {
-        return open3d::io::WritePointCloud(
-                filename, pointcloud.ToLegacyPointCloud(), params);
+        return open3d::io::WritePointCloud(filename, pointcloud.ToLegacy(),
+                                           params);
     }
 
     bool success = map_itr->second(filename, pointcloud.CPU(), params);

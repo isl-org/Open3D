@@ -110,6 +110,9 @@ https://github.com/zeromq/libzmq
 cppzmq                      4.6.0                                    MIT license
 Header-only C++ binding for libzmq
 https://github.com/zeromq/cppzmq
+As an alternative, you can modify 3rdparty/zeromq/zeromq_build.cmake to fetch
+zeromq from our fork
+https://github.com/isl-org/libzmq
 --------------------------------------------------------------------------------
 embree                      3.13.0                              Apache-2 license
 Embree is a collection of high-performance ray tracing kernels
