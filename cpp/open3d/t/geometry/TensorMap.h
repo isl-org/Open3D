@@ -120,6 +120,15 @@ public:
     /// Assert IsSizeSynchronized().
     void AssertSizeSynchronized() const;
 
+    /// Returns True if the underlying memory buffers of all the Tensors in the
+    /// TensorMap is contiguous.
+    inline bool IsContiguous() const;
+
+    /// Returns a contiguous TensorMap containing the same data in the same
+    /// device. For the contiguous tensors in the TensorMap, the same underlying
+    /// memory will be used.
+    TensorMap Contiguous() const;
+
     /// Returns true if the key exists in the map.
     /// Same as C++20's std::unordered_map::contains().
     bool Contains(const std::string& key) const { return count(key) != 0; }
