@@ -205,7 +205,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
                     core::Tensor vertex_map_gt = core::Tensor::Load(
                             fmt::format("{}/downloads/RGBD/"
                                         "raycast_vtx_{:03d}.npy",
-                                        std::string(TEST_DATA_DIR_NEW), i));
+                                        std::string(TEST_DATA_DIR), i));
                     vertex_map.Save(fmt::format("raycast_vtx_{:03d}.npy", i));
                     int64_t discrepancy_count =
                             ((vertex_map.To(core::Device("CPU:0")) -

@@ -3,7 +3,7 @@
 # To run TICPOdometry:
 # 1. Run the `download_kitti.py` script.
 #    python3 download_kitti.py 
-#    This will download a city sequence in examples/test_data/open3d_downloads/datasets/kitti_samples/
+#    This will download a city sequence in examples/data/downloads/datasets/kitti_samples/
 #    if it does not exists, and save the processed frames in `/output/`.
 # 2. If you are downloading it anywhere else, change the `dataset_path` acccordingly.
 # 3. Go to build/bin/examples directory.
@@ -20,7 +20,7 @@ visualization_max = 1.5
 verbosity = Info
 
 # Path of the downloaded dataset containing frames in .pcd or .ply format.
-dataset_path = ../../../examples/test_data/open3d_downloads/datasets/kitti_samples/output/
+dataset_path = ../../../data/downloads/datasets/kitti_samples/output/
 
 # Range of frames is start_index to end_index.
 start_index = 0

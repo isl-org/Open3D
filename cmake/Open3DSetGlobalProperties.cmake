@@ -101,7 +101,7 @@ function(open3d_set_global_properties target)
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 
     # Download test data files from open3d_downloads repo.
-    add_dependencies(${target} open3d_downloads)
+    add_dependencies(${target} downloads)
 
     # Strip unnecessary sections of the binary on Linux/macOS for Release builds
     # (from pybind11)

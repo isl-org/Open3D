@@ -32,10 +32,6 @@
 #define TEST_DATA_DIR
 #endif
 
-#ifndef TEST_DATA_DIR_NEW
-#define TEST_DATA_DIR_NEW
-#endif
-
 #include <gtest/gtest.h>
 
 #include <Eigen/Core>

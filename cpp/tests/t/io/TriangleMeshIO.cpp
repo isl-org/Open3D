@@ -53,7 +53,7 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
 TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(
-            TEST_DATA_DIR "/open3d_downloads/tests/cube.obj", mesh));
+            TEST_DATA_DIR "/downloads/tests/cube.obj", mesh));
 
     core::Tensor triangles = core::Tensor::Init<int64_t>({{0, 1, 2},
                                                           {3, 4, 5},

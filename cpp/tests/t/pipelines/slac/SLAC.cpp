@@ -86,7 +86,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
         utility::LogError(
                 "No fragment found in {}, please make sure the test dataset "
                 "has been downloaded in "
-                "open3d_downloads/tests/reconstruction_system/ been "
+                "downloads/tests/reconstruction_system/ been "
                 "downloaded.",
                 fragment_folder);
     }
