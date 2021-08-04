@@ -44,7 +44,7 @@ static std::vector<std::pair<int, int>> InitialMatching(
     geometry::KDTreeFlann big_feature_tree(big_features);
     geometry::KDTreeFlann small_feature_tree(small_features);
     std::map<int, int> corres_ij;
-    std::map<int, int> corres_ji;
+    std::vector<int> corres_ji(small_features.data_.cols(), -1);
 
 #pragma omp parallel for
     for (int j = 0; j < small_features.data_.cols(); j++) {
@@ -69,11 +69,7 @@ static std::vector<std::pair<int, int>> InitialMatching(
     utility::LogDebug("\t[cross check] ");
     std::vector<std::pair<int, int>> corres_cross;
     for (const std::pair<const int, int>& ij : corres_ij) {
-        int i = ij.first;
-        int j = ij.second;
-        auto i_ptr = corres_ji.find(j);
-        if (i_ptr != corres_ji.end() && i_ptr->second == i)
-            corres_cross.push_back(std::pair<int, int>(i, j));
+        if (corres_ji[ij.second] == ij.first) corres_cross.push_back(ij);
     }
     utility::LogDebug("Initial matchings : {}", corres_cross.size());
     return corres_cross;
