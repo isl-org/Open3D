@@ -76,14 +76,14 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
     // Eliminates the case of impractical values (including negative).
     if (voxel_downsample_factor > 0.001) {
         // TODO: Use geometry::PointCloud::VoxelDownSample.
-        open3d::geometry::PointCloud legacy_s = source.ToLegacyPointCloud();
-        open3d::geometry::PointCloud legacy_t = target.ToLegacyPointCloud();
+        open3d::geometry::PointCloud legacy_s = source.ToLegacy();
+        open3d::geometry::PointCloud legacy_t = target.ToLegacy();
 
         legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
         legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
 
-        source = geometry::PointCloud::FromLegacyPointCloud(legacy_s);
-        target = geometry::PointCloud::FromLegacyPointCloud(legacy_t);
+        source = geometry::PointCloud::FromLegacy(legacy_s);
+        target = geometry::PointCloud::FromLegacy(legacy_t);
     } else {
         utility::LogWarning(
                 " VoxelDownsample: Impractical voxel size [< 0.001], skiping "

@@ -405,7 +405,7 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
     return geometry::RGBDImage(color, depth);
 }
 
-PointCloud PointCloud::FromLegacyPointCloud(
+PointCloud PointCloud::FromLegacy(
         const open3d::geometry::PointCloud &pcd_legacy,
         core::Dtype dtype,
         const core::Device &device) {
@@ -427,7 +427,7 @@ PointCloud PointCloud::FromLegacyPointCloud(
     return pcd;
 }
 
-open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
+open3d::geometry::PointCloud PointCloud::ToLegacy() const {
     open3d::geometry::PointCloud pcd_legacy;
     if (HasPoints()) {
         pcd_legacy.points_ =

@@ -191,16 +191,16 @@ int main(int argc, char* argv[]) {
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh = voxel_grid.ExtractSurfaceMesh();
-        auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
-                mesh.ToLegacyTriangleMesh());
+        auto mesh_legacy =
+                std::make_shared<geometry::TriangleMesh>(mesh.ToLegacy());
         open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
                                       *mesh_legacy);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         auto pcd = voxel_grid.ExtractSurfacePoints();
-        auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-                pcd.ToLegacyPointCloud());
+        auto pcd_legacy =
+                std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
         open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
                                     *pcd_legacy);
     }

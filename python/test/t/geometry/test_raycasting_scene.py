@@ -68,7 +68,7 @@ def test_cast_lots_of_rays():
 
 
 def test_add_triangle_mesh():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
 
     scene = o3d.t.geometry.RaycastingScene()
@@ -83,7 +83,7 @@ def test_add_triangle_mesh():
 
 
 def test_count_intersections():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
 
     scene = o3d.t.geometry.RaycastingScene()
@@ -100,7 +100,7 @@ def test_count_intersections():
 # count lots of random ray intersections to test the internal batching
 # we expect no errors for this test
 def test_count_lots_of_intersections():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
 
     scene = o3d.t.geometry.RaycastingScene()
@@ -133,7 +133,7 @@ def test_compute_closest_points():
 
 
 def test_compute_distance():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
 
     scene = o3d.t.geometry.RaycastingScene()
@@ -147,7 +147,7 @@ def test_compute_distance():
 
 
 def test_compute_signed_distance():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
 
     scene = o3d.t.geometry.RaycastingScene()
@@ -161,7 +161,7 @@ def test_compute_signed_distance():
 
 
 def test_compute_occupancy():
-    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
 
     scene = o3d.t.geometry.RaycastingScene()
