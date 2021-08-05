@@ -40,27 +40,28 @@ namespace pipelines {
 namespace registration {
 
 static std::vector<std::pair<int, int>> InitialMatching(
-        const Feature& big_features, const Feature& small_features) {
-    geometry::KDTreeFlann big_feature_tree(big_features);
-    geometry::KDTreeFlann small_feature_tree(small_features);
+        const Feature& src_features, const Feature& dst_features) {
+    geometry::KDTreeFlann src_feature_tree(src_features);
+    geometry::KDTreeFlann dst_feature_tree(dst_features);
     std::map<int, int> corres_ij;
-    std::vector<int> corres_ji(small_features.data_.cols(), -1);
+    std::vector<int> corres_ji(dst_features.data_.cols(), -1);
 
 #pragma omp parallel for
-    for (int j = 0; j < small_features.data_.cols(); j++) {
+    for (int j = 0; j < dst_features.data_.cols(); j++) {
         std::vector<int> corres_tmp(1);
         std::vector<double> dist_tmp(1);
-        big_feature_tree.SearchKNN(Eigen::VectorXd(small_features.data_.col(j)),
+        src_feature_tree.SearchKNN(Eigen::VectorXd(dst_features.data_.col(j)),
                                    1, corres_tmp, dist_tmp);
         int i = corres_tmp[0];
         corres_ji[j] = i;
         if (corres_ij.find(i) == corres_ij.end()) {
             // set a temp value to prevent other threads recomputing
-            // corres_ij[i] until the following small_feature_tree.SearchKNN()
-            // call completes
+            // corres_ij[i] until the following dst_feature_tree.SearchKNN()
+            // call completes. There is still a race condition but the result
+            // would be fine since both threads will compute the same result
             corres_ij[i] = -1;
-            small_feature_tree.SearchKNN(
-                    Eigen::VectorXd(big_features.data_.col(i)), 1, corres_tmp,
+            dst_feature_tree.SearchKNN(
+                    Eigen::VectorXd(src_features.data_.col(i)), 1, corres_tmp,
                     dist_tmp);
             corres_ij[i] = corres_tmp[0];
         }
@@ -76,8 +77,8 @@ static std::vector<std::pair<int, int>> InitialMatching(
 }
 
 static std::vector<std::pair<int, int>> AdvancedMatching(
-        const geometry::PointCloud& big_point_cloud,
-        const geometry::PointCloud& small_point_cloud,
+        const geometry::PointCloud& src_point_cloud,
+        const geometry::PointCloud& dst_point_cloud,
         const std::vector<std::pair<int, int>>& corres_cross,
         const FastGlobalRegistrationOption& option) {
     utility::LogDebug("\t[tuple constraint] ");
@@ -102,18 +103,18 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
         idi2 = corres_cross[rand2].first;
         idj2 = corres_cross[rand2].second;
 
-        // collect 3 points from big fragment
-        Eigen::Vector3d pti0 = big_point_cloud.points_[idi0];
-        Eigen::Vector3d pti1 = big_point_cloud.points_[idi1];
-        Eigen::Vector3d pti2 = big_point_cloud.points_[idi2];
+        // collect 3 points from source fragment
+        Eigen::Vector3d pti0 = src_point_cloud.points_[idi0];
+        Eigen::Vector3d pti1 = src_point_cloud.points_[idi1];
+        Eigen::Vector3d pti2 = src_point_cloud.points_[idi2];
         double li0 = (pti0 - pti1).norm();
         double li1 = (pti1 - pti2).norm();
         double li2 = (pti2 - pti0).norm();
 
-        // collect 3 points from small fragment
-        Eigen::Vector3d ptj0 = small_point_cloud.points_[idj0];
-        Eigen::Vector3d ptj1 = small_point_cloud.points_[idj1];
-        Eigen::Vector3d ptj2 = small_point_cloud.points_[idj2];
+        // collect 3 points from dest fragment
+        Eigen::Vector3d ptj0 = dst_point_cloud.points_[idj0];
+        Eigen::Vector3d ptj1 = dst_point_cloud.points_[idj1];
+        Eigen::Vector3d ptj2 = dst_point_cloud.points_[idj2];
         double lj0 = (ptj0 - ptj1).norm();
         double lj1 = (ptj1 - ptj2).norm();
         double lj2 = (ptj2 - ptj0).norm();
