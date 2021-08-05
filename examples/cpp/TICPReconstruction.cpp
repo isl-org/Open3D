@@ -793,11 +793,11 @@ private:
         // Currenly Normal Estimation is not supported by Tensor Pointcloud.
         if (registration_method_ == "PointToPlane" &&
             !target.HasPointNormals()) {
-            auto target_legacy = target.ToLegacyPointCloud();
+            auto target_legacy = target.ToLegacy();
             target_legacy.EstimateNormals(geometry::KDTreeSearchParamKNN(),
                                           false);
             core::Tensor target_normals =
-                    t::geometry::PointCloud::FromLegacyPointCloud(target_legacy)
+                    t::geometry::PointCloud::FromLegacy(target_legacy)
                             .GetPointNormals()
                             .To(device_, dtype_);
             target.SetPointNormals(target_normals);

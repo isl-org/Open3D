@@ -109,7 +109,7 @@ TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
     return *this;
 }
 
-geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
+geometry::TriangleMesh TriangleMesh::FromLegacy(
         const open3d::geometry::TriangleMesh &mesh_legacy,
         core::Dtype float_dtype,
         core::Dtype int_dtype,
@@ -151,7 +151,7 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
     return mesh;
 }
 
-open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
+open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
     open3d::geometry::TriangleMesh mesh_legacy;
     if (HasVertices()) {
         mesh_legacy.vertices_ =

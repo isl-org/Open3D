@@ -111,7 +111,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
     for (auto backend : backends) {
         auto voxel_grid = IntegrateTestScene(device, backend);
 
-        auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();
+        auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacy();
         auto pcd_gt = *io::CreatePointCloudFromFile(
                 std::string(TEST_DATA_DIR) + "/RGBD/example_tsdf_pcd.ply");
         auto result = pipelines::registration::EvaluateRegistration(
@@ -132,7 +132,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, IO) {
     const float dist_threshold = 0.004;
 
     auto voxel_grid = IntegrateTestScene(device);
-    auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();
+    auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacy();
 
     t::io::WriteTSDFVoxelGrid(file_name, voxel_grid);
     EXPECT_TRUE(utility::filesystem::FileExists(file_name));
@@ -140,7 +140,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, IO) {
 
     auto loaded_voxel_grid = *t::io::CreateTSDFVoxelGridFromFile(file_name);
     auto pcd_from_loaded_voxel_grid =
-            loaded_voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();
+            loaded_voxel_grid.ExtractSurfacePoints().ToLegacy();
 
     auto result = pipelines::registration::EvaluateRegistration(
             pcd, pcd_from_loaded_voxel_grid, dist_threshold);
@@ -211,7 +211,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
             t::geometry::Image vertex(result[MaskCode::VertexMap]);
             visualization::DrawGeometries(
                     {std::make_shared<open3d::geometry::Image>(
-                            vertex.ToLegacyImage())});
+                            vertex.ToLegacy())});
 
             // There are CPU/CUDA numerical differences around edges, so
             // we need to be tolerant.
