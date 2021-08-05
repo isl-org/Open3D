@@ -391,8 +391,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     ply_add_element(ply_file, "vertex", num_points);
 
     std::vector<AttributePtr> attribute_ptrs;
-    attribute_ptrs.emplace_back(AttributePtr(t_map["points"].GetDtype(),
-                                             t_map["points"].GetDataPtr(), 3));
+    attribute_ptrs.emplace_back(t_map["points"].GetDtype(),
+                                t_map["points"].GetDataPtr(), 3);
 
     e_ply_type pointType = GetPlyType(t_map["points"].GetDtype());
     ply_add_property(ply_file, "x", pointType, pointType, pointType);
@@ -400,8 +400,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     ply_add_property(ply_file, "z", pointType, pointType, pointType);
 
     if (pointcloud.HasPointNormals()) {
-        attribute_ptrs.emplace_back(AttributePtr(
-                t_map["normals"].GetDtype(), t_map["normals"].GetDataPtr(), 3));
+        attribute_ptrs.emplace_back(t_map["normals"].GetDtype(),
+                                    t_map["normals"].GetDataPtr(), 3);
 
         e_ply_type pointNormalsType = GetPlyType(t_map["normals"].GetDtype());
         ply_add_property(ply_file, "nx", pointNormalsType, pointNormalsType,
@@ -413,8 +413,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     }
 
     if (pointcloud.HasPointColors()) {
-        attribute_ptrs.emplace_back(AttributePtr(
-                t_map["colors"].GetDtype(), t_map["colors"].GetDataPtr(), 3));
+        attribute_ptrs.emplace_back(t_map["colors"].GetDtype(),
+                                    t_map["colors"].GetDataPtr(), 3);
 
         e_ply_type pointColorType = GetPlyType(t_map["colors"].GetDtype());
         ply_add_property(ply_file, "red", pointColorType, pointColorType,
@@ -429,8 +429,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     for (auto const &it : t_map) {
         if (it.first != "points" && it.first != "colors" &&
             it.first != "normals") {
-            attribute_ptrs.emplace_back(AttributePtr(
-                    it.second.GetDtype(), it.second.GetDataPtr(), 1));
+            attribute_ptrs.emplace_back(it.second.GetDtype(),
+                                        it.second.GetDataPtr(), 1);
 
             attributeType = GetPlyType(it.second.GetDtype());
             ply_add_property(ply_file, it.first.c_str(), attributeType,
