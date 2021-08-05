@@ -204,12 +204,6 @@ public:
         return vertex_attr_.at(key);
     }
 
-    /// Check if a valid material has been applied to this Mesh
-    bool HasMaterial() { return material_.IsValid(); }
-
-    /// Get mesh material properties.
-    Material &GetMaterial() { return material_; }
-
     /// Removes vertex attribute by key value. Primary attribute "vertices"
     /// cannot be removed. Throws warning if attribute key does not exists.
     ///
@@ -430,10 +424,21 @@ public:
     /// Convert to a legacy Open3D TriangleMesh.
     open3d::geometry::TriangleMesh ToLegacyTriangleMesh() const;
 
+    /// Check if a material has been applied to this Geometry with SetMaterial.
+    bool HasMaterial() { return material_.IsValid(); }
+
+    /// Get material associated with this Geometry.
+    Material& GetMaterial() { return material_; }
+
+    /// Set the material properties associate with this Geometry
+    void SetMaterial(const Material& material) { material_ = material; }
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
     TensorMap triangle_attr_;
+
+    /// Material associated with this geometry
     Material material_;
 };
 
