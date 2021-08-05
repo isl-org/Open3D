@@ -180,8 +180,7 @@ bool ReadPointCloudFromNPZ(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params) {
     // Required checks are performed in the pointcloud constructor itself.
-    t::geometry::PointCloud pcd(ReadNpz(filename));
-    pointcloud = pcd;
+    pointcloud = geometry::PointCloud(ReadNpz(filename));
     return true;
 }
 
