@@ -138,8 +138,6 @@ install_ccache() {
 
     ccache --version
     ccache -s
-    CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$")
-    echo "CCACHE_DIR: ${CCACHE_DIR}"
 }
 
 install_python_dependencies() {

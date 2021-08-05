@@ -134,6 +134,7 @@ create-vm)
     ;;
 
 run-ci)
+    # sudo docker exec --interactive open3d_gpu_ci util/run_ci.sh
     gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" --command \
         "sudo docker run --detach --interactive --name open3d_gpu_ci --gpus all \
             --env NPROC=$NPROC \
@@ -143,8 +144,10 @@ run-ci)
             --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
             --env OPEN3D_ML_ROOT=/root/Open3D/Open3D-ML \
             $DC_IMAGE_TAG; \
-            sudo docker exec --interactive  open3d_gpu_ci util/run_ci.sh"
+         sudo docker exec --interactive open3d_gpu_ci util/docker/open3d-gpu/scripts/tar-ccache.sh
+        "
     ;;
+
 
 delete-image)
     gcloud container images untag "$DC_IMAGE_TAG" --quiet
