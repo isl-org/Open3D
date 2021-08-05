@@ -38,6 +38,7 @@ else
     CUDNN_VERSION="8.0.5.39-1+cuda10.1"
     GCC_MAX_VER=7
 fi
+
 # ML
 TENSORFLOW_VER="2.5.0"
 # TORCH_CUDA_GLNX_VER="1.8.1+cu110"
@@ -45,6 +46,7 @@ TENSORFLOW_VER="2.5.0"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.1/torch-1.8.1-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_MACOS_VER="1.8.1"
+
 # Python
 CONDA_BUILD_VER="3.21.4"
 PIP_VER="21.1.1"
@@ -61,6 +63,9 @@ NBSPHINX_VER=0.8.3
 MATPLOTLIB_VER=3.3.3
 M2R2_VER=0.2.7
 JINJA2_VER=2.11.3 # jinja2 3.x is not compatible with this sphinx version
+
+# Ccache
+CCACHE_VERSION=4.3
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -128,7 +133,7 @@ install_ccache() {
 
     git clone https://github.com/ccache/ccache.git
     cd ccache
-    git checkout v4.3 -b 4.3
+    git checkout v${CCACHE_VERSION} -b ${CCACHE_VERSION}
     mkdir build
     cd build
     cmake -DCMAKE_INSTALL_PREFIX=$HOME -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON ..
