@@ -144,7 +144,10 @@ run-ci)
             --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
             --env OPEN3D_ML_ROOT=/root/Open3D/Open3D-ML \
             $DC_IMAGE_TAG; \
-         sudo docker exec --interactive open3d_gpu_ci util/docker/open3d-gpu/scripts/tar-ccache.sh
+         sudo docker exec --interactive open3d_gpu_ci util/docker/open3d-gpu/scripts/tar-ccache.sh; \
+         sudo docker cp open3d_gpu_ci:/ccache.tar.gz open3d-gpu-ci-ccache.tar.gz; \
+         sudo chown $(id -u):$(id -g) open3d-gpu-ci-ccache.tar.gz; \
+         gsutil cp open3d-gpu-ci-ccache.tar.gz gs://open3d-ci-cache/ || true
         "
     ;;
 
