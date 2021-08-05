@@ -26,7 +26,6 @@
 
 #include <rply.h>
 
-#include <tuple>
 #include <vector>
 
 #include "open3d/core/Dtype.h"
@@ -391,9 +390,9 @@ bool WritePointCloudToPLY(const std::string &filename,
     ply_add_comment(ply_file, "Created by Open3D");
     ply_add_element(ply_file, "vertex", num_points);
 
-    std::vector<AttributePtr> attribute_ptr;
-    attribute_ptr.push_back(AttributePtr(t_map["points"].GetDtype(),
-                                         t_map["points"].GetDataPtr(), 3));
+    std::vector<AttributePtr> attribute_ptrs;
+    attribute_ptrs.emplace_back(AttributePtr(t_map["points"].GetDtype(),
+                                             t_map["points"].GetDataPtr(), 3));
 
     e_ply_type pointType = GetPlyType(t_map["points"].GetDtype());
     ply_add_property(ply_file, "x", pointType, pointType, pointType);
@@ -401,8 +400,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     ply_add_property(ply_file, "z", pointType, pointType, pointType);
 
     if (pointcloud.HasPointNormals()) {
-        attribute_ptr.push_back(AttributePtr(t_map["normals"].GetDtype(),
-                                             t_map["normals"].GetDataPtr(), 3));
+        attribute_ptrs.emplace_back(AttributePtr(
+                t_map["normals"].GetDtype(), t_map["normals"].GetDataPtr(), 3));
 
         e_ply_type pointNormalsType = GetPlyType(t_map["normals"].GetDtype());
         ply_add_property(ply_file, "nx", pointNormalsType, pointNormalsType,
@@ -414,8 +413,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     }
 
     if (pointcloud.HasPointColors()) {
-        attribute_ptr.push_back(AttributePtr(t_map["colors"].GetDtype(),
-                                             t_map["colors"].GetDataPtr(), 3));
+        attribute_ptrs.emplace_back(AttributePtr(
+                t_map["colors"].GetDtype(), t_map["colors"].GetDataPtr(), 3));
 
         e_ply_type pointColorType = GetPlyType(t_map["colors"].GetDtype());
         ply_add_property(ply_file, "red", pointColorType, pointColorType,
@@ -430,8 +429,8 @@ bool WritePointCloudToPLY(const std::string &filename,
     for (auto const &it : t_map) {
         if (it.first != "points" && it.first != "colors" &&
             it.first != "normals") {
-            attribute_ptr.push_back(AttributePtr(it.second.GetDtype(),
-                                                 it.second.GetDataPtr(), 1));
+            attribute_ptrs.emplace_back(AttributePtr(
+                    it.second.GetDtype(), it.second.GetDataPtr(), 1));
 
             attributeType = GetPlyType(it.second.GetDtype());
             ply_add_property(ply_file, it.first.c_str(), attributeType,
@@ -449,7 +448,7 @@ bool WritePointCloudToPLY(const std::string &filename,
     reporter.SetTotal(num_points);
 
     for (int64_t i = 0; i < num_points; i++) {
-        for (auto it : attribute_ptr) {
+        for (auto it : attribute_ptrs) {
             DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
                 const scalar_t *data_ptr =
                         static_cast<const scalar_t *>(it.data_ptr_);

@@ -122,9 +122,9 @@ public:
 
     /// Returns True if the underlying memory buffers of all the Tensors in the
     /// TensorMap is contiguous.
-    inline bool IsContiguous() const;
+    bool IsContiguous() const;
 
-    /// Returns a contiguous TensorMap containing the same data in the same
+    /// Returns a new contiguous TensorMap containing the same data in the same
     /// device. For the contiguous tensors in the TensorMap, the same underlying
     /// memory will be used.
     TensorMap Contiguous() const;

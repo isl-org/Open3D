@@ -72,8 +72,8 @@ void TensorMap::AssertSizeSynchronized() const {
     }
 }
 
-inline bool TensorMap::IsContiguous() const {
-    for (auto& kv : *this) {
+bool TensorMap::IsContiguous() const {
+    for (const auto& kv : *this) {
         if (!kv.second.IsContiguous()) {
             return false;
         }
@@ -82,8 +82,8 @@ inline bool TensorMap::IsContiguous() const {
 }
 
 TensorMap TensorMap::Contiguous() const {
-    TensorMap tensor_map_contiguous(this->GetPrimaryKey());
-    for (auto& kv : *this) {
+    TensorMap tensor_map_contiguous(GetPrimaryKey());
+    for (const auto& kv : *this) {
         // If the tensor is contiguous, the underlying memory is used.
         tensor_map_contiguous[kv.first] = kv.second.Contiguous();
     }
