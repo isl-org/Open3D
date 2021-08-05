@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 
-# sleep 5h
-sleep 10m
+sleep 5h
 sudo poweroff
