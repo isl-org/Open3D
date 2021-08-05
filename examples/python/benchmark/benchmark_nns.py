@@ -1,4 +1,5 @@
 import os
+from subprocess import PIPE, run
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'  # does not affect results
 import argparse
@@ -36,6 +37,15 @@ class O3DFaiss(O3DKnn):
         self.nns = o3d.core.nns.FaissIndex()
         self.nns.set_tensor_data(points)
         return True
+
+
+def run_command(command):
+    result = run(command,
+                 stdout=PIPE,
+                 stderr=PIPE,
+                 universal_newlines=True,
+                 shell=True)
+    return result.stdout
 
 
 def measure_time(fn, min_samples=10, max_samples=100, max_time_in_sec=100.0):
@@ -88,10 +98,11 @@ if __name__ == "__main__":
     # setup dataset examples
     datasets = OrderedDict()
 
-    for i, _file in enumerate(args.file):
-        pcd = o3d.t.io.read_point_cloud(_file)
+    for i, file in enumerate(args.file):
+        pcd = o3d.t.io.read_point_cloud(file)
         points = queries = pcd.point['points']
-        datasets[f'sfm_{i}'] = {'points': points, 'queries': queries}
+        filename = os.path.basename(file)
+        datasets[filename] = {'points': points, 'queries': queries}
 
     # random data
     points = queries = o3d.core.Tensor.from_numpy(
@@ -152,4 +163,15 @@ if __name__ == "__main__":
             results.append(data)
 
     # print results
+    nvcc_version = run_command("nvcc --version")
+    os_version = run_command("cat /etc/os-release")
+    cpu_info = run_command("cat /proc/cpuinfo | grep 'model name'")
+    print("CUDA version")
+    print(nvcc_version)
+    print("")
+    print("OS")
+    print(os_version)
+    print("")
+    print("CPU")
+    print(cpu_info)
     print_table(method_names, results)
