@@ -152,8 +152,8 @@ if __name__ == "__main__":
                 del queries
                 o3d.core.cuda.release_cache()
 
-    with open(f'{method_name}.pkl', 'wb') as f:
-        pickle.dump(results, f)
+        with open(f'{method_name}.pkl', 'wb') as f:
+            pickle.dump(results, f)
 
     results = []
     for method_name, method in zip(method_names, methods):
