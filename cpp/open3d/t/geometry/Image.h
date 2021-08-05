@@ -139,7 +139,7 @@ public:
     /// \brief Get raw buffer of the Image data.
     const void *GetDataPtr() const { return data_.GetDataPtr(); }
 
-    /// \brief Retuns the underlying Tensor of the Image.
+    /// \brief Returns the underlying Tensor of the Image.
     core::Tensor AsTensor() const { return data_; }
 
     /// \brief Transfer the image to a specified device.
