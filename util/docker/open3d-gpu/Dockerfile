@@ -40,8 +40,7 @@ RUN bash -o errexit -c "source /root/Open3D/util/ci_utils.sh && \
     install_cuda_toolkit with-cudnn purge-cache"
 
 # Install ccache
-RUN bash -o errexit -c "source /root/Open3D/util/ci_utils.sh && \
-    install_ccache"
+RUN bash -o errexit -c "source /root/Open3D/util/ci_utils.sh && install_ccache"
 
 # Persist PATH for cuda, cudnn and set requirements for host and container
 ENV PATH=/usr/local/cuda/bin:$PATH \
