@@ -428,10 +428,10 @@ public:
     bool HasMaterial() { return material_.IsValid(); }
 
     /// Get material associated with this Geometry.
-    Material& GetMaterial() { return material_; }
+    Material &GetMaterial() { return material_; }
 
     /// Set the material properties associate with this Geometry
-    void SetMaterial(const Material& material) { material_ = material; }
+    void SetMaterial(const Material &material) { material_ = material; }
 
 protected:
     core::Device device_ = core::Device("CPU:0");
