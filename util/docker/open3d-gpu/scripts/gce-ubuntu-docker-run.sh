@@ -92,7 +92,6 @@ create-base-vm-image)
         "${GCE_VM_IMAGE_SPEC[@]}" \
         --boot-disk-size=$GCE_BOOT_DISK_SIZE \
         --boot-disk-type=$GCE_BOOT_DISK_TYPE \
-        --scopes=compute-rw \
         --metadata=startup-script="\
         sudo apt-key adv --fetch-keys https://nvidia.github.io/nvidia-docker/gpgkey; \
         curl -s -L https://nvidia.github.io/nvidia-docker/$GCE_VM_BASE_OS/nvidia-docker.list \
@@ -129,7 +128,6 @@ create-vm)
             --boot-disk-type=$GCE_BOOT_DISK_TYPE \
             --image-family="$GCE_VM_CUSTOM_IMAGE_FAMILY" \
             --metadata-from-file=startup-script=${SCRIPT_DIR}/auto-shutdown.sh \
-            --scopes=compute-rw \
             --service-account="$GCE_GPU_CI_SA"; do
         ((GCE_ZID = GCE_ZID + 1))
     done
