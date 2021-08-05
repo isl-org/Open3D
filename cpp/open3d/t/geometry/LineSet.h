@@ -127,7 +127,7 @@ public:
     LineSet To(const core::Device &device, bool copy = false) const;
 
     /// Returns copy of the line set on the same device.
-    LineSet Clone() const { return To(GetDevice()); }
+    LineSet Clone() const { return To(GetDevice(), /*copy=*/true); }
 
     /// \brief Text description.
     std::string ToString() const;

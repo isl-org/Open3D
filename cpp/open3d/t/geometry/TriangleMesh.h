@@ -135,7 +135,7 @@ public:
     TriangleMesh To(const core::Device &device, bool copy = false) const;
 
     /// Returns copy of the triangle mesh on the same device.
-    TriangleMesh Clone() const { return To(GetDevice()); }
+    TriangleMesh Clone() const { return To(GetDevice(), /*copy=*/true); }
 
     /// Transfer the triangle mesh to CPU.
     ///
