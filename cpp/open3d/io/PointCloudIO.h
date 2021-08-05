@@ -186,5 +186,6 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 bool WritePointCloudToPTS(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params);
+
 }  // namespace io
 }  // namespace open3d

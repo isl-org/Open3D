@@ -160,5 +160,6 @@ bool WritePointCloud(const std::string &filename,
     p.update_progress = progress_updater;
     return WritePointCloud(filename, pointcloud, p);
 }
+
 }  // namespace io
 }  // namespace open3d
