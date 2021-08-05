@@ -106,7 +106,7 @@ Docker
 ------
 
 If you want to install the Open3D Python packages in a docker conatiner you will
-need to install a minimum set of dependencies. For more details please see `this issue <https://github.com/intel-isl/Open3D/issues/3388>`__.
+need to install a minimum set of dependencies. For more details please see `this issue <https://github.com/isl-org/Open3D/issues/3388>`__.
 
 A minimal ``Dockerfile`` looks like this:
 

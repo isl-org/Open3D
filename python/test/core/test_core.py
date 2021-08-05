@@ -209,7 +209,7 @@ def test_tensor_constructor(dtype, device):
         import warnings
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore",
-                                    category=VisibleDeprecationWarning)
+                                    category=np.VisibleDeprecationWarning)
             o3_t = o3c.Tensor(li_t, dtype, device)
 
     # Automatic casting

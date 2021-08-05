@@ -31,6 +31,7 @@ import pytest
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
@@ -63,7 +64,7 @@ def test_constructor_and_accessors(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_from_legacy_pointcloud(device):
+def test_from_legacy(device):
     dtype = o3c.float32
 
     legacy_pcd = o3d.geometry.PointCloud()
@@ -72,8 +73,7 @@ def test_from_legacy_pointcloud(device):
     legacy_pcd.colors = o3d.utility.Vector3dVector(
         np.array([[6, 7, 8], [9, 10, 11]]))
 
-    pcd = o3d.t.geometry.PointCloud.from_legacy_pointcloud(
-        legacy_pcd, dtype, device)
+    pcd = o3d.t.geometry.PointCloud.from_legacy(legacy_pcd, dtype, device)
     assert pcd.point["points"].allclose(
         o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype, device))
     assert pcd.point["colors"].allclose(
@@ -81,14 +81,14 @@ def test_from_legacy_pointcloud(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_to_legacy_pointcloud(device):
+def test_to_legacy(device):
     dtype = o3c.float32
 
     pcd = o3d.t.geometry.PointCloud(device)
     pcd.point["points"] = o3c.Tensor([[0, 1, 2], [3, 4, 5]], dtype, device)
     pcd.point["colors"] = o3c.Tensor([[6, 7, 8], [9, 10, 11]], dtype, device)
 
-    legacy_pcd = pcd.to_legacy_pointcloud()
+    legacy_pcd = pcd.to_legacy()
     np.testing.assert_allclose(np.asarray(legacy_pcd.points),
                                np.array([[0, 1, 2], [3, 4, 5]]))
     np.testing.assert_allclose(np.asarray(legacy_pcd.colors),

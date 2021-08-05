@@ -47,14 +47,13 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
             std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
 
     // Warm up.
-    t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacyPointCloud(
+    t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacy(
             legacy_pcd, core::Float32, device);
     (void)pcd;
 
     for (auto _ : state) {
-        t::geometry::PointCloud pcd =
-                t::geometry::PointCloud::FromLegacyPointCloud(
-                        legacy_pcd, core::Float32, device);
+        t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacy(
+                legacy_pcd, core::Float32, device);
         core::cuda::Synchronize(device);
     }
 }
@@ -66,11 +65,11 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     pcd.SetPointColors(core::Tensor({num_points, 3}, core::Float32, device));
 
     // Warm up.
-    open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+    open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacy();
     (void)legacy_pcd;
 
     for (auto _ : state) {
-        open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+        open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacy();
         core::cuda::Synchronize(device);
     }
 }

@@ -40,20 +40,22 @@ public:
 
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& points,
+                const tensorflow::Tensor& row_splits,
                 const tensorflow::Tensor& voxel_size,
                 const tensorflow::Tensor& points_range_min,
                 const tensorflow::Tensor& points_range_max) {
         OutputAllocator output_allocator(context);
 
         switch (points.dim_size(1)) {
-#define CASE(NDIM)                                                        \
-    case NDIM:                                                            \
-        VoxelizeCPU<T, NDIM>(points.dim_size(0), points.flat<T>().data(), \
-                             voxel_size.flat<T>().data(),                 \
-                             points_range_min.flat<T>().data(),           \
-                             points_range_max.flat<T>().data(),           \
-                             max_points_per_voxel, max_voxels,            \
-                             output_allocator);                           \
+#define CASE(NDIM)                                                             \
+    case NDIM:                                                                 \
+        VoxelizeCPU<T, NDIM>(                                                  \
+                points.dim_size(0), points.flat<T>().data(),                   \
+                row_splits.dim_size(0) - 1, row_splits.flat<int64_t>().data(), \
+                voxel_size.flat<T>().data(),                                   \
+                points_range_min.flat<T>().data(),                             \
+                points_range_max.flat<T>().data(), max_points_per_voxel,       \
+                max_voxels, output_allocator);                                 \
         break;
             CASE(1)
             CASE(2)

@@ -289,7 +289,7 @@ TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     }
 }
 
-TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
+TEST_P(PointCloudPermuteDevices, FromLegacy) {
     core::Device device = GetParam();
     geometry::PointCloud legacy_pcd;
     legacy_pcd.points_ = std::vector<Eigen::Vector3d>{Eigen::Vector3d(0, 0, 0),
@@ -299,8 +299,8 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
 
     // Float32: vector3d will be converted to float32.
     core::Dtype dtype = core::Float32;
-    t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacyPointCloud(
-            legacy_pcd, dtype, device);
+    t::geometry::PointCloud pcd =
+            t::geometry::PointCloud::FromLegacy(legacy_pcd, dtype, device);
     EXPECT_TRUE(pcd.HasPoints());
     EXPECT_TRUE(pcd.HasPointColors());
     EXPECT_FALSE(pcd.HasPointNormals());
@@ -311,8 +311,7 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
 
     // Float64 case.
     dtype = core::Float64;
-    pcd = t::geometry::PointCloud::FromLegacyPointCloud(legacy_pcd, dtype,
-                                                        device);
+    pcd = t::geometry::PointCloud::FromLegacy(legacy_pcd, dtype, device);
     EXPECT_TRUE(pcd.HasPoints());
     EXPECT_TRUE(pcd.HasPointColors());
     EXPECT_FALSE(pcd.HasPointNormals());
@@ -322,7 +321,7 @@ TEST_P(PointCloudPermuteDevices, FromLegacyPointCloud) {
             core::Tensor::Ones({2, 3}, dtype, device)));
 }
 
-TEST_P(PointCloudPermuteDevices, ToLegacyPointCloud) {
+TEST_P(PointCloudPermuteDevices, ToLegacy) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Float32;
 
@@ -331,7 +330,7 @@ TEST_P(PointCloudPermuteDevices, ToLegacyPointCloud) {
             {"colors", core::Tensor::Ones({2, 3}, dtype, device) * 2},
     });
 
-    geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+    geometry::PointCloud legacy_pcd = pcd.ToLegacy();
     EXPECT_TRUE(legacy_pcd.HasPoints());
     EXPECT_TRUE(legacy_pcd.HasColors());
     EXPECT_FALSE(legacy_pcd.HasNormals());
@@ -662,13 +661,13 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
 
     // Sanity test to visualize
     t::geometry::PointCloud pcd =
-            t::geometry::PointCloud::FromLegacyPointCloud(
+            t::geometry::PointCloud::FromLegacy(
                     *io::CreatePointCloudFromFile(std::string(TEST_DATA_DIR) +
                                                   "/ICP/cloud_bin_2.pcd"))
                     .To(device);
     auto pcd_down = pcd.VoxelDownSample(0.1);
     io::WritePointCloud(fmt::format("down_{}.pcd", device.ToString()),
-                        pcd_down.ToLegacyPointCloud());
+                        pcd_down.ToLegacy());
 
     // Value test
     t::geometry::PointCloud pcd_small(

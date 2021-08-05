@@ -77,7 +77,7 @@ macOS
 
    # (Optional) In case brew updates to a newer clang-format version, we also
    # provide a tagged clang-format@10 backup formula.
-   curl https://raw.githubusercontent.com/intel-isl/Open3D/master/3rdparty/clang-format/clang-format%4010.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@10.rb
+   curl https://raw.githubusercontent.com/isl-org/Open3D/master/3rdparty/clang-format/clang-format%4010.rb -o $(brew --repo)/Library/Taps/homebrew/homebrew-core/Formula/clang-format@10.rb
    brew install clang-format@10
    clang-format --version
 

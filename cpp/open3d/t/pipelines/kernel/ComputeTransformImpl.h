@@ -79,6 +79,10 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         const int64_t *correspondence_indices,
         scalar_t *J_ij,
         scalar_t &r) {
+    if (correspondence_indices[workload_idx] == -1) {
+        return false;
+    }
+
     const int64_t target_idx = 3 * correspondence_indices[workload_idx];
     const int64_t source_idx = 3 * workload_idx;
 
