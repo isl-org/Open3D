@@ -128,7 +128,7 @@ create-vm)
             --boot-disk-size=$GCE_BOOT_DISK_SIZE \
             --boot-disk-type=$GCE_BOOT_DISK_TYPE \
             --image-family="$GCE_VM_CUSTOM_IMAGE_FAMILY" \
-            --metadata-from-file=startup-script=${SCRIPT_DIR}/auto-clean.sh \
+            --metadata-from-file=startup-script=${SCRIPT_DIR}/auto-shutdown.sh \
             --scopes=compute-rw \
             --service-account="$GCE_GPU_CI_SA"; do
         ((GCE_ZID = GCE_ZID + 1))
