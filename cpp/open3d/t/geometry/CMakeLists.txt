@@ -4,6 +4,7 @@ add_library(tgeometry OBJECT $<TARGET_OBJECTS:tgeometry_kernel>)
 
 target_sources(tgeometry PRIVATE
     Image.cpp
+    Material.cpp
     PointCloud.cpp
     RaycastingScene.cpp
     RGBDImage.cpp
