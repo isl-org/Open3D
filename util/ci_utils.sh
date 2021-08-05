@@ -136,7 +136,7 @@ install_ccache() {
     git checkout "v${CCACHE_VERSION}" -b ${CCACHE_VERSION}
     mkdir build
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=$HOME -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON ..
+    cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON ..
     make -j$(nproc)
     $SUDO make install
     cd ../..
