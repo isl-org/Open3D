@@ -92,7 +92,7 @@ bool ReadPointCloud(const std::string &filename,
     } else {
         success = map_itr->second(filename, pointcloud, params);
         utility::LogDebug("Read geometry::PointCloud: {:d} vertices.",
-                          (int)pointcloud.GetPoints().GetLength());
+                          (int)pointcloud.GetPointPositions().GetLength());
         if (params.remove_nan_points || params.remove_infinite_points) {
             utility::LogError(
                     "remove_nan_points and remove_infinite_points options are "
@@ -140,7 +140,7 @@ bool WritePointCloud(const std::string &filename,
     bool success = map_itr->second(filename, pointcloud.CPU(), params);
     if (!pointcloud.IsEmpty()) {
         utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
-                          (int)pointcloud.GetPoints().GetLength());
+                          (int)pointcloud.GetPointPositions().GetLength());
     } else {
         utility::LogDebug("Write geometry::PointCloud: 0 vertices.");
     }

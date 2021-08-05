@@ -382,7 +382,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
             [](const t::geometry::PointCloud& cloud) -> filament::Box {
         Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
         Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
-        const auto& points = cloud.GetPoints();
+        const auto& points = cloud.GetPointPositions();
         const size_t n = points.GetLength();
         float* pts = (float*)points.GetDataPtr();
         for (size_t i = 0; i < 3 * n; i += 3) {
@@ -412,7 +412,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         utility::LogWarning("Point cloud for object {} is empty", object_name);
         return false;
     }
-    const auto& points = point_cloud.GetPoints();
+    const auto& points = point_cloud.GetPointPositions();
     if (points.GetDtype() != core::Float32) {
         utility::LogWarning("tensor point cloud must have Dtype of Float32");
         return false;
@@ -577,7 +577,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         auto vbuf_ptr = resource_mgr_.GetVertexBuffer(g->vb).lock();
         auto vbuf = vbuf_ptr.get();
 
-        const auto& points = point_cloud.GetPoints();
+        const auto& points = point_cloud.GetPointPositions();
         const size_t n_vertices = points.GetLength();
 
         // NOTE: number of points in the updated point cloud must be the
@@ -608,7 +608,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             if (pcloud_is_gpu) {
                 auto vertex_data =
                         static_cast<float*>(malloc(vertex_array_size));
-                memcpy(vertex_data, cpu_pcloud.GetPoints().GetDataPtr(),
+                memcpy(vertex_data, cpu_pcloud.GetPointPositions().GetDataPtr(),
                        vertex_array_size);
                 filament::VertexBuffer::BufferDescriptor pts_descriptor(
                         vertex_data, vertex_array_size, DeallocateBuffer);
@@ -624,7 +624,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             const size_t color_array_size = n_vertices * 3 * sizeof(float);
             if (pcloud_is_gpu) {
                 auto color_data = static_cast<float*>(malloc(color_array_size));
-                memcpy(color_data, cpu_pcloud.GetPoints().GetDataPtr(),
+                memcpy(color_data, cpu_pcloud.GetPointPositions().GetDataPtr(),
                        color_array_size);
                 filament::VertexBuffer::BufferDescriptor color_descriptor(
                         color_data, color_array_size, DeallocateBuffer);

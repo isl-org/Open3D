@@ -66,7 +66,7 @@ void pybind_pointcloud(py::module& m) {
 
     // Constructors.
     pointcloud.def(py::init<const core::Device&>(), "device"_a)
-            .def(py::init<const core::Tensor&>(), "points"_a)
+            .def(py::init<const core::Tensor&>(), "positions"_a)
             .def(py::init<const std::unordered_map<std::string,
                                                    core::Tensor>&>(),
                  "map_keys_to_tensors"_a)

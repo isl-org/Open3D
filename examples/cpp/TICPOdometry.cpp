@@ -289,7 +289,8 @@ private:
                             /*relative = */ false);
 
                     total_points_in_frame +=
-                            pcd_and_bbox_.current_scan_.GetPoints().GetLength();
+                            pcd_and_bbox_.current_scan_.GetPointPositions()
+                                    .GetLength();
 
                     // Removing `normal` attribute before passing it to
                     // the visualizer might give us some performance benifits.
@@ -545,7 +546,7 @@ private:
                                       {"auto", false, false, true});
 
                 // registration module.
-                for (std::string attr : {"points", "colors", "normals"}) {
+                for (std::string attr : {"positions", "colors", "normals"}) {
                     if (pointcloud_local.HasPointAttr(attr)) {
                         pointcloud_local.SetPointAttr(
                                 attr,
@@ -560,11 +561,12 @@ private:
                 // the `GetPointCloudMaterial` function.
                 // Here `z` value of a `x y z` point is used as
                 // `__visualization_scalar`.
-                pointcloud_local.SetPointAttr("__visualization_scalar",
-                                              pointcloud_local.GetPoints()
-                                                      .Slice(0, 0, -1)
-                                                      .Slice(1, 2, 3)
-                                                      .To(dtype_, false));
+                pointcloud_local.SetPointAttr(
+                        "__visualization_scalar",
+                        pointcloud_local.GetPointPositions()
+                                .Slice(0, 0, -1)
+                                .Slice(1, 2, 3)
+                                .To(dtype_, false));
 
                 // Normals are required by `PointToPlane` registration method.
                 // Currenly Normal Estimation is not supported by

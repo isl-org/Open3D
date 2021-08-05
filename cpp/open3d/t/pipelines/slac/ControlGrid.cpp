@@ -62,7 +62,7 @@ ControlGrid::ControlGrid(float grid_size,
 }
 
 void ControlGrid::Touch(const geometry::PointCloud& pcd) {
-    core::Tensor pts = pcd.GetPoints();
+    core::Tensor pts = pcd.GetPointPositions();
     int64_t n = pts.GetLength();
 
     // Coordinate in the grid unit.
@@ -167,7 +167,7 @@ ControlGrid::GetNeighborGridMap() {
 
 geometry::PointCloud ControlGrid::Parameterize(
         const geometry::PointCloud& pcd) {
-    core::Tensor pts = pcd.GetPoints();
+    core::Tensor pts = pcd.GetPointPositions();
     core::Tensor nms;
     if (pcd.HasPointNormals()) {
         nms = pcd.GetPointNormals().T().Contiguous();
@@ -234,7 +234,8 @@ geometry::PointCloud ControlGrid::Parameterize(
             masks_nb.View({8, n}).To(core::Int64).Sum({0}).Eq(8);
 
     geometry::PointCloud pcd_with_params = pcd;
-    pcd_with_params.SetPoints(pcd.GetPoints().IndexGet({valid_mask}));
+    pcd_with_params.SetPointPositions(
+            pcd.GetPointPositions().IndexGet({valid_mask}));
     pcd_with_params.SetPointAttr(kGrid8NbIndices,
                                  addrs_nb.IndexGet({valid_mask}));
     pcd_with_params.SetPointAttr(kGrid8NbVertexInterpRatios,

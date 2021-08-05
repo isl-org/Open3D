@@ -45,17 +45,17 @@ void pybind_trianglemesh(py::module& m) {
     // Constructors.
     triangle_mesh.def(py::init<const core::Device&>(), "device"_a)
             .def(py::init<const core::Tensor&, const core::Tensor&>(),
-                 "vertices"_a, "triangles"_a);
+                 "vertex_positions"_a, "triangle_indices"_a);
 
     // Triangle mesh's attributes: vertices, vertex_colors, vertex_normals, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced
     // by another TensorMap in Python.
     triangle_mesh.def_property_readonly(
-            "vertices",
+            "vertex_positions",
             py::overload_cast<>(&TriangleMesh::GetVertexAttr, py::const_));
     triangle_mesh.def_property_readonly(
-            "triangles",
+            "triangle_indices",
             py::overload_cast<>(&TriangleMesh::GetTriangleAttr, py::const_));
 
     // Device transfers.

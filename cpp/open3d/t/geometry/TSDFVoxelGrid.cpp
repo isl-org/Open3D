@@ -145,7 +145,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     }
 
     core::Tensor block_coords;
-    kernel::tsdf::Touch(point_hashmap_, pcd.GetPoints().Contiguous(),
+    kernel::tsdf::Touch(point_hashmap_, pcd.GetPointPositions().Contiguous(),
                         block_coords, block_resolution_, voxel_size_,
                         sdf_trunc_);
 
