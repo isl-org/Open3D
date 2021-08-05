@@ -34,9 +34,14 @@ RUN /root/Open3D/util/docker/open3d-gpu/scripts/env-setup.sh
 COPY ./util/install_deps_ubuntu.sh ./util/ci_utils.sh /root/Open3D/util/
 RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes
 
+# Install CUDA
 COPY ./util/ci_utils.sh /root/Open3D/util/
 RUN bash -o errexit -c "source /root/Open3D/util/ci_utils.sh && \
     install_cuda_toolkit with-cudnn purge-cache"
+
+# Install ccache
+RUN bash -o errexit -c "source /root/Open3D/util/ci_utils.sh && \
+    install_ccache"
 
 # Persist PATH for cuda, cudnn and set requirements for host and container
 ENV PATH=/usr/local/cuda/bin:$PATH \

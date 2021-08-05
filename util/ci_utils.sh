@@ -122,6 +122,26 @@ install_cuda_toolkit() {
     fi
 }
 
+install_ccache() {
+
+    SUDO=${SUDO:-sudo}
+
+    git clone https://github.com/ccache/ccache.git
+    cd ccache
+    git checkout v4.3 -b 4.3
+    mkdir build
+    cd build
+    cmake -DCMAKE_INSTALL_PREFIX=$HOME -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON ..
+    make -j$(nproc)
+    $SUDO make install
+    cd ../..
+
+    ccache --version
+    ccache -s
+    CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$")
+    echo "CCACHE_DIR: ${CCACHE_DIR}"
+}
+
 install_python_dependencies() {
 
     echo "Installing Python dependencies"
