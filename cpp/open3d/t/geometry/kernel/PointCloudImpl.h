@@ -158,8 +158,8 @@ void UnprojectCPU
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
         const scalar_t* points_ptr,
-        const int64_t* indices_ptr,
-        const int64_t& indices_count,
+        const int32_t* indices_ptr,
+        const int32_t& indices_count,
         scalar_t* covariance_ptr) {
     if (indices_count < 3) {
         covariance_ptr[0] = 1.0;
@@ -175,8 +175,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
     }
 
     double centroid[3] = {0};
-    for (int64_t i = 0; i < indices_count; i++) {
-        int64_t idx = 3 * indices_ptr[i];
+    for (int32_t i = 0; i < indices_count; i++) {
+        int32_t idx = 3 * indices_ptr[i];
         centroid[0] += points_ptr[idx];
         centroid[1] += points_ptr[idx + 1];
         centroid[2] += points_ptr[idx + 2];
@@ -189,8 +189,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
 
     // cumulants must always be Float64 to ensure precision.
     double cumulants[6] = {0};
-    for (int64_t i = 0; i < indices_count; i++) {
-        int64_t idx = 3 * indices_ptr[i];
+    for (int32_t i = 0; i < indices_count; i++) {
+        int32_t idx = 3 * indices_ptr[i];
         double x = static_cast<double>(points_ptr[idx]) - centroid[0];
         double y = static_cast<double>(points_ptr[idx + 1]) - centroid[1];
         double z = static_cast<double>(points_ptr[idx + 2]) - centroid[2];
@@ -258,20 +258,20 @@ void EstimateCovariancesUsingHybridSearchCPU
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
-        int64_t* neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
-        int64_t* neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
+        int32_t* neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
+        int32_t* neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
         scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
         core::ParallelFor(points.GetDevice(), n,
                           [=] OPEN3D_DEVICE(int64_t workload_idx) {
                               // NNS [Hybrid Search].
-                              int64_t neighbour_offset = max_nn * workload_idx;
+                              int32_t neighbour_offset = max_nn * workload_idx;
                               // Count of valid correspondences per point.
-                              int64_t neighbour_count =
+                              int32_t neighbour_count =
                                       neighbour_counts_ptr[workload_idx];
                               // Covariance is of shape {3, 3}, so it has an
                               // offset factor of 9 x workload_idx.
-                              int64_t covariances_offset = 9 * workload_idx;
+                              int32_t covariances_offset = 9 * workload_idx;
 
                               EstimatePointWiseRobustNormalizedCovarianceKernel(
                                       points_ptr,
@@ -305,7 +305,7 @@ void EstimateCovariancesUsingKNNSearchCPU
     std::tie(indices, distance) = tree.KnnSearch(points, max_nn);
 
     indices = indices.Contiguous();
-    int64_t nn_count = indices.GetShape()[1];
+    int32_t nn_count = static_cast<int32_t>(indices.GetShape()[1]);
 
     if (nn_count < 3) {
         utility::LogError(
@@ -315,16 +315,16 @@ void EstimateCovariancesUsingKNNSearchCPU
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         auto points_ptr = points.GetDataPtr<scalar_t>();
-        auto neighbour_indices_ptr = indices.GetDataPtr<int64_t>();
+        auto neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
         auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
                 points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     // NNS [KNN Search].
-                    int64_t neighbour_offset = nn_count * workload_idx;
+                    int32_t neighbour_offset = nn_count * workload_idx;
                     // Covariance is of shape {3, 3}, so it has an offset factor
                     // of 9 x workload_idx.
-                    int64_t covariances_offset = 9 * workload_idx;
+                    int32_t covariances_offset = 9 * workload_idx;
 
                     EstimatePointWiseRobustNormalizedCovarianceKernel(
                             points_ptr,
@@ -620,8 +620,8 @@ void EstimateNormalsFromCovariancesCPU
         core::ParallelFor(
                 covariances.GetDevice(), n,
                 [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    int64_t covariances_offset = 9 * workload_idx;
-                    int64_t normals_offset = 3 * workload_idx;
+                    int32_t covariances_offset = 9 * workload_idx;
+                    int32_t normals_offset = 3 * workload_idx;
                     scalar_t normals_output[3] = {0};
                     EstimatePointWiseNormalsWithFastEigen3x3<scalar_t>(
                             covariances_ptr + covariances_offset,
