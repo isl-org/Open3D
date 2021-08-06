@@ -50,7 +50,7 @@ public:
 
     /// Returns true if the Material was not created with the default
     /// constructor and therefore has a valid shader name.
-    bool IsValid() const { return shader_ != "INVALID"; }
+    bool IsValid() const { return !shader_.empty(); }
 
     /// Get the name of the shader for this material
     const std::string &GetShaderName() const { return shader_; }
@@ -106,7 +106,7 @@ public:
     }
 
     /// Set shader name. The shader name should match the name of a built in or
-    /// user specified shader. The name is NOT checked to esnure it is valid.
+    /// user specified shader. The name is NOT checked to ensure it is valid.
     ///
     /// \param shader The name of the shader.
     void SetShaderName(const std::string &shader) { shader_ = shader; }
@@ -270,7 +270,7 @@ public:
     void SetLineWidth(float value) { SetScalarProperty("line_width", value); }
 
 private:
-    std::string shader_ = "INVALID";
+    std::string shader_;
     std::unordered_map<std::string, Image> texture_maps_;
     std::unordered_map<std::string, float> scalar_properties_;
     std::unordered_map<std::string, Eigen::Vector4f> vector_properties_;
