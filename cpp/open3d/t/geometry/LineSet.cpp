@@ -45,19 +45,21 @@ LineSet::LineSet(const core::Device &device)
       point_attr_(TensorMap("positions")),
       line_attr_(TensorMap("indices")) {}
 
-LineSet::LineSet(const core::Tensor &points, const core::Tensor &lines)
+LineSet::LineSet(const core::Tensor &point_positions,
+                 const core::Tensor &line_indices)
     : LineSet([&]() {
-          if (points.GetDevice() != lines.GetDevice()) {
+          if (point_positions.GetDevice() != line_indices.GetDevice()) {
               utility::LogError(
-                      "'points' device {} does not match 'lines' device "
+                      "'point_positions' device {} does not match "
+                      "'line_indices' device "
                       "{}.",
-                      points.GetDevice().ToString(),
-                      lines.GetDevice().ToString());
+                      point_positions.GetDevice().ToString(),
+                      line_indices.GetDevice().ToString());
           }
-          return points.GetDevice();
+          return point_positions.GetDevice();
       }()) {
-    SetPointPositions(points);
-    SetLineIndices(lines);
+    SetPointPositions(point_positions);
+    SetLineIndices(line_indices);
 }
 
 LineSet LineSet::To(const core::Device &device, bool copy) const {
@@ -136,8 +138,8 @@ LineSet &LineSet::Scale(double scale, const core::Tensor &center) {
     center.AssertShape({3});
     center.AssertDevice(device_);
 
-    core::Tensor points = GetPointPositions();
-    points.Sub_(center).Mul_(scale).Add_(center);
+    core::Tensor point_positions = GetPointPositions();
+    point_positions.Sub_(center).Mul_(scale).Add_(center);
     return *this;
 }
 

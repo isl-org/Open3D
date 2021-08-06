@@ -48,43 +48,46 @@ containing the attribute data.
 
 By default, there are two sets of dictionaries, i.e. ``points`` and
 ``lines``. In most cases, the length of an attribute should be
-equal to the length of the the data corresponding to the master key. For
+equal to the length of the data corresponding to the primary key. For
 instance ``points["colors"]`` should have the same length as
 ``points["positions"]``.
 
 Although the attributes are all stored in a key-value pair dictionary, the
 attributes have different levels:
 
-    - **Level 0**: Default attributes ``points["positions"]`` and ``lines["indices"]``.
-        - Created by default, required for all ``LineSet`` s.
+    - Default attributes ``points["positions"]`` and ``lines["indices"]``.
+        - Created by default, required for all ``LineSet``s.
         - The "positions" tensor must be of shape (N,3) while the "indices" tensor
           must be of shape (N,2) and DtypeCode Int.
         - The device of "positions" and "indices" must be consistent and they
           determine the device of the LineSet.
-    - **Level 1**: Commonly used attributes: line colors.
-    - **Level 2**: Custom attributes, e.g. labels.
-        - Both are not created by default. Created by users. Level 1 attributes
-          have some additional convenience functions in the C++ API compared to
-          Level 2 attributes.
-
-For all attributes, the device must be consistent with the device of the
-LineSet. Dtype can be different.)");
+    - Commonly used attributes: line colors.
+    - Custom attributes, e.g. labels.
+        - Both are not created by default. Users can add their own custom
+          attributes. Commonly used attributes (line colors) have some
+          additional convenience functions in the C++ API compared to custom
+          attributes.
+        - For all attributes, the device must be consistent with the device of
+          the LineSet.
+        - Custom attributes may have any ``dtype``.)");
 
     // Constructors.
     line_set.def(py::init<const core::Device&>(),
                  "device"_a = core::Device("CPU:0"),
                  "Construct an empty LineSet on the provided device.")
             .def(py::init<const core::Tensor&, const core::Tensor&>(),
-                 "points"_a, "lines"_a, R"(
-Construct a LineSet from points and lines.
+                 "point_positions"_a, "line_indices"_a, R"(
+Construct a LineSet from point_positions and line_indices.
 
 The input tensors will be directly used as the underlying storage of the line
-set (no memory copy).  The resulting ``LineSet`` will have the same dtype and device
-as the tensor. The device for ``points`` must be consistent with  ``lines``.)");
+set (no memory copy).  The resulting ``LineSet`` will have the same ``dtype``
+and ``device`` as the tensor. The device for ``point_positions`` must be consistent with
+``line_indices``.)");
     docstring::ClassMethodDocInject(
             m, "LineSet", "__init__",
-            {{"points", "A tensor with element shape (3,)"},
-             {"lines", "A tensor with element shape (2,) and Int Dtype."}});
+            {{"point_positions", "A tensor with element shape (3,)"},
+             {"line_indices",
+              "A tensor with element shape (2,) and Int dtype."}});
 
     // Line set's attributes: points_positions, line_indices, line_colors, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
@@ -135,8 +138,9 @@ as the tensor. The device for ``points`` must be consistent with  ``lines``.)");
 Transforms the points and lines. Custom attributes (e.g. point normals) are not
 transformed. Extracts R, t from the transformation as:
 
-T (4x4) = [[ R(3x3)  t(3x1) ],
-           [ O(1x3)  s(1x1) ]]
+.. math::
+    T_{(4,4)} = \begin{bmatrix} R_{(3,3)} & t_{(3,1)} \\
+                            O_{(1,3)} & s_{(1,1)} \end{bmatrix}
 
 It assumes :math:`s = 1` (no scaling) and :math:`O = [0,0,0]` and applies the
 transformation as :math:`P = R(P) + t`)");

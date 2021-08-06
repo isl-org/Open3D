@@ -46,55 +46,54 @@ namespace geometry {
 /// flexibility, where the key is a string representing the attribute name and
 /// value is a Tensor containing the attribute data.
 ///
-/// By default, there are two sets of dictionaries, i.e. `point_attr_` and
-/// `line_attr_`. In most cases, the length of an attribute should be
-/// equal to the length of the data corresponding to the master key. For
-/// instance `point_attr_["colors"]` should have the same length as
+/// By default, there are two sets of dictionaries: `point_attr_` and
+/// `line_attr_`. In most cases, the length of an attribute should be equal to
+/// the length of the data corresponding to the primary key. For instance,
+/// `point_attr_["colors"]` should have the same length as
 /// `point_attr_["positions"]`.
 ///
 /// Although the attributes are all stored in a key-value pair dictionary, the
 /// attributes have different levels:
 ///
-/// - Level 0: Default attribute {"positions", "indices"}.
+/// - Default attributes {"positions", "indices"}.
 ///     - Created by default, required for all LineSets.
-///     - The "positions" tensor must be of shape N x {3,} while the
-///     "indices" tensor must be of shape N x {2,} and DtypeCode Int.
-///     - Convenience functions:
-///         - LineSet::GetPointPositions()
-///         - LineSet::SetPointPositions(points_tensor)
-///         - LineSet::HasPointPositions()
-///         - LineSet::GetLineIndices()
-///         - LineSet::SetLineIndices(lines_tensor)
-///         - LineSet::HasLineIndices()
+///     - The "positions" tensor must have shape {N,3} while the "indices"
+///       tensor must have shape {N,2} and \ref DtypeCode Int.
 ///     - The device of "positions" and "indices" must be consistent and they
 ///       determine the device of the LineSet.
-/// - Level 1: Commonly used attributes: line colors.
+///     - Usage:
+///         - LineSet::GetPointPositions()
+///         - LineSet::SetPointPositions(const core::Tensor &positions)
+///         - LineSet::HasPointPositions()
+///         - LineSet::GetLineIndices()
+///         - LineSet::SetLineIndices(const core::Tensor &indices)
+///         - LineSet::HasLineIndices()
+/// - Commonly used attributes: line colors.
 ///     - Not created by default.
-///     - The tensor must be of shape N x 3.
-///     - Convenience functions:
+///     - The tensor must be of shape {N,3}.
+///     - For all attributes, the device must be consistent with the device of
+///       the LineSet.
+///     - Value tensors can have any \ref Dtype.
+///     - Usage:
 ///         - Line colors (stored at line_attr_["colors"])
 ///             - LineSet::GetLineColors()
-///             - LineSet::SetLineColors(line_colors_tensor)
+///             - LineSet::SetLineColors(const core::Tensor &line_colors)
 ///             - LineSet::HasLineColors()
+/// - Custom attributes, e.g. {"labels"}.
+///     - Not created by default. Users can add their own custom attributes.
 ///     - For all attributes, the device must be consistent with the device of
-///       the LineSet. Dtype can be different.
-/// - Level 2: Custom attributes, e.g. {"labels"}.
-///     - Not created by default. Created by users.
-///     - No convenience functions.
-///     - Use generalized helper functions. Examples:
+///       the LineSet.
+///     - Value tensors can have any \ref Dtype.
+///     - Usage:
 ///         - LineSet::GetPointAttr("labels")
-///         - LineSet::SetPointAttr("labels",
-///                                       point_labels_tensor)
+///         - LineSet::SetPointAttr("labels", point_labels_tensor)
 ///         - LineSet::HasPointAttr("labels")
 ///         - LineSet::GetLineAttr("labels")
-///         - LineSet::SetLineAttr("labels",
-///                                         line_labels_tensor)
+///         - LineSet::SetLineAttr("labels", line_labels_tensor)
 ///         - LineSet::HasLineAttr("labels")
-///     - For all attributes, the device must be consistent with the device of
-///       the LineSet. Dtype can be different.
 ///
-/// Note that the level 0 and level 1 convenience functions can also be achieved
-/// via the generalized helper functions.
+/// Note that `{Get|Set|Has}{Point|Line}Attr()` functions also work "positions"
+/// and "indices".
 
 class LineSet : public Geometry {
 public:
@@ -113,9 +112,11 @@ public:
     /// tensor. The device for \p points must be consistent with
     /// \p lines.
     ///
-    /// \param points A tensor with element shape (3,).
-    /// \param lines A tensor with element shape (2,) and Int Dtype.
-    LineSet(const core::Tensor &points, const core::Tensor &lines);
+    /// \param point_positions A tensor with element shape {3}.
+    /// \param line_indices A tensor with element shape {2} and Int \ref
+    /// DtypeCode.
+    LineSet(const core::Tensor &point_positions,
+            const core::Tensor &line_indices);
 
     virtual ~LineSet() override {}
 
@@ -271,9 +272,8 @@ public:
                GetLineAttr(key).GetLength() == GetLineIndices().GetLength();
     }
 
-    /// Check if the "indices" attribute's value in line_attr_ has length
-    /// > 0.
-    /// Convenience function.
+    /// Check if the "indices" attribute's value in line_attr_ has
+    /// length > 0.  Convenience function.
     bool HasLineIndices() const { return HasLineAttr("indices"); }
 
     /// Returns true if all of the followings are true in line_attr_:
@@ -306,12 +306,11 @@ public:
     ///
     /// Custom attributes (e.g.: point or line normals) are not transformed.
     ///
-    /// Extracts R, t from Transformation
-    ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
-    ///               [ O(1x3)  s(1x1) ]]
-    ///  (s = 1 for Transformation without scaling)
-    /// PS. It Assumes s = 1 and O = [0,0,0]
-    /// and applies the transformation as P = R(P) + t
+    /// Extracts \f$ R, t \f$ from Transformation \f[
+    /// T_{(4,4)} = \begin{bmatrix} R_{(3,3)} & t_{(3,1)} \\
+    ///                             O_{(1,3)} & s_{(1,1)} \end{bmatrix} \f]
+    ///  It Assumes \f$s = 1\f$ (no scaling) and \f$O = [0,0,0]\f$ and applies
+    ///  the transformation as \f$P = R(P) + t\f$.
     /// \param transformation Transformation [Tensor of shape {4,4}].
     /// Should be on the same device as the LineSet.
     /// \return Transformed line set.
