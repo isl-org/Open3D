@@ -313,6 +313,31 @@ TEST(TPointCloudIO, WritePTSColorConversion2) {
     std::remove(file_name.c_str());
 }
 
+TEST(TPointCloudIO, ReadWritePointCloudAsNPZ) {
+    // Read PointCloud from PLY file.
+    t::geometry::PointCloud pcd_ply;
+    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd_ply,
+                          {"auto", false, false, true});
+
+    core::Tensor custom_attr =
+            core::Tensor::Ones(pcd_ply.GetPoints().GetShape(), core::Float32);
+    pcd_ply.SetPointAttr("custom_attr", custom_attr);
+
+    std::string filename =
+            std::string(TEST_DATA_DIR) + "/test_npz_pointcloud.npz";
+    EXPECT_TRUE(t::io::WritePointCloud(filename, pcd_ply));
+
+    // Read from the saved pointcloud.
+    t::geometry::PointCloud pcd_npz;
+    t::io::ReadPointCloud(filename, pcd_npz, {"auto", false, false, true});
+
+    for (auto &kv : pcd_ply.GetPointAttr()) {
+        EXPECT_TRUE(kv.second.AllClose(pcd_npz.GetPointAttr(kv.first)));
+    }
+
+    std::remove(filename.c_str());
+}
+
 TEST_P(PointCloudIOPermuteDevices, WriteDeviceTestPLY) {
     core::Device device = GetParam();
     std::string filename = std::string(TEST_DATA_DIR) + "/test_write.ply";

@@ -187,23 +187,23 @@ int main(int argc, char* argv[]) {
                         range_map.Slice(2, 0, 1).Contiguous() / depth_max);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                im_near.ToLegacyImage())});
+                                im_near.ToLegacy())});
                 t::geometry::Image im_far(
                         range_map.Slice(2, 1, 2).Contiguous() / depth_max);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                im_far.ToLegacyImage())});
+                                im_far.ToLegacy())});
                 t::geometry::Image depth_raycast(result[MaskCode::DepthMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 depth_raycast
                                         .ColorizeDepth(depth_scale, 0.1,
                                                        depth_max)
-                                        .ToLegacyImage())});
+                                        .ToLegacy())});
                 t::geometry::Image color_raycast(result[MaskCode::ColorMap]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
-                                color_raycast.ToLegacyImage())});
+                                color_raycast.ToLegacy())});
             }
         }
 
@@ -218,8 +218,8 @@ int main(int argc, char* argv[]) {
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         auto mesh = voxel_grid.ExtractSurfaceMesh();
-        auto mesh_legacy = std::make_shared<geometry::TriangleMesh>(
-                mesh.ToLegacyTriangleMesh());
+        auto mesh_legacy =
+                std::make_shared<geometry::TriangleMesh>(mesh.ToLegacy());
         open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
                                       *mesh_legacy);
     }
@@ -228,9 +228,15 @@ int main(int argc, char* argv[]) {
         auto pcd = voxel_grid.ExtractSurfacePoints(
                 -1, 3.0f,
                 MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);
-        auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-                pcd.ToLegacyPointCloud());
+        auto pcd_legacy =
+                std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
         open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
                                     *pcd_legacy);
     }
+
+    if (utility::ProgramOptionExists(argc, argv, "--tsdf")) {
+        open3d::t::io::WriteTSDFVoxelGrid("tsdf.json", voxel_grid);
+    }
+
+    return 0;
 }

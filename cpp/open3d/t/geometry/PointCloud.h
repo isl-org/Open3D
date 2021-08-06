@@ -381,13 +381,13 @@ public:
             bool with_normals = false);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
-    static PointCloud FromLegacyPointCloud(
+    static PointCloud FromLegacy(
             const open3d::geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D PointCloud.
-    open3d::geometry::PointCloud ToLegacyPointCloud() const;
+    open3d::geometry::PointCloud ToLegacy() const;
 
     /// Project a point cloud to a depth image.
     geometry::Image ProjectToDepthImage(

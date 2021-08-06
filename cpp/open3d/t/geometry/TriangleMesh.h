@@ -401,14 +401,14 @@ public:
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
     /// triangles.
     /// \param device The device where the resulting TriangleMesh resides in.
-    static geometry::TriangleMesh FromLegacyTriangleMesh(
+    static geometry::TriangleMesh FromLegacy(
             const open3d::geometry::TriangleMesh &mesh_legacy,
             core::Dtype float_dtype = core::Float32,
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D TriangleMesh.
-    open3d::geometry::TriangleMesh ToLegacyTriangleMesh() const;
+    open3d::geometry::TriangleMesh ToLegacy() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

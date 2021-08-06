@@ -49,7 +49,7 @@ static PointCloud CreateTPCDFromFile(
         const core::Device& device = core::Device("CPU:0")) {
     std::shared_ptr<open3d::geometry::PointCloud> pcd =
             open3d::io::CreatePointCloudFromFile(fname);
-    return PointCloud::FromLegacyPointCloud(*pcd, core::Float32, device);
+    return PointCloud::FromLegacy(*pcd, core::Float32, device);
 }
 
 static void FillInRigidAlignmentTerm(Tensor& AtA,

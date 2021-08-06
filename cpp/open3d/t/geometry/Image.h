@@ -334,12 +334,11 @@ public:
     }
 
     /// \brief Create from a legacy Open3D Image.
-    static Image FromLegacyImage(
-            const open3d::geometry::Image &image_legacy,
-            const core::Device &Device = core::Device("CPU:0"));
+    static Image FromLegacy(const open3d::geometry::Image &image_legacy,
+                            const core::Device &Device = core::Device("CPU:0"));
 
     /// \brief Convert to legacy Image type.
-    open3d::geometry::Image ToLegacyImage() const;
+    open3d::geometry::Image ToLegacy() const;
 
     /// \brief Text description.
     std::string ToString() const;

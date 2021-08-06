@@ -290,7 +290,7 @@ TEST_P(TriangleMeshPermuteDevices, Rotate) {
             core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
 }
 
-TEST_P(TriangleMeshPermuteDevices, FromLegacyTriangleMesh) {
+TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
     core::Device device = GetParam();
     geometry::TriangleMesh legacy_mesh;
     legacy_mesh.vertices_ = std::vector<Eigen::Vector3d>{
@@ -306,9 +306,8 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacyTriangleMesh) {
 
     core::Dtype float_dtype = core::Float32;
     core::Dtype int_dtype = core::Int64;
-    t::geometry::TriangleMesh mesh =
-            t::geometry::TriangleMesh::FromLegacyTriangleMesh(
-                    legacy_mesh, float_dtype, int_dtype, device);
+    t::geometry::TriangleMesh mesh = t::geometry::TriangleMesh::FromLegacy(
+            legacy_mesh, float_dtype, int_dtype, device);
 
     EXPECT_TRUE(mesh.HasVertices());
     EXPECT_TRUE(mesh.HasVertexColors());
@@ -336,7 +335,7 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacyTriangleMesh) {
             core::Tensor::Ones({2, 3}, float_dtype, device) * 4));
 }
 
-TEST_P(TriangleMeshPermuteDevices, ToLegacyTriangleMesh) {
+TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
     core::Device device = GetParam();
 
     core::Dtype float_dtype = core::Float32;
@@ -350,7 +349,7 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacyTriangleMesh) {
     mesh.SetTriangleNormals(core::Tensor::Ones({2, 3}, float_dtype, device) *
                             4);
 
-    geometry::TriangleMesh legacy_mesh = mesh.ToLegacyTriangleMesh();
+    geometry::TriangleMesh legacy_mesh = mesh.ToLegacy();
     EXPECT_EQ(legacy_mesh.vertices_,
               std::vector<Eigen::Vector3d>(
                       {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0)}));
