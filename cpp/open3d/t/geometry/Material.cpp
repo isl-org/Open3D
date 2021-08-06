@@ -31,6 +31,7 @@ namespace t {
 namespace geometry {
 
 void Material::SetDefaultProperties() {
+    shader_ = "defaultUnlit";
     SetBaseColor(Eigen::Vector4f(1.f, 1.f, 1.f, 1.f));
     SetBaseMetallic(0.f);
     SetBaseRoughness(1.f);
