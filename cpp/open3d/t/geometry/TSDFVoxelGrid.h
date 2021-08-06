@@ -178,7 +178,7 @@ public:
     std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
 
 protected:
-    /// Return  addrs and masks for radius (3) neighbor entries.
+    /// Return addrs and masks for radius (3) neighbor entries.
     /// We first find all active entries in the hashmap with there coordinates.
     /// We then query these coordinates and their 3^3 neighbors.
     /// addrs_nb: indexer used for the internal hashmap to access voxel block
