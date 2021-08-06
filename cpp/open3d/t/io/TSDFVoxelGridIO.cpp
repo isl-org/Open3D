@@ -39,16 +39,13 @@ namespace io {
 class TSDFVoxelGridMetadata : public utility::IJsonConvertible {
 public:
     TSDFVoxelGridMetadata() = default;
-    TSDFVoxelGridMetadata(const geometry::TSDFVoxelGrid &tsdf_voxelgrid) {
-        voxel_size_ = tsdf_voxelgrid.GetVoxelSize();
-        sdf_trunc_ = tsdf_voxelgrid.GetSDFTrunc();
-
-        block_resolution_ = tsdf_voxelgrid.GetBlockResolution();
-        block_count_ = tsdf_voxelgrid.GetBlockCount();
-        device_ = tsdf_voxelgrid.GetDevice().ToString();
-
-        attr_dtype_map_ = tsdf_voxelgrid.GetAttrDtypeMap();
-    }
+    TSDFVoxelGridMetadata(const geometry::TSDFVoxelGrid &tsdf_voxelgrid)
+        : voxel_size_(tsdf_voxelgrid.GetVoxelSize()),
+          sdf_trunc_(tsdf_voxelgrid.GetSDFTrunc()),
+          block_resolution_(tsdf_voxelgrid.GetBlockResolution()),
+          block_count_(tsdf_voxelgrid.GetBlockCount()),
+          device_(tsdf_voxelgrid.GetDevice().ToString()),
+          attr_dtype_map_(tsdf_voxelgrid.GetAttrDtypeMap()) {}
 
     bool ConvertToJsonValue(Json::Value &value) const override {
         value["voxel_size"] = voxel_size_;
