@@ -571,12 +571,11 @@ private:
                 // Tensor Pointcloud.
                 if (registration_method_ == "PointToPlane" &&
                     !pointcloud_local.HasPointNormals()) {
-                    auto pointcloud_legacy =
-                            pointcloud_local.ToLegacyPointCloud();
+                    auto pointcloud_legacy = pointcloud_local.ToLegacy();
                     pointcloud_legacy.EstimateNormals(
                             open3d::geometry::KDTreeSearchParamKNN(), false);
                     core::Tensor pointcloud_normals =
-                            t::geometry::PointCloud::FromLegacyPointCloud(
+                            t::geometry::PointCloud::FromLegacy(
                                     pointcloud_legacy)
                                     .GetPointNormals()
                                     .To(dtype_);

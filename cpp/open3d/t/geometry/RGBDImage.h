@@ -111,9 +111,9 @@ public:
     }
 
     /// Convert to the legacy RGBDImage format.
-    open3d::geometry::RGBDImage ToLegacyRGBDImage() const {
-        return open3d::geometry::RGBDImage(color_.ToLegacyImage(),
-                                           depth_.ToLegacyImage());
+    open3d::geometry::RGBDImage ToLegacy() const {
+        return open3d::geometry::RGBDImage(color_.ToLegacy(),
+                                           depth_.ToLegacy());
     }
 
     /// Text description.

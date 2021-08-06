@@ -189,8 +189,8 @@ int main(int argc, char* argv[]) {
                 argc, argv, "--pointcloud",
                 "pcd_" + device.ToString() + ".ply");
         auto pcd = model.ExtractPointCloud(-1);
-        auto pcd_legacy = std::make_shared<open3d::geometry::PointCloud>(
-                pcd.ToLegacyPointCloud());
+        auto pcd_legacy =
+                std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
         open3d::io::WritePointCloud(filename, *pcd_legacy);
     }
 
@@ -199,7 +199,7 @@ int main(int argc, char* argv[]) {
                 argc, argv, "--mesh", "mesh_" + device.ToString() + ".ply");
         auto mesh = model.ExtractTriangleMesh(-1);
         auto mesh_legacy = std::make_shared<open3d::geometry::TriangleMesh>(
-                mesh.ToLegacyTriangleMesh());
+                mesh.ToLegacy());
         open3d::io::WriteTriangleMesh(filename, *mesh_legacy);
     }
 }
