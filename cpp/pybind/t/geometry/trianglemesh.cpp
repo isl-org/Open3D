@@ -89,6 +89,12 @@ void pybind_trianglemesh(py::module& m) {
                       "Scale points.");
     triangle_mesh.def("rotate", &TriangleMesh::Rotate, "R"_a, "center"_a,
                       "Rotate points and normals (if exist).");
+    triangle_mesh.def(
+            "has_material", &TriangleMesh::HasMaterial,
+            "Returns true if the triangle mesh has a valid material assigned");
+    triangle_mesh.def_property("material", &TriangleMesh::GetMaterial,
+                               &TriangleMesh::SetMaterial);
+
     triangle_mesh.def_static(
             "from_legacy_triangle_mesh", &TriangleMesh::FromLegacyTriangleMesh,
             "mesh_legacy"_a, "vertex_dtype"_a = core::Float32,
