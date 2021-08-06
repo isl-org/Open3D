@@ -47,7 +47,7 @@ namespace geometry {
 ///         - TriangleMesh::GetVertexPositions()
 ///         - TriangleMesh::SetVertexPositions(vertex_positions)
 ///         - TriangleMesh::HasVertexPositions()
-///         - Value tensor must have shape {num_vertices, 3.
+///         - Value tensor must have shape {num_vertices, 3}.
 ///     - Triangle indices
 ///         - TriangleMesh::GetTriangleIndices()
 ///         - TriangleMesh::SetTriangleIndices(triangle_indices)
