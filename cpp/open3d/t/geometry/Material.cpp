@@ -46,6 +46,12 @@ void Material::SetDefaultProperties() {
     SetLineWidth(1.f);
 }
 
+void Material::SetTextureMap(const std::string &key, const Image &image) {
+    // Image must be on CPU. If Image is already on CPU the following does not
+    // perform an uneccesasry copy
+    texture_maps_[key] = image.CPU();
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

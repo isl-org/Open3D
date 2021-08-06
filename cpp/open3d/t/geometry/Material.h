@@ -84,10 +84,7 @@ public:
     ///
     /// \param key map name
     /// \param image Image associated with map name
-    void SetTextureMap(const std::string &key, const Image &image) {
-        // TODO :assert device
-        texture_maps_[key] = image;
-    }
+    void SetTextureMap(const std::string &key, const Image &image);
 
     /// Set scalar property. If property already exists it is overwritten,
     /// otherwise a new key/value will be created.
