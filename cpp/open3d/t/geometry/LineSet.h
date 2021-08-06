@@ -307,7 +307,7 @@ public:
     /// Custom attributes (e.g.: point or line normals) are not transformed.
     ///
     /// Extracts \f$ R, t \f$ from Transformation \f[
-    /// T_{(4,4)} = \begin{bmatrix} R_{(3,3)} & t_{(3,1)} \\
+    /// T_{(4,4)} = \begin{bmatrix} R_{(3,3)} & t_{(3,1)} \\*
     ///                             O_{(1,3)} & s_{(1,1)} \end{bmatrix} \f]
     ///  It Assumes \f$s = 1\f$ (no scaling) and \f$O = [0,0,0]\f$ and applies
     ///  the transformation as \f$P = R(P) + t\f$.
