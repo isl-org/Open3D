@@ -89,7 +89,7 @@ INSTANTIATE_TEST_SUITE_P(ReadWritePC, ReadWriteTPC, testing::ValuesIn(pcArgs));
 
 TEST_P(ReadWriteTPC, Basic) {
     ReadWritePCArgs args = GetParam();
-    core::Device device("CPU", 0);
+    core::Device device("CPU:0");
     core::Dtype dtype = core::Float64;
     t::geometry::PointCloud pc1(device);
 
@@ -134,7 +134,7 @@ TEST_P(ReadWriteTPC, Basic) {
 
 TEST_P(ReadWriteTPC, WriteBadData) {
     ReadWritePCArgs args = GetParam();
-    core::Device device("CPU", 0);
+    core::Device device("CPU:0");
     core::Dtype dtype = core::Float64;
     t::geometry::PointCloud pc1(device);
 

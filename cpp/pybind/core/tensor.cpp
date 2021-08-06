@@ -473,24 +473,20 @@ void pybind_core_tensor(py::module& m) {
 
     // Device transfer.
     tensor.def(
+            "cpu",
+            [](const Tensor& tensor) {
+                return tensor.To(core::Device("CPU:0"));
+            },
+            "Transfer the tensor to CPU. If the tensor "
+            "is already on CPU, no copy will be performed.");
+    tensor.def(
             "cuda",
             [](const Tensor& tensor, int device_id) {
-                if (!cuda::IsAvailable()) {
-                    utility::LogError(
-                            "CUDA is not available, cannot copy Tensor.");
-                }
-                if (device_id < 0 || device_id >= cuda::DeviceCount()) {
-                    utility::LogError(
-                            "Invalid device_id {}, must satisfy 0 <= "
-                            "device_id < {}",
-                            device_id, cuda::DeviceCount());
-                }
-                return tensor.To(Device(Device::DeviceType::CUDA, device_id));
+                return tensor.To(core::Device("CUDA", device_id));
             },
+            "Transfer the tensor to a CUDA device. If the tensor is already "
+            "on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
-    tensor.def("cpu", [](const Tensor& tensor) {
-        return tensor.To(Device(Device::DeviceType::CPU, 0));
-    });
 
     // Buffer I/O for Numpy and DLPack(PyTorch).
     tensor.def("numpy", &core::TensorToPyArray);

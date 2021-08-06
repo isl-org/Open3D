@@ -226,12 +226,6 @@ Hashmap Hashmap::To(const Device& device, bool copy) const {
     return new_hashmap;
 }
 
-Hashmap Hashmap::CPU() const { return To(Device("CPU:0"), /*copy=*/false); }
-
-Hashmap Hashmap::CUDA(int device_id) const {
-    return To(Device(Device::DeviceType::CUDA, device_id), /*copy=*/false);
-}
-
 int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
 
 int64_t Hashmap::GetCapacity() const { return device_hashmap_->GetCapacity(); }

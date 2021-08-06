@@ -723,7 +723,7 @@ protected:
                 surface_.pcd =
                         model_->ExtractPointCloud(prop_values_.pointcloud_size,
                                                   std::min<float>(idx, 3.0f))
-                                .CPU();
+                                .To(core::Device("CPU:0"));
                 is_scene_updated_ = true;
             }
 
