@@ -321,8 +321,8 @@ TEST(TPointCloudIO, ReadWritePointCloudAsNPZ) {
     t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd_ply,
                           {"auto", false, false, true});
 
-    core::Tensor custom_attr =
-            core::Tensor::Ones(pcd_ply.GetPoints().GetShape(), core::Float32);
+    core::Tensor custom_attr = core::Tensor::Ones(
+            pcd_ply.GetPointPositions().GetShape(), core::Float32);
     pcd_ply.SetPointAttr("custom_attr", custom_attr);
 
     std::string filename =
