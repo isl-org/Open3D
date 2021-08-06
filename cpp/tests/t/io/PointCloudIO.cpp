@@ -105,6 +105,7 @@ TEST_P(ReadWriteTPC, Basic) {
     EXPECT_TRUE(t::io::WritePointCloud(
             args.filename, pc1,
             {bool(args.write_ascii), bool(args.compressed), true}));
+
     t::geometry::PointCloud pc2(device);
     EXPECT_TRUE(t::io::ReadPointCloud(args.filename, pc2,
                                       {"auto", false, false, true}));
