@@ -15,7 +15,7 @@ default_json_content = {
     "multiprocessing": True,
     "input": {
         "depth_folder": "depth",
-        "color_folder": "image",
+        "color_folder": "color",
         "depth_min": 0.1,
         "depth_max": 3.0,
         "depth_scale": 1000.0

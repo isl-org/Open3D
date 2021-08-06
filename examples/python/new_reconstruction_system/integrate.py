@@ -290,6 +290,12 @@ if __name__ == '__main__':
                         default='',
                         help='path to the intrinsic.json config file.'
                         'By default PrimeSense intrinsics is used.')
+    parser.add_argument('--depth_folder', type=str,
+                        default='depth',
+                        help='subfolder name that contains depth files')
+    parser.add_argument('--color_folder', type=str,
+                        default='color',
+                        help='subfolder name that contains color files')
     parser.add_argument('--depth_scale',
                         type=float,
                         default=1000.0,
@@ -336,6 +342,8 @@ if __name__ == '__main__':
         config.device = args.device
         config.input.depth_scale = args.depth_scale
         config.input.depth_max = args.depth_max
+        config.input.depth_folder = args.depth_folder
+        config.input.color_folder = args.color_folder
         config.integration.voxel_size = args.voxel_size
         config.integration.sdf_trunc = args.sdf_trunc
         config.integration.surface_weight_threshold = args.surface_weight_threshold
