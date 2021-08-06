@@ -312,6 +312,7 @@ TEST_P(PointCloudPermuteDevices, ToLegacy) {
 }
 
 TEST_P(PointCloudPermuteDevices, Getters) {
+    using ::testing::AnyOf;
     core::Device device = GetParam();
     core::Dtype dtype = core::Float32;
 
@@ -337,9 +338,11 @@ TEST_P(PointCloudPermuteDevices, Getters) {
     EXPECT_ANY_THROW(const core::Tensor& tl = pcd.GetPointNormals(); (void)tl);
 
     // ToString
-    EXPECT_EQ(pcd.ToString(),
-              "PointCloud on CPU:0 [2 points (Float32)] "
-              "Attributes: colors (Float32, 3), labels (Float32, 3).");
+    std::string text = "PointCloud on " + device.ToString() +
+                       " [2 points (Float32)] Attributes: ";
+    EXPECT_THAT(pcd.ToString(),  // Compiler dependent output
+                AnyOf(text + "colors (Float32, 3), labels (Float32, 3).",
+                      text + "labels (Float32, 3), colors (Float32, 3)."));
 }
 
 TEST_P(PointCloudPermuteDevices, Setters) {

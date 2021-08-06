@@ -26,6 +26,8 @@
 
 #include "open3d/t/geometry/LineSet.h"
 
+#include <gmock/gmock.h>
+
 #include "core/CoreTest.h"
 #include "open3d/core/TensorList.h"
 #include "tests/UnitTest.h"
@@ -85,6 +87,7 @@ TEST_P(LineSetPermuteDevices, ConstructFromPointPositions) {
 }
 
 TEST_P(LineSetPermuteDevices, Getters) {
+    using ::testing::AnyOf;
     core::Device device = GetParam();
 
     core::Tensor points = core::Tensor::Ones({2, 3}, core::Float32, device);
@@ -127,9 +130,12 @@ TEST_P(LineSetPermuteDevices, Getters) {
                     (void)tl);
 
     // ToString
-    EXPECT_EQ(lineset.ToString(), R"(LineSet on CPU:0
-[2 points (Float32)] Attributes: labels (Float32, 3).
-[2 lines (Int64)] Attributes: labels (Float32, 3), colors (Float32, 3).)");
+    std::string text = "LineSet on " + device.ToString() +
+                       "\n[2 points (Float32)] Attributes: labels (Float32, 3)."
+                       "\n[2 lines (Int64)] Attributes: ";
+    EXPECT_THAT(lineset.ToString(),  // Compiler dependent output
+                AnyOf(text + "labels (Float32, 3), colors (Float32, 3).",
+                      text + "colors (Float32, 3), labels (Float32, 3)."));
 }
 
 TEST_P(LineSetPermuteDevices, Setters) {
@@ -255,12 +261,15 @@ TEST_P(LineSetPermuteDevicePairs, Copy_CopyDevice) {
 
     EXPECT_EQ(lineset_copy_dev.GetDevice(), dst_device);
     // CopyDevice has the same attributes and values as source.
-    EXPECT_TRUE(lineset_copy_dev.GetPointPositions().AllClose(
-            lineset.GetPointPositions()));
-    EXPECT_TRUE(lineset_copy_dev.GetLineIndices().AllClose(
-            lineset.GetLineIndices()));
-    EXPECT_TRUE(lineset_copy_dev.GetPointAttr("labels").AllClose(
-            lineset.GetPointAttr("labels")));
+    EXPECT_TRUE(lineset_copy_dev.GetPointPositions()
+                        .To(src_device)
+                        .AllClose(lineset.GetPointPositions()));
+    EXPECT_TRUE(lineset_copy_dev.GetLineIndices()
+                        .To(src_device)
+                        .AllClose(lineset.GetLineIndices()));
+    EXPECT_TRUE(lineset_copy_dev.GetPointAttr("labels")
+                        .To(src_device)
+                        .AllClose(lineset.GetPointAttr("labels")));
 }
 
 TEST_P(LineSetPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
