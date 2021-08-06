@@ -17,7 +17,6 @@ pwd = Path(os.path.dirname(os.path.realpath(__file__)))
 open3d_root = pwd.parent.parent.parent
 
 
-
 class O3DKnn:
 
     def __init__(self):
