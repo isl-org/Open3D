@@ -26,13 +26,11 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
@@ -42,6 +40,11 @@
 
 namespace open3d {
 namespace t {
+
+namespace io {
+class TSDFVoxelGridMetadata;
+}
+
 namespace geometry {
 
 /// Scalable voxel grid specialized for TSDF integration.
@@ -156,12 +159,40 @@ public:
                   false);
     }
 
+    float GetVoxelSize() const { return voxel_size_; }
+
+    float GetSDFTrunc() const { return sdf_trunc_; }
+
+    int64_t GetBlockResolution() const { return block_resolution_; }
+
+    int64_t GetBlockCount() const { return block_count_; }
+
+    std::unordered_map<std::string, core::Dtype> GetAttrDtypeMap() const {
+        return attr_dtype_map_;
+    }
+
     core::Device GetDevice() const { return device_; }
 
     std::shared_ptr<core::Hashmap> GetBlockHashmap() { return block_hashmap_; }
 
-protected:
-    /// Return  addrs and masks for radius (3) neighbor entries.
+    std::shared_ptr<core::Hashmap> GetBlockHashmap() const {
+        return block_hashmap_;
+    }
+
+private:
+    float voxel_size_;
+
+    float sdf_trunc_;
+
+    int64_t block_resolution_;
+
+    int64_t block_count_;
+
+    std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
+
+    core::Device device_ = core::Device("CPU:0");
+
+    /// Return addrs and masks for radius (3) neighbor entries.
     /// We first find all active entries in the hashmap with there coordinates.
     /// We then query these coordinates and their 3^3 neighbors.
     /// addrs_nb: indexer used for the internal hashmap to access voxel block
@@ -173,22 +204,13 @@ protected:
     std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
             const core::Tensor &active_addrs);
 
-    float voxel_size_;
-    float sdf_trunc_;
-
-    int64_t block_resolution_;
-    int64_t block_count_;
-
-    core::Device device_ = core::Device("CPU:0");
-
     // Global hashmap
     std::shared_ptr<core::Hashmap> block_hashmap_;
 
     // Local hashmap for the `unique` operation of input points
     std::shared_ptr<core::Hashmap> point_hashmap_;
-    core::Tensor active_block_coords_;
 
-    std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
+    core::Tensor active_block_coords_;
 };
 }  // namespace geometry
 }  // namespace t
