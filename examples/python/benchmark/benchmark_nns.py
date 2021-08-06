@@ -11,6 +11,11 @@ import numpy as np
 import open3d as o3d
 import tabulate
 from matplotlib import pyplot as plt
+from pathlib import Path
+
+pwd = Path(os.path.dirname(os.path.realpath(__file__)))
+open3d_root = pwd.parent.parent.parent
+
 
 
 class O3DKnn:
@@ -87,7 +92,7 @@ if __name__ == "__main__":
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--file",
                         action="append",
-                        default=["/root/code/Open3D/small_tower.ply"])
+                        default=[str(open3d_root / "small_tower.ply")])
     args = parser.parse_args()
 
     # cuda device
