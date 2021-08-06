@@ -52,22 +52,22 @@ dist/
 compile_commands.json
 
 # Example resources
-data/downloads
+data/common/downloads
 examples/python/reconstruction_system/dataset/
-data/fountain_small
-data/Armadillo.ply
-data/Bunny.ply
-data/eagle.ply
-data/voxelized.ply
+data/common/fountain_small
+data/common/Armadillo.ply
+data/common/Bunny.ply
+data/common/eagle.ply
+data/common/voxelized.ply
 examples/python/geometry/voxel_grid_test.ply
 examples/python/benchmark/testdata/
 examples/python/misc/test.jpg
-data/GraphOptimization/pose_graph_example_fragment_optimized.json
-data/GraphOptimization/pose_graph_example_global_optimized.json
-data/depth/
-data/image/
-data/sync.ply
-data/sync.png
+data/common/GraphOptimization/pose_graph_example_fragment_optimized.json
+data/common/GraphOptimization/pose_graph_example_global_optimized.json
+data/common/depth/
+data/common/image/
+data/common/sync.ply
+data/common/sync.png
 examples/python/pipelines/multiway_registration.pcd
 examples/python/geometry/test.json
 examples/python/visualization/viewpoint.json
