@@ -45,7 +45,7 @@ public:
 
         block_resolution_ = tsdf_voxelgrid.block_resolution_;
         block_count_ = tsdf_voxelgrid.block_count_;
-        device_ = tsdf_voxelgrid.device_.ToString();
+        device_ = tsdf_voxelgrid.GetDevice().ToString();
 
         attr_dtype_map_ = tsdf_voxelgrid.attr_dtype_map_;
     }

@@ -174,7 +174,6 @@ public:
     int64_t block_resolution_;
     int64_t block_count_;
 
-    core::Device device_ = core::Device("CPU:0");
     std::unordered_map<std::string, core::Dtype> attr_dtype_map_;
 
 protected:
@@ -196,6 +195,8 @@ protected:
     // Local hashmap for the `unique` operation of input points
     std::shared_ptr<core::Hashmap> point_hashmap_;
     core::Tensor active_block_coords_;
+
+    core::Device device_ = core::Device("CPU:0");
 };
 }  // namespace geometry
 }  // namespace t
