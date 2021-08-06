@@ -26,13 +26,11 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
