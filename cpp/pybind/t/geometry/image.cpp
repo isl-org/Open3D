@@ -240,10 +240,9 @@ void pybind_image(py::module &m) {
               "If true, a new tensor is always created; if false, the copy is "
               "avoided when the original tensor already has the targeted "
               "dtype."}});
-    image.def("to_legacy_image", &Image::ToLegacyImage,
-              "Convert to legacy Image type.");
-    image.def_static("from_legacy_image", &Image::FromLegacyImage,
-                     "image_legacy"_a, "device"_a = core::Device("CPU:0"),
+    image.def("to_legacy", &Image::ToLegacy, "Convert to legacy Image type.");
+    image.def_static("from_legacy", &Image::FromLegacy, "image_legacy"_a,
+                     "device"_a = core::Device("CPU:0"),
                      "Create a Image from a legacy Open3D Image.");
     image.def("as_tensor", &Image::AsTensor);
 
@@ -251,7 +250,7 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "get_max_bound");
     docstring::ClassMethodDocInject(m, "Image", "clear");
     docstring::ClassMethodDocInject(m, "Image", "is_empty");
-    docstring::ClassMethodDocInject(m, "Image", "to_legacy_image");
+    docstring::ClassMethodDocInject(m, "Image", "to_legacy");
 
     py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
                Geometry>
@@ -300,7 +299,7 @@ void pybind_image(py::module &m) {
                  "performed.",
                  "device_id"_a = 0)
             // Conversion.
-            .def("to_legacy_rgbd_image", &RGBDImage::ToLegacyRGBDImage,
+            .def("to_legacy", &RGBDImage::ToLegacy,
                  "Convert to legacy RGBDImage type.")
             // Description.
             .def("__repr__", &RGBDImage::ToString);
@@ -309,7 +308,7 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "RGBDImage", "get_max_bound");
     docstring::ClassMethodDocInject(m, "RGBDImage", "clear");
     docstring::ClassMethodDocInject(m, "RGBDImage", "is_empty");
-    docstring::ClassMethodDocInject(m, "RGBDImage", "to_legacy_rgbd_image");
+    docstring::ClassMethodDocInject(m, "RGBDImage", "to_legacy");
     docstring::ClassMethodDocInject(m, "RGBDImage", "__init__",
                                     map_shared_argument_docstrings);
 }

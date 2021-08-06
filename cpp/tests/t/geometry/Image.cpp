@@ -772,7 +772,7 @@ TEST_P(ImagePermuteDevices, Dilate) {
 }
 
 // tImage: (r, c, ch) | legacy Image: (u, v, ch) = (c, r, ch)
-TEST_P(ImagePermuteDevices, ToLegacyImage) {
+TEST_P(ImagePermuteDevices, ToLegacy) {
     core::Device device = GetParam();
     // 2 byte dtype is general enough for uin8_t as well as float
     core::Dtype dtype = core::UInt16;
@@ -783,7 +783,7 @@ TEST_P(ImagePermuteDevices, ToLegacyImage) {
 
     // Test 1 channel image conversion
     t::geometry::Image im_1ch(t_1ch);
-    geometry::Image leg_im_1ch = im_1ch.ToLegacyImage();
+    geometry::Image leg_im_1ch = im_1ch.ToLegacy();
     for (int r = 0; r < im_1ch.GetRows(); ++r)
         for (int c = 0; c < im_1ch.GetCols(); ++c)
             EXPECT_EQ(im_1ch.At(r, c).Item<uint16_t>(),
@@ -795,7 +795,7 @@ TEST_P(ImagePermuteDevices, ToLegacyImage) {
             {2, 2, 3}, dtype, device);
     // Test 3 channel image conversion
     t::geometry::Image im_3ch(t_3ch);
-    geometry::Image leg_im_3ch = im_3ch.ToLegacyImage();
+    geometry::Image leg_im_3ch = im_3ch.ToLegacy();
     for (int r = 0; r < im_3ch.GetRows(); ++r)
         for (int c = 0; c < im_3ch.GetCols(); ++c)
             for (int ch = 0; ch < im_3ch.GetChannels(); ++ch)
@@ -866,8 +866,8 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
 
     core::Tensor intrinsic_t = CreateIntrinsics();
     auto vertex_map = depth_clipped.CreateVertexMap(intrinsic_t, invalid_fill);
-    visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
-            vertex_map.ToLegacyImage())});
+    visualization::DrawGeometries(
+            {std::make_shared<open3d::geometry::Image>(vertex_map.ToLegacy())});
 }
 
 TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
@@ -899,7 +899,7 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
         normal_map.AsTensor() = normal_map.AsTensor().Abs();
         visualization::DrawGeometries(
                 {std::make_shared<open3d::geometry::Image>(
-                        normal_map.ToLegacyImage())});
+                        normal_map.ToLegacy())});
     }
 }
 
@@ -914,12 +914,12 @@ TEST_P(ImagePermuteDevices, DISABLED_ColorizeDepth) {
 
     auto color_depth = depth.ColorizeDepth(1000.0, 0.0, 3.0);
     visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
-            color_depth.ToLegacyImage())});
+            color_depth.ToLegacy())});
 
     auto depth_clipped = depth.ClipTransform(1000.0, 0.0, 3.0, 0.0);
     auto color_depth_clipped = depth_clipped.ColorizeDepth(1.0, 0.0, 3.0);
     visualization::DrawGeometries({std::make_shared<open3d::geometry::Image>(
-            color_depth_clipped.ToLegacyImage())});
+            color_depth_clipped.ToLegacy())});
 }
 }  // namespace tests
 }  // namespace open3d
