@@ -12,9 +12,16 @@ import argparse
 import glob
 
 
-def load_image_file_names(path_dataset, config):
-    depth_folder = os.path.join(path_dataset, config.input.depth_folder)
-    color_folder = os.path.join(path_dataset, config.input.color_folder)
+def load_image_file_names(config):
+    if not os.path.exists(config.path_dataset):
+        print(
+            'Path \'{}\' not found.'.format(config.path_dataset),
+            'Please provide --path_dataset in the command line or the config file.'
+        )
+        return [], []
+
+    depth_folder = os.path.join(config.path_dataset, config.depth_folder)
+    color_folder = os.path.join(config.path_dataset, config.color_folder)
 
     # Only 16-bit png depth is supported
     depth_file_names = glob.glob(os.path.join(depth_folder, '*.png'))
@@ -31,17 +38,17 @@ def load_image_file_names(path_dataset, config):
             return sorted(depth_file_names), sorted(color_file_names)
 
     print(
-        'Found {} depth images, but cannot find matched number of color images with extensions {}, abort!'
-        .format(n_depth, extensions))
+        'Found {} depth images in {}, but cannot find matched number of color images in {} with extensions {}, abort!'
+        .format(n_depth, depth_folder, color_folder, extensions))
     return [], []
 
 
-def load_intrinsic(path_intrinsic, config):
-    if path_intrinsic is None or path_intrinsic == '':
+def load_intrinsic(config):
+    if config.path_intrinsic is None or config.path_intrinsic == '':
         intrinsic = o3d.camera.PinholeCameraIntrinsic(
             o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     else:
-        intrinsic = o3d.io.read_pinhole_camera_intrinsic(path_intrinsic)
+        intrinsic = o3d.io.read_pinhole_camera_intrinsic(config.path_intrinsic)
 
     if config.engine == 'legacy':
         return intrinsic
@@ -105,23 +112,23 @@ def save_poses(
 def init_volume(mode, config):
     if config.engine == 'legacy':
         return o3d.pipelines.integration.ScalableTSDFVolume(
-            voxel_length=config.integration.voxel_size,
-            sdf_trunc=config.integration.sdf_trunc,
+            voxel_length=config.voxel_size,
+            sdf_trunc=config.sdf_trunc,
             color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
 
     elif config.engine == 'tensor':
         if mode == 'scene':
-            block_count = config.integration.scene_block_count
+            block_count = config.block_count
         else:
-            block_count = config.integration.fragment_block_count
+            block_count = config.block_count
         return o3d.t.geometry.TSDFVoxelGrid(
             {
                 'tsdf': o3d.core.Dtype.Float32,
                 'weight': o3d.core.Dtype.UInt16,
                 'color': o3d.core.Dtype.UInt16
             },
-            voxel_size=config.integration.voxel_size,
-            sdf_trunc=config.integration.sdf_trunc,
+            voxel_size=config.voxel_size,
+            sdf_trunc=config.sdf_trunc,
             block_resolution=16,
             block_count=block_count,
             device=o3d.core.Device(config.device))
@@ -142,10 +149,10 @@ def extract_pointcloud(volume, config, file_name=None):
 
     elif config.engine == 'tensor':
         pcd = volume.extract_surface_points(
-            weight_threshold=config.integration.surface_weight_threshold)
+            weight_threshold=config.surface_weight_thr)
 
         if file_name is not None:
-            o3d.io.write_point_cloud(file_name, pcd.to_legacy_pointcloud())
+            o3d.io.write_point_cloud(file_name, pcd.to_legacy())
 
     return pcd
 
@@ -160,8 +167,8 @@ def extract_trianglemesh(volume, config, file_name=None):
 
     elif config.engine == 'tensor':
         mesh = volume.extract_surface_mesh(
-            weight_threshold=config.integration.surface_weight_threshold)
-        mesh = mesh.to_legacy_triangle_mesh()
+            weight_threshold=config.surface_weight_thr)
+        mesh = mesh.to_legacy()
 
         if file_name is not None:
             o3d.io.write_triangle_mesh(file_name, mesh)
