@@ -1,9 +1,0 @@
-{
-    "serial": "",
-    "color_format": "RS2_FORMAT_ANY",
-    "color_resolution": "0,0",
-    "depth_format": "RS2_FORMAT_ANY",
-    "depth_resolution": "0,0",
-    "fps": "0",
-    "visual_preset": ""
-}
