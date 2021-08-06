@@ -28,9 +28,9 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/t/io/HashmapIO.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
-
 namespace open3d {
 namespace core {
 
@@ -194,6 +194,14 @@ void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
 
 void Hashmap::Clear() { device_hashmap_->Clear(); }
 
+void Hashmap::Save(const std::string& file_name) {
+    t::io::WriteHashmap(file_name, *this);
+}
+
+Hashmap Hashmap::Load(const std::string& file_name) {
+    return t::io::ReadHashmap(file_name);
+}
+
 Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
 Hashmap Hashmap::To(const Device& device, bool copy) const {
@@ -216,12 +224,6 @@ Hashmap Hashmap::To(const Device& device, bool copy) const {
                        values.IndexGet({active_indices}), addrs, masks);
 
     return new_hashmap;
-}
-
-Hashmap Hashmap::CPU() const { return To(Device("CPU:0"), /*copy=*/false); }
-
-Hashmap Hashmap::CUDA(int device_id) const {
-    return To(Device(Device::DeviceType::CUDA, device_id), /*copy=*/false);
 }
 
 int64_t Hashmap::Size() const { return device_hashmap_->Size(); }

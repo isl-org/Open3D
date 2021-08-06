@@ -89,7 +89,7 @@ INSTANTIATE_TEST_SUITE_P(ReadWritePC, ReadWriteTPC, testing::ValuesIn(pcArgs));
 
 TEST_P(ReadWriteTPC, Basic) {
     ReadWritePCArgs args = GetParam();
-    core::Device device("CPU", 0);
+    core::Device device("CPU:0");
     core::Dtype dtype = core::Float64;
     t::geometry::PointCloud pc1(device);
 
@@ -105,6 +105,7 @@ TEST_P(ReadWriteTPC, Basic) {
     EXPECT_TRUE(t::io::WritePointCloud(
             args.filename, pc1,
             {bool(args.write_ascii), bool(args.compressed), true}));
+
     t::geometry::PointCloud pc2(device);
     EXPECT_TRUE(t::io::ReadPointCloud(args.filename, pc2,
                                       {"auto", false, false, true}));
@@ -134,7 +135,7 @@ TEST_P(ReadWriteTPC, Basic) {
 
 TEST_P(ReadWriteTPC, WriteBadData) {
     ReadWritePCArgs args = GetParam();
-    core::Device device("CPU", 0);
+    core::Device device("CPU:0");
     core::Dtype dtype = core::Float64;
     t::geometry::PointCloud pc1(device);
 
@@ -311,6 +312,31 @@ TEST(TPointCloudIO, WritePTSColorConversion2) {
     EXPECT_EQ(pcd_read.GetPointColors().ToFlatVector<uint8_t>(),
               std::vector<uint8_t>({255, 0, 0, 255, 0, 255}));
     std::remove(file_name.c_str());
+}
+
+TEST(TPointCloudIO, ReadWritePointCloudAsNPZ) {
+    // Read PointCloud from PLY file.
+    t::geometry::PointCloud pcd_ply;
+    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd_ply,
+                          {"auto", false, false, true});
+
+    core::Tensor custom_attr =
+            core::Tensor::Ones(pcd_ply.GetPoints().GetShape(), core::Float32);
+    pcd_ply.SetPointAttr("custom_attr", custom_attr);
+
+    std::string filename =
+            std::string(TEST_DATA_DIR) + "/test_npz_pointcloud.npz";
+    EXPECT_TRUE(t::io::WritePointCloud(filename, pcd_ply));
+
+    // Read from the saved pointcloud.
+    t::geometry::PointCloud pcd_npz;
+    t::io::ReadPointCloud(filename, pcd_npz, {"auto", false, false, true});
+
+    for (auto &kv : pcd_ply.GetPointAttr()) {
+        EXPECT_TRUE(kv.second.AllClose(pcd_npz.GetPointAttr(kv.first)));
+    }
+
+    std::remove(filename.c_str());
 }
 
 TEST_P(PointCloudIOPermuteDevices, WriteDeviceTestPLY) {
