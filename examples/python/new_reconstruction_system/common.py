@@ -145,7 +145,7 @@ def extract_pointcloud(volume, config, file_name=None):
             weight_threshold=config.integration.surface_weight_threshold)
 
         if file_name is not None:
-            o3d.t.io.write_point_cloud(file_name, pcd)
+            o3d.io.write_point_cloud(file_name, pcd.to_legacy_pointcloud())
 
     return pcd
 
