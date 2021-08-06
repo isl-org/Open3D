@@ -96,13 +96,10 @@ public:
 
     /// Construct a pointcloud from points.
     ///
+    /// The input tensor will be directly used as the underlying storage of the
+    /// trianglemsh (no memory copy).
+    ///
     /// \param points A tensor with element shape (3,).
-    /// - The resulting pointcloud will have the same dtype and device as the
-    /// tensor.
-    /// - If the tensor is created in-place from a pre-allocated buffer, the
-    /// tensor has a fixed size and thus the resulting pointcloud will have
-    /// a fixed size and calling to functions like `SynchronizedPushBack` will
-    /// raise an exception.
     PointCloud(const core::Tensor &points);
 
     /// Construct from points and other attributes of the points.

@@ -108,14 +108,8 @@ public:
     /// Construct a trianglemesh from vertices and triangles.
     ///
     /// The input tensors will be directly used as the underlying storage of
-    /// the trianglemsh (no memory copy). If the tensor is created in-place
-    /// from a pre-allocated buffer, the tensor has a fixed size and thus
-    /// the resulting trianglemesh will have a fixed size and calling to
-    /// functions like `SynchronizedPushBack` will raise an exception.
-    ///
-    /// The resulting trianglemesh will have the same dtype and device as the
-    /// tensor. The device for \p vertex_positions must be consistent with
-    /// \p triangle_indices.
+    /// the trianglemsh (no memory copy). The device for \p vertex_positions
+    /// must be consistent with \p triangle_indices.
     ///
     /// \param vertex_positions A tensor with element shape (3,).
     /// \param triangle_indices A tensor with element shape (3,).
