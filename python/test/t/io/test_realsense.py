@@ -44,7 +44,7 @@ from open3d_test import test_data_dir
 def test_RSBagReader():
 
     shutil.unpack_archive(test_data_dir +
-                          "/RGBD/other_formats/L515_test_s.bag.tar.xz")
+                          "/common/RGBD/other_formats/L515_test_s.bag.tar.xz")
 
     bag_reader = o3d.t.io.RSBagReader()
     bag_reader.open("L515_test_s.bag")

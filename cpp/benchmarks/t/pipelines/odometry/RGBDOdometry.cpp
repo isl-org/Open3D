@@ -64,9 +64,9 @@ static void ComputeOdometryResultPointToPlane(benchmark::State& state,
     const float depth_max = 3.0;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+            std::string(TEST_DATA_DIR) + "/common/RGBD/depth/00000.png");
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
+            std::string(TEST_DATA_DIR) + "/common/RGBD/depth/00002.png");
     src_depth = src_depth.To(device);
     dst_depth = dst_depth.To(device);
 
@@ -124,14 +124,14 @@ static void RGBDOdometryMultiScale(
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+            std::string(TEST_DATA_DIR) + "/common/RGBD/depth/00000.png");
     t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00000.jpg");
+            std::string(TEST_DATA_DIR) + "/common/RGBD/color/00000.jpg");
 
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
+            std::string(TEST_DATA_DIR) + "/common/RGBD/depth/00002.png");
     t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00002.jpg");
+            std::string(TEST_DATA_DIR) + "/common/RGBD/color/00002.jpg");
 
     t::geometry::RGBDImage source, target;
     source.color_ = src_color.To(device);

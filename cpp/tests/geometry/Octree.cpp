@@ -335,7 +335,8 @@ TEST(Octree, EightCubesTraverse) {
 TEST(Octree, FragmentPLYCheckClone) {
     // Build src_octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/common/fragment.ply",
+                       pcd);
     geometry::Octree src_octree(5);
     src_octree.ConvertFromPointCloud(pcd, 0.01);
 
@@ -355,7 +356,8 @@ TEST(Octree, EqualOperatorSpecialCase) {
 TEST(Octree, FragmentPLYLocate) {
     // Build src_octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/common/fragment.ply",
+                       pcd);
     size_t max_depth = 5;
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd, 0.01);

@@ -77,7 +77,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
         // Extrinsics
         std::string trajectory_path =
-                std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
+                std::string(TEST_DATA_DIR) + "/common/RGBD/odometry.log";
         auto trajectory =
                 io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
 
@@ -85,12 +85,12 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
             // Load image
             t::geometry::Image depth =
                     t::io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/depth/{:05d}.png",
+                            fmt::format("{}/common/RGBD/depth/{:05d}.png",
                                         std::string(TEST_DATA_DIR), i))
                             ->To(device);
             t::geometry::Image color =
                     t::io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/color/{:05d}.jpg",
+                            fmt::format("{}/common/RGBD/color/{:05d}.jpg",
                                         std::string(TEST_DATA_DIR), i))
                             ->To(device);
 
@@ -103,7 +103,8 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
         auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacyPointCloud();
         auto pcd_gt = *io::CreatePointCloudFromFile(
-                std::string(TEST_DATA_DIR) + "/RGBD/example_tsdf_pcd.ply");
+                std::string(TEST_DATA_DIR) +
+                "/common/RGBD/example_tsdf_pcd.ply");
         auto result = pipelines::registration::EvaluateRegistration(pcd, pcd_gt,
                                                                     voxel_size);
 
@@ -147,7 +148,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
 
         // Extrinsics
         std::string trajectory_path =
-                std::string(TEST_DATA_DIR) + "/RGBD/trajectory.log";
+                std::string(TEST_DATA_DIR) + "/common/RGBD/trajectory.log";
         auto trajectory =
                 io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
 
@@ -158,12 +159,12 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
             // Load image
             t::geometry::Image depth =
                     t::io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/depth/{:05d}.png",
+                            fmt::format("{}/common/RGBD/depth/{:05d}.png",
                                         std::string(TEST_DATA_DIR), i))
                             ->To(device);
             t::geometry::Image color =
                     t::io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/color/{:05d}.jpg",
+                            fmt::format("{}/common/RGBD/color/{:05d}.jpg",
                                         std::string(TEST_DATA_DIR), i))
                             ->To(device);
 
