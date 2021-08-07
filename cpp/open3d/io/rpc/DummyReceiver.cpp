@@ -36,7 +36,7 @@ namespace io {
 namespace rpc {
 
 DummyReceiver::DummyReceiver(const std::string& address, int timeout)
-    : ReceiverBase(address, timeout) {
+    : ZMQReceiver(address, timeout) {
     SetMessageProcessor(std::make_shared<DummyMessageProcessor>());
 }
 

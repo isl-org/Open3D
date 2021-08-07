@@ -42,9 +42,9 @@ target_sources(io PRIVATE
     rpc/DummyReceiver.cpp
     rpc/MessageProcessorBase.cpp
     rpc/MessageUtils.cpp
-    rpc/ReceiverBase.cpp
     rpc/RemoteFunctions.cpp
     rpc/ZMQContext.cpp
+    rpc/ZMQReceiver.cpp
 )
 
 if (BUILD_AZURE_KINECT)

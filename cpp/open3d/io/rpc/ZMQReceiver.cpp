@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/io/rpc/ZMQReceiver.h"
 
 #include <zmq.hpp>
 
@@ -52,7 +52,7 @@ namespace open3d {
 namespace io {
 namespace rpc {
 
-ReceiverBase::ReceiverBase(const std::string& address, int timeout)
+ZMQReceiver::ZMQReceiver(const std::string& address, int timeout)
     : address_(address),
       timeout_(timeout),
       keep_running_(false),
@@ -60,24 +60,24 @@ ReceiverBase::ReceiverBase(const std::string& address, int timeout)
       mainloop_error_code_(0),
       mainloop_exception_("") {}
 
-ReceiverBase::~ReceiverBase() { Stop(); }
+ZMQReceiver::~ZMQReceiver() { Stop(); }
 
-void ReceiverBase::Start() {
+void ZMQReceiver::Start() {
     {
         const std::lock_guard<std::mutex> lock(mutex_);
         if (!keep_running_) {
             keep_running_ = true;
-            thread_ = std::thread(&ReceiverBase::Mainloop, this);
+            thread_ = std::thread(&ZMQReceiver::Mainloop, this);
             // wait for the loop to start running
             while (!loop_running_.load() && !mainloop_error_code_.load()) {
                 std::this_thread::yield();
             };
 
             if (!mainloop_error_code_.load()) {
-                LogDebug("ReceiverBase: started");
+                LogDebug("ZMQReceiver: started");
             }
         } else {
-            LogDebug("ReceiverBase: already running");
+            LogDebug("ZMQReceiver: already running");
         }
     }
 
@@ -86,7 +86,7 @@ void ReceiverBase::Start() {
     }
 }
 
-void ReceiverBase::Stop() {
+void ZMQReceiver::Stop() {
     bool keep_running_old;
     {
         const std::lock_guard<std::mutex> lock(mutex_);
@@ -97,13 +97,13 @@ void ReceiverBase::Stop() {
     }
     if (keep_running_old) {
         thread_.join();
-        LogDebug("ReceiverBase: stopped");
+        LogDebug("ZMQReceiver: stopped");
     } else {
-        LogDebug("ReceiverBase: already stopped");
+        LogDebug("ZMQReceiver: already stopped");
     }
 }
 
-std::runtime_error ReceiverBase::GetLastError() {
+std::runtime_error ZMQReceiver::GetLastError() {
     const std::lock_guard<std::mutex> lock(mutex_);
     mainloop_error_code_.store(0);
     std::runtime_error result = mainloop_exception_;
@@ -111,7 +111,7 @@ std::runtime_error ReceiverBase::GetLastError() {
     return result;
 }
 
-void ReceiverBase::Mainloop() {
+void ZMQReceiver::Mainloop() {
     context_ = GetZMQContext();
     socket_ = std::unique_ptr<zmq::socket_t>(
             new zmq::socket_t(*context_, ZMQ_REP));
@@ -131,7 +131,7 @@ void ReceiverBase::Mainloop() {
         socket_->bind(address_.c_str());
     } catch (const zmq::error_t& err) {
         mainloop_exception_ = std::runtime_error(
-                "ReceiverBase::Mainloop: Failed to bind address, " +
+                "ZMQReceiver::Mainloop: Failed to bind address, " +
                 std::string(err.what()));
         mainloop_error_code_.store(1);
         return;
@@ -166,7 +166,7 @@ void ReceiverBase::Mainloop() {
 
                     if (!processor_) {
                         LogError(
-                                "ReceiverBase::Mainloop: message processor is "
+                                "ZMQReceiver::Mainloop: message processor is "
                                 "null!");
                     }
 #define PROCESS_MESSAGE(MSGTYPE)                                        \
@@ -191,7 +191,7 @@ void ReceiverBase::Mainloop() {
                     PROCESS_MESSAGE(messages::SetActiveCamera)
                     PROCESS_MESSAGE(messages::SetTime)
                     else {
-                        LogInfo("ReceiverBase::Mainloop: unsupported msg "
+                        LogInfo("ZMQReceiver::Mainloop: unsupported msg "
                                 "id '{}'",
                                 req.msg_id);
                         auto status = messages::Status::ErrorUnsupportedMsgId();
@@ -199,7 +199,7 @@ void ReceiverBase::Mainloop() {
                         break;
                     }
                 } catch (std::exception& err) {
-                    LogInfo("ReceiverBase::Mainloop:a {}", err.what());
+                    LogInfo("ZMQReceiver::Mainloop:a {}", err.what());
                     auto status = messages::Status::ErrorUnpackingFailed();
                     status.str += std::string(" with ") + err.what();
                     replies.push_back(CreateStatusMessage(status));
@@ -222,14 +222,14 @@ void ReceiverBase::Mainloop() {
                 socket_->send(reply, zmq::send_flags::none);
             }
         } catch (const zmq::error_t& err) {
-            LogInfo("ReceiverBase::Mainloop: {}", err.what());
+            LogInfo("ZMQReceiver::Mainloop: {}", err.what());
         }
     }
     socket_->close();
     loop_running_.store(false);
 }
 
-void ReceiverBase::SetMessageProcessor(
+void ZMQReceiver::SetMessageProcessor(
         std::shared_ptr<MessageProcessorBase> processor) {
     processor_ = processor;
 }

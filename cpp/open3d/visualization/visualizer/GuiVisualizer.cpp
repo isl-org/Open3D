@@ -39,7 +39,7 @@
 #include "open3d/io/ModelIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/io/rpc/ZMQReceiver.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
@@ -332,7 +332,7 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<gui::SceneWidget> scene_wgt_;
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
-    std::shared_ptr<io::rpc::ReceiverBase> receiver_;
+    std::shared_ptr<io::rpc::ZMQReceiver> receiver_;
     std::shared_ptr<MessageProcessor> message_processor_;
 
     struct Settings {
@@ -902,8 +902,7 @@ void GuiVisualizer::Layout(const gui::LayoutContext &context) {
 }
 
 void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-    impl_->receiver_ =
-            std::make_shared<io::rpc::ReceiverBase>(address, timeout);
+    impl_->receiver_ = std::make_shared<io::rpc::ZMQReceiver>(address, timeout);
     impl_->receiver_->SetMessageProcessor(impl_->message_processor_);
     try {
         utility::LogInfo("Starting to listen on {}", address);

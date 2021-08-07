@@ -37,7 +37,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/ImageIO.h"
-#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/io/rpc/ZMQReceiver.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/FileSystem.h"
@@ -306,7 +306,7 @@ struct O3DVisualizer::Impl {
     bool selections_need_update_ = true;
     std::function<void(double)> on_animation_;
     std::function<bool()> on_animation_tick_;
-    std::shared_ptr<io::rpc::ReceiverBase> receiver_;
+    std::shared_ptr<io::rpc::ZMQReceiver> receiver_;
     std::shared_ptr<MessageProcessor> message_processor_;
 
     UIState ui_state_;
@@ -1876,8 +1876,7 @@ Open3DScene *O3DVisualizer::GetScene() const {
 }
 
 void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-    impl_->receiver_ =
-            std::make_shared<io::rpc::ReceiverBase>(address, timeout);
+    impl_->receiver_ = std::make_shared<io::rpc::ZMQReceiver>(address, timeout);
     impl_->receiver_->SetMessageProcessor(impl_->message_processor_);
 
     try {

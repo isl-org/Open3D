@@ -55,18 +55,18 @@ struct SetTime;
 }  // namespace messages
 
 /// Class for the server side receiving requests from a client.
-class ReceiverBase {
+class ZMQReceiver {
 public:
     /// Constructs a receiver listening on the specified address.
     /// \param address  Address to listen on.
     /// \param timeout       Timeout in milliseconds for sending the reply.
-    ReceiverBase(const std::string& address = "tcp://127.0.0.1:51454",
-                 int timeout = 10000);
+    ZMQReceiver(const std::string& address = "tcp://127.0.0.1:51454",
+                int timeout = 10000);
 
-    ReceiverBase(const ReceiverBase&) = delete;
-    ReceiverBase& operator=(const ReceiverBase&) = delete;
+    ZMQReceiver(const ZMQReceiver&) = delete;
+    ZMQReceiver& operator=(const ZMQReceiver&) = delete;
 
-    virtual ~ReceiverBase();
+    virtual ~ZMQReceiver();
 
     /// Starts the receiver mainloop in a new thread.
     void Start();
