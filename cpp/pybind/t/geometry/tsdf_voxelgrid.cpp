@@ -27,6 +27,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -100,8 +101,22 @@ void pybind_tsdf_voxelgrid(py::module& m) {
 
     tsdf_voxelgrid.def("to", &TSDFVoxelGrid::To, "device"_a, "copy"_a = false);
     tsdf_voxelgrid.def("clone", &TSDFVoxelGrid::Clone);
-    tsdf_voxelgrid.def("cpu", &TSDFVoxelGrid::CPU);
-    tsdf_voxelgrid.def("cuda", &TSDFVoxelGrid::CUDA, "device_id"_a);
+    tsdf_voxelgrid.def(
+            "cpu",
+            [](const TSDFVoxelGrid& tsdf_voxelgrid) {
+                return tsdf_voxelgrid.To(core::Device("CPU:0"));
+            },
+            "Transfer the tsdf voxelgrid to CPU. If the tsdf voxelgrid "
+            "is already on CPU, no copy will be performed.");
+    tsdf_voxelgrid.def(
+            "cuda",
+            [](const TSDFVoxelGrid& tsdf_voxelgrid, int device_id) {
+                return tsdf_voxelgrid.To(core::Device("CUDA", device_id));
+            },
+            "Transfer the tsdf voxelgrid to a CUDA device. If the tsdf "
+            "voxelgrid is already on the specified CUDA device, no copy will "
+            "be performed.",
+            "device_id"_a = 0);
 
     tsdf_voxelgrid.def("get_block_hashmap",
                        [](const geometry::TSDFVoxelGrid& voxelgrid) {

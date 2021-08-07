@@ -115,8 +115,6 @@ public:
 
     Hashmap Clone() const;
     Hashmap To(const Device& device, bool copy = false) const;
-    Hashmap CPU() const;
-    Hashmap CUDA(int device_id = 0) const;
 
     int64_t Size() const;
 
