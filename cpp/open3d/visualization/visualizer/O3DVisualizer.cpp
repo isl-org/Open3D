@@ -37,6 +37,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/io/rpc/ReceiverBase.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/FileSystem.h"
@@ -62,8 +63,8 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
+#include "open3d/visualization/visualizer/MessageProcessor.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
-#include "open3d/visualization/visualizer/Receiver.h"
 
 #define GROUPS_USE_TREE 1
 
@@ -305,7 +306,8 @@ struct O3DVisualizer::Impl {
     bool selections_need_update_ = true;
     std::function<void(double)> on_animation_;
     std::function<bool()> on_animation_tick_;
-    std::shared_ptr<Receiver> receiver_;
+    std::shared_ptr<io::rpc::ReceiverBase> receiver_;
+    std::shared_ptr<MessageProcessor> message_processor_;
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
@@ -1809,6 +1811,19 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     : Window(title, width, height), impl_(new O3DVisualizer::Impl()) {
     impl_->Construct(this);
 
+    // Create a message processor for incoming messages.
+    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
+                              const std::string &path, int time,
+                              const std::string &layer) {
+        impl_->AddGeometry(path, geom, nullptr, nullptr, nullptr, layer, time,
+                           true);
+        if (impl_->objects_.size() == 1) {
+            impl_->ResetCameraToDefault();
+        }
+    };
+    impl_->message_processor_ =
+            std::make_shared<MessageProcessor>(this, on_geometry);
+
     // Create the app menu. We will take over the existing menubar (if any)
     // since a) we need to cache a pointer, and b) we should be the only
     // window, since the whole point of this class is to have an easy way to
@@ -1861,18 +1876,10 @@ Open3DScene *O3DVisualizer::GetScene() const {
 }
 
 void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
-                              const std::string &path, int time,
-                              const std::string &layer) {
-        impl_->AddGeometry(path, geom, nullptr, nullptr, nullptr, layer, time,
-                           true);
-        if (impl_->objects_.size() == 1) {
-            impl_->ResetCameraToDefault();
-        }
-    };
-
     impl_->receiver_ =
-            std::make_shared<Receiver>(address, timeout, this, on_geometry);
+            std::make_shared<io::rpc::ReceiverBase>(address, timeout);
+    impl_->receiver_->SetMessageProcessor(impl_->message_processor_);
+
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();

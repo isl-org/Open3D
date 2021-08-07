@@ -27,6 +27,7 @@
 #pragma once
 
 #include <atomic>
+#include <msgpack.hpp>
 #include <mutex>
 #include <thread>
 
@@ -42,8 +43,6 @@ namespace open3d {
 namespace io {
 namespace rpc {
 
-class MessageProcessorBase;
-
 namespace messages {
 struct Request;
 struct SetMeshData;
@@ -54,48 +53,47 @@ struct SetActiveCamera;
 struct SetTime;
 }  // namespace messages
 
-/// Class for the server side receiving requests from a client.
-class ReceiverBase {
+/// Base class for processing received messages.
+/// Subclass from this and implement the overloaded ProcessMessage functions as
+/// needed.
+class MessageProcessorBase {
 public:
     /// Constructs a receiver listening on the specified address.
-    /// \param address  Address to listen on.
-    /// \param timeout       Timeout in milliseconds for sending the reply.
-    ReceiverBase(const std::string& address = "tcp://127.0.0.1:51454",
-                 int timeout = 10000);
+    MessageProcessorBase();
 
-    ReceiverBase(const ReceiverBase&) = delete;
-    ReceiverBase& operator=(const ReceiverBase&) = delete;
+    virtual ~MessageProcessorBase();
 
-    virtual ~ReceiverBase();
-
-    /// Starts the receiver mainloop in a new thread.
-    void Start();
-
-    /// Stops the receiver mainloop and joins the thread.
-    /// This function blocks until the mainloop is done with processing
-    /// messages that have already been received.
-    void Stop();
-
-    /// Returns the last error from the mainloop thread.
-    std::runtime_error GetLastError();
-
-    /// Sets the message processor object which will process incoming messages.
-    void SetMessageProcessor(std::shared_ptr<MessageProcessorBase> processor);
-
-private:
-    void Mainloop();
-
-    const std::string address_;
-    const int timeout_;
-    std::shared_ptr<zmq::context_t> context_;
-    std::unique_ptr<zmq::socket_t> socket_;
-    std::thread thread_;
-    std::mutex mutex_;
-    bool keep_running_;
-    std::atomic<bool> loop_running_;
-    std::atomic<int> mainloop_error_code_;
-    std::runtime_error mainloop_exception_;
-    std::shared_ptr<MessageProcessorBase> processor_;
+    /// Function for processing a msg.
+    /// \param req  The Request object that accompanies the \p msg object.
+    ///
+    /// \param msg  The message to be processed
+    ///
+    /// \param obj  The object from which the \p msg was unpacked. Can be
+    /// used for custom unpacking.
+    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
+            const messages::Request& req,
+            const messages::SetMeshData& msg,
+            const msgpack::object_handle& obj);
+    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
+            const messages::Request& req,
+            const messages::GetMeshData& msg,
+            const msgpack::object_handle& obj);
+    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
+            const messages::Request& req,
+            const messages::SetCameraData& msg,
+            const msgpack::object_handle& obj);
+    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
+            const messages::Request& req,
+            const messages::SetProperties& msg,
+            const msgpack::object_handle& obj);
+    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
+            const messages::Request& req,
+            const messages::SetActiveCamera& msg,
+            const msgpack::object_handle& obj);
+    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
+            const messages::Request& req,
+            const messages::SetTime& msg,
+            const msgpack::object_handle& obj);
 };
 
 }  // namespace rpc

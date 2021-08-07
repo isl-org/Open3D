@@ -28,6 +28,7 @@
 
 #include <zmq.hpp>
 
+#include "open3d/io/rpc/MessageProcessorBase.h"
 #include "open3d/io/rpc/Messages.h"
 #include "open3d/io/rpc/ZMQContext.h"
 
@@ -50,11 +51,6 @@ std::shared_ptr<zmq::message_t> CreateStatusMessage(
 namespace open3d {
 namespace io {
 namespace rpc {
-
-struct ReceiverBase::MsgpackObjectHandle {
-    explicit MsgpackObjectHandle(msgpack::object_handle& obj) : obj_(obj) {}
-    msgpack::object_handle& obj_;
-};
 
 ReceiverBase::ReceiverBase(const std::string& address, int timeout)
     : address_(address),
@@ -168,7 +164,10 @@ void ReceiverBase::Mainloop() {
                     auto obj = obj_handle.get();
                     req = obj.as<messages::Request>();
 
-                    if (false) {
+                    if (!processor_) {
+                        LogError(
+                                "ReceiverBase::Mainloop: message processor is "
+                                "null!");
                     }
 #define PROCESS_MESSAGE(MSGTYPE)                                        \
     else if (MSGTYPE::MsgId() == req.msg_id) {                          \
@@ -177,7 +176,7 @@ void ReceiverBase::Mainloop() {
         auto obj = oh.get();                                            \
         MSGTYPE msg;                                                    \
         msg = obj.as<MSGTYPE>();                                        \
-        auto reply = ProcessMessage(req, msg, MsgpackObjectHandle(oh)); \
+        auto reply = processor_->ProcessMessage(req, msg, oh);          \
         if (reply) {                                                    \
             replies.push_back(reply);                                   \
         } else {                                                        \
@@ -230,77 +229,9 @@ void ReceiverBase::Mainloop() {
     loop_running_.store(false);
 }
 
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetMeshData& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::GetMeshData& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetCameraData& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetProperties& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetActiveCamera& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetTime& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
+void ReceiverBase::SetMessageProcessor(
+        std::shared_ptr<MessageProcessorBase> processor) {
+    processor_ = processor;
 }
 
 }  // namespace rpc

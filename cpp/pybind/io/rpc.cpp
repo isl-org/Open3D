@@ -49,7 +49,9 @@ void pybind_rpc(py::module& m_io) {
             m, "_ConnectionBase");
 
     py::class_<rpc::Connection, std::shared_ptr<rpc::Connection>,
-               rpc::ConnectionBase>(m, "Connection")
+               rpc::ConnectionBase>(m, "Connection", R"doc(
+The default connection class which uses a ZeroMQ socket.
+)doc")
             .def(py::init([](std::string address, int connect_timeout,
                              int timeout) {
                      return std::shared_ptr<rpc::Connection>(

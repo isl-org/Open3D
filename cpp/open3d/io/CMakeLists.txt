@@ -40,6 +40,7 @@ target_sources(io PRIVATE
     rpc/BufferConnection.cpp
     rpc/Connection.cpp
     rpc/DummyReceiver.cpp
+    rpc/MessageProcessorBase.cpp
     rpc/MessageUtils.cpp
     rpc/ReceiverBase.cpp
     rpc/RemoteFunctions.cpp

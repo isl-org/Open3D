@@ -28,10 +28,18 @@
 
 #include <zmq.hpp>
 
+#include "open3d/io/rpc/DummyMessageProcessor.h"
 #include "open3d/io/rpc/Messages.h"
 
 namespace open3d {
 namespace io {
-namespace rpc {}  // namespace rpc
+namespace rpc {
+
+DummyReceiver::DummyReceiver(const std::string& address, int timeout)
+    : ReceiverBase(address, timeout) {
+    SetMessageProcessor(std::make_shared<DummyMessageProcessor>());
+}
+
+}  // namespace rpc
 }  // namespace io
 }  // namespace open3d
