@@ -54,7 +54,7 @@ namespace geometry {
 /// - Default attribute: "positions".
 ///     - Usage
 ///         - PointCloud::GetPointPositions()
-///         - PointCloud::SetPointPositions(positions)
+///         - PointCloud::SetPointPositions(const Tensor& positions)
 ///         - PointCloud::HasPointPositions()
 ///     - Created by default, required for all pointclouds.
 ///     - Value tensor must have shape {N, 3}.
@@ -63,10 +63,10 @@ namespace geometry {
 /// - Common attributes: "normals", "colors".
 ///     - Usage
 ///         - PointCloud::GetPointNormals()
-///         - PointCloud::SetPointNormals(normals)
+///         - PointCloud::SetPointNormals(const Tensor& normals)
 ///         - PointCloud::HasPointNormals()
 ///         - PointCloud::GetPointColors()
-///         - PointCloud::SetPointColors(colors)
+///         - PointCloud::SetPointColors(const Tensor& colors)
 ///         - PointCloud::HasPointColors()
 ///     - Not created by default.
 ///     - Value tensor must have shape {N, 3}.
@@ -75,15 +75,16 @@ namespace geometry {
 ///
 /// - Custom attributes, e.g., "labels", "intensities".
 ///     - Usage
-///         - PointCloud::GetPointAttr("labels")
-///         - PointCloud::SetPointAttr("labels", labels)
-///         - PointCloud::HasPointAttr("labels")
-///     - Not created by default. Users and add their own custom attributes.
+///         - PointCloud::GetPointAttr(const std::string& key)
+///         - PointCloud::SetPointAttr(const std::string& key,
+///                                    const Tensor& value)
+///         - PointCloud::HasPointAttr(const std::string& key)
+///     - Not created by default. Users can add their own custom attributes.
 ///     - Value tensor must be on the same device as the point cloud.
 ///     - Value tensor can have any dtype.
 ///
 /// PointCloud::GetPointAttr(), PointCloud::SetPointAttr(),
-/// PointCloud::HasPointAttr() also works for default attribute "position" and
+/// PointCloud::HasPointAttr() also work for default attribute "position" and
 /// common attributes "normals" and "colors", e.g.,
 ///     - PointCloud::GetPointPositions() is the same as
 ///       PointCloud::GetPointAttr("positions")
@@ -97,9 +98,9 @@ public:
     /// Construct a pointcloud from points.
     ///
     /// The input tensor will be directly used as the underlying storage of the
-    /// trianglemsh (no memory copy).
+    /// point cloud (no memory copy).
     ///
-    /// \param points A tensor with element shape (3,).
+    /// \param points A tensor with element shape {3}.
     PointCloud(const core::Tensor &points);
 
     /// Construct from points and other attributes of the points.

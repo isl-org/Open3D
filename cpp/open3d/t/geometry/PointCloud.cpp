@@ -60,7 +60,7 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
     : Geometry(Geometry::GeometryType::PointCloud, 3),
       point_attr_(TensorMap("positions")) {
     if (map_keys_to_tensors.count("positions") == 0) {
-        utility::LogError("\"points\" attribute must be specified.");
+        utility::LogError("\"positions\" attribute must be specified.");
     }
     device_ = map_keys_to_tensors.at("positions").GetDevice();
     map_keys_to_tensors.at("positions")

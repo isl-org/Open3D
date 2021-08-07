@@ -39,18 +39,17 @@ namespace geometry {
 /// \brief A triangle mesh contains vertices and triangles.
 ///
 /// The triangle mesh class stores the attribute data in key-value maps. There
-/// are two maps by default: the vertex attributes map, and the triangle
-/// attribute map.
+/// are two maps: the vertex attributes map, and the triangle attribute map.
 ///
 /// - Default attribute: vertex_attr_["positions"], triangle_attr_["indices"]
 ///     - Vertex positions
 ///         - TriangleMesh::GetVertexPositions()
-///         - TriangleMesh::SetVertexPositions(vertex_positions)
+///         - TriangleMesh::SetVertexPositions(const Tensor& vertex_positions)
 ///         - TriangleMesh::HasVertexPositions()
 ///         - Value tensor must have shape {num_vertices, 3}.
 ///     - Triangle indices
 ///         - TriangleMesh::GetTriangleIndices()
-///         - TriangleMesh::SetTriangleIndices(triangle_indices)
+///         - TriangleMesh::SetTriangleIndices(const Tensor& triangle_indices)
 ///         - TriangleMesh::HasTriangleIndices()
 ///         - Value tensor must have shape {num_triangles, 3}.
 ///     - Created by default, required for all triangle meshes.
@@ -61,25 +60,25 @@ namespace geometry {
 ///                      triangle_attr_["normals"], triangle_attr_["colors"]
 ///     - Vertex normals
 ///         - TriangleMesh::GetVertexNormals()
-///         - TriangleMesh::SetVertexNormals(vertex_normals)
+///         - TriangleMesh::SetVertexNormals(const Tensor& vertex_normals)
 ///         - TriangleMesh::HasVertexNormals()
 ///         - Value tensor must have shape {num_vertices, 3}.
 ///         - Value tensor can have any dtype.
 ///     - Vertex colors
 ///         - TriangleMesh::GetVertexColors()
-///         - TriangleMesh::SetVertexColors(vertex_colors)
+///         - TriangleMesh::SetVertexColors(const Tensor& vertex_colors)
 ///         - TriangleMesh::HasVertexColors()
 ///         - Value tensor must have shape {num_vertices, 3}.
 ///         - Value tensor can have any dtype.
 ///     - Triangle normals
 ///         - TriangleMesh::GetTriangleNormals()
-///         - TriangleMesh::SetTriangleNormals(triangle_normals)
+///         - TriangleMesh::SetTriangleNormals(const Tensor& triangle_normals)
 ///         - TriangleMesh::HasTriangleNormals()
 ///         - Value tensor must have shape {num_triangles, 3}.
 ///         - Value tensor can have any dtype.
 ///     - Triangle colors
 ///         - TriangleMesh::GetTriangleColors()
-///         - TriangleMesh::SetTriangleColors(triangle_colors)
+///         - TriangleMesh::SetTriangleColors(const Tensor& triangle_colors)
 ///         - TriangleMesh::HasTriangleColors()
 ///         - Value tensor must have shape {num_triangles, 3}.
 ///         - Value tensor can have any dtype.
@@ -89,17 +88,19 @@ namespace geometry {
 ///
 /// - Custom attributes: e.g. vetex_attr_["labels"], triangle_attr_["labels"]
 ///     - Use generalized helper functions, e.g.:
-///         - TriangleMesh::GetVertexAttr("labels")
-///         - TriangleMesh::SetVertexAttr("labels", vertex_labels)
-///         - TriangleMesh::HasVertexAttr("labels")
-///         - TriangleMesh::GetTriangleAttr("labels")
-///         - TriangleMesh::SetTriangleAttr("labels", triangle_labels)
-///         - TriangleMesh::HasTriangleAttr("labels")
-///     - Not created by default. Users and add their own custom attributes.
+///         - TriangleMesh::GetVertexAttr(const std::string& key)
+///         - TriangleMesh::SetVertexAttr(const std::string& key,
+///                                       const Tensor& value)
+///         - TriangleMesh::HasVertexAttr(const std::string& key)
+///         - TriangleMesh::GetTriangleAttr(const std::string& key)
+///         - TriangleMesh::SetTriangleAttr(const std::string& key,
+///                                         const Tensor& value)
+///         - TriangleMesh::HasTriangleAttr(const std::string& key)
+///     - Not created by default. Users can add their own custom attributes.
 ///     - Value tensor must be on the same device as the triangle mesh.
 ///
-/// Note that the level 0 and level 1 convenience functions can also be achieved
-/// via the generalized helper functions.
+/// Note that the we can also use the generalized helper functions for the
+/// default and common attributes.
 class TriangleMesh : public Geometry {
 public:
     /// Construct an empty trianglemesh.
@@ -108,11 +109,11 @@ public:
     /// Construct a trianglemesh from vertices and triangles.
     ///
     /// The input tensors will be directly used as the underlying storage of
-    /// the trianglemsh (no memory copy). The device for \p vertex_positions
+    /// the triangle mesh (no memory copy). The device for \p vertex_positions
     /// must be consistent with \p triangle_indices.
     ///
-    /// \param vertex_positions A tensor with element shape (3,).
-    /// \param triangle_indices A tensor with element shape (3,).
+    /// \param vertex_positions A tensor with element shape {3}.
+    /// \param triangle_indices A tensor with element shape {3}.
     TriangleMesh(const core::Tensor &vertex_positions,
                  const core::Tensor &triangle_indices);
 
