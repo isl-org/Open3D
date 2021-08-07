@@ -235,19 +235,6 @@ public:
     /// Returns copy of the point cloud on the same device.
     PointCloud Clone() const;
 
-    /// Transfer the point cloud to CPU.
-    ///
-    /// If the point cloud is already on CPU, no copy will be performed.
-    PointCloud CPU() const { return To(core::Device("CPU:0")); };
-
-    /// Transfer the point cloud to a CUDA device.
-    ///
-    /// If the point cloud is already on the specified CUDA device, no copy will
-    /// be performed.
-    PointCloud CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    };
-
     /// Clear all data in the pointcloud.
     PointCloud &Clear() override {
         point_attr_.clear();
@@ -394,13 +381,13 @@ public:
             bool with_normals = false);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
-    static PointCloud FromLegacyPointCloud(
+    static PointCloud FromLegacy(
             const open3d::geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D PointCloud.
-    open3d::geometry::PointCloud ToLegacyPointCloud() const;
+    open3d::geometry::PointCloud ToLegacy() const;
 
     /// Project a point cloud to a depth image.
     geometry::Image ProjectToDepthImage(

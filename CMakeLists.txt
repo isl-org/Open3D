@@ -256,8 +256,8 @@ endif()
 set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")
 set(PROJECT_DOCS    "http://www.open3d.org/docs")
-set(PROJECT_CODE    "https://github.com/intel-isl/Open3D")
-set(PROJECT_ISSUES  "https://github.com/intel-isl/Open3D/issues")
+set(PROJECT_CODE    "https://github.com/isl-org/Open3D")
+set(PROJECT_ISSUES  "https://github.com/isl-org/Open3D/issues")
 
 # Set installation paths
 if(UNIX OR CYGWIN)
@@ -284,159 +284,26 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # Global Security options (including 3rd party code)
 # Add -fPIC for library and -fPIE for executable to compiler and linker. Does not add -pie !
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-# -Wall -Wextra -Werror or /W4 /WX are enabled for Open3D code (not 3rd party)
-if (MSVC)
-    set(HARDENING_CFLAGS
-        /sdl            # SDL Checks
-        /GS             # Code Generation: Security Check
-        /guard:cf       # Code Generation: Control Flow Guard
-        CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS
-        /INCREMENTAL:NO  # Disable incremental Linking
-        /NXCOMPAT        # Data Execution Prevention: On by default in VS2019
-        /DYNAMICBASE     # Randomized Base Address
-        /HIGHENTROPYVA   #
-        #/INTEGRITYCHECK # Signed binary: Disabled
-        CACHE STRING "Linker flags for security hardening")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
-    set(HARDENING_CFLAGS
-        -fstack-protector               # Stack-based buffer overrun detection
-        -Wformat -Wformat-security      # Format string vulnerability
-        CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS
-        -fsanitize=safe-stack       # Stack execution protection
-        -Wl,-z,relro,-z,now         # Data relocation protection
-        -pie                        # Position independent executable
-        $<$<CONFIG:Release>:LINKER:-S>  # Exclude debug info
-        CACHE STRING "Linker flags for security hardening")
-    if(NOT BUILD_SHARED_LIBS AND NOT BUILD_PYTHON_MODULE)
-        list(APPEND HARDENING_CFLAGS -fsanitize=safe-stack)   # Stack execution protection
-        list(APPEND HARDENING_LDFLAGS -fsanitize=safe-stack)  # only static libraries supported
-    endif()
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
-    set(HARDENING_CFLAGS
-        -fstack-protector               # Stack-based buffer overrun detection
-        -Wformat -Wformat-security      # Format string vulnerability
-        CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS
-        # -pie Position independent executable is default on macOSX 10.6+
-        LINKER:-dead_strip    # Remove unreachable code
-        $<$<CONFIG:Release>:LINKER:-S,-x>  # Exclude debug info, non-global symbols
-        CACHE STRING "Linker flags for security hardening")
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_definitions(_FORTIFY_SOURCE=2)     # Buffer overflow detection
-    set(HARDENING_CFLAGS
-        -fstack-protector-strong    # Stack-based buffer overrun detection
-        -Wformat -Wformat-security  # Format string vulnerability
-        CACHE STRING "Compiler flags for security hardening")
-    set(HARDENING_LDFLAGS
-        -Wl,-z,noexecstack   # Stack execution protection
-        -Wl,-z,relro,-z,now  # Data relocation protection
-        -pie                 # Position independent executable
-        $<$<CONFIG:Release>:LINKER:--strip-debug>  # Exclude debug info
-        CACHE STRING "Linker flags for security hardening")
-else()
-    message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}. No security "
-    "flags set")
-endif()
-include(CheckCXXCompilerFlag)
-foreach(FLAG ${HARDENING_CFLAGS})
-    string(MAKE_C_IDENTIFIER "${FLAG}" FLAGRESULT)
-    check_cxx_compiler_flag("${FLAG}" FLAG${FLAGRESULT})
-    if (NOT FLAG${FLAGRESULT})
-        list(REMOVE_ITEM HARDENING_CFLAGS ${FLAG})
-        message(WARNING "Compiler does not support security option ${FLAG}")
-    endif()
-endforeach()
-include(CheckLinkerFlag)
-foreach(FLAG ${HARDENING_LDFLAGS})
-    string(MAKE_C_IDENTIFIER "${FLAG}" FLAGRESULT)
-    check_linker_flag(CXX "${FLAG}" FLAG${FLAGRESULT})              # cmake 3.18+
-    if (NOT FLAG${FLAGRESULT})
-        list(REMOVE_ITEM HARDENING_LDFLAGS ${FLAG})
-        message(WARNING "Linker does not support security option ${FLAG}")
-    endif()
-endforeach()
-message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS} and
-linker flags: ${HARDENING_LDFLAGS}")
-list(TRANSFORM HARDENING_LDFLAGS REPLACE "-pie"
-    "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:-pie>")
-string(REPLACE ";" "," CUDA_HARDENING_CFLAGS "${HARDENING_CFLAGS}")
-string(REPLACE ";" "," CUDA_HARDENING_LDFLAGS "${HARDENING_LDFLAGS}")
-add_compile_options(
-    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_CFLAGS}>"
-    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>"
-    )
-add_link_options(
-    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${CUDA_HARDENING_LDFLAGS}>"
-    "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>"
-    )
+
+include(Open3DMakeHardeningFlags)
+open3d_make_hardening_flags(HARDENING_CFLAGS HARDENING_LDFLAGS)
+open3d_make_hardening_definitions(HARDENING_DEFINITIONS)
+
+message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS}")
+message(STATUS "Using security hardening linker flags: ${HARDENING_LDFLAGS}")
+message(STATUS "Using security hardening compiler definitions: ${HARDENING_DEFINITIONS}")
+
+add_compile_options("${HARDENING_CFLAGS}")
+add_link_options("${HARDENING_LDFLAGS}")
+add_compile_definitions("${HARDENING_DEFINITIONS}")
 
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
-    find_package(CUDAToolkit REQUIRED)
+    include(Open3DMakeCudaArchitectures)
+    open3d_make_cuda_architectures(CUDA_ARCHS)
+    set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCHS})
 
-    if(BUILD_COMMON_CUDA_ARCHS)
-        # Build with all supported architectures for previous 2 generations and
-        # M0 (minor=0) architectures for previous generations (inluding
-        # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
-        # This is a tradeoff between binary size / build time and runtime on
-        # older architectures.
-        # See https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility.
-        # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
-        if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
-            set(CMAKE_CUDA_ARCHITECTURES 35-real 50-real 60-real 70-real 72-real 75-real 80-real 86)
-        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-            set(CMAKE_CUDA_ARCHITECTURES 35-real 50-real 60-real 70-real 72-real 75-real 80)
-        else()
-            set(CMAKE_CUDA_ARCHITECTURES 30-real 50-real 60-real 70-real 72-real 75)
-        endif()
-    else()
-        if(CMAKE_CUDA_ARCHITECTURES)
-            message(STATUS "Building with user-provided architectures")
-        else()
-            file(WRITE
-                "${CMAKE_CURRENT_BINARY_DIR}/cuda_architectures.c"
-                "
-                #include <stdio.h>
-                #include <cuda_runtime_api.h>
-                int main() {
-                    int n;
-                    if (cudaGetDeviceCount(&n) == cudaSuccess) {
-                        for (int i = 0; i < n; ++i) {
-                            int major, minor;
-                            if (cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor,
-                                                    i) == cudaSuccess &&
-                                cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor,
-                                                    i) == cudaSuccess) {
-                                if (i > 0) {
-                                    printf(\";\");
-                                }
-                                printf(\"%d%d-real\", major, minor);
-                            }
-                        }
-                    }
-                    return 0;
-                }
-                ")
-            try_run(
-                DETECTION_RETURN_VALUE DETECTION_COMPILED
-                "${CMAKE_CURRENT_BINARY_DIR}"
-                "${CMAKE_CURRENT_BINARY_DIR}/cuda_architectures.c"
-                LINK_LIBRARIES CUDA::cudart
-                RUN_OUTPUT_VARIABLE DETECTED_ARCHITECTURES)
-            if(DETECTED_ARCHITECTURES)
-                message(STATUS "Building with detected architectures.")
-                set(CMAKE_CUDA_ARCHITECTURES ${DETECTED_ARCHITECTURES})
-            else()
-                message(STATUS "Failed to detect architectures. Falling back to CMake's default architectures.")
-            endif()
-        endif()
-    endif()
-
-    message(STATUS "CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
+    message(STATUS "Using CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
     enable_language(CUDA)
 
     if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.1")
@@ -467,7 +334,7 @@ if(WIN32)
     endif()
 endif()
 
-# Downloads files from https://github.com/intel-isl/open3d_downloads to
+# Downloads files from https://github.com/isl-org/open3d_downloads to
 # Open3D/examples/test_data/open3d_downloads.
 add_custom_target(open3d_downloads
     COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
@@ -477,155 +344,10 @@ add_custom_target(open3d_downloads
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Convenience function to link against all third-party libraries
-# We need this because we create a lot of object libraries to assemble
-# the main Open3D library
-function(open3d_link_3rdparty_libraries target)
-    target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_PRIVATE_TARGETS})
-    target_link_libraries(${target} PUBLIC ${Open3D_3RDPARTY_PUBLIC_TARGETS})
-    foreach(dep IN LISTS Open3D_3RDPARTY_HEADER_TARGETS)
-        if(TARGET ${dep})
-            get_property(inc TARGET ${dep} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-            if(inc)
-                set_property(TARGET ${target} APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${inc})
-            endif()
-            get_property(inc TARGET ${dep} PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
-            if(inc)
-                set_property(TARGET ${target} APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${inc})
-            endif()
-            get_property(def TARGET ${dep} PROPERTY INTERFACE_COMPILE_DEFINITIONS)
-            if(def)
-                set_property(TARGET ${target} APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS ${def})
-            endif()
-        endif()
-    endforeach()
-endfunction()
-
 # Check if the compiler defines the _GLIBCXX_USE_CXX11_ABI macro
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("#include <cxxabi.h>
 int main() { return _GLIBCXX_USE_CXX11_ABI; }" HAS_GLIBCXX_USE_CXX11_ABI)
-
-# Convenience function to set important target properties
-function(open3d_set_global_properties target)
-    # Tell CMake we want a compiler that supports C++14 features
-    target_compile_features(${target} PUBLIC cxx_std_14)
-
-    # Colorize GCC/Clang terminal outputs
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fdiagnostics-color=always>)
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fcolor-diagnostics>)
-    endif()
-
-    target_include_directories(${target} PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>
-        $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
-    )
-
-    # Required for static linking zeromq
-    target_compile_definitions(${target} PRIVATE ZMQ_STATIC)
-
-    # Propagate build configuration into source code
-    if (BUILD_CUDA_MODULE)
-        target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
-        if (BUILD_CACHED_CUDA_MANAGER)
-            target_compile_definitions(${target} PRIVATE BUILD_CACHED_CUDA_MANAGER)
-        endif()
-    endif()
-    if (BUILD_GUI)
-        target_compile_definitions(${target} PRIVATE BUILD_GUI)
-    endif()
-    if (ENABLE_HEADLESS_RENDERING)
-        target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
-    endif()
-    if (BUILD_AZURE_KINECT)
-        target_compile_definitions(${target} PRIVATE BUILD_AZURE_KINECT)
-    endif()
-    if (BUILD_LIBREALSENSE)
-        target_compile_definitions(${target} PRIVATE BUILD_LIBREALSENSE)
-    endif()
-    if (BUILD_WEBRTC)
-        target_compile_definitions(${target} PRIVATE BUILD_WEBRTC)
-    endif()
-    if (USE_BLAS)
-        target_compile_definitions(${target} PRIVATE USE_BLAS)
-    endif()
-    if (WITH_IPPICV)
-        target_compile_definitions(${target} PRIVATE WITH_IPPICV)
-    endif()
-    if (WITH_FAISS)
-        target_compile_definitions(${target} PRIVATE WITH_FAISS)
-    endif()
-    if (GLIBCXX_USE_CXX11_ABI)
-        target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
-    else()
-        target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
-    endif()
-
-    if(NOT WITH_OPENMP)
-        target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
-    endif()
-    if(WIN32)
-        target_compile_definitions(${target} PRIVATE
-            WINDOWS
-            _CRT_SECURE_NO_DEPRECATE
-            _CRT_NONSTDC_NO_DEPRECATE
-            _SCL_SECURE_NO_WARNINGS
-        )
-        if(MSVC)
-            target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
-            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
-            # Multi-thread compile, two ways to enable
-            # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
-            # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
-            # Option 2, at configure time: add /MP flag, no need to use Option 1
-            # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
-            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
-            if(BUILD_GUI)
-                # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
-                # Filament needs to link through bluegl.lib.
-                # See https://github.com/google/filament/issues/652
-                target_link_options(${target} PRIVATE /force:multiple)
-            endif()
-            # The examples' .pdb files use up a lot of space and cause us to run
-            # out of space on Github Actions. Compressing gives us another couple of GB.
-            target_link_options(${target} PRIVATE /pdbcompress)
-        endif()
-    elseif(APPLE)
-        target_compile_definitions(${target} PRIVATE UNIX APPLE)
-    elseif(UNIX)
-        target_compile_definitions(${target} PRIVATE UNIX)
-    endif()
-    if(LINUX_AARCH64)
-        target_compile_definitions(${target} PRIVATE LINUX_AARCH64)
-    endif()
-    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>")
-
-    # TBB static version is used
-    # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
-    target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
-
-    # Download test data files from open3d_downloads repo.
-    add_dependencies(${target} open3d_downloads)
-
-    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
-    # (from pybind11)
-    # macOS: -x: strip local symbols
-    # Linux: defaults
-    if(UNIX AND CMAKE_STRIP)
-        get_target_property(target_type ${target} TYPE)
-        if(target_type MATCHES
-                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
-            add_custom_command(TARGET ${target} POST_BUILD
-                COMMAND
-                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
-                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
-                COMMAND_EXPAND_LISTS)
-        endif()
-    endif()
-
-endfunction()
 
 macro(add_source_group module_name)
     file(GLOB MODULE_HEADER_FILES "${module_name}/*.h")
@@ -637,6 +359,11 @@ macro(add_source_group module_name)
     file(GLOB MODULE_MATERIAL_FILES "${module_name}/*.mat")
     source_group("Source Files\\Material" FILES ${MODULE_MATERIAL_FILES})
 endmacro()
+
+# Include convenience functions
+include(Open3DLink3rdpartyLibraries)
+include(Open3DSetGlobalProperties)
+include(Open3DShowAndAbortOnWarning)
 
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
@@ -690,100 +417,5 @@ add_custom_target(apply-cpp-style
     -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
 )
 
-function(open3d_aligned_print first second)
-    string(LENGTH "${first}" first_len)
-    math(EXPR star_len "40 - ${first_len}")
-    # CMake 3.15+ has string(REPEAT), but this is backwards compatible
-    string(SUBSTRING "........................................" 0 ${star_len} stars)
-    message(STATUS "  ${first} ${stars} ${second}")
-endfunction()
-
-message(STATUS "================================================================================")
-message(STATUS "Open3D ${PROJECT_VERSION} Configuration Summary")
-message(STATUS "================================================================================")
-message(STATUS "Enabled Features:")
-open3d_aligned_print("OpenMP" "${WITH_OPENMP}")
-open3d_aligned_print("Headless Rendering" "${ENABLE_HEADLESS_RENDERING}")
-open3d_aligned_print("Azure Kinect Support" "${BUILD_AZURE_KINECT}")
-open3d_aligned_print("Intel RealSense Support" "${BUILD_LIBREALSENSE}")
-open3d_aligned_print("CUDA Support" "${BUILD_CUDA_MODULE}")
-open3d_aligned_print("Build GUI" "${BUILD_GUI}")
-open3d_aligned_print("Build WebRTC visualizer" "${BUILD_WEBRTC}")
-open3d_aligned_print("Build Shared Library" "${BUILD_SHARED_LIBS}")
-if(WIN32)
-   open3d_aligned_print("Use Windows Static Runtime" "${STATIC_WINDOWS_RUNTIME}")
-endif()
-open3d_aligned_print("Build Unit Tests" "${BUILD_UNIT_TESTS}")
-open3d_aligned_print("Build Examples" "${BUILD_EXAMPLES}")
-open3d_aligned_print("Build Python Module" "${BUILD_PYTHON_MODULE}")
-open3d_aligned_print("Build Jupyter Extension" "${BUILD_JUPYTER_EXTENSION}")
-open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
-open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
-if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND
-    CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0" )
-    message( WARNING
-        "--------------------------------------------------------------------------------\n"
-        "                                                                                \n"
-        " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
-        " stability issues. See https://github.com/intel-isl/Open3D/issues/3324 and      \n"
-        " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
-        " problem.                                                                       \n"
-        "                                                                                \n"
-        " We recommend to compile PyTorch from source with compile flags                 \n"
-        "   '-Xcompiler -fno-gnu-unique'                                                 \n"
-        "                                                                                \n"
-        " or use the PyTorch wheels at                                                   \n"
-        "   https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.8.1        \n"
-        "                                                                                \n"
-        "--------------------------------------------------------------------------------\n"
-    )
-endif()
-open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
-open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
-if(GLIBCXX_USE_CXX11_ABI)
-    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "1")
-else()
-    open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "0")
-endif()
-
-message(STATUS "================================================================================")
-message(STATUS "Third-Party Dependencies:")
-set(3RDPARTY_DEPENDENCIES
-    Eigen3
-    faiss
-    filament
-    fmt
-    GLEW
-    GLFW
-    imgui
-    ippicv
-    JPEG
-    jsoncpp
-    liblzf
-    OpenGL
-    PNG
-    qhullcpp
-    librealsense
-    tinyfiledialogs
-    TinyGLTF
-    tinyobjloader
-    WebRTC
-)
-foreach(dep IN LISTS 3RDPARTY_DEPENDENCIES)
-    string(TOLOWER "${dep}" dep_lower)
-    string(TOUPPER "${dep}" dep_upper)
-    if(TARGET Open3D::3rdparty_${dep_lower})
-        if(NOT USE_SYSTEM_${dep_upper})
-            open3d_aligned_print("${dep}" "yes (build from source)")
-        else()
-            if(3rdparty_${dep_lower}_VERSION)
-                open3d_aligned_print("${dep}" "yes (v${3rdparty_${dep_lower}_VERSION})")
-            else()
-                open3d_aligned_print("${dep}" "yes")
-            endif()
-        endif()
-    else()
-        open3d_aligned_print("${dep}" "no")
-    endif()
-endforeach()
-message(STATUS "================================================================================")
+include(Open3DPrintConfigurationSummary)
+open3d_print_configuration_summary()

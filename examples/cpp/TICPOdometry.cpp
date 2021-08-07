@@ -168,7 +168,8 @@ private:
                 // Copying the pointcloud to pcd_and_bbox_.current_scan_ on the
                 // `main thread` on CPU, which is later passed to the visualizer
                 // for rendering.
-                pcd_and_bbox_.current_scan_ = pointclouds_device_[0].CPU();
+                pcd_and_bbox_.current_scan_ =
+                        pointclouds_device_[0].To(core::Device("CPU:0"));
 
                 // Removing `normal` attribute before passing it to
                 // the visualizer might give us some performance benifits.
@@ -277,7 +278,7 @@ private:
                     pcd_and_bbox_.current_scan_ =
                             target.Transform(cumulative_transform.To(device_,
                                                                      dtype_))
-                                    .CPU();
+                                    .To(core::Device("CPU:0"));
 
                     // Translate bounding box to current scan frame to model
                     // transform.
@@ -571,12 +572,11 @@ private:
                 // Tensor Pointcloud.
                 if (registration_method_ == "PointToPlane" &&
                     !pointcloud_local.HasPointNormals()) {
-                    auto pointcloud_legacy =
-                            pointcloud_local.ToLegacyPointCloud();
+                    auto pointcloud_legacy = pointcloud_local.ToLegacy();
                     pointcloud_legacy.EstimateNormals(
                             open3d::geometry::KDTreeSearchParamKNN(), false);
                     core::Tensor pointcloud_normals =
-                            t::geometry::PointCloud::FromLegacyPointCloud(
+                            t::geometry::PointCloud::FromLegacy(
                                     pointcloud_legacy)
                                     .GetPointNormals()
                                     .To(dtype_);

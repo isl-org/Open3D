@@ -348,6 +348,23 @@ TEST_P(TensorPermuteDevices, To) {
     EXPECT_EQ(dst_t.ToFlatVector<int>(), dst_vals);
 }
 
+TEST_P(TensorPermuteDevicePairs, ToDevice) {
+    core::Device dst_device;
+    core::Device src_device;
+    std::tie(dst_device, src_device) = GetParam();
+
+    core::Tensor src_t = core::Tensor::Init<float>({0, 1, 2, 3}, src_device);
+    core::Tensor dst_t = src_t.To(dst_device);
+    EXPECT_TRUE(dst_t.To(src_device).AllClose(src_t));
+
+    EXPECT_ANY_THROW(src_t.To(core::Device("CPU:1")));
+
+    // TODO: CUDA exceptions are not captured by EXPECT_ANY_THROW. Detect
+    // invalid device and throw an exception at an earlier stage.
+    // EXPECT_ANY_THROW(src_t.To(core::Device("CUDA:-1")));
+    // EXPECT_ANY_THROW(src_t.To(core::Device("CUDA:100000")));
+}
+
 TEST_P(TensorPermuteDevicePairs, CopyBroadcast) {
     core::Device dst_device;
     core::Device src_device;
@@ -1752,8 +1769,9 @@ TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {
     std::vector<int64_t> sizes = TensorSizes::TestCases();
     int64_t max_size = *std::max_element(sizes.begin(), sizes.end());
     std::vector<int> vals(max_size);
-    std::transform(vals.begin(), vals.end(), vals.begin(),
-                   [](int x) -> int { return utility::UniformRandInt(0, 3); });
+    std::transform(vals.begin(), vals.end(), vals.begin(), [](int x) -> int {
+        return utility::UniformRandIntGenerator(0, 3)();
+    });
 
     for (int64_t size : sizes) {
         int ref_result = std::accumulate(vals.begin(), vals.begin() + size, 0,

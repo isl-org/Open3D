@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
@@ -85,11 +86,19 @@ void pybind_pointcloud(py::module& m) {
                    "device"_a, "copy"_a = false);
     pointcloud.def("clone", &PointCloud::Clone,
                    "Returns a copy of the point cloud on the same device.");
-    pointcloud.def("cpu", &PointCloud::CPU,
-                   "Transfer the point cloud to CPU. If the point cloud is "
-                   "already on CPU, no copy will be performed.");
+
     pointcloud.def(
-            "cuda", &PointCloud::CUDA,
+            "cpu",
+            [](const PointCloud& pointcloud) {
+                return pointcloud.To(core::Device("CPU:0"));
+            },
+            "Transfer the point cloud to CPU. If the point cloud is "
+            "already on CPU, no copy will be performed.");
+    pointcloud.def(
+            "cuda",
+            [](const PointCloud& pointcloud, int device_id) {
+                return pointcloud.To(core::Device("CUDA", device_id));
+            },
             "Transfer the point cloud to a CUDA device. If the point cloud is "
             "already on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
@@ -153,11 +162,10 @@ void pybind_pointcloud(py::module& m) {
             "fx\n\n y "
             "= (v - cy) * z / fy");
     pointcloud.def_static(
-            "from_legacy_pointcloud", &PointCloud::FromLegacyPointCloud,
-            "pcd_legacy"_a, "dtype"_a = core::Float32,
-            "device"_a = core::Device("CPU:0"),
+            "from_legacy", &PointCloud::FromLegacy, "pcd_legacy"_a,
+            "dtype"_a = core::Float32, "device"_a = core::Device("CPU:0"),
             "Create a PointCloud from a legacy Open3D PointCloud.");
-    pointcloud.def("to_legacy_pointcloud", &PointCloud::ToLegacyPointCloud,
+    pointcloud.def("to_legacy", &PointCloud::ToLegacy,
                    "Convert to a legacy Open3D PointCloud.");
 
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image",

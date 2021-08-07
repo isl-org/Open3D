@@ -744,7 +744,7 @@ if (BUILD_LIBREALSENSE)
     if(USE_SYSTEM_LIBREALSENSE AND NOT GLIBCXX_USE_CXX11_ABI)
         # Turn off USE_SYSTEM_LIBREALSENSE.
         # Because it is affected by libraries built with different CXX ABIs.
-        # See details: https://github.com/intel-isl/Open3D/pull/2876
+        # See details: https://github.com/isl-org/Open3D/pull/2876
         message(STATUS "Set USE_SYSTEM_LIBREALSENSE=OFF, because GLIBCXX_USE_CXX11_ABI is OFF.")
         set(USE_SYSTEM_LIBREALSENSE OFF)
     endif()
@@ -1236,38 +1236,57 @@ open3d_import_3rdparty_library(3rdparty_parallelstl
 )
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
 
+# Faiss
+# Open3D should link Faiss before cuBLAS to avoid missing symbols error since
+# Faiss uses cuBLAS symbols. For the same reason, Open3D should link Faiss
+# before BLAS/Lapack if BLAS/Lapack are static libraries.
+if (WITH_FAISS AND WIN32)
+    message(STATUS "Faiss is not supported on Windows")
+    set(WITH_FAISS OFF)
+endif()
+if (WITH_FAISS)
+    message(STATUS "Building third-party library faiss from source")
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
+    open3d_import_3rdparty_library(3rdparty_faiss
+        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
+        LIBRARIES    ${FAISS_LIBRARIES}
+        LIB_DIR      ${FAISS_LIB_DIR}
+        DEPENDS      ext_faiss
+    )
+    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
+endif()
+
+# MKL/BLAS
 if(USE_BLAS)
-    # Try to locate system BLAS/LAPACK
     find_package(BLAS)
     find_package(LAPACK)
     find_package(LAPACKE)
     if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
         message(STATUS "Using system BLAS/LAPACK")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${BLAS_LIBRARIES}")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACK_LIBRARIES}")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS "${LAPACKE_LIBRARIES}")
-        if(BUILD_CUDA_MODULE)
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cusolver)
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cublas)
-        endif()
+        # OpenBLAS/LAPACK/LAPACKE are shared libraries. This is uncommon for
+        # Open3D. When building with this option, the Python wheel is less
+        # portable as it depends on the external shared libraries.
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
+            ${BLAS_LIBRARIES}
+            ${LAPACK_LIBRARIES}
+            ${LAPACKE_LIBRARIES}
+        )
     else()
-        # Compile OpenBLAS/Lapack from source. Install gfortran on Ubuntu first.
+        # Install gfortran first for compiling OpenBLAS/Lapack from source.
         message(STATUS "Building OpenBLAS with LAPACK from source")
         set(BLAS_BUILD_FROM_SOURCE ON)
 
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
-        open3d_import_3rdparty_library(3rdparty_openblas
+        open3d_import_3rdparty_library(3rdparty_blas
             HIDDEN
             INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
             LIB_DIR      ${OPENBLAS_LIB_DIR}
             LIBRARIES    ${OPENBLAS_LIBRARIES}
             DEPENDS      ext_openblas
         )
-        target_link_libraries(3rdparty_openblas INTERFACE Threads::Threads gfortran)
-        if(BUILD_CUDA_MODULE)
-            target_link_libraries(3rdparty_openblas INTERFACE CUDA::cusolver CUDA::cublas)
-        endif()
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openblas)
+        target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
 else()
     include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
@@ -1275,7 +1294,7 @@ else()
     # We link MKL statically. For MKL link flags, refer to:
     # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
     message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
-    open3d_import_3rdparty_library(3rdparty_mkl
+    open3d_import_3rdparty_library(3rdparty_blas
         HIDDEN
         INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
         LIB_DIR      ${STATIC_MKL_LIB_DIR}
@@ -1283,52 +1302,74 @@ else()
         DEPENDS      ext_tbb ext_mkl_include ext_mkl
     )
     if(UNIX)
-        target_compile_options(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
-        target_link_libraries(3rdparty_mkl INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
+        target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
+        target_link_libraries(3rdparty_blas INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
     endif()
-    target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
-    # cuSOLVER and cuBLAS
-    if(BUILD_CUDA_MODULE)
-        target_link_libraries(3rdparty_mkl INTERFACE CUDA::cusolver CUDA::cublas)
-    endif()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
+    target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
 endif()
 
-# Faiss
-if (WITH_FAISS AND WIN32)
-    message(STATUS "Faiss is not supported on Windows")
-    set(WITH_FAISS OFF)
-elseif(WITH_FAISS)
-    message(STATUS "Building third-party library faiss from source")
-    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
-endif()
-if (WITH_FAISS)
-    if (USE_BLAS)
-        if (BLAS_BUILD_FROM_SOURCE)
-            set(FAISS_EXTRA_DEPENDENCIES 3rdparty_openblas)
-        endif()
+# cuBLAS
+if(BUILD_CUDA_MODULE)
+    if(WIN32)
+        # Nvidia does not provide static libraries for Windows. We don't release
+        # pip wheels for Windows with CUDA support at the moment. For the pip
+        # wheels to support CUDA on Windows out-of-the-box, we need to either
+        # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
+        # cudatoolkit conda package), or have a mechanism to locate the CUDA
+        # toolkit from the system.
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS CUDA::cusolver CUDA::cublas)
     else()
-        set(FAISS_EXTRA_LIBRARIES ${STATIC_MKL_LIBRARIES})
-        set(FAISS_EXTRA_DEPENDENCIES 3rdparty_mkl)
+        # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
+        # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
+        # cublas   11.0: https://docs.nvidia.com/cuda/archive/11.0/cublas/index.html#static-library
+        # The link order below is important. Theoretically we should use
+        # open3d_find_package_3rdparty_library, but we have to insert
+        # liblapack_static.a in the middle of the targets.
+        add_library(3rdparty_cublas INTERFACE)
+        target_link_libraries(3rdparty_cublas INTERFACE
+            CUDA::cusolver_static
+            ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
+            CUDA::cusparse_static
+            CUDA::cublas_static
+            CUDA::cublasLt_static
+            CUDA::culibos
+        )
+        if(NOT BUILD_SHARED_LIBS)
+            # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/Open3D/Open3DTargets.cmake.
+            install(TARGETS 3rdparty_cublas EXPORT Open3DTargets)
+        endif()
+        add_library(Open3D::3rdparty_cublas ALIAS 3rdparty_cublas)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_cublas)
     endif()
-    open3d_import_3rdparty_library(3rdparty_faiss
-        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
-        LIBRARIES    ${FAISS_LIBRARIES} ${FAISS_EXTRA_LIBRARIES}
-        LIB_DIR      ${FAISS_LIB_DIR}
-        DEPENDS      ext_faiss ${FAISS_EXTRA_DEPENDENCIES}
-    )
-    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
 endif()
 
 # NPP
 if (BUILD_CUDA_MODULE)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
-    open3d_find_package_3rdparty_library(3rdparty_cuda_npp
-        REQUIRED
-        PACKAGE CUDAToolkit
-        TARGETS CUDA::nppc CUDA::nppicc CUDA::nppif CUDA::nppig CUDA::nppim CUDA::nppial
-    )
+    if(WIN32)
+        open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+            REQUIRED
+            PACKAGE CUDAToolkit
+            TARGETS CUDA::nppc
+                    CUDA::nppicc
+                    CUDA::nppif
+                    CUDA::nppig
+                    CUDA::nppim
+                    CUDA::nppial
+        )
+    else()
+        open3d_find_package_3rdparty_library(3rdparty_cuda_npp
+            REQUIRED
+            PACKAGE CUDAToolkit
+            TARGETS CUDA::nppc_static
+                    CUDA::nppicc_static
+                    CUDA::nppif_static
+                    CUDA::nppig_static
+                    CUDA::nppim_static
+                    CUDA::nppial_static
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_cuda_npp)
 endif ()
 

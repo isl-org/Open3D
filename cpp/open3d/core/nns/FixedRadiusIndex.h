@@ -31,10 +31,369 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NNSIndex.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 
 namespace open3d {
 namespace core {
 namespace nns {
+
+/// Builds a spatial hash table for a fixed radius search of 3D points.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \param points    The tensor of 3D points. This tensor may be splitted into
+///        multiple batch items by defining points_row_splits_size accordingly.
+///
+/// \param radius    The radius that will be used for searching.
+///
+/// \param points_row_splits    Defines the start and end of the points in
+///        each batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this array is [0, num_points]
+///
+/// \param hash_table_splits    Tensor defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_index    This is an output tensor storing the values of
+/// the
+///        hash table, which are the indices to the points. The size of the
+///        tensor must be equal to the number of points.
+///
+/// \param hash_table_cell_splits    This is an output tensor storing the start
+///        of each hash table entry. The size of this array defines the size of
+///        the hash table.
+///        The hash table size is hash_table_cell_splits_size - 1.
+///
+template <class T>
+void BuildSpatialHashTableCPU(const Tensor& points,
+                              double radius,
+                              const Tensor& points_row_splits,
+                              const Tensor& hash_table_splits,
+                              Tensor& hash_table_index,
+                              Tensor& hash_table_cell_splits);
+
+/// Fixed radius search. This function computes a list of neighbor indices
+/// for each query point. The lists are stored linearly and an exclusive prefix
+/// sum defines the start and end of list in the array.
+/// In addition the function optionally can return the distances for each
+/// neighbor in the same format as the indices to the neighbors.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \param points    Tensor with the 3D point positions. This must be the tensor
+///        that was used for building the spatial hash table.
+///
+/// \param queries    Tensor with the 3D query positions. This may be the same
+///                   tensor as \p points.
+///
+/// \param radius    The search radius.
+///
+/// \param points_row_splits    Defines the start and end of the points in each
+///        batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this tensor is [0, num_points]
+///
+/// \param queries_row_splits    Defines the start and end of the queries in
+///        each batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this tensor is [0, num_queries]
+///
+/// \param hash_table_splits    Tensor defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_index    This is an output of the function
+///        BuildSpatialHashTableCPU. This is tensor storing the values of the
+///        hash table, which are the indices to the points. The size of the
+///        tensor must be equal to the number of points.
+///
+/// \param hash_table_cell_splits    This is an output of the function
+///        BuildSpatialHashTableCPU. The row splits array describing the start
+///        and end of each cell.
+///
+/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+///        search.
+///
+/// \param ignore_query_point    If true then points with the same position as
+///        the query point will be ignored.
+///
+/// \param return_distances    If true then this function will return the
+///        distances for each neighbor to its query point in the same format
+///        as the indices.
+///        Note that for the L2 metric the squared distances will be returned!!
+///
+/// \param sort                If true then sort the results in ascending order
+///        of distance
+///
+/// \param neighbors_index     The output tensor that saves the resulting
+///        neighbor indices
+///
+/// \param neighbors_row_splits  Tensor defining the start and end the neighbor
+///        indices in each batch item. The size of the tensor is
+///        num_query_points + 1
+///
+/// \param neighbors_distances   The output tensor that saves the resulting
+///        neighbor distances.
+///
+template <class T>
+void FixedRadiusSearchCPU(const Tensor& points,
+                          const Tensor& queries,
+                          double radius,
+                          const Tensor& points_row_splits,
+                          const Tensor& queries_row_splits,
+                          const Tensor& hash_table_splits,
+                          const Tensor& hash_table_index,
+                          const Tensor& hash_table_cell_splits,
+                          const Metric metric,
+                          const bool ignore_query_point,
+                          const bool return_distances,
+                          const bool sort,
+                          Tensor& neighbors_index,
+                          Tensor& neighbors_row_splits,
+                          Tensor& neighbors_distance);
+
+/// Hybrid search. This function computes a list of neighbor indices
+/// for each query point. The lists are stored linearly and if there is less
+/// neighbors than requested, the output tensor will be assigned with default
+/// values, -1 for indices and 0 for distances. In addition the function
+/// returns the number of neighbors for each query.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \param points    Tensor with the 3D point positions. This must be the tensor
+///        that was used for building the spatial hash table.
+///
+/// \param queries    Tensor with the 3D query positions. This may be the same
+///                   tensor as \p points.
+///
+/// \param radius    The search radius.
+///
+/// \param max_knn   The maximum number of neighbor for each query
+///
+/// \param points_row_splits    Defines the start and end of the points in each
+///        batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this tensor is [0, num_points]
+///
+/// \param queries_row_splits    Defines the start and end of the queries in
+///        each batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this tensor is [0, num_queries]
+///
+/// \param hash_table_splits    Tensor defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_index    This is an output of the function
+///        BuildSpatialHashTableCPU. This is tensor storing the values of the
+///        hash table, which are the indices to the points. The size of the
+///        tensor must be equal to the number of points.
+///
+/// \param hash_table_cell_splits    This is an output of the function
+///        BuildSpatialHashTableCPU. The row splits array describing the start
+///        and end of each cell.
+///
+/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+///        search.
+///
+/// \param neighbors_index     The output tensor that saves the resulting
+///        neighbor indices
+///
+/// \param neighbors_count     The output tensor that saves the number of
+///        neighbors for each query points
+///
+/// \param neighbors_distances   The output tensor that saves the resulting
+///        neighbor distances.
+///
+template <class T>
+void HybridSearchCPU(const Tensor& points,
+                     const Tensor& queries,
+                     double radius,
+                     int max_knn,
+                     const Tensor& points_row_splits,
+                     const Tensor& queries_row_splits,
+                     const Tensor& hash_table_splits,
+                     const Tensor& hash_table_index,
+                     const Tensor& hash_table_cell_splits,
+                     const Metric metric,
+                     Tensor& neighbors_index,
+                     Tensor& neighbors_count,
+                     Tensor& neighbors_distance);
+
+#ifdef BUILD_CUDA_MODULE
+/// Builds a spatial hash table for a fixed radius search of 3D points.
+///
+/// \param points    The tensor of 3D points. This tensor may be splitted into
+///        multiple batch items by defining points_row_splits_size accordingly.
+///
+/// \param radius    The radius that will be used for searching.
+///
+/// \param points_row_splits    Defines the start and end of the points in
+///        each batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this array is [0, num_points]
+///
+/// \param hash_table_splits    Tensor defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_index    This is an output tensor storing the values of
+/// the
+///        hash table, which are the indices to the points. The size of the
+///        tensor must be equal to the number of points.
+///
+/// \param hash_table_cell_splits    This is an output tensor storing the start
+///        of each hash table entry. The size of this array defines the size of
+///        the hash table.
+///        The hash table size is hash_table_cell_splits_size - 1.
+///
+template <class T>
+void BuildSpatialHashTableCUDA(const Tensor& points,
+                               double radius,
+                               const Tensor& points_row_splits,
+                               const Tensor& hash_table_splits,
+                               Tensor& hash_table_index,
+                               Tensor& hash_table_cell_splits);
+
+// Fixed radius search. This function computes a list of neighbor indices
+/// for each query point. The lists are stored linearly and an exclusive prefix
+/// sum defines the start and end of list in the array.
+/// In addition the function optionally can return the distances for each
+/// neighbor in the same format as the indices to the neighbors.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \param points    Tensor with the 3D point positions. This must be the tensor
+///        that was used for building the spatial hash table.
+///
+/// \param queries    Tensor with the 3D query positions. This may be the same
+///                   tensor as \p points.
+///
+/// \param radius    The search radius.
+///
+/// \param points_row_splits    Defines the start and end of the points in each
+///        batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this tensor is [0, num_points]
+///
+/// \param queries_row_splits    Defines the start and end of the queries in
+/// each
+///        batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this tensor is [0, num_queries]
+///
+/// \param hash_table_splits    Tensor defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_index    This is an output of the function
+///        BuildSpatialHashTableCPU. This is tensor storing the values of the
+///        hash table, which are the indices to the points. The size of the
+///        tensor must be equal to the number of points.
+///
+/// \param hash_table_cell_splits    This is an output of the function
+///        BuildSpatialHashTableCPU. The row splits array describing the start
+///        and end of each cell.
+///
+/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+///        search.
+///
+/// \param ignore_query_point    If true then points with the same position as
+///        the query point will be ignored.
+///
+/// \param return_distances    If true then this function will return the
+///        distances for each neighbor to its query point in the same format
+///        as the indices.
+///        Note that for the L2 metric the squared distances will be returned!!
+///
+/// \param sort                If true then sort the results in ascending order
+/// of distance
+///
+/// \param neighbors_index     The output tensor that saves the resulting
+/// neighbor indices
+///
+/// \param neighbors_row_splits  Tensor defining the start and end the neighbor
+/// indices in each batch item. The size of the tensor is num_query_points + 1
+///
+/// \param neighbors_distances   The output tensor that saves the resulting
+/// neighbor distances.
+///
+template <class T>
+void FixedRadiusSearchCUDA(const Tensor& points,
+                           const Tensor& queries,
+                           double radius,
+                           const Tensor& points_row_splits,
+                           const Tensor& queries_row_splits,
+                           const Tensor& hash_table_splits,
+                           const Tensor& hash_table_index,
+                           const Tensor& hash_table_cell_splits,
+                           const Metric metric,
+                           const bool ignore_query_point,
+                           const bool return_distances,
+                           const bool sort,
+                           Tensor& neighbors_index,
+                           Tensor& neighbors_row_splits,
+                           Tensor& neighbors_distance);
+
+/// Hybrid search. This function computes a list of neighbor indices
+/// for each query point. The lists are stored linearly and if there is less
+/// neighbors than requested, the output tensor will be assigned with default
+/// values, -1 for indices and 0 for distances. In addition the function
+/// returns the number of neighbors for each query.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \param points    Tensor with the 3D point positions. This must be the tensor
+///        that was used for building the spatial hash table.
+///
+/// \param queries    Tensor with the 3D query positions. This may be the same
+///                   tensor as \p points.
+///
+/// \param radius    The search radius.
+///
+/// \param max_knn   The maximum number of neighbor for each query
+///
+/// \param points_row_splits    Defines the start and end of the points in each
+///        batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this tensor is [0, num_points]
+///
+/// \param queries_row_splits    Defines the start and end of the queries in
+///        each batch item. The size of the tensor is batch_size+1. If there is
+///        only 1 batch item then this tensor is [0, num_queries]
+///
+/// \param hash_table_splits    Tensor defining the start and end the hash table
+///        for each batch item. This is [0, number of cells] if there is only
+///        1 batch item or [0, hash_table_cell_splits_size-1] which is the same.
+///
+/// \param hash_table_index    This is an output of the function
+///        BuildSpatialHashTableCPU. This is tensor storing the values of the
+///        hash table, which are the indices to the points. The size of the
+///        tensor must be equal to the number of points.
+///
+/// \param hash_table_cell_splits    This is an output of the function
+///        BuildSpatialHashTableCPU. The row splits array describing the start
+///        and end of each cell.
+///
+/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+///        search.
+///
+/// \param neighbors_index     The output tensor that saves the resulting
+///        neighbor indices
+///
+/// \param neighbors_count     The output tensor that saves the number of
+///        neighbors for each query points
+///
+/// \param neighbors_distances   The output tensor that saves the resulting
+///        neighbor distances.
+///
+template <class T>
+void HybridSearchCUDA(const Tensor& points,
+                      const Tensor& queries,
+                      double radius,
+                      int max_knn,
+                      const Tensor& points_row_splits,
+                      const Tensor& queries_row_splits,
+                      const Tensor& hash_table_splits,
+                      const Tensor& hash_table_index,
+                      const Tensor& hash_table_cell_splits,
+                      const Metric metric,
+                      Tensor& neighbors_index,
+                      Tensor& neighbors_count,
+                      Tensor& neighbors_distance);
+#endif
 
 /// \class FixedRadiusIndex
 ///
@@ -61,6 +420,9 @@ public:
     }
 
     bool SetTensorData(const Tensor& dataset_points, double radius) override;
+    bool SetTensorData(const Tensor& dataset_points,
+                       const Tensor& points_row_splits,
+                       double radius);
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override {
@@ -80,74 +442,32 @@ public:
             const Tensor& query_points,
             double radius,
             bool sort = true) const override;
+    std::tuple<Tensor, Tensor, Tensor> SearchRadius(
+            const Tensor& query_points,
+            const Tensor& queries_row_splits,
+            double radius,
+            bool sort = true) const;
 
     std::tuple<Tensor, Tensor, Tensor> SearchHybrid(const Tensor& query_points,
                                                     double radius,
                                                     int max_knn) const override;
 
+    std::tuple<Tensor, Tensor, Tensor> SearchHybrid(
+            const Tensor& query_points,
+            const Tensor& queries_row_splits,
+            double radius,
+            int max_knn) const;
+
     const double hash_table_size_factor = 1.0 / 32;
     const int64_t max_hash_tabls_size = 33554432;
 
 protected:
-    std::vector<int64_t> points_row_splits_;
-    std::vector<int64_t> hash_table_splits_;
+    Tensor points_row_splits_;
+    Tensor hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
 };
 
-template <class T>
-class NeighborSearchAllocator {
-public:
-    NeighborSearchAllocator(Device device) : device_(device) {}
-
-    void AllocIndices(int64_t** ptr, size_t num) {
-        indices_ = Tensor::Empty({int64_t(num)}, core::Int64, device_);
-        *ptr = indices_.GetDataPtr<int64_t>();
-    }
-
-    void AllocIndices(int64_t** ptr, size_t num, int64_t value) {
-        indices_ = Tensor::Full({int64_t(num)}, value, core::Int64, device_);
-        *ptr = indices_.GetDataPtr<int64_t>();
-    }
-
-    void AllocDistances(T** ptr, size_t num) {
-        distances_ =
-                Tensor::Empty({int64_t(num)}, Dtype::FromType<T>(), device_);
-        *ptr = distances_.GetDataPtr<T>();
-    }
-
-    void AllocDistances(T** ptr, size_t num, T value) {
-        distances_ = Tensor::Full({int64_t(num)}, value, Dtype::FromType<T>(),
-                                  device_);
-        *ptr = distances_.GetDataPtr<T>();
-    }
-
-    void AllocCounts(int64_t** ptr, size_t num) {
-        counts_ = Tensor::Empty({int64_t(num)}, core::Int64, device_);
-        *ptr = counts_.GetDataPtr<int64_t>();
-    }
-
-    void AllocCounts(int64_t** ptr, size_t num, int64_t value) {
-        counts_ = Tensor::Full({int64_t(num)}, value, core::Int64, device_);
-        *ptr = counts_.GetDataPtr<int64_t>();
-    }
-
-    const int64_t* IndicesPtr() const { return indices_.GetDataPtr<int64_t>(); }
-
-    const T* DistancesPtr() const { return distances_.GetDataPtr<T>(); }
-
-    const int64_t* CountsPtr() const { return counts_.GetDataPtr<int64_t>(); }
-
-    const Tensor& NeighborsIndex() const { return indices_; }
-    const Tensor& NeighborsDistance() const { return distances_; }
-    const Tensor& NeighborCounts() const { return counts_; }
-
-private:
-    Tensor indices_;
-    Tensor distances_;
-    Tensor counts_;
-    Device device_;
-};
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

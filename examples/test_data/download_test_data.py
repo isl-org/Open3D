@@ -27,7 +27,7 @@
 # Download Open3D test data files. The default download path is
 # Open3D/examples/test_data/open3d_downloads
 #
-# See https://github.com/intel-isl/open3d_downloads for details on how to
+# See https://github.com/isl-org/open3d_downloads for details on how to
 # manage the test data files.
 #
 # We have to put the version check here and the rest of the Python 3.6+

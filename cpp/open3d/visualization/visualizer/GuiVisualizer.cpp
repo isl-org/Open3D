@@ -240,7 +240,7 @@ std::shared_ptr<gui::Dialog> CreateContactDialog(gui::Window *window) {
             "Discord channel:");
     auto right_col = std::make_shared<gui::Label>(
             "http://www.open3d.org\n"
-            "http://github.org/intel-isl/Open3D\n"
+            "http://github.org/isl-org/Open3D\n"
             "http://www.open3d.org/index.php/subscribe/\n"
             "https://discord.gg/D35BGvn");
     auto ok = std::make_shared<gui::Button>("OK");

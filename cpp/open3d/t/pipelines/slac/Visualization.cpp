@@ -73,12 +73,12 @@ void VisualizePointCloudCorrespondences(const t::geometry::PointCloud& tpcd_i,
             correspondences.To(core::Device("CPU:0"));
 
     auto pcd_i_corres = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_i.Clone().Transform(T_ij).ToLegacyPointCloud());
+            tpcd_i.Clone().Transform(T_ij).ToLegacy());
     pcd_i_corres->PaintUniformColor(kSourceColor);
     pcd_i_corres->Transform(flip);
 
-    auto pcd_j_corres = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_j.ToLegacyPointCloud());
+    auto pcd_j_corres =
+            std::make_shared<open3d::geometry::PointCloud>(tpcd_j.ToLegacy());
     pcd_j_corres->PaintUniformColor(kTargetColor);
     pcd_j_corres->Transform(flip);
 
@@ -104,13 +104,13 @@ void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
 
     // Prepare all ctr grid point cloud for lineset
     auto pcd = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_param.ToLegacyPointCloud());
+            tpcd_param.ToLegacy());
     pcd->Transform(flip);
 
     t::geometry::PointCloud tpcd_grid(
             ctr_grid.GetCurrPositions().Slice(0, 0, ctr_grid.Size()));
     auto pcd_grid = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_grid.ToLegacyPointCloud());
+            tpcd_grid.ToLegacy());
     pcd_grid->Transform(flip);
 
     // Prepare nb point cloud for visualization
@@ -120,7 +120,7 @@ void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
             tpcd_grid.GetPoints().IndexGet({corres.View({-1})}));
 
     auto pcd_grid_nb = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_grid_nb.ToLegacyPointCloud());
+            tpcd_grid_nb.ToLegacy());
     pcd_grid_nb->PaintUniformColor(kSourceColor);
     pcd_grid_nb->Transform(flip);
 
@@ -169,24 +169,24 @@ void VisualizePointCloudDeformation(const geometry::PointCloud& tpcd_param,
 
     t::geometry::PointCloud tpcd_init_grid(prev);
     auto pcd_init_grid = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_init_grid.ToLegacyPointCloud());
+            tpcd_init_grid.ToLegacy());
     pcd_init_grid->PaintUniformColor({0, 1, 0});
     pcd_init_grid->Transform(flip);
 
     auto pcd = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_param.ToLegacyPointCloud());
+            tpcd_param.ToLegacy());
     pcd->PaintUniformColor({0, 1, 0});
     pcd->Transform(flip);
 
     t::geometry::PointCloud tpcd_curr_grid(curr);
     auto pcd_curr_grid = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_curr_grid.ToLegacyPointCloud());
+            tpcd_curr_grid.ToLegacy());
     pcd_curr_grid->PaintUniformColor({1, 0, 0});
     pcd_curr_grid->Transform(flip);
 
     auto tpcd_warped = ctr_grid.Deform(tpcd_param);
     auto pcd_warped = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_warped.ToLegacyPointCloud());
+            tpcd_warped.ToLegacy());
     pcd_warped->PaintUniformColor({1, 0, 0});
     pcd_warped->Transform(flip);
 
@@ -218,12 +218,12 @@ void VisualizeGridDeformation(ControlGrid& cgrid) {
 
     t::geometry::PointCloud tpcd_init_grid(prev);
     auto pcd_init_grid = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_init_grid.ToLegacyPointCloud());
+            tpcd_init_grid.ToLegacy());
     pcd_init_grid->PaintUniformColor({0, 1, 0});
 
     t::geometry::PointCloud tpcd_curr_grid(curr);
     auto pcd_curr_grid = std::make_shared<open3d::geometry::PointCloud>(
-            tpcd_curr_grid.ToLegacyPointCloud());
+            tpcd_curr_grid.ToLegacy());
     pcd_curr_grid->PaintUniformColor({1, 0, 0});
 
     std::vector<std::pair<int, int>> nb_lines;

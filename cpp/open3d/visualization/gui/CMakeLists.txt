@@ -71,7 +71,7 @@ file(COPY ${GUI_RESOURCE_SOURCE_FILES}
      DESTINATION ${GUI_RESOURCE_DIR})
 
 
-include(add_compiled_materials)
+include(Open3DAddCompiledMaterials)
 
 open3d_add_compiled_materials(materials
     OUTPUT_DIRECTORY

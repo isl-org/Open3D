@@ -42,7 +42,7 @@ Make sure to use the ``--recursive`` flag when cloning Open3D.
 
 .. code-block:: bash
 
-    git clone --recursive https://github.com/intel-isl/Open3D
+    git clone --recursive https://github.com/isl-org/Open3D
 
     # You can also update the submodule manually
     git submodule update --init --recursive
@@ -267,19 +267,19 @@ enable ``BUILD_CUDA_MODULE=ON`` for GPU support. To include the models and
 pipelines from Open3D-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
 ``OPEN3D_ML_ROOT`` to the Open3D-ML repository. You can directly download
 Open3D-ML from GitHub during the build with
-``OPEN3D_ML_ROOT=https://github.com/intel-isl/Open3D-ML.git``.
+``OPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git``.
 
 .. warning:: Compiling PyTorch ops with CUDA 11 may have stability issues. See
-    `Open3D issue #3324 <https://github.com/intel-isl/Open3D/issues/3324>`_ and
+    `Open3D issue #3324 <https://github.com/isl-org/Open3D/issues/3324>`_ and
     `PyTorch issue #52663 <https://github.com/pytorch/pytorch/issues/52663>`_ for
     more information on this problem.
 
     We recommend to compile Pytorch from source
     with compile flags ``-Xcompiler -fno-gnu-unique`` or use the `PyTorch
     wheels from Open3D.
-    <https://github.com/intel-isl/open3d_downloads/releases/tag/torch1.8.1>`_
+    <https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1>`_
     To reproduce the Open3D PyTorch wheels see the builder repository `here.
-    <https://github.com/intel-isl/pytorch_builder>`_
+    <https://github.com/isl-org/pytorch_builder>`_
 
 
 The following example shows the command for building the ops with GPU support
@@ -292,7 +292,7 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
           -DBUILD_PYTORCH_OPS=ON \
           -DBUILD_TENSORFLOW_OPS=ON \
           -DBUNDLE_OPEN3D_ML=ON \
-          -DOPEN3D_ML_ROOT=https://github.com/intel-isl/Open3D-ML.git \
+          -DOPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git \
           ..
     # Install the python wheel with pip
     make -j install-pip-package

@@ -137,19 +137,6 @@ public:
     /// Returns copy of the triangle mesh on the same device.
     TriangleMesh Clone() const { return To(GetDevice()); }
 
-    /// Transfer the triangle mesh to CPU.
-    ///
-    /// If the triangle mesh is already on CPU, no copy will be performed.
-    TriangleMesh CPU() const { return To(core::Device("CPU:0")); };
-
-    /// Transfer the triangle mesh to a CUDA device.
-    ///
-    /// If the triangle mesh is already on the specified CUDA device, no copy
-    /// will be performed.
-    TriangleMesh CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    };
-
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }
 
@@ -414,14 +401,14 @@ public:
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
     /// triangles.
     /// \param device The device where the resulting TriangleMesh resides in.
-    static geometry::TriangleMesh FromLegacyTriangleMesh(
+    static geometry::TriangleMesh FromLegacy(
             const open3d::geometry::TriangleMesh &mesh_legacy,
             core::Dtype float_dtype = core::Float32,
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D TriangleMesh.
-    open3d::geometry::TriangleMesh ToLegacyTriangleMesh() const;
+    open3d::geometry::TriangleMesh ToLegacy() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

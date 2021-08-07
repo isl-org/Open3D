@@ -42,9 +42,7 @@ public:
     enum class DeviceType { CPU = 0, CUDA = 1 };
 
     /// Default constructor.
-    Device() : device_type_(DeviceType::CPU), device_id_(0) {
-        AssertCPUDeviceIDIsZero();
-    }
+    Device() = default;
 
     /// Constructor with device specified.
     Device(DeviceType device_type, int device_id)
@@ -130,11 +128,9 @@ protected:
     }
 
 protected:
-    DeviceType device_type_;
-    int device_id_;
+    DeviceType device_type_ = DeviceType::CPU;
+    int device_id_ = 0;
 };
-
-const Device HOST = Device("CPU:0");
 
 }  // namespace core
 }  // namespace open3d

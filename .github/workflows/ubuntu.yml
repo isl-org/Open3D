@@ -68,7 +68,7 @@ jobs:
       - name: Install dependencies
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
-          wget https://github.com/intel-isl/open3d_downloads/releases/download/ccache/ccache
+          wget https://github.com/isl-org/open3d_downloads/releases/download/ccache/ccache
           chmod +x ccache
           sudo mv ccache /usr/local/bin
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
@@ -117,7 +117,7 @@ jobs:
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
         with:
-          repository: intel-isl/Open3D-ML
+          repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
@@ -143,7 +143,7 @@ jobs:
         shell: bash -l {0}
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
-          wget https://github.com/intel-isl/open3d_downloads/releases/download/ccache/ccache
+          wget https://github.com/isl-org/open3d_downloads/releases/download/ccache/ccache
           chmod +x ccache
           sudo mv ccache /usr/local/bin
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
@@ -243,7 +243,7 @@ jobs:
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
         with:
-          repository: intel-isl/Open3D-ML
+          repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels

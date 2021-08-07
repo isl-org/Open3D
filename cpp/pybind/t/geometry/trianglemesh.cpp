@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
@@ -64,11 +65,19 @@ void pybind_trianglemesh(py::module& m) {
                       "device"_a, "copy"_a = false);
     triangle_mesh.def("clone", &TriangleMesh::Clone,
                       "Returns copy of the triangle mesh on the same device.");
-    triangle_mesh.def("cpu", &TriangleMesh::CPU,
-                      "Transfer the triangle mesh to CPU. If the triangle mesh "
-                      "is already on CPU, no copy will be performed.");
+
     triangle_mesh.def(
-            "cuda", &TriangleMesh::CUDA,
+            "cpu",
+            [](const TriangleMesh& triangle_mesh) {
+                return triangle_mesh.To(core::Device("CPU:0"));
+            },
+            "Transfer the triangle mesh to CPU. If the triangle mesh "
+            "is already on CPU, no copy will be performed.");
+    triangle_mesh.def(
+            "cuda",
+            [](const TriangleMesh& triangle_mesh, int device_id) {
+                return triangle_mesh.To(core::Device("CUDA", device_id));
+            },
             "Transfer the triangle mesh to a CUDA device. If the triangle mesh "
             "is already on the specified CUDA device, no copy will be "
             "performed.",
@@ -90,13 +99,11 @@ void pybind_trianglemesh(py::module& m) {
     triangle_mesh.def("rotate", &TriangleMesh::Rotate, "R"_a, "center"_a,
                       "Rotate points and normals (if exist).");
     triangle_mesh.def_static(
-            "from_legacy_triangle_mesh", &TriangleMesh::FromLegacyTriangleMesh,
-            "mesh_legacy"_a, "vertex_dtype"_a = core::Float32,
-            "triangle_dtype"_a = core::Int64,
+            "from_legacy", &TriangleMesh::FromLegacy, "mesh_legacy"_a,
+            "vertex_dtype"_a = core::Float32, "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
-    triangle_mesh.def("to_legacy_triangle_mesh",
-                      &TriangleMesh::ToLegacyTriangleMesh,
+    triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
 }
 

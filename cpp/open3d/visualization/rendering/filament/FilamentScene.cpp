@@ -424,7 +424,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         utility::LogWarning(
                 "GPU resident tensor point clouds are not supported at this "
                 "time for direct visualization. Copying point cloud to CPU.");
-        cpu_pcloud = point_cloud.CPU();
+        cpu_pcloud = point_cloud.To(core::Device("CPU:0"));
         buffer_builder = GeometryBuffersBuilder::GetBuilder(cpu_pcloud);
     } else {
         cpu_pcloud = point_cloud;
@@ -599,7 +599,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                 points.GetDevice().GetType() == core::Device::DeviceType::CUDA;
         t::geometry::PointCloud cpu_pcloud;
         if (pcloud_is_gpu) {
-            cpu_pcloud = point_cloud.CPU();
+            cpu_pcloud = point_cloud.To(core::Device("CPU:0"));
         }
 
         // Update the each of the attribute requested

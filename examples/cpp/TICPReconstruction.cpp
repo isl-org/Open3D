@@ -185,8 +185,8 @@ public:
 
                     // Copying the pointcloud on CPU, as required by
                     // the visualizer.
-                    pcd_.source_ = source_.CPU();
-                    pcd_.target_ = target_.CPU();
+                    pcd_.source_ = source_.To(core::Device("CPU:0"));
+                    pcd_.target_ = target_.To(core::Device("CPU:0"));
                 }
 
                 gui::Application::GetInstance().PostToMainThread(
@@ -514,7 +514,8 @@ protected:
                                     .To(host_));
 
                     pcd_.source_ =
-                            source_.CPU().Transform(transformation.To(dtype_));
+                            source_.To(core::Device("CPU:0"))
+                                    .Transform(transformation.To(dtype_));
                 }
 
                 std::stringstream out_;
@@ -793,11 +794,11 @@ private:
         // Currenly Normal Estimation is not supported by Tensor Pointcloud.
         if (registration_method_ == "PointToPlane" &&
             !target.HasPointNormals()) {
-            auto target_legacy = target.ToLegacyPointCloud();
+            auto target_legacy = target.ToLegacy();
             target_legacy.EstimateNormals(geometry::KDTreeSearchParamKNN(),
                                           false);
             core::Tensor target_normals =
-                    t::geometry::PointCloud::FromLegacyPointCloud(target_legacy)
+                    t::geometry::PointCloud::FromLegacy(target_legacy)
                             .GetPointNormals()
                             .To(device_, dtype_);
             target.SetPointNormals(target_normals);
