@@ -63,7 +63,9 @@ The default connection class which uses a ZeroMQ socket.
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
 
     py::class_<rpc::BufferConnection, std::shared_ptr<rpc::BufferConnection>,
-               rpc::ConnectionBase>(m, "BufferConnection")
+               rpc::ConnectionBase>(m, "BufferConnection", R"doc(
+A connection writing to a memory buffer.
+)doc")
             .def(py::init<>())
             .def(
                     "get_buffer",
