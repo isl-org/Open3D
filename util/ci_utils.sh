@@ -51,6 +51,7 @@ PIP_VER="21.1.1"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
+PYTEST_RANDOMLY_VER="3.8.0"
 SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
 
@@ -132,8 +133,8 @@ install_python_dependencies() {
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
-        python -m pip install -U pytest=="$PYTEST_VER"
-        python -m pip install -U scipy=="$SCIPY_VER"
+        python -m pip install -U scipy=="$SCIPY_VER" pytest=="$PYTEST_VER" \
+            pytest-randomly=="$PYTEST_RANDOMLY_VER"
     fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow-gpu
@@ -394,8 +395,9 @@ test_wheel() {
 run_python_tests() {
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
-    python -m pip install -U pytest=="$PYTEST_VER"
-    python -m pip install -U scipy=="$SCIPY_VER"
+    python -m pip install -U scipy=="$SCIPY_VER" pytest=="$PYTEST_VER" \
+        pytest-randomly=="$PYTEST_RANDOMLY_VER"
+    echo Add --rondomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
         echo Testing ML Ops disabled
@@ -407,8 +409,9 @@ run_python_tests() {
 
 # Use: run_unit_tests
 run_cpp_unit_tests() {
-    unitTestFlags=
+    unitTestFlags=--gtest_shuffle
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
+    echo "Run ./bin/tests $unitTestFlags --gtest_random_seed=SEED to repeat this test sequence."
     ./bin/tests "$unitTestFlags"
     echo
 }
