@@ -43,9 +43,12 @@ void pybind_trianglemesh(py::module& m) {
                     "A triangle mesh contains a set of 3d vertices and faces.");
 
     // Constructors.
-    triangle_mesh.def(py::init<const core::Device&>(), "device"_a)
+    triangle_mesh
+            .def(py::init<const core::Device&>(),
+                 "device"_a = core::Device("CPU:0"))
             .def(py::init<const core::Tensor&, const core::Tensor&>(),
-                 "vertices"_a, "triangles"_a);
+                 "vertices"_a, "triangles"_a)
+            .def("__repr__", &TriangleMesh::ToString);
 
     // Triangle mesh's attributes: vertices, vertex_colors, vertex_normals, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can

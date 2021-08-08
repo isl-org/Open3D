@@ -127,6 +127,9 @@ public:
     virtual ~TriangleMesh() override {}
 
 public:
+    /// \brief Text description.
+    std::string ToString() const;
+
     /// Transfer the triangle mesh to a specified device.
     /// \param device The targeted device to convert to.
     /// \param copy If true, a new triangle mesh is always created; if false,

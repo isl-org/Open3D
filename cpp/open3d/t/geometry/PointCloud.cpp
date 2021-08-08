@@ -74,14 +74,14 @@ std::string PointCloud::ToString() const {
         return fmt::format("PointCloud on {} [0 points ()] Attributes: None.",
                            GetDevice().ToString());
     auto str = fmt::format("PointCloud on {} [{} points ({})] Attributes:",
-                           GetDevice().ToString(), GetPoints().GetShape(0),
+                           GetDevice().ToString(), GetPoints().GetLength(),
                            GetPoints().GetDtype().ToString());
     if (point_attr_.size() == 1) return str + " None.";
     for (const auto &keyval : point_attr_) {
         if (keyval.first != "points") {
             str += fmt::format(" {} ({}, {}),", keyval.first,
                                keyval.second.GetDtype().ToString(),
-                               keyval.second.GetShape(1));
+                               keyval.second.GetLength());
         }
     }
     str[str.size() - 1] = '.';
