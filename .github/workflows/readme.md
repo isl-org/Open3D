@@ -184,6 +184,11 @@ used for running CI.
     builds use `gsutil rsync` to update the cache in GCS. Cache transfer only
     takes a few minutes, but reduces ARM64 CI time to about 1:15 hours.
 
+Inside Google Cloud GPU CI project (Project A), in order to upload data to
+Google Cloud bucket in another project (Project B), you'll need to add
+Project A's service account email to Project B's "IAM" management page and
+select the proper role. See [here](https://stackoverflow.com/questions/35479025/cross-project-management-using-service-account).
+
 ## D. Development wheels for user testing
 
 `master` branch Python wheels are uploaded to a world readable GCS bucket for
