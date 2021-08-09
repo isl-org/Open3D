@@ -29,6 +29,7 @@
 #include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Logging.h"
@@ -93,6 +94,9 @@ void pybind_core_hashmap(py::module& m) {
         return addrs;
     });
 
+    hashmap.def("save", &Hashmap::Save);
+    hashmap.def_static("load", &Hashmap::Load);
+
     hashmap.def("get_key_buffer", &Hashmap::GetKeyBuffer);
     hashmap.def("get_value_buffer", &Hashmap::GetValueBuffer);
 
@@ -105,8 +109,21 @@ void pybind_core_hashmap(py::module& m) {
 
     hashmap.def("to", &Hashmap::To, "device"_a, "copy"_a = false);
     hashmap.def("clone", &Hashmap::Clone);
-    hashmap.def("cpu", &Hashmap::CPU);
-    hashmap.def("cuda", &Hashmap::CUDA, "device_id"_a = 0);
+    hashmap.def(
+            "cpu",
+            [](const Hashmap& hashmap) {
+                return hashmap.To(core::Device("CPU:0"));
+            },
+            "Transfer the hashmap to CPU. If the hashmap "
+            "is already on CPU, no copy will be performed.");
+    hashmap.def(
+            "cuda",
+            [](const Hashmap& hashmap, int device_id) {
+                return hashmap.To(core::Device("CUDA", device_id));
+            },
+            "Transfer the hashmap to a CUDA device. If the hashmap is already "
+            "on the specified CUDA device, no copy will be performed.",
+            "device_id"_a = 0);
 }
 }  // namespace core
 }  // namespace open3d
