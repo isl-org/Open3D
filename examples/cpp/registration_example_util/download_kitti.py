@@ -203,7 +203,7 @@ if __name__ == '__main__':
             "Dataset not present, kindly try with a different dataset. \nRun with --print_available_datasets, to get the list of available datasets."
         )
 
-    download_dataset_path = "../../../data/downloads/datasets/kitti_samples/"
+    download_dataset_path = "../../../data/download/datasets/kitti_samples/"
     destination_path = join(download_dataset_path, "output/")
 
     # download and unzip dataset.

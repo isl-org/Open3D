@@ -11,8 +11,8 @@ function(open3d_set_global_properties target)
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fcolor-diagnostics>)
     endif()
-
     target_include_directories(${target} PUBLIC
+
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp>
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
     )
@@ -101,7 +101,7 @@ function(open3d_set_global_properties target)
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 
     # Download test data files from open3d_downloads repo.
-    add_dependencies(${target} downloads)
+    add_dependencies(${target} download_data)
 
     # Strip unnecessary sections of the binary on Linux/macOS for Release builds
     # (from pybind11)

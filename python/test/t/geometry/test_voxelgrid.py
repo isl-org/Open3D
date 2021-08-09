@@ -164,7 +164,7 @@ def test_raycast(device):
                                              3.0, min(i * 1.0, 3.0))
             vertexmap_gt = np.load(
                 test_data_path +
-                "downloads/RGBD/raycast_vtx_{:03d}.npy".format(i))
+                "download/RGBD/raycast_vtx_{:03d}.npy".format(i))
             discrepancy_count = ((vertexmap.cpu().numpy() - vertexmap_gt) >
                                  1e-5).sum()
             # Be tolerant to numerical differences

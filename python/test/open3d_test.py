@@ -33,7 +33,7 @@ import pytest
 
 # Avoid pathlib to be compatible with Python 3.5+.
 _pwd = os.path.dirname(os.path.realpath(__file__))
-test_data_dir = os.path.join(_pwd, os.pardir, os.pardir, "data")
+test_data_dir = os.path.join(_pwd, os.pardir, os.pardir, "examples", "test_data")
 
 # Whenever you import open3d_test, the test data will be downloaded
 # automatically to Open3D/examples/test_data/open3d_downloads. Therefore, make

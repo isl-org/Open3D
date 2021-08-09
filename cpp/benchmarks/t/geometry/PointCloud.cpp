@@ -75,7 +75,7 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 }
 
 static const std::string path =
-        std::string(TEST_DATA_DIR) + "/common/fragment.ply";
+        std::string(TEST_DATA_COMMON_DIR) + "/fragment.ply";
 
 void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
     auto pcd = open3d::io::CreatePointCloudFromFile(path);

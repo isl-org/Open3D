@@ -99,10 +99,10 @@ TEST(UniformTSDFVolume, Constructor) {
 }
 
 TEST(UniformTSDFVolume, RealData) {
-    std::string test_data_dir = std::string(TEST_DATA_DIR);
+    std::string test_data_common_dir = std::string(TEST_DATA_COMMON_DIR);
 
     // Poses
-    std::string trajectory_path = test_data_dir + "/common/RGBD/odometry.log";
+    std::string trajectory_path = test_data_common_dir + "/RGBD/odometry.log";
     std::vector<Eigen::Matrix4d> poses;
     if (!ReadPoses(trajectory_path, poses)) {
         throw std::runtime_error("Cannot read trajectory file");
@@ -127,14 +127,14 @@ TEST(UniformTSDFVolume, RealData) {
         // Color
         geometry::Image im_color;
         std::ostringstream im_color_path;
-        im_color_path << TEST_DATA_DIR << "/common/RGBD/color/"
+        im_color_path << TEST_DATA_COMMON_DIR << "/RGBD/color/"
                       << std::setfill('0') << std::setw(5) << i << ".jpg";
         io::ReadImage(im_color_path.str(), im_color);
 
         // Depth
         geometry::Image im_depth;
         std::ostringstream im_depth_path;
-        im_depth_path << TEST_DATA_DIR << "/common/RGBD/depth/"
+        im_depth_path << TEST_DATA_COMMON_DIR << "/RGBD/depth/"
                       << std::setfill('0') << std::setw(5) << i << ".png";
         io::ReadImage(im_depth_path.str(), im_depth);
 

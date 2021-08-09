@@ -91,14 +91,14 @@ std::pair<float, float> FloatImageMinMax(const geometry::Image& im) {
 TEST(RGBDImage, CreateFromColorAndDepth) {
     geometry::Image im_color;
     EXPECT_TRUE(io::ReadImage(
-            std::string(TEST_DATA_DIR) + "/common/RGBD/color/00000.jpg",
+            std::string(TEST_DATA_COMMON_DIR) + "/RGBD/color/00000.jpg",
             im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
 
     geometry::Image im_depth;
     EXPECT_TRUE(io::ReadImage(
-            std::string(TEST_DATA_DIR) + "/common/RGBD/depth/00000.png",
+            std::string(TEST_DATA_COMMON_DIR) + "/RGBD/depth/00000.png",
             im_depth));
     EXPECT_EQ(im_depth.num_of_channels_, 1);
     EXPECT_EQ(im_depth.bytes_per_channel_, 2);
@@ -128,14 +128,14 @@ TEST(RGBDImage, CreateFromColorAndDepth) {
 TEST(RGBDImage, CreateFromRedwoodFormat) {
     geometry::Image im_color;
     EXPECT_TRUE(io::ReadImage(
-            std::string(TEST_DATA_DIR) + "/common/RGBD/color/00000.jpg",
+            std::string(TEST_DATA_COMMON_DIR) + "/RGBD/color/00000.jpg",
             im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
 
     geometry::Image im_depth;
     EXPECT_TRUE(io::ReadImage(
-            std::string(TEST_DATA_DIR) + "/common/RGBD/depth/00000.png",
+            std::string(TEST_DATA_COMMON_DIR) + "/RGBD/depth/00000.png",
             im_depth));
     EXPECT_EQ(im_depth.num_of_channels_, 1);
     EXPECT_EQ(im_depth.bytes_per_channel_, 2);
@@ -165,16 +165,16 @@ TEST(RGBDImage, CreateFromRedwoodFormat) {
 TEST(RGBDImage, CreateFromTUMFormat) {
     geometry::Image im_color;
     EXPECT_TRUE(
-            io::ReadImage(std::string(TEST_DATA_DIR) +
-                                  "/common/RGBD/other_formats/TUM_color.png",
+            io::ReadImage(std::string(TEST_DATA_COMMON_DIR) +
+                                  "/RGBD/other_formats/TUM_color.png",
                           im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
 
     geometry::Image im_depth;
     EXPECT_TRUE(
-            io::ReadImage(std::string(TEST_DATA_DIR) +
-                                  "/common/RGBD/other_formats/TUM_depth.png",
+            io::ReadImage(std::string(TEST_DATA_COMMON_DIR) +
+                                  "/RGBD/other_formats/TUM_depth.png",
                           im_depth));
     EXPECT_EQ(im_depth.num_of_channels_, 1);
     EXPECT_EQ(im_depth.bytes_per_channel_, 2);
@@ -204,16 +204,16 @@ TEST(RGBDImage, CreateFromTUMFormat) {
 TEST(RGBDImage, CreateFromSUNFormat) {
     geometry::Image im_color;
     EXPECT_TRUE(
-            io::ReadImage(std::string(TEST_DATA_DIR) +
-                                  "/common/RGBD/other_formats/SUN_color.jpg",
+            io::ReadImage(std::string(TEST_DATA_COMMON_DIR) +
+                                  "/RGBD/other_formats/SUN_color.jpg",
                           im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
 
     geometry::Image im_depth;
     EXPECT_TRUE(
-            io::ReadImage(std::string(TEST_DATA_DIR) +
-                                  "/common/RGBD/other_formats/SUN_depth.png",
+            io::ReadImage(std::string(TEST_DATA_COMMON_DIR) +
+                                  "/RGBD/other_formats/SUN_depth.png",
                           im_depth));
     EXPECT_EQ(im_depth.num_of_channels_, 1);
     EXPECT_EQ(im_depth.bytes_per_channel_, 2);

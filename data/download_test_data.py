@@ -25,7 +25,7 @@
 # ----------------------------------------------------------------------------
 
 # Download Open3D test data files. The default download path is
-# Open3D/data/downloads
+# Open3D/data/download
 #
 # See https://github.com/isl-org/open3d_downloads for details on how to
 # manage the test data files.

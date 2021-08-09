@@ -72,8 +72,8 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     core::Device device = GetParam();
 
     std::string dataset_folder =
-            std::string(TEST_DATA_DIR) +
-            "/common/reconstruction_system/livingroom1_clean_micro";
+            std::string(TEST_DATA_COMMON_DIR) +
+            "/reconstruction_system/livingroom1_clean_micro";
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string scene_folder = dataset_folder + "/test_scene";
     std::string slac_folder = dataset_folder + "/output_slac";
@@ -86,7 +86,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
         utility::LogError(
                 "No fragment found in {}, please make sure the test dataset "
                 "has been downloaded in "
-                "downloads/tests/reconstruction_system/ been "
+                "download/tests/reconstruction_system/ been "
                 "downloaded.",
                 fragment_folder);
     }
@@ -182,8 +182,8 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     core::Device device = GetParam();
 
     std::string dataset_folder =
-            std::string(TEST_DATA_DIR) +
-            "/common/reconstruction_system/livingroom1_clean_micro";
+            std::string(TEST_DATA_COMMON_DIR) +
+            "/reconstruction_system/livingroom1_clean_micro";
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string color_folder = dataset_folder + "/image";
     std::string depth_folder = dataset_folder + "/depth";

@@ -286,7 +286,7 @@ TEST(HalfEdgeTriangleMesh, Constructor_PartialHexagon) {
 
 TEST(HalfEdgeTriangleMesh, Constructor_Sphere) {
     geometry::TriangleMesh mesh;
-    io::ReadTriangleMesh(std::string(TEST_DATA_DIR) + "/common/sphere.ply",
+    io::ReadTriangleMesh(std::string(TEST_DATA_COMMON_DIR) + "/sphere.ply",
                          mesh);
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);

@@ -45,7 +45,7 @@ TEST(VoxelGridIO, PLYWriteRead) {
 
     // Write to file
     std::string file_name =
-            std::string(TEST_DATA_DIR) + "/common/temp_voxel_grid.ply";
+            std::string(TEST_DATA_COMMON_DIR) + "/temp_voxel_grid.ply";
     EXPECT_TRUE(io::WriteVoxelGrid(file_name, *src_voxel_grid));
 
     // Read from file

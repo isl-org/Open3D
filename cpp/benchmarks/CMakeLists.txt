@@ -7,7 +7,8 @@ add_subdirectory(pipelines)
 add_subdirectory(t/geometry)
 add_subdirectory(t/pipelines)
 
-target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+target_compile_definitions(benchmarks PRIVATE TEST_DATA_COMMON_DIR="${PROJECT_SOURCE_DIR}/data/common")
+target_compile_definitions(benchmarks PRIVATE TEST_DATA_DOWNLOAD_DIR="${PROJECT_SOURCE_DIR}/data/download")
 target_compile_definitions(benchmarks PRIVATE BENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
 
 target_link_libraries(benchmarks PRIVATE Open3D::Open3D)

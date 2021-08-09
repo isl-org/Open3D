@@ -1,12 +1,12 @@
 # Download Open3D test data files. The default download path is
-# Open3D/data/downloads
+# Open3D/data/download
 #
 # See https://github.com/isl-org/open3d_downloads for details on how to
 # manage the test data files.
 
 
 set(TEST_DATA_DIR "${CMAKE_CURRENT_LIST_DIR}")
-set(DOWNLOAD_DIR "${TEST_DATA_DIR}/downloads")
+set(DOWNLOAD_DIR "${TEST_DATA_DIR}/download")
 
 
 function(download_dataset_file dataset_url dataset_path dataset_sha256)
@@ -19,7 +19,7 @@ function(download_dataset_file dataset_url dataset_path dataset_sha256)
     endif()
 
     # Support subdirectory inside TEST_DATA_DIR, e.g.
-    # Open3D/data/downloads/foo/bar/my_file.txt
+    # Open3D/data/download/foo/bar/my_file.txt
     get_filename_component(DATASET_DIRECTORY "${DATASET_FULL_PATH}" DIRECTORY)
     file(MAKE_DIRECTORY "${DATASET_DIRECTORY}")
 

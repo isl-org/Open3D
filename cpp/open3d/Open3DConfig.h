@@ -24,48 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+// clang-format off
+// Open3D version
+#define OPEN3D_VERSION_MAJOR 0
+#define OPEN3D_VERSION_MINOR 13
+#define OPEN3D_VERSION_PATCH 0
+#define OPEN3D_VERSION_TWEAK 
+#define OPEN3D_VERSION       "0.13.0"
 
-// TEST_DATA_COMMON_DIR, TEST_DATA_DOWNLOAD_DIR defined in CMakeLists.txt
-// Put it here to avoid editor warnings
-#ifndef TEST_DATA_COMMON_DIR
-#define TEST_DATA_COMMON_DIR
-#endif
-
-#ifndef TEST_DATA_DOWNLOAD_DIR
-#define TEST_DATA_DOWNLOAD_DIR
-#endif
-
-#include <gtest/gtest.h>
-
-#include <Eigen/Core>
-#include <sstream>
-#include <string>
-#include <vector>
-
-#include "open3d/Macro.h"
-#include "tests/test_utility/Compare.h"
-#include "tests/test_utility/Print.h"
-#include "tests/test_utility/Rand.h"
-#include "tests/test_utility/Raw.h"
-#include "tests/test_utility/Sort.h"
-
-// GPU_CONDITIONAL_COMPILE_STR is "" if gpu is available, otherwise "DISABLED_"
-// The GPU_CONDITIONAL_COMPILE_STR value is configured in CMake
-#define CUDA_CONDITIONAL_TEST(test_name) \
-    OPEN3D_CONCATENATE(GPU_CONDITIONAL_TEST_STR, test_name)
+// Open3D info
+#define OPEN3D_HOME          "http://www.open3d.org"
+#define OPEN3D_DOCS          "http://www.open3d.org/docs"
+#define OPEN3D_CODE          "https://github.com/isl-org/Open3D"
+#define OPEN3D_ISSUES        "https://github.com/isl-org/Open3D/issues"
 
 namespace open3d {
-namespace tests {
 
-// Eigen Zero()
-const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
-const Eigen::Vector3d Zero3d = Eigen::Vector3d::Zero();
-const Eigen::Matrix<double, 6, 1> Zero6d = Eigen::Matrix<double, 6, 1>::Zero();
-const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
+    void PrintOpen3DVersion();
 
-// Mechanism for reporting unit tests for which there is no implementation yet.
-void NotImplemented();
-
-}  // namespace tests
-}  // namespace open3d
+}
+// clang-format on
