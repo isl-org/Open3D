@@ -32,7 +32,7 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > VoxelHashing [color_folder] [depth_folder]");
+    utility::LogInfo("    > DenseSLAM [color_folder] [depth_folder]");
     utility::LogInfo("      Given an RGBD image sequence, perform frame-to-model tracking and mapping, and reconstruct the surface.");
     utility::LogInfo("");
     utility::LogInfo("Basic options:");
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     utility::filesystem::ListFilesInDirectory(depth_folder, depth_filenames);
     if (color_filenames.size() != depth_filenames.size()) {
         utility::LogError(
-                "[VoxelHashing] numbers of color and depth files mismatch. "
+                "[DenseSLAM] numbers of color and depth files mismatch. "
                 "Please provide folders with same number of images.");
     }
     std::sort(color_filenames.begin(), color_filenames.end());
@@ -128,15 +128,14 @@ int main(int argc, char* argv[]) {
     Tensor T_frame_to_model =
             Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 
-    t::pipelines::voxelhashing::Model model(voxel_size, sdf_trunc,
-                                            block_resolution, block_count,
-                                            T_frame_to_model, device);
+    t::pipelines::slam::Model model(voxel_size, sdf_trunc, block_resolution,
+                                    block_count, T_frame_to_model, device);
 
     // Initialize frame
     Image ref_depth = *t::io::CreateImageFromFile(depth_filenames[0]);
-    t::pipelines::voxelhashing::Frame input_frame(
+    t::pipelines::slam::Frame input_frame(
             ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
-    t::pipelines::voxelhashing::Frame raycast_frame(
+    t::pipelines::slam::Frame raycast_frame(
             ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
 
     // Iterate over frames

@@ -30,7 +30,7 @@
 #include "pybind/t/pipelines/odometry/odometry.h"
 #include "pybind/t/pipelines/registration/registration.h"
 #include "pybind/t/pipelines/slac/slac.h"
-#include "pybind/t/pipelines/voxelhashing/voxelhashing.h"
+#include "pybind/t/pipelines/slam/slam.h"
 
 namespace open3d {
 namespace t {
@@ -42,7 +42,7 @@ void pybind_pipelines(py::module& m) {
     odometry::pybind_odometry(m_pipelines);
     registration::pybind_registration(m_pipelines);
     slac::pybind_slac(m_pipelines);
-    voxelhashing::pybind_voxelhashing(m_pipelines);
+    slam::pybind_slam(m_pipelines);
 }
 
 }  // namespace pipelines

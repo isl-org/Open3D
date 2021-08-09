@@ -34,7 +34,7 @@
 namespace open3d {
 namespace t {
 namespace pipelines {
-namespace voxelhashing {
+namespace slam {
 
 /// \brief Frame is a container class storing an intrinsic matrix and several 2D
 /// tensors, from depth map, vertex map, to color map, in a customized way.
@@ -93,7 +93,7 @@ private:
     // normal_map: (H, W, 3), Float32
     std::unordered_map<std::string, core::Tensor> data_;
 };
-}  // namespace voxelhashing
+}  // namespace slam
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

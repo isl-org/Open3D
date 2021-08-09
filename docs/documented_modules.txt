@@ -11,7 +11,7 @@ open3d.t.pipelines
 open3d.t.pipelines.odometry
 open3d.t.pipelines.registration
 open3d.t.pipelines.slac
-open3d.t.pipelines.voxelhashing
+open3d.t.pipelines.slam
 open3d.ml
 open3d.ml.tf
 open3d.ml.tf.layers

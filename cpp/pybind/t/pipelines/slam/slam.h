@@ -31,11 +31,11 @@
 namespace open3d {
 namespace t {
 namespace pipelines {
-namespace voxelhashing {
+namespace slam {
 
-void pybind_voxelhashing(py::module &m);
+void pybind_slam(py::module &m);
 
-}  // namespace voxelhashing
+}  // namespace slam
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

@@ -16,5 +16,5 @@ target_sources(pybind PRIVATE
 )
 
 target_sources(pybind PRIVATE
-    voxelhashing/voxelhashing.cpp
+    slam/slam.cpp
 )

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/voxelhashing/Model.h"
+#include "open3d/t/pipelines/slam/Model.h"
 
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Image.h"
@@ -32,12 +32,12 @@
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/Utility.h"
 #include "open3d/t/pipelines/odometry/RGBDOdometry.h"
-#include "open3d/t/pipelines/voxelhashing/Frame.h"
+#include "open3d/t/pipelines/slam/Frame.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
-namespace voxelhashing {
+namespace slam {
 
 Model::Model(float voxel_size,
              float sdf_trunc,
@@ -76,10 +76,10 @@ void Model::SynthesizeModelFrame(Frame& raycast_frame,
         raycast_frame.SetData("color", result[MaskCode::ColorMap]);
     } else if (raycast_frame.GetData("color").NumElements() == 0) {
         // Put a dummy RGB frame to enable RGBD odometry in TrackFrameToModel
-        raycast_frame.SetData("color",
-                              core::Tensor({raycast_frame.GetHeight(),
-                                            raycast_frame.GetWidth(), 3},
-                                           core::Dtype::Float32, core::HOST));
+        raycast_frame.SetData(
+                "color", core::Tensor({raycast_frame.GetHeight(),
+                                       raycast_frame.GetWidth(), 3},
+                                      core::Dtype::Float32, core::Device()));
     }
 }
 
@@ -124,7 +124,7 @@ t::geometry::TriangleMesh Model::ExtractTriangleMesh(int estimated_number,
 }
 
 core::Hashmap Model::GetHashmap() { return *voxel_grid_.GetBlockHashmap(); }
-}  // namespace voxelhashing
+}  // namespace slam
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

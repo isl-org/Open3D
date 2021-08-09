@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/voxelhashing/Frame.h"
-#include "open3d/t/pipelines/voxelhashing/Model.h"
+#include "open3d/t/pipelines/slam/Frame.h"
+#include "open3d/t/pipelines/slam/Model.h"
 #include "pybind/docstring.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
-namespace voxelhashing {
+namespace slam {
 
-void pybind_voxelhashing_model(py::module &m) {
+void pybind_slam_model(py::module &m) {
     // TODO: doc
-    py::class_<Model> model(m, "Model", "VoxelHashing model.");
+    py::class_<Model> model(m, "Model", "DenseSLAM model.");
     py::detail::bind_copy_functions<Model>(model);
 
     model.def(py::init<>());
@@ -83,9 +83,9 @@ void pybind_voxelhashing_model(py::module &m) {
     model.def_readwrite("frame_id", &Model::frame_id_);
 }
 
-void pybind_voxelhashing_frame(py::module &m) {
+void pybind_slam_frame(py::module &m) {
     // TODO: doc
-    py::class_<Frame> frame(m, "Frame", "VoxelHashing frame.");
+    py::class_<Frame> frame(m, "Frame", "DenseSLAM frame.");
     py::detail::bind_copy_functions<Frame>(frame);
 
     frame.def(py::init<int, int, core::Tensor, core::Device>(), "height"_a,
@@ -100,14 +100,14 @@ void pybind_voxelhashing_frame(py::module &m) {
     frame.def("get_data_as_image", &Frame::GetDataAsImage);
 }
 
-void pybind_voxelhashing(py::module &m) {
+void pybind_slam(py::module &m) {
     py::module m_submodule =
-            m.def_submodule("voxelhashing", "Tensor VoxelHashing pipeline.");
-    pybind_voxelhashing_model(m_submodule);
-    pybind_voxelhashing_frame(m_submodule);
+            m.def_submodule("slam", "Tensor DenseSLAM pipeline.");
+    pybind_slam_model(m_submodule);
+    pybind_slam_frame(m_submodule);
 }
 
-}  // namespace voxelhashing
+}  // namespace slam
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

@@ -31,12 +31,12 @@
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TSDFVoxelGrid.h"
 #include "open3d/t/pipelines/odometry/RGBDOdometry.h"
-#include "open3d/t/pipelines/voxelhashing/Frame.h"
+#include "open3d/t/pipelines/slam/Frame.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
-namespace voxelhashing {
+namespace slam {
 
 /// Model class maintaining a volumetric grid and the current active frame's
 /// pose. Wraps functionalities including integration, ray casting, and surface
@@ -128,7 +128,7 @@ public:
 
     int frame_id_ = -1;
 };
-}  // namespace voxelhashing
+}  // namespace slam
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
