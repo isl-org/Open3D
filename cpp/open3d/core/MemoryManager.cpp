@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/Blob.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/MemoryManagerStatistic.h"
 #include "open3d/utility/Helper.h"
@@ -122,6 +123,34 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         map_device_type_to_memory_manager.end()) {
         utility::LogError("Unimplemented device '{}'.", device.ToString());
     }
+
+    // Throw error for invalid CUDA device id.
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        if (core::cuda::DeviceCount()) {
+            const int max_device_id = core::cuda::DeviceCount() - 1;
+
+            if (device.GetID() < 0 ||
+                device.GetID() > core::cuda::DeviceCount() - 1) {
+                if (max_device_id) {
+                    utility::LogError(
+                            "Invalid CUDA Device '{}'. Device ID expected to "
+                            "be between 0 to {}, but got {}.",
+                            device.ToString(), max_device_id, device.GetID());
+                } else {
+                    utility::LogError(
+                            "Invalid CUDA Device '{}'. Device ID expected to "
+                            "be 0, but got {}.",
+                            device.ToString(), device.GetID());
+                }
+            }
+        } else {
+            utility::LogError(
+                    "Invalid device '{}'. BUILD_WITH_CUDA=ON, but no CUDA "
+                    "device available.",
+                    device.ToString());
+        }
+    }
+
     return map_device_type_to_memory_manager.at(device.GetType());
 }
 
