@@ -83,6 +83,7 @@ create-base-vm-image)
     gcloud compute instances create "$VM_IMAGE" \
         --zone="${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
         --service-account="$GCE_GPU_CI_SA" \
+        --scopes https://www.googleapis.com/auth/devstorage.full_control \
         --accelerator="$GCE_GPU" \
         --maintenance-policy=TERMINATE \
         --machine-type=$GCE_INSTANCE_TYPE \
@@ -124,6 +125,7 @@ create-vm)
             --boot-disk-size=$GCE_BOOT_DISK_SIZE \
             --boot-disk-type=$GCE_BOOT_DISK_TYPE \
             --image-family="$GCE_VM_CUSTOM_IMAGE_FAMILY" \
+            --scopes https://www.googleapis.com/auth/devstorage.full_control \
             --service-account="$GCE_GPU_CI_SA"; do
         ((GCE_ZID = GCE_ZID + 1))
     done
