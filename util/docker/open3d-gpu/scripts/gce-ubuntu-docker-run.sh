@@ -82,7 +82,7 @@ docker-push)
 create-base-vm-image)
     gcloud compute instances create "$VM_IMAGE" \
         --zone="${GCE_INSTANCE_ZONE[$GCE_ZID]}" \
-        --service-account="$GCE_SA_KEY_DOCS_CI" \
+        --service-account="$GCE_GPU_CI_SA" \
         --accelerator="$GCE_GPU" \
         --maintenance-policy=TERMINATE \
         --machine-type=$GCE_INSTANCE_TYPE \
@@ -124,7 +124,7 @@ create-vm)
             --boot-disk-size=$GCE_BOOT_DISK_SIZE \
             --boot-disk-type=$GCE_BOOT_DISK_TYPE \
             --image-family="$GCE_VM_CUSTOM_IMAGE_FAMILY" \
-            --service-account="$GCE_SA_KEY_DOCS_CI"; do
+            --service-account="$GCE_GPU_CI_SA"; do
         ((GCE_ZID = GCE_ZID + 1))
     done
     sleep 30 # wait for instance ssh service startup
