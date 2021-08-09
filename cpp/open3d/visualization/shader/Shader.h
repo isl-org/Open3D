@@ -494,7 +494,6 @@ const char * const TextureSimpleVertexShader =
 ;
 
 // clang-format on
-}  // namespace open3d::glsl
-}  // namespace open3d::visualization
+}  // namespace glsl
+}  // namespace visualization
 }  // namespace open3d
-

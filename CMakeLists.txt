@@ -335,8 +335,8 @@ if(WIN32)
 endif()
 
 # Downloads files from https://github.com/isl-org/open3d_downloads to
-# Open3D/data/downloads.
-add_custom_target(downloads
+# Open3D/data/download.
+add_custom_target(download_data
     COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/data/download_test_data.cmake
     COMMENT ""
 )
