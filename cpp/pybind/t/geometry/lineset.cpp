@@ -40,36 +40,51 @@ void pybind_lineset(py::module& m) {
     py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>, Geometry>
             line_set(m, "LineSet", R"(
 A LineSet contains points and lines joining them and optionally attributes on
-the points and lines.
+the points and lines.  The ``LineSet`` class stores the attribute data in key-value
+maps, where the key is the attribute name and value is a Tensor containing the
+attribute data.  There are two maps: one each for ``point`` and ``line``.
 
-The LineSet class stores the attribute data in key-value pairs for flexibility,
-where the key is a string representing the attribute name and value is a Tensor
-containing the attribute data.
+The attributes of the line set have different levels::
 
-By default, there are two sets of dictionaries, i.e. ``points`` and
-``lines``. In most cases, the length of an attribute should be
-equal to the length of the data corresponding to the primary key. For
-instance ``points["colors"]`` should have the same length as
-``points["positions"]``.
+    import open3d as o3d
 
-Although the attributes are all stored in a key-value pair dictionary, the
-attributes have different levels:
+    dtype_f = o3d.core.float32
+    dtype_i = o3d.core.int32
 
-    - Default attributes ``points["positions"]`` and ``lines["indices"]``.
-        - Created by default, required for all ``LineSet``s.
-        - The "positions" tensor must be of shape (N,3) while the "indices" tensor
-          must be of shape (N,2) and DtypeCode Int.
-        - The device of "positions" and "indices" must be consistent and they
-          determine the device of the LineSet.
-    - Commonly used attributes: line colors.
-    - Custom attributes, e.g. labels.
-        - Both are not created by default. Users can add their own custom
-          attributes. Commonly used attributes (line colors) have some
-          additional convenience functions in the C++ API compared to custom
-          attributes.
-        - For all attributes, the device must be consistent with the device of
-          the LineSet.
-        - Custom attributes may have any ``dtype``.)");
+    # Create an empty line set
+    # Use lineset.point to access the point attributes
+    # Use lineset.line to access the line attributes
+    lineset = o3d.t.geometry.LineSet()
+
+    # Default attribute: point["positions"], line["indices"]
+    # These attributes is created by default and are required by all line
+    # sets. The shape must be (N, 3) and (N, 2) respectively. The device of
+    # "positions" determines the device of the line set.
+    lineset.point["positions"] = o3d.core.Tensor([[0, 0, 0],
+                                                [0, 0, 1],
+                                                [0, 1, 0],
+                                                [0, 1, 1]], dtype_f, device)
+    lineset.line["indices"] = o3d.core.Tensor([[0, 1], [1, 2],
+                                               [2, 3], [3, 0]], dtype_i, device)
+
+    # Common attributes: line["colors"]
+    # Common attributes are used in built-in line set operations. The
+    # spellings must be correct. For example, if "color" is used instead of
+    # "color", some internal operations that expects "colors" will not work.
+    # "colors" must have shape (N, 3) and must be on the same device as the
+    # line set.
+    lineset.line["colors"] = o3c.core.Tensor([[0.0, 0.0, 0.0],
+                                             [0.1, 0.1, 0.1],
+                                             [0.2, 0.2, 0.2],
+                                             [0.3, 0.3, 0.3]], dtype_f, device)
+
+    # User-defined attributes
+    # You can also attach custom attributes. The value tensor must be on the
+    # same device as the line set. The are no restrictions on the shape or
+    # dtype, e.g.,
+    pcd.point["labels"] = o3c.core.Tensor(...)
+    pcd.line["features"] = o3c.core.Tensor(...)
+)");
 
     // Constructors.
     line_set.def(py::init<const core::Device&>(),
@@ -89,16 +104,16 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
              {"line_indices",
               "A tensor with element shape (2,) and Int dtype."}});
 
-    // Line set's attributes: points_positions, line_indices, line_colors, etc.
+    // Line set's attributes: point_positions, line_indices, line_colors, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced
     // by another TensorMap in Python.
     line_set.def_property_readonly(
-            "points", py::overload_cast<>(&LineSet::GetPointAttr, py::const_),
+            "point", py::overload_cast<>(&LineSet::GetPointAttr, py::const_),
             "Dictionary containing point attributes. The primary key "
             "``positions`` contains point positions.");
     line_set.def_property_readonly(
-            "lines", py::overload_cast<>(&LineSet::GetLineAttr, py::const_),
+            "line", py::overload_cast<>(&LineSet::GetLineAttr, py::const_),
             "Dictionary containing line attributes. The primary key "
             "``indices`` contains indices of points defining the lines.");
 
