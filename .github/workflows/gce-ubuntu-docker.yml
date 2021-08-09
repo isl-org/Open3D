@@ -12,6 +12,7 @@ on:
 env:
   GCE_PROJECT: ${{ secrets.GCE_PROJECT }}
   GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
+  GCE_SA_KEY_DOCS_CI: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
