@@ -152,7 +152,7 @@ bool WritePointCloud(const std::string &filename,
             filename, pointcloud.To(core::Device("CPU:0")), params);
     if (!pointcloud.IsEmpty()) {
         utility::LogDebug("Write geometry::PointCloud: {:d} vertices.",
-                          (int)pointcloud.GetPoints().GetLength());
+                          (int)pointcloud.GetPointPositions().GetLength());
     } else {
         utility::LogDebug("Write geometry::PointCloud: 0 vertices.");
     }
