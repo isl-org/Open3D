@@ -63,7 +63,52 @@ void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
                Geometry>
             pointcloud(m, "PointCloud",
-                       "A pointcloud contains a set of 3D points.");
+                       R"(
+A point cloud contains a list of 3D points.
+
+The point cloud class stores the attribute data in key-value maps, where
+the key is a string representing the attribute name and the value is a
+Tensor containing the attribute data. In most cases, the length of an
+attribute should be equal to the length of the point cloud's "positions".
+
+The attributes of the point cloud have different levels::
+
+    import open3d as o3d
+
+    device = o3d.core.Device("CPU:0")
+    dtype = o3d.core.float32
+
+    # Create an empty point cloud
+    pcd = o3d.t.geometry.PointCloud(device)
+
+    # Default attribute: "positions".
+    # This attribute is created by default and is required by all point clouds.
+    # The shape must be (N, 3). The device of "positions" determines the device
+    # of the point cloud.
+    pcd.point["positions"] = o3d.core.Tensor([[0, 0, 0],
+                                              [1, 1, 1],
+                                              [2, 2, 2]], dtype, device)
+
+    # Common attributes: "normals", "colors".
+    # Common attributes are used in built-in point cloud operations. The
+    # spellings must be correct, for example, if "normal" is used instead of
+    # "normals", some internal operations may think that the point cloud does
+    # not contain normals. "normals" and "colors" must have shape (N, 3) and
+    # must be on the same device as the point cloud.
+    pcd.point["normals"] = o3c.core.Tensor([[0, 0, 1],
+                                            [0, 1, 0],
+                                            [1, 0, 0]], dtype, device)
+    pcd.point["normals"] = o3c.core.Tensor([[0.0, 0.0, 0.0],
+                                            [0.1, 0.1, 0.1],
+                                            [0.2, 0.2, 0.2]], dtype, device)
+
+    # User-defined attributes.
+    # You can also attach custom attributes. The value tensor must be on the
+    # same device as the point cloud. The are no restrictions on the shape and
+    # dtype. E.g.:
+    pcd.point["intensities"] = o3c.core.Tensor([0.3, 0.1, 0.4], dtype, device)
+    pcd.point["lables"] = o3c.core.Tensor([3, 1, 4], o3d.core.int32, device)
+)");
 
     // Constructors.
     pointcloud.def(py::init<const core::Device&>(), "device"_a)
