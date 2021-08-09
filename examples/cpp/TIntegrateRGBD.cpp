@@ -233,4 +233,10 @@ int main(int argc, char* argv[]) {
         open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
                                     *pcd_legacy);
     }
+
+    if (utility::ProgramOptionExists(argc, argv, "--tsdf")) {
+        open3d::t::io::WriteTSDFVoxelGrid("tsdf.json", voxel_grid);
+    }
+
+    return 0;
 }

@@ -105,10 +105,16 @@ public:
     /// Clear stored map without reallocating memory.
     void Clear();
 
+    /// Save active key and value to a npz file at 'key' and 'value'. The file
+    /// name should end with npz, otherwise npz will be added as an extension.
+    void Save(const std::string& file_name);
+
+    /// Load active key and value from a npz file at 'key' and 'value'. The npz
+    /// file should contain a 'key' and a 'value' tensor, of the same length.
+    static Hashmap Load(const std::string& file_name);
+
     Hashmap Clone() const;
     Hashmap To(const Device& device, bool copy = false) const;
-    Hashmap CPU() const;
-    Hashmap CUDA(int device_id = 0) const;
 
     int64_t Size() const;
 
