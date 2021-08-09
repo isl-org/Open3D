@@ -271,7 +271,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         state.name_to_attr_state_.erase("x");
         state.name_to_attr_state_.erase("y");
         state.name_to_attr_state_.erase("z");
-        pointcloud.SetPoints(points);
+        pointcloud.SetPointPositions(points);
     }
     if (state.name_to_attr_state_.count("nx") != 0 &&
         state.name_to_attr_state_.count("ny") != 0 &&
@@ -352,11 +352,12 @@ bool WritePointCloudToPLY(const std::string &filename,
 
     geometry::TensorMap t_map(pointcloud.GetPointAttr().Contiguous());
 
-    long num_points = static_cast<long>(pointcloud.GetPoints().GetLength());
+    long num_points =
+            static_cast<long>(pointcloud.GetPointPositions().GetLength());
 
     // Make sure all the attributes have same size.
     for (auto const &it : t_map) {
-        if (it.first == "points" || it.first == "normals" ||
+        if (it.first == "positions" || it.first == "normals" ||
             it.first == "colors") {
             if (it.second.GetLength() != num_points) {
                 utility::LogWarning(
@@ -391,10 +392,10 @@ bool WritePointCloudToPLY(const std::string &filename,
     ply_add_element(ply_file, "vertex", num_points);
 
     std::vector<AttributePtr> attribute_ptrs;
-    attribute_ptrs.emplace_back(t_map["points"].GetDtype(),
-                                t_map["points"].GetDataPtr(), 3);
+    attribute_ptrs.emplace_back(t_map["positions"].GetDtype(),
+                                t_map["positions"].GetDataPtr(), 3);
 
-    e_ply_type pointType = GetPlyType(t_map["points"].GetDtype());
+    e_ply_type pointType = GetPlyType(t_map["positions"].GetDtype());
     ply_add_property(ply_file, "x", pointType, pointType, pointType);
     ply_add_property(ply_file, "y", pointType, pointType, pointType);
     ply_add_property(ply_file, "z", pointType, pointType, pointType);
@@ -427,7 +428,7 @@ bool WritePointCloudToPLY(const std::string &filename,
 
     e_ply_type attributeType;
     for (auto const &it : t_map) {
-        if (it.first != "points" && it.first != "colors" &&
+        if (it.first != "positions" && it.first != "colors" &&
             it.first != "normals") {
             attribute_ptrs.emplace_back(it.second.GetDtype(),
                                         it.second.GetDataPtr(), 1);

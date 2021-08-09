@@ -61,7 +61,7 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     int64_t num_points = 1000000;  // 1M
     PointCloud pcd(device);
-    pcd.SetPoints(core::Tensor({num_points, 3}, core::Float32, device));
+    pcd.SetPointPositions(core::Tensor({num_points, 3}, core::Float32, device));
     pcd.SetPointColors(core::Tensor({num_points, 3}, core::Float32, device));
 
     // Warm up.
@@ -107,7 +107,7 @@ void Transform(benchmark::State& state, const core::Device& device) {
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    core::Dtype dtype = pcd.GetPoints().GetDtype();
+    core::Dtype dtype = pcd.GetPointPositions().GetDtype();
     core::Tensor transformation = core::Tensor::Init<double>({{1, 0, 0, 1.0},
                                                               {0, 1, 0, 2.0},
                                                               {0, 0, 1, 3.0},
