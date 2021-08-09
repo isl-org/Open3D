@@ -80,7 +80,7 @@ if __name__ == '__main__':
     depth_file_names, color_file_names = load_image_file_names(config)
     intrinsic = load_intrinsic(config)
 
-    volume, poses = voxelhashing(depth_file_names[:100], color_file_names[:100],
+    volume, poses = voxelhashing(depth_file_names, color_file_names,
                                  intrinsic, config)
     save_poses('output.log', poses)
     save_poses('output.json', poses)
