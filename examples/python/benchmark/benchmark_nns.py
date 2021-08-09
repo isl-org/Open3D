@@ -1,26 +1,30 @@
 import os
-from subprocess import PIPE, run
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'  # does not affect results
+
 import argparse
 import itertools
 import pickle
 from collections import OrderedDict
+from pathlib import Path
 
 import numpy as np
 import open3d as o3d
-import tabulate
-from matplotlib import pyplot as plt
-from pathlib import Path
 
 pwd = Path(os.path.dirname(os.path.realpath(__file__)))
 open3d_root = pwd.parent.parent.parent
 
+from benchmark_utils import measure_time, print_system_info, print_table
 
+
+# Define NNS methods
 class O3DKnn:
 
     def __init__(self):
         self.nns = None
+
+    def prepare_data(self, *args):
+        return args
 
     def setup(self, points):
         self.nns = o3d.core.nns.KnnIndex()
@@ -43,50 +47,87 @@ class O3DFaiss(O3DKnn):
         return True
 
 
-def run_command(command):
-    result = run(command,
-                 stdout=PIPE,
-                 stderr=PIPE,
-                 universal_newlines=True,
-                 shell=True)
-    return result.stdout
+class NativeFaiss:
+
+    @staticmethod
+    def swig_ptr_from_FloatTensor(x):
+        assert x.is_contiguous()
+        assert x.dtype == torch.float32
+        return faiss.cast_integer_to_float_ptr(x.storage().data_ptr() +
+                                               x.storage_offset() * 4)
+
+    @staticmethod
+    def swig_ptr_from_LongTensor(x):
+        assert x.is_contiguous()
+        assert x.dtype == torch.int64, "dtype=%s" % x.dtype
+        return faiss.cast_integer_to_idx_t_ptr(x.storage().data_ptr() +
+                                               x.storage_offset() * 8)
+
+    @staticmethod
+    def search_index_pytorch(index, x, k, D=None, I=None):
+        """call the search function of an index with pytorch tensor I/O (CPU
+            and GPU supported)"""
+        assert x.is_contiguous()
+        n, d = x.size()
+        assert d == index.d
+
+        if D is None:
+            D = torch.empty((n, k), dtype=torch.float32, device=x.device)
+        else:
+            assert D.size() == (n, k)
+
+        if I is None:
+            I = torch.empty((n, k), dtype=torch.int64, device=x.device)
+        else:
+            assert I.size() == (n, k)
+        torch.cuda.synchronize()
+        xptr = NativeFaiss.swig_ptr_from_FloatTensor(x)
+        Iptr = NativeFaiss.swig_ptr_from_LongTensor(I)
+        Dptr = NativeFaiss.swig_ptr_from_FloatTensor(D)
+        index.search_c(n, xptr, k, Dptr, Iptr)
+        torch.cuda.synchronize()
+        return D, I
+
+    def __init__(self, d=3):
+        res = faiss.StandardGpuResources()
+        index_cpu = faiss.IndexFlatL2(d)
+        self.index = faiss.index_cpu_to_gpu(res, 0, index_cpu)
+
+    def prepare_data(self, points, queries):
+        points_torch = torch.utils.dlpack.from_dlpack(points.to_dlpack())
+        queries_torch = torch.utils.dlpack.from_dlpack(queries.to_dlpack())
+        return points_torch, queries_torch
+
+    def setup(self, points):
+        points_ptr = NativeFaiss.swig_ptr_from_FloatTensor(points)
+        self.index.add_c(points.shape[0], points_ptr)
+
+    def search(self, queries, knn):
+        result = NativeFaiss.search_index_pytorch(self.index, queries, knn)
+        # print_index
+        print(result[1][:10])
+        return result
+
+    def clear(self):
+        self.index.reset()
 
 
-def measure_time(fn, min_samples=10, max_samples=100, max_time_in_sec=100.0):
-    """Measure time to run fn. Returns the elapsed time each run."""
-    from time import perf_counter_ns
-    t = []
-    for i in range(max_samples):
-        if sum(t) / 1e9 >= max_time_in_sec and i >= min_samples:
-            break
-        t.append(-perf_counter_ns())
-        try:
-            ans = fn()
-        except Exception as e:
-            print(e)
-            return np.array([np.nan])
-        t[-1] += perf_counter_ns()
-        del ans
-    print('.', end='')
-    return np.array(t) / 1e9
+class NativeFaissIVF(NativeFaiss):
 
+    def __init__(self, d=3, nlist=100, nprobe=5):
+        res = faiss.StandardGpuResources()
+        quantizer = faiss.IndexFlatL2(d)  # the other index
+        index_cpu = faiss.IndexIVFFlat(quantizer, d, nlist)
+        index_cpu.nprobe = nprobe
+        self.index = faiss.index_cpu_to_gpu(res, 0, index_cpu)
 
-def print_table(method_names, results):
-    headers = [''] + [f'{n}_setup' for n in method_names
-                     ] + [f'{n}_search' for n in method_names]
-    rows = []
-
-    for x in results[0]:
-        r = [x] + list(
-            map(np.median, [r[x]['knn_gpu_setup'] for r in results] +
-                [r[x]['knn_gpu_search'] for r in results]))
-        rows.append(r)
-
-    print(tabulate.tabulate(rows, headers=headers))
+    def setup(self, points):
+        points_ptr = NativeFaiss.swig_ptr_from_FloatTensor(points)
+        self.index.train_c(points.shape[0], points_ptr)
+        self.index.add_c(points.shape[0], points_ptr)
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--file",
@@ -114,7 +155,16 @@ if __name__ == "__main__":
     datasets['random'] = {'points': points, 'queries': queries}
 
     # prepare methods
-    methods = [O3DKnn(), O3DFaiss()]
+    try:
+        # Requires faiss and torch.
+        # conda install faiss pytorch -c pytorch
+        import faiss
+        import torch
+        import torch.utils.dlpack
+        methods = [O3DKnn(), O3DFaiss(), NativeFaiss(), NativeFaissIVF()]
+    except ImportError as e:
+        methods = [O3DKnn(), O3DFaiss()]
+
     method_names = [m.__class__.__name__ for m in methods]
 
     # run benchmark
@@ -139,6 +189,8 @@ if __name__ == "__main__":
                 queries = queries[::step].contiguous().to(o3d_cuda_dev)
 
                 example_results = {'k': knn, 'num_points': points.shape[0]}
+
+                points, queries = method.prepare_data(points, queries)
 
                 ans = measure_time(lambda: method.setup(points))
                 example_results['knn_gpu_setup'] = ans
@@ -166,16 +218,5 @@ if __name__ == "__main__":
             data = pickle.load(f)
             results.append(data)
 
-    # print results
-    nvcc_version = run_command("nvcc --version")
-    os_version = run_command("cat /etc/os-release")
-    cpu_info = run_command("cat /proc/cpuinfo | grep 'model name'")
-    print("CUDA version")
-    print(nvcc_version)
-    print("")
-    print("OS")
-    print(os_version)
-    print("")
-    print("CPU")
-    print(cpu_info)
+    print_system_info()
     print_table(method_names, results)
