@@ -349,7 +349,7 @@ struct GuiVisualizer::Impl {
     } settings_;
 
     rendering::TriangleMeshModel loaded_model_;
-
+    std::shared_ptr<geometry::PointCloud> loaded_pcd_;
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
 
@@ -369,6 +369,7 @@ struct GuiVisualizer::Impl {
         settings_.view_->ShowFileMaterialEntry(false);
 
         settings_.model_.SetMaterialsToDefault();
+        settings_.view_->EnableEstimateNormals(false);
         // model's OnChanged callback will get called (if set), which will
         // update everything.
     }
@@ -423,6 +424,11 @@ struct GuiVisualizer::Impl {
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
+        // Does user want Point Cloud normals estimated?
+        if (settings_.model_.GetUserWantsEstimateNormals()) {
+            RunNormalEstimation();
+        }
+
         // Make sure scene redraws once changes have been applied
         scene_wgt_->ForceRedraw();
 
@@ -438,29 +444,7 @@ struct GuiVisualizer::Impl {
                                                         loaded_model_);
         } else {
             UpdateMaterials(renderer, current_materials);
-            switch (settings_.model_.GetMaterialType()) {
-                case GuiSettingsModel::MaterialType::LIT:
-                    scene_wgt_->GetScene()->UpdateMaterial(
-                            settings_.lit_material_);
-                    break;
-                case GuiSettingsModel::MaterialType::UNLIT:
-                    scene_wgt_->GetScene()->UpdateMaterial(
-                            settings_.unlit_material_);
-                    break;
-                case GuiSettingsModel::MaterialType::NORMAL_MAP: {
-                    settings_.normal_depth_material_.shader = "normals";
-                    scene_wgt_->GetScene()->UpdateMaterial(
-                            settings_.normal_depth_material_);
-                } break;
-                case GuiSettingsModel::MaterialType::DEPTH: {
-                    settings_.normal_depth_material_.shader = "depth";
-                    scene_wgt_->GetScene()->UpdateMaterial(
-                            settings_.normal_depth_material_);
-                } break;
-
-                default:
-                    break;
-            }
+            UpdateSceneMaterial();
         }
 
         auto *view = scene_wgt_->GetRenderView();
@@ -519,6 +503,43 @@ private:
             render_scene->SetSunLightDirection(lighting.sun_dir);
         }
         render_scene->EnableSunLight(lighting.sun_enabled);
+    }
+
+    void RunNormalEstimation() {
+        if (loaded_pcd_) {
+            loaded_pcd_->EstimateNormals();
+            loaded_pcd_->NormalizeNormals();
+            auto scene3d = scene_wgt_->GetScene();
+            scene3d->ClearGeometry();
+            rendering::Material mat;
+            scene3d->AddGeometry(MODEL_NAME, loaded_pcd_.get(), mat);
+            UpdateSceneMaterial();
+        }
+    }
+
+    void UpdateSceneMaterial() {
+        switch (settings_.model_.GetMaterialType()) {
+            case GuiSettingsModel::MaterialType::LIT:
+                scene_wgt_->GetScene()->UpdateMaterial(settings_.lit_material_);
+                break;
+            case GuiSettingsModel::MaterialType::UNLIT:
+                scene_wgt_->GetScene()->UpdateMaterial(
+                        settings_.unlit_material_);
+                break;
+            case GuiSettingsModel::MaterialType::NORMAL_MAP: {
+                settings_.normal_depth_material_.shader = "normals";
+                scene_wgt_->GetScene()->UpdateMaterial(
+                        settings_.normal_depth_material_);
+            } break;
+            case GuiSettingsModel::MaterialType::DEPTH: {
+                settings_.normal_depth_material_.shader = "depth";
+                scene_wgt_->GetScene()->UpdateMaterial(
+                        settings_.normal_depth_material_);
+            } break;
+
+            default:
+                break;
+        }
     }
 
     void UpdateMaterials(rendering::Renderer &renderer,
@@ -816,6 +837,7 @@ void GuiVisualizer::SetGeometry(
             scene3d->AddGeometry(MODEL_NAME, pcd.get(), loaded_material);
 
             impl_->settings_.model_.SetDisplayingPointClouds(true);
+            impl_->settings_.view_->EnableEstimateNormals(true);
             if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
                 auto &profile =
                         GuiSettingsModel::GetDefaultPointCloudLightingProfile();
@@ -940,6 +962,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
         // clear current model
         impl_->loaded_model_.meshes_.clear();
         impl_->loaded_model_.materials_.clear();
+        impl_->loaded_pcd_.reset();
 
         auto geometry_type = io::ReadFileGeometryType(path);
 
@@ -982,13 +1005,14 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
             if (success) {
                 utility::LogInfo("Successfully read {}", path.c_str());
                 UpdateProgress(ioProgressAmount);
-                if (!cloud->HasNormals()) {
+                if (!cloud->HasNormals() && !cloud->HasColors()) {
                     cloud->EstimateNormals();
                 }
                 UpdateProgress(0.666f);
                 cloud->NormalizeNormals();
                 UpdateProgress(0.75f);
                 geometry = cloud;
+                impl_->loaded_pcd_ = cloud;
             } else {
                 utility::LogWarning("Failed to read points {}", path.c_str());
                 cloud.reset();

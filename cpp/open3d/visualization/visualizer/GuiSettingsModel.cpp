@@ -362,6 +362,20 @@ void GuiSettingsModel::SetPointSize(int size) {
     NotifyChanged(true);
 }
 
+bool GuiSettingsModel::GetUserWantsEstimateNormals() {
+    if (user_wants_estimate_normals_) {
+        user_wants_estimate_normals_ = false;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void GuiSettingsModel::EstimateNormalsClicked() {
+    user_wants_estimate_normals_ = true;
+    NotifyChanged();
+}
+
 bool GuiSettingsModel::GetDisplayingPointClouds() const {
     return displaying_point_clouds_;
 }

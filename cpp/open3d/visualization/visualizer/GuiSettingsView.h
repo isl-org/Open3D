@@ -56,6 +56,7 @@ public:
                     std::function<void(const char*)> on_load_ibl);
 
     void ShowFileMaterialEntry(bool show);
+    void EnableEstimateNormals(bool enable);
     void Update();
 
 private:
@@ -83,6 +84,7 @@ private:
     std::shared_ptr<gui::ColorEdit> material_color_;
     std::shared_ptr<gui::Button> reset_material_color_;
     std::shared_ptr<gui::Slider> point_size_;
+    std::shared_ptr<gui::Button> generate_normals_;
 };
 
 }  // namespace visualization
