@@ -39,8 +39,8 @@ namespace geometry {
 /// typically used as a container for geometry attributes.
 ///
 /// e.g.
-/// tensor_map.primary_key: "points"
-/// tensor_map["points"]  : Tensor of shape {100, 3}.
+/// tensor_map.primary_key: "positions"
+/// tensor_map["positions"]  : Tensor of shape {100, 3}.
 /// tensor_map["colors"]  : Tensor of shape {100, 3}.
 /// tensor_map["normals"] : Tensor of shape {100, 3}.
 ///
