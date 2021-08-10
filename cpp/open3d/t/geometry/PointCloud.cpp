@@ -47,25 +47,25 @@ namespace geometry {
 PointCloud::PointCloud(const core::Device &device)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
       device_(device),
-      point_attr_(TensorMap("points")) {}
+      point_attr_(TensorMap("positions")) {}
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDevice()) {
     points.AssertShapeCompatible({utility::nullopt, 3});
-    SetPoints(points);
+    SetPointPositions(points);
 }
 
 PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
                                &map_keys_to_tensors)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
-      point_attr_(TensorMap("points")) {
-    if (map_keys_to_tensors.count("points") == 0) {
-        utility::LogError("\"points\" attribute must be specified.");
+      point_attr_(TensorMap("positions")) {
+    if (map_keys_to_tensors.count("positions") == 0) {
+        utility::LogError("\"positions\" attribute must be specified.");
     }
-    device_ = map_keys_to_tensors.at("points").GetDevice();
-    map_keys_to_tensors.at("points").AssertShapeCompatible(
-            {utility::nullopt, 3});
-    point_attr_ = TensorMap("points", map_keys_to_tensors.begin(),
+    device_ = map_keys_to_tensors.at("positions").GetDevice();
+    map_keys_to_tensors.at("positions")
+            .AssertShapeCompatible({utility::nullopt, 3});
+    point_attr_ = TensorMap("positions", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());
 }
 
@@ -73,12 +73,14 @@ std::string PointCloud::ToString() const {
     if (point_attr_.size() == 0)
         return fmt::format("PointCloud on {} [0 points ()] Attributes: None.",
                            GetDevice().ToString());
-    auto str = fmt::format("PointCloud on {} [{} points ({})] Attributes:",
-                           GetDevice().ToString(), GetPoints().GetLength(),
-                           GetPoints().GetDtype().ToString());
+    auto str =
+            fmt::format("PointCloud on {} [{} points ({})] Attributes:",
+                        GetDevice().ToString(), GetPointPositions().GetShape(0),
+                        GetPointPositions().GetDtype().ToString());
+
     if (point_attr_.size() == 1) return str + " None.";
     for (const auto &keyval : point_attr_) {
-        if (keyval.first != "points") {
+        if (keyval.first != "positions") {
             str += fmt::format(" {} ({}, {}),", keyval.first,
                                keyval.second.GetDtype().ToString(),
                                keyval.second.GetLength());
@@ -88,11 +90,17 @@ std::string PointCloud::ToString() const {
     return str;
 }
 
-core::Tensor PointCloud::GetMinBound() const { return GetPoints().Min({0}); }
+core::Tensor PointCloud::GetMinBound() const {
+    return GetPointPositions().Min({0});
+}
 
-core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
+core::Tensor PointCloud::GetMaxBound() const {
+    return GetPointPositions().Max({0});
+}
 
-core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
+core::Tensor PointCloud::GetCenter() const {
+    return GetPointPositions().Mean({0});
+}
 
 PointCloud PointCloud::To(const core::Device &device, bool copy) const {
     if (!copy && GetDevice() == device) {
@@ -110,7 +118,7 @@ PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 PointCloud PointCloud::Append(const PointCloud &other) const {
     PointCloud pcd(GetDevice());
 
-    int64_t length = GetPoints().GetLength();
+    int64_t length = GetPointPositions().GetLength();
 
     for (auto &kv : point_attr_) {
         if (other.HasPointAttr(kv.first)) {
@@ -155,7 +163,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    kernel::transform::TransformPoints(transformation, GetPoints());
+    kernel::transform::TransformPoints(transformation, GetPointPositions());
     if (HasPointNormals()) {
         kernel::transform::TransformNormals(transformation, GetPointNormals());
     }
@@ -172,7 +180,7 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
     if (!relative) {
         transform -= GetCenter();
     }
-    GetPoints() += transform;
+    GetPointPositions() += transform;
     return *this;
 }
 
@@ -180,14 +188,14 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
     center.AssertShape({3});
     center.AssertDevice(device_);
 
-    core::Tensor points = GetPoints();
+    core::Tensor points = GetPointPositions();
     points.Sub_(center).Mul_(scale).Add_(center);
     return *this;
 }
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    kernel::transform::RotatePoints(R, GetPoints(), center);
+    kernel::transform::RotatePoints(R, GetPointPositions(), center);
 
     if (HasPointNormals()) {
         kernel::transform::RotateNormals(R, GetPointNormals());
@@ -200,7 +208,7 @@ PointCloud PointCloud::VoxelDownSample(
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
-    core::Tensor points_voxeld = GetPoints() / voxel_size;
+    core::Tensor points_voxeld = GetPointPositions() / voxel_size;
     core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
 
     core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(), core::Int64,
@@ -210,12 +218,13 @@ PointCloud PointCloud::VoxelDownSample(
     core::Tensor addrs, masks;
     points_voxeli_hashmap.Activate(points_voxeli, addrs, masks);
 
-    PointCloud pcd_down(GetPoints().GetDevice());
+    PointCloud pcd_down(GetPointPositions().GetDevice());
     for (auto &kv : point_attr_) {
-        if (kv.first == "points") {
-            pcd_down.SetPointAttr(kv.first, points_voxeli.IndexGet({masks}).To(
-                                                    GetPoints().GetDtype()) *
-                                                    voxel_size);
+        if (kv.first == "positions") {
+            pcd_down.SetPointAttr(kv.first,
+                                  points_voxeli.IndexGet({masks}).To(
+                                          GetPointPositions().GetDtype()) *
+                                          voxel_size);
         } else {
             pcd_down.SetPointAttr(kv.first, kv.second.IndexGet({masks}));
         }
@@ -294,7 +303,7 @@ static PointCloud CreatePointCloudWithNormals(
                     .LogicalAnd(vertex_list.Slice(1, 0, 1, 1).IsFinite())
                     .Reshape({im_size});
     PointCloud pcd(
-            {{"points",
+            {{"positions",
               vertex_list.GetItem({TensorKey::IndexTensor(valid_idx),
                                    TensorKey::Slice(None, None, None)})},
              {"normals",
@@ -364,7 +373,7 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
         kernel::pointcloud::Unproject(
                 rgbd_image.depth_.AsTensor(), image_colors_t, points, colors,
                 intrinsics, extrinsics, depth_scale, depth_max, stride);
-        return PointCloud({{"points", points}, {"colors", colors}});
+        return PointCloud({{"positions", points}, {"colors", colors}});
     }
 }
 
@@ -376,7 +385,7 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
                                                 float depth_max) {
     core::Tensor depth =
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
-    kernel::pointcloud::Project(depth, utility::nullopt, GetPoints(),
+    kernel::pointcloud::Project(depth, utility::nullopt, GetPointPositions(),
                                 utility::nullopt, intrinsics, extrinsics,
                                 depth_scale, depth_max);
     return geometry::Image(depth);
@@ -399,8 +408,9 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
     core::Tensor color =
             core::Tensor::Zeros({height, width, 3}, core::UInt8, device_);
-    kernel::pointcloud::Project(depth, color, GetPoints(), GetPointColors(),
-                                intrinsics, extrinsics, depth_scale, depth_max);
+    kernel::pointcloud::Project(depth, color, GetPointPositions(),
+                                GetPointColors(), intrinsics, extrinsics,
+                                depth_scale, depth_max);
 
     return geometry::RGBDImage(color, depth);
 }
@@ -411,8 +421,9 @@ PointCloud PointCloud::FromLegacy(
         const core::Device &device) {
     geometry::PointCloud pcd(device);
     if (pcd_legacy.HasPoints()) {
-        pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensor(
-                pcd_legacy.points_, dtype, device));
+        pcd.SetPointPositions(
+                core::eigen_converter::EigenVector3dVectorToTensor(
+                        pcd_legacy.points_, dtype, device));
     } else {
         utility::LogWarning("Creating from an empty legacy PointCloud.");
     }
@@ -429,9 +440,9 @@ PointCloud PointCloud::FromLegacy(
 
 open3d::geometry::PointCloud PointCloud::ToLegacy() const {
     open3d::geometry::PointCloud pcd_legacy;
-    if (HasPoints()) {
-        pcd_legacy.points_ =
-                core::eigen_converter::TensorToEigenVector3dVector(GetPoints());
+    if (HasPointPositions()) {
+        pcd_legacy.points_ = core::eigen_converter::TensorToEigenVector3dVector(
+                GetPointPositions());
     }
     if (HasPointColors()) {
         bool dtype_is_supported_for_conversion = true;

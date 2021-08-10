@@ -33,13 +33,13 @@ namespace t {
 namespace io {
 
 void WriteHashmap(const std::string& file_name, const core::Hashmap& hashmap) {
-    core::Tensor keys = hashmap.GetKeyTensor().To(core::HOST);
-    core::Tensor values = hashmap.GetValueTensor().To(core::HOST);
+    core::Tensor keys = hashmap.GetKeyTensor().To(core::Device("CPU:0"));
+    core::Tensor values = hashmap.GetValueTensor().To(core::Device("CPU:0"));
 
     core::Tensor active_addrs;
     hashmap.GetActiveIndices(active_addrs);
     core::Tensor active_indices =
-            active_addrs.To(core::HOST, core::Dtype::Int64);
+            active_addrs.To(core::Device("CPU:0"), core::Dtype::Int64);
 
     core::Tensor active_keys = keys.IndexGet({active_indices});
     core::Tensor active_values = values.IndexGet({active_indices});
@@ -77,9 +77,9 @@ core::Hashmap ReadHashmap(const std::string& file_name) {
     core::SizeVector element_shape_value(shape_value.begin() + 1,
                                          shape_value.end());
 
-    auto hashmap =
-            core::Hashmap(init_capacity, dtype_key, dtype_value,
-                          element_shape_key, element_shape_value, core::HOST);
+    auto hashmap = core::Hashmap(init_capacity, dtype_key, dtype_value,
+                                 element_shape_key, element_shape_value,
+                                 core::Device("CPU:0"));
 
     core::Tensor masks, addrs;
     hashmap.Insert(keys, values, masks, addrs);

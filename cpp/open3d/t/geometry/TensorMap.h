@@ -39,8 +39,8 @@ namespace geometry {
 /// typically used as a container for geometry attributes.
 ///
 /// e.g.
-/// tensor_map.primary_key: "points"
-/// tensor_map["points"]  : Tensor of shape {100, 3}.
+/// tensor_map.primary_key: "positions"
+/// tensor_map["positions"]  : Tensor of shape {100, 3}.
 /// tensor_map["colors"]  : Tensor of shape {100, 3}.
 /// tensor_map["normals"] : Tensor of shape {100, 3}.
 ///
@@ -119,6 +119,15 @@ public:
 
     /// Assert IsSizeSynchronized().
     void AssertSizeSynchronized() const;
+
+    /// Returns True if the underlying memory buffers of all the Tensors in the
+    /// TensorMap is contiguous.
+    bool IsContiguous() const;
+
+    /// Returns a new contiguous TensorMap containing the same data in the same
+    /// device. For the contiguous tensors in the TensorMap, the same underlying
+    /// memory will be used.
+    TensorMap Contiguous() const;
 
     /// Returns true if the key exists in the map.
     /// Same as C++20's std::unordered_map::contains().
