@@ -134,7 +134,7 @@ void EstimateNormals(benchmark::State& state,
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
 
     pcd = pcd.To(device).VoxelDownSample(voxel_size);
-    pcd.SetPoints(pcd.GetPoints().To(dtype));
+    pcd.SetPointPositions(pcd.GetPointPositions().To(dtype));
     if (pcd.HasPointNormals()) {
         pcd.RemovePointAttr("normals");
     }

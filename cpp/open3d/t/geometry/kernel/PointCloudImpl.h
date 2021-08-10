@@ -304,7 +304,7 @@ void EstimateCovariancesUsingKNNSearchCPU
     core::Tensor indices, distance;
     std::tie(indices, distance) = tree.KnnSearch(points, max_nn);
 
-    indices = indices.Contiguous();
+    indices = indices.To(core::Int32).Contiguous();
     int32_t nn_count = static_cast<int32_t>(indices.GetShape()[1]);
 
     if (nn_count < 3) {
@@ -471,7 +471,6 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
     // Based on:
     // https://www.geometrictools.com/Documentation/RobustEigenSymmetric3x3.pdf
     // which handles edge cases like points on a plane.
-
     scalar_t max_coeff = covariance_ptr[0];
 
     for (int i = 1; i < 9; i++) {

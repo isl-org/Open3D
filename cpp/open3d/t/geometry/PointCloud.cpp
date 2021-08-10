@@ -236,7 +236,7 @@ PointCloud PointCloud::VoxelDownSample(
 void PointCloud::EstimateNormals(
         const int max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
-    core::Dtype dtype = this->GetPoints().GetDtype();
+    core::Dtype dtype = this->GetPointPositions().GetDtype();
     if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
         utility::LogError(
                 "Only Float32 and Float64 type color attribute supported for "
@@ -247,8 +247,8 @@ void PointCloud::EstimateNormals(
     const core::Device::DeviceType device_type = device.GetType();
 
     if (!has_normals) {
-        this->SetPointNormals(core::Tensor::Empty({GetPoints().GetLength(), 3},
-                                                  dtype, device));
+        this->SetPointNormals(core::Tensor::Empty(
+                {GetPointPositions().GetLength(), 3}, dtype, device));
     } else {
         if (this->GetPointNormals().GetDtype() != dtype) {
             utility::LogError(
@@ -257,9 +257,10 @@ void PointCloud::EstimateNormals(
         this->SetPointNormals(GetPointNormals().Contiguous());
     }
 
-    this->SetPointAttr("covariances",
-                       core::Tensor::Empty({GetPoints().GetLength(), 3, 3},
-                                           dtype, device));
+    this->SetPointAttr(
+            "covariances",
+            core::Tensor::Empty({GetPointPositions().GetLength(), 3, 3}, dtype,
+                                device));
 
     if (radius.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing covariances");
@@ -267,12 +268,12 @@ void PointCloud::EstimateNormals(
         // mehtod.
         if (device_type == core::Device::DeviceType::CPU) {
             kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
-                    this->GetPoints().Contiguous(),
+                    this->GetPointPositions().Contiguous(),
                     this->GetPointAttr("covariances"), radius.value(), max_knn);
         } else if (device_type == core::Device::DeviceType::CUDA) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateCovariancesUsingHybridSearchCUDA,
-                      this->GetPoints().Contiguous(),
+                      this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value(),
                       max_knn);
         } else {
@@ -283,7 +284,7 @@ void PointCloud::EstimateNormals(
         // Computes and sets `covariances` attribute using KNN Search method.
         if (device_type == core::Device::DeviceType::CPU) {
             kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
-                    this->GetPoints().Contiguous(),
+                    this->GetPointPositions().Contiguous(),
                     this->GetPointAttr("covariances"), max_knn);
         } else if (device_type == core::Device::DeviceType::CUDA) {
             if (dtype == core::Float64) {
@@ -292,7 +293,7 @@ void PointCloud::EstimateNormals(
             }
 
             CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
-                      this->GetPoints().Contiguous(),
+                      this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), max_knn);
         } else {
             utility::LogError("Unimplemented device");
