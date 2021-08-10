@@ -109,7 +109,9 @@ The attributes of the point cloud have different levels::
 )");
 
     // Constructors.
-    pointcloud.def(py::init<const core::Device&>(), "device"_a)
+    pointcloud
+            .def(py::init<const core::Device&>(),
+                 "device"_a = core::Device("CPU:0"))
             .def(py::init<const core::Tensor&>(), "positions"_a)
             .def(py::init<const std::unordered_map<std::string,
                                                    core::Tensor>&>(),

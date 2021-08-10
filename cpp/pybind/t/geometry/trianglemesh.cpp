@@ -96,7 +96,9 @@ The attributes of the triangle mesh have different levels::
 )");
 
     // Constructors.
-    triangle_mesh.def(py::init<const core::Device&>(), "device"_a)
+    triangle_mesh
+            .def(py::init<const core::Device&>(),
+                 "device"_a = core::Device("CPU:0"))
             .def(py::init<const core::Tensor&, const core::Tensor&>(),
                  "vertex_positions"_a, "triangle_indices"_a);
 
@@ -105,10 +107,10 @@ The attributes of the triangle mesh have different levels::
     // be editable in Python. We don't want the TensorMap to be replaced
     // by another TensorMap in Python.
     triangle_mesh.def_property_readonly(
-            "vertex_positions",
+            "vertex",
             py::overload_cast<>(&TriangleMesh::GetVertexAttr, py::const_));
     triangle_mesh.def_property_readonly(
-            "triangle_indices",
+            "triangle",
             py::overload_cast<>(&TriangleMesh::GetTriangleAttr, py::const_));
 
     // Device transfers.
