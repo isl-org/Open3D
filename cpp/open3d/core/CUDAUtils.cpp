@@ -109,8 +109,7 @@ void AssertCUDADeviceAvailable(int device_id) {
 #else
     utility::LogError(
             "-DBUILD_CUDA_MODULE=OFF. Please build with -DBUILD_CUDA_MODULE=ON "
-            "to "
-            "use CUDA device.");
+            "to use CUDA device.");
 #endif
 }
 
