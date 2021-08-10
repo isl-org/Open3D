@@ -44,7 +44,7 @@ def small_scale():
             summary.add_3d('cylinder', summary_format([cylinder]), step=step)
 
 
-def large_scale(n_steps=40, batch_size=8, base_resolution=20):
+def large_scale(n_steps=32, batch_size=1, base_resolution=200):
     """Generate a large scale summary. Geometry resolution increases linearly
     with step. Each element in a batch is painted a different color.
     """
@@ -86,5 +86,5 @@ def large_scale(n_steps=40, batch_size=8, base_resolution=20):
 
 
 if __name__ == "__main__":
-    small_scale()
+    # small_scale()
     large_scale()

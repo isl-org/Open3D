@@ -131,27 +131,29 @@ class TensorboardOpen3DPluginClient {
 
         let parent_element = document.getElementById(parent_id);
         parent_element.replaceChildren();  /* Remove existing children */
-        let slider_form = document.createElement("form");
-        parent_element.appendChild(slider_form);
-        slider_form.setAttribute("oninput", name + "_output.value = " + name + ".valueAsNumber;");
-        let slider_label = document.createElement("label");
-        slider_form.appendChild(slider_label);
-        slider_label.setAttribute("for", name);
-        slider_label.innerText = display_name + ": [" + min.toString() +  "-" + max.toString() + "] ";
-        let slider_input = document.createElement("input");
-        slider_form.appendChild(slider_input);
-        slider_input.setAttribute("type", "range");
-        slider_input.setAttribute("id", name);
-        slider_input.setAttribute("name", name);
-        slider_input.setAttribute("min", min);
-        slider_input.setAttribute("max", max);
-        slider_input.setAttribute("value", value);
-        slider_input.addEventListener("change", this.onselect);
-        let slider_text = document.createElement("output");
-        slider_text.setAttribute("for", name);
-        slider_text.setAttribute("name", name + "_output");
-        slider_text.innerText = value;
-        slider_form.appendChild(slider_text);
+        if (max > min) { // Don't create slider if no choice
+            let slider_form = document.createElement("form");
+            parent_element.appendChild(slider_form);
+            slider_form.setAttribute("oninput", name + "_output.value = " + name + ".valueAsNumber;");
+            let slider_label = document.createElement("label");
+            slider_form.appendChild(slider_label);
+            slider_label.setAttribute("for", name);
+            slider_label.innerText = display_name + ": [" + min.toString() +  "-" + max.toString() + "] ";
+            let slider_input = document.createElement("input");
+            slider_form.appendChild(slider_input);
+            slider_input.setAttribute("type", "range");
+            slider_input.setAttribute("id", name);
+            slider_input.setAttribute("name", name);
+            slider_input.setAttribute("min", min);
+            slider_input.setAttribute("max", max);
+            slider_input.setAttribute("value", value);
+            slider_input.addEventListener("change", this.onselect);
+            let slider_text = document.createElement("output");
+            slider_text.setAttribute("for", name);
+            slider_text.setAttribute("name", name + "_output");
+            slider_text.innerText = value;
+            slider_form.appendChild(slider_text);
+        }
     }
 
     /**

@@ -3,13 +3,13 @@ import os
 import socket
 import time
 import queue
-import logging
-_log = logging.getLogger(__name__)
-_log.setLevel(logging.DEBUG)
-_h = logging.StreamHandler()
-_h.setLevel(logging.DEBUG)
-_h.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
-_log.addHandler(_h)
+# import logging
+# _log = logging.getLogger("Open3D")
+# _log.setLevel(logging.DEBUG)
+# _stream_handler = logging.StreamHandler()
+# _stream_handler.setLevel(logging.DEBUG)
+# _stream_handler.setFormatter(logging.Formatter('[%(name)s %(levelname)s] %(message)s'))
+# _log.addHandler(_stream_handler)
 
 import numpy as np
 
@@ -23,6 +23,7 @@ import torch
 from torch.utils import dlpack as torch_dlpack
 
 import open3d as o3d
+_log = o3d.log
 from open3d.visualization.tensorboard_plugin import metadata
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 import ipdb
@@ -183,9 +184,21 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
     """Data conversion and other preprocessing.
     TODO(ssheorey): Convert to half precision, compression, etc.
     """
-    save_tensor = _to_o3d(tensor[:max_outputs, ...])
-    if prop.endswith("_colors") and save_tensor.dtype != o3d.core.uint8:
-        save_tensor = _to_uint8(save_tensor)
+    if tensor.ndim == 2:  # batch_size = 1
+        save_tensor = _to_o3d(tensor)
+        save_tensor.reshape((1,) + tuple(save_tensor.shape))
+    else:
+        save_tensor = _to_o3d(tensor[:max_outputs, ...])
+    if prop.endswith("_indices"):
+        save_dtype = o3d.core.int32
+    elif prop.endswith("_colors"):
+        save_dtype = o3d.core.uint8
+    else:
+        save_dtype = o3d.core.float32
+    if prop.endswith("_colors"):
+        save_tensor = _to_uint8(save_tensor)  # includes scaling
+    else:
+        save_tensor = save_tensor.to(dtype=save_dtype)
     step_ref = _to_integer(save_tensor)
     if step_ref is not None:
         if step_ref < 0 or step_ref >= step:
@@ -230,7 +243,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         raise ValueError("Unknown geometry properties in data: " +
                          str(unknown_props))
     if "vertex_positions" not in data:
-        raise ValueError("'vertex_positions' not provided.")
+        raise ValueError("Primary key 'vertex_positions' not provided.")
     if max_outputs < 1:
         raise ValueError(
             f"max_outputs ({max_outputs}) should be a non-negative integer.")
@@ -296,9 +309,9 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
 
     vertices = vertex_data.pop("vertex_positions")
     faces = triangle_data.pop("triangle_indices",
-                              o3d.core.Tensor((), dtype=o3d.core.int64))
+                              o3d.core.Tensor((), dtype=o3d.core.int32))
     lines = line_data.pop("line_indices",
-                          o3d.core.Tensor((), dtype=o3d.core.int64))
+                          o3d.core.Tensor((), dtype=o3d.core.int32))
     for b in range(batch_size):
         bc = o3d.io.rpc.BufferConnection()
         o3d.io.rpc.set_mesh_data(
@@ -329,24 +342,26 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     return geometry_metadata.SerializeToString()
 
 
-def add_3d(name, data, step=None, max_outputs=3, description=None):
+def add_3d(name, data, step=None, max_outputs=1, description=None):
     """Write 3D geometry data as summary.
 
     Args:
       name: A name for this summary. The summary tag used for TensorBoard will
         be this name prefixed by any active name scopes.
-      data: A dictionary of `Tensor`s representing 3D data. The following keys
+      data: A dictionary of ``Tensor``s representing 3D data. Tensorflow,
+        PyTorch, Numpy and Open3D tensors are supported. The following keys
         are supported:
 
           - ``vertex_positions``: shape `[B, N, 3]` where B is the number of
                 point clouds and must be same for each key. N is the number of
-                3D points.
-          - ``vertex_colors``: shape `[B, N, 3]`
-          - ``vertex_normals``: shape `[B, N, 3]`
+                3D points. WIll be cast to ``float32``.
+          - ``vertex_colors``: shape `[B, N, 3]` WIll be converted to ``uint8``.
+          - ``vertex_normals``: shape `[B, N, 3]` WIll be cast to ``float32``.
           - ``vertex_uvs``: shape `[B, N, 2]`
-          - ``triangle_indices``: shape `[B, Nf, 3]`
-          - ``line_indices``: shape `[B, Nl, 2]`
+          - ``triangle_indices``: shape `[B, Nf, 3]`. Will be cast to ``uint32``.
+          - ``line_indices``: shape `[B, Nl, 2]`. Will be cast to ``uint32``.
 
+        For batch_size B=1, the tensors may be rank 2 instead of rank 3.
         Floating point color data will be clipped to the range [0,1] and
         converted to uint8 range [0,255]. Other data types will be clipped into
         an allowed range for safe casting to uint8.
@@ -354,15 +369,15 @@ def add_3d(name, data, step=None, max_outputs=3, description=None):
         Any data tensor may be replaced by an int scalar referring to a
         previous step. This allows reusing a previously written property in
         case that it does not change at different steps.
-      step: Explicit `int64`-castable monotonic step value for this summary. If
+      step: Explicit ``int64``-castable monotonic step value for this summary. If
         omitted, this defaults to `tf.summary.experimental.get_step()`, which
         must not be None.
-      max_outputs: Optional `int` or rank-0 integer `Tensor`. At most this
+      max_outputs: Optional ``int`` or rank-0 integer ``Tensor``. At most this
         many images will be emitted at each step. When more than
-        `max_outputs` many images are provided, the first `max_outputs` many
+        `max_outputs` many images are provided, the first ``max_outputs`` many
         images will be used and the rest silently discarded.
       description: Optional long-form description for this summary, as a
-        constant `str`. Markdown is supported. Defaults to empty.
+        constant ``str``. Markdown is supported. Defaults to empty.
 
     Returns:
       True on success, or false if no summary was emitted because no default
