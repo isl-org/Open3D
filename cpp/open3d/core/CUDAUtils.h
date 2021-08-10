@@ -257,12 +257,12 @@ void Synchronize(const Device& device);
 /// Checks if the CUDA device-ID is available and throws error if not. The CUDA
 /// device-ID must be between 0 to device count - 1.
 /// \param device_id The cuda device id to be checked.
-void AssertCUDADeviceIDIsAvailable(const int& device_id);
+void AssertCUDADeviceAvailable(int device_id);
 
 /// Checks if the CUDA device-ID is available and throws error if not. The CUDA
 /// device-ID must be between 0 to device count - 1.
 /// \param device The device to be checked.
-void AssertCUDADeviceIDIsAvailable(const Device& device);
+void AssertCUDADeviceAvailable(const Device& device);
 
 #ifdef BUILD_CUDA_MODULE
 
