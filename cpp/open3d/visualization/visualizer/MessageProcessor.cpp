@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/visualizer/Receiver.h"
+#include "open3d/visualization/visualizer/MessageProcessor.h"
 
 #include <zmq.hpp>
 
@@ -42,10 +42,10 @@ using namespace open3d::utility;
 namespace open3d {
 namespace visualization {
 
-std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
+std::shared_ptr<zmq::message_t> MessageProcessor::ProcessMessage(
         const messages::Request& req,
         const messages::SetMeshData& msg,
-        const MsgpackObjectHandle& obj) {
+        const msgpack::object_handle& obj) {
     std::string errstr(":");
     if (!msg.data.CheckMessage(errstr)) {
         auto status_err = messages::Status::ErrorProcessingMessage();
@@ -307,10 +307,10 @@ std::shared_ptr<zmq::message_t> Receiver::ProcessMessage(
     return CreateStatusOKMsg();
 }
 
-void Receiver::SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
-                           const std::string& path,
-                           int time,
-                           const std::string& layer) {
+void MessageProcessor::SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
+                                   const std::string& path,
+                                   int time,
+                                   const std::string& layer) {
     gui::Application::GetInstance().PostToMainThread(
             window_, [this, geom, path, time, layer]() {
                 on_geometry_(geom, path, time, layer);

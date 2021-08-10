@@ -49,7 +49,9 @@ void pybind_rpc(py::module& m_io) {
             m, "_ConnectionBase");
 
     py::class_<rpc::Connection, std::shared_ptr<rpc::Connection>,
-               rpc::ConnectionBase>(m, "Connection")
+               rpc::ConnectionBase>(m, "Connection", R"doc(
+The default connection class which uses a ZeroMQ socket.
+)doc")
             .def(py::init([](std::string address, int connect_timeout,
                              int timeout) {
                      return std::shared_ptr<rpc::Connection>(
@@ -61,7 +63,9 @@ void pybind_rpc(py::module& m_io) {
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
 
     py::class_<rpc::BufferConnection, std::shared_ptr<rpc::BufferConnection>,
-               rpc::ConnectionBase>(m, "BufferConnection")
+               rpc::ConnectionBase>(m, "BufferConnection", R"doc(
+A connection writing to a memory buffer.
+)doc")
             .def(py::init<>())
             .def(
                     "get_buffer",

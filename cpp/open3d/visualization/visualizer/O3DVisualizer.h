@@ -196,7 +196,7 @@ public:
     UIState GetUIState() const;
     rendering::Open3DScene* GetScene() const;
 
-    /// Starts the RPC interface. See io/rpc/ReceiverBase for the parameters.
+    /// Starts the RPC interface. See io/rpc/ZMQReceiver for the parameters.
     void StartRPCInterface(const std::string& address, int timeout);
 
     void StopRPCInterface();

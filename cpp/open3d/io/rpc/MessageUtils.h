@@ -29,7 +29,6 @@
 #include <tuple>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/io/rpc/ReceiverBase.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 

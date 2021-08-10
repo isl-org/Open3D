@@ -24,10 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/io/rpc/ZMQReceiver.h"
 
 #include <zmq.hpp>
 
+#include "open3d/io/rpc/MessageProcessorBase.h"
 #include "open3d/io/rpc/Messages.h"
 #include "open3d/io/rpc/ZMQContext.h"
 
@@ -51,12 +52,7 @@ namespace open3d {
 namespace io {
 namespace rpc {
 
-struct ReceiverBase::MsgpackObjectHandle {
-    explicit MsgpackObjectHandle(msgpack::object_handle& obj) : obj_(obj) {}
-    msgpack::object_handle& obj_;
-};
-
-ReceiverBase::ReceiverBase(const std::string& address, int timeout)
+ZMQReceiver::ZMQReceiver(const std::string& address, int timeout)
     : address_(address),
       timeout_(timeout),
       keep_running_(false),
@@ -64,24 +60,24 @@ ReceiverBase::ReceiverBase(const std::string& address, int timeout)
       mainloop_error_code_(0),
       mainloop_exception_("") {}
 
-ReceiverBase::~ReceiverBase() { Stop(); }
+ZMQReceiver::~ZMQReceiver() { Stop(); }
 
-void ReceiverBase::Start() {
+void ZMQReceiver::Start() {
     {
         const std::lock_guard<std::mutex> lock(mutex_);
         if (!keep_running_) {
             keep_running_ = true;
-            thread_ = std::thread(&ReceiverBase::Mainloop, this);
+            thread_ = std::thread(&ZMQReceiver::Mainloop, this);
             // wait for the loop to start running
             while (!loop_running_.load() && !mainloop_error_code_.load()) {
                 std::this_thread::yield();
             };
 
             if (!mainloop_error_code_.load()) {
-                LogDebug("ReceiverBase: started");
+                LogDebug("ZMQReceiver: started");
             }
         } else {
-            LogDebug("ReceiverBase: already running");
+            LogDebug("ZMQReceiver: already running");
         }
     }
 
@@ -90,7 +86,7 @@ void ReceiverBase::Start() {
     }
 }
 
-void ReceiverBase::Stop() {
+void ZMQReceiver::Stop() {
     bool keep_running_old;
     {
         const std::lock_guard<std::mutex> lock(mutex_);
@@ -101,13 +97,13 @@ void ReceiverBase::Stop() {
     }
     if (keep_running_old) {
         thread_.join();
-        LogDebug("ReceiverBase: stopped");
+        LogDebug("ZMQReceiver: stopped");
     } else {
-        LogDebug("ReceiverBase: already stopped");
+        LogDebug("ZMQReceiver: already stopped");
     }
 }
 
-std::runtime_error ReceiverBase::GetLastError() {
+std::runtime_error ZMQReceiver::GetLastError() {
     const std::lock_guard<std::mutex> lock(mutex_);
     mainloop_error_code_.store(0);
     std::runtime_error result = mainloop_exception_;
@@ -115,7 +111,7 @@ std::runtime_error ReceiverBase::GetLastError() {
     return result;
 }
 
-void ReceiverBase::Mainloop() {
+void ZMQReceiver::Mainloop() {
     context_ = GetZMQContext();
     socket_ = std::unique_ptr<zmq::socket_t>(
             new zmq::socket_t(*context_, ZMQ_REP));
@@ -135,7 +131,7 @@ void ReceiverBase::Mainloop() {
         socket_->bind(address_.c_str());
     } catch (const zmq::error_t& err) {
         mainloop_exception_ = std::runtime_error(
-                "ReceiverBase::Mainloop: Failed to bind address, " +
+                "ZMQReceiver::Mainloop: Failed to bind address, " +
                 std::string(err.what()));
         mainloop_error_code_.store(1);
         return;
@@ -168,7 +164,10 @@ void ReceiverBase::Mainloop() {
                     auto obj = obj_handle.get();
                     req = obj.as<messages::Request>();
 
-                    if (false) {
+                    if (!processor_) {
+                        LogError(
+                                "ZMQReceiver::Mainloop: message processor is "
+                                "null!");
                     }
 #define PROCESS_MESSAGE(MSGTYPE)                                        \
     else if (MSGTYPE::MsgId() == req.msg_id) {                          \
@@ -177,7 +176,7 @@ void ReceiverBase::Mainloop() {
         auto obj = oh.get();                                            \
         MSGTYPE msg;                                                    \
         msg = obj.as<MSGTYPE>();                                        \
-        auto reply = ProcessMessage(req, msg, MsgpackObjectHandle(oh)); \
+        auto reply = processor_->ProcessMessage(req, msg, oh);          \
         if (reply) {                                                    \
             replies.push_back(reply);                                   \
         } else {                                                        \
@@ -192,7 +191,7 @@ void ReceiverBase::Mainloop() {
                     PROCESS_MESSAGE(messages::SetActiveCamera)
                     PROCESS_MESSAGE(messages::SetTime)
                     else {
-                        LogInfo("ReceiverBase::Mainloop: unsupported msg "
+                        LogInfo("ZMQReceiver::Mainloop: unsupported msg "
                                 "id '{}'",
                                 req.msg_id);
                         auto status = messages::Status::ErrorUnsupportedMsgId();
@@ -200,7 +199,7 @@ void ReceiverBase::Mainloop() {
                         break;
                     }
                 } catch (std::exception& err) {
-                    LogInfo("ReceiverBase::Mainloop:a {}", err.what());
+                    LogInfo("ZMQReceiver::Mainloop:a {}", err.what());
                     auto status = messages::Status::ErrorUnpackingFailed();
                     status.str += std::string(" with ") + err.what();
                     replies.push_back(CreateStatusMessage(status));
@@ -223,84 +222,16 @@ void ReceiverBase::Mainloop() {
                 socket_->send(reply, zmq::send_flags::none);
             }
         } catch (const zmq::error_t& err) {
-            LogInfo("ReceiverBase::Mainloop: {}", err.what());
+            LogInfo("ZMQReceiver::Mainloop: {}", err.what());
         }
     }
     socket_->close();
     loop_running_.store(false);
 }
 
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetMeshData& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::GetMeshData& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetCameraData& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetProperties& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetActiveCamera& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
-}
-std::shared_ptr<zmq::message_t> ReceiverBase::ProcessMessage(
-        const messages::Request& req,
-        const messages::SetTime& msg,
-        const MsgpackObjectHandle& obj) {
-    utility::LogInfo(
-            "ReceiverBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
+void ZMQReceiver::SetMessageProcessor(
+        std::shared_ptr<MessageProcessorBase> processor) {
+    processor_ = processor;
 }
 
 }  // namespace rpc
