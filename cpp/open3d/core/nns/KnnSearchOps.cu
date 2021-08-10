@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/KnnIndex.h"
 #include "open3d/core/nns/KnnSearchImpl.cuh"
@@ -41,7 +42,7 @@ void KnnSearchCUDA(const Tensor& points,
                    int knn,
                    Tensor& neighbors_index,
                    Tensor& neighbors_distance) {
-    const cudaStream_t stream = 0;
+    const cudaStream_t stream = cuda::GetStream();
 
     Device device = points.GetDevice();
     NeighborSearchAllocator<T> output_allocator(device);
