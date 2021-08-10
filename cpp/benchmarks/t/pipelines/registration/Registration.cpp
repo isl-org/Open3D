@@ -76,14 +76,14 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
     // Eliminates the case of impractical values (including negative).
     if (voxel_downsample_factor > 0.001) {
         // TODO: Use geometry::PointCloud::VoxelDownSample.
-        open3d::geometry::PointCloud legacy_s = source.ToLegacyPointCloud();
-        open3d::geometry::PointCloud legacy_t = target.ToLegacyPointCloud();
+        open3d::geometry::PointCloud legacy_s = source.ToLegacy();
+        open3d::geometry::PointCloud legacy_t = target.ToLegacy();
 
         legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
         legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
 
-        source = geometry::PointCloud::FromLegacyPointCloud(legacy_s);
-        target = geometry::PointCloud::FromLegacyPointCloud(legacy_t);
+        source = geometry::PointCloud::FromLegacy(legacy_s);
+        target = geometry::PointCloud::FromLegacy(legacy_t);
     } else {
         utility::LogWarning(
                 " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
@@ -92,12 +92,12 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
 
     geometry::PointCloud source_device(device), target_device(device);
 
-    core::Tensor source_points = source.GetPoints().To(device, dtype);
-    source_device.SetPoints(source_points);
+    core::Tensor source_points = source.GetPointPositions().To(device, dtype);
+    source_device.SetPointPositions(source_points);
 
-    core::Tensor target_points = target.GetPoints().To(device, dtype);
+    core::Tensor target_points = target.GetPointPositions().To(device, dtype);
     core::Tensor target_normals = target.GetPointNormals().To(device, dtype);
-    target_device.SetPoints(target_points);
+    target_device.SetPointPositions(target_points);
     target_device.SetPointNormals(target_normals);
 
     return std::make_tuple(source_device, target_device);
@@ -142,8 +142,8 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
     }
 
     utility::LogDebug(" PointCloud Size: Source: {}  Target: {}",
-                      source.GetPoints().GetShape().ToString(),
-                      target.GetPoints().GetShape().ToString());
+                      source.GetPointPositions().GetShape().ToString(),
+                      target.GetPointPositions().GetShape().ToString());
     utility::LogDebug(" Max iterations: {}, Max_correspondence_distance : {}",
                       max_iterations, max_correspondence_distance);
 }

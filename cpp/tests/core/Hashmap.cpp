@@ -33,6 +33,7 @@
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Optional.h"
 #include "tests/UnitTest.h"
 #include "tests/core/CoreTest.h"
@@ -449,6 +450,46 @@ TEST_P(HashmapPermuteDevices, InsertComplexKeys) {
             EXPECT_EQ(active_values_vec[i], i);
         }
     }
+}
+
+TEST_P(HashmapPermuteDevices, HashmapIO) {
+    const core::Device &device = GetParam();
+    const std::string file_name_noext = "hashmap";
+    const std::string file_name_ext = "hashmap.npz";
+
+    const int n = 10000;
+    const int slots = 1023;
+    int init_capacity = n * 2;
+    HashData<int3, int> data(n, slots);
+
+    std::vector<int> keys_int3;
+    keys_int3.assign(reinterpret_cast<int *>(data.keys_.data()),
+                     reinterpret_cast<int *>(data.keys_.data()) + 3 * n);
+    core::Tensor keys(keys_int3, {n, 3}, core::Dtype::Int32, device);
+    core::Tensor values(data.vals_, {n}, core::Dtype::Int32, device);
+
+    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
+                          {3}, {1}, device);
+    core::Tensor addrs, masks;
+    hashmap.Insert(keys, values, addrs, masks);
+    EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), slots);
+
+    hashmap.Save(file_name_noext);
+    core::Hashmap hashmap_loaded = core::Hashmap::Load(file_name_ext);
+    EXPECT_EQ(hashmap_loaded.Size(), hashmap.Size());
+
+    core::Tensor active_indices;
+    hashmap_loaded.GetActiveIndices(active_indices);
+
+    // Check found results
+    std::vector<core::Tensor> ai({active_indices.To(core::Dtype::Int64)});
+    core::Tensor valid_keys = hashmap_loaded.GetKeyTensor().IndexGet(ai);
+    core::Tensor valid_values = hashmap_loaded.GetValueTensor().IndexGet(ai);
+    EXPECT_TRUE(
+            valid_keys.T()[0].AllClose(valid_values.T()[0] * data.k_factor_));
+
+    EXPECT_TRUE(utility::filesystem::FileExists(file_name_ext));
+    utility::filesystem::RemoveFile(file_name_ext);
 }
 
 }  // namespace tests
