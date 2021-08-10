@@ -92,8 +92,8 @@ void AssertCUDADeviceAvailable(int device_id) {
 #ifdef BUILD_CUDA_MODULE
     if (cuda::DeviceCount() == 0) {
         utility::LogError(
-                "Invalid device 'CUDA:{}'. BUILD_WITH_CUDA=ON, but no CUDA "
-                "device available.",
+                "Invalid device 'CUDA:{}'. -DBUILD_CUDA_MODULE=OFF=ON, but no "
+                "CUDA device available.",
                 device_id);
     } else if (cuda::DeviceCount() == 1 && device_id != 0) {
         utility::LogError(
@@ -108,7 +108,8 @@ void AssertCUDADeviceAvailable(int device_id) {
     }
 #else
     utility::LogError(
-            "BUILD_WITH_CUDA=OFF. Please build with -DBUILD_WITH_CUDA=ON to "
+            "-DBUILD_CUDA_MODULE=OFF. Please build with -DBUILD_CUDA_MODULE=ON "
+            "to "
             "use CUDA device.");
 #endif
 }
