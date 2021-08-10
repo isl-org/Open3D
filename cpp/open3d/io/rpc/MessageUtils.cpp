@@ -260,7 +260,8 @@ std::tuple<messages::MeshData, std::vector<core::Tensor>> PointCloudToMeshData(
     // TODO switch to "positions" after the primary key has changed.
     if (point_attributes.Contains("points")) {
         core::Tensor tensor;
-        std::tie(mesh_data.vertices, tensor) = TensorToArray(pcd.GetPointPositions());
+        std::tie(mesh_data.vertices, tensor) =
+                TensorToArray(pcd.GetPointPositions());
         keep_alive_tensors.push_back(tensor);
     } else {
         LogError("PointCloudToMeshData: PointCloud has no points!");
@@ -294,9 +295,9 @@ GetDataFromSetMeshDataBuffer(std::string& data) {
                                         100          // depth
     );
 
-    size_t offset = 0;
     messages::Request req;
     try {
+        size_t offset = 0;
         auto obj_handle = msgpack::unpack(buffer, buffer_size, offset, nullptr,
                                           nullptr, limits);
         auto obj = obj_handle.get();
