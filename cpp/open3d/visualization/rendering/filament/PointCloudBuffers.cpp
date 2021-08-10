@@ -314,7 +314,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     // tensor is float32. It is an error to call this with a tensor of any other
     // dtype
 
-    const auto& points = geometry_.GetPoints();
+    const auto& points = geometry_.GetPointPositions();
     const size_t n_vertices = points.GetLength();
 
     // We use CUSTOM0 for tangents along with TANGENTS attribute

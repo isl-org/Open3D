@@ -319,16 +319,17 @@ protected:
         // ----- RegistrationMultiScaleICP Function directly taken from
         // ----- t::pipelines::registration, and added O3DVisualizer to it.
         core::Device device = source.GetDevice();
-        core::Dtype dtype = source.GetPoints().GetDtype();
+        core::Dtype dtype = source.GetPointPositions().GetDtype();
 
         // ---- Asserts START
         init_source_to_target.AssertShape({4, 4});
 
-        if (target.GetPoints().GetDtype() != dtype) {
+        if (target.GetPointPositions().GetDtype() != dtype) {
             utility::LogError(
                     "Target Pointcloud dtype {} != Source Pointcloud's dtype "
                     "{}.",
-                    target.GetPoints().GetDtype().ToString(), dtype.ToString());
+                    target.GetPointPositions().GetDtype().ToString(),
+                    dtype.ToString());
         }
         if (target.GetDevice() != device) {
             utility::LogError(
@@ -423,7 +424,7 @@ protected:
         for (int64_t i = 0; i < num_iterations; i++) {
             source_down_pyramid[i].Transform(transformation.To(device, dtype));
             core::nns::NearestNeighborSearch target_nns(
-                    target_down_pyramid[i].GetPoints());
+                    target_down_pyramid[i].GetPointPositions());
             bool check =
                     target_nns.HybridIndex(max_correspondence_distances[i]);
             if (!check) {
@@ -444,7 +445,7 @@ protected:
                 core::Tensor distances, counts;
                 std::tie(result.correspondences_, distances, counts) =
                         target_nns.HybridSearch(
-                                source_down_pyramid[i].GetPoints(),
+                                source_down_pyramid[i].GetPointPositions(),
                                 max_correspondence_distances[i], 1);
                 double num_correspondences =
                         counts.Sum({0}).To(core::Dtype::Float64).Item<double>();
@@ -456,7 +457,8 @@ protected:
 
                 result.fitness_ =
                         num_correspondences /
-                        static_cast<double>(source.GetPoints().GetLength());
+                        static_cast<double>(
+                                source.GetPointPositions().GetLength());
                 result.inlier_rmse_ =
                         std::sqrt(squared_error / num_correspondences);
                 // ---- NNS End ----
@@ -493,23 +495,23 @@ protected:
                 // source[i] and target[corres[i]] is a correspondence.
 
                 core::Tensor source_indices =
-                        core::Tensor::Arange(0,
-                                             source.GetPoints().GetShape()[0],
-                                             1, core::Dtype::Int64, device)
+                        core::Tensor::Arange(
+                                0, source.GetPointPositions().GetShape()[0], 1,
+                                core::Dtype::Int64, device)
                                 .IndexGet({valid});
                 // Only take valid indices.
                 core::Tensor target_indices =
                         result.correspondences_.IndexGet({valid}).Reshape({-1});
                 {
                     std::lock_guard<std::mutex> lock(pcd_.lock_);
-                    pcd_.correspondence_src_.SetPoints(
+                    pcd_.correspondence_src_.SetPointPositions(
                             source_down_pyramid[i]
-                                    .GetPoints()
+                                    .GetPointPositions()
                                     .IndexGet({source_indices})
                                     .To(host_));
-                    pcd_.correspondence_tar_.SetPoints(
+                    pcd_.correspondence_tar_.SetPointPositions(
                             target_down_pyramid[i]
-                                    .GetPoints()
+                                    .GetPointPositions()
                                     .IndexGet({target_indices})
                                     .To(host_));
 
@@ -736,13 +738,13 @@ private:
 
         // Converting point and normals attributes to Floar32 and currently only
         // Float32 pointcloud is supported by the tensor registration module.
-        source.SetPoints(source.GetPoints().To(dtype_));
+        source.SetPointPositions(source.GetPointPositions().To(dtype_));
         if (source.HasPointNormals()) {
             source.SetPointNormals(source.GetPointNormals().To(dtype_));
         }
         // Converting attributes to Floar32 and currently only
         // Float32 pointcloud is supported by the tensor registration module.
-        target.SetPoints(target.GetPoints().To(dtype_));
+        target.SetPointPositions(target.GetPointPositions().To(dtype_));
         if (target.HasPointNormals()) {
             target.SetPointNormals(target.GetPointNormals().To(dtype_));
         }
