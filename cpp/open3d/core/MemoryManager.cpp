@@ -30,7 +30,6 @@
 #include <unordered_map>
 
 #include "open3d/core/Blob.h"
-#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/MemoryManagerStatistic.h"
 #include "open3d/utility/Helper.h"
