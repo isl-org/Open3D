@@ -46,8 +46,8 @@ TSDFVoxelGrid::TSDFVoxelGrid(
       sdf_trunc_(sdf_trunc),
       block_resolution_(block_resolution),
       block_count_(block_count),
-      device_(device),
-      attr_dtype_map_(attr_dtype_map) {
+      attr_dtype_map_(attr_dtype_map),
+      device_(device) {
     if (attr_dtype_map_.count("tsdf") == 0 ||
         attr_dtype_map_.count("weight") == 0) {
         utility::LogError(
@@ -145,7 +145,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     }
 
     core::Tensor block_coords;
-    kernel::tsdf::Touch(point_hashmap_, pcd.GetPoints().Contiguous(),
+    kernel::tsdf::Touch(point_hashmap_, pcd.GetPointPositions().Contiguous(),
                         block_coords, block_resolution_, voxel_size_,
                         sdf_trunc_);
 

@@ -117,7 +117,7 @@ void VisualizePointCloudEmbedding(t::geometry::PointCloud& tpcd_param,
     core::Tensor corres = tpcd_param.GetPointAttr(ControlGrid::kGrid8NbIndices)
                                   .To(core::Device("CPU:0"), core::Int64);
     t::geometry::PointCloud tpcd_grid_nb(
-            tpcd_grid.GetPoints().IndexGet({corres.View({-1})}));
+            tpcd_grid.GetPointPositions().IndexGet({corres.View({-1})}));
 
     auto pcd_grid_nb = std::make_shared<open3d::geometry::PointCloud>(
             tpcd_grid_nb.ToLegacy());

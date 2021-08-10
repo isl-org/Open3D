@@ -51,7 +51,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
 
     core::Tensor distances, counts;
     std::tie(result.correspondences_, distances, counts) =
-            target_nns.HybridSearch(source.GetPoints(),
+            target_nns.HybridSearch(source.GetPointPositions(),
                                     max_correspondence_distance, 1);
     result.correspondences_ = result.correspondences_.To(core::Int64);
     double num_correspondences =
@@ -66,8 +66,9 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     // Reduction sum of "distances" for error.
     double squared_error = distances.Sum({0}).To(core::Float64).Item<double>();
 
-    result.fitness_ = num_correspondences /
-                      static_cast<double>(source.GetPoints().GetLength());
+    result.fitness_ =
+            num_correspondences /
+            static_cast<double>(source.GetPointPositions().GetLength());
     result.inlier_rmse_ = std::sqrt(squared_error / num_correspondences);
 
     return result;
@@ -78,12 +79,13 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                                         double max_correspondence_distance,
                                         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = source.GetPoints().GetDtype();
+    core::Dtype dtype = source.GetPointPositions().GetDtype();
 
     geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation.To(device, dtype));
 
-    open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
+    open3d::core::nns::NearestNeighborSearch target_nns(
+            target.GetPointPositions());
 
     bool check = target_nns.HybridIndex(max_correspondence_distance);
     if (!check) {
@@ -120,10 +122,11 @@ static void AssertInputMultiScaleICP(
         const core::Dtype &dtype) {
     init_source_to_target.AssertShape({4, 4});
 
-    if (target.GetPoints().GetDtype() != dtype) {
+    if (target.GetPointPositions().GetDtype() != dtype) {
         utility::LogError(
                 "Target Pointcloud dtype {} != Source Pointcloud's dtype {}.",
-                target.GetPoints().GetDtype().ToString(), dtype.ToString());
+                target.GetPointPositions().GetDtype().ToString(),
+                dtype.ToString());
     }
     if (target.GetDevice() != device) {
         utility::LogError(
@@ -229,8 +232,8 @@ static RegistrationResult DoSingleScaleIterationsICP(
     RegistrationResult result;
     for (int j = 0; j < criteria.max_iteration_; j++) {
         result = GetRegistrationResultAndCorrespondences(
-                source.GetPoints(), target_nns, max_correspondence_distance,
-                transformation);
+                source.GetPointPositions(), target_nns,
+                max_correspondence_distance, transformation);
 
         // Computing Transform between source and target, given
         // correspondences. ComputeTransformation returns {4,4} shaped
@@ -277,7 +280,7 @@ RegistrationResult RegistrationMultiScaleICP(
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation) {
     core::Device device = source.GetDevice();
-    core::Dtype dtype = source.GetPoints().GetDtype();
+    core::Dtype dtype = source.GetPointPositions().GetDtype();
     int64_t num_iterations = int64_t(criterias.size());
 
     AssertInputMultiScaleICP(source, target, voxel_sizes, criterias,
@@ -305,7 +308,7 @@ RegistrationResult RegistrationMultiScaleICP(
 
         // Initialize Neighbor Search.
         core::nns::NearestNeighborSearch target_nns(
-                target_down_pyramid[i].GetPoints());
+                target_down_pyramid[i].GetPointPositions());
         bool check = target_nns.HybridIndex(max_correspondence_distances[i]);
         if (!check) {
             utility::LogError(

@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
@@ -67,11 +68,54 @@ void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
                Geometry>
             pointcloud(m, "PointCloud",
-                       "A pointcloud contains a set of 3D points.");
+                       R"(
+A point cloud contains a list of 3D points. The point cloud class stores the
+attribute data in key-value maps, where the key is a string representing the
+attribute name and the value is a Tensor containing the attribute data.
+
+The attributes of the point cloud have different levels::
+
+    import open3d as o3d
+
+    device = o3d.core.Device("CPU:0")
+    dtype = o3d.core.float32
+
+    # Create an empty point cloud
+    # Use pcd.point to access the points' attributes
+    pcd = o3d.t.geometry.PointCloud(device)
+
+    # Default attribute: "positions".
+    # This attribute is created by default and is required by all point clouds.
+    # The shape must be (N, 3). The device of "positions" determines the device
+    # of the point cloud.
+    pcd.point["positions"] = o3d.core.Tensor([[0, 0, 0],
+                                              [1, 1, 1],
+                                              [2, 2, 2]], dtype, device)
+
+    # Common attributes: "normals", "colors".
+    # Common attributes are used in built-in point cloud operations. The
+    # spellings must be correct. For example, if "normal" is used instead of
+    # "normals", some internal operations that expects "normals" will not work.
+    # "normals" and "colors" must have shape (N, 3) and must be on the same
+    # device as the point cloud.
+    pcd.point["normals"] = o3c.core.Tensor([[0, 0, 1],
+                                            [0, 1, 0],
+                                            [1, 0, 0]], dtype, device)
+    pcd.point["normals"] = o3c.core.Tensor([[0.0, 0.0, 0.0],
+                                            [0.1, 0.1, 0.1],
+                                            [0.2, 0.2, 0.2]], dtype, device)
+
+    # User-defined attributes.
+    # You can also attach custom attributes. The value tensor must be on the
+    # same device as the point cloud. The are no restrictions on the shape and
+    # dtype, e.g.,
+    pcd.point["intensities"] = o3c.core.Tensor([0.3, 0.1, 0.4], dtype, device)
+    pcd.point["lables"] = o3c.core.Tensor([3, 1, 4], o3d.core.int32, device)
+)");
 
     // Constructors.
     pointcloud.def(py::init<const core::Device&>(), "device"_a)
-            .def(py::init<const core::Tensor&>(), "points"_a)
+            .def(py::init<const core::Tensor&>(), "positions"_a)
             .def(py::init<const std::unordered_map<std::string,
                                                    core::Tensor>&>(),
                  "map_keys_to_tensors"_a)
@@ -90,11 +134,19 @@ void pybind_pointcloud(py::module& m) {
                    "device"_a, "copy"_a = false);
     pointcloud.def("clone", &PointCloud::Clone,
                    "Returns a copy of the point cloud on the same device.");
-    pointcloud.def("cpu", &PointCloud::CPU,
-                   "Transfer the point cloud to CPU. If the point cloud is "
-                   "already on CPU, no copy will be performed.");
+
     pointcloud.def(
-            "cuda", &PointCloud::CUDA,
+            "cpu",
+            [](const PointCloud& pointcloud) {
+                return pointcloud.To(core::Device("CPU:0"));
+            },
+            "Transfer the point cloud to CPU. If the point cloud is "
+            "already on CPU, no copy will be performed.");
+    pointcloud.def(
+            "cuda",
+            [](const PointCloud& pointcloud, int device_id) {
+                return pointcloud.To(core::Device("CUDA", device_id));
+            },
             "Transfer the point cloud to a CUDA device. If the point cloud is "
             "already on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
