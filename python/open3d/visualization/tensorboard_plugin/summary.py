@@ -3,13 +3,6 @@ import os
 import socket
 import time
 import queue
-# import logging
-# _log = logging.getLogger("Open3D")
-# _log.setLevel(logging.DEBUG)
-# _stream_handler = logging.StreamHandler()
-# _stream_handler.setLevel(logging.DEBUG)
-# _stream_handler.setFormatter(logging.Formatter('[%(name)s %(levelname)s] %(message)s'))
-# _log.addHandler(_stream_handler)
 
 import numpy as np
 

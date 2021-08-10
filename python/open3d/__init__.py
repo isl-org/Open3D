@@ -39,6 +39,16 @@ from ctypes import CDLL as _CDLL
 from ctypes.util import find_library as _find_library
 from pathlib import Path as _Path
 
+# Setup Python logger to emulate C++ logger.
+import logging as _logging
+log = _logging.getLogger("Open3D")
+_stream_handler = _logging.StreamHandler()
+_stream_handler.setFormatter(
+    _logging.Formatter('[%(name)s %(levelname)s] %(message)s'))
+_stream_handler.setLevel(_logging.DEBUG)
+log.setLevel(_logging.DEBUG)
+log.addHandler(_stream_handler)
+
 from open3d._build_config import _build_config
 if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
                                        _find_library('c++')):

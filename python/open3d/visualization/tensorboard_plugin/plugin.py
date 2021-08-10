@@ -6,13 +6,6 @@ from collections import namedtuple
 from collections import OrderedDict
 import functools
 import json
-import logging
-_log = logging.getLogger(__name__)
-_log.setLevel(logging.DEBUG)
-_h = logging.StreamHandler()
-_h.setLevel(logging.DEBUG)
-_h.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
-_log.addHandler(_h)
 
 import numpy as np
 from tensorboard import errors
@@ -28,6 +21,7 @@ from werkzeug import wrappers
 import tensorflow.compat.v2 as tf
 
 import open3d as o3d
+_log = o3d.log
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 from open3d.visualization.tensorboard_plugin import metadata
@@ -56,6 +50,11 @@ class LRUCache:
         self.misses = 0
 
     def get(self, key):
+        """Retrieve value corresponding to ``key`` from the cache.
+
+        Return:
+            Value if ``key`` is found, else None.
+        """
         if key not in self.cache:
             self.misses += 1
             _log.debug(str(self))
@@ -66,6 +65,10 @@ class LRUCache:
         return self.cache[key]
 
     def put(self, key, value):
+        """Add (key, value) pair to the cache. If cache limits are exceeded,
+        eject key-value pairs till the cache is within limits."""
+        # FIXME(ssheorey): Cache ignores size of objects allocated by C/C++
+        # addons (pybind11).
         self.cache[key] = value
         self.cur_size += sys.getsizeof(value)
         self.cache.move_to_end(key)
@@ -89,6 +92,8 @@ class LRUCache:
 
 
 class Open3DPluginWindow:
+    """Create and manage a single Open3D WebRTC GUI window.
+    """
 
     # Settings to match tensorboard
     BG_COLOR = gui.Color(0.95, 0.95, 0.95)
@@ -102,6 +107,16 @@ class Open3DPluginWindow:
                  width=1024,
                  height=768,
                  font_size=12):
+        """
+        Args:
+            window_id (str): Open3D window id.
+            event_mux: Tensorboard event multiplexer object. This is used to
+                read and update the geometry index data.
+            logdir (str): Tensorboard logs directory.
+            title (str): Window title. [Unused in WebRTC]
+            width (int): Window width (px).
+            height (int): Window height (px).
+        """
         self.event_mux = event_mux
         self.logdir = logdir
         self.run = "."
@@ -139,30 +154,37 @@ class Open3DPluginWindow:
         _async_event_loop.run_sync(self._update_scene)
 
     def _get_run_tags(self, message):
-        """ JSON message format:
-        {
-          "messageId": 0,
-          "class_name": "tensorboard/window_0/get_run_tags",
-        }
-        Response:
-        {
-          "messageId": 0,
-          "class_name": "tensorboard/window_0/get_run_tags",
-          "run_to_tags": {
-            "run_0" : ["tag_0", "tag_1", ...],
-            "run_1" : ["tag_0", "tag_1", ...],
-            ...
-          }
-          "current": {
-            "run": "run_0",
-            "tags": ["tag_0", "tag_1", ...],
-            "step_limits": [0, 100],
-            "step": 0
-            "batch_size": 8,
-            "batch_idx": 0,
-            "wall_time": wall_time
-          }
-        }
+        """Process message ``get_run_tags`` from the frontend (JS). Reload event
+        files, set default state and send response with updated run-tag mapping
+        and current state.
+
+        JSON message format:: json
+
+            {
+              "messageId": 0,
+              "class_name": "tensorboard/window_0/get_run_tags",
+            }
+
+        Response:: json
+
+            {
+              "messageId": 0,
+              "class_name": "tensorboard/window_0/get_run_tags",
+              "run_to_tags": {
+                "run_0" : ["tag_0", "tag_1", ...],
+                "run_1" : ["tag_0", "tag_1", ...],
+                ...
+              }
+              "current": {
+                "run": "run_0",
+                "tags": ["tag_0", "tag_1", ...],
+                "step_limits": [0, 100],
+                "step": 0
+                "batch_size": 8,
+                "batch_idx": 0,
+                "wall_time": wall_time
+              }
+            }
         """
         _log.debug(f"[DC message recv] {message}")
         self._reload_events()
@@ -195,7 +217,7 @@ class Open3DPluginWindow:
         _log.debug(f"Event data reloaded: {self.run_to_tags}")
 
     def _validate_run(self, selected_run):
-        """ Validate selected_run. Use self.run or the first valid run in case
+        """Validate selected_run. Use self.run or the first valid run in case
         selected run is invalid. Clear cached data.
         """
         if selected_run not in self.run_to_tags:
@@ -208,7 +230,7 @@ class Open3DPluginWindow:
         self.all_tensor_events = dict()
 
     def _validate_tags(self, selected_tags):
-        """ Validate tags assuming self.run is valid. Use self.tags or first
+        """Validate tags assuming self.run is valid. Use self.tags or first
         valid tag in case selected tags are invalid. Also loads all tensor
         data for validated run-tags combination and unloads data for unselected
         tags.
@@ -242,7 +264,7 @@ class Open3DPluginWindow:
         self.step_limits = [min(self.step_to_idx), max(self.step_to_idx)]
 
     def _validate_step(self, selected_step):
-        """ Validate step assuming self.run and self.tags are valid. Use
+        """Validate step assuming self.run and self.tags are valid. Use
         self.step or first valid step if selected_step is invalid."""
         if len(self.tags) == 0:  # No tags in this run
             return
@@ -261,7 +283,7 @@ class Open3DPluginWindow:
         self.batch_size = len(metadata_proto.batch_index.start_size)
 
     def _validate_batch_idx(self, selected_batch_idx):
-        """ Validate batch_idx assuming self.run, self.tags and self.step are
+        """Validate batch_idx assuming self.run, self.tags and self.step are
         valid. Use self.batch_idx or 0 if selected_batch_idx is invalud.
         """
         if len(self.tags) == 0:  # No tags in this run
@@ -273,30 +295,37 @@ class Open3DPluginWindow:
         self.batch_idx = selected_batch_idx
 
     def _update_geometry(self, message):
-        """ JSON message format:
-        {
-          "messageId": 0,
-          "class_name": "tensorboard/window_0/update_geometry",
-          "run": "run_0",
-          "tags": ["tag_0", "tag_1"],
-          "batch_idx": 0,
-          "step": 0
-        }
-        Response:
-        {
-          "messageId": 0,
-          "class_name": "tensorboard/window_0/update_geometry",
-          "current": {
-            "run": "run_0",
-            "tags": ["tag_0", "tag_1", ...],
-            "step_limits": [0, 100],
-            "step": 0
-            "batch_size": 8,
-            "batch_idx": 0,
-            "wall_time": wall_time
-          }
-          "status": OK
-        }
+        """Process an update_geometry message from the frontend (JS). Validate
+        message, update state, update scene and send response with validated
+        state.
+
+        JSON message format:: json
+
+            {
+              "messageId": 0,
+              "class_name": "tensorboard/window_0/update_geometry",
+              "run": "run_0",
+              "tags": ["tag_0", "tag_1"],
+              "batch_idx": 0,
+              "step": 0
+            }
+
+        Response:: json
+
+            {
+              "messageId": 0,
+              "class_name": "tensorboard/window_0/update_geometry",
+              "current": {
+                "run": "run_0",
+                "tags": ["tag_0", "tag_1", ...],
+                "step_limits": [0, 100],
+                "step": 0
+                "batch_size": 8,
+                "batch_idx": 0,
+                "wall_time": wall_time
+              }
+              "status": OK
+            }
         """
         _log.debug(f"[DC message recv] {message}")
         message = json.loads(message)
@@ -322,6 +351,7 @@ class Open3DPluginWindow:
 
     def _read_geometry(self, tag, step, batch_idx):
         """Geometry reader from msgpack files.
+        TODO: Add CRC-32C checks,
         """
         idx = self.step_to_idx[step]
 
@@ -371,7 +401,27 @@ class Open3DPluginWindow:
         self.geometry_cache.put(cache_key, geometry)
         return geometry
 
+    @staticmethod
+    def _postprocess(geometry):
+        """Post process geometry before displaying to account for WIP
+        Tensor-API in Open3D.
+        """
+
+        if isinstance(geometry, o3d.t.geometry.PointCloud):
+            return geometry
+        legacy = geometry.to_legacy()
+        # FLoat64 but range is not scaled!
+        if hasattr(legacy, 'vertex') and 'colors' in legacy.vertex:
+            legacy.vertex['colors'] = o3d.utility.Vector3dVector(
+                np.array(legacy.vertex['colors']) / 255)
+        if hasattr(legacy, 'line') and 'colors' in legacy.line:
+            legacy.line['colors'] = o3d.utility.Vector3dVector(
+                np.array(legacy.vertex['colors']) / 255)
+        return legacy
+
     def _update_scene(self):
+        """Update scene by adding / removing geometry elements and redraw.
+        """
 
         new_geometry_list = []
         for tag in self.tags:
@@ -381,13 +431,9 @@ class Open3DPluginWindow:
 
                 geometry = self._read_geometry(tag, self.step, self.batch_idx)
                 _log.debug(f"Displaying geometry {geometry_name}:{geometry}")
-                # TODO: Switch to `to_legacy()`
                 # ipdb.set_trace()
-                legacy = geometry.to_legacy_triangle_mesh()
-                # FLoat64 but range is not scaled!
-                legacy.vertex_colors = o3d.utility.Vector3dVector(
-                    np.array(legacy.vertex_colors) / 255)
-                self.scene_widget.scene.add_geometry(geometry_name, legacy,
+                pp_geometry = Open3DPluginWindow._postprocess(geometry)
+                self.scene_widget.scene.add_geometry(geometry_name, pp_geometry,
                                                      self.material)
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
