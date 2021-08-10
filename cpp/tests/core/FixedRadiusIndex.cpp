@@ -65,16 +65,23 @@ TEST(FixedRadiusIndex, SearchRadius) {
 
 TEST(FixedRadiusIndex, SearchRadiusBatch) {
     core::Device device = core::Device("CUDA:0");
-    std::vector<int32_t> gt_indices_unsorted = {
-            1,  3,  9,  7,  2,  2,  8,  7,  0,  2,  5,  0,  5,  0,  4,  6,
-            7,  0,  5,  7,  8,  1,  3,  6,  9,  1,  2,  6,  8,  0,  4,  7,
-            14, 15, 17, 15, 14, 15, 14, 15, 10, 12, 13, 16, 18, 13, 14, 17,
-            14, 17, 11, 13, 10, 11, 12, 13, 16, 19, 10, 12, 16};
-    std::vector<int32_t> gt_indices_sorted = {
+    std::vector<int32_t> gt_indices = {
             3,  1,  9,  7,  2,  8,  2,  7,  2,  0,  5,  0,  5,  4,  0,  7,
             6,  7,  5,  0,  8,  9,  6,  3,  1,  8,  2,  6,  1,  7,  0,  4,
             14, 15, 17, 15, 14, 15, 15, 14, 10, 16, 12, 13, 18, 14, 13, 17,
             14, 17, 11, 13, 16, 10, 19, 13, 11, 12, 12, 16, 10};
+    std::vector<float> gt_distances = {
+            0.084161,  0.114104, 0.249048, 0.069964, 0.0270990, 0.0699010,
+            0.245651,  0.120800, 0.117206, 0.210337, 0.0350190, 0.134909,
+            0.220977,  0.03749,  0.117146, 0.136841, 0.198169,  0.036677,
+            0.158472,  0.162762, 0.178925, 0.063426, 0.0872010, 0.149573,
+            0.176834,  0.07211,  0.109588, 0.122338, 0.237021,  0.028249,
+            0.205054,  0.210166, 0.081953, 0.200811, 0.203861,  0.220913,
+            0.113533,  0.226233, 0.143021, 0.224803, 0.0641020, 0.089932,
+            0.136451,  0.168651, 0.204868, 0.091691, 0.22487,   0.246349,
+            0.0401310, 0.169365, 0.126971, 0.247414, 0.117165,  0.124805,
+            0.192050,  0.196358, 0.229541, 0.247814, 0.015753,  0.18135,
+            0.192298};
     std::vector<int64_t> gt_neighbors_row_splits = {
             0,  3,  4,  5,  7,  8,  10, 11, 13, 17, 20, 21, 25,
             29, 32, 32, 35, 36, 38, 40, 45, 48, 50, 52, 58, 61};
@@ -114,14 +121,33 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
     // Test sort = false.
     std::tie(indices, distances, neighbor_row_splits) = index.SearchRadius(
             query_points, queries_row_splits, radius, /*sort*/ false);
-    ExpectEQ(indices.ToFlatVector<int32_t>(), gt_indices_unsorted);
+
+    std::vector<int32_t> indices_vector = indices.ToFlatVector<int32_t>();
+    std::vector<float> distances_vector = distances.ToFlatVector<float>();
+    std::vector<int32_t> gt_indices_unsorted(gt_indices.begin(),
+                                             gt_indices.end());
+    std::vector<float> gt_distances_unsorted(gt_distances.begin(),
+                                             gt_distances.end());
+    for (size_t i = 0; i < gt_neighbors_row_splits.size() - 1; i++) {
+        std::sort(indices_vector.begin() + gt_neighbors_row_splits[i],
+                  indices_vector.begin() + gt_neighbors_row_splits[i + 1]);
+        std::sort(distances_vector.begin() + gt_neighbors_row_splits[i],
+                  distances_vector.begin() + gt_neighbors_row_splits[i + 1]);
+        std::sort(gt_indices_unsorted.begin() + gt_neighbors_row_splits[i],
+                  gt_indices_unsorted.begin() + gt_neighbors_row_splits[i + 1]);
+        std::sort(gt_distances_unsorted.begin() + gt_neighbors_row_splits[i],
+                  gt_distances_unsorted.end() + gt_neighbors_row_splits[i + 1]);
+    }
+    ExpectEQ(indices_vector, gt_indices_unsorted);
+    ExpectEQ(distances_vector, gt_distances_unsorted);
     ExpectEQ(neighbor_row_splits.ToFlatVector<int64_t>(),
              gt_neighbors_row_splits);
 
     // Test sort = true
     std::tie(indices, distances, neighbor_row_splits) = index.SearchRadius(
             query_points, queries_row_splits, radius, /*sort*/ true);
-    ExpectEQ(indices.ToFlatVector<int32_t>(), gt_indices_sorted);
+    ExpectEQ(indices.ToFlatVector<int32_t>(), gt_indices);
+    ExpectEQ(distances.ToFlatVector<float>(), gt_distances);
     ExpectEQ(neighbor_row_splits.ToFlatVector<int64_t>(),
              gt_neighbors_row_splits);
 }
