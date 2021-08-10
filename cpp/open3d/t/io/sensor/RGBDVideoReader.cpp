@@ -75,7 +75,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
     {
 #pragma omp section
         {
-            im_color = tim_rgbd.color_.ToLegacyImage();
+            im_color = tim_rgbd.color_.ToLegacy();
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
             open3d::io::WriteImage(color_file, im_color);
@@ -83,7 +83,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
         }
 #pragma omp section
         {
-            im_depth = tim_rgbd.depth_.ToLegacyImage();
+            im_depth = tim_rgbd.depth_.ToLegacy();
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
             open3d::io::WriteImage(depth_file, im_depth);

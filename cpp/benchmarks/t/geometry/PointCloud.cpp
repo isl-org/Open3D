@@ -47,14 +47,13 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
             std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
 
     // Warm up.
-    t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacyPointCloud(
+    t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacy(
             legacy_pcd, core::Float32, device);
     (void)pcd;
 
     for (auto _ : state) {
-        t::geometry::PointCloud pcd =
-                t::geometry::PointCloud::FromLegacyPointCloud(
-                        legacy_pcd, core::Float32, device);
+        t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacy(
+                legacy_pcd, core::Float32, device);
         core::cuda::Synchronize(device);
     }
 }
@@ -62,15 +61,15 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     int64_t num_points = 1000000;  // 1M
     PointCloud pcd(device);
-    pcd.SetPoints(core::Tensor({num_points, 3}, core::Float32, device));
+    pcd.SetPointPositions(core::Tensor({num_points, 3}, core::Float32, device));
     pcd.SetPointColors(core::Tensor({num_points, 3}, core::Float32, device));
 
     // Warm up.
-    open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+    open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacy();
     (void)legacy_pcd;
 
     for (auto _ : state) {
-        open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacyPointCloud();
+        open3d::geometry::PointCloud legacy_pcd = pcd.ToLegacy();
         core::cuda::Synchronize(device);
     }
 }
@@ -108,7 +107,7 @@ void Transform(benchmark::State& state, const core::Device& device) {
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    core::Dtype dtype = pcd.GetPoints().GetDtype();
+    core::Dtype dtype = pcd.GetPointPositions().GetDtype();
     core::Tensor transformation = core::Tensor::Init<double>({{1, 0, 0, 1.0},
                                                               {0, 1, 0, 2.0},
                                                               {0, 0, 1, 3.0},

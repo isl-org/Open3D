@@ -44,52 +44,50 @@ namespace t {
 namespace geometry {
 
 /// \class PointCloud
-/// \brief A pointcloud contains a set of 3D points.
+/// \brief A point cloud contains a list of 3D points.
 ///
-/// The PointCloud class stores the attribute data in key-value pairs for
-/// flexibility, where the key is a string representing the attribute name and
-/// value is a Tensor containing the attribute data. In most cases, the
-/// length of an attribute should be equal to the length of the "points", the
-/// pointcloud class provides helper functions to check and facilitates this
-/// consistency.
+/// The point cloud class stores the attribute data in key-value maps, where
+/// the key is a string representing the attribute name and the value is a
+/// Tensor containing the attribute data. In most cases, the length of an
+/// attribute should be equal to the length of the point cloud's "positions".
 ///
-/// Although the attributes are all stored in a key-value pair dictionary, the
-/// attributes have different levels:
-///
-/// - Level 0: Default attribute {"points"}.
+/// - Default attribute: "positions".
+///     - Usage
+///         - PointCloud::GetPointPositions()
+///         - PointCloud::SetPointPositions(const Tensor& positions)
+///         - PointCloud::HasPointPositions()
 ///     - Created by default, required for all pointclouds.
-///     - The tensor must be of shape N x {3,}.
-///     - Convenience functions:
-///         - PointCloud::GetPoints()
-///         - PointCloud::SetPoints(points_tensor)
-///         - PointCloud::HasPoints()
-///     - The device of "points" determines the device of the pointcloud.
-/// - Level 1: Commonly-used attributes {"normals", "colors"}.
-///     - Not created by default.
-///     - The tensor must be of shape N x {3,}.
-///     - Convenience functions:
+///     - Value tensor must have shape {N, 3}.
+///     - The device of "positions" determines the device of the pointcloud.
+///
+/// - Common attributes: "normals", "colors".
+///     - Usage
 ///         - PointCloud::GetPointNormals()
-///         - PointCloud::SetPointNormals(normals_tensor)
+///         - PointCloud::SetPointNormals(const Tensor& normals)
 ///         - PointCloud::HasPointNormals()
 ///         - PointCloud::GetPointColors()
-///         - PointCloud::SetPointColors(colors_tensor)
+///         - PointCloud::SetPointColors(const Tensor& colors)
 ///         - PointCloud::HasPointColors()
-///     - Device must be the same as the device of "points". Dtype can be
-///       different.
-/// - Level 2: Custom attributes, e.g. {"labels", "alphas", "intensities"}.
-///     - Not created by default. Created by users.
-///     - No convenience functions.
-///     - Use generalized helper functions. Examples:
-///         - PointCloud::GetPointAttr("labels")
-///         - PointCloud::SetPointAttr("labels", labels_tensor)
-///         - PointCloud::HasPointAttr("labels")
-///     - Device must be the same as the device of "points". Dtype can be
-///       different.
+///     - Not created by default.
+///     - Value tensor must have shape {N, 3}.
+///     - Value tensor must be on the same device as the point cloud.
+///     - Value tensor can have any dtype.
 ///
-/// Note that the level 0 and level 1 convenience functions can also be achieved
-/// via the generalized helper functions:
-///     - PointCloud::GetPoints() is the same as
-///       PointCloud::GetPointAttr("points")
+/// - Custom attributes, e.g., "labels", "intensities".
+///     - Usage
+///         - PointCloud::GetPointAttr(const std::string& key)
+///         - PointCloud::SetPointAttr(const std::string& key,
+///                                    const Tensor& value)
+///         - PointCloud::HasPointAttr(const std::string& key)
+///     - Not created by default. Users can add their own custom attributes.
+///     - Value tensor must be on the same device as the point cloud.
+///     - Value tensor can have any dtype.
+///
+/// PointCloud::GetPointAttr(), PointCloud::SetPointAttr(),
+/// PointCloud::HasPointAttr() also work for default attribute "position" and
+/// common attributes "normals" and "colors", e.g.,
+///     - PointCloud::GetPointPositions() is the same as
+///       PointCloud::GetPointAttr("positions")
 ///     - PointCloud::HasPointNormals() is the same as
 ///       PointCloud::HasPointAttr("normals")
 class PointCloud : public Geometry {
@@ -99,20 +97,17 @@ public:
 
     /// Construct a pointcloud from points.
     ///
-    /// \param points A tensor with element shape (3,).
-    /// - The resulting pointcloud will have the same dtype and device as the
-    /// tensor.
-    /// - If the tensor is created in-place from a pre-allocated buffer, the
-    /// tensor has a fixed size and thus the resulting pointcloud will have
-    /// a fixed size and calling to functions like `SynchronizedPushBack` will
-    /// raise an exception.
+    /// The input tensor will be directly used as the underlying storage of the
+    /// point cloud (no memory copy).
+    ///
+    /// \param points A tensor with element shape {3}.
     PointCloud(const core::Tensor &points);
 
     /// Construct from points and other attributes of the points.
     ///
     /// \param map_keys_to_tensors A map of string to Tensor containing
     /// points and their attributes. point_dict must contain at least the
-    /// "points" key.
+    /// "positions" key.
     PointCloud(const std::unordered_map<std::string, core::Tensor>
                        &map_keys_to_tensors);
 
@@ -131,8 +126,8 @@ public:
         return point_attr_.at(key);
     }
 
-    /// Get the value of the "points" attribute. Convenience function.
-    core::Tensor &GetPoints() { return GetPointAttr("points"); }
+    /// Get the value of the "positions" attribute. Convenience function.
+    core::Tensor &GetPointPositions() { return GetPointAttr("positions"); }
 
     /// Get the value of the "colors" attribute. Convenience function.
     core::Tensor &GetPointColors() { return GetPointAttr("colors"); }
@@ -147,8 +142,10 @@ public:
         return point_attr_.at(key);
     }
 
-    /// Get the value of the "points" attribute. Convenience function.
-    const core::Tensor &GetPoints() const { return GetPointAttr("points"); }
+    /// Get the value of the "positions" attribute. Convenience function.
+    const core::Tensor &GetPointPositions() const {
+        return GetPointAttr("positions");
+    }
 
     /// Get the value of the "colors" attribute. Convenience function.
     const core::Tensor &GetPointColors() const {
@@ -173,10 +170,10 @@ public:
         point_attr_[key] = value;
     }
 
-    /// Set the value of the "points" attribute. Convenience function.
-    void SetPoints(const core::Tensor &value) {
+    /// Set the value of the "positions" attribute. Convenience function.
+    void SetPointPositions(const core::Tensor &value) {
         value.AssertShapeCompatible({utility::nullopt, 3});
-        SetPointAttr("points", value);
+        SetPointAttr("positions", value);
     }
 
     /// Set the value of the "colors" attribute. Convenience function.
@@ -197,18 +194,18 @@ public:
     /// 3) attribute's length > 0
     bool HasPointAttr(const std::string &key) const {
         return point_attr_.Contains(key) && GetPointAttr(key).GetLength() > 0 &&
-               GetPointAttr(key).GetLength() == GetPoints().GetLength();
+               GetPointAttr(key).GetLength() == GetPointPositions().GetLength();
     }
 
-    /// Removes point attribute by key value. Primary attribute "points" cannot
-    /// be removed. Throws warning if attribute key does not exists.
+    /// Removes point attribute by key value. Primary attribute "positions"
+    /// cannot be removed. Throws warning if attribute key does not exists.
     ///
     /// \param key Attribute name.
     void RemovePointAttr(const std::string &key) { point_attr_.Erase(key); }
 
-    /// Check if the "points" attribute's value has length > 0.
+    /// Check if the "positions" attribute's value has length > 0.
     /// This is a convenience function.
-    bool HasPoints() const { return HasPointAttr("points"); }
+    bool HasPointPositions() const { return HasPointAttr("positions"); }
 
     /// Returns true if all of the followings are true:
     /// 1) attribute "colors" exist
@@ -235,27 +232,14 @@ public:
     /// Returns copy of the point cloud on the same device.
     PointCloud Clone() const;
 
-    /// Transfer the point cloud to CPU.
-    ///
-    /// If the point cloud is already on CPU, no copy will be performed.
-    PointCloud CPU() const { return To(core::Device("CPU:0")); };
-
-    /// Transfer the point cloud to a CUDA device.
-    ///
-    /// If the point cloud is already on the specified CUDA device, no copy will
-    /// be performed.
-    PointCloud CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    };
-
     /// Clear all data in the pointcloud.
     PointCloud &Clear() override {
         point_attr_.clear();
         return *this;
     }
 
-    /// Returns !HasPoints().
-    bool IsEmpty() const override { return !HasPoints(); }
+    /// Returns !HasPointPositions().
+    bool IsEmpty() const override { return !HasPointPositions(); }
 
     /// Returns the min bound for point coordinates.
     core::Tensor GetMinBound() const;
@@ -394,13 +378,13 @@ public:
             bool with_normals = false);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
-    static PointCloud FromLegacyPointCloud(
+    static PointCloud FromLegacy(
             const open3d::geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D PointCloud.
-    open3d::geometry::PointCloud ToLegacyPointCloud() const;
+    open3d::geometry::PointCloud ToLegacy() const;
 
     /// Project a point cloud to a depth image.
     geometry::Image ProjectToDepthImage(

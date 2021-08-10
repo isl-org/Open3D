@@ -325,7 +325,7 @@ public:
                         prop_values_.pointcloud_size, 3.0);
                 auto pcd_legacy =
                         std::make_shared<open3d::geometry::PointCloud>(
-                                pcd.ToLegacyPointCloud());
+                                pcd.ToLegacy());
                 io::WritePointCloud("scene.ply", *pcd_legacy);
 
                 utility::LogInfo("Writing trajectory to trajectory.log...");
@@ -535,25 +535,24 @@ protected:
 
         is_scene_updated_ = false;
 
-        color = std::make_shared<open3d::geometry::Image>(
-                ref_color.ToLegacyImage());
+        color = std::make_shared<open3d::geometry::Image>(ref_color.ToLegacy());
         depth_colored = std::make_shared<open3d::geometry::Image>(
                 ref_depth
                         .ColorizeDepth(depth_scale, 0.3, prop_values_.depth_max)
-                        .ToLegacyImage());
+                        .ToLegacy());
 
         raycast_color = std::make_shared<geometry::Image>(
                 t::geometry::Image(
                         core::Tensor::Zeros(
                                 {ref_depth.GetRows(), ref_depth.GetCols(), 3},
                                 core::Dtype::UInt8, core::Device("CPU:0")))
-                        .ToLegacyImage());
+                        .ToLegacy());
         raycast_depth_colored = std::make_shared<geometry::Image>(
                 t::geometry::Image(
                         core::Tensor::Zeros(
                                 {ref_depth.GetRows(), ref_depth.GetCols(), 3},
                                 core::Dtype::UInt8, core::Device("CPU:0")))
-                        .ToLegacyImage());
+                        .ToLegacy());
 
         // Add placeholder in case color raycast is disabled in the beginning.
         raycast_frame.SetData(
@@ -662,9 +661,10 @@ protected:
                                 model_->GetHashmap().GetCapacity());
             {
                 std::lock_guard<std::mutex> locker(surface_.lock);
-                int64_t len = surface_.pcd.HasPoints()
-                                      ? surface_.pcd.GetPoints().GetLength()
-                                      : 0;
+                int64_t len =
+                        surface_.pcd.HasPointPositions()
+                                ? surface_.pcd.GetPointPositions().GetLength()
+                                : 0;
                 info << fmt::format("Surface points: {}/{}\n", len,
                                     prop_values_.pointcloud_size)
                      << "\n";
@@ -695,25 +695,25 @@ protected:
 
             // TODO: update support for timages-image conversion
             color = std::make_shared<open3d::geometry::Image>(
-                    input_frame.GetDataAsImage("color").ToLegacyImage());
+                    input_frame.GetDataAsImage("color").ToLegacy());
             depth_colored = std::make_shared<open3d::geometry::Image>(
                     input_frame.GetDataAsImage("depth")
                             .ColorizeDepth(depth_scale, 0.3,
                                            prop_values_.depth_max)
-                            .ToLegacyImage());
+                            .ToLegacy());
 
             if (prop_values_.raycast_color) {
                 raycast_color = std::make_shared<open3d::geometry::Image>(
                         raycast_frame.GetDataAsImage("color")
                                 .To(core::Dtype::UInt8, false, 255.0f)
-                                .ToLegacyImage());
+                                .ToLegacy());
             }
 
             raycast_depth_colored = std::make_shared<open3d::geometry::Image>(
                     raycast_frame.GetDataAsImage("depth")
                             .ColorizeDepth(depth_scale, 0.3,
                                            prop_values_.depth_max)
-                            .ToLegacyImage());
+                            .ToLegacy());
 
             // Extract surface on demand (do before we increment idx, so that
             // we see something immediately, on interation 0)
@@ -724,7 +724,7 @@ protected:
                 surface_.pcd =
                         model_->ExtractPointCloud(prop_values_.pointcloud_size,
                                                   std::min<float>(idx, 3.0f))
-                                .CPU();
+                                .To(core::Device("CPU:0"));
                 is_scene_updated_ = true;
             }
 
@@ -773,7 +773,7 @@ protected:
                         if (is_scene_updated_) {
                             using namespace rendering;
                             std::lock_guard<std::mutex> locker(surface_.lock);
-                            if (surface_.pcd.HasPoints() &&
+                            if (surface_.pcd.HasPointPositions() &&
                                 surface_.pcd.HasPointColors()) {
                                 auto* scene =
                                         this->widget3d_->GetScene()->GetScene();
