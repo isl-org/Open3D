@@ -60,14 +60,14 @@ inline __device__ T NeighborsDist(const Vec3<T> &p1, const Vec3<T> &p2) {
 }
 
 template <class T>
-inline __device__ void swap(T *x, T *y) {
+inline __device__ void Swap(T *x, T *y) {
     T tmp = *x;
     *x = *y;
     *y = tmp;
 }
 
 template <class T, class TIndex>
-inline __device__ void heapify(T *dist, TIndex *idx, int root, int k) {
+inline __device__ void Heapify(T *dist, TIndex *idx, int root, int k) {
     int child = root * 2 + 1;
 
     while (child < k) {
@@ -77,43 +77,31 @@ inline __device__ void heapify(T *dist, TIndex *idx, int root, int k) {
         if (dist[root] > dist[child]) {
             return;
         }
-        swap<T>(&dist[root], &dist[child]);
-        swap<TIndex>(&idx[root], &idx[child]);
+        Swap<T>(&dist[root], &dist[child]);
+        Swap<TIndex>(&idx[root], &idx[child]);
         root = child;
         child = root * 2 + 1;
     }
 }
 
 template <class T, class TIndex>
-__device__ void heap_sort(T *dist, TIndex *idx, int k) {
+__device__ void HeapSort(T *dist, TIndex *idx, int k) {
     int i;
     for (i = k - 1; i > 0; i--) {
-        swap<T>(&dist[0], &dist[i]);
-        swap<TIndex>(&idx[0], &idx[i]);
-        heapify<T, TIndex>(dist, idx, 0, i);
+        Swap<T>(&dist[0], &dist[i]);
+        Swap<TIndex>(&idx[0], &idx[i]);
+        Heapify<T, TIndex>(dist, idx, 0, i);
     }
-}
-
-template <class TIndex>
-__device__ int get_bt_idx(TIndex idx, const int64_t *offset) {
-    int i = 0;
-    while (1) {
-        if (idx < offset[i])
-            break;
-        else
-            i++;
-    }
-    return i;
 }
 
 template <class T, class TIndex, int METRIC = L2>
-__global__ void knnquery_cuda_kernel(TIndex *__restrict__ indices_ptr,
-                                     T *__restrict__ distances_ptr,
-                                     size_t num_points,
-                                     const T *__restrict__ points,
-                                     size_t num_queries,
-                                     const T *__restrict__ queries,
-                                     int knn) {
+__global__ void KnnQueryKernel(TIndex *__restrict__ indices_ptr,
+                               T *__restrict__ distances_ptr,
+                               size_t num_points,
+                               const T *__restrict__ points,
+                               size_t num_queries,
+                               const T *__restrict__ queries,
+                               int knn) {
     int query_idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (query_idx >= num_queries) return;
 
@@ -135,10 +123,10 @@ __global__ void knnquery_cuda_kernel(TIndex *__restrict__ indices_ptr,
         if (dist < best_dist[0]) {
             best_dist[0] = dist;
             best_idx[0] = i;
-            heapify(best_dist, best_idx, 0, knn);
+            Heapify(best_dist, best_idx, 0, knn);
         }
     }
-    heap_sort(best_dist, best_idx, knn);
+    HeapSort(best_dist, best_idx, knn);
     for (int i = 0; i < knn; i++) {
         indices_ptr[i + knn * query_idx] = best_idx[i];
         distances_ptr[i + knn * query_idx] = best_dist[i];
@@ -146,14 +134,14 @@ __global__ void knnquery_cuda_kernel(TIndex *__restrict__ indices_ptr,
 }
 
 template <class T, class TIndex>
-void knnquery_cuda_launcher(const cudaStream_t &stream,
-                            TIndex *indices_ptr,
-                            T *distances_ptr,
-                            size_t num_points,
-                            const T *const points,
-                            size_t num_queries,
-                            const T *const queries,
-                            int knn) {
+void KnnQuery(const cudaStream_t &stream,
+              TIndex *indices_ptr,
+              T *distances_ptr,
+              size_t num_points,
+              const T *const points,
+              size_t num_queries,
+              const T *const queries,
+              int knn) {
     // input: queries: (m, 3), points: (n, 3), idx: (m, knn)
     const int BLOCKSIZE = 256;
     dim3 block(BLOCKSIZE, 1, 1);
@@ -161,7 +149,7 @@ void knnquery_cuda_launcher(const cudaStream_t &stream,
     grid.x = utility::DivUp(num_queries, block.x);
 
     if (grid.x) {
-        knnquery_cuda_kernel<T, TIndex><<<grid, block, 0, stream>>>(
+        KnnQueryKernel<T, TIndex><<<grid, block, 0, stream>>>(
                 indices_ptr, distances_ptr, num_points, points, num_queries,
                 queries, knn);
     }
@@ -201,9 +189,8 @@ void KnnSearchCUDA(const cudaStream_t stream,
         const T *const queries_i = queries + 3 * queries_row_splits[i];
         int32_t *indices_ptr_i = indices_ptr + queries_row_splits[i] * knn;
         T *distances_ptr_i = distances_ptr + queries_row_splits[i] * knn;
-        knnquery_cuda_launcher(stream, indices_ptr_i, distances_ptr_i,
-                               num_points_i, points_i, num_queries_i, queries_i,
-                               knn);
+        KnnQuery(stream, indices_ptr_i, distances_ptr_i, num_points_i, points_i,
+                 num_queries_i, queries_i, knn);
     }
 }
 
