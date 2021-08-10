@@ -135,7 +135,7 @@ def get_config(args):
 
 
 if __name__ == '__main__':
-    # Priority: command line > loaded json > default config
+    # Priority: command line > loaded yaml > default config
     parser = configargparse.ArgParser(default_config_files=[
         os.path.join(os.path.dirname(__file__), 'default_config.yml')
     ])
