@@ -54,11 +54,11 @@ public:
     ~RaycastingScene();
 
     /// \brief Add a triangle mesh to the scene.
-    /// \param vertices Vertices as Tensor of dim {N,3} and dtype float.
-    /// \param triangles Triangles as Tensor of dim {M,3} and dtype uint32_t.
-    /// \return The geometry ID of the added mesh.
-    uint32_t AddTriangles(const core::Tensor &vertices,
-                          const core::Tensor &triangles);
+    /// \param vertex_positions Vertices as Tensor of dim {N,3} and dtype float.
+    /// \param triangle_indices Triangles as Tensor of dim {M,3} and dtype
+    /// uint32_t. \return The geometry ID of the added mesh.
+    uint32_t AddTriangles(const core::Tensor &vertex_positions,
+                          const core::Tensor &triangle_indices);
 
     /// \brief Add a triangle mesh to the scene.
     /// \param mesh A triangle mesh.

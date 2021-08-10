@@ -662,9 +662,10 @@ protected:
                                 model_->GetHashmap().GetCapacity());
             {
                 std::lock_guard<std::mutex> locker(surface_.lock);
-                int64_t len = surface_.pcd.HasPoints()
-                                      ? surface_.pcd.GetPoints().GetLength()
-                                      : 0;
+                int64_t len =
+                        surface_.pcd.HasPointPositions()
+                                ? surface_.pcd.GetPointPositions().GetLength()
+                                : 0;
                 info << fmt::format("Surface points: {}/{}\n", len,
                                     prop_values_.pointcloud_size)
                      << "\n";
@@ -773,7 +774,7 @@ protected:
                         if (is_scene_updated_) {
                             using namespace rendering;
                             std::lock_guard<std::mutex> locker(surface_.lock);
-                            if (surface_.pcd.HasPoints() &&
+                            if (surface_.pcd.HasPointPositions() &&
                                 surface_.pcd.HasPointColors()) {
                                 auto* scene =
                                         this->widget3d_->GetScene()->GetScene();

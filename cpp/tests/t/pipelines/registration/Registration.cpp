@@ -158,9 +158,9 @@ GetTestPointClouds(const core::Dtype& dtype, const core::Device& device) {
                                       device)
                     .To(dtype);
 
-    source.SetPoints(source_points.To(dtype, false));
+    source.SetPointPositions(source_points.To(dtype, false));
 
-    target.SetPoints(target_points.To(dtype, false));
+    target.SetPointPositions(target_points.To(dtype, false));
     target.SetPointNormals(target_normals.To(dtype, false));
 
     return std::make_tuple(source, target);

@@ -88,6 +88,7 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && cd ${CCACHE_DIR_PARENT} \
  && wget https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz \
  && tar -xf ${CCACHE_TAR_NAME}.tar.gz \
+ && ccache -M 1G \
  && ccache -s
 ENV PATH=/usr/lib/ccache:${PATH}
 
