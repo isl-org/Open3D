@@ -157,18 +157,18 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
             std::get<2>(result->geometry_ptrs_ptr->operator[](geomID));
 
     if (RTC_GEOMETRY_TYPE_TRIANGLE == geom_type) {
-        const float* vertices = (const float*)ptr1;
-        const uint32_t* triangles = (const uint32_t*)ptr2;
+        const float* vertex_positions = (const float*)ptr1;
+        const uint32_t* triangle_indices = (const uint32_t*)ptr2;
 
-        Vec3fa v0(vertices[3 * triangles[3 * primID + 0] + 0],
-                  vertices[3 * triangles[3 * primID + 0] + 1],
-                  vertices[3 * triangles[3 * primID + 0] + 2]);
-        Vec3fa v1(vertices[3 * triangles[3 * primID + 1] + 0],
-                  vertices[3 * triangles[3 * primID + 1] + 1],
-                  vertices[3 * triangles[3 * primID + 1] + 2]);
-        Vec3fa v2(vertices[3 * triangles[3 * primID + 2] + 0],
-                  vertices[3 * triangles[3 * primID + 2] + 1],
-                  vertices[3 * triangles[3 * primID + 2] + 2]);
+        Vec3fa v0(vertex_positions[3 * triangle_indices[3 * primID + 0] + 0],
+                  vertex_positions[3 * triangle_indices[3 * primID + 0] + 1],
+                  vertex_positions[3 * triangle_indices[3 * primID + 0] + 2]);
+        Vec3fa v1(vertex_positions[3 * triangle_indices[3 * primID + 1] + 0],
+                  vertex_positions[3 * triangle_indices[3 * primID + 1] + 1],
+                  vertex_positions[3 * triangle_indices[3 * primID + 1] + 2]);
+        Vec3fa v2(vertex_positions[3 * triangle_indices[3 * primID + 2] + 0],
+                  vertex_positions[3 * triangle_indices[3 * primID + 2] + 1],
+                  vertex_positions[3 * triangle_indices[3 * primID + 2] + 2]);
 
         // Determine distance to closest point on triangle (implemented in
         // common/math/closest_point.h).
@@ -395,17 +395,17 @@ RaycastingScene::~RaycastingScene() {
     rtcReleaseDevice(impl_->device_);
 }
 
-uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertices,
-                                       const core::Tensor& triangles) {
-    vertices.AssertDevice(impl_->tensor_device_);
-    vertices.AssertShapeCompatible({utility::nullopt, 3});
-    vertices.AssertDtype(core::Float32);
-    triangles.AssertDevice(impl_->tensor_device_);
-    triangles.AssertShapeCompatible({utility::nullopt, 3});
-    triangles.AssertDtype(core::UInt32);
+uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
+                                       const core::Tensor& triangle_indices) {
+    vertex_positions.AssertDevice(impl_->tensor_device_);
+    vertex_positions.AssertShapeCompatible({utility::nullopt, 3});
+    vertex_positions.AssertDtype(core::Float32);
+    triangle_indices.AssertDevice(impl_->tensor_device_);
+    triangle_indices.AssertShapeCompatible({utility::nullopt, 3});
+    triangle_indices.AssertDtype(core::UInt32);
 
-    const size_t num_vertices = vertices.GetLength();
-    const size_t num_triangles = triangles.GetLength();
+    const size_t num_vertices = vertex_positions.GetLength();
+    const size_t num_triangles = triangle_indices.GetLength();
 
     // scene needs to be recommitted
     impl_->scene_committed_ = false;
@@ -422,12 +422,12 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertices,
             3 * sizeof(uint32_t), num_triangles);
 
     {
-        auto data = vertices.Contiguous();
+        auto data = vertex_positions.Contiguous();
         memcpy(vertex_buffer, data.GetDataPtr(),
                sizeof(float) * 3 * num_vertices);
     }
     {
-        auto data = triangles.Contiguous();
+        auto data = triangle_indices.Contiguous();
         memcpy(index_buffer, data.GetDataPtr(),
                sizeof(uint32_t) * 3 * num_triangles);
     }
@@ -443,14 +443,14 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertices,
 }
 
 uint32_t RaycastingScene::AddTriangles(const TriangleMesh& mesh) {
-    size_t num_verts = mesh.GetVertices().GetLength();
+    size_t num_verts = mesh.GetVertexPositions().GetLength();
     if (num_verts > std::numeric_limits<uint32_t>::max()) {
         utility::LogError(
                 "Cannot add mesh with more than {} vertices to the scene",
                 std::numeric_limits<uint32_t>::max());
     }
-    return AddTriangles(mesh.GetVertices(),
-                        mesh.GetTriangles().To(core::UInt32));
+    return AddTriangles(mesh.GetVertexPositions(),
+                        mesh.GetTriangleIndices().To(core::UInt32));
 }
 
 std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
