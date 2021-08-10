@@ -42,12 +42,23 @@ bool NearestNeighborSearch::SetIndex() {
 bool NearestNeighborSearch::KnnIndex() {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        knn_index_.reset(new nns::KnnIndex());
-        return knn_index_->SetTensorData(dataset_points_);
+        if (dataset_points_.GetShape()[1] == 3) {
+            knn_index_.reset(new nns::KnnIndex());
+            return knn_index_->SetTensorData(dataset_points_);
+        } else {
+#ifdef WITH_FAISS
+            faiss_index_.reset(new nns::FaissIndex());
+            return faiss_index_->SetTensorData(dataset_points_);
+#else
+            utility::LogError(
+                    "[NearestNeighborSearch::KnnIndex] Currently, Faiss is "
+                    "disabled. Please recompile Open3D with WITH_FAISS=ON.");
+#endif
+        }
 #else
         utility::LogError(
-                "[NearestNeighborSearch::KnnIndex] Currently, Faiss is "
-                "disabled. Please recompile Open3D with WITH_FAISS=ON.");
+                "[NearestNeighborSearch::KnnIndex] Currently, CUDA support is "
+                "disabled. Please recompile Open3D with BUILD_CUDA_MODULE=ON.");
 #endif
     } else {
         return SetIndex();
@@ -102,16 +113,22 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
-#ifdef BUILD_CUDA_MODULE
-    if (knn_index_) {
-        return knn_index_->SearchKnn(query_points, knn);
-    }
-#endif
-    if (nanoflann_index_) {
-        return nanoflann_index_->SearchKnn(query_points, knn);
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        if (query_points.GetShape()[1] == 3 && knn_index_) {
+            return knn_index_->SearchKnn(query_points, knn);
+        } else if (faiss_index_) {
+            return faiss_index_->SearchKnn(query_points, knn);
+        } else {
+            utility::LogError(
+                    "[NearestNeighborSearch::KnnSearch] Index is not set.");
+        }
     } else {
-        utility::LogError(
-                "[NearestNeighborSearch::KnnSearch] Index is not set.");
+        if (nanoflann_index_) {
+            return nanoflann_index_->SearchKnn(query_points, knn);
+        } else {
+            utility::LogError(
+                    "[NearestNeighborSearch::KnnSearch] Index is not set.");
+        }
     }
 }
 
