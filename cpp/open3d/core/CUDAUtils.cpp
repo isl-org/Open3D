@@ -88,6 +88,45 @@ void Synchronize(const Device& device) {
 #endif
 }
 
+void AssertCUDADeviceIDIsAvailable(const int& device_id) {
+#ifdef BUILD_CUDA_MODULE
+    if (core::cuda::DeviceCount()) {
+        const int max_device_id = core::cuda::DeviceCount() - 1;
+        if (device_id < 0 || device_id > max_device_id) {
+            if (max_device_id) {
+                utility::LogError(
+                        "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
+                        "be between 0 to {}, but got {}.",
+                        device_id, max_device_id, device_id);
+            } else {
+                utility::LogError(
+                        "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
+                        "be 0, but got {}.",
+                        device_id, device_id);
+            }
+        }
+    } else {
+        utility::LogError(
+                "Invalid device 'CUDA:{}'. BUILD_WITH_CUDA=ON, but no CUDA "
+                "device available.",
+                device_id);
+    }
+#else
+    utility::LogError(
+            "BUILD_WITH_CUDA=OFF. Please build with CUDA to use CUDA device.");
+#endif
+}
+
+void AssertCUDADeviceIDIsAvailable(const Device& device) {
+    if (device.GetType() == Device::DeviceType::CUDA) {
+        AssertCUDADeviceIDIsAvailable(device.GetID());
+    } else {
+        utility::LogError(
+                "Expected device-type to be CUDA, but got device '{}'",
+                device.ToString());
+    }
+}
+
 #ifdef BUILD_CUDA_MODULE
 int GetDevice() {
     int device;
@@ -96,6 +135,7 @@ int GetDevice() {
 }
 
 static void SetDevice(int device_id) {
+    AssertCUDADeviceIDIsAvailable(device_id);
     OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
 }
 
