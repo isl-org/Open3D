@@ -124,22 +124,38 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
 
     std::vector<int32_t> indices_vector = indices.ToFlatVector<int32_t>();
     std::vector<float> distances_vector = distances.ToFlatVector<float>();
-    std::vector<int32_t> gt_indices_unsorted(gt_indices.begin(),
-                                             gt_indices.end());
-    std::vector<float> gt_distances_unsorted(gt_distances.begin(),
-                                             gt_distances.end());
+    std::vector<int32_t> indices_sorted(indices_vector.size());
+    std::vector<float> distances_sorted(distances_vector.size());
+
     for (size_t i = 0; i < gt_neighbors_row_splits.size() - 1; i++) {
-        std::sort(indices_vector.begin() + gt_neighbors_row_splits[i],
-                  indices_vector.begin() + gt_neighbors_row_splits[i + 1]);
-        std::sort(distances_vector.begin() + gt_neighbors_row_splits[i],
-                  distances_vector.begin() + gt_neighbors_row_splits[i + 1]);
-        std::sort(gt_indices_unsorted.begin() + gt_neighbors_row_splits[i],
-                  gt_indices_unsorted.begin() + gt_neighbors_row_splits[i + 1]);
-        std::sort(gt_distances_unsorted.begin() + gt_neighbors_row_splits[i],
-                  gt_distances_unsorted.end() + gt_neighbors_row_splits[i + 1]);
+        int64_t size_i =
+                gt_neighbors_row_splits[i + 1] - gt_neighbors_row_splits[i];
+        // permutation vector
+        std::vector<size_t> perm_i(size_i);
+        std::iota(perm_i.begin(), perm_i.end(), 0);
+
+        // find permutation
+        std::sort(perm_i.begin(), perm_i.end(), [&](size_t m, size_t n) {
+            return distances_vector[gt_neighbors_row_splits[i] + m] <
+                   distances_vector[gt_neighbors_row_splits[i] + n];
+        });
+
+        // apply permutation
+        std::transform(
+                perm_i.begin(), perm_i.end(),
+                indices_sorted.begin() + gt_neighbors_row_splits[i],
+                [&](size_t m) {
+                    return indices_vector[gt_neighbors_row_splits[i] + m];
+                });
+        std::transform(
+                perm_i.begin(), perm_i.end(),
+                distances_sorted.begin() + gt_neighbors_row_splits[i],
+                [&](size_t m) {
+                    return distances_vector[gt_neighbors_row_splits[i] + m];
+                });
     }
-    ExpectEQ(indices_vector, gt_indices_unsorted);
-    ExpectEQ(distances_vector, gt_distances_unsorted);
+    ExpectEQ(indices_sorted, gt_indices);
+    ExpectEQ(distances_sorted, gt_distances);
     ExpectEQ(neighbor_row_splits.ToFlatVector<int64_t>(),
              gt_neighbors_row_splits);
 
