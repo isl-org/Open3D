@@ -84,9 +84,18 @@ TensorToEigenMatrixXi(const core::Tensor &tensor);
 std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
         const core::Tensor &tensor);
 
+/// \brief Converts a tensor of shape (N, 2) to std::vector<Eigen::Vector2i>. An
+/// exception will be thrown if the tensor shape is not (N, 2). Regardless of
+/// the tensor dtype, the output will be converted to int.
+///
+/// \param tensor A tensor of shape (N, 2).
+/// \return A vector of N Eigen::Vector2i values.
+std::vector<Eigen::Vector2i> TensorToEigenVector2iVector(
+        const core::Tensor &tensor);
+
 /// \brief Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3i>. An
 /// exception will be thrown if the tensor shape is not (N, 3). Regardless of
-/// the tensor dtype, the output will be converted to to int.
+/// the tensor dtype, the output will be converted to int.
 ///
 /// \param tensor A tensor of shape (N, 3).
 /// \return A vector of N Eigen::Vector3i values.
@@ -103,6 +112,20 @@ std::vector<Eigen::Vector3i> TensorToEigenVector3iVector(
 /// \return A tensor of shape (N, 3) with the specified dtype and device.
 core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device);
+
+/// \brief Converts a vector of Eigen::Vector2i to a (N, 2) tensor. This
+/// function also takes care of dtype conversion and device transfer if
+/// necessary.
+///
+/// \param values A vector of Eigen::Vector2i values, e.g. a list of 2D points /
+/// indices.
+/// \param dtype Dtype of the output tensor.
+/// \param device Device of the output tensor.
+/// \return A tensor of shape (N, 2) with the specified dtype and device.
+core::Tensor EigenVector2iVectorToTensor(
+        const std::vector<Eigen::Vector2i> &values,
         core::Dtype dtype,
         const core::Device &device);
 
