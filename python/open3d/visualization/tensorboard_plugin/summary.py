@@ -69,7 +69,7 @@ class _AsyncDataWriter:
         while True:
             tagfilepath, data = self._write_queue.get()
             _log.debug(
-                f"Writing {len(data)}bytes data at "
+                f"Writing {len(data)}b data at "
                 f"{tagfilepath}+{self._file_handles[tagfilepath].tell()}")
             with self._file_lock:
                 handle = self._file_handles[tagfilepath]
@@ -257,54 +257,57 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                if 'triangle_indices' in data else "")
     for prop, tensor in data.items():
         if prop in ('vertex_positions',) + metadata.VERTEX_PROPERTIES:
-            vertex_data[prop] = _preprocess(prop, tensor, step, max_outputs,
-                                            geometry_metadata)
-            if vertex_data[prop] is None:  # Step reference
-                del vertex_data[prop]
+            prop_name = prop[7:]
+            vertex_data[prop_name] = _preprocess(prop, tensor, step,
+                                                 max_outputs, geometry_metadata)
+            if vertex_data[prop_name] is None:  # Step reference
+                del vertex_data[prop_name]
                 continue
             if batch_size is None:  # Get tensor dims from earlier property
-                batch_size, n_vertices, _ = vertex_data[prop].shape
+                batch_size, n_vertices, _ = vertex_data[prop_name].shape
             exp_shape = (batch_size, n_vertices,
                          metadata.GEOMETRY_PROPERTY_DIMS[prop])
-            if tuple(vertex_data[prop].shape) != exp_shape:
+            if tuple(vertex_data[prop_name].shape) != exp_shape:
                 raise ValueError(
                     f"Property {prop} tensor should be of shape "
-                    f"{exp_shape} but is {vertex_data[prop].shape}.")
+                    f"{exp_shape} but is {vertex_data[prop_name].shape}.")
 
         elif prop in ('triangle_indices',) + metadata.TRIANGLE_PROPERTIES:
-            triangle_data[prop] = _preprocess(prop, tensor, step, max_outputs,
-                                              geometry_metadata)
-            if triangle_data[prop] is None:  # Step reference
-                del vertex_data[prop]
+            prop_name = prop[9:]
+            triangle_data[prop_name] = _preprocess(prop, tensor, step,
+                                                   max_outputs,
+                                                   geometry_metadata)
+            if triangle_data[prop_name] is None:  # Step reference
+                del triangle_data[prop_name]
                 continue
             if n_triangles is None:  # Get tensor dims from earlier property
-                _, n_triangles, _ = triangle_data[prop].shape
+                _, n_triangles, _ = triangle_data[prop_name].shape
             exp_shape = (batch_size, n_triangles,
                          metadata.GEOMETRY_PROPERTY_DIMS[prop])
-            if tuple(triangle_data[prop].shape) != exp_shape:
+            if tuple(triangle_data[prop_name].shape) != exp_shape:
                 raise ValueError(
                     f"Property {prop} tensor should be of shape "
-                    f"{exp_shape} but is {triangle_data[prop].shape}.")
+                    f"{exp_shape} but is {triangle_data[prop_name].shape}.")
 
         elif prop in ('line_indices',) + metadata.LINE_PROPERTIES:
-            line_data[prop] = _preprocess(prop, tensor, step, max_outputs,
-                                          geometry_metadata)
-            if line_data[prop] is None:  # Step reference
-                del vertex_data[prop]
+            line_data[prop_name] = _preprocess(prop, tensor, step, max_outputs,
+                                               geometry_metadata)
+            if line_data[prop_name] is None:  # Step reference
+                del vertex_data[prop_name]
                 continue
             if n_lines is None:  # Get tensor dims from earlier property
-                _, n_lines, _ = line_data[prop].shape
+                _, n_lines, _ = line_data[prop_name].shape
             exp_shape = (batch_size, n_lines,
-                         metadata.GEOMETRY_PROPERTY_DIMS[prop])
-            if tuple(line_data[prop].shape) != exp_shape:
-                raise ValueError(f"Property {prop} tensor should be of shape "
-                                 f"{exp_shape} but is {line_data[prop].shape}.")
+                         metadata.GEOMETRY_PROPERTY_DIMS[prop_name])
+            if tuple(line_data[prop_name].shape) != exp_shape:
+                raise ValueError(
+                    f"Property {prop} tensor should be of shape "
+                    f"{exp_shape} but is {line_data[prop_name].shape}.")
 
-    vertices = vertex_data.pop("vertex_positions")
-    faces = triangle_data.pop("triangle_indices",
+    vertices = vertex_data.pop("positions")
+    faces = triangle_data.pop("indices",
                               o3d.core.Tensor((), dtype=o3d.core.int32))
-    lines = line_data.pop("line_indices",
-                          o3d.core.Tensor((), dtype=o3d.core.int32))
+    lines = line_data.pop("indices", o3d.core.Tensor((), dtype=o3d.core.int32))
     for b in range(batch_size):
         bc = o3d.io.rpc.BufferConnection()
         o3d.io.rpc.set_mesh_data(

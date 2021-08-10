@@ -86,5 +86,5 @@ def large_scale(n_steps=32, batch_size=1, base_resolution=200):
 
 
 if __name__ == "__main__":
-    # small_scale()
+    small_scale()
     large_scale()

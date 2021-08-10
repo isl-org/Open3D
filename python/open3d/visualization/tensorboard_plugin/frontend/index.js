@@ -71,12 +71,13 @@ class TensorboardOpen3DPluginClient {
         dashboard.innerHTML = this.dashboard_html;
         // Ask Open3D for a new window
         const width = window.innerWidth * 5/6 - 60 ;
-        const height = window.innerHeight - 40;
+        const height = window.innerHeight * 5/6 - 40;
         const fontsize = window.getComputedStyle(document.body).fontSize;
         fetch(this.url_route_prefix + "/new_window?width=" + width + "&height="
             + height + "&fontsize=" + fontsize, null)
             .then((response) => response.json())
-            .then((response) => this.addConnection(response.window_id, response.logdir))
+            .then((response) => this.addConnection(response.window_id,
+                response.logdir))
             .catch(err => console.error("Error: /new_window failed:" + err));
     }
 
@@ -92,7 +93,8 @@ class TensorboardOpen3DPluginClient {
      * selected initially.
      */
     createSelector(name, parent_id, options, type, initial_checked_options) {
-        console.assert(type == "radio" || type == "checkbox", "type must be radio or checkbox");
+        console.assert(type == "radio" || type == "checkbox",
+            "type must be radio or checkbox");
 
         let parent_element = document.getElementById(parent_id);
         parent_element.replaceChildren();  /* Remove existing children */
@@ -134,11 +136,13 @@ class TensorboardOpen3DPluginClient {
         if (max > min) { // Don't create slider if no choice
             let slider_form = document.createElement("form");
             parent_element.appendChild(slider_form);
-            slider_form.setAttribute("oninput", name + "_output.value = " + name + ".valueAsNumber;");
+            slider_form.setAttribute("oninput", name + "_output.value = " + name
+                + ".valueAsNumber;");
             let slider_label = document.createElement("label");
             slider_form.appendChild(slider_label);
             slider_label.setAttribute("for", name);
-            slider_label.innerText = display_name + ": [" + min.toString() +  "-" + max.toString() + "] ";
+            slider_label.innerText = display_name + ": [" + min.toString() +
+                "-" + max.toString() + "] ";
             let slider_input = document.createElement("input");
             slider_form.appendChild(slider_input);
             slider_input.setAttribute("type", "range");
@@ -163,11 +167,16 @@ class TensorboardOpen3DPluginClient {
     // arrow function binds this at time of instantiation
     ResizeEvent = () => {
         if (this.webRtcClient) {
+            let webrtc_widget = document.getElementById("video_" +
+                this.windowUId);
+            webrtc_widget.style.height = window.innerHeight *5/6 - 40;
+            webrtc_widget.style.width = window.innerWidth *5/6 - 60;
+            // const rect = webrtc_widget.getBoundingClientRect();
             const resizeEvent = {
                 window_uid: this.windowUId,
                 class_name: "ResizeEvent",
-                height: window.innerHeight - 40,
-                width: window.innerWidth *5/6 - 60
+                height: webrtc_widget.scrollHeight,
+                width: webrtc_widget.scrollWidth
             };
             this.webRtcClient.dataChannel.send(JSON.stringify(resizeEvent));
         }
@@ -178,7 +187,8 @@ class TensorboardOpen3DPluginClient {
      * connection and close server window.
      */
     closeWindow = () => {
-        fetch(this.url_route_prefix + "/close_window?window_id=" + this.windowUId, null)
+        fetch(this.url_route_prefix + "/close_window?window_id=" +
+            this.windowUId, null)
             .then(() => {;
                 if (this.webRtcClient) {
                     this.webRtcClient.disconnect();
@@ -232,13 +242,14 @@ class TensorboardOpen3DPluginClient {
         if (evt.target.name == "run-selector-radio-buttons") { // update tags
             this.current.run = evt.target.id;
             this.createSelector("tag-selector-checkboxes", "tag-selector",
-                this.run_to_tags[this.current.run], "checkbox", this.current.tags);
+                this.run_to_tags[this.current.run], "checkbox",
+                this.current.tags);
         } else if (evt.target.name == "tag-selector-checkboxes") {
             if (evt.target.checked) {
                 this.current.tags.push(evt.target.id);
             } else {
-                this.current.tags.splice(this.current.tags.indexOf(evt.target.id),
-                    1);
+                this.current.tags.splice(this.current.tags.indexOf(
+                    evt.target.id), 1);
             }
         } else if (evt.target.name == "batch-idx-selector-slider") {
             this.current.batch_idx = evt.target.value;
@@ -271,26 +282,34 @@ class TensorboardOpen3DPluginClient {
             this.current = message.current;
 
             this.createSelector("run-selector-radio-buttons", "run-selector",
-                Object.getOwnPropertyNames(this.run_to_tags), "radio", this.current.run);
+                Object.getOwnPropertyNames(this.run_to_tags), "radio",
+                this.current.run);
             this.createSelector("tag-selector-checkboxes", "tag-selector",
-                this.run_to_tags[this.current.run], "checkbox", this.current.tags);
-            this.createSlider("batch-idx-selector-slider", "Batch index", "batch-idx-selector",
-                0, this.current.batch_size - 1, this.current.batch_idx);
+                this.run_to_tags[this.current.run], "checkbox",
+                this.current.tags);
+            this.createSlider("batch-idx-selector-slider", "Batch index",
+                "batch-idx-selector", 0, this.current.batch_size - 1,
+                this.current.batch_idx);
             this.createSlider("step-selector-slider", "Step", "step-selector",
-                this.current.step_limits[0], this.current.step_limits[1], this.current.step);
+                this.current.step_limits[0], this.current.step_limits[1],
+                this.current.step);
             this.requestGeometryUpdate();
         }
         if (message.class_name.endsWith("update_geometry")) {
             // Brute force way to sync state with server.
             this.current = message.current;
             this.createSelector("run-selector-radio-buttons", "run-selector",
-                Object.getOwnPropertyNames(this.run_to_tags), "radio", this.current.run);
+                Object.getOwnPropertyNames(this.run_to_tags), "radio",
+                this.current.run);
             this.createSelector("tag-selector-checkboxes", "tag-selector",
-                this.run_to_tags[this.current.run], "checkbox", this.current.tags);
-            this.createSlider("batch-idx-selector-slider", "Batch index", "batch-idx-selector",
-                0, this.current.batch_size - 1, this.current.batch_idx);
+                this.run_to_tags[this.current.run], "checkbox",
+                this.current.tags);
+            this.createSlider("batch-idx-selector-slider", "Batch index",
+                "batch-idx-selector", 0, this.current.batch_size - 1,
+                this.current.batch_idx);
             this.createSlider("step-selector-slider", "Step", "step-selector",
-                this.current.step_limits[0], this.current.step_limits[1], this.current.step);
+                this.current.step_limits[0], this.current.step_limits[1],
+                this.current.step);
         }
     };
 
@@ -308,38 +327,38 @@ class TensorboardOpen3DPluginClient {
         if (document.getElementById(videoId) == null) {
             let webrtcDiv = document.getElementById("webrtc");
             if (webrtcDiv) {
-                let divElt = document.createElement("div");
-                divElt.id = "div_" + videoId;
-
                 let videoElt = document.createElement("video");
+                webrtcDiv.appendChild(videoElt);
                 videoElt.id = videoId;
                 videoElt.title = this.windowUId;
                 videoElt.muted = true;
                 videoElt.controls = false;
                 videoElt.playsinline = true;
                 videoElt.innerText = "Your browser does not support HTML5 video.";
-
-                divElt.appendChild(videoElt);
-                webrtcDiv.appendChild(divElt);
             }
         }
 
         let videoElt = document.getElementById(videoId);
         if (videoElt) {
-            this.webRtcClient = new WebRtcStreamer(videoElt, this.http_handshake_url, null, null);
+            this.webRtcClient = new WebRtcStreamer(videoElt,
+                this.http_handshake_url, null, null);
             console.info("[addConnection] videoId: " + videoId);
 
-            this.webRtcClient.connect(this.windowUId, /*audio*/ null, this.webRtcOptions);
+            this.webRtcClient.connect(this.windowUId, /*audio*/ null,
+                this.webRtcOptions);
             console.info("[addConnection] windowUId: " + this.windowUId);
             console.info("[addConnection] options: " + this.webRtcOptions);
             window.onresize = this.ResizeEvent;
             window.onbeforeunload = this.closeWindow;
             videoElt.addEventListener('LocalDataChannelOpen', (evt) => {
-                evt.detail.channel.addEventListener('message', this.processDCMessage);
+                evt.detail.channel.addEventListener('message',
+                    this.processDCMessage);
             });
-            videoElt.addEventListener('RemoteDataChannelOpen', this.reloadRunTags);
+            videoElt.addEventListener('RemoteDataChannelOpen',
+                this.reloadRunTags);
             // Listen for the user clicking on the main TB reload button
-            let tb_reload_button = parent.document.querySelector(".reload-button");
+            let tb_reload_button =
+                parent.document.querySelector(".reload-button");
             if (tb_reload_button != null) {
                 tb_reload_button.addEventListener("click", this.reloadRunTags);
             }

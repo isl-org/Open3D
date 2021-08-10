@@ -105,10 +105,10 @@ The attributes of the triangle mesh have different levels::
     // be editable in Python. We don't want the TensorMap to be replaced
     // by another TensorMap in Python.
     triangle_mesh.def_property_readonly(
-            "vertex_positions",
+            "vertex",
             py::overload_cast<>(&TriangleMesh::GetVertexAttr, py::const_));
     triangle_mesh.def_property_readonly(
-            "triangle_indices",
+            "triangle",
             py::overload_cast<>(&TriangleMesh::GetTriangleAttr, py::const_));
 
     // Device transfers.

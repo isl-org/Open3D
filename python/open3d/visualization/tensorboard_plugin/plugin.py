@@ -359,7 +359,6 @@ class Open3DPluginWindow:
         metadata_proto.ParseFromString(
             self.all_tensor_events[tag][idx].tensor_proto.string_val[0])
         filename = metadata_proto.batch_index.filename
-        # ipdb.set_trace()
         read_location = metadata_proto.batch_index.start_size[batch_idx].start
         read_size = metadata_proto.batch_index.start_size[batch_idx].size
         cache_key = (filename, read_location, read_size, tag, step, idx,
@@ -410,13 +409,15 @@ class Open3DPluginWindow:
         if isinstance(geometry, o3d.t.geometry.PointCloud):
             return geometry
         legacy = geometry.to_legacy()
-        # FLoat64 but range is not scaled!
-        if hasattr(legacy, 'vertex') and 'colors' in legacy.vertex:
-            legacy.vertex['colors'] = o3d.utility.Vector3dVector(
-                np.array(legacy.vertex['colors']) / 255)
-        if hasattr(legacy, 'line') and 'colors' in legacy.line:
-            legacy.line['colors'] = o3d.utility.Vector3dVector(
-                np.array(legacy.vertex['colors']) / 255)
+        # color is FLoat64 but range is [0,255]!
+        if isinstance(geometry, o3d.t.geometry.TriangleMesh):
+            if legacy.has_vertex_colors():
+                legacy.vertex_colors = o3d.utility.Vector3dVector(
+                    np.asarray(legacy.vertex_colors) / 255)
+        elif isinstance(geometry, o3d.t.geometry.TriangleMesh):
+            if legacy.has_colors():
+                legacy.colors = o3d.utility.Vector3dVector(
+                    np.asarray(legacy.colors) / 255)
         return legacy
 
     def _update_scene(self):
