@@ -40,9 +40,10 @@ void pybind_lineset(py::module& m) {
     py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>, Geometry>
             line_set(m, "LineSet", R"(
 A LineSet contains points and lines joining them and optionally attributes on
-the points and lines.  The ``LineSet`` class stores the attribute data in key-value
-maps, where the key is the attribute name and value is a Tensor containing the
-attribute data.  There are two maps: one each for ``point`` and ``line``.
+the points and lines.  The ``LineSet`` class stores the attribute data in
+key-value maps, where the key is the attribute name and value is a Tensor
+containing the attribute data.  There are two maps: one each for ``point``
+and ``line``.
 
 The attributes of the line set have different levels::
 
@@ -61,11 +62,13 @@ The attributes of the line set have different levels::
     # sets. The shape must be (N, 3) and (N, 2) respectively. The device of
     # "positions" determines the device of the line set.
     lineset.point["positions"] = o3d.core.Tensor([[0, 0, 0],
-                                                [0, 0, 1],
-                                                [0, 1, 0],
-                                                [0, 1, 1]], dtype_f, device)
-    lineset.line["indices"] = o3d.core.Tensor([[0, 1], [1, 2],
-                                               [2, 3], [3, 0]], dtype_i, device)
+                                                  [0, 0, 1],
+                                                  [0, 1, 0],
+                                                  [0, 1, 1]], dtype_f, device)
+    lineset.line["indices"] = o3d.core.Tensor([[0, 1],
+                                               [1, 2],
+                                               [2, 3],
+                                               [3, 0]], dtype_i, device)
 
     # Common attributes: line["colors"]
     # Common attributes are used in built-in line set operations. The
@@ -74,9 +77,9 @@ The attributes of the line set have different levels::
     # "colors" must have shape (N, 3) and must be on the same device as the
     # line set.
     lineset.line["colors"] = o3c.core.Tensor([[0.0, 0.0, 0.0],
-                                             [0.1, 0.1, 0.1],
-                                             [0.2, 0.2, 0.2],
-                                             [0.3, 0.3, 0.3]], dtype_f, device)
+                                              [0.1, 0.1, 0.1],
+                                              [0.2, 0.2, 0.2],
+                                              [0.3, 0.3, 0.3]], dtype_f, device)
 
     # User-defined attributes
     # You can also attach custom attributes. The value tensor must be on the
