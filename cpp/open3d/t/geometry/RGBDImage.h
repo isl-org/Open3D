@@ -97,19 +97,6 @@ public:
     /// Returns copy of the RGBD image on the same device.
     RGBDImage Clone() const { return To(color_.GetDevice(), /*copy=*/true); }
 
-    /// Transfer the RGBD image to CPU.
-    ///
-    /// If the RGBD image is already on CPU, no copy will be performed.
-    RGBDImage CPU() const { return To(core::Device("CPU:0")); }
-
-    /// Transfer the RGBD image to a CUDA device.
-    ///
-    /// If the RGBD image is already on the specified CUDA device, no copy will
-    /// be performed.
-    RGBDImage CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    }
-
     /// Convert to the legacy RGBDImage format.
     open3d::geometry::RGBDImage ToLegacy() const {
         return open3d::geometry::RGBDImage(color_.ToLegacy(),

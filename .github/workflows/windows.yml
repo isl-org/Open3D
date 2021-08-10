@@ -19,6 +19,7 @@ env:
   WHEEL_VER: "0.35.1"
   STOOLS_VER: "50.3.2"
   PYTEST_VER: "6.0.1"
+  PYTEST_RANDOMLY_VER: "3.8.0"
   SCIPY_VER: "1.5.4"
   JEDI_VER: "0.17.2" # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8" # https://github.com/psf/requests/issues/5710
@@ -123,7 +124,8 @@ jobs:
         if: ${{ matrix.BUILD_CUDA == 'OFF' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
-          .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
+          echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
+          .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
       - name: Linking to Open3D
         run: |
           $ErrorActionPreference = 'Stop'
@@ -325,6 +327,7 @@ jobs:
             wheel==${{ env.WHEEL_VER }} `
             setuptools==${{ env.STOOLS_VER }}
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
+          python -m pip install -U pytest-randomly==${{ env.PYTEST_RANDOMLY_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$pi_tag-*.whl).Name
@@ -340,6 +343,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
+          echo "Add --rondomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
           python -m pytest python/test/ --ignore python/test/ml_ops/
           deactivate
