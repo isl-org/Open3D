@@ -9,7 +9,7 @@ libusb. Run corresponding script file under "script" directory to automatically
 config them.
 
 --------------------------------------------------------------------------------
-Eigen                       3.3.2                            Mainly MPL2 license
+Eigen                       3.4-rc1                            Mainly MPL2 license
 A high-level C++ library of template headers for linear algebra, matrix and
 vector operations, numerical solvers and related algorithms
 http://eigen.tuxfamily.org/
@@ -52,7 +52,7 @@ dirent                      1.21                                     MIT license
 https://github.com/tronkko/dirent
 A C/C++ programming interface for cross-platform filesystem
 --------------------------------------------------------------------------------
-librealsense                2.40.0                               Apache-2 license
+librealsense                2.44.0                               Apache-2 license
 A cross-platform library for capturing data from the Intel RealSense F200,
 SR300, R200 and L500 cameras
 https://github.com/IntelRealSense/librealsense
@@ -69,7 +69,7 @@ tinyobjloader                v1.0.0                                  MIT license
 Tiny but powerful single file wavefront obj loader
 https://github.com/syoyo/tinyobjloader
 --------------------------------------------------------------------------------
-pybind11                    v2.5.0                                   BSD license
+pybind11                    v2.6.2                                   BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
 --------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ nanoflann                   1.3.1                                    BSD license
 A C++11 header-only library for Nearest Neighbor (NN) search with KD-trees
 https://github.com/jlblancoc/nanoflann
 --------------------------------------------------------------------------------
-CUTLASS                     1.3.2                                    BSD license
+CUTLASS                     1.3.3                                    BSD license
 CUDA Templates for Linear Algebra Subroutines
 https://github.com/NVIDIA/cutlass
 --------------------------------------------------------------------------------
@@ -117,3 +117,4 @@ https://github.com/isl-org/libzmq
 embree                      3.13.0                              Apache-2 license
 Embree is a collection of high-performance ray tracing kernels
 https://github.com/embree/embree
+--------------------------------------------------------------------------------
