@@ -163,11 +163,11 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
             if (mesh_data.faces.CheckShape({-1, 3}, errstr)) {
                 std::shared_ptr<t::geometry::TriangleMesh> mesh(
                         new t::geometry::TriangleMesh());
-                mesh->SetVertices(ArrayToTensor(mesh_data.vertices));
+                mesh->SetVertexPositions(ArrayToTensor(mesh_data.vertices));
                 for (auto item : mesh_data.vertex_attributes) {
                     mesh->SetVertexAttr(item.first, ArrayToTensor(item.second));
                 }
-                mesh->SetTriangles(ArrayToTensor(mesh_data.faces));
+                mesh->SetTriangleIndices(ArrayToTensor(mesh_data.faces));
                 for (auto item : mesh_data.face_attributes) {
                     mesh->SetTriangleAttr(item.first,
                                           ArrayToTensor(item.second));
@@ -184,7 +184,7 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
                    mesh_data.vertices.CheckNonEmpty()) {
             std::shared_ptr<t::geometry::PointCloud> pcd(
                     new t::geometry::PointCloud());
-            pcd->SetPoints(ArrayToTensor(mesh_data.vertices));
+            pcd->SetPointPositions(ArrayToTensor(mesh_data.vertices));
             for (auto item : mesh_data.vertex_attributes) {
                 pcd->SetPointAttr(item.first, ArrayToTensor(item.second));
             }
@@ -213,7 +213,7 @@ TriangleMeshToMeshData(const t::geometry::TriangleMesh& trimesh) {
     if (vertex_attributes.Contains("vertices")) {
         core::Tensor tensor;
         std::tie(mesh_data.vertices, tensor) =
-                TensorToArray(trimesh.GetVertices());
+                TensorToArray(trimesh.GetVertexPositions());
         keep_alive_tensors.push_back(tensor);
     } else {
         LogError("TriangleMeshToMeshData: TriangleMesh has no vertices!");
@@ -260,7 +260,7 @@ std::tuple<messages::MeshData, std::vector<core::Tensor>> PointCloudToMeshData(
     // TODO switch to "positions" after the primary key has changed.
     if (point_attributes.Contains("points")) {
         core::Tensor tensor;
-        std::tie(mesh_data.vertices, tensor) = TensorToArray(pcd.GetPoints());
+        std::tie(mesh_data.vertices, tensor) = TensorToArray(pcd.GetPointPositions());
         keep_alive_tensors.push_back(tensor);
     } else {
         LogError("PointCloudToMeshData: PointCloud has no points!");
