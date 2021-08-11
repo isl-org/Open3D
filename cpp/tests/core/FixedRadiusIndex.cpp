@@ -122,6 +122,11 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
     std::tie(indices, distances, neighbor_row_splits) = index.SearchRadius(
             query_points, queries_row_splits, radius, /*sort*/ false);
 
+    // Check neighbor_row_splits first, since indices and distances checks are
+    // dependent on the row splits value.
+    ASSERT_EQ(neighbor_row_splits.ToFlatVector<int64_t>(),
+              gt_neighbors_row_splits);
+
     std::vector<int32_t> indices_vector = indices.ToFlatVector<int32_t>();
     std::vector<float> distances_vector = distances.ToFlatVector<float>();
     std::vector<int32_t> indices_sorted(indices_vector.size());
@@ -156,8 +161,6 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
     }
     ExpectEQ(indices_sorted, gt_indices);
     ExpectEQ(distances_sorted, gt_distances);
-    ExpectEQ(neighbor_row_splits.ToFlatVector<int64_t>(),
-             gt_neighbors_row_splits);
 
     // Test sort = true
     std::tie(indices, distances, neighbor_row_splits) = index.SearchRadius(
