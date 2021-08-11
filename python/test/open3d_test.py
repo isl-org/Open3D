@@ -42,6 +42,7 @@ test_data_dir = os.path.join(_pwd, os.pardir, os.pardir, "examples",
 # unit tests. See https://github.com/isl-org/open3d_downloads for details on
 # how to manage the test data files.
 sys.path.append(test_data_dir)
+sys.path.append(os.path.join(_pwd, os.pardir, os.pardir, "data"))
 from download_utils import download_all_files as _download_all_files
 _download_all_files()
 
