@@ -47,17 +47,17 @@ void KnnSearchCUDA(const Tensor& points,
     Device device = points.GetDevice();
     NeighborSearchAllocator<T> output_allocator(device);
 
-    int num_points = points.GetShape()[0];
-    int num_queries = queries.GetShape()[0];
+    int num_points = points.GetShape(0);
+    int num_queries = queries.GetShape(0);
     knn = num_points > knn ? knn : num_points;
 
-    open3d::core::nns::impl::KnnSearchCUDA(
-            stream, points.GetShape()[0], points.GetDataPtr<T>(),
-            queries.GetShape()[0], queries.GetDataPtr<T>(),
-            points_row_splits.GetShape()[0],
-            points_row_splits.GetDataPtr<int64_t>(),
-            queries_row_splits.GetShape()[0],
-            queries_row_splits.GetDataPtr<int64_t>(), knn, output_allocator);
+    impl::KnnSearchCUDA(stream, points.GetShape(0), points.GetDataPtr<T>(),
+                        queries.GetShape(0), queries.GetDataPtr<T>(),
+                        points_row_splits.GetShape(0),
+                        points_row_splits.GetDataPtr<int64_t>(),
+                        queries_row_splits.GetShape(0),
+                        queries_row_splits.GetDataPtr<int64_t>(), knn,
+                        output_allocator);
 
     neighbors_index =
             output_allocator.NeighborsIndex().View({num_queries, knn});

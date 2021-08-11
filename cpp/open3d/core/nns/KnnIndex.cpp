@@ -34,18 +34,17 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-KnnIndex::KnnIndex(){};
+KnnIndex::KnnIndex() {}
 
 KnnIndex::KnnIndex(const Tensor& dataset_points) {
     SetTensorData(dataset_points);
 }
 
-KnnIndex::~KnnIndex(){};
+KnnIndex::~KnnIndex() {}
 
 bool KnnIndex::SetTensorData(const Tensor& dataset_points) {
-    int64_t num_dataset_points = dataset_points.GetShape()[0];
-    Tensor points_row_splits(std::vector<int64_t>({0, num_dataset_points}), {2},
-                             Int64);
+    int64_t num_dataset_points = dataset_points.GetShape(0);
+    Tensor points_row_splits = Tensor::Init<int64_t>({0, num_dataset_points});
     return SetTensorData(dataset_points, points_row_splits);
 }
 
@@ -56,11 +55,10 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points,
                 "KnnIndex::SetTensorData dataset_points must be 2D matri,x "
                 "with shape {n_dataset_points,d}.");
     }
-    if (dataset_points.GetShape()[0] <= 0 ||
-        dataset_points.GetShape()[1] <= 0) {
+    if (dataset_points.GetShape(0) <= 0 || dataset_points.GetShape(1) <= 0) {
         utility::LogError("KnnIndex::SetTensorData Failed due to no data.");
     }
-    if (dataset_points.GetShape()[0] != points_row_splits[-1].Item<int64_t>()) {
+    if (dataset_points.GetShape(0) != points_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
                 "KnnIndex::SetTensorData dataset_points and points_row_splits "
                 "have incompatible shapes.");
@@ -87,9 +85,8 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points,
 
 std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
                                               int knn) const {
-    int64_t num_query_points = query_points.GetShape()[0];
-    Tensor queries_row_splits(std::vector<int64_t>({0, num_query_points}), {2},
-                              Int64);
+    int64_t num_query_points = query_points.GetShape(0);
+    Tensor queries_row_splits = Tensor::Init<int64_t>({0, num_query_points});
     return SearchKnn(query_points, queries_row_splits, knn);
 }
 
@@ -102,7 +99,7 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     query_points.AssertDtype(dtype);
     query_points.AssertDevice(device);
     query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
-    if (query_points.GetShape()[0] != queries_row_splits[-1].Item<int64_t>()) {
+    if (query_points.GetShape(0) != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
                 "KnnIndex::SearchKnn query_points and queries_row_splits have "
                 "incompatible shapes.");
