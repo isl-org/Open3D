@@ -96,7 +96,9 @@ The attributes of the triangle mesh have different levels::
 )");
 
     // Constructors.
-    triangle_mesh.def(py::init<const core::Device&>(), "device"_a)
+    triangle_mesh
+            .def(py::init<const core::Device&>(),
+                 "device"_a = core::Device("CPU:0"))
             .def(py::init<const core::Tensor&, const core::Tensor&>(),
                  "vertex_positions"_a, "triangle_indices"_a);
 
