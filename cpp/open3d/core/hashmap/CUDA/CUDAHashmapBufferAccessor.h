@@ -44,8 +44,6 @@ namespace core {
 /// Dynamic memory allocation and free are expensive on kernels.
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
 
-__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity);
-
 class CUDAHashmapBufferAccessor {
 public:
     __host__ void Setup(int64_t capacity,
@@ -75,9 +73,7 @@ public:
         std::vector<uint8_t *> value_ptrs(n_values_);
         for (size_t i = 0; i < n_values_; ++i) {
             value_ptrs[i] = static_cast<uint8_t *>(values[i].GetDataPtr());
-            // std::cout << "input pointer " << i << " : " << (void
-            // *)value_ptrs[i]
-            //           << "\n";
+            cudaMemset(value_ptrs[i], 0, capacity_ * dsize_values[i]);
         }
         values_ = static_cast<uint8_t **>(
                 MemoryManager::Malloc(n_values_ * sizeof(uint8_t *), device));
@@ -95,13 +91,10 @@ public:
 
     __host__ void Reset(const Device &device) {
         int heap_counter = 0;
-        MemoryManager::Memcpy(heap_counter_, device, &heap_counter,
-                              Device("CPU:0"), sizeof(int));
+        MemoryManager::MemcpyFromHost(heap_counter_, device, &heap_counter,
+                                      sizeof(int));
 
-        const int blocks =
-                (capacity_ + kThreadsPerBlock - 1) / kThreadsPerBlock;
-        ResetHashmapBufferKernel<<<blocks, kThreadsPerBlock, 0,
-                                   core::cuda::GetStream()>>>(heap_, capacity_);
+        thrust::sequence(thrust::device, heap_, heap_ + capacity_, 0);
         cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }

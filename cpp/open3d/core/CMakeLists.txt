@@ -74,7 +74,6 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(core PRIVATE
         hashmap/CUDA/CreateCUDAHashmap.cu
-        hashmap/CUDA/CUDAHashmapBufferAccessor.cu
         hashmap/CUDA/SlabNodeManager.cu
     )
 
