@@ -56,9 +56,6 @@ public:
     SlabHashmapImpl();
 
     __host__ void Setup(int64_t init_buckets,
-                        int64_t init_capacity,
-                        int64_t dsize_key,
-                        int64_t dsize_value,
                         const SlabNodeManagerImpl& node_mgr_impl,
                         const CUDAHashmapBufferAccessor& buffer_accessor);
 
@@ -104,11 +101,7 @@ public:
 
 public:
     Hash hash_fn_;
-
     int64_t bucket_count_;
-    int64_t capacity_;
-    int64_t dsize_key_;
-    int64_t dsize_value_;
 
     Slab* bucket_list_head_;
     SlabNodeManagerImpl node_mgr_impl_;
@@ -135,10 +128,11 @@ __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
-                                  const void* input_values,
+                                  const void* const* input_values,
                                   addr_t* output_addrs,
                                   bool* output_masks,
-                                  int64_t count);
+                                  int64_t count,
+                                  int64_t n_values);
 
 template <typename Key, typename Hash>
 __global__ void FindKernel(SlabHashmapImpl<Key, Hash> impl,
@@ -176,16 +170,9 @@ SlabHashmapImpl<Key, Hash>::SlabHashmapImpl()
 template <typename Key, typename Hash>
 void SlabHashmapImpl<Key, Hash>::Setup(
         int64_t init_buckets,
-        int64_t init_capacity,
-        int64_t dsize_key,
-        int64_t dsize_value,
         const SlabNodeManagerImpl& allocator_impl,
         const CUDAHashmapBufferAccessor& pair_allocator_impl) {
     bucket_count_ = init_buckets;
-    capacity_ = init_capacity;
-    dsize_key_ = dsize_key;
-    dsize_value_ = dsize_value;
-
     node_mgr_impl_ = allocator_impl;
     buffer_accessor_ = pair_allocator_impl;
 }
@@ -468,9 +455,7 @@ __device__ int32_t SlabHashmapImpl<Key, Hash>::WarpFindKey(const Key& key,
             // Validate key addrs.
             && (ptr != kEmptyNodeAddr)
             // Find keys in memory heap.
-            &&
-            *static_cast<Key*>(buffer_accessor_.ExtractIterator(ptr).first) ==
-                    key;
+            && *static_cast<Key*>(buffer_accessor_.GetKeyPtr(ptr)) == key;
 
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_found)) - 1;
 }
@@ -511,10 +496,8 @@ __global__ void InsertKernelPass0(SlabHashmapImpl<Key, Hash> impl,
         // First write ALL input_keys to avoid potential thread conflicts.
         addr_t iterator_addr =
                 impl.buffer_accessor_.heap_[heap_counter_prev + tid];
-        iterator_t iterator =
-                impl.buffer_accessor_.ExtractIterator(iterator_addr);
-
-        *static_cast<Key*>(iterator.first) = input_keys_templated[tid];
+        void* key = impl.buffer_accessor_.GetKeyPtr(iterator_addr);
+        *static_cast<Key*>(key) = input_keys_templated[tid];
         output_addrs[tid] = iterator_addr;
     }
 }
@@ -559,25 +542,27 @@ __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
-                                  const void* input_values,
+                                  const void* const* input_values,
                                   addr_t* output_addrs,
                                   bool* output_masks,
-                                  int64_t count) {
+                                  int64_t count,
+                                  int64_t n_values) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid < count) {
         addr_t iterator_addr = output_addrs[tid];
 
         if (output_masks[tid]) {
-            iterator_t iterator =
-                    impl.buffer_accessor_.ExtractIterator(iterator_addr);
+            for (int j = 0; j < n_values; ++j) {
+                void* dst_ptr =
+                        impl.buffer_accessor_.GetValuePtr(iterator_addr, j);
+                int64_t dsize_value = impl.buffer_accessor_.dsize_values_[j];
 
-            // Success: copy remaining input_values
-            if (input_values != nullptr) {
-                MEMCPY_AS_INTS(iterator.second,
-                               static_cast<const uint8_t*>(input_values) +
-                                       tid * impl.dsize_value_,
-                               impl.dsize_value_);
+                // Success: copy remaining input_values
+                MEMCPY_AS_INTS(dst_ptr,
+                               static_cast<const uint8_t*>(input_values[j]) +
+                                       tid * dsize_value,
+                               dsize_value);
             }
         } else {
             impl.buffer_accessor_.DeviceFree(iterator_addr);

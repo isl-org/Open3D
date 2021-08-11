@@ -36,9 +36,9 @@ namespace core {
 std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
         int64_t init_capacity,
         const Dtype& dtype_key,
-        const Dtype& dtype_value,
         const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
+        const std::vector<Dtype>& dtype_values,
+        const std::vector<SizeVector>& element_shape_values,
         const Device& device,
         const HashmapBackend& backend) {
     if (backend != HashmapBackend::Default && backend != HashmapBackend::Slab &&
@@ -49,20 +49,26 @@ std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
     int64_t dim = element_shape_key.NumElements();
 
     int64_t dsize_key = dim * dtype_key.ByteSize();
-    int64_t dsize_value =
-            element_shape_value.NumElements() * dtype_value.ByteSize();
+
+    // TODO: size check
+    std::vector<int64_t> dsize_values;
+    for (size_t i = 0; i < dtype_values.size(); ++i) {
+        int64_t dsize_value = element_shape_values[i].NumElements() *
+                              dtype_values[i].ByteSize();
+        dsize_values.push_back(dsize_value);
+    }
 
     std::shared_ptr<DeviceHashmap> device_hashmap_ptr;
     if (backend == HashmapBackend::Default ||
         backend == HashmapBackend::StdGPU) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
             device_hashmap_ptr = std::make_shared<StdGPUHashmap<key_t, hash_t>>(
-                    init_capacity, dsize_key, dsize_value, device);
+                    init_capacity, dsize_key, dsize_values, device);
         });
     } else {  // if (backend == HashmapBackend::Slab) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
             device_hashmap_ptr = std::make_shared<SlabHashmap<key_t, hash_t>>(
-                    init_capacity, dsize_key, dsize_value, device);
+                    init_capacity, dsize_key, dsize_values, device);
         });
     }
     return device_hashmap_ptr;

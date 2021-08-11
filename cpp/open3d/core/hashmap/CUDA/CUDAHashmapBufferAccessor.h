@@ -27,6 +27,7 @@
 #pragma once
 
 #include <assert.h>
+#include <thrust/device_vector.h>
 
 #include <memory>
 #include <vector>
@@ -49,19 +50,47 @@ class CUDAHashmapBufferAccessor {
 public:
     __host__ void Setup(int64_t capacity,
                         int64_t dsize_key,
-                        int64_t dsize_value,
+                        std::vector<int64_t> dsize_values,
                         Tensor &keys,
-                        Tensor &values,
+                        std::vector<Tensor> &values,
                         Tensor &heap) {
         capacity_ = capacity;
-        dsize_key_ = dsize_key;
-        dsize_value_ = dsize_value;
-        keys_ = keys.GetDataPtr<uint8_t>();
-        values_ = values.GetDataPtr<uint8_t>();
         heap_ = static_cast<addr_t *>(heap.GetDataPtr());
-        OPEN3D_CUDA_CHECK(cudaMemset(values_, 0, capacity_ * dsize_value_));
+
+        keys_ = keys.GetDataPtr<uint8_t>();
+        dsize_key_ = dsize_key;
+
+        Device device = keys.GetDevice();
+
+        n_values_ = dsize_values.size();
+
+        // Copy value sizes
+        dsize_values_ = static_cast<int64_t *>(
+                MemoryManager::Malloc(n_values_ * sizeof(int64_t), device));
+        MemoryManager::MemcpyFromHost(dsize_values_, device,
+                                      dsize_values.data(),
+                                      n_values_ * sizeof(int64_t));
+
+        // Copy values
+        std::vector<uint8_t *> value_ptrs(n_values_);
+        for (size_t i = 0; i < n_values_; ++i) {
+            value_ptrs[i] = static_cast<uint8_t *>(values[i].GetDataPtr());
+            // std::cout << "input pointer " << i << " : " << (void
+            // *)value_ptrs[i]
+            //           << "\n";
+        }
+        values_ = static_cast<uint8_t **>(
+                MemoryManager::Malloc(n_values_ * sizeof(uint8_t *), device));
+        MemoryManager::MemcpyFromHost(values_, device, value_ptrs.data(),
+                                      n_values_ * sizeof(uint8_t *));
+
         cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
+    }
+
+    __host__ void Shutdown(const Device &device) {
+        MemoryManager::Free(values_, device);
+        MemoryManager::Free(dsize_values_, device);
     }
 
     __host__ void Reset(const Device &device) {
@@ -81,7 +110,6 @@ public:
         heap_counter_ =
                 static_cast<int *>(MemoryManager::Malloc(sizeof(int), device));
     }
-
     __host__ void HostFree(const Device &device) {
         if (heap_counter_ != nullptr) {
             MemoryManager::Free(heap_counter_, device);
@@ -93,7 +121,6 @@ public:
         int index = atomicAdd(heap_counter_, 1);
         return heap_[index];
     }
-
     __device__ void DeviceFree(addr_t ptr) {
         int index = atomicSub(heap_counter_, 1);
         heap_[index - 1] = ptr;
@@ -106,19 +133,24 @@ public:
         return heap_counter;
     }
 
-    __device__ iterator_t ExtractIterator(addr_t ptr) {
-        return iterator_t(keys_ + ptr * dsize_key_,
-                          values_ + ptr * dsize_value_);
+    __device__ void *GetKeyPtr(addr_t ptr) { return keys_ + ptr * dsize_key_; }
+    __device__ void *GetValuePtr(addr_t ptr, int value_idx = 0) {
+        // printf("device pointer %d: %p, dsize: %ld\n", value_idx,
+        //        (void *)values_[value_idx], dsize_values_[value_idx]);
+        return values_[value_idx] + ptr * dsize_values_[value_idx];
     }
 
 public:
-    uint8_t *keys_;               /* [N] * sizeof(Key) */
-    uint8_t *values_;             /* [N] * sizeof(Value) */
     addr_t *heap_;                /* [N] */
     int *heap_counter_ = nullptr; /* [1] */
 
+    uint8_t *keys_; /* [N] * sizeof(Key) */
     int64_t dsize_key_;
-    int64_t dsize_value_;
+
+    size_t n_values_;
+    uint8_t **values_;
+    int64_t *dsize_values_;
+
     int64_t capacity_;
 };
 

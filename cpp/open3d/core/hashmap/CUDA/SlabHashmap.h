@@ -39,7 +39,7 @@ class SlabHashmap : public DeviceHashmap {
 public:
     SlabHashmap(int64_t init_capacity,
                 int64_t dsize_key,
-                int64_t dsize_value,
+                std::vector<int64_t> dsize_values,
                 const Device& device);
 
     ~SlabHashmap();
@@ -47,7 +47,7 @@ public:
     void Rehash(int64_t buckets) override;
 
     void Insert(const void* input_keys,
-                const void* input_values,
+                const std::vector<const void*> input_values,
                 addr_t* output_addrs,
                 bool* output_masks,
                 int64_t count) override;
@@ -87,7 +87,7 @@ protected:
     /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
     /// separate this implementation and avoid shared checks.
     void InsertImpl(const void* input_keys,
-                    const void* input_values,
+                    const std::vector<const void*> input_values,
                     addr_t* output_addrs,
                     bool* output_masks,
                     int64_t count);
@@ -101,9 +101,9 @@ protected:
 template <typename Key, typename Hash>
 SlabHashmap<Key, Hash>::SlabHashmap(int64_t init_capacity,
                                     int64_t dsize_key,
-                                    int64_t dsize_value,
+                                    std::vector<int64_t> dsize_values,
                                     const Device& device)
-    : DeviceHashmap(init_capacity, dsize_key, dsize_value, device) {
+    : DeviceHashmap(init_capacity, dsize_key, dsize_values, device) {
     int64_t init_buckets = init_capacity * 2;
     Allocate(init_buckets, init_capacity);
 }
@@ -118,7 +118,7 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
     Tensor active_keys;
-    Tensor active_values;
+    std::vector<Tensor> active_values;
 
     if (iterator_count > 0) {
         Tensor active_addrs =
@@ -126,9 +126,12 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
         GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
 
         Tensor active_indices = active_addrs.To(core::Int64);
+
         active_keys = this->buffer_->GetKeyBuffer().IndexGet({active_indices});
-        active_values =
-                this->buffer_->GetValueBuffer().IndexGet({active_indices});
+        auto value_buffers = this->GetValueBuffers();
+        for (auto& value_buffer : value_buffers) {
+            active_values.emplace_back(value_buffer.IndexGet({active_indices}));
+        }
     }
 
     float avg_capacity_per_bucket =
@@ -144,7 +147,11 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
         Tensor output_addrs({iterator_count}, core::Int32, this->device_);
         Tensor output_masks({iterator_count}, core::Bool, this->device_);
 
-        InsertImpl(active_keys.GetDataPtr(), active_values.GetDataPtr(),
+        std::vector<const void*> active_value_ptrs;
+        for (auto& active_value : active_values) {
+            active_value_ptrs.push_back(active_value.GetDataPtr());
+        }
+        InsertImpl(active_keys.GetDataPtr(), active_value_ptrs,
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
                    output_masks.GetDataPtr<bool>(), iterator_count);
     }
@@ -152,7 +159,7 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
 
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Insert(const void* input_keys,
-                                    const void* input_values,
+                                    std::vector<const void*> input_values,
                                     addr_t* output_addrs,
                                     bool* output_masks,
                                     int64_t count) {
@@ -174,7 +181,8 @@ void SlabHashmap<Key, Hash>::Activate(const void* input_keys,
                                       addr_t* output_addrs,
                                       bool* output_masks,
                                       int64_t count) {
-    Insert(input_keys, nullptr, output_addrs, output_masks, count);
+    std::vector<const void*> null_values;
+    Insert(input_keys, null_values, output_addrs, output_masks, count);
 }
 
 template <typename Key, typename Hash>
@@ -278,7 +286,8 @@ std::vector<int64_t> SlabHashmap<Key, Hash>::BucketSizes() const {
     thrust::fill(elems_per_bucket.begin(), elems_per_bucket.end(), 0);
 
     const int64_t num_blocks =
-            (impl_.capacity_ + kThreadsPerBlock - 1) / kThreadsPerBlock;
+            (impl_.buffer_accessor_.capacity_ + kThreadsPerBlock - 1) /
+            kThreadsPerBlock;
     CountElemsPerBucketKernel<<<num_blocks, kThreadsPerBlock, 0,
                                 core::cuda::GetStream()>>>(
             impl_, thrust::raw_pointer_cast(elems_per_bucket.data()));
@@ -297,11 +306,12 @@ float SlabHashmap<Key, Hash>::LoadFactor() const {
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::InsertImpl(const void* input_keys,
-                                        const void* input_values,
-                                        addr_t* output_addrs,
-                                        bool* output_masks,
-                                        int64_t count) {
+void SlabHashmap<Key, Hash>::InsertImpl(
+        const void* input_keys,
+        std::vector<const void*> input_values_host,
+        addr_t* output_addrs,
+        bool* output_masks,
+        int64_t count) {
     if (count == 0) return;
 
     /// Increase heap_counter to pre-allocate potential memory increment and
@@ -318,9 +328,19 @@ void SlabHashmap<Key, Hash>::InsertImpl(const void* input_keys,
     InsertKernelPass1<<<num_blocks, kThreadsPerBlock, 0,
                         core::cuda::GetStream()>>>(
             impl_, input_keys, output_addrs, output_masks, count);
+
+    thrust::device_vector<const void*> input_values(input_values_host.begin(),
+                                                    input_values_host.end());
+    int64_t n_values = input_values.size() == impl_.buffer_accessor_.n_values_
+                               ? impl_.buffer_accessor_.n_values_
+                               : 0;
+    // https://stackoverflow.com/a/37998941
+    const void* const* input_values_ptr =
+            thrust::raw_pointer_cast(input_values.data());
     InsertKernelPass2<<<num_blocks, kThreadsPerBlock, 0,
-                        core::cuda::GetStream()>>>(
-            impl_, input_values, output_addrs, output_masks, count);
+                        core::cuda::GetStream()>>>(impl_, input_values_ptr,
+                                                   output_addrs, output_masks,
+                                                   count, n_values);
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
@@ -333,11 +353,11 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
     // Allocate buffer for key values.
     this->buffer_ =
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
-                                            this->dsize_value_, this->device_);
+                                            this->dsize_values_, this->device_);
     buffer_accessor_.HostAllocate(this->device_);
     buffer_accessor_.Setup(this->capacity_, this->dsize_key_,
-                           this->dsize_value_, this->buffer_->GetKeyBuffer(),
-                           this->buffer_->GetValueBuffer(),
+                           this->dsize_values_, this->buffer_->GetKeyBuffer(),
+                           this->buffer_->GetValueBuffers(),
                            this->buffer_->GetHeap());
     buffer_accessor_.Reset(this->device_);
 
@@ -352,13 +372,13 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
-    impl_.Setup(this->bucket_count_, this->capacity_, this->dsize_key_,
-                this->dsize_value_, node_mgr_->impl_, buffer_accessor_);
+    impl_.Setup(this->bucket_count_, node_mgr_->impl_, buffer_accessor_);
 }
 
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Free() {
     buffer_accessor_.HostFree(this->device_);
+    buffer_accessor_.Shutdown(this->device_);
     MemoryManager::Free(impl_.bucket_list_head_, this->device_);
 }
 }  // namespace core
