@@ -98,12 +98,12 @@ TEST(FixedRadiusIndex, SearchRadius) {
 
 TEST(FixedRadiusIndex, SearchRadiusBatch) {
     core::Device device = core::Device("CUDA:0");
-    std::vector<int32_t> gt_indices_sorted = {
+    std::vector<int32_t> gt_indices = {
             3,  1,  9,  7,  2,  8,  2,  7,  2,  0,  5,  0,  5,  4,  0,  7,
             6,  7,  5,  0,  8,  9,  6,  3,  1,  8,  2,  6,  1,  7,  0,  4,
             14, 15, 17, 15, 14, 15, 15, 14, 10, 16, 12, 13, 18, 14, 13, 17,
             14, 17, 11, 13, 16, 10, 19, 13, 11, 12, 12, 16, 10};
-    std::vector<float> gt_distances_sorted = {
+    std::vector<float> gt_distances = {
             0.084161,  0.114104, 0.249048, 0.069964, 0.0270990, 0.0699010,
             0.245651,  0.120800, 0.117206, 0.210337, 0.0350190, 0.134909,
             0.220977,  0.03749,  0.117146, 0.136841, 0.198169,  0.036677,
@@ -162,10 +162,10 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
 
     std::vector<int32_t> indices_vector = indices.ToFlatVector<int32_t>();
     std::vector<float> distances_vector = distances.ToFlatVector<float>();
-    std::vector<int32_t> gt_indices_unsorted(gt_indices_sorted.begin(),
-                                             gt_indices_sorted.end());
-    std::vector<float> gt_distances_unsorted(gt_distances_sorted.begin(),
-                                             gt_distances_sorted.end());
+    std::vector<int32_t> gt_indices_sorted(gt_indices.begin(),
+                                           gt_indices.end());
+    std::vector<float> gt_distances_sorted(gt_distances.begin(),
+                                           gt_distances.end());
 
     for (size_t i = 0; i < gt_neighbors_row_splits.size() - 1; i++) {
         int64_t size_i =
@@ -174,7 +174,6 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
         // Sort predicted indices and distances
         std::vector<size_t> p_i = FindPermutation<int32_t>(
                 indices_vector.data() + gt_neighbors_row_splits[i], size_i);
-
         ApplyPermutation(indices_vector.data() + gt_neighbors_row_splits[i],
                          p_i);
         ApplyPermutation(distances_vector.data() + gt_neighbors_row_splits[i],
@@ -182,23 +181,21 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
 
         // Sort gt indices and distances
         std::vector<size_t> gt_p_i = FindPermutation<int32_t>(
-                gt_indices_unsorted.data() + gt_neighbors_row_splits[i],
-                size_i);
+                gt_indices_sorted.data() + gt_neighbors_row_splits[i], size_i);
+        ApplyPermutation(gt_indices_sorted.data() + gt_neighbors_row_splits[i],
+                         gt_p_i);
         ApplyPermutation(
-                gt_indices_unsorted.data() + gt_neighbors_row_splits[i],
-                gt_p_i);
-        ApplyPermutation(
-                gt_distances_unsorted.data() + gt_neighbors_row_splits[i],
+                gt_distances_sorted.data() + gt_neighbors_row_splits[i],
                 gt_p_i);
     }
-    ExpectEQ(indices_vector, gt_indices_unsorted);
-    ExpectEQ(distances_vector, gt_distances_unsorted);
+    ExpectEQ(indices_vector, gt_indices_sorted);
+    ExpectEQ(distances_vector, gt_distances_sorted);
 
     // Test sort = true
     std::tie(indices, distances, neighbor_row_splits) = index.SearchRadius(
             query_points, queries_row_splits, radius, /*sort*/ true);
-    ExpectEQ(indices.ToFlatVector<int32_t>(), gt_indices_sorted);
-    ExpectEQ(distances.ToFlatVector<float>(), gt_distances_sorted);
+    ExpectEQ(indices.ToFlatVector<int32_t>(), gt_indices);
+    ExpectEQ(distances.ToFlatVector<float>(), gt_distances);
     ExpectEQ(neighbor_row_splits.ToFlatVector<int64_t>(),
              gt_neighbors_row_splits);
 }
