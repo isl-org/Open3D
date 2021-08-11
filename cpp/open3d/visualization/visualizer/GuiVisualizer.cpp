@@ -328,6 +328,8 @@ enum MenuId {
 };
 
 struct GuiVisualizer::Impl {
+    GuiVisualizer *visualizer_;
+
     std::shared_ptr<gui::SceneWidget> scene_wgt_;
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
@@ -507,13 +509,38 @@ private:
 
     void RunNormalEstimation() {
         if (loaded_pcd_) {
-            loaded_pcd_->EstimateNormals();
-            loaded_pcd_->NormalizeNormals();
-            auto scene3d = scene_wgt_->GetScene();
-            scene3d->ClearGeometry();
-            rendering::Material mat;
-            scene3d->AddGeometry(MODEL_NAME, loaded_pcd_.get(), mat);
-            UpdateSceneMaterial();
+            gui::Application::GetInstance().PostToMainThread(
+                    visualizer_, [this]() {
+                        auto &theme = visualizer_->GetTheme();
+                        auto loading_dlg =
+                                std::make_shared<gui::Dialog>("Loading");
+                        auto vert = std::make_shared<gui::Vert>(
+                                0, gui::Margins(theme.font_size));
+                        auto loading_text = std::string(
+                                "Estimating normals. Be patient. This may take "
+                                "a while. ");
+                        vert->AddChild(std::make_shared<gui::Label>(
+                                loading_text.c_str()));
+                        loading_dlg->AddChild(vert);
+                        visualizer_->ShowDialog(loading_dlg);
+                    });
+
+            gui::Application::GetInstance().RunInThread([this]() {
+                loaded_pcd_->EstimateNormals();
+                loaded_pcd_->NormalizeNormals();
+
+                gui::Application::GetInstance().PostToMainThread(
+                        visualizer_, [this]() {
+                            auto scene3d = scene_wgt_->GetScene();
+                            scene3d->ClearGeometry();
+                            rendering::Material mat;
+                            scene3d->AddGeometry(MODEL_NAME, loaded_pcd_.get(),
+                                                 mat);
+                            UpdateSceneMaterial();
+                        });
+                gui::Application::GetInstance().PostToMainThread(
+                        visualizer_, [this]() { visualizer_->CloseDialog(); });
+            });
         }
     }
 
@@ -663,6 +690,9 @@ void GuiVisualizer::Init() {
 
         gui::Application::GetInstance().SetMenubar(menu);
     }
+
+    // Implementation needs the GuiVisualizer
+    impl_->visualizer_ = this;
 
     // Create scene
     impl_->scene_wgt_ = std::make_shared<gui::SceneWidget>();
