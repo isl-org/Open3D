@@ -35,8 +35,8 @@ namespace tests {
 
 TEST(TriangleMeshIO, CreateMeshFromFile) {
     auto mesh = t::io::CreateMeshFromFile(TEST_DATA_COMMON_DIR "/knot.ply");
-    EXPECT_EQ(mesh->GetTriangles().GetLength(), 2880);
-    EXPECT_EQ(mesh->GetVertices().GetLength(), 1440);
+    EXPECT_EQ(mesh->GetTriangleIndices().GetLength(), 2880);
+    EXPECT_EQ(mesh->GetVertexPositions().GetLength(), 1440);
 }
 
 TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
