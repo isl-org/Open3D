@@ -92,11 +92,16 @@ TEST_P(HashmapPermuteDevices, SimpleInit) {
         core::Tensor values(values_val, {n}, core::Int32, device);
 
         int init_capacity = n * 2;
+        utility::LogWarning("Before init");
         core::Hashmap hashmap(init_capacity, core::Int32, core::Int32, {1}, {1},
                               device, backend);
+        utility::LogWarning("After init");
+        std::cout << hashmap.GetValueTensor().ToString() << "\n";
 
+        utility::LogWarning("Before insert");
         core::Tensor addrs, masks;
         hashmap.Insert(keys, values, addrs, masks);
+        utility::LogWarning("After insert");
 
         EXPECT_TRUE(masks.All());
         EXPECT_EQ(hashmap.Size(), 5);

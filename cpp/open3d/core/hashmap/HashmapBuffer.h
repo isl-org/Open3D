@@ -61,37 +61,41 @@ class HashmapBuffer {
 public:
     HashmapBuffer(int64_t capacity,
                   int64_t dsize_key,
-                  int64_t dsize_value,
-                  const Device &device)
-        : capacity_(capacity),
-          dsize_key_(dsize_key),
-          dsize_value_(dsize_value),
-          device_(device) {
-        key_buffer_ =
-                Tensor({capacity_},
-                       Dtype(Dtype::DtypeCode::Object, dsize_key_, "_hash_k"),
-                       device_);
-        value_buffer_ =
-                Tensor({capacity_},
-                       Dtype(Dtype::DtypeCode::Object, dsize_value_, "_hash_v"),
-                       device_);
-        heap_ = Tensor({capacity_}, core::Int32, device_);
+                  std::vector<int64_t> dsize_values,
+                  const Device &device) {
+        heap_ = Tensor({capacity}, core::Int32, device);
+
+        key_buffer_ = Tensor(
+                {capacity},
+                Dtype(Dtype::DtypeCode::Object, dsize_key, "_hash_k"), device);
+
+        value_buffers_.clear();
+        for (size_t i = 0; i < dsize_values.size(); ++i) {
+            int64_t dsize_value = dsize_values[i];
+            Tensor value_buffer_i({capacity},
+                                  Dtype(Dtype::DtypeCode::Object, dsize_value,
+                                        "_hash_v_" + std::to_string(i)),
+                                  device);
+            value_buffers_.push_back(value_buffer_i);
+        }
     }
 
-    Tensor &GetKeyBuffer() { return key_buffer_; }
-    Tensor &GetValueBuffer() { return value_buffer_; }
     Tensor &GetHeap() { return heap_; }
+    Tensor &GetKeyBuffer() { return key_buffer_; }
+
+    std::vector<Tensor> &GetValueBuffers() { return value_buffers_; }
+    Tensor GetValueBuffer(size_t i = 0) const {
+        if (i >= value_buffers_.size()) {
+            utility::LogError("Value buffer index out-of-bound ({} >= {}).", i,
+                              value_buffers_.size());
+        }
+        return value_buffers_[i];
+    }
 
 protected:
-    int64_t capacity_;
-    int64_t dsize_key_;
-    int64_t dsize_value_;
-
-    Tensor key_buffer_;
-    Tensor value_buffer_;
     Tensor heap_;
-
-    Device device_;
+    Tensor key_buffer_;
+    std::vector<Tensor> value_buffers_;
 };
 }  // namespace core
 }  // namespace open3d

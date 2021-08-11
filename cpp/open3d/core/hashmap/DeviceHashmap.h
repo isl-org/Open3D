@@ -41,11 +41,11 @@ public:
     /// Comprehensive constructor for the developer.
     DeviceHashmap(int64_t init_capacity,
                   int64_t dsize_key,
-                  int64_t dsize_value,
+                  std::vector<int64_t> dsize_values,
                   const Device& device)
         : capacity_(init_capacity),
           dsize_key_(dsize_key),
-          dsize_value_(dsize_value),
+          dsize_values_(dsize_values),
           device_(device) {}
     virtual ~DeviceHashmap() {}
 
@@ -59,7 +59,7 @@ public:
 
     /// Parallel insert contiguous arrays of keys and values.
     virtual void Insert(const void* input_keys,
-                        const void* input_values,
+                        const std::vector<const void*> input_values,
                         addr_t* output_iterators,
                         bool* output_masks,
                         int64_t count) = 0;
@@ -94,21 +94,21 @@ public:
     virtual float LoadFactor() const = 0;
 
     int64_t GetCapacity() const { return capacity_; }
-    int64_t GetKeyBytesize() const { return dsize_key_; }
-    int64_t GetValueBytesize() const { return dsize_value_; }
     Device GetDevice() const { return device_; }
-
-    Tensor& GetKeyBuffer() { return buffer_->GetKeyBuffer(); }
-    Tensor& GetValueBuffer() { return buffer_->GetValueBuffer(); }
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
     virtual std::vector<int64_t> BucketSizes() const = 0;
 
+    Tensor GetKeyBuffer() { return buffer_->GetKeyBuffer(); }
+
+    std::vector<Tensor> GetValueBuffers() { return buffer_->GetValueBuffers(); }
+    Tensor GetValueBuffer(size_t i = 0) { return buffer_->GetValueBuffer(i); }
+
 public:
     int64_t capacity_;
     int64_t dsize_key_;
-    int64_t dsize_value_;
+    std::vector<int64_t> dsize_values_;
 
     Device device_;
 
@@ -122,27 +122,27 @@ public:
 std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
         int64_t init_capacity,
         const Dtype& dtype_key,
-        const Dtype& dtype_value,
         const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
+        const std::vector<Dtype>& dtype_values,
+        const std::vector<SizeVector>& element_shape_values,
         const Device& device,
         const HashmapBackend& backend);
 
 std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
         int64_t init_capacity,
         const Dtype& dtype_key,
-        const Dtype& dtype_value,
         const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
+        const std::vector<Dtype>& dtype_values,
+        const std::vector<SizeVector>& element_shape_values,
         const Device& device,
         const HashmapBackend& backend);
 
 std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
         int64_t init_capacity,
         const Dtype& dtype_key,
-        const Dtype& dtype_value,
         const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
+        const std::vector<Dtype>& dtype_values,
+        const std::vector<SizeVector>& element_shape_values,
         const Device& device,
         const HashmapBackend& backend);
 

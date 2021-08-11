@@ -121,11 +121,6 @@ public:
     int64_t GetCapacity() const;
     int64_t GetBucketCount() const;
     Device GetDevice() const;
-    int64_t GetKeyBytesize() const;
-    int64_t GetValueBytesize() const;
-
-    Tensor& GetKeyBuffer() const;
-    Tensor& GetValueBuffer() const;
 
     Tensor GetKeyTensor() const;
     Tensor GetValueTensor() const;

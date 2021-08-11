@@ -44,17 +44,21 @@ class CPUHashmapBufferAccessor {
 public:
     CPUHashmapBufferAccessor(int64_t capacity,
                              int64_t dsize_key,
-                             int64_t dsize_value,
+                             std::vector<int64_t> dsize_values,
                              Tensor &keys,
-                             Tensor &values,
+                             std::vector<Tensor> &values,
                              Tensor &heap)
         : capacity_(capacity),
           dsize_key_(dsize_key),
-          dsize_value_(dsize_value),
-          keys_(keys.GetDataPtr<uint8_t>()),
-          values_(values.GetDataPtr<uint8_t>()),
-          heap_(static_cast<addr_t *>(heap.GetDataPtr())) {
-        std::memset(values_, 0, capacity_ * dsize_value_);
+          dsize_values_(dsize_values),
+          heap_(static_cast<addr_t *>(heap.GetDataPtr())),
+          keys_(keys.GetDataPtr<uint8_t>()) {
+        // TODO: size check
+        for (size_t i = 0; i < values.size(); ++i) {
+            void *data_ptr = values[i].GetDataPtr();
+            std::memset(data_ptr, 0, capacity_ * dsize_values_[i]);
+            values_.push_back(static_cast<uint8_t *>(data_ptr));
+        }
     }
 
     void Reset() {
@@ -67,25 +71,25 @@ public:
     }
 
     addr_t DeviceAllocate() { return heap_[heap_counter_.fetch_add(1)]; }
-
     void DeviceFree(addr_t ptr) { heap_[heap_counter_.fetch_sub(1) - 1] = ptr; }
 
     int HeapCounter() const { return heap_counter_.load(); }
 
-    std::pair<void *, void *> ExtractIterator(addr_t ptr) {
-        return std::make_pair(keys_ + ptr * dsize_key_,
-                              values_ + ptr * dsize_value_);
+    void *GetKeyPtr(addr_t ptr) { return keys_ + ptr * dsize_key_; }
+    void *GetValuePtr(addr_t ptr, int value_idx = 0) {
+        return values_[value_idx] + ptr * dsize_values_[value_idx];
     }
 
 public:
     int64_t capacity_;
     int64_t dsize_key_;
-    int64_t dsize_value_;
+    std::vector<int64_t> dsize_values_;
 
-    uint8_t *keys_;                 /* [N] * sizeof(Key) */
-    uint8_t *values_;               /* [N] * sizeof(Value) */
     addr_t *heap_;                  /* [N] */
     std::atomic<int> heap_counter_; /* [1] */
+
+    uint8_t *keys_;                 /* [N] * sizeof(Key) */
+    std::vector<uint8_t *> values_; /* [N] * sizeof(Value) */
 };
 
 }  // namespace core

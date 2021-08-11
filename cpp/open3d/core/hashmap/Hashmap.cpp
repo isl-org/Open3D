@@ -58,9 +58,9 @@ Hashmap::Hashmap(int64_t init_capacity,
                 "key/value.");
     }
 
-    device_hashmap_ = CreateDeviceHashmap(init_capacity, dtype_key, dtype_value,
-                                          element_shape_key,
-                                          element_shape_value, device, backend);
+    device_hashmap_ = CreateDeviceHashmap(
+            init_capacity, dtype_key, element_shape_key, {dtype_value},
+            {element_shape_value}, device, backend);
 }
 
 void Hashmap::Rehash(int64_t buckets) {
@@ -103,7 +103,8 @@ void Hashmap::Insert(const Tensor& input_keys,
     output_addrs = Tensor({count}, core::Int32, GetDevice());
     output_masks = Tensor({count}, core::Bool, GetDevice());
 
-    device_hashmap_->Insert(input_keys.GetDataPtr(), input_values.GetDataPtr(),
+    device_hashmap_->Insert(input_keys.GetDataPtr(),
+                            {input_values.GetDataPtr()},
                             static_cast<addr_t*>(output_addrs.GetDataPtr()),
                             output_masks.GetDataPtr<bool>(), count);
 }
@@ -236,27 +237,13 @@ int64_t Hashmap::GetBucketCount() const {
 
 Device Hashmap::GetDevice() const { return device_hashmap_->GetDevice(); }
 
-int64_t Hashmap::GetKeyBytesize() const {
-    return device_hashmap_->GetKeyBytesize();
-}
-int64_t Hashmap::GetValueBytesize() const {
-    return device_hashmap_->GetValueBytesize();
-}
-
-Tensor& Hashmap::GetKeyBuffer() const {
-    return device_hashmap_->GetKeyBuffer();
-}
-Tensor& Hashmap::GetValueBuffer() const {
-    return device_hashmap_->GetValueBuffer();
-}
-
 Tensor Hashmap::GetKeyTensor() const {
     int64_t capacity = GetCapacity();
     SizeVector key_shape = element_shape_key_;
     key_shape.insert(key_shape.begin(), capacity);
     return Tensor(key_shape, shape_util::DefaultStrides(key_shape),
-                  GetKeyBuffer().GetDataPtr(), dtype_key_,
-                  GetKeyBuffer().GetBlob());
+                  device_hashmap_->GetKeyBuffer().GetDataPtr(), dtype_key_,
+                  device_hashmap_->GetKeyBuffer().GetBlob());
 }
 
 Tensor Hashmap::GetValueTensor() const {
@@ -264,8 +251,8 @@ Tensor Hashmap::GetValueTensor() const {
     SizeVector value_shape = element_shape_value_;
     value_shape.insert(value_shape.begin(), capacity);
     return Tensor(value_shape, shape_util::DefaultStrides(value_shape),
-                  GetValueBuffer().GetDataPtr(), dtype_value_,
-                  GetValueBuffer().GetBlob());
+                  device_hashmap_->GetValueBuffer().GetDataPtr(), dtype_value_,
+                  device_hashmap_->GetValueBuffer().GetBlob());
 }
 
 /// Return number of elems per bucket.

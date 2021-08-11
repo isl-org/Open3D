@@ -42,14 +42,14 @@ class TBBHashmap : public DeviceHashmap {
 public:
     TBBHashmap(int64_t init_capacity,
                int64_t dsize_key,
-               int64_t dsize_value,
+               std::vector<int64_t> dsize_values,
                const Device& device);
     ~TBBHashmap();
 
     void Rehash(int64_t buckets) override;
 
     void Insert(const void* input_keys,
-                const void* input_values,
+                std::vector<const void*> input_values,
                 addr_t* output_addrs,
                 bool* output_masks,
                 int64_t count) override;
@@ -88,7 +88,7 @@ protected:
     std::shared_ptr<CPUHashmapBufferAccessor> buffer_ctx_;
 
     void InsertImpl(const void* input_keys,
-                    const void* input_values,
+                    std::vector<const void*> input_values,
                     addr_t* output_addrs,
                     bool* output_masks,
                     int64_t count);
@@ -99,9 +99,9 @@ protected:
 template <typename Key, typename Hash>
 TBBHashmap<Key, Hash>::TBBHashmap(int64_t init_capacity,
                                   int64_t dsize_key,
-                                  int64_t dsize_value,
+                                  std::vector<int64_t> dsize_values,
                                   const Device& device)
-    : DeviceHashmap(init_capacity, dsize_key, dsize_value, device) {
+    : DeviceHashmap(init_capacity, dsize_key, dsize_values, device) {
     Allocate(init_capacity);
 }
 
@@ -115,7 +115,7 @@ int64_t TBBHashmap<Key, Hash>::Size() const {
 
 template <typename Key, typename Hash>
 void TBBHashmap<Key, Hash>::Insert(const void* input_keys,
-                                   const void* input_values,
+                                   const std::vector<const void*> input_values,
                                    addr_t* output_addrs,
                                    bool* output_masks,
                                    int64_t count) {
@@ -139,7 +139,8 @@ void TBBHashmap<Key, Hash>::Activate(const void* input_keys,
                                      addr_t* output_addrs,
                                      bool* output_masks,
                                      int64_t count) {
-    Insert(input_keys, nullptr, output_addrs, output_masks, count);
+    std::vector<const void*> null_values;
+    Insert(input_keys, null_values, output_addrs, output_masks, count);
 }
 
 template <typename Key, typename Hash>
@@ -201,7 +202,7 @@ void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
     int64_t iterator_count = Size();
 
     Tensor active_keys;
-    Tensor active_values;
+    std::vector<Tensor> active_values;
 
     if (iterator_count > 0) {
         Tensor active_addrs({iterator_count}, core::Int32, this->device_);
@@ -209,7 +210,11 @@ void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
 
         Tensor active_indices = active_addrs.To(core::Int64);
         active_keys = this->GetKeyBuffer().IndexGet({active_indices});
-        active_values = this->GetValueBuffer().IndexGet({active_indices});
+
+        auto value_buffers = this->GetValueBuffers();
+        for (auto& value_buffer : value_buffers) {
+            active_values.emplace_back(value_buffer.IndexGet({active_indices}));
+        }
     }
 
     float avg_capacity_per_bucket =
@@ -223,7 +228,11 @@ void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
         Tensor output_addrs({iterator_count}, core::Int32, this->device_);
         Tensor output_masks({iterator_count}, core::Bool, this->device_);
 
-        InsertImpl(active_keys.GetDataPtr(), active_values.GetDataPtr(),
+        std::vector<const void*> active_value_ptrs;
+        for (auto& active_value : active_values) {
+            active_value_ptrs.push_back(active_value.GetDataPtr());
+        }
+        InsertImpl(active_keys.GetDataPtr(), active_value_ptrs,
                    static_cast<addr_t*>(output_addrs.GetDataPtr()),
                    output_masks.GetDataPtr<bool>(), iterator_count);
     }
@@ -252,12 +261,22 @@ float TBBHashmap<Key, Hash>::LoadFactor() const {
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::InsertImpl(const void* input_keys,
-                                       const void* input_values,
-                                       addr_t* output_addrs,
-                                       bool* output_masks,
-                                       int64_t count) {
+void TBBHashmap<Key, Hash>::InsertImpl(
+        const void* input_keys,
+        const std::vector<const void*> input_values,
+        addr_t* output_addrs,
+        bool* output_masks,
+        int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
+
+    size_t n_values = dsize_values_.size();
+
+    bool assign = (input_values.size() == n_values);
+    if (input_values.size() != n_values && input_values.size() != 0) {
+        utility::LogWarning(
+                "Input values mismatch with actual stored values, fall back to "
+                "activate/reset instead of insertion.");
+    }
 
 #pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (int64_t i = 0; i < count; ++i) {
@@ -271,28 +290,32 @@ void TBBHashmap<Key, Hash>::InsertImpl(const void* input_keys,
 
         // Lazy copy key value pair to buffer only if succeeded
         if (res.second) {
-            addr_t dst_kv_addr = buffer_ctx_->DeviceAllocate();
-            auto dst_kv_iter = buffer_ctx_->ExtractIterator(dst_kv_addr);
+            addr_t buf_index = buffer_ctx_->DeviceAllocate();
+            void* key_ptr = buffer_ctx_->GetKeyPtr(buf_index);
 
             // Copy templated key to buffer
-            *static_cast<Key*>(dst_kv_iter.first) = key;
+            *static_cast<Key*>(key_ptr) = key;
 
             // Copy/reset non-templated value in buffer
-            uint8_t* dst_value = static_cast<uint8_t*>(dst_kv_iter.second);
-            if (input_values != nullptr) {
-                const uint8_t* src_value =
-                        static_cast<const uint8_t*>(input_values) +
-                        this->dsize_value_ * i;
-                std::memcpy(dst_value, src_value, this->dsize_value_);
-            } else {
-                std::memset(dst_value, 0, this->dsize_value_);
+            for (size_t j = 0; j < n_values; ++j) {
+                uint8_t* dst_value = static_cast<uint8_t*>(
+                        buffer_ctx_->GetValuePtr(buf_index, j));
+
+                if (assign) {
+                    const uint8_t* src_value =
+                            static_cast<const uint8_t*>(input_values[j]) +
+                            this->dsize_values_[j] * i;
+                    std::memcpy(dst_value, src_value, this->dsize_values_[j]);
+                } else {
+                    std::memset(dst_value, 0, this->dsize_values_[j]);
+                }
             }
 
             // Update from dummy 0
-            res.first->second = dst_kv_addr;
+            res.first->second = buf_index;
 
             // Write to return variables
-            output_addrs[i] = dst_kv_addr;
+            output_addrs[i] = buf_index;
             output_masks[i] = true;
         }
     }
@@ -304,11 +327,11 @@ void TBBHashmap<Key, Hash>::Allocate(int64_t capacity) {
 
     this->buffer_ =
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
-                                            this->dsize_value_, this->device_);
+                                            this->dsize_values_, this->device_);
 
     buffer_ctx_ = std::make_shared<CPUHashmapBufferAccessor>(
-            this->capacity_, this->dsize_key_, this->dsize_value_,
-            this->buffer_->GetKeyBuffer(), this->buffer_->GetValueBuffer(),
+            this->capacity_, this->dsize_key_, this->dsize_values_,
+            this->buffer_->GetKeyBuffer(), this->buffer_->GetValueBuffers(),
             this->buffer_->GetHeap());
     buffer_ctx_->Reset();
 
