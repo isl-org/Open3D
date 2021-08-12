@@ -415,8 +415,8 @@ __global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
 
     // If success, change the iterator and provide the actual index
     if (res.second) {
-        buf_index_t dst_kv_addr = buffer_accessor.DeviceAllocate();
-        auto key_ptr = buffer_accessor.GetKeyPtr(dst_kv_addr);
+        buf_index_t buf_index = buffer_accessor.DeviceAllocate();
+        auto key_ptr = buffer_accessor.GetKeyPtr(buf_index);
 
         // Copy templated key to buffer (duplicate)
         // TODO: hack stdgpu inside and take out the buffer directly
@@ -426,7 +426,7 @@ __global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
         for (int j = 0; j < n_values; ++j) {
             const int64_t dsize_value = buffer_accessor.dsize_values_[j];
             uint8_t* dst_value = static_cast<uint8_t*>(
-                    buffer_accessor.GetValuePtr(dst_kv_addr, j));
+                    buffer_accessor.GetValuePtr(buf_index, j));
             const uint8_t* src_value =
                     static_cast<const uint8_t*>(input_values[j]) +
                     dsize_value * tid;
@@ -436,10 +436,10 @@ __global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
         }
 
         // Update from the dummy index
-        res.first->second = dst_kv_addr;
+        res.first->second = buf_index;
 
         // Write to return variables
-        output_buf_indices[tid] = dst_kv_addr;
+        output_buf_indices[tid] = buf_index;
         output_masks[tid] = true;
     }
 }

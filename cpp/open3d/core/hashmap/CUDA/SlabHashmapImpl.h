@@ -50,6 +50,16 @@
 namespace open3d {
 namespace core {
 
+// Each slab contains a collection of uint32_t entries.
+// Each uint32_t entry can represent:
+// 0) an empty placeholder;
+// 1) a stored buf_index;
+// 2) a ptr to the next slab if at the end of the slab.
+// In case 0) and 1), it is interpreted as a buf_index_t.
+// In case 2), it is intepreted as uint32_t.
+// They are equivalent, but we differentiate them in the implementation to
+// emphasize the differences.
+
 template <typename Key, typename Hash>
 class SlabHashmapImpl {
 public:
@@ -59,42 +69,58 @@ public:
                         const SlabNodeManagerImpl& node_mgr_impl,
                         const CUDAHashmapBufferAccessor& buffer_accessor);
 
+    /// Warp-insert a pre-allocated buf_index at key.
     __device__ bool Insert(bool lane_active,
                            uint32_t lane_id,
                            uint32_t bucket_id,
                            const Key& key,
                            buf_index_t buf_index);
 
+    /// Warp-find a buf_index and its mask at key.
     __device__ Pair<buf_index_t, bool> Find(bool lane_active,
                                             uint32_t lane_id,
                                             uint32_t bucket_id,
                                             const Key& key);
 
+    /// Warp-erase an entry at key.
     __device__ Pair<buf_index_t, bool> Erase(bool lane_active,
                                              uint32_t lane_id,
                                              uint32_t bucket_id,
                                              const Key& key);
 
+    /// Warp-synchronize a key in a slab.
     __device__ void WarpSyncKey(const Key& key, uint32_t lane_id, Key& ret_key);
+
+    /// Warp-find a key in a slab.
     __device__ int32_t WarpFindKey(const Key& src_key,
                                    uint32_t lane_id,
-                                   buf_index_t ptr);
-    __device__ int32_t WarpFindEmpty(buf_index_t unit_data);
+                                   uint32_t slab_entry);
+
+    /// Warp-find the first empty slot in a slab.
+    __device__ int32_t WarpFindEmpty(uint32_t slab_entry);
 
     // Hash function.
     __device__ int64_t ComputeBucket(const Key& key) const;
 
     // Node manager.
-    __device__ buf_index_t AllocateSlab(uint32_t lane_id);
-    __device__ void FreeSlab(buf_index_t slab_ptr);
+    __device__ uint32_t AllocateSlab(uint32_t lane_id);
+    __device__ void FreeSlab(uint32_t slab_ptr);
 
     // Helpers.
-    __device__ buf_index_t* get_unit_ptr_from_list_nodes(buf_index_t slab_ptr,
-                                                         uint32_t lane_id) {
+    __device__ uint32_t* SlabEntryPtr(uint32_t bucket_id,
+                                      uint32_t lane_id,
+                                      uint32_t slab_ptr) {
+        return (slab_ptr == kHeadSlabAddr)
+                       ? SlabEntryPtrFromHead(bucket_id, lane_id)
+                       : SlabEntryPtrFromNodes(slab_ptr, lane_id);
+    }
+
+    __device__ uint32_t* SlabEntryPtrFromNodes(uint32_t slab_ptr,
+                                               uint32_t lane_id) {
         return node_mgr_impl_.get_unit_ptr_from_slab(slab_ptr, lane_id);
     }
-    __device__ buf_index_t* get_unit_ptr_from_list_head(uint32_t bucket_id,
-                                                        uint32_t lane_id) {
+    __device__ uint32_t* SlabEntryPtrFromHead(uint32_t bucket_id,
+                                              uint32_t lane_id) {
         return reinterpret_cast<uint32_t*>(bucket_list_head_) +
                bucket_id * kWarpSize + lane_id;
     }
@@ -157,7 +183,7 @@ __global__ void EraseKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 template <typename Key, typename Hash>
 __global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
                                        buf_index_t* output_buf_indices,
-                                       uint32_t* output_iterator_count);
+                                       uint32_t* output_count);
 
 template <typename Key, typename Hash>
 __global__ void CountElemsPerBucketKernel(SlabHashmapImpl<Key, Hash> impl,
@@ -182,10 +208,10 @@ __device__ bool SlabHashmapImpl<Key, Hash>::Insert(bool lane_active,
                                                    uint32_t lane_id,
                                                    uint32_t bucket_id,
                                                    const Key& key,
-                                                   buf_index_t iterator_addr) {
+                                                   buf_index_t buf_index) {
     uint32_t work_queue = 0;
     uint32_t prev_work_queue = 0;
-    uint32_t curr_slab_ptr = kHeadSlabAddr;
+    uint32_t slab_ptr = kHeadSlabAddr;
     Key src_key;
 
     bool mask = false;
@@ -193,49 +219,39 @@ __device__ bool SlabHashmapImpl<Key, Hash>::Insert(bool lane_active,
     // > Loop when we have active lanes
     while ((work_queue = __ballot_sync(kSyncLanesMask, lane_active))) {
         // 0. Restart from linked list head if last insertion is finished
-        curr_slab_ptr =
-                (prev_work_queue != work_queue) ? kHeadSlabAddr : curr_slab_ptr;
+        slab_ptr = (prev_work_queue != work_queue) ? kHeadSlabAddr : slab_ptr;
         uint32_t src_lane = __ffs(work_queue) - 1;
         uint32_t src_bucket =
                 __shfl_sync(kSyncLanesMask, bucket_id, src_lane, kWarpSize);
         WarpSyncKey(key, src_lane, src_key);
 
-        // Each lane in the warp reads a unit in the slab
-        uint32_t unit_data =
-                (curr_slab_ptr == kHeadSlabAddr)
-                        ? *(get_unit_ptr_from_list_head(src_bucket, lane_id))
-                        : *(get_unit_ptr_from_list_nodes(curr_slab_ptr,
-                                                         lane_id));
+        uint32_t slab_entry = *SlabEntryPtr(src_bucket, lane_id, slab_ptr);
 
-        int32_t lane_found = WarpFindKey(src_key, lane_id, unit_data);
-        int32_t lane_empty = WarpFindEmpty(unit_data);
+        int32_t lane_found = WarpFindKey(src_key, lane_id, slab_entry);
+        int32_t lane_empty = WarpFindEmpty(slab_entry);
 
         // Branch 1: key already existing, ABORT
         if (lane_found >= 0) {
             if (lane_id == src_lane) {
-                // free memory heap
                 lane_active = false;
             }
         }
 
         // Branch 2: empty slot available, try to insert
         else if (lane_empty >= 0) {
+            // Cannot merge if statements.
+            // otherwise the warp flow will be interrupted.
             if (lane_id == src_lane) {
-                // TODO: check why we cannot put malloc here
-                const uint32_t* unit_data_ptr =
-                        (curr_slab_ptr == kHeadSlabAddr)
-                                ? get_unit_ptr_from_list_head(src_bucket,
-                                                              lane_empty)
-                                : get_unit_ptr_from_list_nodes(curr_slab_ptr,
-                                                               lane_empty);
+                // Now regard the entry as a value of buf_index
+                const uint32_t* empty_entry_ptr =
+                        SlabEntryPtr(src_bucket, lane_empty, slab_ptr);
 
-                buf_index_t old_iterator_addr =
-                        atomicCAS((unsigned int*)unit_data_ptr, kEmptyNodeAddr,
-                                  iterator_addr);
+                uint32_t old_empty_entry_value =
+                        atomicCAS((unsigned int*)empty_entry_ptr,
+                                  kEmptyNodeAddr, buf_index);
 
-                // Remember to clean up in another pass
                 // Branch 2.1: SUCCEED
-                if (old_iterator_addr == kEmptyNodeAddr) {
+                if (old_empty_entry_value == kEmptyNodeAddr) {
                     lane_active = false;
                     mask = true;
                 }
@@ -251,38 +267,36 @@ __device__ bool SlabHashmapImpl<Key, Hash>::Insert(bool lane_active,
         // Branch 3: nothing found in this slab, goto next slab
         else {
             // broadcast next slab
-            buf_index_t next_slab_ptr = __shfl_sync(
-                    kSyncLanesMask, unit_data, kNextSlabPtrLaneId, kWarpSize);
+            uint32_t next_slab_ptr = __shfl_sync(kSyncLanesMask, slab_entry,
+                                                 kNextSlabPtrLaneId, kWarpSize);
 
-            // Branch 3.1: next slab existing, RESTART this lane
+            // Branch 3.1: next slab existing, RESTART at updated slab ptr
             if (next_slab_ptr != kEmptySlabAddr) {
-                curr_slab_ptr = next_slab_ptr;
+                slab_ptr = next_slab_ptr;
             }
 
-            // Branch 3.2: next slab empty, try to allocate one
+            // Branch 3.2: next slab empty, try to allocate one from the Slab
+            // buffer.
             else {
-                buf_index_t new_next_slab_ptr = AllocateSlab(lane_id);
+                // Warp allocate, must be outside the condition clause.
+                uint32_t new_next_slab_ptr = AllocateSlab(lane_id);
 
                 if (lane_id == kNextSlabPtrLaneId) {
-                    const uint32_t* unit_data_ptr =
-                            (curr_slab_ptr == kHeadSlabAddr)
-                                    ? get_unit_ptr_from_list_head(
-                                              src_bucket, kNextSlabPtrLaneId)
-                                    : get_unit_ptr_from_list_nodes(
-                                              curr_slab_ptr,
-                                              kNextSlabPtrLaneId);
+                    const uint32_t* next_slab_entry_ptr = SlabEntryPtr(
+                            src_bucket, kNextSlabPtrLaneId, slab_ptr);
 
-                    buf_index_t old_next_slab_ptr =
-                            atomicCAS((unsigned int*)unit_data_ptr,
+                    uint32_t old_next_slab_entry_value =
+                            atomicCAS((unsigned int*)next_slab_entry_ptr,
                                       kEmptySlabAddr, new_next_slab_ptr);
 
-                    // Branch 3.2.1: other thread allocated, RESTART lane. In
-                    // the consequent attempt, goto Branch 2'
-                    if (old_next_slab_ptr != kEmptySlabAddr) {
+                    // Branch 3.2.1: other thread has allocated,
+                    // RESTART. In the consequent attempt, goto Branch 2.
+                    if (old_next_slab_entry_value != kEmptySlabAddr) {
                         FreeSlab(new_next_slab_ptr);
                     }
-                    // Branch 3.2.2: this thread allocated, RESTART lane, 'goto
-                    // Branch 2'
+
+                    // Branch 3.2.2: this thread allocated succesfully.
+                    // RESTART, goto Branch 2
                 }
             }
         }
@@ -301,16 +315,15 @@ __device__ Pair<buf_index_t, bool> SlabHashmapImpl<Key, Hash>::Find(
         const Key& query_key) {
     uint32_t work_queue = 0;
     uint32_t prev_work_queue = work_queue;
-    uint32_t curr_slab_ptr = kHeadSlabAddr;
+    uint32_t slab_ptr = kHeadSlabAddr;
 
-    buf_index_t iterator = kNullAddr;
+    buf_index_t buf_index = kNullAddr;
     bool mask = false;
 
     // > Loop when we have active lanes.
     while ((work_queue = __ballot_sync(kSyncLanesMask, lane_active))) {
         // 0. Restart from linked list head if the last query is finished.
-        curr_slab_ptr =
-                (prev_work_queue != work_queue) ? kHeadSlabAddr : curr_slab_ptr;
+        slab_ptr = (prev_work_queue != work_queue) ? kHeadSlabAddr : slab_ptr;
         uint32_t src_lane = __ffs(work_queue) - 1;
         uint32_t src_bucket =
                 __shfl_sync(kSyncLanesMask, bucket_id, src_lane, kWarpSize);
@@ -319,25 +332,20 @@ __device__ Pair<buf_index_t, bool> SlabHashmapImpl<Key, Hash>::Find(
         WarpSyncKey(query_key, src_lane, src_key);
 
         // Each lane in the warp reads a unit in the slab in parallel.
-        const uint32_t unit_data =
-                (curr_slab_ptr == kHeadSlabAddr)
-                        ? *(get_unit_ptr_from_list_head(src_bucket, lane_id))
-                        : *(get_unit_ptr_from_list_nodes(curr_slab_ptr,
-                                                         lane_id));
+        const uint32_t slab_entry =
+                *SlabEntryPtr(src_bucket, lane_id, slab_ptr);
 
-        int32_t lane_found = WarpFindKey(src_key, lane_id, unit_data);
+        int32_t lane_found = WarpFindKey(src_key, lane_id, slab_entry);
 
         // 1. Found in this slab, SUCCEED.
         if (lane_found >= 0) {
             // broadcast found value
-            buf_index_t found_pair_internal_ptr = __shfl_sync(
-                    kSyncLanesMask, unit_data, lane_found, kWarpSize);
+            uint32_t found_buf_index = __shfl_sync(kSyncLanesMask, slab_entry,
+                                                   lane_found, kWarpSize);
 
             if (lane_id == src_lane) {
                 lane_active = false;
-
-                // Actually iterator_addr
-                iterator = found_pair_internal_ptr;
+                buf_index = found_buf_index;
                 mask = true;
             }
         }
@@ -345,8 +353,8 @@ __device__ Pair<buf_index_t, bool> SlabHashmapImpl<Key, Hash>::Find(
         // 2. Not found in this slab.
         else {
             // Broadcast next slab: lane 31 reads 'next'.
-            buf_index_t next_slab_ptr = __shfl_sync(
-                    kSyncLanesMask, unit_data, kNextSlabPtrLaneId, kWarpSize);
+            uint32_t next_slab_ptr = __shfl_sync(kSyncLanesMask, slab_entry,
+                                                 kNextSlabPtrLaneId, kWarpSize);
 
             // 2.1. Next slab is empty, ABORT.
             if (next_slab_ptr == kEmptySlabAddr) {
@@ -356,14 +364,14 @@ __device__ Pair<buf_index_t, bool> SlabHashmapImpl<Key, Hash>::Find(
             }
             // 2.2. Next slab exists, RESTART.
             else {
-                curr_slab_ptr = next_slab_ptr;
+                slab_ptr = next_slab_ptr;
             }
         }
 
         prev_work_queue = work_queue;
     }
 
-    return make_pair(iterator, mask);
+    return make_pair(buf_index, mask);
 }
 
 template <typename Key, typename Hash>
@@ -374,63 +382,57 @@ __device__ Pair<buf_index_t, bool> SlabHashmapImpl<Key, Hash>::Erase(
         const Key& key) {
     uint32_t work_queue = 0;
     uint32_t prev_work_queue = 0;
-    uint32_t curr_slab_ptr = kHeadSlabAddr;
+    uint32_t slab_ptr = kHeadSlabAddr;
     Key src_key;
 
-    buf_index_t iterator_addr = 0;
+    buf_index_t buf_index = 0;
     bool mask = false;
 
     // > Loop when we have active lanes.
     while ((work_queue = __ballot_sync(kSyncLanesMask, lane_active))) {
         // 0. Restart from linked list head if last insertion is finished.
-        curr_slab_ptr =
-                (prev_work_queue != work_queue) ? kHeadSlabAddr : curr_slab_ptr;
+        slab_ptr = (prev_work_queue != work_queue) ? kHeadSlabAddr : slab_ptr;
         uint32_t src_lane = __ffs(work_queue) - 1;
         uint32_t src_bucket =
                 __shfl_sync(kSyncLanesMask, bucket_id, src_lane, kWarpSize);
 
         WarpSyncKey(key, src_lane, src_key);
 
-        const uint32_t unit_data =
-                (curr_slab_ptr == kHeadSlabAddr)
-                        ? *(get_unit_ptr_from_list_head(src_bucket, lane_id))
-                        : *(get_unit_ptr_from_list_nodes(curr_slab_ptr,
-                                                         lane_id));
+        const uint32_t slab_entry =
+                *SlabEntryPtr(src_bucket, lane_id, slab_ptr);
 
-        int32_t lane_found = WarpFindKey(src_key, lane_id, unit_data);
+        int32_t lane_found = WarpFindKey(src_key, lane_id, slab_entry);
 
         // Branch 1: key found.
         if (lane_found >= 0) {
             if (lane_id == src_lane) {
-                uint32_t* unit_data_ptr =
-                        (curr_slab_ptr == kHeadSlabAddr)
-                                ? get_unit_ptr_from_list_head(src_bucket,
-                                                              lane_found)
-                                : get_unit_ptr_from_list_nodes(curr_slab_ptr,
-                                                               lane_found);
+                uint32_t* found_entry_ptr =
+                        SlabEntryPtr(src_bucket, lane_found, slab_ptr);
 
-                uint32_t pair_to_delete = atomicExch(
-                        (unsigned int*)unit_data_ptr, kEmptyNodeAddr);
-                mask = pair_to_delete != kEmptyNodeAddr;
-                iterator_addr = pair_to_delete;
-                // Branch 1.2: other thread did the job, avoid double free
+                uint32_t old_found_entry_value = atomicExch(
+                        (unsigned int*)found_entry_ptr, kEmptyNodeAddr);
+
+                // Branch 1.2: other thread might have done the job,
+                // avoid double free.
+                mask = (old_found_entry_value != kEmptyNodeAddr);
+                buf_index = old_found_entry_value;
             }
         } else {  // no matching slot found:
-            buf_index_t next_slab_ptr = __shfl_sync(
-                    kSyncLanesMask, unit_data, kNextSlabPtrLaneId, kWarpSize);
+            uint32_t next_slab_ptr = __shfl_sync(kSyncLanesMask, slab_entry,
+                                                 kNextSlabPtrLaneId, kWarpSize);
             if (next_slab_ptr == kEmptySlabAddr) {
                 // not found:
                 if (lane_id == src_lane) {
                     lane_active = false;
                 }
             } else {
-                curr_slab_ptr = next_slab_ptr;
+                slab_ptr = next_slab_ptr;
             }
         }
         prev_work_queue = work_queue;
     }
 
-    return make_pair(iterator_addr, mask);
+    return make_pair(buf_index, mask);
 }
 
 template <typename Key, typename Hash>
@@ -446,23 +448,24 @@ __device__ void SlabHashmapImpl<Key, Hash>::WarpSyncKey(const Key& key,
 }
 
 template <typename Key, typename Hash>
-__device__ int32_t SlabHashmapImpl<Key, Hash>::WarpFindKey(const Key& key,
-                                                           uint32_t lane_id,
-                                                           buf_index_t ptr) {
+__device__ int32_t SlabHashmapImpl<Key, Hash>::WarpFindKey(
+        const Key& key, uint32_t lane_id, uint32_t slab_entry) {
     bool is_lane_found =
             // Select key lanes.
             ((1 << lane_id) & kNodePtrLanesMask)
             // Validate key buf_indices.
-            && (ptr != kEmptyNodeAddr)
-            // Find keys in memory heap.
-            && *static_cast<Key*>(buffer_accessor_.GetKeyPtr(ptr)) == key;
+            && (slab_entry != kEmptyNodeAddr)
+            // Find keys in buffer. Now slab_entry is interpreted as buf_index.
+            &&
+            (*static_cast<Key*>(buffer_accessor_.GetKeyPtr(slab_entry)) == key);
 
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_found)) - 1;
 }
 
 template <typename Key, typename Hash>
-__device__ int32_t SlabHashmapImpl<Key, Hash>::WarpFindEmpty(buf_index_t ptr) {
-    bool is_lane_empty = (ptr == kEmptyNodeAddr);
+__device__ int32_t
+SlabHashmapImpl<Key, Hash>::WarpFindEmpty(uint32_t slab_entry) {
+    bool is_lane_empty = (slab_entry == kEmptyNodeAddr);
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_empty)) - 1;
 }
 
@@ -473,14 +476,13 @@ SlabHashmapImpl<Key, Hash>::ComputeBucket(const Key& key) const {
 }
 
 template <typename Key, typename Hash>
-__device__ buf_index_t
-SlabHashmapImpl<Key, Hash>::AllocateSlab(uint32_t lane_id) {
+__device__ uint32_t SlabHashmapImpl<Key, Hash>::AllocateSlab(uint32_t lane_id) {
     return node_mgr_impl_.WarpAllocate(lane_id);
 }
 
 template <typename Key, typename Hash>
 __device__ __forceinline__ void SlabHashmapImpl<Key, Hash>::FreeSlab(
-        buf_index_t slab_ptr) {
+        uint32_t slab_ptr) {
     node_mgr_impl_.FreeUntouched(slab_ptr);
 }
 
@@ -495,11 +497,11 @@ __global__ void InsertKernelPass0(SlabHashmapImpl<Key, Hash> impl,
 
     if (tid < count) {
         // First write ALL input_keys to avoid potential thread conflicts.
-        buf_index_t iterator_addr =
+        buf_index_t buf_index =
                 impl.buffer_accessor_.heap_[heap_counter_prev + tid];
-        void* key = impl.buffer_accessor_.GetKeyPtr(iterator_addr);
+        void* key = impl.buffer_accessor_.GetKeyPtr(buf_index);
         *static_cast<Key*>(key) = input_keys_templated[tid];
-        output_buf_indices[tid] = iterator_addr;
+        output_buf_indices[tid] = buf_index;
     }
 }
 
@@ -521,20 +523,19 @@ __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 
     bool lane_active = false;
     uint32_t bucket_id = 0;
-    buf_index_t iterator_addr = 0;
+    buf_index_t buf_index = 0;
 
     // Dummy for warp sync.
     Key key;
     if (tid < count) {
         lane_active = true;
         key = input_keys_templated[tid];
-        iterator_addr = output_buf_indices[tid];
+        buf_index = output_buf_indices[tid];
         bucket_id = impl.ComputeBucket(key);
     }
 
     // Index out-of-bound threads still have to run for warp synchronization.
-    bool mask =
-            impl.Insert(lane_active, lane_id, bucket_id, key, iterator_addr);
+    bool mask = impl.Insert(lane_active, lane_id, bucket_id, key, buf_index);
 
     if (tid < count) {
         output_masks[tid] = mask;
@@ -551,12 +552,11 @@ __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid < count) {
-        buf_index_t iterator_addr = output_buf_indices[tid];
+        buf_index_t buf_index = output_buf_indices[tid];
 
         if (output_masks[tid]) {
             for (int j = 0; j < n_values; ++j) {
-                void* dst_ptr =
-                        impl.buffer_accessor_.GetValuePtr(iterator_addr, j);
+                void* dst_ptr = impl.buffer_accessor_.GetValuePtr(buf_index, j);
                 int64_t dsize_value = impl.buffer_accessor_.dsize_values_[j];
 
                 // Success: copy remaining input_values
@@ -566,7 +566,7 @@ __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
                                dsize_value);
             }
         } else {
-            impl.buffer_accessor_.DeviceFree(iterator_addr);
+            impl.buffer_accessor_.DeviceFree(buf_index);
         }
     }
 }
@@ -659,7 +659,7 @@ __global__ void EraseKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 template <typename Key, typename Hash>
 __global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
                                        buf_index_t* output_buf_indices,
-                                       uint32_t* output_iterator_count) {
+                                       uint32_t* output_count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
@@ -671,29 +671,28 @@ __global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
 
     impl.node_mgr_impl_.Init(tid, lane_id);
 
-    uint32_t src_unit_data =
-            *impl.get_unit_ptr_from_list_head(bucket_id, lane_id);
-    bool is_active = src_unit_data != kEmptyNodeAddr;
+    uint32_t slab_entry = *impl.SlabEntryPtrFromHead(bucket_id, lane_id);
+    bool is_active = slab_entry != kEmptyNodeAddr;
 
     if (is_active && ((1 << lane_id) & kNodePtrLanesMask)) {
-        uint32_t index = atomicAdd(output_iterator_count, 1);
-        output_buf_indices[index] = src_unit_data;
+        uint32_t index = atomicAdd(output_count, 1);
+        output_buf_indices[index] = slab_entry;
     }
 
-    buf_index_t next = __shfl_sync(kSyncLanesMask, src_unit_data,
-                                   kNextSlabPtrLaneId, kWarpSize);
+    uint32_t slab_ptr = __shfl_sync(kSyncLanesMask, slab_entry,
+                                    kNextSlabPtrLaneId, kWarpSize);
 
     // Count following nodes,
-    while (next != kEmptySlabAddr) {
-        src_unit_data = *impl.get_unit_ptr_from_list_nodes(next, lane_id);
-        is_active = (src_unit_data != kEmptyNodeAddr);
+    while (slab_ptr != kEmptySlabAddr) {
+        slab_entry = *impl.SlabEntryPtrFromNodes(slab_ptr, lane_id);
+        is_active = (slab_entry != kEmptyNodeAddr);
 
         if (is_active && ((1 << lane_id) & kNodePtrLanesMask)) {
-            uint32_t index = atomicAdd(output_iterator_count, 1);
-            output_buf_indices[index] = src_unit_data;
+            uint32_t index = atomicAdd(output_count, 1);
+            output_buf_indices[index] = slab_entry;
         }
-        next = __shfl_sync(kSyncLanesMask, src_unit_data, kNextSlabPtrLaneId,
-                           kWarpSize);
+        slab_ptr = __shfl_sync(kSyncLanesMask, slab_entry, kNextSlabPtrLaneId,
+                               kWarpSize);
     }
 }
 
@@ -714,20 +713,19 @@ __global__ void CountElemsPerBucketKernel(SlabHashmapImpl<Key, Hash> impl,
     uint32_t count = 0;
 
     // Count head node.
-    uint32_t src_unit_data =
-            *impl.get_unit_ptr_from_list_head(bucket_id, lane_id);
+    uint32_t slab_entry = *impl.SlabEntryPtrFromHead(bucket_id, lane_id);
     count += __popc(
-            __ballot_sync(kNodePtrLanesMask, src_unit_data != kEmptyNodeAddr));
-    buf_index_t next = __shfl_sync(kSyncLanesMask, src_unit_data,
-                                   kNextSlabPtrLaneId, kWarpSize);
+            __ballot_sync(kNodePtrLanesMask, slab_entry != kEmptyNodeAddr));
+    uint32_t slab_ptr = __shfl_sync(kSyncLanesMask, slab_entry,
+                                    kNextSlabPtrLaneId, kWarpSize);
 
     // Count following nodes.
-    while (next != kEmptySlabAddr) {
-        src_unit_data = *impl.get_unit_ptr_from_list_nodes(next, lane_id);
-        count += __popc(__ballot_sync(kNodePtrLanesMask,
-                                      src_unit_data != kEmptyNodeAddr));
-        next = __shfl_sync(kSyncLanesMask, src_unit_data, kNextSlabPtrLaneId,
-                           kWarpSize);
+    while (slab_ptr != kEmptySlabAddr) {
+        slab_entry = *impl.SlabEntryPtrFromNodes(slab_ptr, lane_id);
+        count += __popc(
+                __ballot_sync(kNodePtrLanesMask, slab_entry != kEmptyNodeAddr));
+        slab_ptr = __shfl_sync(kSyncLanesMask, slab_entry, kNextSlabPtrLaneId,
+                               kWarpSize);
     }
 
     // Write back the results.
