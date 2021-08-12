@@ -75,29 +75,31 @@ std::string TriangleMesh::ToString() const {
             GetTriangleIndices().GetLength(),
             GetTriangleIndices().GetDtype().ToString());
 
-    std::string vertices_attr_str = "\nVertices Attributes: ";
+    std::string vertices_attr_str = "\nVertices Attributes:";
     if (vertex_attr_.size() == 1) {
         vertices_attr_str += " None.";
     } else {
         for (const auto &kv : vertex_attr_) {
             if (kv.first != "positions") {
-                vertices_attr_str += fmt::format(
-                        " {} ({}, {}),", kv.first,
-                        kv.second.GetDtype().ToString(), kv.second.GetLength());
+                vertices_attr_str +=
+                        fmt::format(" {} (dtype = {}, shape = {}),", kv.first,
+                                    kv.second.GetDtype().ToString(),
+                                    kv.second.GetShape().ToString());
             }
         }
         vertices_attr_str[vertices_attr_str.size() - 1] = '.';
     }
 
-    std::string triangles_attr_str = "\nTriangles Attributes: ";
+    std::string triangles_attr_str = "\nTriangles Attributes:";
     if (triangle_attr_.size() == 1) {
         triangles_attr_str += " None.";
     } else {
         for (const auto &kv : triangle_attr_) {
             if (kv.first != "indices") {
-                triangles_attr_str += fmt::format(
-                        " {} ({}, {}),", kv.first,
-                        kv.second.GetDtype().ToString(), kv.second.GetLength());
+                triangles_attr_str +=
+                        fmt::format(" {} (dtype = {}, shape = {}),", kv.first,
+                                    kv.second.GetDtype().ToString(),
+                                    kv.second.GetShape().ToString());
             }
         }
         triangles_attr_str[triangles_attr_str.size() - 1] = '.';

@@ -126,17 +126,33 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
                     (void)tl);
     EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetTriangleAttr("labels");
                     (void)tl);
+}
 
-    // ToString Test.
-    // ToString may print the attributes in any order. In order to reduce
-    // complexity of the test, keeping only one attribute per tensor-map.
-    mesh.RemoveVertexAttr("labels");
-    mesh.RemoveTriangleAttr("labels");
+TEST_P(TriangleMeshPermuteDevices, ToString) {
+    core::Device device = GetParam();
 
-    std::string text = "TriangleMesh on " + device.ToString() +
-                       " [2 vertices (Float32) and 2 triangles (Int64)]."
-                       "\nVertices Attributes:  colors (Float32, 2)."
-                       "\nTriangles Attributes:  normals (Float32, 2).";
+    core::Tensor vertices = core::Tensor::Ones({2, 3}, core::Float32, device);
+    core::Tensor vertex_colors =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 2;
+    core::Tensor vertex_labels =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 3;
+
+    core::Tensor triangles = core::Tensor::Ones({2, 3}, core::Int64, device);
+    core::Tensor triangle_normals =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 2;
+    core::Tensor triangle_labels =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 3;
+
+    t::geometry::TriangleMesh mesh(vertices, triangles);
+    mesh.SetVertexColors(vertex_colors);
+    mesh.SetTriangleNormals(triangle_normals);
+
+    std::string text =
+            "TriangleMesh on " + device.ToString() +
+            " [2 vertices (Float32) and 2 triangles (Int64)]."
+            "\nVertices Attributes: colors (dtype = Float32, shape = {2, 3})."
+            "\nTriangles Attributes: normals (dtype = Float32, shape = {2, "
+            "3}).";
 
     EXPECT_STREQ(mesh.ToString().c_str(), text.c_str());
 
@@ -146,8 +162,8 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
     // Mesh with only primary attributes.
     std::string text_2 = "TriangleMesh on " + device.ToString() +
                          " [2 vertices (Float32) and 2 triangles (Int64)]."
-                         "\nVertices Attributes:  None."
-                         "\nTriangles Attributes:  None.";
+                         "\nVertices Attributes: None."
+                         "\nTriangles Attributes: None.";
 
     EXPECT_STREQ(mesh.ToString().c_str(), text_2.c_str());
 

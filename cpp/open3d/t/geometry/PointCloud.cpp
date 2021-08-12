@@ -81,9 +81,9 @@ std::string PointCloud::ToString() const {
     if (point_attr_.size() == 1) return str + " None.";
     for (const auto &keyval : point_attr_) {
         if (keyval.first != "positions") {
-            str += fmt::format(" {} ({}, {}),", keyval.first,
+            str += fmt::format(" {} (dtype = {}, shape = {}),", keyval.first,
                                keyval.second.GetDtype().ToString(),
-                               keyval.second.GetLength());
+                               keyval.second.GetShape().ToString());
         }
     }
     str[str.size() - 1] = '.';
