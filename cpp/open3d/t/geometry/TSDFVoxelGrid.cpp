@@ -150,10 +150,10 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                         sdf_trunc_);
 
     // Active voxel blocks in the block hashmap.
-    core::Tensor addrs, masks;
+    core::Tensor buf_indices, masks;
     int64_t n = block_hashmap_->Size();
     try {
-        block_hashmap_->Activate(block_coords, addrs, masks);
+        block_hashmap_->Activate(block_coords, buf_indices, masks);
     } catch (const std::runtime_error &) {
         utility::LogError(
                 "[TSDFIntegrate] Unable to allocate volume during rehashing. "
@@ -165,12 +165,12 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     }
 
     // Collect voxel blocks in the viewing frustum. Note we cannot directly
-    // reuse addrs from Activate, since some blocks might have been activated in
-    // previous launches and return false.
+    // reuse buf_indices from Activate, since some blocks might have been
+    // activated in previous launches and return false.
     // TODO(wei): support one-pass operation ActivateAndFind.
-    // TODO(wei): set point_hashmap_[block_coords] = addrs and use the small
-    // hashmap for raycasting
-    block_hashmap_->Find(block_coords, addrs, masks);
+    // TODO(wei): set point_hashmap_[block_coords] = buf_indices and use the
+    // small hashmap for raycasting
+    block_hashmap_->Find(block_coords, buf_indices, masks);
 
     // TODO(wei): directly reuse it without intermediate variables.
     // Reserved for raycasting
@@ -200,7 +200,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     core::Tensor dst = block_hashmap_->GetValueTensor();
 
     // TODO(wei): use a fixed buffer.
-    kernel::tsdf::Integrate(depth_tensor, color_tensor, addrs,
+    kernel::tsdf::Integrate(depth_tensor, color_tensor, buf_indices,
                             block_hashmap_->GetKeyTensor(), dst, intrinsics,
                             extrinsics, block_resolution_, voxel_size_,
                             sdf_trunc_, depth_scale, depth_max);
@@ -272,19 +272,20 @@ PointCloud TSDFVoxelGrid::ExtractSurfacePoints(int estimated_number,
         utility::LogError("VertexMap must be specified in Surface extraction.");
     }
 
-    core::Tensor active_addrs;
-    block_hashmap_->GetActiveIndices(active_addrs);
-    core::Tensor active_nb_addrs, active_nb_masks;
-    std::tie(active_nb_addrs, active_nb_masks) =
-            BufferRadiusNeighbors(active_addrs);
+    core::Tensor active_buf_indices;
+    block_hashmap_->GetActiveIndices(active_buf_indices);
+    core::Tensor active_nb_buf_indices, active_nb_masks;
+    std::tie(active_nb_buf_indices, active_nb_masks) =
+            BufferRadiusNeighbors(active_buf_indices);
 
     // Extract points around zero-crossings.
     core::Tensor points, normals, colors;
 
     kernel::tsdf::ExtractSurfacePoints(
-            active_addrs.To(core::Int64), active_nb_addrs.To(core::Int64),
-            active_nb_masks, block_hashmap_->GetKeyTensor(),
-            block_hashmap_->GetValueTensor(), points,
+            active_buf_indices.To(core::Int64),
+            active_nb_buf_indices.To(core::Int64), active_nb_masks,
+            block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
+            points,
             surface_mask & SurfaceMaskCode::NormalMap
                     ? utility::optional<std::reference_wrapper<core::Tensor>>(
                               normals)
@@ -317,11 +318,11 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh(int estimate_vertices,
     }
 
     // Query active blocks and their nearest neighbors to handle boundary cases.
-    core::Tensor active_addrs;
-    block_hashmap_->GetActiveIndices(active_addrs);
-    core::Tensor active_nb_addrs, active_nb_masks;
-    std::tie(active_nb_addrs, active_nb_masks) =
-            BufferRadiusNeighbors(active_addrs);
+    core::Tensor active_buf_indices;
+    block_hashmap_->GetActiveIndices(active_buf_indices);
+    core::Tensor active_nb_buf_indices, active_nb_masks;
+    std::tie(active_nb_buf_indices, active_nb_masks) =
+            BufferRadiusNeighbors(active_buf_indices);
 
     // Map active indices to [0, num_blocks] to be allocated for surface mesh.
     int64_t num_blocks = block_hashmap_->Size();
@@ -330,14 +331,14 @@ TriangleMesh TSDFVoxelGrid::ExtractSurfaceMesh(int estimate_vertices,
     std::vector<int64_t> iota_map(num_blocks);
     std::iota(iota_map.begin(), iota_map.end(), 0);
     inverse_index_map.IndexSet(
-            {active_addrs.To(core::Int64)},
+            {active_buf_indices.To(core::Int64)},
             core::Tensor(iota_map, {num_blocks}, core::Int64, device_));
 
     core::Tensor vertices, triangles, vertex_normals, vertex_colors;
     int vertex_count = estimate_vertices;
     kernel::tsdf::ExtractSurfaceMesh(
-            active_addrs.To(core::Int64), inverse_index_map,
-            active_nb_addrs.To(core::Int64), active_nb_masks,
+            active_buf_indices.To(core::Int64), inverse_index_map,
+            active_nb_buf_indices.To(core::Int64), active_nb_masks,
             block_hashmap_->GetKeyTensor(), block_hashmap_->GetValueTensor(),
             vertices, triangles,
             surface_mask & SurfaceMaskCode::NormalMap
@@ -377,14 +378,14 @@ TSDFVoxelGrid TSDFVoxelGrid::To(const core::Device &device, bool copy) const {
 }
 
 std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
-        const core::Tensor &active_addrs) {
+        const core::Tensor &active_buf_indices) {
     // Fixed radius search for spatially hashed voxel blocks.
     // A generalization will be implementing dense/sparse fixed radius search
     // with coordinates as hashmap keys.
     core::Tensor key_buffer_int3_tensor = block_hashmap_->GetKeyTensor();
 
-    core::Tensor active_keys =
-            key_buffer_int3_tensor.IndexGet({active_addrs.To(core::Int64)});
+    core::Tensor active_keys = key_buffer_int3_tensor.IndexGet(
+            {active_buf_indices.To(core::Int64)});
     int64_t n = active_keys.GetShape()[0];
 
     // Fill in radius nearest neighbors.
@@ -399,9 +400,10 @@ std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
     }
     keys_nb = keys_nb.View({27 * n, 3});
 
-    core::Tensor addrs_nb, masks_nb;
-    block_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
-    return std::make_pair(addrs_nb.View({27, n, 1}), masks_nb.View({27, n, 1}));
+    core::Tensor buf_indices_nb, masks_nb;
+    block_hashmap_->Find(keys_nb, buf_indices_nb, masks_nb);
+    return std::make_pair(buf_indices_nb.View({27, n, 1}),
+                          masks_nb.View({27, n, 1}));
 }
 }  // namespace geometry
 }  // namespace t

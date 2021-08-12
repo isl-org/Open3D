@@ -65,21 +65,21 @@ void pybind_core_hashmap(py::module& m) {
 
     hashmap.def("insert",
                 [](Hashmap& h, const Tensor& keys, const Tensor& values) {
-                    Tensor addrs, masks;
-                    h.Insert(keys, values, addrs, masks);
-                    return py::make_tuple(addrs, masks);
+                    Tensor buf_indices, masks;
+                    h.Insert(keys, values, buf_indices, masks);
+                    return py::make_tuple(buf_indices, masks);
                 });
 
     hashmap.def("activate", [](Hashmap& h, const Tensor& keys) {
-        Tensor addrs, masks;
-        h.Activate(keys, addrs, masks);
-        return py::make_tuple(addrs, masks);
+        Tensor buf_indices, masks;
+        h.Activate(keys, buf_indices, masks);
+        return py::make_tuple(buf_indices, masks);
     });
 
     hashmap.def("find", [](Hashmap& h, const Tensor& keys) {
-        Tensor addrs, masks;
-        h.Find(keys, addrs, masks);
-        return py::make_tuple(addrs, masks);
+        Tensor buf_indices, masks;
+        h.Find(keys, buf_indices, masks);
+        return py::make_tuple(buf_indices, masks);
     });
 
     hashmap.def("erase", [](Hashmap& h, const Tensor& keys) {
@@ -88,10 +88,10 @@ void pybind_core_hashmap(py::module& m) {
         return masks;
     });
 
-    hashmap.def("get_active_addrs", [](Hashmap& h) {
-        Tensor addrs;
-        h.GetActiveIndices(addrs);
-        return addrs;
+    hashmap.def("get_active_buf_indices", [](Hashmap& h) {
+        Tensor buf_indices;
+        h.GetActiveIndices(buf_indices);
+        return buf_indices;
     });
 
     hashmap.def("save", &Hashmap::Save);

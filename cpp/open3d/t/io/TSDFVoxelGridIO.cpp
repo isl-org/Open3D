@@ -137,8 +137,8 @@ bool ReadTSDFVoxelGrid(const std::string &file_name,
     core::Tensor keys = tensor_map.at("key").To(device);
     core::Tensor values = tensor_map.at("value").To(device);
 
-    core::Tensor addrs, masks;
-    tsdf_voxelgrid.GetBlockHashmap()->Insert(keys, values, addrs, masks);
+    core::Tensor buf_indices, masks;
+    tsdf_voxelgrid.GetBlockHashmap()->Insert(keys, values, buf_indices, masks);
 
     return true;
 }

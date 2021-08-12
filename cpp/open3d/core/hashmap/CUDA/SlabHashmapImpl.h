@@ -63,7 +63,7 @@ public:
                            uint32_t lane_id,
                            uint32_t bucket_id,
                            const Key& key,
-                           buf_index_t iterator_addr);
+                           buf_index_t buf_index);
 
     __device__ Pair<buf_index_t, bool> Find(bool lane_active,
                                             uint32_t lane_id,
@@ -115,21 +115,21 @@ public:
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass0(SlabHashmapImpl<Key, Hash> impl,
                                   const void* input_keys,
-                                  buf_index_t* output_addrs,
+                                  buf_index_t* output_buf_indices,
                                   int heap_counter_prev,
                                   int64_t count);
 
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
                                   const void* input_keys,
-                                  buf_index_t* output_addrs,
+                                  buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count);
 
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
                                   const void* const* input_values,
-                                  buf_index_t* output_addrs,
+                                  buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count,
                                   int64_t n_values);
@@ -137,26 +137,26 @@ __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
 template <typename Key, typename Hash>
 __global__ void FindKernel(SlabHashmapImpl<Key, Hash> impl,
                            const void* input_keys,
-                           buf_index_t* output_addrs,
+                           buf_index_t* output_buf_indices,
                            bool* output_masks,
                            int64_t count);
 
 template <typename Key, typename Hash>
 __global__ void EraseKernelPass0(SlabHashmapImpl<Key, Hash> impl,
                                  const void* input_keys,
-                                 buf_index_t* output_addrs,
+                                 buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count);
 
 template <typename Key, typename Hash>
 __global__ void EraseKernelPass1(SlabHashmapImpl<Key, Hash> impl,
-                                 buf_index_t* output_addrs,
+                                 buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count);
 
 template <typename Key, typename Hash>
 __global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
-                                       buf_index_t* output_addrs,
+                                       buf_index_t* output_buf_indices,
                                        uint32_t* output_iterator_count);
 
 template <typename Key, typename Hash>
@@ -171,10 +171,10 @@ template <typename Key, typename Hash>
 void SlabHashmapImpl<Key, Hash>::Setup(
         int64_t init_buckets,
         const SlabNodeManagerImpl& allocator_impl,
-        const CUDAHashmapBufferAccessor& pair_allocator_impl) {
+        const CUDAHashmapBufferAccessor& buffer_accessor) {
     bucket_count_ = init_buckets;
     node_mgr_impl_ = allocator_impl;
-    buffer_accessor_ = pair_allocator_impl;
+    buffer_accessor_ = buffer_accessor;
 }
 
 template <typename Key, typename Hash>
@@ -452,7 +452,7 @@ __device__ int32_t SlabHashmapImpl<Key, Hash>::WarpFindKey(const Key& key,
     bool is_lane_found =
             // Select key lanes.
             ((1 << lane_id) & kNodePtrLanesMask)
-            // Validate key addrs.
+            // Validate key buf_indices.
             && (ptr != kEmptyNodeAddr)
             // Find keys in memory heap.
             && *static_cast<Key*>(buffer_accessor_.GetKeyPtr(ptr)) == key;
@@ -487,7 +487,7 @@ __device__ __forceinline__ void SlabHashmapImpl<Key, Hash>::FreeSlab(
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass0(SlabHashmapImpl<Key, Hash> impl,
                                   const void* input_keys,
-                                  buf_index_t* output_addrs,
+                                  buf_index_t* output_buf_indices,
                                   int heap_counter_prev,
                                   int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
@@ -499,14 +499,14 @@ __global__ void InsertKernelPass0(SlabHashmapImpl<Key, Hash> impl,
                 impl.buffer_accessor_.heap_[heap_counter_prev + tid];
         void* key = impl.buffer_accessor_.GetKeyPtr(iterator_addr);
         *static_cast<Key*>(key) = input_keys_templated[tid];
-        output_addrs[tid] = iterator_addr;
+        output_buf_indices[tid] = iterator_addr;
     }
 }
 
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
                                   const void* input_keys,
-                                  buf_index_t* output_addrs,
+                                  buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
@@ -528,7 +528,7 @@ __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
     if (tid < count) {
         lane_active = true;
         key = input_keys_templated[tid];
-        iterator_addr = output_addrs[tid];
+        iterator_addr = output_buf_indices[tid];
         bucket_id = impl.ComputeBucket(key);
     }
 
@@ -544,14 +544,14 @@ __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
                                   const void* const* input_values,
-                                  buf_index_t* output_addrs,
+                                  buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count,
                                   int64_t n_values) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid < count) {
-        buf_index_t iterator_addr = output_addrs[tid];
+        buf_index_t iterator_addr = output_buf_indices[tid];
 
         if (output_masks[tid]) {
             for (int j = 0; j < n_values; ++j) {
@@ -574,7 +574,7 @@ __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
 template <typename Key, typename Hash>
 __global__ void FindKernel(SlabHashmapImpl<Key, Hash> impl,
                            const void* input_keys,
-                           buf_index_t* output_addrs,
+                           buf_index_t* output_buf_indices,
                            bool* output_masks,
                            int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
@@ -605,7 +605,7 @@ __global__ void FindKernel(SlabHashmapImpl<Key, Hash> impl,
     result = impl.Find(lane_active, lane_id, bucket_id, key);
 
     if (tid < count) {
-        output_addrs[tid] = result.first;
+        output_buf_indices[tid] = result.first;
         output_masks[tid] = result.second;
     }
 }
@@ -613,7 +613,7 @@ __global__ void FindKernel(SlabHashmapImpl<Key, Hash> impl,
 template <typename Key, typename Hash>
 __global__ void EraseKernelPass0(SlabHashmapImpl<Key, Hash> impl,
                                  const void* input_keys,
-                                 buf_index_t* output_addrs,
+                                 buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
@@ -640,25 +640,25 @@ __global__ void EraseKernelPass0(SlabHashmapImpl<Key, Hash> impl,
     auto result = impl.Erase(lane_active, lane_id, bucket_id, key);
 
     if (tid < count) {
-        output_addrs[tid] = result.first;
+        output_buf_indices[tid] = result.first;
         output_masks[tid] = result.second;
     }
 }
 
 template <typename Key, typename Hash>
 __global__ void EraseKernelPass1(SlabHashmapImpl<Key, Hash> impl,
-                                 buf_index_t* output_addrs,
+                                 buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid < count && output_masks[tid]) {
-        impl.buffer_accessor_.DeviceFree(output_addrs[tid]);
+        impl.buffer_accessor_.DeviceFree(output_buf_indices[tid]);
     }
 }
 
 template <typename Key, typename Hash>
 __global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
-                                       buf_index_t* output_addrs,
+                                       buf_index_t* output_buf_indices,
                                        uint32_t* output_iterator_count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
@@ -677,7 +677,7 @@ __global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
 
     if (is_active && ((1 << lane_id) & kNodePtrLanesMask)) {
         uint32_t index = atomicAdd(output_iterator_count, 1);
-        output_addrs[index] = src_unit_data;
+        output_buf_indices[index] = src_unit_data;
     }
 
     buf_index_t next = __shfl_sync(kSyncLanesMask, src_unit_data,
@@ -690,7 +690,7 @@ __global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
 
         if (is_active && ((1 << lane_id) & kNodePtrLanesMask)) {
             uint32_t index = atomicAdd(output_iterator_count, 1);
-            output_addrs[index] = src_unit_data;
+            output_buf_indices[index] = src_unit_data;
         }
         next = __shfl_sync(kSyncLanesMask, src_unit_data, kNextSlabPtrLaneId,
                            kWarpSize);

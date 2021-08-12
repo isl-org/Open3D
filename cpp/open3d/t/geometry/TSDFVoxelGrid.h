@@ -183,17 +183,15 @@ private:
 
     core::Device device_ = core::Device("CPU:0");
 
-    /// Return addrs and masks for radius (3) neighbor entries.
+    /// Return buf_indices and masks for radius (3) neighbor entries.
     /// We first find all active entries in the hashmap with there coordinates.
     /// We then query these coordinates and their 3^3 neighbors.
-    /// addrs_nb: indexer used for the internal hashmap to access voxel block
-    /// coordinates in the 3^3 neighbors.
-    /// masks_nb: flag used for hashmap to indicate whether a query is a
-    /// success.
-    /// Currently we preserve a dense output (27 x active_entries) without
-    /// compression / reduction.
+    /// buf_indices_nb: indexer used for the internal hashmap to access voxel
+    /// block coordinates in the 3^3 neighbors. masks_nb: flag used for hashmap
+    /// to indicate whether a query is a success. Currently we preserve a dense
+    /// output (27 x active_entries) without compression / reduction.
     std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
-            const core::Tensor &active_addrs);
+            const core::Tensor &active_buf_indices);
 
     // Global hashmap
     std::shared_ptr<core::Hashmap> block_hashmap_;

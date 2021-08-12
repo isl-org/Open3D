@@ -68,15 +68,17 @@ public:
     buf_index_t DeviceAllocate() {
         return heap_[(*heap_counter_).fetch_add(1)];
     }
-    void DeviceFree(buf_index_t ptr) {
-        heap_[(*heap_counter_).fetch_sub(1) - 1] = ptr;
+    void DeviceFree(buf_index_t buf_index) {
+        heap_[(*heap_counter_).fetch_sub(1) - 1] = buf_index;
     }
 
     int HeapCounter() const { return (*heap_counter_).load(); }
 
-    void *GetKeyPtr(buf_index_t ptr) { return keys_ + ptr * dsize_key_; }
-    void *GetValuePtr(buf_index_t ptr, int value_idx = 0) {
-        return values_[value_idx] + ptr * dsize_values_[value_idx];
+    void *GetKeyPtr(buf_index_t buf_index) {
+        return keys_ + buf_index * dsize_key_;
+    }
+    void *GetValuePtr(buf_index_t buf_index, int value_idx = 0) {
+        return values_[value_idx] + buf_index * dsize_values_[value_idx];
     }
 
 public:

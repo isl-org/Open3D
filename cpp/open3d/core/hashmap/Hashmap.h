@@ -62,45 +62,42 @@ public:
     void Rehash(int64_t buckets);
 
     /// Parallel insert arrays of keys and values in Tensors.
-    /// Return addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    /// masks: success insertions, must be combined with addrs in advanced
-    /// indexing.
+    /// Return buf_indices: internal indices that can be directly used for
+    /// advanced indexing in Tensor key/value buffers. masks: success
+    /// insertions, must be combined with buf_indices in advanced indexing.
     void Insert(const Tensor& input_keys,
                 const Tensor& input_values,
-                Tensor& output_addrs,
+                Tensor& output_buf_indices,
                 Tensor& output_masks);
 
     /// Parallel activate arrays of keys in Tensor.
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
-    /// Return addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    /// masks: success insertions, must be combined with addrs in advanced
-    /// indexing.
+    /// Return buf_indices: internal indices that can be directly used for
+    /// advanced indexing in Tensor key/value buffers. masks: success
+    /// insertions, must be combined with buf_indices in advanced indexing.
     void Activate(const Tensor& input_keys,
-                  Tensor& output_addrs,
+                  Tensor& output_buf_indices,
                   Tensor& output_masks);
 
     /// Parallel find an array of keys in Tensor.
-    /// Return addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    /// masks: success insertions, must be combined with addrs in advanced
-    /// indexing.
+    /// Return buf_indices: internal indices that can be directly used for
+    /// advanced indexing in Tensor key/value buffers. masks: success
+    /// insertions, must be combined with buf_indices in advanced indexing.
     void Find(const Tensor& input_keys,
-              Tensor& output_addrs,
+              Tensor& output_buf_indices,
               Tensor& output_masks);
 
     /// Parallel erase an array of keys in Tensor.
     /// Output masks is a bool Tensor.
-    /// Return masks: success insertions, must be combined with addrs in
+    /// Return masks: success insertions, must be combined with buf_indices in
     /// advanced indexing.
     void Erase(const Tensor& input_keys, Tensor& output_masks);
 
     /// Parallel collect all iterators in the hash table
-    /// Return addrs: internal indices that can be directly used for advanced
-    /// indexing in Tensor key/value buffers.
-    void GetActiveIndices(Tensor& output_indices) const;
+    /// Return buf_indices: internal indices that can be directly used for
+    /// advanced indexing in Tensor key/value buffers.
+    void GetActiveIndices(Tensor& output_buf_indices) const;
 
     /// Clear stored map without reallocating memory.
     void Clear();

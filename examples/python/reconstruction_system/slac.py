@@ -55,13 +55,13 @@ def run(config):
             ply_file_names, pose_graph_fragment, slac_params, debug_option)
 
         hashmap = ctrl_grid.get_hashmap()
-        active_addrs = hashmap.get_active_addrs().to(o3d.core.Dtype.Int64)
+        active_buf_indices = hashmap.get_active_buf_indices().to(o3d.core.Dtype.Int64)
 
-        key_tensor = hashmap.get_key_tensor()[active_addrs]
+        key_tensor = hashmap.get_key_tensor()[active_buf_indices]
         key_tensor.save(
             join(slac_params.get_subfolder_name(), "ctr_grid_keys.npy"))
 
-        value_tensor = hashmap.get_value_tensor()[active_addrs]
+        value_tensor = hashmap.get_value_tensor()[active_buf_indices]
         value_tensor.save(
             join(slac_params.get_subfolder_name(), "ctr_grid_values.npy"))
 

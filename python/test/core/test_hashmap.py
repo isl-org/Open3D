@@ -48,10 +48,10 @@ def test_insertion(device):
                       dtype=o3c.int64,
                       device=device)
     values = o3c.Tensor([1, 3, 5, 7, 9, 9], dtype=o3c.int64, device=device)
-    addrs, masks = hashmap.insert(keys, values)
+    buf_indices, masks = hashmap.insert(keys, values)
     assert masks.to(o3c.int64).sum() == 5
 
-    valid_indices = addrs[masks].to(o3c.int64)
+    valid_indices = buf_indices[masks].to(o3c.int64)
     valid_keys = hashmap.get_key_tensor()[valid_indices]
     valid_values = hashmap.get_value_tensor()[valid_indices]
     np.testing.assert_equal(valid_keys.cpu().numpy(),
@@ -65,10 +65,10 @@ def test_activate(device):
     keys = o3c.Tensor([100, 300, 500, 700, 900, 900],
                       dtype=o3c.int64,
                       device=device)
-    addrs, masks = hashmap.activate(keys)
+    buf_indices, masks = hashmap.activate(keys)
     assert masks.to(o3c.int64).sum() == 5
 
-    valid_indices = addrs[masks].to(o3c.int64)
+    valid_indices = buf_indices[masks].to(o3c.int64)
     valid_keys = hashmap.get_key_tensor()[valid_indices]
     np.testing.assert_equal(np.sort(valid_keys.cpu().numpy().flatten()),
                             np.array([100, 300, 500, 700, 900]))
@@ -83,10 +83,10 @@ def test_find(device):
     hashmap.insert(keys, values)
 
     keys = o3c.Tensor([100, 200, 500], dtype=o3c.int64, device=device)
-    addrs, masks = hashmap.find(keys)
+    buf_indices, masks = hashmap.find(keys)
     np.testing.assert_equal(masks.cpu().numpy(), np.array([True, False, True]))
 
-    valid_indices = addrs[masks].to(o3c.int64)
+    valid_indices = buf_indices[masks].to(o3c.int64)
     valid_keys = hashmap.get_key_tensor()[valid_indices]
     valid_values = hashmap.get_value_tensor()[valid_indices]
     assert valid_keys.shape[0] == 2
@@ -111,8 +111,8 @@ def test_erase(device):
     np.testing.assert_equal(masks.cpu().numpy(), np.array([True, False, True]))
 
     assert hashmap.size() == 3
-    active_addrs = hashmap.get_active_addrs()
-    active_indices = active_addrs.to(o3c.int64)
+    active_buf_indices = hashmap.get_active_buf_indices()
+    active_indices = active_buf_indices.to(o3c.int64)
 
     active_keys = hashmap.get_key_tensor()[active_indices]
     active_values = hashmap.get_value_tensor()[active_indices]
@@ -132,10 +132,10 @@ def test_complex_shape(device):
                       dtype=o3c.int64,
                       device=device)
     values = o3c.Tensor([1, 2, 3], dtype=o3c.int64, device=device)
-    addrs, masks = hashmap.insert(keys, values)
+    buf_indices, masks = hashmap.insert(keys, values)
     assert masks.to(o3c.int64).sum() == 3
 
-    valid_indices = addrs[masks].to(o3c.int64)
+    valid_indices = buf_indices[masks].to(o3c.int64)
     valid_keys = hashmap.get_key_tensor()[valid_indices, :]
 
     valid_values = hashmap.get_value_tensor()[valid_indices]

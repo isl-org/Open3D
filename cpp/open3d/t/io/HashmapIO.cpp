@@ -36,10 +36,10 @@ void WriteHashmap(const std::string& file_name, const core::Hashmap& hashmap) {
     core::Tensor keys = hashmap.GetKeyTensor().To(core::Device("CPU:0"));
     core::Tensor values = hashmap.GetValueTensor().To(core::Device("CPU:0"));
 
-    core::Tensor active_addrs;
-    hashmap.GetActiveIndices(active_addrs);
+    core::Tensor active_buf_indices;
+    hashmap.GetActiveIndices(active_buf_indices);
     core::Tensor active_indices =
-            active_addrs.To(core::Device("CPU:0"), core::Dtype::Int64);
+            active_buf_indices.To(core::Device("CPU:0"), core::Dtype::Int64);
 
     core::Tensor active_keys = keys.IndexGet({active_indices});
     core::Tensor active_values = values.IndexGet({active_indices});
@@ -81,8 +81,8 @@ core::Hashmap ReadHashmap(const std::string& file_name) {
                                  element_shape_key, element_shape_value,
                                  core::Device("CPU:0"));
 
-    core::Tensor masks, addrs;
-    hashmap.Insert(keys, values, masks, addrs);
+    core::Tensor masks, buf_indices;
+    hashmap.Insert(keys, values, masks, buf_indices);
 
     return hashmap;
 }

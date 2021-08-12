@@ -214,8 +214,8 @@ PointCloud PointCloud::VoxelDownSample(
                                         core::Int32, {3}, {1}, device_,
                                         backend);
 
-    core::Tensor addrs, masks;
-    points_voxeli_hashmap.Activate(points_voxeli, addrs, masks);
+    core::Tensor buf_indices, masks;
+    points_voxeli_hashmap.Activate(points_voxeli, buf_indices, masks);
 
     PointCloud pcd_down(GetPointPositions().GetDevice());
     for (auto &kv : point_attr_) {

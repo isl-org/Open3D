@@ -48,17 +48,17 @@ public:
 
     void Insert(const void* input_keys,
                 const std::vector<const void*> input_values,
-                buf_index_t* output_addrs,
+                buf_index_t* output_buf_indices,
                 bool* output_masks,
                 int64_t count) override;
 
     void Activate(const void* input_keys,
-                  buf_index_t* output_addrs,
+                  buf_index_t* output_buf_indices,
                   bool* output_masks,
                   int64_t count) override;
 
     void Find(const void* input_keys,
-              buf_index_t* output_addrs,
+              buf_index_t* output_buf_indices,
               bool* output_masks,
               int64_t count) override;
 
@@ -88,7 +88,7 @@ protected:
     /// separate this implementation and avoid shared checks.
     void InsertImpl(const void* input_keys,
                     const std::vector<const void*> input_values,
-                    buf_index_t* output_addrs,
+                    buf_index_t* output_buf_indices,
                     bool* output_masks,
                     int64_t count);
 
@@ -115,17 +115,17 @@ SlabHashmap<Key, Hash>::~SlabHashmap() {
 
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
-    int64_t iterator_count = Size();
+    int64_t count = Size();
 
     Tensor active_keys;
     std::vector<Tensor> active_values;
 
-    if (iterator_count > 0) {
-        Tensor active_addrs =
-                Tensor({iterator_count}, core::Int32, this->device_);
-        GetActiveIndices(static_cast<buf_index_t*>(active_addrs.GetDataPtr()));
+    if (count > 0) {
+        Tensor active_buf_indices = Tensor({count}, core::Int32, this->device_);
+        GetActiveIndices(
+                static_cast<buf_index_t*>(active_buf_indices.GetDataPtr()));
 
-        Tensor active_indices = active_addrs.To(core::Int64);
+        Tensor active_indices = active_buf_indices.To(core::Int64);
 
         active_keys = this->buffer_->GetKeyBuffer().IndexGet({active_indices});
         auto value_buffers = this->GetValueBuffers();
@@ -143,24 +143,24 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
              std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
                       active_keys.GetLength()));
 
-    if (iterator_count > 0) {
-        Tensor output_addrs({iterator_count}, core::Int32, this->device_);
-        Tensor output_masks({iterator_count}, core::Bool, this->device_);
+    if (count > 0) {
+        Tensor output_buf_indices({count}, core::Int32, this->device_);
+        Tensor output_masks({count}, core::Bool, this->device_);
 
         std::vector<const void*> active_value_ptrs;
         for (auto& active_value : active_values) {
             active_value_ptrs.push_back(active_value.GetDataPtr());
         }
         InsertImpl(active_keys.GetDataPtr(), active_value_ptrs,
-                   static_cast<buf_index_t*>(output_addrs.GetDataPtr()),
-                   output_masks.GetDataPtr<bool>(), iterator_count);
+                   static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
+                   output_masks.GetDataPtr<bool>(), count);
     }
 }
 
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Insert(const void* input_keys,
                                     std::vector<const void*> input_values,
-                                    buf_index_t* output_addrs,
+                                    buf_index_t* output_buf_indices,
                                     bool* output_masks,
                                     int64_t count) {
     int64_t new_size = Size() + count;
@@ -173,21 +173,22 @@ void SlabHashmap<Key, Hash>::Insert(const void* input_keys,
         Rehash(expected_buckets);
     }
 
-    InsertImpl(input_keys, input_values, output_addrs, output_masks, count);
+    InsertImpl(input_keys, input_values, output_buf_indices, output_masks,
+               count);
 }
 
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Activate(const void* input_keys,
-                                      buf_index_t* output_addrs,
+                                      buf_index_t* output_buf_indices,
                                       bool* output_masks,
                                       int64_t count) {
     std::vector<const void*> null_values;
-    Insert(input_keys, null_values, output_addrs, output_masks, count);
+    Insert(input_keys, null_values, output_buf_indices, output_masks, count);
 }
 
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Find(const void* input_keys,
-                                  buf_index_t* output_addrs,
+                                  buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count) {
     if (count == 0) return;
@@ -199,7 +200,7 @@ void SlabHashmap<Key, Hash>::Find(const void* input_keys,
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     FindKernel<<<num_blocks, kThreadsPerBlock, 0, core::cuda::GetStream()>>>(
-            impl_, input_keys, output_addrs, output_masks, count);
+            impl_, input_keys, output_buf_indices, output_masks, count);
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
@@ -213,28 +214,30 @@ void SlabHashmap<Key, Hash>::Erase(const void* input_keys,
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
-    auto iterator_addrs = static_cast<buf_index_t*>(
+    auto buf_indices = static_cast<buf_index_t*>(
             MemoryManager::Malloc(sizeof(buf_index_t) * count, this->device_));
 
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     EraseKernelPass0<<<num_blocks, kThreadsPerBlock, 0,
                        core::cuda::GetStream()>>>(
-            impl_, input_keys, iterator_addrs, output_masks, count);
+            impl_, input_keys, buf_indices, output_masks, count);
     EraseKernelPass1<<<num_blocks, kThreadsPerBlock, 0,
-                       core::cuda::GetStream()>>>(impl_, iterator_addrs,
+                       core::cuda::GetStream()>>>(impl_, buf_indices,
                                                   output_masks, count);
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
-    MemoryManager::Free(iterator_addrs, this->device_);
+    MemoryManager::Free(buf_indices, this->device_);
 }
 
 template <typename Key, typename Hash>
-int64_t SlabHashmap<Key, Hash>::GetActiveIndices(buf_index_t* output_addrs) {
-    uint32_t* iterator_count = static_cast<uint32_t*>(
+int64_t SlabHashmap<Key, Hash>::GetActiveIndices(
+        buf_index_t* output_buf_indices) {
+    uint32_t* count = static_cast<uint32_t*>(
             MemoryManager::Malloc(sizeof(uint32_t), this->device_));
-    OPEN3D_CUDA_CHECK(cudaMemset(iterator_count, 0, sizeof(uint32_t)));
+    OPEN3D_CUDA_CHECK(cudaMemset(count, 0, sizeof(uint32_t)));
+
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
@@ -242,15 +245,14 @@ int64_t SlabHashmap<Key, Hash>::GetActiveIndices(buf_index_t* output_addrs) {
             (impl_.bucket_count_ * kWarpSize + kThreadsPerBlock - 1) /
             kThreadsPerBlock;
     GetActiveIndicesKernel<<<num_blocks, kThreadsPerBlock, 0,
-                             core::cuda::GetStream()>>>(impl_, output_addrs,
-                                                        iterator_count);
+                             core::cuda::GetStream()>>>(
+            impl_, output_buf_indices, count);
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 
     uint32_t ret;
-    MemoryManager::MemcpyToHost(&ret, iterator_count, this->device_,
-                                sizeof(uint32_t));
-    MemoryManager::Free(iterator_count, this->device_);
+    MemoryManager::MemcpyToHost(&ret, count, this->device_, sizeof(uint32_t));
+    MemoryManager::Free(count, this->device_);
 
     return static_cast<int64_t>(ret);
 }
@@ -309,7 +311,7 @@ template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::InsertImpl(
         const void* input_keys,
         std::vector<const void*> input_values_host,
-        buf_index_t* output_addrs,
+        buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {
     if (count == 0) return;
@@ -324,10 +326,10 @@ void SlabHashmap<Key, Hash>::InsertImpl(
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     InsertKernelPass0<<<num_blocks, kThreadsPerBlock, 0,
                         core::cuda::GetStream()>>>(
-            impl_, input_keys, output_addrs, prev_heap_counter, count);
+            impl_, input_keys, output_buf_indices, prev_heap_counter, count);
     InsertKernelPass1<<<num_blocks, kThreadsPerBlock, 0,
                         core::cuda::GetStream()>>>(
-            impl_, input_keys, output_addrs, output_masks, count);
+            impl_, input_keys, output_buf_indices, output_masks, count);
 
     thrust::device_vector<const void*> input_values(input_values_host.begin(),
                                                     input_values_host.end());
@@ -338,9 +340,9 @@ void SlabHashmap<Key, Hash>::InsertImpl(
     const void* const* input_values_ptr =
             thrust::raw_pointer_cast(input_values.data());
     InsertKernelPass2<<<num_blocks, kThreadsPerBlock, 0,
-                        core::cuda::GetStream()>>>(impl_, input_values_ptr,
-                                                   output_addrs, output_masks,
-                                                   count, n_values);
+                        core::cuda::GetStream()>>>(
+            impl_, input_values_ptr, output_buf_indices, output_masks, count,
+            n_values);
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }

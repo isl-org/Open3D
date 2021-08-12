@@ -69,7 +69,7 @@ void Hashmap::Rehash(int64_t buckets) {
 
 void Hashmap::Insert(const Tensor& input_keys,
                      const Tensor& input_values,
-                     Tensor& output_addrs,
+                     Tensor& output_buf_indices,
                      Tensor& output_masks) {
     SizeVector input_key_elem_shape(input_keys.GetShape());
     input_key_elem_shape.erase(input_key_elem_shape.begin());
@@ -100,17 +100,17 @@ void Hashmap::Insert(const Tensor& input_keys,
     }
 
     int64_t count = shape[0];
-    output_addrs = Tensor({count}, core::Int32, GetDevice());
+    output_buf_indices = Tensor({count}, core::Int32, GetDevice());
     output_masks = Tensor({count}, core::Bool, GetDevice());
 
     device_hashmap_->Insert(
             input_keys.GetDataPtr(), {input_values.GetDataPtr()},
-            static_cast<buf_index_t*>(output_addrs.GetDataPtr()),
+            static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
             output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Activate(const Tensor& input_keys,
-                       Tensor& output_addrs,
+                       Tensor& output_buf_indices,
                        Tensor& output_masks) {
     SizeVector input_key_elem_shape(input_keys.GetShape());
     input_key_elem_shape.erase(input_key_elem_shape.begin());
@@ -128,17 +128,17 @@ void Hashmap::Activate(const Tensor& input_keys,
 
     int64_t count = shape[0];
 
-    output_addrs = Tensor({count}, core::Int32, GetDevice());
+    output_buf_indices = Tensor({count}, core::Int32, GetDevice());
     output_masks = Tensor({count}, core::Bool, GetDevice());
 
     device_hashmap_->Activate(
             input_keys.GetDataPtr(),
-            static_cast<buf_index_t*>(output_addrs.GetDataPtr()),
+            static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
             output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Find(const Tensor& input_keys,
-                   Tensor& output_addrs,
+                   Tensor& output_buf_indices,
                    Tensor& output_masks) {
     SizeVector input_key_elem_shape(input_keys.GetShape());
     input_key_elem_shape.erase(input_key_elem_shape.begin());
@@ -157,11 +157,12 @@ void Hashmap::Find(const Tensor& input_keys,
     int64_t count = shape[0];
 
     output_masks = Tensor({count}, core::Bool, GetDevice());
-    output_addrs = Tensor({count}, core::Int32, GetDevice());
+    output_buf_indices = Tensor({count}, core::Int32, GetDevice());
 
-    device_hashmap_->Find(input_keys.GetDataPtr(),
-                          static_cast<buf_index_t*>(output_addrs.GetDataPtr()),
-                          output_masks.GetDataPtr<bool>(), count);
+    device_hashmap_->Find(
+            input_keys.GetDataPtr(),
+            static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
+            output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
@@ -186,12 +187,12 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
                            output_masks.GetDataPtr<bool>(), count);
 }
 
-void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
+void Hashmap::GetActiveIndices(Tensor& output_buf_indices) const {
     int64_t count = device_hashmap_->Size();
-    output_addrs = Tensor({count}, core::Int32, GetDevice());
+    output_buf_indices = Tensor({count}, core::Int32, GetDevice());
 
     device_hashmap_->GetActiveIndices(
-            static_cast<buf_index_t*>(output_addrs.GetDataPtr()));
+            static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()));
 }
 
 void Hashmap::Clear() { device_hashmap_->Clear(); }
@@ -217,13 +218,13 @@ Hashmap Hashmap::To(const Device& device, bool copy) const {
     Tensor keys = GetKeyTensor().To(device, /*copy=*/true);
     Tensor values = GetValueTensor().To(device, /*copy=*/true);
 
-    core::Tensor active_addrs;
-    GetActiveIndices(active_addrs);
-    core::Tensor active_indices = active_addrs.To(core::Int64);
+    core::Tensor active_buf_indices;
+    GetActiveIndices(active_buf_indices);
+    core::Tensor active_indices = active_buf_indices.To(core::Int64);
 
-    core::Tensor addrs, masks;
+    core::Tensor buf_indices, masks;
     new_hashmap.Insert(keys.IndexGet({active_indices}),
-                       values.IndexGet({active_indices}), addrs, masks);
+                       values.IndexGet({active_indices}), buf_indices, masks);
 
     return new_hashmap;
 }

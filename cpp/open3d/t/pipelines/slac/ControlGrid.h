@@ -81,8 +81,8 @@ public:
     /// Get the neighbor indices per grid to construct the regularizer.
     /// \return A 6-way neighbor grid map for all the active entries of shape
     /// (N, ).
-    /// - addrs Active indices in the buffer of shape (N, )
-    /// - addrs_nb Neighbor indices (including non-allocated entries) for
+    /// - buf_indices Active indices in the buffer of shape (N, )
+    /// - buf_indices_nb Neighbor indices (including non-allocated entries) for
     /// the active entries of shape (N, 6).
     /// - masks_nb Corresponding neighbor masks of shape (N, 6).
     std::tuple<core::Tensor, core::Tensor, core::Tensor> GetNeighborGridMap();
