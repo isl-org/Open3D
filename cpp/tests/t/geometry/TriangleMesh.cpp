@@ -133,7 +133,7 @@ TEST_P(TriangleMeshPermuteDevices, Setters) {
 
     // Setters are already tested in Getters' unit tests. Here we test that
     // mismatched device should throw an exception. This test is only effective
-    // is device is a CUDA device.
+    // if device is a CUDA device.
     t::geometry::TriangleMesh mesh(device);
     core::Device cpu_device = core::Device("CPU:0");
     if (cpu_device != device) {
