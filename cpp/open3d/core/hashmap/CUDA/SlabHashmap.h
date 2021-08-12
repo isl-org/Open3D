@@ -355,10 +355,7 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_values_, this->device_);
     buffer_accessor_.HostAllocate(this->device_);
-    buffer_accessor_.Setup(this->capacity_, this->dsize_key_,
-                           this->dsize_values_, this->buffer_->GetKeyBuffer(),
-                           this->buffer_->GetValueBuffers(),
-                           this->buffer_->GetIndexHeap());
+    buffer_accessor_.Setup(*this->buffer_);
     buffer_accessor_.Reset(this->device_);
 
     // Allocate buffer for linked list nodes.

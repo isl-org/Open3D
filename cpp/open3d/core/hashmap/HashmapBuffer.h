@@ -64,7 +64,6 @@ public:
                   std::vector<int64_t> dsize_values,
                   const Device &device) {
         heap_ = Tensor({capacity}, core::UInt32, device);
-        heap_top_ = Tensor({1}, core::Int32, device);
 
         key_buffer_ = Tensor(
                 {capacity},
@@ -80,6 +79,9 @@ public:
             value_buffers_.push_back(value_buffer_i);
         }
     }
+
+    /// Return device of the buffer.
+    Device GetDevice() const { return heap_.GetDevice(); }
 
     /// Return capacity of the buffer.
     int64_t GetCapacity() const { return heap_.GetLength(); }
@@ -99,9 +101,6 @@ public:
     /// Return the index heap tensor.
     Tensor GetIndexHeap() const { return heap_; }
 
-    /// Return the index heap's top.
-    Tensor GetHeapTop() const { return heap_top_; }
-
     /// Return the key buffer tensor.
     Tensor GetKeyBuffer() const { return key_buffer_; }
 
@@ -119,7 +118,6 @@ public:
 
 protected:
     Tensor heap_;
-    Tensor heap_top_;
 
     Tensor key_buffer_;
     std::vector<Tensor> value_buffers_;

@@ -46,36 +46,31 @@ namespace core {
 
 class CUDAHashmapBufferAccessor {
 public:
-    __host__ void Setup(int64_t capacity,
-                        int64_t dsize_key,
-                        const std::vector<int64_t> &dsize_values,
-                        const Tensor &keys,
-                        const std::vector<Tensor> &values,
-                        const Tensor &heap) {
-        capacity_ = capacity;
-        heap_ = const_cast<addr_t *>(
-                static_cast<const addr_t *>(heap.GetDataPtr()));
+    __host__ void Setup(const HashmapBuffer &hashmap_buffer) {
+        Device device = hashmap_buffer.GetDevice();
 
-        keys_ = const_cast<uint8_t *>(keys.GetDataPtr<const uint8_t>());
-        dsize_key_ = dsize_key;
+        // Properties
+        capacity_ = hashmap_buffer.GetCapacity();
+        std::vector<int64_t> dsize_values_host =
+                hashmap_buffer.GetValueDsizes();
+        n_values_ = dsize_values_host.size();
 
-        Device device = keys.GetDevice();
-
-        n_values_ = dsize_values.size();
-
-        // Copy value sizes
+        dsize_key_ = hashmap_buffer.GetKeyDsize();
         dsize_values_ = static_cast<int64_t *>(
                 MemoryManager::Malloc(n_values_ * sizeof(int64_t), device));
         MemoryManager::MemcpyFromHost(dsize_values_, device,
-                                      dsize_values.data(),
+                                      dsize_values_host.data(),
                                       n_values_ * sizeof(int64_t));
 
-        // Copy values
+        // Pointers
+        heap_ = hashmap_buffer.GetIndexHeap().GetDataPtr<addr_t>();
+        keys_ = hashmap_buffer.GetKeyBuffer().GetDataPtr<uint8_t>();
+
+        std::vector<Tensor> value_buffers = hashmap_buffer.GetValueBuffers();
         std::vector<uint8_t *> value_ptrs(n_values_);
         for (size_t i = 0; i < n_values_; ++i) {
-            value_ptrs[i] = const_cast<uint8_t *>(
-                    static_cast<const uint8_t *>(values[i].GetDataPtr()));
-            cudaMemset(value_ptrs[i], 0, capacity_ * dsize_values[i]);
+            value_ptrs[i] = value_buffers[i].GetDataPtr<uint8_t>();
+            cudaMemset(value_ptrs[i], 0, capacity_ * dsize_values_host[i]);
         }
         values_ = static_cast<uint8_t **>(
                 MemoryManager::Malloc(n_values_ * sizeof(uint8_t *), device));
@@ -130,8 +125,6 @@ public:
 
     __device__ void *GetKeyPtr(addr_t ptr) { return keys_ + ptr * dsize_key_; }
     __device__ void *GetValuePtr(addr_t ptr, int value_idx = 0) {
-        // printf("device pointer %d: %p, dsize: %ld\n", value_idx,
-        //        (void *)values_[value_idx], dsize_values_[value_idx]);
         return values_[value_idx] + ptr * dsize_values_[value_idx];
     }
 
