@@ -48,14 +48,15 @@ class CUDAHashmapBufferAccessor {
 public:
     __host__ void Setup(int64_t capacity,
                         int64_t dsize_key,
-                        std::vector<int64_t> dsize_values,
-                        Tensor &keys,
-                        std::vector<Tensor> &values,
-                        Tensor &heap) {
+                        const std::vector<int64_t> &dsize_values,
+                        const Tensor &keys,
+                        const std::vector<Tensor> &values,
+                        const Tensor &heap) {
         capacity_ = capacity;
-        heap_ = static_cast<addr_t *>(heap.GetDataPtr());
+        heap_ = const_cast<addr_t *>(
+                static_cast<const addr_t *>(heap.GetDataPtr()));
 
-        keys_ = keys.GetDataPtr<uint8_t>();
+        keys_ = const_cast<uint8_t *>(keys.GetDataPtr<const uint8_t>());
         dsize_key_ = dsize_key;
 
         Device device = keys.GetDevice();
@@ -72,7 +73,8 @@ public:
         // Copy values
         std::vector<uint8_t *> value_ptrs(n_values_);
         for (size_t i = 0; i < n_values_; ++i) {
-            value_ptrs[i] = static_cast<uint8_t *>(values[i].GetDataPtr());
+            value_ptrs[i] = const_cast<uint8_t *>(
+                    static_cast<const uint8_t *>(values[i].GetDataPtr()));
             cudaMemset(value_ptrs[i], 0, capacity_ * dsize_values[i]);
         }
         values_ = static_cast<uint8_t **>(

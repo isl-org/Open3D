@@ -63,7 +63,8 @@ public:
                   int64_t dsize_key,
                   std::vector<int64_t> dsize_values,
                   const Device &device) {
-        heap_ = Tensor({capacity}, core::Int32, device);
+        heap_ = Tensor({capacity}, core::UInt32, device);
+        heap_top_ = Tensor({1}, core::Int32, device);
 
         key_buffer_ = Tensor(
                 {capacity},
@@ -80,10 +81,34 @@ public:
         }
     }
 
-    Tensor &GetHeap() { return heap_; }
-    Tensor &GetKeyBuffer() { return key_buffer_; }
+    /// Return capacity of the buffer.
+    int64_t GetCapacity() const { return heap_.GetLength(); }
 
-    std::vector<Tensor> &GetValueBuffers() { return value_buffers_; }
+    /// Return key's data size in bytes.
+    int64_t GetKeyDsize() const { return key_buffer_.GetDtype().ByteSize(); }
+
+    /// Return value's data sizes in bytes.
+    std::vector<int64_t> GetValueDsizes() const {
+        std::vector<int64_t> value_dsizes;
+        for (auto &value_buffer : value_buffers_) {
+            value_dsizes.push_back(value_buffer.GetDtype().ByteSize());
+        }
+        return value_dsizes;
+    }
+
+    /// Return the index heap tensor.
+    Tensor GetIndexHeap() const { return heap_; }
+
+    /// Return the index heap's top.
+    Tensor GetHeapTop() const { return heap_top_; }
+
+    /// Return the key buffer tensor.
+    Tensor GetKeyBuffer() const { return key_buffer_; }
+
+    /// Return the value buffer tensors.
+    std::vector<Tensor> GetValueBuffers() const { return value_buffers_; }
+
+    /// Return the selected value buffer tensor at index i.
     Tensor GetValueBuffer(size_t i = 0) const {
         if (i >= value_buffers_.size()) {
             utility::LogError("Value buffer index out-of-bound ({} >= {}).", i,
@@ -94,6 +119,8 @@ public:
 
 protected:
     Tensor heap_;
+    Tensor heap_top_;
+
     Tensor key_buffer_;
     std::vector<Tensor> value_buffers_;
 };

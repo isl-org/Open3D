@@ -329,10 +329,7 @@ void TBBHashmap<Key, Hash>::Allocate(int64_t capacity) {
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_values_, this->device_);
 
-    buffer_ctx_ = std::make_shared<CPUHashmapBufferAccessor>(
-            this->capacity_, this->dsize_key_, this->dsize_values_,
-            this->buffer_->GetKeyBuffer(), this->buffer_->GetValueBuffers(),
-            this->buffer_->GetHeap());
+    buffer_ctx_ = std::make_shared<CPUHashmapBufferAccessor>(*this->buffer_);
     buffer_ctx_->Reset();
 
     impl_ = std::make_shared<tbb::concurrent_unordered_map<Key, addr_t, Hash>>(

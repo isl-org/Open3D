@@ -42,20 +42,15 @@ namespace core {
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
 class CPUHashmapBufferAccessor {
 public:
-    CPUHashmapBufferAccessor(int64_t capacity,
-                             int64_t dsize_key,
-                             std::vector<int64_t> dsize_values,
-                             Tensor &keys,
-                             std::vector<Tensor> &values,
-                             Tensor &heap)
-        : capacity_(capacity),
-          dsize_key_(dsize_key),
-          dsize_values_(dsize_values),
-          heap_(static_cast<addr_t *>(heap.GetDataPtr())),
-          keys_(keys.GetDataPtr<uint8_t>()) {
-        // TODO: size check
-        for (size_t i = 0; i < values.size(); ++i) {
-            void *data_ptr = values[i].GetDataPtr();
+    CPUHashmapBufferAccessor(const HashmapBuffer &hashmap_buffer)
+        : capacity_(hashmap_buffer.GetCapacity()),
+          dsize_key_(hashmap_buffer.GetKeyDsize()),
+          dsize_values_(hashmap_buffer.GetValueDsizes()),
+          heap_(hashmap_buffer.GetIndexHeap().GetDataPtr<addr_t>()),
+          keys_(hashmap_buffer.GetKeyBuffer().GetDataPtr<uint8_t>()) {
+        std::vector<Tensor> value_buffers = hashmap_buffer.GetValueBuffers();
+        for (size_t i = 0; i < value_buffers.size(); ++i) {
+            void *data_ptr = value_buffers[i].GetDataPtr();
             std::memset(data_ptr, 0, capacity_ * dsize_values_[i]);
             values_.push_back(static_cast<uint8_t *>(data_ptr));
         }
