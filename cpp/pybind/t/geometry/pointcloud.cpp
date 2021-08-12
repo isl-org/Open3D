@@ -111,6 +111,8 @@ The attributes of the point cloud have different levels::
     // Constructors.
     pointcloud
             .def(py::init<const core::Device&>(),
+                 "Construct an empty pointcloud on the provided ``device`` "
+                 "(default: 'CPU:0').",
                  "device"_a = core::Device("CPU:0"))
             .def(py::init<const core::Tensor&>(), "positions"_a)
             .def(py::init<const std::unordered_map<std::string,
@@ -123,7 +125,7 @@ The attributes of the point cloud have different levels::
     // by another TensorMap in Python.
     pointcloud.def_property_readonly(
             "point", py::overload_cast<>(&PointCloud::GetPointAttr, py::const_),
-            "Point's attributes: points, colors, normals, etc.");
+            "Point's attributes: positions, colors, normals, etc.");
 
     // Device transfers.
     pointcloud.def("to", &PointCloud::To,

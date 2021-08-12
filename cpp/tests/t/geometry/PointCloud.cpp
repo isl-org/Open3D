@@ -342,8 +342,10 @@ TEST_P(PointCloudPermuteDevices, Getters) {
     std::string text = "PointCloud on " + device.ToString() +
                        " [2 points (Float32)] Attributes: ";
     EXPECT_THAT(pcd.ToString(),  // Compiler dependent output
-                AnyOf(text + "colors (Float32, 3), labels (Float32, 3).",
-                      text + "labels (Float32, 3), colors (Float32, 3)."));
+                AnyOf(text + "colors (dtype = Float32, shape = {2, 3}), labels "
+                             "(dtype = Float32, shape = {2, 3}).",
+                      text + "labels (dtype = Float32, shape = (2, 3)), colors "
+                             "(dtype = Float32, shape = {2, 3})."));
 }
 
 TEST_P(PointCloudPermuteDevices, Setters) {
