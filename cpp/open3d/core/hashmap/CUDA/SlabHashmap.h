@@ -274,7 +274,7 @@ void SlabHashmap<Key, Hash>::Clear() {
 
 template <typename Key, typename Hash>
 int64_t SlabHashmap<Key, Hash>::Size() const {
-    return buffer_accessor_.HeapCounter(this->device_);
+    return this->buffer_->GetHeapTopIndex();
 }
 
 template <typename Key, typename Hash>
@@ -318,7 +318,7 @@ void SlabHashmap<Key, Hash>::InsertImpl(
 
     /// Increase heap_counter to pre-allocate potential memory increment and
     /// avoid atomicAdd in kernel.
-    int prev_heap_counter = buffer_accessor_.HeapCounter(this->device_);
+    int prev_heap_counter = this->buffer_->GetHeapTopIndex();
     *thrust::device_ptr<int>(impl_.buffer_accessor_.heap_counter_) =
             prev_heap_counter + count;
 

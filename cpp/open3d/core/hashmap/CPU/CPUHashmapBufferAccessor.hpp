@@ -72,8 +72,6 @@ public:
         heap_[(*heap_counter_).fetch_sub(1) - 1] = buf_index;
     }
 
-    int HeapCounter() const { return (*heap_counter_).load(); }
-
     void *GetKeyPtr(buf_index_t buf_index) {
         return keys_ + buf_index * dsize_key_;
     }

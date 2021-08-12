@@ -106,13 +106,6 @@ public:
         heap_[index - 1] = ptr;
     }
 
-    __host__ int HeapCounter(const Device &device) const {
-        int heap_counter;
-        MemoryManager::Memcpy(&heap_counter, Device("CPU:0"), heap_counter_,
-                              device, sizeof(int));
-        return heap_counter;
-    }
-
     __device__ void *GetKeyPtr(buf_index_t ptr) {
         return keys_ + ptr * dsize_key_;
     }
