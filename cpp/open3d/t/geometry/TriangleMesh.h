@@ -133,7 +133,7 @@ public:
     TriangleMesh To(const core::Device &device, bool copy = false) const;
 
     /// Returns copy of the triangle mesh on the same device.
-    TriangleMesh Clone() const { return To(GetDevice()); }
+    TriangleMesh Clone() const { return To(GetDevice(), /*copy=*/true); }
 
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }
