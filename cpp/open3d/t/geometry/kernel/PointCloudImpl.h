@@ -304,7 +304,7 @@ void EstimateCovariancesUsingKNNSearchCPU
     core::Tensor indices, distance;
     std::tie(indices, distance) = tree.KnnSearch(points, max_nn);
 
-    indices = indices.To(core::Int32).Contiguous();
+    indices = indices.Contiguous();
     int32_t nn_count = static_cast<int32_t>(indices.GetShape()[1]);
 
     if (nn_count < 3) {

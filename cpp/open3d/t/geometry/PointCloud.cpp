@@ -252,7 +252,7 @@ void PointCloud::EstimateNormals(
     } else {
         if (this->GetPointNormals().GetDtype() != dtype) {
             utility::LogError(
-                    "Normals attribute must have same dtype as points.");
+                    "Normals attribute must have same dtype as positions.");
         }
         this->SetPointNormals(GetPointNormals().Contiguous());
     }
@@ -287,11 +287,6 @@ void PointCloud::EstimateNormals(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointAttr("covariances"), max_knn);
         } else if (device_type == core::Device::DeviceType::CUDA) {
-            if (dtype == core::Float64) {
-                utility::LogError(
-                        "KNN Support for Float64 dtype is missing on CUDA.");
-            }
-
             CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), max_knn);

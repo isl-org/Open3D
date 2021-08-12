@@ -280,7 +280,14 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   30,
                   utility::nullopt)
         ->Unit(benchmark::kMillisecond);
-// KNN Support for Float64 is missing on CUDA.
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F64 KNN[0.02 | 30],
+                  core::Device("CUDA:0"),
+                  core::Float64,
+                  0.02,
+                  30,
+                  utility::nullopt)
+        ->Unit(benchmark::kMillisecond);
 #endif
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,

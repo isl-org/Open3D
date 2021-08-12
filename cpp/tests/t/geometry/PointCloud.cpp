@@ -287,11 +287,9 @@ TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
     pcd.RemovePointAttr("normals");
 
-    if (device.GetType() == core::Device::DeviceType::CPU) {
-        // Estimate normals using KNN Search (KNN CUDA to be fixed).
-        pcd.EstimateNormals(4);
-        EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
-    }
+    // Estimate normals using KNN Search.
+    pcd.EstimateNormals(4);
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
 }
 
 TEST_P(PointCloudPermuteDevices, FromLegacy) {
