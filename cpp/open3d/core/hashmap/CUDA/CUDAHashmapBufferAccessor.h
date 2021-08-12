@@ -46,7 +46,7 @@ namespace core {
 
 class CUDAHashmapBufferAccessor {
 public:
-    __host__ void Setup(const HashmapBuffer &hashmap_buffer) {
+    __host__ void Setup(HashmapBuffer &hashmap_buffer) {
         Device device = hashmap_buffer.GetDevice();
 
         // Properties
@@ -77,6 +77,7 @@ public:
         MemoryManager::MemcpyFromHost(values_, device, value_ptrs.data(),
                                       n_values_ * sizeof(uint8_t *));
 
+        heap_counter_ = hashmap_buffer.GetHeapTop().cuda.GetDataPtr<int>();
         cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
@@ -94,17 +95,6 @@ public:
         thrust::sequence(thrust::device, heap_, heap_ + capacity_, 0);
         cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
-    }
-
-    __host__ void HostAllocate(const Device &device) {
-        heap_counter_ =
-                static_cast<int *>(MemoryManager::Malloc(sizeof(int), device));
-    }
-    __host__ void HostFree(const Device &device) {
-        if (heap_counter_ != nullptr) {
-            MemoryManager::Free(heap_counter_, device);
-        }
-        heap_counter_ = nullptr;
     }
 
     __device__ addr_t DeviceAllocate() {

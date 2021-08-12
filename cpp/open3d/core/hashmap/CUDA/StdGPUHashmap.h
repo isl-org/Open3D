@@ -474,7 +474,6 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
     this->buffer_ =
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_values_, this->device_);
-    buffer_accessor_.HostAllocate(this->device_);
     buffer_accessor_.Setup(*this->buffer_);
     buffer_accessor_.Reset(this->device_);
 
@@ -493,8 +492,6 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
 template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::Free() {
     // Buffer is automatically handled by the smart pointer.
-
-    buffer_accessor_.HostFree(this->device_);
     buffer_accessor_.Shutdown(this->device_);
 
     // stdgpu initializes on the default stream. Set the current stream to

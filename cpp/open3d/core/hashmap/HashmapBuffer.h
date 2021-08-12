@@ -45,6 +45,7 @@
 
 #include <assert.h>
 
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -59,6 +60,11 @@ typedef uint32_t addr_t;
 
 class HashmapBuffer {
 public:
+    struct HeapTop {
+        Tensor cuda;
+        std::atomic<int> cpu = {0};
+    };
+
     HashmapBuffer(int64_t capacity,
                   int64_t dsize_key,
                   std::vector<int64_t> dsize_values,
@@ -77,6 +83,11 @@ public:
                                         "_hash_v_" + std::to_string(i)),
                                   device);
             value_buffers_.push_back(value_buffer_i);
+        }
+
+        // Heap top is device specific
+        if (device.GetType() == Device::DeviceType::CUDA) {
+            heap_top_.cuda = Tensor({1}, Dtype::Int32, device);
         }
     }
 
@@ -101,6 +112,18 @@ public:
     /// Return the index heap tensor.
     Tensor GetIndexHeap() const { return heap_; }
 
+    /// Return the heap top structure. To be dispatched accordingly in C++/CUDA
+    /// accessors.
+    HeapTop &GetHeapTop() { return heap_top_; }
+
+    /// Return the current heap top.
+    int GetHeapTopIndex() const {
+        if (heap_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+            return heap_top_.cuda[0].Item<int>();
+        }
+        return heap_top_.cpu.load();
+    }
+
     /// Return the key buffer tensor.
     Tensor GetKeyBuffer() const { return key_buffer_; }
 
@@ -118,6 +141,7 @@ public:
 
 protected:
     Tensor heap_;
+    HeapTop heap_top_;
 
     Tensor key_buffer_;
     std::vector<Tensor> value_buffers_;

@@ -354,7 +354,6 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
     this->buffer_ =
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_values_, this->device_);
-    buffer_accessor_.HostAllocate(this->device_);
     buffer_accessor_.Setup(*this->buffer_);
     buffer_accessor_.Reset(this->device_);
 
@@ -374,7 +373,6 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
 
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Free() {
-    buffer_accessor_.HostFree(this->device_);
     buffer_accessor_.Shutdown(this->device_);
     MemoryManager::Free(impl_.bucket_list_head_, this->device_);
 }

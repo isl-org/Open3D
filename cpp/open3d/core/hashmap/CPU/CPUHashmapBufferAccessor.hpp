@@ -42,7 +42,8 @@ namespace core {
 /// We pre-allocate a chunk of memory and manually manage them on kernels.
 class CPUHashmapBufferAccessor {
 public:
-    CPUHashmapBufferAccessor(const HashmapBuffer &hashmap_buffer)
+    /// Must initialize from a non-const buffer to grab the heap top.
+    CPUHashmapBufferAccessor(HashmapBuffer &hashmap_buffer)
         : capacity_(hashmap_buffer.GetCapacity()),
           dsize_key_(hashmap_buffer.GetKeyDsize()),
           dsize_values_(hashmap_buffer.GetValueDsizes()),
@@ -54,6 +55,7 @@ public:
             std::memset(data_ptr, 0, capacity_ * dsize_values_[i]);
             values_.push_back(static_cast<uint8_t *>(data_ptr));
         }
+        heap_counter_ = &(hashmap_buffer.GetHeapTop().cpu);
     }
 
     void Reset() {
@@ -62,13 +64,15 @@ public:
             heap_[i] = i;
         }
 
-        heap_counter_ = 0;
+        *heap_counter_ = 0;
     }
 
-    addr_t DeviceAllocate() { return heap_[heap_counter_.fetch_add(1)]; }
-    void DeviceFree(addr_t ptr) { heap_[heap_counter_.fetch_sub(1) - 1] = ptr; }
+    addr_t DeviceAllocate() { return heap_[(*heap_counter_).fetch_add(1)]; }
+    void DeviceFree(addr_t ptr) {
+        heap_[(*heap_counter_).fetch_sub(1) - 1] = ptr;
+    }
 
-    int HeapCounter() const { return heap_counter_.load(); }
+    int HeapCounter() const { return (*heap_counter_).load(); }
 
     void *GetKeyPtr(addr_t ptr) { return keys_ + ptr * dsize_key_; }
     void *GetValuePtr(addr_t ptr, int value_idx = 0) {
@@ -80,8 +84,8 @@ public:
     int64_t dsize_key_;
     std::vector<int64_t> dsize_values_;
 
-    addr_t *heap_;                  /* [N] */
-    std::atomic<int> heap_counter_; /* [1] */
+    addr_t *heap_;                   /* [N] */
+    std::atomic<int> *heap_counter_; /* [1] */
 
     uint8_t *keys_;                 /* [N] * sizeof(Key) */
     std::vector<uint8_t *> values_; /* [N] * sizeof(Value) */
