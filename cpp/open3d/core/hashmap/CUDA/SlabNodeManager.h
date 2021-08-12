@@ -59,9 +59,9 @@ class Slab {
 public:
     /// Each element is an internal ptr to a kv pair managed by the
     /// InternalMemoryManager. Can be converted to a real ptr.
-    addr_t kv_pair_ptrs[kWarpSize - 1];
+    buf_index_t kv_pair_ptrs[kWarpSize - 1];
     /// An internal ptr managed by InternalNodeManager.
-    addr_t next_slab_ptr;
+    buf_index_t next_slab_ptr;
 };
 
 class SlabNodeManagerImpl {
@@ -74,7 +74,7 @@ public:
           super_block_index_(0) {}
 
     __device__ __forceinline__ uint32_t* get_unit_ptr_from_slab(
-            const addr_t& next_slab_ptr, const uint32_t& lane_id) {
+            const buf_index_t& next_slab_ptr, const uint32_t& lane_id) {
         return super_blocks_ + addressDecoder(next_slab_ptr) + lane_id;
     }
     __device__ __forceinline__ uint32_t* get_ptr_for_bitmap(
@@ -150,7 +150,7 @@ public:
     // This function, frees a recently allocated memory unit by a single thread.
     // Since it is untouched, there shouldn't be any worries for the actual
     // memory contents to be reset again.
-    __device__ void FreeUntouched(addr_t ptr) {
+    __device__ void FreeUntouched(buf_index_t ptr) {
         atomicAnd(super_blocks_ +
                           getSuperBlockIndex(ptr) * kUIntsPerSuperBlock +
                           getMemBlockIndex(ptr) * kSlabsPerBlock +
@@ -160,24 +160,24 @@ public:
 
 private:
     __device__ __host__ __forceinline__ uint32_t
-    getSuperBlockIndex(addr_t address) const {
+    getSuperBlockIndex(buf_index_t address) const {
         return address >> kSuperBlockMaskBits;
     }
     __device__ __host__ __forceinline__ uint32_t
-    getMemBlockIndex(addr_t address) const {
+    getMemBlockIndex(buf_index_t address) const {
         return ((address >> kBlockMaskBits) & 0x1FFFF);
     }
-    __device__ __host__ __forceinline__ addr_t
-    getMemBlockAddress(addr_t address) const {
+    __device__ __host__ __forceinline__ buf_index_t
+    getMemBlockAddress(buf_index_t address) const {
         return (kBitmapsPerSuperBlock +
                 getMemBlockIndex(address) * kUIntsPerBlock);
     }
     __device__ __host__ __forceinline__ uint32_t
-    getMemUnitIndex(addr_t address) const {
+    getMemUnitIndex(buf_index_t address) const {
         return address & 0x3FF;
     }
-    __device__ __host__ __forceinline__ addr_t
-    getMemUnitAddress(addr_t address) {
+    __device__ __host__ __forceinline__ buf_index_t
+    getMemUnitAddress(buf_index_t address) {
         return getMemUnitIndex(address) * kWarpSize;
     }
 
@@ -202,13 +202,14 @@ private:
                   memory_block_index_ * kSlabsPerBlock + (threadIdx.x & 0x1f));
     }
 
-    __host__ __device__ addr_t addressDecoder(addr_t address_ptr_index) {
+    __host__ __device__ buf_index_t
+    addressDecoder(buf_index_t address_ptr_index) {
         return getSuperBlockIndex(address_ptr_index) * kUIntsPerSuperBlock +
                getMemBlockAddress(address_ptr_index) +
                getMemUnitIndex(address_ptr_index) * kWarpSize;
     }
 
-    __host__ __device__ void print_address(addr_t address_ptr_index) {
+    __host__ __device__ void print_address(buf_index_t address_ptr_index) {
         printf("Super block Index: %d, Memory block index: %d, Memory unit "
                "index: "
                "%d\n",

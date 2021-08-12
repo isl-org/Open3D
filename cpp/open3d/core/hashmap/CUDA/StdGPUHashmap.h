@@ -118,12 +118,12 @@ private:
 // accessible in raw CUDA kernels.
 template <typename Key>
 using InternalStdGPUHashmapAllocator =
-        StdGPUAllocator<thrust::pair<const Key, addr_t>>;
+        StdGPUAllocator<thrust::pair<const Key, buf_index_t>>;
 
 template <typename Key, typename Hash>
 using InternalStdGPUHashmap =
         stdgpu::unordered_map<Key,
-                              addr_t,
+                              buf_index_t,
                               Hash,
                               stdgpu::equal_to<Key>,
                               InternalStdGPUHashmapAllocator<Key>>;
@@ -141,17 +141,17 @@ public:
 
     void Insert(const void* input_keys,
                 std::vector<const void*> input_values,
-                addr_t* output_addrs,
+                buf_index_t* output_addrs,
                 bool* output_masks,
                 int64_t count) override;
 
     void Activate(const void* input_keys,
-                  addr_t* output_addrs,
+                  buf_index_t* output_addrs,
                   bool* output_masks,
                   int64_t count) override;
 
     void Find(const void* input_keys,
-              addr_t* output_addrs,
+              buf_index_t* output_addrs,
               bool* output_masks,
               int64_t count) override;
 
@@ -159,7 +159,7 @@ public:
                bool* output_masks,
                int64_t count) override;
 
-    int64_t GetActiveIndices(addr_t* output_indices) override;
+    int64_t GetActiveIndices(buf_index_t* output_indices) override;
 
     void Clear() override;
 
@@ -180,7 +180,7 @@ protected:
 
     void InsertImpl(const void* input_keys,
                     std::vector<const void*> input_values,
-                    addr_t* output_addrs,
+                    buf_index_t* output_addrs,
                     bool* output_masks,
                     int64_t count);
 
@@ -210,7 +210,7 @@ int64_t StdGPUHashmap<Key, Hash>::Size() const {
 template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::Insert(const void* input_keys,
                                       std::vector<const void*> input_values,
-                                      addr_t* output_addrs,
+                                      buf_index_t* output_addrs,
                                       bool* output_masks,
                                       int64_t count) {
     int64_t new_size = Size() + count;
@@ -228,7 +228,7 @@ void StdGPUHashmap<Key, Hash>::Insert(const void* input_keys,
 
 template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::Activate(const void* input_keys,
-                                        addr_t* output_addrs,
+                                        buf_index_t* output_addrs,
                                         bool* output_masks,
                                         int64_t count) {
     std::vector<const void*> null_values;
@@ -240,7 +240,7 @@ template <typename Key, typename Hash>
 __global__ void STDGPUFindKernel(InternalStdGPUHashmap<Key, Hash> map,
                                  CUDAHashmapBufferAccessor buffer_accessor,
                                  const Key* input_keys,
-                                 addr_t* output_addrs,
+                                 buf_index_t* output_addrs,
                                  bool* output_masks,
                                  int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -255,7 +255,7 @@ __global__ void STDGPUFindKernel(InternalStdGPUHashmap<Key, Hash> map,
 
 template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::Find(const void* input_keys,
-                                    addr_t* output_addrs,
+                                    buf_index_t* output_addrs,
                                     bool* output_masks,
                                     int64_t count) {
     uint32_t threads = 128;
@@ -272,7 +272,7 @@ template <typename Key, typename Hash>
 __global__ void STDGPUEraseKernel(InternalStdGPUHashmap<Key, Hash> map,
                                   CUDAHashmapBufferAccessor buffer_accessor,
                                   const Key* input_keys,
-                                  addr_t* output_addrs,
+                                  buf_index_t* output_addrs,
                                   bool* output_masks,
                                   int64_t count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -301,7 +301,8 @@ void StdGPUHashmap<Key, Hash>::Erase(const void* input_keys,
 
     core::Tensor toutput_addrs =
             core::Tensor({count}, core::Int32, this->device_);
-    addr_t* output_addrs = static_cast<addr_t*>(toutput_addrs.GetDataPtr());
+    buf_index_t* output_addrs =
+            static_cast<buf_index_t*>(toutput_addrs.GetDataPtr());
 
     STDGPUEraseKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
             impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
@@ -311,14 +312,15 @@ void StdGPUHashmap<Key, Hash>::Erase(const void* input_keys,
 
 template <typename Key>
 struct ValueExtractor {
-    OPEN3D_HOST_DEVICE addr_t
-    operator()(const thrust::pair<Key, addr_t>& x) const {
+    OPEN3D_HOST_DEVICE buf_index_t
+    operator()(const thrust::pair<Key, buf_index_t>& x) const {
         return x.second;
     }
 };
 
 template <typename Key, typename Hash>
-int64_t StdGPUHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
+int64_t StdGPUHashmap<Key, Hash>::GetActiveIndices(
+        buf_index_t* output_indices) {
     auto range = impl_.device_range();
 
     thrust::transform(range.begin(), range.end(), output_indices,
@@ -342,7 +344,7 @@ void StdGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
 
     if (iterator_count > 0) {
         Tensor active_addrs({iterator_count}, core::Int32, this->device_);
-        GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
+        GetActiveIndices(static_cast<buf_index_t*>(active_addrs.GetDataPtr()));
 
         Tensor active_indices = active_addrs.To(core::Int64);
         active_keys = this->buffer_->GetKeyBuffer().IndexGet({active_indices});
@@ -369,7 +371,7 @@ void StdGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
             active_value_ptrs.push_back(active_value.GetDataPtr());
         }
         InsertImpl(active_keys.GetDataPtr(), active_value_ptrs,
-                   static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                   static_cast<buf_index_t*>(output_addrs.GetDataPtr()),
                    output_masks.GetDataPtr<bool>(), iterator_count);
     }
 }
@@ -395,7 +397,7 @@ __global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
                                    CUDAHashmapBufferAccessor buffer_accessor,
                                    const Key* input_keys,
                                    const void* const* input_values,
-                                   addr_t* output_addrs,
+                                   buf_index_t* output_addrs,
                                    bool* output_masks,
                                    int64_t count,
                                    int64_t n_values) {
@@ -411,7 +413,7 @@ __global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
 
     // If success, change the iterator and provide the actual index
     if (res.second) {
-        addr_t dst_kv_addr = buffer_accessor.DeviceAllocate();
+        buf_index_t dst_kv_addr = buffer_accessor.DeviceAllocate();
         auto key_ptr = buffer_accessor.GetKeyPtr(dst_kv_addr);
 
         // Copy templated key to buffer (duplicate)
@@ -444,7 +446,7 @@ template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::InsertImpl(
         const void* input_keys,
         std::vector<const void*> input_values_host,
-        addr_t* output_addrs,
+        buf_index_t* output_addrs,
         bool* output_masks,
         int64_t count) {
     uint32_t threads = 128;

@@ -38,8 +38,6 @@
 namespace open3d {
 namespace core {
 
-/// Dynamic memory allocation and free are expensive on kernels.
-/// We pre-allocate a chunk of memory and manually manage them on kernels.
 class CPUHashmapBufferAccessor {
 public:
     /// Must initialize from a non-const buffer to grab the heap top.
@@ -47,7 +45,7 @@ public:
         : capacity_(hashmap_buffer.GetCapacity()),
           dsize_key_(hashmap_buffer.GetKeyDsize()),
           dsize_values_(hashmap_buffer.GetValueDsizes()),
-          heap_(hashmap_buffer.GetIndexHeap().GetDataPtr<addr_t>()),
+          heap_(hashmap_buffer.GetIndexHeap().GetDataPtr<buf_index_t>()),
           keys_(hashmap_buffer.GetKeyBuffer().GetDataPtr<uint8_t>()) {
         std::vector<Tensor> value_buffers = hashmap_buffer.GetValueBuffers();
         for (size_t i = 0; i < value_buffers.size(); ++i) {
@@ -67,15 +65,17 @@ public:
         *heap_counter_ = 0;
     }
 
-    addr_t DeviceAllocate() { return heap_[(*heap_counter_).fetch_add(1)]; }
-    void DeviceFree(addr_t ptr) {
+    buf_index_t DeviceAllocate() {
+        return heap_[(*heap_counter_).fetch_add(1)];
+    }
+    void DeviceFree(buf_index_t ptr) {
         heap_[(*heap_counter_).fetch_sub(1) - 1] = ptr;
     }
 
     int HeapCounter() const { return (*heap_counter_).load(); }
 
-    void *GetKeyPtr(addr_t ptr) { return keys_ + ptr * dsize_key_; }
-    void *GetValuePtr(addr_t ptr, int value_idx = 0) {
+    void *GetKeyPtr(buf_index_t ptr) { return keys_ + ptr * dsize_key_; }
+    void *GetValuePtr(buf_index_t ptr, int value_idx = 0) {
         return values_[value_idx] + ptr * dsize_values_[value_idx];
     }
 
@@ -84,7 +84,7 @@ public:
     int64_t dsize_key_;
     std::vector<int64_t> dsize_values_;
 
-    addr_t *heap_;                   /* [N] */
+    buf_index_t *heap_;              /* [N] */
     std::atomic<int> *heap_counter_; /* [1] */
 
     uint8_t *keys_;                 /* [N] * sizeof(Key) */

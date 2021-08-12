@@ -103,10 +103,10 @@ void Hashmap::Insert(const Tensor& input_keys,
     output_addrs = Tensor({count}, core::Int32, GetDevice());
     output_masks = Tensor({count}, core::Bool, GetDevice());
 
-    device_hashmap_->Insert(input_keys.GetDataPtr(),
-                            {input_values.GetDataPtr()},
-                            static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                            output_masks.GetDataPtr<bool>(), count);
+    device_hashmap_->Insert(
+            input_keys.GetDataPtr(), {input_values.GetDataPtr()},
+            static_cast<buf_index_t*>(output_addrs.GetDataPtr()),
+            output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Activate(const Tensor& input_keys,
@@ -131,9 +131,10 @@ void Hashmap::Activate(const Tensor& input_keys,
     output_addrs = Tensor({count}, core::Int32, GetDevice());
     output_masks = Tensor({count}, core::Bool, GetDevice());
 
-    device_hashmap_->Activate(input_keys.GetDataPtr(),
-                              static_cast<addr_t*>(output_addrs.GetDataPtr()),
-                              output_masks.GetDataPtr<bool>(), count);
+    device_hashmap_->Activate(
+            input_keys.GetDataPtr(),
+            static_cast<buf_index_t*>(output_addrs.GetDataPtr()),
+            output_masks.GetDataPtr<bool>(), count);
 }
 
 void Hashmap::Find(const Tensor& input_keys,
@@ -159,7 +160,7 @@ void Hashmap::Find(const Tensor& input_keys,
     output_addrs = Tensor({count}, core::Int32, GetDevice());
 
     device_hashmap_->Find(input_keys.GetDataPtr(),
-                          static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                          static_cast<buf_index_t*>(output_addrs.GetDataPtr()),
                           output_masks.GetDataPtr<bool>(), count);
 }
 
@@ -190,7 +191,7 @@ void Hashmap::GetActiveIndices(Tensor& output_addrs) const {
     output_addrs = Tensor({count}, core::Int32, GetDevice());
 
     device_hashmap_->GetActiveIndices(
-            static_cast<addr_t*>(output_addrs.GetDataPtr()));
+            static_cast<buf_index_t*>(output_addrs.GetDataPtr()));
 }
 
 void Hashmap::Clear() { device_hashmap_->Clear(); }

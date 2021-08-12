@@ -63,7 +63,7 @@ public:
                                       n_values_ * sizeof(int64_t));
 
         // Pointers
-        heap_ = hashmap_buffer.GetIndexHeap().GetDataPtr<addr_t>();
+        heap_ = hashmap_buffer.GetIndexHeap().GetDataPtr<buf_index_t>();
         keys_ = hashmap_buffer.GetKeyBuffer().GetDataPtr<uint8_t>();
 
         std::vector<Tensor> value_buffers = hashmap_buffer.GetValueBuffers();
@@ -97,11 +97,11 @@ public:
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 
-    __device__ addr_t DeviceAllocate() {
+    __device__ buf_index_t DeviceAllocate() {
         int index = atomicAdd(heap_counter_, 1);
         return heap_[index];
     }
-    __device__ void DeviceFree(addr_t ptr) {
+    __device__ void DeviceFree(buf_index_t ptr) {
         int index = atomicSub(heap_counter_, 1);
         heap_[index - 1] = ptr;
     }
@@ -113,13 +113,15 @@ public:
         return heap_counter;
     }
 
-    __device__ void *GetKeyPtr(addr_t ptr) { return keys_ + ptr * dsize_key_; }
-    __device__ void *GetValuePtr(addr_t ptr, int value_idx = 0) {
+    __device__ void *GetKeyPtr(buf_index_t ptr) {
+        return keys_ + ptr * dsize_key_;
+    }
+    __device__ void *GetValuePtr(buf_index_t ptr, int value_idx = 0) {
         return values_[value_idx] + ptr * dsize_values_[value_idx];
     }
 
 public:
-    addr_t *heap_;                /* [N] */
+    buf_index_t *heap_;           /* [N] */
     int *heap_counter_ = nullptr; /* [1] */
 
     uint8_t *keys_; /* [N] * sizeof(Key) */

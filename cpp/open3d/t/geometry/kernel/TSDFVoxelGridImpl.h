@@ -1232,7 +1232,7 @@ void RayCastCPU
                     auto GetVoxelAtP = [&] OPEN3D_DEVICE(
                                                int x_b, int y_b, int z_b,
                                                int x_v, int y_v, int z_v,
-                                               core::addr_t block_addr,
+                                               core::buf_index_t block_addr,
                                                BlockCache& cache) -> voxel_t* {
                         int x_vn = (x_v + block_resolution) % block_resolution;
                         int y_vn = (y_v + block_resolution) % block_resolution;

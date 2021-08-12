@@ -60,7 +60,7 @@ public:
     /// Parallel insert contiguous arrays of keys and values.
     virtual void Insert(const void* input_keys,
                         const std::vector<const void*> input_values,
-                        addr_t* output_iterators,
+                        buf_index_t* output_iterators,
                         bool* output_masks,
                         int64_t count) = 0;
 
@@ -68,13 +68,13 @@ public:
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
     virtual void Activate(const void* input_keys,
-                          addr_t* output_iterators,
+                          buf_index_t* output_iterators,
                           bool* output_masks,
                           int64_t count) = 0;
 
     /// Parallel find a contiguous array of keys.
     virtual void Find(const void* input_keys,
-                      addr_t* output_iterators,
+                      buf_index_t* output_iterators,
                       bool* output_masks,
                       int64_t count) = 0;
 
@@ -84,7 +84,7 @@ public:
                        int64_t count) = 0;
 
     /// Parallel collect all iterators in the hash table
-    virtual int64_t GetActiveIndices(addr_t* output_indices) = 0;
+    virtual int64_t GetActiveIndices(buf_index_t* output_indices) = 0;
 
     /// Clear stored map without reallocating memory.
     virtual void Clear() = 0;

@@ -50,17 +50,17 @@ public:
 
     void Insert(const void* input_keys,
                 std::vector<const void*> input_values,
-                addr_t* output_addrs,
+                buf_index_t* output_addrs,
                 bool* output_masks,
                 int64_t count) override;
 
     void Activate(const void* input_keys,
-                  addr_t* output_addrs,
+                  buf_index_t* output_addrs,
                   bool* output_masks,
                   int64_t count) override;
 
     void Find(const void* input_keys,
-              addr_t* output_addrs,
+              buf_index_t* output_addrs,
               bool* output_masks,
               int64_t count) override;
 
@@ -68,7 +68,7 @@ public:
                bool* output_masks,
                int64_t count) override;
 
-    int64_t GetActiveIndices(addr_t* output_indices) override;
+    int64_t GetActiveIndices(buf_index_t* output_indices) override;
 
     void Clear() override;
 
@@ -77,19 +77,20 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    std::shared_ptr<tbb::concurrent_unordered_map<Key, addr_t, Hash>> GetImpl()
-            const {
+    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>
+    GetImpl() const {
         return impl_;
     }
 
 protected:
-    std::shared_ptr<tbb::concurrent_unordered_map<Key, addr_t, Hash>> impl_;
+    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>
+            impl_;
 
     std::shared_ptr<CPUHashmapBufferAccessor> buffer_ctx_;
 
     void InsertImpl(const void* input_keys,
                     std::vector<const void*> input_values,
-                    addr_t* output_addrs,
+                    buf_index_t* output_addrs,
                     bool* output_masks,
                     int64_t count);
 
@@ -116,7 +117,7 @@ int64_t TBBHashmap<Key, Hash>::Size() const {
 template <typename Key, typename Hash>
 void TBBHashmap<Key, Hash>::Insert(const void* input_keys,
                                    const std::vector<const void*> input_values,
-                                   addr_t* output_addrs,
+                                   buf_index_t* output_addrs,
                                    bool* output_masks,
                                    int64_t count) {
     int64_t new_size = Size() + count;
@@ -136,7 +137,7 @@ void TBBHashmap<Key, Hash>::Insert(const void* input_keys,
 
 template <typename Key, typename Hash>
 void TBBHashmap<Key, Hash>::Activate(const void* input_keys,
-                                     addr_t* output_addrs,
+                                     buf_index_t* output_addrs,
                                      bool* output_masks,
                                      int64_t count) {
     std::vector<const void*> null_values;
@@ -145,7 +146,7 @@ void TBBHashmap<Key, Hash>::Activate(const void* input_keys,
 
 template <typename Key, typename Hash>
 void TBBHashmap<Key, Hash>::Find(const void* input_keys,
-                                 addr_t* output_addrs,
+                                 buf_index_t* output_addrs,
                                  bool* output_masks,
                                  int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
@@ -181,7 +182,7 @@ void TBBHashmap<Key, Hash>::Erase(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
-int64_t TBBHashmap<Key, Hash>::GetActiveIndices(addr_t* output_indices) {
+int64_t TBBHashmap<Key, Hash>::GetActiveIndices(buf_index_t* output_indices) {
     int64_t count = impl_->size();
     int64_t i = 0;
     for (auto iter = impl_->begin(); iter != impl_->end(); ++iter, ++i) {
@@ -206,7 +207,7 @@ void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
 
     if (iterator_count > 0) {
         Tensor active_addrs({iterator_count}, core::Int32, this->device_);
-        GetActiveIndices(static_cast<addr_t*>(active_addrs.GetDataPtr()));
+        GetActiveIndices(static_cast<buf_index_t*>(active_addrs.GetDataPtr()));
 
         Tensor active_indices = active_addrs.To(core::Int64);
         active_keys = this->GetKeyBuffer().IndexGet({active_indices});
@@ -233,7 +234,7 @@ void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
             active_value_ptrs.push_back(active_value.GetDataPtr());
         }
         InsertImpl(active_keys.GetDataPtr(), active_value_ptrs,
-                   static_cast<addr_t*>(output_addrs.GetDataPtr()),
+                   static_cast<buf_index_t*>(output_addrs.GetDataPtr()),
                    output_masks.GetDataPtr<bool>(), iterator_count);
     }
 
@@ -264,7 +265,7 @@ template <typename Key, typename Hash>
 void TBBHashmap<Key, Hash>::InsertImpl(
         const void* input_keys,
         const std::vector<const void*> input_values,
-        addr_t* output_addrs,
+        buf_index_t* output_addrs,
         bool* output_masks,
         int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
@@ -290,7 +291,7 @@ void TBBHashmap<Key, Hash>::InsertImpl(
 
         // Lazy copy key value pair to buffer only if succeeded
         if (res.second) {
-            addr_t buf_index = buffer_ctx_->DeviceAllocate();
+            buf_index_t buf_index = buffer_ctx_->DeviceAllocate();
             void* key_ptr = buffer_ctx_->GetKeyPtr(buf_index);
 
             // Copy templated key to buffer
@@ -332,8 +333,9 @@ void TBBHashmap<Key, Hash>::Allocate(int64_t capacity) {
     buffer_ctx_ = std::make_shared<CPUHashmapBufferAccessor>(*this->buffer_);
     buffer_ctx_->Reset();
 
-    impl_ = std::make_shared<tbb::concurrent_unordered_map<Key, addr_t, Hash>>(
-            capacity, Hash());
+    impl_ = std::make_shared<
+            tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>(capacity,
+                                                                   Hash());
 }
 
 }  // namespace core

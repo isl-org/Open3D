@@ -24,23 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// The value_ array's size is FIXED.
-// The heap_ array stores the addresses of the values.
-// Only the unallocated part is maintained.
-// (ONLY care about the heap above the heap counter. Below is
-// meaningless.)
-// During Allocate, ptr is extracted from the heap;
-// During Free, ptr is put back to the top of the heap.
-// ---------------------------------------------------------------------
-// heap  ---Malloc-->  heap  ---Malloc-->  heap  ---Free(0)-->  heap
-// N-1                 N-1                  N-1                  N-1   |
-//  .                   .                    .                    .    |
-//  .                   .                    .                    .    |
-//  .                   .                    .                    .    |
-//  3                   3                    3                    3    |
-//  2                   2                    2 <-                 2    |
-//  1                   1 <-                 1                    0 <- |
-//  0 <- heap_counter   0                    0                    0
 #pragma once
 
 #include <assert.h>
@@ -55,8 +38,23 @@
 namespace open3d {
 namespace core {
 
-// Type for the internal heap. core::Int32 is used to store it in Tensors.
-typedef uint32_t addr_t;
+// The heap array stores the indices of the key/values buffers. It is not
+// injective.
+// During Allocate, an buffer index (buf_index) is extracted from the
+// heap; During Free, a buf_index is put back to the top of the heap.
+// ---------------------------------------------------------------------
+// heap  ---Malloc-->  heap  ---Malloc-->  heap  ---Free(0)-->  heap
+// N-1                 N-1                  N-1                  N-1   |
+//  .                   .                    .                    .    |
+//  .                   .                    .                    .    |
+//  .                   .                    .                    .    |
+//  3                   3                    3                    3    |
+//  2                   2                    2 <-                 2    |
+//  1                   1 <-                 1                    0 <- |
+//  0 <- heap_top       0                    0                    0
+
+// Buffer index type for the internal heap.
+typedef uint32_t buf_index_t;
 
 class HashmapBuffer {
 public:
