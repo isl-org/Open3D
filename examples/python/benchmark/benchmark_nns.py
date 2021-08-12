@@ -39,6 +39,18 @@ class O3DKnn:
         del self.nns
 
 
+class O3DKnnCPU(O3DKnn):
+
+    def prepare_data(self, points, queries):
+        points_cpu = points.cpu()
+        queries_cpu = queries.cpu()
+        return points_cpu, queries_cpu
+
+    def setup(self, points):
+        self.nns = o3d.core.nns.NearestNeighborSearch(points)
+        return self.nns.knn_index()
+
+
 class O3DFaiss(O3DKnn):
 
     def setup(self, points):
@@ -133,6 +145,7 @@ if __name__ == "__main__":
     parser.add_argument("--file",
                         action="append",
                         default=[str(open3d_root / "small_tower.ply")])
+    parser.add_argument("--test_faiss", action="store_true")
     args = parser.parse_args()
 
     # cuda device
@@ -155,15 +168,18 @@ if __name__ == "__main__":
     datasets['random'] = {'points': points, 'queries': queries}
 
     # prepare methods
-    try:
-        # Requires faiss and torch.
-        # conda install faiss pytorch -c pytorch
-        import faiss
-        import torch
-        import torch.utils.dlpack
-        methods = [O3DKnn(), O3DFaiss(), NativeFaiss(), NativeFaissIVF()]
-    except ImportError as e:
-        methods = [O3DKnn(), O3DFaiss()]
+    methods = [O3DKnn(), O3DFaiss(), O3DKnnCPU()]
+    if args.test_faiss:
+        try:
+            # Requires faiss and torch.
+            # conda install faiss pytorch -c pytorch
+            import faiss
+            import torch
+            import torch.utils.dlpack
+            methods.append(NativeFaiss())
+            methods.append(NativeFaissIVF())
+        except ImportError as e:
+            print("faiss is not available. Please install faiss first.")
 
     method_names = [m.__class__.__name__ for m in methods]
 
