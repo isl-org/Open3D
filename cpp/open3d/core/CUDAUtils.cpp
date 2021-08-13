@@ -131,6 +131,7 @@ int GetDevice() {
 }
 
 static void SetDevice(int device_id) {
+    AssertCUDADeviceAvailable(device_id);
     OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
 }
 
