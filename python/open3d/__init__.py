@@ -42,9 +42,10 @@ from pathlib import Path as _Path
 # Setup Python logger to emulate C++ logger.
 import logging as _logging
 log = _logging.getLogger("Open3D")
+log.propagate = False
 _stream_handler = _logging.StreamHandler()
 _stream_handler.setFormatter(
-    _logging.Formatter('[%(name)s %(levelname)s] %(message)s'))
+    _logging.Formatter('[%(name)s %(levelname)s T:%(threadName)s] %(message)s'))
 _stream_handler.setLevel(_logging.DEBUG)
 log.setLevel(_logging.DEBUG)
 log.addHandler(_stream_handler)

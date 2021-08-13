@@ -34,7 +34,7 @@
   padding: 2em;
 }
 
-.run-tag-selector {
+#options-selector {
   flex: 1 16em;
   display: flex;
   flex-direction: column;
@@ -47,11 +47,11 @@
 }
 
 /* width is 6x left selctor, min-width=576px*/
-.main-view {
+#widget-view {
   flex: 6 576;
 }
 
-.run-selector, .tag-selector{
+#run-selector, #tag-selector{
   height: 40%;
   padding: 5px;
 }
@@ -59,7 +59,7 @@
 .batchidx-step-selector {
   display: flex;
   flex-direction: column;
-  width: 40%;
+  width: 60%;
   padding: 5px;
   align-items: end;
   color: #424242;  /*TB --paper-grey-800 */
@@ -82,7 +82,7 @@
 }
 
 
-#webrtc {
+.webrtc {
   display: flex;
   flex-direction: column;
   height: 100%;

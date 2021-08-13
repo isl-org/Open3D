@@ -160,12 +160,11 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                 const Json::Value value = utility::StringToJson(message);
                 const std::string window_uid =
                         value.get("window_uid", "").asString();
+                const auto oswin = GetOSWindowByUID(window_uid);
                 if (value.get("class_name", "").asString() == "MouseEvent" &&
-                    window_uid != "") {
+                    oswin != nullptr) {
                     gui::MouseEvent me;
-                    if (me.FromJson(value)) {
-                        PostMouseEvent(GetOSWindowByUID(window_uid), me);
-                    }
+                    if (me.FromJson(value)) PostMouseEvent(oswin, me);
                 }
                 return "";  // empty string is not sent back
             });
@@ -175,8 +174,9 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                 const Json::Value value = utility::StringToJson(message);
                 const std::string window_uid =
                         value.get("window_uid", "").asString();
+                const auto oswin = GetOSWindowByUID(window_uid);
                 if (value.get("class_name", "").asString() == "ResizeEvent" &&
-                    window_uid != "") {
+                    oswin != nullptr) {
                     const int height = value.get("height", 0).asInt();
                     const int width = value.get("width", 0).asInt();
                     if (height <= 0 || width <= 0) {
@@ -189,8 +189,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                     } else {
                         utility::LogDebug("ResizeEvent {}: ({}, {})",
                                           window_uid, height, width);
-                        SetWindowSize(GetOSWindowByUID(window_uid), width,
-                                      height);
+                        SetWindowSize(oswin, width, height);
                     }
                 }
                 return "";  // empty string is not sent back
@@ -365,8 +364,8 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
         if (impl_->data_channel_message_callbacks_.count(class_name) != 0) {
             reply = impl_->data_channel_message_callbacks_.at(class_name)(
                     message);
-            if (!window_uid.empty())
-                PostRedrawEvent(GetOSWindowByUID(window_uid));
+            const auto oswin = GetOSWindowByUID(window_uid);
+            if (oswin) PostRedrawEvent(oswin);
             return reply;
         } else {
             reply = fmt::format(
@@ -407,8 +406,10 @@ void WebRTCWindowSystem::SendInitFrames(const std::string &window_uid) {
     utility::LogInfo("Sending init frames to {}.", window_uid);
     static const int s_max_initial_frames = 5;
     static const int s_sleep_between_frames_ms = 100;
-    for (int i = 0; i < s_max_initial_frames; ++i) {
-        PostRedrawEvent(GetOSWindowByUID(window_uid));
+    const auto oswin = GetOSWindowByUID(window_uid);
+    if (!oswin) return;
+    for (int i = 0; oswin != nullptr && i < s_max_initial_frames; ++i) {
+        PostRedrawEvent(oswin);
         std::this_thread::sleep_for(
                 std::chrono::milliseconds(s_sleep_between_frames_ms));
         utility::LogDebug("Sent init frames #{} to {}.", i, window_uid);
