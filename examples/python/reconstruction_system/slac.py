@@ -55,7 +55,8 @@ def run(config):
             ply_file_names, pose_graph_fragment, slac_params, debug_option)
 
         hashmap = ctrl_grid.get_hashmap()
-        active_buf_indices = hashmap.get_active_buf_indices().to(o3d.core.Dtype.Int64)
+        active_buf_indices = hashmap.get_active_buf_indices().to(
+            o3d.core.Dtype.Int64)
 
         key_tensor = hashmap.get_key_tensor()[active_buf_indices]
         key_tensor.save(

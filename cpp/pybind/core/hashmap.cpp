@@ -97,9 +97,6 @@ void pybind_core_hashmap(py::module& m) {
     hashmap.def("save", &Hashmap::Save);
     hashmap.def_static("load", &Hashmap::Load);
 
-    hashmap.def("get_key_buffer", &Hashmap::GetKeyBuffer);
-    hashmap.def("get_value_buffer", &Hashmap::GetValueBuffer);
-
     hashmap.def("get_key_tensor", &Hashmap::GetKeyTensor);
     hashmap.def("get_value_tensor", &Hashmap::GetValueTensor);
 
