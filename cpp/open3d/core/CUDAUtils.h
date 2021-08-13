@@ -248,6 +248,16 @@ void ReleaseCache();
 /// compiled with CUDA this function has no effect.
 void Synchronize();
 
+/// Checks if the CUDA device-ID is available and throws error if not. The CUDA
+/// device-ID must be between 0 to device count - 1.
+/// \param device_id The cuda device id to be checked.
+void AssertCUDADeviceAvailable(int device_id);
+
+/// Checks if the CUDA device-ID is available and throws error if not. The CUDA
+/// device-ID must be between 0 to device count - 1.
+/// \param device The device to be checked.
+void AssertCUDADeviceAvailable(const Device& device);
+
 /// Calls cudaDeviceSynchronize() for the specified device. If Open3D is not
 /// compiled with CUDA or if \p device is not a CUDA device, this function has
 /// no effect.
