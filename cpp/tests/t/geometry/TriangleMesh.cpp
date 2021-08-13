@@ -128,6 +128,52 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
                     (void)tl);
 }
 
+TEST_P(TriangleMeshPermuteDevices, ToString) {
+    core::Device device = GetParam();
+
+    core::Tensor vertices = core::Tensor::Ones({2, 3}, core::Float32, device);
+    core::Tensor vertex_colors =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 2;
+    core::Tensor vertex_labels =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 3;
+
+    core::Tensor triangles = core::Tensor::Ones({2, 3}, core::Int64, device);
+    core::Tensor triangle_normals =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 2;
+    core::Tensor triangle_labels =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 3;
+
+    t::geometry::TriangleMesh mesh(vertices, triangles);
+    mesh.SetVertexColors(vertex_colors);
+    mesh.SetTriangleNormals(triangle_normals);
+
+    std::string text =
+            "TriangleMesh on " + device.ToString() +
+            " [2 vertices (Float32) and 2 triangles (Int64)]."
+            "\nVertices Attributes: colors (dtype = Float32, shape = {2, 3})."
+            "\nTriangles Attributes: normals (dtype = Float32, shape = {2, "
+            "3}).";
+
+    EXPECT_STREQ(mesh.ToString().c_str(), text.c_str());
+
+    mesh.RemoveVertexAttr("colors");
+    mesh.RemoveTriangleAttr("normals");
+
+    // Mesh with only primary attributes.
+    std::string text_2 = "TriangleMesh on " + device.ToString() +
+                         " [2 vertices (Float32) and 2 triangles (Int64)]."
+                         "\nVertices Attributes: None."
+                         "\nTriangles Attributes: None.";
+
+    EXPECT_STREQ(mesh.ToString().c_str(), text_2.c_str());
+
+    // Empty mesh.
+    mesh.Clear();
+    std::string text_3 = "TriangleMesh on " + device.ToString() +
+                         " [0 vertices and 0 triangles].";
+    EXPECT_STREQ(mesh.ToString().c_str(), text_3.c_str());
+}
+
 TEST_P(TriangleMeshPermuteDevices, Setters) {
     core::Device device = GetParam();
 

@@ -131,11 +131,14 @@ TEST_P(LineSetPermuteDevices, Getters) {
 
     // ToString
     std::string text = "LineSet on " + device.ToString() +
-                       "\n[2 points (Float32)] Attributes: labels (Float32, 3)."
+                       "\n[2 points (Float32)] Attributes: labels (dtype = "
+                       "Float32, shape = {2, 3})."
                        "\n[2 lines (Int64)] Attributes: ";
     EXPECT_THAT(lineset.ToString(),  // Compiler dependent output
-                AnyOf(text + "labels (Float32, 3), colors (Float32, 3).",
-                      text + "colors (Float32, 3), labels (Float32, 3)."));
+                AnyOf(text + "labels (dtype = Float32, shape = {2, 3}), colors "
+                             "(dtype = Float32, shape = {2, 3}).",
+                      text + "colors (dtype = Float32, shape = {2, 3}), labels "
+                             "(dtype = Float32, shape = {2, 3})."));
 }
 
 TEST_P(LineSetPermuteDevices, Setters) {
