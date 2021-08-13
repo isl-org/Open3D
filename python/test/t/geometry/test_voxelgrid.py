@@ -33,7 +33,7 @@ import os
 
 test_path = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 sys.path.append(test_path)
-test_data_path = test_path + "../../examples/test_data/"
+test_data_path = test_path + "../../data/download/"
 
 from open3d_test import list_devices
 
