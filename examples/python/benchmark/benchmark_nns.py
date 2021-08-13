@@ -21,22 +21,19 @@ from benchmark_utils import measure_time, print_system_info, print_table
 class O3DKnn:
 
     def __init__(self):
-        self.nns = None
+        pass
 
     def prepare_data(self, *args):
         return args
 
     def setup(self, points):
-        self.nns = o3d.core.nns.KnnIndex()
-        self.nns.set_tensor_data(points)
-        return True
+        nns = o3d.core.nns.KnnIndex()
+        nns.set_tensor_data(points)
+        return nns
 
-    def search(self, queries, knn):
-        ans = self.nns.knn_search(queries, knn)
+    def search(self, nns, queries, knn):
+        ans = nns.knn_search(queries, knn)
         return ans
-
-    def clear(self):
-        del self.nns
 
 
 class O3DKnnCPU(O3DKnn):
@@ -47,16 +44,17 @@ class O3DKnnCPU(O3DKnn):
         return points_cpu, queries_cpu
 
     def setup(self, points):
-        self.nns = o3d.core.nns.NearestNeighborSearch(points)
-        return self.nns.knn_index()
+        nns = o3d.core.nns.NearestNeighborSearch(points)
+        nns.knn_index()
+        return nns
 
 
 class O3DFaiss(O3DKnn):
 
     def setup(self, points):
-        self.nns = o3d.core.nns.FaissIndex()
-        self.nns.set_tensor_data(points)
-        return True
+        nns = o3d.core.nns.FaissIndex()
+        nns.set_tensor_data(points)
+        return nns
 
 
 class NativeFaiss:
@@ -101,42 +99,43 @@ class NativeFaiss:
         return D, I
 
     def __init__(self, d=3):
-        res = faiss.StandardGpuResources()
-        index_cpu = faiss.IndexFlatL2(d)
-        self.index = faiss.index_cpu_to_gpu(res, 0, index_cpu)
+        self.res = faiss.StandardGpuResources()
+        self.d = d
 
     def prepare_data(self, points, queries):
-        points_torch = torch.utils.dlpack.from_dlpack(points.to_dlpack())
-        queries_torch = torch.utils.dlpack.from_dlpack(queries.to_dlpack())
-        return points_torch, queries_torch
+        points_np = points.cpu().numpy()
+        queries_np = queries.cpu().numpy()
+        return points_np, queries_np
 
     def setup(self, points):
-        points_ptr = NativeFaiss.swig_ptr_from_FloatTensor(points)
-        self.index.add_c(points.shape[0], points_ptr)
+        print("setup")
+        index_cpu = faiss.IndexFlatL2(self.d)
+        index = faiss.index_cpu_to_gpu(self.res, 0, index_cpu)
+        index.add(points)
+        return index
 
-    def search(self, queries, knn):
-        result = NativeFaiss.search_index_pytorch(self.index, queries, knn)
-        # print_index
-        print(result[1][:10])
+    def search(self, index, queries, knn):
+        print("search")
+        result = index.search(queries, knn)
         return result
-
-    def clear(self):
-        self.index.reset()
 
 
 class NativeFaissIVF(NativeFaiss):
 
     def __init__(self, d=3, nlist=100, nprobe=5):
-        res = faiss.StandardGpuResources()
-        quantizer = faiss.IndexFlatL2(d)  # the other index
-        index_cpu = faiss.IndexIVFFlat(quantizer, d, nlist)
-        index_cpu.nprobe = nprobe
-        self.index = faiss.index_cpu_to_gpu(res, 0, index_cpu)
+        super().__init__(d)
+        self.nlist = nlist
+        self.nprobe = nprobe
 
     def setup(self, points):
-        points_ptr = NativeFaiss.swig_ptr_from_FloatTensor(points)
-        self.index.train_c(points.shape[0], points_ptr)
-        self.index.add_c(points.shape[0], points_ptr)
+        print("setup")
+        quantizer = faiss.IndexFlatL2(self.d)  # the other index
+        index_cpu = faiss.IndexIVFFlat(quantizer, self.d, self.nlist)
+        # index_cpu.nprobe = self.nprobe
+        index = faiss.index_cpu_to_gpu(self.res, 0, index_cpu)
+        index.train(points)
+        index.add(points)
+        return index
 
 
 if __name__ == "__main__":
@@ -172,7 +171,9 @@ if __name__ == "__main__":
     if args.test_faiss:
         try:
             # Requires faiss and torch.
-            # conda install faiss pytorch -c pytorch
+            # conda install faiss=1.6.5 pytorch -c pytorch
+            # NOTE: faiss >= 1.7 has some error related with index other than IndexFlat
+            # see https://github.com/facebookresearch/faiss/issues/1771
             import faiss
             import torch
             import torch.utils.dlpack
@@ -211,10 +212,12 @@ if __name__ == "__main__":
                 ans = measure_time(lambda: method.setup(points))
                 example_results['knn_gpu_setup'] = ans
 
-                ans = measure_time(lambda: method.search(queries, knn))
+                index = method.setup(points)
+
+                ans = measure_time(lambda: method.search(index, queries, knn))
                 example_results['knn_gpu_search'] = ans
 
-                method.clear()
+                del index
                 o3d.core.cuda.release_cache()
 
                 results[
