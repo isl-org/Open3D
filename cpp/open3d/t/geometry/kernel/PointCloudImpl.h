@@ -182,18 +182,17 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
         centroid[2] += points_ptr[idx + 2];
     }
 
-    double num_indices = static_cast<double>(indices_count);
-    centroid[0] /= num_indices;
-    centroid[1] /= num_indices;
-    centroid[2] /= num_indices;
+    centroid[0] /= indices_count;
+    centroid[1] /= indices_count;
+    centroid[2] /= indices_count;
 
     // cumulants must always be Float64 to ensure precision.
     double cumulants[6] = {0};
     for (int32_t i = 0; i < indices_count; i++) {
         int32_t idx = 3 * indices_ptr[i];
-        double x = static_cast<double>(points_ptr[idx]) - centroid[0];
-        double y = static_cast<double>(points_ptr[idx + 1]) - centroid[1];
-        double z = static_cast<double>(points_ptr[idx + 2]) - centroid[2];
+        const double x = static_cast<double>(points_ptr[idx]) - centroid[0];
+        const double y = static_cast<double>(points_ptr[idx + 1]) - centroid[1];
+        const double z = static_cast<double>(points_ptr[idx + 2]) - centroid[2];
 
         cumulants[0] += x * x;
         cumulants[1] += y * y;
@@ -206,12 +205,11 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
 
     // Using Bessel's correction (dividing by (n - 1) instead of n).
     // Refer: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-    cumulants[0] /= (num_indices - 1.0);
-    cumulants[1] /= (num_indices - 1.0);
-    cumulants[2] /= (num_indices - 1.0);
-    cumulants[3] /= (num_indices - 1.0);
-    cumulants[4] /= (num_indices - 1.0);
-    cumulants[5] /= (num_indices - 1.0);
+    const double normalization_factor =
+            static_cast<double>(indices_count - 1.0);
+    for (int i = 0; i < 6; ++i) {
+        cumulants[i] /= normalization_factor;
+    }
 
     // Covariances(0, 0)
     covariance_ptr[0] = static_cast<scalar_t>(cumulants[0]);
@@ -248,8 +246,7 @@ void EstimateCovariancesUsingHybridSearchCPU
     core::nns::NearestNeighborSearch tree(points);
     bool check = tree.HybridIndex(radius);
     if (!check) {
-        utility::LogError(
-                "NearestNeighborSearch::FixedRadiusIndex Index is not set.");
+        utility::LogError("Building FixedRadiusIndex failed.");
     }
 
     core::Tensor indices, distance, counts;
@@ -262,23 +259,23 @@ void EstimateCovariancesUsingHybridSearchCPU
         int32_t* neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
         scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
-        core::ParallelFor(points.GetDevice(), n,
-                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                              // NNS [Hybrid Search].
-                              int32_t neighbour_offset = max_nn * workload_idx;
-                              // Count of valid correspondences per point.
-                              int32_t neighbour_count =
-                                      neighbour_counts_ptr[workload_idx];
-                              // Covariance is of shape {3, 3}, so it has an
-                              // offset factor of 9 x workload_idx.
-                              int32_t covariances_offset = 9 * workload_idx;
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    // NNS [Hybrid Search].
+                    const int32_t neighbour_offset = max_nn * workload_idx;
+                    // Count of valid correspondences per point.
+                    const int32_t neighbour_count =
+                            neighbour_counts_ptr[workload_idx];
+                    // Covariance is of shape {3, 3}, so it has an
+                    // offset factor of 9 x workload_idx.
+                    const int32_t covariances_offset = 9 * workload_idx;
 
-                              EstimatePointWiseRobustNormalizedCovarianceKernel(
-                                      points_ptr,
-                                      neighbour_indices_ptr + neighbour_offset,
-                                      neighbour_count,
-                                      covariances_ptr + covariances_offset);
-                          });
+                    EstimatePointWiseRobustNormalizedCovarianceKernel(
+                            points_ptr,
+                            neighbour_indices_ptr + neighbour_offset,
+                            neighbour_count,
+                            covariances_ptr + covariances_offset);
+                });
     });
 
     core::cuda::Synchronize(points.GetDevice());
@@ -298,7 +295,7 @@ void EstimateCovariancesUsingKNNSearchCPU
     core::nns::NearestNeighborSearch tree(points);
     bool check = tree.KnnIndex();
     if (!check) {
-        utility::LogError("KnnIndex is not set.");
+        utility::LogError("Building KNN-Index failed.");
     }
 
     core::Tensor indices, distance;
@@ -310,7 +307,7 @@ void EstimateCovariancesUsingKNNSearchCPU
     if (nn_count < 3) {
         utility::LogError(
                 "Not enought neighbors to compute Covariances / Normals. Try "
-                "changing the search parameter.");
+                "increasing the max_nn parameter.");
     }
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -321,10 +318,10 @@ void EstimateCovariancesUsingKNNSearchCPU
         core::ParallelFor(
                 points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     // NNS [KNN Search].
-                    int32_t neighbour_offset = nn_count * workload_idx;
+                    const int32_t neighbour_offset = nn_count * workload_idx;
                     // Covariance is of shape {3, 3}, so it has an offset factor
                     // of 9 x workload_idx.
-                    int32_t covariances_offset = 9 * workload_idx;
+                    const int32_t covariances_offset = 9 * workload_idx;
 
                     EstimatePointWiseRobustNormalizedCovarianceKernel(
                             points_ptr,
