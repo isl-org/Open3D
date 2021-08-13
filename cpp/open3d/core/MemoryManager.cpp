@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/Blob.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/MemoryManagerStatistic.h"
 #include "open3d/utility/Helper.h"
@@ -122,6 +123,11 @@ std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
         map_device_type_to_memory_manager.end()) {
         utility::LogError("Unimplemented device '{}'.", device.ToString());
     }
+
+    if (device.GetType() == Device::DeviceType::CUDA) {
+        cuda::AssertCUDADeviceAvailable(device.GetID());
+    }
+
     return map_device_type_to_memory_manager.at(device.GetType());
 }
 
