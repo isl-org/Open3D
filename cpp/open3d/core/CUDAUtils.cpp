@@ -90,12 +90,15 @@ void Synchronize(const Device& device) {
 
 void AssertCUDADeviceAvailable(int device_id) {
     // #ifdef BUILD_CUDA_MODULE
-    if (DeviceCount() == 0) {
-        utility::LogError(
-                "Invalid device 'CUDA:{}'. -DBUILD_CUDA_MODULE=ON, but no "
-                "CUDA device available.",
-                device_id);
-    }
+    int num_devices = 0;
+    OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&num_devices));
+    utility::LogInfo(" ################# NUM DEVICE : {}", num_devices);
+    // if (DeviceCount() == 0) {
+    //     utility::LogError(
+    //             "Invalid device 'CUDA:{}'. -DBUILD_CUDA_MODULE=ON, but no "
+    //             "CUDA device available.",
+    //             device_id);
+    // }
     //  else if (DeviceCount() == 1 && device_id != 0) {
     //     utility::LogError(
     //             "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
