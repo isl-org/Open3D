@@ -38,6 +38,12 @@
 namespace open3d {
 namespace core {
 
+void CPUResetHeap(Tensor &heap);
+
+#ifdef BUILD_CUDA_MODULE
+void CUDAResetHeap(Tensor &heap);
+#endif
+
 // The heap array stores the indices of the key/values buffers. It is not
 // injective.
 // During Allocate, an buffer index (buf_index) is extracted from the
@@ -66,76 +72,41 @@ public:
     HashmapBuffer(int64_t capacity,
                   int64_t dsize_key,
                   std::vector<int64_t> dsize_values,
-                  const Device &device) {
-        heap_ = Tensor({capacity}, core::UInt32, device);
+                  const Device &device);
 
-        key_buffer_ = Tensor(
-                {capacity},
-                Dtype(Dtype::DtypeCode::Object, dsize_key, "_hash_k"), device);
-
-        value_buffers_.clear();
-        for (size_t i = 0; i < dsize_values.size(); ++i) {
-            int64_t dsize_value = dsize_values[i];
-            Tensor value_buffer_i({capacity},
-                                  Dtype(Dtype::DtypeCode::Object, dsize_value,
-                                        "_hash_v_" + std::to_string(i)),
-                                  device);
-            value_buffers_.push_back(value_buffer_i);
-        }
-
-        // Heap top is device specific
-        if (device.GetType() == Device::DeviceType::CUDA) {
-            heap_top_.cuda = Tensor({1}, Dtype::Int32, device);
-        }
-    }
+    /// Reset the heap and heap top.
+    void ResetHeap();
 
     /// Return device of the buffer.
-    Device GetDevice() const { return heap_.GetDevice(); }
+    Device GetDevice() const;
 
     /// Return capacity of the buffer.
-    int64_t GetCapacity() const { return heap_.GetLength(); }
+    int64_t GetCapacity() const;
 
     /// Return key's data size in bytes.
-    int64_t GetKeyDsize() const { return key_buffer_.GetDtype().ByteSize(); }
+    int64_t GetKeyDsize() const;
 
     /// Return value's data sizes in bytes.
-    std::vector<int64_t> GetValueDsizes() const {
-        std::vector<int64_t> value_dsizes;
-        for (auto &value_buffer : value_buffers_) {
-            value_dsizes.push_back(value_buffer.GetDtype().ByteSize());
-        }
-        return value_dsizes;
-    }
+    std::vector<int64_t> GetValueDsizes() const;
 
     /// Return the index heap tensor.
-    Tensor GetIndexHeap() const { return heap_; }
+    Tensor GetIndexHeap() const;
 
     /// Return the heap top structure. To be dispatched accordingly in C++/CUDA
     /// accessors.
-    HeapTop &GetHeapTop() { return heap_top_; }
+    HeapTop &GetHeapTop();
 
     /// Return the current heap top.
-    int GetHeapTopIndex() const {
-        if (heap_.GetDevice().GetType() == Device::DeviceType::CUDA) {
-            return heap_top_.cuda[0].Item<int>();
-        }
-        return heap_top_.cpu.load();
-    }
+    int GetHeapTopIndex() const;
 
     /// Return the key buffer tensor.
-    Tensor GetKeyBuffer() const { return key_buffer_; }
+    Tensor GetKeyBuffer() const;
 
     /// Return the value buffer tensors.
-    std::vector<Tensor> GetValueBuffers() const { return value_buffers_; }
+    std::vector<Tensor> GetValueBuffers() const;
 
     /// Return the selected value buffer tensor at index i.
-    Tensor GetValueBuffer(size_t i = 0) const {
-        if (i >= value_buffers_.size()) {
-            utility::LogError("Value buffer index out-of-bound ({} >= {}).", i,
-                              value_buffers_.size());
-        }
-        return value_buffers_[i];
-    }
+    Tensor GetValueBuffer(size_t i = 0) const;
 
 protected:
     Tensor heap_;

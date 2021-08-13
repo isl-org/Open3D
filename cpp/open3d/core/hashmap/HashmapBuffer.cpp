@@ -1,0 +1,116 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+
+#include "open3d/core/hashmap/HashmapBuffer.h"
+
+#include "open3d/core/CUDAUtils.h"
+namespace open3d {
+namespace core {
+
+HashmapBuffer::HashmapBuffer(int64_t capacity,
+                             int64_t dsize_key,
+                             std::vector<int64_t> dsize_values,
+                             const Device &device) {
+    heap_ = Tensor({capacity}, core::UInt32, device);
+
+    key_buffer_ = Tensor({capacity},
+                         Dtype(Dtype::DtypeCode::Object, dsize_key, "_hash_k"),
+                         device);
+
+    value_buffers_.clear();
+    for (size_t i = 0; i < dsize_values.size(); ++i) {
+        int64_t dsize_value = dsize_values[i];
+        Tensor value_buffer_i({capacity},
+                              Dtype(Dtype::DtypeCode::Object, dsize_value,
+                                    "_hash_v_" + std::to_string(i)),
+                              device);
+        value_buffers_.push_back(value_buffer_i);
+    }
+
+    // Heap top is device specific
+    if (device.GetType() == Device::DeviceType::CUDA) {
+        heap_top_.cuda = Tensor({1}, Dtype::Int32, device);
+    }
+
+    ResetHeap();
+}
+
+void HashmapBuffer::ResetHeap() {
+    Device device = GetDevice();
+
+    Tensor heap = GetIndexHeap();
+    if (device.GetType() == Device::DeviceType::CPU) {
+        CPUResetHeap(heap);
+        heap_top_.cpu = 0;
+    } else if (device.GetType() == Device::DeviceType::CUDA) {
+        CUDA_CALL(CUDAResetHeap, heap);
+        heap_top_.cuda.Fill<int>(0);
+    }
+}
+
+Device HashmapBuffer::GetDevice() const { return heap_.GetDevice(); }
+
+int64_t HashmapBuffer::GetCapacity() const { return heap_.GetLength(); }
+
+int64_t HashmapBuffer::GetKeyDsize() const {
+    return key_buffer_.GetDtype().ByteSize();
+}
+
+std::vector<int64_t> HashmapBuffer::GetValueDsizes() const {
+    std::vector<int64_t> value_dsizes;
+    for (auto &value_buffer : value_buffers_) {
+        value_dsizes.push_back(value_buffer.GetDtype().ByteSize());
+    }
+    return value_dsizes;
+}
+
+Tensor HashmapBuffer::GetIndexHeap() const { return heap_; }
+
+HashmapBuffer::HeapTop &HashmapBuffer::GetHeapTop() { return heap_top_; }
+
+int HashmapBuffer::GetHeapTopIndex() const {
+    if (heap_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        return heap_top_.cuda[0].Item<int>();
+    }
+    return heap_top_.cpu.load();
+}
+
+Tensor HashmapBuffer::GetKeyBuffer() const { return key_buffer_; }
+
+std::vector<Tensor> HashmapBuffer::GetValueBuffers() const {
+    return value_buffers_;
+}
+
+Tensor HashmapBuffer::GetValueBuffer(size_t i) const {
+    if (i >= value_buffers_.size()) {
+        utility::LogError("Value buffer index out-of-bound ({} >= {}).", i,
+                          value_buffers_.size());
+    }
+    return value_buffers_[i];
+}
+
+}  // namespace core
+}  // namespace open3d

@@ -260,7 +260,7 @@ int64_t SlabHashmap<Key, Hash>::GetActiveIndices(
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Clear() {
     // Clear the heap
-    buffer_accessor_.Reset(this->device_);
+    this->buffer_->ResetHeap();
 
     // Clear the linked list heads
     OPEN3D_CUDA_CHECK(cudaMemset(impl_.bucket_list_head_, 0xFF,
@@ -316,17 +316,17 @@ void SlabHashmap<Key, Hash>::InsertImpl(
         int64_t count) {
     if (count == 0) return;
 
-    /// Increase heap_counter to pre-allocate potential memory increment and
+    /// Increase heap_top to pre-allocate potential memory increment and
     /// avoid atomicAdd in kernel.
-    int prev_heap_counter = this->buffer_->GetHeapTopIndex();
-    *thrust::device_ptr<int>(impl_.buffer_accessor_.heap_counter_) =
-            prev_heap_counter + count;
+    int prev_heap_top = this->buffer_->GetHeapTopIndex();
+    *thrust::device_ptr<int>(impl_.buffer_accessor_.heap_top_) =
+            prev_heap_top + count;
 
     const int64_t num_blocks =
             (count + kThreadsPerBlock - 1) / kThreadsPerBlock;
     InsertKernelPass0<<<num_blocks, kThreadsPerBlock, 0,
                         core::cuda::GetStream()>>>(
-            impl_, input_keys, output_buf_indices, prev_heap_counter, count);
+            impl_, input_keys, output_buf_indices, prev_heap_top, count);
     InsertKernelPass1<<<num_blocks, kThreadsPerBlock, 0,
                         core::cuda::GetStream()>>>(
             impl_, input_keys, output_buf_indices, output_masks, count);
@@ -357,7 +357,6 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_values_, this->device_);
     buffer_accessor_.Setup(*this->buffer_);
-    buffer_accessor_.Reset(this->device_);
 
     // Allocate buffer for linked list nodes.
     node_mgr_ = std::make_shared<SlabNodeManager>(this->device_);

@@ -27,7 +27,6 @@
 #pragma once
 
 #include <assert.h>
-#include <thrust/device_vector.h>
 
 #include <memory>
 #include <vector>
@@ -40,9 +39,6 @@
 
 namespace open3d {
 namespace core {
-
-/// Dynamic memory allocation and free are expensive on kernels.
-/// We pre-allocate a chunk of memory and manually manage them on kernels.
 
 class CUDAHashmapBufferAccessor {
 public:
@@ -77,7 +73,7 @@ public:
         MemoryManager::MemcpyFromHost(values_, device, value_ptrs.data(),
                                       n_values_ * sizeof(uint8_t *));
 
-        heap_counter_ = hashmap_buffer.GetHeapTop().cuda.GetDataPtr<int>();
+        heap_top_ = hashmap_buffer.GetHeapTop().cuda.GetDataPtr<int>();
         cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
@@ -87,22 +83,12 @@ public:
         MemoryManager::Free(dsize_values_, device);
     }
 
-    __host__ void Reset(const Device &device) {
-        int heap_counter = 0;
-        MemoryManager::MemcpyFromHost(heap_counter_, device, &heap_counter,
-                                      sizeof(int));
-
-        thrust::sequence(thrust::device, heap_, heap_ + capacity_, 0);
-        cuda::Synchronize();
-        OPEN3D_CUDA_CHECK(cudaGetLastError());
-    }
-
     __device__ buf_index_t DeviceAllocate() {
-        int index = atomicAdd(heap_counter_, 1);
+        int index = atomicAdd(heap_top_, 1);
         return heap_[index];
     }
     __device__ void DeviceFree(buf_index_t ptr) {
-        int index = atomicSub(heap_counter_, 1);
+        int index = atomicSub(heap_top_, 1);
         heap_[index - 1] = ptr;
     }
 
@@ -114,8 +100,8 @@ public:
     }
 
 public:
-    buf_index_t *heap_;           /* [N] */
-    int *heap_counter_ = nullptr; /* [1] */
+    buf_index_t *heap_;       /* [N] */
+    int *heap_top_ = nullptr; /* [1] */
 
     uint8_t *keys_; /* [N] * sizeof(Key) */
     int64_t dsize_key_;

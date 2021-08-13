@@ -197,7 +197,7 @@ int64_t TBBHashmap<Key, Hash>::GetActiveIndices(
 template <typename Key, typename Hash>
 void TBBHashmap<Key, Hash>::Clear() {
     impl_->clear();
-    buffer_accessor_->Reset();
+    this->buffer_->ResetHeap();
 }
 
 template <typename Key, typename Hash>
@@ -335,7 +335,6 @@ void TBBHashmap<Key, Hash>::Allocate(int64_t capacity) {
 
     buffer_accessor_ =
             std::make_shared<CPUHashmapBufferAccessor>(*this->buffer_);
-    buffer_accessor_->Reset();
 
     impl_ = std::make_shared<
             tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>(capacity,

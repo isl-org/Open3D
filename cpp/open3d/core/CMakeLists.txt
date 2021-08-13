@@ -19,10 +19,12 @@ target_sources(core PRIVATE
 target_sources(core PRIVATE
     hashmap/DeviceHashmap.cpp
     hashmap/Hashmap.cpp
+    hashmap/HashmapBuffer.cpp
 )
 
 target_sources(core PRIVATE
     hashmap/CPU/CreateCPUHashmap.cpp
+    hashmap/CPU/CPUHashmapBuffer.cpp
 )
 
 target_sources(core PRIVATE
@@ -74,6 +76,7 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(core PRIVATE
         hashmap/CUDA/CreateCUDAHashmap.cu
+        hashmap/CUDA/CUDAHashmapBuffer.cu
         hashmap/CUDA/SlabNodeManager.cu
     )
 

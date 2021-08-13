@@ -27,6 +27,7 @@
 #pragma once
 
 #include <stdgpu/memory.h>
+#include <thrust/device_vector.h>
 #include <thrust/transform.h>
 
 #include <stdgpu/unordered_map.cuh>
@@ -333,7 +334,7 @@ int64_t StdGPUHashmap<Key, Hash>::GetActiveIndices(
 template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::Clear() {
     impl_.clear();
-    buffer_accessor_.Reset(this->device_);
+    this->buffer_->ResetHeap();
 }
 
 template <typename Key, typename Hash>
@@ -480,7 +481,6 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
             std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
                                             this->dsize_values_, this->device_);
     buffer_accessor_.Setup(*this->buffer_);
-    buffer_accessor_.Reset(this->device_);
 
     // stdgpu initializes on the default stream. Set the current stream to
     // ensure correct behavior.
