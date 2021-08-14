@@ -103,7 +103,9 @@ namespace geometry {
 /// default and common attributes.
 class TriangleMesh : public Geometry {
 public:
-    /// Construct an empty trianglemesh.
+    /// Construct an empty pointcloud on the provided device.
+    /// \param device The device on which to initialize the trianglemesh
+    /// (default: 'CPU:0').
     TriangleMesh(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a trianglemesh from vertices and triangles.
@@ -120,6 +122,9 @@ public:
     virtual ~TriangleMesh() override {}
 
 public:
+    /// \brief Text description.
+    std::string ToString() const;
+
     /// Transfer the triangle mesh to a specified device.
     /// \param device The targeted device to convert to.
     /// \param copy If true, a new triangle mesh is always created; if false,
@@ -128,7 +133,7 @@ public:
     TriangleMesh To(const core::Device &device, bool copy = false) const;
 
     /// Returns copy of the triangle mesh on the same device.
-    TriangleMesh Clone() const { return To(GetDevice()); }
+    TriangleMesh Clone() const { return To(GetDevice(), /*copy=*/true); }
 
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }

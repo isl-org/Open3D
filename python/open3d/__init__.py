@@ -38,6 +38,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 from ctypes import CDLL as _CDLL
 from ctypes.util import find_library as _find_library
 from pathlib import Path as _Path
+import warnings
 
 from open3d._build_config import _build_config
 if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
@@ -55,7 +56,10 @@ if _build_config["BUILD_CUDA_MODULE"]:
     try:  # StopIteration if cpu version not available
         _CDLL(str(next((_Path(__file__).parent / 'cpu').glob('pybind*'))))
     except StopIteration:
-        pass
+        warnings.warn(
+            "Open3D was built with CUDA support, but Open3D CPU Python "
+            "bindings were not found. Open3D will not work on systems without"
+            " CUDA devices.", ImportWarning)
     try:
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
@@ -66,10 +70,21 @@ if _build_config["BUILD_CUDA_MODULE"]:
                                             utility, t)
             from open3d.cuda import pybind
             __DEVICE_API__ = 'cuda'
-    except OSError:  # CUDA not installed
-        pass
-    except StopIteration:  # pybind cuda library not available
-        pass
+        else:
+            warnings.warn(
+                "Open3D was built with CUDA support, but no suitable CUDA "
+                "devices found. If your system has CUDA devices, check your "
+                "CUDA drivers and runtime.", ImportWarning)
+    except OSError:
+        warnings.warn(
+            "Open3D was built with CUDA support, but CUDA libraries could "
+            "not be found! Check your CUDA installation. Falling back to the "
+            "CPU pybind library.", ImportWarning)
+    except StopIteration:
+        warnings.warn(
+            "Open3D was built with CUDA support, but Open3D CUDA Python "
+            "binding library not found! Falling back to the CPU Python "
+            "binding library.", ImportWarning)
 
 if __DEVICE_API__ == 'cpu':
     from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility, t)
@@ -100,8 +115,8 @@ if _build_config["BUILD_JUPYTER_EXTENSION"]:
         except NameError:
             pass
     else:
-        print("Open3D WebVisualizer is not supported on ARM for now.")
-        pass
+        warnings.warn("Open3D WebVisualizer is not supported on ARM for now.",
+                      RuntimeWarning)
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
 # If set this will override the integrated Open3D-ML.

@@ -92,7 +92,9 @@ namespace geometry {
 ///       PointCloud::HasPointAttr("normals")
 class PointCloud : public Geometry {
 public:
-    /// Construct an empty pointcloud.
+    /// Construct an empty pointcloud on the provided device.
+    /// \param device The device on which to initialize the pointcloud (default:
+    /// 'CPU:0').
     PointCloud(const core::Device &device = core::Device("CPU:0"));
 
     /// Construct a pointcloud from points.
