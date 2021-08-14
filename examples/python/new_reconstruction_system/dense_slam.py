@@ -2,8 +2,6 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-# examples/python/reconstruction_system/integrate_scene.py
-
 import os
 import configargparse
 import numpy as np
@@ -11,11 +9,11 @@ import open3d as o3d
 import argparse
 import time
 
-from config import add_arguments, get_config
+from config import ConfigParser
 from common import load_image_file_names, save_poses, load_intrinsic, init_volume, extract_pointcloud, extract_trianglemesh
 
 
-def slam(depth_file_names, color_file_names, intrinsic, config, mode='scene'):
+def slam(depth_file_names, color_file_names, intrinsic, config):
     n_files = len(color_file_names)
     device = o3d.core.Device(config.device)
 
@@ -61,15 +59,14 @@ def slam(depth_file_names, color_file_names, intrinsic, config, mode='scene'):
 
 
 if __name__ == '__main__':
-    parser = configargparse.ArgParser(default_config_files=[
-        os.path.join(os.path.dirname(__file__), 'default_config.yml')
-    ],
-                                      conflict_handler='resolve')
-    parser.add('--config', is_config_file=True, help='Config file path.')
-    parser = add_arguments(parser)
-
-    args = parser.parse_args()
-    config = get_config(args)
+    parser = ConfigParser()
+    parser.add(
+        '--config',
+        is_config_file=True,
+        help=
+        'YAML config file path. Please refer to default_config.yml as a reference. It overrides the default config file, but will be overriden by other command line inputs.'
+    )
+    config = parser.get_config()
 
     depth_file_names, color_file_names = load_image_file_names(config)
     intrinsic = load_intrinsic(config)

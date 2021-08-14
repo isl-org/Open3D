@@ -24,4 +24,3 @@ voxel_size: 0.0058
 sdf_trunc: 0.04
 block_count: 40000
 surface_weight_thr: 3.0
-
