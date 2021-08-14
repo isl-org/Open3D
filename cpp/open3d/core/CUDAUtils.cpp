@@ -89,22 +89,22 @@ void Synchronize(const Device& device) {
 
 void AssertCUDADeviceAvailable(int device_id) {
 #ifdef BUILD_CUDA_MODULE
-    int num_devices = cuda::DeviceCount();
-    if (num_devices == 0) {
+    int device_count = cuda::DeviceCount();
+    if (device_count == 0) {
         utility::LogError(
                 "Invalid device 'CUDA:{}'. -DBUILD_CUDA_MODULE=ON, but no "
                 "CUDA device available.",
                 device_id);
-    } else if (num_devices == 1 && device_id != 0) {
+    } else if (device_count == 1 && device_id != 0) {
         utility::LogError(
                 "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
                 "be 0, but got {}.",
                 device_id, device_id);
-    } else if (device_id < 0 || device_id >= num_devices) {
+    } else if (device_id < 0 || device_id >= device_count) {
         utility::LogError(
                 "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
                 "be between 0 to {}, but got {}.",
-                device_id, num_devices - 1, device_id);
+                device_id, device_count - 1, device_id);
     }
 #else
     utility::LogError(
