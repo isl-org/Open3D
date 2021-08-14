@@ -212,7 +212,7 @@ jobs:
   ready-docs:
     name: Ready docs archive
     runs-on: ubuntu-18.04
-    # if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/master' }}
     needs: [build-wheel]
     steps:
       - name: GCloud CLI setup

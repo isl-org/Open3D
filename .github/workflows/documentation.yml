@@ -99,7 +99,7 @@ jobs:
           if-no-files-found: error
 
       - name: Deploy docs
-        # if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/master' }}
         run: |
           # Compress and upload the docs, only for master branch
           docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
