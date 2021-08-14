@@ -89,32 +89,31 @@ void Synchronize(const Device& device) {
 }
 
 void AssertCUDADeviceAvailable(int device_id) {
-    // #ifdef BUILD_CUDA_MODULE
+#ifdef BUILD_CUDA_MODULE
     int num_devices = 0;
     OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&num_devices));
-    utility::LogInfo(" ################# NUM DEVICE : {}", num_devices);
-    // if (DeviceCount() == 0) {
-    //     utility::LogError(
-    //             "Invalid device 'CUDA:{}'. -DBUILD_CUDA_MODULE=ON, but no "
-    //             "CUDA device available.",
-    //             device_id);
-    // }
-    //  else if (DeviceCount() == 1 && device_id != 0) {
-    //     utility::LogError(
-    //             "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
-    //             "be 0, but got {}.",
-    //             device_id, device_id);
-    // } else if (device_id < 0 || device_id >= DeviceCount()) {
-    //     utility::LogError(
-    //             "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
-    //             "be between 0 to {}, but got {}.",
-    //             device_id, DeviceCount() - 1, device_id);
-    // }
-    // #else
-    //     utility::LogError(
-    //             "-DBUILD_CUDA_MODULE=OFF. Please build with
-    //             -DBUILD_CUDA_MODULE=ON " "to use CUDA device.");
-    // #endif
+
+    if (num_devices == 0) {
+        utility::LogError(
+                "Invalid device 'CUDA:{}'. -DBUILD_CUDA_MODULE=ON, but no "
+                "CUDA device available.",
+                device_id);
+    } else if (num_devices == 1 && device_id != 0) {
+        utility::LogError(
+                "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
+                "be 0, but got {}.",
+                device_id, device_id);
+    } else if (device_id < 0 || device_id >= num_devices) {
+        utility::LogError(
+                "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
+                "be between 0 to {}, but got {}.",
+                device_id, num_devices - 1, device_id);
+    }
+#else
+    utility::LogError(
+            "-DBUILD_CUDA_MODULE=OFF. Please build with -DBUILD_CUDA_MODULE=ON "
+            "to use CUDA device.");
+#endif
 }
 
 void AssertCUDADeviceAvailable(const Device& device) {
