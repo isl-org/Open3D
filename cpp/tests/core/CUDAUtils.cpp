@@ -37,13 +37,13 @@ namespace open3d {
 namespace tests {
 
 TEST(CUDAUtils, InitState) {
-    std::shared_ptr<core::CUDAState> cuda_state =
-            core::CUDAState::GetInstance();
-    utility::LogInfo("Number of CUDA devices: {}", cuda_state->GetNumDevices());
-    for (int i = 0; i < cuda_state->GetNumDevices(); ++i) {
-        for (int j = 0; j < cuda_state->GetNumDevices(); ++j) {
+    const int num_devices = core::cuda::DeviceCount();
+    const core::CUDAState& cuda_state = core::CUDAState::GetInstance();
+    utility::LogInfo("Number of CUDA devices: {}", num_devices);
+    for (int i = 0; i < num_devices; ++i) {
+        for (int j = 0; j < num_devices; ++j) {
             utility::LogInfo("P2PEnabled {}->{}: {}", i, j,
-                             cuda_state->GetP2PEnabled()[i][j]);
+                             cuda_state.GetP2PEnabled()[i][j]);
         }
     }
 }

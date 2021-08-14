@@ -43,9 +43,8 @@ class PermuteDevices : public testing::TestWithParam<core::Device> {
 public:
     static std::vector<core::Device> TestCases() {
 #ifdef BUILD_CUDA_MODULE
-        std::shared_ptr<core::CUDAState> cuda_state =
-                core::CUDAState::GetInstance();
-        if (cuda_state->GetNumDevices() >= 1) {
+        const int num_devices = core::cuda::DeviceCount();
+        if (num_devices >= 1) {
             return {
                     core::Device("CPU:0"),
                     core::Device("CUDA:0"),
@@ -67,9 +66,8 @@ class PermuteDevicesWithFaiss : public testing::TestWithParam<core::Device> {
 public:
     static std::vector<core::Device> TestCases() {
 #if defined(BUILD_CUDA_MODULE) && defined(WITH_FAISS)
-        std::shared_ptr<core::CUDAState> cuda_state =
-                core::CUDAState::GetInstance();
-        if (cuda_state->GetNumDevices() >= 1) {
+        const int num_devices = core::cuda::DeviceCount();
+        if (num_devices >= 1) {
             return {
                     core::Device("CPU:0"),
                     core::Device("CUDA:0"),
@@ -92,9 +90,8 @@ class PermuteDevicePairs
 public:
     static std::vector<std::pair<core::Device, core::Device>> TestCases() {
 #ifdef BUILD_CUDA_MODULE
-        std::shared_ptr<core::CUDAState> cuda_state =
-                core::CUDAState::GetInstance();
-        if (cuda_state->GetNumDevices() > 1) {
+        const int num_devices = core::cuda::DeviceCount();
+        if (num_devices > 1) {
             // To test multiple CUDA devices, we only need to test CUDA 0 and 1.
             return {
                     {core::Device("CPU:0"), core::Device("CPU:0")},    // 0
@@ -107,7 +104,7 @@ public:
                     {core::Device("CUDA:1"), core::Device("CUDA:0")},  // 7
                     {core::Device("CUDA:1"), core::Device("CUDA:1")},  // 8
             };
-        } else if (cuda_state->GetNumDevices() == 1) {
+        } else if (num_devices == 1) {
             return {
                     {core::Device("CPU:0"), core::Device("CPU:0")},
                     {core::Device("CPU:0"), core::Device("CUDA:0")},
