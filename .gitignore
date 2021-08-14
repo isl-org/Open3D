@@ -52,31 +52,32 @@ dist/
 compile_commands.json
 
 # Example resources
-examples/test_data/open3d_downloads
-examples/python/reconstruction_system/dataset/
-examples/test_data/fountain_small
-examples/test_data/Armadillo.ply
-examples/test_data/Bunny.ply
-examples/test_data/eagle.ply
-examples/test_data/voxelized.ply
-examples/python/geometry/voxel_grid_test.ply
 examples/python/benchmark/testdata/
-examples/python/misc/test.jpg
-examples/test_data/GraphOptimization/pose_graph_example_fragment_optimized.json
-examples/test_data/GraphOptimization/pose_graph_example_global_optimized.json
-examples/test_data/depth/
-examples/test_data/image/
-examples/test_data/sync.ply
-examples/test_data/sync.png
-examples/python/pipelines/multiway_registration.pcd
-examples/python/geometry/test.json
-examples/python/visualization/viewpoint.json
+examples/python/geometry/copy_of_crate.mtl
+examples/python/geometry/copy_of_crate.obj
+examples/python/geometry/copy_of_crate.png
 examples/python/geometry/copy_of_fragment.pcd
 examples/python/geometry/copy_of_knot.ply
 examples/python/geometry/copy_of_lena_color.jpg
-examples/python/geometry/copy_of_crate.mtl
-examples/python/geometry/copy_of_crate.png
-examples/python/geometry/copy_of_crate.obj
+examples/python/geometry/test.json
+examples/python/geometry/voxel_grid_test.ply
+examples/python/misc/test.jpg
+examples/python/pipelines/multiway_registration.pcd
+examples/python/reconstruction_system/dataset/
+examples/python/visualization/viewpoint.json
+
+data/common/Armadillo.ply
+data/common/Bunny.ply
+data/common/depth/
+data/common/eagle.ply
+data/common/fountain_small
+data/common/GraphOptimization/pose_graph_example_fragment_optimized.json
+data/common/GraphOptimization/pose_graph_example_global_optimized.json
+data/common/image/
+data/common/open3d_downloads
+data/common/sync.ply
+data/common/sync.png
+data/common/voxelized.ply
 
 # doc
 docs/test_data
