@@ -261,7 +261,17 @@ public:
 
                             this->trajectory_ = std::make_shared<
                                     camera::PinholeCameraTrajectory>();
+
                             float voxel_size = prop_values_.voxel_size;
+                            // The SDF truncation distance is empirically set to
+                            // 6 * voxel_size. Further SDF measurements can be
+                            // regarded as outliers and truncated for a smooth
+                            // result.
+                            // The volumetric hash map maps 3D coordinates to
+                            // 16^3 voxel blocks, to ensure a globally sparse
+                            // locally dense data structure. This captures the
+                            // data distribution while maintaining a good memory
+                            // access pattern.
                             this->model_ =
                                     std::make_shared<t::pipelines::slam::Model>(
                                             voxel_size, voxel_size * 6, 16,

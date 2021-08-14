@@ -76,10 +76,10 @@ void Model::SynthesizeModelFrame(Frame& raycast_frame,
         raycast_frame.SetData("color", result[MaskCode::ColorMap]);
     } else if (raycast_frame.GetData("color").NumElements() == 0) {
         // Put a dummy RGB frame to enable RGBD odometry in TrackFrameToModel
-        raycast_frame.SetData(
-                "color", core::Tensor({raycast_frame.GetHeight(),
-                                       raycast_frame.GetWidth(), 3},
-                                      core::Dtype::Float32, core::Device()));
+        raycast_frame.SetData("color",
+                              core::Tensor({raycast_frame.GetHeight(),
+                                            raycast_frame.GetWidth(), 3},
+                                           core::Float32, core::Device()));
     }
 }
 
