@@ -90,9 +90,7 @@ void Synchronize(const Device& device) {
 
 void AssertCUDADeviceAvailable(int device_id) {
 #ifdef BUILD_CUDA_MODULE
-    int num_devices = 0;
-    OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&num_devices));
-
+    int num_devices = cuda::DeviceCount();
     if (num_devices == 0) {
         utility::LogError(
                 "Invalid device 'CUDA:{}'. -DBUILD_CUDA_MODULE=ON, but no "
@@ -260,7 +258,11 @@ CUDAState::CUDAState() {
             if (src_id == tar_id) {
                 p2p_enabled_[src_id][tar_id] = true;
             } else {
-                CUDAScopedDevice scoped_device(src_id);
+                // Avoid CUDAScopedDevice() or SetDevice() here as they
+                // introduce circular dependencies. See:
+                // https://github.com/isl-org/Open3D/pull/3922.
+                int prev_id = cuda::GetDevice();
+                OPEN3D_CUDA_CHECK(cudaSetDevice(src_id));
 
                 // Check access.
                 int can_access = 0;
@@ -279,6 +281,8 @@ CUDAState::CUDAState() {
                 } else {
                     p2p_enabled_[src_id][tar_id] = false;
                 }
+
+                OPEN3D_CUDA_CHECK(cudaSetDevice(prev_id));
             }
         }
     }
