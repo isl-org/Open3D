@@ -88,6 +88,42 @@ void Synchronize(const Device& device) {
 #endif
 }
 
+void AssertCUDADeviceAvailable(int device_id) {
+#ifdef BUILD_CUDA_MODULE
+    int num_devices = cuda::DeviceCount();
+    if (num_devices == 0) {
+        utility::LogError(
+                "Invalid device 'CUDA:{}'. -DBUILD_CUDA_MODULE=ON, but no "
+                "CUDA device available.",
+                device_id);
+    } else if (num_devices == 1 && device_id != 0) {
+        utility::LogError(
+                "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
+                "be 0, but got {}.",
+                device_id, device_id);
+    } else if (device_id < 0 || device_id >= num_devices) {
+        utility::LogError(
+                "Invalid CUDA Device 'CUDA:{}'. Device ID expected to "
+                "be between 0 to {}, but got {}.",
+                device_id, num_devices - 1, device_id);
+    }
+#else
+    utility::LogError(
+            "-DBUILD_CUDA_MODULE=OFF. Please build with -DBUILD_CUDA_MODULE=ON "
+            "to use CUDA device.");
+#endif
+}
+
+void AssertCUDADeviceAvailable(const Device& device) {
+    if (device.GetType() == Device::DeviceType::CUDA) {
+        AssertCUDADeviceAvailable(device.GetID());
+    } else {
+        utility::LogError(
+                "Expected device-type to be CUDA, but got device '{}'",
+                device.ToString());
+    }
+}
+
 #ifdef BUILD_CUDA_MODULE
 int GetDevice() {
     int device;
@@ -96,6 +132,7 @@ int GetDevice() {
 }
 
 static void SetDevice(int device_id) {
+    AssertCUDADeviceAvailable(device_id);
     OPEN3D_CUDA_CHECK(cudaSetDevice(device_id));
 }
 
@@ -221,7 +258,11 @@ CUDAState::CUDAState() {
             if (src_id == tar_id) {
                 p2p_enabled_[src_id][tar_id] = true;
             } else {
-                CUDAScopedDevice scoped_device(src_id);
+                // Avoid CUDAScopedDevice() or SetDevice() here as they
+                // introduce circular dependencies. See:
+                // https://github.com/isl-org/Open3D/pull/3922.
+                int prev_id = cuda::GetDevice();
+                OPEN3D_CUDA_CHECK(cudaSetDevice(src_id));
 
                 // Check access.
                 int can_access = 0;
@@ -240,6 +281,8 @@ CUDAState::CUDAState() {
                 } else {
                     p2p_enabled_[src_id][tar_id] = false;
                 }
+
+                OPEN3D_CUDA_CHECK(cudaSetDevice(prev_id));
             }
         }
     }
