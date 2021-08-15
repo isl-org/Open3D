@@ -32,7 +32,7 @@
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
@@ -178,8 +178,7 @@ TEST_P(NumpyIOPermuteDevices, NpzWriteRead) {
 
 TEST_P(NumpyIOPermuteDevices, NpzReadCompressed) {
     const core::Device device = GetParam();
-    const std::string file_name =
-            std::string(TEST_DATA_DIR) + "/tensors_compressed.npz";
+    const std::string file_name = GetDataPathCommon("tensors_compressed.npz");
 
     core::Tensor t;
     core::Tensor t_load;

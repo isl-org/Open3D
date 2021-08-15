@@ -34,7 +34,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/utility/IJsonConvertible.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -42,7 +42,7 @@ namespace tests {
 void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
                              bool delete_temp = true) {
     // Write to file
-    std::string file_name = std::string(TEST_DATA_DIR) + "/temp_octree.json";
+    std::string file_name = GetDataPathCommon("temp_octree.json");
     EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
 
     // Read from file
@@ -75,7 +75,7 @@ TEST(OctreeIO, ZeroDepth) {
 TEST(OctreeIO, JsonFileIOFragment) {
     // Create octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    io::ReadPointCloud(GetDataPathCommon("fragment.ply"), pcd);
     size_t max_depth = 6;
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd, 0.01);

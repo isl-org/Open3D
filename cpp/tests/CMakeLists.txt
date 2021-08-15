@@ -15,6 +15,7 @@ add_subdirectory(visualization)
 
 target_sources(tests PRIVATE
     Main.cpp
+    Tests.cpp
 )
 
 target_include_directories(tests PRIVATE ".")

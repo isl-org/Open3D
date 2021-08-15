@@ -26,7 +26,7 @@
 
 #include "open3d/geometry/Line3D.h"
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 using namespace open3d::geometry;
 using namespace ::testing;

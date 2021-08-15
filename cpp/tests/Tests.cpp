@@ -24,24 +24,44 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// TEST_DATA_DIR defined in CMakeLists.txt
+// Put it here to avoid editor warnings
+#ifndef TEST_DATA_DIR
+#define TEST_DATA_DIR
+#endif
+
 #include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
 
-TEST(ImageIO, DISABLED_CreateImageFromFile) { NotImplemented(); }
+void NotImplemented() {
+    std::cout << "\033[0;32m"
+              << "[          ] "
+              << "\033[0;0m";
+    std::cout << "\033[0;31m"
+              << "Not implemented."
+              << "\033[0;0m" << std::endl;
 
-TEST(ImageIO, DISABLED_ReadImage) { NotImplemented(); }
+    GTEST_NONFATAL_FAILURE_("Not implemented");
+}
 
-TEST(ImageIO, DISABLED_WriteImage) { NotImplemented(); }
+std::string GetDataPathCommon(const std::string& relative_path) {
+    if (relative_path.empty()) {
+        return std::string(TEST_DATA_DIR);
+    } else {
+        return std::string(TEST_DATA_DIR) + "/" + relative_path;
+    }
+}
 
-TEST(ImageIO, DISABLED_ReadImageFromPNG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_WriteImageToPNG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_ReadImageFromJPG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_WriteImageToJPG) { NotImplemented(); }
+std::string GetDataPathDownload(const std::string& relative_path) {
+    if (relative_path.empty()) {
+        return std::string(TEST_DATA_DIR) + "/open3d_downloads";
+    } else {
+        return std::string(TEST_DATA_DIR) + "/open3d_downloads/" +
+               relative_path;
+    }
+}
 
 }  // namespace tests
 }  // namespace open3d

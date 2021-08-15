@@ -32,7 +32,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -639,8 +639,8 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     // Sanity test to visualize
     t::geometry::PointCloud pcd =
             t::geometry::PointCloud::FromLegacy(
-                    *io::CreatePointCloudFromFile(std::string(TEST_DATA_DIR) +
-                                                  "/ICP/cloud_bin_2.pcd"))
+                    *io::CreatePointCloudFromFile(
+                            GetDataPathCommon("/ICP/cloud_bin_2.pcd")))
                     .To(device);
     auto pcd_down = pcd.VoxelDownSample(0.1);
     io::WritePointCloud(fmt::format("down_{}.pcd", device.ToString()),

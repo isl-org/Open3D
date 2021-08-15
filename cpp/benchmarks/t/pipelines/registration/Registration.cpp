@@ -28,17 +28,23 @@
 
 #include <benchmark/benchmark.h>
 
+#include "benchmarks/Benchmarks.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
+namespace open3d {
+namespace t {
+namespace pipelines {
+namespace registration {
+
 // Testing parameters:
 // Filename for pointcloud registration data.
 static const std::string source_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
+        benchmarks::GetDataPathCommon("ICP/cloud_bin_0.pcd");
 static const std::string target_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
+        benchmarks::GetDataPathCommon("ICP/cloud_bin_1.pcd");
 
 static const double voxel_downsampling_factor = 0.02;
 
@@ -54,11 +60,6 @@ static const double max_correspondence_distance = 0.05;
 static const std::vector<float> initial_transform_flat{
         0.862, 0.011, -0.507, 0.5,  -0.139, 0.967, -0.215, 0.7,
         0.487, 0.255, 0.835,  -1.4, 0.0,    0.0,   0.0,    1.0};
-
-namespace open3d {
-namespace t {
-namespace pipelines {
-namespace registration {
 
 static std::tuple<geometry::PointCloud, geometry::PointCloud>
 LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,

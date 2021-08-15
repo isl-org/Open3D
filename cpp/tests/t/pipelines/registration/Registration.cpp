@@ -35,7 +35,7 @@
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace t_reg = open3d::t::pipelines::registration;
 namespace l_reg = open3d::pipelines::registration;

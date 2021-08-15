@@ -24,24 +24,43 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "tests/Tests.h"
+#pragma once
+
+#include <gtest/gtest.h>
+
+#include <Eigen/Core>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include "open3d/Macro.h"
+#include "tests/test_utility/Compare.h"
+#include "tests/test_utility/Print.h"
+#include "tests/test_utility/Rand.h"
+#include "tests/test_utility/Raw.h"
+#include "tests/test_utility/Sort.h"
 
 namespace open3d {
 namespace tests {
 
-TEST(ImageIO, DISABLED_CreateImageFromFile) { NotImplemented(); }
+// Eigen Zero()
+const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
+const Eigen::Vector3d Zero3d = Eigen::Vector3d::Zero();
+const Eigen::Matrix<double, 6, 1> Zero6d = Eigen::Matrix<double, 6, 1>::Zero();
+const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
 
-TEST(ImageIO, DISABLED_ReadImage) { NotImplemented(); }
+// Mechanism for reporting unit tests for which there is no implementation yet.
+void NotImplemented();
 
-TEST(ImageIO, DISABLED_WriteImage) { NotImplemented(); }
+/// Returns Open3D common data directory. If a relative path will be appended
+/// when specified.
+/// \param relative_path Relative path to Open3D common data directory.
+std::string GetDataPathCommon(const std::string& relative_path = "");
 
-TEST(ImageIO, DISABLED_ReadImageFromPNG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_WriteImageToPNG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_ReadImageFromJPG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_WriteImageToJPG) { NotImplemented(); }
+/// Returns Open3D download data directory. If a relative path will be appended
+/// when specified.
+/// \param relative_path Relative path to Open3D download data directory.
+std::string GetDataPathDownload(const std::string& relative_path = "");
 
 }  // namespace tests
 }  // namespace open3d

@@ -30,7 +30,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/slac/Visualization.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -53,7 +53,7 @@ TEST_P(ControlGridPermuteDevices, Touch) {
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
     t::geometry::PointCloud pcd = CreateTPCDFromFile(
-            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
+            GetDataPathCommon("ICP/cloud_bin_0.pcd"), device);
     cgrid.Touch(pcd);
 
     t::geometry::PointCloud pcd_param = cgrid.Parameterize(pcd);
@@ -64,7 +64,7 @@ TEST_P(ControlGridPermuteDevices, Deform) {
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
     t::geometry::PointCloud pcd = CreateTPCDFromFile(
-            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
+            GetDataPathCommon("ICP/cloud_bin_0.pcd"), device);
     cgrid.Touch(pcd);
     cgrid.Compactify();
 
@@ -82,7 +82,7 @@ TEST_P(ControlGridPermuteDevices, Regularizer) {
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
     t::geometry::PointCloud pcd = CreateTPCDFromFile(
-            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd", device);
+            GetDataPathCommon("ICP/cloud_bin_0.pcd"), device);
     cgrid.Touch(pcd);
     cgrid.Compactify();
     core::Tensor prev = cgrid.GetInitPositions();

@@ -24,24 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "tests/Tests.h"
+#pragma once
+
+#include <string>
 
 namespace open3d {
-namespace tests {
+namespace benchmarks {
 
-TEST(ImageIO, DISABLED_CreateImageFromFile) { NotImplemented(); }
+/// Returns Open3D common data directory. If a relative path will be appended
+/// when specified.
+/// \param relative_path Relative path to Open3D common data directory.
+std::string GetDataPathCommon(const std::string& relative_path = "");
 
-TEST(ImageIO, DISABLED_ReadImage) { NotImplemented(); }
+/// Returns Open3D download data directory. If a relative path will be appended
+/// when specified.
+/// \param relative_path Relative path to Open3D download data directory.
+std::string GetDataPathDownload(const std::string& relative_path = "");
 
-TEST(ImageIO, DISABLED_WriteImage) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_ReadImageFromPNG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_WriteImageToPNG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_ReadImageFromJPG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_WriteImageToJPG) { NotImplemented(); }
-
-}  // namespace tests
+}  // namespace benchmarks
 }  // namespace open3d
