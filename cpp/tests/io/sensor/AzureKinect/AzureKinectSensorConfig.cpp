@@ -32,7 +32,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

@@ -41,7 +41,7 @@
 #include "open3d/t/pipelines/slac/SLACOptimizer.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Timer.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

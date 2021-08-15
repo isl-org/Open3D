@@ -34,7 +34,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/utility/IJsonConvertible.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

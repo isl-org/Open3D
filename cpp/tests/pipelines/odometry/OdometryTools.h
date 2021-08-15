@@ -27,7 +27,7 @@
 #pragma once
 
 #include "open3d/geometry/Image.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

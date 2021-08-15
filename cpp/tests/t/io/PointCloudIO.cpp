@@ -35,7 +35,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorList.h"
 #include "open3d/t/geometry/PointCloud.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

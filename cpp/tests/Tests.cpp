@@ -30,7 +30,7 @@
 #define TEST_DATA_DIR
 #endif
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/PointCloud.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

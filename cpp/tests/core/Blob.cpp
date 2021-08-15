@@ -28,7 +28,7 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/MemoryManager.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {

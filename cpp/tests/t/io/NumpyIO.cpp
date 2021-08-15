@@ -32,7 +32,7 @@
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {

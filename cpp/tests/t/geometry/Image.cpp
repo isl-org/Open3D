@@ -34,7 +34,7 @@
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
