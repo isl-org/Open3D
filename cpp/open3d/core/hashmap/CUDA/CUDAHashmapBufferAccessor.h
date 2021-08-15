@@ -47,15 +47,15 @@ public:
 
         // Properties
         capacity_ = hashmap_buffer.GetCapacity();
-        std::vector<int64_t> dsize_values_host =
+        std::vector<int64_t> value_dsizes_host =
                 hashmap_buffer.GetValueDsizes();
-        n_values_ = dsize_values_host.size();
+        n_values_ = value_dsizes_host.size();
 
-        dsize_key_ = hashmap_buffer.GetKeyDsize();
-        dsize_values_ = static_cast<int64_t *>(
+        key_dsize_ = hashmap_buffer.GetKeyDsize();
+        value_dsizes_ = static_cast<int64_t *>(
                 MemoryManager::Malloc(n_values_ * sizeof(int64_t), device));
-        MemoryManager::MemcpyFromHost(dsize_values_, device,
-                                      dsize_values_host.data(),
+        MemoryManager::MemcpyFromHost(value_dsizes_, device,
+                                      value_dsizes_host.data(),
                                       n_values_ * sizeof(int64_t));
 
         // Pointers
@@ -66,7 +66,7 @@ public:
         std::vector<uint8_t *> value_ptrs(n_values_);
         for (size_t i = 0; i < n_values_; ++i) {
             value_ptrs[i] = value_buffers[i].GetDataPtr<uint8_t>();
-            cudaMemset(value_ptrs[i], 0, capacity_ * dsize_values_host[i]);
+            cudaMemset(value_ptrs[i], 0, capacity_ * value_dsizes_host[i]);
         }
         values_ = static_cast<uint8_t **>(
                 MemoryManager::Malloc(n_values_ * sizeof(uint8_t *), device));
@@ -80,7 +80,7 @@ public:
 
     __host__ void Shutdown(const Device &device) {
         MemoryManager::Free(values_, device);
-        MemoryManager::Free(dsize_values_, device);
+        MemoryManager::Free(value_dsizes_, device);
     }
 
     __device__ buf_index_t DeviceAllocate() {
@@ -93,10 +93,10 @@ public:
     }
 
     __device__ void *GetKeyPtr(buf_index_t ptr) {
-        return keys_ + ptr * dsize_key_;
+        return keys_ + ptr * key_dsize_;
     }
     __device__ void *GetValuePtr(buf_index_t ptr, int value_idx = 0) {
-        return values_[value_idx] + ptr * dsize_values_[value_idx];
+        return values_[value_idx] + ptr * value_dsizes_[value_idx];
     }
 
 public:
@@ -104,11 +104,11 @@ public:
     int *heap_top_ = nullptr; /* [1] */
 
     uint8_t *keys_; /* [N] * sizeof(Key) */
-    int64_t dsize_key_;
+    int64_t key_dsize_;
 
     size_t n_values_;
     uint8_t **values_;
-    int64_t *dsize_values_;
+    int64_t *value_dsizes_;
 
     int64_t capacity_;
 };

@@ -154,7 +154,7 @@ __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
-                                  const void* const* input_values,
+                                  const void* const* input_values_soa,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count,
@@ -544,7 +544,7 @@ __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 
 template <typename Key, typename Hash>
 __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
-                                  const void* const* input_values,
+                                  const void* const* input_values_soa,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count,
@@ -557,13 +557,14 @@ __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
         if (output_masks[tid]) {
             for (int j = 0; j < n_values; ++j) {
                 void* dst_ptr = impl.buffer_accessor_.GetValuePtr(buf_index, j);
-                int64_t dsize_value = impl.buffer_accessor_.dsize_values_[j];
+                int64_t dsize_value = impl.buffer_accessor_.value_dsizes_[j];
 
                 // Success: copy remaining input_values
-                MEMCPY_AS_INTS(dst_ptr,
-                               static_cast<const uint8_t*>(input_values[j]) +
-                                       tid * dsize_value,
-                               dsize_value);
+                MEMCPY_AS_INTS(
+                        dst_ptr,
+                        static_cast<const uint8_t*>(input_values_soa[j]) +
+                                tid * dsize_value,
+                        dsize_value);
             }
         } else {
             impl.buffer_accessor_.DeviceFree(buf_index);

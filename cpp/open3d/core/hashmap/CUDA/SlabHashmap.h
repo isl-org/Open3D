@@ -38,8 +38,8 @@ template <typename Key, typename Hash>
 class SlabHashmap : public DeviceHashmap {
 public:
     SlabHashmap(int64_t init_capacity,
-                int64_t dsize_key,
-                std::vector<int64_t> dsize_values,
+                int64_t key_dsize,
+                std::vector<int64_t> value_dsizes,
                 const Device& device);
 
     ~SlabHashmap();
@@ -47,7 +47,7 @@ public:
     void Rehash(int64_t buckets) override;
 
     void Insert(const void* input_keys,
-                const std::vector<const void*> input_values,
+                const std::vector<const void*> input_values_soa,
                 buf_index_t* output_buf_indices,
                 bool* output_masks,
                 int64_t count) override;
@@ -87,7 +87,7 @@ protected:
     /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
     /// separate this implementation and avoid shared checks.
     void InsertImpl(const void* input_keys,
-                    const std::vector<const void*> input_values,
+                    const std::vector<const void*> input_values_soa,
                     buf_index_t* output_buf_indices,
                     bool* output_masks,
                     int64_t count);
@@ -100,10 +100,10 @@ protected:
 
 template <typename Key, typename Hash>
 SlabHashmap<Key, Hash>::SlabHashmap(int64_t init_capacity,
-                                    int64_t dsize_key,
-                                    std::vector<int64_t> dsize_values,
+                                    int64_t key_dsize,
+                                    std::vector<int64_t> value_dsizes,
                                     const Device& device)
-    : DeviceHashmap(init_capacity, dsize_key, dsize_values, device) {
+    : DeviceHashmap(init_capacity, key_dsize, value_dsizes, device) {
     int64_t init_buckets = init_capacity * 2;
     Allocate(init_buckets, init_capacity);
 }
@@ -159,7 +159,7 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
 
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::Insert(const void* input_keys,
-                                    std::vector<const void*> input_values,
+                                    std::vector<const void*> input_values_soa,
                                     buf_index_t* output_buf_indices,
                                     bool* output_masks,
                                     int64_t count) {
@@ -173,7 +173,7 @@ void SlabHashmap<Key, Hash>::Insert(const void* input_keys,
         Rehash(expected_buckets);
     }
 
-    InsertImpl(input_keys, input_values, output_buf_indices, output_masks,
+    InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks,
                count);
 }
 
@@ -310,7 +310,7 @@ float SlabHashmap<Key, Hash>::LoadFactor() const {
 template <typename Key, typename Hash>
 void SlabHashmap<Key, Hash>::InsertImpl(
         const void* input_keys,
-        std::vector<const void*> input_values_host,
+        std::vector<const void*> input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {
@@ -331,18 +331,19 @@ void SlabHashmap<Key, Hash>::InsertImpl(
                         core::cuda::GetStream()>>>(
             impl_, input_keys, output_buf_indices, output_masks, count);
 
-    thrust::device_vector<const void*> input_values(input_values_host.begin(),
-                                                    input_values_host.end());
-    int64_t n_values = input_values.size() == impl_.buffer_accessor_.n_values_
-                               ? impl_.buffer_accessor_.n_values_
-                               : 0;
+    thrust::device_vector<const void*> input_values_soa_device(
+            input_values_soa.begin(), input_values_soa.end());
+    int64_t n_values =
+            input_values_soa.size() == impl_.buffer_accessor_.n_values_
+                    ? impl_.buffer_accessor_.n_values_
+                    : 0;
     // https://stackoverflow.com/a/37998941
-    const void* const* input_values_ptr =
-            thrust::raw_pointer_cast(input_values.data());
+    const void* const* ptr_input_values_soa =
+            thrust::raw_pointer_cast(input_values_soa_device.data());
     InsertKernelPass2<<<num_blocks, kThreadsPerBlock, 0,
                         core::cuda::GetStream()>>>(
-            impl_, input_values_ptr, output_buf_indices, output_masks, count,
-            n_values);
+            impl_, ptr_input_values_soa, output_buf_indices, output_masks,
+            count, n_values);
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
@@ -354,8 +355,8 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
 
     // Allocate buffer for key values.
     this->buffer_ =
-            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
-                                            this->dsize_values_, this->device_);
+            std::make_shared<HashmapBuffer>(this->capacity_, this->key_dsize_,
+                                            this->value_dsizes_, this->device_);
     buffer_accessor_.Setup(*this->buffer_);
 
     // Allocate buffer for linked list nodes.

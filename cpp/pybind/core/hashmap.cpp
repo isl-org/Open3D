@@ -45,42 +45,42 @@ void pybind_core_hashmap(py::module& m) {
             m, "Hashmap",
             "A Hashmap is a map from key to data wrapped by Tensors.");
 
-    hashmap.def(py::init([](int64_t init_capacity, const Dtype& dtype_key,
-                            const py::handle& element_shape_key,
-                            const Dtype& dtype_value,
-                            const py::handle& element_shape_value,
+    hashmap.def(py::init([](int64_t init_capacity, const Dtype& key_dtype,
+                            const py::handle& key_element_shape,
+                            const Dtype& value_dtype,
+                            const py::handle& value_element_shape,
                             const Device& device) {
-                    SizeVector element_shape_key_sv =
-                            PyHandleToSizeVector(element_shape_key);
-                    SizeVector element_shape_value_sv =
-                            PyHandleToSizeVector(element_shape_value);
-                    return Hashmap(init_capacity, dtype_key,
-                                   element_shape_key_sv, dtype_value,
-                                   element_shape_value_sv, device);
+                    SizeVector key_element_shape_sv =
+                            PyHandleToSizeVector(key_element_shape);
+                    SizeVector value_element_shape_sv =
+                            PyHandleToSizeVector(value_element_shape);
+                    return Hashmap(init_capacity, key_dtype,
+                                   key_element_shape_sv, value_dtype,
+                                   value_element_shape_sv, device);
                 }),
-                "init_capacity"_a, "dtype_key"_a, "element_shape_key"_a,
-                "dtype_value"_a, "element_shape_value"_a,
+                "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
+                "value_dtype"_a, "value_element_shape"_a,
                 "device"_a = Device("CPU:0"));
 
     hashmap.def(
-            py::init([](int64_t init_capacity, const Dtype& dtype_key,
-                        const py::handle& element_shape_key,
+            py::init([](int64_t init_capacity, const Dtype& key_dtype,
+                        const py::handle& key_element_shape,
                         const std::vector<Dtype>& dtypes_value,
                         const std::vector<py::handle>& element_shapes_value,
                         const Device& device) {
-                SizeVector element_shape_key_sv =
-                        PyHandleToSizeVector(element_shape_key);
+                SizeVector key_element_shape_sv =
+                        PyHandleToSizeVector(key_element_shape);
 
                 std::vector<SizeVector> element_shapes_value_sv;
                 for (auto& handle : element_shapes_value) {
-                    SizeVector element_shape_value_sv =
+                    SizeVector value_element_shape_sv =
                             PyHandleToSizeVector(handle);
-                    element_shapes_value_sv.push_back(element_shape_value_sv);
+                    element_shapes_value_sv.push_back(value_element_shape_sv);
                 }
-                return Hashmap(init_capacity, dtype_key, element_shape_key_sv,
+                return Hashmap(init_capacity, key_dtype, key_element_shape_sv,
                                dtypes_value, element_shapes_value_sv, device);
             }),
-            "init_capacity"_a, "dtype_key"_a, "element_shape_key"_a,
+            "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
             "dtypes_value"_a, "element_shapes_value"_a,
             "device"_a = Device("CPU:0"));
 
@@ -156,15 +156,15 @@ void pybind_core_hashmap(py::module& m) {
     py::class_<Hashset, Hashmap> hashset(m, "Hashset",
                                          "A Hashset is a unordered set that "
                                          "collects keys wrapped by Tensors.");
-    hashset.def(py::init([](int64_t init_capacity, const Dtype& dtype_key,
-                            const py::handle& element_shape_key,
+    hashset.def(py::init([](int64_t init_capacity, const Dtype& key_dtype,
+                            const py::handle& key_element_shape,
                             const Device& device) {
-                    SizeVector element_shape_key_sv =
-                            PyHandleToSizeVector(element_shape_key);
-                    return Hashset(init_capacity, dtype_key,
-                                   element_shape_key_sv, device);
+                    SizeVector key_element_shape_sv =
+                            PyHandleToSizeVector(key_element_shape);
+                    return Hashset(init_capacity, key_dtype,
+                                   key_element_shape_sv, device);
                 }),
-                "init_capacity"_a, "dtype_key"_a, "element_shape_key"_a,
+                "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
                 "device"_a = Device("CPU:0"));
 
     hashset.def("insert", [](Hashset& h, const Tensor& keys) {

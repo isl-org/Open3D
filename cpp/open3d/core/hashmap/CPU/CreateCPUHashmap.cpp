@@ -34,32 +34,32 @@ namespace core {
 /// Non-templated factory.
 std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
         int64_t init_capacity,
-        const Dtype& dtype_key,
-        const SizeVector& element_shape_key,
-        const std::vector<Dtype>& dtype_values,
-        const std::vector<SizeVector>& element_shape_values,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
         const HashmapBackend& backend) {
     if (backend != HashmapBackend::Default && backend != HashmapBackend::TBB) {
         utility::LogError("Unsupported backend for CPU hashmap.");
     }
 
-    int64_t dim = element_shape_key.NumElements();
+    int64_t dim = key_element_shape.NumElements();
 
-    int64_t dsize_key = dim * dtype_key.ByteSize();
+    int64_t key_dsize = dim * key_dtype.ByteSize();
 
     // TODO: size check
-    std::vector<int64_t> dsize_values;
-    for (size_t i = 0; i < dtype_values.size(); ++i) {
-        int64_t dsize_value = element_shape_values[i].NumElements() *
-                              dtype_values[i].ByteSize();
-        dsize_values.push_back(dsize_value);
+    std::vector<int64_t> value_dsizes;
+    for (size_t i = 0; i < value_dtypes.size(); ++i) {
+        int64_t dsize_value = value_element_shapes[i].NumElements() *
+                              value_dtypes[i].ByteSize();
+        value_dsizes.push_back(dsize_value);
     }
 
     std::shared_ptr<DeviceHashmap> device_hashmap_ptr;
-    DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
+    DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(key_dtype, dim, [&] {
         device_hashmap_ptr = std::make_shared<TBBHashmap<key_t, hash_t>>(
-                init_capacity, dsize_key, dsize_values, device);
+                init_capacity, key_dsize, value_dsizes, device);
     });
     return device_hashmap_ptr;
 }

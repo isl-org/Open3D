@@ -39,12 +39,12 @@ enum class HashmapBackend;
 class DeviceHashmap {
 public:
     DeviceHashmap(int64_t init_capacity,
-                  int64_t dsize_key,
-                  std::vector<int64_t> dsize_values,
+                  int64_t key_dsize,
+                  std::vector<int64_t> value_dsizes,
                   const Device& device)
         : capacity_(init_capacity),
-          dsize_key_(dsize_key),
-          dsize_values_(dsize_values),
+          key_dsize_(key_dsize),
+          value_dsizes_(value_dsizes),
           device_(device) {}
     virtual ~DeviceHashmap() {}
 
@@ -118,8 +118,8 @@ public:
 public:
     int64_t capacity_;
 
-    int64_t dsize_key_;
-    std::vector<int64_t> dsize_values_;
+    int64_t key_dsize_;
+    std::vector<int64_t> value_dsizes_;
 
     Device device_;
 
@@ -132,28 +132,28 @@ public:
 /// - Default CUDA constructor is in CUDA/CreateCUDAHashmap.cu
 std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
         int64_t init_capacity,
-        const Dtype& dtype_key,
-        const SizeVector& element_shape_key,
-        const std::vector<Dtype>& dtype_values,
-        const std::vector<SizeVector>& element_shape_values,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
         const HashmapBackend& backend);
 
 std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
         int64_t init_capacity,
-        const Dtype& dtype_key,
-        const SizeVector& element_shape_key,
-        const std::vector<Dtype>& dtype_values,
-        const std::vector<SizeVector>& element_shape_values,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
         const HashmapBackend& backend);
 
 std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
         int64_t init_capacity,
-        const Dtype& dtype_key,
-        const SizeVector& element_shape_key,
-        const std::vector<Dtype>& dtype_values,
-        const std::vector<SizeVector>& element_shape_values,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
         const HashmapBackend& backend);
 

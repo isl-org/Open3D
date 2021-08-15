@@ -31,18 +31,18 @@ namespace open3d {
 namespace core {
 
 HashmapBuffer::HashmapBuffer(int64_t capacity,
-                             int64_t dsize_key,
-                             std::vector<int64_t> dsize_values,
+                             int64_t key_dsize,
+                             std::vector<int64_t> value_dsizes,
                              const Device &device) {
     heap_ = Tensor({capacity}, core::UInt32, device);
 
     key_buffer_ = Tensor({capacity},
-                         Dtype(Dtype::DtypeCode::Object, dsize_key, "_hash_k"),
+                         Dtype(Dtype::DtypeCode::Object, key_dsize, "_hash_k"),
                          device);
 
     value_buffers_.clear();
-    for (size_t i = 0; i < dsize_values.size(); ++i) {
-        int64_t dsize_value = dsize_values[i];
+    for (size_t i = 0; i < value_dsizes.size(); ++i) {
+        int64_t dsize_value = value_dsizes[i];
         Tensor value_buffer_i({capacity},
                               Dtype(Dtype::DtypeCode::Object, dsize_value,
                                     "_hash_v_" + std::to_string(i)),

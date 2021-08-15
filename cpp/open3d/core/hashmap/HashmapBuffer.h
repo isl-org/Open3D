@@ -70,8 +70,8 @@ public:
     };
 
     HashmapBuffer(int64_t capacity,
-                  int64_t dsize_key,
-                  std::vector<int64_t> dsize_values,
+                  int64_t key_dsize,
+                  std::vector<int64_t> value_dsizes,
                   const Device &device);
 
     /// Reset the heap and heap top.

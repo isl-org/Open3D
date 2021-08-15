@@ -36,28 +36,28 @@ namespace open3d {
 namespace core {
 
 Hashmap::Hashmap(int64_t init_capacity,
-                 const Dtype& dtype_key,
-                 const SizeVector& element_shape_key,
-                 const Dtype& dtype_value,
-                 const SizeVector& element_shape_value,
+                 const Dtype& key_dtype,
+                 const SizeVector& key_element_shape,
+                 const Dtype& value_dtype,
+                 const SizeVector& value_element_shape,
                  const Device& device,
                  const HashmapBackend& backend)
-    : dtype_key_(dtype_key),
-      element_shape_key_(element_shape_key),
-      dtypes_value_({dtype_value}),
-      element_shapes_value_({element_shape_value}) {
+    : key_dtype_(key_dtype),
+      key_element_shape_(key_element_shape),
+      dtypes_value_({value_dtype}),
+      element_shapes_value_({value_element_shape}) {
     Init(init_capacity, device, backend);
 }
 
 Hashmap::Hashmap(int64_t init_capacity,
-                 const Dtype& dtype_key,
-                 const SizeVector& element_shape_key,
+                 const Dtype& key_dtype,
+                 const SizeVector& key_element_shape,
                  const std::vector<Dtype>& dtypes_value,
                  const std::vector<SizeVector>& element_shapes_value,
                  const Device& device,
                  const HashmapBackend& backend)
-    : dtype_key_(dtype_key),
-      element_shape_key_(element_shape_key),
+    : key_dtype_(key_dtype),
+      key_element_shape_(key_element_shape),
       dtypes_value_(dtypes_value),
       element_shapes_value_(element_shapes_value) {
     Init(init_capacity, device, backend);
@@ -68,19 +68,19 @@ void Hashmap::Rehash(int64_t buckets) {
 }
 
 void Hashmap::InsertImpl(const Tensor& input_keys,
-                         const std::vector<Tensor>& arr_input_values,
+                         const std::vector<Tensor>& input_values_soa,
                          Tensor& output_buf_indices,
                          Tensor& output_masks) {
-    CheckKeyValueLengthCompatibility(input_keys, arr_input_values);
+    CheckKeyValueLengthCompatibility(input_keys, input_values_soa);
     CheckKeyCompatibility(input_keys);
-    CheckValueCompatibility(arr_input_values);
+    CheckValueCompatibility(input_values_soa);
 
     int64_t length = input_keys.GetLength();
     PrepareIndicesOutput(output_buf_indices, length);
     PrepareMasksOutput(output_masks, length);
 
     std::vector<const void*> input_values_ptrs;
-    for (auto& input_value : arr_input_values) {
+    for (auto& input_value : input_values_soa) {
         input_values_ptrs.push_back(input_value.GetDataPtr());
     }
 
@@ -98,10 +98,10 @@ void Hashmap::Insert(const Tensor& input_keys,
 }
 
 void Hashmap::Insert(const Tensor& input_keys,
-                     const std::vector<Tensor>& arr_input_values,
+                     const std::vector<Tensor>& input_values_soa,
                      Tensor& output_buf_indices,
                      Tensor& output_masks) {
-    InsertImpl(input_keys, arr_input_values, output_buf_indices, output_masks);
+    InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks);
 }
 
 void Hashmap::Activate(const Tensor& input_keys,
@@ -180,16 +180,16 @@ Hashmap Hashmap::To(const Device& device, bool copy) const {
     Tensor active_indices = active_buf_indices_i32.To(core::Int64);
 
     Tensor active_keys = keys.IndexGet({active_indices}).To(device);
-    std::vector<Tensor> arr_active_values;
+    std::vector<Tensor> soa_active_values;
     for (auto& value : values) {
-        arr_active_values.push_back(
+        soa_active_values.push_back(
                 value.IndexGet({active_indices}).To(device));
     }
 
-    Hashmap new_hashmap(GetCapacity(), dtype_key_, element_shape_key_,
+    Hashmap new_hashmap(GetCapacity(), key_dtype_, key_element_shape_,
                         dtypes_value_, element_shapes_value_, device);
     Tensor buf_indices, masks;
-    new_hashmap.Insert(active_keys, arr_active_values, buf_indices, masks);
+    new_hashmap.Insert(active_keys, soa_active_values, buf_indices, masks);
 
     return new_hashmap;
 }
@@ -206,10 +206,10 @@ Device Hashmap::GetDevice() const { return device_hashmap_->GetDevice(); }
 
 Tensor Hashmap::GetKeyTensor() const {
     int64_t capacity = GetCapacity();
-    SizeVector key_shape = element_shape_key_;
+    SizeVector key_shape = key_element_shape_;
     key_shape.insert(key_shape.begin(), capacity);
     return Tensor(key_shape, shape_util::DefaultStrides(key_shape),
-                  device_hashmap_->GetKeyBuffer().GetDataPtr(), dtype_key_,
+                  device_hashmap_->GetKeyBuffer().GetDataPtr(), key_dtype_,
                   device_hashmap_->GetKeyBuffer().GetBlob());
 }
 
@@ -218,18 +218,18 @@ std::vector<Tensor> Hashmap::GetValueTensors() const {
 
     std::vector<Tensor> value_buffers = device_hashmap_->GetValueBuffers();
 
-    std::vector<Tensor> arr_value_tensor;
+    std::vector<Tensor> soa_value_tensor;
     for (size_t i = 0; i < element_shapes_value_.size(); ++i) {
         SizeVector value_shape = element_shapes_value_[i];
         value_shape.insert(value_shape.begin(), capacity);
 
         Dtype value_dtype = dtypes_value_[i];
-        arr_value_tensor.push_back(
+        soa_value_tensor.push_back(
                 Tensor(value_shape, shape_util::DefaultStrides(value_shape),
                        value_buffers[i].GetDataPtr(), value_dtype,
                        value_buffers[i].GetBlob()));
     }
-    return arr_value_tensor;
+    return soa_value_tensor;
 }
 
 Tensor Hashmap::GetValueTensor(size_t i) const {
@@ -261,10 +261,10 @@ void Hashmap::Init(int64_t init_capacity,
                    const Device& device,
                    const HashmapBackend& backend) {
     // Key check
-    if (dtype_key_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
+    if (key_dtype_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
         utility::LogError("[Hashmap] Undefined key dtype is not allowed.");
     }
-    if (element_shape_key_.NumElements() == 0) {
+    if (key_element_shape_.NumElements() == 0) {
         utility::LogError(
                 "[Hashmap] Key element shape must contain at least 1 element, "
                 "but got 0.");
@@ -273,18 +273,18 @@ void Hashmap::Init(int64_t init_capacity,
     // Value check
     if (dtypes_value_.size() != element_shapes_value_.size()) {
         utility::LogError(
-                "[Hashmap] Size of dtype_value ({}) mismatches with size of "
+                "[Hashmap] Size of value_dtype ({}) mismatches with size of "
                 "element_shapes_value ({}).",
                 dtypes_value_.size(), element_shapes_value_.size());
     }
-    for (auto& dtype_value : dtypes_value_) {
-        if (dtype_value.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
+    for (auto& value_dtype : dtypes_value_) {
+        if (value_dtype.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
             utility::LogError(
                     "[Hashmap] Undefined value dtype is not allowed.");
         }
     }
-    for (auto& element_shape_value : element_shapes_value_) {
-        if (element_shape_value.NumElements() == 0) {
+    for (auto& value_element_shape : element_shapes_value_) {
+        if (value_element_shape.NumElements() == 0) {
             utility::LogError(
                     "[Hashmap] Value element shape must contain at least 1 "
                     "element, but got 0.");
@@ -292,7 +292,7 @@ void Hashmap::Init(int64_t init_capacity,
     }
 
     device_hashmap_ = CreateDeviceHashmap(
-            init_capacity, dtype_key_, element_shape_key_, dtypes_value_,
+            init_capacity, key_dtype_, key_element_shape_, dtypes_value_,
             element_shapes_value_, device, backend);
 }
 
@@ -305,13 +305,13 @@ void Hashmap::CheckKeyLength(const Tensor& input_keys) const {
 
 void Hashmap::CheckKeyValueLengthCompatibility(
         const Tensor& input_keys,
-        const std::vector<Tensor>& arr_input_values) const {
+        const std::vector<Tensor>& input_values_soa) const {
     int64_t key_len = input_keys.GetLength();
     if (key_len == 0) {
         utility::LogError("Input number of keys should > 0, but got 0.");
     }
-    for (size_t i = 0; i < arr_input_values.size(); ++i) {
-        Tensor input_value = arr_input_values[i];
+    for (size_t i = 0; i < input_values_soa.size(); ++i) {
+        Tensor input_value = input_values_soa[i];
         if (input_value.GetLength() != key_len) {
             utility::LogError(
                     "Input number of values at {} mismatch with number of "
@@ -329,7 +329,7 @@ void Hashmap::CheckKeyCompatibility(const Tensor& input_keys) const {
     int64_t input_key_elem_bytesize = input_key_elem_shape.NumElements() *
                                       input_keys.GetDtype().ByteSize();
     int64_t stored_key_elem_bytesize =
-            element_shape_key_.NumElements() * dtype_key_.ByteSize();
+            key_element_shape_.NumElements() * key_dtype_.ByteSize();
     if (input_key_elem_bytesize != stored_key_elem_bytesize) {
         utility::LogError(
                 "Input key element bytesize ({}) mismatch with stored ({})",
@@ -338,16 +338,16 @@ void Hashmap::CheckKeyCompatibility(const Tensor& input_keys) const {
 }
 
 void Hashmap::CheckValueCompatibility(
-        const std::vector<Tensor>& arr_input_values) const {
-    if (arr_input_values.size() != element_shapes_value_.size()) {
+        const std::vector<Tensor>& input_values_soa) const {
+    if (input_values_soa.size() != element_shapes_value_.size()) {
         utility::LogError(
                 "Input number of value arrays ({}) mismatches with stored "
                 "({})",
-                arr_input_values.size() != element_shapes_value_.size());
+                input_values_soa.size() != element_shapes_value_.size());
     }
 
-    for (size_t i = 0; i < arr_input_values.size(); ++i) {
-        Tensor input_value = arr_input_values[i];
+    for (size_t i = 0; i < input_values_soa.size(); ++i) {
+        Tensor input_value = input_values_soa[i];
         SizeVector input_value_i_elem_shape(input_value.GetShape());
         input_value_i_elem_shape.erase(input_value_i_elem_shape.begin());
 
@@ -386,28 +386,28 @@ void Hashmap::PrepareMasksOutput(Tensor& output_masks, int64_t length) const {
 }
 
 Hashset::Hashset(int64_t init_capacity,
-                 const Dtype& dtype_key,
-                 const SizeVector& element_shape_key,
+                 const Dtype& key_dtype,
+                 const SizeVector& key_element_shape,
                  const Device& device,
                  const HashmapBackend& backend)
     : Hashmap(init_capacity,
-              dtype_key,
-              element_shape_key,
+              key_dtype,
+              key_element_shape,
               std::vector<Dtype>{},
               std::vector<SizeVector>{},
               device,
               backend) {}
 
 Hashset::Hashset(int64_t init_capacity,
-                 const Dtype& dtype_key,
-                 const SizeVector& element_shape_key,
-                 const Dtype& dtype_value,
-                 const SizeVector& element_shape_value,
+                 const Dtype& key_dtype,
+                 const SizeVector& key_element_shape,
+                 const Dtype& value_dtype,
+                 const SizeVector& value_element_shape,
                  const Device& device,
                  const HashmapBackend& backend)
     : Hashmap(init_capacity,
-              dtype_key,
-              element_shape_key,
+              key_dtype,
+              key_element_shape,
               std::vector<Dtype>{},
               std::vector<SizeVector>{},
               device,
@@ -418,15 +418,15 @@ Hashset::Hashset(int64_t init_capacity,
 }
 
 Hashset::Hashset(int64_t init_capacity,
-                 const Dtype& dtype_key,
-                 const SizeVector& element_shape_key,
+                 const Dtype& key_dtype,
+                 const SizeVector& key_element_shape,
                  const std::vector<Dtype>& dtypes_value,
                  const std::vector<SizeVector>& element_shapes_value,
                  const Device& device,
                  const HashmapBackend& backend)
     : Hashmap(init_capacity,
-              dtype_key,
-              element_shape_key,
+              key_dtype,
+              key_element_shape,
               std::vector<Dtype>{},
               std::vector<SizeVector>{},
               device,

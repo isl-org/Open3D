@@ -133,15 +133,15 @@ template <typename Key, typename Hash>
 class StdGPUHashmap : public DeviceHashmap {
 public:
     StdGPUHashmap(int64_t init_capacity,
-                  int64_t dsize_key,
-                  std::vector<int64_t> dsize_values,
+                  int64_t key_dsize,
+                  std::vector<int64_t> value_dsizes,
                   const Device& device);
     ~StdGPUHashmap();
 
     void Rehash(int64_t buckets) override;
 
     void Insert(const void* input_keys,
-                std::vector<const void*> input_values,
+                std::vector<const void*> input_values_soa,
                 buf_index_t* output_buf_indices,
                 bool* output_masks,
                 int64_t count) override;
@@ -180,7 +180,7 @@ protected:
     CUDAHashmapBufferAccessor buffer_accessor_;
 
     void InsertImpl(const void* input_keys,
-                    std::vector<const void*> input_values,
+                    std::vector<const void*> input_values_soa,
                     buf_index_t* output_buf_indices,
                     bool* output_masks,
                     int64_t count);
@@ -191,10 +191,10 @@ protected:
 
 template <typename Key, typename Hash>
 StdGPUHashmap<Key, Hash>::StdGPUHashmap(int64_t init_capacity,
-                                        int64_t dsize_key,
-                                        std::vector<int64_t> dsize_values,
+                                        int64_t key_dsize,
+                                        std::vector<int64_t> value_dsizes,
                                         const Device& device)
-    : DeviceHashmap(init_capacity, dsize_key, dsize_values, device) {
+    : DeviceHashmap(init_capacity, key_dsize, value_dsizes, device) {
     Allocate(init_capacity);
 }
 
@@ -210,7 +210,7 @@ int64_t StdGPUHashmap<Key, Hash>::Size() const {
 
 template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::Insert(const void* input_keys,
-                                      std::vector<const void*> input_values,
+                                      std::vector<const void*> input_values_soa,
                                       buf_index_t* output_buf_indices,
                                       bool* output_masks,
                                       int64_t count) {
@@ -224,7 +224,7 @@ void StdGPUHashmap<Key, Hash>::Insert(const void* input_keys,
                 int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
         Rehash(expected_buckets);
     }
-    InsertImpl(input_keys, input_values, output_buf_indices, output_masks,
+    InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks,
                count);
 }
 
@@ -399,7 +399,7 @@ template <typename Key, typename Hash>
 __global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
                                    CUDAHashmapBufferAccessor buffer_accessor,
                                    const Key* input_keys,
-                                   const void* const* input_values,
+                                   const void* const* input_values_soa,
                                    buf_index_t* output_buf_indices,
                                    bool* output_masks,
                                    int64_t count,
@@ -425,11 +425,11 @@ __global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
 
         // Copy/reset non-templated value in buffer
         for (int j = 0; j < n_values; ++j) {
-            const int64_t dsize_value = buffer_accessor.dsize_values_[j];
+            const int64_t dsize_value = buffer_accessor.value_dsizes_[j];
             uint8_t* dst_value = static_cast<uint8_t*>(
                     buffer_accessor.GetValuePtr(buf_index, j));
             const uint8_t* src_value =
-                    static_cast<const uint8_t*>(input_values[j]) +
+                    static_cast<const uint8_t*>(input_values_soa[j]) +
                     dsize_value * tid;
             for (int byte = 0; byte < dsize_value; ++byte) {
                 dst_value[byte] = src_value[byte];
@@ -448,26 +448,26 @@ __global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
 template <typename Key, typename Hash>
 void StdGPUHashmap<Key, Hash>::InsertImpl(
         const void* input_keys,
-        std::vector<const void*> input_values_host,
+        std::vector<const void*> input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {
     uint32_t threads = 128;
     uint32_t blocks = (count + threads - 1) / threads;
 
-    thrust::device_vector<const void*> input_values(input_values_host.begin(),
-                                                    input_values_host.end());
-    int64_t n_values = input_values.size() == buffer_accessor_.n_values_
+    thrust::device_vector<const void*> input_values_soa_device(
+            input_values_soa.begin(), input_values_soa.end());
+    int64_t n_values = input_values_soa.size() == buffer_accessor_.n_values_
                                ? buffer_accessor_.n_values_
                                : 0;
     // std::cout << "n_values = " << n_values << "\n";
     // https://stackoverflow.com/a/37998941
-    const void* const* input_values_ptr =
-            thrust::raw_pointer_cast(input_values.data());
+    const void* const* ptr_input_values_soa =
+            thrust::raw_pointer_cast(input_values_soa_device.data());
 
     STDGPUInsertKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
             impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
-            input_values_ptr, output_buf_indices, output_masks, count,
+            ptr_input_values_soa, output_buf_indices, output_masks, count,
             n_values);
     cuda::Synchronize(this->device_);
 }
@@ -478,8 +478,8 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
 
     // Allocate buffer for key values.
     this->buffer_ =
-            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
-                                            this->dsize_values_, this->device_);
+            std::make_shared<HashmapBuffer>(this->capacity_, this->key_dsize_,
+                                            this->value_dsizes_, this->device_);
     buffer_accessor_.Setup(*this->buffer_);
 
     // stdgpu initializes on the default stream. Set the current stream to

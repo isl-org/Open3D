@@ -42,19 +42,19 @@ public:
     /// Constructor for primitive types, supporting element shapes.
     /// Example:
     /// Key is int<3> coordinate:
-    /// - dtype_key = core::Int32
-    /// - element_shape_key = {3}
+    /// - key_dtype = core::Int32
+    /// - key_element_shape = {3}
     Hashmap(int64_t init_capacity,
-            const Dtype& dtype_key,
-            const SizeVector& element_shape_key,
-            const Dtype& dtype_value,
-            const SizeVector& element_shape_value,
+            const Dtype& key_dtype,
+            const SizeVector& key_element_shape,
+            const Dtype& value_dtype,
+            const SizeVector& value_element_shapes,
             const Device& device,
             const HashmapBackend& backend = HashmapBackend::Default);
 
     Hashmap(int64_t init_capacity,
-            const Dtype& dtype_key,
-            const SizeVector& element_shape_key,
+            const Dtype& key_dtype,
+            const SizeVector& key_element_shape,
             const std::vector<Dtype>& dtypes_value,
             const std::vector<SizeVector>& element_shapes_value,
             const Device& device,
@@ -83,7 +83,7 @@ public:
     /// advanced indexing in Tensor key/value buffers. masks: success
     /// insertions, must be combined with buf_indices in advanced indexing.
     void Insert(const Tensor& input_keys,
-                const std::vector<Tensor>& arr_input_values,
+                const std::vector<Tensor>& input_values_soa,
                 Tensor& output_buf_indices,
                 Tensor& output_masks);
 
@@ -157,17 +157,17 @@ protected:
               const HashmapBackend& backend);
 
     void InsertImpl(const Tensor& input_keys,
-                    const std::vector<Tensor>& arr_input_values,
+                    const std::vector<Tensor>& input_values_soa,
                     Tensor& output_buf_indices,
                     Tensor& output_masks);
 
     void CheckKeyLength(const Tensor& input_keys) const;
     void CheckKeyValueLengthCompatibility(
             const Tensor& input_keys,
-            const std::vector<Tensor>& arr_input_values) const;
+            const std::vector<Tensor>& input_values_soa) const;
     void CheckKeyCompatibility(const Tensor& input_keys) const;
     void CheckValueCompatibility(
-            const std::vector<Tensor>& arr_input_values) const;
+            const std::vector<Tensor>& input_values_soa) const;
 
     void PrepareIndicesOutput(Tensor& output_buf_indices, int64_t length) const;
     void PrepareMasksOutput(Tensor& output_masks, int64_t length) const;
@@ -175,8 +175,8 @@ protected:
 private:
     std::shared_ptr<DeviceHashmap> device_hashmap_;
 
-    Dtype dtype_key_;
-    SizeVector element_shape_key_;
+    Dtype key_dtype_;
+    SizeVector key_element_shape_;
 
     std::vector<Dtype> dtypes_value_;
     std::vector<SizeVector> element_shapes_value_;
@@ -185,22 +185,22 @@ private:
 class Hashset : public Hashmap {
 public:
     Hashset(int64_t init_capacity,
-            const Dtype& dtype_key,
-            const SizeVector& element_shape_key,
+            const Dtype& key_dtype,
+            const SizeVector& key_element_shape,
             const Device& device,
             const HashmapBackend& backend = HashmapBackend::Default);
 
     Hashset(int64_t init_capacity,
-            const Dtype& dtype_key,
-            const SizeVector& element_shape_key,
-            const Dtype& dtype_value,
-            const SizeVector& element_shape_value,
+            const Dtype& key_dtype,
+            const SizeVector& key_element_shape,
+            const Dtype& value_dtype,
+            const SizeVector& value_element_shapes,
             const Device& device,
             const HashmapBackend& backend = HashmapBackend::Default);
 
     Hashset(int64_t init_capacity,
-            const Dtype& dtype_key,
-            const SizeVector& element_shape_key,
+            const Dtype& key_dtype,
+            const SizeVector& key_element_shape,
             const std::vector<Dtype>& dtypes_value,
             const std::vector<SizeVector>& element_shapes_value,
             const Device& device,

@@ -35,21 +35,21 @@ namespace core {
 
 std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
         int64_t init_capacity,
-        const Dtype& dtype_key,
-        const SizeVector& element_shape_key,
-        const std::vector<Dtype>& dtype_values,
-        const std::vector<SizeVector>& element_shape_values,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
         const HashmapBackend& backend) {
     if (device.GetType() == Device::DeviceType::CPU) {
-        return CreateCPUHashmap(init_capacity, dtype_key, element_shape_key,
-                                dtype_values, element_shape_values, device,
+        return CreateCPUHashmap(init_capacity, key_dtype, key_element_shape,
+                                value_dtypes, value_element_shapes, device,
                                 backend);
     }
 #if defined(BUILD_CUDA_MODULE)
     else if (device.GetType() == Device::DeviceType::CUDA) {
-        return CreateCUDAHashmap(init_capacity, dtype_key, element_shape_key,
-                                 dtype_values, element_shape_values, device,
+        return CreateCUDAHashmap(init_capacity, key_dtype, key_element_shape,
+                                 value_dtypes, value_element_shapes, device,
                                  backend);
     }
 #endif

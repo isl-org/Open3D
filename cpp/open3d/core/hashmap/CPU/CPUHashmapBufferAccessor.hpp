@@ -42,15 +42,16 @@ public:
     /// Must initialize from a non-const buffer to grab the heap top.
     CPUHashmapBufferAccessor(HashmapBuffer &hashmap_buffer)
         : capacity_(hashmap_buffer.GetCapacity()),
-          dsize_key_(hashmap_buffer.GetKeyDsize()),
-          dsize_values_(hashmap_buffer.GetValueDsizes()),
+          key_dsize_(hashmap_buffer.GetKeyDsize()),
+          value_dsizes_(hashmap_buffer.GetValueDsizes()),
           heap_(hashmap_buffer.GetIndexHeap().GetDataPtr<buf_index_t>()),
-          keys_(hashmap_buffer.GetKeyBuffer().GetDataPtr<uint8_t>()) {
+          key_buffer_ptr_(hashmap_buffer.GetKeyBuffer().GetDataPtr<uint8_t>()) {
         std::vector<Tensor> value_buffers = hashmap_buffer.GetValueBuffers();
         for (size_t i = 0; i < value_buffers.size(); ++i) {
-            void *data_ptr = value_buffers[i].GetDataPtr();
-            std::memset(data_ptr, 0, capacity_ * dsize_values_[i]);
-            values_.push_back(static_cast<uint8_t *>(data_ptr));
+            void *value_buffer_ptr = value_buffers[i].GetDataPtr();
+            std::memset(value_buffer_ptr, 0, capacity_ * value_dsizes_[i]);
+            value_buffer_ptrs_.push_back(
+                    static_cast<uint8_t *>(value_buffer_ptr));
         }
         heap_top_ = &(hashmap_buffer.GetHeapTop().cpu);
     }
@@ -61,22 +62,23 @@ public:
     }
 
     void *GetKeyPtr(buf_index_t buf_index) {
-        return keys_ + buf_index * dsize_key_;
+        return key_buffer_ptr_ + buf_index * key_dsize_;
     }
     void *GetValuePtr(buf_index_t buf_index, int value_idx = 0) {
-        return values_[value_idx] + buf_index * dsize_values_[value_idx];
+        return value_buffer_ptrs_[value_idx] +
+               buf_index * value_dsizes_[value_idx];
     }
 
 public:
     int64_t capacity_;
-    int64_t dsize_key_;
-    std::vector<int64_t> dsize_values_;
+    int64_t key_dsize_;
+    std::vector<int64_t> value_dsizes_;
 
     buf_index_t *heap_;          /* [N] */
     std::atomic<int> *heap_top_; /* [1] */
 
-    uint8_t *keys_;                 /* [N] * sizeof(Key) */
-    std::vector<uint8_t *> values_; /* [N] * sizeof(Value) */
+    uint8_t *key_buffer_ptr_;                  /* [N] * sizeof(Key) */
+    std::vector<uint8_t *> value_buffer_ptrs_; /* [N] * sizeof(Value) */
 };
 
 }  // namespace core

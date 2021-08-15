@@ -41,15 +41,15 @@ template <typename Key, typename Hash>
 class TBBHashmap : public DeviceHashmap {
 public:
     TBBHashmap(int64_t init_capacity,
-               int64_t dsize_key,
-               std::vector<int64_t> dsize_values,
+               int64_t key_dsize,
+               std::vector<int64_t> value_dsizes,
                const Device& device);
     ~TBBHashmap();
 
     void Rehash(int64_t buckets) override;
 
     void Insert(const void* input_keys,
-                std::vector<const void*> input_values,
+                std::vector<const void*> input_values_soa,
                 buf_index_t* output_buf_indices,
                 bool* output_masks,
                 int64_t count) override;
@@ -89,7 +89,7 @@ protected:
     std::shared_ptr<CPUHashmapBufferAccessor> buffer_accessor_;
 
     void InsertImpl(const void* input_keys,
-                    std::vector<const void*> input_values,
+                    std::vector<const void*> input_values_soa,
                     buf_index_t* output_buf_indices,
                     bool* output_masks,
                     int64_t count);
@@ -99,10 +99,10 @@ protected:
 
 template <typename Key, typename Hash>
 TBBHashmap<Key, Hash>::TBBHashmap(int64_t init_capacity,
-                                  int64_t dsize_key,
-                                  std::vector<int64_t> dsize_values,
+                                  int64_t key_dsize,
+                                  std::vector<int64_t> value_dsizes,
                                   const Device& device)
-    : DeviceHashmap(init_capacity, dsize_key, dsize_values, device) {
+    : DeviceHashmap(init_capacity, key_dsize, value_dsizes, device) {
     Allocate(init_capacity);
 }
 
@@ -115,11 +115,12 @@ int64_t TBBHashmap<Key, Hash>::Size() const {
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::Insert(const void* input_keys,
-                                   const std::vector<const void*> input_values,
-                                   buf_index_t* output_buf_indices,
-                                   bool* output_masks,
-                                   int64_t count) {
+void TBBHashmap<Key, Hash>::Insert(
+        const void* input_keys,
+        const std::vector<const void*> input_values_soa,
+        buf_index_t* output_buf_indices,
+        bool* output_masks,
+        int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
         int64_t bucket_count = GetBucketCount();
@@ -132,7 +133,7 @@ void TBBHashmap<Key, Hash>::Insert(const void* input_keys,
 
         Rehash(expected_buckets);
     }
-    InsertImpl(input_keys, input_values, output_buf_indices, output_masks,
+    InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks,
                count);
 }
 
@@ -267,16 +268,16 @@ float TBBHashmap<Key, Hash>::LoadFactor() const {
 template <typename Key, typename Hash>
 void TBBHashmap<Key, Hash>::InsertImpl(
         const void* input_keys,
-        const std::vector<const void*> input_values,
+        const std::vector<const void*> input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
-    size_t n_values = dsize_values_.size();
+    size_t n_values = value_dsizes_.size();
 
-    bool assign = (input_values.size() == n_values);
-    if (input_values.size() != n_values && input_values.size() != 0) {
+    bool assign = (input_values_soa.size() == n_values);
+    if (input_values_soa.size() != n_values && input_values_soa.size() != 0) {
         utility::LogWarning(
                 "Input values mismatch with actual stored values, fall back to "
                 "activate/reset instead of insertion.");
@@ -307,11 +308,11 @@ void TBBHashmap<Key, Hash>::InsertImpl(
 
                 if (assign) {
                     const uint8_t* src_value =
-                            static_cast<const uint8_t*>(input_values[j]) +
-                            this->dsize_values_[j] * i;
-                    std::memcpy(dst_value, src_value, this->dsize_values_[j]);
+                            static_cast<const uint8_t*>(input_values_soa[j]) +
+                            this->value_dsizes_[j] * i;
+                    std::memcpy(dst_value, src_value, this->value_dsizes_[j]);
                 } else {
-                    std::memset(dst_value, 0, this->dsize_values_[j]);
+                    std::memset(dst_value, 0, this->value_dsizes_[j]);
                 }
             }
 
@@ -330,8 +331,8 @@ void TBBHashmap<Key, Hash>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     this->buffer_ =
-            std::make_shared<HashmapBuffer>(this->capacity_, this->dsize_key_,
-                                            this->dsize_values_, this->device_);
+            std::make_shared<HashmapBuffer>(this->capacity_, this->key_dsize_,
+                                            this->value_dsizes_, this->device_);
 
     buffer_accessor_ =
             std::make_shared<CPUHashmapBufferAccessor>(*this->buffer_);

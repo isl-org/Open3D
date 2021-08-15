@@ -70,10 +70,10 @@ core::Hashmap ReadHashmap(const std::string& file_name) {
     // Key
     core::Tensor keys = tensor_map.at("key");
 
-    core::Dtype dtype_key = keys.GetDtype();
+    core::Dtype key_dtype = keys.GetDtype();
 
     core::SizeVector shape_key = keys.GetShape();
-    core::SizeVector element_shape_key(shape_key.begin() + 1, shape_key.end());
+    core::SizeVector key_element_shape(shape_key.begin() + 1, shape_key.end());
 
     int64_t init_capacity = keys.GetLength();
 
@@ -87,19 +87,19 @@ core::Hashmap ReadHashmap(const std::string& file_name) {
     for (int64_t i = 0; i < n_values; ++i) {
         core::Tensor value_i = tensor_map.at(fmt::format("value_{:03d}", i));
 
-        core::Dtype dtype_value_i = value_i.GetDtype();
+        core::Dtype value_dtype_i = value_i.GetDtype();
 
         core::SizeVector shape_value_i = value_i.GetShape();
-        core::SizeVector element_shape_value_i(shape_value_i.begin() + 1,
+        core::SizeVector value_element_shape_i(shape_value_i.begin() + 1,
                                                shape_value_i.end());
 
         arr_input_values.push_back(value_i);
-        dtypes_value.push_back(dtype_value_i);
-        element_shapes_value.push_back(element_shape_value_i);
+        dtypes_value.push_back(value_dtype_i);
+        element_shapes_value.push_back(value_element_shape_i);
     }
 
     auto hashmap =
-            core::Hashmap(init_capacity, dtype_key, element_shape_key,
+            core::Hashmap(init_capacity, key_dtype, key_element_shape,
                           dtypes_value, element_shapes_value, core::Device());
 
     core::Tensor masks, buf_indices;
