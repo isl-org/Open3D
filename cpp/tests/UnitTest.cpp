@@ -24,43 +24,44 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+// TEST_DATA_DIR defined in CMakeLists.txt
+// Put it here to avoid editor warnings
+#ifndef TEST_DATA_DIR
+#define TEST_DATA_DIR
+#endif
 
-#include <gtest/gtest.h>
-
-#include <Eigen/Core>
-#include <sstream>
-#include <string>
-#include <vector>
-
-#include "open3d/Macro.h"
-#include "tests/test_utility/Compare.h"
-#include "tests/test_utility/Print.h"
-#include "tests/test_utility/Rand.h"
-#include "tests/test_utility/Raw.h"
-#include "tests/test_utility/Sort.h"
+#include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {
 
-// Eigen Zero()
-const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
-const Eigen::Vector3d Zero3d = Eigen::Vector3d::Zero();
-const Eigen::Matrix<double, 6, 1> Zero6d = Eigen::Matrix<double, 6, 1>::Zero();
-const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
+void NotImplemented() {
+    std::cout << "\033[0;32m"
+              << "[          ] "
+              << "\033[0;0m";
+    std::cout << "\033[0;31m"
+              << "Not implemented."
+              << "\033[0;0m" << std::endl;
 
-// Mechanism for reporting unit tests for which there is no implementation yet.
-void NotImplemented();
+    GTEST_NONFATAL_FAILURE_("Not implemented");
+}
 
-/// Returns Open3D common data directory. If a relative path will be appended
-/// when specified.
-/// \param relative_path Relative path to Open3D common data directory.
-std::string GetDataPathCommon(const std::string& relative_path = "");
+std::string GetDataPathCommon(const std::string& relative_path) {
+    if (relative_path.empty()) {
+        return std::string(TEST_DATA_DIR);
+    } else {
+        return std::string(TEST_DATA_DIR) + "/" + relative_path;
+    }
+}
 
-/// Returns Open3D download data directory. If a relative path will be appended
-/// when specified.
-/// \param relative_path Relative path to Open3D download data directory.
-std::string GetDataPathDownload(const std::string& relative_path = "");
+std::string GetDataPathDownload(const std::string& relative_path) {
+    if (relative_path.empty()) {
+        return std::string(TEST_DATA_DIR) + "/open3d_downloads";
+    } else {
+        return std::string(TEST_DATA_DIR) + "/open3d_downloads/" +
+               relative_path;
+    }
+}
 
 }  // namespace tests
 }  // namespace open3d
