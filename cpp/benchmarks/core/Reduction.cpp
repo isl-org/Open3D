@@ -36,27 +36,27 @@
 #include "open3d/core/kernel/Kernel.h"
 
 namespace open3d {
-namespace core {
+namespace benchmarks {
 
-void Reduction(benchmark::State& state, const Device& device) {
+void Reduction(benchmark::State& state, const core::Device& device) {
     int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
-    Tensor src(shape, core::Int64, device);
-    Tensor warm_up = src.Sum({1});
+    core::SizeVector shape{2, large_dim};
+    core::Tensor src(shape, core::Int64, device);
+    core::Tensor warm_up = src.Sum({1});
     (void)warm_up;
     for (auto _ : state) {
-        Tensor dst = src.Sum({1});
-        cuda::Synchronize(device);
+        core::Tensor dst = src.Sum({1});
+        core::cuda::Synchronize(device);
     }
 }
 
-BENCHMARK_CAPTURE(Reduction, CPU, Device("CPU:0"))
+BENCHMARK_CAPTURE(Reduction, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(Reduction, CUDA, Device("CUDA:0"))
+BENCHMARK_CAPTURE(Reduction, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
-}  // namespace core
+}  // namespace benchmarks
 }  // namespace open3d

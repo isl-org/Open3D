@@ -31,25 +31,27 @@
 #include "open3d/core/Tensor.h"
 
 namespace open3d {
-namespace core {
+namespace benchmarks {
 
-void Zeros(benchmark::State& state, const Device& device) {
+void Zeros(benchmark::State& state, const core::Device& device) {
     int64_t large_dim = (1ULL << 27) + 10;
-    SizeVector shape{2, large_dim};
+    core::SizeVector shape{2, large_dim};
 
-    Tensor warm_up = Tensor::Zeros(shape, core::Float32, device);
+    core::Tensor warm_up = core::Tensor::Zeros(shape, core::Float32, device);
     (void)warm_up;
     for (auto _ : state) {
-        Tensor dst = Tensor::Zeros(shape, core::Float32, device);
-        cuda::Synchronize(device);
+        core::Tensor dst = core::Tensor::Zeros(shape, core::Float32, device);
+        core::cuda::Synchronize(device);
     }
 }
 
-BENCHMARK_CAPTURE(Zeros, CPU, Device("CPU:0"))->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(Zeros, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(Zeros, CUDA, Device("CUDA:0"))->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(Zeros, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
 #endif
 
-}  // namespace core
+}  // namespace benchmarks
 }  // namespace open3d

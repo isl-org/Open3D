@@ -32,21 +32,21 @@
 #include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
-namespace core {
+namespace benchmarks {
 
 enum class MemoryManagerBackend { Direct, Cached };
 
-std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
-        const Device& device, const MemoryManagerBackend& backend) {
-    std::shared_ptr<DeviceMemoryManager> device_mm;
+std::shared_ptr<core::DeviceMemoryManager> MakeMemoryManager(
+        const core::Device& device, const MemoryManagerBackend& backend) {
+    std::shared_ptr<core::DeviceMemoryManager> device_mm;
     switch (device.GetType()) {
-        case Device::DeviceType::CPU:
-            device_mm = std::make_shared<CPUMemoryManager>();
+        case core::Device::DeviceType::CPU:
+            device_mm = std::make_shared<core::CPUMemoryManager>();
             break;
 
 #ifdef BUILD_CUDA_MODULE
-        case Device::DeviceType::CUDA:
-            device_mm = std::make_shared<CUDAMemoryManager>();
+        case core::Device::DeviceType::CUDA:
+            device_mm = std::make_shared<core::CUDAMemoryManager>();
             break;
 #endif
 
@@ -60,7 +60,7 @@ std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
             return device_mm;
 
         case MemoryManagerBackend::Cached:
-            return std::make_shared<CachedMemoryManager>(device_mm);
+            return std::make_shared<core::CachedMemoryManager>(device_mm);
 
         default:
             utility::LogError("Unimplemented backend");
@@ -70,9 +70,9 @@ std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
 
 void Malloc(benchmark::State& state,
             int size,
-            const Device& device,
+            const core::Device& device,
             const MemoryManagerBackend& backend) {
-    CachedMemoryManager::ReleaseCache(device);
+    core::CachedMemoryManager::ReleaseCache(device);
 
     auto device_mm = MakeMemoryManager(device, backend);
 
@@ -80,27 +80,27 @@ void Malloc(benchmark::State& state,
     {
         void* ptr = device_mm->Malloc(size, device);
         device_mm->Free(ptr, device);
-        cuda::Synchronize(device);
+        core::cuda::Synchronize(device);
     }
 
     for (auto _ : state) {
         void* ptr = device_mm->Malloc(size, device);
-        cuda::Synchronize(device);
+        core::cuda::Synchronize(device);
 
         state.PauseTiming();
         device_mm->Free(ptr, device);
-        cuda::Synchronize(device);
+        core::cuda::Synchronize(device);
         state.ResumeTiming();
     }
 
-    CachedMemoryManager::ReleaseCache(device);
+    core::CachedMemoryManager::ReleaseCache(device);
 }
 
 void Free(benchmark::State& state,
           int size,
-          const Device& device,
+          const core::Device& device,
           const MemoryManagerBackend& backend) {
-    CachedMemoryManager::ReleaseCache(device);
+    core::CachedMemoryManager::ReleaseCache(device);
 
     auto device_mm = MakeMemoryManager(device, backend);
 
@@ -108,20 +108,20 @@ void Free(benchmark::State& state,
     {
         void* ptr = device_mm->Malloc(size, device);
         device_mm->Free(ptr, device);
-        cuda::Synchronize(device);
+        core::cuda::Synchronize(device);
     }
 
     for (auto _ : state) {
         state.PauseTiming();
         void* ptr = device_mm->Malloc(size, device);
-        cuda::Synchronize(device);
+        core::cuda::Synchronize(device);
         state.ResumeTiming();
 
         device_mm->Free(ptr, device);
-        cuda::Synchronize(device);
+        core::cuda::Synchronize(device);
     }
 
-    CachedMemoryManager::ReleaseCache(device);
+    core::CachedMemoryManager::ReleaseCache(device);
 }
 
 #define ENUM_BM_SIZE(FN, DEVICE, DEVICE_NAME, BACKEND)                         \
@@ -149,19 +149,20 @@ void Free(benchmark::State& state,
             ->Unit(benchmark::kMicrosecond);
 
 #ifdef BUILD_CUDA_MODULE
-#define ENUM_BM_BACKEND(FN)                                                \
-    ENUM_BM_SIZE(FN, Device("CPU:0"), CPU, MemoryManagerBackend::Direct)   \
-    ENUM_BM_SIZE(FN, Device("CPU:0"), CPU, MemoryManagerBackend::Cached)   \
-    ENUM_BM_SIZE(FN, Device("CUDA:0"), CUDA, MemoryManagerBackend::Direct) \
-    ENUM_BM_SIZE(FN, Device("CUDA:0"), CUDA, MemoryManagerBackend::Cached)
+#define ENUM_BM_BACKEND(FN)                                                    \
+    ENUM_BM_SIZE(FN, core::Device("CPU:0"), CPU, MemoryManagerBackend::Direct) \
+    ENUM_BM_SIZE(FN, core::Device("CPU:0"), CPU, MemoryManagerBackend::Cached) \
+    ENUM_BM_SIZE(FN, core::Device("CUDA:0"), CUDA,                             \
+                 MemoryManagerBackend::Direct)                                 \
+    ENUM_BM_SIZE(FN, core::Device("CUDA:0"), CUDA, MemoryManagerBackend::Cached)
 #else
-#define ENUM_BM_BACKEND(FN)                                              \
-    ENUM_BM_SIZE(FN, Device("CPU:0"), CPU, MemoryManagerBackend::Direct) \
-    ENUM_BM_SIZE(FN, Device("CPU:0"), CPU, MemoryManagerBackend::Cached)
+#define ENUM_BM_BACKEND(FN)                                                    \
+    ENUM_BM_SIZE(FN, core::Device("CPU:0"), CPU, MemoryManagerBackend::Direct) \
+    ENUM_BM_SIZE(FN, core::Device("CPU:0"), CPU, MemoryManagerBackend::Cached)
 #endif
 
 ENUM_BM_BACKEND(Malloc)
 ENUM_BM_BACKEND(Free)
 
-}  // namespace core
+}  // namespace benchmarks
 }  // namespace open3d

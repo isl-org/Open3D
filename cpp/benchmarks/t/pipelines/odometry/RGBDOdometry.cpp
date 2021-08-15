@@ -38,9 +38,7 @@
 #include "open3d/t/io/PointCloudIO.h"
 
 namespace open3d {
-namespace t {
-namespace pipelines {
-namespace odometry {
+namespace benchmarks {
 
 static core::Tensor CreateIntrisicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
@@ -209,7 +207,6 @@ BENCHMARK_CAPTURE(RGBDOdometryMultiScale,
                   t::pipelines::odometry::Method::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 #endif
-}  // namespace odometry
-}  // namespace pipelines
-}  // namespace t
+
+}  // namespace benchmarks
 }  // namespace open3d

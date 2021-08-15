@@ -38,8 +38,7 @@
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
-namespace pipelines {
-namespace registration {
+namespace benchmarks {
 
 // Testing parameters:
 // Filename for pointcloud registration data.
@@ -82,7 +81,8 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
 }
 
 static void BenchmarkRegistrationICPLegacy(
-        benchmark::State& state, const TransformationEstimationType& type) {
+        benchmark::State& state,
+        const pipelines::registration::TransformationEstimationType& type) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
@@ -90,30 +90,37 @@ static void BenchmarkRegistrationICPLegacy(
                                               target_pointcloud_filename,
                                               voxel_downsampling_factor);
 
-    std::shared_ptr<TransformationEstimation> estimation;
-    if (type == TransformationEstimationType::PointToPlane) {
-        estimation = std::make_shared<TransformationEstimationPointToPlane>();
-    } else if (type == TransformationEstimationType::PointToPoint) {
-        estimation = std::make_shared<TransformationEstimationPointToPoint>();
+    std::shared_ptr<pipelines::registration::TransformationEstimation>
+            estimation;
+    if (type ==
+        pipelines::registration::TransformationEstimationType::PointToPlane) {
+        estimation = std::make_shared<
+                pipelines::registration::
+                        TransformationEstimationPointToPlane>();
+    } else if (type == pipelines::registration::TransformationEstimationType::
+                               PointToPoint) {
+        estimation = std::make_shared<
+                pipelines::registration::
+                        TransformationEstimationPointToPoint>();
     }
 
     Eigen::Matrix4d init_trans;
     init_trans << 0.862, 0.011, -0.507, 0.5, -0.139, 0.967, -0.215, 0.7, 0.487,
             0.255, 0.835, -1.4, 0.0, 0.0, 0.0, 1.0;
 
-    RegistrationResult reg_result(init_trans);
+    pipelines::registration::RegistrationResult reg_result(init_trans);
     // Warm up.
     reg_result = RegistrationICP(
             source, target, max_correspondence_distance, init_trans,
             *estimation,
-            ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                   max_iterations));
+            pipelines::registration::ICPConvergenceCriteria(
+                    relative_fitness, relative_rmse, max_iterations));
     for (auto _ : state) {
         reg_result = RegistrationICP(
                 source, target, max_correspondence_distance, init_trans,
                 *estimation,
-                ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                       max_iterations));
+                pipelines::registration::ICPConvergenceCriteria(
+                        relative_fitness, relative_rmse, max_iterations));
     }
 
     utility::LogDebug(" Max iterations: {}, Max_correspondence_distance : {}",
@@ -122,16 +129,17 @@ static void BenchmarkRegistrationICPLegacy(
                       reg_result.inlier_rmse_);
 }
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
-                  PointToPlane / CPU,
-                  TransformationEstimationType::PointToPlane)
+BENCHMARK_CAPTURE(
+        BenchmarkRegistrationICPLegacy,
+        PointToPlane / CPU,
+        pipelines::registration::TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
-                  PointToPoint / CPU,
-                  TransformationEstimationType::PointToPoint)
+BENCHMARK_CAPTURE(
+        BenchmarkRegistrationICPLegacy,
+        PointToPoint / CPU,
+        pipelines::registration::TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 
-}  // namespace registration
-}  // namespace pipelines
+}  // namespace benchmarks
 }  // namespace open3d

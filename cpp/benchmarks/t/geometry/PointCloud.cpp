@@ -36,11 +36,10 @@
 #include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
-namespace t {
-namespace geometry {
+namespace benchmarks {
 
 void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
-    open3d::geometry::PointCloud legacy_pcd;
+    geometry::PointCloud legacy_pcd;
     size_t num_points = 1000000;  // 1M
     legacy_pcd.points_ =
             std::vector<Eigen::Vector3d>(num_points, Eigen::Vector3d(0, 0, 0));
@@ -61,7 +60,7 @@ void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
 
 void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     int64_t num_points = 1000000;  // 1M
-    PointCloud pcd(device);
+    t::geometry::PointCloud pcd(device);
     pcd.SetPointPositions(core::Tensor({num_points, 3}, core::Float32, device));
     pcd.SetPointColors(core::Tensor({num_points, 3}, core::Float32, device));
 
@@ -104,7 +103,7 @@ void VoxelDownSample(benchmark::State& state,
 }
 
 void Transform(benchmark::State& state, const core::Device& device) {
-    PointCloud pcd;
+    t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
@@ -117,7 +116,7 @@ void Transform(benchmark::State& state, const core::Device& device) {
                                           .To(dtype);
 
     // Warm Up.
-    PointCloud pcd_transformed = pcd.Transform(transformation);
+    t::geometry::PointCloud pcd_transformed = pcd.Transform(transformation);
 
     for (auto _ : state) {
         pcd_transformed = pcd.Transform(transformation);
@@ -185,6 +184,5 @@ BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
-}  // namespace geometry
-}  // namespace t
+}  // namespace benchmarks
 }  // namespace open3d
