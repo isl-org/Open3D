@@ -32,10 +32,10 @@ import hashlib
 import io
 import time
 
-# Typically "Open3D/examples/test_data", the test data dir.
+# Typically "Open3D/data/common", the test data dir.
 _test_data_dir = Path(__file__).parent.absolute().resolve()
 
-# Typically "Open3D/examples/test_data/open3d_downloads", the download dir.
+# Typically "Open3D/data/common/open3d_downloads", the download dir.
 _download_dir = _test_data_dir / "open3d_downloads"
 
 
@@ -62,7 +62,7 @@ def _download_file(url, path, sha256, max_retry=3):
         raise AssertionError(f"{full_path} must be inside {_download_dir}.")
 
     # Supports sub directory inside _test_data_dir, e.g.
-    # Open3D/examples/test_data/open3d_downloads/foo/bar/my_file.txt
+    # Open3D/data/common/open3d_downloads/foo/bar/my_file.txt
     full_path.parent.mkdir(parents=True, exist_ok=True)
 
     if full_path.exists() and _compute_sha256(full_path) == sha256:

@@ -38,7 +38,7 @@ import shutil
 import sys
 
 # Whenever you import open3d_tutorial, the test data will be downloaded
-# automatically to Open3D/examples/test_data/open3d_downloads. Therefore, make
+# automatically to Open3D/data/common/open3d_downloads. Therefore, make
 # sure to import open3d_tutorial before running the tutorials.
 # See https://github.com/isl-org/open3d_downloads for details on how to
 # manage the test data files.

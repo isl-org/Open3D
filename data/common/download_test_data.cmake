@@ -1,5 +1,5 @@
 # Download Open3D test data files. The default download path is
-# Open3D/examples/test_data/open3d_downloads
+# Open3D/data/common/open3d_downloads
 #
 # See https://github.com/isl-org/open3d_downloads for details on how to
 # manage the test data files.
@@ -19,7 +19,7 @@ function(download_dataset_file dataset_url dataset_path dataset_sha256)
     endif()
 
     # Support subdirectory inside OPEN3D_DATA_DIR_COMMON, e.g.
-    # Open3D/examples/test_data/open3d_downloads/foo/bar/my_file.txt
+    # Open3D/data/common/open3d_downloads/foo/bar/my_file.txt
     get_filename_component(DATASET_DIRECTORY "${DATASET_FULL_PATH}" DIRECTORY)
     file(MAKE_DIRECTORY "${DATASET_DIRECTORY}")
 

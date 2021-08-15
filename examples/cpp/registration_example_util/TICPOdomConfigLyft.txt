@@ -17,7 +17,7 @@ visualization_max = 10.0
 verbosity = Info
 
 # Path of the downloaded dataset containing frames in .pcd or .ply format.
-dataset_path = ../../../examples/test_data/open3d_downloads/datasets/lyft_samples/output/
+dataset_path = ../../../data/common/open3d_downloads/datasets/lyft_samples/output/
 
 # Range of frames is start_index to end_index.
 start_index = 0

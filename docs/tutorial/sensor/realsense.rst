@@ -254,7 +254,7 @@ to a bag file. The recording can be paused / resumed with [SPACE]. Use [ESC] to
 stop capture and quit. You can use this example to capture your own dataset::
 
         make RealSenseRecorder
-        bin/examples/RealSenseRecorder --config ../examples/test_data/rs_default_config.json --record test_data.bag
+        bin/examples/RealSenseRecorder --config ../data/common/rs_default_config.json --record test_data.bag
 
 .. image:: https://storage.googleapis.com/open3d-bin/docs/images/RealSenseRecorder.jpg
     :width: 800px

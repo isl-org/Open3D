@@ -37,7 +37,7 @@ test_data_dir = os.path.join(_pwd, os.pardir, os.pardir, "examples",
                              "test_data")
 
 # Whenever you import open3d_test, the test data will be downloaded
-# automatically to Open3D/examples/test_data/open3d_downloads. Therefore, make
+# automatically to Open3D/data/common/open3d_downloads. Therefore, make
 # sure to import open3d_test or anything inside open3d_test before running
 # unit tests. See https://github.com/isl-org/open3d_downloads for details on
 # how to manage the test data files.

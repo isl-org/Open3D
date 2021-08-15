@@ -32,7 +32,7 @@
 using namespace open3d;
 
 // TODO: remove hard-coded path.
-const std::string TEST_DIR = "../../../examples/test_data";
+const std::string TEST_DIR = "../../../data/common";
 
 // Create and add a window to gui::Application, but do not run it yet.
 void AddDrawWindow(

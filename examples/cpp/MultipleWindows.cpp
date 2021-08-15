@@ -37,7 +37,7 @@ using namespace open3d::visualization;
 
 const int WIDTH = 1024;
 const int HEIGHT = 768;
-const std::string DATA_PATH = "../../../examples/test_data/ICP/cloud_bin_0.pcd";
+const std::string DATA_PATH = "../../../data/common/ICP/cloud_bin_0.pcd";
 const Eigen::Vector3f CENTER_OFFSET(0.0f, 0.0f, -3.0f);
 const std::string CLOUD_NAME = "points";
 
