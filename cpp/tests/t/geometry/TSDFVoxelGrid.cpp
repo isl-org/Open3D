@@ -75,14 +75,12 @@ t::geometry::TSDFVoxelGrid IntegrateTestScene(
     for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
         // Load image
         t::geometry::Image depth =
-                t::io::CreateImageFromFile(
-                        fmt::format("{}/RGBD/depth/{:05d}.png",
-                                    std::string(TEST_DATA_DIR), i))
+                t::io::CreateImageFromFile(GetDataPathCommon(fmt::format(
+                                                   "RGBD/depth/{:05d}.png", i)))
                         ->To(device);
         t::geometry::Image color =
-                t::io::CreateImageFromFile(
-                        fmt::format("{}/RGBD/color/{:05d}.jpg",
-                                    std::string(TEST_DATA_DIR), i))
+                t::io::CreateImageFromFile(GetDataPathCommon(fmt::format(
+                                                   "RGBD/color/{:05d}.jpg", i)))
                         ->To(device);
 
         Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;

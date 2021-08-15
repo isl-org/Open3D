@@ -34,14 +34,14 @@ namespace open3d {
 namespace tests {
 
 TEST(TriangleMeshIO, CreateMeshFromFile) {
-    auto mesh = t::io::CreateMeshFromFile(TEST_DATA_DIR "/knot.ply");
+    auto mesh = t::io::CreateMeshFromFile(GetDataPathCommon("/knot.ply"));
     EXPECT_EQ(mesh->GetTriangleIndices().GetLength(), 2880);
     EXPECT_EQ(mesh->GetVertexPositions().GetLength(), 1440);
 }
 
 TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
     t::geometry::TriangleMesh mesh, mesh_read;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/knot.ply", mesh));
+    EXPECT_TRUE(t::io::ReadTriangleMesh(GetDataPathCommon("/knot.ply"), mesh));
     std::string file_name = GetDataPathCommon("test_mesh.ply");
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
@@ -100,9 +100,9 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
 TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     t::geometry::TriangleMesh mesh_tensor, mesh_tensor_read;
     geometry::TriangleMesh mesh_legacy, mesh_legacy_read;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/monkey/monkey.obj",
+    EXPECT_TRUE(t::io::ReadTriangleMesh(GetDataPathCommon("/monkey/monkey.obj"),
                                         mesh_tensor));
-    EXPECT_TRUE(io::ReadTriangleMesh(TEST_DATA_DIR "/monkey/monkey.obj",
+    EXPECT_TRUE(io::ReadTriangleMesh(GetDataPathCommon("/monkey/monkey.obj"),
                                      mesh_legacy));
 
     EXPECT_EQ(mesh_tensor.GetTriangleIndices().GetLength(),
