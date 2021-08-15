@@ -4,11 +4,9 @@
 
 # examples/python/reconstruction_system/common.py
 
-import sys, os
-import time
+import os
 import numpy as np
 import open3d as o3d
-import argparse
 import glob
 
 
@@ -37,9 +35,9 @@ def load_image_file_names(config):
         if len(color_file_names) == n_depth:
             return sorted(depth_file_names), sorted(color_file_names)
 
-    print(
-        'Found {} depth images in {}, but cannot find matched number of color images in {} with extensions {}, abort!'
-        .format(n_depth, depth_folder, color_folder, extensions))
+    print('Found {} depth images in {}, but cannot find matched number of '
+          'color images in {} with extensions {}, abort!'.format(
+              n_depth, depth_folder, color_folder, extensions))
     return [], []
 
 

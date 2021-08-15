@@ -1,5 +1,4 @@
 import os
-import yaml
 import configargparse
 
 
@@ -107,7 +106,7 @@ class ConfigParser(configargparse.ArgParser):
         integration_parser.add(
             '--surface_weight_thr', type=float,
             help='Weight threshold to filter outliers during volumetric surface reconstruction.')
-        #yapf:enable
+        # yapf:enable
 
     def get_config(self):
         config = self.parse_args()
@@ -138,13 +137,13 @@ class ConfigParser(configargparse.ArgParser):
 
 
 if __name__ == '__main__':
-    # Priority: command line > loaded yaml > default config
+    # Priority: command line > custom config file > default config file
     parser = ConfigParser()
     parser.add(
         '--config',
         is_config_file=True,
-        help=
-        'YAML config file path. Please refer to default_config.yml as a reference. It overrides the default config file, but will be overriden by other command line inputs.'
-    )
+        help='YAML config file path. Please refer to default_config.yml as a '
+        'reference. It overrides the default config file, but will be '
+        'overridden by other command line inputs.')
     config = parser.get_config()
     print(config)

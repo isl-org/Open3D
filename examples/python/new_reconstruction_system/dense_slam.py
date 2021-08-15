@@ -2,15 +2,12 @@
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
-import os
-import configargparse
 import numpy as np
 import open3d as o3d
-import argparse
 import time
 
 from config import ConfigParser
-from common import load_image_file_names, save_poses, load_intrinsic, init_volume, extract_pointcloud, extract_trianglemesh
+from common import load_image_file_names, save_poses, load_intrinsic, extract_trianglemesh
 
 
 def slam(depth_file_names, color_file_names, intrinsic, config):
@@ -63,9 +60,9 @@ if __name__ == '__main__':
     parser.add(
         '--config',
         is_config_file=True,
-        help=
-        'YAML config file path. Please refer to default_config.yml as a reference. It overrides the default config file, but will be overriden by other command line inputs.'
-    )
+        help='YAML config file path. Please refer to default_config.yml as a '
+        'reference. It overrides the default config file, but will be '
+        'overridden by other command line inputs.')
     config = parser.get_config()
 
     depth_file_names, color_file_names = load_image_file_names(config)
