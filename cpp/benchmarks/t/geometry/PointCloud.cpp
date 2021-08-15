@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "Benchmarks.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/io/PointCloudIO.h"

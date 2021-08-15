@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "Benchmarks.h"
 #include "open3d/core/CUDAUtils.h"
 
 namespace open3d {

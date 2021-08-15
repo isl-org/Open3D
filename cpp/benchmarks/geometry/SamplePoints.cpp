@@ -26,6 +26,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "Benchmarks.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/TriangleMeshIO.h"
 

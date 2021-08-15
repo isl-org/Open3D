@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "Benchmarks.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 
