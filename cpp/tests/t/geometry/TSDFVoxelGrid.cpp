@@ -214,9 +214,8 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
             // There are CPU/CUDA numerical differences around edges, so
             // we need to be tolerant.
             core::Tensor vertex_map_gt = core::Tensor::Load(
-                    fmt::format("{}/open3d_downloads/RGBD/"
-                                "raycast_vtx_{:03d}.npy",
-                                std::string(TEST_DATA_DIR), n - 1));
+                    GetDataPathDownload() +
+                    fmt::format("/RGBD/raycast_vtx_{:03d}.npy", n - 1));
             vertex_map.Save(fmt::format("raycast_vtx_{:03d}.npy", n - 1));
             int64_t discrepancy_count =
                     ((vertex_map.To(core::Device("CPU:0")) - vertex_map_gt)
