@@ -68,8 +68,7 @@ t::geometry::TSDFVoxelGrid IntegrateTestScene(
              {0, 0, 1}});
 
     // Extrinsics
-    std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
+    std::string trajectory_path = GetDataPathCommon("RGBD/odometry.log");
     auto trajectory =
             io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
 
@@ -113,7 +112,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
         auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacy();
         auto pcd_gt = *io::CreatePointCloudFromFile(
-                std::string(TEST_DATA_DIR) + "/RGBD/example_tsdf_pcd.ply");
+                GetDataPathCommon("RGBD/example_tsdf_pcd.ply"));
         auto result = pipelines::registration::EvaluateRegistration(
                 pcd, pcd_gt, dist_threshold);
 
@@ -172,8 +171,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
              {0, 0, 1}});
 
     // Extrinsic
-    std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
+    std::string trajectory_path = GetDataPathCommon("RGBD/odometry.log");
     auto trajectory =
             io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
     size_t n = trajectory->parameters_.size();

@@ -42,7 +42,7 @@ TEST(TriangleMeshIO, CreateMeshFromFile) {
 TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/knot.ply", mesh));
-    std::string file_name = std::string(TEST_DATA_DIR) + "/test_mesh.ply";
+    std::string file_name = GetDataPathCommon("test_mesh.ply");
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(
@@ -85,7 +85,7 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(triangles));
     EXPECT_TRUE(mesh.GetVertexPositions().AllClose(vertices));
 
-    std::string file_name = std::string(TEST_DATA_DIR) + "/test_mesh.obj";
+    std::string file_name = GetDataPathCommon("test_mesh.obj");
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(
@@ -112,10 +112,8 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     EXPECT_EQ(mesh_tensor.GetVertexNormals().GetLength(),
               static_cast<int64_t>(mesh_legacy.vertex_normals_.size()));
 
-    std::string file_name_tensor =
-            std::string(TEST_DATA_DIR) + "/test_mesh_tensor.obj";
-    std::string file_name_legacy =
-            std::string(TEST_DATA_DIR) + "/test_mesh_legacy.obj";
+    std::string file_name_tensor = GetDataPathCommon("test_mesh_tensor.obj");
+    std::string file_name_legacy = GetDataPathCommon("test_mesh_legacy.obj");
 
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name_tensor, mesh_tensor));
     EXPECT_TRUE(io::WriteTriangleMesh(file_name_legacy, mesh_legacy));
@@ -131,7 +129,7 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     std::remove(file_name_tensor.c_str());
     std::remove(file_name_legacy.c_str());
     std::string file_name_legacy_mtl =
-            std::string(TEST_DATA_DIR) + "/test_mesh_legacy.mtl";
+            GetDataPathCommon("test_mesh_legacy.mtl");
     std::remove(file_name_legacy_mtl.c_str());
 }
 

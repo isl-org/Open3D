@@ -1172,7 +1172,7 @@ TEST(PointCloud, ComputeConvexHull) {
 
 TEST(PointCloud, HiddenPointRemoval) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    io::ReadPointCloud(GetDataPathCommon("fragment.ply"), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
     ExpectEQ(pcd.GetMaxBound(), Eigen::Vector3d(3.96609, 2.427476, 2.55859));
     ExpectEQ(pcd.GetMinBound(), Eigen::Vector3d(0.558594, 0.832031, 0.566637));
@@ -1188,7 +1188,7 @@ TEST(PointCloud, HiddenPointRemoval) {
 
 TEST(PointCloud, ClusterDBSCAN) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    io::ReadPointCloud(GetDataPathCommon("fragment.ply"), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
 
     // Hard-coded test
@@ -1202,7 +1202,7 @@ TEST(PointCloud, ClusterDBSCAN) {
 
 TEST(PointCloud, SegmentPlane) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.pcd", pcd);
+    io::ReadPointCloud(GetDataPathCommon("fragment.pcd"), pcd);
     EXPECT_EQ(pcd.points_.size(), 113662);
 
     // Hard-coded test
@@ -1231,9 +1231,8 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
 
 TEST(PointCloud, CreateFromDepthImage) {
     const std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/trajectory.log";
-    const std::string im_depth_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png";
+            GetDataPathCommon("RGBD/trajectory.log");
+    const std::string im_depth_path = GetDataPathCommon("RGBD/depth/00000.png");
 
     camera::PinholeCameraTrajectory trajectory;
     io::ReadPinholeCameraTrajectory(trajectory_path, trajectory);
@@ -1259,11 +1258,9 @@ TEST(PointCloud, CreateFromDepthImage) {
 
 TEST(PointCloud, CreateFromRGBDImage) {
     const std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/trajectory.log";
-    const std::string im_depth_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png";
-    const std::string im_rgb_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00000.jpg";
+            GetDataPathCommon("RGBD/trajectory.log");
+    const std::string im_depth_path = GetDataPathCommon("RGBD/depth/00000.png");
+    const std::string im_rgb_path = GetDataPathCommon("RGBD/color/00000.jpg");
 
     camera::PinholeCameraTrajectory trajectory;
     io::ReadPinholeCameraTrajectory(trajectory_path, trajectory);
