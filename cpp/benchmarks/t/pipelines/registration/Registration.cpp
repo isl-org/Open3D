@@ -34,10 +34,6 @@
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
-// namespace t {
-// namespace pipelines {
-// namespace registration {
-
 namespace open3d {
 namespace benchmarks {
 
