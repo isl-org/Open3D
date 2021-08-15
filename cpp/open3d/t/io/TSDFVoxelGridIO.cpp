@@ -135,7 +135,7 @@ bool ReadTSDFVoxelGrid(const std::string &file_name,
     std::unordered_map<std::string, core::Tensor> tensor_map =
             t::io::ReadNpz(hashmap_file_name);
     core::Tensor keys = tensor_map.at("key").To(device);
-    core::Tensor values = tensor_map.at("value").To(device);
+    core::Tensor values = tensor_map.at("value_000").To(device);
 
     core::Tensor buf_indices, masks;
     tsdf_voxelgrid.GetBlockHashmap()->Insert(keys, values, buf_indices, masks);
