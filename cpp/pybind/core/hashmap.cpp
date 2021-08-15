@@ -46,21 +46,20 @@ void pybind_core_hashmap(py::module& m) {
             "A Hashmap is a map from key to data wrapped by Tensors.");
 
     hashmap.def(py::init([](int64_t init_capacity, const Dtype& dtype_key,
-                            const Dtype& dtype_value,
                             const py::handle& element_shape_key,
+                            const Dtype& dtype_value,
                             const py::handle& element_shape_value,
                             const Device& device) {
                     SizeVector element_shape_key_sv =
                             PyHandleToSizeVector(element_shape_key);
                     SizeVector element_shape_value_sv =
                             PyHandleToSizeVector(element_shape_value);
-                    return Hashmap(init_capacity, dtype_key, dtype_value,
-                                   element_shape_key_sv, element_shape_value_sv,
-                                   device);
+                    return Hashmap(init_capacity, dtype_key,
+                                   element_shape_key_sv, dtype_value,
+                                   element_shape_value_sv, device);
                 }),
-                "init_capacity"_a, "dtype_key"_a, "dtype_value"_a,
-                "element_shape_key"_a = SizeVector({1}),
-                "element_shape_value"_a = SizeVector({1}),
+                "init_capacity"_a, "dtype_key"_a, "element_shape_key"_a,
+                "dtype_value"_a, "element_shape_value"_a,
                 "device"_a = Device("CPU:0"));
 
     hashmap.def("insert",

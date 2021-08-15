@@ -46,8 +46,8 @@ public:
     /// - element_shape_key = {3}
     Hashmap(int64_t init_capacity,
             const Dtype& dtype_key,
-            const Dtype& dtype_value,
             const SizeVector& element_shape_key,
+            const Dtype& dtype_value,
             const SizeVector& element_shape_value,
             const Device& device,
             const HashmapBackend& backend = HashmapBackend::Default);
@@ -146,9 +146,9 @@ private:
     std::shared_ptr<DeviceHashmap> device_hashmap_;
 
     Dtype dtype_key_;
-    Dtype dtype_value_;
-
     SizeVector element_shape_key_;
+
+    Dtype dtype_value_;
     SizeVector element_shape_value_;
 };
 

@@ -36,14 +36,14 @@ namespace core {
 
 Hashmap::Hashmap(int64_t init_capacity,
                  const Dtype& dtype_key,
-                 const Dtype& dtype_value,
                  const SizeVector& element_shape_key,
+                 const Dtype& dtype_value,
                  const SizeVector& element_shape_value,
                  const Device& device,
                  const HashmapBackend& backend)
     : dtype_key_(dtype_key),
-      dtype_value_(dtype_value),
       element_shape_key_(element_shape_key),
+      dtype_value_(dtype_value),
       element_shape_value_(element_shape_value) {
     if (dtype_key_.GetDtypeCode() == Dtype::DtypeCode::Undefined ||
         dtype_value_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
@@ -212,8 +212,8 @@ Hashmap Hashmap::To(const Device& device, bool copy) const {
         return *this;
     }
 
-    Hashmap new_hashmap(GetCapacity(), dtype_key_, dtype_value_,
-                        element_shape_key_, element_shape_value_, device);
+    Hashmap new_hashmap(GetCapacity(), dtype_key_, element_shape_key_,
+                        dtype_value_, element_shape_value_, device);
 
     Tensor keys = GetKeyTensor().To(device, /*copy=*/true);
     Tensor values = GetValueTensor().To(device, /*copy=*/true);

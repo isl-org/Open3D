@@ -77,8 +77,8 @@ core::Hashmap ReadHashmap(const std::string& file_name) {
     core::SizeVector element_shape_value(shape_value.begin() + 1,
                                          shape_value.end());
 
-    auto hashmap = core::Hashmap(init_capacity, dtype_key, dtype_value,
-                                 element_shape_key, element_shape_value,
+    auto hashmap = core::Hashmap(init_capacity, dtype_key, element_shape_key,
+                                 dtype_value, element_shape_value,
                                  core::Device("CPU:0"));
 
     core::Tensor masks, buf_indices;

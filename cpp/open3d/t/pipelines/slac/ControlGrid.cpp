@@ -44,7 +44,7 @@ ControlGrid::ControlGrid(float grid_size,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
-            grid_count, core::Int32, core::Float32, core::SizeVector{3},
+            grid_count, core::Int32, core::SizeVector{3}, core::Float32,
             core::SizeVector{3}, device);
 }
 
@@ -54,8 +54,8 @@ ControlGrid::ControlGrid(float grid_size,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
     ctr_hashmap_ = std::make_shared<core::Hashmap>(
-            2 * keys.GetLength(), core::Int32, core::Float32,
-            core::SizeVector{3}, core::SizeVector{3}, device);
+            2 * keys.GetLength(), core::Int32, core::SizeVector{3},
+            core::Float32, core::SizeVector{3}, device);
 
     core::Tensor buf_indices, masks;
     ctr_hashmap_->Insert(keys, values, buf_indices, masks);
@@ -87,9 +87,8 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
     // Convert back to the meter unit.
     vals_nb = vals_nb.View({8 * n, 3}) * grid_size_;
 
-    core::Hashmap unique_hashmap(n, core::Int32, core::Int32,
-                                 core::SizeVector{3}, core::SizeVector{1},
-                                 device_);
+    core::Hashmap unique_hashmap(n, core::Int32, core::SizeVector{3},
+                                 core::Int32, core::SizeVector{1}, device_);
 
     core::Tensor buf_indices_unique, masks_unique;
     unique_hashmap.Activate(keys_nb, buf_indices_unique, masks_unique);

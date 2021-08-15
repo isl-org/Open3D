@@ -77,7 +77,7 @@ TEST_P(HashmapPermuteDevices, SimpleInit) {
 
     std::vector<core::HashmapBackend> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        // backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::Slab);
         backends.push_back(core::HashmapBackend::StdGPU);
     } else {
         backends.push_back(core::HashmapBackend::TBB);
@@ -92,7 +92,7 @@ TEST_P(HashmapPermuteDevices, SimpleInit) {
         core::Tensor values(values_val, {n}, core::Int32, device);
 
         int init_capacity = n * 2;
-        core::Hashmap hashmap(init_capacity, core::Int32, core::Int32, {1}, {1},
+        core::Hashmap hashmap(init_capacity, core::Int32, {1}, core::Int32, {1},
                               device, backend);
 
         core::Tensor buf_indices, masks;
@@ -123,7 +123,7 @@ TEST_P(HashmapPermuteDevices, Find) {
     core::Tensor values(data.vals_, {n}, core::Int32, device);
 
     for (auto backend : backends) {
-        core::Hashmap hashmap(init_capacity, core::Int32, core::Int32, {1}, {1},
+        core::Hashmap hashmap(init_capacity, core::Int32, {1}, core::Int32, {1},
                               device, backend);
 
         core::Tensor buf_indices, masks;
@@ -167,7 +167,7 @@ TEST_P(HashmapPermuteDevices, Insert) {
     core::Tensor values(data.vals_, {n}, core::Int32, device);
 
     for (auto backend : backends) {
-        core::Hashmap hashmap(init_capacity, core::Int32, core::Int32, {1}, {1},
+        core::Hashmap hashmap(init_capacity, core::Int32, {1}, core::Int32, {1},
                               device, backend);
 
         core::Tensor buf_indices, masks;
@@ -224,7 +224,7 @@ TEST_P(HashmapPermuteDevices, Erase) {
     core::Tensor keys_erase(data_erase.keys_, {n}, core::Int32, device);
 
     for (auto backend : backends) {
-        core::Hashmap hashmap(init_capacity, core::Int32, core::Int32, {1}, {1},
+        core::Hashmap hashmap(init_capacity, core::Int32, {1}, core::Int32, {1},
                               device, backend);
 
         core::Tensor buf_indices_insert, masks_insert;
@@ -284,7 +284,7 @@ TEST_P(HashmapPermuteDevices, Rehash) {
     core::Tensor values(data.vals_, {n}, core::Int32, device);
 
     for (auto backend : backends) {
-        core::Hashmap hashmap(init_capacity, core::Int32, core::Int32, {1}, {1},
+        core::Hashmap hashmap(init_capacity, core::Int32, {1}, core::Int32, {1},
                               device, backend);
 
         core::Tensor buf_indices, masks;
@@ -337,7 +337,7 @@ TEST_P(HashmapPermuteDevices, Clear) {
     core::Tensor values(data.vals_, {n}, core::Int32, device);
 
     for (auto backend : backends) {
-        core::Hashmap hashmap(init_capacity, core::Int32, core::Int32, {1}, {1},
+        core::Hashmap hashmap(init_capacity, core::Int32, {1}, core::Int32, {1},
                               device, backend);
 
         // Insert first
@@ -419,7 +419,7 @@ TEST_P(HashmapPermuteDevices, InsertComplexKeys) {
     core::Tensor values(data.vals_, {n}, core::Int32, device);
 
     for (auto backend : backends) {
-        core::Hashmap hashmap(init_capacity, core::Int32, core::Int32, {3}, {1},
+        core::Hashmap hashmap(init_capacity, core::Int32, {3}, core::Int32, {1},
                               device, backend);
 
         core::Tensor buf_indices, masks;
@@ -470,8 +470,8 @@ TEST_P(HashmapPermuteDevices, HashmapIO) {
     core::Tensor keys(keys_int3, {n, 3}, core::Dtype::Int32, device);
     core::Tensor values(data.vals_, {n}, core::Dtype::Int32, device);
 
-    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, core::Dtype::Int32,
-                          {3}, {1}, device);
+    core::Hashmap hashmap(init_capacity, core::Dtype::Int32, {3},
+                          core::Dtype::Int32, {1}, device);
     core::Tensor buf_indices, masks;
     hashmap.Insert(keys, values, buf_indices, masks);
     EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), slots);

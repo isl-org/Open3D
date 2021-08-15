@@ -36,14 +36,14 @@ from open3d_test import list_devices
 
 @pytest.mark.parametrize("device", list_devices())
 def test_creation(device):
-    hashmap = o3c.Hashmap(10, o3c.int64, o3c.int64, [1], [1], device)
+    hashmap = o3c.Hashmap(10, o3c.int64, [1], o3c.int64, [1], device)
     assert hashmap.size() == 0
 
 
 @pytest.mark.parametrize("device", list_devices())
 def test_insertion(device):
     capacity = 10
-    hashmap = o3c.Hashmap(capacity, o3c.int64, o3c.int64, [1], [1], device)
+    hashmap = o3c.Hashmap(capacity, o3c.int64, [1], o3c.int64, [1], device)
     keys = o3c.Tensor([100, 300, 500, 700, 900, 900],
                       dtype=o3c.int64,
                       device=device)
@@ -61,7 +61,7 @@ def test_insertion(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_activate(device):
     capacity = 10
-    hashmap = o3c.Hashmap(capacity, o3c.int64, o3c.int64, [1], [1], device)
+    hashmap = o3c.Hashmap(capacity, o3c.int64, [1], o3c.int64, [1], device)
     keys = o3c.Tensor([100, 300, 500, 700, 900, 900],
                       dtype=o3c.int64,
                       device=device)
@@ -77,7 +77,7 @@ def test_activate(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_find(device):
     capacity = 10
-    hashmap = o3c.Hashmap(capacity, o3c.int64, o3c.int64, [1], [1], device)
+    hashmap = o3c.Hashmap(capacity, o3c.int64, [1], o3c.int64, [1], device)
     keys = o3c.Tensor([100, 300, 500, 700, 900], dtype=o3c.int64, device=device)
     values = o3c.Tensor([1, 3, 5, 7, 9], dtype=o3c.int64, device=device)
     hashmap.insert(keys, values)
@@ -100,7 +100,7 @@ def test_find(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_erase(device):
     capacity = 10
-    hashmap = o3c.Hashmap(capacity, o3c.int64, o3c.int64, [1], [1], device)
+    hashmap = o3c.Hashmap(capacity, o3c.int64, [1], o3c.int64, [1], device)
     keys = o3c.Tensor([100, 300, 500, 700, 900], dtype=o3c.int64, device=device)
     values = o3c.Tensor([1, 3, 5, 7, 9], dtype=o3c.int64, device=device)
     hashmap.insert(keys, values)
@@ -127,7 +127,7 @@ def test_erase(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_complex_shape(device):
     capacity = 10
-    hashmap = o3c.Hashmap(capacity, o3c.int64, o3c.int64, [3], [1], device)
+    hashmap = o3c.Hashmap(capacity, o3c.int64, [3], o3c.int64, [1], device)
     keys = o3c.Tensor([[1, 2, 3], [2, 3, 4], [3, 4, 5]],
                       dtype=o3c.int64,
                       device=device)

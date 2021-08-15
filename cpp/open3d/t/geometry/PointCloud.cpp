@@ -211,7 +211,7 @@ PointCloud PointCloud::VoxelDownSample(
     core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
 
     core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(), core::Int64,
-                                        core::Int32, {3}, {1}, device_,
+                                        {3}, core::Int32, {1}, device_,
                                         backend);
 
     core::Tensor buf_indices, masks;

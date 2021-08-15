@@ -38,7 +38,6 @@ enum class HashmapBackend;
 
 class DeviceHashmap {
 public:
-    /// Comprehensive constructor for the developer.
     DeviceHashmap(int64_t init_capacity,
                   int64_t dsize_key,
                   std::vector<int64_t> dsize_values,
@@ -89,24 +88,36 @@ public:
     /// Clear stored map without reallocating memory.
     virtual void Clear() = 0;
 
+    /// Get the size (number of valid entries) of the hash map.
     virtual int64_t Size() const = 0;
+
+    /// Get the number of buckets of the hash map.
     virtual int64_t GetBucketCount() const = 0;
+
+    /// Get the current load factor, defined as size / bucket count.
     virtual float LoadFactor() const = 0;
 
+    /// Get the maximum capacity of the hash map.
     int64_t GetCapacity() const { return capacity_; }
+
+    /// Get the current device.
     Device GetDevice() const { return device_; }
 
-    /// Return number of elems per bucket.
-    /// High performance not required, so directly returns a vector.
+    /// Get the number of entries per bucket.
     virtual std::vector<int64_t> BucketSizes() const = 0;
 
+    /// Get the key buffer that stores actual keys.
     Tensor GetKeyBuffer() { return buffer_->GetKeyBuffer(); }
 
+    /// Get the value buffers that store actual array of values.
     std::vector<Tensor> GetValueBuffers() { return buffer_->GetValueBuffers(); }
+
+    /// Get the i-th value buffer that store an actual value array.
     Tensor GetValueBuffer(size_t i = 0) { return buffer_->GetValueBuffer(i); }
 
 public:
     int64_t capacity_;
+
     int64_t dsize_key_;
     std::vector<int64_t> dsize_values_;
 
