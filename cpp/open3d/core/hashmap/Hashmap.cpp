@@ -385,5 +385,64 @@ void Hashmap::PrepareMasksOutput(Tensor& output_masks, int64_t length) const {
     }
 }
 
+Hashset::Hashset(int64_t init_capacity,
+                 const Dtype& dtype_key,
+                 const SizeVector& element_shape_key,
+                 const Device& device,
+                 const HashmapBackend& backend)
+    : Hashmap(init_capacity,
+              dtype_key,
+              element_shape_key,
+              std::vector<Dtype>{},
+              std::vector<SizeVector>{},
+              device,
+              backend) {}
+
+Hashset::Hashset(int64_t init_capacity,
+                 const Dtype& dtype_key,
+                 const SizeVector& element_shape_key,
+                 const Dtype& dtype_value,
+                 const SizeVector& element_shape_value,
+                 const Device& device,
+                 const HashmapBackend& backend)
+    : Hashmap(init_capacity,
+              dtype_key,
+              element_shape_key,
+              std::vector<Dtype>{},
+              std::vector<SizeVector>{},
+              device,
+              backend) {
+    utility::LogError(
+            "A hash set does not accept values. Please use a hash map "
+            "instead.");
+}
+
+Hashset::Hashset(int64_t init_capacity,
+                 const Dtype& dtype_key,
+                 const SizeVector& element_shape_key,
+                 const std::vector<Dtype>& dtypes_value,
+                 const std::vector<SizeVector>& element_shapes_value,
+                 const Device& device,
+                 const HashmapBackend& backend)
+    : Hashmap(init_capacity,
+              dtype_key,
+              element_shape_key,
+              std::vector<Dtype>{},
+              std::vector<SizeVector>{},
+              device,
+              backend) {
+    if (dtypes_value.size() != 0 || element_shapes_value.size() != 0) {
+        utility::LogError(
+                "A hash set does not accept values. Please use a hash map "
+                "instead.");
+    }
+}
+
+void Hashset::Insert(const Tensor& input_keys,
+                     Tensor& output_buf_indices,
+                     Tensor& output_masks) {
+    return Hashmap::Insert(input_keys, std::vector<Tensor>{},
+                           output_buf_indices, output_masks);
+}
 }  // namespace core
 }  // namespace open3d

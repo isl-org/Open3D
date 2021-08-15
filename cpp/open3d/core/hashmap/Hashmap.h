@@ -182,5 +182,34 @@ private:
     std::vector<SizeVector> element_shapes_value_;
 };
 
+class Hashset : public Hashmap {
+public:
+    Hashset(int64_t init_capacity,
+            const Dtype& dtype_key,
+            const SizeVector& element_shape_key,
+            const Device& device,
+            const HashmapBackend& backend = HashmapBackend::Default);
+
+    Hashset(int64_t init_capacity,
+            const Dtype& dtype_key,
+            const SizeVector& element_shape_key,
+            const Dtype& dtype_value,
+            const SizeVector& element_shape_value,
+            const Device& device,
+            const HashmapBackend& backend = HashmapBackend::Default);
+
+    Hashset(int64_t init_capacity,
+            const Dtype& dtype_key,
+            const SizeVector& element_shape_key,
+            const std::vector<Dtype>& dtypes_value,
+            const std::vector<SizeVector>& element_shapes_value,
+            const Device& device,
+            const HashmapBackend& backend = HashmapBackend::Default);
+
+    void Insert(const Tensor& input_keys,
+                Tensor& output_buf_indices,
+                Tensor& output_masks);
+};
+
 }  // namespace core
 }  // namespace open3d

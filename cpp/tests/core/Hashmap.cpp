@@ -527,6 +527,40 @@ TEST_P(HashmapPermuteDevices, MultivalueInsertion) {
     }
 }
 
+TEST_P(HashmapPermuteDevices, Hashset) {
+    core::Device device = GetParam();
+    std::vector<core::HashmapBackend> backends;
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
+    } else {
+        backends.push_back(core::HashmapBackend::TBB);
+    }
+
+    const int n = 1000000;
+    const int slots = 1023;
+    int init_capacity = n * 2;
+
+    // Insert once, find twice
+    HashData<int3, int> data(n, slots);
+
+    std::vector<int> keys_int3;
+    keys_int3.assign(reinterpret_cast<int *>(data.keys_.data()),
+                     reinterpret_cast<int *>(data.keys_.data()) + 3 * n);
+    core::Tensor keys(keys_int3, {n, 3}, core::Int32, device);
+
+    for (auto backend : backends) {
+        core::Hashset hashset(init_capacity, core::Int32, {3}, device, backend);
+
+        core::Tensor buf_indices, masks;
+        hashset.Insert(keys, buf_indices, masks);
+        EXPECT_EQ(masks.To(core::Int64).Sum({0}).Item<int64_t>(), slots);
+
+        int64_t s = hashset.Size();
+        EXPECT_EQ(s, slots);
+    }
+}
+
 TEST_P(HashmapPermuteDevices, HashmapIO) {
     const core::Device &device = GetParam();
     const std::string file_name_noext = "hashmap";
