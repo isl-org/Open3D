@@ -31,5 +31,7 @@ endif()
 
 target_sources(benchmarks PRIVATE
     Main.cpp
+    Benchmarks.cpp
 )
 target_link_libraries(benchmarks PRIVATE benchmark::benchmark)
+target_include_directories(benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
