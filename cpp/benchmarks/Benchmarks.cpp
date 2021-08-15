@@ -27,7 +27,7 @@
 #include "Benchmarks.h"
 
 namespace open3d {
-namespace tests {
+namespace benchmarks {
 
 std::string GetDataPathCommon(const std::string& relative_path) {
     if (relative_path.empty()) {
@@ -46,5 +46,5 @@ std::string GetDataPathDownload(const std::string& relative_path) {
     }
 }
 
-}  // namespace tests
+}  // namespace benchmarks
 }  // namespace open3d
