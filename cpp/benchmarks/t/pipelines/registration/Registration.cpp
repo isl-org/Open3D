@@ -36,9 +36,9 @@
 // Testing parameters:
 // Filename for pointcloud registration data.
 static const std::string source_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
+        std::string(OPEN3D_DATA_DIR_COMMON) + "/ICP/cloud_bin_0.pcd";
 static const std::string target_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
+        std::string(OPEN3D_DATA_DIR_COMMON) + "/ICP/cloud_bin_1.pcd";
 
 static const double voxel_downsampling_factor = 0.02;
 

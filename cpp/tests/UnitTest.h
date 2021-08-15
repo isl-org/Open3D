@@ -26,10 +26,10 @@
 
 #pragma once
 
-// TEST_DATA_DIR defined in CMakeLists.txt
+// OPEN3D_DATA_DIR_COMMON defined in CMakeLists.txt
 // Put it here to avoid editor warnings
-#ifndef TEST_DATA_DIR
-#define TEST_DATA_DIR
+#ifndef OPEN3D_DATA_DIR_COMMON
+#define OPEN3D_DATA_DIR_COMMON
 #endif
 
 #include <gtest/gtest.h>

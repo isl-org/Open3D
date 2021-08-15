@@ -5,8 +5,8 @@
 # manage the test data files.
 
 
-set(TEST_DATA_DIR "${CMAKE_CURRENT_LIST_DIR}")
-set(DOWNLOAD_DIR "${TEST_DATA_DIR}/open3d_downloads")
+set(OPEN3D_DATA_DIR_COMMON "${CMAKE_CURRENT_LIST_DIR}")
+set(DOWNLOAD_DIR "${OPEN3D_DATA_DIR_COMMON}/open3d_downloads")
 
 
 function(download_dataset_file dataset_url dataset_path dataset_sha256)
@@ -18,7 +18,7 @@ function(download_dataset_file dataset_url dataset_path dataset_sha256)
         message(FATAL_ERROR "${DATASET_FULL_PATH} must be inside ${DOWNLOAD_DIR}")
     endif()
 
-    # Support subdirectory inside TEST_DATA_DIR, e.g.
+    # Support subdirectory inside OPEN3D_DATA_DIR_COMMON, e.g.
     # Open3D/examples/test_data/open3d_downloads/foo/bar/my_file.txt
     get_filename_component(DATASET_DIRECTORY "${DATASET_FULL_PATH}" DIRECTORY)
     file(MAKE_DIRECTORY "${DATASET_DIRECTORY}")
@@ -33,7 +33,7 @@ function(download_dataset_file dataset_url dataset_path dataset_sha256)
 endfunction()
 
 
-file(READ "${TEST_DATA_DIR}/download_file_list.json" DATASETS)
+file(READ "${OPEN3D_DATA_DIR_COMMON}/download_file_list.json" DATASETS)
 
 string(JSON DATASET_NUMBER LENGTH ${DATASETS})
 if (NOT DATASET_NUMBER STREQUAL "0")

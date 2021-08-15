@@ -639,8 +639,9 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     // Sanity test to visualize
     t::geometry::PointCloud pcd =
             t::geometry::PointCloud::FromLegacy(
-                    *io::CreatePointCloudFromFile(std::string(TEST_DATA_DIR) +
-                                                  "/ICP/cloud_bin_2.pcd"))
+                    *io::CreatePointCloudFromFile(
+                            std::string(OPEN3D_DATA_DIR_COMMON) +
+                            "/ICP/cloud_bin_2.pcd"))
                     .To(device);
     auto pcd_down = pcd.VoxelDownSample(0.1);
     io::WritePointCloud(fmt::format("down_{}.pcd", device.ToString()),

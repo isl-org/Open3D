@@ -34,15 +34,17 @@ namespace open3d {
 namespace tests {
 
 TEST(TriangleMeshIO, CreateMeshFromFile) {
-    auto mesh = t::io::CreateMeshFromFile(TEST_DATA_DIR "/knot.ply");
+    auto mesh = t::io::CreateMeshFromFile(OPEN3D_DATA_DIR_COMMON "/knot.ply");
     EXPECT_EQ(mesh->GetTriangleIndices().GetLength(), 2880);
     EXPECT_EQ(mesh->GetVertexPositions().GetLength(), 1440);
 }
 
 TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
     t::geometry::TriangleMesh mesh, mesh_read;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/knot.ply", mesh));
-    std::string file_name = std::string(TEST_DATA_DIR) + "/test_mesh.ply";
+    EXPECT_TRUE(
+            t::io::ReadTriangleMesh(OPEN3D_DATA_DIR_COMMON "/knot.ply", mesh));
+    std::string file_name =
+            std::string(OPEN3D_DATA_DIR_COMMON) + "/test_mesh.ply";
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(
@@ -55,7 +57,7 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
 TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(
-            TEST_DATA_DIR "/open3d_downloads/tests/cube.obj", mesh));
+            OPEN3D_DATA_DIR_COMMON "/open3d_downloads/tests/cube.obj", mesh));
 
     core::Tensor triangles = core::Tensor::Init<int64_t>({{0, 1, 2},
                                                           {3, 4, 5},
@@ -85,7 +87,8 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(triangles));
     EXPECT_TRUE(mesh.GetVertexPositions().AllClose(vertices));
 
-    std::string file_name = std::string(TEST_DATA_DIR) + "/test_mesh.obj";
+    std::string file_name =
+            std::string(OPEN3D_DATA_DIR_COMMON) + "/test_mesh.obj";
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(
@@ -100,10 +103,10 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
 TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     t::geometry::TriangleMesh mesh_tensor, mesh_tensor_read;
     geometry::TriangleMesh mesh_legacy, mesh_legacy_read;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/monkey/monkey.obj",
-                                        mesh_tensor));
-    EXPECT_TRUE(io::ReadTriangleMesh(TEST_DATA_DIR "/monkey/monkey.obj",
-                                     mesh_legacy));
+    EXPECT_TRUE(t::io::ReadTriangleMesh(
+            OPEN3D_DATA_DIR_COMMON "/monkey/monkey.obj", mesh_tensor));
+    EXPECT_TRUE(io::ReadTriangleMesh(
+            OPEN3D_DATA_DIR_COMMON "/monkey/monkey.obj", mesh_legacy));
 
     EXPECT_EQ(mesh_tensor.GetTriangleIndices().GetLength(),
               static_cast<int64_t>(mesh_legacy.triangles_.size()));
@@ -113,9 +116,9 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
               static_cast<int64_t>(mesh_legacy.vertex_normals_.size()));
 
     std::string file_name_tensor =
-            std::string(TEST_DATA_DIR) + "/test_mesh_tensor.obj";
+            std::string(OPEN3D_DATA_DIR_COMMON) + "/test_mesh_tensor.obj";
     std::string file_name_legacy =
-            std::string(TEST_DATA_DIR) + "/test_mesh_legacy.obj";
+            std::string(OPEN3D_DATA_DIR_COMMON) + "/test_mesh_legacy.obj";
 
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name_tensor, mesh_tensor));
     EXPECT_TRUE(io::WriteTriangleMesh(file_name_legacy, mesh_legacy));
@@ -131,7 +134,7 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     std::remove(file_name_tensor.c_str());
     std::remove(file_name_legacy.c_str());
     std::string file_name_legacy_mtl =
-            std::string(TEST_DATA_DIR) + "/test_mesh_legacy.mtl";
+            std::string(OPEN3D_DATA_DIR_COMMON) + "/test_mesh_legacy.mtl";
     std::remove(file_name_legacy_mtl.c_str());
 }
 

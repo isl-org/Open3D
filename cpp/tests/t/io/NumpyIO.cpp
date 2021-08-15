@@ -179,7 +179,7 @@ TEST_P(NumpyIOPermuteDevices, NpzWriteRead) {
 TEST_P(NumpyIOPermuteDevices, NpzReadCompressed) {
     const core::Device device = GetParam();
     const std::string file_name =
-            std::string(TEST_DATA_DIR) + "/tensors_compressed.npz";
+            std::string(OPEN3D_DATA_DIR_COMMON) + "/tensors_compressed.npz";
 
     core::Tensor t;
     core::Tensor t_load;
