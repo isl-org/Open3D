@@ -52,6 +52,14 @@ public:
             const Device& device,
             const HashmapBackend& backend = HashmapBackend::Default);
 
+    Hashmap(int64_t init_capacity,
+            const Dtype& dtype_key,
+            const SizeVector& element_shape_key,
+            const std::vector<Dtype>& dtypes_value,
+            const std::vector<SizeVector>& element_shapes_value,
+            const Device& device,
+            const HashmapBackend& backend = HashmapBackend::Default);
+
     ~Hashmap(){};
 
     /// Rehash expects extra memory space at runtime, since it consists of
@@ -67,6 +75,15 @@ public:
     /// insertions, must be combined with buf_indices in advanced indexing.
     void Insert(const Tensor& input_keys,
                 const Tensor& input_values,
+                Tensor& output_buf_indices,
+                Tensor& output_masks);
+
+    /// Parallel insert arrays of keys and values in Tensors.
+    /// Return buf_indices: internal indices that can be directly used for
+    /// advanced indexing in Tensor key/value buffers. masks: success
+    /// insertions, must be combined with buf_indices in advanced indexing.
+    void Insert(const Tensor& input_keys,
+                const std::vector<Tensor>& arr_input_values,
                 Tensor& output_buf_indices,
                 Tensor& output_masks);
 
@@ -120,7 +137,8 @@ public:
     Device GetDevice() const;
 
     Tensor GetKeyTensor() const;
-    Tensor GetValueTensor() const;
+    std::vector<Tensor> GetValueTensors() const;
+    Tensor GetValueTensor(size_t index = 0) const;
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
@@ -134,13 +152,25 @@ public:
     }
 
 protected:
-    void AssertKeyDtype(const Dtype& dtype_key,
-                        const SizeVector& elem_shape) const;
-    void AssertValueDtype(const Dtype& dtype_val,
-                          const SizeVector& elem_shape) const;
+    void Init(int64_t init_capacity,
+              const Device& device,
+              const HashmapBackend& backend);
 
-    Dtype GetKeyDtype() const { return dtype_key_; }
-    Dtype GetValueDtype() const { return dtype_value_; }
+    void InsertImpl(const Tensor& input_keys,
+                    const std::vector<Tensor>& arr_input_values,
+                    Tensor& output_buf_indices,
+                    Tensor& output_masks);
+
+    void CheckKeyLength(const Tensor& input_keys) const;
+    void CheckKeyValueLengthCompatibility(
+            const Tensor& input_keys,
+            const std::vector<Tensor>& arr_input_values) const;
+    void CheckKeyCompatibility(const Tensor& input_keys) const;
+    void CheckValueCompatibility(
+            const std::vector<Tensor>& arr_input_values) const;
+
+    void PrepareIndicesOutput(Tensor& output_buf_indices, int64_t length) const;
+    void PrepareMasksOutput(Tensor& output_masks, int64_t length) const;
 
 private:
     std::shared_ptr<DeviceHashmap> device_hashmap_;
@@ -148,8 +178,8 @@ private:
     Dtype dtype_key_;
     SizeVector element_shape_key_;
 
-    Dtype dtype_value_;
-    SizeVector element_shape_value_;
+    std::vector<Dtype> dtypes_value_;
+    std::vector<SizeVector> element_shapes_value_;
 };
 
 }  // namespace core

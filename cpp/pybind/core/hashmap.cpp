@@ -97,7 +97,11 @@ void pybind_core_hashmap(py::module& m) {
     hashmap.def_static("load", &Hashmap::Load);
 
     hashmap.def("get_key_tensor", &Hashmap::GetKeyTensor);
-    hashmap.def("get_value_tensor", &Hashmap::GetValueTensor);
+    hashmap.def("get_value_tensors", &Hashmap::GetValueTensors);
+    hashmap.def("get_value_tensor",
+                [](Hashmap& h) { return h.GetValueTensor(); });
+    hashmap.def("get_value_tensor",
+                [](Hashmap& h, size_t i) { return h.GetValueTensor(i); });
 
     hashmap.def("rehash", &Hashmap::Rehash);
     hashmap.def("size", &Hashmap::Size);

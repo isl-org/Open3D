@@ -33,56 +33,77 @@ namespace t {
 namespace io {
 
 void WriteHashmap(const std::string& file_name, const core::Hashmap& hashmap) {
-    core::Tensor keys = hashmap.GetKeyTensor().To(core::Device("CPU:0"));
-    core::Tensor values = hashmap.GetValueTensor().To(core::Device("CPU:0"));
+    core::Tensor keys = hashmap.GetKeyTensor();
+    std::vector<core::Tensor> values = hashmap.GetValueTensors();
 
-    core::Tensor active_buf_indices;
-    hashmap.GetActiveIndices(active_buf_indices);
-    core::Tensor active_indices =
-            active_buf_indices.To(core::Device("CPU:0"), core::Dtype::Int64);
+    core::Device host;
 
-    core::Tensor active_keys = keys.IndexGet({active_indices});
-    core::Tensor active_values = values.IndexGet({active_indices});
+    core::Tensor active_buf_indices_i32;
+    hashmap.GetActiveIndices(active_buf_indices_i32);
+    core::Tensor active_indices = active_buf_indices_i32.To(core::Int64);
+
+    core::Tensor active_keys = keys.IndexGet({active_indices}).To(host);
+
+    std::unordered_map<std::string, core::Tensor> output;
+    output.emplace("key", active_keys);
+    output.emplace(
+            "n_values",
+            core::Tensor(
+                    std::vector<int64_t>{static_cast<int64_t>(values.size())},
+                    {1}, core::Int64, host));
+    for (size_t i = 0; i < values.size(); ++i) {
+        core::Tensor active_value_i =
+                values[i].IndexGet({active_indices}).To(host);
+        output.emplace(fmt::format("value_{:03d}", i), active_value_i);
+    }
 
     std::string ext =
             utility::filesystem::GetFileExtensionInLowerCase(file_name);
     std::string postfix = ext != "npz" ? ".npz" : "";
-    WriteNpz(file_name + postfix,
-             {{"key", active_keys}, {"value", active_values}});
+    WriteNpz(file_name + postfix, output);
 }
 
 core::Hashmap ReadHashmap(const std::string& file_name) {
     std::unordered_map<std::string, core::Tensor> tensor_map =
             t::io::ReadNpz(file_name);
+
+    // Key
     core::Tensor keys = tensor_map.at("key");
-    core::Tensor values = tensor_map.at("value");
 
     core::Dtype dtype_key = keys.GetDtype();
-    core::Dtype dtype_value = values.GetDtype();
-
-    int length_key = keys.GetLength();
-    int length_value = values.GetLength();
-    if (length_key != length_value) {
-        utility::LogError("Incompatible key length ({}) and value length ({}).",
-                          length_key, length_value);
-    }
-    int init_capacity = length_key;
 
     core::SizeVector shape_key = keys.GetShape();
-    core::SizeVector shape_value = values.GetShape();
-    if (shape_key.size() < 2 || shape_value.size() < 2) {
-        utility::LogError("key value element shape must be larger than 1 dim");
-    }
     core::SizeVector element_shape_key(shape_key.begin() + 1, shape_key.end());
-    core::SizeVector element_shape_value(shape_value.begin() + 1,
-                                         shape_value.end());
 
-    auto hashmap = core::Hashmap(init_capacity, dtype_key, element_shape_key,
-                                 dtype_value, element_shape_value,
-                                 core::Device("CPU:0"));
+    int64_t init_capacity = keys.GetLength();
+
+    // Value(s)
+    int64_t n_values = tensor_map.at("n_values")[0].Item<int64_t>();
+
+    std::vector<core::Tensor> arr_input_values;
+    std::vector<core::Dtype> dtypes_value;
+    std::vector<core::SizeVector> element_shapes_value;
+
+    for (int64_t i = 0; i < n_values; ++i) {
+        core::Tensor value_i = tensor_map.at(fmt::format("value_{:03d}", i));
+
+        core::Dtype dtype_value_i = value_i.GetDtype();
+
+        core::SizeVector shape_value_i = value_i.GetShape();
+        core::SizeVector element_shape_value_i(shape_value_i.begin() + 1,
+                                               shape_value_i.end());
+
+        arr_input_values.push_back(value_i);
+        dtypes_value.push_back(dtype_value_i);
+        element_shapes_value.push_back(element_shape_value_i);
+    }
+
+    auto hashmap =
+            core::Hashmap(init_capacity, dtype_key, element_shape_key,
+                          dtypes_value, element_shapes_value, core::Device());
 
     core::Tensor masks, buf_indices;
-    hashmap.Insert(keys, values, masks, buf_indices);
+    hashmap.Insert(keys, arr_input_values, masks, buf_indices);
 
     return hashmap;
 }
