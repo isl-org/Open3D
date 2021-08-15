@@ -152,6 +152,27 @@ void pybind_core_hashmap(py::module& m) {
             "Transfer the hashmap to a CUDA device. If the hashmap is already "
             "on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
+
+    py::class_<Hashset, Hashmap> hashset(m, "Hashset",
+                                         "A Hashset is a unordered set that "
+                                         "collects keys wrapped by Tensors.");
+    hashset.def(py::init([](int64_t init_capacity, const Dtype& dtype_key,
+                            const py::handle& element_shape_key,
+                            const Device& device) {
+                    SizeVector element_shape_key_sv =
+                            PyHandleToSizeVector(element_shape_key);
+                    return Hashset(init_capacity, dtype_key,
+                                   element_shape_key_sv, device);
+                }),
+                "init_capacity"_a, "dtype_key"_a, "element_shape_key"_a,
+                "device"_a = Device("CPU:0"));
+
+    hashset.def("insert", [](Hashset& h, const Tensor& keys) {
+        Tensor buf_indices, masks;
+        h.Insert(keys, buf_indices, masks);
+        return py::make_tuple(buf_indices, masks);
+    });
 }
+
 }  // namespace core
 }  // namespace open3d

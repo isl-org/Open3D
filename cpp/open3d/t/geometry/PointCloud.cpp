@@ -210,12 +210,11 @@ PointCloud PointCloud::VoxelDownSample(
     core::Tensor points_voxeld = GetPointPositions() / voxel_size;
     core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
 
-    core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(), core::Int64,
-                                        {3}, core::Int32, {1}, device_,
-                                        backend);
+    core::Hashset points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
+                                        {3}, device_, backend);
 
     core::Tensor buf_indices, masks;
-    points_voxeli_hashmap.Activate(points_voxeli, buf_indices, masks);
+    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
 
     PointCloud pcd_down(GetPointPositions().GetDevice());
     for (auto &kv : point_attr_) {

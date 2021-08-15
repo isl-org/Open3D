@@ -162,7 +162,9 @@ def test_multivalue(device):
                       dtype=o3c.int64,
                       device=device)
     values_i64 = o3c.Tensor([1, 2, 3], dtype=o3c.int64, device=device)
-    values_f64 = o3c.Tensor([400.0, 500.0, 600.0], dtype=o3c.float64, device=device)
+    values_f64 = o3c.Tensor([400.0, 500.0, 600.0],
+                            dtype=o3c.float64,
+                            device=device)
     buf_indices, masks = hashmap.insert(keys, [values_i64, values_f64])
     assert masks.to(o3c.int64).sum() == 3
 
@@ -185,3 +187,27 @@ def test_multivalue(device):
 
     np.testing.assert_equal(masks.cpu().numpy().flatten(),
                             np.array([True, False]))
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_hashset(device):
+    capacity = 10
+    hashset = o3c.Hashset(capacity, o3c.int64, (3), device)
+    keys = o3c.Tensor([[1, 2, 3], [2, 3, 4], [3, 4, 5]],
+                      dtype=o3c.int64,
+                      device=device)
+    buf_indices, masks = hashset.insert(keys)
+    assert masks.to(o3c.int64).sum() == 3
+
+    keys = o3c.Tensor([[1, 2, 3], [3, 4, 5], [4, 5, 6]], dtype=o3c.int64, device=device)
+    buf_indices, masks = hashset.find(keys)
+    np.testing.assert_equal(masks.cpu().numpy().flatten(),
+                            np.array([True, True, False]))
+
+    keys = o3c.Tensor([[1, 2, 3], [4, 5, 6]], dtype=o3c.int64, device=device)
+    masks = hashset.erase(keys)
+
+    np.testing.assert_equal(masks.cpu().numpy().flatten(),
+                            np.array([True, False]))
+
+
