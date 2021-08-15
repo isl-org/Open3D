@@ -52,16 +52,15 @@ bool ShallDisableP2P(int argc, char** argv) {
 #endif
 
 int main(int argc, char** argv) {
-    open3d::utility::CPUInfo::GetInstance().Print();
+    using namespace open3d;
+    utility::CPUInfo::GetInstance().Print();
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<open3d::core::CUDAState> cuda_state =
-                open3d::core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        open3d::utility::LogInfo("P2P device transfer has been disabled.");
+        core::CUDAState::GetInstance().ForceDisableP2PForTesting();
+        utility::LogInfo("P2P device transfer has been disabled.");
     }
 #endif
     testing::InitGoogleMock(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     return RUN_ALL_TESTS();
 }

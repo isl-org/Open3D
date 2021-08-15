@@ -196,7 +196,7 @@ private:
 /// https://github.com/pytorch/pytorch/blob/master/aten/src/THC/THCGeneral.cpp
 class CUDAState {
 public:
-    static std::shared_ptr<CUDAState> GetInstance();
+    static CUDAState& GetInstance();
 
     CUDAState(CUDAState const&) = delete;
     void operator=(CUDAState const&) = delete;

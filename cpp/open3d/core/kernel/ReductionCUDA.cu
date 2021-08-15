@@ -230,7 +230,7 @@ public:
                                 ? static_cast<int>(LastPow2(dim1))
                                 : MAX_NUM_THREADS;
         block_width_ =
-                std::min(dim0_pow2, CUDAState::GetInstance()->GetWarpSize());
+                std::min(dim0_pow2, CUDAState::GetInstance().GetWarpSize());
         block_height_ =
                 std::min(dim1_pow2, int(MAX_NUM_THREADS / block_width_));
         block_width_ =
@@ -305,7 +305,7 @@ public:
     int SharedMemorySize() const {
         if (!ShouldBlockYReduce() &&
             (!ShouldBlockXReduce() ||
-             block_width_ <= CUDAState::GetInstance()->GetWarpSize())) {
+             block_width_ <= CUDAState::GetInstance().GetWarpSize())) {
             return 0;
         }
         return element_size_bytes_ * num_threads_;
@@ -846,7 +846,7 @@ public:
             numerator_ = 1;
             denominator_ = 1;
         } else {
-            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
+            int device_id = CUDAState::GetInstance().GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
             buffer_ = std::make_unique<Blob>(size, device);
             acc_ptr_ = (char*)buffer_->GetDataPtr();
@@ -972,7 +972,7 @@ private:
         void* buffer = nullptr;
         void* semaphores = nullptr;
         if (config.ShouldGlobalReduce()) {
-            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
+            int device_id = CUDAState::GetInstance().GetCurrentDeviceID();
             Device device(Device::DeviceType::CUDA, device_id);
 
             buffer_blob =

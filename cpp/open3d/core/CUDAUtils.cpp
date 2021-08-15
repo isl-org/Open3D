@@ -40,8 +40,7 @@ namespace cuda {
 int DeviceCount() {
 #ifdef BUILD_CUDA_MODULE
     try {
-        std::shared_ptr<CUDAState> cuda_state = CUDAState::GetInstance();
-        return cuda_state->GetNumDevices();
+        return CUDAState::GetInstance().GetNumDevices();
     } catch (const std::runtime_error&) {  // GetInstance can throw
         return 0;
     }
@@ -203,8 +202,8 @@ CUDAScopedStream::~CUDAScopedStream() {
     cuda::SetStream(prev_stream_);
 }
 
-std::shared_ptr<CUDAState> CUDAState::GetInstance() {
-    static std::shared_ptr<CUDAState> instance{new CUDAState};
+CUDAState& CUDAState::GetInstance() {
+    static CUDAState instance;
     return instance;
 }
 
