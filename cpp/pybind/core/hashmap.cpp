@@ -62,12 +62,40 @@ void pybind_core_hashmap(py::module& m) {
                 "dtype_value"_a, "element_shape_value"_a,
                 "device"_a = Device("CPU:0"));
 
+    hashmap.def(
+            py::init([](int64_t init_capacity, const Dtype& dtype_key,
+                        const py::handle& element_shape_key,
+                        const std::vector<Dtype>& dtypes_value,
+                        const std::vector<py::handle>& element_shapes_value,
+                        const Device& device) {
+                SizeVector element_shape_key_sv =
+                        PyHandleToSizeVector(element_shape_key);
+
+                std::vector<SizeVector> element_shapes_value_sv;
+                for (auto& handle : element_shapes_value) {
+                    SizeVector element_shape_value_sv =
+                            PyHandleToSizeVector(handle);
+                    element_shapes_value_sv.push_back(element_shape_value_sv);
+                }
+                return Hashmap(init_capacity, dtype_key, element_shape_key_sv,
+                               dtypes_value, element_shapes_value_sv, device);
+            }),
+            "init_capacity"_a, "dtype_key"_a, "element_shape_key"_a,
+            "dtypes_value"_a, "element_shapes_value"_a,
+            "device"_a = Device("CPU:0"));
+
     hashmap.def("insert",
                 [](Hashmap& h, const Tensor& keys, const Tensor& values) {
                     Tensor buf_indices, masks;
                     h.Insert(keys, values, buf_indices, masks);
                     return py::make_tuple(buf_indices, masks);
                 });
+    hashmap.def("insert", [](Hashmap& h, const Tensor& keys,
+                             const std::vector<Tensor>& values) {
+        Tensor buf_indices, masks;
+        h.Insert(keys, values, buf_indices, masks);
+        return py::make_tuple(buf_indices, masks);
+    });
 
     hashmap.def("activate", [](Hashmap& h, const Tensor& keys) {
         Tensor buf_indices, masks;

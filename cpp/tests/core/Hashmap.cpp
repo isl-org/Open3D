@@ -454,6 +454,79 @@ TEST_P(HashmapPermuteDevices, InsertComplexKeys) {
     }
 }
 
+TEST_P(HashmapPermuteDevices, MultivalueInsertion) {
+    core::Device device = GetParam();
+    std::vector<core::HashmapBackend> backends;
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        backends.push_back(core::HashmapBackend::Slab);
+        backends.push_back(core::HashmapBackend::StdGPU);
+    } else {
+        backends.push_back(core::HashmapBackend::TBB);
+    }
+
+    const int n = 1000000;
+    const int slots = 1023;
+    int init_capacity = n * 2;
+
+    // Insert once, find twice
+    HashData<int3, int> data(n, slots);
+
+    std::vector<int> keys_int3;
+    keys_int3.assign(reinterpret_cast<int *>(data.keys_.data()),
+                     reinterpret_cast<int *>(data.keys_.data()) + 3 * n);
+    core::Tensor keys(keys_int3, {n, 3}, core::Int32, device);
+    core::Tensor values(data.vals_, {n}, core::Int32, device);
+    core::Tensor values_f64 = values.To(core::Float64);
+
+    for (auto backend : backends) {
+        core::Hashmap hashmap(init_capacity, core::Int32, {3},
+                              {core::Int32, core::Float64}, {{1}, {1}}, device,
+                              backend);
+
+        core::Tensor buf_indices, masks;
+        hashmap.Insert(keys, {values, values_f64}, buf_indices, masks);
+        EXPECT_EQ(masks.To(core::Int64).Sum({0}).Item<int64_t>(), slots);
+
+        int64_t s = hashmap.Size();
+        EXPECT_EQ(s, slots);
+
+        core::Tensor active_buf_indices;
+        hashmap.GetActiveIndices(active_buf_indices);
+        EXPECT_EQ(s, active_buf_indices.GetShape()[0]);
+        core::Tensor active_indices = active_buf_indices.To(core::Int64);
+
+        std::vector<core::Tensor> ai = {active_indices};
+        core::Tensor active_keys = hashmap.GetKeyTensor().IndexGet(ai);
+        core::Tensor active_values_0 = hashmap.GetValueTensor(0).IndexGet(ai);
+        core::Tensor active_values_1 = hashmap.GetValueTensor(1).IndexGet(ai);
+
+        core::Tensor key_dim0 = active_keys.GetItem(
+                {core::TensorKey::Slice(core::None, core::None, core::None),
+                 core::TensorKey::Index(0)});
+
+        EXPECT_TRUE(
+                key_dim0.AllClose(active_values_0.View({s}) * data.k_factor_));
+        EXPECT_TRUE(
+                key_dim0.To(core::Float64)
+                        .AllClose(active_values_1.View({s}) * data.k_factor_));
+
+        // Check existence
+        std::vector<int> active_values_vec =
+                active_values_0.ToFlatVector<int>();
+        std::sort(active_values_vec.begin(), active_values_vec.end());
+        for (int i = 0; i < s; ++i) {
+            EXPECT_EQ(active_values_vec[i], i);
+        }
+
+        std::vector<double> active_values_vec_f64 =
+                active_values_1.ToFlatVector<double>();
+        std::sort(active_values_vec_f64.begin(), active_values_vec_f64.end());
+        for (int i = 0; i < s; ++i) {
+            EXPECT_EQ(active_values_vec_f64[i], i);
+        }
+    }
+}
+
 TEST_P(HashmapPermuteDevices, HashmapIO) {
     const core::Device &device = GetParam();
     const std::string file_name_noext = "hashmap";

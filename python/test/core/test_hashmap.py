@@ -151,3 +151,37 @@ def test_complex_shape(device):
 
     np.testing.assert_equal(masks.cpu().numpy().flatten(),
                             np.array([True, False]))
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_multivalue(device):
+    capacity = 10
+    hashmap = o3c.Hashmap(capacity, o3c.int64, (3), (o3c.int64, o3c.float64),
+                          ((1), (1)), device)
+    keys = o3c.Tensor([[1, 2, 3], [2, 3, 4], [3, 4, 5]],
+                      dtype=o3c.int64,
+                      device=device)
+    values_i64 = o3c.Tensor([1, 2, 3], dtype=o3c.int64, device=device)
+    values_f64 = o3c.Tensor([400.0, 500.0, 600.0], dtype=o3c.float64, device=device)
+    buf_indices, masks = hashmap.insert(keys, [values_i64, values_f64])
+    assert masks.to(o3c.int64).sum() == 3
+
+    valid_indices = buf_indices[masks].to(o3c.int64)
+    valid_keys = hashmap.get_key_tensor()[valid_indices, :]
+
+    valid_values_i64 = hashmap.get_value_tensor(0)[valid_indices]
+    valid_values_f64 = hashmap.get_value_tensor(1)[valid_indices]
+
+    np.testing.assert_equal(
+        valid_keys.cpu().numpy().flatten(),
+        np.array([[1, 2, 3], [2, 3, 4], [3, 4, 5]]).flatten())
+    np.testing.assert_equal(valid_values_i64.cpu().numpy().flatten(),
+                            np.array([1, 2, 3]))
+    np.testing.assert_allclose(valid_values_f64.cpu().numpy().flatten(),
+                               np.array([400.0, 500.0, 600.0]))
+
+    keys = o3c.Tensor([[1, 2, 3], [4, 5, 6]], dtype=o3c.int64, device=device)
+    masks = hashmap.erase(keys)
+
+    np.testing.assert_equal(masks.cpu().numpy().flatten(),
+                            np.array([True, False]))
