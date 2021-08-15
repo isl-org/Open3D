@@ -1,0 +1,182 @@
+name: CUDA CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release wheels'
+        required: false
+        default: 'ON'
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  build-wheel:
+    name: Build wheel
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.6, 3.7, 3.8, 3.9]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+          - is_master: false
+            python_version: 3.9
+    env:
+      # Environment variables are used as Docker build args.
+      # - Keep the default values consistent with Dockerfile.cuda
+      # - Keep the usage orders consistent.
+      BASE_IMAGE: nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
+      BUILD_COMMON_CUDA_ARCHS: ${{ matrix.is_master && 'ON' || 'OFF' }}
+      CCACHE_TAR_NAME: open3d-cuda-ci-ccache
+      CMAKE_VERSION: cmake-3.19.7-Linux-x86_64
+      CCACHE_VERSION: 4.3
+      PYTHON_VERSION: ${{ matrix.python_version }}
+    steps:
+      - name: Cancel outdated
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ github.token }}
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Docker build
+        run: |
+          docker build \
+            --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} \
+            --build-arg DEVELOPER_BUILD=${{ env.DEVELOPER_BUILD }} \
+            --build-arg BUILD_COMMON_CUDA_ARCHS=${{ env.BUILD_COMMON_CUDA_ARCHS }} \
+            --build-arg CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} \
+            --build-arg CMAKE_VERSION=${{ env.CMAKE_VERSION }} \
+            --build-arg CCACHE_VERSION=${{ env.CCACHE_VERSION }} \
+            --build-arg PYTHON_VERSION=${{ env.PYTHON_VERSION }} \
+            -t open3d-cuda-ci:latest \
+            -f .github/workflows/Dockerfile.cuda .
+      - name: Extract wheel from Docker
+        run: |
+          mkdir -p ${GITHUB_WORKSPACE}/artifacts
+          docker run --rm \
+            -v ${GITHUB_WORKSPACE}/artifacts:/opt/mount \
+            open3d-cuda-ci:latest \
+            bash -c "cp /root/Open3D/build/lib/python_package/pip_package/open3d*.whl                /opt/mount && \
+                     cp /root/Open3D/build/lib/python_package/conda_package/linux-64/open3d*.tar.bz2 /opt/mount && \
+                     cp /${{ env.CCACHE_TAR_NAME }}.tar.gz                                           /opt/mount"
+          sudo chown -R $(id -u):$(id -g) ${GITHUB_WORKSPACE}/artifacts
+          ls -alh ${GITHUB_WORKSPACE}/artifacts
+          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/artifacts/open3d*.whl)"
+          echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
+          CONDA_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/artifacts/open3d*.tar.bz2)"
+          echo "CONDA_PKG_NAME=$CONDA_PKG_NAME" >> $GITHUB_ENV
+      - name: Upload wheel to GitHub artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d_linux_x86_64_wheels
+          path: |
+            artifacts/${{ env.PIP_PKG_NAME }}
+            artifacts/${{ env.CONDA_PKG_NAME }}
+          if-no-files-found: error
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+      - name: Upload ccache to GCS
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+          gsutil cp ${GITHUB_WORKSPACE}/artifacts/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
+      - name: Upload wheel to GCS
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+          gsutil cp ${GITHUB_WORKSPACE}/artifacts/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
+          echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
+          gsutil cp ${GITHUB_WORKSPACE}/artifacts/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/linux-64/
+          echo "Download conda package at: https://storage.googleapis.com/open3d-releases-master/conda_package/linux-64/${{ env.CONDA_PKG_NAME }}"
+
+  test-wheel-cpu:
+    name: Test wheel CPU
+    runs-on: ubuntu-18.04
+    needs: [build-wheel]
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [3.6, 3.7, 3.8, 3.9]
+        is_master:
+          - ${{ github.ref == 'refs/heads/master' }}
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+          - is_master: false
+            python_version: 3.9
+    env:
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: false
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: isl-org/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
+      - name: Download wheels
+        uses: actions/download-artifact@v2
+        with:
+          name: open3d_linux_x86_64_wheels
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Test Python package
+        run: |
+          python -V
+          source util/ci_utils.sh
+          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          test_wheel open3d*-"$pi_tag"-*.whl
+      - name: Run Python unit tests
+        run: |
+          source util/ci_utils.sh
+          echo "Running Open3D python tests..."
+          run_python_tests
+
+  ready-docs:
+    name: Ready docs archive
+    runs-on: ubuntu-18.04
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [build-wheel]
+    steps:
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+      - name: Rename documentation archive
+        run: |
+          docs_tar_file="${{ github.sha }}.tar.gz"
+          gsutil mv gs://open3d-docs/wait_for_wheels_${docs_tar_file} gs://open3d-docs/${docs_tar_file}
+          echo "All development wheels available. Documentation archive is ready for deployment:"
+          echo "https://storage.googleapis.com/open3d-docs/${docs_tar_file}"
