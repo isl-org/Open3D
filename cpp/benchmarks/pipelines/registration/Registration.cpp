@@ -37,12 +37,16 @@
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Logging.h"
 
+namespace open3d {
+namespace pipelines {
+namespace registration {
+
 // Testing parameters:
 // Filename for pointcloud registration data.
 static const std::string source_pointcloud_filename =
-        TEST_DATA_DIR "/ICP/cloud_bin_0.pcd";
+        benchmarks::GetDataPathCommon("/ICP/cloud_bin_0.pcd");
 static const std::string target_pointcloud_filename =
-        TEST_DATA_DIR "/ICP/cloud_bin_1.pcd";
+        benchmarks::GetDataPathCommon("/ICP/cloud_bin_1.pcd");
 
 static const double voxel_downsampling_factor = 0.02;
 
@@ -53,10 +57,6 @@ static const int max_iterations = 30;
 
 // NNS parameter.
 static const double max_correspondence_distance = 0.05;
-
-namespace open3d {
-namespace pipelines {
-namespace registration {
 
 static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
         const std::string& source_filename,
