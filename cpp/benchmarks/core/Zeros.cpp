@@ -26,7 +26,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include "Benchmarks.h"
+#include "benchmarks/Benchmarks.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 

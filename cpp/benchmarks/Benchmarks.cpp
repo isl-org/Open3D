@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Benchmarks.h"
+#include "benchmarks/Benchmarks.h"
 
 namespace open3d {
 namespace benchmarks {
