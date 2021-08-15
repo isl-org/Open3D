@@ -103,8 +103,8 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
             OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
                                               cudaMemcpyDeviceToDevice,
                                               cuda::GetStream()));
-        } else if (CUDAState::GetInstance()->IsP2PEnabled(src_device.GetID(),
-                                                          dst_device.GetID())) {
+        } else if (CUDAState::GetInstance().IsP2PEnabled(src_device.GetID(),
+                                                         dst_device.GetID())) {
             OPEN3D_CUDA_CHECK(cudaMemcpyPeerAsync(
                     dst_ptr, dst_device.GetID(), src_ptr, src_device.GetID(),
                     num_bytes, cuda::GetStream()));
