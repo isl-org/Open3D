@@ -106,5 +106,6 @@ jobs:
           tar_file="${{ github.sha }}.tar.gz"
           rm -rf ${tar_file}
           tar -C ${docs_out_dir} -czvf ${tar_file} html
-          gsutil cp ${tar_file} gs://open3d-docs/${tar_file}
-          echo "Download the docs at: https://storage.googleapis.com/open3d-docs/${tar_file}"
+          gsutil cp ${tar_file} gs://open3d-docs/wait_for_wheels_${tar_file}
+          echo "Docs archive uploaded to:"
+          echo "https://storage.googleapis.com/open3d-docs/wait_for_wheels_${tar_file}"

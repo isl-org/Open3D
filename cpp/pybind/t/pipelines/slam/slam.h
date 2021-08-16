@@ -26,32 +26,16 @@
 
 #pragma once
 
-#include "open3d/core/Tensor.h"
-#include "open3d/t/geometry/Image.h"
-#include "open3d/t/geometry/RGBDImage.h"
-#include "open3d/t/geometry/TSDFVoxelGrid.h"
-#include "open3d/t/pipelines/odometry/RGBDOdometry.h"
-#include "open3d/t/pipelines/voxelhashing/Frame.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
-namespace voxelhashing {
+namespace slam {
 
-struct Option {
-    Option() {}
+void pybind_slam(py::module &m);
 
-    /// TSDF VoxelBlock options
-    float voxel_size = 3.0 / 512.0;
-    int est_block_count = 40000;
-
-    /// Input options
-    float depth_scale = 1000.0f;
-    float depth_max = 3.0f;
-    float depth_diff = 0.07f;
-};
-
-}  // namespace voxelhashing
+}  // namespace slam
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d

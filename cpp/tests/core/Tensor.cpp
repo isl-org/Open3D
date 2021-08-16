@@ -359,10 +359,8 @@ TEST_P(TensorPermuteDevicePairs, ToDevice) {
 
     EXPECT_ANY_THROW(src_t.To(core::Device("CPU:1")));
 
-    // TODO: CUDA exceptions are not captured by EXPECT_ANY_THROW. Detect
-    // invalid device and throw an exception at an earlier stage.
-    // EXPECT_ANY_THROW(src_t.To(core::Device("CUDA:-1")));
-    // EXPECT_ANY_THROW(src_t.To(core::Device("CUDA:100000")));
+    EXPECT_ANY_THROW(src_t.To(core::Device("CUDA:-1")));
+    EXPECT_ANY_THROW(src_t.To(core::Device("CUDA:100000")));
 }
 
 TEST_P(TensorPermuteDevicePairs, CopyBroadcast) {
