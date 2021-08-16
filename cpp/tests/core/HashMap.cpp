@@ -33,6 +33,7 @@
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/hashmap/HashSet.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Optional.h"
 #include "tests/UnitTest.h"
@@ -527,7 +528,7 @@ TEST_P(HashMapPermuteDevices, MultivalueInsertion) {
     }
 }
 
-TEST_P(HashMapPermuteDevices, Hashset) {
+TEST_P(HashMapPermuteDevices, HashSet) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
@@ -550,7 +551,7 @@ TEST_P(HashMapPermuteDevices, Hashset) {
     core::Tensor keys(keys_int3, {n, 3}, core::Int32, device);
 
     for (auto backend : backends) {
-        core::Hashset hashset(init_capacity, core::Int32, {3}, device, backend);
+        core::HashSet hashset(init_capacity, core::Int32, {3}, device, backend);
 
         core::Tensor buf_indices, masks;
         hashset.Insert(keys, buf_indices, masks);

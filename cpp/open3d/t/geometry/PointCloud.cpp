@@ -34,7 +34,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/HashMap.h"
+#include "open3d/core/hashmap/HashSet.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
@@ -210,7 +210,7 @@ PointCloud PointCloud::VoxelDownSample(
     core::Tensor points_voxeld = GetPointPositions() / voxel_size;
     core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
 
-    core::Hashset points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
+    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
                                         {3}, device_, backend);
 
     core::Tensor buf_indices, masks;

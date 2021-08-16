@@ -29,38 +29,25 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashBackendBuffer.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 namespace open3d {
 namespace core {
 
-class DeviceHashBackend;
-
-enum class HashBackendType { Slab, StdGPU, TBB, Default };
-
-class HashMap {
+class HashSet {
 public:
     /// Constructor for primitive types, supporting element shapes.
     /// Example:
     /// Key is int<3> coordinate:
     /// - key_dtype = core::Int32
     /// - key_element_shape = {3}
-    HashMap(int64_t init_capacity,
+    HashSet(int64_t init_capacity,
             const Dtype& key_dtype,
             const SizeVector& key_element_shape,
-            const Dtype& value_dtype,
-            const SizeVector& value_element_shapes,
             const Device& device,
             const HashBackendType& backend = HashBackendType::Default);
 
-    HashMap(int64_t init_capacity,
-            const Dtype& key_dtype,
-            const SizeVector& key_element_shape,
-            const std::vector<Dtype>& dtypes_value,
-            const std::vector<SizeVector>& element_shapes_value,
-            const Device& device,
-            const HashBackendType& backend = HashBackendType::Default);
-
-    ~HashMap(){};
+    ~HashSet(){};
 
     /// Rehash expects extra memory space at runtime, since it consists of
     /// 1) dumping all key value pairs to a buffer
@@ -74,28 +61,8 @@ public:
     /// advanced indexing in Tensor key/value buffers. masks: success
     /// insertions, must be combined with buf_indices in advanced indexing.
     void Insert(const Tensor& input_keys,
-                const Tensor& input_values,
                 Tensor& output_buf_indices,
                 Tensor& output_masks);
-
-    /// Parallel insert arrays of keys and values in Tensors.
-    /// Return buf_indices: internal indices that can be directly used for
-    /// advanced indexing in Tensor key/value buffers. masks: success
-    /// insertions, must be combined with buf_indices in advanced indexing.
-    void Insert(const Tensor& input_keys,
-                const std::vector<Tensor>& input_values_soa,
-                Tensor& output_buf_indices,
-                Tensor& output_masks);
-
-    /// Parallel activate arrays of keys in Tensor.
-    /// Specifically useful for large value elements (e.g., a tensor), where we
-    /// can do in-place management after activation.
-    /// Return buf_indices: internal indices that can be directly used for
-    /// advanced indexing in Tensor key/value buffers. masks: success
-    /// insertions, must be combined with buf_indices in advanced indexing.
-    void Activate(const Tensor& input_keys,
-                  Tensor& output_buf_indices,
-                  Tensor& output_masks);
 
     /// Parallel find an array of keys in Tensor.
     /// Return buf_indices: internal indices that can be directly used for
@@ -125,10 +92,10 @@ public:
 
     /// Load active key and value from a npz file at 'key' and 'value'. The npz
     /// file should contain a 'key' and a 'value' tensor, of the same length.
-    static HashMap Load(const std::string& file_name);
+    static HashSet Load(const std::string& file_name);
 
-    HashMap Clone() const;
-    HashMap To(const Device& device, bool copy = false) const;
+    HashSet Clone() const;
+    HashSet To(const Device& device, bool copy = false) const;
 
     int64_t Size() const;
 
@@ -137,8 +104,6 @@ public:
     Device GetDevice() const;
 
     Tensor GetKeyTensor() const;
-    std::vector<Tensor> GetValueTensors() const;
-    Tensor GetValueTensor(size_t index = 0) const;
 
     /// Return number of elems per bucket.
     /// High performance not required, so directly returns a vector.
@@ -147,39 +112,11 @@ public:
     /// Return size / bucket_count.
     float LoadFactor() const;
 
-    std::shared_ptr<DeviceHashBackend> GetDeviceHashBackend() const {
-        return device_hashmap_;
-    }
-
-protected:
-    void Init(int64_t init_capacity,
-              const Device& device,
-              const HashBackendType& backend);
-
-    void InsertImpl(const Tensor& input_keys,
-                    const std::vector<Tensor>& input_values_soa,
-                    Tensor& output_buf_indices,
-                    Tensor& output_masks);
-
-    void CheckKeyLength(const Tensor& input_keys) const;
-    void CheckKeyValueLengthCompatibility(
-            const Tensor& input_keys,
-            const std::vector<Tensor>& input_values_soa) const;
-    void CheckKeyCompatibility(const Tensor& input_keys) const;
-    void CheckValueCompatibility(
-            const std::vector<Tensor>& input_values_soa) const;
-
-    void PrepareIndicesOutput(Tensor& output_buf_indices, int64_t length) const;
-    void PrepareMasksOutput(Tensor& output_masks, int64_t length) const;
+    std::shared_ptr<DeviceHashBackend> GetDeviceHashBackend() const;
 
 private:
-    std::shared_ptr<DeviceHashBackend> device_hashmap_;
-
-    Dtype key_dtype_;
-    SizeVector key_element_shape_;
-
-    std::vector<Dtype> dtypes_value_;
-    std::vector<SizeVector> element_shapes_value_;
+    HashSet(const HashMap& internal_hashmap);
+    std::shared_ptr<HashMap> internal_;
 };
 
 }  // namespace core
