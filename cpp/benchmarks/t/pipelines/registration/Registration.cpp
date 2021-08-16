@@ -33,19 +33,12 @@
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
-// Testing parameters:
-// Filename for pointcloud registration data.
-static const std::string source_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
-static const std::string target_pointcloud_filename =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
-
 static const double voxel_downsampling_factor = 0.02;
 
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 30;
+static const int max_iterations = 10;
 
 // NNS parameter.
 static const double max_correspondence_distance = 0.05;
@@ -73,34 +66,32 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
     io::ReadPointCloud(target_pointcloud_filename, target,
                        {"auto", false, false, true});
 
+    source = source.To(device);
+    target = target.To(device);
+
     // Eliminates the case of impractical values (including negative).
     if (voxel_downsample_factor > 0.001) {
-        // TODO: Use geometry::PointCloud::VoxelDownSample.
-        open3d::geometry::PointCloud legacy_s = source.ToLegacy();
-        open3d::geometry::PointCloud legacy_t = target.ToLegacy();
-
-        legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
-        legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
-
-        source = geometry::PointCloud::FromLegacy(legacy_s);
-        target = geometry::PointCloud::FromLegacy(legacy_t);
+        source = source.VoxelDownSample(voxel_downsample_factor);
+        target = target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                "VoxelDownsample: Impractical voxel size [< 0.001], skiping "
                 "downsampling.");
     }
 
-    geometry::PointCloud source_device(device), target_device(device);
+    source.SetPointPositions(source.GetPointPositions().To(dtype));
+    source.SetPointNormals(source.GetPointNormals().To(dtype));
+    if (source.HasPointColors()) {
+        source.SetPointColors(source.GetPointColors().To(dtype).Div(255.0));
+    }
 
-    core::Tensor source_points = source.GetPointPositions().To(device, dtype);
-    source_device.SetPointPositions(source_points);
+    target.SetPointPositions(target.GetPointPositions().To(dtype));
+    target.SetPointNormals(target.GetPointNormals().To(dtype));
+    if (target.HasPointColors()) {
+        target.SetPointColors(target.GetPointColors().To(dtype).Div(255.0));
+    }
 
-    core::Tensor target_points = target.GetPointPositions().To(device, dtype);
-    core::Tensor target_normals = target.GetPointNormals().To(device, dtype);
-    target_device.SetPointPositions(target_points);
-    target_device.SetPointNormals(target_normals);
-
-    return std::make_tuple(source_device, target_device);
+    return std::make_tuple(source, target);
 }
 
 static void BenchmarkRegistrationICP(benchmark::State& state,
@@ -109,20 +100,47 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
                                      const TransformationEstimationType& type) {
     geometry::PointCloud source(device), target(device);
 
-    std::tie(source, target) = LoadTensorPointCloudFromFile(
-            source_pointcloud_filename, target_pointcloud_filename,
-            voxel_downsampling_factor, dtype, device);
+    std::string source_pointcloud_filename;
+    std::string target_pointcloud_filename;
 
+    core::Tensor init_trans;
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {
         estimation = std::make_shared<TransformationEstimationPointToPlane>();
+
+        init_trans = core::Tensor(initial_transform_flat, {4, 4}, core::Float32,
+                                  device)
+                             .To(dtype);
+
+        source_pointcloud_filename =
+                std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
+        target_pointcloud_filename =
+                std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
     } else if (type == TransformationEstimationType::PointToPoint) {
         estimation = std::make_shared<TransformationEstimationPointToPoint>();
+
+        init_trans = core::Tensor(initial_transform_flat, {4, 4}, core::Float32,
+                                  device)
+                             .To(dtype);
+
+        source_pointcloud_filename =
+                std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
+        target_pointcloud_filename =
+                std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
+    } else if (type == TransformationEstimationType::ColoredICP) {
+        estimation = std::make_shared<TransformationEstimationForColoredICP>();
+
+        init_trans = core::Tensor::Eye(4, core::Float64, device);
+
+        source_pointcloud_filename =
+                std::string(TEST_DATA_DIR) + "/ColoredICP/frag_115.ply";
+        target_pointcloud_filename =
+                std::string(TEST_DATA_DIR) + "/ColoredICP/frag_115.ply";
     }
 
-    core::Tensor init_trans =
-            core::Tensor(initial_transform_flat, {4, 4}, core::Float32, device)
-                    .To(dtype);
+    std::tie(source, target) = LoadTensorPointCloudFromFile(
+            source_pointcloud_filename, target_pointcloud_filename,
+            voxel_downsampling_factor, dtype, device);
 
     RegistrationResult reg_result(init_trans);
 
@@ -132,6 +150,7 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
             *estimation,
             ICPConvergenceCriteria(relative_fitness, relative_rmse,
                                    max_iterations));
+
     for (auto _ : state) {
         reg_result = RegistrationICP(
                 source, target, max_correspondence_distance, init_trans,
@@ -140,12 +159,6 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
                                        max_iterations));
         core::cuda::Synchronize(device);
     }
-
-    utility::LogDebug(" PointCloud Size: Source: {}  Target: {}",
-                      source.GetPointPositions().GetShape().ToString(),
-                      target.GetPointPositions().GetShape().ToString());
-    utility::LogDebug(" Max iterations: {}, Max_correspondence_distance : {}",
-                      max_iterations, max_correspondence_distance);
 }
 
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
@@ -160,6 +173,22 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPlane / CUDA32,
                   core::Device("CUDA:0"),
                   core::Float32,
+                  TransformationEstimationType::PointToPlane)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  PointToPlane / CPU64,
+                  core::Device("CPU:0"),
+                  core::Float64,
+                  TransformationEstimationType::PointToPlane)
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  PointToPlane / CUDA64,
+                  core::Device("CUDA:0"),
+                  core::Float64,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 #endif
@@ -181,22 +210,6 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
 #endif
 
 BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CPU64,
-                  core::Device("CPU:0"),
-                  core::Float64,
-                  TransformationEstimationType::PointToPlane)
-        ->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CUDA64,
-                  core::Device("CUDA:0"),
-                  core::Float64,
-                  TransformationEstimationType::PointToPlane)
-        ->Unit(benchmark::kMillisecond);
-#endif
-
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   PointToPoint / CPU64,
                   core::Device("CPU:0"),
                   core::Float64,
@@ -209,6 +222,38 @@ BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
                   core::Device("CUDA:0"),
                   core::Float64,
                   TransformationEstimationType::PointToPoint)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  ColoredICP / CPU32,
+                  core::Device("CPU:0"),
+                  core::Float32,
+                  TransformationEstimationType::ColoredICP)
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  ColoredICP / CUDA32,
+                  core::Device("CUDA:0"),
+                  core::Float32,
+                  TransformationEstimationType::ColoredICP)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  ColoredICP / CPU64,
+                  core::Device("CPU:0"),
+                  core::Float64,
+                  TransformationEstimationType::ColoredICP)
+        ->Unit(benchmark::kMillisecond);
+
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
+                  ColoredICP / CUDA64,
+                  core::Device("CUDA:0"),
+                  core::Float64,
+                  TransformationEstimationType::ColoredICP)
         ->Unit(benchmark::kMillisecond);
 #endif
 
