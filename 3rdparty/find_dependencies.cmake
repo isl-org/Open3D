@@ -16,15 +16,16 @@ set(Open3D_3RDPARTY_EXTERNAL_MODULES)
 set(Open3D_3RDPARTY_PUBLIC_TARGETS)
 
 # HEADER_TARGETS
-# CMake targets we use in our public interface, but as a special case we do not
-# need to link against the library. This simplifies dependencies where we merely
-# expose declared data types from other libraries in our public headers, so it
-# would be overkill to require all library users to link against that dependency.
+# CMake targets we use in our public interface, but as a special case we only
+# need to link privately against the library. This simplifies dependencies
+# where we merely expose declared data types from other libraries in our
+# public headers, so it would be overkill to require all library users to link
+# against that dependency.
 set(Open3D_3RDPARTY_HEADER_TARGETS)
 
 # PRIVATE_TARGETS
 # CMake targets for dependencies which are not exposed in the public API. This
-# will probably include HEADER_TARGETS, but also anything else we use internally.
+# will include anything else we use internally.
 set(Open3D_3RDPARTY_PRIVATE_TARGETS)
 
 find_package(PkgConfig QUIET)
@@ -596,7 +597,6 @@ if(NOT USE_SYSTEM_GLEW)
     endif()
 endif()
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_glew)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_glew)
 
 # GLFW
 if(USE_SYSTEM_GLFW)
@@ -655,7 +655,6 @@ if(TARGET Open3D::3rdparty_x11)
     target_link_libraries(3rdparty_glfw INTERFACE Open3D::3rdparty_x11)
 endif()
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_glfw)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_glfw)
 
 # TurboJPEG
 if(USE_SYSTEM_JPEG AND BUILD_AZURE_KINECT)
@@ -1190,7 +1189,6 @@ if(BUILD_GUI)
         target_link_options(3rdparty_filament INTERFACE "-fobjc-link-runtime")
     endif()
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_filament)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_filament)
 endif()
 
 # RPC interface
