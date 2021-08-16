@@ -58,7 +58,7 @@ namespace geometry {
 ///         - PointCloud::HasPointPositions()
 ///     - Created by default, required for all pointclouds.
 ///     - Value tensor must have shape {N, 3}.
-///     - The device of "positions" determines the device of the pointcloud.
+///     - The device of "positions" determines the device of the point cloud.
 ///
 /// - Common attributes: "normals", "colors".
 ///     - Usage
@@ -92,12 +92,12 @@ namespace geometry {
 ///       PointCloud::HasPointAttr("normals")
 class PointCloud : public Geometry {
 public:
-    /// Construct an empty pointcloud on the provided device.
-    /// \param device The device on which to initialize the pointcloud (default:
-    /// 'CPU:0').
+    /// Construct an empty point cloud on the provided device.
+    /// \param device The device on which to initialize the point cloud
+    /// (default: 'CPU:0').
     PointCloud(const core::Device &device = core::Device("CPU:0"));
 
-    /// Construct a pointcloud from points.
+    /// Construct a point cloud from points.
     ///
     /// The input tensor will be directly used as the underlying storage of the
     /// point cloud (no memory copy).
@@ -234,7 +234,7 @@ public:
     /// Returns copy of the point cloud on the same device.
     PointCloud Clone() const;
 
-    /// Clear all data in the pointcloud.
+    /// Clear all data in the point cloud.
     PointCloud &Clear() override {
         point_attr_.clear();
         return *this;
@@ -252,15 +252,15 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
-    /// Append a pointcloud and returns the resulting pointcloud.
+    /// Append a point cloud and returns the resulting point cloud.
     ///
-    /// The pointcloud being appended, must have all the attributes
-    /// present in the pointcloud it is being appended to, with same
+    /// The point cloud being appended, must have all the attributes
+    /// present in the point cloud it is being appended to, with same
     /// dtype, device and same shape other than the first dimension / length.
     PointCloud Append(const PointCloud &other) const;
 
     /// operator+ for t::PointCloud appends the compatible attributes to the
-    /// pointcloud.
+    /// point cloud.
     PointCloud operator+(const PointCloud &other) const {
         return Append(other);
     }
@@ -275,14 +275,14 @@ public:
     /// and applies the transformation as P = R(P) + t
     /// \param transformation Transformation [Tensor of dim {4,4}].
     /// Should be on the same device as the PointCloud
-    /// \return Transformed pointcloud
+    /// \return Transformed point cloud
     PointCloud &Transform(const core::Tensor &transformation);
 
     /// \brief Translates the points of the PointCloud.
     /// \param translation translation tensor of dimension {3}
     /// Should be on the same device as the PointCloud
     /// \param relative if true (default): translates relative to Center
-    /// \return Translated pointcloud
+    /// \return Translated point cloud
     PointCloud &Translate(const core::Tensor &translation,
                           bool relative = true);
 
@@ -290,7 +290,7 @@ public:
     /// \param scale Scale [double] of dimension
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is
     /// to be scaled. Should be on the same device as the PointCloud
-    /// \return Scaled pointcloud
+    /// \return Scaled point cloud
     PointCloud &Scale(double scale, const core::Tensor &center);
 
     /// \brief Rotates the points and normals (if exists).
@@ -298,7 +298,7 @@ public:
     /// Should be on the same device as the PointCloud
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is
     /// to be scaled. Should be on the same device as the PointCloud
-    /// \return Rotated pointcloud
+    /// \return Rotated point cloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     /// \brief Downsamples a point cloud with a specified voxel size.
@@ -311,8 +311,8 @@ public:
     core::Device GetDevice() const { return device_; }
 
 public:
-    /// \brief Function to estimate point normals. If the pointcloud normals
-    /// exists, the estimated normals are oriented with respect to the same.
+    /// \brief Function to estimate point normals. If the point cloud normals
+    /// exist, the estimated normals are oriented with respect to the same.
     /// It uses KNN search if only max_nn parameter is provided, and
     /// HybridSearch if radius parameter is also provided.
     /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
@@ -323,7 +323,7 @@ public:
             const utility::optional<double> radius = utility::nullopt);
 
 public:
-    /// \brief Factory function to create a pointcloud from a depth image and a
+    /// \brief Factory function to create a point cloud from a depth image and a
     /// camera model.
     ///
     /// Given depth value d at (u, v) image coordinate, the corresponding 3d
@@ -345,8 +345,8 @@ public:
     /// normals are requested, the depth map is first filtered to ensure smooth
     /// normals.
     ///
-    /// \return Created pointcloud with the 'points' property set. Thus is empty
-    /// if the conversion fails.
+    /// \return Created point cloud with the 'points' property set. Thus is
+    /// empty if the conversion fails.
     static PointCloud CreateFromDepthImage(
             const Image &depth,
             const core::Tensor &intrinsics,
@@ -357,8 +357,8 @@ public:
             int stride = 1,
             bool with_normals = false);
 
-    /// \brief Factory function to create a pointcloud from an RGB-D image and a
-    /// camera model.
+    /// \brief Factory function to create a point cloud from an RGB-D image and
+    /// a camera model.
     ///
     /// Given depth value d at (u, v) image coordinate, the corresponding 3d
     /// point is:
@@ -380,7 +380,7 @@ public:
     /// normals are requested, the depth map is first filtered to ensure smooth
     /// normals.
     ///
-    /// \return Created pointcloud with the 'points' and 'colors' properties
+    /// \return Created point cloud with the 'points' and 'colors' properties
     /// set. This is empty if the conversion fails.
     static PointCloud CreateFromRGBDImage(
             const RGBDImage &rgbd_image,

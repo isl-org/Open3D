@@ -175,7 +175,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
     }
 
     double centroid[3] = {0};
-    for (int32_t i = 0; i < indices_count; i++) {
+    for (int32_t i = 0; i < indices_count; ++i) {
         int32_t idx = 3 * indices_ptr[i];
         centroid[0] += points_ptr[idx];
         centroid[1] += points_ptr[idx + 1];
@@ -188,7 +188,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
 
     // cumulants must always be Float64 to ensure precision.
     double cumulants[6] = {0};
-    for (int32_t i = 0; i < indices_count; i++) {
+    for (int32_t i = 0; i < indices_count; ++i) {
         int32_t idx = 3 * indices_ptr[i];
         const double x = static_cast<double>(points_ptr[idx]) - centroid[0];
         const double y = static_cast<double>(points_ptr[idx + 1]) - centroid[1];
@@ -205,8 +205,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
 
     // Using Bessel's correction (dividing by (n - 1) instead of n).
     // Refer: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-    const double normalization_factor =
-            static_cast<double>(indices_count - 1.0);
+    const double normalization_factor = (indices_count - 1.0);
     for (int i = 0; i < 6; ++i) {
         cumulants[i] /= normalization_factor;
     }
@@ -470,7 +469,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
     // which handles edge cases like points on a plane.
     scalar_t max_coeff = covariance_ptr[0];
 
-    for (int i = 1; i < 9; i++) {
+    for (int i = 1; i < 9; ++i) {
         if (max_coeff < covariance_ptr[i]) {
             max_coeff = covariance_ptr[i];
         }
@@ -485,7 +484,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
 
     scalar_t A[9] = {0};
 
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 9; ++i) {
         A[i] = covariance_ptr[i] / max_coeff;
     }
 
