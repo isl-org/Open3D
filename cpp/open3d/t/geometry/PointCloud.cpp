@@ -77,12 +77,13 @@ std::string PointCloud::ToString() const {
             fmt::format("PointCloud on {} [{} points ({})] Attributes:",
                         GetDevice().ToString(), GetPointPositions().GetShape(0),
                         GetPointPositions().GetDtype().ToString());
+
     if (point_attr_.size() == 1) return str + " None.";
     for (const auto &keyval : point_attr_) {
         if (keyval.first != "positions") {
-            str += fmt::format(" {} ({}, {}),", keyval.first,
+            str += fmt::format(" {} (dtype = {}, shape = {}),", keyval.first,
                                keyval.second.GetDtype().ToString(),
-                               keyval.second.GetShape(1));
+                               keyval.second.GetShape().ToString());
         }
     }
     str[str.size() - 1] = '.';
