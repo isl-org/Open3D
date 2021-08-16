@@ -27,6 +27,7 @@
 #include "open3d/t/pipelines/slac/ControlGrid.h"
 
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/hashmap/HashSet.h"
 
 namespace open3d {
 namespace t {
@@ -87,11 +88,10 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
     // Convert back to the meter unit.
     vals_nb = vals_nb.View({8 * n, 3}) * grid_size_;
 
-    core::HashMap unique_hashmap(n, core::Int32, core::SizeVector{3},
-                                 core::Int32, core::SizeVector{1}, device_);
+    core::HashSet unique_hashset(n, core::Int32, core::SizeVector{3}, device_);
 
     core::Tensor buf_indices_unique, masks_unique;
-    unique_hashmap.Activate(keys_nb, buf_indices_unique, masks_unique);
+    unique_hashset.Insert(keys_nb, buf_indices_unique, masks_unique);
 
     core::Tensor buf_indices, masks;
     ctr_hashmap_->Insert(keys_nb.IndexGet({masks_unique}),
