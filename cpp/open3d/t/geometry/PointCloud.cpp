@@ -37,6 +37,7 @@
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 
@@ -231,6 +232,86 @@ PointCloud PointCloud::VoxelDownSample(
     }
 
     return pcd_down;
+}
+
+void PointCloud::EstimateNormals(
+        const int max_knn /* = 30*/,
+        const utility::optional<double> radius /*= utility::nullopt*/) {
+    core::Dtype dtype = this->GetPointPositions().GetDtype();
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                "Only Float32 and Float64 type color attribute supported for "
+                "estimating color gradient.");
+    }
+    const bool has_normals = HasPointNormals();
+    const core::Device device = GetDevice();
+    const core::Device::DeviceType device_type = device.GetType();
+
+    if (!has_normals) {
+        this->SetPointNormals(core::Tensor::Empty(
+                {GetPointPositions().GetLength(), 3}, dtype, device));
+    } else {
+        if (this->GetPointNormals().GetDtype() != dtype) {
+            utility::LogError(
+                    "Normals attribute must have same dtype as positions.");
+        }
+        this->SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    this->SetPointAttr(
+            "covariances",
+            core::Tensor::Empty({GetPointPositions().GetLength(), 3, 3}, dtype,
+                                device));
+
+    if (radius.has_value()) {
+        utility::LogDebug("Using Hybrid Search for computing covariances");
+        // Computes and sets `covariances` attribute using Hybrid Search
+        // mehtod.
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value(), max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateCovariancesUsingHybridSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), radius.value(),
+                      max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogDebug("Using KNN Search for computing covariances");
+        // Computes and sets `covariances` attribute using KNN Search method.
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    }
+
+    // Estimate `normal` of each point using its `covariance` matrix.
+    if (device_type == core::Device::DeviceType::CPU) {
+        kernel::pointcloud::EstimateNormalsFromCovariancesCPU(
+                this->GetPointAttr("covariances"), this->GetPointNormals(),
+                has_normals);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(kernel::pointcloud::EstimateNormalsFromCovariancesCUDA,
+                  this->GetPointAttr("covariances"), this->GetPointNormals(),
+                  has_normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    // TODO (@rishabh): Don't remove covariances attribute, when
+    // EstimateCovariance functionality is exposed.
+    RemovePointAttr("covariances");
 }
 
 static PointCloud CreatePointCloudWithNormals(
