@@ -130,6 +130,114 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
 
+template <typename scalar_t, typename funct_t>
+__global__ void ComputePoseColoredICPKernelCUDA(
+        const scalar_t *source_points_ptr,
+        const scalar_t *source_colors_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *target_normals_ptr,
+        const scalar_t *target_colors_ptr,
+        const scalar_t *target_color_gradients_ptr,
+        const int64_t *correspondence_indices,
+        const scalar_t sqrt_lambda_geometric,
+        const scalar_t sqrt_lambda_photometric,
+        const int n,
+        scalar_t *global_sum,
+        funct_t GetWeightFromRobustKernel) {
+    __shared__ scalar_t local_sum0[kThread1DUnit];
+    __shared__ scalar_t local_sum1[kThread1DUnit];
+    __shared__ scalar_t local_sum2[kThread1DUnit];
+
+    const int tid = threadIdx.x;
+
+    local_sum0[tid] = 0;
+    local_sum1[tid] = 0;
+    local_sum2[tid] = 0;
+
+    const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (workload_idx >= n) return;
+
+    scalar_t J_G[6] = {0}, J_I[6] = {0}, reduction[29] = {0};
+    scalar_t r_G = 0, r_I = 0;
+
+    bool valid = GetJacobianColoredICP<scalar_t>(
+            workload_idx, source_points_ptr, source_colors_ptr,
+            target_points_ptr, target_normals_ptr, target_colors_ptr,
+            target_color_gradients_ptr, correspondence_indices,
+            sqrt_lambda_geometric, sqrt_lambda_photometric, J_G, J_I, r_G, r_I);
+
+    scalar_t w_G = GetWeightFromRobustKernel(r_G);
+    scalar_t w_I = GetWeightFromRobustKernel(r_I);
+
+    if (valid) {
+        // Dump J, r into JtJ and Jtr
+        int i = 0;
+        for (int j = 0; j < 6; ++j) {
+            for (int k = 0; k <= j; ++k) {
+                reduction[i] += J_G[j] * w_G * J_G[k] + J_I[j] * w_I * J_I[k];
+                ++i;
+            }
+            reduction[21 + j] += J_G[j] * w_G * r_G + J_I[j] * w_I * r_I;
+        }
+        reduction[27] += r_G * r_G + r_I * r_I;
+        reduction[28] += 1;
+    }
+
+    ReduceSum6x6LinearSystem<scalar_t, kThread1DUnit>(tid, valid, reduction,
+                                                      local_sum0, local_sum1,
+                                                      local_sum2, global_sum);
+}
+
+void ComputePoseColoredICPCUDA(const core::Tensor &source_points,
+                               const core::Tensor &source_colors,
+                               const core::Tensor &target_points,
+                               const core::Tensor &target_normals,
+                               const core::Tensor &target_colors,
+                               const core::Tensor &target_color_gradients,
+                               const core::Tensor &correspondence_indices,
+                               core::Tensor &pose,
+                               float &residual,
+                               int &inlier_count,
+                               const core::Dtype &dtype,
+                               const core::Device &device,
+                               const registration::RobustKernel &kernel,
+                               const double &lambda_geometric) {
+    int n = source_points.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
+    const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
+    const dim3 threads(kThread1DUnit);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t sqrt_lambda_geometric =
+                static_cast<scalar_t>(sqrt(lambda_geometric));
+        scalar_t sqrt_lambda_photometric =
+                static_cast<scalar_t>(sqrt(1.0 - lambda_geometric));
+
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                kernel.type_, scalar_t, kernel.scaling_parameter_,
+                kernel.shape_parameter_, [&]() {
+                    ComputePoseColoredICPKernelCUDA<<<
+                            blocks, threads, 0, core::cuda::GetStream()>>>(
+                            source_points.GetDataPtr<scalar_t>(),
+                            source_colors.GetDataPtr<scalar_t>(),
+                            target_points.GetDataPtr<scalar_t>(),
+                            target_normals.GetDataPtr<scalar_t>(),
+                            target_colors.GetDataPtr<scalar_t>(),
+                            target_color_gradients.GetDataPtr<scalar_t>(),
+                            correspondence_indices.GetDataPtr<int64_t>(),
+                            sqrt_lambda_geometric, sqrt_lambda_photometric, n,
+                            global_sum.GetDataPtr<scalar_t>(),
+                            GetWeightFromRobustKernel);
+                });
+    });
+
+    core::cuda::Synchronize();
+
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
+}
+
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

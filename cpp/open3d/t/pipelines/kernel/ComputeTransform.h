@@ -51,6 +51,16 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &correspondence_indices,
                                      const registration::RobustKernel &kernel);
 
+core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
+                                   const core::Tensor &source_colors,
+                                   const core::Tensor &target_points,
+                                   const core::Tensor &target_normals,
+                                   const core::Tensor &target_colors,
+                                   const core::Tensor &target_color_gradients,
+                                   const core::Tensor &correspondence_indices,
+                                   const registration::RobustKernel &kernel,
+                                   const double &lambda_geometric);
+
 /// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
 /// for point to point registration method.
 /// \param source_points source points indexed according to correspondences.

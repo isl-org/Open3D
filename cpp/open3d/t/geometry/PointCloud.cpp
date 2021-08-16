@@ -31,6 +31,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
@@ -231,6 +232,88 @@ PointCloud PointCloud::VoxelDownSample(
     }
 
     return pcd_down;
+}
+
+void PointCloud::EstimateColorGradients(
+        const int max_knn /* = 30*/,
+        const utility::optional<double> radius /*= utility::nullopt*/) {
+    if (!HasPointColors() || !HasPointNormals()) {
+        utility::LogError(
+                "PointCloud must have colors and normals attribute "
+                "to compute color gradients.");
+    }
+
+    core::Dtype dtype = this->GetPointColors().GetDtype();
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                "Only Float32 and Float64 type color attribute supported for "
+                "estimating color gradient.");
+    }
+
+    if (!radius.has_value()) {
+        utility::LogError(
+                "KNN Search based EstimateColorGradient is not implemented "
+                "yet. Please provide radius parameter value.");
+    }
+
+    const core::Device device = GetDevice();
+    const core::Device::DeviceType device_type = device.GetType();
+
+    if (!this->HasPointAttr("color_gradients")) {
+        this->SetPointAttr(
+                "color_gradients",
+                core::Tensor::Empty({GetPointPositions().GetLength(), 3}, dtype,
+                                    device));
+    } else {
+        if (this->GetPointAttr("color_gradients").GetDtype() != dtype) {
+            utility::LogError(
+                    "color_gradients attribute must be of same dtype as "
+                    "points.");
+        }
+        // If color_gradients attribute is already present, do not re-compute.
+        return;
+    }
+
+    // Compute and set `color_gradients` attribute.
+    if (radius.has_value()) {
+        utility::LogDebug("Using Hybrid Search for computing color_gradients");
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateColorGradientsUsingHybridSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), radius.value(),
+                    max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateColorGradientsUsingHybridSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointNormals().Contiguous(),
+                      this->GetPointColors().Contiguous(),
+                      this->GetPointAttr("color_gradients"), radius.value(),
+                      max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogDebug("Using KNN Search for computing color_gradients");
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateColorGradientsUsingKNNSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateColorGradientsUsingKNNSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointNormals().Contiguous(),
+                      this->GetPointColors().Contiguous(),
+                      this->GetPointAttr("color_gradients"), max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    }
 }
 
 static PointCloud CreatePointCloudWithNormals(

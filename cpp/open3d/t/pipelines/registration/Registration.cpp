@@ -152,9 +152,21 @@ static void AssertInputMultiScaleICP(
                 "normal vectors for target PointCloud.");
     }
 
+    // ColoredICP requires pre-computed color_gradients for target points.
     if (estimation.GetTransformationEstimationType() ==
         TransformationEstimationType::ColoredICP) {
-        utility::LogError("Tensor PointCloud ColoredICP is not implemented.");
+        if (!target.HasPointNormals()) {
+            utility::LogError(
+                    "ColoredICP requires target pointcloud to have normals.");
+        }
+        if (!target.HasPointColors()) {
+            utility::LogError(
+                    "ColoredICP requires target pointcloud to have colors.");
+        }
+        if (!source.HasPointColors()) {
+            utility::LogError(
+                    "ColoredICP requires source pointcloud to have colors.");
+        }
     }
 
     if (max_correspondence_distances[0] <= 0.0) {
@@ -185,6 +197,7 @@ InitializePointCloudPyramidForMultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
+        const double &max_correspondence_distance,
         const TransformationEstimation &estimation,
         const int64_t &num_iterations) {
     std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
@@ -200,10 +213,12 @@ InitializePointCloudPyramidForMultiScaleICP(
                 target.VoxelDownSample(voxel_sizes[num_iterations - 1]);
     }
 
-    // TODO(@rishabh): Estimate Color-Gradient here, for ColoredICP.
+    // Computing Color Gradients.
     if (estimation.GetTransformationEstimationType() ==
-        TransformationEstimationType::ColoredICP) {
-        utility::LogError(" ColoredICP requires pre-computed color-gradients.");
+                TransformationEstimationType::ColoredICP &&
+        !target.HasPointAttr("color_gradients")) {
+        target_down_pyramid[num_iterations - 1].EstimateColorGradients(
+                30, max_correspondence_distance * 2.0);
     }
 
     for (int k = num_iterations - 2; k >= 0; k--) {
@@ -292,7 +307,9 @@ RegistrationResult RegistrationMultiScaleICP(
     std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);
     std::tie(source_down_pyramid, target_down_pyramid) =
             InitializePointCloudPyramidForMultiScaleICP(
-                    source, target, voxel_sizes, estimation, num_iterations);
+                    source, target, voxel_sizes,
+                    max_correspondence_distances[num_iterations - 1],
+                    estimation, num_iterations);
 
     // Transformation tensor is always of shape {4,4}, type Float64 on CPU:0.
     core::Tensor transformation =
