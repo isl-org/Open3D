@@ -302,8 +302,8 @@ public:
     /// \brief Downsamples a point cloud with a specified voxel size.
     /// \param voxel_size Voxel size. A positive number.
     PointCloud VoxelDownSample(double voxel_size,
-                               const core::HashmapBackend &backend =
-                                       core::HashmapBackend::Default) const;
+                               const core::HashBackendType &backend =
+                                       core::HashBackendType::Default) const;
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }

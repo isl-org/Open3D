@@ -45,7 +45,7 @@
 #include "open3d/core/hashmap/CUDA/SlabMacros.h"
 #include "open3d/core/hashmap/CUDA/SlabNodeManager.h"
 #include "open3d/core/hashmap/CUDA/SlabTraits.h"
-#include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/hashmap/DeviceHashBackend.h"
 
 namespace open3d {
 namespace core {
@@ -61,9 +61,9 @@ namespace core {
 // emphasize the differences.
 
 template <typename Key, typename Hash>
-class SlabHashmapImpl {
+class SlabHashBackendImpl {
 public:
-    SlabHashmapImpl();
+    SlabHashBackendImpl();
 
     __host__ void Setup(int64_t init_buckets,
                         const SlabNodeManagerImpl& node_mgr_impl,
@@ -139,21 +139,21 @@ public:
 
 /// Kernels
 template <typename Key, typename Hash>
-__global__ void InsertKernelPass0(SlabHashmapImpl<Key, Hash> impl,
+__global__ void InsertKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
                                   const void* input_keys,
                                   buf_index_t* output_buf_indices,
                                   int heap_counter_prev,
                                   int64_t count);
 
 template <typename Key, typename Hash>
-__global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
+__global__ void InsertKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
                                   const void* input_keys,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count);
 
 template <typename Key, typename Hash>
-__global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
+__global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash> impl,
                                   const void* const* input_values_soa,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
@@ -161,40 +161,40 @@ __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
                                   int64_t n_values);
 
 template <typename Key, typename Hash>
-__global__ void FindKernel(SlabHashmapImpl<Key, Hash> impl,
+__global__ void FindKernel(SlabHashBackendImpl<Key, Hash> impl,
                            const void* input_keys,
                            buf_index_t* output_buf_indices,
                            bool* output_masks,
                            int64_t count);
 
 template <typename Key, typename Hash>
-__global__ void EraseKernelPass0(SlabHashmapImpl<Key, Hash> impl,
+__global__ void EraseKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
                                  const void* input_keys,
                                  buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count);
 
 template <typename Key, typename Hash>
-__global__ void EraseKernelPass1(SlabHashmapImpl<Key, Hash> impl,
+__global__ void EraseKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
                                  buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count);
 
 template <typename Key, typename Hash>
-__global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
+__global__ void GetActiveIndicesKernel(SlabHashBackendImpl<Key, Hash> impl,
                                        buf_index_t* output_buf_indices,
                                        uint32_t* output_count);
 
 template <typename Key, typename Hash>
-__global__ void CountElemsPerBucketKernel(SlabHashmapImpl<Key, Hash> impl,
+__global__ void CountElemsPerBucketKernel(SlabHashBackendImpl<Key, Hash> impl,
                                           int64_t* bucket_elem_counts);
 
 template <typename Key, typename Hash>
-SlabHashmapImpl<Key, Hash>::SlabHashmapImpl()
+SlabHashBackendImpl<Key, Hash>::SlabHashBackendImpl()
     : bucket_count_(0), bucket_list_head_(nullptr) {}
 
 template <typename Key, typename Hash>
-void SlabHashmapImpl<Key, Hash>::Setup(
+void SlabHashBackendImpl<Key, Hash>::Setup(
         int64_t init_buckets,
         const SlabNodeManagerImpl& allocator_impl,
         const CUDAHashmapBufferAccessor& buffer_accessor) {
@@ -204,11 +204,11 @@ void SlabHashmapImpl<Key, Hash>::Setup(
 }
 
 template <typename Key, typename Hash>
-__device__ bool SlabHashmapImpl<Key, Hash>::Insert(bool lane_active,
-                                                   uint32_t lane_id,
-                                                   uint32_t bucket_id,
-                                                   const Key& key,
-                                                   buf_index_t buf_index) {
+__device__ bool SlabHashBackendImpl<Key, Hash>::Insert(bool lane_active,
+                                                       uint32_t lane_id,
+                                                       uint32_t bucket_id,
+                                                       const Key& key,
+                                                       buf_index_t buf_index) {
     uint32_t work_queue = 0;
     uint32_t prev_work_queue = 0;
     uint32_t slab_ptr = kHeadSlabAddr;
@@ -308,7 +308,7 @@ __device__ bool SlabHashmapImpl<Key, Hash>::Insert(bool lane_active,
 }
 
 template <typename Key, typename Hash>
-__device__ Pair<buf_index_t, bool> SlabHashmapImpl<Key, Hash>::Find(
+__device__ Pair<buf_index_t, bool> SlabHashBackendImpl<Key, Hash>::Find(
         bool lane_active,
         uint32_t lane_id,
         uint32_t bucket_id,
@@ -375,7 +375,7 @@ __device__ Pair<buf_index_t, bool> SlabHashmapImpl<Key, Hash>::Find(
 }
 
 template <typename Key, typename Hash>
-__device__ Pair<buf_index_t, bool> SlabHashmapImpl<Key, Hash>::Erase(
+__device__ Pair<buf_index_t, bool> SlabHashBackendImpl<Key, Hash>::Erase(
         bool lane_active,
         uint32_t lane_id,
         uint32_t bucket_id,
@@ -436,9 +436,9 @@ __device__ Pair<buf_index_t, bool> SlabHashmapImpl<Key, Hash>::Erase(
 }
 
 template <typename Key, typename Hash>
-__device__ void SlabHashmapImpl<Key, Hash>::WarpSyncKey(const Key& key,
-                                                        uint32_t lane_id,
-                                                        Key& ret_key) {
+__device__ void SlabHashBackendImpl<Key, Hash>::WarpSyncKey(const Key& key,
+                                                            uint32_t lane_id,
+                                                            Key& ret_key) {
     auto dst_key_ptr = reinterpret_cast<int*>(&ret_key);
     auto src_key_ptr = reinterpret_cast<const int*>(&key);
     for (int i = 0; i < key_size_in_int_; ++i) {
@@ -448,7 +448,7 @@ __device__ void SlabHashmapImpl<Key, Hash>::WarpSyncKey(const Key& key,
 }
 
 template <typename Key, typename Hash>
-__device__ int32_t SlabHashmapImpl<Key, Hash>::WarpFindKey(
+__device__ int32_t SlabHashBackendImpl<Key, Hash>::WarpFindKey(
         const Key& key, uint32_t lane_id, uint32_t slab_entry) {
     bool is_lane_found =
             // Select key lanes.
@@ -464,30 +464,31 @@ __device__ int32_t SlabHashmapImpl<Key, Hash>::WarpFindKey(
 
 template <typename Key, typename Hash>
 __device__ int32_t
-SlabHashmapImpl<Key, Hash>::WarpFindEmpty(uint32_t slab_entry) {
+SlabHashBackendImpl<Key, Hash>::WarpFindEmpty(uint32_t slab_entry) {
     bool is_lane_empty = (slab_entry == kEmptyNodeAddr);
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_empty)) - 1;
 }
 
 template <typename Key, typename Hash>
 __device__ int64_t
-SlabHashmapImpl<Key, Hash>::ComputeBucket(const Key& key) const {
+SlabHashBackendImpl<Key, Hash>::ComputeBucket(const Key& key) const {
     return hash_fn_(key) % bucket_count_;
 }
 
 template <typename Key, typename Hash>
-__device__ uint32_t SlabHashmapImpl<Key, Hash>::AllocateSlab(uint32_t lane_id) {
+__device__ uint32_t
+SlabHashBackendImpl<Key, Hash>::AllocateSlab(uint32_t lane_id) {
     return node_mgr_impl_.WarpAllocate(lane_id);
 }
 
 template <typename Key, typename Hash>
-__device__ __forceinline__ void SlabHashmapImpl<Key, Hash>::FreeSlab(
+__device__ __forceinline__ void SlabHashBackendImpl<Key, Hash>::FreeSlab(
         uint32_t slab_ptr) {
     node_mgr_impl_.FreeUntouched(slab_ptr);
 }
 
 template <typename Key, typename Hash>
-__global__ void InsertKernelPass0(SlabHashmapImpl<Key, Hash> impl,
+__global__ void InsertKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
                                   const void* input_keys,
                                   buf_index_t* output_buf_indices,
                                   int heap_counter_prev,
@@ -506,7 +507,7 @@ __global__ void InsertKernelPass0(SlabHashmapImpl<Key, Hash> impl,
 }
 
 template <typename Key, typename Hash>
-__global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
+__global__ void InsertKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
                                   const void* input_keys,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
@@ -543,7 +544,7 @@ __global__ void InsertKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 }
 
 template <typename Key, typename Hash>
-__global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
+__global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash> impl,
                                   const void* const* input_values_soa,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
@@ -573,7 +574,7 @@ __global__ void InsertKernelPass2(SlabHashmapImpl<Key, Hash> impl,
 }
 
 template <typename Key, typename Hash>
-__global__ void FindKernel(SlabHashmapImpl<Key, Hash> impl,
+__global__ void FindKernel(SlabHashBackendImpl<Key, Hash> impl,
                            const void* input_keys,
                            buf_index_t* output_buf_indices,
                            bool* output_masks,
@@ -612,7 +613,7 @@ __global__ void FindKernel(SlabHashmapImpl<Key, Hash> impl,
 }
 
 template <typename Key, typename Hash>
-__global__ void EraseKernelPass0(SlabHashmapImpl<Key, Hash> impl,
+__global__ void EraseKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
                                  const void* input_keys,
                                  buf_index_t* output_buf_indices,
                                  bool* output_masks,
@@ -647,7 +648,7 @@ __global__ void EraseKernelPass0(SlabHashmapImpl<Key, Hash> impl,
 }
 
 template <typename Key, typename Hash>
-__global__ void EraseKernelPass1(SlabHashmapImpl<Key, Hash> impl,
+__global__ void EraseKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
                                  buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count) {
@@ -658,7 +659,7 @@ __global__ void EraseKernelPass1(SlabHashmapImpl<Key, Hash> impl,
 }
 
 template <typename Key, typename Hash>
-__global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
+__global__ void GetActiveIndicesKernel(SlabHashBackendImpl<Key, Hash> impl,
                                        buf_index_t* output_buf_indices,
                                        uint32_t* output_count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -698,7 +699,7 @@ __global__ void GetActiveIndicesKernel(SlabHashmapImpl<Key, Hash> impl,
 }
 
 template <typename Key, typename Hash>
-__global__ void CountElemsPerBucketKernel(SlabHashmapImpl<Key, Hash> impl,
+__global__ void CountElemsPerBucketKernel(SlabHashBackendImpl<Key, Hash> impl,
                                           int64_t* bucket_elem_counts) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;

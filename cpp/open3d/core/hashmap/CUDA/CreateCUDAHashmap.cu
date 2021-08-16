@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CUDA/SlabHashmap.h"
-#include "open3d/core/hashmap/CUDA/StdGPUHashmap.h"
+#include "open3d/core/hashmap/CUDA/SlabHashBackend.h"
+#include "open3d/core/hashmap/CUDA/StdGPUHashBackend.h"
 #include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/core/hashmap/Hashmap.h"
 
@@ -33,16 +33,16 @@ namespace open3d {
 namespace core {
 
 /// Non-templated factory.
-std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
+std::shared_ptr<DeviceHashBackend> CreateCUDAHashmap(
         int64_t init_capacity,
         const Dtype& key_dtype,
         const SizeVector& key_element_shape,
         const std::vector<Dtype>& value_dtypes,
         const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
-        const HashmapBackend& backend) {
-    if (backend != HashmapBackend::Default && backend != HashmapBackend::Slab &&
-        backend != HashmapBackend::StdGPU) {
+        const HashBackendType& backend) {
+    if (backend != HashBackendType::Default && backend != HashBackendType::Slab &&
+        backend != HashBackendType::StdGPU) {
         utility::LogError("Unsupported backend for CUDA hashmap.");
     }
 
@@ -58,16 +58,16 @@ std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
         value_dsizes.push_back(dsize_value);
     }
 
-    std::shared_ptr<DeviceHashmap> device_hashmap_ptr;
-    if (backend == HashmapBackend::Default ||
-        backend == HashmapBackend::StdGPU) {
+    std::shared_ptr<DeviceHashBackend> device_hashmap_ptr;
+    if (backend == HashBackendType::Default ||
+        backend == HashBackendType::StdGPU) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(key_dtype, dim, [&] {
-            device_hashmap_ptr = std::make_shared<StdGPUHashmap<key_t, hash_t>>(
+            device_hashmap_ptr = std::make_shared<StdGPUHashBackend<key_t, hash_t>>(
                     init_capacity, key_dsize, value_dsizes, device);
         });
-    } else {  // if (backend == HashmapBackend::Slab) {
+    } else {  // if (backend == HashBackendType::Slab) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(key_dtype, dim, [&] {
-            device_hashmap_ptr = std::make_shared<SlabHashmap<key_t, hash_t>>(
+            device_hashmap_ptr = std::make_shared<SlabHashBackend<key_t, hash_t>>(
                     init_capacity, key_dsize, value_dsizes, device);
         });
     }

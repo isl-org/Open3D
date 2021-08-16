@@ -75,12 +75,12 @@ INSTANTIATE_TEST_SUITE_P(Hashmap,
 TEST_P(HashmapPermuteDevices, SimpleInit) {
     core::Device device = GetParam();
 
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     for (auto backend : backends) {
@@ -105,12 +105,12 @@ TEST_P(HashmapPermuteDevices, SimpleInit) {
 
 TEST_P(HashmapPermuteDevices, Find) {
     core::Device device = GetParam();
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     const int n = 1000000;
@@ -149,12 +149,12 @@ TEST_P(HashmapPermuteDevices, Find) {
 
 TEST_P(HashmapPermuteDevices, Insert) {
     core::Device device = GetParam();
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     const int n = 1000000;
@@ -202,12 +202,12 @@ TEST_P(HashmapPermuteDevices, Insert) {
 
 TEST_P(HashmapPermuteDevices, Erase) {
     core::Device device = GetParam();
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     const int n = 1000000;
@@ -265,12 +265,12 @@ TEST_P(HashmapPermuteDevices, Erase) {
 
 TEST_P(HashmapPermuteDevices, Rehash) {
     core::Device device = GetParam();
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     const int n = 1000000;
@@ -319,12 +319,12 @@ TEST_P(HashmapPermuteDevices, Rehash) {
 
 TEST_P(HashmapPermuteDevices, Clear) {
     core::Device device = GetParam();
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     const int n = 1000000;
@@ -397,12 +397,12 @@ public:
 
 TEST_P(HashmapPermuteDevices, InsertComplexKeys) {
     core::Device device = GetParam();
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     const int n = 1000000;
@@ -456,12 +456,12 @@ TEST_P(HashmapPermuteDevices, InsertComplexKeys) {
 
 TEST_P(HashmapPermuteDevices, MultivalueInsertion) {
     core::Device device = GetParam();
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     const int n = 1000000;
@@ -529,12 +529,12 @@ TEST_P(HashmapPermuteDevices, MultivalueInsertion) {
 
 TEST_P(HashmapPermuteDevices, Hashset) {
     core::Device device = GetParam();
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     const int n = 1000000;

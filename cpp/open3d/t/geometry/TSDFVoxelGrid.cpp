@@ -41,7 +41,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
         int64_t block_resolution,
         int64_t block_count,
         const core::Device &device,
-        const core::HashmapBackend &backend)
+        const core::HashBackendType &backend)
     : voxel_size_(voxel_size),
       sdf_trunc_(sdf_trunc),
       block_resolution_(block_resolution),
@@ -139,7 +139,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     if (point_hashmap_ == nullptr) {
         point_hashmap_ = std::make_shared<core::Hashmap>(
                 capacity, core::Int32, core::SizeVector{3}, core::UInt8,
-                core::SizeVector{1}, device_, core::HashmapBackend::Default);
+                core::SizeVector{1}, device_, core::HashBackendType::Default);
     } else {
         point_hashmap_->Clear();
     }
@@ -239,7 +239,7 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                                 depth_min, depth_max);
 
     core::Tensor block_values = block_hashmap_->GetValueTensor();
-    auto device_hashmap = block_hashmap_->GetDeviceHashmap();
+    auto device_hashmap = block_hashmap_->GetDeviceHashBackend();
     kernel::tsdf::RayCast(device_hashmap, block_values, range_minmax_map,
                           vertex_map, depth_map, color_map, normal_map,
                           intrinsics, extrinsics, height, width,

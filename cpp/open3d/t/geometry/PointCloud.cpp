@@ -203,7 +203,7 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
 }
 
 PointCloud PointCloud::VoxelDownSample(
-        double voxel_size, const core::HashmapBackend &backend) const {
+        double voxel_size, const core::HashBackendType &backend) const {
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }

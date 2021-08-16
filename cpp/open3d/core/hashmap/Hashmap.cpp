@@ -27,7 +27,7 @@
 #include "open3d/core/hashmap/Hashmap.h"
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/hashmap/DeviceHashBackend.h"
 #include "open3d/t/io/HashmapIO.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -41,7 +41,7 @@ Hashmap::Hashmap(int64_t init_capacity,
                  const Dtype& value_dtype,
                  const SizeVector& value_element_shape,
                  const Device& device,
-                 const HashmapBackend& backend)
+                 const HashBackendType& backend)
     : key_dtype_(key_dtype),
       key_element_shape_(key_element_shape),
       dtypes_value_({value_dtype}),
@@ -55,7 +55,7 @@ Hashmap::Hashmap(int64_t init_capacity,
                  const std::vector<Dtype>& dtypes_value,
                  const std::vector<SizeVector>& element_shapes_value,
                  const Device& device,
-                 const HashmapBackend& backend)
+                 const HashBackendType& backend)
     : key_dtype_(key_dtype),
       key_element_shape_(key_element_shape),
       dtypes_value_(dtypes_value),
@@ -259,7 +259,7 @@ float Hashmap::LoadFactor() const { return device_hashmap_->LoadFactor(); }
 
 void Hashmap::Init(int64_t init_capacity,
                    const Device& device,
-                   const HashmapBackend& backend) {
+                   const HashBackendType& backend) {
     // Key check
     if (key_dtype_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
         utility::LogError("[Hashmap] Undefined key dtype is not allowed.");
@@ -291,7 +291,7 @@ void Hashmap::Init(int64_t init_capacity,
         }
     }
 
-    device_hashmap_ = CreateDeviceHashmap(
+    device_hashmap_ = CreateDeviceHashBackend(
             init_capacity, key_dtype_, key_element_shape_, dtypes_value_,
             element_shapes_value_, device, backend);
 }
@@ -389,7 +389,7 @@ Hashset::Hashset(int64_t init_capacity,
                  const Dtype& key_dtype,
                  const SizeVector& key_element_shape,
                  const Device& device,
-                 const HashmapBackend& backend)
+                 const HashBackendType& backend)
     : Hashmap(init_capacity,
               key_dtype,
               key_element_shape,
@@ -404,7 +404,7 @@ Hashset::Hashset(int64_t init_capacity,
                  const Dtype& value_dtype,
                  const SizeVector& value_element_shape,
                  const Device& device,
-                 const HashmapBackend& backend)
+                 const HashBackendType& backend)
     : Hashmap(init_capacity,
               key_dtype,
               key_element_shape,
@@ -423,7 +423,7 @@ Hashset::Hashset(int64_t init_capacity,
                  const std::vector<Dtype>& dtypes_value,
                  const std::vector<SizeVector>& element_shapes_value,
                  const Device& device,
-                 const HashmapBackend& backend)
+                 const HashBackendType& backend)
     : Hashmap(init_capacity,
               key_dtype,
               key_element_shape,

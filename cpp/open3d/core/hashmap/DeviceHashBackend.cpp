@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/DeviceHashmap.h"
-
+#include "open3d/core/hashmap/DeviceHashBackend.h"
 #include "open3d/core/hashmap/Hashmap.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -33,14 +32,14 @@
 namespace open3d {
 namespace core {
 
-std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
+std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
         int64_t init_capacity,
         const Dtype& key_dtype,
         const SizeVector& key_element_shape,
         const std::vector<Dtype>& value_dtypes,
         const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
-        const HashmapBackend& backend) {
+        const HashBackendType& backend) {
     if (device.GetType() == Device::DeviceType::CPU) {
         return CreateCPUHashmap(init_capacity, key_dtype, key_element_shape,
                                 value_dtypes, value_element_shapes, device,
@@ -54,7 +53,7 @@ std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
     }
 #endif
     else {
-        utility::LogError("[CreateDeviceHashmap]: Unimplemented device");
+        utility::LogError("[CreateDeviceHashBackend]: Unimplemented device");
     }
 }
 

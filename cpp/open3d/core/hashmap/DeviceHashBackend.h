@@ -34,19 +34,19 @@
 namespace open3d {
 namespace core {
 
-enum class HashmapBackend;
+enum class HashBackendType;
 
-class DeviceHashmap {
+class DeviceHashBackend {
 public:
-    DeviceHashmap(int64_t init_capacity,
-                  int64_t key_dsize,
-                  std::vector<int64_t> value_dsizes,
-                  const Device& device)
+    DeviceHashBackend(int64_t init_capacity,
+                      int64_t key_dsize,
+                      std::vector<int64_t> value_dsizes,
+                      const Device& device)
         : capacity_(init_capacity),
           key_dsize_(key_dsize),
           value_dsizes_(value_dsizes),
           device_(device) {}
-    virtual ~DeviceHashmap() {}
+    virtual ~DeviceHashBackend() {}
 
     /// Rehash expects a lot of extra memory space at runtime,
     /// since it consists of
@@ -127,35 +127,35 @@ public:
 };
 
 /// Factory functions:
-/// - Default constructor switch is in DeviceHashmap.cpp
+/// - Default constructor switch is in DeviceHashBackend.cpp
 /// - Default CPU constructor is in CPU/CreateCPUHashmap.cpp
 /// - Default CUDA constructor is in CUDA/CreateCUDAHashmap.cu
-std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
+std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
         int64_t init_capacity,
         const Dtype& key_dtype,
         const SizeVector& key_element_shape,
         const std::vector<Dtype>& value_dtypes,
         const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
-        const HashmapBackend& backend);
+        const HashBackendType& backend);
 
-std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
+std::shared_ptr<DeviceHashBackend> CreateCPUHashmap(
         int64_t init_capacity,
         const Dtype& key_dtype,
         const SizeVector& key_element_shape,
         const std::vector<Dtype>& value_dtypes,
         const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
-        const HashmapBackend& backend);
+        const HashBackendType& backend);
 
-std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
+std::shared_ptr<DeviceHashBackend> CreateCUDAHashmap(
         int64_t init_capacity,
         const Dtype& key_dtype,
         const SizeVector& key_element_shape,
         const std::vector<Dtype>& value_dtypes,
         const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
-        const HashmapBackend& backend);
+        const HashBackendType& backend);
 
 }  // namespace core
 }  // namespace open3d

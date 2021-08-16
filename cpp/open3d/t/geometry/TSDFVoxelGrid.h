@@ -69,8 +69,8 @@ public:
                   int64_t block_resolution = 16, /*  block Tensor resolution  */
                   int64_t block_count = 1000,
                   const core::Device &device = core::Device("CPU:0"),
-                  const core::HashmapBackend &backend =
-                          core::HashmapBackend::Default);
+                  const core::HashBackendType &backend =
+                          core::HashBackendType::Default);
 
     ~TSDFVoxelGrid(){};
 

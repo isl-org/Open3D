@@ -60,7 +60,7 @@ void CUDAResetHeap(Tensor &heap);
 //  0 <- heap_top       0                    0                    0
 
 // Buffer index type for the internal heap.
-typedef uint32_t buf_index_t;
+using buf_index_t = uint32_t;
 
 class HashmapBuffer {
 public:

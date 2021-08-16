@@ -29,20 +29,20 @@
 #include <memory>
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/hashmap/CUDA/SlabHashmapImpl.h"
-#include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/hashmap/CUDA/SlabHashBackendImpl.h"
+#include "open3d/core/hashmap/DeviceHashBackend.h"
 
 namespace open3d {
 namespace core {
 template <typename Key, typename Hash>
-class SlabHashmap : public DeviceHashmap {
+class SlabHashBackend : public DeviceHashBackend {
 public:
-    SlabHashmap(int64_t init_capacity,
-                int64_t key_dsize,
-                std::vector<int64_t> value_dsizes,
-                const Device& device);
+    SlabHashBackend(int64_t init_capacity,
+                    int64_t key_dsize,
+                    std::vector<int64_t> value_dsizes,
+                    const Device& device);
 
-    ~SlabHashmap();
+    ~SlabHashBackend();
 
     void Rehash(int64_t buckets) override;
 
@@ -74,12 +74,12 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    SlabHashmapImpl<Key, Hash> GetImpl() { return impl_; }
+    SlabHashBackendImpl<Key, Hash> GetImpl() { return impl_; }
 
 protected:
     /// The struct is directly passed to kernels by value, so cannot be a
     /// shared pointer.
-    SlabHashmapImpl<Key, Hash> impl_;
+    SlabHashBackendImpl<Key, Hash> impl_;
 
     CUDAHashmapBufferAccessor buffer_accessor_;
     std::shared_ptr<SlabNodeManager> node_mgr_;
@@ -99,22 +99,22 @@ protected:
 };
 
 template <typename Key, typename Hash>
-SlabHashmap<Key, Hash>::SlabHashmap(int64_t init_capacity,
-                                    int64_t key_dsize,
-                                    std::vector<int64_t> value_dsizes,
-                                    const Device& device)
-    : DeviceHashmap(init_capacity, key_dsize, value_dsizes, device) {
+SlabHashBackend<Key, Hash>::SlabHashBackend(int64_t init_capacity,
+                                            int64_t key_dsize,
+                                            std::vector<int64_t> value_dsizes,
+                                            const Device& device)
+    : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
     int64_t init_buckets = init_capacity * 2;
     Allocate(init_buckets, init_capacity);
 }
 
 template <typename Key, typename Hash>
-SlabHashmap<Key, Hash>::~SlabHashmap() {
+SlabHashBackend<Key, Hash>::~SlabHashBackend() {
     Free();
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
+void SlabHashBackend<Key, Hash>::Rehash(int64_t buckets) {
     int64_t count = Size();
 
     Tensor active_keys;
@@ -158,11 +158,12 @@ void SlabHashmap<Key, Hash>::Rehash(int64_t buckets) {
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::Insert(const void* input_keys,
-                                    std::vector<const void*> input_values_soa,
-                                    buf_index_t* output_buf_indices,
-                                    bool* output_masks,
-                                    int64_t count) {
+void SlabHashBackend<Key, Hash>::Insert(
+        const void* input_keys,
+        std::vector<const void*> input_values_soa,
+        buf_index_t* output_buf_indices,
+        bool* output_masks,
+        int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
         float avg_capacity_per_bucket =
@@ -178,19 +179,19 @@ void SlabHashmap<Key, Hash>::Insert(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::Activate(const void* input_keys,
-                                      buf_index_t* output_buf_indices,
-                                      bool* output_masks,
-                                      int64_t count) {
+void SlabHashBackend<Key, Hash>::Activate(const void* input_keys,
+                                          buf_index_t* output_buf_indices,
+                                          bool* output_masks,
+                                          int64_t count) {
     std::vector<const void*> null_values;
     Insert(input_keys, null_values, output_buf_indices, output_masks, count);
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::Find(const void* input_keys,
-                                  buf_index_t* output_buf_indices,
-                                  bool* output_masks,
-                                  int64_t count) {
+void SlabHashBackend<Key, Hash>::Find(const void* input_keys,
+                                      buf_index_t* output_buf_indices,
+                                      bool* output_masks,
+                                      int64_t count) {
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
@@ -206,9 +207,9 @@ void SlabHashmap<Key, Hash>::Find(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::Erase(const void* input_keys,
-                                   bool* output_masks,
-                                   int64_t count) {
+void SlabHashBackend<Key, Hash>::Erase(const void* input_keys,
+                                       bool* output_masks,
+                                       int64_t count) {
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
@@ -232,7 +233,7 @@ void SlabHashmap<Key, Hash>::Erase(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
-int64_t SlabHashmap<Key, Hash>::GetActiveIndices(
+int64_t SlabHashBackend<Key, Hash>::GetActiveIndices(
         buf_index_t* output_buf_indices) {
     uint32_t* count = static_cast<uint32_t*>(
             MemoryManager::Malloc(sizeof(uint32_t), this->device_));
@@ -258,7 +259,7 @@ int64_t SlabHashmap<Key, Hash>::GetActiveIndices(
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::Clear() {
+void SlabHashBackend<Key, Hash>::Clear() {
     // Clear the heap
     this->buffer_->ResetHeap();
 
@@ -273,17 +274,17 @@ void SlabHashmap<Key, Hash>::Clear() {
 }
 
 template <typename Key, typename Hash>
-int64_t SlabHashmap<Key, Hash>::Size() const {
+int64_t SlabHashBackend<Key, Hash>::Size() const {
     return this->buffer_->GetHeapTopIndex();
 }
 
 template <typename Key, typename Hash>
-int64_t SlabHashmap<Key, Hash>::GetBucketCount() const {
+int64_t SlabHashBackend<Key, Hash>::GetBucketCount() const {
     return bucket_count_;
 }
 
 template <typename Key, typename Hash>
-std::vector<int64_t> SlabHashmap<Key, Hash>::BucketSizes() const {
+std::vector<int64_t> SlabHashBackend<Key, Hash>::BucketSizes() const {
     thrust::device_vector<int64_t> elems_per_bucket(impl_.bucket_count_);
     thrust::fill(elems_per_bucket.begin(), elems_per_bucket.end(), 0);
 
@@ -303,12 +304,12 @@ std::vector<int64_t> SlabHashmap<Key, Hash>::BucketSizes() const {
 }
 
 template <typename Key, typename Hash>
-float SlabHashmap<Key, Hash>::LoadFactor() const {
+float SlabHashBackend<Key, Hash>::LoadFactor() const {
     return float(Size()) / float(this->bucket_count_);
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::InsertImpl(
+void SlabHashBackend<Key, Hash>::InsertImpl(
         const void* input_keys,
         std::vector<const void*> input_values_soa,
         buf_index_t* output_buf_indices,
@@ -349,7 +350,8 @@ void SlabHashmap<Key, Hash>::InsertImpl(
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
+void SlabHashBackend<Key, Hash>::Allocate(int64_t bucket_count,
+                                          int64_t capacity) {
     this->bucket_count_ = bucket_count;
     this->capacity_ = capacity;
 
@@ -374,7 +376,7 @@ void SlabHashmap<Key, Hash>::Allocate(int64_t bucket_count, int64_t capacity) {
 }
 
 template <typename Key, typename Hash>
-void SlabHashmap<Key, Hash>::Free() {
+void SlabHashBackend<Key, Hash>::Free() {
     buffer_accessor_.Shutdown(this->device_);
     MemoryManager::Free(impl_.bucket_list_head_, this->device_);
 }

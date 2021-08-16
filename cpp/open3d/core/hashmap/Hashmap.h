@@ -33,9 +33,9 @@
 namespace open3d {
 namespace core {
 
-class DeviceHashmap;
+class DeviceHashBackend;
 
-enum class HashmapBackend { Slab, StdGPU, TBB, Default };
+enum class HashBackendType { Slab, StdGPU, TBB, Default };
 
 class Hashmap {
 public:
@@ -50,7 +50,7 @@ public:
             const Dtype& value_dtype,
             const SizeVector& value_element_shapes,
             const Device& device,
-            const HashmapBackend& backend = HashmapBackend::Default);
+            const HashBackendType& backend = HashBackendType::Default);
 
     Hashmap(int64_t init_capacity,
             const Dtype& key_dtype,
@@ -58,7 +58,7 @@ public:
             const std::vector<Dtype>& dtypes_value,
             const std::vector<SizeVector>& element_shapes_value,
             const Device& device,
-            const HashmapBackend& backend = HashmapBackend::Default);
+            const HashBackendType& backend = HashBackendType::Default);
 
     ~Hashmap(){};
 
@@ -147,14 +147,14 @@ public:
     /// Return size / bucket_count.
     float LoadFactor() const;
 
-    std::shared_ptr<DeviceHashmap> GetDeviceHashmap() const {
+    std::shared_ptr<DeviceHashBackend> GetDeviceHashBackend() const {
         return device_hashmap_;
     }
 
 protected:
     void Init(int64_t init_capacity,
               const Device& device,
-              const HashmapBackend& backend);
+              const HashBackendType& backend);
 
     void InsertImpl(const Tensor& input_keys,
                     const std::vector<Tensor>& input_values_soa,
@@ -173,7 +173,7 @@ protected:
     void PrepareMasksOutput(Tensor& output_masks, int64_t length) const;
 
 private:
-    std::shared_ptr<DeviceHashmap> device_hashmap_;
+    std::shared_ptr<DeviceHashBackend> device_hashmap_;
 
     Dtype key_dtype_;
     SizeVector key_element_shape_;
@@ -188,7 +188,7 @@ public:
             const Dtype& key_dtype,
             const SizeVector& key_element_shape,
             const Device& device,
-            const HashmapBackend& backend = HashmapBackend::Default);
+            const HashBackendType& backend = HashBackendType::Default);
 
     Hashset(int64_t init_capacity,
             const Dtype& key_dtype,
@@ -196,7 +196,7 @@ public:
             const Dtype& value_dtype,
             const SizeVector& value_element_shapes,
             const Device& device,
-            const HashmapBackend& backend = HashmapBackend::Default);
+            const HashBackendType& backend = HashBackendType::Default);
 
     Hashset(int64_t init_capacity,
             const Dtype& key_dtype,
@@ -204,7 +204,7 @@ public:
             const std::vector<Dtype>& dtypes_value,
             const std::vector<SizeVector>& element_shapes_value,
             const Device& device,
-            const HashmapBackend& backend = HashmapBackend::Default);
+            const HashBackendType& backend = HashBackendType::Default);
 
     void Insert(const Tensor& input_keys,
                 Tensor& output_buf_indices,

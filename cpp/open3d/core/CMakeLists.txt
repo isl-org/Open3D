@@ -17,7 +17,7 @@ target_sources(core PRIVATE
 )
 
 target_sources(core PRIVATE
-    hashmap/DeviceHashmap.cpp
+    hashmap/DeviceHashBackend.cpp
     hashmap/Hashmap.cpp
     hashmap/HashmapBuffer.cpp
 )

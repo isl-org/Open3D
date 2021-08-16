@@ -69,7 +69,7 @@ void EstimateRange(const core::Tensor& block_keys,
                    float depth_min,
                    float depth_max);
 
-void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
+void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
              const core::Tensor& block_values,
              const core::Tensor& range_map,
              core::Tensor& vertex_map,
@@ -150,7 +150,7 @@ void EstimateRangeCPU(const core::Tensor& block_keys,
                       float depth_min,
                       float depth_max);
 
-void RayCastCPU(std::shared_ptr<core::DeviceHashmap>& hashmap,
+void RayCastCPU(std::shared_ptr<core::DeviceHashBackend>& hashmap,
                 const core::Tensor& block_values,
                 const core::Tensor& range_map,
                 core::Tensor& vertex_map,
@@ -232,7 +232,7 @@ void EstimateRangeCUDA(const core::Tensor& block_keys,
                        float depth_min,
                        float depth_max);
 
-void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
+void RayCastCUDA(std::shared_ptr<core::DeviceHashBackend>& hashmap,
                  const core::Tensor& block_values,
                  const core::Tensor& range_map,
                  core::Tensor& vertex_map,

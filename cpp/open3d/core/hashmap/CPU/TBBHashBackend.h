@@ -32,19 +32,19 @@
 #include <unordered_map>
 
 #include "open3d/core/hashmap/CPU/CPUHashmapBufferAccessor.hpp"
-#include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/hashmap/DeviceHashBackend.h"
 #include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace core {
 template <typename Key, typename Hash>
-class TBBHashmap : public DeviceHashmap {
+class TBBHashBackend : public DeviceHashBackend {
 public:
-    TBBHashmap(int64_t init_capacity,
-               int64_t key_dsize,
-               std::vector<int64_t> value_dsizes,
-               const Device& device);
-    ~TBBHashmap();
+    TBBHashBackend(int64_t init_capacity,
+                   int64_t key_dsize,
+                   std::vector<int64_t> value_dsizes,
+                   const Device& device);
+    ~TBBHashBackend();
 
     void Rehash(int64_t buckets) override;
 
@@ -98,24 +98,24 @@ protected:
 };
 
 template <typename Key, typename Hash>
-TBBHashmap<Key, Hash>::TBBHashmap(int64_t init_capacity,
-                                  int64_t key_dsize,
-                                  std::vector<int64_t> value_dsizes,
-                                  const Device& device)
-    : DeviceHashmap(init_capacity, key_dsize, value_dsizes, device) {
+TBBHashBackend<Key, Hash>::TBBHashBackend(int64_t init_capacity,
+                                          int64_t key_dsize,
+                                          std::vector<int64_t> value_dsizes,
+                                          const Device& device)
+    : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
     Allocate(init_capacity);
 }
 
 template <typename Key, typename Hash>
-TBBHashmap<Key, Hash>::~TBBHashmap() {}
+TBBHashBackend<Key, Hash>::~TBBHashBackend() {}
 
 template <typename Key, typename Hash>
-int64_t TBBHashmap<Key, Hash>::Size() const {
+int64_t TBBHashBackend<Key, Hash>::Size() const {
     return impl_->size();
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::Insert(
+void TBBHashBackend<Key, Hash>::Insert(
         const void* input_keys,
         const std::vector<const void*> input_values_soa,
         buf_index_t* output_buf_indices,
@@ -138,19 +138,19 @@ void TBBHashmap<Key, Hash>::Insert(
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::Activate(const void* input_keys,
-                                     buf_index_t* output_buf_indices,
-                                     bool* output_masks,
-                                     int64_t count) {
+void TBBHashBackend<Key, Hash>::Activate(const void* input_keys,
+                                         buf_index_t* output_buf_indices,
+                                         bool* output_masks,
+                                         int64_t count) {
     std::vector<const void*> null_values;
     Insert(input_keys, null_values, output_buf_indices, output_masks, count);
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::Find(const void* input_keys,
-                                 buf_index_t* output_buf_indices,
-                                 bool* output_masks,
-                                 int64_t count) {
+void TBBHashBackend<Key, Hash>::Find(const void* input_keys,
+                                     buf_index_t* output_buf_indices,
+                                     bool* output_masks,
+                                     int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
 #pragma omp parallel for num_threads(utility::EstimateMaxThreads())
@@ -165,9 +165,9 @@ void TBBHashmap<Key, Hash>::Find(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::Erase(const void* input_keys,
-                                  bool* output_masks,
-                                  int64_t count) {
+void TBBHashBackend<Key, Hash>::Erase(const void* input_keys,
+                                      bool* output_masks,
+                                      int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
     for (int64_t i = 0; i < count; ++i) {
@@ -184,7 +184,7 @@ void TBBHashmap<Key, Hash>::Erase(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
-int64_t TBBHashmap<Key, Hash>::GetActiveIndices(
+int64_t TBBHashBackend<Key, Hash>::GetActiveIndices(
         buf_index_t* output_buf_indices) {
     int64_t count = impl_->size();
     int64_t i = 0;
@@ -196,13 +196,13 @@ int64_t TBBHashmap<Key, Hash>::GetActiveIndices(
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::Clear() {
+void TBBHashBackend<Key, Hash>::Clear() {
     impl_->clear();
     this->buffer_->ResetHeap();
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
+void TBBHashBackend<Key, Hash>::Rehash(int64_t buckets) {
     int64_t count = Size();
 
     Tensor active_keys;
@@ -246,12 +246,12 @@ void TBBHashmap<Key, Hash>::Rehash(int64_t buckets) {
 }
 
 template <typename Key, typename Hash>
-int64_t TBBHashmap<Key, Hash>::GetBucketCount() const {
+int64_t TBBHashBackend<Key, Hash>::GetBucketCount() const {
     return impl_->unsafe_bucket_count();
 }
 
 template <typename Key, typename Hash>
-std::vector<int64_t> TBBHashmap<Key, Hash>::BucketSizes() const {
+std::vector<int64_t> TBBHashBackend<Key, Hash>::BucketSizes() const {
     int64_t bucket_count = impl_->unsafe_bucket_count();
     std::vector<int64_t> ret;
     for (int64_t i = 0; i < bucket_count; ++i) {
@@ -261,12 +261,12 @@ std::vector<int64_t> TBBHashmap<Key, Hash>::BucketSizes() const {
 }
 
 template <typename Key, typename Hash>
-float TBBHashmap<Key, Hash>::LoadFactor() const {
+float TBBHashBackend<Key, Hash>::LoadFactor() const {
     return impl_->load_factor();
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::InsertImpl(
+void TBBHashBackend<Key, Hash>::InsertImpl(
         const void* input_keys,
         const std::vector<const void*> input_values_soa,
         buf_index_t* output_buf_indices,
@@ -327,7 +327,7 @@ void TBBHashmap<Key, Hash>::InsertImpl(
 }
 
 template <typename Key, typename Hash>
-void TBBHashmap<Key, Hash>::Allocate(int64_t capacity) {
+void TBBHashBackend<Key, Hash>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     this->buffer_ =

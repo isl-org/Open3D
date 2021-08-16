@@ -36,7 +36,7 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/StdAllocator.h"
 #include "open3d/core/hashmap/CUDA/CUDAHashmapBufferAccessor.h"
-#include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/hashmap/DeviceHashBackend.h"
 
 namespace open3d {
 namespace core {
@@ -115,28 +115,28 @@ private:
     StdAllocator<T> std_allocator_;
 };
 
-// These typedefs must be defined outside of StdGPUHashmap to make them
+// These typedefs must be defined outside of StdGPUHashBackend to make them
 // accessible in raw CUDA kernels.
 template <typename Key>
-using InternalStdGPUHashmapAllocator =
+using InternalStdGPUHashBackendAllocator =
         StdGPUAllocator<thrust::pair<const Key, buf_index_t>>;
 
 template <typename Key, typename Hash>
-using InternalStdGPUHashmap =
+using InternalStdGPUHashBackend =
         stdgpu::unordered_map<Key,
                               buf_index_t,
                               Hash,
                               stdgpu::equal_to<Key>,
-                              InternalStdGPUHashmapAllocator<Key>>;
+                              InternalStdGPUHashBackendAllocator<Key>>;
 
 template <typename Key, typename Hash>
-class StdGPUHashmap : public DeviceHashmap {
+class StdGPUHashBackend : public DeviceHashBackend {
 public:
-    StdGPUHashmap(int64_t init_capacity,
-                  int64_t key_dsize,
-                  std::vector<int64_t> value_dsizes,
-                  const Device& device);
-    ~StdGPUHashmap();
+    StdGPUHashBackend(int64_t init_capacity,
+                      int64_t key_dsize,
+                      std::vector<int64_t> value_dsizes,
+                      const Device& device);
+    ~StdGPUHashBackend();
 
     void Rehash(int64_t buckets) override;
 
@@ -170,12 +170,12 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    InternalStdGPUHashmap<Key, Hash> GetImpl() const { return impl_; }
+    InternalStdGPUHashBackend<Key, Hash> GetImpl() const { return impl_; }
 
 protected:
     // Use reference, since the structure itself is implicitly handled as a
     // pointer directly by stdgpu.
-    InternalStdGPUHashmap<Key, Hash> impl_;
+    InternalStdGPUHashBackend<Key, Hash> impl_;
 
     CUDAHashmapBufferAccessor buffer_accessor_;
 
@@ -190,30 +190,32 @@ protected:
 };
 
 template <typename Key, typename Hash>
-StdGPUHashmap<Key, Hash>::StdGPUHashmap(int64_t init_capacity,
-                                        int64_t key_dsize,
-                                        std::vector<int64_t> value_dsizes,
-                                        const Device& device)
-    : DeviceHashmap(init_capacity, key_dsize, value_dsizes, device) {
+StdGPUHashBackend<Key, Hash>::StdGPUHashBackend(
+        int64_t init_capacity,
+        int64_t key_dsize,
+        std::vector<int64_t> value_dsizes,
+        const Device& device)
+    : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
     Allocate(init_capacity);
 }
 
 template <typename Key, typename Hash>
-StdGPUHashmap<Key, Hash>::~StdGPUHashmap() {
+StdGPUHashBackend<Key, Hash>::~StdGPUHashBackend() {
     Free();
 }
 
 template <typename Key, typename Hash>
-int64_t StdGPUHashmap<Key, Hash>::Size() const {
+int64_t StdGPUHashBackend<Key, Hash>::Size() const {
     return impl_.size();
 }
 
 template <typename Key, typename Hash>
-void StdGPUHashmap<Key, Hash>::Insert(const void* input_keys,
-                                      std::vector<const void*> input_values_soa,
-                                      buf_index_t* output_buf_indices,
-                                      bool* output_masks,
-                                      int64_t count) {
+void StdGPUHashBackend<Key, Hash>::Insert(
+        const void* input_keys,
+        std::vector<const void*> input_values_soa,
+        buf_index_t* output_buf_indices,
+        bool* output_masks,
+        int64_t count) {
     int64_t new_size = Size() + count;
     if (new_size > this->capacity_) {
         int64_t bucket_count = GetBucketCount();
@@ -229,17 +231,17 @@ void StdGPUHashmap<Key, Hash>::Insert(const void* input_keys,
 }
 
 template <typename Key, typename Hash>
-void StdGPUHashmap<Key, Hash>::Activate(const void* input_keys,
-                                        buf_index_t* output_buf_indices,
-                                        bool* output_masks,
-                                        int64_t count) {
+void StdGPUHashBackend<Key, Hash>::Activate(const void* input_keys,
+                                            buf_index_t* output_buf_indices,
+                                            bool* output_masks,
+                                            int64_t count) {
     std::vector<const void*> null_values;
     Insert(input_keys, null_values, output_buf_indices, output_masks, count);
 }
 
 // Need an explicit kernel for non-const access to map
 template <typename Key, typename Hash>
-__global__ void STDGPUFindKernel(InternalStdGPUHashmap<Key, Hash> map,
+__global__ void STDGPUFindKernel(InternalStdGPUHashBackend<Key, Hash> map,
                                  CUDAHashmapBufferAccessor buffer_accessor,
                                  const Key* input_keys,
                                  buf_index_t* output_buf_indices,
@@ -256,10 +258,10 @@ __global__ void STDGPUFindKernel(InternalStdGPUHashmap<Key, Hash> map,
 }
 
 template <typename Key, typename Hash>
-void StdGPUHashmap<Key, Hash>::Find(const void* input_keys,
-                                    buf_index_t* output_buf_indices,
-                                    bool* output_masks,
-                                    int64_t count) {
+void StdGPUHashBackend<Key, Hash>::Find(const void* input_keys,
+                                        buf_index_t* output_buf_indices,
+                                        bool* output_masks,
+                                        int64_t count) {
     uint32_t threads = 128;
     uint32_t blocks = (count + threads - 1) / threads;
 
@@ -271,7 +273,7 @@ void StdGPUHashmap<Key, Hash>::Find(const void* input_keys,
 
 // Need an explicit kernel for non-const access to map
 template <typename Key, typename Hash>
-__global__ void STDGPUEraseKernel(InternalStdGPUHashmap<Key, Hash> map,
+__global__ void STDGPUEraseKernel(InternalStdGPUHashBackend<Key, Hash> map,
                                   CUDAHashmapBufferAccessor buffer_accessor,
                                   const Key* input_keys,
                                   buf_index_t* output_buf_indices,
@@ -295,9 +297,9 @@ __global__ void STDGPUEraseKernel(InternalStdGPUHashmap<Key, Hash> map,
 }
 
 template <typename Key, typename Hash>
-void StdGPUHashmap<Key, Hash>::Erase(const void* input_keys,
-                                     bool* output_masks,
-                                     int64_t count) {
+void StdGPUHashBackend<Key, Hash>::Erase(const void* input_keys,
+                                         bool* output_masks,
+                                         int64_t count) {
     uint32_t threads = 128;
     uint32_t blocks = (count + threads - 1) / threads;
 
@@ -321,7 +323,7 @@ struct ValueExtractor {
 };
 
 template <typename Key, typename Hash>
-int64_t StdGPUHashmap<Key, Hash>::GetActiveIndices(
+int64_t StdGPUHashBackend<Key, Hash>::GetActiveIndices(
         buf_index_t* output_indices) {
     auto range = impl_.device_range();
 
@@ -332,13 +334,13 @@ int64_t StdGPUHashmap<Key, Hash>::GetActiveIndices(
 }
 
 template <typename Key, typename Hash>
-void StdGPUHashmap<Key, Hash>::Clear() {
+void StdGPUHashBackend<Key, Hash>::Clear() {
     impl_.clear();
     this->buffer_->ResetHeap();
 }
 
 template <typename Key, typename Hash>
-void StdGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
+void StdGPUHashBackend<Key, Hash>::Rehash(int64_t buckets) {
     int64_t count = Size();
 
     Tensor active_keys;
@@ -380,23 +382,23 @@ void StdGPUHashmap<Key, Hash>::Rehash(int64_t buckets) {
 }
 
 template <typename Key, typename Hash>
-int64_t StdGPUHashmap<Key, Hash>::GetBucketCount() const {
+int64_t StdGPUHashBackend<Key, Hash>::GetBucketCount() const {
     return impl_.bucket_count();
 }
 
 template <typename Key, typename Hash>
-std::vector<int64_t> StdGPUHashmap<Key, Hash>::BucketSizes() const {
+std::vector<int64_t> StdGPUHashBackend<Key, Hash>::BucketSizes() const {
     utility::LogError("Unimplemented");
 }
 
 template <typename Key, typename Hash>
-float StdGPUHashmap<Key, Hash>::LoadFactor() const {
+float StdGPUHashBackend<Key, Hash>::LoadFactor() const {
     return impl_.load_factor();
 }
 
 // Need an explicit kernel for non-const access to map
 template <typename Key, typename Hash>
-__global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
+__global__ void STDGPUInsertKernel(InternalStdGPUHashBackend<Key, Hash> map,
                                    CUDAHashmapBufferAccessor buffer_accessor,
                                    const Key* input_keys,
                                    const void* const* input_values_soa,
@@ -446,7 +448,7 @@ __global__ void STDGPUInsertKernel(InternalStdGPUHashmap<Key, Hash> map,
 }
 
 template <typename Key, typename Hash>
-void StdGPUHashmap<Key, Hash>::InsertImpl(
+void StdGPUHashBackend<Key, Hash>::InsertImpl(
         const void* input_keys,
         std::vector<const void*> input_values_soa,
         buf_index_t* output_buf_indices,
@@ -473,7 +475,7 @@ void StdGPUHashmap<Key, Hash>::InsertImpl(
 }
 
 template <typename Key, typename Hash>
-void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
+void StdGPUHashBackend<Key, Hash>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     // Allocate buffer for key values.
@@ -487,15 +489,15 @@ void StdGPUHashmap<Key, Hash>::Allocate(int64_t capacity) {
     {
         CUDAScopedStream scoped_stream(cuda::GetDefaultStream());
 
-        impl_ = InternalStdGPUHashmap<Key, Hash>::createDeviceObject(
+        impl_ = InternalStdGPUHashBackend<Key, Hash>::createDeviceObject(
                 this->capacity_,
-                InternalStdGPUHashmapAllocator<Key>(this->device_));
+                InternalStdGPUHashBackendAllocator<Key>(this->device_));
         cuda::Synchronize(this->device_);
     }
 }
 
 template <typename Key, typename Hash>
-void StdGPUHashmap<Key, Hash>::Free() {
+void StdGPUHashBackend<Key, Hash>::Free() {
     // Buffer is automatically handled by the smart pointer.
     buffer_accessor_.Shutdown(this->device_);
 
@@ -504,7 +506,7 @@ void StdGPUHashmap<Key, Hash>::Free() {
     {
         CUDAScopedStream scoped_stream(cuda::GetDefaultStream());
 
-        InternalStdGPUHashmap<Key, Hash>::destroyDeviceObject(impl_);
+        InternalStdGPUHashBackend<Key, Hash>::destroyDeviceObject(impl_);
     }
 }
 }  // namespace core

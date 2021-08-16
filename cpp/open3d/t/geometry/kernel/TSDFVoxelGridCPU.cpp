@@ -32,7 +32,7 @@
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/CPU/TBBHashmap.h"
+#include "open3d/core/hashmap/CPU/TBBHashBackend.h"
 #include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"

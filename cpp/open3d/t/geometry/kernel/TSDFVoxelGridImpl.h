@@ -1147,7 +1147,7 @@ void RayCastCUDA
 #else
 void RayCastCPU
 #endif
-        (std::shared_ptr<core::DeviceHashmap>& hashmap,
+        (std::shared_ptr<core::DeviceHashBackend>& hashmap,
          const core::Tensor& block_values,
          const core::Tensor& range_map,
          core::Tensor& vertex_map,
@@ -1170,7 +1170,8 @@ void RayCastCPU
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     auto cuda_hashmap =
-            std::dynamic_pointer_cast<core::StdGPUHashmap<Key, Hash>>(hashmap);
+            std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash>>(
+                    hashmap);
     if (cuda_hashmap == nullptr) {
         utility::LogError(
                 "Unsupported backend: CUDA raycasting only supports STDGPU.");
@@ -1178,7 +1179,7 @@ void RayCastCPU
     auto hashmap_impl = cuda_hashmap->GetImpl();
 #else
     auto cpu_hashmap =
-            std::dynamic_pointer_cast<core::TBBHashmap<Key, Hash>>(hashmap);
+            std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash>>(hashmap);
     auto hashmap_impl = *cpu_hashmap->GetImpl();
 #endif
 
