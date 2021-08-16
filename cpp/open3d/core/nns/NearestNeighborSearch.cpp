@@ -132,6 +132,23 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
     }
 }
 
+std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearchSingle(
+        const Tensor& query_point, int knn) {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        utility::LogError(
+                "[NearestNeighborSearch::KnnSearchSingle] Single query "
+                "interface is not available for CUDA tensors.");
+    } else {
+        if (nanoflann_index_) {
+            return nanoflann_index_->SearchKnnSingle(query_point, knn);
+        } else {
+            utility::LogError(
+                    "[NearestNeighborSearch::KnnSearchSingle] Index is not "
+                    "set.");
+        }
+    }
+}
+
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
         const Tensor& query_points, double radius, bool sort) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
@@ -192,6 +209,24 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         } else {
             utility::LogError(
                     "[NearestNeighborSearch::HybridSearch] Index is not set.");
+        }
+    }
+}
+
+std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearchSingle(
+        const Tensor& query_point, double radius, int max_knn) {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+        utility::LogError(
+                "[NearestNeighborSearch::HybridSearchSingle] Single query "
+                "interface is not available for CUDA tensors.");
+    } else {
+        if (nanoflann_index_) {
+            return nanoflann_index_->SearchHybridSingle(query_point, radius,
+                                                        max_knn);
+        } else {
+            utility::LogError(
+                    "[NearestNeighborSearch::HybridSearchSingle] Index is not "
+                    "set.");
         }
     }
 }

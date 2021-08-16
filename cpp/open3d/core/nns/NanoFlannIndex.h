@@ -158,6 +158,8 @@ public:
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                         int knn) const override;
 
+    std::pair<Tensor, Tensor> SearchKnnSingle(const Tensor &query_point,
+                                              int knn) const override;
     /// Perform radius search with multiple radii.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}, same
@@ -202,6 +204,11 @@ public:
     std::tuple<Tensor, Tensor, Tensor> SearchHybrid(const Tensor &query_points,
                                                     double radius,
                                                     int max_knn) const override;
+
+    std::tuple<Tensor, Tensor, Tensor> SearchHybridSingle(
+            const Tensor &query_point,
+            double radius,
+            int max_knn) const override;
 
 protected:
     // Tensor dataset_points_;

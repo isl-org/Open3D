@@ -80,6 +80,10 @@ public:
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                         int knn) const override;
 
+    std::pair<Tensor, Tensor> SearchKnnSingle(const Tensor &query_point,
+                                              int knn) const override {
+        utility::LogError("FaissIndex::SearchKnnSingle not implemented.");
+    }
     /// Perform radius search with multiple radii.
     ///
     /// \param query_points Query points. Must be Float32, 2D, with shape {n,
@@ -93,7 +97,7 @@ public:
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
                                                     const Tensor &radii,
                                                     bool sort) const override {
-        utility::LogError("FaissIndex::SearchHybrid not implemented.");
+        utility::LogError("FaissIndex::SearchRadius not implemented.");
     }
 
     /// Perform radius search.
@@ -109,7 +113,7 @@ public:
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor &query_points,
                                                     double radius,
                                                     bool sort) const override {
-        utility::LogError("FaissIndex::SearchHybrid not implemented.");
+        utility::LogError("FaissIndex::SearchRadius not implemented.");
     }
 
     /// Perform hybrid search.
@@ -127,6 +131,13 @@ public:
     std::tuple<Tensor, Tensor, Tensor> SearchHybrid(const Tensor &query_points,
                                                     double radius,
                                                     int max_knn) const override;
+
+    std::tuple<Tensor, Tensor, Tensor> SearchHybridSingle(
+            const Tensor &query_point,
+            double radius,
+            int max_knn) const override {
+        utility::LogError("FaissIndex::SearchHybridSingle not implemented.");
+    }
 
 protected:
     std::unique_ptr<faiss::Index> index;

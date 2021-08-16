@@ -71,6 +71,9 @@ public:
     virtual std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                                 int knn) const = 0;
 
+    virtual std::pair<Tensor, Tensor> SearchKnnSingle(
+            const Tensor &query_points, int knn) const = 0;
+
     /// Perform radius search with multiple radii.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}, same
@@ -110,6 +113,9 @@ public:
     /// - distances: Tensor of shape {n, knn}, with dtype Float32.
     /// - counts: Tensor of shape {n, 1}, with dtype Int64.
     virtual std::tuple<Tensor, Tensor, Tensor> SearchHybrid(
+            const Tensor &query_points, double radius, int max_knn) const = 0;
+
+    virtual std::tuple<Tensor, Tensor, Tensor> SearchHybridSingle(
             const Tensor &query_points, double radius, int max_knn) const = 0;
 
     /// Get dimension of the dataset points.
