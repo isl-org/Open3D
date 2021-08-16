@@ -121,7 +121,7 @@ def test_octree_node_access():
 
 
 def test_octree_visualize():
-    pcd_path = os.path.join(test_data_dir, "common/fragment.ply")
+    pcd_path = os.path.join(test_data_dir, "fragment.ply")
     pcd = o3d.io.read_point_cloud(pcd_path)
     octree = o3d.geometry.Octree(8)
     octree.convert_from_point_cloud(pcd)
@@ -130,7 +130,7 @@ def test_octree_visualize():
 
 
 def test_octree_voxel_grid_convert():
-    pcd_path = os.path.join(test_data_dir, "common/fragment.ply")
+    pcd_path = os.path.join(test_data_dir, "fragment.ply")
     pcd = o3d.io.read_point_cloud(pcd_path)
     octree = o3d.geometry.Octree(8)
     octree.convert_from_point_cloud(pcd)
@@ -145,7 +145,7 @@ def test_octree_voxel_grid_convert():
 
 
 def test_locate_leaf_node():
-    pcd_path = os.path.join(test_data_dir, "common/fragment.ply")
+    pcd_path = os.path.join(test_data_dir, "fragment.ply")
     pcd = o3d.io.read_point_cloud(pcd_path)
 
     max_depth = 5
