@@ -37,7 +37,7 @@ target_sources(tpipelines PRIVATE
 )
 
 target_sources(tpipelines PRIVATE
-    voxelhashing/Model.cpp
+    slam/Model.cpp
 )
 
 open3d_show_and_abort_on_warning(tpipelines)
