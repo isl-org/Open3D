@@ -199,7 +199,9 @@ def test_hashset(device):
     buf_indices, masks = hashset.insert(keys)
     assert masks.to(o3c.int64).sum() == 3
 
-    keys = o3c.Tensor([[1, 2, 3], [3, 4, 5], [4, 5, 6]], dtype=o3c.int64, device=device)
+    keys = o3c.Tensor([[1, 2, 3], [3, 4, 5], [4, 5, 6]],
+                      dtype=o3c.int64,
+                      device=device)
     buf_indices, masks = hashset.find(keys)
     np.testing.assert_equal(masks.cpu().numpy().flatten(),
                             np.array([True, True, False]))
@@ -209,5 +211,3 @@ def test_hashset(device):
 
     np.testing.assert_equal(masks.cpu().numpy().flatten(),
                             np.array([True, False]))
-
-
