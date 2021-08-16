@@ -41,7 +41,8 @@ std::shared_ptr<DeviceHashBackend> CreateCUDAHashBackend(
         const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
         const HashBackendType& backend) {
-    if (backend != HashBackendType::Default && backend != HashBackendType::Slab &&
+    if (backend != HashBackendType::Default &&
+        backend != HashBackendType::Slab &&
         backend != HashBackendType::StdGPU) {
         utility::LogError("Unsupported backend for CUDA hashmap.");
     }
@@ -62,13 +63,15 @@ std::shared_ptr<DeviceHashBackend> CreateCUDAHashBackend(
     if (backend == HashBackendType::Default ||
         backend == HashBackendType::StdGPU) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(key_dtype, dim, [&] {
-            device_hashmap_ptr = std::make_shared<StdGPUHashBackend<key_t, hash_t>>(
-                    init_capacity, key_dsize, value_dsizes, device);
+            device_hashmap_ptr =
+                    std::make_shared<StdGPUHashBackend<key_t, hash_t>>(
+                            init_capacity, key_dsize, value_dsizes, device);
         });
     } else {  // if (backend == HashBackendType::Slab) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(key_dtype, dim, [&] {
-            device_hashmap_ptr = std::make_shared<SlabHashBackend<key_t, hash_t>>(
-                    init_capacity, key_dsize, value_dsizes, device);
+            device_hashmap_ptr =
+                    std::make_shared<SlabHashBackend<key_t, hash_t>>(
+                            init_capacity, key_dsize, value_dsizes, device);
         });
     }
     return device_hashmap_ptr;

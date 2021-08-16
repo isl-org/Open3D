@@ -80,7 +80,7 @@ void HashMap::InsertImpl(const Tensor& input_keys,
     PrepareMasksOutput(output_masks, length);
 
     std::vector<const void*> input_values_ptrs;
-    for (auto& input_value : input_values_soa) {
+    for (const auto& input_value : input_values_soa) {
         input_values_ptrs.push_back(input_value.GetDataPtr());
     }
 
@@ -181,7 +181,7 @@ HashMap HashMap::To(const Device& device, bool copy) const {
 
     Tensor active_keys = keys.IndexGet({active_indices}).To(device);
     std::vector<Tensor> soa_active_values;
-    for (auto& value : values) {
+    for (const auto& value : values) {
         soa_active_values.push_back(
                 value.IndexGet({active_indices}).To(device));
     }
@@ -277,13 +277,13 @@ void HashMap::Init(int64_t init_capacity,
                 "element_shapes_value ({}).",
                 dtypes_value_.size(), element_shapes_value_.size());
     }
-    for (auto& value_dtype : dtypes_value_) {
+    for (const auto& value_dtype : dtypes_value_) {
         if (value_dtype.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
             utility::LogError(
                     "[HashMap] Undefined value dtype is not allowed.");
         }
     }
-    for (auto& value_element_shape : element_shapes_value_) {
+    for (const auto& value_element_shape : element_shapes_value_) {
         if (value_element_shape.NumElements() == 0) {
             utility::LogError(
                     "[HashMap] Value element shape must contain at least 1 "

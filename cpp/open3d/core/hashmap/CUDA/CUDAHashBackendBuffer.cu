@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <thrust/device_vector.h>
+#include <thrust/sequence.h>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/HashBackendBuffer.h"

@@ -192,7 +192,7 @@ def test_multivalue(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_hashset(device):
     capacity = 10
-    hashset = o3c.Hashset(capacity, o3c.int64, (3), device)
+    hashset = o3c.HashSet(capacity, o3c.int64, (3), device)
     keys = o3c.Tensor([[1, 2, 3], [2, 3, 4], [3, 4, 5]],
                       dtype=o3c.int64,
                       device=device)

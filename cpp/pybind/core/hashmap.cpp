@@ -32,6 +32,7 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/HashSet.h"
 #include "open3d/utility/Logging.h"
 #include "pybind/core/core.h"
 #include "pybind/core/tensor_converter.h"
@@ -153,25 +154,71 @@ void pybind_core_hashmap(py::module& m) {
             "on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
 
-    py::class_<Hashset, HashMap> hashset(m, "Hashset",
-                                         "A Hashset is a unordered set that "
-                                         "collects keys wrapped by Tensors.");
+    /////////////////////////////////////////////////
+    py::class_<HashSet> hashset(m, "HashSet",
+                                "A HashSet is a unordered set that "
+                                "collects keys wrapped by Tensors.");
     hashset.def(py::init([](int64_t init_capacity, const Dtype& key_dtype,
                             const py::handle& key_element_shape,
                             const Device& device) {
                     SizeVector key_element_shape_sv =
                             PyHandleToSizeVector(key_element_shape);
-                    return Hashset(init_capacity, key_dtype,
+                    return HashSet(init_capacity, key_dtype,
                                    key_element_shape_sv, device);
                 }),
                 "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
                 "device"_a = Device("CPU:0"));
 
-    hashset.def("insert", [](Hashset& h, const Tensor& keys) {
+    hashset.def("insert", [](HashSet& h, const Tensor& keys) {
         Tensor buf_indices, masks;
         h.Insert(keys, buf_indices, masks);
         return py::make_tuple(buf_indices, masks);
     });
+
+    hashset.def("find", [](HashSet& h, const Tensor& keys) {
+        Tensor buf_indices, masks;
+        h.Find(keys, buf_indices, masks);
+        return py::make_tuple(buf_indices, masks);
+    });
+
+    hashset.def("erase", [](HashSet& h, const Tensor& keys) {
+        Tensor masks;
+        h.Erase(keys, masks);
+        return masks;
+    });
+
+    hashset.def("get_active_buf_indices", [](HashSet& h) {
+        Tensor buf_indices;
+        h.GetActiveIndices(buf_indices);
+        return buf_indices;
+    });
+
+    hashset.def("save", &HashSet::Save);
+    hashset.def_static("load", &HashSet::Load);
+
+    hashset.def("get_key_tensor", &HashSet::GetKeyTensor);
+
+    hashset.def("rehash", &HashSet::Rehash);
+    hashset.def("size", &HashSet::Size);
+    hashset.def("capacity", &HashSet::GetCapacity);
+
+    hashset.def("to", &HashSet::To, "device"_a, "copy"_a = false);
+    hashset.def("clone", &HashSet::Clone);
+    hashset.def(
+            "cpu",
+            [](const HashSet& hashset) {
+                return hashset.To(core::Device("CPU:0"));
+            },
+            "Transfer the hashset to CPU. If the hashset "
+            "is already on CPU, no copy will be performed.");
+    hashset.def(
+            "cuda",
+            [](const HashSet& hashset, int device_id) {
+                return hashset.To(core::Device("CUDA", device_id));
+            },
+            "Transfer the hashset to a CUDA device. If the hashset is already "
+            "on the specified CUDA device, no copy will be performed.",
+            "device_id"_a = 0);
 }
 
 }  // namespace core
