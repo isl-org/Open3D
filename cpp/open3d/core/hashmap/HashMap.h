@@ -28,7 +28,7 @@
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/HashmapBuffer.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
 
 namespace open3d {
 namespace core {
@@ -37,14 +37,14 @@ class DeviceHashBackend;
 
 enum class HashBackendType { Slab, StdGPU, TBB, Default };
 
-class Hashmap {
+class HashMap {
 public:
     /// Constructor for primitive types, supporting element shapes.
     /// Example:
     /// Key is int<3> coordinate:
     /// - key_dtype = core::Int32
     /// - key_element_shape = {3}
-    Hashmap(int64_t init_capacity,
+    HashMap(int64_t init_capacity,
             const Dtype& key_dtype,
             const SizeVector& key_element_shape,
             const Dtype& value_dtype,
@@ -52,7 +52,7 @@ public:
             const Device& device,
             const HashBackendType& backend = HashBackendType::Default);
 
-    Hashmap(int64_t init_capacity,
+    HashMap(int64_t init_capacity,
             const Dtype& key_dtype,
             const SizeVector& key_element_shape,
             const std::vector<Dtype>& dtypes_value,
@@ -60,7 +60,7 @@ public:
             const Device& device,
             const HashBackendType& backend = HashBackendType::Default);
 
-    ~Hashmap(){};
+    ~HashMap(){};
 
     /// Rehash expects extra memory space at runtime, since it consists of
     /// 1) dumping all key value pairs to a buffer
@@ -125,10 +125,10 @@ public:
 
     /// Load active key and value from a npz file at 'key' and 'value'. The npz
     /// file should contain a 'key' and a 'value' tensor, of the same length.
-    static Hashmap Load(const std::string& file_name);
+    static HashMap Load(const std::string& file_name);
 
-    Hashmap Clone() const;
-    Hashmap To(const Device& device, bool copy = false) const;
+    HashMap Clone() const;
+    HashMap To(const Device& device, bool copy = false) const;
 
     int64_t Size() const;
 
@@ -182,7 +182,7 @@ private:
     std::vector<SizeVector> element_shapes_value_;
 };
 
-class Hashset : public Hashmap {
+class Hashset : public HashMap {
 public:
     Hashset(int64_t init_capacity,
             const Dtype& key_dtype,

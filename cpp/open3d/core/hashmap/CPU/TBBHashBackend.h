@@ -31,7 +31,7 @@
 #include <limits>
 #include <unordered_map>
 
-#include "open3d/core/hashmap/CPU/CPUHashmapBufferAccessor.hpp"
+#include "open3d/core/hashmap/CPU/CPUHashBackendBufferAccessor.hpp"
 #include "open3d/core/hashmap/DeviceHashBackend.h"
 #include "open3d/utility/Parallel.h"
 
@@ -86,7 +86,7 @@ protected:
     std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>
             impl_;
 
-    std::shared_ptr<CPUHashmapBufferAccessor> buffer_accessor_;
+    std::shared_ptr<CPUHashBackendBufferAccessor> buffer_accessor_;
 
     void InsertImpl(const void* input_keys,
                     std::vector<const void*> input_values_soa,
@@ -330,12 +330,12 @@ template <typename Key, typename Hash>
 void TBBHashBackend<Key, Hash>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
-    this->buffer_ =
-            std::make_shared<HashmapBuffer>(this->capacity_, this->key_dsize_,
-                                            this->value_dsizes_, this->device_);
+    this->buffer_ = std::make_shared<HashBackendBuffer>(
+            this->capacity_, this->key_dsize_, this->value_dsizes_,
+            this->device_);
 
     buffer_accessor_ =
-            std::make_shared<CPUHashmapBufferAccessor>(*this->buffer_);
+            std::make_shared<CPUHashBackendBufferAccessor>(*this->buffer_);
 
     impl_ = std::make_shared<
             tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>(capacity,

@@ -35,7 +35,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/StdAllocator.h"
-#include "open3d/core/hashmap/CUDA/CUDAHashmapBufferAccessor.h"
+#include "open3d/core/hashmap/CUDA/CUDAHashBackendBufferAccessor.h"
 #include "open3d/core/hashmap/DeviceHashBackend.h"
 
 namespace open3d {
@@ -177,7 +177,7 @@ protected:
     // pointer directly by stdgpu.
     InternalStdGPUHashBackend<Key, Hash> impl_;
 
-    CUDAHashmapBufferAccessor buffer_accessor_;
+    CUDAHashBackendBufferAccessor buffer_accessor_;
 
     void InsertImpl(const void* input_keys,
                     std::vector<const void*> input_values_soa,
@@ -242,7 +242,7 @@ void StdGPUHashBackend<Key, Hash>::Activate(const void* input_keys,
 // Need an explicit kernel for non-const access to map
 template <typename Key, typename Hash>
 __global__ void STDGPUFindKernel(InternalStdGPUHashBackend<Key, Hash> map,
-                                 CUDAHashmapBufferAccessor buffer_accessor,
+                                 CUDAHashBackendBufferAccessor buffer_accessor,
                                  const Key* input_keys,
                                  buf_index_t* output_buf_indices,
                                  bool* output_masks,
@@ -274,7 +274,7 @@ void StdGPUHashBackend<Key, Hash>::Find(const void* input_keys,
 // Need an explicit kernel for non-const access to map
 template <typename Key, typename Hash>
 __global__ void STDGPUEraseKernel(InternalStdGPUHashBackend<Key, Hash> map,
-                                  CUDAHashmapBufferAccessor buffer_accessor,
+                                  CUDAHashBackendBufferAccessor buffer_accessor,
                                   const Key* input_keys,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
@@ -398,14 +398,15 @@ float StdGPUHashBackend<Key, Hash>::LoadFactor() const {
 
 // Need an explicit kernel for non-const access to map
 template <typename Key, typename Hash>
-__global__ void STDGPUInsertKernel(InternalStdGPUHashBackend<Key, Hash> map,
-                                   CUDAHashmapBufferAccessor buffer_accessor,
-                                   const Key* input_keys,
-                                   const void* const* input_values_soa,
-                                   buf_index_t* output_buf_indices,
-                                   bool* output_masks,
-                                   int64_t count,
-                                   int64_t n_values) {
+__global__ void STDGPUInsertKernel(
+        InternalStdGPUHashBackend<Key, Hash> map,
+        CUDAHashBackendBufferAccessor buffer_accessor,
+        const Key* input_keys,
+        const void* const* input_values_soa,
+        buf_index_t* output_buf_indices,
+        bool* output_masks,
+        int64_t count,
+        int64_t n_values) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= count) return;
 
@@ -479,9 +480,9 @@ void StdGPUHashBackend<Key, Hash>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     // Allocate buffer for key values.
-    this->buffer_ =
-            std::make_shared<HashmapBuffer>(this->capacity_, this->key_dsize_,
-                                            this->value_dsizes_, this->device_);
+    this->buffer_ = std::make_shared<HashBackendBuffer>(
+            this->capacity_, this->key_dsize_, this->value_dsizes_,
+            this->device_);
     buffer_accessor_.Setup(*this->buffer_);
 
     // stdgpu initializes on the default stream. Set the current stream to

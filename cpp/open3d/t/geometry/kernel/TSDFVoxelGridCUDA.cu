@@ -33,7 +33,7 @@
 #include "open3d/core/hashmap/CUDA/StdGPUHashBackend.h"
 #include "open3d/core/hashmap/DeviceHashBackend.h"
 #include "open3d/core/hashmap/Dispatch.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
@@ -56,7 +56,7 @@ struct Coord3i {
     int64_t z_;
 };
 
-void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
+void TouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
                const core::Tensor& points,
                core::Tensor& voxel_block_coords,
                int64_t voxel_grid_resolution,

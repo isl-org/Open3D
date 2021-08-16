@@ -35,14 +35,14 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/hashmap/CUDA/SlabMacros.h"
 #include "open3d/core/hashmap/CUDA/SlabTraits.h"
-#include "open3d/core/hashmap/HashmapBuffer.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
 
 namespace open3d {
 namespace core {
 
-class CUDAHashmapBufferAccessor {
+class CUDAHashBackendBufferAccessor {
 public:
-    __host__ void Setup(HashmapBuffer &hashmap_buffer) {
+    __host__ void Setup(HashBackendBuffer &hashmap_buffer) {
         Device device = hashmap_buffer.GetDevice();
 
         // Properties

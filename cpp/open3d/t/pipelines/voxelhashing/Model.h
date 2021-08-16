@@ -117,7 +117,7 @@ public:
             int estimated_number = -1, float weight_threshold = 3.0f);
 
     /// Get block hashmap int the TSDFVoxelGrid.
-    core::Hashmap GetHashmap();
+    core::HashMap GetHashMap();
 
 public:
     /// Maintained volumetric map.

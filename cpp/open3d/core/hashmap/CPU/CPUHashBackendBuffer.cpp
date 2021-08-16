@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/HashmapBuffer.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
 #include "open3d/utility/Parallel.h"
 
 namespace open3d {

@@ -24,18 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashBackend.h"
-#include "open3d/t/io/HashmapIO.h"
+#include "open3d/t/io/HashMapIO.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
-Hashmap::Hashmap(int64_t init_capacity,
+HashMap::HashMap(int64_t init_capacity,
                  const Dtype& key_dtype,
                  const SizeVector& key_element_shape,
                  const Dtype& value_dtype,
@@ -49,7 +49,7 @@ Hashmap::Hashmap(int64_t init_capacity,
     Init(init_capacity, device, backend);
 }
 
-Hashmap::Hashmap(int64_t init_capacity,
+HashMap::HashMap(int64_t init_capacity,
                  const Dtype& key_dtype,
                  const SizeVector& key_element_shape,
                  const std::vector<Dtype>& dtypes_value,
@@ -63,11 +63,11 @@ Hashmap::Hashmap(int64_t init_capacity,
     Init(init_capacity, device, backend);
 }
 
-void Hashmap::Rehash(int64_t buckets) {
+void HashMap::Rehash(int64_t buckets) {
     return device_hashmap_->Rehash(buckets);
 }
 
-void Hashmap::InsertImpl(const Tensor& input_keys,
+void HashMap::InsertImpl(const Tensor& input_keys,
                          const std::vector<Tensor>& input_values_soa,
                          Tensor& output_buf_indices,
                          Tensor& output_masks) {
@@ -90,21 +90,21 @@ void Hashmap::InsertImpl(const Tensor& input_keys,
             output_masks.GetDataPtr<bool>(), length);
 }
 
-void Hashmap::Insert(const Tensor& input_keys,
+void HashMap::Insert(const Tensor& input_keys,
                      const Tensor& input_values,
                      Tensor& output_buf_indices,
                      Tensor& output_masks) {
     InsertImpl(input_keys, {input_values}, output_buf_indices, output_masks);
 }
 
-void Hashmap::Insert(const Tensor& input_keys,
+void HashMap::Insert(const Tensor& input_keys,
                      const std::vector<Tensor>& input_values_soa,
                      Tensor& output_buf_indices,
                      Tensor& output_masks) {
     InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks);
 }
 
-void Hashmap::Activate(const Tensor& input_keys,
+void HashMap::Activate(const Tensor& input_keys,
                        Tensor& output_buf_indices,
                        Tensor& output_masks) {
     CheckKeyLength(input_keys);
@@ -120,7 +120,7 @@ void Hashmap::Activate(const Tensor& input_keys,
             output_masks.GetDataPtr<bool>(), length);
 }
 
-void Hashmap::Find(const Tensor& input_keys,
+void HashMap::Find(const Tensor& input_keys,
                    Tensor& output_buf_indices,
                    Tensor& output_masks) {
     CheckKeyLength(input_keys);
@@ -136,7 +136,7 @@ void Hashmap::Find(const Tensor& input_keys,
             output_masks.GetDataPtr<bool>(), length);
 }
 
-void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
+void HashMap::Erase(const Tensor& input_keys, Tensor& output_masks) {
     CheckKeyLength(input_keys);
     CheckKeyCompatibility(input_keys);
 
@@ -147,7 +147,7 @@ void Hashmap::Erase(const Tensor& input_keys, Tensor& output_masks) {
                            output_masks.GetDataPtr<bool>(), length);
 }
 
-void Hashmap::GetActiveIndices(Tensor& output_buf_indices) const {
+void HashMap::GetActiveIndices(Tensor& output_buf_indices) const {
     int64_t length = device_hashmap_->Size();
     PrepareIndicesOutput(output_buf_indices, length);
 
@@ -155,19 +155,19 @@ void Hashmap::GetActiveIndices(Tensor& output_buf_indices) const {
             static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()));
 }
 
-void Hashmap::Clear() { device_hashmap_->Clear(); }
+void HashMap::Clear() { device_hashmap_->Clear(); }
 
-void Hashmap::Save(const std::string& file_name) {
-    t::io::WriteHashmap(file_name, *this);
+void HashMap::Save(const std::string& file_name) {
+    t::io::WriteHashMap(file_name, *this);
 }
 
-Hashmap Hashmap::Load(const std::string& file_name) {
-    return t::io::ReadHashmap(file_name);
+HashMap HashMap::Load(const std::string& file_name) {
+    return t::io::ReadHashMap(file_name);
 }
 
-Hashmap Hashmap::Clone() const { return To(GetDevice(), /*copy=*/true); }
+HashMap HashMap::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
-Hashmap Hashmap::To(const Device& device, bool copy) const {
+HashMap HashMap::To(const Device& device, bool copy) const {
     if (!copy && GetDevice() == device) {
         return *this;
     }
@@ -186,7 +186,7 @@ Hashmap Hashmap::To(const Device& device, bool copy) const {
                 value.IndexGet({active_indices}).To(device));
     }
 
-    Hashmap new_hashmap(GetCapacity(), key_dtype_, key_element_shape_,
+    HashMap new_hashmap(GetCapacity(), key_dtype_, key_element_shape_,
                         dtypes_value_, element_shapes_value_, device);
     Tensor buf_indices, masks;
     new_hashmap.Insert(active_keys, soa_active_values, buf_indices, masks);
@@ -194,17 +194,17 @@ Hashmap Hashmap::To(const Device& device, bool copy) const {
     return new_hashmap;
 }
 
-int64_t Hashmap::Size() const { return device_hashmap_->Size(); }
+int64_t HashMap::Size() const { return device_hashmap_->Size(); }
 
-int64_t Hashmap::GetCapacity() const { return device_hashmap_->GetCapacity(); }
+int64_t HashMap::GetCapacity() const { return device_hashmap_->GetCapacity(); }
 
-int64_t Hashmap::GetBucketCount() const {
+int64_t HashMap::GetBucketCount() const {
     return device_hashmap_->GetBucketCount();
 }
 
-Device Hashmap::GetDevice() const { return device_hashmap_->GetDevice(); }
+Device HashMap::GetDevice() const { return device_hashmap_->GetDevice(); }
 
-Tensor Hashmap::GetKeyTensor() const {
+Tensor HashMap::GetKeyTensor() const {
     int64_t capacity = GetCapacity();
     SizeVector key_shape = key_element_shape_;
     key_shape.insert(key_shape.begin(), capacity);
@@ -213,7 +213,7 @@ Tensor Hashmap::GetKeyTensor() const {
                   device_hashmap_->GetKeyBuffer().GetBlob());
 }
 
-std::vector<Tensor> Hashmap::GetValueTensors() const {
+std::vector<Tensor> HashMap::GetValueTensors() const {
     int64_t capacity = GetCapacity();
 
     std::vector<Tensor> value_buffers = device_hashmap_->GetValueBuffers();
@@ -232,7 +232,7 @@ std::vector<Tensor> Hashmap::GetValueTensors() const {
     return soa_value_tensor;
 }
 
-Tensor Hashmap::GetValueTensor(size_t i) const {
+Tensor HashMap::GetValueTensor(size_t i) const {
     int64_t capacity = GetCapacity();
 
     if (i >= dtypes_value_.size()) {
@@ -251,42 +251,42 @@ Tensor Hashmap::GetValueTensor(size_t i) const {
                   value_buffer.GetBlob());
 }
 
-std::vector<int64_t> Hashmap::BucketSizes() const {
+std::vector<int64_t> HashMap::BucketSizes() const {
     return device_hashmap_->BucketSizes();
 };
 
-float Hashmap::LoadFactor() const { return device_hashmap_->LoadFactor(); }
+float HashMap::LoadFactor() const { return device_hashmap_->LoadFactor(); }
 
-void Hashmap::Init(int64_t init_capacity,
+void HashMap::Init(int64_t init_capacity,
                    const Device& device,
                    const HashBackendType& backend) {
     // Key check
     if (key_dtype_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
-        utility::LogError("[Hashmap] Undefined key dtype is not allowed.");
+        utility::LogError("[HashMap] Undefined key dtype is not allowed.");
     }
     if (key_element_shape_.NumElements() == 0) {
         utility::LogError(
-                "[Hashmap] Key element shape must contain at least 1 element, "
+                "[HashMap] Key element shape must contain at least 1 element, "
                 "but got 0.");
     }
 
     // Value check
     if (dtypes_value_.size() != element_shapes_value_.size()) {
         utility::LogError(
-                "[Hashmap] Size of value_dtype ({}) mismatches with size of "
+                "[HashMap] Size of value_dtype ({}) mismatches with size of "
                 "element_shapes_value ({}).",
                 dtypes_value_.size(), element_shapes_value_.size());
     }
     for (auto& value_dtype : dtypes_value_) {
         if (value_dtype.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
             utility::LogError(
-                    "[Hashmap] Undefined value dtype is not allowed.");
+                    "[HashMap] Undefined value dtype is not allowed.");
         }
     }
     for (auto& value_element_shape : element_shapes_value_) {
         if (value_element_shape.NumElements() == 0) {
             utility::LogError(
-                    "[Hashmap] Value element shape must contain at least 1 "
+                    "[HashMap] Value element shape must contain at least 1 "
                     "element, but got 0.");
         }
     }
@@ -296,14 +296,14 @@ void Hashmap::Init(int64_t init_capacity,
             element_shapes_value_, device, backend);
 }
 
-void Hashmap::CheckKeyLength(const Tensor& input_keys) const {
+void HashMap::CheckKeyLength(const Tensor& input_keys) const {
     int64_t key_len = input_keys.GetLength();
     if (key_len == 0) {
         utility::LogError("Input number of keys should > 0, but got 0.");
     }
 }
 
-void Hashmap::CheckKeyValueLengthCompatibility(
+void HashMap::CheckKeyValueLengthCompatibility(
         const Tensor& input_keys,
         const std::vector<Tensor>& input_values_soa) const {
     int64_t key_len = input_keys.GetLength();
@@ -322,7 +322,7 @@ void Hashmap::CheckKeyValueLengthCompatibility(
     }
 }
 
-void Hashmap::CheckKeyCompatibility(const Tensor& input_keys) const {
+void HashMap::CheckKeyCompatibility(const Tensor& input_keys) const {
     SizeVector input_key_elem_shape(input_keys.GetShape());
     input_key_elem_shape.erase(input_key_elem_shape.begin());
 
@@ -337,7 +337,7 @@ void Hashmap::CheckKeyCompatibility(const Tensor& input_keys) const {
     }
 }
 
-void Hashmap::CheckValueCompatibility(
+void HashMap::CheckValueCompatibility(
         const std::vector<Tensor>& input_values_soa) const {
     if (input_values_soa.size() != element_shapes_value_.size()) {
         utility::LogError(
@@ -368,7 +368,7 @@ void Hashmap::CheckValueCompatibility(
     }
 }
 
-void Hashmap::PrepareIndicesOutput(Tensor& output_buf_indices,
+void HashMap::PrepareIndicesOutput(Tensor& output_buf_indices,
                                    int64_t length) const {
     if (output_buf_indices.GetLength() != length ||
         output_buf_indices.GetDtype() != core::Int32 ||
@@ -377,7 +377,7 @@ void Hashmap::PrepareIndicesOutput(Tensor& output_buf_indices,
     }
 }
 
-void Hashmap::PrepareMasksOutput(Tensor& output_masks, int64_t length) const {
+void HashMap::PrepareMasksOutput(Tensor& output_masks, int64_t length) const {
     if (output_masks.GetLength() != length ||
         output_masks.GetDtype() != core::Bool ||
         output_masks.GetDevice() != GetDevice()) {
@@ -390,7 +390,7 @@ Hashset::Hashset(int64_t init_capacity,
                  const SizeVector& key_element_shape,
                  const Device& device,
                  const HashBackendType& backend)
-    : Hashmap(init_capacity,
+    : HashMap(init_capacity,
               key_dtype,
               key_element_shape,
               std::vector<Dtype>{},
@@ -405,7 +405,7 @@ Hashset::Hashset(int64_t init_capacity,
                  const SizeVector& value_element_shape,
                  const Device& device,
                  const HashBackendType& backend)
-    : Hashmap(init_capacity,
+    : HashMap(init_capacity,
               key_dtype,
               key_element_shape,
               std::vector<Dtype>{},
@@ -424,7 +424,7 @@ Hashset::Hashset(int64_t init_capacity,
                  const std::vector<SizeVector>& element_shapes_value,
                  const Device& device,
                  const HashBackendType& backend)
-    : Hashmap(init_capacity,
+    : HashMap(init_capacity,
               key_dtype,
               key_element_shape,
               std::vector<Dtype>{},
@@ -441,7 +441,7 @@ Hashset::Hashset(int64_t init_capacity,
 void Hashset::Insert(const Tensor& input_keys,
                      Tensor& output_buf_indices,
                      Tensor& output_masks) {
-    return Hashmap::Insert(input_keys, std::vector<Tensor>{},
+    return HashMap::Insert(input_keys, std::vector<Tensor>{},
                            output_buf_indices, output_masks);
 }
 }  // namespace core

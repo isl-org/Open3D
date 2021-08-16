@@ -99,7 +99,7 @@ TSDFVoxelGrid::TSDFVoxelGrid(
                 "than half block size (i.e., block_resolution * voxel_size * "
                 "0.5)");
     }
-    block_hashmap_ = std::make_shared<core::Hashmap>(
+    block_hashmap_ = std::make_shared<core::HashMap>(
             block_count_, core::Int32, core::SizeVector{3}, core::UInt8,
             core::SizeVector{block_resolution_, block_resolution_,
                              block_resolution_, total_bytes},
@@ -137,7 +137,7 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                        (depth.GetRows() / down_factor) * 8;
 
     if (point_hashmap_ == nullptr) {
-        point_hashmap_ = std::make_shared<core::Hashmap>(
+        point_hashmap_ = std::make_shared<core::HashMap>(
                 capacity, core::Int32, core::SizeVector{3}, core::UInt8,
                 core::SizeVector{1}, device_, core::HashBackendType::Default);
     } else {

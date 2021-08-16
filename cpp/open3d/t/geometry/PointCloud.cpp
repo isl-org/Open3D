@@ -34,7 +34,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"

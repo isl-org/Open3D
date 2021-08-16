@@ -30,7 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 

@@ -68,7 +68,7 @@ struct Coord3iHash {
     }
 };
 
-void TouchCPU(std::shared_ptr<core::Hashmap>&
+void TouchCPU(std::shared_ptr<core::HashMap>&
                       hashmap,  // dummy for now, one pass insertion is faster
               const core::Tensor& points,
               core::Tensor& voxel_block_coords,

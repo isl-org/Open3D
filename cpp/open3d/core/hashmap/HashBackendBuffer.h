@@ -62,17 +62,17 @@ void CUDAResetHeap(Tensor &heap);
 // Buffer index type for the internal heap.
 using buf_index_t = uint32_t;
 
-class HashmapBuffer {
+class HashBackendBuffer {
 public:
     struct HeapTop {
         Tensor cuda;
         std::atomic<int> cpu = {0};
     };
 
-    HashmapBuffer(int64_t capacity,
-                  int64_t key_dsize,
-                  std::vector<int64_t> value_dsizes,
-                  const Device &device);
+    HashBackendBuffer(int64_t capacity,
+                      int64_t key_dsize,
+                      std::vector<int64_t> value_dsizes,
+                      const Device &device);
 
     /// Reset the heap and heap top.
     void ResetHeap();

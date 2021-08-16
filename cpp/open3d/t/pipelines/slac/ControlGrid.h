@@ -27,7 +27,7 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
@@ -128,7 +128,7 @@ public:
     /// in-place).
     core::Tensor GetCurrPositions() { return ctr_hashmap_->GetValueTensor(); }
 
-    std::shared_ptr<core::Hashmap> GetHashmap() { return ctr_hashmap_; }
+    std::shared_ptr<core::HashMap> GetHashMap() { return ctr_hashmap_; }
     int64_t Size() { return ctr_hashmap_->Size(); }
 
     core::Device GetDevice() { return device_; }
@@ -142,7 +142,7 @@ private:
     float grid_size_;
 
     core::Device device_ = core::Device("CPU:0");
-    std::shared_ptr<core::Hashmap> ctr_hashmap_;
+    std::shared_ptr<core::HashMap> ctr_hashmap_;
 };
 
 }  // namespace slac

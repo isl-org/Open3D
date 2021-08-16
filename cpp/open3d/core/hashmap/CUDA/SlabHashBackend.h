@@ -81,7 +81,7 @@ protected:
     /// shared pointer.
     SlabHashBackendImpl<Key, Hash> impl_;
 
-    CUDAHashmapBufferAccessor buffer_accessor_;
+    CUDAHashBackendBufferAccessor buffer_accessor_;
     std::shared_ptr<SlabNodeManager> node_mgr_;
 
     /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
@@ -356,9 +356,9 @@ void SlabHashBackend<Key, Hash>::Allocate(int64_t bucket_count,
     this->capacity_ = capacity;
 
     // Allocate buffer for key values.
-    this->buffer_ =
-            std::make_shared<HashmapBuffer>(this->capacity_, this->key_dsize_,
-                                            this->value_dsizes_, this->device_);
+    this->buffer_ = std::make_shared<HashBackendBuffer>(
+            this->capacity_, this->key_dsize_, this->value_dsizes_,
+            this->device_);
     buffer_accessor_.Setup(*this->buffer_);
 
     // Allocate buffer for linked list nodes.

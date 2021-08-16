@@ -31,7 +31,7 @@
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
@@ -164,9 +164,9 @@ public:
 
     core::Device GetDevice() const { return device_; }
 
-    std::shared_ptr<core::Hashmap> GetBlockHashmap() { return block_hashmap_; }
+    std::shared_ptr<core::HashMap> GetBlockHashMap() { return block_hashmap_; }
 
-    std::shared_ptr<core::Hashmap> GetBlockHashmap() const {
+    std::shared_ptr<core::HashMap> GetBlockHashMap() const {
         return block_hashmap_;
     }
 
@@ -194,10 +194,10 @@ private:
             const core::Tensor &active_buf_indices);
 
     // Global hashmap
-    std::shared_ptr<core::Hashmap> block_hashmap_;
+    std::shared_ptr<core::HashMap> block_hashmap_;
 
     // Local hashmap for the `unique` operation of input points
-    std::shared_ptr<core::Hashmap> point_hashmap_;
+    std::shared_ptr<core::HashMap> point_hashmap_;
 
     core::Tensor active_block_coords_;
 };

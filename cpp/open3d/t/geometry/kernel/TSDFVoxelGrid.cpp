@@ -38,7 +38,7 @@ namespace t {
 namespace geometry {
 namespace kernel {
 namespace tsdf {
-void Touch(std::shared_ptr<core::Hashmap>& hashmap,
+void Touch(std::shared_ptr<core::HashMap>& hashmap,
            const core::Tensor& points,
            core::Tensor& voxel_block_coords,
            int64_t voxel_grid_resolution,

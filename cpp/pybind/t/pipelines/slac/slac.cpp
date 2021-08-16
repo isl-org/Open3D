@@ -212,7 +212,7 @@ void pybind_slac_classes(py::module &m) {
             .def(
                     "get_hashmap",
                     [](ControlGrid &control_grid) {
-                        return *control_grid.GetHashmap();
+                        return *control_grid.GetHashMap();
                     },
                     "Get the control grid hashmap.")
             .def("size", &ControlGrid::Size)

@@ -29,7 +29,7 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/HashmapBuffer.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
 
 namespace open3d {
 namespace core {
@@ -123,13 +123,13 @@ public:
 
     Device device_;
 
-    std::shared_ptr<HashmapBuffer> buffer_;
+    std::shared_ptr<HashBackendBuffer> buffer_;
 };
 
 /// Factory functions:
 /// - Default constructor switch is in DeviceHashBackend.cpp
-/// - Default CPU constructor is in CPU/CreateCPUHashmap.cpp
-/// - Default CUDA constructor is in CUDA/CreateCUDAHashmap.cu
+/// - Default CPU constructor is in CPU/CreateCPUHashBackend.cpp
+/// - Default CUDA constructor is in CUDA/CreateCUDAHashBackend.cu
 std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
         int64_t init_capacity,
         const Dtype& key_dtype,
@@ -139,7 +139,7 @@ std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
         const Device& device,
         const HashBackendType& backend);
 
-std::shared_ptr<DeviceHashBackend> CreateCPUHashmap(
+std::shared_ptr<DeviceHashBackend> CreateCPUHashBackend(
         int64_t init_capacity,
         const Dtype& key_dtype,
         const SizeVector& key_element_shape,
@@ -148,7 +148,7 @@ std::shared_ptr<DeviceHashBackend> CreateCPUHashmap(
         const Device& device,
         const HashBackendType& backend);
 
-std::shared_ptr<DeviceHashBackend> CreateCUDAHashmap(
+std::shared_ptr<DeviceHashBackend> CreateCUDAHashBackend(
         int64_t init_capacity,
         const Dtype& key_dtype,
         const SizeVector& key_element_shape,

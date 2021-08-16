@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/HashmapBuffer.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
 
 #include "open3d/core/CUDAUtils.h"
 namespace open3d {
 namespace core {
 
-HashmapBuffer::HashmapBuffer(int64_t capacity,
-                             int64_t key_dsize,
-                             std::vector<int64_t> value_dsizes,
-                             const Device &device) {
+HashBackendBuffer::HashBackendBuffer(int64_t capacity,
+                                     int64_t key_dsize,
+                                     std::vector<int64_t> value_dsizes,
+                                     const Device &device) {
     heap_ = Tensor({capacity}, core::UInt32, device);
 
     key_buffer_ = Tensor({capacity},
@@ -58,7 +58,7 @@ HashmapBuffer::HashmapBuffer(int64_t capacity,
     ResetHeap();
 }
 
-void HashmapBuffer::ResetHeap() {
+void HashBackendBuffer::ResetHeap() {
     Device device = GetDevice();
 
     Tensor heap = GetIndexHeap();
@@ -71,15 +71,15 @@ void HashmapBuffer::ResetHeap() {
     }
 }
 
-Device HashmapBuffer::GetDevice() const { return heap_.GetDevice(); }
+Device HashBackendBuffer::GetDevice() const { return heap_.GetDevice(); }
 
-int64_t HashmapBuffer::GetCapacity() const { return heap_.GetLength(); }
+int64_t HashBackendBuffer::GetCapacity() const { return heap_.GetLength(); }
 
-int64_t HashmapBuffer::GetKeyDsize() const {
+int64_t HashBackendBuffer::GetKeyDsize() const {
     return key_buffer_.GetDtype().ByteSize();
 }
 
-std::vector<int64_t> HashmapBuffer::GetValueDsizes() const {
+std::vector<int64_t> HashBackendBuffer::GetValueDsizes() const {
     std::vector<int64_t> value_dsizes;
     for (auto &value_buffer : value_buffers_) {
         value_dsizes.push_back(value_buffer.GetDtype().ByteSize());
@@ -87,24 +87,26 @@ std::vector<int64_t> HashmapBuffer::GetValueDsizes() const {
     return value_dsizes;
 }
 
-Tensor HashmapBuffer::GetIndexHeap() const { return heap_; }
+Tensor HashBackendBuffer::GetIndexHeap() const { return heap_; }
 
-HashmapBuffer::HeapTop &HashmapBuffer::GetHeapTop() { return heap_top_; }
+HashBackendBuffer::HeapTop &HashBackendBuffer::GetHeapTop() {
+    return heap_top_;
+}
 
-int HashmapBuffer::GetHeapTopIndex() const {
+int HashBackendBuffer::GetHeapTopIndex() const {
     if (heap_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         return heap_top_.cuda[0].Item<int>();
     }
     return heap_top_.cpu.load();
 }
 
-Tensor HashmapBuffer::GetKeyBuffer() const { return key_buffer_; }
+Tensor HashBackendBuffer::GetKeyBuffer() const { return key_buffer_; }
 
-std::vector<Tensor> HashmapBuffer::GetValueBuffers() const {
+std::vector<Tensor> HashBackendBuffer::GetValueBuffers() const {
     return value_buffers_;
 }
 
-Tensor HashmapBuffer::GetValueBuffer(size_t i) const {
+Tensor HashBackendBuffer::GetValueBuffer(size_t i) const {
     if (i >= value_buffers_.size()) {
         utility::LogError("Value buffer index out-of-bound ({} >= {}).", i,
                           value_buffers_.size());

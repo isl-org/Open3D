@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 #include <benchmark/benchmark.h>
 
@@ -78,14 +78,14 @@ void HashInsertInt(benchmark::State& state,
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
                            backend);
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                         backend);
         Tensor buf_indices, masks;
 
@@ -118,14 +118,14 @@ void HashEraseInt(benchmark::State& state,
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
                            backend);
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                         backend);
         Tensor buf_indices, masks;
         hashmap.Insert(keys, values, buf_indices, masks);
@@ -159,7 +159,7 @@ void HashFindInt(benchmark::State& state,
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
+    HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                     backend);
     Tensor buf_indices, masks;
     // Insert as warp-up
@@ -182,14 +182,14 @@ void HashClearInt(benchmark::State& state,
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
                            backend);
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                         backend);
         Tensor buf_indices, masks;
 
@@ -231,14 +231,14 @@ void HashRehashInt(benchmark::State& state,
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
                            backend);
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                         backend);
         Tensor buf_indices, masks;
 
@@ -295,14 +295,14 @@ void HashInsertInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
                            backend);
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                         backend);
         Tensor buf_indices, masks;
 
@@ -338,14 +338,14 @@ void HashEraseInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
                            backend);
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                         backend);
         Tensor buf_indices, masks;
         hashmap.Insert(keys, values, buf_indices, masks);
@@ -382,7 +382,7 @@ void HashFindInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
+    HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                     backend);
     Tensor buf_indices, masks;
     hashmap.Insert(keys, values, buf_indices, masks);
@@ -407,14 +407,14 @@ void HashClearInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
                            backend);
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                         backend);
         Tensor buf_indices, masks;
 
@@ -459,14 +459,14 @@ void HashRehashInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
                            backend);
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                         backend);
         Tensor buf_indices, masks;
 

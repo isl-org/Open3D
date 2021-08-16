@@ -27,13 +27,13 @@
 #include "open3d/core/hashmap/CUDA/SlabHashBackend.h"
 #include "open3d/core/hashmap/CUDA/StdGPUHashBackend.h"
 #include "open3d/core/hashmap/Dispatch.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 namespace open3d {
 namespace core {
 
 /// Non-templated factory.
-std::shared_ptr<DeviceHashBackend> CreateCUDAHashmap(
+std::shared_ptr<DeviceHashBackend> CreateCUDAHashBackend(
         int64_t init_capacity,
         const Dtype& key_dtype,
         const SizeVector& key_element_shape,

@@ -32,15 +32,15 @@
 #include <memory>
 #include <vector>
 
-#include "open3d/core/hashmap/HashmapBuffer.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
 
 namespace open3d {
 namespace core {
 
-class CPUHashmapBufferAccessor {
+class CPUHashBackendBufferAccessor {
 public:
     /// Must initialize from a non-const buffer to grab the heap top.
-    CPUHashmapBufferAccessor(HashmapBuffer &hashmap_buffer)
+    CPUHashBackendBufferAccessor(HashBackendBuffer &hashmap_buffer)
         : capacity_(hashmap_buffer.GetCapacity()),
           key_dsize_(hashmap_buffer.GetKeyDsize()),
           value_dsizes_(hashmap_buffer.GetValueDsizes()),

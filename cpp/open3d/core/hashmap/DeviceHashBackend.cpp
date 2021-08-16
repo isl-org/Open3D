@@ -25,7 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/hashmap/DeviceHashBackend.h"
-#include "open3d/core/hashmap/Hashmap.h"
+
+#include "open3d/core/hashmap/HashMap.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -41,15 +42,15 @@ std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
         const Device& device,
         const HashBackendType& backend) {
     if (device.GetType() == Device::DeviceType::CPU) {
-        return CreateCPUHashmap(init_capacity, key_dtype, key_element_shape,
-                                value_dtypes, value_element_shapes, device,
-                                backend);
+        return CreateCPUHashBackend(init_capacity, key_dtype, key_element_shape,
+                                    value_dtypes, value_element_shapes, device,
+                                    backend);
     }
 #if defined(BUILD_CUDA_MODULE)
     else if (device.GetType() == Device::DeviceType::CUDA) {
-        return CreateCUDAHashmap(init_capacity, key_dtype, key_element_shape,
-                                 value_dtypes, value_element_shapes, device,
-                                 backend);
+        return CreateCUDAHashBackend(init_capacity, key_dtype,
+                                     key_element_shape, value_dtypes,
+                                     value_element_shapes, device, backend);
     }
 #endif
     else {

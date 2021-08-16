@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
                         fragment_fnames, *pose_graph, params, debug_option);
 
         // Write control grids
-        auto hashmap = control_grid.GetHashmap();
+        auto hashmap = control_grid.GetHashMap();
         core::Tensor active_buf_indices;
         hashmap->GetActiveIndices(active_buf_indices);
         active_buf_indices = active_buf_indices.To(core::Dtype::Int64);

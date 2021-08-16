@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 #include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
@@ -41,9 +41,9 @@
 namespace open3d {
 namespace core {
 void pybind_core_hashmap(py::module& m) {
-    py::class_<Hashmap> hashmap(
-            m, "Hashmap",
-            "A Hashmap is a map from key to data wrapped by Tensors.");
+    py::class_<HashMap> hashmap(
+            m, "HashMap",
+            "A HashMap is a map from key to data wrapped by Tensors.");
 
     hashmap.def(py::init([](int64_t init_capacity, const Dtype& key_dtype,
                             const py::handle& key_element_shape,
@@ -54,7 +54,7 @@ void pybind_core_hashmap(py::module& m) {
                             PyHandleToSizeVector(key_element_shape);
                     SizeVector value_element_shape_sv =
                             PyHandleToSizeVector(value_element_shape);
-                    return Hashmap(init_capacity, key_dtype,
+                    return HashMap(init_capacity, key_dtype,
                                    key_element_shape_sv, value_dtype,
                                    value_element_shape_sv, device);
                 }),
@@ -77,7 +77,7 @@ void pybind_core_hashmap(py::module& m) {
                             PyHandleToSizeVector(handle);
                     element_shapes_value_sv.push_back(value_element_shape_sv);
                 }
-                return Hashmap(init_capacity, key_dtype, key_element_shape_sv,
+                return HashMap(init_capacity, key_dtype, key_element_shape_sv,
                                dtypes_value, element_shapes_value_sv, device);
             }),
             "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
@@ -85,75 +85,75 @@ void pybind_core_hashmap(py::module& m) {
             "device"_a = Device("CPU:0"));
 
     hashmap.def("insert",
-                [](Hashmap& h, const Tensor& keys, const Tensor& values) {
+                [](HashMap& h, const Tensor& keys, const Tensor& values) {
                     Tensor buf_indices, masks;
                     h.Insert(keys, values, buf_indices, masks);
                     return py::make_tuple(buf_indices, masks);
                 });
-    hashmap.def("insert", [](Hashmap& h, const Tensor& keys,
+    hashmap.def("insert", [](HashMap& h, const Tensor& keys,
                              const std::vector<Tensor>& values) {
         Tensor buf_indices, masks;
         h.Insert(keys, values, buf_indices, masks);
         return py::make_tuple(buf_indices, masks);
     });
 
-    hashmap.def("activate", [](Hashmap& h, const Tensor& keys) {
+    hashmap.def("activate", [](HashMap& h, const Tensor& keys) {
         Tensor buf_indices, masks;
         h.Activate(keys, buf_indices, masks);
         return py::make_tuple(buf_indices, masks);
     });
 
-    hashmap.def("find", [](Hashmap& h, const Tensor& keys) {
+    hashmap.def("find", [](HashMap& h, const Tensor& keys) {
         Tensor buf_indices, masks;
         h.Find(keys, buf_indices, masks);
         return py::make_tuple(buf_indices, masks);
     });
 
-    hashmap.def("erase", [](Hashmap& h, const Tensor& keys) {
+    hashmap.def("erase", [](HashMap& h, const Tensor& keys) {
         Tensor masks;
         h.Erase(keys, masks);
         return masks;
     });
 
-    hashmap.def("get_active_buf_indices", [](Hashmap& h) {
+    hashmap.def("get_active_buf_indices", [](HashMap& h) {
         Tensor buf_indices;
         h.GetActiveIndices(buf_indices);
         return buf_indices;
     });
 
-    hashmap.def("save", &Hashmap::Save);
-    hashmap.def_static("load", &Hashmap::Load);
+    hashmap.def("save", &HashMap::Save);
+    hashmap.def_static("load", &HashMap::Load);
 
-    hashmap.def("get_key_tensor", &Hashmap::GetKeyTensor);
-    hashmap.def("get_value_tensors", &Hashmap::GetValueTensors);
+    hashmap.def("get_key_tensor", &HashMap::GetKeyTensor);
+    hashmap.def("get_value_tensors", &HashMap::GetValueTensors);
     hashmap.def("get_value_tensor",
-                [](Hashmap& h) { return h.GetValueTensor(); });
+                [](HashMap& h) { return h.GetValueTensor(); });
     hashmap.def("get_value_tensor",
-                [](Hashmap& h, size_t i) { return h.GetValueTensor(i); });
+                [](HashMap& h, size_t i) { return h.GetValueTensor(i); });
 
-    hashmap.def("rehash", &Hashmap::Rehash);
-    hashmap.def("size", &Hashmap::Size);
-    hashmap.def("capacity", &Hashmap::GetCapacity);
+    hashmap.def("rehash", &HashMap::Rehash);
+    hashmap.def("size", &HashMap::Size);
+    hashmap.def("capacity", &HashMap::GetCapacity);
 
-    hashmap.def("to", &Hashmap::To, "device"_a, "copy"_a = false);
-    hashmap.def("clone", &Hashmap::Clone);
+    hashmap.def("to", &HashMap::To, "device"_a, "copy"_a = false);
+    hashmap.def("clone", &HashMap::Clone);
     hashmap.def(
             "cpu",
-            [](const Hashmap& hashmap) {
+            [](const HashMap& hashmap) {
                 return hashmap.To(core::Device("CPU:0"));
             },
             "Transfer the hashmap to CPU. If the hashmap "
             "is already on CPU, no copy will be performed.");
     hashmap.def(
             "cuda",
-            [](const Hashmap& hashmap, int device_id) {
+            [](const HashMap& hashmap, int device_id) {
                 return hashmap.To(core::Device("CUDA", device_id));
             },
             "Transfer the hashmap to a CUDA device. If the hashmap is already "
             "on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
 
-    py::class_<Hashset, Hashmap> hashset(m, "Hashset",
+    py::class_<Hashset, HashMap> hashset(m, "Hashset",
                                          "A Hashset is a unordered set that "
                                          "collects keys wrapped by Tensors.");
     hashset.def(py::init([](int64_t init_capacity, const Dtype& key_dtype,

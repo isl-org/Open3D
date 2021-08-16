@@ -24,29 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <string>
-
-#include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/CPU/TBBHashBackend.h"
+#include "open3d/core/hashmap/Dispatch.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 namespace open3d {
-namespace t {
-namespace io {
+namespace core {
 
-/// Read a hash map's keys and values from a npz file at 'key' and 'value'.
-/// Return a hash map on CPU.
-///
-/// \param filename The npz file name to read from.
-core::Hashmap ReadHashmap(const std::string& filename);
+/// Non-templated factory.
+std::shared_ptr<DeviceHashBackend> CreateCPUHashBackend(
+        int64_t init_capacity,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
+        const Device& device,
+        const HashBackendType& backend) {
+    if (backend != HashBackendType::Default &&
+        backend != HashBackendType::TBB) {
+        utility::LogError("Unsupported backend for CPU hashmap.");
+    }
 
-/// Save a hash map's keys and values to a npz file at 'key' and 'value'.
-///
-/// \param filename The npz file name to write to.
-/// \param hashmap Hashmap to save.
-void WriteHashmap(const std::string& filename, const core::Hashmap& hashmap);
+    int64_t dim = key_element_shape.NumElements();
 
-}  // namespace io
-}  // namespace t
+    int64_t key_dsize = dim * key_dtype.ByteSize();
+
+    // TODO: size check
+    std::vector<int64_t> value_dsizes;
+    for (size_t i = 0; i < value_dtypes.size(); ++i) {
+        int64_t dsize_value = value_element_shapes[i].NumElements() *
+                              value_dtypes[i].ByteSize();
+        value_dsizes.push_back(dsize_value);
+    }
+
+    std::shared_ptr<DeviceHashBackend> device_hashmap_ptr;
+    DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(key_dtype, dim, [&] {
+        device_hashmap_ptr = std::make_shared<TBBHashBackend<key_t, hash_t>>(
+                init_capacity, key_dsize, value_dsizes, device);
+    });
+    return device_hashmap_ptr;
+}
+
+}  // namespace core
 }  // namespace open3d

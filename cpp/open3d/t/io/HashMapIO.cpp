@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/io/HashmapIO.h"
+#include "open3d/t/io/HashMapIO.h"
 
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
@@ -32,7 +32,7 @@ namespace open3d {
 namespace t {
 namespace io {
 
-void WriteHashmap(const std::string& file_name, const core::Hashmap& hashmap) {
+void WriteHashMap(const std::string& file_name, const core::HashMap& hashmap) {
     core::Tensor keys = hashmap.GetKeyTensor();
     std::vector<core::Tensor> values = hashmap.GetValueTensors();
 
@@ -63,7 +63,7 @@ void WriteHashmap(const std::string& file_name, const core::Hashmap& hashmap) {
     WriteNpz(file_name + postfix, output);
 }
 
-core::Hashmap ReadHashmap(const std::string& file_name) {
+core::HashMap ReadHashMap(const std::string& file_name) {
     std::unordered_map<std::string, core::Tensor> tensor_map =
             t::io::ReadNpz(file_name);
 
@@ -99,7 +99,7 @@ core::Hashmap ReadHashmap(const std::string& file_name) {
     }
 
     auto hashmap =
-            core::Hashmap(init_capacity, key_dtype, key_element_shape,
+            core::HashMap(init_capacity, key_dtype, key_element_shape,
                           dtypes_value, element_shapes_value, core::Device());
 
     core::Tensor masks, buf_indices;

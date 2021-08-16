@@ -41,7 +41,7 @@
 #pragma once
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/hashmap/CUDA/CUDAHashmapBufferAccessor.h"
+#include "open3d/core/hashmap/CUDA/CUDAHashBackendBufferAccessor.h"
 #include "open3d/core/hashmap/CUDA/SlabMacros.h"
 #include "open3d/core/hashmap/CUDA/SlabNodeManager.h"
 #include "open3d/core/hashmap/CUDA/SlabTraits.h"
@@ -67,7 +67,7 @@ public:
 
     __host__ void Setup(int64_t init_buckets,
                         const SlabNodeManagerImpl& node_mgr_impl,
-                        const CUDAHashmapBufferAccessor& buffer_accessor);
+                        const CUDAHashBackendBufferAccessor& buffer_accessor);
 
     /// Warp-insert a pre-allocated buf_index at key.
     __device__ bool Insert(bool lane_active,
@@ -131,7 +131,7 @@ public:
 
     Slab* bucket_list_head_;
     SlabNodeManagerImpl node_mgr_impl_;
-    CUDAHashmapBufferAccessor buffer_accessor_;
+    CUDAHashBackendBufferAccessor buffer_accessor_;
 
     // TODO: verify size with alignment
     int key_size_in_int_ = sizeof(Key) / sizeof(int);
@@ -197,7 +197,7 @@ template <typename Key, typename Hash>
 void SlabHashBackendImpl<Key, Hash>::Setup(
         int64_t init_buckets,
         const SlabNodeManagerImpl& allocator_impl,
-        const CUDAHashmapBufferAccessor& buffer_accessor) {
+        const CUDAHashBackendBufferAccessor& buffer_accessor) {
     bucket_count_ = init_buckets;
     node_mgr_impl_ = allocator_impl;
     buffer_accessor_ = buffer_accessor;
