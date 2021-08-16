@@ -205,7 +205,7 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
 
     // Using Bessel's correction (dividing by (n - 1) instead of n).
     // Refer: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-    const double normalization_factor = (indices_count - 1.0);
+    const double normalization_factor = static_cast<double>(indices_count - 1);
     for (int i = 0; i < 6; ++i) {
         cumulants[i] /= normalization_factor;
     }
