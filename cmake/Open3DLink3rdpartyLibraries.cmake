@@ -24,5 +24,7 @@ function(open3d_link_3rdparty_libraries target)
             message(WARNING "Skipping non-existent header dependency ${dep}")
         endif()
     endforeach()
+    # Link header dependencies privately.
+    target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_HEADER_TARGETS})
 
 endfunction()
