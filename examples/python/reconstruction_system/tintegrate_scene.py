@@ -24,7 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-
 # examples/python/reconstruction_system/integrate_scene.py
 
 import numpy as np
