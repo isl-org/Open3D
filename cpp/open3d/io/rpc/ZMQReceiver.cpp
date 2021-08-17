@@ -116,7 +116,7 @@ void ZMQReceiver::Mainloop() {
     socket_ = std::unique_ptr<zmq::socket_t>(
             new zmq::socket_t(*context_, ZMQ_REP));
 
-    socket_->set(zmq::sockopt::linger, 1000);
+    socket_->set(zmq::sockopt::linger, 0);
     socket_->set(zmq::sockopt::rcvtimeo, 1000);
     socket_->set(zmq::sockopt::sndtimeo, timeout_);
 
