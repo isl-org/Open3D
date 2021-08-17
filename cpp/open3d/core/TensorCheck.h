@@ -33,7 +33,9 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 
-/// Assert Tensor's dtype is the same as the expected dtype.
+/// Assert Tensor's dtype is the same as the expected dtype. When an error
+/// occurs, the corresponding file name, line number and function name will be
+/// printed in the error message.
 ///
 /// Example: core::AssertTensorDtype(tensor, core::Float32);
 ///          core::AssertTensorDtype(tensor, core::Float32, "Error!");
@@ -41,7 +43,9 @@
     OPEN3D_GET_ARG_4(__VA_ARGS__, _AssertTensorDtype3, _AssertTensorDtype2, ) \
     (__VA_ARGS__)
 
-/// Assert Tensor's device is the same as the expected device.
+/// Assert Tensor's device is the same as the expected device. When an error
+/// occurs, the corresponding file name, line number and function name will be
+/// printed in the error message.
 ///
 /// Example: core::AssertTensorDtype(tensor, core::Device("CUDA:0"));
 ///          core::AssertTensorDtype(tensor, core::Device("CUDA:0"), "Error!");
@@ -50,7 +54,9 @@
                      _AssertTensorDevice2, )            \
     (__VA_ARGS__)
 
-/// Assert Tensor's shape is the same as the expected shape.
+/// Assert Tensor's shape is the same as the expected shape. When an error
+/// occurs, the corresponding file name, line number and function name will be
+/// printed in the error message.
 ///
 /// Example: core::AssertTensorDtype(tensor, {2, 3});
 ///          core::AssertTensorDtype(tensor, {2, 3}, "Error!");
@@ -58,7 +64,9 @@
     OPEN3D_GET_ARG_4(__VA_ARGS__, _AssertTensorShape3, _AssertTensorShape2, ) \
     (__VA_ARGS__)
 
-/// Assert Tensor's shape is compatbile with the expected dynamic shape.
+/// Assert Tensor's shape is compatbile with the expected dynamic shape. When an
+/// error occurs, the corresponding file name, line number and function name
+/// will be printed in the error message.
 ///
 /// Example: core::AssertTensorShapeCompatible(tensor,
 ///                                            {2, utility::nullopt});
