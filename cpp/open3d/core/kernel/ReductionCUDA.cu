@@ -597,7 +597,7 @@ public:
         // unroll that exposes instruction level parallelism.
         while (idx < config_.num_inputs_per_output_) {
             // load input
-            SmallArray<scalar_t, vt0> values;
+            utility::MiniVec<scalar_t, vt0> values;
             if (input_calc_.dims_ == 1) {
                 StridedIterate<vt0>(
                         [&](index_t i, index_t idx) {
