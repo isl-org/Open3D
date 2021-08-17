@@ -28,8 +28,12 @@
 
 #include <cassert>
 
-#define OPEN3D_CONCATENATE_IMPL(s1, s2) s1##s2
-#define OPEN3D_CONCATENATE(s1, s2) OPEN3D_CONCATENATE_IMPL(s1, s2)
+#define OPEN3D_CONCAT_IMPL(s1, s2) s1##s2
+#define OPEN3D_CONCAT(s1, s2) OPEN3D_CONCAT_IMPL(s1, s2)
+
+#define OPEN3D_GET_ARG_2(s1, s2, ...) s2
+#define OPEN3D_GET_ARG_3(s1, s2, s3, ...) s3
+#define OPEN3D_GET_ARG_4(s1, s2, s3, s4, ...) s4
 
 // https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
 #if defined(_WIN32) || defined(__CYGWIN__)
