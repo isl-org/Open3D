@@ -91,9 +91,24 @@ def list_devices_with_torch():
         return []
 
 
+def get_data_path_common(relative_path=""):
+    if not relative_path:
+        return test_data_dir
+    else:
+        return os.path.join(test_data_dir, relative_path)
+
+
+def get_data_path_download(relative_path=""):
+    download_path = os.path.join(test_data_dir, "open3d_downloads")
+    if not relative_path:
+        return download_path
+    else:
+        return os.path.join(download_path, relative_path)
+
+
 def download_fountain_dataset():
-    fountain_path = os.path.join(test_data_dir, "fountain_small")
-    fountain_zip_path = os.path.join(test_data_dir, "fountain.zip")
+    fountain_path = get_data_path_common("fountain_small")
+    fountain_zip_path = get_data_path_common("fountain.zip")
     if not os.path.exists(fountain_path):
         print("Downloading fountain dataset")
         url = "https://github.com/isl-org/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"

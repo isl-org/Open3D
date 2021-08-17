@@ -26,6 +26,7 @@
 
 # flake8: noqa: S101
 
+from open3d_test import get_data_path_common
 import sys
 import os
 import shutil
@@ -34,7 +35,6 @@ import numpy as np
 import pytest
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
-from open3d_test import test_data_dir
 
 
 @pytest.mark.skipif(os.getenv('GITHUB_SHA') is not None or
@@ -43,8 +43,8 @@ from open3d_test import test_data_dir
                     "not built with librealsense")
 def test_RSBagReader():
 
-    shutil.unpack_archive(test_data_dir +
-                          "/RGBD/other_formats/L515_test_s.bag.tar.xz")
+    shutil.unpack_archive(
+        get_data_path_common("RGBD/other_formats/L515_test_s.bag.tar.xz"))
 
     bag_reader = o3d.t.io.RSBagReader()
     bag_reader.open("L515_test_s.bag")

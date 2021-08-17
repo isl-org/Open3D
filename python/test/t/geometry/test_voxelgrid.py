@@ -28,14 +28,7 @@ import open3d as o3d
 import numpy as np
 import pytest
 
-import sys
-import os
-
-test_path = os.path.dirname(os.path.realpath(__file__)) + "/../../"
-sys.path.append(test_path)
-test_data_path = test_path + "../../examples/test_data/"
-
-from open3d_test import list_devices
+from open3d_test import get_data_path_download, list_devices, get_data_path_common, get_data_path_download
 
 
 class CameraPose:
@@ -89,15 +82,15 @@ def test_integration(device):
     intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix, o3d.core.float32,
                                 device)
 
-    camera_poses = read_trajectory(test_data_path + "RGBD/odometry.log")
+    camera_poses = read_trajectory(get_data_path_common("RGBD/odometry.log"))
 
     for i in range(len(camera_poses)):
-        color = o3d.io.read_image(test_data_path +
-                                  "RGBD/color/{:05d}.jpg".format(i))
+        color = o3d.io.read_image(
+            get_data_path_common("RGBD/color/{:05d}.jpg".format(i)))
         color = o3d.t.geometry.Image.from_legacy(color, device=device)
 
-        depth = o3d.io.read_image(test_data_path +
-                                  "RGBD/depth/{:05d}.png".format(i))
+        depth = o3d.io.read_image(
+            get_data_path_common("RGBD/depth/{:05d}.png".format(i)))
         depth = o3d.t.geometry.Image.from_legacy(depth, device=device)
 
         extrinsic = o3d.core.Tensor(np.linalg.inv(camera_poses[i].pose),
@@ -105,8 +98,8 @@ def test_integration(device):
         volume.integrate(depth, color, intrinsic, extrinsic, 1000.0, 3.0)
 
     pcd = volume.extract_surface_points().to_legacy()
-    pcd_gt = o3d.io.read_point_cloud(test_data_path +
-                                     "RGBD/example_tsdf_pcd.ply")
+    pcd_gt = o3d.io.read_point_cloud(
+        get_data_path_common("RGBD/example_tsdf_pcd.ply"))
 
     n_pcd = len(pcd.points)
     n_pcd_gt = len(pcd_gt.points)
@@ -144,15 +137,15 @@ def test_raycast(device):
     intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix, o3d.core.float32,
                                 device)
 
-    camera_poses = read_trajectory(test_data_path + "RGBD/odometry.log")
+    camera_poses = read_trajectory(get_data_path_common("RGBD/odometry.log"))
 
     for i in range(len(camera_poses)):
-        color = o3d.io.read_image(test_data_path +
-                                  "RGBD/color/{:05d}.jpg".format(i))
+        color = o3d.io.read_image(
+            get_data_path_common("RGBD/color/{:05d}.jpg".format(i)))
         color = o3d.t.geometry.Image.from_legacy(color, device=device)
 
-        depth = o3d.io.read_image(test_data_path +
-                                  "RGBD/depth/{:05d}.png".format(i))
+        depth = o3d.io.read_image(
+            get_data_path_common("RGBD/depth/{:05d}.png".format(i)))
         depth = o3d.t.geometry.Image.from_legacy(depth, device=device)
 
         extrinsic = o3d.core.Tensor(np.linalg.inv(camera_poses[i].pose),
@@ -163,8 +156,7 @@ def test_raycast(device):
                                              depth.columns, depth.rows, 50, 0.1,
                                              3.0, min(i * 1.0, 3.0))
             vertexmap_gt = np.load(
-                test_data_path +
-                "open3d_downloads/RGBD/raycast_vtx_{:03d}.npy".format(i))
+                get_data_path_download("RGBD/raycast_vtx_{:03d}.npy".format(i)))
             discrepancy_count = ((vertexmap.cpu().numpy() - vertexmap_gt) >
                                  1e-5).sum()
             # Be tolerant to numerical differences
