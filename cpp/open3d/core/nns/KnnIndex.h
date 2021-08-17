@@ -75,11 +75,6 @@ public:
                                         const Tensor& queries_row_splits,
                                         int knn) const;
 
-    std::pair<Tensor, Tensor> SearchKnnSingle(const Tensor& query_point,
-                                              int knn) const override {
-        utility::LogError("KnnIndex::SearchKnnSingle not implemented.");
-    }
-
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor& query_points,
                                                     const Tensor& radii,
                                                     bool sort) const override {
@@ -97,13 +92,6 @@ public:
             double radius,
             int max_knn) const override {
         utility::LogError("KnnIndex::SearchHybrid not implemented.");
-    }
-
-    std::tuple<Tensor, Tensor, Tensor> SearchHybridSingle(
-            const Tensor& query_point,
-            double radius,
-            int max_knn) const override {
-        utility::LogError("KnnIndex::SearchHybridSingle not implemented.");
     }
 
 protected:

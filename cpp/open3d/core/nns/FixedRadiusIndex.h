@@ -429,11 +429,6 @@ public:
         utility::LogError("FixedRadiusIndex::SearchKnn not implemented.");
     }
 
-    std::pair<Tensor, Tensor> SearchKnnSingle(const Tensor& query_point,
-                                              int knn) const override {
-        utility::LogError("FixedRadiusIndex::SearchKnnSingle not implemented.");
-    }
-
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor& query_points,
             const Tensor& radii,
@@ -462,14 +457,6 @@ public:
             const Tensor& queries_row_splits,
             double radius,
             int max_knn) const;
-
-    std::tuple<Tensor, Tensor, Tensor> SearchHybridSingle(
-            const Tensor& query_point,
-            double radius,
-            int max_knn) const override {
-        utility::LogError(
-                "FixedRadiusIndex::SearchHybridSingle not implemented.");
-    }
 
     const double hash_table_size_factor = 1.0 / 32;
     const int64_t max_hash_tabls_size = 33554432;

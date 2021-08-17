@@ -216,5 +216,118 @@ TEST_P(NNSPermuteDevices, HybridSearch) {
     ExpectEQ(counts.ToFlatVector<int32_t>(), std::vector<int32_t>({2}));
 }
 
+TEST(NearestNeighborSearch, KnnSearchSingle) {
+    // set up index
+    core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                                             {0.0, 0.0, 0.1},
+                                                             {0.0, 0.0, 0.2},
+                                                             {0.0, 0.1, 0.0},
+                                                             {0.0, 0.1, 0.1},
+                                                             {0.0, 0.1, 0.2},
+                                                             {0.0, 0.2, 0.0},
+                                                             {0.0, 0.2, 0.1},
+                                                             {0.0, 0.2, 0.2},
+                                                             {0.1, 0.0, 0.0}});
+    core::Tensor query_point =
+            core::Tensor::Init<float>({0.064705, 0.043921, 0.087843});
+    core::Tensor gt_indices, gt_distances;
+
+    core::nns::NearestNeighborSearch index(dataset_points);
+    index.KnnIndex();
+    core::Tensor indices, distances;
+    int32_t count;
+
+    // if k is smaller or equal to 0
+    indices = core::Tensor::Empty({1}, core::Int32);
+    distances = core::Tensor::Empty({1}, core::Float32);
+    EXPECT_THROW(index.KnnSearchSingle(query_point.GetDataPtr<float>(), -1,
+                                       indices.GetDataPtr<int32_t>(),
+                                       distances.GetDataPtr<float>(), count),
+                 std::runtime_error);
+    EXPECT_THROW(index.KnnSearchSingle(query_point.GetDataPtr<float>(), 0,
+                                       indices.GetDataPtr<int32_t>(),
+                                       distances.GetDataPtr<float>(), count),
+                 std::runtime_error);
+
+    // if k == 3
+    indices = core::Tensor::Empty({3}, core::Int32);
+    distances = core::Tensor::Empty({3}, core::Float32);
+    core::SizeVector shape{3};
+    gt_indices = core::Tensor::Init<int32_t>({1, 4, 9});
+    gt_distances =
+            core::Tensor::Init<float>({0.00626358, 0.00747938, 0.0108912});
+
+    index.KnnSearchSingle(query_point.GetDataPtr<float>(), 3,
+                          indices.GetDataPtr<int32_t>(),
+                          distances.GetDataPtr<float>(), count);
+    indices = indices.Slice(0, 0, count);
+    distances = distances.Slice(0, 0, count);
+
+    EXPECT_EQ(count, 3);
+    EXPECT_EQ(indices.GetShape(), shape);
+    EXPECT_EQ(distances.GetShape(), shape);
+    EXPECT_TRUE(indices.AllClose(gt_indices));
+    EXPECT_TRUE(distances.AllClose(gt_distances));
+
+    // if k > size
+    indices = core::Tensor::Empty({12}, core::Int32);
+    distances = core::Tensor::Empty({12}, core::Float32);
+    shape = core::SizeVector{10};
+    gt_indices = core::Tensor::Init<int32_t>({1, 4, 9, 0, 3, 2, 5, 7, 6, 8});
+    gt_distances = core::Tensor::Init<float>(
+            {0.00626358, 0.00747938, 0.0108912, 0.0138322, 0.015048, 0.018695,
+             0.0199108, 0.0286952, 0.0362638, 0.0411266});
+
+    index.KnnSearchSingle(query_point.GetDataPtr<float>(), 12,
+                          indices.GetDataPtr<int32_t>(),
+                          distances.GetDataPtr<float>(), count);
+    indices = indices.Slice(0, 0, count);
+    distances = distances.Slice(0, 0, count);
+
+    EXPECT_EQ(indices.GetShape(), shape);
+    EXPECT_EQ(distances.GetShape(), shape);
+    EXPECT_TRUE(indices.AllClose(gt_indices));
+    EXPECT_TRUE(distances.AllClose(gt_distances));
+}
+
+TEST(NearestNeighborSeaerch, HybridSearchSingle) {
+    core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                                             {0.0, 0.0, 0.1},
+                                                             {0.0, 0.0, 0.2},
+                                                             {0.0, 0.1, 0.0},
+                                                             {0.0, 0.1, 0.1},
+                                                             {0.0, 0.1, 0.2},
+                                                             {0.0, 0.2, 0.0},
+                                                             {0.0, 0.2, 0.1},
+                                                             {0.0, 0.2, 0.2},
+                                                             {0.1, 0.0, 0.0}});
+    core::Tensor query_point =
+            core::Tensor::Init<float>({0.064705, 0.043921, 0.087843});
+    core::Tensor gt_indices, gt_distances, gt_counts;
+
+    core::nns::NearestNeighborSearch index(dataset_points);
+    index.HybridIndex();
+
+    // if radius == 0.1
+    float radius = 0.1;
+    int max_knn = 3;
+    core::Tensor indices, distances;
+    int32_t count;
+    core::SizeVector shape{3};
+    indices = core::Tensor::Full({3}, -1, core::Int32);
+    distances = core::Tensor::Full({3}, 0, core::Float32);
+    gt_indices = core::Tensor::Init<int32_t>({1, 4, -1});
+    gt_distances = core::Tensor::Init<float>({0.00626358, 0.00747938, 0});
+    gt_counts = core::Tensor::Init<int32_t>({2});
+    index.HybridSearchSingle(query_point.GetDataPtr<float>(), radius, max_knn,
+                             indices.GetDataPtr<int32_t>(),
+                             distances.GetDataPtr<float>(), count);
+
+    EXPECT_EQ(indices.GetShape(), shape);
+    EXPECT_EQ(distances.GetShape(), shape);
+    EXPECT_TRUE(indices.AllClose(gt_indices));
+    EXPECT_TRUE(distances.AllClose(gt_distances));
+    EXPECT_EQ(count, 2);
+}
 }  // namespace tests
 }  // namespace open3d

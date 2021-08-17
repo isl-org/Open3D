@@ -87,8 +87,12 @@ public:
     ///              The distances are squared L2 distances.
     std::pair<Tensor, Tensor> KnnSearch(const Tensor &query_points, int knn);
 
-    std::pair<Tensor, Tensor> KnnSearchSingle(const Tensor &query_point,
-                                              int knn);
+    template <class T>
+    void KnnSearchSingle(const T *query_point,
+                         int knn,
+                         int32_t *indices_ptr,
+                         T *distances_ptr,
+                         int32_t &count);
     /// Perform fixed radius search. All query points share the same radius.
     ///
     /// \param query_points Data points for querying. Must be 2D, with shape {n,
@@ -133,8 +137,13 @@ public:
                                                     double radius,
                                                     int max_knn);
 
-    std::tuple<Tensor, Tensor, Tensor> HybridSearchSingle(
-            const Tensor &query_point, double radius, int max_knn);
+    template <class T>
+    void HybridSearchSingle(const T *query_point,
+                            double radius,
+                            int max_knn,
+                            int32_t *indices_ptr,
+                            T *distances_ptr,
+                            int32_t &count);
 
 private:
     bool SetIndex();

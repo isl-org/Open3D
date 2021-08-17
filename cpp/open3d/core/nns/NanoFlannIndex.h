@@ -52,6 +52,8 @@ namespace open3d {
 namespace core {
 namespace nns {
 
+typedef int32_t index_t;
+
 /// Distance metric enum.
 // enum Metric { L1, L2, Linf };
 
@@ -158,8 +160,12 @@ public:
     std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                         int knn) const override;
 
-    std::pair<Tensor, Tensor> SearchKnnSingle(const Tensor &query_point,
-                                              int knn) const override;
+    template <class T>
+    void SearchKnnSingle(const T *query_point,
+                         int knn,
+                         index_t *indices_ptr,
+                         T *distances_ptr,
+                         index_t &count) const;
     /// Perform radius search with multiple radii.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}, same
@@ -205,10 +211,13 @@ public:
                                                     double radius,
                                                     int max_knn) const override;
 
-    std::tuple<Tensor, Tensor, Tensor> SearchHybridSingle(
-            const Tensor &query_point,
-            double radius,
-            int max_knn) const override;
+    template <class T>
+    void SearchHybridSingle(const T *query_point,
+                            double radius,
+                            int max_knn,
+                            index_t *indices_ptr,
+                            T *distances_ptr,
+                            index_t &count) const;
 
 protected:
     // Tensor dataset_points_;

@@ -39,8 +39,6 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-typedef int32_t index_t;
-
 NanoFlannIndex::NanoFlannIndex(){};
 
 NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
@@ -69,12 +67,14 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     return true;
 };
 
-std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnnSingle(
-        const Tensor &query_point, int knn) const {
+template <class T>
+void NanoFlannIndex::SearchKnnSingle(const T *query_point,
+                                     int knn,
+                                     index_t *indices_ptr,
+                                     T *distances_ptr,
+                                     index_t &count) const {
     // Check dtype.
-    query_point.AssertDtype(GetDtype());
-    // Check shapes.
-    query_point.AssertShape({GetDimension()});
+    dataset_points_.AssertDtype(Dtype::FromType<T>());
     // Check arguments.
     if (knn <= 0) {
         utility::LogError(
@@ -82,23 +82,11 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnnSingle(
                 "0.");
     }
 
-    Dtype dtype = GetDtype();
-
-    Tensor indices = Tensor::Full({knn}, -1, Dtype::FromType<index_t>());
-    Tensor distances = Tensor::Full({knn}, -1, dtype);
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        auto holder =
-                static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
-                        holder_.get());
-        holder->index_->knnSearch(query_point.GetDataPtr<scalar_t>(),
-                                  (size_t)knn, indices.GetDataPtr<index_t>(),
-                                  distances.GetDataPtr<scalar_t>());
-        int64_t num_neighbors =
-                indices.Ge(0).To(Int64).Sum({0}, false).Item<int64_t>();
-        indices = indices.Slice(0, 0, num_neighbors);
-        distances = distances.Slice(0, 0, num_neighbors);
-    });
-    return std::make_pair(indices, distances);
+    auto holder =
+            static_cast<NanoFlannIndexHolder<L2, T, index_t> *>(holder_.get());
+    size_t num_neighbors = holder->index_->knnSearch(
+            query_point, (size_t)knn, indices_ptr, distances_ptr);
+    count = (index_t)num_neighbors;
 };
 
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
@@ -267,12 +255,15 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     return result;
 };
 
-std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybridSingle(
-        const Tensor &query_point, double radius, int max_knn) const {
+template <class T>
+void NanoFlannIndex::SearchHybridSingle(const T *query_point,
+                                        double radius,
+                                        int max_knn,
+                                        index_t *indices_ptr,
+                                        T *distances_ptr,
+                                        index_t &count) const {
     // Check dtype.
-    query_point.AssertDtype(GetDtype());
-    // Check shapes.
-    query_point.AssertShape({GetDimension()});
+    dataset_points_.AssertDtype(Dtype::FromType<T>());
     // Check arguments.
     if (max_knn <= 0) {
         utility::LogError(
@@ -286,39 +277,32 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybridSingle(
     }
 
     double radius_squared = radius * radius;
-    Dtype dtype = GetDtype();
 
-    Tensor indices = Tensor::Full({max_knn}, -1, Dtype::FromType<index_t>());
-    Tensor distances = Tensor::Full({max_knn}, 0, dtype);
-    Tensor counts = Tensor::Empty({1}, Dtype::FromType<index_t>());
+    auto holder =
+            static_cast<NanoFlannIndexHolder<L2, T, index_t> *>(holder_.get());
+    nanoflann::SearchParams params;
 
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        auto holder =
-                static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
-                        holder_.get());
-        nanoflann::SearchParams params;
+    std::vector<std::pair<index_t, T>> ret_matches;
+    size_t num_results = holder->index_->radiusSearch(
+            query_point, radius_squared, ret_matches, params);
+    ret_matches.resize(num_results);
 
-        std::vector<std::pair<index_t, scalar_t>> ret_matches;
-        size_t num_results = holder->index_->radiusSearch(
-                query_point.GetDataPtr<scalar_t>(), radius_squared, ret_matches,
-                params);
-        ret_matches.resize(num_results);
+    index_t num_neighbors =
+            (index_t)num_results < max_knn ? (index_t)num_results : max_knn;
+    count = num_neighbors;
 
-        index_t num_neighbors =
-                (index_t)num_results < max_knn ? (index_t)num_results : max_knn;
-        counts.GetDataPtr<index_t>()[0] = num_neighbors;
-
-        index_t *indices_ptr = indices.GetDataPtr<index_t>();
-        scalar_t *distances_ptr = distances.GetDataPtr<scalar_t>();
-        int neighbour_idx = 0;
-        for (auto it = ret_matches.begin();
-             it < ret_matches.end() && neighbour_idx < max_knn;
-             it++, neighbour_idx++) {
-            indices_ptr[neighbour_idx] = it->first;
-            distances_ptr[neighbour_idx] = it->second;
-        }
-    });
-    return std::make_tuple(indices, distances, counts);
+    int neighbour_idx = 0;
+    for (auto it = ret_matches.begin();
+         it < ret_matches.end() && neighbour_idx < max_knn;
+         it++, neighbour_idx++) {
+        indices_ptr[neighbour_idx] = it->first;
+        distances_ptr[neighbour_idx] = it->second;
+    }
+    while (neighbour_idx < max_knn) {
+        indices_ptr[neighbour_idx] = -1;
+        distances_ptr[neighbour_idx] = 0;
+        neighbour_idx += 1;
+    }
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
@@ -398,6 +382,31 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     return std::make_tuple(indices, distances, counts);
 }
 
+template void NanoFlannIndex::SearchKnnSingle(const float *query_point,
+                                              int knn,
+                                              index_t *indices_ptr,
+                                              float *distances_ptr,
+                                              index_t &count) const;
+
+template void NanoFlannIndex::SearchKnnSingle(const double *query_point,
+                                              int knn,
+                                              index_t *indices_ptr,
+                                              double *distances_ptr,
+                                              index_t &count) const;
+
+template void NanoFlannIndex::SearchHybridSingle(const float *query_point,
+                                                 double radius,
+                                                 int max_knn,
+                                                 index_t *indices_ptr,
+                                                 float *distances_ptr,
+                                                 index_t &count) const;
+
+template void NanoFlannIndex::SearchHybridSingle(const double *query_point,
+                                                 double radius,
+                                                 int max_knn,
+                                                 index_t *indices_ptr,
+                                                 double *distances_ptr,
+                                                 index_t &count) const;
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

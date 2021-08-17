@@ -132,15 +132,20 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
     }
 }
 
-std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearchSingle(
-        const Tensor& query_point, int knn) {
+template <class T>
+void NearestNeighborSearch::KnnSearchSingle(const T* query_point,
+                                            int knn,
+                                            int32_t* indices_ptr,
+                                            T* distances_ptr,
+                                            int32_t& count) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         utility::LogError(
                 "[NearestNeighborSearch::KnnSearchSingle] Single query "
                 "interface is not available for CUDA tensors.");
     } else {
         if (nanoflann_index_) {
-            return nanoflann_index_->SearchKnnSingle(query_point, knn);
+            return nanoflann_index_->SearchKnnSingle<T>(
+                    query_point, knn, indices_ptr, distances_ptr, count);
         } else {
             utility::LogError(
                     "[NearestNeighborSearch::KnnSearchSingle] Index is not "
@@ -213,8 +218,13 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearch(
     }
 }
 
-std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearchSingle(
-        const Tensor& query_point, double radius, int max_knn) {
+template <class T>
+void NearestNeighborSearch::HybridSearchSingle(const T* query_point,
+                                               double radius,
+                                               int max_knn,
+                                               int32_t* indices_ptr,
+                                               T* distances_ptr,
+                                               int32_t& count) {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         utility::LogError(
                 "[NearestNeighborSearch::HybridSearchSingle] Single query "
@@ -222,7 +232,8 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearchSingle(
     } else {
         if (nanoflann_index_) {
             return nanoflann_index_->SearchHybridSingle(query_point, radius,
-                                                        max_knn);
+                                                        max_knn, indices_ptr,
+                                                        distances_ptr, count);
         } else {
             utility::LogError(
                     "[NearestNeighborSearch::HybridSearchSingle] Index is not "
@@ -239,6 +250,33 @@ void NearestNeighborSearch::AssertNotCUDA(const Tensor& t) const {
     }
 }
 
+template void NearestNeighborSearch::KnnSearchSingle(const float* query_point,
+                                                     int knn,
+                                                     int32_t* indices_ptr,
+                                                     float* distances_ptr,
+                                                     int32_t& count);
+
+template void NearestNeighborSearch::KnnSearchSingle(const double* query_point,
+                                                     int knn,
+                                                     int32_t* indices_ptr,
+                                                     double* distances_ptr,
+                                                     int32_t& count);
+
+template void NearestNeighborSearch::HybridSearchSingle(
+        const float* query_point,
+        double radius,
+        int max_knn,
+        int32_t* indices_ptr,
+        float* distances_ptr,
+        int32_t& count);
+
+template void NearestNeighborSearch::HybridSearchSingle(
+        const double* query_point,
+        double radius,
+        int max_knn,
+        int32_t* indices_ptr,
+        double* distances_ptr,
+        int32_t& count);
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d
