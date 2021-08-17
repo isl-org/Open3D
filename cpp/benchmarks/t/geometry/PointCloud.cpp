@@ -124,6 +124,45 @@ void Transform(benchmark::State& state, const core::Device& device) {
     }
 }
 
+void EstimateNormals(benchmark::State& state,
+                     const core::Device& device,
+                     const core::Dtype& dtype,
+                     const double voxel_size,
+                     const int max_nn,
+                     const utility::optional<double> radius) {
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    pcd = pcd.To(device).VoxelDownSample(voxel_size);
+    pcd.SetPointPositions(pcd.GetPointPositions().To(dtype));
+    if (pcd.HasPointNormals()) {
+        pcd.RemovePointAttr("normals");
+    }
+
+    // Warp up
+    pcd.EstimateNormals(max_nn, radius);
+    for (auto _ : state) {
+        pcd.EstimateNormals(max_nn, radius);
+    }
+}
+
+void LegacyEstimateNormals(
+        benchmark::State& state,
+        const double voxel_size,
+        const open3d::geometry::KDTreeSearchParam& search_param) {
+    open3d::geometry::PointCloud pcd;
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    auto pcd_down = pcd.VoxelDownSample(voxel_size);
+
+    // Warp up
+    pcd_down->EstimateNormals(search_param, true);
+
+    for (auto _ : state) {
+        pcd_down->EstimateNormals(search_param, true);
+    }
+}
+
 BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
@@ -183,6 +222,85 @@ BENCHMARK_CAPTURE(Transform, CPU, core::Device("CPU:0"))
 BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
+
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CPU F32 Hybrid[0.02 | 30 | 0.06],
+                  core::Device("CPU:0"),
+                  core::Float32,
+                  0.02,
+                  30,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CPU F64 Hybrid[0.02 | 30 | 0.06],
+                  core::Device("CPU:0"),
+                  core::Float64,
+                  0.02,
+                  30,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CPU F32 KNN[0.02 | 30],
+                  core::Device("CPU:0"),
+                  core::Float32,
+                  0.02,
+                  30,
+                  utility::nullopt)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CPU F64 KNN[0.02 | 30],
+                  core::Device("CPU:0"),
+                  core::Float64,
+                  0.02,
+                  30,
+                  utility::nullopt)
+        ->Unit(benchmark::kMillisecond);
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F32 Hybrid[0.02 | 30 | 0.06],
+                  core::Device("CUDA:0"),
+                  core::Float32,
+                  0.02,
+                  30,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F64 Hybrid[0.02 | 30 | 0.06],
+                  core::Device("CUDA:0"),
+                  core::Float64,
+                  0.02,
+                  30,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F32 KNN[0.02 | 30],
+                  core::Device("CUDA:0"),
+                  core::Float32,
+                  0.02,
+                  30,
+                  utility::nullopt)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F64 KNN[0.02 | 30],
+                  core::Device("CUDA:0"),
+                  core::Float64,
+                  0.02,
+                  30,
+                  utility::nullopt)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(LegacyEstimateNormals,
+                  Legacy Hybrid[0.02 | 30 | 0.06],
+                  0.02,
+                  open3d::geometry::KDTreeSearchParamHybrid(0.06, 30))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(LegacyEstimateNormals,
+                  Legacy KNN[0.02 | 30],
+                  0.02,
+                  open3d::geometry::KDTreeSearchParamKNN(30))
+        ->Unit(benchmark::kMillisecond);
 
 }  // namespace geometry
 }  // namespace t

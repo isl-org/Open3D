@@ -62,6 +62,52 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertex_positions,
     SetTriangleIndices(triangle_indices);
 }
 
+std::string TriangleMesh::ToString() const {
+    if (vertex_attr_.size() == 0 || triangle_attr_.size() == 0)
+        return fmt::format("TriangleMesh on {} [{} vertices and {} triangles].",
+                           GetDevice().ToString(), vertex_attr_.size(),
+                           triangle_attr_.size());
+
+    auto str = fmt::format(
+            "TriangleMesh on {} [{} vertices ({}) and {} triangles ({})].",
+            GetDevice().ToString(), GetVertexPositions().GetLength(),
+            GetVertexPositions().GetDtype().ToString(),
+            GetTriangleIndices().GetLength(),
+            GetTriangleIndices().GetDtype().ToString());
+
+    std::string vertices_attr_str = "\nVertices Attributes:";
+    if (vertex_attr_.size() == 1) {
+        vertices_attr_str += " None.";
+    } else {
+        for (const auto &kv : vertex_attr_) {
+            if (kv.first != "positions") {
+                vertices_attr_str +=
+                        fmt::format(" {} (dtype = {}, shape = {}),", kv.first,
+                                    kv.second.GetDtype().ToString(),
+                                    kv.second.GetShape().ToString());
+            }
+        }
+        vertices_attr_str[vertices_attr_str.size() - 1] = '.';
+    }
+
+    std::string triangles_attr_str = "\nTriangles Attributes:";
+    if (triangle_attr_.size() == 1) {
+        triangles_attr_str += " None.";
+    } else {
+        for (const auto &kv : triangle_attr_) {
+            if (kv.first != "indices") {
+                triangles_attr_str +=
+                        fmt::format(" {} (dtype = {}, shape = {}),", kv.first,
+                                    kv.second.GetDtype().ToString(),
+                                    kv.second.GetShape().ToString());
+            }
+        }
+        triangles_attr_str[triangles_attr_str.size() - 1] = '.';
+    }
+
+    return str + vertices_attr_str + triangles_attr_str;
+}
+
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
     kernel::transform::TransformPoints(transformation, GetVertexPositions());
     if (HasVertexNormals()) {

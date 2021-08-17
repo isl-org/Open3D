@@ -256,6 +256,42 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
               std::vector<float>({2, 2, 1}));
 }
 
+TEST_P(PointCloudPermuteDevices, EstimateNormals) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0},
+                                                      {1, 1, 1}},
+                                                     device);
+    t::geometry::PointCloud pcd(points);
+
+    // Estimate normals using Hybrid Search.
+    pcd.EstimateNormals(4, 2.0);
+
+    core::Tensor normals =
+            core::Tensor::Init<double>({{0.57735, 0.57735, 0.57735},
+                                        {-0.57735, -0.57735, 0.57735},
+                                        {0.57735, -0.57735, 0.57735},
+                                        {-0.57735, 0.57735, 0.57735},
+                                        {-0.57735, 0.57735, 0.57735},
+                                        {0.57735, -0.57735, 0.57735},
+                                        {-0.57735, -0.57735, 0.57735},
+                                        {0.57735, 0.57735, 0.57735}},
+                                       device);
+
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+    pcd.RemovePointAttr("normals");
+
+    // Estimate normals using KNN Search.
+    pcd.EstimateNormals(4);
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+}
+
 TEST_P(PointCloudPermuteDevices, FromLegacy) {
     core::Device device = GetParam();
     geometry::PointCloud legacy_pcd;
@@ -342,8 +378,10 @@ TEST_P(PointCloudPermuteDevices, Getters) {
     std::string text = "PointCloud on " + device.ToString() +
                        " [2 points (Float32)] Attributes: ";
     EXPECT_THAT(pcd.ToString(),  // Compiler dependent output
-                AnyOf(text + "colors (Float32, 3), labels (Float32, 3).",
-                      text + "labels (Float32, 3), colors (Float32, 3)."));
+                AnyOf(text + "colors (dtype = Float32, shape = {2, 3}), labels "
+                             "(dtype = Float32, shape = {2, 3}).",
+                      text + "labels (dtype = Float32, shape = (2, 3)), colors "
+                             "(dtype = Float32, shape = {2, 3})."));
 }
 
 TEST_P(PointCloudPermuteDevices, Setters) {
