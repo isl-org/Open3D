@@ -66,11 +66,9 @@ class _AsyncEventLoop:
             while len(self._run_queue) > 0:
                 with self._lock:
                     task = self._run_queue.popleft()
-                _log.debug(f"[_AsyncEventLoop] Running: {task.func.__name__}")
                 # Release lock while running task. This allows a task to add
                 # more async tasks.
                 retval = task.func()
-                _log.debug(f"[_AsyncEventLoop] Done!")
                 with self._lock:
                     self._return_vals[task.task_id] = retval
 

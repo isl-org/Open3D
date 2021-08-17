@@ -32,18 +32,27 @@
 // any purpose.
 // ----------------------------------------------------------------------------
 
+// import "webrtcstreamer";
+
 class TensorboardOpen3DPluginClient {
 
     url_route_prefix = "/data/plugin/Open3D";
-    http_handshake_url = "http://localhost:8888";
+    http_handshake_url = window.location.protocol + "//" + window.location.hostname +
+        ":8888";
     webRtcOptions = "rtptransport=tcp&timeout=60";
+    width = Math.round(window.innerWidth * 2/5 - 60);
+    height = Math.round(this.width * 3/4);
+    fontsize = window.getComputedStyle(document.body).fontSize;
     messageId = 0;
     webRtcClientList = new Map(); // {windowUId -> webRtcStreamer}
-    current = new Map();     // {windowUId -> Geometry state (run, tags, batch_idx, step)}
+    window_state = new Map();     // {windowUId -> Geometry state (run, tags, batch_idx, step)}
     runWindow = new Map();  // {run -> windowUId}
+    selected_tags = new Set();
+    common_step = undefined;
+    common_batch_idx = undefined;
 
     /**
-     * Entry point for the Tensorboard Open3D plugin client
+     * Entry point for the TensorBoard Open3D plugin client
      * @constructor
      */
     constructor() {
@@ -54,15 +63,15 @@ class TensorboardOpen3DPluginClient {
                 <div id="options-selector">
                     <h3>Options</h3>
                     <label class="container">Sync view
-                        <input type="checkbox" id="ui-options-view" checked>
+                        <input type="checkbox" id="ui-options-view">
                         <span class="checkmark"></span>
                     </label>
                     <label class="container">Sync step
-                        <input type="checkbox" id="ui-options-step" checked>
+                        <input type="checkbox" id="ui-options-step">
                         <span class="checkmark"></span>
                     </label>
                     <label class="container">Sync batch index
-                        <input type="checkbox" id="ui-options-bidx" checked>
+                        <input type="checkbox" id="ui-options-bidx">
                         <span class="checkmark"></span>
                     </label>
 
@@ -79,11 +88,9 @@ class TensorboardOpen3DPluginClient {
             `;
         document.body.insertAdjacentHTML("beforeend", dashboard_html);
         // Ask Open3D for a new window
-        const width = Math.round(window.innerWidth * 5/6 - 60);
-        const height = Math.round(window.innerHeight * 5/6 - 40);
-        const fontsize = window.getComputedStyle(document.body).fontSize;
-        fetch(this.url_route_prefix + "/new_window?width=" + width + "&height="
-            + height + "&fontsize=" + fontsize, null)
+        console.info("Requesting window with size: ", this.width, "x", this.height);
+        fetch(this.url_route_prefix + "/new_window?width=" + this.width + "&height="
+            + this.height + "&fontsize=" + this.fontsize, null)
             .then((response) => response.json())
             .then((response) => this.addConnection(response.window_id,
                 response.logdir))
@@ -94,7 +101,6 @@ class TensorboardOpen3DPluginClient {
     /** Add App level event listeners.
     */
     addAppEventListeners = () => {
-        window.addEventListener("resize", this.ResizeEvent);
         window.addEventListener("beforeunload", this.closeWindow);
         // Listen for the user clicking on the main TB reload button
         let tb_reload_button =
@@ -102,14 +108,45 @@ class TensorboardOpen3DPluginClient {
         if (tb_reload_button != null) {
             tb_reload_button.addEventListener("click", this.reloadRunTags);
         }
+        // App option handling
+        document.getElementById("ui-options-step").addEventListener("change", (evt) => {
+            if (evt.target.checked) {
+                this.common_step = this.window_state.values().next().value.step;
+                for (let [windowUId, current_state] of this.window_state) {
+                    current_state.step = this.common_step;
+                    this.requestGeometryUpdate(windowUId);
+                }
+            } else {
+                this.common_step = undefined;
+            }
+            console.debug("this.common_step = ", this.common_step);
+        });
+
+        document.getElementById("ui-options-bidx").addEventListener("change", (evt) => {
+            if (evt.target.checked) {
+                this.common_batch_idx = this.window_state.values().next().value.batch_idx;
+                for (let [windowUId, current_state] of this.window_state) {
+                    current_state.batch_idx = this.common_batch_idx;
+                    this.requestGeometryUpdate(windowUId);
+                }
+            } else {
+                this.common_batch_idx = undefined;
+            }
+            console.debug("this.common_batch_idx = ", this.common_batch_idx);
+        });
     };
 
     /**
      * Create a video element to display geometry and initiate WebRTC connection
      * with server. Attach listeners to process data channel messages.
+     *
+     * @param {string} windowUId  Window ID from the server, e.g.: "window_1"
+     * @param {string} logdir TensorBoard log directory to be displayed to the
+     *      user.
+     * @param {string} run TB run to display here. Can be 'undefined' in which
+     *      case the server will assign a run.
      */
-    addConnection = (windowUId, logdir) => {
-        // this.windowUId = windowUId;
+    addConnection = (windowUId, logdir, run) => {
         const videoId = "video_" + windowUId;
         let logdir_el = document.getElementById("logdir");
         logdir_el.innerText = logdir;
@@ -118,10 +155,10 @@ class TensorboardOpen3DPluginClient {
         const widget_template = `
         <div class="webrtc" id="widget_${videoId}">
             <div class="batchidx-step-selector">
-                <div id="batch-idx-selector"></div>
-                <div id="step-selector"></div>
+                <div id="batch-idx-selector-div-${windowUId}"></div>
+                <div id="step-selector-div-${windowUId}"></div>
             </div>
-            <video id="${videoId}" title="${videoId}" muted="true"
+            <video id="${videoId}" title="${run || videoId}" muted="true"
                 playsinline="true">
                 Your browser does not support HTML5 video.
             </video>
@@ -138,13 +175,27 @@ class TensorboardOpen3DPluginClient {
         this.webRtcClientList.set(windowUId, client);
         console.info("[addConnection] windowUId: " + windowUId);
         videoElt.addEventListener('LocalDataChannelOpen', (evt) => {
-            evt.detail.channel.addEventListener('message', (evt2) => {
-                this.processDCMessage(windowUId, evt2);
-            });
+            evt.detail.channel.addEventListener('message',
+                this.processDCMessage.bind(this, windowUId));
         });
+        videoElt.addEventListener("resize", this.ResizeEvent);
         if (this.webRtcClientList.size == 1) {
             // Initial Run Tag reload only needed for first window
             videoElt.addEventListener('RemoteDataChannelOpen', this.reloadRunTags);
+        } else { // Initialize state from first webrtc_window
+            // deep copy: All objects and sub-objects need to be copied with JS
+            // spread syntax.
+            let new_window_state = {...this.window_state.values().next().value};
+            new_window_state.tags = [...new_window_state.tags];
+            this.window_state.set(windowUId, new_window_state);
+            if (run) {
+                this.runWindow.set(run, windowUId);
+                this.window_state.get(windowUId).run = run;
+                console.debug("After addConnection: this.runWindow = ",
+                    this.runWindow, "this.window_state = ", this.window_state);
+            }
+            videoElt.addEventListener('RemoteDataChannelOpen',
+                this.requestGeometryUpdate.bind(this, windowUId));
         }
     };
 
@@ -165,11 +216,11 @@ class TensorboardOpen3DPluginClient {
 
         let parent_element = document.getElementById(parent_id);
         parent_element.replaceChildren();  /* Remove existing children */
+        initial_checked_options = new Set(initial_checked_options);
         for (const option of options) {
             let checked="";
-            if(initial_checked_options.includes(option)) {
+            if(initial_checked_options.has(option))
                 checked="checked";
-            }
             const option_template=`
             <label class="container">${option}
                 <input type="${type}" id="${option}" name="${name}" ${checked}>
@@ -197,7 +248,7 @@ class TensorboardOpen3DPluginClient {
 
         let parent_element = document.getElementById(parent_id);
         parent_element.replaceChildren();  /* Remove existing children */
-        let name_wid = name + "-" + windowUId;
+        const name_wid = name + "-" + windowUId;
         if (max > min) { // Don't create slider if no choice
             const slider_template=`
             <form oninput="document.getElementById('${name_wid}_output').value
@@ -214,7 +265,7 @@ class TensorboardOpen3DPluginClient {
             `;
             parent_element.insertAdjacentHTML('beforeend', slider_template);
             document.getElementById(name_wid).addEventListener("change",
-                (evt) => { this.onStepBIdxSelect(windowUId, evt); } );
+                this.onStepBIdxSelect.bind(this, windowUId));
         }
     };
 
@@ -223,13 +274,22 @@ class TensorboardOpen3DPluginClient {
      * window to the server.
      */
     // arrow function binds this at time of instantiation
-    ResizeEvent = () => {
+    ResizeEvent = (evt) => {
         return; // TODO handle resize
+        const windowUID = evt.target.id.substring(6); // Remove "video_"
+            const resizeEvent = {
+                window_uid: windowUId,
+                class_name: "ResizeEvent",
+                height: webrtc_widget.scrollHeight,
+                width: webrtc_widget.scrollWidth
+            };
+            this.webRtcClient.dataChannel.send(JSON.stringify(resizeEvent));
+
         if (this.webRtcClientList.size > 1) {
             let webrtc_widget = document.getElementById("video_" +
                 this.windowUId);
-            webrtc_widget.style.height = Math.round(window.innerHeight *5/6 - 40);
-            webrtc_widget.style.width = Math.round(window.innerWidth *5/6 - 60);
+            webrtc_widget.style.height = this.height;
+            webrtc_widget.style.width = this.width;
             // const rect = webrtc_widget.getBoundingClientRect();
             const resizeEvent = {
                 window_uid: this.windowUId,
@@ -263,12 +323,12 @@ class TensorboardOpen3DPluginClient {
      */
     reloadRunTags = () => {
         this.messageId += 1;
-        // Any window_id may be used
+        // Any _open_ window_id may be used. TODO: Check
         const getRunTagsMessage = {
             messageId: this.messageId,
             class_name: "tensorboard/window_0/get_run_tags"
         }
-        console.log(getRunTagsMessage);
+        console.info("Sending getRunTagsMessage: ", getRunTagsMessage);
         if (this.webRtcClientList.size > 0) {
             let client = this.webRtcClientList.values().next().value;
             client.dataChannel.send(JSON.stringify(getRunTagsMessage));
@@ -287,24 +347,24 @@ class TensorboardOpen3DPluginClient {
             messageId: this.messageId,
             window_uid: windowUId,
             class_name: "tensorboard/" + windowUId + "/update_geometry",
-            run: this.current.get(windowUId).run,
-            tags: this.current.get(windowUId).tags,
-            batch_idx: this.current.get(windowUId).batch_idx,
-            step: this.current.get(windowUId).step
+            run: this.window_state.get(windowUId).run,
+            tags: Array.from(this.selected_tags),
+            batch_idx: this.common_batch_idx || this.window_state.get(windowUId).batch_idx,
+            step: this.common_step || this.window_state.get(windowUId).step
         };
-        console.info(updateGeometryMessage);
+        console.info("Sending updateGeometryMessage:", updateGeometryMessage);
         this.webRtcClientList.get(windowUId).dataChannel.send(JSON.stringify(
             updateGeometryMessage));
     };
 
     /**
-     * Event handler for Run and Tags selector update. Triggers a geoemtry
+     * Event handler for Run and Tags selector update. Triggers a geometry
      * update message.
      */
     onRunTagselect = (evt) => {
-        if (evt.target.name == "run-selector-checkboxes") { // update tags
-            // this.current.get(windowUId).run = evt.target.id;
+        if (evt.target.name == "run-selector-checkboxes") {
             if (this.runWindow.has(evt.target.id)) {
+                const windowUId = this.runWindow.get(evt.target.id);
                 let window_widget = document.getElementById("widget_video_" + windowUId);
                 if (evt.target.checked) { // display window
                     window_widget.style.display = "block";
@@ -314,49 +374,50 @@ class TensorboardOpen3DPluginClient {
                     console.info("Hiding window " + windowUId + " with run " + evt.target.id);
                 }
             } else {    // create new window
-                const width = Math.round(window.innerWidth * 5/6 - 60);
-                const height = Math.round(window.innerHeight * 5/6 - 40);
-                const fontsize = window.getComputedStyle(document.body).fontSize;
-                fetch(this.url_route_prefix + "/new_window?width=" + width + "&height="
-                    + height + "&fontsize=" + fontsize, null)
+                console.info("Requesting window with size: ", this.width, "x", this.height);
+                fetch(this.url_route_prefix + "/new_window?width=" + this.width + "&height="
+                    + this.height + "&fontsize=" + this.fontsize, null)
                     .then((response) => response.json())
                     .then((response) => this.addConnection(response.window_id,
-                        response.logdir))
+                        response.logdir, evt.target.id))
                     .catch(err => console.error("Error: /new_window failed:" + err));
             }
-            // this.createSelector("tag-selector-checkboxes", "tag-selector",
-            //     this.run_to_tags[this.current.run], "checkbox",
-            //     this.current.tags);
         } else if (evt.target.name == "tag-selector-checkboxes") {
-            if (evt.target.checked) {
-                this.current.values().forEach( (currentState) => {
-                    currentState.tags.push(evt.target.id);
-                });
-            } else {
-                this.current.values().forEach( (currentState) => {
-                    currentState.tags.splice(currentState.tags.indexOf(
-                        evt.target.id), 1);
-                });
-            }
-            this.current.keys().forEach( (windowUId) => {
+            if (evt.target.checked)
+                this.selected_tags.add(evt.target.id);
+            else
+                this.selected_tags.delete(evt.target.id);
+            for (const windowUId of this.window_state.keys())
                 this.requestGeometryUpdate(windowUId);
-            });
         }
     };
 
     /**
      * Event handler for Step and Batch Index selector update. Triggers a
-     * geoemtry update message.
+     * geometry update message.
      */
     onStepBIdxSelect = (windowUId, evt) => {
-        if (evt.target.name.startsWith("batch-idx-selector-slider")) {
-            this.current.get(windowUId).batch_idx = evt.target.value;
-            // TODO Sync batch_idx if selected
-            this.requestGeometryUpdate(windowUId);
-        } else if (evt.target.name.startsWith("step-selector-slider")) {
-            this.current.get(windowUId).step = evt.target.value;
-            // TODO Sync step if selected
-            this.requestGeometryUpdate(windowUId);
+        console.debug("[onStepBIdxSelect] this.window_state: ",
+            this.window_state, "this.common_step", this.common_step,
+            "this.common_batch_idx", this.common_batch_idx);
+        if (evt.target.name.startsWith("batch-idx-selector")) {
+            if (this.common_batch_idx != undefined) {
+                this.common_batch_idx = evt.target.value;
+                for (const windowUId of this.window_state.keys())
+                    this.requestGeometryUpdate(windowUId);
+            } else {
+                this.window_state.get(windowUId).batch_idx = evt.target.value;
+                this.requestGeometryUpdate(windowUId)
+            };
+        } else if (evt.target.name.startsWith("step-selector")) {
+            if (this.common_step != undefined) {
+                this.common_step = evt.target.value;
+                for (const windowUId of this.window_state.keys())
+                    this.requestGeometryUpdate(windowUId);
+            } else {
+                this.window_state.get(windowUId).step = evt.target.value;
+                this.requestGeometryUpdate(windowUId);
+            }
         }
     };
 
@@ -377,41 +438,43 @@ class TensorboardOpen3DPluginClient {
                 }
             }
         }
-        console.info(message);
         if (message.class_name.endsWith("get_run_tags")) {
             this.run_to_tags = message.run_to_tags;
-            this.current.set(windowUId, message.current); // TODO: Only for first window?
             this.runWindow.set(message.current.run, windowUId);
-
+            this.window_state.set(windowUId, message.current);
+            console.debug("[After get_run_tags] this.runWindow: ",
+                this.runWindow, "this.window_state:", this.window_state);
             this.createSelector("run-selector-checkboxes", "run-selector",
                 Object.getOwnPropertyNames(this.run_to_tags), "checkbox",
-                message.current.run);
+                [message.current.run]);
+
+            this.selected_tags = new Set(message.current.tags);
+            let all_tags = new Set()
+            for (const run in this.run_to_tags)
+                for (const tag of this.run_to_tags[run])
+                    all_tags.add(tag);
             this.createSelector("tag-selector-checkboxes", "tag-selector",
-                this.run_to_tags[message.current.run], "checkbox",
-                message.current.tags);
-            this.createSlider(windowUId, "batch-idx-selector-slider", "Batch index",
-                "batch-idx-selector", 0, message.current.batch_size - 1,
+                all_tags, "checkbox", this.selected_tags);
+            this.createSlider(windowUId, "batch-idx-selector", "Batch index",
+                "batch-idx-selector-div-" + windowUId, 0, message.current.batch_size - 1,
                 message.current.batch_idx);
-            this.createSlider(windowUId, "step-selector-slider", "Step", "step-selector",
-                message.current.step_limits[0], message.current.step_limits[1],
-                message.current.step);
+            this.createSlider(windowUId, "step-selector", "Step",
+                "step-selector-div-" + windowUId, message.current.step_limits[0],
+                message.current.step_limits[1], message.current.step);
             this.requestGeometryUpdate(windowUId);
         } else if (message.class_name.endsWith("update_geometry")) {
-            // Brute force way to sync state with server.
-            this.current.set(windowUId, message.current);
-            this.runWindow.set(message.current.run, windowUId);
-            // this.createSelector("run-selector-checkboxes", "run-selector",
-            //     Object.getOwnPropertyNames(this.run_to_tags), "checkbox",
-            //     message.current.run);
-            // this.createSelector("tag-selector-checkboxes", "tag-selector",
-            //     this.run_to_tags[message.current.run], "checkbox",
-            //     message.current.tags);
-            this.createSlider(windowUId, "batch-idx-selector-slider", "Batch index",
-                "batch-idx-selector", 0, message.current.batch_size - 1,
-                message.current.batch_idx);
-            this.createSlider(windowUId, "step-selector-slider", "Step", "step-selector",
-                message.current.step_limits[0], message.current.step_limits[1],
-                message.current.step);
+            // Sync state with server
+            console.assert(message.window_uid == windowUId,
+                `windowUId mismatch: received ${message.window_uid} !== ${windowUId}`);
+            this.window_state.set(windowUId, message.current);
+            console.debug("[After update_geometry] this.runWindow: ",
+                this.runWindow, "this.window_state:", this.window_state);
+            this.createSlider(windowUId, "batch-idx-selector", "Batch index",
+                "batch-idx-selector-div-" + windowUId, 0,
+                message.current.batch_size - 1, message.current.batch_idx);
+            this.createSlider(windowUId, "step-selector", "Step",
+                "step-selector-div-" + windowUId, message.current.step_limits[0],
+                message.current.step_limits[1], message.current.step);
         }
     };
 
@@ -421,5 +484,5 @@ class TensorboardOpen3DPluginClient {
  * The main entry point of any TensorBoard iframe plugin.
  */
 export async function render() {
-    let o3dclient = new TensorboardOpen3DPluginClient();
+    const o3dclient = new TensorboardOpen3DPluginClient();
 }

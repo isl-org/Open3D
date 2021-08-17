@@ -634,7 +634,8 @@ var WebRtcStreamer = (function () {
         const recvs = pc.getReceivers();
 
         recvs.forEach((recv) => {
-          if (recv.track && recv.track.kind === "video") {
+          if (recv.track && recv.track.kind === "video" && recv.getParameters !=
+              undefined) {
             console.log(
               "codecs:" + JSON.stringify(recv.getParameters().codecs)
             );

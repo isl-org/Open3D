@@ -2,10 +2,9 @@
 import os
 import sys
 import threading
-from collections import namedtuple
 from collections import OrderedDict
-import functools
 import json
+from functools import partial
 
 import numpy as np
 from tensorboard import errors
@@ -35,6 +34,9 @@ import ipdb
 
 
 class LRUCache:
+    """Cache storing recent items, i.e. least recently used will be ejected when
+    a new item needs to be added to a full cache.
+    """
 
     def __init__(self, max_items=128, max_size=1 << 20):
         """
@@ -119,6 +121,9 @@ class Open3DPluginDataReader:
             self._tensor_events = dict()  # Invalidate index
         _log.debug(f"Event data reloaded: {self._run_to_tags}")
 
+    def is_active(self):
+        return any(len(tags) > 0 for tags in self._run_to_tags.values())
+
     @property
     def run_to_tags(self):
         with self._lock:
@@ -153,7 +158,7 @@ class Open3DPluginDataReader:
 
         data_dir = PluginDirectory(os.path.join(self.logdir, run),
                                    metadata.PLUGIN_NAME)
-        # TODO: Make this a bounded LRU dict. Close files if too many open
+        # TODO(ssheorey): Make this a bounded LRU dict. Close files if too many open
         if filename not in self._file_handles:
             self._file_handles[filename] = tf.io.gfile.GFile(
                 os.path.join(data_dir, filename), "rb")
@@ -181,7 +186,7 @@ class Open3DPluginDataReader:
                     f" property {prop} of geometry at step {step}. Ignoring.")
                 continue
             geometry_ref = self.read_geometry(run, tag, step_ref, batch_idx,
-                                              step_to_idx, run_tensor_events)
+                                              step_to_idx)
             setattr(geometry, prop, getattr(geometry_ref, prop))
 
         self.geometry_cache.put(cache_key, geometry)
@@ -190,7 +195,7 @@ class Open3DPluginDataReader:
 
 def _postprocess(geometry):
     """Post process geometry before displaying to account for WIP
-    Tensor-API in Open3D.
+    Tensor API in Open3D.
     """
 
     if isinstance(geometry, o3d.t.geometry.PointCloud):
@@ -251,14 +256,14 @@ class Open3DPluginWindow:
         self.init_done = threading.Event()  # Notify when WebRTC is ready
 
         # Register frontend callbacks
-        class_name_base = f"tensorboard/window_{window_id}"
+        class_name_base = "tensorboard/" + window_id
         o3d.visualization.webrtc_server.register_data_channel_message_callback(
             class_name_base + "/get_run_tags", self._get_run_tags)
         o3d.visualization.webrtc_server.register_data_channel_message_callback(
             class_name_base + "/update_geometry", self._update_geometry)
 
         _async_event_loop.run_sync(
-            lambda: self._create_ui(title, width, height))
+            partial(self._create_ui, title, width, height))
         self._update_scene()
 
     def _get_run_tags(self, message):
@@ -424,7 +429,7 @@ class Open3DPluginWindow:
         self._validate_step(int(message["step"]))
         self._validate_batch_idx(int(message["batch_idx"]))
 
-        self._update_scene
+        self._update_scene()
 
         # Compose reply
         message["current"] = {
@@ -450,23 +455,22 @@ class Open3DPluginWindow:
             geometry_name = f"{self.run}/{tag}/b{self.batch_idx}/s{self.step}"
             new_geometry_list.append(geometry_name)
             if geometry_name not in self.geometry_list:
-
                 geometry = self.data_reader.read_geometry(
-                    self.run, tag, self.step, self.batch_idx, self.step_to_idx,
-                    self.all_tensor_events)
+                    self.run, tag, self.step, self.batch_idx, self.step_to_idx)
                 _log.debug(f"Displaying geometry {geometry_name}:{geometry}")
                 pp_geometry = _postprocess(geometry)
                 _async_event_loop.run_sync(
-                    self.scene_widget.scene.add_geometry(
-                        geometry_name, pp_geometry, self.material))
+                    partial(self.scene_widget.scene.add_geometry, geometry_name,
+                            pp_geometry, self.material))
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
                 _log.debug(f"Removing geometry {current_item}")
                 _async_event_loop.run_sync(
-                    self.scene_widget.scene.remove_geometry(current_item))
+                    partial(self.scene_widget.scene.remove_geometry,
+                            current_item))
         self.geometry_list = new_geometry_list
 
-        _async_event_loop.run_sync(self.scene_widget.force_redraw())
+        _async_event_loop.run_sync(self.scene_widget.force_redraw)
 
         if not self.init_done.is_set():
             self.init_done.set()
@@ -528,7 +532,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
         self.window_lock = threading.Lock()  # protect _windows and _next_wid
         self._windows = {}
         self._next_wid = 0
-        o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+        o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)
         # o3d.visualization.webrtc_server.disable_http_handshake()
 
     @wrappers.Request.application
@@ -536,8 +540,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
 
         if request.is_multiprocess:
             return werkzeug.exceptions.ExpectationFailed(
-                "Open3D plugin does not currently run on a multi-process web server."
-            )
+                "Open3D plugin does not run on a multi-process web server.")
 
         win_width = min(3840,
                         max(640, int(float(request.args.get('width', 1024)))))
@@ -546,7 +549,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
         font_size = min(
             20, max(6, int(float(request.args.get('fontsize', '12px')[:-2]))))
         with self.window_lock:
-            this_window_id = "window_" + self._next_wid
+            this_window_id = f"window_{self._next_wid}"
             self._next_wid += 1
             # TODO: Use GetWebRTCUID() instead
 
@@ -613,7 +616,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
         Returns:
           A boolean value. Whether this plugin is active.
         """
-        return True
+        return self.data_reader.is_active()
         # return bool(self._multiplexer.PluginRunToTagToContent(self.plugin_name))
 
     def frontend_metadata(self):

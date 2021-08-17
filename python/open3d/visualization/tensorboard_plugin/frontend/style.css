@@ -34,6 +34,7 @@
   padding: 2em;
 }
 
+/* Options for the whole plugin, runs and tag selection */
 #options-selector {
   flex: 1 16em;
   display: flex;
@@ -81,11 +82,9 @@
   display: inline-block;
 }
 
-
 .webrtc {
   display: flex;
   flex-direction: column;
-  height: 100%;
   padding: 5px;
 }
 
