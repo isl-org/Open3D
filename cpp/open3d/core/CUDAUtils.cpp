@@ -39,11 +39,9 @@ namespace cuda {
 
 int DeviceCount() {
 #ifdef BUILD_CUDA_MODULE
-    try {
-        return CUDAState::GetInstance().GetNumDevices();
-    } catch (const std::runtime_error&) {  // GetInstance can throw
-        return 0;
-    }
+    int num_devices;
+    OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&num_devices));
+    return num_devices;
 #else
     return 0;
 #endif
@@ -72,8 +70,7 @@ void ReleaseCache() {
 void Synchronize() {
 #ifdef BUILD_CUDA_MODULE
     for (int i = 0; i < DeviceCount(); ++i) {
-        CUDAScopedDevice scoped_device(Device("CUDA", i));
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+        Synchronize(Device(Device::DeviceType::CUDA, i));
     }
 #endif
 }
@@ -151,6 +148,8 @@ public:
 
 private:
     CUDAStream() = default;
+    CUDAStream(const CUDAStream&) = delete;
+    CUDAStream& operator=(const CUDAStream&) = delete;
 
     cudaStream_t stream_ = Default();
 };
@@ -175,7 +174,9 @@ CUDAScopedDevice::CUDAScopedDevice(int device_id)
 }
 
 CUDAScopedDevice::CUDAScopedDevice(const Device& device)
-    : CUDAScopedDevice(device.GetID()) {}
+    : CUDAScopedDevice(device.GetID()) {
+    cuda::AssertCUDADeviceAvailable(device);
+}
 
 CUDAScopedDevice::~CUDAScopedDevice() { cuda::SetDevice(prev_device_id_); }
 
@@ -207,37 +208,21 @@ CUDAState& CUDAState::GetInstance() {
     return instance;
 }
 
-bool CUDAState::IsP2PEnabled(int src_id, int tar_id) {
-    if (src_id < 0 || src_id >= num_devices_) {
-        utility::LogError("Device id {} is out of bound of total {} devices.",
-                          src_id, num_devices_);
-    }
-    if (tar_id < 0 || tar_id >= num_devices_) {
-        utility::LogError("Device id {} is out of bound of total {} devices.",
-                          tar_id, num_devices_);
-    }
+bool CUDAState::IsP2PEnabled(int src_id, int tar_id) const {
+    cuda::AssertCUDADeviceAvailable(src_id);
+    cuda::AssertCUDADeviceAvailable(tar_id);
     return p2p_enabled_[src_id][tar_id];
 }
 
-bool CUDAState::IsP2PEnabled(const Device& src, const Device& tar) {
+bool CUDAState::IsP2PEnabled(const Device& src, const Device& tar) const {
+    cuda::AssertCUDADeviceAvailable(src);
+    cuda::AssertCUDADeviceAvailable(tar);
     return p2p_enabled_[src.GetID()][tar.GetID()];
 }
 
-std::vector<std::vector<bool>> CUDAState::GetP2PEnabled() const {
-    return p2p_enabled_;
-}
-
-int CUDAState::GetNumDevices() const { return num_devices_; }
-
-int CUDAState::GetWarpSize() const { return warp_sizes_[GetCurrentDeviceID()]; }
-
-int CUDAState::GetCurrentDeviceID() const { return cuda::GetDevice(); }
-
-/// Disable P2P device transfer by marking p2p_enabled_ to `false`, in order
-/// to run non-p2p tests on a p2p-capable machine.
 void CUDAState::ForceDisableP2PForTesting() {
-    for (int src_id = 0; src_id < num_devices_; ++src_id) {
-        for (int tar_id = 0; tar_id < num_devices_; ++tar_id) {
+    for (int src_id = 0; src_id < cuda::DeviceCount(); ++src_id) {
+        for (int tar_id = 0; tar_id < cuda::DeviceCount(); ++tar_id) {
             if (src_id != tar_id && p2p_enabled_[src_id][tar_id]) {
                 p2p_enabled_[src_id][tar_id] = false;
             }
@@ -246,22 +231,16 @@ void CUDAState::ForceDisableP2PForTesting() {
 }
 
 CUDAState::CUDAState() {
-    OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&num_devices_));
-
     // Check and enable all possible peer to peer access.
     p2p_enabled_ = std::vector<std::vector<bool>>(
-            num_devices_, std::vector<bool>(num_devices_, false));
+            cuda::DeviceCount(), std::vector<bool>(cuda::DeviceCount(), false));
 
-    for (int src_id = 0; src_id < num_devices_; ++src_id) {
-        for (int tar_id = 0; tar_id < num_devices_; ++tar_id) {
+    for (int src_id = 0; src_id < cuda::DeviceCount(); ++src_id) {
+        for (int tar_id = 0; tar_id < cuda::DeviceCount(); ++tar_id) {
             if (src_id == tar_id) {
                 p2p_enabled_[src_id][tar_id] = true;
             } else {
-                // Avoid CUDAScopedDevice() or SetDevice() here as they
-                // introduce circular dependencies. See:
-                // https://github.com/isl-org/Open3D/pull/3922.
-                int prev_id = cuda::GetDevice();
-                OPEN3D_CUDA_CHECK(cudaSetDevice(src_id));
+                CUDAScopedDevice scoped_device(src_id);
 
                 // Check access.
                 int can_access = 0;
@@ -272,7 +251,7 @@ CUDAState::CUDAState() {
                     p2p_enabled_[src_id][tar_id] = true;
                     cudaError_t err = cudaDeviceEnablePeerAccess(tar_id, 0);
                     if (err == cudaErrorPeerAccessAlreadyEnabled) {
-                        // Ignore error since p2p is already enabled.
+                        // Ignore error since P2P is already enabled.
                         cudaGetLastError();
                     } else {
                         OPEN3D_CUDA_CHECK(err);
@@ -280,31 +259,22 @@ CUDAState::CUDAState() {
                 } else {
                     p2p_enabled_[src_id][tar_id] = false;
                 }
-
-                OPEN3D_CUDA_CHECK(cudaSetDevice(prev_id));
             }
         }
-    }
-
-    // Cache warp sizes
-    warp_sizes_.resize(num_devices_);
-    for (int device_id = 0; device_id < num_devices_; ++device_id) {
-        cudaDeviceProp device_prop;
-        OPEN3D_CUDA_CHECK(cudaGetDeviceProperties(&device_prop, device_id));
-        warp_sizes_[device_id] = device_prop.warpSize;
     }
 }
 
 int GetCUDACurrentDeviceTextureAlignment() {
-    int value = 0;
-    cudaError_t err = cudaDeviceGetAttribute(
-            &value, cudaDevAttrTextureAlignment, cuda::GetDevice());
-    if (err != cudaSuccess) {
-        utility::LogError(
-                "GetCUDACurrentDeviceTextureAlignment(): "
-                "cudaDeviceGetAttribute failed with {}",
-                cudaGetErrorString(err));
-    }
+    int value;
+    OPEN3D_CUDA_CHECK(cudaDeviceGetAttribute(
+            &value, cudaDevAttrTextureAlignment, cuda::GetDevice()));
+    return value;
+}
+
+int GetCUDACurrentWarpSize() {
+    int value;
+    OPEN3D_CUDA_CHECK(cudaDeviceGetAttribute(&value, cudaDevAttrWarpSize,
+                                             cuda::GetDevice()));
     return value;
 }
 

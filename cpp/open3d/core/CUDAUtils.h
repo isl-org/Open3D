@@ -182,7 +182,7 @@ private:
 /// CUDAState is a lazy-evaluated singleton class that initializes and stores
 /// the states of CUDA devices.
 ///
-/// Currently is stores total number of devices and peer-to-peer availability.
+/// Currently is stores the peer-to-peer availability.
 ///
 /// In the future, it can also be used to store
 /// - Device allocators
@@ -191,40 +191,34 @@ private:
 /// - ...
 ///
 /// Ref:
-/// https://stackoverflow.com/a/1008289/1255535
-/// https://stackoverflow.com/a/40337728/1255535
 /// https://github.com/pytorch/pytorch/blob/master/aten/src/THC/THCGeneral.cpp
 class CUDAState {
 public:
     static CUDAState& GetInstance();
 
-    CUDAState(CUDAState const&) = delete;
-    void operator=(CUDAState const&) = delete;
+    CUDAState(const CUDAState&) = delete;
+    CUDAState& operator=(const CUDAState&) = delete;
 
-    bool IsP2PEnabled(int src_id, int tar_id);
+    /// Returns true if peer-to-peer is available from the CUDA device-ID
+    /// \p src_id to \p tar_id.
+    bool IsP2PEnabled(int src_id, int tar_id) const;
 
-    bool IsP2PEnabled(const Device& src, const Device& tar);
+    /// Returns true if peer-to-peer is available from the CUDA device
+    /// \p src to \p tar.
+    bool IsP2PEnabled(const Device& src, const Device& tar) const;
 
-    std::vector<std::vector<bool>> GetP2PEnabled() const;
-
-    int GetNumDevices() const;
-
-    int GetWarpSize() const;
-
-    int GetCurrentDeviceID() const;
-
-    /// Disable P2P device transfer by marking p2p_enabled_ to `false`, in order
-    /// to run non-p2p tests on a p2p-capable machine.
+    /// Disables P2P device transfer between all devices, in order to run
+    /// non-P2P tests on a P2P-capable machine.
     void ForceDisableP2PForTesting();
 
 private:
     CUDAState();
 
-private:
-    int num_devices_ = 0;
-    std::vector<int> warp_sizes_;
     std::vector<std::vector<bool>> p2p_enabled_;
 };
+
+/// Returns the size of a warp for the current device.
+int GetCUDACurrentWarpSize();
 
 /// Returns the texture alignment in bytes for the current device.
 int GetCUDACurrentDeviceTextureAlignment();
