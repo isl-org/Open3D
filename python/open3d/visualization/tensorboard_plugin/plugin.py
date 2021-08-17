@@ -38,16 +38,13 @@ class LRUCache:
     a new item needs to be added to a full cache.
     """
 
-    def __init__(self, max_items=128, max_size=1 << 20):
+    def __init__(self, max_items=128):
         """
         Args:
             max_items (int): Max items in cache.
-            max_size (int): Max total size of cached items in bytes.
         """
         self.cache = OrderedDict()
         self.max_items = max_items
-        self.max_size = max_size
-        self.cur_size = 0
         self.hits = 0
         self.misses = 0
 
@@ -69,28 +66,20 @@ class LRUCache:
     def put(self, key, value):
         """Add (key, value) pair to the cache. If cache limits are exceeded,
         eject key-value pairs till the cache is within limits."""
-        # FIXME(ssheorey): Cache ignores size of objects allocated by C/C++
-        # addons (pybind11).
         self.cache[key] = value
-        self.cur_size += sys.getsizeof(value)
         self.cache.move_to_end(key)
         if len(self.cache) > self.max_items:
-            self.cur_size -= sys.getsizeof(self.cache.popitem(last=False))
-        while self.cur_size > self.max_size:
-            self.cur_size -= sys.getsizeof(self.cache.popitem(last=False))
+            self.cache.popitem(last=False)
         _log.debug(str(self))
 
     def clear(self):
         """Invalidate cache."""
         for key in self.cache:
             self.cache.popitem(key)
-        self.cur_size = 0
 
     def __str__(self):
-        return (
-            f"Items: {len(self.cache)}/{self.max_items}, "
-            f"Size: {self.cur_size}/{self.max_size}bytes, Hits: {self.hits},"
-            f" Misses: {self.misses}")
+        return (f"Items: {len(self.cache)}/{self.max_items}, "
+                f"Hits: {self.hits}, Misses: {self.misses}")
 
 
 class Open3DPluginDataReader:
@@ -107,7 +96,7 @@ class Open3DPluginDataReader:
         self._lock = threading.Lock()
         # Geometry data reading
         self._tensor_events = dict()
-        self.geometry_cache = LRUCache(max_items=128, max_size=1 << 20)
+        self.geometry_cache = LRUCache(max_items=128)
         self._file_handles = {}
         self.reload_events()
 
@@ -153,47 +142,50 @@ class Open3DPluginDataReader:
         cache_key = (filename, read_location, read_size, run, tag, step,
                      batch_idx)
         geometry = self.geometry_cache.get(cache_key)
-        if geometry is not None:
-            return geometry
-
-        data_dir = PluginDirectory(os.path.join(self.logdir, run),
-                                   metadata.PLUGIN_NAME)
-        # TODO(ssheorey): Make this a bounded LRU dict. Close files if too many open
-        if filename not in self._file_handles:
-            self._file_handles[filename] = tf.io.gfile.GFile(
-                os.path.join(data_dir, filename), "rb")
-            if not self._file_handles[filename].seekable():
-                raise RuntimeError(
-                    os.path.join(data_dir, filename) +
-                    " does not support seeking. This storage is not supported.")
-        self._file_handles[filename].seek(offset=read_location)
-        buf = self._file_handles[filename].read(read_size)
-        msg_tag, msg_step, geometry = o3d.io.rpc.get_data_from_set_mesh_data_buffer(
-            buf)
-        if msg_tag.empty() and msg_step == 0:
-            raise IOError(f"Geometry {cache_key} reading failed! Possible " +
-                          "msgpack or TF event file corruption.")
-        # TODO: Remove the next check
-        if tag != msg_tag or step != msg_step:
-            _log.warning(
-                f"Mismatch between TF event (tag={tag}, step={step}) and "
-                f"mesgpack (tag={msg_tag}, step={msg_step}) data. Possible data"
-                " corruption.")
-        _log.debug(f"Geometry {cache_key} reading successful!")
-        # Fill in properties by reference
-        for (prop_enum, step_ref) in metadata_proto.property_references:
-            prop = plugin_data_pb2.Open3DPluginData.GeometryProperty.Name(
-                prop_enum)
-            if step_ref >= step:
+        if geometry is None:  # Read from storage
+            data_dir = PluginDirectory(os.path.join(self.logdir, run),
+                                       metadata.PLUGIN_NAME)
+            # TODO(ssheorey): Make this a bounded LRU dict. Close files if too many open
+            if filename not in self._file_handles:
+                self._file_handles[filename] = tf.io.gfile.GFile(
+                    os.path.join(data_dir, filename), "rb")
+                if not self._file_handles[filename].seekable():
+                    raise RuntimeError(
+                        os.path.join(data_dir, filename) +
+                        " does not support seeking. This storage is not supported."
+                    )
+            self._file_handles[filename].seek(offset=read_location)
+            buf = self._file_handles[filename].read(read_size)
+            msg_tag, msg_step, geometry = o3d.io.rpc.get_data_from_set_mesh_data_buffer(
+                buf)
+            if geometry is None:
+                raise IOError(f"Geometry {cache_key} reading failed! Possible "
+                              "msgpack or TF event file corruption.")
+            if tag != msg_tag or step != msg_step:
                 _log.warning(
-                    f"Incorrect future step reference {step_ref} for"
+                    f"Mismatch between TF event (tag={tag}, step={step}) and "
+                    f"mesgpack (tag={msg_tag}, step={msg_step}) data. Possible data"
+                    " corruption.")
+            _log.debug(f"Geometry {cache_key} reading successful!")
+            self.geometry_cache.put(cache_key, geometry)
+
+        # Fill in properties by reference
+        for prop_ref in metadata_proto.property_references:
+            prop = plugin_data_pb2.Open3DPluginData.GeometryProperty.Name(
+                prop_ref.geometry_property)
+            if prop_ref.step_ref >= step:
+                _log.warning(
+                    f"Incorrect future step reference {prop_ref.step_ref} for"
                     f" property {prop} of geometry at step {step}. Ignoring.")
                 continue
-            geometry_ref = self.read_geometry(run, tag, step_ref, batch_idx,
-                                              step_to_idx)
-            setattr(geometry, prop, getattr(geometry_ref, prop))
+            geometry_ref = self.read_geometry(run, tag, prop_ref.step_ref,
+                                              batch_idx, step_to_idx)
+            # "vertex_normals" -> ["vertex", "normals"]
+            prop_map, prop_attribute = prop.split("_")
+            # geometry.vertex["normals" = geometry_ref.vertex["normals"]
+            getattr(geometry, prop_map)[prop_attribute] = getattr(
+                geometry_ref, prop_map)[prop_attribute]
 
-        self.geometry_cache.put(cache_key, geometry)
         return geometry
 
 

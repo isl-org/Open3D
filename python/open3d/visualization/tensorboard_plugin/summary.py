@@ -233,8 +233,8 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         prop for prop in data if prop not in metadata.GEOMETRY_PROPERTY_DIMS
     ]
     if unknown_props:
-        raise ValueError("Unknown geometry properties in data: " +
-                         str(unknown_props))
+        raise ValueError(
+            f"Unknown geometry properties in data: {unknown_props}")
     if "vertex_positions" not in data:
         raise ValueError("Primary key 'vertex_positions' not provided.")
     if max_outputs < 1:
@@ -307,23 +307,28 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     lines = line_data.pop("indices", o3d.core.Tensor((), dtype=o3d.core.int32))
     for b in range(batch_size):
         bc = o3d.io.rpc.BufferConnection()
-        o3d.io.rpc.set_mesh_data(
-            vertices=vertices[b, :, :] if vertices.ndim == 3 else vertices,
-            path=tag,
-            time=step,
-            layer="",
-            vertex_attributes={
-                prop: tensor[b, :, :] for prop, tensor in vertex_data.items()
-            },
-            faces=faces[b, :, :] if faces.ndim == 3 else faces,
-            face_attributes={
-                prop: tensor[b, :, :] for prop, tensor in triangle_data.items()
-            },
-            lines=lines[b, :, :] if lines.ndim == 3 else lines,
-            line_attributes={
-                prop: tensor[b, :, :] for prop, tensor in line_data.items()
-            },
-            connection=bc)
+        if not o3d.io.rpc.set_mesh_data(
+                vertices=vertices[b, :, :] if vertices.ndim == 3 else vertices,
+                path=tag,
+                time=step,
+                layer="",
+                vertex_attributes={
+                    prop: tensor[b, :, :]
+                    for prop, tensor in vertex_data.items()
+                },
+                faces=faces[b, :, :] if faces.ndim == 3 else faces,
+                face_attributes={
+                    prop: tensor[b, :, :]
+                    for prop, tensor in triangle_data.items()
+                },
+                lines=lines[b, :, :] if lines.ndim == 3 else lines,
+                line_attributes={
+                    prop: tensor[b, :, :] for prop, tensor in line_data.items()
+                },
+                connection=bc):
+            raise IOError(
+                "[Open3D set_mesh_data] Geometry data serialization for tag "
+                "{tag} step {step} failed!")
         # TODO: This returns a copy instead of the original. Benchmark
         data_buffer = bc.get_buffer()
         filename, this_write_location = _async_data_writer.enqueue(
@@ -350,7 +355,6 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
                 3D points. WIll be cast to ``float32``.
           - ``vertex_colors``: shape `(B, N, 3)` WIll be converted to ``uint8``.
           - ``vertex_normals``: shape `(B, N, 3)` WIll be cast to ``float32``.
-          - ``vertex_uvs``: shape `(B, N, 2)`
           - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
           - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
 
@@ -359,11 +363,12 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
         converted to uint8 range [0,255]. Other data types will be clipped into
         an allowed range for safe casting to uint8.
 
-        Any data tensor may be replaced by an int scalar referring to a
-        previous step. This allows reusing a previously written property in
-        case that it does not change at different steps.
-      step: Explicit ``int64``-castable monotonic step value for this summary. If
-        omitted, this defaults to `tf.summary.experimental.get_step()`, which
+        Any data tensor (except the primary ``vertex_positions``,
+        ``triangle_indices`` and ``line_indices``), may be replaced by an int
+        scalar referring to a previous step. This allows reusing a previously
+        written property in case that it does not change at different steps.
+      step: Explicit ``int64``-castable monotonic step value for this summary.
+        If omitted, this defaults to `tf.summary.experimental.get_step()`, which
         must not be None.
       max_outputs: Optional ``int`` or rank-0 integer ``Tensor``. At most this
         many images will be emitted at each step. When more than

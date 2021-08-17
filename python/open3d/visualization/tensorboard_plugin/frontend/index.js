@@ -158,8 +158,7 @@ class TensorboardOpen3DPluginClient {
                 <div id="batch-idx-selector-div-${windowUId}"></div>
                 <div id="step-selector-div-${windowUId}"></div>
             </div>
-            <video id="${videoId}" title="${run || videoId}" muted="true"
-                playsinline="true">
+            <video id="${videoId}" muted="true" playsinline="true">
                 Your browser does not support HTML5 video.
             </video>
         </div>
@@ -475,6 +474,11 @@ class TensorboardOpen3DPluginClient {
             this.createSlider(windowUId, "step-selector", "Step",
                 "step-selector-div-" + windowUId, message.current.step_limits[0],
                 message.current.step_limits[1], message.current.step);
+            // Init with miliseconds
+            const wall_time = new Date(message.current.wall_time * 1000);
+            document.getElementById("video_" + windowUId).title =
+                message.current.run + " at " + wall_time.toLocaleString();
+
         }
     };
 

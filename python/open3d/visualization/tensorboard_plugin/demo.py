@@ -112,13 +112,11 @@ def property_reference(run_name="property_reference"):
             cube.paint_uniform_color(colors[step])
             cube_summary = to_dict_batch([cube])
             if step > 0:
-                cube_summary['vertex_positions'] = 0
                 cube_summary['vertex_normals'] = 0
             summary.add_3d('cube', cube_summary, step=step)
             cylinder.paint_uniform_color(colors[step])
             cylinder_summary = to_dict_batch([cylinder])
             if step > 0:
-                cylinder_summary['vertex_positions'] = 0
                 cylinder_summary['vertex_normals'] = 0
             summary.add_3d('cylinder', cylinder_summary, step=step)
 
