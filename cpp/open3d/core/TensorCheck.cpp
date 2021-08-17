@@ -27,7 +27,6 @@
 #include "open3d/core/TensorCheck.h"
 
 #include <iostream>
-#include <string>
 
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"

@@ -33,12 +33,6 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 
-#ifdef _WIN32
-#define __FN__ __FUNCSIG__
-#else
-#define __FN__ __PRETTY_FUNCTION__
-#endif
-
 /// Assert Tensor's dtype is the same as the expected dtype.
 ///
 /// Example: core::AssertTensorDtype(tensor, core::Float32);
