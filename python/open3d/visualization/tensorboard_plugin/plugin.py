@@ -170,6 +170,10 @@ class Open3DPluginDataReader:
         buf = self._file_handles[filename].read(read_size)
         msg_tag, msg_step, geometry = o3d.io.rpc.get_data_from_set_mesh_data_buffer(
             buf)
+        if msg_tag.empty() and msg_step == 0:
+            raise IOError(f"Geometry {cache_key} reading failed! Possible " +
+                          "msgpack or TF event file corruption.")
+        # TODO: Remove the next check
         if tag != msg_tag or step != msg_step:
             _log.warning(
                 f"Mismatch between TF event (tag={tag}, step={step}) and "

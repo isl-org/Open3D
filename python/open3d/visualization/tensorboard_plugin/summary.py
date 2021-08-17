@@ -177,22 +177,8 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
     """Data conversion and other preprocessing.
     TODO(ssheorey): Convert to half precision, compression, etc.
     """
-    if tensor.ndim == 2:  # batch_size = 1
-        save_tensor = _to_o3d(tensor)
-        save_tensor.reshape((1,) + tuple(save_tensor.shape))
-    else:
-        save_tensor = _to_o3d(tensor[:max_outputs, ...])
-    if prop.endswith("_indices"):
-        save_dtype = o3d.core.int32
-    elif prop.endswith("_colors"):
-        save_dtype = o3d.core.uint8
-    else:
-        save_dtype = o3d.core.float32
-    if prop.endswith("_colors"):
-        save_tensor = _to_uint8(save_tensor)  # includes scaling
-    else:
-        save_tensor = save_tensor.to(dtype=save_dtype)
-    step_ref = _to_integer(save_tensor)
+    # Check if property is reference to prior step
+    step_ref = _to_integer(tensor)
     if step_ref is not None:
         if step_ref < 0 or step_ref >= step:
             raise ValueError(f"Out of order step refernce {step_ref} for "
@@ -202,9 +188,23 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
             Value(prop),
             step_ref=step_ref)
         return None
-    if save_tensor.ndim != 3:
+    if tensor.ndim == 2:  # batch_size = 1
+        save_tensor = _to_o3d(tensor)
+        save_tensor.reshape((1,) + tuple(save_tensor.shape))
+    elif tensor.ndim == 3:
+        save_tensor = _to_o3d(tensor[:max_outputs, ...])
+    else:
         raise ValueError(f"Property {prop} tensor should be of shape "
-                         f"BxNxNp but is {save_tensor.shape}.")
+                         f"BxNxNp but is {tensor.shape}.")
+
+    # Datatype conversion
+    if prop.endswith("_colors"):
+        save_tensor = _to_uint8(save_tensor)  # includes scaling
+    elif prop.endswith("_indices"):
+        save_tensor = save_tensor.to(dtype=o3d.core.int32)
+    else:
+        save_tensor = save_tensor.to(dtype=o3d.core.float32)
+
     return save_tensor
 
 
@@ -251,10 +251,6 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     line_data = {}
     geometry_metadata = plugin_data_pb2.Open3DPluginData(
         version=metadata._VERSION)
-    _log.debug(f"Writing data with shape: vertices:" +
-               f"{data['vertex_positions'].shape}" +
-               f", triangles:{data['triangle_indices'].shape}"
-               if 'triangle_indices' in data else "")
     for prop, tensor in data.items():
         if prop in ('vertex_positions',) + metadata.VERTEX_PROPERTIES:
             prop_name = prop[7:]
@@ -304,14 +300,15 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                     f"Property {prop} tensor should be of shape "
                     f"{exp_shape} but is {line_data[prop_name].shape}.")
 
-    vertices = vertex_data.pop("positions")
+    vertices = vertex_data.pop("positions",
+                               o3d.core.Tensor((), dtype=o3d.core.int32))
     faces = triangle_data.pop("indices",
                               o3d.core.Tensor((), dtype=o3d.core.int32))
     lines = line_data.pop("indices", o3d.core.Tensor((), dtype=o3d.core.int32))
     for b in range(batch_size):
         bc = o3d.io.rpc.BufferConnection()
         o3d.io.rpc.set_mesh_data(
-            vertices=vertices[b, :, :],
+            vertices=vertices[b, :, :] if vertices.ndim == 3 else vertices,
             path=tag,
             time=step,
             layer="",
@@ -348,14 +345,14 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
         PyTorch, Numpy and Open3D tensors are supported. The following keys
         are supported:
 
-          - ``vertex_positions``: shape `[B, N, 3]` where B is the number of
+          - ``vertex_positions``: shape `(B, N, 3)` where B is the number of
                 point clouds and must be same for each key. N is the number of
                 3D points. WIll be cast to ``float32``.
-          - ``vertex_colors``: shape `[B, N, 3]` WIll be converted to ``uint8``.
-          - ``vertex_normals``: shape `[B, N, 3]` WIll be cast to ``float32``.
-          - ``vertex_uvs``: shape `[B, N, 2]`
-          - ``triangle_indices``: shape `[B, Nf, 3]`. Will be cast to ``uint32``.
-          - ``line_indices``: shape `[B, Nl, 2]`. Will be cast to ``uint32``.
+          - ``vertex_colors``: shape `(B, N, 3)` WIll be converted to ``uint8``.
+          - ``vertex_normals``: shape `(B, N, 3)` WIll be cast to ``float32``.
+          - ``vertex_uvs``: shape `(B, N, 2)`
+          - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
+          - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
 
         For batch_size B=1, the tensors may be rank 2 instead of rank 3.
         Floating point color data will be clipped to the range [0,1] and
