@@ -66,7 +66,6 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
         core::AssertTensorDevice(t, core::Device("CUDA:1000"));
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
-        utility::LogInfo(err.what());
         EXPECT_TRUE(utility::ContainsString(err.what(), "Tensor has device"));
         EXPECT_TRUE(utility::ContainsString(err.what(),
                                             "but is expected to be CUDA:1000"));
@@ -80,7 +79,26 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
 
 TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     core::Device device = GetParam();
-    (void)device;
+    core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
+
+    core::AssertTensorShape(t, {1});
+
+    // try {
+    //     core::AssertTensorShape(t, {1});
+    //     FAIL() << "Should not reach here.";
+    // } catch (std::runtime_error const& err) {
+    //     utility::LogInfo("Error: {}", err.what());
+    //     // EXPECT_TRUE(utility::ContainsString(err.what(), "Tensor has
+    //     // device")); EXPECT_TRUE(utility::ContainsString(err.what(),
+    //     //                                     "but is expected to be
+    //     //                                     CUDA:1000"));
+    //     // EXPECT_TRUE(utility::ContainsString(err.what(),
+    //     // "tests/core/TensorCheck.cpp:"));
+    //     // EXPECT_TRUE(utility::ContainsString(err.what(),
+    //     // "AssertTensorShape"));
+    // } catch (...) {
+    //     FAIL() << "std::runtime_error not thrown.";
+    // }
 }
 
 TEST_P(TensorCheckPermuteDevices, AssertTensorShapeCompatible) {
