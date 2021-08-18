@@ -27,6 +27,7 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install as _install
 import os
+import sys
 import glob
 import ctypes
 
@@ -123,6 +124,14 @@ if '@BUNDLE_OPEN3D_ML@' == 'ON':
     with open('@OPEN3D_ML_ROOT@/requirements.txt', 'r') as f:
         install_requires += [line.strip() for line in f.readlines() if line]
 
+entry_points = {}
+if sys.platform != 'darwin':
+    entry_points.update({
+        "tensorboard_plugins": [
+            "Open3D = @PYPI_PACKAGE_NAME@._ml3d.vis.tensorboard_plugin"
+            ".plugin:Open3DPlugin",
+        ]
+    })
 setup_args = dict(
     name="@PYPI_PACKAGE_NAME@",
     version='@PROJECT_VERSION@',
@@ -130,11 +139,7 @@ setup_args = dict(
     include_package_data=True,
     install_requires=install_requires,
     packages=find_packages(),
-    entry_points={
-        "tensorboard_plugins": [
-            "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin.plugin:Open3DPlugin",
-        ],
-    },
+    entry_points=entry_points,
     zip_safe=False,
     cmdclass=cmdclass,
     author='Open3D Team',

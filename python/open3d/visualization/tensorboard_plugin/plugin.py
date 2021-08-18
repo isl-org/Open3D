@@ -1,5 +1,6 @@
 """Open3D visualization plugin for Tensorboard"""
 import os
+import sys
 import threading
 from collections import OrderedDict
 import json
@@ -14,7 +15,10 @@ from werkzeug import wrappers
 # TODO(ssheorey) Enable operation without TF, but with PyTorch + Tensorboard
 import tensorflow.compat.v2 as tf
 
+if sys.platform == 'darwin':
+    raise NotImplementedError("Open3D for TensorBoard does not run on macOS.")
 import open3d as o3d
+# TODO: Check for GPU / EGL else TensorBoard will crash.
 _log = o3d.log
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
