@@ -57,6 +57,10 @@ std::vector<std::string> SplitString(const std::string& str,
     return tokens;
 }
 
+bool ContainsString(const std::string& src, const std::string& dst) {
+    return src.find(dst) != std::string::npos;
+}
+
 std::string& LeftStripString(std::string& str, const std::string& chars) {
     str.erase(0, str.find_first_not_of(chars));
     return str;
