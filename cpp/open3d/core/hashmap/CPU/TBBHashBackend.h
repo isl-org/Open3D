@@ -42,14 +42,14 @@ class TBBHashBackend : public DeviceHashBackend {
 public:
     TBBHashBackend(int64_t init_capacity,
                    int64_t key_dsize,
-                   std::vector<int64_t> value_dsizes,
+                   const std::vector<int64_t>& value_dsizes,
                    const Device& device);
     ~TBBHashBackend();
 
     void Rehash(int64_t buckets) override;
 
     void Insert(const void* input_keys,
-                std::vector<const void*> input_values_soa,
+                const std::vector<const void*>& input_values_soa,
                 buf_index_t* output_buf_indices,
                 bool* output_masks,
                 int64_t count) override;
@@ -89,7 +89,7 @@ protected:
     std::shared_ptr<CPUHashBackendBufferAccessor> buffer_accessor_;
 
     void InsertImpl(const void* input_keys,
-                    std::vector<const void*> input_values_soa,
+                    const std::vector<const void*>& input_values_soa,
                     buf_index_t* output_buf_indices,
                     bool* output_masks,
                     int64_t count);
@@ -98,10 +98,11 @@ protected:
 };
 
 template <typename Key, typename Hash>
-TBBHashBackend<Key, Hash>::TBBHashBackend(int64_t init_capacity,
-                                          int64_t key_dsize,
-                                          std::vector<int64_t> value_dsizes,
-                                          const Device& device)
+TBBHashBackend<Key, Hash>::TBBHashBackend(
+        int64_t init_capacity,
+        int64_t key_dsize,
+        const std::vector<int64_t>& value_dsizes,
+        const Device& device)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
     Allocate(init_capacity);
 }
@@ -117,7 +118,7 @@ int64_t TBBHashBackend<Key, Hash>::Size() const {
 template <typename Key, typename Hash>
 void TBBHashBackend<Key, Hash>::Insert(
         const void* input_keys,
-        const std::vector<const void*> input_values_soa,
+        const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {
@@ -268,7 +269,7 @@ float TBBHashBackend<Key, Hash>::LoadFactor() const {
 template <typename Key, typename Hash>
 void TBBHashBackend<Key, Hash>::InsertImpl(
         const void* input_keys,
-        const std::vector<const void*> input_values_soa,
+        const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {

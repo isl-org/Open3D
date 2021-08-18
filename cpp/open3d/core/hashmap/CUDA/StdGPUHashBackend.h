@@ -134,14 +134,14 @@ class StdGPUHashBackend : public DeviceHashBackend {
 public:
     StdGPUHashBackend(int64_t init_capacity,
                       int64_t key_dsize,
-                      std::vector<int64_t> value_dsizes,
+                      const std::vector<int64_t>& value_dsizes,
                       const Device& device);
     ~StdGPUHashBackend();
 
     void Rehash(int64_t buckets) override;
 
     void Insert(const void* input_keys,
-                std::vector<const void*> input_values_soa,
+                const std::vector<const void*>& input_values_soa,
                 buf_index_t* output_buf_indices,
                 bool* output_masks,
                 int64_t count) override;
@@ -180,7 +180,7 @@ protected:
     CUDAHashBackendBufferAccessor buffer_accessor_;
 
     void InsertImpl(const void* input_keys,
-                    std::vector<const void*> input_values_soa,
+                    const std::vector<const void*>& input_values_soa,
                     buf_index_t* output_buf_indices,
                     bool* output_masks,
                     int64_t count);
@@ -193,7 +193,7 @@ template <typename Key, typename Hash>
 StdGPUHashBackend<Key, Hash>::StdGPUHashBackend(
         int64_t init_capacity,
         int64_t key_dsize,
-        std::vector<int64_t> value_dsizes,
+        const std::vector<int64_t>& value_dsizes,
         const Device& device)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
     Allocate(init_capacity);
@@ -212,7 +212,7 @@ int64_t StdGPUHashBackend<Key, Hash>::Size() const {
 template <typename Key, typename Hash>
 void StdGPUHashBackend<Key, Hash>::Insert(
         const void* input_keys,
-        std::vector<const void*> input_values_soa,
+        const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {
@@ -451,7 +451,7 @@ __global__ void STDGPUInsertKernel(
 template <typename Key, typename Hash>
 void StdGPUHashBackend<Key, Hash>::InsertImpl(
         const void* input_keys,
-        std::vector<const void*> input_values_soa,
+        const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {

@@ -40,7 +40,7 @@ class DeviceHashBackend {
 public:
     DeviceHashBackend(int64_t init_capacity,
                       int64_t key_dsize,
-                      std::vector<int64_t> value_dsizes,
+                      const std::vector<int64_t>& value_dsizes,
                       const Device& device)
         : capacity_(init_capacity),
           key_dsize_(key_dsize),
@@ -58,7 +58,7 @@ public:
 
     /// Parallel insert contiguous arrays of keys and values.
     virtual void Insert(const void* input_keys,
-                        const std::vector<const void*> input_values,
+                        const std::vector<const void*>& input_values,
                         buf_index_t* output_buf_indices,
                         bool* output_masks,
                         int64_t count) = 0;

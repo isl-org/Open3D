@@ -39,7 +39,7 @@ class SlabHashBackend : public DeviceHashBackend {
 public:
     SlabHashBackend(int64_t init_capacity,
                     int64_t key_dsize,
-                    std::vector<int64_t> value_dsizes,
+                    const std::vector<int64_t>& value_dsizes,
                     const Device& device);
 
     ~SlabHashBackend();
@@ -47,7 +47,7 @@ public:
     void Rehash(int64_t buckets) override;
 
     void Insert(const void* input_keys,
-                const std::vector<const void*> input_values_soa,
+                const std::vector<const void*>& input_values_soa,
                 buf_index_t* output_buf_indices,
                 bool* output_masks,
                 int64_t count) override;
@@ -87,7 +87,7 @@ protected:
     /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
     /// separate this implementation and avoid shared checks.
     void InsertImpl(const void* input_keys,
-                    const std::vector<const void*> input_values_soa,
+                    const std::vector<const void*>& input_values_soa,
                     buf_index_t* output_buf_indices,
                     bool* output_masks,
                     int64_t count);
@@ -99,10 +99,11 @@ protected:
 };
 
 template <typename Key, typename Hash>
-SlabHashBackend<Key, Hash>::SlabHashBackend(int64_t init_capacity,
-                                            int64_t key_dsize,
-                                            std::vector<int64_t> value_dsizes,
-                                            const Device& device)
+SlabHashBackend<Key, Hash>::SlabHashBackend(
+        int64_t init_capacity,
+        int64_t key_dsize,
+        const std::vector<int64_t>& value_dsizes,
+        const Device& device)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
     int64_t init_buckets = init_capacity * 2;
     Allocate(init_buckets, init_capacity);
@@ -160,7 +161,7 @@ void SlabHashBackend<Key, Hash>::Rehash(int64_t buckets) {
 template <typename Key, typename Hash>
 void SlabHashBackend<Key, Hash>::Insert(
         const void* input_keys,
-        std::vector<const void*> input_values_soa,
+        const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {
@@ -311,7 +312,7 @@ float SlabHashBackend<Key, Hash>::LoadFactor() const {
 template <typename Key, typename Hash>
 void SlabHashBackend<Key, Hash>::InsertImpl(
         const void* input_keys,
-        std::vector<const void*> input_values_soa,
+        const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
         int64_t count) {

@@ -575,14 +575,14 @@ TEST_P(HashMapPermuteDevices, HashMapIO) {
     std::vector<int> keys_int3;
     keys_int3.assign(reinterpret_cast<int *>(data.keys_.data()),
                      reinterpret_cast<int *>(data.keys_.data()) + 3 * n);
-    core::Tensor keys(keys_int3, {n, 3}, core::Dtype::Int32, device);
-    core::Tensor values(data.vals_, {n}, core::Dtype::Int32, device);
+    core::Tensor keys(keys_int3, {n, 3}, core::Int32, device);
+    core::Tensor values(data.vals_, {n}, core::Int32, device);
 
-    core::HashMap hashmap(init_capacity, core::Dtype::Int32, {3},
-                          core::Dtype::Int32, {1}, device);
+    core::HashMap hashmap(init_capacity, core::Int32, {3}, core::Int32, {1},
+                          device);
     core::Tensor buf_indices, masks;
     hashmap.Insert(keys, values, buf_indices, masks);
-    EXPECT_EQ(masks.To(core::Dtype::Int64).Sum({0}).Item<int64_t>(), slots);
+    EXPECT_EQ(masks.To(core::Int64).Sum({0}).Item<int64_t>(), slots);
 
     hashmap.Save(file_name_noext);
     core::HashMap hashmap_loaded = core::HashMap::Load(file_name_ext);
@@ -592,7 +592,7 @@ TEST_P(HashMapPermuteDevices, HashMapIO) {
     hashmap_loaded.GetActiveIndices(active_indices);
 
     // Check found results
-    std::vector<core::Tensor> ai({active_indices.To(core::Dtype::Int64)});
+    std::vector<core::Tensor> ai({active_indices.To(core::Int64)});
     core::Tensor valid_keys = hashmap_loaded.GetKeyTensor().IndexGet(ai);
     core::Tensor valid_values = hashmap_loaded.GetValueTensor().IndexGet(ai);
     EXPECT_TRUE(

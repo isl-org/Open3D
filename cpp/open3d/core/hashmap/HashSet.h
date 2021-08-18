@@ -36,82 +36,92 @@ namespace core {
 
 class HashSet {
 public:
-    /// Constructor for primitive types, supporting element shapes.
-    /// Example:
-    /// Key is int<3> coordinate:
-    /// - key_dtype = core::Int32
-    /// - key_element_shape = {3}
+    /// Initialize a hash set given a key dtype and element shape.
     HashSet(int64_t init_capacity,
             const Dtype& key_dtype,
             const SizeVector& key_element_shape,
             const Device& device,
             const HashBackendType& backend = HashBackendType::Default);
 
-    ~HashSet(){};
+    /// Default destructor.
+    ~HashSet() = default;
 
-    /// Rehash expects extra memory space at runtime, since it consists of
-    /// 1) dumping all key value pairs to a buffer
-    /// 2) deallocate old hash table
-    /// 3) create a new hash table
-    /// 4) parallel insert dumped key value pairs
+    /// Rehash the internal hash map with the given number of buckets.
     void Rehash(int64_t buckets);
 
     /// Parallel insert arrays of keys and values in Tensors.
-    /// Return buf_indices: internal indices that can be directly used for
-    /// advanced indexing in Tensor key/value buffers. masks: success
-    /// insertions, must be combined with buf_indices in advanced indexing.
+    /// The output_buf_indices and output_masks will be overwritten, to be used
+    /// with tensor buffers.
+    /// output_buf_indices stores buffer indices that access buffer tensors
+    /// obtained from GetKeyTensor() via advanced indexing.
+    /// NOTE: output_buf_indices are stored in Int32. A conversion to Int64 is
+    /// required for further indexing.
+    /// output_masks stores if the insertion is
+    /// a success or failure (key already exists).
     void Insert(const Tensor& input_keys,
                 Tensor& output_buf_indices,
                 Tensor& output_masks);
 
     /// Parallel find an array of keys in Tensor.
-    /// Return buf_indices: internal indices that can be directly used for
-    /// advanced indexing in Tensor key/value buffers. masks: success
-    /// insertions, must be combined with buf_indices in advanced indexing.
+    /// The roles of output_buf_indices is the same as Insert.
+    /// output_masks stores if the finding is a success or failure (key
+    /// not found).
     void Find(const Tensor& input_keys,
               Tensor& output_buf_indices,
               Tensor& output_masks);
 
     /// Parallel erase an array of keys in Tensor.
-    /// Output masks is a bool Tensor.
-    /// Return masks: success insertions, must be combined with buf_indices in
-    /// advanced indexing.
+    /// The output_masks will be overwritten, to be used
+    /// with tensor buffers.
+    /// output_masks stores if the erase is a success or failure (key not found
+    /// all already erased in another thread).
     void Erase(const Tensor& input_keys, Tensor& output_masks);
 
-    /// Parallel collect all iterators in the hash table
-    /// Return buf_indices: internal indices that can be directly used for
-    /// advanced indexing in Tensor key/value buffers.
+    /// Parallel collect all indices in the buffer corresponding to the active
+    /// entries in the hash map. Stored in output_buf_indices.
     void GetActiveIndices(Tensor& output_buf_indices) const;
 
-    /// Clear stored map without reallocating memory.
+    /// Clear stored map without reallocating the buffers.
     void Clear();
 
-    /// Save active key and value to a npz file at 'key' and 'value'. The file
-    /// name should end with npz, otherwise npz will be added as an extension.
+    /// Save active keys to a npz file at 'key'.
+    /// The file name should end with 'npz', otherwise 'npz' will be added as an
+    /// extension.
     void Save(const std::string& file_name);
 
-    /// Load active key and value from a npz file at 'key' and 'value'. The npz
-    /// file should contain a 'key' and a 'value' tensor, of the same length.
+    /// Load active keys and values from a npz file that contains 'key'.
     static HashSet Load(const std::string& file_name);
 
+    /// Clone the hash set with buffers.
     HashSet Clone() const;
+
+    /// Convert the hash set to another device.
     HashSet To(const Device& device, bool copy = false) const;
 
+    /// Get the size (number of active entries) of the hash set.
     int64_t Size() const;
 
+    /// Get the capacity of the hash set.
     int64_t GetCapacity() const;
+
+    /// Get the number of buckets of the internal hash set.
     int64_t GetBucketCount() const;
+
+    /// Get the device of the hash set.
     Device GetDevice() const;
 
+    /// Get the key tensor buffer to be used along with buf_indices and masks.
+    /// Example:
+    /// GetKeyTensor().IndexGet({buf_indices.To(core::Int64).IndexGet{masks}})
     Tensor GetKeyTensor() const;
 
-    /// Return number of elems per bucket.
-    /// High performance not required, so directly returns a vector.
+    /// Return number of elements per bucket.
     std::vector<int64_t> BucketSizes() const;
 
     /// Return size / bucket_count.
     float LoadFactor() const;
 
+    /// Return the implementation of the device hash backend.
     std::shared_ptr<DeviceHashBackend> GetDeviceHashBackend() const;
 
 private:

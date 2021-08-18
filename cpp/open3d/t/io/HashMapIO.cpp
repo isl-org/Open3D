@@ -36,7 +36,7 @@ void WriteHashMap(const std::string& file_name, const core::HashMap& hashmap) {
     core::Tensor keys = hashmap.GetKeyTensor();
     std::vector<core::Tensor> values = hashmap.GetValueTensors();
 
-    core::Device host;
+    core::Device host("CPU:0");
 
     core::Tensor active_buf_indices_i32;
     hashmap.GetActiveIndices(active_buf_indices_i32);

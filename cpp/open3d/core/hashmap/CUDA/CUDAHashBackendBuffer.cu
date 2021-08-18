@@ -34,8 +34,7 @@ namespace core {
 void CUDAResetHeap(Tensor &heap) {
     uint32_t *heap_ptr = heap.GetDataPtr<uint32_t>();
     thrust::sequence(thrust::device, heap_ptr, heap_ptr + heap.GetLength(), 0);
-    cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
-};
+}
 }  // namespace core
 }  // namespace open3d
