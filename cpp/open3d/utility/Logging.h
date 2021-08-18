@@ -152,64 +152,71 @@ public:
     VerbosityLevel GetVerbosityLevel() const;
 
     template <typename... Args>
-    static void _LogError [[noreturn]] (const char *file_name,
-                                        int line_number,
-                                        const char *function_name,
+    static void _LogError [[noreturn]] (const char *file,
+                                        int line,
+                                        const char *function,
                                         const char *format,
                                         Args &&... args) {
-        Logger::GetInstance().VError(file_name, line_number, function_name,
-                                     format, fmt::make_format_args(args...));
+        Logger::GetInstance().VError(file, line, function,
+                                     FormatArgs(format, args...));
     }
     template <typename... Args>
-    static void _LogWarning(const char *file_name,
-                            int line_number,
-                            const char *function_name,
+    static void _LogWarning(const char *file,
+                            int line,
+                            const char *function,
                             const char *format,
                             Args &&... args) {
-        Logger::GetInstance().VWarning(file_name, line_number, function_name,
-                                       format, fmt::make_format_args(args...));
+        Logger::GetInstance().VWarning(file, line, function,
+                                       FormatArgs(format, args...));
     }
     template <typename... Args>
-    static void _LogInfo(const char *file_name,
-                         int line_number,
-                         const char *function_name,
+    static void _LogInfo(const char *file,
+                         int line,
+                         const char *function,
                          const char *format,
                          Args &&... args) {
-        Logger::GetInstance().VInfo(file_name, line_number, function_name,
-                                    format, fmt::make_format_args(args...));
+        Logger::GetInstance().VInfo(file, line, function,
+                                    FormatArgs(format, args...));
     }
     template <typename... Args>
-    static void _LogDebug(const char *file_name,
-                          int line_number,
-                          const char *function_name,
+    static void _LogDebug(const char *file,
+                          int line,
+                          const char *function,
                           const char *format,
                           Args &&... args) {
-        Logger::GetInstance().VDebug(file_name, line_number, function_name,
-                                     format, fmt::make_format_args(args...));
+        Logger::GetInstance().VDebug(file, line, function,
+                                     FormatArgs(format, args...));
     }
 
 private:
     Logger();
-    void VError [[noreturn]] (const char *file_name,
-                              int line_number,
-                              const char *function_name,
-                              const char *format,
-                              fmt::format_args args) const;
-    void VWarning(const char *file_name,
-                  int line_number,
-                  const char *function_name,
-                  const char *format,
-                  fmt::format_args args) const;
-    void VInfo(const char *file_name,
-               int line_number,
-               const char *function_name,
-               const char *format,
-               fmt::format_args args) const;
-    void VDebug(const char *file_name,
-                int line_number,
-                const char *function_name,
-                const char *format,
-                fmt::format_args args) const;
+    template <typename... Args>
+    static std::string FormatArgs(const char *format, Args &&... args) {
+        std::string message;
+        if (sizeof...(Args) > 0) {
+            fmt::format_args format_args = fmt::make_format_args(args...);
+            message = fmt::vformat(format, format_args);
+        } else {
+            message = std::string(format);
+        }
+        return message;
+    }
+    void VError [[noreturn]] (const char *file,
+                              int line,
+                              const char *function,
+                              const std::string &message) const;
+    void VWarning(const char *file,
+                  int line,
+                  const char *function,
+                  const std::string &message) const;
+    void VInfo(const char *file,
+               int line,
+               const char *function,
+               const std::string &message) const;
+    void VDebug(const char *file,
+                int line,
+                const char *function,
+                const std::string &message) const;
 
 private:
     struct Impl;

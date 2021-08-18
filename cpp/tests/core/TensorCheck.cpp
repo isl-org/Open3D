@@ -80,7 +80,6 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
 TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     core::Device device = GetParam();
     core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
-
     core::AssertTensorShape(t, {1});
 
     // try {
