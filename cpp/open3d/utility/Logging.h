@@ -157,8 +157,14 @@ public:
                                         const char *function,
                                         const char *format,
                                         Args &&... args) {
-        Logger::GetInstance().VError(file, line, function,
-                                     FormatArgs(format, args...));
+        if (sizeof...(Args) > 0) {
+            Logger::GetInstance().VError(
+                    file, line, function,
+                    FormatArgsPartial(format, fmt::make_format_args(args...)));
+        } else {
+            Logger::GetInstance().VError(file, line, function,
+                                         std::string(format));
+        }
     }
     template <typename... Args>
     static void _LogWarning(const char *file,
@@ -200,6 +206,11 @@ private:
             message = std::string(format);
         }
         return message;
+    }
+    static std::string FormatArgsPartial(const char *format,
+                                         fmt::format_args args) {
+        std::string err_msg = fmt::vformat(format, args);
+        return err_msg;
     }
     void VError [[noreturn]] (const char *file,
                               int line,
