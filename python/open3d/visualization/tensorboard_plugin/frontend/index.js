@@ -62,10 +62,6 @@ class TensorboardOpen3DPluginClient {
             <div id="open3d-dashboard">
                 <div id="options-selector">
                     <h3>Options</h3>
-                    <label class="container">Sync view
-                        <input type="checkbox" id="ui-options-view">
-                        <span class="checkmark"></span>
-                    </label>
                     <label class="container">Sync step
                         <input type="checkbox" id="ui-options-step">
                         <span class="checkmark"></span>
@@ -366,7 +362,7 @@ class TensorboardOpen3DPluginClient {
                 const windowUId = this.runWindow.get(evt.target.id);
                 let window_widget = document.getElementById("widget_video_" + windowUId);
                 if (evt.target.checked) { // display window
-                    window_widget.style.display = "block";
+                    window_widget.style.display = "flex";
                     console.info("Showing window " + windowUId + " with run " + evt.target.id);
                 } else {    // hide window
                     window_widget.style.display = "none";

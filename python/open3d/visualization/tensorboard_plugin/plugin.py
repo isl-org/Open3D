@@ -1,22 +1,17 @@
 """Open3D visualization plugin for Tensorboard"""
 import os
-import sys
 import threading
 from collections import OrderedDict
 import json
 from functools import partial
 
 import numpy as np
-from tensorboard import errors
 from tensorboard.plugins import base_plugin
-from tensorboard.util import tensor_util
-from tensorboard.data import provider
-from tensorboard import plugin_util
-from tensorboard.backend import http_util
 from tensorboard.backend.event_processing.plugin_event_multiplexer import EventMultiplexer
 from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
 import werkzeug
 from werkzeug import wrappers
+# TODO(ssheorey) Enable operation without TF, but with PyTorch + Tensorboard
 import tensorflow.compat.v2 as tf
 
 import open3d as o3d
@@ -27,10 +22,7 @@ from open3d.visualization.tensorboard_plugin import metadata
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 # Set window system before the GUI event loop
 o3d.visualization.webrtc_server.enable_webrtc()
-# Note: the _AsyncEventLoop is started whenever this module is imported.
 from open3d.visualization._async_event_loop import _async_event_loop
-
-import ipdb
 
 
 class LRUCache:
@@ -84,10 +76,16 @@ class LRUCache:
 
 class Open3DPluginDataReader:
     """Manage TB event data and geometry data for common use by all
-    Open3DPluginWindow instances.
+    Open3DPluginWindow instances. This is thread safe for simultaneous use by
+    multiple browser clients with a multi-threaded web server. Read geometry
+    data is cached in memory.
+
+    Args:
+        logdir (str): TensorBoard logs directory.
+        cache_max_items (int): Max geometry elements to be cached in memory.
     """
 
-    def __init__(self, logdir):
+    def __init__(self, logdir, cache_max_items=128):
         self.logdir = logdir
         self.event_mux = EventMultiplexer(tensor_size_guidance={
             metadata.PLUGIN_NAME: 0  # Store all metadata in RAM
@@ -96,11 +94,12 @@ class Open3DPluginDataReader:
         self._lock = threading.Lock()
         # Geometry data reading
         self._tensor_events = dict()
-        self.geometry_cache = LRUCache(max_items=128)
+        self.geometry_cache = LRUCache(max_items=cache_max_items)
         self._file_handles = {}
         self.reload_events()
 
     def reload_events(self):
+        """Reload event file"""
         self.event_mux.Reload()
         run_tags = self.event_mux.PluginRunToTagToContent(metadata.PLUGIN_NAME)
         with self._lock:
@@ -111,10 +110,12 @@ class Open3DPluginDataReader:
         _log.debug(f"Event data reloaded: {self._run_to_tags}")
 
     def is_active(self):
+        """Do we have any Open3D data to display?"""
         return any(len(tags) > 0 for tags in self._run_to_tags.values())
 
     @property
     def run_to_tags(self):
+        """Locked access to the run_to_tags map."""
         with self._lock:
             return self._run_to_tags
 
@@ -129,7 +130,7 @@ class Open3DPluginDataReader:
 
     def read_geometry(self, run, tag, step, batch_idx, step_to_idx):
         """Geometry reader from msgpack files.
-        TODO: Add CRC-32C checks,
+        TODO(ssheorey): Add CRC-32C
         """
         idx = step_to_idx[step]
         metadata_proto = plugin_data_pb2.Open3DPluginData()
@@ -317,7 +318,7 @@ class Open3DPluginWindow:
 
     def _validate_run(self, selected_run):
         """Validate selected_run. Use self.run or the first valid run in case
-        selected run is invalid. Clear cached data.
+        selected run is invalid. Clear cached events.
         """
         if selected_run not in self.data_reader.run_to_tags:
             selected_run = self.run
@@ -442,10 +443,7 @@ class Open3DPluginWindow:
 
     def _update_scene(self):
         """Update scene by adding / removing geometry elements and redraw.
-            Must run in the main GUI thread.
-            TODO: Reduce compute in Main GUI thread.
         """
-
         new_geometry_list = []
         for tag in self.tags:
             geometry_name = f"{self.run}/{tag}/b{self.batch_idx}/s{self.step}"
@@ -473,6 +471,13 @@ class Open3DPluginWindow:
         _log.debug(f"Displaying complete!")
 
     def _create_ui(self, title, width, height):
+        """Create new Open3D application window and rendering widgets.
+
+        Args:
+            title (str): Window title (unused).
+            width (int): Window width.
+            height (int): Window height.
+        """
         self.window = gui.Application.instance.create_window(
             title, width, height)
         # self.window_uid = o3d.webrtc_server.get_window_uid()
@@ -492,7 +497,7 @@ class Open3DPluginWindow:
 
 
 class Open3DPlugin(base_plugin.TBPlugin):
-    """Open3D plugin for TensorBoard
+    """Open3D plugin for TensorBoard.
 
     Subclasses should have a trivial constructor that takes a TBContext
     argument. Any operation that might throw an exception should either be
@@ -519,10 +524,6 @@ class Open3DPlugin(base_plugin.TBPlugin):
         Args:
             context: A `base_plugin.TBContext` instance.
         """
-        self._data_provider = context.data_provider
-        self._downsample_to = (context.sampling_hints or
-                               {}).get(self.plugin_name,
-                                       self._DEFAULT_DOWNSAMPLING)
         self._logdir = context.logdir
         self.data_reader = Open3DPluginDataReader(self._logdir)
         self.window_lock = threading.Lock()  # protect _windows and _next_wid
@@ -574,17 +575,6 @@ class Open3DPlugin(base_plugin.TBPlugin):
         _log.debug(f"Window {this_window_id} closed.")
         return werkzeug.Response(f"Closed window_{this_window_id}")
 
-    # def _instance_tag_content(self, ctx, experiment, run, instance_tag):
-    #     """Gets the `MeshPluginData` proto for an instance tag."""
-    #     results = self._data_provider.list_tensors(
-    #         ctx,
-    #         experiment_id=experiment,
-    #         plugin_name=metadata.PLUGIN_NAME,
-    #         run_tag_filter=provider.RunTagFilter(runs=[run],
-    #                                              tags=[instance_tag]),
-    #     )
-    #     return results[run][instance_tag].plugin_content
-
     def get_plugin_apps(self):
         """Returns a set of WSGI applications that the plugin implements.
 
@@ -600,20 +590,20 @@ class Open3DPlugin(base_plugin.TBPlugin):
             "/style.css": self._serve_css,
             "/new_window": self._new_window,
             "/close_window": self._close_window,
-            "/api/*": self._webrtc_http_api,
+            "/api/*": self._webrtc_http_api
         }
 
     def is_active(self):
         """Determines whether this plugin is active.
 
         A plugin may not be active for instance if it lacks relevant data. If a
-        plugin is inactive, the frontend may avoid issuing requests to its routes.
+        plugin is inactive, the frontend may avoid issuing requests to its
+        routes.
 
         Returns:
           A boolean value. Whether this plugin is active.
         """
         return self.data_reader.is_active()
-        # return bool(self._multiplexer.PluginRunToTagToContent(self.plugin_name))
 
     def frontend_metadata(self):
         """Defines how the plugin will be displayed on the frontend.
@@ -669,35 +659,3 @@ class Open3DPlugin(base_plugin.TBPlugin):
                 os.path.join(os.path.dirname(__file__), "frontend",
                              "style.css")) as cssfile:
             return werkzeug.Response(cssfile.read(), content_type="text/css")
-
-    def tensors_impl(self, ctx, experiment, tag, run):
-        """Returns tensor data for the specified tag and run.
-
-        For details on how to use tags and runs, see
-        https://github.com/tensorflow/tensorboard#tags-giving-names-to-data
-
-        Args:
-          tag: string
-          run: string
-
-        Returns:
-          A list of TensorEvents - tuples containing 3 numbers describing
-          entries in the data series.
-
-        Raises:
-          NotFoundError if there are no tensors data for provided `run` and
-          `tag`.
-        """
-        all_tensors = self._data_provider.read_tensors(
-            ctx,
-            experiment_id=experiment,
-            plugin_name=metadata.PLUGIN_NAME,
-            downsample=self._DEFAULT_DOWNSAMPLING,
-            run_tag_filter=provider.RunTagFilter(runs=[run], tags=[tag]),
-        )
-        tensors = all_tensors.get(run, {}).get(tag, None)
-        _log.debug(tensors)
-        if tensors is None:
-            raise errors.NotFoundError("No tensors data for run=%r, tag=%r" %
-                                       (run, tag))
-        return [(x.wall_time, x.step, x.value) for x in tensors]
