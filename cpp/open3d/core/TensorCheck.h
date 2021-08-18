@@ -98,10 +98,11 @@
                                      tensor, shape, message)
 #define _AssertTensorShapeCompatible2(tensor, dynamic_shape) \
     tensor_check::_AssertTensorShapeCompatible(              \
-            __FILE__, __LINE__, (const char*)__FN__, tensor, shape)
-#define _AssertTensorShapeCompatible3(tensor, dynamic_shape, message) \
-    tensor_check::_AssertTensorShapeCompatible(                       \
-            __FILE__, __LINE__, (const char*)__FN__, tensor, shape, message)
+            __FILE__, __LINE__, (const char*)__FN__, tensor, dynamic_shape)
+#define _AssertTensorShapeCompatible3(tensor, dynamic_shape, message)       \
+    tensor_check::_AssertTensorShapeCompatible(__FILE__, __LINE__,          \
+                                               (const char*)__FN__, tensor, \
+                                               dynamic_shape, message)
 
 namespace open3d {
 namespace core {

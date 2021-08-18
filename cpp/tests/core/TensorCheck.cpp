@@ -80,21 +80,16 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
 TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     core::Device device = GetParam();
     core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
-    // core::AssertTensorShape(t, {1});
 
     try {
         core::AssertTensorShape(t, {1});
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
-        utility::LogInfo("Error: {}", err.what());
-        // EXPECT_TRUE(utility::ContainsString(err.what(), "Tensor has
-        // device")); EXPECT_TRUE(utility::ContainsString(err.what(),
-        //                                     "but is expected to be
-        //                                     CUDA:1000"));
-        // EXPECT_TRUE(utility::ContainsString(err.what(),
-        // "tests/core/TensorCheck.cpp:"));
-        // EXPECT_TRUE(utility::ContainsString(err.what(),
-        // "AssertTensorShape"));
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(), "Tensor has shape {}, but is expected to be {1}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(),
+                                            "tests/core/TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
     } catch (...) {
         FAIL() << "std::runtime_error not thrown.";
     }
@@ -102,7 +97,23 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
 
 TEST_P(TensorCheckPermuteDevices, AssertTensorShapeCompatible) {
     core::Device device = GetParam();
-    (void)device;
+    core::Tensor t = core::Tensor::Empty({2, 3}, core::Float32, device);
+
+    try {
+        core::AssertTensorShapeCompatible(t, {4, utility::nullopt});
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(),
+                "Tensor has shape {2, 3}, but is expected to be compatible "
+                "with {4, None}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(),
+                                            "tests/core/TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(),
+                                            "AssertTensorShapeCompatible"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
 }
 
 }  // namespace tests
