@@ -38,6 +38,8 @@
 namespace open3d {
 namespace core {
 
+class SizeVector;
+
 /// DynamicSizeVector is a vector of optional<int64_t>, it is used to represent
 /// a shape with unknown (dynamic) dimensions.
 ///
@@ -64,6 +66,8 @@ public:
     template <class InputIterator>
     DynamicSizeVector(InputIterator first, InputIterator last)
         : std::vector<optint64_t>(first, last) {}
+
+    DynamicSizeVector(const SizeVector& dim_sizes);
 
     DynamicSizeVector() {}
 
@@ -95,6 +99,11 @@ public:
         }
         ss << "}";
         return ss.str();
+    }
+
+    bool IsDynamic() const {
+        return std::any_of(this->begin(), this->end(),
+                           [](const optint64_t& v) { return !v.has_value(); });
     }
 };
 

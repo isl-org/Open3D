@@ -1575,24 +1575,27 @@ bool Tensor::IsSame(const Tensor& other) const {
            dtype_ == other.dtype_;
 }
 
-void Tensor::AssertShape(const SizeVector& expected_shape,
+void Tensor::AssertShape(const DynamicSizeVector& expected_shape,
                          const std::string& error_msg) const {
-    if (shape_ != expected_shape) {
-        if (error_msg.empty()) {
-            utility::LogError(
-                    "Tensor has shape {}, but it is expected to be {}.", shape_,
-                    expected_shape);
-        } else {
-            utility::LogError(
-                    "Tensor has shape {}, but it is expected to be {}: {}",
-                    shape_, expected_shape, error_msg);
+    if (expected_shape.IsDynamic()) {
+        GetShape().AssertCompatible(expected_shape, error_msg);
+    } else {
+        SizeVector static_shape(expected_shape.size());
+        std::transform(expected_shape.begin(), expected_shape.end(),
+                       static_shape.begin(),
+                       [](const auto& v) { return v.value(); });
+        if (shape_ != static_shape) {
+            if (error_msg.empty()) {
+                utility::LogError(
+                        "Tensor has shape {}, but it is expected to be {}.",
+                        shape_, static_shape);
+            } else {
+                utility::LogError(
+                        "Tensor has shape {}, but it is expected to be {}: {}",
+                        shape_, static_shape, error_msg);
+            }
         }
     }
-}
-
-void Tensor::AssertShapeCompatible(const DynamicSizeVector& expected_shape,
-                                   const std::string& error_msg) const {
-    GetShape().AssertCompatible(expected_shape, error_msg);
 }
 
 void Tensor::AssertDevice(const Device& expected_device,
