@@ -27,14 +27,35 @@
 #include "open3d/core/TensorCheck.h"
 
 #include "tests/UnitTest.h"
+#include "tests/core/CoreTest.h"
 
 namespace open3d {
 namespace tests {
 
-TEST(TensorCheck, AssertTensorDtype) {}
-TEST(TensorCheck, AssertTensorDevice) {}
-TEST(TensorCheck, AssertTensorShape) {}
-TEST(TensorCheck, AssertTensorShapeCompatible) {}
+class TensorCheckPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(Tensor,
+                         TensorCheckPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
+
+TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
+    core::Device device = GetParam();
+    (void)device;
+}
+
+TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
+    core::Device device = GetParam();
+    (void)device;
+}
+
+TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
+    core::Device device = GetParam();
+    (void)device;
+}
+
+TEST_P(TensorCheckPermuteDevices, AssertTensorShapeCompatible) {
+    core::Device device = GetParam();
+    (void)device;
+}
 
 }  // namespace tests
 }  // namespace open3d
