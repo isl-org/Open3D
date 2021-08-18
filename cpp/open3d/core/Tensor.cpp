@@ -1580,10 +1580,7 @@ void Tensor::AssertShape(const DynamicSizeVector& expected_shape,
     if (expected_shape.IsDynamic()) {
         GetShape().AssertCompatible(expected_shape, error_msg);
     } else {
-        SizeVector static_shape(expected_shape.size());
-        std::transform(expected_shape.begin(), expected_shape.end(),
-                       static_shape.begin(),
-                       [](const auto& v) { return v.value(); });
+        SizeVector static_shape(expected_shape);
         if (shape_ != static_shape) {
             if (error_msg.empty()) {
                 utility::LogError(

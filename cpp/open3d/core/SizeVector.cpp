@@ -38,8 +38,136 @@
 namespace open3d {
 namespace core {
 
+DynamicSizeVector::DynamicSizeVector(
+        const std::initializer_list<utility::optional<int64_t>>& dim_sizes)
+    : std::vector<utility::optional<int64_t>>(dim_sizes) {}
+
+DynamicSizeVector::DynamicSizeVector(
+        const std::vector<utility::optional<int64_t>>& dim_sizes)
+    : std::vector<utility::optional<int64_t>>(dim_sizes) {}
+
+DynamicSizeVector::DynamicSizeVector(const DynamicSizeVector& other)
+    : std::vector<utility::optional<int64_t>>(other) {}
+
+DynamicSizeVector::DynamicSizeVector(int64_t n, int64_t initial_value)
+    : std::vector<utility::optional<int64_t>>(n, initial_value) {}
+
 DynamicSizeVector::DynamicSizeVector(const SizeVector& dim_sizes)
     : DynamicSizeVector(dim_sizes.begin(), dim_sizes.end()) {}
+
+DynamicSizeVector& DynamicSizeVector::operator=(const DynamicSizeVector& v) {
+    static_cast<std::vector<utility::optional<int64_t>>*>(this)->operator=(v);
+    return *this;
+}
+
+DynamicSizeVector& DynamicSizeVector::operator=(DynamicSizeVector&& v) {
+    static_cast<std::vector<utility::optional<int64_t>>*>(this)->operator=(v);
+    return *this;
+}
+
+std::string DynamicSizeVector::ToString() const {
+    std::stringstream ss;
+    ss << "{";
+    bool first = true;
+    for (const utility::optional<int64_t>& element : *this) {
+        if (first) {
+            first = false;
+        } else {
+            ss << ", ";
+        }
+        if (element.has_value()) {
+            ss << fmt::format("{}", element.value());
+        } else {
+            ss << "None";
+        }
+    }
+    ss << "}";
+    return ss.str();
+}
+
+bool DynamicSizeVector::IsDynamic() const {
+    return std::any_of(
+            this->begin(), this->end(),
+            [](const utility::optional<int64_t>& v) { return !v.has_value(); });
+}
+
+SizeVector::SizeVector(const std::initializer_list<int64_t>& dim_sizes)
+    : std::vector<int64_t>(dim_sizes) {}
+
+SizeVector::SizeVector(const std::vector<int64_t>& dim_sizes)
+    : std::vector<int64_t>(dim_sizes) {}
+
+SizeVector::SizeVector(const SizeVector& other) : std::vector<int64_t>(other) {}
+
+SizeVector::SizeVector(int64_t n, int64_t initial_value)
+    : std::vector<int64_t>(n, initial_value) {}
+
+SizeVector::SizeVector(const DynamicSizeVector& dim_sizes) {
+    this->resize(dim_sizes.size());
+    std::transform(dim_sizes.begin(), dim_sizes.end(), this->begin(),
+                   [](const auto& v) { return v.value(); });
+}
+
+SizeVector& SizeVector::operator=(const SizeVector& v) {
+    static_cast<std::vector<int64_t>*>(this)->operator=(v);
+    return *this;
+}
+
+SizeVector& SizeVector::operator=(SizeVector&& v) {
+    static_cast<std::vector<int64_t>*>(this)->operator=(v);
+    return *this;
+}
+
+int64_t SizeVector::NumElements() const {
+    if (this->size() == 0) {
+        return 1;
+    }
+    return std::accumulate(
+            this->begin(), this->end(), 1LL,
+            [this](const int64_t& lhs, const int64_t& rhs) -> int64_t {
+                if (lhs < 0 || rhs < 0) {
+                    utility::LogError(
+                            "Shape {} cannot contain negative dimensions.",
+                            this->ToString());
+                }
+                return std::multiplies<int64_t>()(lhs, rhs);
+            });
+}
+
+int64_t SizeVector::GetLength() const {
+    if (size() == 0) {
+        utility::LogError("Cannot get length of a 0-dimensional shape.");
+    } else {
+        return operator[](0);
+    }
+}
+
+std::string SizeVector::ToString() const { return fmt::format("{}", *this); }
+
+void SizeVector::AssertCompatible(const DynamicSizeVector& dsv,
+                                  const std::string msg) const {
+    if (!IsCompatible(dsv)) {
+        if (msg.empty()) {
+            utility::LogError("Shape {} is not compatible with {}.", ToString(),
+                              dsv.ToString());
+        } else {
+            utility::LogError("Shape {} is not compatible with {}: {}",
+                              ToString(), dsv.ToString(), msg);
+        }
+    }
+}
+
+bool SizeVector::IsCompatible(const DynamicSizeVector& dsv) const {
+    if (size() != dsv.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < size(); ++i) {
+        if (dsv[i].has_value() && dsv[i].value() != at(i)) {
+            return false;
+        }
+    }
+    return true;
+}
 
 }  // namespace core
 }  // namespace open3d

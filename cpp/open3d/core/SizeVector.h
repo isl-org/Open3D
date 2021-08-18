@@ -27,12 +27,9 @@
 #pragma once
 
 #include <cstddef>
-#include <numeric>
-#include <sstream>
 #include <string>
 #include <vector>
 
-#include "open3d/utility/Logging.h"
 #include "open3d/utility/Optional.h"
 
 namespace open3d {
@@ -48,146 +45,67 @@ class SizeVector;
 /// core::DynamicSizeVector shape{utility::nullopt, 3};
 /// ```
 class DynamicSizeVector : public std::vector<utility::optional<int64_t>> {
-    using optint64_t = utility::optional<int64_t>;
-
 public:
-    DynamicSizeVector(const std::initializer_list<optint64_t>& dim_sizes)
-        : std::vector<optint64_t>(dim_sizes) {}
+    DynamicSizeVector() {}
 
-    DynamicSizeVector(const std::vector<optint64_t>& dim_sizes)
-        : std::vector<optint64_t>(dim_sizes) {}
+    DynamicSizeVector(
+            const std::initializer_list<utility::optional<int64_t>>& dim_sizes);
 
-    DynamicSizeVector(const DynamicSizeVector& other)
-        : std::vector<optint64_t>(other) {}
+    DynamicSizeVector(const std::vector<utility::optional<int64_t>>& dim_sizes);
 
-    explicit DynamicSizeVector(int64_t n, int64_t initial_value = 0)
-        : std::vector<optint64_t>(n, initial_value) {}
+    DynamicSizeVector(const DynamicSizeVector& other);
+
+    explicit DynamicSizeVector(int64_t n, int64_t initial_value = 0);
 
     template <class InputIterator>
     DynamicSizeVector(InputIterator first, InputIterator last)
-        : std::vector<optint64_t>(first, last) {}
+        : std::vector<utility::optional<int64_t>>(first, last) {}
 
     DynamicSizeVector(const SizeVector& dim_sizes);
 
-    DynamicSizeVector() {}
+    DynamicSizeVector& operator=(const DynamicSizeVector& v);
 
-    DynamicSizeVector& operator=(const DynamicSizeVector& v) {
-        static_cast<std::vector<optint64_t>*>(this)->operator=(v);
-        return *this;
-    }
+    DynamicSizeVector& operator=(DynamicSizeVector&& v);
 
-    DynamicSizeVector& operator=(DynamicSizeVector&& v) {
-        static_cast<std::vector<optint64_t>*>(this)->operator=(v);
-        return *this;
-    }
+    std::string ToString() const;
 
-    std::string ToString() const {
-        std::stringstream ss;
-        ss << "{";
-        bool first = true;
-        for (const optint64_t& element : *this) {
-            if (first) {
-                first = false;
-            } else {
-                ss << ", ";
-            }
-            if (element.has_value()) {
-                ss << fmt::format("{}", element.value());
-            } else {
-                ss << "None";
-            }
-        }
-        ss << "}";
-        return ss.str();
-    }
-
-    bool IsDynamic() const {
-        return std::any_of(this->begin(), this->end(),
-                           [](const optint64_t& v) { return !v.has_value(); });
-    }
+    bool IsDynamic() const;
 };
 
 /// SizeVector is a vector of int64_t, typically used in Tensor shape and
 /// strides. A signed int64_t type is chosen to allow negative strides.
 class SizeVector : public std::vector<int64_t> {
 public:
-    SizeVector(const std::initializer_list<int64_t>& dim_sizes)
-        : std::vector<int64_t>(dim_sizes) {}
+    SizeVector() {}
 
-    SizeVector(const std::vector<int64_t>& dim_sizes)
-        : std::vector<int64_t>(dim_sizes) {}
+    SizeVector(const std::initializer_list<int64_t>& dim_sizes);
 
-    SizeVector(const SizeVector& other) : std::vector<int64_t>(other) {}
+    SizeVector(const std::vector<int64_t>& dim_sizes);
 
-    explicit SizeVector(int64_t n, int64_t initial_value = 0)
-        : std::vector<int64_t>(n, initial_value) {}
+    SizeVector(const SizeVector& other);
+
+    explicit SizeVector(int64_t n, int64_t initial_value = 0);
 
     template <class InputIterator>
     SizeVector(InputIterator first, InputIterator last)
         : std::vector<int64_t>(first, last) {}
 
-    SizeVector() {}
+    explicit SizeVector(const DynamicSizeVector& dim_sizes);
 
-    SizeVector& operator=(const SizeVector& v) {
-        static_cast<std::vector<int64_t>*>(this)->operator=(v);
-        return *this;
-    }
+    SizeVector& operator=(const SizeVector& v);
 
-    SizeVector& operator=(SizeVector&& v) {
-        static_cast<std::vector<int64_t>*>(this)->operator=(v);
-        return *this;
-    }
+    SizeVector& operator=(SizeVector&& v);
 
-    int64_t NumElements() const {
-        if (this->size() == 0) {
-            return 1;
-        }
-        return std::accumulate(
-                this->begin(), this->end(), 1LL,
-                [this](const int64_t& lhs, const int64_t& rhs) -> int64_t {
-                    if (lhs < 0 || rhs < 0) {
-                        utility::LogError(
-                                "Shape {} cannot contain negative dimensions.",
-                                this->ToString());
-                    }
-                    return std::multiplies<int64_t>()(lhs, rhs);
-                });
-    }
+    int64_t NumElements() const;
 
-    int64_t GetLength() const {
-        if (size() == 0) {
-            utility::LogError("Cannot get length of a 0-dimensional shape.");
-        } else {
-            return operator[](0);
-        }
-    }
+    int64_t GetLength() const;
 
-    std::string ToString() const { return fmt::format("{}", *this); }
+    std::string ToString() const;
 
     void AssertCompatible(const DynamicSizeVector& dsv,
-                          const std::string msg = "") const {
-        if (!IsCompatible(dsv)) {
-            if (msg.empty()) {
-                utility::LogError("Shape {} is not compatible with {}.",
-                                  ToString(), dsv.ToString());
-            } else {
-                utility::LogError("Shape {} is not compatible with {}: {}",
-                                  ToString(), dsv.ToString(), msg);
-            }
-        }
-    }
+                          const std::string msg = "") const;
 
-    bool IsCompatible(const DynamicSizeVector& dsv) const {
-        if (size() != dsv.size()) {
-            return false;
-        }
-        for (size_t i = 0; i < size(); ++i) {
-            if (dsv[i].has_value() && dsv[i].value() != at(i)) {
-                return false;
-            }
-        }
-        return true;
-    }
+    bool IsCompatible(const DynamicSizeVector& dsv) const;
 };
 
 }  // namespace core
