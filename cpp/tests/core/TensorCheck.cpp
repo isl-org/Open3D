@@ -39,12 +39,43 @@ INSTANTIATE_TEST_SUITE_P(Tensor,
 
 TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
     core::Device device = GetParam();
-    (void)device;
+    core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
+
+    // Check error message in Google test:
+    // https://stackoverflow.com/a/23271612/1255535
+    try {
+        core::AssertTensorDtype(t, core::Int32);
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(),
+                "Tensor has dtype Float32, but is expected to be Int32."));
+        EXPECT_TRUE(utility::ContainsString(err.what(),
+                                            "tests/core/TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorDtype"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
 }
 
 TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
     core::Device device = GetParam();
-    (void)device;
+    core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
+
+    try {
+        core::AssertTensorDevice(t, core::Device("CUDA:1000"));
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        utility::LogInfo(err.what());
+        EXPECT_TRUE(utility::ContainsString(err.what(), "Tensor has device"));
+        EXPECT_TRUE(utility::ContainsString(err.what(),
+                                            "but is expected to be CUDA:1000"));
+        EXPECT_TRUE(utility::ContainsString(err.what(),
+                                            "tests/core/TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorDevice"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
 }
 
 TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
