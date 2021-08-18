@@ -160,7 +160,7 @@ public:
         if (sizeof...(Args) > 0) {
             Logger::GetInstance().VError(
                     file, line, function,
-                    FormatArgsPartial(format, fmt::make_format_args(args...)));
+                    FormatArgs(format, fmt::make_format_args(args...)));
         } else {
             Logger::GetInstance().VError(file, line, function,
                                          std::string(format));
@@ -175,7 +175,7 @@ public:
         if (sizeof...(Args) > 0) {
             Logger::GetInstance().VWarning(
                     file, line, function,
-                    FormatArgsPartial(format, fmt::make_format_args(args...)));
+                    FormatArgs(format, fmt::make_format_args(args...)));
         } else {
             Logger::GetInstance().VWarning(file, line, function,
                                            std::string(format));
@@ -190,7 +190,7 @@ public:
         if (sizeof...(Args) > 0) {
             Logger::GetInstance().VInfo(
                     file, line, function,
-                    FormatArgsPartial(format, fmt::make_format_args(args...)));
+                    FormatArgs(format, fmt::make_format_args(args...)));
         } else {
             Logger::GetInstance().VInfo(file, line, function,
                                         std::string(format));
@@ -205,7 +205,7 @@ public:
         if (sizeof...(Args) > 0) {
             Logger::GetInstance().VDebug(
                     file, line, function,
-                    FormatArgsPartial(format, fmt::make_format_args(args...)));
+                    FormatArgs(format, fmt::make_format_args(args...)));
         } else {
             Logger::GetInstance().VDebug(file, line, function,
                                          std::string(format));
@@ -214,19 +214,7 @@ public:
 
 private:
     Logger();
-    template <typename... Args>
-    static std::string FormatArgs(const char *format, Args &&... args) {
-        std::string message;
-        if (sizeof...(Args) > 0) {
-            fmt::format_args format_args = fmt::make_format_args(args...);
-            message = fmt::vformat(format, format_args);
-        } else {
-            message = std::string(format);
-        }
-        return message;
-    }
-    static std::string FormatArgsPartial(const char *format,
-                                         fmt::format_args args) {
+    static std::string FormatArgs(const char *format, fmt::format_args args) {
         std::string err_msg = fmt::vformat(format, args);
         return err_msg;
     }
