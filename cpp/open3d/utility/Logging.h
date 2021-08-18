@@ -172,8 +172,14 @@ public:
                             const char *function,
                             const char *format,
                             Args &&... args) {
-        Logger::GetInstance().VWarning(file, line, function,
-                                       FormatArgs(format, args...));
+        if (sizeof...(Args) > 0) {
+            Logger::GetInstance().VWarning(
+                    file, line, function,
+                    FormatArgsPartial(format, fmt::make_format_args(args...)));
+        } else {
+            Logger::GetInstance().VWarning(file, line, function,
+                                           std::string(format));
+        }
     }
     template <typename... Args>
     static void _LogInfo(const char *file,
@@ -181,8 +187,14 @@ public:
                          const char *function,
                          const char *format,
                          Args &&... args) {
-        Logger::GetInstance().VInfo(file, line, function,
-                                    FormatArgs(format, args...));
+        if (sizeof...(Args) > 0) {
+            Logger::GetInstance().VInfo(
+                    file, line, function,
+                    FormatArgsPartial(format, fmt::make_format_args(args...)));
+        } else {
+            Logger::GetInstance().VInfo(file, line, function,
+                                        std::string(format));
+        }
     }
     template <typename... Args>
     static void _LogDebug(const char *file,
@@ -190,8 +202,14 @@ public:
                           const char *function,
                           const char *format,
                           Args &&... args) {
-        Logger::GetInstance().VDebug(file, line, function,
-                                     FormatArgs(format, args...));
+        if (sizeof...(Args) > 0) {
+            Logger::GetInstance().VDebug(
+                    file, line, function,
+                    FormatArgsPartial(format, fmt::make_format_args(args...)));
+        } else {
+            Logger::GetInstance().VDebug(file, line, function,
+                                         std::string(format));
+        }
     }
 
 private:
