@@ -155,10 +155,16 @@ if __name__ == "__main__":
     # setup dataset examples
     datasets = OrderedDict()
 
-    for i, file in enumerate(args.file):
-        pcd = o3d.t.io.read_point_cloud(file)
+    # TODO: remove hard-coded file list.
+    files = [
+        "small_tower.ply", "kitti_1.ply", "kitti_2.ply", "fluid_1000.ply",
+        "s3dis_1.ply", "s3dis_2.ply"
+    ]
+    for i, file in enumerate(files):
+        filepath = os.path.join(open3d_root, file)
+        pcd = o3d.t.io.read_point_cloud(filepath)
         points = queries = pcd.point['points']
-        filename = os.path.basename(file)
+        filename = os.path.basename(filepath)
         datasets[filename] = {'points': points, 'queries': queries}
 
     # random data
