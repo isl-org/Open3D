@@ -52,8 +52,8 @@ def test_insertion(device):
     assert masks.to(o3c.int64).sum() == 5
 
     valid_indices = buf_indices[masks].to(o3c.int64)
-    valid_keys = hashmap.get_key_tensor()[valid_indices]
-    valid_values = hashmap.get_value_tensor()[valid_indices]
+    valid_keys = hashmap.key_tensor()[valid_indices]
+    valid_values = hashmap.value_tensor()[valid_indices]
     np.testing.assert_equal(valid_keys.cpu().numpy(),
                             valid_values.cpu().numpy() * 100)
 
@@ -69,7 +69,7 @@ def test_activate(device):
     assert masks.to(o3c.int64).sum() == 5
 
     valid_indices = buf_indices[masks].to(o3c.int64)
-    valid_keys = hashmap.get_key_tensor()[valid_indices]
+    valid_keys = hashmap.key_tensor()[valid_indices]
     np.testing.assert_equal(np.sort(valid_keys.cpu().numpy().flatten()),
                             np.array([100, 300, 500, 700, 900]))
 
@@ -87,8 +87,8 @@ def test_find(device):
     np.testing.assert_equal(masks.cpu().numpy(), np.array([True, False, True]))
 
     valid_indices = buf_indices[masks].to(o3c.int64)
-    valid_keys = hashmap.get_key_tensor()[valid_indices]
-    valid_values = hashmap.get_value_tensor()[valid_indices]
+    valid_keys = hashmap.key_tensor()[valid_indices]
+    valid_values = hashmap.value_tensor()[valid_indices]
     assert valid_keys.shape[0] == 2
 
     np.testing.assert_equal(valid_keys.cpu().numpy().flatten(),
@@ -111,11 +111,11 @@ def test_erase(device):
     np.testing.assert_equal(masks.cpu().numpy(), np.array([True, False, True]))
 
     assert hashmap.size() == 3
-    active_buf_indices = hashmap.get_active_buf_indices()
+    active_buf_indices = hashmap.active_buf_indices()
     active_indices = active_buf_indices.to(o3c.int64)
 
-    active_keys = hashmap.get_key_tensor()[active_indices]
-    active_values = hashmap.get_value_tensor()[active_indices]
+    active_keys = hashmap.key_tensor()[active_indices]
+    active_values = hashmap.value_tensor()[active_indices]
 
     active_keys_np = active_keys.cpu().numpy().flatten()
     active_values_np = active_values.cpu().numpy().flatten()
@@ -136,9 +136,9 @@ def test_complex_shape(device):
     assert masks.to(o3c.int64).sum() == 3
 
     valid_indices = buf_indices[masks].to(o3c.int64)
-    valid_keys = hashmap.get_key_tensor()[valid_indices, :]
+    valid_keys = hashmap.key_tensor()[valid_indices, :]
 
-    valid_values = hashmap.get_value_tensor()[valid_indices]
+    valid_values = hashmap.value_tensor()[valid_indices]
 
     np.testing.assert_equal(
         valid_keys.cpu().numpy().flatten(),
@@ -169,10 +169,10 @@ def test_multivalue(device):
     assert masks.to(o3c.int64).sum() == 3
 
     valid_indices = buf_indices[masks].to(o3c.int64)
-    valid_keys = hashmap.get_key_tensor()[valid_indices, :]
+    valid_keys = hashmap.key_tensor()[valid_indices, :]
 
-    valid_values_i64 = hashmap.get_value_tensor(0)[valid_indices]
-    valid_values_f64 = hashmap.get_value_tensor(1)[valid_indices]
+    valid_values_i64 = hashmap.value_tensor(0)[valid_indices]
+    valid_values_f64 = hashmap.value_tensor(1)[valid_indices]
 
     np.testing.assert_equal(
         valid_keys.cpu().numpy().flatten(),
