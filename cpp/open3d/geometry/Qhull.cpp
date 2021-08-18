@@ -118,6 +118,7 @@ Qhull::ComputeDelaunayTetrahedralization(
     if (points.size() == 4) {
         delaunay_triangulation->vertices_ = points;
         delaunay_triangulation->tetras_.push_back(Vector4i(0, 1, 2, 3));
+        pt_map.insert(pt_map.end(), {0, 1, 2, 3});
         return std::make_tuple(delaunay_triangulation, pt_map);
     }
 
