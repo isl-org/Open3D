@@ -63,6 +63,8 @@ public:
 
     DynamicSizeVector(const SizeVector& dim_sizes);
 
+    SizeVector ToSizeVector() const;
+
     DynamicSizeVector& operator=(const DynamicSizeVector& v);
 
     DynamicSizeVector& operator=(DynamicSizeVector&& v);
@@ -89,8 +91,6 @@ public:
     template <class InputIterator>
     SizeVector(InputIterator first, InputIterator last)
         : std::vector<int64_t>(first, last) {}
-
-    explicit SizeVector(const DynamicSizeVector& dim_sizes);
 
     SizeVector& operator=(const SizeVector& v);
 

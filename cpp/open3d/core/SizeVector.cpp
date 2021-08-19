@@ -55,6 +55,17 @@ DynamicSizeVector::DynamicSizeVector(int64_t n, int64_t initial_value)
 DynamicSizeVector::DynamicSizeVector(const SizeVector& dim_sizes)
     : DynamicSizeVector(dim_sizes.begin(), dim_sizes.end()) {}
 
+SizeVector DynamicSizeVector::ToSizeVector() const {
+    SizeVector sv(size());
+    std::transform(begin(), end(), sv.begin(), [](const auto& v) {
+        if (!v.has_value()) {
+            utility::LogError("Cannot convert dynamic shape to SizeVector.");
+        }
+        return v.value();
+    });
+    return sv;
+}
+
 DynamicSizeVector& DynamicSizeVector::operator=(const DynamicSizeVector& v) {
     static_cast<std::vector<utility::optional<int64_t>>*>(this)->operator=(v);
     return *this;
@@ -101,12 +112,6 @@ SizeVector::SizeVector(const SizeVector& other) : std::vector<int64_t>(other) {}
 
 SizeVector::SizeVector(int64_t n, int64_t initial_value)
     : std::vector<int64_t>(n, initial_value) {}
-
-SizeVector::SizeVector(const DynamicSizeVector& dim_sizes) {
-    this->resize(dim_sizes.size());
-    std::transform(dim_sizes.begin(), dim_sizes.end(), this->begin(),
-                   [](const auto& v) { return v.value(); });
-}
 
 SizeVector& SizeVector::operator=(const SizeVector& v) {
     static_cast<std::vector<int64_t>*>(this)->operator=(v);

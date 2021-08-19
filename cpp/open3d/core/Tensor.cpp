@@ -1581,7 +1581,7 @@ void Tensor::AssertShape(const DynamicSizeVector& expected_shape,
     if (expected_shape.IsDynamic()) {
         GetShape().AssertCompatible(expected_shape, error_msg);
     } else {
-        SizeVector static_shape(expected_shape);
+        SizeVector static_shape = expected_shape.ToSizeVector();
         if (shape_ != static_shape) {
             if (error_msg.empty()) {
                 utility::LogError(
