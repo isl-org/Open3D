@@ -163,7 +163,7 @@ if __name__ == "__main__":
     for i, file in enumerate(files):
         filepath = os.path.join(open3d_root, file)
         pcd = o3d.t.io.read_point_cloud(filepath)
-        points = queries = pcd.point['points']
+        points = queries = pcd.point['points'].to(o3d.core.Dtype.Float32)
         filename = os.path.basename(filepath)
         datasets[filename] = {'points': points, 'queries': queries}
 
