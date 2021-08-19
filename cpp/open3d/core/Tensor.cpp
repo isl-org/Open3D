@@ -26,6 +26,7 @@
 
 #include "open3d/core/Tensor.h"
 
+#include <numeric>
 #include <sstream>
 
 #include "open3d/core/AdvancedIndexing.h"
