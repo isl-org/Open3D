@@ -2,7 +2,7 @@
 # source: plugin_data.proto
 
 import sys
-_b=sys.version_info[0]<3 and (lambda x:x) or (lambda x:x.encode('latin1'))
+_b = sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode('latin1'))
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
@@ -11,267 +11,366 @@ from google.protobuf import symbol_database as _symbol_database
 
 _sym_db = _symbol_database.Default()
 
-
-
-
 DESCRIPTOR = _descriptor.FileDescriptor(
-  name='plugin_data.proto',
-  package='tensorboard.open3d',
-  syntax='proto3',
-  serialized_options=None,
-  serialized_pb=_b('\n\x11plugin_data.proto\x12\x12tensorboard.open3d\"\x8b\x05\n\x10Open3DPluginData\x12\x0f\n\x07version\x18\x01 \x01(\x05\x12S\n\x13property_references\x18\x02 \x03(\x0b\x32\x36.tensorboard.open3d.Open3DPluginData.PropertyReference\x12\x44\n\x0b\x62\x61tch_index\x18\x03 \x01(\x0b\x32/.tensorboard.open3d.Open3DPluginData.BatchIndex\x1aw\n\x11PropertyReference\x12P\n\x11geometry_property\x18\x01 \x01(\x0e\x32\x35.tensorboard.open3d.Open3DPluginData.GeometryProperty\x12\x10\n\x08step_ref\x18\x02 \x01(\x04\x1a(\n\tStartSize\x12\r\n\x05start\x18\x01 \x01(\x04\x12\x0c\n\x04size\x18\x02 \x01(\x04\x1a\x62\n\nBatchIndex\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x42\n\nstart_size\x18\x02 \x03(\x0b\x32..tensorboard.open3d.Open3DPluginData.StartSize\"\xc3\x01\n\x10GeometryProperty\x12\x14\n\x10vertex_positions\x10\x00\x12\x12\n\x0evertex_normals\x10\x01\x12\x11\n\rvertex_colors\x10\x02\x12\x0e\n\nvertex_uvs\x10\x03\x12\x14\n\x10triangle_indices\x10\x04\x12\x13\n\x0ftriangle_colors\x10\x05\x12\x14\n\x10triangle_normals\x10\x06\x12\x10\n\x0cline_indices\x10\x07\x12\x0f\n\x0bline_colors\x10\x08\x62\x06proto3')
-)
-
-
+    name='plugin_data.proto',
+    package='tensorboard.open3d',
+    syntax='proto3',
+    serialized_options=None,
+    serialized_pb=_b(
+        '\n\x11plugin_data.proto\x12\x12tensorboard.open3d\"\x8b\x05\n\x10Open3DPluginData\x12\x0f\n\x07version\x18\x01 \x01(\x05\x12S\n\x13property_references\x18\x02 \x03(\x0b\x32\x36.tensorboard.open3d.Open3DPluginData.PropertyReference\x12\x44\n\x0b\x62\x61tch_index\x18\x03 \x01(\x0b\x32/.tensorboard.open3d.Open3DPluginData.BatchIndex\x1aw\n\x11PropertyReference\x12P\n\x11geometry_property\x18\x01 \x01(\x0e\x32\x35.tensorboard.open3d.Open3DPluginData.GeometryProperty\x12\x10\n\x08step_ref\x18\x02 \x01(\x04\x1a(\n\tStartSize\x12\r\n\x05start\x18\x01 \x01(\x04\x12\x0c\n\x04size\x18\x02 \x01(\x04\x1a\x62\n\nBatchIndex\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x42\n\nstart_size\x18\x02 \x03(\x0b\x32..tensorboard.open3d.Open3DPluginData.StartSize\"\xc3\x01\n\x10GeometryProperty\x12\x14\n\x10vertex_positions\x10\x00\x12\x12\n\x0evertex_normals\x10\x01\x12\x11\n\rvertex_colors\x10\x02\x12\x0e\n\nvertex_uvs\x10\x03\x12\x14\n\x10triangle_indices\x10\x04\x12\x13\n\x0ftriangle_colors\x10\x05\x12\x14\n\x10triangle_normals\x10\x06\x12\x10\n\x0cline_indices\x10\x07\x12\x0f\n\x0bline_colors\x10\x08\x62\x06proto3'
+    ))
 
 _OPEN3DPLUGINDATA_GEOMETRYPROPERTY = _descriptor.EnumDescriptor(
-  name='GeometryProperty',
-  full_name='tensorboard.open3d.Open3DPluginData.GeometryProperty',
-  filename=None,
-  file=DESCRIPTOR,
-  values=[
-    _descriptor.EnumValueDescriptor(
-      name='vertex_positions', index=0, number=0,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='vertex_normals', index=1, number=1,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='vertex_colors', index=2, number=2,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='vertex_uvs', index=3, number=3,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='triangle_indices', index=4, number=4,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='triangle_colors', index=5, number=5,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='triangle_normals', index=6, number=6,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='line_indices', index=7, number=7,
-      serialized_options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='line_colors', index=8, number=8,
-      serialized_options=None,
-      type=None),
-  ],
-  containing_type=None,
-  serialized_options=None,
-  serialized_start=498,
-  serialized_end=693,
+    name='GeometryProperty',
+    full_name='tensorboard.open3d.Open3DPluginData.GeometryProperty',
+    filename=None,
+    file=DESCRIPTOR,
+    values=[
+        _descriptor.EnumValueDescriptor(name='vertex_positions',
+                                        index=0,
+                                        number=0,
+                                        serialized_options=None,
+                                        type=None),
+        _descriptor.EnumValueDescriptor(name='vertex_normals',
+                                        index=1,
+                                        number=1,
+                                        serialized_options=None,
+                                        type=None),
+        _descriptor.EnumValueDescriptor(name='vertex_colors',
+                                        index=2,
+                                        number=2,
+                                        serialized_options=None,
+                                        type=None),
+        _descriptor.EnumValueDescriptor(name='vertex_uvs',
+                                        index=3,
+                                        number=3,
+                                        serialized_options=None,
+                                        type=None),
+        _descriptor.EnumValueDescriptor(name='triangle_indices',
+                                        index=4,
+                                        number=4,
+                                        serialized_options=None,
+                                        type=None),
+        _descriptor.EnumValueDescriptor(name='triangle_colors',
+                                        index=5,
+                                        number=5,
+                                        serialized_options=None,
+                                        type=None),
+        _descriptor.EnumValueDescriptor(name='triangle_normals',
+                                        index=6,
+                                        number=6,
+                                        serialized_options=None,
+                                        type=None),
+        _descriptor.EnumValueDescriptor(name='line_indices',
+                                        index=7,
+                                        number=7,
+                                        serialized_options=None,
+                                        type=None),
+        _descriptor.EnumValueDescriptor(name='line_colors',
+                                        index=8,
+                                        number=8,
+                                        serialized_options=None,
+                                        type=None),
+    ],
+    containing_type=None,
+    serialized_options=None,
+    serialized_start=498,
+    serialized_end=693,
 )
 _sym_db.RegisterEnumDescriptor(_OPEN3DPLUGINDATA_GEOMETRYPROPERTY)
 
-
 _OPEN3DPLUGINDATA_PROPERTYREFERENCE = _descriptor.Descriptor(
-  name='PropertyReference',
-  full_name='tensorboard.open3d.Open3DPluginData.PropertyReference',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='geometry_property', full_name='tensorboard.open3d.Open3DPluginData.PropertyReference.geometry_property', index=0,
-      number=1, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='step_ref', full_name='tensorboard.open3d.Open3DPluginData.PropertyReference.step_ref', index=1,
-      number=2, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=234,
-  serialized_end=353,
+    name='PropertyReference',
+    full_name='tensorboard.open3d.Open3DPluginData.PropertyReference',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='geometry_property',
+            full_name=
+            'tensorboard.open3d.Open3DPluginData.PropertyReference.geometry_property',
+            index=0,
+            number=1,
+            type=14,
+            cpp_type=8,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
+        _descriptor.FieldDescriptor(
+            name='step_ref',
+            full_name=
+            'tensorboard.open3d.Open3DPluginData.PropertyReference.step_ref',
+            index=1,
+            number=2,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=234,
+    serialized_end=353,
 )
 
 _OPEN3DPLUGINDATA_STARTSIZE = _descriptor.Descriptor(
-  name='StartSize',
-  full_name='tensorboard.open3d.Open3DPluginData.StartSize',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='start', full_name='tensorboard.open3d.Open3DPluginData.StartSize.start', index=0,
-      number=1, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='size', full_name='tensorboard.open3d.Open3DPluginData.StartSize.size', index=1,
-      number=2, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=355,
-  serialized_end=395,
+    name='StartSize',
+    full_name='tensorboard.open3d.Open3DPluginData.StartSize',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='start',
+            full_name='tensorboard.open3d.Open3DPluginData.StartSize.start',
+            index=0,
+            number=1,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
+        _descriptor.FieldDescriptor(
+            name='size',
+            full_name='tensorboard.open3d.Open3DPluginData.StartSize.size',
+            index=1,
+            number=2,
+            type=4,
+            cpp_type=4,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=355,
+    serialized_end=395,
 )
 
 _OPEN3DPLUGINDATA_BATCHINDEX = _descriptor.Descriptor(
-  name='BatchIndex',
-  full_name='tensorboard.open3d.Open3DPluginData.BatchIndex',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='filename', full_name='tensorboard.open3d.Open3DPluginData.BatchIndex.filename', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='start_size', full_name='tensorboard.open3d.Open3DPluginData.BatchIndex.start_size', index=1,
-      number=2, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=397,
-  serialized_end=495,
+    name='BatchIndex',
+    full_name='tensorboard.open3d.Open3DPluginData.BatchIndex',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='filename',
+            full_name='tensorboard.open3d.Open3DPluginData.BatchIndex.filename',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=_b("").decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
+        _descriptor.FieldDescriptor(
+            name='start_size',
+            full_name=
+            'tensorboard.open3d.Open3DPluginData.BatchIndex.start_size',
+            index=1,
+            number=2,
+            type=11,
+            cpp_type=10,
+            label=3,
+            has_default_value=False,
+            default_value=[],
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=397,
+    serialized_end=495,
 )
 
 _OPEN3DPLUGINDATA = _descriptor.Descriptor(
-  name='Open3DPluginData',
-  full_name='tensorboard.open3d.Open3DPluginData',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='version', full_name='tensorboard.open3d.Open3DPluginData.version', index=0,
-      number=1, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='property_references', full_name='tensorboard.open3d.Open3DPluginData.property_references', index=1,
-      number=2, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='batch_index', full_name='tensorboard.open3d.Open3DPluginData.batch_index', index=2,
-      number=3, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[_OPEN3DPLUGINDATA_PROPERTYREFERENCE, _OPEN3DPLUGINDATA_STARTSIZE, _OPEN3DPLUGINDATA_BATCHINDEX, ],
-  enum_types=[
-    _OPEN3DPLUGINDATA_GEOMETRYPROPERTY,
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=42,
-  serialized_end=693,
+    name='Open3DPluginData',
+    full_name='tensorboard.open3d.Open3DPluginData',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='version',
+            full_name='tensorboard.open3d.Open3DPluginData.version',
+            index=0,
+            number=1,
+            type=5,
+            cpp_type=1,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
+        _descriptor.FieldDescriptor(
+            name='property_references',
+            full_name='tensorboard.open3d.Open3DPluginData.property_references',
+            index=1,
+            number=2,
+            type=11,
+            cpp_type=10,
+            label=3,
+            has_default_value=False,
+            default_value=[],
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
+        _descriptor.FieldDescriptor(
+            name='batch_index',
+            full_name='tensorboard.open3d.Open3DPluginData.batch_index',
+            index=2,
+            number=3,
+            type=11,
+            cpp_type=10,
+            label=1,
+            has_default_value=False,
+            default_value=None,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
+    ],
+    extensions=[],
+    nested_types=[
+        _OPEN3DPLUGINDATA_PROPERTYREFERENCE,
+        _OPEN3DPLUGINDATA_STARTSIZE,
+        _OPEN3DPLUGINDATA_BATCHINDEX,
+    ],
+    enum_types=[
+        _OPEN3DPLUGINDATA_GEOMETRYPROPERTY,
+    ],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=42,
+    serialized_end=693,
 )
 
-_OPEN3DPLUGINDATA_PROPERTYREFERENCE.fields_by_name['geometry_property'].enum_type = _OPEN3DPLUGINDATA_GEOMETRYPROPERTY
+_OPEN3DPLUGINDATA_PROPERTYREFERENCE.fields_by_name[
+    'geometry_property'].enum_type = _OPEN3DPLUGINDATA_GEOMETRYPROPERTY
 _OPEN3DPLUGINDATA_PROPERTYREFERENCE.containing_type = _OPEN3DPLUGINDATA
 _OPEN3DPLUGINDATA_STARTSIZE.containing_type = _OPEN3DPLUGINDATA
-_OPEN3DPLUGINDATA_BATCHINDEX.fields_by_name['start_size'].message_type = _OPEN3DPLUGINDATA_STARTSIZE
+_OPEN3DPLUGINDATA_BATCHINDEX.fields_by_name[
+    'start_size'].message_type = _OPEN3DPLUGINDATA_STARTSIZE
 _OPEN3DPLUGINDATA_BATCHINDEX.containing_type = _OPEN3DPLUGINDATA
-_OPEN3DPLUGINDATA.fields_by_name['property_references'].message_type = _OPEN3DPLUGINDATA_PROPERTYREFERENCE
-_OPEN3DPLUGINDATA.fields_by_name['batch_index'].message_type = _OPEN3DPLUGINDATA_BATCHINDEX
+_OPEN3DPLUGINDATA.fields_by_name[
+    'property_references'].message_type = _OPEN3DPLUGINDATA_PROPERTYREFERENCE
+_OPEN3DPLUGINDATA.fields_by_name[
+    'batch_index'].message_type = _OPEN3DPLUGINDATA_BATCHINDEX
 _OPEN3DPLUGINDATA_GEOMETRYPROPERTY.containing_type = _OPEN3DPLUGINDATA
 DESCRIPTOR.message_types_by_name['Open3DPluginData'] = _OPEN3DPLUGINDATA
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-Open3DPluginData = _reflection.GeneratedProtocolMessageType('Open3DPluginData', (_message.Message,), dict(
-
-  PropertyReference = _reflection.GeneratedProtocolMessageType('PropertyReference', (_message.Message,), dict(
-    DESCRIPTOR = _OPEN3DPLUGINDATA_PROPERTYREFERENCE,
-    __module__ = 'plugin_data_pb2'
-    # @@protoc_insertion_point(class_scope:tensorboard.open3d.Open3DPluginData.PropertyReference)
+Open3DPluginData = _reflection.GeneratedProtocolMessageType(
+    'Open3DPluginData',
+    (_message.Message,),
+    dict(
+        PropertyReference=_reflection.GeneratedProtocolMessageType(
+            'PropertyReference',
+            (_message.Message,),
+            dict(
+                DESCRIPTOR=_OPEN3DPLUGINDATA_PROPERTYREFERENCE,
+                __module__='plugin_data_pb2'
+                # @@protoc_insertion_point(class_scope:tensorboard.open3d.Open3DPluginData.PropertyReference)
+            )),
+        StartSize=_reflection.GeneratedProtocolMessageType(
+            'StartSize',
+            (_message.Message,),
+            dict(
+                DESCRIPTOR=_OPEN3DPLUGINDATA_STARTSIZE,
+                __module__='plugin_data_pb2'
+                # @@protoc_insertion_point(class_scope:tensorboard.open3d.Open3DPluginData.StartSize)
+            )),
+        BatchIndex=_reflection.GeneratedProtocolMessageType(
+            'BatchIndex',
+            (_message.Message,),
+            dict(
+                DESCRIPTOR=_OPEN3DPLUGINDATA_BATCHINDEX,
+                __module__='plugin_data_pb2'
+                # @@protoc_insertion_point(class_scope:tensorboard.open3d.Open3DPluginData.BatchIndex)
+            )),
+        DESCRIPTOR=_OPEN3DPLUGINDATA,
+        __module__='plugin_data_pb2'
+        # @@protoc_insertion_point(class_scope:tensorboard.open3d.Open3DPluginData)
     ))
-  ,
-
-  StartSize = _reflection.GeneratedProtocolMessageType('StartSize', (_message.Message,), dict(
-    DESCRIPTOR = _OPEN3DPLUGINDATA_STARTSIZE,
-    __module__ = 'plugin_data_pb2'
-    # @@protoc_insertion_point(class_scope:tensorboard.open3d.Open3DPluginData.StartSize)
-    ))
-  ,
-
-  BatchIndex = _reflection.GeneratedProtocolMessageType('BatchIndex', (_message.Message,), dict(
-    DESCRIPTOR = _OPEN3DPLUGINDATA_BATCHINDEX,
-    __module__ = 'plugin_data_pb2'
-    # @@protoc_insertion_point(class_scope:tensorboard.open3d.Open3DPluginData.BatchIndex)
-    ))
-  ,
-  DESCRIPTOR = _OPEN3DPLUGINDATA,
-  __module__ = 'plugin_data_pb2'
-  # @@protoc_insertion_point(class_scope:tensorboard.open3d.Open3DPluginData)
-  ))
 _sym_db.RegisterMessage(Open3DPluginData)
 _sym_db.RegisterMessage(Open3DPluginData.PropertyReference)
 _sym_db.RegisterMessage(Open3DPluginData.StartSize)
 _sym_db.RegisterMessage(Open3DPluginData.BatchIndex)
-
 
 # @@protoc_insertion_point(module_scope)

@@ -4,6 +4,17 @@ import json
 from tensorboard.compat.proto import summary_pb2
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 
+# Setup Python logger to emulate Open3D C++ logger.
+import logging as _logging
+log = _logging.getLogger("Open3D")
+log.propagate = False
+_stream_handler = _logging.StreamHandler()
+_stream_handler.setFormatter(
+    _logging.Formatter('[%(name)s %(levelname)s T:%(threadName)s] %(message)s'))
+_stream_handler.setLevel(_logging.DEBUG)
+log.setLevel(_logging.DEBUG)
+log.addHandler(_stream_handler)
+
 PLUGIN_NAME = "Open3D"
 
 # The most recent value for the `version` field of the

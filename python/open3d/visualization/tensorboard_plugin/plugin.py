@@ -19,10 +19,10 @@ if sys.platform == 'darwin':
     raise NotImplementedError("Open3D for TensorBoard does not run on macOS.")
 import open3d as o3d
 # TODO: Check for GPU / EGL else TensorBoard will crash.
-_log = o3d.log
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 from open3d.visualization.tensorboard_plugin import metadata
+_log = metadata.log
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 # Set window system before the GUI event loop
 o3d.visualization.webrtc_server.enable_webrtc()

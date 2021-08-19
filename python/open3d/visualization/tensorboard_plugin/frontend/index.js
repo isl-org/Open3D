@@ -48,8 +48,8 @@ class TensorboardOpen3DPluginClient {
     window_state = new Map();     // {windowUId -> Geometry state (run, tags, batch_idx, step)}
     runWindow = new Map();  // {run -> windowUId}
     selected_tags = new Set();
-    common_step = undefined;
-    common_batch_idx = undefined;
+    common_step = null;
+    common_batch_idx = null;
 
     /**
      * Entry point for the TensorBoard Open3D plugin client
@@ -91,8 +91,8 @@ class TensorboardOpen3DPluginClient {
             .then((response) => this.addConnection(response.window_id,
                 response.logdir))
             .then(this.addAppEventListeners)
-            .catch(err => console.error("Error: /new_window failed:" + err));
-    };
+            .catch((err) => console.error("Error: /new_window failed:" + err));
+    }
 
     /** Add App level event listeners.
     */
@@ -113,7 +113,7 @@ class TensorboardOpen3DPluginClient {
                     this.requestGeometryUpdate(windowUId);
                 }
             } else {
-                this.common_step = undefined;
+                this.common_step = null;
             }
             console.debug("this.common_step = ", this.common_step);
         });
@@ -126,7 +126,7 @@ class TensorboardOpen3DPluginClient {
                     this.requestGeometryUpdate(windowUId);
                 }
             } else {
-                this.common_batch_idx = undefined;
+                this.common_batch_idx = null;
             }
             console.debug("this.common_batch_idx = ", this.common_batch_idx);
         });
@@ -139,7 +139,7 @@ class TensorboardOpen3DPluginClient {
      * @param {string} windowUId  Window ID from the server, e.g.: "window_1"
      * @param {string} logdir TensorBoard log directory to be displayed to the
      *      user.
-     * @param {string} run TB run to display here. Can be 'undefined' in which
+     * @param {string} run TB run to display here. Can be "undefined" in which
      *      case the server will assign a run.
      */
     addConnection = (windowUId, logdir, run) => {
@@ -169,14 +169,14 @@ class TensorboardOpen3DPluginClient {
         client.connect(windowUId, /*audio*/ null, this.webRtcOptions);
         this.webRtcClientList.set(windowUId, client);
         console.info("[addConnection] windowUId: " + windowUId);
-        videoElt.addEventListener('LocalDataChannelOpen', (evt) => {
-            evt.detail.channel.addEventListener('message',
+        videoElt.addEventListener("LocalDataChannelOpen", (evt) => {
+            evt.detail.channel.addEventListener("message",
                 this.processDCMessage.bind(this, windowUId));
         });
         videoElt.addEventListener("resize", this.ResizeEvent);
-        if (this.webRtcClientList.size == 1) {
+        if (this.webRtcClientList.size === 1) {
             // Initial Run Tag reload only needed for first window
-            videoElt.addEventListener('RemoteDataChannelOpen', this.reloadRunTags);
+            videoElt.addEventListener("RemoteDataChannelOpen", this.reloadRunTags);
         } else { // Initialize state from first webrtc_window
             // deep copy: All objects and sub-objects need to be copied with JS
             // spread syntax.
@@ -189,7 +189,7 @@ class TensorboardOpen3DPluginClient {
                 console.debug("After addConnection: this.runWindow = ",
                     this.runWindow, "this.window_state = ", this.window_state);
             }
-            videoElt.addEventListener('RemoteDataChannelOpen',
+            videoElt.addEventListener("RemoteDataChannelOpen",
                 this.requestGeometryUpdate.bind(this, windowUId));
         }
     };
@@ -206,7 +206,7 @@ class TensorboardOpen3DPluginClient {
      * selected initially.
      */
     createSelector(name, parent_id, options, type, initial_checked_options) {
-        console.assert(type == "radio" || type == "checkbox",
+        console.assert(type === "radio" || type === "checkbox",
             "type must be radio or checkbox");
 
         let parent_element = document.getElementById(parent_id);
@@ -222,7 +222,7 @@ class TensorboardOpen3DPluginClient {
                 <span class="checkmark"></span>
             </label>
             `;
-            parent_element.insertAdjacentHTML('beforeend', option_template);
+            parent_element.insertAdjacentHTML("beforeend", option_template);
             document.getElementById(option).addEventListener("change",
                 this.onRunTagselect);
         }
@@ -246,19 +246,19 @@ class TensorboardOpen3DPluginClient {
         const name_wid = name + "-" + windowUId;
         if (max > min) { // Don't create slider if no choice
             const slider_template=`
-            <form oninput="document.getElementById('${name_wid}_output').value
-                = document.getElementById('${name_wid}').valueAsNumber;">
-                <label> ${display_name + ': [' + min.toString() + '-' +
-                        max.toString() + '] '}
+            <form oninput="document.getElementById("${name_wid}_output").value
+                = document.getElementById("${name_wid}").valueAsNumber;">
+                <label> ${display_name + ": [" + min.toString() + "-" +
+                        max.toString() + "] "}
                     <input type="range" id="${name_wid}" name="${name_wid}" min="${min}"
                         max="${max}" value="${value}">
                     </input>
                 </label>
-                <output for="${name_wid}" id="${name_wid + '_output'}"> ${value}
+                <output for="${name_wid}" id="${name_wid + "_output"}"> ${value}
                 </output>
             </form>
             `;
-            parent_element.insertAdjacentHTML('beforeend', slider_template);
+            parent_element.insertAdjacentHTML("beforeend", slider_template);
             document.getElementById(name_wid).addEventListener("change",
                 this.onStepBIdxSelect.bind(this, windowUId));
         }
@@ -306,7 +306,7 @@ class TensorboardOpen3DPluginClient {
                 windowUId, null)
                 .then(() => {
                     webRtcClient.disconnect();
-                    webRtcClient = undefined;
+                    webRtcClient = null;
                 });
         }
         this.webRtcClientList.clear();
@@ -396,7 +396,7 @@ class TensorboardOpen3DPluginClient {
             this.window_state, "this.common_step", this.common_step,
             "this.common_batch_idx", this.common_batch_idx);
         if (evt.target.name.startsWith("batch-idx-selector")) {
-            if (this.common_batch_idx != undefined) {
+            if (this.common_batch_idx != null) {
                 this.common_batch_idx = evt.target.value;
                 for (const windowUId of this.window_state.keys())
                     this.requestGeometryUpdate(windowUId);
@@ -405,7 +405,7 @@ class TensorboardOpen3DPluginClient {
                 this.requestGeometryUpdate(windowUId)
             };
         } else if (evt.target.name.startsWith("step-selector")) {
-            if (this.common_step != undefined) {
+            if (this.common_step != null) {
                 this.common_step = evt.target.value;
                 for (const windowUId of this.window_state.keys())
                     this.requestGeometryUpdate(windowUId);
@@ -421,7 +421,7 @@ class TensorboardOpen3DPluginClient {
      * Data channel message handler. Updates UI controls based on server state.
      */
     processDCMessage = (windowUId, evt) => {
-        let message = undefined;
+        let message = null;
         try {
             message = JSON.parse(evt.data);
         } catch (err) {

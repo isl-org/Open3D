@@ -32,12 +32,12 @@
 // any purpose.
 // ----------------------------------------------------------------------------
 
-var WebRtcStreamer = (function () {
+let WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
 
   // Query style from the user's browser and match Open3D style
-    function css( element, property ) {
-    return window.getComputedStyle( element, null ).getPropertyValue( property );
+    function css (element, property) {
+    return window.getComputedStyle(element, null).getPropertyValue(property);
 }
 
   /**
@@ -241,10 +241,10 @@ var WebRtcStreamer = (function () {
         );
         var widthInputElt = document.getElementById(windowUID + "_width_input");
         if (!heightInputElt || !widthInputElt) {
-          Console.warn("Cannot resize, missing height/width inputs.");
+          console.warn("Cannot resize, missing height/width inputs.");
           return;
         }
-        var resizeEvent = {
+        const resizeEvent = {
           window_uid: windowUID,
           class_name: "ResizeEvent",
           height: parseInt(heightInputElt.value),
@@ -370,7 +370,7 @@ var WebRtcStreamer = (function () {
           var open3dMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
-            type: event.buttons == 0 ? "MOVE" : "DRAG",
+            type: event.buttons === 0 ? "MOVE" : "DRAG",
             x: event.offsetX,
             y: event.offsetY,
             modifiers: WebRtcStreamer._getModifiers(event),
@@ -440,8 +440,8 @@ var WebRtcStreamer = (function () {
           // Flip the sign and set absolute value to 1.
           var dx = event.deltaX;
           var dy = event.deltaY;
-          dx = dx == 0 ? dx : (-dx / Math.abs(dx)) * 1;
-          dy = dy == 0 ? dy : (-dy / Math.abs(dy)) * 1;
+          dx = dx === 0 ? dx : (-dx / Math.abs(dx)) * 1;
+          dy = dy === 0 ? dy : (-dy / Math.abs(dy)) * 1;
 
           var open3dMouseEvent = {
             window_uid: windowUID,
@@ -782,6 +782,8 @@ var WebRtcStreamer = (function () {
   return WebRtcStreamer;
 })();
 
-if (typeof module !== "undefined" && typeof module.exports !== "undefined")
+if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
   module.exports = WebRtcStreamer;
-else window.WebRtcStreamer = WebRtcStreamer;
+} else {
+    window.WebRtcStreamer = WebRtcStreamer;
+}

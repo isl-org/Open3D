@@ -12,14 +12,16 @@ from tensorboard.backend.event_processing.plugin_asset_util import PluginDirecto
 from tensorboard.util import lazy_tensor_creator
 from tensorflow.experimental import dlpack as tf_dlpack
 
-import torch
-from torch.utils import dlpack as torch_dlpack
+try:
+    import torch
+    from torch.utils import dlpack as torch_dlpack
+except ImportError:
+    torch = None
 
 import open3d as o3d
-_log = o3d.log
 from open3d.visualization.tensorboard_plugin import metadata
+_log = metadata.log
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
-import ipdb
 
 
 class _AsyncDataWriter:
@@ -137,7 +139,7 @@ def _to_o3d(tensor):
         return tensor
     if isinstance(tensor, tf.Tensor):
         return o3d.core.Tensor.from_dlpack(tf_dlpack.to_dlpack(tensor))
-    if isinstance(tensor, torch.Tensor):
+    if torch is not None and isinstance(tensor, torch.Tensor):
         return o3d.core.Tensor.from_dlpack(torch_dlpack.to_dlpack(tensor))
     return o3d.core.Tensor.from_numpy(np.asarray(tensor))
 
@@ -394,8 +396,8 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
     # TODO(https://github.com/tensorflow/tensorboard/issues/2109): remove fallback
     summary_scope = (getattr(tf.summary.experimental, "summary_scope", None) or
                      tf.summary.summary_scope)
-    with summary_scope(name, "open3d_summary", values=[data, max_outputs,
-                                                       step]) as (tag, scope):
+    with summary_scope(name, "open3d_summary",
+                       values=[data, max_outputs, step]) as (tag, unused_scope):
         # Defer preprocessing by passing it as a callable to write(),
         # wrapped in a LazyTensorCreator for backwards compatibility, so that we
         # only do this work when summaries are actually written, i.e. if

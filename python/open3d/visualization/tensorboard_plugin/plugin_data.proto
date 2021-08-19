@@ -1,3 +1,7 @@
+// To generate plugin_data_pb2.py, use this command:
+// protoc -I=. --python_out=. plugin_data.proto
+// and use make apply-style to correct formatting.
+
 syntax = "proto3";
 
 package tensorboard.open3d;
