@@ -5,4 +5,5 @@ target_sources(tests PRIVATE
     TensorMap.cpp
     TriangleMesh.cpp
     TSDFVoxelGrid.cpp
+    VoxelBlockGrid.cpp
 )

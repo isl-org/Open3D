@@ -11,6 +11,7 @@ target_sources(tgeometry PRIVATE
     TensorMap.cpp
     TriangleMesh.cpp
     TSDFVoxelGrid.cpp
+    VoxelBlockGrid.cpp
 )
 
 open3d_show_and_abort_on_warning(tgeometry)
