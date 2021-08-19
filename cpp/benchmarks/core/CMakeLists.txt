@@ -1,5 +1,5 @@
 target_sources(benchmarks PRIVATE
-    Hashmap.cpp
+    HashMap.cpp
     MemoryManager.cpp
     Reduction.cpp
     Zeros.cpp

@@ -34,6 +34,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/MiniVec.h"
 
 namespace open3d {
 namespace core {
@@ -52,19 +53,6 @@ static constexpr int64_t MAX_INPUTS = 10;
 // Maximum number of outputs of an op. This number can be increased when
 // necessary.
 static constexpr int64_t MAX_OUTPUTS = 2;
-
-// Fixed-size array type usable from host and device.
-template <typename T, int size>
-struct alignas(16) SmallArray {
-    T data_[size];
-
-    OPEN3D_HOST_DEVICE T operator[](int i) const { return data_[i]; }
-    OPEN3D_HOST_DEVICE T& operator[](int i) { return data_[i]; }
-
-    SmallArray() = default;
-    SmallArray(const SmallArray&) = default;
-    SmallArray& operator=(const SmallArray&) = default;
-};
 
 template <int NARGS, typename index_t = uint32_t>
 struct OffsetCalculator {
@@ -88,9 +76,9 @@ struct OffsetCalculator {
         }
     }
 
-    OPEN3D_HOST_DEVICE SmallArray<index_t, NARGS> get(
+    OPEN3D_HOST_DEVICE utility::MiniVec<index_t, NARGS> get(
             index_t linear_idx) const {
-        SmallArray<index_t, NARGS> offsets;
+        utility::MiniVec<index_t, NARGS> offsets;
 #if defined(__CUDA_ARCH__)
 #pragma unroll
 #endif

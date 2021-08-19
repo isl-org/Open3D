@@ -3,7 +3,7 @@ target_sources(tests PRIVATE
     CUDAUtils.cpp
     Device.cpp
     EigenConverter.cpp
-    Hashmap.cpp
+    HashMap.cpp
     Indexer.cpp
     Linalg.cpp
     MemoryManager.cpp
@@ -20,6 +20,7 @@ target_sources(tests PRIVATE
 if (BUILD_CUDA_MODULE)
     target_sources(tests PRIVATE
         FixedRadiusIndex.cpp
+        KnnIndex.cpp
     )
 endif()
 

@@ -88,7 +88,6 @@ Logger &Logger::GetInstance() {
 void Logger::VError [[noreturn]] (const char *file_name,
                                   int line_number,
                                   const char *function_name,
-                                  bool force_console_log,
                                   const char *format,
                                   fmt::format_args args) const {
     std::string err_msg = fmt::vformat(format, args);
@@ -104,52 +103,37 @@ void Logger::VError [[noreturn]] (const char *file_name,
 void Logger::VWarning(const char *file_name,
                       int line_number,
                       const char *function_name,
-                      bool force_console_log,
                       const char *format,
                       fmt::format_args args) const {
     if (impl_->verbosity_level_ >= VerbosityLevel::Warning) {
         std::string err_msg = fmt::vformat(format, args);
         err_msg = fmt::format("[Open3D WARNING] {}", err_msg);
         err_msg = impl_->ColorString(err_msg, TextColor::Yellow, 1);
-        if (force_console_log) {
-            Logger::Impl::console_print_fcn_(err_msg);
-        } else {
-            impl_->print_fcn_(err_msg);
-        }
+        impl_->print_fcn_(err_msg);
     }
 }
 
 void Logger::VInfo(const char *file_name,
                    int line_number,
                    const char *function_name,
-                   bool force_console_log,
                    const char *format,
                    fmt::format_args args) const {
     if (impl_->verbosity_level_ >= VerbosityLevel::Info) {
         std::string err_msg = fmt::vformat(format, args);
         err_msg = fmt::format("[Open3D INFO] {}", err_msg);
-        if (force_console_log) {
-            Logger::Impl::console_print_fcn_(err_msg);
-        } else {
-            impl_->print_fcn_(err_msg);
-        }
+        impl_->print_fcn_(err_msg);
     }
 }
 
 void Logger::VDebug(const char *file_name,
                     int line_number,
                     const char *function_name,
-                    bool force_console_log,
                     const char *format,
                     fmt::format_args args) const {
     if (impl_->verbosity_level_ >= VerbosityLevel::Debug) {
         std::string err_msg = fmt::vformat(format, args);
         err_msg = fmt::format("[Open3D DEBUG] {}", err_msg);
-        if (force_console_log) {
-            Logger::Impl::console_print_fcn_(err_msg);
-        } else {
-            impl_->print_fcn_(err_msg);
-        }
+        impl_->print_fcn_(err_msg);
     }
 }
 

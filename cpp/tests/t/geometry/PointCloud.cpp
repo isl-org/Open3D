@@ -64,6 +64,10 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
 
     // Default device.
     EXPECT_EQ(pcd.GetDevice(), core::Device("CPU:0"));
+
+    // ToString
+    EXPECT_EQ(pcd.ToString(),
+              "PointCloud on CPU:0 [0 points ()] Attributes: None.");
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
@@ -252,6 +256,42 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
               std::vector<float>({2, 2, 1}));
 }
 
+TEST_P(PointCloudPermuteDevices, EstimateNormals) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0},
+                                                      {1, 1, 1}},
+                                                     device);
+    t::geometry::PointCloud pcd(points);
+
+    // Estimate normals using Hybrid Search.
+    pcd.EstimateNormals(4, 2.0);
+
+    core::Tensor normals =
+            core::Tensor::Init<double>({{0.57735, 0.57735, 0.57735},
+                                        {-0.57735, -0.57735, 0.57735},
+                                        {0.57735, -0.57735, 0.57735},
+                                        {-0.57735, 0.57735, 0.57735},
+                                        {-0.57735, 0.57735, 0.57735},
+                                        {0.57735, -0.57735, 0.57735},
+                                        {-0.57735, -0.57735, 0.57735},
+                                        {0.57735, 0.57735, 0.57735}},
+                                       device);
+
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+    pcd.RemovePointAttr("normals");
+
+    // Estimate normals using KNN Search.
+    pcd.EstimateNormals(4);
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+}
+
 TEST_P(PointCloudPermuteDevices, FromLegacy) {
     core::Device device = GetParam();
     geometry::PointCloud legacy_pcd;
@@ -309,6 +349,7 @@ TEST_P(PointCloudPermuteDevices, ToLegacy) {
 }
 
 TEST_P(PointCloudPermuteDevices, Getters) {
+    using ::testing::AnyOf;
     core::Device device = GetParam();
     core::Dtype dtype = core::Float32;
 
@@ -332,6 +373,15 @@ TEST_P(PointCloudPermuteDevices, Getters) {
     EXPECT_NO_THROW(const core::Tensor& tl = pcd.GetPointAttr("labels");
                     (void)tl);
     EXPECT_ANY_THROW(const core::Tensor& tl = pcd.GetPointNormals(); (void)tl);
+
+    // ToString
+    std::string text = "PointCloud on " + device.ToString() +
+                       " [2 points (Float32)] Attributes: ";
+    EXPECT_THAT(pcd.ToString(),  // Compiler dependent output
+                AnyOf(text + "colors (dtype = Float32, shape = {2, 3}), labels "
+                             "(dtype = Float32, shape = {2, 3}).",
+                      text + "labels (dtype = Float32, shape = (2, 3)), colors "
+                             "(dtype = Float32, shape = {2, 3})."));
 }
 
 TEST_P(PointCloudPermuteDevices, Setters) {

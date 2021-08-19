@@ -135,10 +135,8 @@ void pybind_registration_classes(py::module &m) {
                PyTransformationEstimation<TransformationEstimation>>
             te(m, "TransformationEstimation",
                "Base class that estimates a transformation between two "
-               "point "
-               "clouds. The virtual function ComputeTransformation() must "
-               "be "
-               "implemented in subclasses.");
+               "point clouds. The virtual function ComputeTransformation() "
+               "must be implemented in subclasses.");
     te.def("compute_rmse", &TransformationEstimation::ComputeRMSE, "source"_a,
            "target"_a, "correspondences"_a,
            "Compute RMSE between source and target points cloud given "

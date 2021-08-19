@@ -121,7 +121,7 @@ void pybind_tsdf_voxelgrid(py::module& m) {
     tsdf_voxelgrid.def("get_block_hashmap",
                        [](const geometry::TSDFVoxelGrid& voxelgrid) {
                            // Returning shared_ptr can result in double-free.
-                           return *voxelgrid.GetBlockHashmap();
+                           return *voxelgrid.GetBlockHashMap();
                        });
     tsdf_voxelgrid.def("get_device", &TSDFVoxelGrid::GetDevice);
 }

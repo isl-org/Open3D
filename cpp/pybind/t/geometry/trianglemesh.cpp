@@ -96,19 +96,24 @@ The attributes of the triangle mesh have different levels::
 )");
 
     // Constructors.
-    triangle_mesh.def(py::init<const core::Device&>(), "device"_a)
+    triangle_mesh
+            .def(py::init<const core::Device&>(),
+                 "Construct an empty trianglemesh on the provided ``device`` "
+                 "(default: 'CPU:0').",
+                 "device"_a = core::Device("CPU:0"))
             .def(py::init<const core::Tensor&, const core::Tensor&>(),
-                 "vertex_positions"_a, "triangle_indices"_a);
+                 "vertex_positions"_a, "triangle_indices"_a)
+            .def("__repr__", &TriangleMesh::ToString);
 
     // Triangle mesh's attributes: vertices, vertex_colors, vertex_normals, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced
     // by another TensorMap in Python.
     triangle_mesh.def_property_readonly(
-            "vertex_positions",
+            "vertex",
             py::overload_cast<>(&TriangleMesh::GetVertexAttr, py::const_));
     triangle_mesh.def_property_readonly(
-            "triangle_indices",
+            "triangle",
             py::overload_cast<>(&TriangleMesh::GetTriangleAttr, py::const_));
 
     // Device transfers.

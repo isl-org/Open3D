@@ -238,13 +238,14 @@ void FillInSLACRegularizerTerm(Tensor& AtA,
                                int n_frags,
                                const SLACOptimizerParams& params,
                                const SLACDebugOption& debug_option) {
-    Tensor active_addrs, nb_addrs, nb_masks;
-    std::tie(active_addrs, nb_addrs, nb_masks) = ctr_grid.GetNeighborGridMap();
+    Tensor active_buf_indices, nb_buf_indices, nb_masks;
+    std::tie(active_buf_indices, nb_buf_indices, nb_masks) =
+            ctr_grid.GetNeighborGridMap();
 
     Tensor positions_init = ctr_grid.GetInitPositions();
     Tensor positions_curr = ctr_grid.GetCurrPositions();
-    kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_addrs,
-                                      nb_addrs, nb_masks, positions_init,
+    kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_buf_indices,
+                                      nb_buf_indices, nb_masks, positions_init,
                                       positions_curr,
                                       n_frags * params.regularizer_weight_,
                                       n_frags, ctr_grid.GetAnchorIdx());
