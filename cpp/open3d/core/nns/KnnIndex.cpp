@@ -98,7 +98,7 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
 
     query_points.AssertDtype(dtype);
     query_points.AssertDevice(device);
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
     if (query_points.GetShape(0) != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
                 "KnnIndex::SearchKnn query_points and queries_row_splits have "

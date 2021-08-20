@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <numeric>
+
 #include "open3d/core/Indexer.h"
 #include "open3d/core/kernel/NonZero.h"
 #include "open3d/utility/Logging.h"

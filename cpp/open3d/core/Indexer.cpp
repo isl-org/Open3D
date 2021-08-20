@@ -26,6 +26,8 @@
 
 #include "open3d/core/Indexer.h"
 
+#include <numeric>
+
 namespace open3d {
 namespace core {
 
