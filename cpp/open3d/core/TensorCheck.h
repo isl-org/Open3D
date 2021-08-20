@@ -37,72 +37,36 @@
 /// occurs, the corresponding file name, line number and function name will be
 /// printed in the error message.
 ///
-/// Example: core::AssertTensorDtype(tensor, core::Float32);
-///          core::AssertTensorDtype(tensor, core::Float32, "Error!");
-#define AssertTensorDtype(...)                                                \
-    OPEN3D_GET_ARG_4(__VA_ARGS__, _AssertTensorDtype3, _AssertTensorDtype2, ) \
-    (__VA_ARGS__)
+/// Example: check that the tensor has dtype Float32
+/// core::AssertTensorDtype(tensor, core::Float32);
+#define AssertTensorDtype(tensor, dtype)                                      \
+    tensor_check::_AssertTensorDtype(__FILE__, __LINE__, (const char*)__FN__, \
+                                     tensor, dtype)
 
 /// Assert Tensor's device is the same as the expected device. When an error
 /// occurs, the corresponding file name, line number and function name will be
 /// printed in the error message.
 ///
-/// Example: core::AssertTensorDevice(tensor, core::Device("CUDA:0"));
-///          core::AssertTensorDevice(tensor, core::Device("CUDA:0"), "Error!");
-#define AssertTensorDevice(...)                         \
-    OPEN3D_GET_ARG_4(__VA_ARGS__, _AssertTensorDevice3, \
-                     _AssertTensorDevice2, )            \
-    (__VA_ARGS__)
+/// Example: check that the tensor has device CUDA:0
+/// core::AssertTensorDevice(tensor, core::Device("CUDA:0"));
+#define AssertTensorDevice(tensor, device)                                     \
+    tensor_check::_AssertTensorDevice(__FILE__, __LINE__, (const char*)__FN__, \
+                                      tensor, device)
 
 /// Assert Tensor's shape is the same as the expected shape. When an error
 /// occurs, the corresponding file name, line number and function name will be
-/// printed in the error message.
+/// printed in the error message. AssertTensorShape takes a shape (SizeVector)
+/// or dynamic shape (DynamicSizeVector).
 ///
-/// Example: core::AssertTensorShape(tensor, {2, 3});
-///          core::AssertTensorShape(tensor, {2, 3}, "Error!");
-#define AssertTensorShape(...)                                                \
-    OPEN3D_GET_ARG_4(__VA_ARGS__, _AssertTensorShape3, _AssertTensorShape2, ) \
-    (__VA_ARGS__)
-
-/// Assert Tensor's shape is compatbile with the expected dynamic shape. When an
-/// error occurs, the corresponding file name, line number and function name
-/// will be printed in the error message.
+/// Example: check that the tensor has shape {100, 3}
+/// core::AssertTensorShape(tensor, {100, 3});
 ///
-/// Example: core::AssertTensorShapeCompatible(tensor,
-///                                            {2, utility::nullopt});
-///          core::AssertTensorShapeCompatible(tensor,
-///                                            {2, utility::nullopt}, "Error!");
-#define AssertTensorShapeCompatible(...)                         \
-    OPEN3D_GET_ARG_4(__VA_ARGS__, _AssertTensorShapeCompatible3, \
-                     _AssertTensorShapeCompatible2, )            \
-    (__VA_ARGS__)
-
-// Helper functions.
-#define _AssertTensorDtype2(tensor, dtype)                                    \
-    tensor_check::_AssertTensorDtype(__FILE__, __LINE__, (const char*)__FN__, \
-                                     tensor, dtype)
-#define _AssertTensorDtype3(tensor, dtype, message)                           \
-    tensor_check::_AssertTensorDtype(__FILE__, __LINE__, (const char*)__FN__, \
-                                     tensor, dtype, message)
-#define _AssertTensorDevice2(tensor, device)                                   \
-    tensor_check::_AssertTensorDevice(__FILE__, __LINE__, (const char*)__FN__, \
-                                      tensor, device)
-#define _AssertTensorDevice3(tensor, device, message)                          \
-    tensor_check::_AssertTensorDevice(__FILE__, __LINE__, (const char*)__FN__, \
-                                      tensor, device, message)
-#define _AssertTensorShape2(tensor, shape)                                    \
-    tensor_check::_AssertTensorShape(__FILE__, __LINE__, (const char*)__FN__, \
-                                     tensor, shape)
-#define _AssertTensorShape3(tensor, shape, message)                           \
-    tensor_check::_AssertTensorShape(__FILE__, __LINE__, (const char*)__FN__, \
-                                     tensor, shape, message)
-#define _AssertTensorShapeCompatible2(tensor, dynamic_shape) \
-    tensor_check::_AssertTensorShapeCompatible(              \
-            __FILE__, __LINE__, (const char*)__FN__, tensor, dynamic_shape)
-#define _AssertTensorShapeCompatible3(tensor, dynamic_shape, message)       \
-    tensor_check::_AssertTensorShapeCompatible(__FILE__, __LINE__,          \
-                                               (const char*)__FN__, tensor, \
-                                               dynamic_shape, message)
+/// Example: check that the tensor has shape {N, 3}
+/// core::AssertTensorShape(tensor, {utility::nullopt, 3});
+#define AssertTensorShape(tensor, ...)                       \
+    tensor_check::_AssertTensorShape(                        \
+            __FILE__, __LINE__, (const char*)__FN__, tensor, \
+            __VA_ARGS__)  // __VA_ARGS__ handles initilizer list.
 
 namespace open3d {
 namespace core {
@@ -112,29 +76,19 @@ void _AssertTensorDtype(const char* file,
                         int line,
                         const char* function,
                         const Tensor& tensor,
-                        const Dtype& dtype,
-                        const std::string& message = "");
+                        const Dtype& dtype);
 
 void _AssertTensorDevice(const char* file,
                          int line,
                          const char* function,
                          const Tensor& tensor,
-                         const Device& device,
-                         const std::string& message = "");
+                         const Device& device);
 
 void _AssertTensorShape(const char* file,
                         int line,
                         const char* function,
                         const Tensor& tensor,
-                        const SizeVector& shape,
-                        const std::string& message = "");
-
-void _AssertTensorShapeCompatible(const char* file,
-                                  int line,
-                                  const char* function,
-                                  const Tensor& tensor,
-                                  const DynamicSizeVector& dynamic_shape,
-                                  const std::string& message = "");
+                        const DynamicSizeVector& shape);
 
 }  // namespace tensor_check
 }  // namespace core

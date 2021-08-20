@@ -26,8 +26,8 @@
 
 #include "open3d/core/TensorCheck.h"
 
+#include "CoreTest.h"
 #include "tests/UnitTest.h"
-#include "tests/core/CoreTest.h"
 
 namespace open3d {
 namespace tests {
@@ -50,8 +50,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
         EXPECT_TRUE(utility::ContainsString(
                 err.what(),
                 "Tensor has dtype Float32, but is expected to be Int32."));
-        EXPECT_TRUE(utility::ContainsString(err.what(),
-                                            "tests/core/TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorDtype"));
     } catch (...) {
         FAIL() << "std::runtime_error not thrown.";
@@ -69,8 +68,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
         EXPECT_TRUE(utility::ContainsString(err.what(), "Tensor has device"));
         EXPECT_TRUE(utility::ContainsString(err.what(),
                                             "but is expected to be CUDA:1000"));
-        EXPECT_TRUE(utility::ContainsString(err.what(),
-                                            "tests/core/TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorDevice"));
     } catch (...) {
         FAIL() << "std::runtime_error not thrown.";
@@ -79,38 +77,94 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
 
 TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     core::Device device = GetParam();
-    core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
+    core::Tensor t;
 
+    // AssertTensorShape with initializer_list. Test different number of
+    // arguments to check macro expansion.
     try {
-        core::AssertTensorShape(t, {1});
-        FAIL() << "Should not reach here.";
-    } catch (std::runtime_error const& err) {
-        EXPECT_TRUE(utility::ContainsString(
-                err.what(), "Tensor has shape {}, but is expected to be {1}."));
-        EXPECT_TRUE(utility::ContainsString(err.what(),
-                                            "tests/core/TensorCheck.cpp:"));
-        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
-    } catch (...) {
-        FAIL() << "std::runtime_error not thrown.";
-    }
-}
-
-TEST_P(TensorCheckPermuteDevices, AssertTensorShapeCompatible) {
-    core::Device device = GetParam();
-    core::Tensor t = core::Tensor::Empty({2, 3}, core::Float32, device);
-
-    try {
-        core::AssertTensorShapeCompatible(t, {4, utility::nullopt});
+        t = core::Tensor::Empty({10}, core::Float32, device);
+        core::AssertTensorShape(t, {});
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(
                 err.what(),
-                "Tensor has shape {2, 3}, but is expected to be compatible "
-                "with {4, None}."));
-        EXPECT_TRUE(utility::ContainsString(err.what(),
-                                            "tests/core/TensorCheck.cpp:"));
-        EXPECT_TRUE(utility::ContainsString(err.what(),
-                                            "AssertTensorShapeCompatible"));
+                "Tensor has shape {10}, but is expected to be {}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
+    try {
+        t = core::Tensor::Empty({10}, core::Float32, device);
+        core::AssertTensorShape(t, {1});
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(),
+                "Tensor has shape {10}, but is expected to be {1}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
+    try {
+        t = core::Tensor::Empty({10}, core::Float32, device);
+        core::AssertTensorShape(t, {1, 2});
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(),
+                "Tensor has shape {10}, but is expected to be {1, 2}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
+
+    // AssertTensorShape with SizeVector instance.
+    try {
+        t = core::Tensor::Empty({10}, core::Float32, device);
+        core::AssertTensorShape(t, core::SizeVector({1, 2}));
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(),
+                "Tensor has shape {10}, but is expected to be {1, 2}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
+
+    // AssertTensorShapeCompatible with initializer_list.
+    try {
+        t = core::Tensor::Empty({10}, core::Float32, device);
+        core::AssertTensorShape(t, {4, utility::nullopt});
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(),
+                "Tensor has shape {10}, but is expected to be compatible with "
+                "{4, None}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
+
+    // AssertTensorShapeCompatible with DynamicSizeVector instance.
+    try {
+        t = core::Tensor::Empty({10}, core::Float32, device);
+        core::AssertTensorShape(t,
+                                core::DynamicSizeVector({4, utility::nullopt}));
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(),
+                "Tensor has shape {10}, but is expected to be compatible with "
+                "{4, None}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
     } catch (...) {
         FAIL() << "std::runtime_error not thrown.";
     }

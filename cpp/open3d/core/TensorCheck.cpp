@@ -39,17 +39,13 @@ void _AssertTensorDtype(const char* file,
                         int line,
                         const char* function,
                         const Tensor& tensor,
-                        const Dtype& dtype,
-                        const std::string& message) {
+                        const Dtype& dtype) {
     if (tensor.GetDtype() == dtype) {
         return;
     }
     std::string error_message =
             fmt::format("Tensor has dtype {}, but is expected to be {}.",
                         tensor.GetDtype().ToString(), dtype.ToString());
-    if (!message.empty()) {
-        error_message += " " + message;
-    }
     utility::Logger::_LogError(file, line, function, error_message.c_str());
 }
 
@@ -57,17 +53,13 @@ void _AssertTensorDevice(const char* file,
                          int line,
                          const char* function,
                          const Tensor& tensor,
-                         const Device& device,
-                         const std::string& message) {
+                         const Device& device) {
     if (tensor.GetDevice() == device) {
         return;
     }
     std::string error_message =
             fmt::format("Tensor has device {}, but is expected to be {}.",
                         tensor.GetDevice().ToString(), device.ToString());
-    if (!message.empty()) {
-        error_message += " " + message;
-    }
     utility::Logger::_LogError(file, line, function, error_message.c_str());
 }
 
@@ -75,36 +67,26 @@ void _AssertTensorShape(const char* file,
                         int line,
                         const char* function,
                         const Tensor& tensor,
-                        const SizeVector& shape,
-                        const std::string& message) {
-    if (tensor.GetShape() == shape) {
-        return;
+                        const DynamicSizeVector& shape) {
+    if (shape.IsDynamic()) {
+        if (tensor.GetShape().IsCompatible(shape)) {
+            return;
+        }
+        std::string error_message = fmt::format(
+                "Tensor has shape {}, but is expected to be compatible with "
+                "{}.",
+                tensor.GetShape().ToString(), shape.ToString());
+        utility::Logger::_LogError(file, line, function, error_message.c_str());
+    } else {
+        SizeVector static_shape = shape.ToSizeVector();
+        if (tensor.GetShape() == static_shape) {
+            return;
+        }
+        std::string error_message = fmt::format(
+                "Tensor has shape {}, but is expected to be {}.",
+                tensor.GetShape().ToString(), static_shape.ToString());
+        utility::Logger::_LogError(file, line, function, error_message.c_str());
     }
-    std::string error_message =
-            fmt::format("Tensor has shape {}, but is expected to be {}.",
-                        tensor.GetShape().ToString(), shape.ToString());
-    if (!message.empty()) {
-        error_message += " " + message;
-    }
-    utility::Logger::_LogError(file, line, function, error_message.c_str());
-}
-
-void _AssertTensorShapeCompatible(const char* file,
-                                  int line,
-                                  const char* function,
-                                  const Tensor& tensor,
-                                  const DynamicSizeVector& dynamic_shape,
-                                  const std::string& message) {
-    if (tensor.GetShape().IsCompatible(dynamic_shape)) {
-        return;
-    }
-    std::string error_message = fmt::format(
-            "Tensor has shape {}, but is expected to be compatible with {}.",
-            tensor.GetShape().ToString(), dynamic_shape.ToString());
-    if (!message.empty()) {
-        error_message += " " + message;
-    }
-    utility::Logger::_LogError(file, line, function, error_message.c_str());
 }
 
 }  // namespace tensor_check
