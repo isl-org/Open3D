@@ -70,6 +70,45 @@ public:
     /// Default destructor.
     ~VoxelBlockGrid() = default;
 
+    /// Get the underlying hash map that stores values in structure of arrays
+    /// (SoA).
+    core::HashMap GetHashMap() { return *block_hashmap_; }
+
+    /// Get the attribute tensor corresponding to the attribute name.
+    /// A sugar for hashmap.GetValueTensor(i)
+    core::Tensor GetAttribute(const std::string &attr_name) const;
+
+    /// Get the coordinate tensor of active voxels per block, in the shape of
+    /// (hashmap.Size(), resolution, resolution, resolution, 3) in Int32.
+    /// Useful for developing user-defined tensor-based operations.
+    ///
+    /// To access actual metric coordinates, multiply by (voxel_size_ *
+    /// resolution).
+    ///
+    /// Example:
+    /// For a voxel block grid with (2, 2, 2) block resolution,
+    /// if the active block coordinates are {(-1, 3, 2), (0, 2, 4)},
+    /// the returned results will be 2 x 8 3D coordinates:
+    /// {
+    /// (-1, 3, 2) * 2 + (0, 0, 0) = (-2, 6, 4)
+    /// (-1, 3, 2) * 2 + (1, 0, 0) = (-1, 6, 4)
+    /// ...
+    /// (-1, 3, 2) * 2 + (1, 1, 1) = (-1, 7, 5)
+    ///
+    /// (0, 2, 4) * 2 + (0, 0, 0) = (0, 4, 8)
+    /// (0, 2, 4) * 2 + (1, 0, 0) = (1, 4, 8)
+    /// ...
+    /// (0, 2, 4) * 2 + (1, 1, 1) = (1, 5, 9)
+    /// }
+    core::Tensor GetVoxelCoordinates(const core::Tensor &voxel_indices) const;
+
+    /// Get a (4, N) index tensor of active voxels.
+    /// To access actual metric coordinates, multiply by (voxel_size_ *
+    /// resolution).
+    core::Tensor GetVoxelIndices() const;
+
+    ////////////////////////////////////////////////////////
+    /// Integration related properties
     /// Fuse an RGB-D frame with TSDF integration.
     void Integrate(const Image &depth,
                    const Image &color,
@@ -90,10 +129,6 @@ public:
             float depth_min = 0.1f,
             float depth_max = 3.0f,
             float weight_threshold = 3.0f);
-
-    /// Get the underlying hash map that stores values in structure of arrays
-    /// (SoA).
-    core::HashMap GetHashMap() { return *block_hashmap_; }
 
 private:
     float voxel_size_;

@@ -78,6 +78,44 @@ TEST_P(VoxelBlockGridPermuteDevices, Construct) {
                          color_tensor.GetDtype().ToString());
     }
 }
+
+TEST_P(VoxelBlockGridPermuteDevices, Indexing) {
+    core::Device device = GetParam();
+
+    std::vector<core::HashBackendType> backends;
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
+    } else {
+        backends.push_back(core::HashBackendType::TBB);
+    }
+
+    for (auto backend : backends) {
+        auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
+                                  {core::Float32, core::UInt16, core::UInt8},
+                                  {{1}, {1}, {3}}, 3.0 / 512, 2, 10, device,
+                                  backend);
+
+        auto hashmap = vbg.GetHashMap();
+        core::Tensor keys = core::Tensor(std::vector<int>{-1, 3, 2, 0, 2, 4},
+                                         core::SizeVector{2, 3},
+                                         core::Dtype::Int32, device);
+
+        core::Tensor buf_indices, masks;
+        hashmap.Activate(keys, buf_indices, masks);
+        utility::LogInfo("Block indices: {}",
+                         buf_indices.IndexGet({masks}).ToString());
+
+        core::Tensor voxel_indices = vbg.GetVoxelIndices();
+        utility::LogInfo("Voxel indices for advanced indexing: {}",
+                         voxel_indices.ToString());
+
+        core::Tensor voxel_coords = vbg.GetVoxelCoordinates(voxel_indices);
+        utility::LogInfo("Voxel coordinates for positioning: {}",
+                         voxel_coords.ToString());
+    }
+}
+
 TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     core::Device device = GetParam();
 
@@ -152,6 +190,27 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                     {std::make_shared<open3d::geometry::Image>(
                             color_raycast.ToLegacy())});
         }
+
+        core::Tensor voxel_indices = vbg.GetVoxelIndices();
+        core::Tensor voxel_coords = vbg.GetVoxelCoordinates(voxel_indices);
+
+        core::Tensor tsdf =
+                vbg.GetAttribute("tsdf")
+                        .IndexGet({voxel_indices[0], voxel_indices[1],
+                                   voxel_indices[2], voxel_indices[3]})
+                        .View({-1});
+        core::Tensor weight =
+                vbg.GetAttribute("weight")
+                        .IndexGet({voxel_indices[0], voxel_indices[1],
+                                   voxel_indices[2], voxel_indices[3]})
+                        .View({-1});
+
+        core::Tensor mask = tsdf.Abs().Lt(0.3) && weight.Gt(1);
+        core::Tensor valid_coords = voxel_coords.T().IndexGet({mask});
+        PointCloud valid_pcd(valid_coords);
+        auto vis_valid_pcd = std::make_shared<open3d::geometry::PointCloud>(
+                valid_pcd.ToLegacy());
+        visualization::DrawGeometries({vis_valid_pcd});
 
         if (backend == core::HashBackendType::StdGPU) {
             vbg.GetHashMap().Save("vbg.npz");

@@ -78,6 +78,65 @@ VoxelBlockGrid::VoxelBlockGrid(
             attr_element_shapes, device, backend);
 }
 
+core::Tensor VoxelBlockGrid::GetAttribute(const std::string &attr_name) const {
+    if (name_attr_map_.count(attr_name) == 0) {
+        utility::LogWarning("Attribute {} not found, return empty tensor.",
+                            attr_name);
+    }
+    int buffer_idx = name_attr_map_.at(attr_name);
+    return block_hashmap_->GetValueTensor(buffer_idx);
+}
+
+core::Tensor VoxelBlockGrid::GetVoxelCoordinates(
+        const core::Tensor &voxel_indices) const {
+    core::Tensor key_tensor = block_hashmap_->GetKeyTensor();
+
+    core::Tensor voxel_coords =
+            key_tensor.IndexGet({voxel_indices[0]}).T().To(core::Int64) *
+            block_resolution_;
+    voxel_coords[0] += voxel_indices[1];
+    voxel_coords[1] += voxel_indices[2];
+    voxel_coords[2] += voxel_indices[3];
+
+    return voxel_coords;
+}
+
+core::Tensor VoxelBlockGrid::GetVoxelIndices() const {
+    core::Device device = block_hashmap_->GetDevice();
+
+    core::Tensor active_buf_indices;
+    block_hashmap_->GetActiveIndices(active_buf_indices);
+
+    int64_t n_blocks = active_buf_indices.GetLength();
+
+    int64_t resolution = block_resolution_;
+    int64_t resolution2 = resolution * resolution;
+    int64_t resolution3 = resolution2 * resolution;
+
+    // Non-kernel version.
+    // TODO: kernel version
+    core::Tensor linear_coordinates = core::Tensor::Arange(
+            0, n_blocks * resolution3, 1, core::Int64, device);
+
+    core::Tensor block_idx = linear_coordinates / resolution3;
+    core::Tensor remainder = linear_coordinates - block_idx * resolution3;
+
+    /// operator % is not supported now
+    core::Tensor voxel_z = remainder / resolution2;
+    core::Tensor voxel_y = (remainder - (voxel_z * resolution2)) / resolution;
+    core::Tensor voxel_x = remainder - (remainder / resolution) * resolution;
+
+    core::Tensor voxel_indices = core::Tensor({4, n_blocks * resolution3},
+                                              core::Dtype::Int64, device);
+    voxel_indices[0] =
+            active_buf_indices.IndexGet({block_idx}).To(core::Dtype::Int64);
+    voxel_indices[1] = voxel_x;
+    voxel_indices[2] = voxel_y;
+    voxel_indices[3] = voxel_z;
+
+    return voxel_indices;
+}
+
 void VoxelBlockGrid::Integrate(const Image &depth,
                                const Image &color,
                                const core::Tensor &intrinsics,
