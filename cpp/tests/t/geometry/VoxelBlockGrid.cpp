@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/t/io/ImageIO.h"
+#include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
 namespace open3d {
@@ -109,29 +110,33 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                                   {{1}, {1}, {3}}, 3.0 / 512, 16, 10000, device,
                                   backend);
 
-        const int i = 0;
+        for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
+            // Load image
+            t::geometry::Image depth =
+                    t::io::CreateImageFromFile(
+                            fmt::format("{}/RGBD/depth/{:05d}.png",
+                                        std::string(TEST_DATA_DIR), i))
+                            ->To(device);
+            t::geometry::Image color =
+                    t::io::CreateImageFromFile(
+                            fmt::format("{}/RGBD/color/{:05d}.jpg",
+                                        std::string(TEST_DATA_DIR), i))
+                            ->To(device);
 
-        // Load image
-        t::geometry::Image depth =
-                t::io::CreateImageFromFile(
-                        fmt::format("{}/RGBD/depth/{:05d}.png",
-                                    std::string(TEST_DATA_DIR), i))
-                        ->To(device);
-        t::geometry::Image color =
-                t::io::CreateImageFromFile(
-                        fmt::format("{}/RGBD/color/{:05d}.jpg",
-                                    std::string(TEST_DATA_DIR), i))
-                        ->To(device);
+            Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
+            core::Tensor extrinsic_t =
+                    core::eigen_converter::EigenMatrixToTensor(extrinsic);
 
-        Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
-        core::Tensor extrinsic_t =
-                core::eigen_converter::EigenMatrixToTensor(extrinsic);
-
-        vbg.Integrate(depth, color, intrinsic_t, extrinsic_t);
+            vbg.Integrate(depth, color, intrinsic_t, extrinsic_t);
+        }
 
         if (backend == core::HashBackendType::StdGPU) {
             vbg.GetHashMap().Save("vbg.npz");
         }
+
+        auto pcd = std::make_shared<open3d::geometry::PointCloud>(
+                vbg.ExtractSurfacePoints().ToLegacy());
+        visualization::DrawGeometries({pcd});
     }
 }
 }  // namespace tests

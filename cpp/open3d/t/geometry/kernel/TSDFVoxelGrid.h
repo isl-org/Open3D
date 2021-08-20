@@ -115,6 +115,19 @@ void ExtractSurfacePoints(
         float weight_threshold,
         int& valid_size);
 
+void ExtractSurfacePoints(const core::Tensor& block_indices,
+                          const core::Tensor& nb_block_indices,
+                          const core::Tensor& nb_block_masks,
+                          const core::Tensor& block_keys,
+                          const std::vector<core::Tensor>& block_values,
+                          core::Tensor& points,
+                          core::Tensor& normals,
+                          core::Tensor& colors,
+                          int64_t block_resolution,
+                          float voxel_size,
+                          float weight_threshold,
+                          int& valid_size);
+
 void ExtractSurfaceMesh(
         const core::Tensor& block_indices,
         const core::Tensor& inv_block_indices,
@@ -208,6 +221,19 @@ void ExtractSurfacePointsCPU(
         float voxel_size,
         float weight_threshold,
         int& valid_size);
+
+void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
+                             const core::Tensor& nb_block_indices,
+                             const core::Tensor& nb_block_masks,
+                             const core::Tensor& block_keys,
+                             const std::vector<core::Tensor>& block_values,
+                             core::Tensor& points,
+                             core::Tensor& normals,
+                             core::Tensor& colors,
+                             int64_t block_resolution,
+                             float voxel_size,
+                             float weight_threshold,
+                             int& valid_size);
 
 void ExtractSurfaceMeshCPU(
         const core::Tensor& block_indices,
@@ -303,6 +329,19 @@ void ExtractSurfacePointsCUDA(
         float voxel_size,
         float weight_threshold,
         int& valid_size);
+
+void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
+                              const core::Tensor& nb_block_indices,
+                              const core::Tensor& nb_block_masks,
+                              const core::Tensor& block_keys,
+                              const std::vector<core::Tensor>& block_values,
+                              core::Tensor& points,
+                              core::Tensor& normals,
+                              core::Tensor& colors,
+                              int64_t block_resolution,
+                              float voxel_size,
+                              float weight_threshold,
+                              int& valid_size);
 
 void ExtractSurfaceMeshCUDA(
         const core::Tensor& block_indices,

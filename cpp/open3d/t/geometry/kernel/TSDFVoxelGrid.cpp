@@ -281,6 +281,40 @@ void ExtractSurfacePoints(
     }
 }
 
+void ExtractSurfacePoints(const core::Tensor& block_indices,
+                          const core::Tensor& nb_block_indices,
+                          const core::Tensor& nb_block_masks,
+                          const core::Tensor& block_keys,
+                          const std::vector<core::Tensor>& block_values,
+                          core::Tensor& points,
+                          core::Tensor& normals,
+                          core::Tensor& colors,
+                          int64_t block_resolution,
+                          float voxel_size,
+                          float weight_threshold,
+                          int& valid_size) {
+    core::Device device = block_keys.GetDevice();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        ExtractSurfacePointsCPU(block_indices, nb_block_indices, nb_block_masks,
+                                block_keys, block_values, points, normals,
+                                colors, block_resolution, voxel_size,
+                                weight_threshold, valid_size);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        ExtractSurfacePointsCUDA(block_indices, nb_block_indices,
+                                 nb_block_masks, block_keys, block_values,
+                                 points, normals, colors, block_resolution,
+                                 voxel_size, weight_threshold, valid_size);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 void ExtractSurfaceMesh(
         const core::Tensor& block_indices,
         const core::Tensor& inv_block_indices,

@@ -78,6 +78,9 @@ public:
                    float depth_scale = 1000.0f,
                    float depth_max = 3.0f);
 
+    PointCloud ExtractSurfacePoints(int estimate_number = -1,
+                                    float weight_threshold = 3.0f);
+
     /// Get the underlying hash map that stores values in structure of arrays
     /// (SoA).
     core::HashMap GetHashMap() { return *block_hashmap_; }
