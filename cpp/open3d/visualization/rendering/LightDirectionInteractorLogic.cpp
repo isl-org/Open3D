@@ -29,7 +29,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Scene.h"
 
 namespace open3d {
@@ -152,7 +152,7 @@ void LightDirectionInteractorLogic::StartMouseDrag() {
     auto sphere = geometry::LineSet::CreateFromTriangleMesh(*sphere_tris);
     sphere->PaintUniformColor(kSkyColor);
     auto t0 = Camera::Transform::Identity();
-    Material mat;
+    MaterialRecord mat;
     mat.shader = "defaultUnlit";
     scene_->AddGeometry("__suncagesphere__", *sphere, mat);
     scene_->SetGeometryTransform("__suncagesphere__", t0);

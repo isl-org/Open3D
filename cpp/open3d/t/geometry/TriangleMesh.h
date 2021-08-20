@@ -29,8 +29,8 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/Geometry.h"
-#include "open3d/t/geometry/Material.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/visualization/rendering/Material.h"
 
 namespace open3d {
 namespace t {
@@ -415,10 +415,12 @@ public:
     bool HasMaterial() { return material_.IsValid(); }
 
     /// Get material associated with this Geometry.
-    Material &GetMaterial() { return material_; }
+    visualization::rendering::Material &GetMaterial() { return material_; }
 
     /// Set the material properties associate with this Geometry
-    void SetMaterial(const Material &material) { material_ = material; }
+    void SetMaterial(const visualization::rendering::Material &material) {
+        material_ = material;
+    }
 
 protected:
     core::Device device_ = core::Device("CPU:0");
@@ -426,7 +428,7 @@ protected:
     TensorMap triangle_attr_;
 
     /// Material associated with this geometry
-    Material material_;
+    visualization::rendering::Material material_;
 };
 
 }  // namespace geometry

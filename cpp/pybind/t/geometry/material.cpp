@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/Material.h"
+#include "open3d/visualization/rendering/Material.h"
 
 #include <string>
 #include <unordered_map>
@@ -32,8 +32,8 @@
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace t {
-namespace geometry {
+namespace visualization {
+namespace rendering {
 
 void pybind_material(py::module& m) {
     py::class_<Material, std::shared_ptr<Material>> mat(

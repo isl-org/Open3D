@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/Material.h"
+#include "open3d/visualization/rendering/Material.h"
 
 namespace open3d {
-namespace t {
-namespace geometry {
+namespace visualization {
+namespace rendering {
 
 void Material::SetDefaultProperties() {
     shader_ = "defaultUnlit";
@@ -47,12 +47,13 @@ void Material::SetDefaultProperties() {
     SetLineWidth(1.f);
 }
 
-void Material::SetTextureMap(const std::string &key, const Image &image) {
+void Material::SetTextureMap(const std::string &key,
+                             const t::geometry::Image &image) {
     // Image must be on CPU. If Image is already on CPU the following does not
     // perform an uneccesasry copy
-    texture_maps_[key] = image.CPU();
+    texture_maps_[key] = image.Clone();
 }
 
-}  // namespace geometry
-}  // namespace t
+}  // namespace rendering
+}  // namespace visualization
 }  // namespace open3d

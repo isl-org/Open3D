@@ -294,7 +294,7 @@ void FilamentScene::SetActiveCamera(const std::string& camera_name) {}
 
 MaterialInstanceHandle FilamentScene::AssignMaterialToFilamentGeometry(
         filament::RenderableManager::Builder& builder,
-        const Material& material) {
+        const MaterialRecord& material) {
     // TODO: put this in a method
     auto shader = defaults_mapping::shader_mappings[material.shader];
     if (!shader) shader = defaults_mapping::kColorOnlyMesh;
@@ -309,7 +309,7 @@ MaterialInstanceHandle FilamentScene::AssignMaterialToFilamentGeometry(
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const geometry::Geometry3D& geometry,
-                                const Material& material,
+                                const MaterialRecord& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
     if (geometries_.count(object_name) > 0) {
@@ -373,7 +373,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
                                 const t::geometry::PointCloud& point_cloud,
-                                const Material& material,
+                                const MaterialRecord& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
     // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
@@ -506,7 +506,7 @@ bool FilamentScene::CreateAndAddFilamentEntity(
         filament::Box& aabb,
         VertexBufferHandle vb,
         IndexBufferHandle ib,
-        const Material& material,
+        const MaterialRecord& material,
         BufferReuse reusing_vertex_buffer /*= kNo*/) {
     auto vbuf = resource_mgr_.GetVertexBuffer(vb).lock();
     auto ibuf = resource_mgr_.GetIndexBuffer(ib).lock();
@@ -1168,7 +1168,7 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
 }
 
 void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
-                                             const Material& material,
+                                             const MaterialRecord& material,
                                              bool shader_only) {
     // Has the shader changed?
     if (geom->mat.properties.shader != material.shader) {
@@ -1225,7 +1225,7 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
 }
 
 void FilamentScene::OverrideMaterial(const std::string& object_name,
-                                     const Material& material) {
+                                     const MaterialRecord& material) {
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         OverrideMaterialInternal(g, material);
@@ -1238,7 +1238,7 @@ void FilamentScene::QueryGeometry(std::vector<std::string>& geometry) {
     }
 }
 
-void FilamentScene::OverrideMaterialAll(const Material& material,
+void FilamentScene::OverrideMaterialAll(const MaterialRecord& material,
                                         bool shader_only) {
     for (auto& ge : geometries_) {
         if (ge.first == kBackgroundName) {
@@ -1679,7 +1679,7 @@ void FilamentScene::CreateBackgroundGeometry() {
                           {1.0, 1.0, 0.0},
                           {-1.0, 1.0, 0.0}};
         quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
-        Material m;
+        MaterialRecord m;
         m.shader = "unlitBackground";
         m.base_color = {1.f, 1.f, 1.f, 1.f};
         m.aspect_ratio = 0.0;
@@ -1707,7 +1707,7 @@ void FilamentScene::SetBackground(
         new_image = image;
     }
 
-    Material m;
+    MaterialRecord m;
     m.shader = "unlitBackground";
     m.base_color = color;
     if (new_image) {
@@ -1776,7 +1776,7 @@ void FilamentScene::CreateGroundPlaneGeometry() {
                       {1.0, 1.0, 1.0},
                       {-1.0, 1.0, 1.0}};
     quad.triangles_ = {{0, 1, 2}, {0, 2, 3}};
-    rendering::Material m;
+    rendering::MaterialRecord m;
     m.shader = "infiniteGroundPlane";
     m.base_color = kDefaultGroundPlaneColor;
     AddGeometry(kGroundPlaneName, quad, m);
@@ -1790,7 +1790,7 @@ void FilamentScene::EnableGroundPlane(bool enable, GroundPlane plane) {
         CreateGroundPlaneGeometry();
     }
     if (enable) {
-        rendering::Material m;
+        rendering::MaterialRecord m;
         m.shader = "infiniteGroundPlane";
         m.base_color = kDefaultGroundPlaneColor;
         if (plane == GroundPlane::XY) {

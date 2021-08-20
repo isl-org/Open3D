@@ -57,7 +57,7 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
@@ -334,9 +334,9 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<Receiver> receiver_;
 
     struct Settings {
-        rendering::Material lit_material_;
-        rendering::Material unlit_material_;
-        rendering::Material normal_depth_material_;
+        rendering::MaterialRecord lit_material_;
+        rendering::MaterialRecord unlit_material_;
+        rendering::MaterialRecord normal_depth_material_;
 
         GuiSettingsModel model_;
         std::shared_ptr<gui::Vert> wgt_base;
@@ -789,7 +789,7 @@ void GuiVisualizer::SetGeometry(
 
     impl_->SetMaterialsToDefault();
 
-    rendering::Material loaded_material;
+    rendering::MaterialRecord loaded_material;
     if (loaded_model) {
         scene3d->AddModel(MODEL_NAME, impl_->loaded_model_);
         impl_->settings_.model_.SetDisplayingPointClouds(false);
@@ -893,7 +893,7 @@ void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
         // just add with the default material and pretend the user changed the
         // current material and update everyone's material.
         impl_->scene_wgt_->GetScene()->AddGeometry(path, geom.get(),
-                                                   rendering::Material());
+                                                   rendering::MaterialRecord());
         impl_->UpdateFromModel(GetRenderer(), true);
     };
     impl_->receiver_ =

@@ -51,7 +51,7 @@ namespace visualization {
 namespace rendering {
 
 class Camera;
-struct Material;
+struct MaterialRecord;
 struct TriangleMeshModel;
 
 class Open3DScene {
@@ -95,24 +95,24 @@ public:
     /// Adds a geometry with the specified name. Default visible is true.
     void AddGeometry(const std::string& name,
                      const geometry::Geometry3D* geom,
-                     const Material& mat,
+                     const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     // Note: we can't use shared_ptr here, as we might be given something
     //       from Python, which is using unique_ptr. The pointer must live long
     //       enough to get copied to the GPU by the render thread.
     void AddGeometry(const std::string& name,
                      const t::geometry::PointCloud* geom,
-                     const Material& mat,
+                     const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     bool HasGeometry(const std::string& name) const;
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
-    void ModifyGeometryMaterial(const std::string& name, const Material& mat);
+    void ModifyGeometryMaterial(const std::string& name, const MaterialRecord& mat);
     void AddModel(const std::string& name, const TriangleMeshModel& model);
 
     /// Updates all geometries to use this material
-    void UpdateMaterial(const Material& mat);
+    void UpdateMaterial(const MaterialRecord& mat);
     /// Updates the named model to use this material
     void UpdateModelMaterial(const std::string& name,
                              const TriangleMeshModel& model);

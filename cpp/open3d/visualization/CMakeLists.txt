@@ -52,6 +52,7 @@ if (BUILD_GUI)
         rendering/Gradient.cpp
         rendering/IBLRotationInteractorLogic.cpp
         rendering/LightDirectionInteractorLogic.cpp
+        rendering/Material.cpp
         rendering/MaterialModifier.cpp
         rendering/MatrixInteractorLogic.cpp
         rendering/ModelInteractorLogic.cpp

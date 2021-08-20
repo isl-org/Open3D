@@ -28,7 +28,7 @@
 
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Window.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
 
@@ -65,7 +65,7 @@ public:
         std::shared_ptr<geometry::Geometry3D> geometry;
         std::shared_ptr<t::geometry::Geometry> tgeometry;
         std::shared_ptr<rendering::TriangleMeshModel> model;
-        rendering::Material material;
+        rendering::MaterialRecord material;
         std::string group;
         double time = 0.0;
         bool is_visible = true;
@@ -117,21 +117,21 @@ public:
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<geometry::Geometry3D> geom,
-                     const rendering::Material* material = nullptr,
+                     const rendering::MaterialRecord* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
-                     const rendering::Material* material = nullptr,
+                     const rendering::MaterialRecord* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
     void AddGeometry(const std::string& name,
                      std::shared_ptr<rendering::TriangleMeshModel> tgeom,
-                     const rendering::Material* material = nullptr,
+                     const rendering::MaterialRecord* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);

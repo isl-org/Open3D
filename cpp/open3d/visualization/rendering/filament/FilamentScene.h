@@ -53,7 +53,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -113,12 +113,12 @@ public:
     // Scene geometry
     bool AddGeometry(const std::string& object_name,
                      const geometry::Geometry3D& geometry,
-                     const Material& material,
+                     const MaterialRecord& material,
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
                      const t::geometry::PointCloud& point_cloud,
-                     const Material& material,
+                     const MaterialRecord& material,
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
@@ -143,10 +143,10 @@ public:
     void SetGeometryPriority(const std::string& object_name,
                              uint8_t priority) override;
     void OverrideMaterial(const std::string& object_name,
-                          const Material& material) override;
+                          const MaterialRecord& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
 
-    void OverrideMaterialAll(const Material& material,
+    void OverrideMaterialAll(const MaterialRecord& material,
                              bool shader_only = true) override;
 
     // Lighting Environment
@@ -235,7 +235,7 @@ public:
 private:
     MaterialInstanceHandle AssignMaterialToFilamentGeometry(
             filament::RenderableManager::Builder& builder,
-            const Material& material);
+            const MaterialRecord& material);
     enum BufferReuse { kNo, kYes };
     bool CreateAndAddFilamentEntity(
             const std::string& object_name,
@@ -243,7 +243,7 @@ private:
             filament::Box& aabb,
             VertexBufferHandle vb,
             IndexBufferHandle ib,
-            const Material& material,
+            const MaterialRecord& material,
             BufferReuse reusing_vertex_buffer = BufferReuse::kNo);
 
     filament::Engine& engine_;
@@ -271,7 +271,7 @@ private:
 
     struct GeometryMaterialInstance {
         TextureMaps maps;
-        Material properties;
+        MaterialRecord properties;
         MaterialInstanceHandle mat_instance;
     };
 
@@ -313,7 +313,7 @@ private:
     LightEntity* GetLightInternal(const std::string& light_name,
                                   bool warn_if_not_found = true);
     void OverrideMaterialInternal(RenderableGeometry* geom,
-                                  const Material& material,
+                                  const MaterialRecord& material,
                                   bool shader_only = false);
     void UpdateMaterialProperties(RenderableGeometry& geom);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);

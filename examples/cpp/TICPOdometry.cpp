@@ -132,7 +132,7 @@ public:
         LoadTensorPointClouds();
 
         // Rendering Material used for `current frame`.
-        mat_ = rendering::Material();
+        mat_ = rendering::MaterialRecord();
         mat_.shader = "defaultUnlit";
         mat_.base_color = Eigen::Vector4f(0.72f, 0.45f, 0.69f, 1.0f);
         mat_.point_size = 3.0f;
@@ -606,8 +606,8 @@ private:
         }
     }
 
-    rendering::Material GetPointCloudMaterial() {
-        auto pointcloud_mat = rendering::Material();
+    rendering::MaterialRecord GetPointCloudMaterial() {
+        auto pointcloud_mat = rendering::MaterialRecord();
         pointcloud_mat.shader = "unlitGradient";
 
         // The values of `__visualization_scalar` for each point is mapped to
@@ -668,8 +668,8 @@ private:
     std::atomic<bool> is_done_;
 
     // Material for model pointcloud and current scan pointcloud.
-    open3d::visualization::rendering::Material pointcloud_mat_;
-    open3d::visualization::rendering::Material mat_;
+    open3d::visualization::rendering::MaterialRecord pointcloud_mat_;
+    open3d::visualization::rendering::MaterialRecord mat_;
 
     // Stores the vector of pre-processed pointclouds on device.
     std::vector<open3d::t::geometry::PointCloud> pointclouds_device_;

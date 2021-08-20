@@ -32,7 +32,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/gui/Application.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
 
@@ -105,7 +105,7 @@ void RecreateAxis(Scene* scene,
     }
     axis_length = std::max(axis_length, 0.25 * bounds.GetCenter().norm());
     auto mesh = CreateAxisGeometry(axis_length);
-    Material mat;
+    MaterialRecord mat;
     mat.shader = "defaultUnlit";
     scene->AddGeometry(kAxisObjectName, *mesh, mat);
     // It looks awkward to have the axis cast a a shadow, and even stranger
@@ -253,7 +253,7 @@ void Open3DScene::ClearGeometry() {
 void Open3DScene::AddGeometry(
         const std::string& name,
         const geometry::Geometry3D* geom,
-        const Material& mat,
+        const MaterialRecord& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
     std::string fast_name;
@@ -284,7 +284,7 @@ void Open3DScene::AddGeometry(
 void Open3DScene::AddGeometry(
         const std::string& name,
         const t::geometry::PointCloud* geom,
-        const Material& mat,
+        const MaterialRecord& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
     std::string fast_name;
@@ -308,7 +308,7 @@ void Open3DScene::AddGeometry(
             auto lowq_name = name + kLowQualityModelObjectSuffix;
             auto bbox_geom =
                     geometry::LineSet::CreateFromAxisAlignedBoundingBox(bbox);
-            Material bbox_mat;
+            MaterialRecord bbox_mat;
             bbox_mat.base_color = {1.0f, 0.5f, 0.0f, 1.0f};  // orange
             bbox_mat.shader = "unlitSolidColor";
             scene->AddGeometry(lowq_name, *bbox_geom, bbox_mat);
@@ -343,7 +343,7 @@ void Open3DScene::RemoveGeometry(const std::string& name) {
 }
 
 void Open3DScene::ModifyGeometryMaterial(const std::string& name,
-                                         const Material& mat) {
+                                         const MaterialRecord& mat) {
     auto scene = renderer_.GetScene(scene_);
     scene->OverrideMaterial(name, mat);
     auto it = geometries_.find(name);
@@ -385,7 +385,7 @@ void Open3DScene::AddModel(const std::string& name,
     axis_dirty_ = true;
 }
 
-void Open3DScene::UpdateMaterial(const Material& mat) {
+void Open3DScene::UpdateMaterial(const MaterialRecord& mat) {
     auto scene = renderer_.GetScene(scene_);
     for (auto& g : geometries_) {
         scene->OverrideMaterial(g.second.name, mat);
