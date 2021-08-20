@@ -45,6 +45,20 @@ std::shared_ptr<zmq::message_t> CreateStatusMessage(
 
     return msg;
 }
+
+template <class T>
+std::shared_ptr<zmq::message_t> IgnoreMessage(
+        const open3d::io::rpc::messages::Request& req,
+        const T& msg,
+        const msgpack::object_handle& obj) {
+    LogInfo("MessageProcessorBase::ProcessMessage: messages with id {} will be "
+            "ignored",
+            msg.MsgId());
+    auto status = open3d::io::rpc::messages::Status::ErrorProcessingMessage();
+    status.str += ": messages with id " + msg.MsgId() + " are not supported";
+    return CreateStatusMessage(status);
+}
+
 }  // namespace
 
 namespace open3d {
@@ -59,73 +73,42 @@ std::shared_ptr<zmq::message_t> MessageProcessorBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetMeshData& msg,
         const msgpack::object_handle& obj) {
-    utility::LogInfo(
-            "MessageProcessorBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
+    return IgnoreMessage(req, msg, obj);
 }
+
 std::shared_ptr<zmq::message_t> MessageProcessorBase::ProcessMessage(
         const messages::Request& req,
         const messages::GetMeshData& msg,
         const msgpack::object_handle& obj) {
-    utility::LogInfo(
-            "MessageProcessorBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
+    return IgnoreMessage(req, msg, obj);
 }
+
 std::shared_ptr<zmq::message_t> MessageProcessorBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetCameraData& msg,
         const msgpack::object_handle& obj) {
-    utility::LogInfo(
-            "MessageProcessorBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
+    return IgnoreMessage(req, msg, obj);
 }
+
 std::shared_ptr<zmq::message_t> MessageProcessorBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetProperties& msg,
         const msgpack::object_handle& obj) {
-    utility::LogInfo(
-            "MessageProcessorBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
+    return IgnoreMessage(req, msg, obj);
 }
+
 std::shared_ptr<zmq::message_t> MessageProcessorBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetActiveCamera& msg,
         const msgpack::object_handle& obj) {
-    utility::LogInfo(
-            "MessageProcessorBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
+    return IgnoreMessage(req, msg, obj);
 }
+
 std::shared_ptr<zmq::message_t> MessageProcessorBase::ProcessMessage(
         const messages::Request& req,
         const messages::SetTime& msg,
         const msgpack::object_handle& obj) {
-    utility::LogInfo(
-            "MessageProcessorBase::ProcessMessage: messages with id {} will be "
-            "ignored",
-            msg.MsgId());
-    auto status = messages::Status::ErrorProcessingMessage();
-    status.str += ": messages with id " + msg.MsgId() + " are not supported";
-    return CreateStatusMessage(status);
+    return IgnoreMessage(req, msg, obj);
 }
 
 }  // namespace rpc

@@ -140,29 +140,23 @@ core::Tensor ArrayToTensor(const messages::Array& array) {
     return result;
 }
 
-std::tuple<messages::Array, core::Tensor> TensorToArray(
-        const core::Tensor& tensor) {
-    // We require the tensor to be contiguous and to use the CPU.
-    auto t = tensor.To(core::Device("CPU:0")).Contiguous();
-    auto a = DISPATCH_DTYPE_TO_TEMPLATE(t.GetDtype(), [&]() {
-        return messages::Array::FromPtr(
-                (scalar_t*)t.GetDataPtr(),
-                static_cast<std::vector<int64_t>>(t.GetShape()));
-    });
-    // We do not know if t is a shallow or deep copy. Therefore, we need to
-    // return t as well to keep the memory alive.
-    return std::tie(a, t);
+std::map<std::string, messages::Array> TensorMapToArrayMap(
+        const t::geometry::TensorMap& tensor_map) {
+    std::map<std::string, messages::Array> result;
+    for (auto item : tensor_map) {
+        result[item.first] = messages::Array::FromTensor(item.second);
+    }
+    return result;
 }
 
 std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
         const messages::MeshData& mesh_data) {
     std::string errstr;
     if (mesh_data.CheckMessage(errstr)) {
-        if (mesh_data.o3d_type == "TriangleMesh" ||
+        if (mesh_data.O3DTypeIsTriangleMesh() ||
             mesh_data.faces.CheckNonEmpty()) {
             if (mesh_data.faces.CheckShape({-1, 3}, errstr)) {
-                std::shared_ptr<t::geometry::TriangleMesh> mesh(
-                        new t::geometry::TriangleMesh());
+                auto mesh = std::make_shared<t::geometry::TriangleMesh>();
                 mesh->SetVertexPositions(ArrayToTensor(mesh_data.vertices));
                 for (auto item : mesh_data.vertex_attributes) {
                     mesh->SetVertexAttr(item.first, ArrayToTensor(item.second));
@@ -177,13 +171,26 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
                 LogWarning("MeshDataToGeometry: Invalid shape for faces, {}",
                            errstr);
             }
-        } else if (mesh_data.o3d_type == "LineSet" ||
+        } else if (mesh_data.O3DTypeIsLineSet() ||
                    mesh_data.lines.CheckNonEmpty()) {
-            // TODO
-        } else if (mesh_data.o3d_type == "PointCloud" ||
+            if (mesh_data.lines.CheckShape({-1, 2}, errstr)) {
+                auto ls = std::make_shared<t::geometry::LineSet>();
+                ls->SetPointPositions(ArrayToTensor(mesh_data.vertices));
+                for (auto item : mesh_data.vertex_attributes) {
+                    ls->SetPointAttr(item.first, ArrayToTensor(item.second));
+                }
+                ls->SetLineIndices(ArrayToTensor(mesh_data.lines));
+                for (auto item : mesh_data.line_attributes) {
+                    ls->SetLineAttr(item.first, ArrayToTensor(item.second));
+                }
+                return ls;
+            } else {
+                LogWarning("MeshDataToGeometry: Invalid shape for lines, {}",
+                           errstr);
+            }
+        } else if (mesh_data.O3DTypeIsPointCloud() ||
                    mesh_data.vertices.CheckNonEmpty()) {
-            std::shared_ptr<t::geometry::PointCloud> pcd(
-                    new t::geometry::PointCloud());
+            auto pcd = std::make_shared<t::geometry::PointCloud>();
             pcd->SetPointPositions(ArrayToTensor(mesh_data.vertices));
             for (auto item : mesh_data.vertex_attributes) {
                 pcd->SetPointAttr(item.first, ArrayToTensor(item.second));
@@ -202,88 +209,79 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
     return std::shared_ptr<t::geometry::Geometry>();
 }
 
-std::tuple<messages::MeshData, std::vector<core::Tensor>>
-TriangleMeshToMeshData(const t::geometry::TriangleMesh& trimesh) {
-    std::vector<core::Tensor> keep_alive_tensors;
+messages::MeshData GeometryToMeshData(
+        const t::geometry::TriangleMesh& trimesh) {
     messages::MeshData mesh_data;
 
     // vertices
     auto vertex_attributes = trimesh.GetVertexAttr();
-    // TODO switch to "positions" after the primary key has changed.
-    if (vertex_attributes.Contains("vertices")) {
-        core::Tensor tensor;
-        std::tie(mesh_data.vertices, tensor) =
-                TensorToArray(trimesh.GetVertexPositions());
-        keep_alive_tensors.push_back(tensor);
+    mesh_data.vertex_attributes = TensorMapToArrayMap(vertex_attributes);
+    if (mesh_data.vertex_attributes.count("positions")) {
+        mesh_data.vertices = mesh_data.vertex_attributes["positions"];
+        mesh_data.vertex_attributes.erase("positions");
     } else {
-        LogError("TriangleMeshToMeshData: TriangleMesh has no vertices!");
-    }
-
-    for (auto item : vertex_attributes) {
-        // TODO switch to "positions" after the primary key has changed.
-        if (item.first != "vertices") {
-            core::Tensor tensor;
-            std::tie(mesh_data.vertex_attributes[item.first], tensor) =
-                    TensorToArray(item.second);
-            keep_alive_tensors.push_back(tensor);
-        }
+        LogError("GeometryToMeshData: TriangleMesh has no vertices!");
     }
 
     // triangles
-    auto triangle_attributes = trimesh.GetTriangleAttr();
-    for (auto item : triangle_attributes) {
-        // TODO switch to "indices" after the primary key has changed.
-        if (item.first != "triangles") {
-            core::Tensor tensor;
-            std::tie(mesh_data.face_attributes[item.first], tensor) =
-                    TensorToArray(item.second);
-            keep_alive_tensors.push_back(tensor);
-        } else {
-            core::Tensor tensor;
-            std::tie(mesh_data.faces, tensor) = TensorToArray(item.second);
-            keep_alive_tensors.push_back(tensor);
-        }
+    auto face_attributes = trimesh.GetTriangleAttr();
+    mesh_data.face_attributes = TensorMapToArrayMap(face_attributes);
+    if (mesh_data.face_attributes.count("indices")) {
+        mesh_data.faces = mesh_data.face_attributes["indices"];
+        mesh_data.face_attributes.erase("indices");
     }
 
-    mesh_data.o3d_type = "TriangleMesh";
+    mesh_data.SetO3DTypeToTriangleMesh();
 
-    return std::tie(mesh_data, keep_alive_tensors);
+    return mesh_data;
 }
 
-std::tuple<messages::MeshData, std::vector<core::Tensor>> PointCloudToMeshData(
-        const t::geometry::PointCloud& pcd) {
-    std::vector<core::Tensor> keep_alive_tensors;
+messages::MeshData GeometryToMeshData(const t::geometry::PointCloud& pcd) {
     messages::MeshData mesh_data;
 
     // points
     auto point_attributes = pcd.GetPointAttr();
-    // TODO switch to "positions" after the primary key has changed.
-    if (point_attributes.Contains("points")) {
-        core::Tensor tensor;
-        std::tie(mesh_data.vertices, tensor) =
-                TensorToArray(pcd.GetPointPositions());
-        keep_alive_tensors.push_back(tensor);
+    mesh_data.vertex_attributes = TensorMapToArrayMap(point_attributes);
+    if (mesh_data.vertex_attributes.count("positions")) {
+        mesh_data.vertices = mesh_data.vertex_attributes["positions"];
+        mesh_data.vertex_attributes.erase("positions");
     } else {
-        LogError("PointCloudToMeshData: PointCloud has no points!");
+        LogError("GeometryToMeshData: PointCloud has no points!");
     }
 
-    for (auto item : point_attributes) {
-        // TODO switch to "positions" after the primary key has changed.
-        if (item.first != "points") {
-            core::Tensor tensor;
-            std::tie(mesh_data.vertex_attributes[item.first], tensor) =
-                    TensorToArray(item.second);
-            keep_alive_tensors.push_back(tensor);
-        }
+    mesh_data.SetO3DTypeToPointCloud();
+
+    return mesh_data;
+}
+
+messages::MeshData GeometryToMeshData(const t::geometry::LineSet& ls) {
+    messages::MeshData mesh_data;
+
+    // points
+    auto point_attributes = ls.GetPointAttr();
+    mesh_data.vertex_attributes = TensorMapToArrayMap(point_attributes);
+    if (mesh_data.vertex_attributes.count("positions")) {
+        mesh_data.vertices = mesh_data.vertex_attributes["positions"];
+        mesh_data.vertex_attributes.erase("positions");
+    } else {
+        LogError("GeometryToMeshData: LineSet has no points!");
     }
 
-    mesh_data.o3d_type = "PointCloud";
+    // triangles
+    auto line_attributes = ls.GetLineAttr();
+    mesh_data.line_attributes = TensorMapToArrayMap(line_attributes);
+    if (mesh_data.line_attributes.count("indices")) {
+        mesh_data.lines = mesh_data.line_attributes["indices"];
+        mesh_data.line_attributes.erase("indices");
+    }
 
-    return std::tie(mesh_data, keep_alive_tensors);
+    mesh_data.SetO3DTypeToLineSet();
+
+    return mesh_data;
 }
 
 std::tuple<std::string, double, std::shared_ptr<t::geometry::Geometry>>
-GetDataFromSetMeshDataBuffer(std::string& data) {
+DataBufferToMetaGeometry(std::string& data) {
     const char* buffer = data.data();
     size_t buffer_size = data.size();
 

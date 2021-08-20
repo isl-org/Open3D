@@ -197,12 +197,13 @@ A connection writing to a memory buffer.
                      "the connection."},
             });
 
-    m.def("get_data_from_set_mesh_data_buffer",
-          &rpc::GetDataFromSetMeshDataBuffer, "data"_a,
-          "This function returns the geometry, the path and the time stored in "
-          "a SetMeshData message. data must contain the Request header message "
-          "followed by the SetMeshData message. The function returns None for "
-          "the geometry if not successful.");
+    m.def("data_buffer_to_meta_geometry", &rpc::DataBufferToMetaGeometry,
+          "data"_a, R"doc(
+This function returns the geometry, the path and the time stored in a
+SetMeshData message. data must contain the Request header message followed
+by the SetMeshData message. The function returns None for the geometry if not
+successful.
+)doc");
 }
 
 }  // namespace io
