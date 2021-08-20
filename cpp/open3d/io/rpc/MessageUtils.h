@@ -108,7 +108,7 @@ messages::MeshData GeometryToMeshData(const t::geometry::TriangleMesh& trimesh);
 /// object for serialization.
 messages::MeshData GeometryToMeshData(const t::geometry::PointCloud& pcd);
 
-/// Creates MeshData from a LinSet. This function returns the MeshData
+/// Creates MeshData from a LineSet. This function returns the MeshData
 /// object for serialization.
 messages::MeshData GeometryToMeshData(const t::geometry::LineSet& ls);
 

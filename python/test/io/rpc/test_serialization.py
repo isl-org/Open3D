@@ -39,7 +39,7 @@ def test_set_mesh_data_deserialization():
         o3d.io.rpc.set_mesh_data(*args, **kwargs, connection=bc)
         return o3d.io.rpc.data_buffer_to_meta_geometry(bc.get_buffer())
 
-    rng = np.random.RandomState(123)
+    rng = np.random
 
     verts = rng.rand(100, 3).astype(np.float32)
     tris = rng.randint(0, 100, size=[71, 3]).astype(np.int32)
