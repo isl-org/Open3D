@@ -182,7 +182,7 @@ private:
 /// CUDAState is a lazy-evaluated singleton class that initializes and stores
 /// the states of CUDA devices.
 ///
-/// Currently is stores the peer-to-peer availability.
+/// Currently it stores the peer-to-peer availability.
 ///
 /// In the future, it can also be used to store
 /// - Device allocators
