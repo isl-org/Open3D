@@ -38,7 +38,7 @@ namespace geometry {
 
 void pybind_trianglemesh(py::module& m) {
     py::class_<TriangleMesh, PyGeometry<TriangleMesh>,
-               std::shared_ptr<TriangleMesh>, Geometry>
+               std::shared_ptr<TriangleMesh>, Geometry, DrawableGeometry>
             triangle_mesh(m, "TriangleMesh",
                           R"(
 A triangle mesh contains vertices and triangles. The triangle mesh class stores
@@ -155,9 +155,10 @@ The attributes of the triangle mesh have different levels::
                       "Scale points.");
     triangle_mesh.def("rotate", &TriangleMesh::Rotate, "R"_a, "center"_a,
                       "Rotate points and normals (if exist).");
-    triangle_mesh.def(
-            "has_material", &TriangleMesh::HasMaterial,
-            "Returns true if the triangle mesh has a valid material assigned");
+
+    triangle_mesh.def("has_material", &TriangleMesh::HasMaterial,
+                      "Returns true if the triangle mesh has a valid material "
+                      "assigned");
     triangle_mesh.def_property("material", &TriangleMesh::GetMaterial,
                                &TriangleMesh::SetMaterial);
 

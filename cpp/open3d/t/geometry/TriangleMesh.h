@@ -28,9 +28,9 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
-#include "open3d/visualization/rendering/Material.h"
 
 namespace open3d {
 namespace t {
@@ -102,7 +102,7 @@ namespace geometry {
 ///
 /// Note that the we can also use the generalized helper functions for the
 /// default and common attributes.
-class TriangleMesh : public Geometry {
+class TriangleMesh : public Geometry, public DrawableGeometry {
 public:
     /// Construct an empty pointcloud on the provided device.
     /// \param device The device on which to initialize the trianglemesh
@@ -411,24 +411,10 @@ public:
     /// Convert to a legacy Open3D TriangleMesh.
     open3d::geometry::TriangleMesh ToLegacy() const;
 
-    /// Check if a material has been applied to this Geometry with SetMaterial.
-    bool HasMaterial() { return material_.IsValid(); }
-
-    /// Get material associated with this Geometry.
-    visualization::rendering::Material &GetMaterial() { return material_; }
-
-    /// Set the material properties associate with this Geometry
-    void SetMaterial(const visualization::rendering::Material &material) {
-        material_ = material;
-    }
-
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
     TensorMap triangle_attr_;
-
-    /// Material associated with this geometry
-    visualization::rendering::Material material_;
 };
 
 }  // namespace geometry
