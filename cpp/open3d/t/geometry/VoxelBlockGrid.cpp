@@ -128,6 +128,7 @@ void VoxelBlockGrid::Integrate(const Image &depth,
     }
     block_hashmap_->Find(block_coords, buf_indices, masks);
 
+    active_block_coords_ = block_coords;
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
     kernel::tsdf::Integrate(depth.AsTensor(), color.AsTensor(), buf_indices,
@@ -191,6 +192,46 @@ PointCloud VoxelBlockGrid::ExtractSurfacePoints(int estimated_number,
     // pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
 
     return pcd;
+}
+
+std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
+        const core::Tensor &intrinsics,
+        const core::Tensor &extrinsics,
+        int width,
+        int height,
+        float depth_scale,
+        float depth_min,
+        float depth_max,
+        float weight_threshold) {
+    // Extrinsic: world to camera -> pose: camera to world
+    core::Tensor vertex_map, depth_map, color_map, normal_map;
+    core::Device device = block_hashmap_->GetDevice();
+    vertex_map = core::Tensor({height, width, 3}, core::Float32, device);
+    depth_map = core::Tensor({height, width, 1}, core::Float32, device);
+    color_map = core::Tensor({height, width, 3}, core::Float32, device);
+
+    const int down_factor = 8;
+    core::Tensor range_minmax_map;
+    kernel::tsdf::EstimateRange(active_block_coords_, range_minmax_map,
+                                intrinsics, extrinsics, height, width,
+                                down_factor, block_resolution_, voxel_size_,
+                                depth_min, depth_max);
+
+    std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
+    auto device_hashmap = block_hashmap_->GetDeviceHashBackend();
+    kernel::tsdf::RayCast(device_hashmap, block_values, range_minmax_map,
+                          vertex_map, depth_map, color_map, normal_map,
+                          intrinsics, extrinsics, height, width,
+                          block_resolution_, voxel_size_, voxel_size_ * 6,
+                          depth_scale, depth_min, depth_max, weight_threshold);
+
+    std::unordered_map<std::string, core::Tensor> results;
+    results.emplace("vertex", vertex_map);
+    results.emplace("depth", depth_map);
+    results.emplace("color", color_map);
+    results.emplace("range", range_minmax_map);
+
+    return results;
 }
 
 }  // namespace geometry

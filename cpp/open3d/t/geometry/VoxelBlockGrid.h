@@ -81,6 +81,16 @@ public:
     PointCloud ExtractSurfacePoints(int estimate_number = -1,
                                     float weight_threshold = 3.0f);
 
+    std::unordered_map<std::string, core::Tensor> RayCast(
+            const core::Tensor &intrinsics,
+            const core::Tensor &extrinsics,
+            int width,
+            int height,
+            float depth_scale = 1000.0f,
+            float depth_min = 0.1f,
+            float depth_max = 3.0f,
+            float weight_threshold = 3.0f);
+
     /// Get the underlying hash map that stores values in structure of arrays
     /// (SoA).
     core::HashMap GetHashMap() { return *block_hashmap_; }
@@ -88,6 +98,8 @@ public:
 private:
     float voxel_size_;
     int64_t block_resolution_;
+
+    core::Tensor active_block_coords_;
 
     // Global hash map: 3D coords -> voxel blocks in SoA.
     std::shared_ptr<core::HashMap> block_hashmap_;

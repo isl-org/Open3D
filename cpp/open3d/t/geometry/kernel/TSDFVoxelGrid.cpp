@@ -246,6 +246,49 @@ void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
     }
 }
 
+void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
+             const std::vector<core::Tensor>& block_values,
+             const core::Tensor& range_map,
+             core::Tensor& vertex_map,
+             core::Tensor& depth_map,
+             core::Tensor& color_map,
+             core::Tensor& normal_map,
+             const core::Tensor& intrinsics,
+             const core::Tensor& extrinsics,
+             int h,
+             int w,
+             int64_t block_resolution,
+             float voxel_size,
+             float sdf_trunc,
+             float depth_scale,
+             float depth_min,
+             float depth_max,
+             float weight_threshold) {
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
+
+    core::Device device = hashmap->GetDevice();
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        RayCastCPU(hashmap, block_values, range_map, vertex_map, depth_map,
+                   color_map, normal_map, intrinsics_d, extrinsics_d, h, w,
+                   block_resolution, voxel_size, sdf_trunc, depth_scale,
+                   depth_min, depth_max, weight_threshold);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        RayCastCUDA(hashmap, block_values, range_map, vertex_map, depth_map,
+                    color_map, normal_map, intrinsics_d, extrinsics_d, h, w,
+                    block_resolution, voxel_size, sdf_trunc, depth_scale,
+                    depth_min, depth_max, weight_threshold);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 void ExtractSurfacePoints(
         const core::Tensor& block_indices,
         const core::Tensor& nb_block_indices,

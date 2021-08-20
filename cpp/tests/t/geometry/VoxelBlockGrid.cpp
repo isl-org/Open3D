@@ -103,6 +103,10 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
             std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
     auto trajectory =
             io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
+    const int cols = 640;
+    const int rows = 480;
+    const float depth_scale = 1000.0;
+    const float depth_max = 3.0;
 
     for (auto backend : backends) {
         auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
@@ -128,6 +132,25 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                     core::eigen_converter::EigenMatrixToTensor(extrinsic);
 
             vbg.Integrate(depth, color, intrinsic_t, extrinsic_t);
+            auto result = vbg.RayCast(intrinsic_t, extrinsic_t, cols, rows,
+                                      depth_scale, 0.1, depth_max, 1.0);
+            core::Tensor range_map = result["range"];
+            t::geometry::Image im_near(range_map.Slice(2, 0, 1).Contiguous() /
+                                       depth_max);
+            visualization::DrawGeometries(
+                    {std::make_shared<open3d::geometry::Image>(
+                            im_near.ToLegacy())});
+
+            t::geometry::Image depth_raycast(result["depth"]);
+            visualization::DrawGeometries(
+                    {std::make_shared<open3d::geometry::Image>(
+                            depth_raycast
+                                    .ColorizeDepth(depth_scale, 0.1, depth_max)
+                                    .ToLegacy())});
+            t::geometry::Image color_raycast(result["color"]);
+            visualization::DrawGeometries(
+                    {std::make_shared<open3d::geometry::Image>(
+                            color_raycast.ToLegacy())});
         }
 
         if (backend == core::HashBackendType::StdGPU) {
