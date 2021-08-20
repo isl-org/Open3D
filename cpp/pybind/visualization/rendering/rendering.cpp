@@ -337,22 +337,25 @@ void pybind_rendering_classes(py::module &m) {
             .def_property("mode", &Gradient::GetMode, &Gradient::SetMode);
 
     // ---- Material ----
-    py::class_<MaterialRecord> mat(m, "Material",
-                             "Describes the real-world, physically based (PBR) "
-                             "material used to render a geometry");
+    py::class_<MaterialRecord> mat(
+            m, "Material",
+            "Describes the real-world, physically based (PBR) "
+            "material used to render a geometry");
     mat.def(py::init<>())
             .def_readwrite("has_alpha", &MaterialRecord::has_alpha)
             .def_readwrite("base_color", &MaterialRecord::base_color)
             .def_readwrite("base_metallic", &MaterialRecord::base_metallic)
             .def_readwrite("base_roughness", &MaterialRecord::base_roughness)
-            .def_readwrite("base_reflectance", &MaterialRecord::base_reflectance)
+            .def_readwrite("base_reflectance",
+                           &MaterialRecord::base_reflectance)
             .def_readwrite("base_clearcoat", &MaterialRecord::base_clearcoat)
             .def_readwrite("base_clearcoat_roughness",
                            &MaterialRecord::base_clearcoat_roughness)
             .def_readwrite("base_anisotropy", &MaterialRecord::base_anisotropy)
             .def_readwrite("thickness", &MaterialRecord::thickness)
             .def_readwrite("transmission", &MaterialRecord::transmission)
-            .def_readwrite("absorption_color", &MaterialRecord::absorption_color)
+            .def_readwrite("absorption_color",
+                           &MaterialRecord::absorption_color)
             .def_readwrite("absorption_distance",
                            &MaterialRecord::absorption_distance)
             .def_readwrite("point_size", &MaterialRecord::point_size)
@@ -375,7 +378,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("scalar_max", &MaterialRecord::scalar_max)
             .def_readwrite("sRGB_color", &MaterialRecord::sRGB_color)
             .def_readwrite("aspect_ratio", &MaterialRecord::aspect_ratio)
-            .def_readwrite("ground_plane_axis", &MaterialRecord::ground_plane_axis)
+            .def_readwrite("ground_plane_axis",
+                           &MaterialRecord::ground_plane_axis)
             .def_readwrite("shader", &MaterialRecord::shader);
 
     // ---- TriangleMeshModel ----

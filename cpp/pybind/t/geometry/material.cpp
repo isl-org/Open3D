@@ -72,6 +72,6 @@ void pybind_material(py::module& m) {
                  "Returns true if the material has the vector property");
 }
 
-}  // namespace geometry
-}  // namespace t
+}  // namespace rendering
+}  // namespace visualization
 }  // namespace open3d
