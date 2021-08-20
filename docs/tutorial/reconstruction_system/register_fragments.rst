@@ -21,8 +21,8 @@ Preprocess point cloud
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 17
-   :lines: 5,18-28
+   :lineno-start: 39
+   :lines: 27,40-50
    :linenos:
 
 This function downsamples a point cloud to make it sparser and regularly
@@ -38,8 +38,8 @@ Compute initial registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 54
-   :lines: 5,55-81
+   :lineno-start: 81
+   :lines: 27,82-108
    :linenos:
 
 This function computes a rough alignment between two fragments. If the fragments
@@ -56,8 +56,8 @@ Pairwise global registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 30
-   :lines: 5,31-52
+   :lineno-start: 52
+   :lines: 27,53-79
    :linenos:
 
 This function uses :ref:`/tutorial/pipelines/global_registration.ipynb#RANSAC` or :ref:`/tutorial/pipelines/global_registration.ipynb#fast-global-registration` for pairwise global registration.
@@ -70,8 +70,8 @@ Multiway registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 83
-   :lines: 5,84-103
+   :lineno-start: 110
+   :lines: 27,111-131
    :linenos:
 
 This script uses the technique demonstrated in
@@ -85,8 +85,8 @@ called for multiway registration.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/optimize_posegraph.py
    :language: python
-   :lineno-start: 42
-   :lines: 5,43-50
+   :lineno-start: 66
+   :lines: 27,67-74
    :linenos:
 
 Main registration loop
@@ -98,8 +98,8 @@ multiway registration.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 135
-   :lines: 5,136-176
+   :lineno-start: 164
+   :lines: 27,164-204
    :linenos:
 
 Results

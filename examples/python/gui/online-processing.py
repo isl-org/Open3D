@@ -1,7 +1,8 @@
-###############################################################################
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Open3D: www.open3d.org
 # Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,10 +19,10 @@
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-###############################################################################
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 """Online 3D depth video processing pipeline.
 
 - Connects to a RGBD camera or RGBD video file (currently
