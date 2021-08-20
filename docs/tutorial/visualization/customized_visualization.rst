@@ -99,7 +99,7 @@ Capture images in a customized animation
 
 .. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
-   :lineno-start: 87
+   :lineno-start: 109
    :lines: 109-156
    :linenos:
 

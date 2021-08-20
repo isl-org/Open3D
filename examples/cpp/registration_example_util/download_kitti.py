@@ -24,6 +24,10 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import open3d as o3d
+import numpy as np
+from os import listdir, makedirs
+from os.path import exists, isfile, join, splitext, dirname, basename
 import re
 import sys
 import struct
