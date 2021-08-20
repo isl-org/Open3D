@@ -26,8 +26,6 @@
 
 #pragma once
 
-#include <string>
-
 #include "open3d/Macro.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
@@ -39,9 +37,9 @@
 ///
 /// Example: check that the tensor has dtype Float32
 /// core::AssertTensorDtype(tensor, core::Float32);
-#define AssertTensorDtype(tensor, dtype)                                      \
-    tensor_check::_AssertTensorDtype(__FILE__, __LINE__, (const char*)__FN__, \
-                                     tensor, dtype)
+#define AssertTensorDtype(tensor, dtype) \
+    tensor_check::_AssertTensorDtype(    \
+            __FILE__, __LINE__, (const char*)OPEN3D_FUNCTION, tensor, dtype)
 
 /// Assert Tensor's device is the same as the expected device. When an error
 /// occurs, the corresponding file name, line number and function name will be
@@ -49,9 +47,9 @@
 ///
 /// Example: check that the tensor has device CUDA:0
 /// core::AssertTensorDevice(tensor, core::Device("CUDA:0"));
-#define AssertTensorDevice(tensor, device)                                     \
-    tensor_check::_AssertTensorDevice(__FILE__, __LINE__, (const char*)__FN__, \
-                                      tensor, device)
+#define AssertTensorDevice(tensor, device) \
+    tensor_check::_AssertTensorDevice(     \
+            __FILE__, __LINE__, (const char*)OPEN3D_FUNCTION, tensor, device)
 
 /// Assert Tensor's shape is the same as the expected shape. When an error
 /// occurs, the corresponding file name, line number and function name will be
@@ -63,9 +61,9 @@
 ///
 /// Example: check that the tensor has shape {N, 3}
 /// core::AssertTensorShape(tensor, {utility::nullopt, 3});
-#define AssertTensorShape(tensor, ...)                       \
-    tensor_check::_AssertTensorShape(                        \
-            __FILE__, __LINE__, (const char*)__FN__, tensor, \
+#define AssertTensorShape(tensor, ...)                                \
+    tensor_check::_AssertTensorShape(                                 \
+            __FILE__, __LINE__, (const char*)OPEN3D_FUNCTION, tensor, \
             __VA_ARGS__)  // __VA_ARGS__ handles initilizer list.
 
 namespace open3d {

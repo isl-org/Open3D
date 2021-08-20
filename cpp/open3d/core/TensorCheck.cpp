@@ -26,6 +26,8 @@
 
 #include "open3d/core/TensorCheck.h"
 
+#include <string>
+
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
@@ -44,7 +46,7 @@ void _AssertTensorDtype(const char* file,
         return;
     }
     std::string error_message =
-            fmt::format("Tensor has dtype {}, but is expected to be {}.",
+            fmt::format("Tensor has dtype {}, but is expected to have {}.",
                         tensor.GetDtype().ToString(), dtype.ToString());
     utility::Logger::_LogError(file, line, function, error_message.c_str());
 }
@@ -58,7 +60,7 @@ void _AssertTensorDevice(const char* file,
         return;
     }
     std::string error_message =
-            fmt::format("Tensor has device {}, but is expected to be {}.",
+            fmt::format("Tensor has device {}, but is expected to have {}.",
                         tensor.GetDevice().ToString(), device.ToString());
     utility::Logger::_LogError(file, line, function, error_message.c_str());
 }
@@ -73,7 +75,7 @@ void _AssertTensorShape(const char* file,
             return;
         }
         std::string error_message = fmt::format(
-                "Tensor has shape {}, but is expected to be compatible with "
+                "Tensor has shape {}, but is expected to have compatible with "
                 "{}.",
                 tensor.GetShape().ToString(), shape.ToString());
         utility::Logger::_LogError(file, line, function, error_message.c_str());
@@ -83,7 +85,7 @@ void _AssertTensorShape(const char* file,
             return;
         }
         std::string error_message = fmt::format(
-                "Tensor has shape {}, but is expected to be {}.",
+                "Tensor has shape {}, but is expected to have {}.",
                 tensor.GetShape().ToString(), static_shape.ToString());
         utility::Logger::_LogError(file, line, function, error_message.c_str());
     }

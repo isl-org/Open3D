@@ -49,7 +49,24 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(
                 err.what(),
-                "Tensor has dtype Float32, but is expected to be Int32."));
+                "Tensor has dtype Float32, but is expected to have Int32."));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorDtype"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
+
+    // More tests for macro exstension.
+    core::AssertTensorDtype(
+            t, core::Dtype(core::Dtype::DtypeCode::Float, 4, "Float32"));
+    try {
+        core::AssertTensorDtype(
+                t, core::Dtype(core::Dtype::DtypeCode::Float, 4, "Float64"));
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(),
+                "Tensor has dtype Float32, but is expected to have Float64."));
         EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorDtype"));
     } catch (...) {
@@ -66,8 +83,8 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(err.what(), "Tensor has device"));
-        EXPECT_TRUE(utility::ContainsString(err.what(),
-                                            "but is expected to be CUDA:1000"));
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(), "but is expected to have CUDA:1000"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorDevice"));
     } catch (...) {
@@ -88,7 +105,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(
                 err.what(),
-                "Tensor has shape {10}, but is expected to be {}."));
+                "Tensor has shape {10}, but is expected to have {}."));
         EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
     } catch (...) {
@@ -101,7 +118,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(
                 err.what(),
-                "Tensor has shape {10}, but is expected to be {1}."));
+                "Tensor has shape {10}, but is expected to have {1}."));
         EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
     } catch (...) {
@@ -114,7 +131,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(
                 err.what(),
-                "Tensor has shape {10}, but is expected to be {1, 2}."));
+                "Tensor has shape {10}, but is expected to have {1, 2}."));
         EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
     } catch (...) {
@@ -129,7 +146,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(
                 err.what(),
-                "Tensor has shape {10}, but is expected to be {1, 2}."));
+                "Tensor has shape {10}, but is expected to have {1, 2}."));
         EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
     } catch (...) {
@@ -142,10 +159,10 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
         core::AssertTensorShape(t, {4, utility::nullopt});
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
-        EXPECT_TRUE(utility::ContainsString(
-                err.what(),
-                "Tensor has shape {10}, but is expected to be compatible with "
-                "{4, None}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(),
+                                            "Tensor has shape {10}, but is "
+                                            "expected to have compatible with "
+                                            "{4, None}."));
         EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
     } catch (...) {
@@ -159,10 +176,10 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
                                 core::DynamicSizeVector({4, utility::nullopt}));
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
-        EXPECT_TRUE(utility::ContainsString(
-                err.what(),
-                "Tensor has shape {10}, but is expected to be compatible with "
-                "{4, None}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(),
+                                            "Tensor has shape {10}, but is "
+                                            "expected to have compatible with "
+                                            "{4, None}."));
         EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
         EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorShape"));
     } catch (...) {

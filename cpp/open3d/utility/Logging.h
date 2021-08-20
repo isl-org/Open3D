@@ -69,8 +69,9 @@
 //
 // Usage  : utility::LogError(format_string, arg0, arg1, ...);
 // Example: utility::LogError("name: {}, age: {}", "dog", 5);
-#define LogError(...) \
-    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+#define LogError(...)                                                    \
+    Logger::_LogError(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
+                      __VA_ARGS__)
 
 // LogWarning is used if an error occurs, but the error is also signaled
 // via a return value (i.e., there is no need to throw an exception). This
@@ -80,24 +81,27 @@
 //
 // Usage  : utility::LogWarning(format_string, arg0, arg1, ...);
 // Example: utility::LogWarning("name: {}, age: {}", "dog", 5);
-#define LogWarning(...) \
-    Logger::_LogWarning(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+#define LogWarning(...)                                                    \
+    Logger::_LogWarning(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
+                        __VA_ARGS__)
 
 // LogInfo is used to inform the user with expected output, e.g, pressed a
 // key in the visualizer prints helping information.
 //
 // Usage  : utility::LogInfo(format_string, arg0, arg1, ...);
 // Example: utility::LogInfo("name: {}, age: {}", "dog", 5);
-#define LogInfo(...) \
-    Logger::_LogInfo(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+#define LogInfo(...)                                                    \
+    Logger::_LogInfo(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
+                     __VA_ARGS__)
 
 // LogDebug is used to print debug/additional information on the state of
 // the algorithm.
 //
 // Usage  : utility::LogDebug(format_string, arg0, arg1, ...);
 // Example: utility::LogDebug("name: {}, age: {}", "dog", 5);
-#define LogDebug(...) \
-    Logger::_LogDebug(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+#define LogDebug(...)                                                    \
+    Logger::_LogDebug(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
+                      __VA_ARGS__)
 
 namespace open3d {
 namespace utility {
