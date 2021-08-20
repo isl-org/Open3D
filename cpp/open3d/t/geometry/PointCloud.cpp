@@ -34,9 +34,10 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashSet.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 
@@ -47,25 +48,24 @@ namespace geometry {
 PointCloud::PointCloud(const core::Device &device)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
       device_(device),
-      point_attr_(TensorMap("points")) {}
+      point_attr_(TensorMap("positions")) {}
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDevice()) {
-    points.AssertShapeCompatible({utility::nullopt, 3});
-    SetPoints(points);
+    points.AssertShape({utility::nullopt, 3});
+    SetPointPositions(points);
 }
 
 PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
                                &map_keys_to_tensors)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
-      point_attr_(TensorMap("points")) {
-    if (map_keys_to_tensors.count("points") == 0) {
-        utility::LogError("\"points\" attribute must be specified.");
+      point_attr_(TensorMap("positions")) {
+    if (map_keys_to_tensors.count("positions") == 0) {
+        utility::LogError("\"positions\" attribute must be specified.");
     }
-    device_ = map_keys_to_tensors.at("points").GetDevice();
-    map_keys_to_tensors.at("points").AssertShapeCompatible(
-            {utility::nullopt, 3});
-    point_attr_ = TensorMap("points", map_keys_to_tensors.begin(),
+    device_ = map_keys_to_tensors.at("positions").GetDevice();
+    map_keys_to_tensors.at("positions").AssertShape({utility::nullopt, 3});
+    point_attr_ = TensorMap("positions", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());
 }
 
@@ -73,26 +73,34 @@ std::string PointCloud::ToString() const {
     if (point_attr_.size() == 0)
         return fmt::format("PointCloud on {} [0 points ()] Attributes: None.",
                            GetDevice().ToString());
-    auto str = fmt::format("PointCloud on {} [{} points ({})] Attributes:",
-                           GetDevice().ToString(), GetPoints().GetShape(0),
-                           GetPoints().GetDtype().ToString());
+    auto str =
+            fmt::format("PointCloud on {} [{} points ({})] Attributes:",
+                        GetDevice().ToString(), GetPointPositions().GetShape(0),
+                        GetPointPositions().GetDtype().ToString());
+
     if (point_attr_.size() == 1) return str + " None.";
     for (const auto &keyval : point_attr_) {
-        if (keyval.first != "points") {
-            str += fmt::format(" {} ({}, {}),", keyval.first,
+        if (keyval.first != "positions") {
+            str += fmt::format(" {} (dtype = {}, shape = {}),", keyval.first,
                                keyval.second.GetDtype().ToString(),
-                               keyval.second.GetShape(1));
+                               keyval.second.GetShape().ToString());
         }
     }
     str[str.size() - 1] = '.';
     return str;
 }
 
-core::Tensor PointCloud::GetMinBound() const { return GetPoints().Min({0}); }
+core::Tensor PointCloud::GetMinBound() const {
+    return GetPointPositions().Min({0});
+}
 
-core::Tensor PointCloud::GetMaxBound() const { return GetPoints().Max({0}); }
+core::Tensor PointCloud::GetMaxBound() const {
+    return GetPointPositions().Max({0});
+}
 
-core::Tensor PointCloud::GetCenter() const { return GetPoints().Mean({0}); }
+core::Tensor PointCloud::GetCenter() const {
+    return GetPointPositions().Mean({0});
+}
 
 PointCloud PointCloud::To(const core::Device &device, bool copy) const {
     if (!copy && GetDevice() == device) {
@@ -110,7 +118,7 @@ PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 PointCloud PointCloud::Append(const PointCloud &other) const {
     PointCloud pcd(GetDevice());
 
-    int64_t length = GetPoints().GetLength();
+    int64_t length = GetPointPositions().GetLength();
 
     for (auto &kv : point_attr_) {
         if (other.HasPointAttr(kv.first)) {
@@ -155,7 +163,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    kernel::transform::TransformPoints(transformation, GetPoints());
+    kernel::transform::TransformPoints(transformation, GetPointPositions());
     if (HasPointNormals()) {
         kernel::transform::TransformNormals(transformation, GetPointNormals());
     }
@@ -172,7 +180,7 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
     if (!relative) {
         transform -= GetCenter();
     }
-    GetPoints() += transform;
+    GetPointPositions() += transform;
     return *this;
 }
 
@@ -180,14 +188,14 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
     center.AssertShape({3});
     center.AssertDevice(device_);
 
-    core::Tensor points = GetPoints();
+    core::Tensor points = GetPointPositions();
     points.Sub_(center).Mul_(scale).Add_(center);
     return *this;
 }
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    kernel::transform::RotatePoints(R, GetPoints(), center);
+    kernel::transform::RotatePoints(R, GetPointPositions(), center);
 
     if (HasPointNormals()) {
         kernel::transform::RotateNormals(R, GetPointNormals());
@@ -196,32 +204,112 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
 }
 
 PointCloud PointCloud::VoxelDownSample(
-        double voxel_size, const core::HashmapBackend &backend) const {
+        double voxel_size, const core::HashBackendType &backend) const {
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
-    core::Tensor points_voxeld = GetPoints() / voxel_size;
+    core::Tensor points_voxeld = GetPointPositions() / voxel_size;
     core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
 
-    core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(), core::Int64,
-                                        core::Int32, {3}, {1}, device_,
-                                        backend);
+    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
+                                        {3}, device_, backend);
 
-    core::Tensor addrs, masks;
-    points_voxeli_hashmap.Activate(points_voxeli, addrs, masks);
+    core::Tensor buf_indices, masks;
+    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
 
-    PointCloud pcd_down(GetPoints().GetDevice());
+    PointCloud pcd_down(GetPointPositions().GetDevice());
     for (auto &kv : point_attr_) {
-        if (kv.first == "points") {
-            pcd_down.SetPointAttr(kv.first, points_voxeli.IndexGet({masks}).To(
-                                                    GetPoints().GetDtype()) *
-                                                    voxel_size);
+        if (kv.first == "positions") {
+            pcd_down.SetPointAttr(kv.first,
+                                  points_voxeli.IndexGet({masks}).To(
+                                          GetPointPositions().GetDtype()) *
+                                          voxel_size);
         } else {
             pcd_down.SetPointAttr(kv.first, kv.second.IndexGet({masks}));
         }
     }
 
     return pcd_down;
+}
+
+void PointCloud::EstimateNormals(
+        const int max_knn /* = 30*/,
+        const utility::optional<double> radius /*= utility::nullopt*/) {
+    core::Dtype dtype = this->GetPointPositions().GetDtype();
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                "Only Float32 and Float64 type color attribute supported for "
+                "estimating color gradient.");
+    }
+    const bool has_normals = HasPointNormals();
+    const core::Device device = GetDevice();
+    const core::Device::DeviceType device_type = device.GetType();
+
+    if (!has_normals) {
+        this->SetPointNormals(core::Tensor::Empty(
+                {GetPointPositions().GetLength(), 3}, dtype, device));
+    } else {
+        if (this->GetPointNormals().GetDtype() != dtype) {
+            utility::LogError(
+                    "Normals attribute must have same dtype as positions.");
+        }
+        this->SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    this->SetPointAttr(
+            "covariances",
+            core::Tensor::Empty({GetPointPositions().GetLength(), 3, 3}, dtype,
+                                device));
+
+    if (radius.has_value()) {
+        utility::LogDebug("Using Hybrid Search for computing covariances");
+        // Computes and sets `covariances` attribute using Hybrid Search
+        // mehtod.
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value(), max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateCovariancesUsingHybridSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), radius.value(),
+                      max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogDebug("Using KNN Search for computing covariances");
+        // Computes and sets `covariances` attribute using KNN Search method.
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    }
+
+    // Estimate `normal` of each point using its `covariance` matrix.
+    if (device_type == core::Device::DeviceType::CPU) {
+        kernel::pointcloud::EstimateNormalsFromCovariancesCPU(
+                this->GetPointAttr("covariances"), this->GetPointNormals(),
+                has_normals);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(kernel::pointcloud::EstimateNormalsFromCovariancesCUDA,
+                  this->GetPointAttr("covariances"), this->GetPointNormals(),
+                  has_normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    // TODO (@rishabh): Don't remove covariances attribute, when
+    // EstimateCovariance functionality is exposed.
+    RemovePointAttr("covariances");
 }
 
 static PointCloud CreatePointCloudWithNormals(
@@ -294,7 +382,7 @@ static PointCloud CreatePointCloudWithNormals(
                     .LogicalAnd(vertex_list.Slice(1, 0, 1, 1).IsFinite())
                     .Reshape({im_size});
     PointCloud pcd(
-            {{"points",
+            {{"positions",
               vertex_list.GetItem({TensorKey::IndexTensor(valid_idx),
                                    TensorKey::Slice(None, None, None)})},
              {"normals",
@@ -364,7 +452,7 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
         kernel::pointcloud::Unproject(
                 rgbd_image.depth_.AsTensor(), image_colors_t, points, colors,
                 intrinsics, extrinsics, depth_scale, depth_max, stride);
-        return PointCloud({{"points", points}, {"colors", colors}});
+        return PointCloud({{"positions", points}, {"colors", colors}});
     }
 }
 
@@ -376,7 +464,7 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
                                                 float depth_max) {
     core::Tensor depth =
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
-    kernel::pointcloud::Project(depth, utility::nullopt, GetPoints(),
+    kernel::pointcloud::Project(depth, utility::nullopt, GetPointPositions(),
                                 utility::nullopt, intrinsics, extrinsics,
                                 depth_scale, depth_max);
     return geometry::Image(depth);
@@ -399,20 +487,22 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
     core::Tensor color =
             core::Tensor::Zeros({height, width, 3}, core::UInt8, device_);
-    kernel::pointcloud::Project(depth, color, GetPoints(), GetPointColors(),
-                                intrinsics, extrinsics, depth_scale, depth_max);
+    kernel::pointcloud::Project(depth, color, GetPointPositions(),
+                                GetPointColors(), intrinsics, extrinsics,
+                                depth_scale, depth_max);
 
     return geometry::RGBDImage(color, depth);
 }
 
-PointCloud PointCloud::FromLegacyPointCloud(
+PointCloud PointCloud::FromLegacy(
         const open3d::geometry::PointCloud &pcd_legacy,
         core::Dtype dtype,
         const core::Device &device) {
     geometry::PointCloud pcd(device);
     if (pcd_legacy.HasPoints()) {
-        pcd.SetPoints(core::eigen_converter::EigenVector3dVectorToTensor(
-                pcd_legacy.points_, dtype, device));
+        pcd.SetPointPositions(
+                core::eigen_converter::EigenVector3dVectorToTensor(
+                        pcd_legacy.points_, dtype, device));
     } else {
         utility::LogWarning("Creating from an empty legacy PointCloud.");
     }
@@ -427,11 +517,11 @@ PointCloud PointCloud::FromLegacyPointCloud(
     return pcd;
 }
 
-open3d::geometry::PointCloud PointCloud::ToLegacyPointCloud() const {
+open3d::geometry::PointCloud PointCloud::ToLegacy() const {
     open3d::geometry::PointCloud pcd_legacy;
-    if (HasPoints()) {
-        pcd_legacy.points_ =
-                core::eigen_converter::TensorToEigenVector3dVector(GetPoints());
+    if (HasPointPositions()) {
+        pcd_legacy.points_ = core::eigen_converter::TensorToEigenVector3dVector(
+                GetPointPositions());
     }
     if (HasPointColors()) {
         bool dtype_is_supported_for_conversion = true;

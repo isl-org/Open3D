@@ -96,27 +96,29 @@ TensorToEigenMatrixXi(const core::Tensor &tensor) {
     return TensorToEigenMatrix<int>(tensor);
 }
 
-template <typename T>
-static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
+template <typename T, int N>
+static std::vector<Eigen::Matrix<T, N, 1>> TensorToEigenVectorNxVector(
         const core::Tensor &tensor) {
-    static_assert(std::is_same<T, double>::value || std::is_same<T, int>::value,
-                  "Only supports double and int (Vector3d and Vector3i).");
+    static_assert(
+            (std::is_same<T, double>::value || std::is_same<T, int>::value) &&
+                    N > 0,
+            "Only supports double and int (VectorNd and VectorNi) with N>0.");
     core::Dtype dtype;
     if (std::is_same<T, double>::value) {
         dtype = core::Float64;
     } else if (std::is_same<T, int>::value) {
         dtype = core::Int32;
     }
-    if (dtype.ByteSize() * 3 != sizeof(Eigen::Matrix<T, 3, 1>)) {
+    if (dtype.ByteSize() * N != sizeof(Eigen::Matrix<T, N, 1>)) {
         utility::LogError("Internal error: dtype size mismatch {} != {}.",
-                          dtype.ByteSize() * 3, sizeof(Eigen::Matrix<T, 3, 1>));
+                          dtype.ByteSize() * N, sizeof(Eigen::Matrix<T, N, 1>));
     }
-    tensor.AssertShapeCompatible({utility::nullopt, 3});
+    tensor.AssertShape({utility::nullopt, N});
 
-    // Eigen::Vector3x is not a "fixed-size vectorizable Eigen type" thus it is
+    // Eigen::VectorNx is not a "fixed-size vectorizable Eigen type" thus it is
     // safe to write directly into std vector memory, see:
     // https://eigen.tuxfamily.org/dox/group__TopicStlContainers.html.
-    std::vector<Eigen::Matrix<T, 3, 1>> eigen_vector(tensor.GetLength());
+    std::vector<Eigen::Matrix<T, N, 1>> eigen_vector(tensor.GetLength());
     core::Tensor t = tensor.Contiguous().To(dtype);
     MemoryManager::MemcpyToHost(eigen_vector.data(), t.GetDataPtr(),
                                 t.GetDevice(),
@@ -124,19 +126,21 @@ static std::vector<Eigen::Matrix<T, 3, 1>> TensorToEigenVector3xVector(
     return eigen_vector;
 }
 
-template <typename T>
-static core::Tensor EigenVector3xVectorToTensor(
-        const std::vector<Eigen::Matrix<T, 3, 1>> &values,
+template <typename T, int N>
+static core::Tensor EigenVectorNxVectorToTensor(
+        const std::vector<Eigen::Matrix<T, N, 1>> &values,
         core::Dtype dtype,
         const core::Device &device) {
-    // Unlike TensorToEigenVector3xVector, more types can be supported here. To
+    // Unlike TensorToEigenVector3NVector, more types can be supported here. To
     // keep consistency, we only allow double and int.
-    static_assert(std::is_same<T, double>::value || std::is_same<T, int>::value,
-                  "Only supports double and int (Vector3d and Vector3i).");
+    static_assert(
+            (std::is_same<T, double>::value || std::is_same<T, int>::value) &&
+                    N > 0,
+            "Only supports double and int (VectorNd and VectorNi) with N>0.");
     // Init CPU Tensor.
     int64_t num_values = static_cast<int64_t>(values.size());
     core::Tensor tensor_cpu =
-            core::Tensor::Empty({num_values, 3}, dtype, Device("CPU:0"));
+            core::Tensor::Empty({num_values, N}, dtype, Device("CPU:0"));
 
     // Fill Tensor. This takes care of dtype conversion at the same time.
     core::Indexer indexer({tensor_cpu}, tensor_cpu,
@@ -144,10 +148,10 @@ static core::Tensor EigenVector3xVectorToTensor(
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         LaunchIndexFillKernel(indexer, [&](void *ptr, int64_t workload_idx) {
             // Fills the flattened tensor tensor_cpu[:] with dtype
-            // casting. tensor_cpu[:][i] corresponds to the (i/3)-th
-            // element's (i%3)-th coordinate value.
+            // casting. tensor_cpu[:][i] corresponds to the (i/N)-th
+            // element's (i%N)-th coordinate value.
             *static_cast<scalar_t *>(ptr) = static_cast<scalar_t>(
-                    values[workload_idx / 3](workload_idx % 3));
+                    values[workload_idx / N](workload_idx % N));
         });
     });
 
@@ -157,26 +161,37 @@ static core::Tensor EigenVector3xVectorToTensor(
 
 std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
         const core::Tensor &tensor) {
-    return TensorToEigenVector3xVector<double>(tensor);
+    return TensorToEigenVectorNxVector<double, 3>(tensor);
 }
 
 std::vector<Eigen::Vector3i> TensorToEigenVector3iVector(
         const core::Tensor &tensor) {
-    return TensorToEigenVector3xVector<int>(tensor);
+    return TensorToEigenVectorNxVector<int, 3>(tensor);
+}
+
+std::vector<Eigen::Vector2i> TensorToEigenVector2iVector(
+        const core::Tensor &tensor) {
+    return TensorToEigenVectorNxVector<int, 2>(tensor);
 }
 
 core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
         core::Dtype dtype,
         const core::Device &device) {
-    return EigenVector3xVectorToTensor(values, dtype, device);
+    return EigenVectorNxVectorToTensor(values, dtype, device);
 }
 
 core::Tensor EigenVector3iVectorToTensor(
         const std::vector<Eigen::Vector3i> &values,
         core::Dtype dtype,
         const core::Device &device) {
-    return EigenVector3xVectorToTensor(values, dtype, device);
+    return EigenVectorNxVectorToTensor(values, dtype, device);
+}
+core::Tensor EigenVector2iVectorToTensor(
+        const std::vector<Eigen::Vector2i> &values,
+        core::Dtype dtype,
+        const core::Device &device) {
+    return EigenVectorNxVectorToTensor(values, dtype, device);
 }
 
 }  // namespace eigen_converter

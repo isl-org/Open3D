@@ -75,59 +75,46 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     query_points.AssertDtype(GetDtype());
 
     // Check shapes.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
         utility::LogError(
                 "[NanoFlannIndex::SearchKnn] knn should be larger than 0.");
     }
 
-    int64_t num_query_points = query_points.GetShape()[0];
-    Dtype dtype = GetDtype();
+    const int64_t num_neighbors = std::min(
+            static_cast<int64_t>(GetDatasetSize()), static_cast<int64_t>(knn));
+    const int64_t num_query_points = query_points.GetShape()[0];
+    const Dtype dtype = GetDtype();
 
-    Tensor indices;
-    Tensor distances;
+    Tensor indices = Tensor::Empty({num_query_points, num_neighbors},
+                                   Dtype::FromType<index_t>());
+    Tensor distances = Tensor::Empty({num_query_points, num_neighbors}, dtype);
+
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        Tensor batch_indices = Tensor::Full({num_query_points, knn}, -1,
-                                            Dtype::FromType<index_t>());
-        Tensor batch_distances =
-                Tensor::Full({num_query_points, knn}, -1, dtype);
+        const core::Tensor query_contiguous = query_points.Contiguous();
+        const scalar_t *query_ptr = query_contiguous.GetDataPtr<scalar_t>();
+        const int query_dim = GetDimension();
+
+        index_t *indices_ptr = indices.GetDataPtr<index_t>();
+        scalar_t *distances_ptr = distances.GetDataPtr<scalar_t>();
 
         auto holder =
                 static_cast<NanoFlannIndexHolder<L2, scalar_t, index_t> *>(
                         holder_.get());
 
         // Parallel search.
-        tbb::parallel_for(
-                tbb::blocked_range<size_t>(0, num_query_points),
-                [&](const tbb::blocked_range<size_t> &r) {
-                    for (size_t i = r.begin(); i != r.end(); ++i) {
-                        auto single_indices =
-                                batch_indices[i].GetDataPtr<index_t>();
-                        auto single_distances =
-                                batch_distances[i].GetDataPtr<scalar_t>();
-
-                        // search
-                        holder->index_->knnSearch(
-                                query_points[i].GetDataPtr<scalar_t>(),
-                                (size_t)knn, single_indices, single_distances);
-                    }
-                });
-        // Check if the number of neighbors are same.
-        Tensor check_valid = batch_indices.Ge(0)
-                                     .To(Dtype::FromType<index_t>())
-                                     .Sum({-1}, false);
-        int64_t num_neighbors = check_valid[0].Item<index_t>();
-        if (check_valid.Ne(num_neighbors).Any()) {
-            utility::LogError(
-                    "[NanoFlannIndex::SearchKnn] The number of neighbors are "
-                    "different. Something went wrong.");
-        }
-        // Slice non-zero items.
-        indices = batch_indices.Slice(1, 0, num_neighbors)
-                          .View({num_query_points, num_neighbors});
-        distances = batch_distances.Slice(1, 0, num_neighbors)
-                            .View({num_query_points, num_neighbors});
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, num_query_points),
+                          [&](const tbb::blocked_range<size_t> &r) {
+                              for (size_t i = r.begin(); i != r.end(); ++i) {
+                                  // search
+                                  holder->index_->knnSearch(
+                                          query_ptr + query_dim * i,
+                                          (size_t)num_neighbors,
+                                          indices_ptr + num_neighbors * i,
+                                          distances_ptr + num_neighbors * i);
+                              }
+                          });
     });
     return std::make_pair(indices, distances);
 };
@@ -140,7 +127,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
     // Check shapes.
     int64_t num_query_points = query_points.GetShape()[0];
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
     radii.AssertShape({num_query_points});
 
     Dtype dtype = GetDtype();
@@ -238,7 +225,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
     query_points.AssertDtype(GetDtype());
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
         utility::LogError(

@@ -348,6 +348,21 @@ TEST_P(TensorPermuteDevices, To) {
     EXPECT_EQ(dst_t.ToFlatVector<int>(), dst_vals);
 }
 
+TEST_P(TensorPermuteDevicePairs, ToDevice) {
+    core::Device dst_device;
+    core::Device src_device;
+    std::tie(dst_device, src_device) = GetParam();
+
+    core::Tensor src_t = core::Tensor::Init<float>({0, 1, 2, 3}, src_device);
+    core::Tensor dst_t = src_t.To(dst_device);
+    EXPECT_TRUE(dst_t.To(src_device).AllClose(src_t));
+
+    EXPECT_ANY_THROW(src_t.To(core::Device("CPU:1")));
+
+    EXPECT_ANY_THROW(src_t.To(core::Device("CUDA:-1")));
+    EXPECT_ANY_THROW(src_t.To(core::Device("CUDA:100000")));
+}
+
 TEST_P(TensorPermuteDevicePairs, CopyBroadcast) {
     core::Device dst_device;
     core::Device src_device;

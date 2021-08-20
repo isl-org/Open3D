@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
 
     using legacyRGBDImage = open3d::geometry::RGBDImage;
     auto last_frame_time = std::chrono::steady_clock::now();
-    legacyRGBDImage im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
+    legacyRGBDImage im_rgbd = bag_reader.NextFrame().ToLegacy();
     while (!bag_reader.IsEOF() && !flag_exit) {
         if (flag_play) {
             // create shared_ptr with no-op deleter for stack RGBDImage
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
 
             std::this_thread::sleep_until(last_frame_time + frame_interval);
             last_frame_time = std::chrono::steady_clock::now();
-            im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
+            im_rgbd = bag_reader.NextFrame().ToLegacy();
         }
         vis.PollEvents();
     }

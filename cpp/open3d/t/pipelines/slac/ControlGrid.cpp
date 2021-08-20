@@ -27,6 +27,7 @@
 #include "open3d/t/pipelines/slac/ControlGrid.h"
 
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/hashmap/HashSet.h"
 
 namespace open3d {
 namespace t {
@@ -43,8 +44,8 @@ ControlGrid::ControlGrid(float grid_size,
                          int64_t grid_count,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
-    ctr_hashmap_ = std::make_shared<core::Hashmap>(
-            grid_count, core::Int32, core::Float32, core::SizeVector{3},
+    ctr_hashmap_ = std::make_shared<core::HashMap>(
+            grid_count, core::Int32, core::SizeVector{3}, core::Float32,
             core::SizeVector{3}, device);
 }
 
@@ -53,16 +54,16 @@ ControlGrid::ControlGrid(float grid_size,
                          const core::Tensor& values,
                          const core::Device& device)
     : grid_size_(grid_size), device_(device) {
-    ctr_hashmap_ = std::make_shared<core::Hashmap>(
-            2 * keys.GetLength(), core::Int32, core::Float32,
-            core::SizeVector{3}, core::SizeVector{3}, device);
+    ctr_hashmap_ = std::make_shared<core::HashMap>(
+            2 * keys.GetLength(), core::Int32, core::SizeVector{3},
+            core::Float32, core::SizeVector{3}, device);
 
-    core::Tensor addrs, masks;
-    ctr_hashmap_->Insert(keys, values, addrs, masks);
+    core::Tensor buf_indices, masks;
+    ctr_hashmap_->Insert(keys, values, buf_indices, masks);
 }
 
 void ControlGrid::Touch(const geometry::PointCloud& pcd) {
-    core::Tensor pts = pcd.GetPoints();
+    core::Tensor pts = pcd.GetPointPositions();
     int64_t n = pts.GetLength();
 
     // Coordinate in the grid unit.
@@ -87,27 +88,25 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
     // Convert back to the meter unit.
     vals_nb = vals_nb.View({8 * n, 3}) * grid_size_;
 
-    core::Hashmap unique_hashmap(n, core::Int32, core::Int32,
-                                 core::SizeVector{3}, core::SizeVector{1},
-                                 device_);
+    core::HashSet unique_hashset(n, core::Int32, core::SizeVector{3}, device_);
 
-    core::Tensor addrs_unique, masks_unique;
-    unique_hashmap.Activate(keys_nb, addrs_unique, masks_unique);
+    core::Tensor buf_indices_unique, masks_unique;
+    unique_hashset.Insert(keys_nb, buf_indices_unique, masks_unique);
 
-    core::Tensor addrs, masks;
+    core::Tensor buf_indices, masks;
     ctr_hashmap_->Insert(keys_nb.IndexGet({masks_unique}),
-                         vals_nb.IndexGet({masks_unique}), addrs, masks);
+                         vals_nb.IndexGet({masks_unique}), buf_indices, masks);
 }
 
 void ControlGrid::Compactify() {
     ctr_hashmap_->Rehash(ctr_hashmap_->Size() * 2);
 
-    core::Tensor active_addrs;
-    ctr_hashmap_->GetActiveIndices(active_addrs);
+    core::Tensor active_buf_indices;
+    ctr_hashmap_->GetActiveIndices(active_buf_indices);
 
     // Select anchor point
     core::Tensor active_keys = ctr_hashmap_->GetKeyTensor().IndexGet(
-            {active_addrs.To(core::Int64)});
+            {active_buf_indices.To(core::Int64)});
 
     std::vector<Eigen::Vector3i> active_keys_vec =
             core::eigen_converter::TensorToEigenVector3iVector(active_keys);
@@ -126,16 +125,17 @@ void ControlGrid::Compactify() {
                          (a(2) == b(2) && a(1) == b(1) && a(0) < b(0));
               });
     anchor_idx_ =
-            active_addrs[active_keys_indexed[active_keys_indexed.size() / 2](3)]
+            active_buf_indices[active_keys_indexed[active_keys_indexed.size() /
+                                                   2](3)]
                     .Item<int>();
 }
 
 std::tuple<core::Tensor, core::Tensor, core::Tensor>
 ControlGrid::GetNeighborGridMap() {
-    core::Tensor active_addrs;
-    ctr_hashmap_->GetActiveIndices(active_addrs);
+    core::Tensor active_buf_indices;
+    ctr_hashmap_->GetActiveIndices(active_buf_indices);
 
-    core::Tensor active_indices = active_addrs.To(core::Int64);
+    core::Tensor active_indices = active_buf_indices.To(core::Int64);
     core::Tensor active_keys =
             ctr_hashmap_->GetKeyTensor().IndexGet({active_indices});
 
@@ -158,16 +158,17 @@ ControlGrid::GetNeighborGridMap() {
     // Obtain nearest neighbors
     keys_nb = keys_nb.View({6 * n, 3});
 
-    core::Tensor addrs_nb, masks_nb;
-    ctr_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
+    core::Tensor buf_indices_nb, masks_nb;
+    ctr_hashmap_->Find(keys_nb, buf_indices_nb, masks_nb);
 
-    return std::make_tuple(active_addrs, addrs_nb.View({6, n}).T().Contiguous(),
+    return std::make_tuple(active_buf_indices,
+                           buf_indices_nb.View({6, n}).T().Contiguous(),
                            masks_nb.View({6, n}).T().Contiguous());
 }
 
 geometry::PointCloud ControlGrid::Parameterize(
         const geometry::PointCloud& pcd) {
-    core::Tensor pts = pcd.GetPoints();
+    core::Tensor pts = pcd.GetPointPositions();
     core::Tensor nms;
     if (pcd.HasPointNormals()) {
         nms = pcd.GetPointNormals().T().Contiguous();
@@ -219,11 +220,11 @@ geometry::PointCloud ControlGrid::Parameterize(
 
     keys_nb = keys_nb.View({8 * n, 3});
 
-    core::Tensor addrs_nb, masks_nb;
-    ctr_hashmap_->Find(keys_nb, addrs_nb, masks_nb);
+    core::Tensor buf_indices_nb, masks_nb;
+    ctr_hashmap_->Find(keys_nb, buf_indices_nb, masks_nb);
 
     // (n, 8)
-    addrs_nb = addrs_nb.View({8, n}).T().Contiguous();
+    buf_indices_nb = buf_indices_nb.View({8, n}).T().Contiguous();
     // (n, 8)
     point_ratios_nb = point_ratios_nb.T().Contiguous();
 
@@ -234,9 +235,10 @@ geometry::PointCloud ControlGrid::Parameterize(
             masks_nb.View({8, n}).To(core::Int64).Sum({0}).Eq(8);
 
     geometry::PointCloud pcd_with_params = pcd;
-    pcd_with_params.SetPoints(pcd.GetPoints().IndexGet({valid_mask}));
+    pcd_with_params.SetPointPositions(
+            pcd.GetPointPositions().IndexGet({valid_mask}));
     pcd_with_params.SetPointAttr(kGrid8NbIndices,
-                                 addrs_nb.IndexGet({valid_mask}));
+                                 buf_indices_nb.IndexGet({valid_mask}));
     pcd_with_params.SetPointAttr(kGrid8NbVertexInterpRatios,
                                  point_ratios_nb.IndexGet({valid_mask}));
 

@@ -158,9 +158,9 @@ GetTestPointClouds(const core::Dtype& dtype, const core::Device& device) {
                                       device)
                     .To(dtype);
 
-    source.SetPoints(source_points.To(dtype, false));
+    source.SetPointPositions(source_points.To(dtype, false));
 
-    target.SetPoints(target_points.To(dtype, false));
+    target.SetPointPositions(target_points.To(dtype, false));
     target.SetPointNormals(target_normals.To(dtype, false));
 
     return std::make_tuple(source, target);
@@ -173,10 +173,8 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
         t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
         std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
-        open3d::geometry::PointCloud source_lpcd =
-                source_tpcd.ToLegacyPointCloud();
-        open3d::geometry::PointCloud target_lpcd =
-                target_tpcd.ToLegacyPointCloud();
+        open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
+        open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
 
         // Initial transformation input for tensor implementation.
         core::Tensor initial_transform_t =
@@ -211,10 +209,8 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
         t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
         std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
-        open3d::geometry::PointCloud source_lpcd =
-                source_tpcd.ToLegacyPointCloud();
-        open3d::geometry::PointCloud target_lpcd =
-                target_tpcd.ToLegacyPointCloud();
+        open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
+        open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
 
         // Initial transformation input for tensor implementation.
         core::Tensor initial_transform_t =
@@ -262,10 +258,8 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
         t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
         std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
 
-        open3d::geometry::PointCloud source_lpcd =
-                source_tpcd.ToLegacyPointCloud();
-        open3d::geometry::PointCloud target_lpcd =
-                target_tpcd.ToLegacyPointCloud();
+        open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
+        open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
 
         // Initial transformation input for tensor implementation.
         core::Tensor initial_transform_t =

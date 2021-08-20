@@ -86,8 +86,8 @@ def get_pcds(dtype, device):
     source = o3d.t.geometry.PointCloud(device)
     target = o3d.t.geometry.PointCloud(device)
 
-    source.point["points"] = source_points
-    target.point["points"] = target_points
+    source.point["positions"] = source_points
+    target.point["positions"] = target_points
     target.point["normals"] = target_normals
 
     return source, target
@@ -126,8 +126,8 @@ def test_evaluate_registration(device):
     for dtype in supported_dtypes:
         source_t, target_t = get_pcds(dtype, device)
 
-        source_legacy = source_t.to_legacy_pointcloud()
-        target_legacy = target_t.to_legacy_pointcloud()
+        source_legacy = source_t.to_legacy()
+        target_legacy = target_t.to_legacy()
 
         max_correspondence_distance = 3.0
         init_trans_legacy = np.eye(4)
@@ -152,8 +152,8 @@ def test_registration_icp_point_to_point(device):
     for dtype in supported_dtypes:
         source_t, target_t = get_pcds(dtype, device)
 
-        source_legacy = source_t.to_legacy_pointcloud()
-        target_legacy = target_t.to_legacy_pointcloud()
+        source_legacy = source_t.to_legacy()
+        target_legacy = target_t.to_legacy()
 
         max_correspondence_distance = 3.0
 
@@ -190,8 +190,8 @@ def test_test_registration_icp_point_to_plane(device):
     for dtype in supported_dtypes:
         source_t, target_t = get_pcds(dtype, device)
 
-        source_legacy = source_t.to_legacy_pointcloud()
-        target_legacy = target_t.to_legacy_pointcloud()
+        source_legacy = source_t.to_legacy()
+        target_legacy = target_t.to_legacy()
 
         max_correspondence_distance = 3.0
 

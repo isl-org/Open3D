@@ -48,10 +48,10 @@ TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
 
     // Public members.
     EXPECT_TRUE(mesh.IsEmpty());
-    EXPECT_FALSE(mesh.HasVertices());
+    EXPECT_FALSE(mesh.HasVertexPositions());
     EXPECT_FALSE(mesh.HasVertexColors());
     EXPECT_FALSE(mesh.HasVertexNormals());
-    EXPECT_FALSE(mesh.HasTriangles());
+    EXPECT_FALSE(mesh.HasTriangleIndices());
     EXPECT_FALSE(mesh.HasTriangleNormals());
 
     // Default device.
@@ -70,9 +70,9 @@ TEST_P(TriangleMeshPermuteDevices, ConstructFromVertices) {
 
     t::geometry::TriangleMesh mesh(vertices, triangles);
 
-    EXPECT_TRUE(mesh.HasVertices());
-    EXPECT_EQ(mesh.GetVertices().GetLength(), 10);
-    EXPECT_EQ(mesh.GetTriangles().GetLength(), 10);
+    EXPECT_TRUE(mesh.HasVertexPositions());
+    EXPECT_EQ(mesh.GetVertexPositions().GetLength(), 10);
+    EXPECT_EQ(mesh.GetTriangleIndices().GetLength(), 10);
 }
 
 TEST_P(TriangleMeshPermuteDevices, Getters) {
@@ -96,7 +96,7 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
     mesh.SetTriangleNormals(triangle_normals);
     mesh.SetTriangleAttr("labels", triangle_labels);
 
-    EXPECT_TRUE(mesh.GetVertices().AllClose(
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
             core::Tensor::Ones({2, 3}, core::Float32, device)));
     EXPECT_TRUE(mesh.GetVertexColors().AllClose(
             core::Tensor::Ones({2, 3}, core::Float32, device) * 2));
@@ -104,7 +104,7 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
             core::Tensor::Ones({2, 3}, core::Float32, device) * 3));
     EXPECT_ANY_THROW(mesh.GetVertexNormals());
 
-    EXPECT_TRUE(mesh.GetTriangles().AllClose(
+    EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(
             core::Tensor::Ones({2, 3}, core::Int64, device)));
     EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
             core::Tensor::Ones({2, 3}, core::Float32, device) * 2));
@@ -112,18 +112,66 @@ TEST_P(TriangleMeshPermuteDevices, Getters) {
             core::Tensor::Ones({2, 3}, core::Float32, device) * 3));
 
     // Const getters. (void)tl gets rid of the unused variables warning.
-    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetVertices(); (void)tl);
+    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetVertexPositions();
+                    (void)tl);
     EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetVertexColors(); (void)tl);
     EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetVertexAttr("labels");
                     (void)tl);
     EXPECT_ANY_THROW(const core::Tensor& tl = mesh.GetVertexNormals();
                      (void)tl);
 
-    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetTriangles(); (void)tl);
+    EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetTriangleIndices();
+                    (void)tl);
     EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetTriangleNormals();
                     (void)tl);
     EXPECT_NO_THROW(const core::Tensor& tl = mesh.GetTriangleAttr("labels");
                     (void)tl);
+}
+
+TEST_P(TriangleMeshPermuteDevices, ToString) {
+    core::Device device = GetParam();
+
+    core::Tensor vertices = core::Tensor::Ones({2, 3}, core::Float32, device);
+    core::Tensor vertex_colors =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 2;
+    core::Tensor vertex_labels =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 3;
+
+    core::Tensor triangles = core::Tensor::Ones({2, 3}, core::Int64, device);
+    core::Tensor triangle_normals =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 2;
+    core::Tensor triangle_labels =
+            core::Tensor::Ones({2, 3}, core::Float32, device) * 3;
+
+    t::geometry::TriangleMesh mesh(vertices, triangles);
+    mesh.SetVertexColors(vertex_colors);
+    mesh.SetTriangleNormals(triangle_normals);
+
+    std::string text =
+            "TriangleMesh on " + device.ToString() +
+            " [2 vertices (Float32) and 2 triangles (Int64)]."
+            "\nVertices Attributes: colors (dtype = Float32, shape = {2, 3})."
+            "\nTriangles Attributes: normals (dtype = Float32, shape = {2, "
+            "3}).";
+
+    EXPECT_STREQ(mesh.ToString().c_str(), text.c_str());
+
+    mesh.RemoveVertexAttr("colors");
+    mesh.RemoveTriangleAttr("normals");
+
+    // Mesh with only primary attributes.
+    std::string text_2 = "TriangleMesh on " + device.ToString() +
+                         " [2 vertices (Float32) and 2 triangles (Int64)]."
+                         "\nVertices Attributes: None."
+                         "\nTriangles Attributes: None.";
+
+    EXPECT_STREQ(mesh.ToString().c_str(), text_2.c_str());
+
+    // Empty mesh.
+    mesh.Clear();
+    std::string text_3 = "TriangleMesh on " + device.ToString() +
+                         " [0 vertices and 0 triangles].";
+    EXPECT_STREQ(mesh.ToString().c_str(), text_3.c_str());
 }
 
 TEST_P(TriangleMeshPermuteDevices, Setters) {
@@ -131,7 +179,7 @@ TEST_P(TriangleMeshPermuteDevices, Setters) {
 
     // Setters are already tested in Getters' unit tests. Here we test that
     // mismatched device should throw an exception. This test is only effective
-    // is device is a CUDA device.
+    // if device is a CUDA device.
     t::geometry::TriangleMesh mesh(device);
     core::Device cpu_device = core::Device("CPU:0");
     if (cpu_device != device) {
@@ -142,7 +190,7 @@ TEST_P(TriangleMeshPermuteDevices, Setters) {
         core::Tensor cpu_labels =
                 core::Tensor::Ones({2, 3}, core::Float32, cpu_device) * 3;
 
-        EXPECT_ANY_THROW(mesh.SetVertices(cpu_vertices));
+        EXPECT_ANY_THROW(mesh.SetVertexPositions(cpu_vertices));
         EXPECT_ANY_THROW(mesh.SetVertexColors(cpu_colors));
         EXPECT_ANY_THROW(mesh.SetVertexAttr("labels", cpu_labels));
     }
@@ -174,26 +222,26 @@ TEST_P(TriangleMeshPermuteDevices, RemoveAttr) {
     EXPECT_ANY_THROW(mesh.GetTriangleAttr("labels"));
 
     // Not allowed to delete primary key attribute.
-    EXPECT_ANY_THROW(mesh.RemoveVertexAttr("vertices"));
-    EXPECT_ANY_THROW(mesh.RemoveTriangleAttr("triangles"));
+    EXPECT_ANY_THROW(mesh.RemoveVertexAttr("positions"));
+    EXPECT_ANY_THROW(mesh.RemoveTriangleAttr("indices"));
 }
 
 TEST_P(TriangleMeshPermuteDevices, Has) {
     core::Device device = GetParam();
 
     t::geometry::TriangleMesh mesh(device);
-    EXPECT_FALSE(mesh.HasVertices());
+    EXPECT_FALSE(mesh.HasVertexPositions());
     EXPECT_FALSE(mesh.HasVertexColors());
     EXPECT_FALSE(mesh.HasVertexNormals());
     EXPECT_FALSE(mesh.HasVertexAttr("labels"));
-    EXPECT_FALSE(mesh.HasTriangles());
+    EXPECT_FALSE(mesh.HasTriangleIndices());
     EXPECT_FALSE(mesh.HasTriangleNormals());
     EXPECT_FALSE(mesh.HasTriangleAttr("labels"));
 
-    mesh.SetVertices(core::Tensor::Ones({10, 3}, core::Float32, device));
-    EXPECT_TRUE(mesh.HasVertices());
-    mesh.SetTriangles(core::Tensor::Ones({10, 3}, core::Int64, device));
-    EXPECT_TRUE(mesh.HasTriangles());
+    mesh.SetVertexPositions(core::Tensor::Ones({10, 3}, core::Float32, device));
+    EXPECT_TRUE(mesh.HasVertexPositions());
+    mesh.SetTriangleIndices(core::Tensor::Ones({10, 3}, core::Int64, device));
+    EXPECT_TRUE(mesh.HasTriangleIndices());
 
     // Different size.
     mesh.SetVertexColors(core::Tensor::Ones({5, 3}, core::Float32, device));
@@ -215,12 +263,13 @@ TEST_P(TriangleMeshPermuteDevices, Transform) {
     core::Tensor transformation = core::Tensor::Init<float>(
             {{1, 1, 0, 1}, {0, 1, 1, 1}, {0, 1, 0, 1}, {0, 0, 0, 1}}, device);
 
-    mesh.SetVertices(core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
+    mesh.SetVertexPositions(
+            core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
     mesh.SetVertexNormals(
             core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
 
     mesh.Transform(transformation);
-    EXPECT_TRUE(mesh.GetVertices().AllClose(
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
             core::Tensor::Init<float>({{3, 3, 2}, {3, 3, 2}}, device)));
     EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
             core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
@@ -233,7 +282,8 @@ TEST_P(TriangleMeshPermuteDevices, Translate) {
     core::Tensor translation = core::Tensor::Init<float>({10, 20, 30}, device);
 
     // Relative.
-    mesh.SetVertices(core::Tensor::Init<float>({{0, 1, 2}, {6, 7, 8}}, device));
+    mesh.SetVertexPositions(
+            core::Tensor::Init<float>({{0, 1, 2}, {6, 7, 8}}, device));
     mesh.SetVertexNormals(
             core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
 
@@ -243,14 +293,15 @@ TEST_P(TriangleMeshPermuteDevices, Translate) {
     EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
             core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device)));
 
-    EXPECT_TRUE(mesh.GetVertices().AllClose(
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
             core::Tensor::Init<float>({{10, 21, 32}, {16, 27, 38}}, device)));
 
     // Non-relative.
-    mesh.SetVertices(core::Tensor::Init<float>({{0, 1, 2}, {6, 7, 8}}, device));
+    mesh.SetVertexPositions(
+            core::Tensor::Init<float>({{0, 1, 2}, {6, 7, 8}}, device));
     mesh.Translate(translation, /*relative=*/false);
 
-    EXPECT_TRUE(mesh.GetVertices().AllClose(
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
             core::Tensor::Init<float>({{7, 17, 27}, {13, 23, 33}}, device)));
 }
 
@@ -263,11 +314,11 @@ TEST_P(TriangleMeshPermuteDevices, Scale) {
     core::Tensor center = core::Tensor::Ones({3}, core::Dtype::Float32, device);
     double scale = 4;
 
-    mesh.SetVertices(core::Tensor::Init<float>(
+    mesh.SetVertexPositions(core::Tensor::Init<float>(
             {{0, 0, 0}, {1, 1, 1}, {2, 2, 2}}, device));
 
     mesh.Scale(scale, center);
-    EXPECT_TRUE(mesh.GetVertices().AllClose(core::Tensor::Init<float>(
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(core::Tensor::Init<float>(
             {{-3, -3, -3}, {1, 1, 1}, {5, 5, 5}}, device)));
 }
 
@@ -279,18 +330,19 @@ TEST_P(TriangleMeshPermuteDevices, Rotate) {
             {{1, 1, 0}, {0, 1, 1}, {0, 1, 0}}, device);
     core::Tensor center = core::Tensor::Ones({3}, core::Dtype::Float32, device);
 
-    mesh.SetVertices(core::Tensor::Init<float>({{2, 2, 2}, {2, 2, 2}}, device));
+    mesh.SetVertexPositions(
+            core::Tensor::Init<float>({{2, 2, 2}, {2, 2, 2}}, device));
     mesh.SetVertexNormals(
             core::Tensor::Init<float>({{1, 1, 1}, {1, 1, 1}}, device));
 
     mesh.Rotate(rotation, center);
-    EXPECT_TRUE(mesh.GetVertices().AllClose(
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
             core::Tensor::Init<float>({{3, 3, 2}, {3, 3, 2}}, device)));
     EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
             core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
 }
 
-TEST_P(TriangleMeshPermuteDevices, FromLegacyTriangleMesh) {
+TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
     core::Device device = GetParam();
     geometry::TriangleMesh legacy_mesh;
     legacy_mesh.vertices_ = std::vector<Eigen::Vector3d>{
@@ -306,51 +358,51 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacyTriangleMesh) {
 
     core::Dtype float_dtype = core::Float32;
     core::Dtype int_dtype = core::Int64;
-    t::geometry::TriangleMesh mesh =
-            t::geometry::TriangleMesh::FromLegacyTriangleMesh(
-                    legacy_mesh, float_dtype, int_dtype, device);
+    t::geometry::TriangleMesh mesh = t::geometry::TriangleMesh::FromLegacy(
+            legacy_mesh, float_dtype, int_dtype, device);
 
-    EXPECT_TRUE(mesh.HasVertices());
+    EXPECT_TRUE(mesh.HasVertexPositions());
     EXPECT_TRUE(mesh.HasVertexColors());
     EXPECT_TRUE(mesh.HasVertexNormals());
-    EXPECT_TRUE(mesh.HasTriangles());
+    EXPECT_TRUE(mesh.HasTriangleIndices());
     EXPECT_TRUE(mesh.HasTriangleNormals());
     EXPECT_FALSE(mesh.HasTriangleColors());
 
-    EXPECT_NO_THROW(mesh.GetVertices().AssertDtype(float_dtype));
-    EXPECT_NO_THROW(mesh.GetVertices().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetVertexPositions().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(mesh.GetVertexPositions().AssertDtype(float_dtype));
     EXPECT_NO_THROW(mesh.GetVertexColors().AssertDtype(float_dtype));
     EXPECT_NO_THROW(mesh.GetVertexNormals().AssertDtype(float_dtype));
-    EXPECT_NO_THROW(mesh.GetTriangles().AssertDtype(int_dtype));
+    EXPECT_NO_THROW(mesh.GetTriangleIndices().AssertDtype(int_dtype));
     EXPECT_NO_THROW(mesh.GetTriangleNormals().AssertDtype(float_dtype));
 
-    EXPECT_TRUE(mesh.GetVertices().AllClose(
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
             core::Tensor::Ones({2, 3}, float_dtype, device) * 0));
     EXPECT_TRUE(mesh.GetVertexColors().AllClose(
             core::Tensor::Ones({2, 3}, float_dtype, device) * 1));
     EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
             core::Tensor::Ones({2, 3}, float_dtype, device) * 2));
-    EXPECT_TRUE(mesh.GetTriangles().AllClose(
+    EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(
             core::Tensor::Ones({2, 3}, int_dtype, device) * 3));
     EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
             core::Tensor::Ones({2, 3}, float_dtype, device) * 4));
 }
 
-TEST_P(TriangleMeshPermuteDevices, ToLegacyTriangleMesh) {
+TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
     core::Device device = GetParam();
 
     core::Dtype float_dtype = core::Float32;
     core::Dtype int_dtype = core::Int64;
 
     t::geometry::TriangleMesh mesh(device);
-    mesh.SetVertices(core::Tensor::Ones({2, 3}, float_dtype, device) * 0);
+    mesh.SetVertexPositions(core::Tensor::Ones({2, 3}, float_dtype, device) *
+                            0);
     mesh.SetVertexColors(core::Tensor::Ones({2, 3}, float_dtype, device) * 1);
     mesh.SetVertexNormals(core::Tensor::Ones({2, 3}, float_dtype, device) * 2);
-    mesh.SetTriangles(core::Tensor::Ones({2, 3}, int_dtype, device) * 3);
+    mesh.SetTriangleIndices(core::Tensor::Ones({2, 3}, int_dtype, device) * 3);
     mesh.SetTriangleNormals(core::Tensor::Ones({2, 3}, float_dtype, device) *
                             4);
 
-    geometry::TriangleMesh legacy_mesh = mesh.ToLegacyTriangleMesh();
+    geometry::TriangleMesh legacy_mesh = mesh.ToLegacy();
     EXPECT_EQ(legacy_mesh.vertices_,
               std::vector<Eigen::Vector3d>(
                       {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0)}));

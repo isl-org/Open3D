@@ -68,7 +68,7 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                     "Read PTS failed: number of points must be >= 0.");
             return false;
         } else if (num_points == 0) {
-            pointcloud.SetPoints(core::Tensor({0, 3}, core::Float64));
+            pointcloud.SetPointPositions(core::Tensor({0, 3}, core::Float64));
             return true;
         }
         utility::CountingProgressReporter reporter(params.update_progress);
@@ -87,9 +87,10 @@ bool ReadPointCloudFromPTS(const std::string &filename,
 
             // X Y Z I R G B.
             if (num_fields == 7) {
-                pointcloud.SetPoints(
+                pointcloud.SetPointPositions(
                         core::Tensor({num_points, 3}, core::Float64));
-                points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
+                points_ptr =
+                        pointcloud.GetPointPositions().GetDataPtr<double>();
                 pointcloud.SetPointAttr(
                         "intensities",
                         core::Tensor({num_points, 1}, core::Float64));
@@ -101,18 +102,20 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             }
             // X Y Z R G B.
             else if (num_fields == 6) {
-                pointcloud.SetPoints(
+                pointcloud.SetPointPositions(
                         core::Tensor({num_points, 3}, core::Float64));
-                points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
+                points_ptr =
+                        pointcloud.GetPointPositions().GetDataPtr<double>();
                 pointcloud.SetPointColors(
                         core::Tensor({num_points, 3}, core::UInt8));
                 colors_ptr = pointcloud.GetPointColors().GetDataPtr<uint8_t>();
             }
             // X Y Z I.
             else if (num_fields == 4) {
-                pointcloud.SetPoints(
+                pointcloud.SetPointPositions(
                         core::Tensor({num_points, 3}, core::Float64));
-                points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
+                points_ptr =
+                        pointcloud.GetPointPositions().GetDataPtr<double>();
                 pointcloud.SetPointAttr(
                         "intensities",
                         core::Tensor({num_points, 1}, core::Float64));
@@ -121,9 +124,10 @@ bool ReadPointCloudFromPTS(const std::string &filename,
             }
             // X Y Z.
             else if (num_fields == 3) {
-                pointcloud.SetPoints(
+                pointcloud.SetPointPositions(
                         core::Tensor({num_points, 3}, core::Float64));
-                points_ptr = pointcloud.GetPoints().GetDataPtr<double>();
+                points_ptr =
+                        pointcloud.GetPointPositions().GetDataPtr<double>();
             } else {
                 utility::LogWarning("Read PTS failed: unknown pts format: {}",
                                     line_buffer);
@@ -221,20 +225,18 @@ bool WritePointCloudToPTS(const std::string &filename,
         int64_t num_points = 0;
 
         if (!pointcloud.IsEmpty()) {
-            num_points = pointcloud.GetPoints().GetLength();
+            num_points = pointcloud.GetPointPositions().GetLength();
         }
 
         // Assert attribute shapes.
-        if (pointcloud.HasPoints()) {
-            pointcloud.GetPoints().AssertShape(core::SizeVector{num_points, 3});
+        if (pointcloud.HasPointPositions()) {
+            pointcloud.GetPointPositions().AssertShape({num_points, 3});
         }
         if (pointcloud.HasPointColors()) {
-            pointcloud.GetPointColors().AssertShape(
-                    core::SizeVector{num_points, 3});
+            pointcloud.GetPointColors().AssertShape({num_points, 3});
         }
         if (pointcloud.HasPointAttr("intensities")) {
-            pointcloud.GetPointAttr("intensities")
-                    .AssertShape(core::SizeVector{num_points, 1});
+            pointcloud.GetPointAttr("intensities").AssertShape({num_points, 1});
         }
 
         reporter.SetTotal(num_points);
@@ -251,7 +253,7 @@ bool WritePointCloudToPTS(const std::string &filename,
         core::Tensor colors;
 
         if (num_points > 0) {
-            points_ptr = pointcloud.GetPoints()
+            points_ptr = pointcloud.GetPointPositions()
                                  .To(core::Float64)
                                  .GetDataPtr<double>();
         }

@@ -7,6 +7,7 @@
 import numpy as np
 import open3d as o3d
 import sys
+
 sys.path.append("../utility")
 from file import join, get_rgbd_file_lists
 
@@ -102,6 +103,6 @@ def run(config):
         o3d.t.io.write_point_cloud(save_pcd_path, pcd)
     else:
         mesh = voxel_grid.extract_surface_mesh().to(o3d.core.Device("CPU:0"))
-        mesh_legacy = mesh.to_legacy_triangle_mesh()
+        mesh_legacy = mesh.to_legacy()
         save_mesh_path = join(slac_folder, "output_slac_mesh.ply")
         o3d.io.write_triangle_mesh(save_mesh_path, mesh_legacy)

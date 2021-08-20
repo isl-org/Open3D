@@ -140,11 +140,23 @@ Now, try importing Open3D.
 If this works, congratulations, now Open3D has been successfully installed!
 
 
+Troubleshooting:
+^^^^^^^^^^^^^^^^
+
+If you get an error when importing Open3D, enable detailed Python warnings to
+help troubleshoot the issue:
+
+.. code-block:: bash
+
+    python -W default -c "import open3d as o3d"
+
+
 Running Open3D tutorials
 ========================
 
 A complete set of Python tutorials and testing data will also be copied to
-demonstrate the usage of Open3D Python interface. See ``examples/python`` for all Python examples.
+demonstrate the usage of Open3D Python interface. See ``examples/python`` for
+all Python examples.
 
 .. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``,
     ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction

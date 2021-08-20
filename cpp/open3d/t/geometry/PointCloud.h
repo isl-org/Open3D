@@ -31,7 +31,7 @@
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
@@ -44,75 +44,72 @@ namespace t {
 namespace geometry {
 
 /// \class PointCloud
-/// \brief A pointcloud contains a set of 3D points.
+/// \brief A point cloud contains a list of 3D points.
 ///
-/// The PointCloud class stores the attribute data in key-value pairs for
-/// flexibility, where the key is a string representing the attribute name and
-/// value is a Tensor containing the attribute data. In most cases, the
-/// length of an attribute should be equal to the length of the "points", the
-/// pointcloud class provides helper functions to check and facilitates this
-/// consistency.
+/// The point cloud class stores the attribute data in key-value maps, where
+/// the key is a string representing the attribute name and the value is a
+/// Tensor containing the attribute data. In most cases, the length of an
+/// attribute should be equal to the length of the point cloud's "positions".
 ///
-/// Although the attributes are all stored in a key-value pair dictionary, the
-/// attributes have different levels:
-///
-/// - Level 0: Default attribute {"points"}.
+/// - Default attribute: "positions".
+///     - Usage
+///         - PointCloud::GetPointPositions()
+///         - PointCloud::SetPointPositions(const Tensor& positions)
+///         - PointCloud::HasPointPositions()
 ///     - Created by default, required for all pointclouds.
-///     - The tensor must be of shape N x {3,}.
-///     - Convenience functions:
-///         - PointCloud::GetPoints()
-///         - PointCloud::SetPoints(points_tensor)
-///         - PointCloud::HasPoints()
-///     - The device of "points" determines the device of the pointcloud.
-/// - Level 1: Commonly-used attributes {"normals", "colors"}.
-///     - Not created by default.
-///     - The tensor must be of shape N x {3,}.
-///     - Convenience functions:
+///     - Value tensor must have shape {N, 3}.
+///     - The device of "positions" determines the device of the point cloud.
+///
+/// - Common attributes: "normals", "colors".
+///     - Usage
 ///         - PointCloud::GetPointNormals()
-///         - PointCloud::SetPointNormals(normals_tensor)
+///         - PointCloud::SetPointNormals(const Tensor& normals)
 ///         - PointCloud::HasPointNormals()
 ///         - PointCloud::GetPointColors()
-///         - PointCloud::SetPointColors(colors_tensor)
+///         - PointCloud::SetPointColors(const Tensor& colors)
 ///         - PointCloud::HasPointColors()
-///     - Device must be the same as the device of "points". Dtype can be
-///       different.
-/// - Level 2: Custom attributes, e.g. {"labels", "alphas", "intensities"}.
-///     - Not created by default. Created by users.
-///     - No convenience functions.
-///     - Use generalized helper functions. Examples:
-///         - PointCloud::GetPointAttr("labels")
-///         - PointCloud::SetPointAttr("labels", labels_tensor)
-///         - PointCloud::HasPointAttr("labels")
-///     - Device must be the same as the device of "points". Dtype can be
-///       different.
+///     - Not created by default.
+///     - Value tensor must have shape {N, 3}.
+///     - Value tensor must be on the same device as the point cloud.
+///     - Value tensor can have any dtype.
 ///
-/// Note that the level 0 and level 1 convenience functions can also be achieved
-/// via the generalized helper functions:
-///     - PointCloud::GetPoints() is the same as
-///       PointCloud::GetPointAttr("points")
+/// - Custom attributes, e.g., "labels", "intensities".
+///     - Usage
+///         - PointCloud::GetPointAttr(const std::string& key)
+///         - PointCloud::SetPointAttr(const std::string& key,
+///                                    const Tensor& value)
+///         - PointCloud::HasPointAttr(const std::string& key)
+///     - Not created by default. Users can add their own custom attributes.
+///     - Value tensor must be on the same device as the point cloud.
+///     - Value tensor can have any dtype.
+///
+/// PointCloud::GetPointAttr(), PointCloud::SetPointAttr(),
+/// PointCloud::HasPointAttr() also work for default attribute "position" and
+/// common attributes "normals" and "colors", e.g.,
+///     - PointCloud::GetPointPositions() is the same as
+///       PointCloud::GetPointAttr("positions")
 ///     - PointCloud::HasPointNormals() is the same as
 ///       PointCloud::HasPointAttr("normals")
 class PointCloud : public Geometry {
 public:
-    /// Construct an empty pointcloud.
+    /// Construct an empty point cloud on the provided device.
+    /// \param device The device on which to initialize the point cloud
+    /// (default: 'CPU:0').
     PointCloud(const core::Device &device = core::Device("CPU:0"));
 
-    /// Construct a pointcloud from points.
+    /// Construct a point cloud from points.
     ///
-    /// \param points A tensor with element shape (3,).
-    /// - The resulting pointcloud will have the same dtype and device as the
-    /// tensor.
-    /// - If the tensor is created in-place from a pre-allocated buffer, the
-    /// tensor has a fixed size and thus the resulting pointcloud will have
-    /// a fixed size and calling to functions like `SynchronizedPushBack` will
-    /// raise an exception.
+    /// The input tensor will be directly used as the underlying storage of the
+    /// point cloud (no memory copy).
+    ///
+    /// \param points A tensor with element shape {3}.
     PointCloud(const core::Tensor &points);
 
     /// Construct from points and other attributes of the points.
     ///
     /// \param map_keys_to_tensors A map of string to Tensor containing
     /// points and their attributes. point_dict must contain at least the
-    /// "points" key.
+    /// "positions" key.
     PointCloud(const std::unordered_map<std::string, core::Tensor>
                        &map_keys_to_tensors);
 
@@ -131,8 +128,8 @@ public:
         return point_attr_.at(key);
     }
 
-    /// Get the value of the "points" attribute. Convenience function.
-    core::Tensor &GetPoints() { return GetPointAttr("points"); }
+    /// Get the value of the "positions" attribute. Convenience function.
+    core::Tensor &GetPointPositions() { return GetPointAttr("positions"); }
 
     /// Get the value of the "colors" attribute. Convenience function.
     core::Tensor &GetPointColors() { return GetPointAttr("colors"); }
@@ -147,8 +144,10 @@ public:
         return point_attr_.at(key);
     }
 
-    /// Get the value of the "points" attribute. Convenience function.
-    const core::Tensor &GetPoints() const { return GetPointAttr("points"); }
+    /// Get the value of the "positions" attribute. Convenience function.
+    const core::Tensor &GetPointPositions() const {
+        return GetPointAttr("positions");
+    }
 
     /// Get the value of the "colors" attribute. Convenience function.
     const core::Tensor &GetPointColors() const {
@@ -173,21 +172,21 @@ public:
         point_attr_[key] = value;
     }
 
-    /// Set the value of the "points" attribute. Convenience function.
-    void SetPoints(const core::Tensor &value) {
-        value.AssertShapeCompatible({utility::nullopt, 3});
-        SetPointAttr("points", value);
+    /// Set the value of the "positions" attribute. Convenience function.
+    void SetPointPositions(const core::Tensor &value) {
+        value.AssertShape({utility::nullopt, 3});
+        SetPointAttr("positions", value);
     }
 
     /// Set the value of the "colors" attribute. Convenience function.
     void SetPointColors(const core::Tensor &value) {
-        value.AssertShapeCompatible({utility::nullopt, 3});
+        value.AssertShape({utility::nullopt, 3});
         SetPointAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute. Convenience function.
     void SetPointNormals(const core::Tensor &value) {
-        value.AssertShapeCompatible({utility::nullopt, 3});
+        value.AssertShape({utility::nullopt, 3});
         SetPointAttr("normals", value);
     }
 
@@ -197,18 +196,18 @@ public:
     /// 3) attribute's length > 0
     bool HasPointAttr(const std::string &key) const {
         return point_attr_.Contains(key) && GetPointAttr(key).GetLength() > 0 &&
-               GetPointAttr(key).GetLength() == GetPoints().GetLength();
+               GetPointAttr(key).GetLength() == GetPointPositions().GetLength();
     }
 
-    /// Removes point attribute by key value. Primary attribute "points" cannot
-    /// be removed. Throws warning if attribute key does not exists.
+    /// Removes point attribute by key value. Primary attribute "positions"
+    /// cannot be removed. Throws warning if attribute key does not exists.
     ///
     /// \param key Attribute name.
     void RemovePointAttr(const std::string &key) { point_attr_.Erase(key); }
 
-    /// Check if the "points" attribute's value has length > 0.
+    /// Check if the "positions" attribute's value has length > 0.
     /// This is a convenience function.
-    bool HasPoints() const { return HasPointAttr("points"); }
+    bool HasPointPositions() const { return HasPointAttr("positions"); }
 
     /// Returns true if all of the followings are true:
     /// 1) attribute "colors" exist
@@ -235,27 +234,14 @@ public:
     /// Returns copy of the point cloud on the same device.
     PointCloud Clone() const;
 
-    /// Transfer the point cloud to CPU.
-    ///
-    /// If the point cloud is already on CPU, no copy will be performed.
-    PointCloud CPU() const { return To(core::Device("CPU:0")); };
-
-    /// Transfer the point cloud to a CUDA device.
-    ///
-    /// If the point cloud is already on the specified CUDA device, no copy will
-    /// be performed.
-    PointCloud CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    };
-
-    /// Clear all data in the pointcloud.
+    /// Clear all data in the point cloud.
     PointCloud &Clear() override {
         point_attr_.clear();
         return *this;
     }
 
-    /// Returns !HasPoints().
-    bool IsEmpty() const override { return !HasPoints(); }
+    /// Returns !HasPointPositions().
+    bool IsEmpty() const override { return !HasPointPositions(); }
 
     /// Returns the min bound for point coordinates.
     core::Tensor GetMinBound() const;
@@ -266,15 +252,15 @@ public:
     /// Returns the center for point coordinates.
     core::Tensor GetCenter() const;
 
-    /// Append a pointcloud and returns the resulting pointcloud.
+    /// Append a point cloud and returns the resulting point cloud.
     ///
-    /// The pointcloud being appended, must have all the attributes
-    /// present in the pointcloud it is being appended to, with same
+    /// The point cloud being appended, must have all the attributes
+    /// present in the point cloud it is being appended to, with same
     /// dtype, device and same shape other than the first dimension / length.
     PointCloud Append(const PointCloud &other) const;
 
     /// operator+ for t::PointCloud appends the compatible attributes to the
-    /// pointcloud.
+    /// point cloud.
     PointCloud operator+(const PointCloud &other) const {
         return Append(other);
     }
@@ -289,14 +275,14 @@ public:
     /// and applies the transformation as P = R(P) + t
     /// \param transformation Transformation [Tensor of dim {4,4}].
     /// Should be on the same device as the PointCloud
-    /// \return Transformed pointcloud
+    /// \return Transformed point cloud
     PointCloud &Transform(const core::Tensor &transformation);
 
     /// \brief Translates the points of the PointCloud.
     /// \param translation translation tensor of dimension {3}
     /// Should be on the same device as the PointCloud
     /// \param relative if true (default): translates relative to Center
-    /// \return Translated pointcloud
+    /// \return Translated point cloud
     PointCloud &Translate(const core::Tensor &translation,
                           bool relative = true);
 
@@ -304,7 +290,7 @@ public:
     /// \param scale Scale [double] of dimension
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is
     /// to be scaled. Should be on the same device as the PointCloud
-    /// \return Scaled pointcloud
+    /// \return Scaled point cloud
     PointCloud &Scale(double scale, const core::Tensor &center);
 
     /// \brief Rotates the points and normals (if exists).
@@ -312,19 +298,32 @@ public:
     /// Should be on the same device as the PointCloud
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is
     /// to be scaled. Should be on the same device as the PointCloud
-    /// \return Rotated pointcloud
+    /// \return Rotated point cloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     /// \brief Downsamples a point cloud with a specified voxel size.
     /// \param voxel_size Voxel size. A positive number.
     PointCloud VoxelDownSample(double voxel_size,
-                               const core::HashmapBackend &backend =
-                                       core::HashmapBackend::Default) const;
+                               const core::HashBackendType &backend =
+                                       core::HashBackendType::Default) const;
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
-    /// \brief Factory function to create a pointcloud from a depth image and a
+public:
+    /// \brief Function to estimate point normals. If the point cloud normals
+    /// exist, the estimated normals are oriented with respect to the same.
+    /// It uses KNN search if only max_nn parameter is provided, and
+    /// HybridSearch if radius parameter is also provided.
+    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
+    /// \param radius [optional] NeighbourSearch radius parameter to use
+    /// HybridSearch. [Recommended ~1.4x voxel size].
+    void EstimateNormals(
+            const int max_nn = 30,
+            const utility::optional<double> radius = utility::nullopt);
+
+public:
+    /// \brief Factory function to create a point cloud from a depth image and a
     /// camera model.
     ///
     /// Given depth value d at (u, v) image coordinate, the corresponding 3d
@@ -346,8 +345,8 @@ public:
     /// normals are requested, the depth map is first filtered to ensure smooth
     /// normals.
     ///
-    /// \return Created pointcloud with the 'points' property set. Thus is empty
-    /// if the conversion fails.
+    /// \return Created point cloud with the 'points' property set. Thus is
+    /// empty if the conversion fails.
     static PointCloud CreateFromDepthImage(
             const Image &depth,
             const core::Tensor &intrinsics,
@@ -358,8 +357,8 @@ public:
             int stride = 1,
             bool with_normals = false);
 
-    /// \brief Factory function to create a pointcloud from an RGB-D image and a
-    /// camera model.
+    /// \brief Factory function to create a point cloud from an RGB-D image and
+    /// a camera model.
     ///
     /// Given depth value d at (u, v) image coordinate, the corresponding 3d
     /// point is:
@@ -381,7 +380,7 @@ public:
     /// normals are requested, the depth map is first filtered to ensure smooth
     /// normals.
     ///
-    /// \return Created pointcloud with the 'points' and 'colors' properties
+    /// \return Created point cloud with the 'points' and 'colors' properties
     /// set. This is empty if the conversion fails.
     static PointCloud CreateFromRGBDImage(
             const RGBDImage &rgbd_image,
@@ -394,13 +393,13 @@ public:
             bool with_normals = false);
 
     /// Create a PointCloud from a legacy Open3D PointCloud.
-    static PointCloud FromLegacyPointCloud(
+    static PointCloud FromLegacy(
             const open3d::geometry::PointCloud &pcd_legacy,
             core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Convert to a legacy Open3D PointCloud.
-    open3d::geometry::PointCloud ToLegacyPointCloud() const;
+    open3d::geometry::PointCloud ToLegacy() const;
 
     /// Project a point cloud to a depth image.
     geometry::Image ProjectToDepthImage(
