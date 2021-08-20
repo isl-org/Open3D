@@ -43,7 +43,7 @@ TEST(CUDAUtils, InitState) {
     for (int i = 0; i < device_count; ++i) {
         for (int j = 0; j < device_count; ++j) {
             utility::LogInfo("P2PEnabled {}->{}: {}", i, j,
-                             cuda_state.GetP2PEnabled()[i][j]);
+                             cuda_state.IsP2PEnabled(i, j));
         }
     }
 }

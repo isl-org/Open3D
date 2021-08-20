@@ -34,7 +34,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashSet.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -52,7 +52,7 @@ PointCloud::PointCloud(const core::Device &device)
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDevice()) {
-    points.AssertShapeCompatible({utility::nullopt, 3});
+    points.AssertShape({utility::nullopt, 3});
     SetPointPositions(points);
 }
 
@@ -64,8 +64,7 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
         utility::LogError("\"positions\" attribute must be specified.");
     }
     device_ = map_keys_to_tensors.at("positions").GetDevice();
-    map_keys_to_tensors.at("positions")
-            .AssertShapeCompatible({utility::nullopt, 3});
+    map_keys_to_tensors.at("positions").AssertShape({utility::nullopt, 3});
     point_attr_ = TensorMap("positions", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());
 }
@@ -205,19 +204,18 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
 }
 
 PointCloud PointCloud::VoxelDownSample(
-        double voxel_size, const core::HashmapBackend &backend) const {
+        double voxel_size, const core::HashBackendType &backend) const {
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
     core::Tensor points_voxeld = GetPointPositions() / voxel_size;
     core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
 
-    core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(), core::Int64,
-                                        core::Int32, {3}, {1}, device_,
-                                        backend);
+    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
+                                        {3}, device_, backend);
 
-    core::Tensor addrs, masks;
-    points_voxeli_hashmap.Activate(points_voxeli, addrs, masks);
+    core::Tensor buf_indices, masks;
+    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
 
     PointCloud pcd_down(GetPointPositions().GetDevice());
     for (auto &kv : point_attr_) {

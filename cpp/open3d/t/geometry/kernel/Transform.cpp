@@ -36,7 +36,7 @@ namespace kernel {
 namespace transform {
 
 void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
-    points.AssertShapeCompatible({utility::nullopt, 3});
+    points.AssertShape({utility::nullopt, 3});
     transformation.AssertShape({4, 4});
     core::Dtype dtype = points.GetDtype();
     transformation.AssertDtype(dtype);
@@ -61,7 +61,7 @@ void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
 
 void TransformNormals(const core::Tensor& transformation,
                       core::Tensor& normals) {
-    normals.AssertShapeCompatible({utility::nullopt, 3});
+    normals.AssertShape({utility::nullopt, 3});
     transformation.AssertShape({4, 4});
     core::Dtype dtype = normals.GetDtype();
     transformation.AssertDtype(dtype);
@@ -87,7 +87,7 @@ void TransformNormals(const core::Tensor& transformation,
 void RotatePoints(const core::Tensor& R,
                   core::Tensor& points,
                   const core::Tensor& center) {
-    points.AssertShapeCompatible({utility::nullopt, 3});
+    points.AssertShape({utility::nullopt, 3});
     R.AssertShape({3, 3});
     center.AssertShape({3});
     core::Dtype dtype = points.GetDtype();
@@ -115,7 +115,7 @@ void RotatePoints(const core::Tensor& R,
 }
 
 void RotateNormals(const core::Tensor& R, core::Tensor& normals) {
-    normals.AssertShapeCompatible({utility::nullopt, 3});
+    normals.AssertShape({utility::nullopt, 3});
     R.AssertShape({3, 3});
     core::Dtype dtype = normals.GetDtype();
     R.AssertDtype(dtype);

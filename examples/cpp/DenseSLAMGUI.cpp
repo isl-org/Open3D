@@ -668,8 +668,8 @@ protected:
             info << T_eigen.format(CleanFmt) << "\n\n";
 
             info << fmt::format("Active voxel blocks: {}/{}\n",
-                                model_->GetHashmap().Size(),
-                                model_->GetHashmap().GetCapacity());
+                                model_->GetHashMap().Size(),
+                                model_->GetHashMap().GetCapacity());
             {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 int64_t len =

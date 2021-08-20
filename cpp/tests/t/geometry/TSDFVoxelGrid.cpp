@@ -49,7 +49,7 @@ INSTANTIATE_TEST_SUITE_P(TSDFVoxelGrid,
 
 t::geometry::TSDFVoxelGrid IntegrateTestScene(
         const core::Device &device,
-        const core::HashmapBackend &backend = core::HashmapBackend::Default) {
+        const core::HashBackendType &backend = core::HashBackendType::Default) {
     float voxel_size = 0.008;
     t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Float32},
                                            {"weight", core::UInt16},
@@ -100,12 +100,12 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
     core::Device device = GetParam();
     const float dist_threshold = 0.004;
 
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     for (auto backend : backends) {
@@ -181,18 +181,18 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
     core::Tensor extrinsic_t =
             core::eigen_converter::EigenMatrixToTensor(extrinsic);
 
-    std::vector<core::HashmapBackend> backends;
+    std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashmapBackend::Slab);
-        backends.push_back(core::HashmapBackend::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
-        backends.push_back(core::HashmapBackend::TBB);
+        backends.push_back(core::HashBackendType::TBB);
     }
 
     for (auto backend : backends) {
         auto voxel_grid = IntegrateTestScene(device, backend);
 
-        if (backend == core::HashmapBackend::Slab) {
+        if (backend == core::HashBackendType::Slab) {
             EXPECT_THROW(voxel_grid.RayCast(intrinsic_t, extrinsic_t, cols,
                                             rows, depth_scale, 0.1, depth_max,
                                             std::min((n - 1) * 1.0f, 3.0f)),

@@ -230,16 +230,13 @@ bool WritePointCloudToPTS(const std::string &filename,
 
         // Assert attribute shapes.
         if (pointcloud.HasPointPositions()) {
-            pointcloud.GetPointPositions().AssertShape(
-                    core::SizeVector{num_points, 3});
+            pointcloud.GetPointPositions().AssertShape({num_points, 3});
         }
         if (pointcloud.HasPointColors()) {
-            pointcloud.GetPointColors().AssertShape(
-                    core::SizeVector{num_points, 3});
+            pointcloud.GetPointColors().AssertShape({num_points, 3});
         }
         if (pointcloud.HasPointAttr("intensities")) {
-            pointcloud.GetPointAttr("intensities")
-                    .AssertShape(core::SizeVector{num_points, 1});
+            pointcloud.GetPointAttr("intensities").AssertShape({num_points, 1});
         }
 
         reporter.SetTotal(num_points);
