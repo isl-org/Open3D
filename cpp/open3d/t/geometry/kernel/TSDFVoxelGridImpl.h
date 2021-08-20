@@ -173,6 +173,130 @@ void IntegrateCPU
 }
 
 #if defined(__CUDACC__)
+void IntegrateCUDA
+#else
+void IntegrateCPU
+#endif
+        (const core::Tensor& depth,
+         const core::Tensor& color,
+         const core::Tensor& indices,
+         const core::Tensor& block_keys,
+         std::vector<core::Tensor>& block_values,
+         // Transforms
+         const core::Tensor& intrinsics,
+         const core::Tensor& extrinsics,
+         // Parameters
+         int64_t resolution,
+         float voxel_size,
+         float sdf_trunc,
+         float depth_scale,
+         float depth_max) {
+    // Parameters
+    int64_t resolution2 = resolution * resolution;
+    int64_t resolution3 = resolution2 * resolution;
+
+    // Shape / transform indexers, no data involved
+    NDArrayIndexer voxel_indexer({resolution, resolution, resolution});
+    TransformIndexer transform_indexer(intrinsics, extrinsics, voxel_size);
+
+    // Real data indexer
+    NDArrayIndexer depth_indexer(depth, 2);
+    NDArrayIndexer block_keys_indexer(block_keys, 1);
+
+    // Optional color integration
+    NDArrayIndexer color_indexer;
+    // bool integrate_color = false;
+    if (color.NumElements() != 0) {
+        color_indexer = NDArrayIndexer(color, 2);
+        // integrate_color = true;
+    }
+
+    // Plain arrays that does not require indexers
+    const int* indices_ptr = indices.GetDataPtr<int>();
+
+    float* tsdf_base_ptr = block_values[0].GetDataPtr<float>();
+    float* weight_base_ptr = block_values[1].GetDataPtr<float>();
+    uint16_t* color_base_ptr = block_values[2].GetDataPtr<uint16_t>();
+
+    int64_t n = indices.GetLength() * resolution3;
+
+    core::ParallelFor(
+            depth.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                // Natural index (0, N) -> (block_idx, voxel_idx)
+                int block_idx = indices_ptr[workload_idx / resolution3];
+                int voxel_idx = workload_idx % resolution3;
+
+                /// Coordinate transform
+                // block_idx -> (x_block, y_block, z_block)
+                int* block_key_ptr =
+                        block_keys_indexer.GetDataPtr<int>(block_idx);
+                int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
+                int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
+                int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
+
+                // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+                int64_t xv, yv, zv;
+                voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+                // coordinate in world (in voxel)
+                int64_t x = (xb * resolution + xv);
+                int64_t y = (yb * resolution + yv);
+                int64_t z = (zb * resolution + zv);
+
+                // coordinate in camera (in voxel -> in meter)
+                float xc, yc, zc, u, v;
+                transform_indexer.RigidTransform(
+                        static_cast<float>(x), static_cast<float>(y),
+                        static_cast<float>(z), &xc, &yc, &zc);
+
+                // coordinate in image (in pixel)
+                transform_indexer.Project(xc, yc, zc, &u, &v);
+                if (!depth_indexer.InBoundary(u, v)) {
+                    return;
+                }
+
+                // Associate image workload and compute SDF and
+                // TSDF.
+                float depth = *depth_indexer.GetDataPtr<float>(
+                                      static_cast<int64_t>(u),
+                                      static_cast<int64_t>(v)) /
+                              depth_scale;
+
+                float sdf = (depth - zc);
+                if (depth <= 0 || depth > depth_max || zc <= 0 ||
+                    sdf < -sdf_trunc) {
+                    return;
+                }
+                sdf = sdf < sdf_trunc ? sdf : sdf_trunc;
+                sdf /= sdf_trunc;
+
+                int64_t linear_idx = block_idx * resolution3 +
+                                     zv * resolution2 + yv * resolution + xv;
+                float* tsdf_ptr = tsdf_base_ptr + linear_idx;
+                float* weight_ptr = weight_base_ptr + linear_idx;
+                uint16_t* color_ptr = color_base_ptr + 3 * linear_idx;
+
+                float* input_color_ptr = color_indexer.GetDataPtr<float>(
+                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+
+                float inv_wsum = 1.0f / (*weight_ptr + 1);
+                float weight = *weight_ptr;
+
+                *tsdf_ptr = (weight * (*tsdf_ptr) + sdf) * inv_wsum;
+                for (int i = 0; i < 3; ++i) {
+                    color_ptr[i] =
+                            (weight * color_ptr[i] + input_color_ptr[i]) *
+                            inv_wsum;
+                }
+                *weight_ptr = (weight + 1);
+            });
+
+#if defined(__CUDACC__)
+    core::cuda::Synchronize();
+#endif
+}
+
+#if defined(__CUDACC__)
 void ExtractSurfacePointsCUDA
 #else
 void ExtractSurfacePointsCPU

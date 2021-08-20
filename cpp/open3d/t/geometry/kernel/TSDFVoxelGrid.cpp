@@ -116,6 +116,59 @@ void Integrate(const core::Tensor& depth,
     }
 }
 
+void Integrate(const core::Tensor& depth,
+               const core::Tensor& color,
+               const core::Tensor& block_indices,
+               const core::Tensor& block_keys,
+               std::vector<core::Tensor>& block_values,
+               const core::Tensor& intrinsics,
+               const core::Tensor& extrinsics,
+               int64_t resolution,
+               float voxel_size,
+               float sdf_trunc,
+               float depth_scale,
+               float depth_max) {
+    core::Device device = depth.GetDevice();
+
+    core::Tensor depthf32 = depth.To(core::Float32);
+    core::Tensor colorf32;
+
+    if (color.NumElements() != 0) {
+        if (color.GetDevice() != device) {
+            utility::LogError(
+                    "Incompatible color device type for depth and color");
+        }
+        colorf32 = color.To(core::Float32);
+    }
+
+    if (block_indices.GetDevice() != device ||
+        block_keys.GetDevice() != device) {
+        utility::LogError(
+                "Incompatible device type for depth and TSDF voxel grid");
+    }
+
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        IntegrateCPU(depthf32, colorf32, block_indices, block_keys,
+                     block_values, intrinsics_d, extrinsics_d, resolution,
+                     voxel_size, sdf_trunc, depth_scale, depth_max);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        IntegrateCUDA(depthf32, colorf32, block_indices, block_keys,
+                      block_values, intrinsics_d, extrinsics_d, resolution,
+                      voxel_size, sdf_trunc, depth_scale, depth_max);
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 void EstimateRange(const core::Tensor& block_keys,
                    core::Tensor& range_minmax_map,
                    const core::Tensor& intrinsics,

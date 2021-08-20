@@ -28,6 +28,8 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 
 namespace open3d {
 namespace t {
@@ -41,7 +43,8 @@ VoxelBlockGrid::VoxelBlockGrid(
         int64_t block_resolution,
         int64_t block_count,
         const core::Device &device,
-        const core::HashBackendType &backend) {
+        const core::HashBackendType &backend)
+    : voxel_size_(voxel_size), block_resolution_(block_resolution) {
     size_t n_attrs = attr_names.size();
     if (attr_dtypes.size() != n_attrs) {
         utility::LogError(
@@ -73,6 +76,64 @@ VoxelBlockGrid::VoxelBlockGrid(
     block_hashmap_ = std::make_shared<core::HashMap>(
             block_count, core::Int32, core::SizeVector{3}, attr_dtypes,
             attr_element_shapes, device, backend);
+}
+
+void VoxelBlockGrid::Integrate(const Image &depth,
+                               const Image &color,
+                               const core::Tensor &intrinsics,
+                               const core::Tensor &extrinsics,
+                               float depth_scale,
+                               float depth_max) {
+    if (depth.IsEmpty()) {
+        utility::LogError("Input depth is empty.");
+    }
+    if (depth.GetDtype() != core::UInt16 && depth.GetDtype() != core::Float32) {
+        utility::LogError("Unsupported depth image dtype {}.",
+                          depth.GetDtype().ToString());
+    }
+
+    const int64_t down_factor = 4;
+    if (point_hashmap_ == nullptr) {
+        int64_t capacity = (depth.GetCols() * depth.GetRows()) /
+                           (down_factor * down_factor * 4);
+        point_hashmap_ = std::make_shared<core::HashMap>(
+                capacity, core::Int32, core::SizeVector{3}, core::Int32,
+                core::SizeVector{1}, block_hashmap_->GetDevice());
+    } else {
+        point_hashmap_->Clear();
+    }
+
+    core::Tensor block_coords;
+    PointCloud pcd = PointCloud::CreateFromDepthImage(
+            depth, intrinsics, extrinsics, depth_scale, depth_max, down_factor);
+    kernel::tsdf::Touch(point_hashmap_, pcd.GetPointPositions().Contiguous(),
+                        block_coords, block_resolution_, voxel_size_,
+                        6 * voxel_size_);
+
+    utility::LogInfo("block_coords's shape = {}", block_coords.GetShape());
+
+    // Active voxel blocks in the block hashmap.
+    core::Tensor buf_indices, masks;
+    int64_t n = block_hashmap_->Size();
+    try {
+        block_hashmap_->Activate(block_coords, buf_indices, masks);
+    } catch (const std::runtime_error &) {
+        utility::LogError(
+                "[TSDFIntegrate] Unable to allocate volume during rehashing. "
+                "Consider using a "
+                "larger block_count at initialization to avoid rehashing "
+                "(currently {}), or choosing a larger voxel_size "
+                "(currently {})",
+                n, voxel_size_);
+    }
+    block_hashmap_->Find(block_coords, buf_indices, masks);
+
+    core::Tensor block_keys = block_hashmap_->GetKeyTensor();
+    std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
+    kernel::tsdf::Integrate(depth.AsTensor(), color.AsTensor(), buf_indices,
+                            block_keys, block_values, intrinsics, extrinsics,
+                            block_resolution_, voxel_size_, voxel_size_ * 6,
+                            depth_scale, depth_max);
 }
 
 }  // namespace geometry

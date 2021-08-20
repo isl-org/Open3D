@@ -70,12 +70,29 @@ public:
     /// Default destructor.
     ~VoxelBlockGrid() = default;
 
-    /// Get the underlying hash map that stores values in structure of arrays.
+    /// Fuse an RGB-D frame with TSDF integration.
+    void Integrate(const Image &depth,
+                   const Image &color,
+                   const core::Tensor &intrinsics,
+                   const core::Tensor &extrinsics,
+                   float depth_scale = 1000.0f,
+                   float depth_max = 3.0f);
+
+    /// Get the underlying hash map that stores values in structure of arrays
+    /// (SoA).
     core::HashMap GetHashMap() { return *block_hashmap_; }
 
 private:
+    float voxel_size_;
+    int64_t block_resolution_;
+
+    // Global hash map: 3D coords -> voxel blocks in SoA.
     std::shared_ptr<core::HashMap> block_hashmap_;
 
+    // Local hash map: 3D coords -> indices in block_hashmap_.
+    std::shared_ptr<core::HashMap> point_hashmap_;
+
+    // Map: attribute name -> index to access the attribute in SoA.
     std::unordered_map<std::string, int> name_attr_map_;
 };
 }  // namespace geometry
