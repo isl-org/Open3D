@@ -68,8 +68,8 @@ public:
     ///
     /// \param msg  The message to be processed
     ///
-    /// \param obj  The object from which the \p msg was unpacked. Can be
-    /// used for custom unpacking.
+    /// \param obj  The handle to the object from which the \p msg was unpacked.
+    /// Can be used for custom unpacking.
     virtual std::shared_ptr<zmq::message_t> ProcessMessage(
             const messages::Request& req,
             const messages::SetMeshData& msg,
