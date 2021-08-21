@@ -63,9 +63,9 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && wget https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz \
- && tar -xf ${CCACHE_TAR_NAME}.tar.gz \
- && ccache -s
+ && (wget https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
+RUN ccache -s
 
 # Miniconda
 ENV PATH="/root/miniconda3/bin:${PATH}"
