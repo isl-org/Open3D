@@ -81,7 +81,7 @@ def test_set_mesh_data_deserialization():
                         size=lines.shape[:1] + (2,)).astype(rng.choice(dtypes)),
     }
 
-    path, time, geom = set_mesh_data_to_geometry(verts,
+    path, time, geom = set_mesh_data_to_geometry(vertices=verts,
                                                  vertex_attributes=vert_attrs,
                                                  path="pcd",
                                                  time=123)
@@ -92,7 +92,7 @@ def test_set_mesh_data_deserialization():
     for k, v in vert_attrs.items():
         np.testing.assert_equal(geom.point[k].numpy(), v)
 
-    path, time, geom = set_mesh_data_to_geometry(verts,
+    path, time, geom = set_mesh_data_to_geometry(vertices=verts,
                                                  faces=tris,
                                                  vertex_attributes=vert_attrs,
                                                  face_attributes=tri_attrs,
@@ -108,7 +108,7 @@ def test_set_mesh_data_deserialization():
     for k, v in tri_attrs.items():
         np.testing.assert_equal(geom.triangle[k].numpy(), v)
 
-    path, time, geom = set_mesh_data_to_geometry(verts,
+    path, time, geom = set_mesh_data_to_geometry(vertices=verts,
                                                  lines=lines,
                                                  vertex_attributes=vert_attrs,
                                                  line_attributes=line_attrs,
@@ -123,3 +123,51 @@ def test_set_mesh_data_deserialization():
         np.testing.assert_equal(geom.point[k].numpy(), v)
     for k, v in line_attrs.items():
         np.testing.assert_equal(geom.line[k].numpy(), v)
+
+    #
+    # Test partial data
+    #
+    path, time, geom = set_mesh_data_to_geometry(vertex_attributes=vert_attrs,
+                                                 path="pcd",
+                                                 time=123,
+                                                 o3d_type="PointCloud")
+    assert path == "pcd"
+    assert time == 123
+    assert isinstance(geom, o3d.t.geometry.PointCloud)
+    for k, v in vert_attrs.items():
+        np.testing.assert_equal(geom.point[k].numpy(), v)
+
+    path, time, geom = set_mesh_data_to_geometry(vertex_attributes=vert_attrs,
+                                                 face_attributes=tri_attrs,
+                                                 path="trimesh",
+                                                 time=123,
+                                                 o3d_type="TriangleMesh")
+    assert path == "trimesh"
+    assert time == 123
+    assert isinstance(geom, o3d.t.geometry.TriangleMesh)
+    for k, v in vert_attrs.items():
+        np.testing.assert_equal(geom.vertex[k].numpy(), v)
+    for k, v in tri_attrs.items():
+        np.testing.assert_equal(geom.triangle[k].numpy(), v)
+
+    path, time, geom = set_mesh_data_to_geometry(vertex_attributes=vert_attrs,
+                                                 line_attributes=line_attrs,
+                                                 path="lines",
+                                                 time=123,
+                                                 o3d_type="LineSet")
+    assert path == "lines"
+    assert time == 123
+    assert isinstance(geom, o3d.t.geometry.LineSet)
+    for k, v in vert_attrs.items():
+        np.testing.assert_equal(geom.point[k].numpy(), v)
+    for k, v in line_attrs.items():
+        np.testing.assert_equal(geom.line[k].numpy(), v)
+
+    # Without o3d_type and no primary key data the returned object is None
+    path, time, geom = set_mesh_data_to_geometry(vertex_attributes=vert_attrs,
+                                                 path="unknown",
+                                                 time=123,
+                                                 o3d_type="")
+    assert path == "unknown"
+    assert time == 123
+    assert geom is None
