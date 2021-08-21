@@ -42,6 +42,8 @@ namespace open3d {
 namespace io {
 namespace rpc {
 
+class MessageProcessorBase;
+
 namespace messages {
 struct Request;
 struct SetMeshData;
@@ -52,21 +54,19 @@ struct SetActiveCamera;
 struct SetTime;
 }  // namespace messages
 
-/// Base class for the server side receiving requests from a client.
-/// Subclass from this and implement the overloaded ProcessMessage functions as
-/// needed.
-class ReceiverBase {
+/// Class for the server side receiving requests from a client.
+class ZMQReceiver {
 public:
     /// Constructs a receiver listening on the specified address.
     /// \param address  Address to listen on.
     /// \param timeout       Timeout in milliseconds for sending the reply.
-    ReceiverBase(const std::string& address = "tcp://127.0.0.1:51454",
-                 int timeout = 10000);
+    ZMQReceiver(const std::string& address = "tcp://127.0.0.1:51454",
+                int timeout = 10000);
 
-    ReceiverBase(const ReceiverBase&) = delete;
-    ReceiverBase& operator=(const ReceiverBase&) = delete;
+    ZMQReceiver(const ZMQReceiver&) = delete;
+    ZMQReceiver& operator=(const ZMQReceiver&) = delete;
 
-    virtual ~ReceiverBase();
+    virtual ~ZMQReceiver();
 
     /// Starts the receiver mainloop in a new thread.
     void Start();
@@ -79,42 +79,8 @@ public:
     /// Returns the last error from the mainloop thread.
     std::runtime_error GetLastError();
 
-protected:
-    // Opaque type for providing the original msgpack::object to the
-    // ProcessMessage functions
-    struct MsgpackObject;
-
-    /// Function for processing a msg.
-    /// \param req  The Request object that accompanies the \p msg object.
-    ///
-    /// \param msg  The message to be processed
-    ///
-    /// \param obj  The object from which the \p msg was unpacked. Can be
-    /// used for custom unpacking.
-    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetMeshData& msg,
-            const MsgpackObject& obj);
-    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::GetMeshData& msg,
-            const MsgpackObject& obj);
-    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetCameraData& msg,
-            const MsgpackObject& obj);
-    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetProperties& msg,
-            const MsgpackObject& obj);
-    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetActiveCamera& msg,
-            const MsgpackObject& obj);
-    virtual std::shared_ptr<zmq::message_t> ProcessMessage(
-            const messages::Request& req,
-            const messages::SetTime& msg,
-            const MsgpackObject& obj);
+    /// Sets the message processor object which will process incoming messages.
+    void SetMessageProcessor(std::shared_ptr<MessageProcessorBase> processor);
 
 private:
     void Mainloop();
@@ -129,6 +95,7 @@ private:
     std::atomic<bool> loop_running_;
     std::atomic<int> mainloop_error_code_;
     std::runtime_error mainloop_exception_;
+    std::shared_ptr<MessageProcessorBase> processor_;
 };
 
 }  // namespace rpc

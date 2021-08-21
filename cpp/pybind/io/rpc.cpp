@@ -27,6 +27,7 @@
 #include "open3d/io/rpc/BufferConnection.h"
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
+#include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
 #include "open3d/io/rpc/ZMQContext.h"
 #include "pybind/core/tensor_type_caster.h"
@@ -48,7 +49,9 @@ void pybind_rpc(py::module& m_io) {
             m, "_ConnectionBase");
 
     py::class_<rpc::Connection, std::shared_ptr<rpc::Connection>,
-               rpc::ConnectionBase>(m, "Connection")
+               rpc::ConnectionBase>(m, "Connection", R"doc(
+The default connection class which uses a ZeroMQ socket.
+)doc")
             .def(py::init([](std::string address, int connect_timeout,
                              int timeout) {
                      return std::shared_ptr<rpc::Connection>(
@@ -60,7 +63,9 @@ void pybind_rpc(py::module& m_io) {
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
 
     py::class_<rpc::BufferConnection, std::shared_ptr<rpc::BufferConnection>,
-               rpc::ConnectionBase>(m, "BufferConnection")
+               rpc::ConnectionBase>(m, "BufferConnection", R"doc(
+A connection writing to a memory buffer.
+)doc")
             .def(py::init<>())
             .def(
                     "get_buffer",
@@ -191,6 +196,14 @@ void pybind_rpc(py::module& m_io) {
                      "A Connection object. Use None to automatically create "
                      "the connection."},
             });
+
+    m.def("data_buffer_to_meta_geometry", &rpc::DataBufferToMetaGeometry,
+          "data"_a, R"doc(
+This function returns the geometry, the path and the time stored in a
+SetMeshData message. data must contain the Request header message followed
+by the SetMeshData message. The function returns None for the geometry if not
+successful.
+)doc");
 }
 
 }  // namespace io
