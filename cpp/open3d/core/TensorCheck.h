@@ -38,7 +38,7 @@
 /// Example: check that the tensor has dtype Float32
 /// core::AssertTensorDtype(tensor, core::Float32);
 #define AssertTensorDtype(tensor, dtype) \
-    tensor_check::_AssertTensorDtype(    \
+    tensor_check::AssertTensorDtype_(    \
             __FILE__, __LINE__, (const char*)OPEN3D_FUNCTION, tensor, dtype)
 
 /// Assert Tensor's device is the same as the expected device. When an error
@@ -48,7 +48,7 @@
 /// Example: check that the tensor has device CUDA:0
 /// core::AssertTensorDevice(tensor, core::Device("CUDA:0"));
 #define AssertTensorDevice(tensor, device) \
-    tensor_check::_AssertTensorDevice(     \
+    tensor_check::AssertTensorDevice_(     \
             __FILE__, __LINE__, (const char*)OPEN3D_FUNCTION, tensor, device)
 
 /// Assert Tensor's shape is the same as the expected shape. When an error
@@ -62,7 +62,7 @@
 /// Example: check that the tensor has shape {N, 3}
 /// core::AssertTensorShape(tensor, {utility::nullopt, 3});
 #define AssertTensorShape(tensor, ...)                                \
-    tensor_check::_AssertTensorShape(                                 \
+    tensor_check::AssertTensorShape_(                                 \
             __FILE__, __LINE__, (const char*)OPEN3D_FUNCTION, tensor, \
             __VA_ARGS__)  // __VA_ARGS__ handles initilizer list.
 
@@ -70,19 +70,19 @@ namespace open3d {
 namespace core {
 namespace tensor_check {
 
-void _AssertTensorDtype(const char* file,
+void AssertTensorDtype_(const char* file,
                         int line,
                         const char* function,
                         const Tensor& tensor,
                         const Dtype& dtype);
 
-void _AssertTensorDevice(const char* file,
+void AssertTensorDevice_(const char* file,
                          int line,
                          const char* function,
                          const Tensor& tensor,
                          const Device& device);
 
-void _AssertTensorShape(const char* file,
+void AssertTensorShape_(const char* file,
                         int line,
                         const char* function,
                         const Tensor& tensor,

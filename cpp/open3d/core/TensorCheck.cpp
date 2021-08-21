@@ -37,7 +37,7 @@ namespace open3d {
 namespace core {
 namespace tensor_check {
 
-void _AssertTensorDtype(const char* file,
+void AssertTensorDtype_(const char* file,
                         int line,
                         const char* function,
                         const Tensor& tensor,
@@ -48,10 +48,10 @@ void _AssertTensorDtype(const char* file,
     std::string error_message =
             fmt::format("Tensor has dtype {}, but is expected to have {}.",
                         tensor.GetDtype().ToString(), dtype.ToString());
-    utility::Logger::_LogError(file, line, function, error_message.c_str());
+    utility::Logger::LogError_(file, line, function, error_message.c_str());
 }
 
-void _AssertTensorDevice(const char* file,
+void AssertTensorDevice_(const char* file,
                          int line,
                          const char* function,
                          const Tensor& tensor,
@@ -62,10 +62,10 @@ void _AssertTensorDevice(const char* file,
     std::string error_message =
             fmt::format("Tensor has device {}, but is expected to have {}.",
                         tensor.GetDevice().ToString(), device.ToString());
-    utility::Logger::_LogError(file, line, function, error_message.c_str());
+    utility::Logger::LogError_(file, line, function, error_message.c_str());
 }
 
-void _AssertTensorShape(const char* file,
+void AssertTensorShape_(const char* file,
                         int line,
                         const char* function,
                         const Tensor& tensor,
@@ -78,7 +78,7 @@ void _AssertTensorShape(const char* file,
                 "Tensor has shape {}, but is expected to have compatible with "
                 "{}.",
                 tensor.GetShape().ToString(), shape.ToString());
-        utility::Logger::_LogError(file, line, function, error_message.c_str());
+        utility::Logger::LogError_(file, line, function, error_message.c_str());
     } else {
         SizeVector static_shape = shape.ToSizeVector();
         if (tensor.GetShape() == static_shape) {
@@ -87,7 +87,7 @@ void _AssertTensorShape(const char* file,
         std::string error_message = fmt::format(
                 "Tensor has shape {}, but is expected to have {}.",
                 tensor.GetShape().ToString(), static_shape.ToString());
-        utility::Logger::_LogError(file, line, function, error_message.c_str());
+        utility::Logger::LogError_(file, line, function, error_message.c_str());
     }
 }
 

@@ -70,7 +70,7 @@
 // Usage  : utility::LogError(format_string, arg0, arg1, ...);
 // Example: utility::LogError("name: {}, age: {}", "dog", 5);
 #define LogError(...)                                                    \
-    Logger::_LogError(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
+    Logger::LogError_(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
                       __VA_ARGS__)
 
 // LogWarning is used if an error occurs, but the error is also signaled
@@ -82,7 +82,7 @@
 // Usage  : utility::LogWarning(format_string, arg0, arg1, ...);
 // Example: utility::LogWarning("name: {}, age: {}", "dog", 5);
 #define LogWarning(...)                                                    \
-    Logger::_LogWarning(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
+    Logger::LogWarning_(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
                         __VA_ARGS__)
 
 // LogInfo is used to inform the user with expected output, e.g, pressed a
@@ -91,7 +91,7 @@
 // Usage  : utility::LogInfo(format_string, arg0, arg1, ...);
 // Example: utility::LogInfo("name: {}, age: {}", "dog", 5);
 #define LogInfo(...)                                                    \
-    Logger::_LogInfo(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
+    Logger::LogInfo_(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
                      __VA_ARGS__)
 
 // LogDebug is used to print debug/additional information on the state of
@@ -100,7 +100,7 @@
 // Usage  : utility::LogDebug(format_string, arg0, arg1, ...);
 // Example: utility::LogDebug("name: {}, age: {}", "dog", 5);
 #define LogDebug(...)                                                    \
-    Logger::_LogDebug(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
+    Logger::LogDebug_(__FILE__, __LINE__, (const char *)OPEN3D_FUNCTION, \
                       __VA_ARGS__)
 
 namespace open3d {
@@ -156,7 +156,7 @@ public:
     VerbosityLevel GetVerbosityLevel() const;
 
     template <typename... Args>
-    static void _LogError [[noreturn]] (const char *file,
+    static void LogError_ [[noreturn]] (const char *file,
                                         int line,
                                         const char *function,
                                         const char *format,
@@ -171,7 +171,7 @@ public:
         }
     }
     template <typename... Args>
-    static void _LogWarning(const char *file,
+    static void LogWarning_(const char *file,
                             int line,
                             const char *function,
                             const char *format,
@@ -186,7 +186,7 @@ public:
         }
     }
     template <typename... Args>
-    static void _LogInfo(const char *file,
+    static void LogInfo_(const char *file,
                          int line,
                          const char *function,
                          const char *format,
@@ -201,7 +201,7 @@ public:
         }
     }
     template <typename... Args>
-    static void _LogDebug(const char *file,
+    static void LogDebug_(const char *file,
                           int line,
                           const char *function,
                           const char *format,
