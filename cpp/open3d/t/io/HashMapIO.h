@@ -26,32 +26,27 @@
 
 #pragma once
 
+#include <string>
+
 #include "open3d/core/Tensor.h"
-#include "open3d/t/geometry/Image.h"
-#include "open3d/t/geometry/RGBDImage.h"
-#include "open3d/t/geometry/TSDFVoxelGrid.h"
-#include "open3d/t/pipelines/odometry/RGBDOdometry.h"
-#include "open3d/t/pipelines/voxelhashing/Frame.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 namespace open3d {
 namespace t {
-namespace pipelines {
-namespace voxelhashing {
+namespace io {
 
-struct Option {
-    Option() {}
+/// Read a hash map's keys and values from a npz file at 'key' and 'value'.
+/// Return a hash map on CPU.
+///
+/// \param filename The npz file name to read from.
+core::HashMap ReadHashMap(const std::string& filename);
 
-    /// TSDF VoxelBlock options
-    float voxel_size = 3.0 / 512.0;
-    int est_block_count = 40000;
+/// Save a hash map's keys and values to a npz file at 'key' and 'value'.
+///
+/// \param filename The npz file name to write to.
+/// \param hashmap HashMap to save.
+void WriteHashMap(const std::string& filename, const core::HashMap& hashmap);
 
-    /// Input options
-    float depth_scale = 1000.0f;
-    float depth_max = 3.0f;
-    float depth_diff = 0.07f;
-};
-
-}  // namespace voxelhashing
-}  // namespace pipelines
+}  // namespace io
 }  // namespace t
 }  // namespace open3d

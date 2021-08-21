@@ -30,7 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -57,7 +57,12 @@ static const std::unordered_map<std::string, std::string>
                  "Also compute normals for the point cloud. If True, the point "
                  "cloud will only contain points with valid normals. If "
                  "normals are requested, the depth map is first filtered to "
-                 "ensure smooth normals."}};
+                 "ensure smooth normals."},
+                {"max_nn",
+                 "NeighbourSearch max neighbours parameter [default = 30]."},
+                {"radius",
+                 "[optional] NeighbourSearch radius parameter to use "
+                 "HybridSearch. [Recommended ~1.4x voxel size]."}};
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
@@ -175,14 +180,25 @@ The attributes of the point cloud have different levels::
                    "Scale points.");
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
+
     pointcloud.def(
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
                 return pointcloud.VoxelDownSample(
-                        voxel_size, core::HashmapBackend::Default);
+                        voxel_size, core::HashBackendType::Default);
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
+
+    pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
+                   py::call_guard<py::gil_scoped_release>(),
+                   py::arg("max_nn") = 30, py::arg("radius") = py::none(),
+                   "Function to estimate point normals. If the pointcloud "
+                   "normals exists, the estimated normals are oriented "
+                   "with respect to the same. It uses KNN search if only "
+                   "max_nn parameter is provided, and HybridSearch if radius "
+                   "parameter is also provided.");
+
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,
             py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,
@@ -215,6 +231,8 @@ The attributes of the point cloud have different levels::
     pointcloud.def("to_legacy", &PointCloud::ToLegacy,
                    "Convert to a legacy Open3D PointCloud.");
 
+    docstring::ClassMethodDocInject(m, "PointCloud", "estimate_normals",
+                                    map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image",
                                     map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image",

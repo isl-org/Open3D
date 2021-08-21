@@ -24,39 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/DeviceHashmap.h"
+#pragma once
 
-#include "open3d/core/hashmap/Hashmap.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace pipelines {
+namespace slam {
 
-std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
-        int64_t init_capacity,
-        const Dtype& dtype_key,
-        const Dtype& dtype_value,
-        const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
-        const Device& device,
-        const HashmapBackend& backend) {
-    if (device.GetType() == Device::DeviceType::CPU) {
-        return CreateCPUHashmap(init_capacity, dtype_key, dtype_value,
-                                element_shape_key, element_shape_value, device,
-                                backend);
-    }
-#if defined(BUILD_CUDA_MODULE)
-    else if (device.GetType() == Device::DeviceType::CUDA) {
-        return CreateCUDAHashmap(init_capacity, dtype_key, dtype_value,
-                                 element_shape_key, element_shape_value, device,
-                                 backend);
-    }
-#endif
-    else {
-        utility::LogError("[CreateDeviceHashmap]: Unimplemented device");
-    }
-}
+void pybind_slam(py::module &m);
 
-}  // namespace core
+}  // namespace slam
+}  // namespace pipelines
+}  // namespace t
 }  // namespace open3d

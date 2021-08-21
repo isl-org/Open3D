@@ -14,3 +14,7 @@ target_sources(pybind PRIVATE
 target_sources(pybind PRIVATE
     slac/slac.cpp
 )
+
+target_sources(pybind PRIVATE
+    slam/slam.cpp
+)

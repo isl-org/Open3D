@@ -16,15 +16,16 @@ set(Open3D_3RDPARTY_EXTERNAL_MODULES)
 set(Open3D_3RDPARTY_PUBLIC_TARGETS)
 
 # HEADER_TARGETS
-# CMake targets we use in our public interface, but as a special case we do not
-# need to link against the library. This simplifies dependencies where we merely
-# expose declared data types from other libraries in our public headers, so it
-# would be overkill to require all library users to link against that dependency.
+# CMake targets we use in our public interface, but as a special case we only
+# need to link privately against the library. This simplifies dependencies
+# where we merely expose declared data types from other libraries in our
+# public headers, so it would be overkill to require all library users to link
+# against that dependency.
 set(Open3D_3RDPARTY_HEADER_TARGETS)
 
 # PRIVATE_TARGETS
 # CMake targets for dependencies which are not exposed in the public API. This
-# will probably include HEADER_TARGETS, but also anything else we use internally.
+# will include anything else we use internally.
 set(Open3D_3RDPARTY_PRIVATE_TARGETS)
 
 find_package(PkgConfig QUIET)
@@ -303,6 +304,11 @@ function(open3d_find_package_3rdparty_library name)
         endif()
         if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
             install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
+            # Ensure that imported targets will be found again.
+            if(arg_TARGETS)
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES ${arg_PACKAGE})
+                set(Open3D_3RDPARTY_EXTERNAL_MODULES ${Open3D_3RDPARTY_EXTERNAL_MODULES} PARENT_SCOPE)
+            endif()
         endif()
         set(${name}_FOUND TRUE PARENT_SCOPE)
         set(${name}_VERSION ${${arg_PACKAGE_VERSION_VAR}} PARENT_SCOPE)
@@ -445,10 +451,9 @@ endfunction()
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
-# CUDAToolkit
+# CUDAToolkit (required at this point for subsequent checks and targets)
 if(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
-    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
 endif()
 
 # Threads
@@ -459,7 +464,6 @@ open3d_find_package_3rdparty_library(3rdparty_threads
     PACKAGE Threads
     TARGETS Threads::Threads
 )
-list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Threads")
 
 # Assimp
 include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
@@ -480,9 +484,6 @@ if(WITH_OPENMP)
     )
     if(3rdparty_openmp_FOUND)
         message(STATUS "Building with OpenMP")
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenMP")
-        endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openmp)
     endif()
 endif()
@@ -494,11 +495,6 @@ if(UNIX AND NOT APPLE)
         PACKAGE X11
         TARGETS X11::X11
     )
-    if(3rdparty_x11_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "X11")
-        endif()
-    endif()
 endif()
 
 # CUB (already included in CUDA 11.0+)
@@ -534,11 +530,7 @@ if(USE_SYSTEM_EIGEN3)
         PACKAGE Eigen3
         TARGETS Eigen3::Eigen
     )
-    if(3rdparty_eigen3_FOUND)
-        # Eigen3 is a publicly visible dependency, so add it to the list of
-        # modules we need to find in the Open3D config script.
-        list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Eigen3")
-    else()
+    if(NOT 3rdparty_eigen3_FOUND)
         set(USE_SYSTEM_EIGEN3 OFF)
     endif()
 endif()
@@ -568,9 +560,7 @@ if(USE_SYSTEM_GLEW)
         PACKAGE GLEW
         TARGETS GLEW::GLEW
     )
-    if(3rdparty_glew_FOUND)
-        list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "GLEW")
-    else()
+    if(NOT 3rdparty_glew_FOUND)
         open3d_pkg_config_3rdparty_library(3rdparty_glew
             HEADER
             SEARCH_ARGS glew
@@ -596,7 +586,6 @@ if(NOT USE_SYSTEM_GLEW)
     endif()
 endif()
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_glew)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_glew)
 
 # GLFW
 if(USE_SYSTEM_GLFW)
@@ -605,9 +594,7 @@ if(USE_SYSTEM_GLFW)
         PACKAGE glfw3
         TARGETS glfw
     )
-    if(3rdparty_glfw_FOUND)
-        list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "glfw3")
-    else()
+    if(NOT 3rdparty_glfw_FOUND)
         open3d_pkg_config_3rdparty_library(3rdparty_glfw
             HEADER
             SEARCH_ARGS glfw3
@@ -655,17 +642,13 @@ if(TARGET Open3D::3rdparty_x11)
     target_link_libraries(3rdparty_glfw INTERFACE Open3D::3rdparty_x11)
 endif()
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_glfw)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_glfw)
 
 # TurboJPEG
 if(USE_SYSTEM_JPEG AND BUILD_AZURE_KINECT)
     open3d_pkg_config_3rdparty_library(3rdparty_turbojpeg
         SEARCH_ARGS turbojpeg
     )
-    if(3rdparty_turbojpeg_FOUND)
-        message(STATUS "Using installed third-party library turbojpeg")
-    else()
-        message(STATUS "Unable to find installed third-party library turbojpeg")
+    if(NOT 3rdparty_turbojpeg_FOUND)
         message(STATUS "Azure Kinect driver needs TurboJPEG API")
         set(USE_SYSTEM_JPEG OFF)
     endif()
@@ -678,9 +661,6 @@ if(USE_SYSTEM_JPEG)
         TARGETS JPEG::JPEG
     )
     if(3rdparty_jpeg_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "JPEG")
-        endif()
         if(TARGET Open3D::3rdparty_turbojpeg)
             list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_turbojpeg)
         endif()
@@ -716,11 +696,7 @@ if(USE_SYSTEM_LIBLZF)
         PACKAGE liblzf
         TARGETS liblzf::liblzf
     )
-    if(3rdparty_liblzf_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "JPEG")
-        endif()
-    else()
+    if(NOT 3rdparty_liblzf_FOUND)
         set(USE_SYSTEM_LIBLZF OFF)
     endif()
 endif()
@@ -753,11 +729,7 @@ if (BUILD_LIBREALSENSE)
             PACKAGE realsense2
             TARGETS realsense2::realsense2
         )
-        if(3rdparty_librealsense_FOUND)
-            if(NOT BUILD_SHARED_LIBS)
-                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "realsense2")
-            endif()
-        else()
+        if(NOT 3rdparty_librealsense_FOUND)
             set(USE_SYSTEM_LIBREALSENSE OFF)
         endif()
     endif()
@@ -786,11 +758,7 @@ if(USE_SYSTEM_PNG)
         PACKAGE_VERSION_VAR PNG_VERSION_STRING
         TARGETS PNG::PNG
     )
-    if(3rdparty_png_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "PNG")
-        endif()
-    else()
+    if(NOT 3rdparty_png_FOUND)
         set(USE_SYSTEM_PNG OFF)
     endif()
 endif()
@@ -840,11 +808,7 @@ if(USE_SYSTEM_TINYGLTF)
         PACKAGE TinyGLTF
         TARGETS TinyGLTF::TinyGLTF
     )
-    if(3rdparty_tinygltf_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "TinyGLTF")
-        endif()
-    else()
+    if(NOT 3rdparty_tinygltf_FOUND)
         set(USE_SYSTEM_TINYGLTF OFF)
     endif()
 endif()
@@ -864,11 +828,7 @@ if(USE_SYSTEM_TINYOBJLOADER)
         PACKAGE tinyobjloader
         TARGETS tinyobjloader::tinyobjloader
     )
-    if(3rdparty_tinyobjloader_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "tinyobjloader")
-        endif()
-    else()
+    if(NOT 3rdparty_tinyobjloader_FOUND)
         set(USE_SYSTEM_TINYOBJLOADER OFF)
     endif()
 endif()
@@ -888,11 +848,7 @@ if(USE_SYSTEM_QHULLCPP)
         PACKAGE Qhull
         TARGETS Qhull::qhullcpp
     )
-    if(3rdparty_qhullcpp_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "Qhull")
-        endif()
-    else()
+    if(NOT 3rdparty_qhullcpp_FOUND)
         set(USE_SYSTEM_QHULLCPP OFF)
     endif()
 endif()
@@ -959,11 +915,7 @@ if(USE_SYSTEM_FMT)
         PACKAGE fmt
         TARGETS fmt::fmt-header-only fmt::fmt
     )
-    if(3rdparty_fmt_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "fmt")
-        endif()
-    else()
+    if(NOT 3rdparty_fmt_FOUND)
         set(USE_SYSTEM_FMT OFF)
     endif()
 endif()
@@ -1046,11 +998,6 @@ else()
         PACKAGE OpenGL
         TARGETS OpenGL::GL
     )
-    if(3rdparty_opengl_FOUND)
-        if(NOT BUILD_SHARED_LIBS)
-            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenGL")
-        endif()
-    endif()
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_opengl)
 
@@ -1061,11 +1008,7 @@ if(BUILD_GUI)
             PACKAGE ImGui
             TARGETS ImGui::ImGui
         )
-        if(3rdparty_imgui_FOUND)
-            if(NOT BUILD_SHARED_LIBS)
-                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "ImGui")
-            endif()
-        else()
+        if(NOT 3rdparty_imgui_FOUND)
             set(USE_SYSTEM_IMGUI OFF)
         endif()
     endif()
@@ -1190,7 +1133,6 @@ if(BUILD_GUI)
         target_link_options(3rdparty_filament INTERFACE "-fobjc-link-runtime")
     endif()
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_filament)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_filament)
 endif()
 
 # RPC interface
@@ -1338,6 +1280,7 @@ if(BUILD_CUDA_MODULE)
         if(NOT BUILD_SHARED_LIBS)
             # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/Open3D/Open3DTargets.cmake.
             install(TARGETS 3rdparty_cublas EXPORT Open3DTargets)
+            list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "CUDAToolkit")
         endif()
         add_library(Open3D::3rdparty_cublas ALIAS 3rdparty_cublas)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_cublas)
@@ -1412,7 +1355,7 @@ endif ()
 
 # WebRTC
 if(BUILD_WEBRTC)
-    # Incude WebRTC headers in Open3D.h.
+    # Include WebRTC headers in Open3D.h.
     set(BUILD_WEBRTC_COMMENT "")
 
     # Build WebRTC from source for advanced users.
@@ -1448,7 +1391,7 @@ if(BUILD_WEBRTC)
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_civetweb)
 else()
-    # Don't incude WebRTC headers in Open3D.h.
+    # Don't include WebRTC headers in Open3D.h.
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
 
@@ -1462,3 +1405,7 @@ open3d_import_3rdparty_library(3rdparty_embree
     DEPENDS      ext_embree
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
+
+# Compactify list of external modules.
+# This must be called after all dependencies are processed.
+list(REMOVE_DUPLICATES Open3D_3RDPARTY_EXTERNAL_MODULES)

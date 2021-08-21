@@ -283,7 +283,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             {{"search_param",
               "The KDTree search parameters for neighborhood search."},
              {"fast_normal_computation",
-              "If true, the normal estiamtion uses a non-iterative method to "
+              "If true, the normal estimation uses a non-iterative method to "
               "extract the eigenvector from the covariance matrix. This is "
               "faster, but is not as numerical stable."}});
     docstring::ClassMethodDocInject(

@@ -261,14 +261,25 @@ public:
 
                             this->trajectory_ = std::make_shared<
                                     camera::PinholeCameraTrajectory>();
+
                             float voxel_size = prop_values_.voxel_size;
-                            this->model_ = std::make_shared<
-                                    t::pipelines::voxelhashing::Model>(
-                                    voxel_size, voxel_size * 6, 16,
-                                    prop_values_.bucket_count,
-                                    core::Tensor::Eye(4, core::Dtype::Float64,
-                                                      core::Device("CPU:0")),
-                                    core::Device(device_str_));
+                            // The SDF truncation distance is empirically set to
+                            // 6 * voxel_size. Further SDF measurements can be
+                            // regarded as outliers and truncated for a smooth
+                            // result.
+                            // The volumetric hash map maps 3D coordinates to
+                            // 16^3 voxel blocks, to ensure a globally sparse
+                            // locally dense data structure. This captures the
+                            // data distribution while maintaining a good memory
+                            // access pattern.
+                            this->model_ =
+                                    std::make_shared<t::pipelines::slam::Model>(
+                                            voxel_size, voxel_size * 6, 16,
+                                            prop_values_.bucket_count,
+                                            core::Tensor::Eye(
+                                                    4, core::Dtype::Float64,
+                                                    core::Device("CPU:0")),
+                                            core::Device(device_str_));
                             this->is_started_ = true;
                         });
             }
@@ -416,7 +427,7 @@ protected:
     } surface_;
     std::atomic<bool> is_scene_updated_;
 
-    std::shared_ptr<t::pipelines::voxelhashing::Model> model_;
+    std::shared_ptr<t::pipelines::slam::Model> model_;
     std::shared_ptr<camera::PinholeCameraTrajectory> trajectory_;
     std::thread update_thread_;
 
@@ -519,9 +530,9 @@ protected:
         t::geometry::Image ref_color =
                 *t::io::CreateImageFromFile(rgb_files[0]);
 
-        t::pipelines::voxelhashing::Frame input_frame(
+        t::pipelines::slam::Frame input_frame(
                 ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
-        t::pipelines::voxelhashing::Frame raycast_frame(
+        t::pipelines::slam::Frame raycast_frame(
                 ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
 
         // Odometry
@@ -657,8 +668,8 @@ protected:
             info << T_eigen.format(CleanFmt) << "\n\n";
 
             info << fmt::format("Active voxel blocks: {}/{}\n",
-                                model_->GetHashmap().Size(),
-                                model_->GetHashmap().GetCapacity());
+                                model_->GetHashMap().Size(),
+                                model_->GetHashMap().GetCapacity());
             {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 int64_t len =
@@ -802,7 +813,7 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > VoxelHashingGUI [dataset_path]");
+    utility::LogInfo("    > DenseSLAMGUI [dataset_path]");
     utility::LogInfo("      Given a sequence of RGBD images, reconstruct point cloud from color and depth images");
     utility::LogInfo("");
     utility::LogInfo("Basic options:");
@@ -831,7 +842,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::string intrinsic_path = utility::GetProgramOptionAsString(
-            argc, argv, "--intrinsics_json", "");
+            argc, argv, "--intrinsics_path", "");
 
     std::string device_code =
             utility::GetProgramOptionAsString(argc, argv, "--device", "CUDA:0");
