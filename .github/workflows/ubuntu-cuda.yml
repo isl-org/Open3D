@@ -37,7 +37,7 @@ jobs:
       BASE_IMAGE: nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
       BUILD_COMMON_CUDA_ARCHS: ${{ matrix.is_master && 'ON' || 'OFF' }}
-      CCACHE_TAR_NAME: open3d-cuda-ci-ccache
+      CCACHE_TAR_NAME: open3d-ubuntu-1804-cuda-ci-ccache
       CMAKE_VERSION: cmake-3.19.7-Linux-x86_64
       CCACHE_VERSION: 4.3
       PYTHON_VERSION: ${{ matrix.python_version }}
@@ -64,14 +64,14 @@ jobs:
             --build-arg CMAKE_VERSION=${{ env.CMAKE_VERSION }} \
             --build-arg CCACHE_VERSION=${{ env.CCACHE_VERSION }} \
             --build-arg PYTHON_VERSION=${{ env.PYTHON_VERSION }} \
-            -t open3d-cuda-ci:latest \
-            -f .github/workflows/Dockerfile.cuda .
+            -t open3d-ubuntu-cuda-ci:latest \
+            -f .github/workflows/Dockerfile.ubuntu-cuda .
       - name: Extract wheel from Docker
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/artifacts
           docker run --rm \
             -v ${GITHUB_WORKSPACE}/artifacts:/opt/mount \
-            open3d-cuda-ci:latest \
+            open3d-ubuntu-cuda-ci:latest \
             bash -c "cp /root/Open3D/build/lib/python_package/pip_package/open3d*.whl                /opt/mount && \
                      cp /root/Open3D/build/lib/python_package/conda_package/linux-64/open3d*.tar.bz2 /opt/mount && \
                      cp /${{ env.CCACHE_TAR_NAME }}.tar.gz                                           /opt/mount"

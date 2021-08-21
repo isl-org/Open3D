@@ -5,7 +5,7 @@ FROM ${BASE_IMAGE}
 # Customizable build arguments from cuda.yml
 ARG DEVELOPER_BUILD=ON
 ARG BUILD_COMMON_CUDA_ARCHS=OFF
-ARG CCACHE_TAR_NAME=open3d-cuda-ci-ccache
+ARG CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
 ARG CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
 ARG CCACHE_VERSION=4.3
 ARG PYTHON_VERSION=3.6
