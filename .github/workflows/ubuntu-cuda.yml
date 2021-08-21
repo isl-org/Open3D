@@ -1,4 +1,4 @@
-name: CUDA CI
+name: Ubuntu CUDA CI
 
 on:
   workflow_dispatch:
