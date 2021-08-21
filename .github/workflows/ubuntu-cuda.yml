@@ -89,7 +89,7 @@ jobs:
             artifacts/${{ env.PIP_PKG_NAME }}
             artifacts/${{ env.CONDA_PKG_NAME }}
           if-no-files-found: error
-      - name: GCloud CLI setup
+      - name: GCloud CLI setup (GCE_SA_KEY_DOCS_CI)
         uses: google-github-actions/setup-gcloud@master
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
@@ -99,6 +99,13 @@ jobs:
       - name: Upload ccache to GCS
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/artifacts/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
+      - name: GCloud CLI setup (GCE_SA_KEY_GPU_CI)
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
       - name: Upload wheel to GCS
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/artifacts/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
