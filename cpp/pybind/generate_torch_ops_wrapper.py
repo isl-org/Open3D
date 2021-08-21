@@ -1,4 +1,4 @@
- # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -23,7 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-
 """This script inspects the open3d_torch_ops library and generates function wrappers"""
 import os
 import sys
