@@ -114,7 +114,7 @@ core::Tensor VoxelBlockGrid::GetVoxelIndices() const {
     int64_t resolution3 = resolution2 * resolution;
 
     // Non-kernel version.
-    // TODO: kernel version
+    /// TODO: Check if kernel version is necessary.
     core::Tensor linear_coordinates = core::Tensor::Arange(
             0, n_blocks * resolution3, 1, core::Int64, device);
 

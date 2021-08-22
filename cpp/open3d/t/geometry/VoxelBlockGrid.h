@@ -55,6 +55,7 @@ public:
     ///                {{1}, {1}, {3}},
     ///                0.005,
     ///                16,
+    ///                10000,
     ///                core::Device("CUDA:0"),
     ///                core::HashBackendType::Default);
     VoxelBlockGrid(const std::vector<std::string> &attr_names,
@@ -78,34 +79,41 @@ public:
     /// A sugar for hashmap.GetValueTensor(i)
     core::Tensor GetAttribute(const std::string &attr_name) const;
 
-    /// Get the coordinate tensor of active voxels per block, in the shape of
-    /// (hashmap.Size(), resolution, resolution, resolution, 3) in Int32.
-    /// Useful for developing user-defined tensor-based operations.
+    /// Get a (4, N), Int64 index tensor for active voxels, used for advanced
+    /// indexing.
+    /// Returned index tensor can access selected value buffers in order of
+    /// (buf_index, index_voxel_x, index_voxel_y, index_voxel_z).
     ///
-    /// To access actual metric coordinates, multiply by (voxel_size_ *
-    /// resolution).
+    /// Example:
+    /// For a voxel block grid with (2, 2, 2) block resolution,
+    /// if the active block coordinates are at buffer index {(2, 4)} given by
+    /// GetActiveIndices() from the underlying hash map,
+    /// the returned result will be a (4, 2 x 8) tensor:
+    /// {
+    /// (2, 0, 0, 0), (2, 1, 0, 0), (2, 0, 1, 0), (2, 1, 1, 0),
+    /// (2, 0, 0, 1), (2, 1, 0, 1), (2, 0, 1, 1), (2, 1, 1, 1),
+    /// (4, 0, 0, 0), (4, 1, 0, 0), (4, 0, 1, 0), (4, 1, 1, 0),
+    /// (4, 0, 0, 1), (4, 1, 0, 1), (4, 0, 1, 1), (4, 1, 1, 1),
+    /// }
+    /// Note: the slicing order is z-y-x.
+    core::Tensor GetVoxelIndices() const;
+
+    /// Get a (3, hashmap.Size() * resolution^3) coordinate tensor of active
+    /// voxels per block, used for geometry transformation jointly with
+    /// indices from GetVoxelIndices.
     ///
     /// Example:
     /// For a voxel block grid with (2, 2, 2) block resolution,
     /// if the active block coordinates are {(-1, 3, 2), (0, 2, 4)},
-    /// the returned results will be 2 x 8 3D coordinates:
+    /// the returned result will be a (3, 2 x 8) tensor given by:
     /// {
-    /// (-1, 3, 2) * 2 + (0, 0, 0) = (-2, 6, 4)
-    /// (-1, 3, 2) * 2 + (1, 0, 0) = (-1, 6, 4)
-    /// ...
-    /// (-1, 3, 2) * 2 + (1, 1, 1) = (-1, 7, 5)
-    ///
-    /// (0, 2, 4) * 2 + (0, 0, 0) = (0, 4, 8)
-    /// (0, 2, 4) * 2 + (1, 0, 0) = (1, 4, 8)
-    /// ...
-    /// (0, 2, 4) * 2 + (1, 1, 1) = (1, 5, 9)
+    /// key_tensor[voxel_indices[0]] * block_resolution_ + voxel_indices[1]
+    /// key_tensor[voxel_indices[0]] * block_resolution_ + voxel_indices[2]
+    /// key_tensor[voxel_indices[0]] * block_resolution_ + voxel_indices[3]
     /// }
+    /// Note: the coordinates are VOXEL COORDINATES in Int64. To access metric
+    /// coordinates, multiply by voxel size.
     core::Tensor GetVoxelCoordinates(const core::Tensor &voxel_indices) const;
-
-    /// Get a (4, N) index tensor of active voxels.
-    /// To access actual metric coordinates, multiply by (voxel_size_ *
-    /// resolution).
-    core::Tensor GetVoxelIndices() const;
 
     ////////////////////////////////////////////////////////
     /// Integration related properties
