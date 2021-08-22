@@ -49,6 +49,7 @@ static const std::unordered_map<
                 {"npz", ReadPointCloudFromNPZ},
                 {"xyzi", ReadPointCloudFromXYZI},
                 {"ply", ReadPointCloudFromPLY},
+                {"pcd", ReadPointCloudFromPCD},
                 {"pts", ReadPointCloudFromPTS},
         };
 
