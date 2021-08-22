@@ -150,8 +150,8 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
 
     std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Slab);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -164,7 +164,7 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
     for (auto backend : backends) {
         auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
                                   {core::Float32, core::Float32, core::UInt16},
-                                  {{1}, {1}, {3}}, 3.0 / 512, 16, 10000, device,
+                                  {{1}, {1}, {3}}, 3.0 / 512, 8, 10000, device,
                                   backend);
 
         const int i = 0;
@@ -204,7 +204,7 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     for (auto backend : backends) {
         auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
                                   {core::Float32, core::Float32, core::UInt16},
-                                  {{1}, {1}, {3}}, 3.0 / 512, 16, 10000, device,
+                                  {{1}, {1}, {3}}, 3.0 / 512, 8, 10000, device,
                                   backend);
 
         for (size_t i = 0; i < extrinsics.size(); ++i) {

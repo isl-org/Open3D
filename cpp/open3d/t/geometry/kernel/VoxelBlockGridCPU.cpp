@@ -192,7 +192,6 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
     });
 
     int64_t block_count = set.size();
-    std::cout << "block_count " << block_count << "\n";
     if (block_count == 0) {
         utility::LogError(
                 "No block is touched in TSDF volume, abort integration. Please "

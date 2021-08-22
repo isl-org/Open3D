@@ -107,15 +107,16 @@ void IntegrateCPU
 
     // Optional color integration
     NDArrayIndexer color_indexer;
-    // bool integrate_color = false;
+    bool integrate_color = false;
     if (color.NumElements() != 0) {
         color_indexer = NDArrayIndexer(color, 2);
-        // integrate_color = true;
+        integrate_color = true;
     }
 
     // Plain arrays that does not require indexers
     const int* indices_ptr = indices.GetDataPtr<int>();
 
+    /// Fix data types
     float* tsdf_base_ptr = block_values[0].GetDataPtr<float>();
     float* weight_base_ptr = block_values[1].GetDataPtr<float>();
     uint16_t* color_base_ptr = block_values[2].GetDataPtr<uint16_t>();
@@ -178,17 +179,19 @@ void IntegrateCPU
                 float* weight_ptr = weight_base_ptr + linear_idx;
                 uint16_t* color_ptr = color_base_ptr + 3 * linear_idx;
 
-                float* input_color_ptr = color_indexer.GetDataPtr<float>(
-                        static_cast<int64_t>(u), static_cast<int64_t>(v));
-
                 float inv_wsum = 1.0f / (*weight_ptr + 1);
                 float weight = *weight_ptr;
 
                 *tsdf_ptr = (weight * (*tsdf_ptr) + sdf) * inv_wsum;
-                for (int i = 0; i < 3; ++i) {
-                    color_ptr[i] =
-                            (weight * color_ptr[i] + input_color_ptr[i]) *
-                            inv_wsum;
+
+                if (integrate_color) {
+                    float* input_color_ptr = color_indexer.GetDataPtr<float>(
+                            static_cast<int64_t>(u), static_cast<int64_t>(v));
+                    for (int i = 0; i < 3; ++i) {
+                        color_ptr[i] =
+                                (weight * color_ptr[i] + input_color_ptr[i]) *
+                                inv_wsum;
+                    }
                 }
                 *weight_ptr = (weight + 1);
             });

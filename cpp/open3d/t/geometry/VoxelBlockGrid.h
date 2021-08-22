@@ -61,7 +61,7 @@ public:
     VoxelBlockGrid(const std::vector<std::string> &attr_names,
                    const std::vector<core::Dtype> &attr_dtypes,
                    const std::vector<core::SizeVector> &attr_channels,
-                   double voxel_size,
+                   float voxel_size,
                    int64_t block_resolution = 16,
                    int64_t block_count = 10000,
                    const core::Device &device = core::Device("CPU:0"),

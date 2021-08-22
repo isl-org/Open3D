@@ -41,7 +41,7 @@ VoxelBlockGrid::VoxelBlockGrid(
         const std::vector<std::string> &attr_names,
         const std::vector<core::Dtype> &attr_dtypes,
         const std::vector<core::SizeVector> &attr_channels,
-        double voxel_size,
+        float voxel_size,
         int64_t block_resolution,
         int64_t block_count,
         const core::Device &device,
@@ -164,10 +164,12 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
     }
 
     core::Tensor block_coords;
-    kernel::voxel_grid::DepthTouch(
-            frustum_hashmap_, depth.AsTensor(), intrinsic, extrinsic,
-            block_coords, block_resolution_, voxel_size_, voxel_size_ * 6,
-            depth_scale, depth_max, down_factor);
+    float trunc_multiplier = block_resolution_ * 0.5;
+    kernel::voxel_grid::DepthTouch(frustum_hashmap_, depth.AsTensor(),
+                                   intrinsic, extrinsic, block_coords,
+                                   block_resolution_, voxel_size_,
+                                   voxel_size_ * trunc_multiplier, depth_scale,
+                                   depth_max, down_factor);
 
     return block_coords;
 }
@@ -175,7 +177,7 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
 core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(const PointCloud &pcd) {
     core::Tensor positions = pcd.GetPointPositions();
 
-    const int64_t est_neighbor_multiplier = 4;
+    const int64_t est_neighbor_multiplier = 8;
     if (frustum_hashmap_ == nullptr) {
         int64_t capacity = positions.GetLength() * est_neighbor_multiplier;
         frustum_hashmap_ = std::make_shared<core::HashMap>(
@@ -186,9 +188,10 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(const PointCloud &pcd) {
     }
 
     core::Tensor block_coords;
-    kernel::voxel_grid::PointCloudTouch(frustum_hashmap_, positions,
-                                        block_coords, block_resolution_,
-                                        voxel_size_, 6 * voxel_size_);
+    float trunc_multiplier = block_resolution_ / 2 - 1;
+    kernel::voxel_grid::PointCloudTouch(
+            frustum_hashmap_, positions, block_coords, block_resolution_,
+            voxel_size_, voxel_size_ * trunc_multiplier);
     return block_coords;
 }
 
@@ -210,10 +213,11 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
 
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
+    float trunc_multiplier = block_resolution_ * 0.5;
     kernel::voxel_grid::Integrate(
             depth.AsTensor(), color.AsTensor(), buf_indices, block_keys,
             block_values, intrinsic, extrinsic, block_resolution_, voxel_size_,
-            voxel_size_ * 6, depth_scale, depth_max);
+            voxel_size_ * trunc_multiplier, depth_scale, depth_max);
 }
 
 std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
@@ -242,12 +246,14 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
             block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
             down_factor, block_resolution_, voxel_size_, depth_min, depth_max);
 
+    float trunc_multiplier = block_resolution_ * 0.5;
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
-    kernel::voxel_grid::RayCast(
-            block_hashmap_, block_values, range_minmax_map, vertex_map,
-            depth_map, color_map, normal_map, intrinsic, extrinsic, height,
-            width, block_resolution_, voxel_size_, voxel_size_ * 6, depth_scale,
-            depth_min, depth_max, weight_threshold);
+    kernel::voxel_grid::RayCast(block_hashmap_, block_values, range_minmax_map,
+                                vertex_map, depth_map, color_map, normal_map,
+                                intrinsic, extrinsic, height, width,
+                                block_resolution_, voxel_size_,
+                                voxel_size_ * trunc_multiplier, depth_scale,
+                                depth_min, depth_max, weight_threshold);
 
     std::unordered_map<std::string, core::Tensor> results;
     results.emplace("vertex", vertex_map);
