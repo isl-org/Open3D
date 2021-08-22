@@ -153,9 +153,10 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
     }
 
     const int64_t down_factor = 4;
+    const int64_t load_factor = 4;
     if (frustum_hashmap_ == nullptr) {
         int64_t capacity = (depth.GetCols() * depth.GetRows()) /
-                           (down_factor * down_factor * 4);
+                           (down_factor * down_factor * load_factor);
         frustum_hashmap_ = std::make_shared<core::HashMap>(
                 capacity, core::Int32, core::SizeVector{3}, core::Int32,
                 core::SizeVector{1}, block_hashmap_->GetDevice());
@@ -170,6 +171,26 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
             frustum_hashmap_, pcd.GetPointPositions().Contiguous(),
             block_coords, block_resolution_, voxel_size_, 6 * voxel_size_);
 
+    return block_coords;
+}
+
+core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(const PointCloud &pcd) {
+    const int64_t est_duplicate_factor = 4;
+
+    core::Tensor positions = pcd.GetPointPositions();
+
+    if (frustum_hashmap_ == nullptr) {
+        int64_t capacity = positions.GetLength() / est_duplicate_factor;
+        frustum_hashmap_ = std::make_shared<core::HashMap>(
+                capacity, core::Int32, core::SizeVector{3}, core::Int32,
+                core::SizeVector{1}, block_hashmap_->GetDevice());
+    } else {
+        frustum_hashmap_->Clear();
+    }
+
+    core::Tensor block_coords;
+    kernel::voxel_grid::Touch(frustum_hashmap_, positions, block_coords,
+                              block_resolution_, voxel_size_, 6 * voxel_size_);
     return block_coords;
 }
 

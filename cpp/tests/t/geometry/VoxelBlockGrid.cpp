@@ -169,8 +169,9 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
             core::Tensor extrinsic_t =
                     core::eigen_converter::EigenMatrixToTensor(extrinsic);
 
-            core::Tensor block_coords = vbg.GetUniqueBlockCoordinates(
-                    depth, intrinsic_t, extrinsic_t);
+            PointCloud pcd = PointCloud::CreateFromDepthImage(
+                    depth, intrinsic_t, extrinsic_t, depth_scale, depth_max, 4);
+            core::Tensor block_coords = vbg.GetUniqueBlockCoordinates(pcd);
             vbg.Integrate(block_coords, depth, color, intrinsic_t, extrinsic_t);
 
             auto result =
