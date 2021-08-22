@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
+#include "open3d/t/geometry/kernel/VoxelBlockGrid.h"
 
 #include <vector>
 
@@ -37,7 +37,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
-namespace tsdf {
+namespace voxel_grid {
+
 void Touch(std::shared_ptr<core::HashMap>& hashmap,
            const core::Tensor& points,
            core::Tensor& voxel_block_coords,
@@ -66,7 +67,7 @@ void Integrate(const core::Tensor& depth,
                const core::Tensor& color,
                const core::Tensor& block_indices,
                const core::Tensor& block_keys,
-               core::Tensor& block_values,
+               std::vector<core::Tensor>& block_values,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                int64_t resolution,
@@ -88,8 +89,7 @@ void Integrate(const core::Tensor& depth,
     }
 
     if (block_indices.GetDevice() != device ||
-        block_keys.GetDevice() != device ||
-        block_values.GetDevice() != device) {
+        block_keys.GetDevice() != device) {
         utility::LogError(
                 "Incompatible device type for depth and TSDF voxel grid");
     }
@@ -116,42 +116,8 @@ void Integrate(const core::Tensor& depth,
     }
 }
 
-void EstimateRange(const core::Tensor& block_keys,
-                   core::Tensor& range_minmax_map,
-                   const core::Tensor& intrinsics,
-                   const core::Tensor& extrinsics,
-                   int h,
-                   int w,
-                   int down_factor,
-                   int64_t block_resolution,
-                   float voxel_size,
-                   float depth_min,
-                   float depth_max) {
-    static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
-    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
-
-    core::Device device = block_keys.GetDevice();
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
-        EstimateRangeCPU(block_keys, range_minmax_map, intrinsics_d,
-                         extrinsics_d, h, w, down_factor, block_resolution,
-                         voxel_size, depth_min, depth_max);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        EstimateRangeCUDA(block_keys, range_minmax_map, intrinsics_d,
-                          extrinsics_d, h, w, down_factor, block_resolution,
-                          voxel_size, depth_min, depth_max);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
-    } else {
-        utility::LogError("Unimplemented device");
-    }
-}
-
 void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
-             const core::Tensor& block_values,
+             const std::vector<core::Tensor>& block_values,
              const core::Tensor& range_map,
              core::Tensor& vertex_map,
              core::Tensor& depth_map,
@@ -193,19 +159,18 @@ void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
     }
 }
 
-void ExtractSurfacePoints(
-        const core::Tensor& block_indices,
-        const core::Tensor& nb_block_indices,
-        const core::Tensor& nb_block_masks,
-        const core::Tensor& block_keys,
-        const core::Tensor& block_values,
-        core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> normals,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
-        int64_t block_resolution,
-        float voxel_size,
-        float weight_threshold,
-        int& valid_size) {
+void ExtractSurfacePoints(const core::Tensor& block_indices,
+                          const core::Tensor& nb_block_indices,
+                          const core::Tensor& nb_block_masks,
+                          const core::Tensor& block_keys,
+                          const std::vector<core::Tensor>& block_values,
+                          core::Tensor& points,
+                          core::Tensor& normals,
+                          core::Tensor& colors,
+                          int64_t block_resolution,
+                          float voxel_size,
+                          float weight_threshold,
+                          int& valid_size) {
     core::Device device = block_keys.GetDevice();
 
     core::Device::DeviceType device_type = device.GetType();
@@ -228,45 +193,7 @@ void ExtractSurfacePoints(
     }
 }
 
-void ExtractSurfaceMesh(
-        const core::Tensor& block_indices,
-        const core::Tensor& inv_block_indices,
-        const core::Tensor& nb_block_indices,
-        const core::Tensor& nb_block_masks,
-        const core::Tensor& block_keys,
-        const core::Tensor& block_values,
-        core::Tensor& vertices,
-        core::Tensor& triangles,
-        utility::optional<std::reference_wrapper<core::Tensor>> vertex_normals,
-        utility::optional<std::reference_wrapper<core::Tensor>> vertex_colors,
-        int64_t block_resolution,
-        float voxel_size,
-        float weight_threshold,
-        int& vertex_count) {
-    core::Device device = block_keys.GetDevice();
-
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
-        ExtractSurfaceMeshCPU(block_indices, inv_block_indices,
-                              nb_block_indices, nb_block_masks, block_keys,
-                              block_values, vertices, triangles, vertex_normals,
-                              vertex_colors, block_resolution, voxel_size,
-                              weight_threshold, vertex_count);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        ExtractSurfaceMeshCUDA(block_indices, inv_block_indices,
-                               nb_block_indices, nb_block_masks, block_keys,
-                               block_values, vertices, triangles,
-                               vertex_normals, vertex_colors, block_resolution,
-                               voxel_size, weight_threshold, vertex_count);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
-    } else {
-        utility::LogError("Unimplemented device");
-    }
-}
-}  // namespace tsdf
+}  // namespace voxel_grid
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t

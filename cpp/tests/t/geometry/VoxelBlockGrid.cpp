@@ -169,9 +169,13 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
             core::Tensor extrinsic_t =
                     core::eigen_converter::EigenMatrixToTensor(extrinsic);
 
-            vbg.Integrate(depth, color, intrinsic_t, extrinsic_t);
-            auto result = vbg.RayCast(intrinsic_t, extrinsic_t, cols, rows,
-                                      depth_scale, 0.1, depth_max, 1.0);
+            core::Tensor block_coords = vbg.GetUniqueBlockCoordinates(
+                    depth, intrinsic_t, extrinsic_t);
+            vbg.Integrate(block_coords, depth, color, intrinsic_t, extrinsic_t);
+
+            auto result =
+                    vbg.RayCast(block_coords, intrinsic_t, extrinsic_t, cols,
+                                rows, depth_scale, 0.1, depth_max, 1.0);
             core::Tensor range_map = result["range"];
             t::geometry::Image im_near(range_map.Slice(2, 0, 1).Contiguous() /
                                        depth_max);

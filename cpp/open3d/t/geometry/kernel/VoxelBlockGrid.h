@@ -35,7 +35,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
-namespace tsdf {
+namespace voxel_grid {
 
 void Touch(std::shared_ptr<core::HashMap>& hashmap,
            const core::Tensor& points,
@@ -48,7 +48,7 @@ void Integrate(const core::Tensor& depth,
                const core::Tensor& color,
                const core::Tensor& block_indices,
                const core::Tensor& block_keys,
-               core::Tensor& block_values,
+               std::vector<core::Tensor>& block_values,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                int64_t resolution,
@@ -57,20 +57,8 @@ void Integrate(const core::Tensor& depth,
                float depth_scale,
                float depth_max);
 
-void EstimateRange(const core::Tensor& block_keys,
-                   core::Tensor& range_minmax_map,
-                   const core::Tensor& intrinsics,
-                   const core::Tensor& extrinsics,
-                   int h,
-                   int w,
-                   int down_factor,
-                   int64_t block_resolution,
-                   float voxel_size,
-                   float depth_min,
-                   float depth_max);
-
 void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
-             const core::Tensor& block_values,
+             const std::vector<core::Tensor>& block_values,
              const core::Tensor& range_map,
              core::Tensor& vertex_map,
              core::Tensor& depth_map,
@@ -88,35 +76,18 @@ void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
              float depth_max,
              float weight_threshold);
 
-void ExtractSurfacePoints(
-        const core::Tensor& block_indices,
-        const core::Tensor& nb_block_indices,
-        const core::Tensor& nb_block_masks,
-        const core::Tensor& block_keys,
-        const core::Tensor& block_values,
-        core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> normals,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
-        int64_t block_resolution,
-        float voxel_size,
-        float weight_threshold,
-        int& valid_size);
-
-void ExtractSurfaceMesh(
-        const core::Tensor& block_indices,
-        const core::Tensor& inv_block_indices,
-        const core::Tensor& nb_block_indices,
-        const core::Tensor& nb_block_masks,
-        const core::Tensor& block_keys,
-        const core::Tensor& block_values,
-        core::Tensor& vertices,
-        core::Tensor& triangles,
-        utility::optional<std::reference_wrapper<core::Tensor>> vertex_normals,
-        utility::optional<std::reference_wrapper<core::Tensor>> vertex_colors,
-        int64_t block_resolution,
-        float voxel_size,
-        float weight_threshold,
-        int& vertex_count);
+void ExtractSurfacePoints(const core::Tensor& block_indices,
+                          const core::Tensor& nb_block_indices,
+                          const core::Tensor& nb_block_masks,
+                          const core::Tensor& block_keys,
+                          const std::vector<core::Tensor>& block_values,
+                          core::Tensor& points,
+                          core::Tensor& normals,
+                          core::Tensor& colors,
+                          int64_t block_resolution,
+                          float voxel_size,
+                          float weight_threshold,
+                          int& valid_size);
 
 void TouchCPU(std::shared_ptr<core::HashMap>& hashmap,
               const core::Tensor& points,
@@ -129,7 +100,7 @@ void IntegrateCPU(const core::Tensor& depth,
                   const core::Tensor& color,
                   const core::Tensor& block_indices,
                   const core::Tensor& block_keys,
-                  core::Tensor& block_values,
+                  std::vector<core::Tensor>& block_values,
                   const core::Tensor& intrinsics,
                   const core::Tensor& extrinsics,
                   int64_t resolution,
@@ -138,20 +109,8 @@ void IntegrateCPU(const core::Tensor& depth,
                   float depth_scale,
                   float depth_max);
 
-void EstimateRangeCPU(const core::Tensor& block_keys,
-                      core::Tensor& range_minmax_map,
-                      const core::Tensor& intrinsics,
-                      const core::Tensor& extrinsics,
-                      int h,
-                      int w,
-                      int down_factor,
-                      int64_t block_resolution,
-                      float voxel_size,
-                      float depth_min,
-                      float depth_max);
-
 void RayCastCPU(std::shared_ptr<core::DeviceHashBackend>& hashmap,
-                const core::Tensor& block_values,
+                const std::vector<core::Tensor>& block_values,
                 const core::Tensor& range_map,
                 core::Tensor& vertex_map,
                 core::Tensor& depth_map,
@@ -169,35 +128,18 @@ void RayCastCPU(std::shared_ptr<core::DeviceHashBackend>& hashmap,
                 float depth_max,
                 float weight_threshold);
 
-void ExtractSurfacePointsCPU(
-        const core::Tensor& block_indices,
-        const core::Tensor& nb_block_indices,
-        const core::Tensor& nb_block_masks,
-        const core::Tensor& block_keys,
-        const core::Tensor& block_values,
-        core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> normals,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
-        int64_t block_resolution,
-        float voxel_size,
-        float weight_threshold,
-        int& valid_size);
-
-void ExtractSurfaceMeshCPU(
-        const core::Tensor& block_indices,
-        const core::Tensor& inv_block_indices,
-        const core::Tensor& nb_block_indices,
-        const core::Tensor& nb_block_masks,
-        const core::Tensor& block_keys,
-        const core::Tensor& block_values,
-        core::Tensor& vertices,
-        core::Tensor& triangles,
-        utility::optional<std::reference_wrapper<core::Tensor>> vertex_normals,
-        utility::optional<std::reference_wrapper<core::Tensor>> vertex_colors,
-        int64_t block_resolution,
-        float voxel_size,
-        float weight_threshold,
-        int& vertex_count);
+void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
+                             const core::Tensor& nb_block_indices,
+                             const core::Tensor& nb_block_masks,
+                             const core::Tensor& block_keys,
+                             const std::vector<core::Tensor>& block_values,
+                             core::Tensor& points,
+                             core::Tensor& normals,
+                             core::Tensor& colors,
+                             int64_t block_resolution,
+                             float voxel_size,
+                             float weight_threshold,
+                             int& valid_size);
 
 #ifdef BUILD_CUDA_MODULE
 void TouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
@@ -211,7 +153,7 @@ void IntegrateCUDA(const core::Tensor& depth,
                    const core::Tensor& color,
                    const core::Tensor& block_indices,
                    const core::Tensor& block_keys,
-                   core::Tensor& block_values,
+                   std::vector<core::Tensor>& block_values,
                    const core::Tensor& intrinsics,
                    const core::Tensor& extrinsics,
                    int64_t resolution,
@@ -220,20 +162,8 @@ void IntegrateCUDA(const core::Tensor& depth,
                    float depth_scale,
                    float depth_max);
 
-void EstimateRangeCUDA(const core::Tensor& block_keys,
-                       core::Tensor& range_minmax_map,
-                       const core::Tensor& intrinsics,
-                       const core::Tensor& extrinsics,
-                       int h,
-                       int w,
-                       int down_factor,
-                       int64_t block_resolution,
-                       float voxel_size,
-                       float depth_min,
-                       float depth_max);
-
 void RayCastCUDA(std::shared_ptr<core::DeviceHashBackend>& hashmap,
-                 const core::Tensor& block_values,
+                 const std::vector<core::Tensor>& block_values,
                  const core::Tensor& range_map,
                  core::Tensor& vertex_map,
                  core::Tensor& depth_map,
@@ -251,37 +181,21 @@ void RayCastCUDA(std::shared_ptr<core::DeviceHashBackend>& hashmap,
                  float depth_max,
                  float weight_threshold);
 
-void ExtractSurfacePointsCUDA(
-        const core::Tensor& block_indices,
-        const core::Tensor& nb_block_indices,
-        const core::Tensor& nb_block_masks,
-        const core::Tensor& block_keys,
-        const core::Tensor& block_values,
-        core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> normals,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
-        int64_t block_resolution,
-        float voxel_size,
-        float weight_threshold,
-        int& valid_size);
+void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
+                              const core::Tensor& nb_block_indices,
+                              const core::Tensor& nb_block_masks,
+                              const core::Tensor& block_keys,
+                              const std::vector<core::Tensor>& block_values,
+                              core::Tensor& points,
+                              core::Tensor& normals,
+                              core::Tensor& colors,
+                              int64_t block_resolution,
+                              float voxel_size,
+                              float weight_threshold,
+                              int& valid_size);
 
-void ExtractSurfaceMeshCUDA(
-        const core::Tensor& block_indices,
-        const core::Tensor& inv_block_indices,
-        const core::Tensor& nb_block_indices,
-        const core::Tensor& nb_block_masks,
-        const core::Tensor& block_keys,
-        const core::Tensor& block_values,
-        core::Tensor& vertices,
-        core::Tensor& triangles,
-        utility::optional<std::reference_wrapper<core::Tensor>> vertex_normals,
-        utility::optional<std::reference_wrapper<core::Tensor>> vertex_colors,
-        int64_t block_resolution,
-        float voxel_size,
-        float weight_threshold,
-        int& vertex_count);
 #endif
-}  // namespace tsdf
+}  // namespace voxel_grid
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t

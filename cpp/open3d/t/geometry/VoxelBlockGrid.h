@@ -115,20 +115,34 @@ public:
     /// coordinates, multiply by voxel size.
     core::Tensor GetVoxelCoordinates(const core::Tensor &voxel_indices) const;
 
-    ////////////////////////////////////////////////////////
-    /// Integration related properties
-    /// Fuse an RGB-D frame with TSDF integration.
-    void Integrate(const Image &depth,
+    /// Get a (3, M) active block coordinates from a depth image, with potential
+    /// duplicates removed.
+    /// Note: these coordinates are not activated in the internal sparse voxel
+    /// block. They need to be inserted in the hash map.
+    core::Tensor GetUniqueBlockCoordinates(const Image &depth,
+                                           const core::Tensor &intrinsics,
+                                           const core::Tensor &extrinsics,
+                                           float depth_scale = 1000.0f,
+                                           float depth_max = 3.0f);
+
+    /// Obtain active block coordinates from a point cloud.
+    core::Tensor GetUniqueBlockCoordinates(const PointCloud &pcd);
+
+    /// Integrate RGB-D properties in the selected block coordinates.
+    void Integrate(const core::Tensor &block_coords,
+                   const Image &depth,
                    const Image &color,
                    const core::Tensor &intrinsics,
                    const core::Tensor &extrinsics,
                    float depth_scale = 1000.0f,
                    float depth_max = 3.0f);
 
-    PointCloud ExtractSurfacePoints(int estimate_number = -1,
-                                    float weight_threshold = 3.0f);
-
+    /// Perform ray casting in the selected block coordinates.
+    /// The block coordinates in the frustum can be taken from
+    /// GetUniqueBlockCoordinates.
+    /// All the block coordinates can be taken from GetHashMap().GetKeyTensor().
     std::unordered_map<std::string, core::Tensor> RayCast(
+            const core::Tensor &block_coords,
             const core::Tensor &intrinsics,
             const core::Tensor &extrinsics,
             int width,
@@ -138,17 +152,18 @@ public:
             float depth_max = 3.0f,
             float weight_threshold = 3.0f);
 
+    PointCloud ExtractSurfacePoints(int estimate_number = -1,
+                                    float weight_threshold = 3.0f);
+
 private:
     float voxel_size_;
     int64_t block_resolution_;
-
-    core::Tensor active_block_coords_;
 
     // Global hash map: 3D coords -> voxel blocks in SoA.
     std::shared_ptr<core::HashMap> block_hashmap_;
 
     // Local hash map: 3D coords -> indices in block_hashmap_.
-    std::shared_ptr<core::HashMap> point_hashmap_;
+    std::shared_ptr<core::HashMap> frustum_hashmap_;
 
     // Map: attribute name -> index to access the attribute in SoA.
     std::unordered_map<std::string, int> name_attr_map_;

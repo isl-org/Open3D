@@ -30,6 +30,7 @@
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
+#include "open3d/t/geometry/kernel/VoxelBlockGrid.h"
 
 namespace open3d {
 namespace t {
@@ -137,12 +138,12 @@ core::Tensor VoxelBlockGrid::GetVoxelIndices() const {
     return voxel_indices;
 }
 
-void VoxelBlockGrid::Integrate(const Image &depth,
-                               const Image &color,
-                               const core::Tensor &intrinsics,
-                               const core::Tensor &extrinsics,
-                               float depth_scale,
-                               float depth_max) {
+core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
+        const Image &depth,
+        const core::Tensor &intrinsics,
+        const core::Tensor &extrinsics,
+        float depth_scale,
+        float depth_max) {
     if (depth.IsEmpty()) {
         utility::LogError("Input depth is empty.");
     }
@@ -152,56 +153,51 @@ void VoxelBlockGrid::Integrate(const Image &depth,
     }
 
     const int64_t down_factor = 4;
-    if (point_hashmap_ == nullptr) {
+    if (frustum_hashmap_ == nullptr) {
         int64_t capacity = (depth.GetCols() * depth.GetRows()) /
                            (down_factor * down_factor * 4);
-        point_hashmap_ = std::make_shared<core::HashMap>(
+        frustum_hashmap_ = std::make_shared<core::HashMap>(
                 capacity, core::Int32, core::SizeVector{3}, core::Int32,
                 core::SizeVector{1}, block_hashmap_->GetDevice());
     } else {
-        point_hashmap_->Clear();
+        frustum_hashmap_->Clear();
     }
 
     core::Tensor block_coords;
     PointCloud pcd = PointCloud::CreateFromDepthImage(
             depth, intrinsics, extrinsics, depth_scale, depth_max, down_factor);
-    kernel::tsdf::Touch(point_hashmap_, pcd.GetPointPositions().Contiguous(),
-                        block_coords, block_resolution_, voxel_size_,
-                        6 * voxel_size_);
+    kernel::voxel_grid::Touch(
+            frustum_hashmap_, pcd.GetPointPositions().Contiguous(),
+            block_coords, block_resolution_, voxel_size_, 6 * voxel_size_);
 
-    utility::LogInfo("block_coords's shape = {}", block_coords.GetShape());
+    return block_coords;
+}
 
-    // Active voxel blocks in the block hashmap.
+void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
+                               const Image &depth,
+                               const Image &color,
+                               const core::Tensor &intrinsics,
+                               const core::Tensor &extrinsics,
+                               float depth_scale,
+                               float depth_max) {
     core::Tensor buf_indices, masks;
-    int64_t n = block_hashmap_->Size();
-    try {
-        block_hashmap_->Activate(block_coords, buf_indices, masks);
-    } catch (const std::runtime_error &) {
-        utility::LogError(
-                "[TSDFIntegrate] Unable to allocate volume during rehashing. "
-                "Consider using a "
-                "larger block_count at initialization to avoid rehashing "
-                "(currently {}), or choosing a larger voxel_size "
-                "(currently {})",
-                n, voxel_size_);
-    }
+    block_hashmap_->Activate(block_coords, buf_indices, masks);
     block_hashmap_->Find(block_coords, buf_indices, masks);
 
-    active_block_coords_ = block_coords;
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
-    kernel::tsdf::Integrate(depth.AsTensor(), color.AsTensor(), buf_indices,
-                            block_keys, block_values, intrinsics, extrinsics,
-                            block_resolution_, voxel_size_, voxel_size_ * 6,
-                            depth_scale, depth_max);
+    kernel::voxel_grid::Integrate(
+            depth.AsTensor(), color.AsTensor(), buf_indices, block_keys,
+            block_values, intrinsics, extrinsics, block_resolution_,
+            voxel_size_, voxel_size_ * 6, depth_scale, depth_max);
 }
 
 std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
         std::shared_ptr<core::HashMap> &hashmap,
         const core::Tensor &active_buf_indices) {
     // Fixed radius search for spatially hashed voxel blocks.
-    // A generalization will be implementing dense/sparse fixed radius search
-    // with coordinates as hashmap keys.
+    // A generalization will be implementing dense/sparse fixed radius
+    // search with coordinates as hashmap keys.
     core::Tensor key_buffer_int3_tensor = hashmap->GetKeyTensor();
 
     core::Tensor active_keys = key_buffer_int3_tensor.IndexGet(
@@ -241,7 +237,7 @@ PointCloud VoxelBlockGrid::ExtractSurfacePoints(int estimated_number,
 
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
-    kernel::tsdf::ExtractSurfacePoints(
+    kernel::voxel_grid::ExtractSurfacePoints(
             active_buf_indices, active_nb_buf_indices, active_nb_masks,
             block_keys, block_values, points, normals, colors,
             block_resolution_, voxel_size_, weight_threshold, estimated_number);
@@ -254,6 +250,7 @@ PointCloud VoxelBlockGrid::ExtractSurfacePoints(int estimated_number,
 }
 
 std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
+        const core::Tensor &block_coords,
         const core::Tensor &intrinsics,
         const core::Tensor &extrinsics,
         int width,
@@ -271,18 +268,18 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
 
     const int down_factor = 8;
     core::Tensor range_minmax_map;
-    kernel::tsdf::EstimateRange(active_block_coords_, range_minmax_map,
-                                intrinsics, extrinsics, height, width,
-                                down_factor, block_resolution_, voxel_size_,
-                                depth_min, depth_max);
+    kernel::tsdf::EstimateRange(block_coords, range_minmax_map, intrinsics,
+                                extrinsics, height, width, down_factor,
+                                block_resolution_, voxel_size_, depth_min,
+                                depth_max);
 
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
     auto device_hashmap = block_hashmap_->GetDeviceHashBackend();
-    kernel::tsdf::RayCast(device_hashmap, block_values, range_minmax_map,
-                          vertex_map, depth_map, color_map, normal_map,
-                          intrinsics, extrinsics, height, width,
-                          block_resolution_, voxel_size_, voxel_size_ * 6,
-                          depth_scale, depth_min, depth_max, weight_threshold);
+    kernel::voxel_grid::RayCast(
+            device_hashmap, block_values, range_minmax_map, vertex_map,
+            depth_map, color_map, normal_map, intrinsics, extrinsics, height,
+            width, block_resolution_, voxel_size_, voxel_size_ * 6, depth_scale,
+            depth_min, depth_max, weight_threshold);
 
     std::unordered_map<std::string, core::Tensor> results;
     results.emplace("vertex", vertex_map);
