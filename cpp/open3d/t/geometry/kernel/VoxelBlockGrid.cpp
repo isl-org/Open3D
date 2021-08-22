@@ -63,6 +63,33 @@ void Touch(std::shared_ptr<core::HashMap>& hashmap,
     }
 }
 
+void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
+                const core::Tensor& depth,
+                const core::Tensor& intrinsics,
+                const core::Tensor& extrinsics,
+                core::Tensor& voxel_block_coords,
+                int64_t voxel_grid_resolution,
+                float voxel_size,
+                float sdf_trunc,
+                float depth_scale,
+                float depth_max,
+                int stride) {
+    core::Device device = depth.GetDevice();
+
+    core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        DepthTouchCPU(hashmap, depth, intrinsics, extrinsics,
+                      voxel_block_coords, voxel_grid_resolution, voxel_size,
+                      sdf_trunc, depth_scale, depth_max, stride);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(DepthTouchCUDA, hashmap, depth, intrinsics, extrinsics,
+                  voxel_block_coords, voxel_grid_resolution, voxel_size,
+                  sdf_trunc, depth_scale, depth_max, stride);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 void Integrate(const core::Tensor& depth,
                const core::Tensor& color,
                const core::Tensor& block_indices,

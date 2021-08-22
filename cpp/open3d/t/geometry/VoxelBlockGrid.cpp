@@ -153,10 +153,12 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
     }
 
     const int64_t down_factor = 4;
-    const int64_t load_factor = 4;
+    const int64_t est_duplicate_factor = 4;
     if (frustum_hashmap_ == nullptr) {
-        int64_t capacity = (depth.GetCols() * depth.GetRows()) /
-                           (down_factor * down_factor * load_factor);
+        int64_t capacity = (depth.GetCols() / down_factor) *
+                           (depth.GetRows() / down_factor) /
+                           est_duplicate_factor;
+
         frustum_hashmap_ = std::make_shared<core::HashMap>(
                 capacity, core::Int32, core::SizeVector{3}, core::Int32,
                 core::SizeVector{1}, block_hashmap_->GetDevice());
@@ -165,11 +167,10 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
     }
 
     core::Tensor block_coords;
-    PointCloud pcd = PointCloud::CreateFromDepthImage(
-            depth, intrinsics, extrinsics, depth_scale, depth_max, down_factor);
-    kernel::voxel_grid::Touch(
-            frustum_hashmap_, pcd.GetPointPositions().Contiguous(),
-            block_coords, block_resolution_, voxel_size_, 6 * voxel_size_);
+    kernel::voxel_grid::DepthTouch(
+            frustum_hashmap_, depth.AsTensor(), intrinsics, extrinsics,
+            block_coords, block_resolution_, voxel_size_, voxel_size_ * 6,
+            depth_scale, depth_max, down_factor);
 
     return block_coords;
 }

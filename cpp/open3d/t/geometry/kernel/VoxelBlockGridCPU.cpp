@@ -123,6 +123,20 @@ void TouchCPU(std::shared_ptr<core::HashMap>&
     }
 }
 
+void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
+                   const core::Tensor& depth,
+                   const core::Tensor& intrinsics,
+                   const core::Tensor& extrinsics,
+                   core::Tensor& voxel_block_coords,
+                   int64_t voxel_grid_resolution,
+                   float voxel_size,
+                   float sdf_trunc,
+                   float depth_scale,
+                   float depth_max,
+                   int stride) {
+    utility::LogError("Unimplemented.");
+}
+
 }  // namespace voxel_grid
 }  // namespace kernel
 }  // namespace geometry

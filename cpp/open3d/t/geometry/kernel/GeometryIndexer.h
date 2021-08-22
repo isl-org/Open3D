@@ -142,6 +142,14 @@ public:
         *fy = fy_;
     }
 
+    OPEN3D_HOST_DEVICE void GetCameraPosition(float* x,
+                                              float* y,
+                                              float* z) const {
+        *x = extrinsic_[0][3];
+        *y = extrinsic_[1][3];
+        *z = extrinsic_[2][3];
+    }
+
 private:
     float extrinsic_[3][4];
 
