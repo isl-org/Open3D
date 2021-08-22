@@ -134,7 +134,80 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
                    float depth_scale,
                    float depth_max,
                    int stride) {
-    utility::LogError("Unimplemented.");
+    core::Device device = depth.GetDevice();
+    NDArrayIndexer depth_indexer(depth, 2);
+    core::Tensor pose = t::geometry::InverseTransformation(extrinsics);
+    TransformIndexer ti(intrinsics, pose, 1.0f);
+
+    // Output
+    int64_t rows_strided = depth_indexer.GetShape(0) / stride;
+    int64_t cols_strided = depth_indexer.GetShape(1) / stride;
+    int64_t n = rows_strided * cols_strided;
+
+    int64_t resolution = voxel_grid_resolution;
+    float block_size = voxel_size * resolution;
+
+    tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
+    DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
+        core::ParallelFor(device, n, [&](int64_t workload_idx) {
+            int64_t y = (workload_idx / cols_strided) * stride;
+            int64_t x = (workload_idx % cols_strided) * stride;
+
+            float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) / depth_scale;
+            if (d > 0 && d < depth_max) {
+                float x_c = 0, y_c = 0, z_c = 0;
+                ti.Unproject(static_cast<float>(x), static_cast<float>(y), 1.0,
+                             &x_c, &y_c, &z_c);
+                float x_g = 0, y_g = 0, z_g = 0;
+                ti.RigidTransform(x_c, y_c, z_c, &x_g, &y_g, &z_g);
+
+                // Origin
+                float x_o = 0, y_o = 0, z_o = 0;
+                ti.GetCameraPosition(&x_o, &y_o, &z_o);
+
+                // Direction
+                float x_d = x_g - x_o;
+                float y_d = y_g - y_o;
+                float z_d = z_g - z_o;
+
+                const int step_size = 3;
+                const float t_min = std::max(d - sdf_trunc, 0.0f);
+                const float t_max = std::min(d + sdf_trunc, depth_max);
+                const float t_step = (t_max - t_min) / step_size;
+
+                float t = t_min;
+                for (int step = 0; step <= step_size; ++step) {
+                    int xb = static_cast<int>(
+                            std::floor((x_o + t * x_d) / block_size));
+                    int yb = static_cast<int>(
+                            std::floor((y_o + t * y_d) / block_size));
+                    int zb = static_cast<int>(
+                            std::floor((z_o + t * z_d) / block_size));
+                    set.emplace(xb, yb, zb);
+                    t += t_step;
+                }
+            }
+        });
+    });
+
+    int64_t block_count = set.size();
+    std::cout << "block_count " << block_count << "\n";
+    if (block_count == 0) {
+        utility::LogError(
+                "No block is touched in TSDF volume, abort integration. Please "
+                "check specified parameters, "
+                "especially depth_scale and voxel_size");
+    }
+
+    voxel_block_coords = core::Tensor({block_count, 3}, core::Int32, device);
+    int* block_coords_ptr = voxel_block_coords.GetDataPtr<int>();
+    int count = 0;
+    for (auto it = set.begin(); it != set.end(); ++it, ++count) {
+        int64_t offset = count * 3;
+        block_coords_ptr[offset + 0] = static_cast<int>(it->x_);
+        block_coords_ptr[offset + 1] = static_cast<int>(it->y_);
+        block_coords_ptr[offset + 2] = static_cast<int>(it->z_);
+    }
 }
 
 }  // namespace voxel_grid

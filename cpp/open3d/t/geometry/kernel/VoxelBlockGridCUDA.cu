@@ -139,22 +139,24 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
     // Output
     int64_t rows_strided = depth_indexer.GetShape(0) / stride;
     int64_t cols_strided = depth_indexer.GetShape(1) / stride;
+    int64_t n = rows_strided * cols_strided;
+
+    const int64_t step_size = 3;
+    const int64_t est_multipler_factor = step_size;
+
+    static core::Tensor block_coordi;
+    if (block_coordi.GetLength() != est_multipler_factor * n) {
+        block_coordi = core::Tensor({est_multipler_factor * n, 3},
+                                    core::Dtype::Int32, device);
+    }
 
     // Counter
     core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32, device);
     int* count_ptr = count.GetDataPtr<int>();
-
-    int64_t n = rows_strided * cols_strided;
-    static core::Tensor block_coordi;
-    if (block_coordi.GetLength() != 4 * n) {
-        block_coordi = core::Tensor({4 * n, 3}, core::Dtype::Int32, device);
-    }
-
     int* block_coordi_ptr = block_coordi.GetDataPtr<int>();
 
     int64_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
-
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
         core::ParallelFor(device, n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
             int64_t y = (workload_idx / cols_strided) * stride;
@@ -177,13 +179,12 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
                 float y_d = y_g - y_o;
                 float z_d = z_g - z_o;
 
-                const int step_size = 3;
                 const float t_min = max(d - sdf_trunc, 0.0);
                 const float t_max = min(d + sdf_trunc, depth_max);
                 const float t_step = (t_max - t_min) / step_size;
 
                 float t = t_min;
-                int idx = atomicAdd(count_ptr, step_size);
+                int idx = OPEN3D_ATOMIC_ADD(count_ptr, (step_size + 1));
                 for (int step = 0; step <= step_size; ++step) {
                     int offset = (step + idx) * 3;
 
@@ -205,6 +206,8 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
     });
 
     int total_block_count = count[0].Item<int>();
+    std::cout << "allocated: " << block_coordi.GetLength() << "\n";
+    std::cout << "total_block_count: " << total_block_count << "\n";
     if (total_block_count == 0) {
         utility::LogError(
                 "No block is touched in TSDF volume, "
@@ -214,6 +217,8 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Tensor block_addrs, block_masks;
     hashmap->Activate(block_coordi, block_addrs, block_masks);
+    std::cout << "hashmap_size " << hashmap->Size() << "\n";
+    std::cout << "hashmap_capacity " << hashmap->GetCapacity() << "\n";
 
     // Customized IndexGet (generic version too slow)
     voxel_block_coords =
