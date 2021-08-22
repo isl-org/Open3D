@@ -77,7 +77,8 @@ public:
     void Insert(const Tensor& input_keys,
                 const Tensor& input_values,
                 Tensor& output_buf_indices,
-                Tensor& output_masks);
+                Tensor& output_masks,
+                bool allow_unsafe = false);
 
     /// Parallel insert arrays of keys and a structure of value arrays in
     /// Tensors.
@@ -86,7 +87,8 @@ public:
     void Insert(const Tensor& input_keys,
                 const std::vector<Tensor>& input_values_soa,
                 Tensor& output_buf_indices,
-                Tensor& output_masks);
+                Tensor& output_masks,
+                bool allow_unsafe = false);
 
     /// Parallel activate arrays of keys in Tensor.
     /// Specifically useful for large value elements (e.g., a 3D tensor), where
@@ -94,7 +96,8 @@ public:
     /// The roles of output_buf_indices and output_masks are the same as Insert.
     void Activate(const Tensor& input_keys,
                   Tensor& output_buf_indices,
-                  Tensor& output_masks);
+                  Tensor& output_masks,
+                  bool allow_unsafe = false);
 
     /// Parallel find an array of keys in Tensor.
     /// The roles of output_buf_indices is the same as Insert.
@@ -180,7 +183,8 @@ protected:
     void InsertImpl(const Tensor& input_keys,
                     const std::vector<Tensor>& input_values_soa,
                     Tensor& output_buf_indices,
-                    Tensor& output_masks);
+                    Tensor& output_masks,
+                    bool allow_unsafe);
 
     void CheckKeyLength(const Tensor& input_keys) const;
     void CheckKeyValueLengthCompatibility(

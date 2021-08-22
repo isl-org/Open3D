@@ -39,25 +39,21 @@ namespace geometry {
 namespace kernel {
 namespace voxel_grid {
 
-void Touch(std::shared_ptr<core::HashMap>& hashmap,
-           const core::Tensor& points,
-           core::Tensor& voxel_block_coords,
-           int64_t voxel_grid_resolution,
-           float voxel_size,
-           float sdf_trunc) {
+void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
+                     const core::Tensor& points,
+                     core::Tensor& voxel_block_coords,
+                     int64_t voxel_grid_resolution,
+                     float voxel_size,
+                     float sdf_trunc) {
     core::Device device = points.GetDevice();
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        TouchCPU(hashmap, points, voxel_block_coords, voxel_grid_resolution,
-                 voxel_size, sdf_trunc);
+        PointCloudTouchCPU(hashmap, points, voxel_block_coords,
+                           voxel_grid_resolution, voxel_size, sdf_trunc);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        TouchCUDA(hashmap, points, voxel_block_coords, voxel_grid_resolution,
-                  voxel_size, sdf_trunc);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(PointCloudTouchCUDA, hashmap, points, voxel_block_coords,
+                  voxel_grid_resolution, voxel_size, sdf_trunc);
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -131,13 +127,9 @@ void Integrate(const core::Tensor& depth,
                      block_values, intrinsics_d, extrinsics_d, resolution,
                      voxel_size, sdf_trunc, depth_scale, depth_max);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        IntegrateCUDA(depthf32, colorf32, block_indices, block_keys,
-                      block_values, intrinsics_d, extrinsics_d, resolution,
-                      voxel_size, sdf_trunc, depth_scale, depth_max);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(IntegrateCUDA, depthf32, colorf32, block_indices, block_keys,
+                  block_values, intrinsics_d, extrinsics_d, resolution,
+                  voxel_size, sdf_trunc, depth_scale, depth_max);
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -173,14 +165,10 @@ void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
                    block_resolution, voxel_size, sdf_trunc, depth_scale,
                    depth_min, depth_max, weight_threshold);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        RayCastCUDA(hashmap, block_values, range_map, vertex_map, depth_map,
-                    color_map, normal_map, intrinsics_d, extrinsics_d, h, w,
-                    block_resolution, voxel_size, sdf_trunc, depth_scale,
-                    depth_min, depth_max, weight_threshold);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(RayCastCUDA, hashmap, block_values, range_map, vertex_map,
+                  depth_map, color_map, normal_map, intrinsics_d, extrinsics_d,
+                  h, w, block_resolution, voxel_size, sdf_trunc, depth_scale,
+                  depth_min, depth_max, weight_threshold);
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -207,14 +195,10 @@ void ExtractSurfacePoints(const core::Tensor& block_indices,
                                 colors, block_resolution, voxel_size,
                                 weight_threshold, valid_size);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        ExtractSurfacePointsCUDA(block_indices, nb_block_indices,
-                                 nb_block_masks, block_keys, block_values,
-                                 points, normals, colors, block_resolution,
-                                 voxel_size, weight_threshold, valid_size);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
+        CUDA_CALL(ExtractSurfacePointsCUDA, block_indices, nb_block_indices,
+                  nb_block_masks, block_keys, block_values, points, normals,
+                  colors, block_resolution, voxel_size, weight_threshold,
+                  valid_size);
     } else {
         utility::LogError("Unimplemented device");
     }

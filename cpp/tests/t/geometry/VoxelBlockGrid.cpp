@@ -121,7 +121,7 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
 
     std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        backends.push_back(core::HashBackendType::Slab);
+        // backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
         backends.push_back(core::HashBackendType::TBB);

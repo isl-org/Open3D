@@ -70,7 +70,8 @@ void HashMap::Rehash(int64_t buckets) {
 void HashMap::InsertImpl(const Tensor& input_keys,
                          const std::vector<Tensor>& input_values_soa,
                          Tensor& output_buf_indices,
-                         Tensor& output_masks) {
+                         Tensor& output_masks,
+                         bool allow_unsafe) {
     CheckKeyValueLengthCompatibility(input_keys, input_values_soa);
     CheckKeyCompatibility(input_keys);
     CheckValueCompatibility(input_values_soa);
@@ -87,26 +88,31 @@ void HashMap::InsertImpl(const Tensor& input_keys,
     device_hashmap_->Insert(
             input_keys.GetDataPtr(), input_values_ptrs,
             static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
-            output_masks.GetDataPtr<bool>(), length);
+            output_masks.GetDataPtr<bool>(), length, allow_unsafe);
 }
 
 void HashMap::Insert(const Tensor& input_keys,
                      const Tensor& input_values,
                      Tensor& output_buf_indices,
-                     Tensor& output_masks) {
-    InsertImpl(input_keys, {input_values}, output_buf_indices, output_masks);
+                     Tensor& output_masks,
+                     bool allow_unsafe) {
+    InsertImpl(input_keys, {input_values}, output_buf_indices, output_masks,
+               allow_unsafe);
 }
 
 void HashMap::Insert(const Tensor& input_keys,
                      const std::vector<Tensor>& input_values_soa,
                      Tensor& output_buf_indices,
-                     Tensor& output_masks) {
-    InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks);
+                     Tensor& output_masks,
+                     bool allow_unsafe) {
+    InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks,
+               allow_unsafe);
 }
 
 void HashMap::Activate(const Tensor& input_keys,
                        Tensor& output_buf_indices,
-                       Tensor& output_masks) {
+                       Tensor& output_masks,
+                       bool allow_unsafe) {
     CheckKeyLength(input_keys);
     CheckKeyCompatibility(input_keys);
 
@@ -117,7 +123,7 @@ void HashMap::Activate(const Tensor& input_keys,
     device_hashmap_->Activate(
             input_keys.GetDataPtr(),
             static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
-            output_masks.GetDataPtr<bool>(), length);
+            output_masks.GetDataPtr<bool>(), length, allow_unsafe);
 }
 
 void HashMap::Find(const Tensor& input_keys,

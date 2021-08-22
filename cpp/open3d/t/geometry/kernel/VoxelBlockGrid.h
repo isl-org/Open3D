@@ -37,12 +37,12 @@ namespace geometry {
 namespace kernel {
 namespace voxel_grid {
 
-void Touch(std::shared_ptr<core::HashMap>& hashmap,
-           const core::Tensor& points,
-           core::Tensor& voxel_block_coords,
-           int64_t voxel_grid_resolution,
-           float voxel_size,
-           float sdf_trunc);
+void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
+                     const core::Tensor& points,
+                     core::Tensor& voxel_block_coords,
+                     int64_t voxel_grid_resolution,
+                     float voxel_size,
+                     float sdf_trunc);
 
 void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
                 const core::Tensor& depth,
@@ -101,12 +101,12 @@ void ExtractSurfacePoints(const core::Tensor& block_indices,
                           float weight_threshold,
                           int& valid_size);
 
-void TouchCPU(std::shared_ptr<core::HashMap>& hashmap,
-              const core::Tensor& points,
-              core::Tensor& voxel_block_coords,
-              int64_t voxel_grid_resolution,
-              float voxel_size,
-              float sdf_trunc);
+void PointCloudTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
+                        const core::Tensor& points,
+                        core::Tensor& voxel_block_coords,
+                        int64_t voxel_grid_resolution,
+                        float voxel_size,
+                        float sdf_trunc);
 
 void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
                    const core::Tensor& depth,
@@ -166,12 +166,12 @@ void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
                              int& valid_size);
 
 #ifdef BUILD_CUDA_MODULE
-void TouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
-               const core::Tensor& points,
-               core::Tensor& voxel_block_coords,
-               int64_t voxel_grid_resolution,
-               float voxel_size,
-               float sdf_trunc);
+void PointCloudTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
+                         const core::Tensor& points,
+                         core::Tensor& voxel_block_coords,
+                         int64_t voxel_grid_resolution,
+                         float voxel_size,
+                         float sdf_trunc);
 
 void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
                     const core::Tensor& depth,

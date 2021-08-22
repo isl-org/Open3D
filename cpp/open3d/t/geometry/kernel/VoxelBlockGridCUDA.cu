@@ -57,12 +57,12 @@ struct Coord3i {
     int64_t z_;
 };
 
-void TouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
-               const core::Tensor& points,
-               core::Tensor& voxel_block_coords,
-               int64_t voxel_grid_resolution,
-               float voxel_size,
-               float sdf_trunc) {
+void PointCloudTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
+                         const core::Tensor& points,
+                         core::Tensor& voxel_block_coords,
+                         int64_t voxel_grid_resolution,
+                         float voxel_size,
+                         float sdf_trunc) {
     int64_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
 
@@ -142,7 +142,7 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
     int64_t n = rows_strided * cols_strided;
 
     const int64_t step_size = 3;
-    const int64_t est_multipler_factor = step_size;
+    const int64_t est_multipler_factor = (step_size + 1);
 
     static core::Tensor block_coordi;
     if (block_coordi.GetLength() != est_multipler_factor * n) {
@@ -205,20 +205,19 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
         });
     });
 
-    int total_block_count = count[0].Item<int>();
-    std::cout << "allocated: " << block_coordi.GetLength() << "\n";
-    std::cout << "total_block_count: " << total_block_count << "\n";
+    int64_t total_block_count = static_cast<int64_t>(count[0].Item<int>());
     if (total_block_count == 0) {
         utility::LogError(
                 "No block is touched in TSDF volume, "
                 "abort integration. Please check specified parameters, "
                 "especially depth_scale and voxel_size");
     }
+
+    total_block_count = std::min(total_block_count, hashmap->GetCapacity());
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Tensor block_addrs, block_masks;
-    hashmap->Activate(block_coordi, block_addrs, block_masks);
-    std::cout << "hashmap_size " << hashmap->Size() << "\n";
-    std::cout << "hashmap_capacity " << hashmap->GetCapacity() << "\n";
+    hashmap->Activate(block_coordi, block_addrs, block_masks,
+                      /*allow_unsafe =*/false);
 
     // Customized IndexGet (generic version too slow)
     voxel_block_coords =

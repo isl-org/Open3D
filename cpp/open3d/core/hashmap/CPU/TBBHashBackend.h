@@ -52,12 +52,14 @@ public:
                 const std::vector<const void*>& input_values_soa,
                 buf_index_t* output_buf_indices,
                 bool* output_masks,
-                int64_t count) override;
+                int64_t count,
+                bool allow_unsafe) override;
 
     void Activate(const void* input_keys,
                   buf_index_t* output_buf_indices,
                   bool* output_masks,
-                  int64_t count) override;
+                  int64_t count,
+                  bool allow_unsafe) override;
 
     void Find(const void* input_keys,
               buf_index_t* output_buf_indices,
@@ -121,9 +123,10 @@ void TBBHashBackend<Key, Hash>::Insert(
         const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
         bool* output_masks,
-        int64_t count) {
+        int64_t count,
+        bool allow_unsafe) {
     int64_t new_size = Size() + count;
-    if (new_size > this->capacity_) {
+    if (!allow_unsafe && new_size > this->capacity_) {
         int64_t bucket_count = GetBucketCount();
         float avg_capacity_per_bucket =
                 float(this->capacity_) / float(bucket_count);
@@ -142,9 +145,11 @@ template <typename Key, typename Hash>
 void TBBHashBackend<Key, Hash>::Activate(const void* input_keys,
                                          buf_index_t* output_buf_indices,
                                          bool* output_masks,
-                                         int64_t count) {
+                                         int64_t count,
+                                         bool allow_unsafe) {
     std::vector<const void*> null_values;
-    Insert(input_keys, null_values, output_buf_indices, output_masks, count);
+    Insert(input_keys, null_values, output_buf_indices, output_masks, count,
+           allow_unsafe);
 }
 
 template <typename Key, typename Hash>

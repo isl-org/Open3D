@@ -69,13 +69,14 @@ struct Coord3iHash {
     }
 };
 
-void TouchCPU(std::shared_ptr<core::HashMap>&
-                      hashmap,  // dummy for now, one pass insertion is faster
-              const core::Tensor& points,
-              core::Tensor& voxel_block_coords,
-              int64_t voxel_grid_resolution,
-              float voxel_size,
-              float sdf_trunc) {
+void PointCloudTouchCPU(
+        std::shared_ptr<core::HashMap>&
+                hashmap,  // dummy for now, one pass insertion is faster
+        const core::Tensor& points,
+        core::Tensor& voxel_block_coords,
+        int64_t voxel_grid_resolution,
+        float voxel_size,
+        float sdf_trunc) {
     int64_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
 

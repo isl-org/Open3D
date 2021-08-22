@@ -61,7 +61,8 @@ public:
                         const std::vector<const void*>& input_values,
                         buf_index_t* output_buf_indices,
                         bool* output_masks,
-                        int64_t count) = 0;
+                        int64_t count,
+                        bool allow_unsafe) = 0;
 
     /// Parallel activate contiguous arrays of keys without copying values.
     /// Specifically useful for large value elements (e.g., a tensor), where we
@@ -69,7 +70,8 @@ public:
     virtual void Activate(const void* input_keys,
                           buf_index_t* output_buf_indices,
                           bool* output_masks,
-                          int64_t count) = 0;
+                          int64_t count,
+                          bool allow_unsafe) = 0;
 
     /// Parallel find a contiguous array of keys.
     virtual void Find(const void* input_keys,
