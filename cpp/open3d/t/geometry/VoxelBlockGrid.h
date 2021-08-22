@@ -120,31 +120,34 @@ public:
     /// Note: these coordinates are not activated in the internal sparse voxel
     /// block. They need to be inserted in the hash map.
     core::Tensor GetUniqueBlockCoordinates(const Image &depth,
-                                           const core::Tensor &intrinsics,
-                                           const core::Tensor &extrinsics,
+                                           const core::Tensor &intrinsic,
+                                           const core::Tensor &extrinsic,
                                            float depth_scale = 1000.0f,
                                            float depth_max = 3.0f);
 
     /// Obtain active block coordinates from a point cloud.
     core::Tensor GetUniqueBlockCoordinates(const PointCloud &pcd);
 
-    /// Integrate RGB-D properties in the selected block coordinates.
+    /// Specific operation for TSDF volumes.
+    /// Integrate an RGB-D frame in the selected block coordinates using pinhole
+    /// camera model.
     void Integrate(const core::Tensor &block_coords,
                    const Image &depth,
                    const Image &color,
-                   const core::Tensor &intrinsics,
-                   const core::Tensor &extrinsics,
+                   const core::Tensor &intrinsic,
+                   const core::Tensor &extrinsic,
                    float depth_scale = 1000.0f,
                    float depth_max = 3.0f);
 
-    /// Perform ray casting in the selected block coordinates.
+    /// Specific operation for TSDF volumes.
+    /// Perform volumetric ray casting in the selected block coordinates.
     /// The block coordinates in the frustum can be taken from
     /// GetUniqueBlockCoordinates.
     /// All the block coordinates can be taken from GetHashMap().GetKeyTensor().
     std::unordered_map<std::string, core::Tensor> RayCast(
             const core::Tensor &block_coords,
-            const core::Tensor &intrinsics,
-            const core::Tensor &extrinsics,
+            const core::Tensor &intrinsic,
+            const core::Tensor &extrinsic,
             int width,
             int height,
             float depth_scale = 1000.0f,
@@ -152,6 +155,8 @@ public:
             float depth_max = 3.0f,
             float weight_threshold = 3.0f);
 
+    /// Specific operation for TSDF volumes.
+    /// Extract point cloud at isosurface points.
     PointCloud ExtractSurfacePoints(int estimate_number = -1,
                                     float weight_threshold = 3.0f);
 

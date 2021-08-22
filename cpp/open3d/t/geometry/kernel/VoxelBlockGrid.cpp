@@ -28,9 +28,10 @@
 
 #include <vector>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/DeviceHashBackend.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -135,7 +136,7 @@ void Integrate(const core::Tensor& depth,
     }
 }
 
-void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
+void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              const std::vector<core::Tensor>& block_values,
              const core::Tensor& range_map,
              core::Tensor& vertex_map,

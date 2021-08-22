@@ -29,6 +29,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/kernel/VoxelBlockGrid.h"
 
@@ -46,6 +47,7 @@ VoxelBlockGrid::VoxelBlockGrid(
         const core::Device &device,
         const core::HashBackendType &backend)
     : voxel_size_(voxel_size), block_resolution_(block_resolution) {
+    // Check property lengths
     size_t n_attrs = attr_names.size();
     if (attr_dtypes.size() != n_attrs) {
         utility::LogError(
@@ -58,10 +60,10 @@ VoxelBlockGrid::VoxelBlockGrid(
                 attr_channels.size(), n_attrs);
     }
 
+    // Specify block element shapes and attribute names.
     std::vector<core::SizeVector> attr_element_shapes;
     core::SizeVector block_shape{block_resolution, block_resolution,
                                  block_resolution};
-
     for (size_t i = 0; i < n_attrs; ++i) {
         // Construct element shapes.
         core::SizeVector attr_channel = attr_channels[i];
@@ -140,24 +142,20 @@ core::Tensor VoxelBlockGrid::GetVoxelIndices() const {
 
 core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
         const Image &depth,
-        const core::Tensor &intrinsics,
-        const core::Tensor &extrinsics,
+        const core::Tensor &intrinsic,
+        const core::Tensor &extrinsic,
         float depth_scale,
         float depth_max) {
-    if (depth.IsEmpty()) {
-        utility::LogError("Input depth is empty.");
-    }
-    if (depth.GetDtype() != core::UInt16 && depth.GetDtype() != core::Float32) {
-        utility::LogError("Unsupported depth image dtype {}.",
-                          depth.GetDtype().ToString());
-    }
+    CheckDepthTensor(depth.AsTensor());
+    CheckIntrinsicTensor(intrinsic);
+    CheckExtrinsicTensor(extrinsic);
 
     const int64_t down_factor = 4;
-    const int64_t est_step_multiplier = 4;
+    const int64_t est_sample_multiplier = 4;
     if (frustum_hashmap_ == nullptr) {
         int64_t capacity = (depth.GetCols() / down_factor) *
                            (depth.GetRows() / down_factor) *
-                           est_step_multiplier;
+                           est_sample_multiplier;
         frustum_hashmap_ = std::make_shared<core::HashMap>(
                 capacity, core::Int32, core::SizeVector{3}, core::Int32,
                 core::SizeVector{1}, block_hashmap_->GetDevice());
@@ -167,7 +165,7 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
 
     core::Tensor block_coords;
     kernel::voxel_grid::DepthTouch(
-            frustum_hashmap_, depth.AsTensor(), intrinsics, extrinsics,
+            frustum_hashmap_, depth.AsTensor(), intrinsic, extrinsic,
             block_coords, block_resolution_, voxel_size_, voxel_size_ * 6,
             depth_scale, depth_max, down_factor);
 
@@ -197,10 +195,15 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(const PointCloud &pcd) {
 void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
                                const Image &depth,
                                const Image &color,
-                               const core::Tensor &intrinsics,
-                               const core::Tensor &extrinsics,
+                               const core::Tensor &intrinsic,
+                               const core::Tensor &extrinsic,
                                float depth_scale,
                                float depth_max) {
+    CheckDepthTensor(depth.AsTensor());
+    CheckColorTensor(color.AsTensor());
+    CheckIntrinsicTensor(intrinsic);
+    CheckExtrinsicTensor(extrinsic);
+
     core::Tensor buf_indices, masks;
     block_hashmap_->Activate(block_coords, buf_indices, masks);
     block_hashmap_->Find(block_coords, buf_indices, masks);
@@ -209,8 +212,50 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
     kernel::voxel_grid::Integrate(
             depth.AsTensor(), color.AsTensor(), buf_indices, block_keys,
-            block_values, intrinsics, extrinsics, block_resolution_,
-            voxel_size_, voxel_size_ * 6, depth_scale, depth_max);
+            block_values, intrinsic, extrinsic, block_resolution_, voxel_size_,
+            voxel_size_ * 6, depth_scale, depth_max);
+}
+
+std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
+        const core::Tensor &block_coords,
+        const core::Tensor &intrinsic,
+        const core::Tensor &extrinsic,
+        int width,
+        int height,
+        float depth_scale,
+        float depth_min,
+        float depth_max,
+        float weight_threshold) {
+    CheckIntrinsicTensor(intrinsic);
+    CheckExtrinsicTensor(extrinsic);
+
+    // Extrinsic: world to camera -> pose: camera to world
+    core::Tensor vertex_map, depth_map, color_map, normal_map;
+    core::Device device = block_hashmap_->GetDevice();
+    vertex_map = core::Tensor({height, width, 3}, core::Float32, device);
+    depth_map = core::Tensor({height, width, 1}, core::Float32, device);
+    color_map = core::Tensor({height, width, 3}, core::Float32, device);
+
+    const int down_factor = 8;
+    core::Tensor range_minmax_map;
+    kernel::tsdf::EstimateRange(
+            block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
+            down_factor, block_resolution_, voxel_size_, depth_min, depth_max);
+
+    std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
+    kernel::voxel_grid::RayCast(
+            block_hashmap_, block_values, range_minmax_map, vertex_map,
+            depth_map, color_map, normal_map, intrinsic, extrinsic, height,
+            width, block_resolution_, voxel_size_, voxel_size_ * 6, depth_scale,
+            depth_min, depth_max, weight_threshold);
+
+    std::unordered_map<std::string, core::Tensor> results;
+    results.emplace("vertex", vertex_map);
+    results.emplace("depth", depth_map);
+    results.emplace("color", color_map);
+    results.emplace("range", range_minmax_map);
+
+    return results;
 }
 
 std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
@@ -268,47 +313,6 @@ PointCloud VoxelBlockGrid::ExtractSurfacePoints(int estimated_number,
     // pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
 
     return pcd;
-}
-
-std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
-        const core::Tensor &block_coords,
-        const core::Tensor &intrinsics,
-        const core::Tensor &extrinsics,
-        int width,
-        int height,
-        float depth_scale,
-        float depth_min,
-        float depth_max,
-        float weight_threshold) {
-    // Extrinsic: world to camera -> pose: camera to world
-    core::Tensor vertex_map, depth_map, color_map, normal_map;
-    core::Device device = block_hashmap_->GetDevice();
-    vertex_map = core::Tensor({height, width, 3}, core::Float32, device);
-    depth_map = core::Tensor({height, width, 1}, core::Float32, device);
-    color_map = core::Tensor({height, width, 3}, core::Float32, device);
-
-    const int down_factor = 8;
-    core::Tensor range_minmax_map;
-    kernel::tsdf::EstimateRange(block_coords, range_minmax_map, intrinsics,
-                                extrinsics, height, width, down_factor,
-                                block_resolution_, voxel_size_, depth_min,
-                                depth_max);
-
-    std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
-    auto device_hashmap = block_hashmap_->GetDeviceHashBackend();
-    kernel::voxel_grid::RayCast(
-            device_hashmap, block_values, range_minmax_map, vertex_map,
-            depth_map, color_map, normal_map, intrinsics, extrinsics, height,
-            width, block_resolution_, voxel_size_, voxel_size_ * 6, depth_scale,
-            depth_min, depth_max, weight_threshold);
-
-    std::unordered_map<std::string, core::Tensor> results;
-    results.emplace("vertex", vertex_map);
-    results.emplace("depth", depth_map);
-    results.emplace("color", color_map);
-    results.emplace("range", range_minmax_map);
-
-    return results;
 }
 
 }  // namespace geometry

@@ -44,6 +44,35 @@ INSTANTIATE_TEST_SUITE_P(VoxelBlockGrid,
                          VoxelBlockGridPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
+static core::Tensor GetIntrinsicTensor() {
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    auto focal_length = intrinsic.GetFocalLength();
+    auto principal_point = intrinsic.GetPrincipalPoint();
+    return core::Tensor::Init<double>(
+            {{focal_length.first, 0, principal_point.first},
+             {0, focal_length.second, principal_point.second},
+             {0, 0, 1}});
+}
+
+static std::vector<core::Tensor> GetExtrinsicTensors() {
+    // Extrinsics
+    std::string trajectory_path =
+            std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
+    auto trajectory =
+            io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
+
+    std::vector<core::Tensor> extrinsics;
+    for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
+        Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
+        core::Tensor extrinsic_t =
+                core::eigen_converter::EigenMatrixToTensor(extrinsic);
+        extrinsics.emplace_back(extrinsic_t);
+    }
+
+    return extrinsics;
+}
+
 TEST_P(VoxelBlockGridPermuteDevices, Construct) {
     core::Device device = GetParam();
 
@@ -116,33 +145,19 @@ TEST_P(VoxelBlockGridPermuteDevices, Indexing) {
     }
 }
 
-TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
+TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
     core::Device device = GetParam();
 
     std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        // backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
 
-    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
-            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
-    auto focal_length = intrinsic.GetFocalLength();
-    auto principal_point = intrinsic.GetPrincipalPoint();
-    core::Tensor intrinsic_t = core::Tensor::Init<double>(
-            {{focal_length.first, 0, principal_point.first},
-             {0, focal_length.second, principal_point.second},
-             {0, 0, 1}});
-
-    // Extrinsics
-    std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
-    auto trajectory =
-            io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
-    const int cols = 640;
-    const int rows = 480;
+    core::Tensor intrinsic = GetIntrinsicTensor();
+    std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
     const float depth_scale = 1000.0;
     const float depth_max = 3.0;
 
@@ -152,57 +167,92 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                                   {{1}, {1}, {3}}, 3.0 / 512, 16, 10000, device,
                                   backend);
 
-        for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
-            // Load image
-            t::geometry::Image depth =
-                    t::io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/depth/{:05d}.png",
-                                        std::string(TEST_DATA_DIR), i))
-                            ->To(device);
-            t::geometry::Image color =
-                    t::io::CreateImageFromFile(
-                            fmt::format("{}/RGBD/color/{:05d}.jpg",
-                                        std::string(TEST_DATA_DIR), i))
-                            ->To(device);
+        const int i = 0;
+        Image depth = t::io::CreateImageFromFile(
+                              fmt::format("{}/RGBD/depth/{:05d}.png",
+                                          std::string(TEST_DATA_DIR), i))
+                              ->To(device);
+        core::Tensor block_coords_from_depth = vbg.GetUniqueBlockCoordinates(
+                depth, intrinsic, extrinsics[i], depth_scale, depth_max);
 
-            Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
-            core::Tensor extrinsic_t =
-                    core::eigen_converter::EigenMatrixToTensor(extrinsic);
+        PointCloud pcd = PointCloud::CreateFromDepthImage(
+                depth, intrinsic, extrinsics[i], depth_scale, depth_max, 4);
+        core::Tensor block_coords_from_pcd = vbg.GetUniqueBlockCoordinates(pcd);
 
-            // PointCloud pcd = PointCloud::CreateFromDepthImage(
-            //         depth, intrinsic_t, extrinsic_t, depth_scale, depth_max,
-            //         4);
-            // core::Tensor block_coords = vbg.GetUniqueBlockCoordinates(pcd);
-            core::Tensor block_coords = vbg.GetUniqueBlockCoordinates(
-                    depth, intrinsic_t, extrinsic_t, depth_scale, depth_max);
+        utility::LogInfo("Number of blocks from depth: {}, blocks from pcd: {}",
+                         block_coords_from_depth.GetLength(),
+                         block_coords_from_pcd.GetLength());
+    }
+}
 
-            vbg.Integrate(block_coords, depth, color, intrinsic_t, extrinsic_t);
+TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
+    core::Device device = GetParam();
 
-            auto result =
-                    vbg.RayCast(block_coords, intrinsic_t, extrinsic_t, cols,
-                                rows, depth_scale, 0.1, depth_max, 1.0);
-            core::Tensor range_map = result["range"];
-            t::geometry::Image im_near(range_map.Slice(2, 0, 1).Contiguous() /
-                                       depth_max);
-            visualization::DrawGeometries(
-                    {std::make_shared<open3d::geometry::Image>(
-                            im_near.ToLegacy())});
+    std::vector<core::HashBackendType> backends;
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
+    } else {
+        backends.push_back(core::HashBackendType::TBB);
+    }
 
-            t::geometry::Image depth_raycast(result["depth"]);
-            visualization::DrawGeometries(
-                    {std::make_shared<open3d::geometry::Image>(
-                            depth_raycast
-                                    .ColorizeDepth(depth_scale, 0.1, depth_max)
-                                    .ToLegacy())});
-            t::geometry::Image color_raycast(result["color"]);
-            visualization::DrawGeometries(
-                    {std::make_shared<open3d::geometry::Image>(
-                            color_raycast.ToLegacy())});
+    core::Tensor intrinsic = GetIntrinsicTensor();
+    std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
+    const float depth_scale = 1000.0;
+    const float depth_min = 0.1;
+    const float depth_max = 3.0;
+    for (auto backend : backends) {
+        auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
+                                  {core::Float32, core::Float32, core::UInt16},
+                                  {{1}, {1}, {3}}, 3.0 / 512, 16, 10000, device,
+                                  backend);
+
+        for (size_t i = 0; i < extrinsics.size(); ++i) {
+            Image depth = t::io::CreateImageFromFile(
+                                  fmt::format("{}/RGBD/depth/{:05d}.png",
+                                              std::string(TEST_DATA_DIR), i))
+                                  ->To(device);
+            Image color = t::io::CreateImageFromFile(
+                                  fmt::format("{}/RGBD/color/{:05d}.jpg",
+                                              std::string(TEST_DATA_DIR), i))
+                                  ->To(device);
+
+            core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
+                    depth, intrinsic, extrinsics[i], depth_scale, depth_max);
+            vbg.Integrate(frustum_block_coords, depth, color, intrinsic,
+                          extrinsics[i]);
+
+            // Check raycasting with non-slab backends.
+            if (i == extrinsics.size() - 1 &&
+                backend != core::HashBackendType::Slab) {
+                auto result = vbg.RayCast(frustum_block_coords, intrinsic,
+                                          extrinsics[i], depth.GetCols(),
+                                          depth.GetRows(), depth_scale,
+                                          depth_min, depth_max, 1.0);
+                core::Tensor range_map = result["range"];
+                t::geometry::Image im_near(
+                        range_map.Slice(2, 0, 1).Contiguous() / depth_max);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                im_near.ToLegacy())});
+
+                t::geometry::Image depth_raycast(result["depth"]);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                depth_raycast
+                                        .ColorizeDepth(depth_scale, depth_min,
+                                                       depth_max)
+                                        .ToLegacy())});
+                t::geometry::Image color_raycast(result["color"]);
+                visualization::DrawGeometries(
+                        {std::make_shared<open3d::geometry::Image>(
+                                color_raycast.ToLegacy())});
+            }
         }
 
+        // Check customized indexing and processing
         core::Tensor voxel_indices = vbg.GetVoxelIndices();
         core::Tensor voxel_coords = vbg.GetVoxelCoordinates(voxel_indices);
-
         core::Tensor tsdf =
                 vbg.GetAttribute("tsdf")
                         .IndexGet({voxel_indices[0], voxel_indices[1],
@@ -221,14 +271,12 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                 valid_pcd.ToLegacy());
         visualization::DrawGeometries({vis_valid_pcd});
 
-        if (backend == core::HashBackendType::StdGPU) {
-            vbg.GetHashMap().Save("vbg.npz");
-        }
-
+        // Check surface extraction
         auto pcd = std::make_shared<open3d::geometry::PointCloud>(
                 vbg.ExtractSurfacePoints().ToLegacy());
         visualization::DrawGeometries({pcd});
     }
 }
+
 }  // namespace tests
 }  // namespace open3d
