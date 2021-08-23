@@ -78,8 +78,8 @@ def print_table(method_names, results):
 
     for x in results[0]:
         r = [x] + list(
-            map(np.median, [r[x]['knn_gpu_setup'] for r in results] +
-                [r[x]['knn_gpu_search'] for r in results]))
+            map(np.median, [r[x]['knn_setup'] for r in results] +
+                [r[x]['knn_search'] for r in results]))
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))

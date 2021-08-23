@@ -23,38 +23,38 @@ class O3DKnn:
     def __init__(self):
         pass
 
-    def prepare_data(self, *args):
-        return args
+    def setup(self, points, queries):
+        index = o3d.core.nns.KnnIndex()
+        index.set_tensor_data(points)
+        return index, queries
 
-    def setup(self, points):
-        nns = o3d.core.nns.KnnIndex()
-        nns.set_tensor_data(points)
-        return nns
-
-    def search(self, nns, queries, knn):
-        ans = nns.knn_search(queries, knn)
+    def search(self, index, queries, knn):
+        ans = index.knn_search(queries, knn)
         return ans
 
 
 class O3DKnnCPU(O3DKnn):
 
-    def prepare_data(self, points, queries):
+    def setup(self, points, queries):
         points_cpu = points.cpu()
         queries_cpu = queries.cpu()
-        return points_cpu, queries_cpu
+        index = o3d.core.nns.NearestNeighborSearch(points_cpu)
+        index.knn_index()
+        return index, queries_cpu
 
-    def setup(self, points):
-        nns = o3d.core.nns.NearestNeighborSearch(points)
-        nns.knn_index()
-        return nns
+    def search(self, index, queries, knn):
+        indices, distances = index.knn_search(queries, knn)
+        indices_gpu = indices.cuda()
+        distances_gpu = distances.cuda()
+        return indices_gpu, distances_gpu
 
 
 class O3DFaiss(O3DKnn):
 
-    def setup(self, points):
-        nns = o3d.core.nns.FaissIndex()
-        nns.set_tensor_data(points)
-        return nns
+    def setup(self, points, queries):
+        index = o3d.core.nns.FaissIndex()
+        index.set_tensor_data(points)
+        return index, queries
 
 
 class NativeFaiss:
@@ -203,7 +203,8 @@ if __name__ == "__main__":
             points = example['points']
             queries = example['queries']
 
-            for knn, step in itertools.product((1, 37, 64), (1, 10, 100)):
+            for knn, step in itertools.product((1, 37, 64),
+                                               (1, 10, 25, 50, 100)):
                 print(knn, step)
                 points = example['points']
                 queries = example['queries']
@@ -213,15 +214,18 @@ if __name__ == "__main__":
 
                 example_results = {'k': knn, 'num_points': points.shape[0]}
 
-                points, queries = method.prepare_data(points, queries)
+                if hasattr(method, "prepare_data"):
+                    points, queries = method.prepare_data(points, queries)
 
-                ans = measure_time(lambda: method.setup(points))
-                example_results['knn_gpu_setup'] = ans
+                ans = measure_time(lambda: method.setup(points, queries),
+                                   min_samples=3)
+                example_results['knn_setup'] = ans
 
-                index = method.setup(points)
+                index, queries = method.setup(points, queries)
 
-                ans = measure_time(lambda: method.search(index, queries, knn))
-                example_results['knn_gpu_search'] = ans
+                ans = measure_time(lambda: method.search(index, queries, knn),
+                                   min_samples=3)
+                example_results['knn_search'] = ans
 
                 del index
                 o3d.core.cuda.release_cache()
