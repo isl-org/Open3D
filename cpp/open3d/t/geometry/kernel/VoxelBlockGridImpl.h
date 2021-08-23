@@ -301,7 +301,7 @@ void RayCastCPU
                 auto GetLinearIdxAtP = [&] OPEN3D_DEVICE(
                                                int x_b, int y_b, int z_b,
                                                int x_v, int y_v, int z_v,
-                                               core::buf_index_t block_addr,
+                                               core::buf_index_t block_buf_idx,
                                                BlockCache& cache) -> int64_t {
                     int x_vn = (x_v + block_resolution) % block_resolution;
                     int y_vn = (y_v + block_resolution) % block_resolution;
@@ -312,7 +312,7 @@ void RayCastCPU
                     int dz_b = Sign(z_v - z_vn);
 
                     if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
-                        return block_addr * resolution3 + z_v * resolution2 +
+                        return block_buf_idx * resolution3 + z_v * resolution2 +
                                y_v * block_resolution + x_v;
                     } else {
                         Key key;
@@ -320,18 +320,19 @@ void RayCastCPU
                         key.Set(1, y_b + dy_b);
                         key.Set(2, z_b + dz_b);
 
-                        int block_addr =
+                        int block_buf_idx =
                                 cache.Check(key.Get(0), key.Get(1), key.Get(2));
-                        if (block_addr < 0) {
+                        if (block_buf_idx < 0) {
                             auto iter = hashmap_impl.find(key);
                             if (iter == hashmap_impl.end()) return -1;
-                            block_addr = iter->second;
+                            block_buf_idx = iter->second;
                             cache.Update(key.Get(0), key.Get(1), key.Get(2),
-                                         block_addr);
+                                         block_buf_idx);
                         }
 
-                        return block_addr * resolution3 + z_vn * resolution2 +
-                               y_vn * block_resolution + x_vn;
+                        return block_buf_idx * resolution3 +
+                               z_vn * resolution2 + y_vn * block_resolution +
+                               x_vn;
                     }
                 };
 
@@ -354,12 +355,12 @@ void RayCastCPU
                     key.Set(1, y_b);
                     key.Set(2, z_b);
 
-                    int block_addr = cache.Check(x_b, y_b, z_b);
-                    if (block_addr < 0) {
+                    int block_buf_idx = cache.Check(x_b, y_b, z_b);
+                    if (block_buf_idx < 0) {
                         auto iter = hashmap_impl.find(key);
                         if (iter == hashmap_impl.end()) return -1;
-                        block_addr = iter->second;
-                        cache.Update(x_b, y_b, z_b, block_addr);
+                        block_buf_idx = iter->second;
+                        cache.Update(x_b, y_b, z_b, block_buf_idx);
                     }
 
                     // Voxel coordinate and look up
@@ -367,7 +368,7 @@ void RayCastCPU
                     int y_v = int((y_g - y_b * block_size) / voxel_size);
                     int z_v = int((z_g - z_b * block_size) / voxel_size);
 
-                    return block_addr * resolution3 + z_v * resolution2 +
+                    return block_buf_idx * resolution3 + z_v * resolution2 +
                            y_v * block_resolution + x_v;
                 };
 
@@ -466,7 +467,6 @@ void RayCastCPU
                     // Trilinear interpolation
                     // TODO(wei): simplify the flow by splitting the
                     // functions given what is enabled
-
                     int x_b = static_cast<int>(floorf(x_g / block_size));
                     int y_b = static_cast<int>(floorf(y_g / block_size));
                     int z_b = static_cast<int>(floorf(z_g / block_size));
@@ -479,12 +479,12 @@ void RayCastCPU
                     key.Set(1, y_b);
                     key.Set(2, z_b);
 
-                    int block_addr = cache.Check(x_b, y_b, z_b);
-                    if (block_addr < 0) {
+                    int block_buf_idx = cache.Check(x_b, y_b, z_b);
+                    if (block_buf_idx < 0) {
                         auto iter = hashmap_impl.find(key);
                         if (iter == hashmap_impl.end()) return;
-                        block_addr = iter->second;
-                        cache.Update(x_b, y_b, z_b, block_addr);
+                        block_buf_idx = iter->second;
+                        cache.Update(x_b, y_b, z_b, block_buf_idx);
                     }
 
                     int x_v_floor = static_cast<int>(floorf(x_v));
@@ -495,7 +495,7 @@ void RayCastCPU
                     float ratio_y = y_v - float(y_v_floor);
                     float ratio_z = z_v - float(z_v_floor);
 
-                    float sum_weight_color = 0.0;
+                    float sum_r = 0.0;
                     for (int k = 0; k < 8; ++k) {
                         int dx_v = (k & 1) > 0 ? 1 : 0;
                         int dy_v = (k & 2) > 0 ? 1 : 0;
@@ -503,8 +503,8 @@ void RayCastCPU
 
                         int64_t linear_idx_k = GetLinearIdxAtP(
                                 x_b, y_b, z_b, x_v_floor + dx_v,
-                                y_v_floor + dy_v, z_v_floor + dz_v, block_addr,
-                                cache);
+                                y_v_floor + dy_v, z_v_floor + dz_v,
+                                block_buf_idx, cache);
 
                         if (linear_idx_k >= 0 &&
                             weight_base_ptr[linear_idx_k] > 0) {
@@ -515,19 +515,15 @@ void RayCastCPU
                             float rz = dz_v * (ratio_z) +
                                        (1 - dz_v) * (1 - ratio_z);
 
-                            float ratio = rx * ry * rz;
+                            float r = rx * ry * rz;
 
-                            sum_weight_color += ratio;
                             int64_t color_linear_idx = linear_idx_k * 3;
                             color_ptr[0] +=
-                                    ratio *
-                                    color_base_ptr[color_linear_idx + 0];
+                                    r * color_base_ptr[color_linear_idx + 0];
                             color_ptr[1] +=
-                                    ratio *
-                                    color_base_ptr[color_linear_idx + 1];
+                                    r * color_base_ptr[color_linear_idx + 1];
                             color_ptr[2] +=
-                                    ratio *
-                                    color_base_ptr[color_linear_idx + 2];
+                                    r * color_base_ptr[color_linear_idx + 2];
 
                             float tsdf_k = tsdf_base_ptr[linear_idx_k];
                             float grad_x = ry * rz * tsdf_k * (2 * dx_v - 1);
@@ -537,14 +533,16 @@ void RayCastCPU
                             normal_ptr[0] += grad_x;
                             normal_ptr[1] += grad_y;
                             normal_ptr[2] += grad_z;
+
+                            sum_r += r;
                         }
                     }  // loop over 8 neighbors
 
-                    if (sum_weight_color > 0) {
-                        sum_weight_color *= 255.0;
-                        color_ptr[0] /= sum_weight_color;
-                        color_ptr[1] /= sum_weight_color;
-                        color_ptr[2] /= sum_weight_color;
+                    if (sum_r > 0) {
+                        sum_r *= 255.0;
+                        color_ptr[0] /= sum_r;
+                        color_ptr[1] /= sum_r;
+                        color_ptr[2] /= sum_r;
 
                         float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
                                           normal_ptr[1] * normal_ptr[1] +
