@@ -241,6 +241,7 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
     vertex_map = core::Tensor({height, width, 3}, core::Float32, device);
     depth_map = core::Tensor({height, width, 1}, core::Float32, device);
     color_map = core::Tensor({height, width, 3}, core::Float32, device);
+    normal_map = core::Tensor({height, width, 3}, core::Float32, device);
 
     const int down_factor = 8;
     core::Tensor range_minmax_map;
@@ -261,6 +262,7 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
     results.emplace("vertex", vertex_map);
     results.emplace("depth", depth_map);
     results.emplace("color", color_map);
+    results.emplace("normal", normal_map);
     results.emplace("range", range_minmax_map);
 
     return results;

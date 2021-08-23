@@ -270,9 +270,11 @@ void RayCastCPU
     NDArrayIndexer vertex_map_indexer;
     NDArrayIndexer depth_map_indexer;
     NDArrayIndexer color_map_indexer;
+    NDArrayIndexer normal_map_indexer;
     vertex_map_indexer = NDArrayIndexer(vertex_map, 2);
     depth_map_indexer = NDArrayIndexer(depth_map, 2);
     color_map_indexer = NDArrayIndexer(color_map, 2);
+    normal_map_indexer = NDArrayIndexer(normal_map, 2);
 
     const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
     const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
@@ -290,6 +292,7 @@ void RayCastCPU
 
 #ifndef __CUDACC__
     using std::max;
+    using std::sqrt;
 #endif
 
     core::ParallelFor(
@@ -372,7 +375,7 @@ void RayCastCPU
                 int64_t x = workload_idx % cols;
 
                 float *depth_ptr = nullptr, *vertex_ptr = nullptr,
-                      *color_ptr = nullptr;
+                      *color_ptr = nullptr, *normal_ptr = nullptr;
 
                 depth_ptr = depth_map_indexer.GetDataPtr<float>(x, y);
                 depth_ptr[0] = 0;
@@ -386,6 +389,11 @@ void RayCastCPU
                 color_ptr[0] = 0;
                 color_ptr[1] = 0;
                 color_ptr[2] = 0;
+
+                normal_ptr = normal_map_indexer.GetDataPtr<float>(x, y);
+                normal_ptr[0] = 0;
+                normal_ptr[1] = 0;
+                normal_ptr[2] = 0;
 
                 const float* range =
                         range_map_indexer.GetDataPtr<float>(x / 8, y / 8);
@@ -492,12 +500,6 @@ void RayCastCPU
                         int dx_v = (k & 1) > 0 ? 1 : 0;
                         int dy_v = (k & 2) > 0 ? 1 : 0;
                         int dz_v = (k & 4) > 0 ? 1 : 0;
-                        float ratio =
-                                (dx_v * (ratio_x) +
-                                 (1 - dx_v) * (1 - ratio_x)) *
-                                (dy_v * (ratio_y) +
-                                 (1 - dy_v) * (1 - ratio_y)) *
-                                (dz_v * (ratio_z) + (1 - dz_v) * (1 - ratio_z));
 
                         int64_t linear_idx_k = GetLinearIdxAtP(
                                 x_b, y_b, z_b, x_v_floor + dx_v,
@@ -506,16 +508,35 @@ void RayCastCPU
 
                         if (linear_idx_k >= 0 &&
                             weight_base_ptr[linear_idx_k] > 0) {
+                            float rx = dx_v * (ratio_x) +
+                                       (1 - dx_v) * (1 - ratio_x);
+                            float ry = dy_v * (ratio_y) +
+                                       (1 - dy_v) * (1 - ratio_y);
+                            float rz = dz_v * (ratio_z) +
+                                       (1 - dz_v) * (1 - ratio_z);
+
+                            float ratio = rx * ry * rz;
+
                             sum_weight_color += ratio;
+                            int64_t color_linear_idx = linear_idx_k * 3;
                             color_ptr[0] +=
                                     ratio *
-                                    color_base_ptr[linear_idx_k * 3 + 0];
+                                    color_base_ptr[color_linear_idx + 0];
                             color_ptr[1] +=
                                     ratio *
-                                    color_base_ptr[linear_idx_k * 3 + 1];
+                                    color_base_ptr[color_linear_idx + 1];
                             color_ptr[2] +=
                                     ratio *
-                                    color_base_ptr[linear_idx_k * 3 + 2];
+                                    color_base_ptr[color_linear_idx + 2];
+
+                            float tsdf_k = tsdf_base_ptr[linear_idx_k];
+                            float grad_x = ry * rz * tsdf_k * (2 * dx_v - 1);
+                            float grad_y = rx * rz * tsdf_k * (2 * dy_v - 1);
+                            float grad_z = rx * ry * tsdf_k * (2 * dz_v - 1);
+
+                            normal_ptr[0] += grad_x;
+                            normal_ptr[1] += grad_y;
+                            normal_ptr[2] += grad_z;
                         }
                     }  // loop over 8 neighbors
 
@@ -524,9 +545,16 @@ void RayCastCPU
                         color_ptr[0] /= sum_weight_color;
                         color_ptr[1] /= sum_weight_color;
                         color_ptr[2] /= sum_weight_color;
-                    }
 
-                }  // if (tsdf < 0)
+                        float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
+                                          normal_ptr[1] * normal_ptr[1] +
+                                          normal_ptr[2] * normal_ptr[2]);
+                        w2c_transform_indexer.Rotate(
+                                -normal_ptr[0] / norm, -normal_ptr[1] / norm,
+                                -normal_ptr[2] / norm, normal_ptr + 0,
+                                normal_ptr + 1, normal_ptr + 2);
+                    }
+                }  // surface-found
             });
 
 #if defined(__CUDACC__)

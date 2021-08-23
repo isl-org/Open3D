@@ -236,6 +236,13 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                                 frustum_block_coords, intrinsic, extrinsics[i],
                                 depth.GetCols(), depth.GetRows(), depth_scale,
                                 depth_min, depth_max, 1.0);
+
+                        t::geometry::Image normal_raycast(result["normal"]);
+                        visualization::DrawGeometries(
+                                {std::make_shared<open3d::geometry::Image>(
+                                        normal_raycast.ToLegacy())});
+                        normal_raycast.AsTensor().Save("normal.npy");
+
                         core::Tensor range_map = result["range"];
                         t::geometry::Image im_near(
                                 range_map.Slice(2, 0, 1).Contiguous() /
