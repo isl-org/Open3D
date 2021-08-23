@@ -307,7 +307,7 @@ Eigen::Vector2f FilamentCamera::GetNDC(const Eigen::Vector3f& pt) const {
 double FilamentCamera::GetViewZ(float z_buffer) const {
     double z_near = GetNear();
     if (z_buffer >= 1.0f) {
-        return 1e9;
+        return std::numeric_limits<double>::infinity();
     } else {
         return -z_near / (1.0 - z_buffer);
     }
