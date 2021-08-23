@@ -242,61 +242,23 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
+#define FN_ARGUMENTS                                                        \
+    const core::Tensor &depth, const core::Tensor &color,                   \
+            const core::Tensor &indices, const core::Tensor &block_keys,    \
+            std::vector<core::Tensor>&block_values,                         \
+            const core::Tensor &intrinsics, const core::Tensor &extrinsics, \
+            int64_t resolution, float voxel_size, float sdf_trunc,          \
+            float depth_scale, float depth_max
+
 template void IntegrateCUDA<uint16_t, uint8_t, float, uint16_t, uint16_t>(
-        const core::Tensor& depth,
-        const core::Tensor& color,
-        const core::Tensor& indices,
-        const core::Tensor& block_keys,
-        std::vector<core::Tensor>& block_values,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        int64_t resolution,
-        float voxel_size,
-        float sdf_trunc,
-        float depth_scale,
-        float depth_max);
-
+        FN_ARGUMENTS);
 template void IntegrateCUDA<uint16_t, uint8_t, float, float, float>(
-        const core::Tensor& depth,
-        const core::Tensor& color,
-        const core::Tensor& indices,
-        const core::Tensor& block_keys,
-        std::vector<core::Tensor>& block_values,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        int64_t resolution,
-        float voxel_size,
-        float sdf_trunc,
-        float depth_scale,
-        float depth_max);
-
+        FN_ARGUMENTS);
 template void IntegrateCUDA<float, float, float, uint16_t, uint16_t>(
-        const core::Tensor& depth,
-        const core::Tensor& color,
-        const core::Tensor& indices,
-        const core::Tensor& block_keys,
-        std::vector<core::Tensor>& block_values,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        int64_t resolution,
-        float voxel_size,
-        float sdf_trunc,
-        float depth_scale,
-        float depth_max);
+        FN_ARGUMENTS);
+template void IntegrateCUDA<float, float, float, float, float>(FN_ARGUMENTS);
 
-template void IntegrateCUDA<float, float, float, float, float>(
-        const core::Tensor& depth,
-        const core::Tensor& color,
-        const core::Tensor& indices,
-        const core::Tensor& block_keys,
-        std::vector<core::Tensor>& block_values,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        int64_t resolution,
-        float voxel_size,
-        float sdf_trunc,
-        float depth_scale,
-        float depth_max);
+#undef FN_ARGUMENTS
 
 }  // namespace voxel_grid
 }  // namespace kernel
