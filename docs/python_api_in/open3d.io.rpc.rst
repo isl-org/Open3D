@@ -16,7 +16,7 @@ open3d.io.rpc
 .. autosummary::
 
     destroy_zmq_context
-    get_data_from_set_mesh_data_buffer
+    data_buffer_to_meta_geometry
     set_active_camera
     set_legacy_camera
     set_mesh_data
@@ -31,7 +31,7 @@ open3d.io.rpc
     BufferConnection <open3d.io.rpc.BufferConnection>
     Connection <open3d.io.rpc.Connection>
     destroy_zmq_context <open3d.io.rpc.destroy_zmq_context>
-    get_data_from_set_mesh_data_buffer <open3d.io.rpc.get_data_from_set_mesh_data_buffer>
+    data_buffer_to_meta_geometry <open3d.io.rpc.data_buffer_to_meta_geometry>
     set_active_camera <open3d.io.rpc.set_active_camera>
     set_legacy_camera <open3d.io.rpc.set_legacy_camera>
     set_mesh_data <open3d.io.rpc.set_mesh_data>

@@ -52,7 +52,7 @@ static constexpr uint32_t kWarpSize = 32;
 //////////////////////
 // Tunable variables
 //////////////////////
-// Hashmap
+// HashMap
 static constexpr uint32_t kSuperBlocks = 32;
 static constexpr uint32_t kBlocksPerSuperBlock = 4;
 static constexpr uint32_t kBlocksPerSuperBlockInBits = 2;

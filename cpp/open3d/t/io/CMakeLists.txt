@@ -3,7 +3,7 @@ add_library(tio OBJECT)
 target_sources(tio PRIVATE
     ImageIO.cpp
     NumpyIO.cpp
-    HashmapIO.cpp
+    HashMapIO.cpp
     PointCloudIO.cpp
     TriangleMeshIO.cpp
     TSDFVoxelGridIO.cpp

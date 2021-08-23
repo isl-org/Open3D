@@ -29,7 +29,7 @@
 #include <json/json.h>
 
 #include "open3d/io/IJsonConvertibleIO.h"
-#include "open3d/t/io/HashmapIO.h"
+#include "open3d/t/io/HashMapIO.h"
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
 
@@ -135,10 +135,10 @@ bool ReadTSDFVoxelGrid(const std::string &file_name,
     std::unordered_map<std::string, core::Tensor> tensor_map =
             t::io::ReadNpz(hashmap_file_name);
     core::Tensor keys = tensor_map.at("key").To(device);
-    core::Tensor values = tensor_map.at("value").To(device);
+    core::Tensor values = tensor_map.at("value_000").To(device);
 
-    core::Tensor addrs, masks;
-    tsdf_voxelgrid.GetBlockHashmap()->Insert(keys, values, addrs, masks);
+    core::Tensor buf_indices, masks;
+    tsdf_voxelgrid.GetBlockHashMap()->Insert(keys, values, buf_indices, masks);
 
     return true;
 }
@@ -157,8 +157,8 @@ bool WriteTSDFVoxelGrid(const std::string &file_name,
         utility::LogError("Unable to write TSDFVoxelGrid's metadata!");
     }
 
-    WriteHashmap(metadata.hashmap_file_name_,
-                 *tsdf_voxelgrid.GetBlockHashmap());
+    WriteHashMap(metadata.hashmap_file_name_,
+                 *tsdf_voxelgrid.GetBlockHashMap());
 
     return true;
 }

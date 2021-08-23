@@ -127,7 +127,7 @@ void pybind_slam_model(py::module &m) {
                                     map_shared_argument_docstrings);
 
     model.def(
-            "get_hashmap", &Model::GetHashmap,
+            "get_hashmap", &Model::GetHashMap,
             "Get the underlying hash map from 3D coordinates to voxel blocks.");
     model.def_readwrite("voxel_grid", &Model::voxel_grid_,
                         "Get the maintained TSDFVoxelGrid.");

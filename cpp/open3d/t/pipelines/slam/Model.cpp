@@ -123,7 +123,7 @@ t::geometry::TriangleMesh Model::ExtractTriangleMesh(int estimated_number,
     return voxel_grid_.ExtractSurfaceMesh(estimated_number, weight_threshold);
 }
 
-core::Hashmap Model::GetHashmap() { return *voxel_grid_.GetBlockHashmap(); }
+core::HashMap Model::GetHashMap() { return *voxel_grid_.GetBlockHashMap(); }
 }  // namespace slam
 }  // namespace pipelines
 }  // namespace t

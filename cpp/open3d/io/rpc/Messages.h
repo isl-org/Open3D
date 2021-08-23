@@ -32,6 +32,8 @@
 #include <string>
 #include <vector>
 
+#include "open3d/core/Tensor.h"
+
 namespace open3d {
 namespace io {
 namespace rpc {
@@ -120,6 +122,8 @@ inline std::string TypeStr<uint64_t>() {
 struct Array {
     static std::string MsgId() { return "array"; }
 
+    /// Creates an Array from a pointer. The caller is responsible for keeping
+    /// the pointer valid during the lifetime of the Array object.
     template <class T>
     static Array FromPtr(const T* const ptr,
                          const std::vector<int64_t>& shape) {
@@ -132,6 +136,26 @@ struct Array {
         arr.data.size = uint32_t(sizeof(T) * num);
         return arr;
     }
+
+    /// Creates an Array from a Tensor. This will copy the tensor to
+    /// contiguous CPU memory if necessary and the returned array will keep
+    /// a reference.
+    static Array FromTensor(const core::Tensor& tensor) {
+        // We require the tensor to be contiguous and to use the CPU.
+        auto t = tensor.To(core::Device("CPU:0")).Contiguous();
+        auto a = DISPATCH_DTYPE_TO_TEMPLATE(t.GetDtype(), [&]() {
+            auto arr = messages::Array::FromPtr(
+                    (scalar_t*)t.GetDataPtr(),
+                    static_cast<std::vector<int64_t>>(t.GetShape()));
+            arr.tensor_ = t;
+            return arr;
+        });
+        return a;
+    }
+
+    // Object for keeping a reference to the tensor. not meant to be serialized.
+    core::Tensor tensor_;
+
     std::string type;
     std::vector<int64_t> shape;
     msgpack::type::raw_ref data;
@@ -275,7 +299,7 @@ struct MeshData {
     /// The array can be of rank 1 or 2.
     /// An array of rank 2 with shape [num_lines,n] defines num_lines linestrips
     /// with n vertices. If the rank of the array is 1 then linestrips with
-    /// different number of veertices are stored sequentially. Each linestrip is
+    /// different number of vertices are stored sequentially. Each linestrip is
     /// stored as a sequence 'n i1 i2 ... in' with n>=2. The type of the array
     /// must be int32_t or int64_t
     Array lines;
@@ -284,6 +308,14 @@ struct MeshData {
 
     /// map of arrays that can be interpreted as textures
     std::map<std::string, Array> textures;
+
+    void SetO3DTypeToPointCloud() { o3d_type = "PointCloud"; }
+    void SetO3DTypeToLineSet() { o3d_type = "LineSet"; }
+    void SetO3DTypeToTriangleMesh() { o3d_type = "TriangleMesh"; }
+
+    bool O3DTypeIsPointCloud() const { return o3d_type == "PointCloud"; }
+    bool O3DTypeIsLineSet() const { return o3d_type == "LineSet"; }
+    bool O3DTypeIsTriangleMesh() const { return o3d_type == "TriangleMesh"; }
 
     bool CheckVertices(std::string& errstr) const {
         std::string tmp = "invalid vertices array:";
@@ -332,10 +364,8 @@ struct MeshData {
     }
 
     bool CheckO3DType(std::string& errstr) const {
-        if (o3d_type.empty()) return true;
-
-        if ("PointCloud" == o3d_type || "TriangleMesh" == o3d_type ||
-            "LineSet" == o3d_type) {
+        if (o3d_type.empty() || O3DTypeIsPointCloud() || O3DTypeIsLineSet() ||
+            O3DTypeIsTriangleMesh()) {
             return true;
         } else {
             errstr +=

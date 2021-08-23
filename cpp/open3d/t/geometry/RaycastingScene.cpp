@@ -398,10 +398,10 @@ RaycastingScene::~RaycastingScene() {
 uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
                                        const core::Tensor& triangle_indices) {
     vertex_positions.AssertDevice(impl_->tensor_device_);
-    vertex_positions.AssertShapeCompatible({utility::nullopt, 3});
+    vertex_positions.AssertShape({utility::nullopt, 3});
     vertex_positions.AssertDtype(core::Float32);
     triangle_indices.AssertDevice(impl_->tensor_device_);
-    triangle_indices.AssertShapeCompatible({utility::nullopt, 3});
+    triangle_indices.AssertShape({utility::nullopt, 3});
     triangle_indices.AssertDtype(core::UInt32);
 
     const size_t num_vertices = vertex_positions.GetLength();

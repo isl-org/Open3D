@@ -262,7 +262,7 @@ class Open3DPluginDataReader:
             file_handle[0].seek(offset=read_location)
             buf = file_handle[0].read(read_size)
             file_handle[1].release()
-            msg_tag, msg_step, geometry = o3d.io.rpc.get_data_from_set_mesh_data_buffer(
+            msg_tag, msg_step, geometry = o3d.io.rpc.data_buffer_to_meta_geometry(
                 buf)
             if geometry is None:
                 raise IOError(f"Geometry {cache_key} reading failed! Possible "

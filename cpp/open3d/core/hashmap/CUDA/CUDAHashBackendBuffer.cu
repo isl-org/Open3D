@@ -24,29 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <thrust/sequence.h>
 
-#include <string>
-
-#include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
 
 namespace open3d {
-namespace t {
-namespace io {
-
-/// Read a hash map's keys and values from a npz file at 'key' and 'value'.
-/// Return a hash map on CPU.
-///
-/// \param filename The npz file name to read from.
-core::Hashmap ReadHashmap(const std::string& filename);
-
-/// Save a hash map's keys and values to a npz file at 'key' and 'value'.
-///
-/// \param filename The npz file name to write to.
-/// \param hashmap Hashmap to save.
-void WriteHashmap(const std::string& filename, const core::Hashmap& hashmap);
-
-}  // namespace io
-}  // namespace t
+namespace core {
+void CUDAResetHeap(Tensor &heap) {
+    uint32_t *heap_ptr = heap.GetDataPtr<uint32_t>();
+    thrust::sequence(thrust::device, heap_ptr, heap_ptr + heap.GetLength(), 0);
+    OPEN3D_CUDA_CHECK(cudaGetLastError());
+}
+}  // namespace core
 }  // namespace open3d

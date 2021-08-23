@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 #include <benchmark/benchmark.h>
 
@@ -71,28 +71,28 @@ void HashInsertInt(benchmark::State& state,
                    int capacity,
                    int duplicate_factor,
                    const Device& device,
-                   const HashmapBackend& backend) {
+                   const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {1}, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
                            backend);
-    Tensor addrs, masks;
-    hashmap_warmup.Insert(keys, values, addrs, masks);
+    Tensor buf_indices, masks;
+    hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, core::Int32, {1}, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                         backend);
-        Tensor addrs, masks;
+        Tensor buf_indices, masks;
 
         cuda::Synchronize(device);
         state.ResumeTiming();
 
-        hashmap.Insert(keys, values, addrs, masks);
+        hashmap.Insert(keys, values, buf_indices, masks);
 
         cuda::Synchronize(device);
         state.PauseTiming();
@@ -111,24 +111,24 @@ void HashEraseInt(benchmark::State& state,
                   int capacity,
                   int duplicate_factor,
                   const Device& device,
-                  const HashmapBackend& backend) {
+                  const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {1}, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
                            backend);
-    Tensor addrs, masks;
-    hashmap_warmup.Insert(keys, values, addrs, masks);
+    Tensor buf_indices, masks;
+    hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, core::Int32, {1}, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                         backend);
-        Tensor addrs, masks;
-        hashmap.Insert(keys, values, addrs, masks);
+        Tensor buf_indices, masks;
+        hashmap.Insert(keys, values, buf_indices, masks);
 
         cuda::Synchronize(device);
         state.ResumeTiming();
@@ -152,21 +152,21 @@ void HashFindInt(benchmark::State& state,
                  int capacity,
                  int duplicate_factor,
                  const Device& device,
-                 const HashmapBackend& backend) {
+                 const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap(capacity, core::Int32, core::Int32, {1}, {1}, device,
+    HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                     backend);
-    Tensor addrs, masks;
+    Tensor buf_indices, masks;
     // Insert as warp-up
-    hashmap.Insert(keys, values, addrs, masks);
+    hashmap.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
-        hashmap.Find(keys, addrs, masks);
+        hashmap.Find(keys, buf_indices, masks);
         cuda::Synchronize(device);
     }
 }
@@ -175,25 +175,25 @@ void HashClearInt(benchmark::State& state,
                   int capacity,
                   int duplicate_factor,
                   const Device& device,
-                  const HashmapBackend& backend) {
+                  const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {1}, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
                            backend);
-    Tensor addrs, masks;
-    hashmap_warmup.Insert(keys, values, addrs, masks);
+    Tensor buf_indices, masks;
+    hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, core::Int32, {1}, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                         backend);
-        Tensor addrs, masks;
+        Tensor buf_indices, masks;
 
-        hashmap.Insert(keys, values, addrs, masks);
+        hashmap.Insert(keys, values, buf_indices, masks);
 
         int64_t s = hashmap.Size();
         if (s != slots) {
@@ -224,25 +224,25 @@ void HashRehashInt(benchmark::State& state,
                    int capacity,
                    int duplicate_factor,
                    const Device& device,
-                   const HashmapBackend& backend) {
+                   const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
     Tensor keys(data.keys_, {capacity}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {1}, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {1}, core::Int32, {1}, device,
                            backend);
-    Tensor addrs, masks;
-    hashmap_warmup.Insert(keys, values, addrs, masks);
+    Tensor buf_indices, masks;
+    hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, core::Int32, {1}, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
                         backend);
-        Tensor addrs, masks;
+        Tensor buf_indices, masks;
 
-        hashmap.Insert(keys, values, addrs, masks);
+        hashmap.Insert(keys, values, buf_indices, masks);
 
         int64_t s = hashmap.Size();
         if (s != slots) {
@@ -285,7 +285,7 @@ void HashInsertInt3(benchmark::State& state,
                     int capacity,
                     int duplicate_factor,
                     const Device& device,
-                    const HashmapBackend& backend) {
+                    const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -295,21 +295,21 @@ void HashInsertInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {3}, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
                            backend);
-    Tensor addrs, masks;
-    hashmap_warmup.Insert(keys, values, addrs, masks);
+    Tensor buf_indices, masks;
+    hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, core::Int32, {3}, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                         backend);
-        Tensor addrs, masks;
+        Tensor buf_indices, masks;
 
         cuda::Synchronize(device);
         state.ResumeTiming();
 
-        hashmap.Insert(keys, values, addrs, masks);
+        hashmap.Insert(keys, values, buf_indices, masks);
 
         cuda::Synchronize(device);
         state.PauseTiming();
@@ -328,7 +328,7 @@ void HashEraseInt3(benchmark::State& state,
                    int capacity,
                    int duplicate_factor,
                    const Device& device,
-                   const HashmapBackend& backend) {
+                   const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -338,17 +338,17 @@ void HashEraseInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {3}, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
                            backend);
-    Tensor addrs, masks;
-    hashmap_warmup.Insert(keys, values, addrs, masks);
+    Tensor buf_indices, masks;
+    hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, core::Int32, {3}, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                         backend);
-        Tensor addrs, masks;
-        hashmap.Insert(keys, values, addrs, masks);
+        Tensor buf_indices, masks;
+        hashmap.Insert(keys, values, buf_indices, masks);
 
         cuda::Synchronize(device);
         state.ResumeTiming();
@@ -372,7 +372,7 @@ void HashFindInt3(benchmark::State& state,
                   int capacity,
                   int duplicate_factor,
                   const Device& device,
-                  const HashmapBackend& backend) {
+                  const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -382,13 +382,13 @@ void HashFindInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap(capacity, core::Int32, core::Int32, {3}, {1}, device,
+    HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                     backend);
-    Tensor addrs, masks;
-    hashmap.Insert(keys, values, addrs, masks);
+    Tensor buf_indices, masks;
+    hashmap.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
-        hashmap.Find(keys, addrs, masks);
+        hashmap.Find(keys, buf_indices, masks);
         cuda::Synchronize(device);
     }
 }
@@ -397,7 +397,7 @@ void HashClearInt3(benchmark::State& state,
                    int capacity,
                    int duplicate_factor,
                    const Device& device,
-                   const HashmapBackend& backend) {
+                   const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -407,18 +407,18 @@ void HashClearInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {3}, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
                            backend);
-    Tensor addrs, masks;
-    hashmap_warmup.Insert(keys, values, addrs, masks);
+    Tensor buf_indices, masks;
+    hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, core::Int32, {3}, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                         backend);
-        Tensor addrs, masks;
+        Tensor buf_indices, masks;
 
-        hashmap.Insert(keys, values, addrs, masks);
+        hashmap.Insert(keys, values, buf_indices, masks);
 
         int64_t s = hashmap.Size();
         if (s != slots) {
@@ -449,7 +449,7 @@ void HashRehashInt3(benchmark::State& state,
                     int capacity,
                     int duplicate_factor,
                     const Device& device,
-                    const HashmapBackend& backend) {
+                    const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -459,18 +459,18 @@ void HashRehashInt3(benchmark::State& state,
     Tensor keys(keys_Int3, {capacity, 3}, core::Int32, device);
     Tensor values(data.vals_, {capacity}, core::Int32, device);
 
-    Hashmap hashmap_warmup(capacity, core::Int32, core::Int32, {3}, {1}, device,
+    HashMap hashmap_warmup(capacity, core::Int32, {3}, core::Int32, {1}, device,
                            backend);
-    Tensor addrs, masks;
-    hashmap_warmup.Insert(keys, values, addrs, masks);
+    Tensor buf_indices, masks;
+    hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
     for (auto _ : state) {
         state.PauseTiming();
-        Hashmap hashmap(capacity, core::Int32, core::Int32, {3}, {1}, device,
+        HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
                         backend);
-        Tensor addrs, masks;
+        Tensor buf_indices, masks;
 
-        hashmap.Insert(keys, values, addrs, masks);
+        hashmap.Insert(keys, values, buf_indices, masks);
 
         int64_t s = hashmap.Size();
         if (s != slots) {
@@ -525,13 +525,13 @@ void HashRehashInt3(benchmark::State& state,
     ENUM_BM_CAPACITY(FN, 32, DEVICE, BACKEND)
 
 #ifdef BUILD_CUDA_MODULE
-#define ENUM_BM_BACKEND(FN)                                    \
-    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashmapBackend::TBB)   \
-    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashmapBackend::Slab) \
-    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashmapBackend::StdGPU)
+#define ENUM_BM_BACKEND(FN)                                     \
+    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashBackendType::TBB)   \
+    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashBackendType::Slab) \
+    ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashBackendType::StdGPU)
 #else
 #define ENUM_BM_BACKEND(FN) \
-    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashmapBackend::TBB)
+    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashBackendType::TBB)
 #endif
 
 ENUM_BM_BACKEND(HashInsertInt)
