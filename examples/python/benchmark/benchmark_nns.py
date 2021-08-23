@@ -1,5 +1,7 @@
 import os
 
+from numpy.random.mtrand import sample
+
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'  # does not affect results
 
 import argparse
@@ -14,7 +16,7 @@ import open3d as o3d
 pwd = Path(os.path.dirname(os.path.realpath(__file__)))
 open3d_root = pwd.parent.parent.parent
 
-from benchmark_utils import measure_time, print_system_info, print_table
+from benchmark_utils import measure_time, print_system_info, print_table, sample_points
 
 
 # Define NNS methods
@@ -203,28 +205,30 @@ if __name__ == "__main__":
             points = example['points']
             queries = example['queries']
 
-            for knn, step in itertools.product((1, 37, 64),
-                                               (1, 10, 25, 50, 100)):
-                print(knn, step)
+            for knn, num_points in itertools.product(
+                (1, 37, 64),
+                    map(lambda x: x * 1000,
+                        (1, 10, 50, 75, 100, 150, 200, 500, 1000))):
+                print(knn, num_points)
                 points = example['points']
                 queries = example['queries']
 
-                points = points[::step].contiguous().to(o3d_cuda_dev)
-                queries = queries[::step].contiguous().to(o3d_cuda_dev)
+                points = sample_points(points, num_sample=num_points)
+                queries = sample_points(queries, num_sample=num_points)
+                points = points.contiguous().to(o3d_cuda_dev)
+                queries = queries.contiguous().to(o3d_cuda_dev)
 
                 example_results = {'k': knn, 'num_points': points.shape[0]}
 
                 if hasattr(method, "prepare_data"):
                     points, queries = method.prepare_data(points, queries)
 
-                ans = measure_time(lambda: method.setup(points, queries),
-                                   min_samples=3)
+                ans = measure_time(lambda: method.setup(points, queries))
                 example_results['knn_setup'] = ans
 
                 index, queries = method.setup(points, queries)
 
-                ans = measure_time(lambda: method.search(index, queries, knn),
-                                   min_samples=3)
+                ans = measure_time(lambda: method.search(index, queries, knn))
                 example_results['knn_search'] = ans
 
                 del index

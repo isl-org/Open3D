@@ -83,3 +83,11 @@ def print_table(method_names, results):
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))
+
+
+def sample_points(points, num_sample):
+    if points.shape[0] < num_sample:
+        num_sample = points.shape[0]
+
+    idx = np.round(np.linspace(0, len(points) - 1, num_sample)).astype(int)
+    return points[idx]
