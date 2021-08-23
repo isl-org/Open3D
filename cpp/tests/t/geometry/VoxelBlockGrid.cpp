@@ -203,11 +203,11 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     const float depth_max = 3.0;
     for (auto backend : backends) {
         for (int block_resolution : std::vector<int>{8, 16}) {
-            auto vbg =
-                    VoxelBlockGrid({"tsdf", "weight", "color"},
-                                   {core::Float32, core::Float32, core::UInt16},
-                                   {{1}, {1}, {3}}, 3.0 / 512, block_resolution,
-                                   10000, device, backend);
+            auto vbg = VoxelBlockGrid(
+                    {"tsdf", "weight", "color"},
+                    {core::Float32, core::Float32, core::Float32},
+                    {{1}, {1}, {3}}, 3.0 / 512, block_resolution, 10000, device,
+                    backend);
 
             for (size_t i = 0; i < extrinsics.size(); ++i) {
                 Image depth =

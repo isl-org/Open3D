@@ -46,9 +46,8 @@ void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
                      int64_t voxel_grid_resolution,
                      float voxel_size,
                      float sdf_trunc) {
-    core::Device device = points.GetDevice();
+    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
 
-    core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         PointCloudTouchCPU(hashmap, points, voxel_block_coords,
                            voxel_grid_resolution, voxel_size, sdf_trunc);
@@ -62,8 +61,8 @@ void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
 
 void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
                 const core::Tensor& depth,
-                const core::Tensor& intrinsics,
-                const core::Tensor& extrinsics,
+                const core::Tensor& intrinsic,
+                const core::Tensor& extrinsic,
                 core::Tensor& voxel_block_coords,
                 int64_t voxel_grid_resolution,
                 float voxel_size,
@@ -71,15 +70,14 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
                 float depth_scale,
                 float depth_max,
                 int stride) {
-    core::Device device = depth.GetDevice();
+    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
 
-    core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        DepthTouchCPU(hashmap, depth, intrinsics, extrinsics,
-                      voxel_block_coords, voxel_grid_resolution, voxel_size,
-                      sdf_trunc, depth_scale, depth_max, stride);
+        DepthTouchCPU(hashmap, depth, intrinsic, extrinsic, voxel_block_coords,
+                      voxel_grid_resolution, voxel_size, sdf_trunc, depth_scale,
+                      depth_max, stride);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(DepthTouchCUDA, hashmap, depth, intrinsics, extrinsics,
+        CUDA_CALL(DepthTouchCUDA, hashmap, depth, intrinsic, extrinsic,
                   voxel_block_coords, voxel_grid_resolution, voxel_size,
                   sdf_trunc, depth_scale, depth_max, stride);
     } else {
@@ -87,53 +85,75 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
     }
 }
 
+#define DISPATCH_VALUE_DTYPE_TO_TEMPLATE(WEIGHT_DTYPE, COLOR_DTYPE, ...)   \
+    [&] {                                                                  \
+        if (WEIGHT_DTYPE == open3d::core::Float32 &&                       \
+            COLOR_DTYPE == open3d::core::Float32) {                        \
+            using weight_t = float;                                        \
+            using color_t = float;                                         \
+            return __VA_ARGS__();                                          \
+        } else if (WEIGHT_DTYPE == open3d::core::UInt16 &&                 \
+                   COLOR_DTYPE == open3d::core::UInt16) {                  \
+            using weight_t = uint16_t;                                     \
+            using color_t = uint16_t;                                      \
+            return __VA_ARGS__();                                          \
+        } else {                                                           \
+            utility::LogError("Unsupported value data type combination."); \
+        }                                                                  \
+    }()
+
+#define DISPATCH_INPUT_DTYPE_TO_TEMPLATE(DEPTH_DTYPE, COLOR_DTYPE, ...)    \
+    [&] {                                                                  \
+        if (DEPTH_DTYPE == open3d::core::Float32 &&                        \
+            COLOR_DTYPE == open3d::core::Float32) {                        \
+            using input_depth_t = float;                                   \
+            using input_color_t = float;                                   \
+            return __VA_ARGS__();                                          \
+        } else if (DEPTH_DTYPE == open3d::core::UInt16 &&                  \
+                   COLOR_DTYPE == open3d::core::UInt8) {                   \
+            using input_depth_t = uint16_t;                                \
+            using input_color_t = uint8_t;                                 \
+            return __VA_ARGS__();                                          \
+        } else {                                                           \
+            utility::LogError("Unsupported input data type combination."); \
+        }                                                                  \
+    }()
+
 void Integrate(const core::Tensor& depth,
                const core::Tensor& color,
                const core::Tensor& block_indices,
                const core::Tensor& block_keys,
                std::vector<core::Tensor>& block_values,
-               const core::Tensor& intrinsics,
-               const core::Tensor& extrinsics,
+               const core::Tensor& intrinsic,
+               const core::Tensor& extrinsic,
                int64_t resolution,
                float voxel_size,
                float sdf_trunc,
                float depth_scale,
                float depth_max) {
-    core::Device device = depth.GetDevice();
+    core::Device::DeviceType device_type = depth.GetDevice().GetType();
 
-    core::Tensor depthf32 = depth.To(core::Float32);
-    core::Tensor colorf32;
-
-    if (color.NumElements() != 0) {
-        if (color.GetDevice() != device) {
-            utility::LogError(
-                    "Incompatible color device type for depth and color");
-        }
-        colorf32 = color.To(core::Float32);
-    }
-
-    if (block_indices.GetDevice() != device ||
-        block_keys.GetDevice() != device) {
-        utility::LogError(
-                "Incompatible device type for depth and TSDF voxel grid");
-    }
-
-    static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
-    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
-
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
-        IntegrateCPU(depthf32, colorf32, block_indices, block_keys,
-                     block_values, intrinsics_d, extrinsics_d, resolution,
-                     voxel_size, sdf_trunc, depth_scale, depth_max);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(IntegrateCUDA, depthf32, colorf32, block_indices, block_keys,
-                  block_values, intrinsics_d, extrinsics_d, resolution,
-                  voxel_size, sdf_trunc, depth_scale, depth_max);
-    } else {
-        utility::LogError("Unimplemented device");
-    }
+    using tsdf_t = float;
+    DISPATCH_INPUT_DTYPE_TO_TEMPLATE(depth.GetDtype(), color.GetDtype(), [&] {
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_values[1].GetDtype(), block_values[2].GetDtype(), [&] {
+                    if (device_type == core::Device::DeviceType::CPU) {
+                        IntegrateCPU<input_depth_t, input_color_t, tsdf_t,
+                                     weight_t, color_t>(
+                                depth, color, block_indices, block_keys,
+                                block_values, intrinsic, extrinsic, resolution,
+                                voxel_size, sdf_trunc, depth_scale, depth_max);
+                    } else if (device_type == core::Device::DeviceType::CUDA) {
+                        IntegrateCUDA<input_depth_t, input_color_t, tsdf_t,
+                                      weight_t, color_t>(
+                                depth, color, block_indices, block_keys,
+                                block_values, intrinsic, extrinsic, resolution,
+                                voxel_size, sdf_trunc, depth_scale, depth_max);
+                    } else {
+                        utility::LogError("Unimplemented device");
+                    }
+                });
+    });
 }
 
 void RayCast(std::shared_ptr<core::HashMap>& hashmap,
@@ -143,8 +163,8 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              core::Tensor& depth_map,
              core::Tensor& color_map,
              core::Tensor& normal_map,
-             const core::Tensor& intrinsics,
-             const core::Tensor& extrinsics,
+             const core::Tensor& intrinsic,
+             const core::Tensor& extrinsic,
              int h,
              int w,
              int64_t block_resolution,
@@ -154,21 +174,17 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              float depth_min,
              float depth_max,
              float weight_threshold) {
-    static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
-    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
+    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
 
-    core::Device device = hashmap->GetDevice();
-    core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         RayCastCPU(hashmap, block_values, range_map, vertex_map, depth_map,
-                   color_map, normal_map, intrinsics_d, extrinsics_d, h, w,
+                   color_map, normal_map, intrinsic, extrinsic, h, w,
                    block_resolution, voxel_size, sdf_trunc, depth_scale,
                    depth_min, depth_max, weight_threshold);
     } else if (device_type == core::Device::DeviceType::CUDA) {
         CUDA_CALL(RayCastCUDA, hashmap, block_values, range_map, vertex_map,
-                  depth_map, color_map, normal_map, intrinsics_d, extrinsics_d,
-                  h, w, block_resolution, voxel_size, sdf_trunc, depth_scale,
+                  depth_map, color_map, normal_map, intrinsic, extrinsic, h, w,
+                  block_resolution, voxel_size, sdf_trunc, depth_scale,
                   depth_min, depth_max, weight_threshold);
     } else {
         utility::LogError("Unimplemented device");
@@ -187,9 +203,8 @@ void ExtractSurfacePoints(const core::Tensor& block_indices,
                           float voxel_size,
                           float weight_threshold,
                           int& valid_size) {
-    core::Device device = block_keys.GetDevice();
+    core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
 
-    core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         ExtractSurfacePointsCPU(block_indices, nb_block_indices, nb_block_masks,
                                 block_keys, block_values, points, normals,

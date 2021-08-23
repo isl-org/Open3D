@@ -120,6 +120,11 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
                    float depth_max,
                    int stride);
 
+template <typename input_depth_t,
+          typename input_color_t,
+          typename tsdf_t,
+          typename weight_t,
+          typename color_t>
 void IntegrateCPU(const core::Tensor& depth,
                   const core::Tensor& color,
                   const core::Tensor& block_indices,
@@ -185,6 +190,11 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
                     float depth_max,
                     int stride);
 
+template <typename input_depth_t,
+          typename input_color_t,
+          typename tsdf_t,
+          typename weight_t,
+          typename color_t>
 void IntegrateCUDA(const core::Tensor& depth,
                    const core::Tensor& color,
                    const core::Tensor& block_indices,

@@ -188,7 +188,7 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(const PointCloud &pcd) {
     }
 
     core::Tensor block_coords;
-    float trunc_multiplier = block_resolution_ / 2 - 1;
+    float trunc_multiplier = block_resolution_ * 0.5 - 1;
     kernel::voxel_grid::PointCloudTouch(
             frustum_hashmap_, positions, block_coords, block_resolution_,
             voxel_size_, voxel_size_ * trunc_multiplier);
@@ -202,6 +202,7 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
                                const core::Tensor &extrinsic,
                                float depth_scale,
                                float depth_max) {
+    CheckBlockCoorinates(block_coords);
     CheckDepthTensor(depth.AsTensor());
     CheckColorTensor(color.AsTensor());
     CheckIntrinsicTensor(intrinsic);
@@ -230,6 +231,7 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
         float depth_min,
         float depth_max,
         float weight_threshold) {
+    CheckBlockCoorinates(block_coords);
     CheckIntrinsicTensor(intrinsic);
     CheckExtrinsicTensor(extrinsic);
 

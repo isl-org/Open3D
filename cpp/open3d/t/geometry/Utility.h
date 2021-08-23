@@ -57,12 +57,37 @@ inline void CheckIntrinsicTensor(const core::Tensor& intrinsic) {
         utility::LogError("Unsupported intrinsic matrix shape {}",
                           intrinsic.GetShape());
     }
+
+    if (intrinsic.GetDtype() != core::Dtype::Float64) {
+        utility::LogError("Unsupported intrinsic matrix dtype {}",
+                          intrinsic.GetDtype().ToString());
+    }
+
+    if (!intrinsic.IsContiguous()) {
+        utility::LogError("Intrinsic matrix must be contiguous.");
+    }
 }
 
 inline void CheckExtrinsicTensor(const core::Tensor& extrinsic) {
     if (extrinsic.GetShape() != core::SizeVector{4, 4}) {
         utility::LogError("Unsupported extrinsic matrix shape {}",
                           extrinsic.GetShape());
+    }
+
+    if (extrinsic.GetDtype() != core::Dtype::Float64) {
+        utility::LogError("Unsupported extrinsic matrix dtype {}",
+                          extrinsic.GetDtype().ToString());
+    }
+
+    if (!extrinsic.IsContiguous()) {
+        utility::LogError("Extrinsic matrix must be contiguous.");
+    }
+}
+
+inline void CheckBlockCoorinates(const core::Tensor& block_coords) {
+    if (block_coords.GetDtype() != core::Dtype::Int32) {
+        utility::LogError("Unsupported block coordinate dtype {}",
+                          block_coords.GetDtype().ToString());
     }
 }
 

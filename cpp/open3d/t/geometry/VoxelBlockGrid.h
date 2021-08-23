@@ -51,7 +51,7 @@ public:
     /// \brief Default Constructor.
     /// Example:
     /// VoxelBlockGrid({"tsdf", "weight", "color"},
-    ///                {core::Float32, core::Float32, core::UInt16},
+    ///                {core::Float32, core::UInt16, core::UInt16},
     ///                {{1}, {1}, {3}},
     ///                0.005,
     ///                16,
@@ -131,6 +131,16 @@ public:
     /// Specific operation for TSDF volumes.
     /// Integrate an RGB-D frame in the selected block coordinates using pinhole
     /// camera model.
+    /// For built-in kernels, we support efficient hash map types for SLAM:
+    /// tsdf: float, weight: uint16_t, color: uint16_t
+    /// and accurate mode for differentiable rendering:
+    /// tsdf/weight/color: float
+    /// We assume input data are either raw:
+    /// depth: uint16_t, color: uint8_t
+    /// or depth/color: float.
+    /// To support other types and properties, users should combine
+    /// GetUniqueBlockCoordinates, GetVoxelIndices, and GetVoxelCoordinates,
+    /// with self-defined operations.
     void Integrate(const core::Tensor &block_coords,
                    const Image &depth,
                    const Image &color,
