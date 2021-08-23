@@ -185,7 +185,5 @@ jobs:
           export_default_credentials: true
       - name: Rename documentation archive
         run: |
-          docs_tar_file="${{ github.sha }}.tar.gz"
-          gsutil mv gs://open3d-docs/wait_for_wheels_${docs_tar_file} gs://open3d-docs/${docs_tar_file}
-          echo "All development wheels available. Documentation archive is ready for deployment:"
-          echo "https://storage.googleapis.com/open3d-docs/${docs_tar_file}"
+          export docs_tar_file="${{ github.sha }}.tar.gz"
+          util/ready_docs.sh
