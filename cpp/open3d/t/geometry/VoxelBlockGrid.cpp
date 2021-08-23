@@ -238,10 +238,6 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
     // Extrinsic: world to camera -> pose: camera to world
     core::Tensor vertex_map, depth_map, color_map, normal_map;
     core::Device device = block_hashmap_->GetDevice();
-    vertex_map = core::Tensor({height, width, 3}, core::Float32, device);
-    depth_map = core::Tensor({height, width, 1}, core::Float32, device);
-    color_map = core::Tensor({height, width, 3}, core::Float32, device);
-    normal_map = core::Tensor({height, width, 3}, core::Float32, device);
 
     const int down_factor = 8;
     core::Tensor range_minmax_map;
@@ -249,23 +245,26 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
             block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
             down_factor, block_resolution_, voxel_size_, depth_min, depth_max);
 
+    std::unordered_map<std::string, core::Tensor> renderings_map;
+    renderings_map["vertex"] =
+            core::Tensor({height, width, 3}, core::Float32, device);
+    renderings_map["depth"] =
+            core::Tensor({height, width, 1}, core::Float32, device);
+    renderings_map["color"] =
+            core::Tensor({height, width, 3}, core::Float32, device);
+    renderings_map["normal"] =
+            core::Tensor({height, width, 3}, core::Float32, device);
+    renderings_map["range"] = range_minmax_map;
+
     float trunc_multiplier = block_resolution_ * 0.5;
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
     kernel::voxel_grid::RayCast(block_hashmap_, block_values, range_minmax_map,
-                                vertex_map, depth_map, color_map, normal_map,
-                                intrinsic, extrinsic, height, width,
-                                block_resolution_, voxel_size_,
+                                renderings_map, intrinsic, extrinsic, height,
+                                width, block_resolution_, voxel_size_,
                                 voxel_size_ * trunc_multiplier, depth_scale,
                                 depth_min, depth_max, weight_threshold);
 
-    std::unordered_map<std::string, core::Tensor> results;
-    results.emplace("vertex", vertex_map);
-    results.emplace("depth", depth_map);
-    results.emplace("color", color_map);
-    results.emplace("normal", normal_map);
-    results.emplace("range", range_minmax_map);
-
-    return results;
+    return renderings_map;
 }
 
 std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(

@@ -260,16 +260,15 @@ template void IntegrateCUDA<float, float, float, float, float>(FN_ARGUMENTS);
 
 #undef FN_ARGUMENTS
 
-#define FN_ARGUMENTS                                                     \
-    std::shared_ptr<core::HashMap> &hashmap,                             \
-            const std::vector<core::Tensor> &block_values,               \
-            const core::Tensor &range_map, core::Tensor &vertex_map,     \
-            core::Tensor &depth_map, core::Tensor &color_map,            \
-            core::Tensor &normal_map, const core::Tensor &intrinsics,    \
-            const core::Tensor &extrinsics, int h, int w,                \
-            int64_t block_resolution, float voxel_size, float sdf_trunc, \
-            float depth_scale, float depth_min, float depth_max,         \
-            float weight_threshold
+#define FN_ARGUMENTS                                                        \
+    std::shared_ptr<core::HashMap> &hashmap,                                \
+            const std::vector<core::Tensor> &block_values,                  \
+            const core::Tensor &range_map,                                  \
+            std::unordered_map<std::string, core::Tensor> &renderings_map,  \
+            const core::Tensor &intrinsics, const core::Tensor &extrinsics, \
+            int h, int w, int64_t block_resolution, float voxel_size,       \
+            float sdf_trunc, float depth_scale, float depth_min,            \
+            float depth_max, float weight_threshold
 
 template void RayCastCUDA<float, uint16_t, uint16_t>(FN_ARGUMENTS);
 template void RayCastCUDA<float, float, float>(FN_ARGUMENTS);

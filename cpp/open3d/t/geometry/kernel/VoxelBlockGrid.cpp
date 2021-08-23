@@ -159,10 +159,7 @@ void Integrate(const core::Tensor& depth,
 void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              const std::vector<core::Tensor>& block_values,
              const core::Tensor& range_map,
-             core::Tensor& vertex_map,
-             core::Tensor& depth_map,
-             core::Tensor& color_map,
-             core::Tensor& normal_map,
+             std::unordered_map<std::string, core::Tensor>& renderings_map,
              const core::Tensor& intrinsic,
              const core::Tensor& extrinsic,
              int h,
@@ -181,18 +178,16 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
             block_values[1].GetDtype(), block_values[2].GetDtype(), [&] {
                 if (device_type == core::Device::DeviceType::CPU) {
                     RayCastCPU<tsdf_t, weight_t, color_t>(
-                            hashmap, block_values, range_map, vertex_map,
-                            depth_map, color_map, normal_map, intrinsic,
-                            extrinsic, h, w, block_resolution, voxel_size,
-                            sdf_trunc, depth_scale, depth_min, depth_max,
-                            weight_threshold);
+                            hashmap, block_values, range_map, renderings_map,
+                            intrinsic, extrinsic, h, w, block_resolution,
+                            voxel_size, sdf_trunc, depth_scale, depth_min,
+                            depth_max, weight_threshold);
                 } else if (device_type == core::Device::DeviceType::CUDA) {
                     RayCastCUDA<tsdf_t, weight_t, color_t>(
-                            hashmap, block_values, range_map, vertex_map,
-                            depth_map, color_map, normal_map, intrinsic,
-                            extrinsic, h, w, block_resolution, voxel_size,
-                            sdf_trunc, depth_scale, depth_min, depth_max,
-                            weight_threshold);
+                            hashmap, block_values, range_map, renderings_map,
+                            intrinsic, extrinsic, h, w, block_resolution,
+                            voxel_size, sdf_trunc, depth_scale, depth_min,
+                            depth_max, weight_threshold);
                 } else {
                     utility::LogError("Unimplemented device");
                 }

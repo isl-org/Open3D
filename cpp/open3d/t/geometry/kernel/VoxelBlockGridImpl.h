@@ -226,10 +226,7 @@ void RayCastCPU
         (std::shared_ptr<core::HashMap>& hashmap,
          const std::vector<core::Tensor>& block_values,
          const core::Tensor& range_map,
-         core::Tensor& vertex_map,
-         core::Tensor& depth_map,
-         core::Tensor& color_map,
-         core::Tensor& normal_map,
+         std::unordered_map<std::string, core::Tensor>& renderings_map,
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          int h,
@@ -271,10 +268,10 @@ void RayCastCPU
     NDArrayIndexer depth_map_indexer;
     NDArrayIndexer color_map_indexer;
     NDArrayIndexer normal_map_indexer;
-    vertex_map_indexer = NDArrayIndexer(vertex_map, 2);
-    depth_map_indexer = NDArrayIndexer(depth_map, 2);
-    color_map_indexer = NDArrayIndexer(color_map, 2);
-    normal_map_indexer = NDArrayIndexer(normal_map, 2);
+    vertex_map_indexer = NDArrayIndexer(renderings_map.at("vertex"), 2);
+    depth_map_indexer = NDArrayIndexer(renderings_map.at("depth"), 2);
+    color_map_indexer = NDArrayIndexer(renderings_map.at("color"), 2);
+    normal_map_indexer = NDArrayIndexer(renderings_map.at("normal"), 2);
 
     const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
     const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
