@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/t/io/ImageIO.h"
+#include "open3d/t/io/NumpyIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/UnitTest.h"
 
@@ -263,6 +264,24 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                         visualization::DrawGeometries(
                                 {std::make_shared<open3d::geometry::Image>(
                                         color_raycast.ToLegacy())});
+
+                        core::Tensor index_map = result["index"];
+                        core::Tensor mask_map = result["mask"];
+                        core::Tensor ratio_map = result["ratio"];
+                        core::Tensor tsdf = vbg.GetAttribute("tsdf");
+                        core::Tensor weight = vbg.GetAttribute("weight");
+                        core::Tensor color = vbg.GetAttribute("color");
+                        t::io::WriteNpz(
+                                "raycasting.npz",
+                                std::unordered_map<std::string, core::Tensor>{
+                                        {"index", index_map},
+                                        {"mask", mask_map},
+                                        {"ratio", ratio_map},
+                                        {"tsdf", tsdf},
+                                        {"weight", weight},
+                                        {"color", color}});
+
+                        // Sanity check in python:
                     }
                 }
 

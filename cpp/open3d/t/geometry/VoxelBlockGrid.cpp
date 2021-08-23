@@ -254,6 +254,18 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
             core::Tensor({height, width, 3}, core::Float32, device);
     renderings_map["normal"] =
             core::Tensor({height, width, 3}, core::Float32, device);
+
+    // Mask indicating if its 8 voxel neighbors are all valid.
+    renderings_map["mask"] =
+            core::Tensor::Zeros({height, width, 8}, core::Bool, device);
+    // Ratio for trilinear-interpolation.
+    renderings_map["ratio"] =
+            core::Tensor({height, width, 8}, core::Float32, device);
+    // Each index is a linearized from a 4D index (block_idx, dx, dy, dz).
+    // This 1D index can access flattened value tensors.
+    renderings_map["index"] =
+            core::Tensor({height, width, 8}, core::Int64, device);
+
     renderings_map["range"] = range_minmax_map;
 
     float trunc_multiplier = block_resolution_ * 0.5;

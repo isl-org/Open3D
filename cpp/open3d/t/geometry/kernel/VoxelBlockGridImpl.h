@@ -273,6 +273,13 @@ void RayCastCPU
     color_map_indexer = NDArrayIndexer(renderings_map.at("color"), 2);
     normal_map_indexer = NDArrayIndexer(renderings_map.at("normal"), 2);
 
+    NDArrayIndexer index_map_indexer;
+    NDArrayIndexer mask_map_indexer;
+    NDArrayIndexer ratio_map_indexer;
+    index_map_indexer = NDArrayIndexer(renderings_map.at("index"), 2);
+    mask_map_indexer = NDArrayIndexer(renderings_map.at("mask"), 2);
+    ratio_map_indexer = NDArrayIndexer(renderings_map.at("ratio"), 2);
+
     const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
     const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
     const color_t* color_base_ptr = block_values[2].GetDataPtr<color_t>();
@@ -393,6 +400,11 @@ void RayCastCPU
                 normal_ptr[1] = 0;
                 normal_ptr[2] = 0;
 
+                bool* mask_ptr = mask_map_indexer.GetDataPtr<bool>(x, y);
+                float* ratio_ptr = ratio_map_indexer.GetDataPtr<float>(x, y);
+                int64_t* index_ptr =
+                        index_map_indexer.GetDataPtr<int64_t>(x, y);
+
                 const float* range =
                         range_map_indexer.GetDataPtr<float>(x / 8, y / 8);
                 float t = range[0];
@@ -505,6 +517,9 @@ void RayCastCPU
 
                         if (linear_idx_k >= 0 &&
                             weight_base_ptr[linear_idx_k] > 0) {
+                            mask_ptr[k] = true;
+                            index_ptr[k] = linear_idx_k;
+
                             float rx = dx_v * (ratio_x) +
                                        (1 - dx_v) * (1 - ratio_x);
                             float ry = dy_v * (ratio_y) +
@@ -513,6 +528,7 @@ void RayCastCPU
                                        (1 - dz_v) * (1 - ratio_z);
 
                             float r = rx * ry * rz;
+                            ratio_ptr[k] = r;
 
                             int64_t color_linear_idx = linear_idx_k * 3;
                             color_ptr[0] +=
