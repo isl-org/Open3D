@@ -203,87 +203,92 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     const float depth_max = 3.0;
     for (auto backend : backends) {
         for (int block_resolution : std::vector<int>{8, 16}) {
-            auto vbg = VoxelBlockGrid(
-                    {"tsdf", "weight", "color"},
-                    {core::Float32, core::Float32, core::Float32},
-                    {{1}, {1}, {3}}, 3.0 / 512, block_resolution, 10000, device,
-                    backend);
+            for (auto &dtype :
+                 std::vector<core::Dtype>{core::Float32, core::UInt16}) {
+                auto vbg = VoxelBlockGrid(
+                        {"tsdf", "weight", "color"},
+                        {core::Float32, dtype, dtype}, {{1}, {1}, {3}},
+                        3.0 / 512, block_resolution, 10000, device, backend);
 
-            for (size_t i = 0; i < extrinsics.size(); ++i) {
-                Image depth =
-                        t::io::CreateImageFromFile(
-                                fmt::format("{}/RGBD/depth/{:05d}.png",
-                                            std::string(TEST_DATA_DIR), i))
-                                ->To(device);
-                Image color =
-                        t::io::CreateImageFromFile(
-                                fmt::format("{}/RGBD/color/{:05d}.jpg",
-                                            std::string(TEST_DATA_DIR), i))
-                                ->To(device);
+                for (size_t i = 0; i < extrinsics.size(); ++i) {
+                    Image depth =
+                            t::io::CreateImageFromFile(
+                                    fmt::format("{}/RGBD/depth/{:05d}.png",
+                                                std::string(TEST_DATA_DIR), i))
+                                    ->To(device);
+                    Image color =
+                            t::io::CreateImageFromFile(
+                                    fmt::format("{}/RGBD/color/{:05d}.jpg",
+                                                std::string(TEST_DATA_DIR), i))
+                                    ->To(device);
 
-                core::Tensor frustum_block_coords =
-                        vbg.GetUniqueBlockCoordinates(depth, intrinsic,
-                                                      extrinsics[i],
-                                                      depth_scale, depth_max);
-                vbg.Integrate(frustum_block_coords, depth, color, intrinsic,
-                              extrinsics[i]);
+                    core::Tensor frustum_block_coords =
+                            vbg.GetUniqueBlockCoordinates(
+                                    depth, intrinsic, extrinsics[i],
+                                    depth_scale, depth_max);
+                    vbg.Integrate(frustum_block_coords, depth, color, intrinsic,
+                                  extrinsics[i]);
 
-                // Check raycasting with non-slab backends.
-                if (i == extrinsics.size() - 1 &&
-                    backend != core::HashBackendType::Slab) {
-                    auto result = vbg.RayCast(frustum_block_coords, intrinsic,
-                                              extrinsics[i], depth.GetCols(),
-                                              depth.GetRows(), depth_scale,
-                                              depth_min, depth_max, 1.0);
-                    core::Tensor range_map = result["range"];
-                    t::geometry::Image im_near(
-                            range_map.Slice(2, 0, 1).Contiguous() / depth_max);
-                    visualization::DrawGeometries(
-                            {std::make_shared<open3d::geometry::Image>(
-                                    im_near.ToLegacy())});
+                    // Check raycasting with non-slab backends.
+                    if (i == extrinsics.size() - 1 &&
+                        backend != core::HashBackendType::Slab) {
+                        auto result = vbg.RayCast(
+                                frustum_block_coords, intrinsic, extrinsics[i],
+                                depth.GetCols(), depth.GetRows(), depth_scale,
+                                depth_min, depth_max, 1.0);
+                        core::Tensor range_map = result["range"];
+                        t::geometry::Image im_near(
+                                range_map.Slice(2, 0, 1).Contiguous() /
+                                depth_max);
+                        visualization::DrawGeometries(
+                                {std::make_shared<open3d::geometry::Image>(
+                                        im_near.ToLegacy())});
 
-                    t::geometry::Image depth_raycast(result["depth"]);
-                    visualization::DrawGeometries(
-                            {std::make_shared<open3d::geometry::Image>(
-                                    depth_raycast
-                                            .ColorizeDepth(depth_scale,
-                                                           depth_min, depth_max)
-                                            .ToLegacy())});
-                    t::geometry::Image color_raycast(result["color"]);
-                    visualization::DrawGeometries(
-                            {std::make_shared<open3d::geometry::Image>(
-                                    color_raycast.ToLegacy())});
+                        t::geometry::Image depth_raycast(result["depth"]);
+                        visualization::DrawGeometries(
+                                {std::make_shared<open3d::geometry::Image>(
+                                        depth_raycast
+                                                .ColorizeDepth(depth_scale,
+                                                               depth_min,
+                                                               depth_max)
+                                                .ToLegacy())});
+                        t::geometry::Image color_raycast(result["color"]);
+                        visualization::DrawGeometries(
+                                {std::make_shared<open3d::geometry::Image>(
+                                        color_raycast.ToLegacy())});
+                    }
                 }
+
+                // Check customized indexing and processing
+                core::Tensor voxel_indices = vbg.GetVoxelIndices();
+                core::Tensor voxel_coords =
+                        vbg.GetVoxelCoordinates(voxel_indices);
+                core::Tensor tsdf =
+                        vbg.GetAttribute("tsdf")
+                                .IndexGet({voxel_indices[0], voxel_indices[1],
+                                           voxel_indices[2], voxel_indices[3]})
+                                .View({-1});
+                core::Tensor weight =
+                        vbg.GetAttribute("weight")
+                                .IndexGet({voxel_indices[0], voxel_indices[1],
+                                           voxel_indices[2], voxel_indices[3]})
+                                .View({-1});
+
+                core::Tensor mask = tsdf.Abs().Lt(0.3) && weight.Gt(1);
+                core::Tensor valid_coords = voxel_coords.T().IndexGet({mask});
+                PointCloud valid_pcd(valid_coords);
+                auto vis_valid_pcd =
+                        std::make_shared<open3d::geometry::PointCloud>(
+                                valid_pcd.ToLegacy());
+                visualization::DrawGeometries({vis_valid_pcd});
+
+                // Check surface extraction
+                auto pcd = std::make_shared<open3d::geometry::PointCloud>(
+                        vbg.ExtractSurfacePoints().ToLegacy());
+                visualization::DrawGeometries({pcd});
             }
-
-            // Check customized indexing and processing
-            core::Tensor voxel_indices = vbg.GetVoxelIndices();
-            core::Tensor voxel_coords = vbg.GetVoxelCoordinates(voxel_indices);
-            core::Tensor tsdf =
-                    vbg.GetAttribute("tsdf")
-                            .IndexGet({voxel_indices[0], voxel_indices[1],
-                                       voxel_indices[2], voxel_indices[3]})
-                            .View({-1});
-            core::Tensor weight =
-                    vbg.GetAttribute("weight")
-                            .IndexGet({voxel_indices[0], voxel_indices[1],
-                                       voxel_indices[2], voxel_indices[3]})
-                            .View({-1});
-
-            core::Tensor mask = tsdf.Abs().Lt(0.3) && weight.Gt(1);
-            core::Tensor valid_coords = voxel_coords.T().IndexGet({mask});
-            PointCloud valid_pcd(valid_coords);
-            auto vis_valid_pcd = std::make_shared<open3d::geometry::PointCloud>(
-                    valid_pcd.ToLegacy());
-            visualization::DrawGeometries({vis_valid_pcd});
-
-            // Check surface extraction
-            auto pcd = std::make_shared<open3d::geometry::PointCloud>(
-                    vbg.ExtractSurfacePoints().ToLegacy());
-            visualization::DrawGeometries({pcd});
         }
     }
 }
-
 }  // namespace tests
 }  // namespace open3d

@@ -217,6 +217,7 @@ struct BlockCache {
     }
 };
 
+template <typename tsdf_t, typename weight_t, typename color_t>
 #if defined(__CUDACC__)
 void RayCastCUDA
 #else
@@ -273,9 +274,9 @@ void RayCastCPU
     depth_map_indexer = NDArrayIndexer(depth_map, 2);
     color_map_indexer = NDArrayIndexer(color_map, 2);
 
-    const float* tsdf_base_ptr = block_values[0].GetDataPtr<float>();
-    const float* weight_base_ptr = block_values[1].GetDataPtr<float>();
-    const float* color_base_ptr = block_values[2].GetDataPtr<float>();
+    const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
+    const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
+    const color_t* color_base_ptr = block_values[2].GetDataPtr<color_t>();
     TransformIndexer c2w_transform_indexer(
             intrinsics, t::geometry::InverseTransformation(extrinsics));
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
@@ -533,6 +534,7 @@ void RayCastCPU
 #endif
 }
 
+template <typename tsdf_t, typename weight_t, typename color_t>
 #if defined(__CUDACC__)
 void ExtractSurfacePointsCUDA
 #else
@@ -565,9 +567,9 @@ void ExtractSurfacePointsCPU
     // Plain arrays that does not require indexers
     const int* indices_ptr = indices.GetDataPtr<int>();
 
-    const float* tsdf_base_ptr = block_values[0].GetDataPtr<float>();
-    const float* weight_base_ptr = block_values[1].GetDataPtr<float>();
-    const float* color_base_ptr = block_values[2].GetDataPtr<float>();
+    const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
+    const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
+    const color_t* color_base_ptr = block_values[2].GetDataPtr<color_t>();
 
     int64_t n_blocks = indices.GetLength();
     int64_t n = n_blocks * resolution3;
@@ -610,9 +612,7 @@ void ExtractSurfacePointsCPU
                     int64_t xv, yv, zv;
                     voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-                    int64_t linear_idx = block_idx * resolution3 +
-                                         zv * resolution2 + yv * resolution +
-                                         xv;
+                    int64_t linear_idx = block_idx * resolution3 + voxel_idx;
                     float tsdf_o = tsdf_base_ptr[linear_idx];
                     float weight_o = weight_base_ptr[linear_idx];
                     if (weight_o <= weight_threshold) return;
@@ -644,9 +644,8 @@ void ExtractSurfacePointsCPU
 #endif
     }
 
-    int max_count = valid_size;
     if (points.GetLength() == 0) {
-        points = core::Tensor({max_count, 3}, core::Float32,
+        points = core::Tensor({valid_size, 3}, core::Float32,
                               block_values[0].GetDevice());
     }
     NDArrayIndexer point_indexer(points, 1);
@@ -662,7 +661,7 @@ void ExtractSurfacePointsCPU
 
     // Colors
     NDArrayIndexer color_indexer;
-    colors = core::Tensor({max_count, 3}, core::Float32,
+    colors = core::Tensor({valid_size, 3}, core::Float32,
                           block_values[0].GetDevice());
     color_indexer = NDArrayIndexer(colors, 1);
 
@@ -694,8 +693,7 @@ void ExtractSurfacePointsCPU
                 int64_t xv, yv, zv;
                 voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
 
-                int64_t linear_idx = block_idx * resolution3 +
-                                     zv * resolution2 + yv * resolution + xv;
+                int64_t linear_idx = block_idx * resolution3 + voxel_idx;
                 float tsdf_o = tsdf_base_ptr[linear_idx];
                 float weight_o = weight_base_ptr[linear_idx];
                 if (weight_o <= weight_threshold) return;
@@ -733,13 +731,13 @@ void ExtractSurfacePointsCPU
 
                         float* color_ptr = color_indexer.GetDataPtr<float>(idx);
 
-                        const float* color_o_ptr =
+                        const color_t* color_o_ptr =
                                 color_base_ptr + 3 * linear_idx;
                         float r_o = color_o_ptr[0];
                         float g_o = color_o_ptr[1];
                         float b_o = color_o_ptr[2];
 
-                        const float* color_i_ptr =
+                        const color_t* color_i_ptr =
                                 color_base_ptr + 3 * linear_idx_i;
                         float r_i = color_i_ptr[0];
                         float g_i = color_i_ptr[1];

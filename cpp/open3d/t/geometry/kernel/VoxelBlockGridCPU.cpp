@@ -48,7 +48,7 @@ namespace voxel_grid {
 
 struct Coord3i {
     Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
-    bool operator==(const Coord3i& other) const {
+    bool operator==(const Coord3i &other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
 
@@ -58,7 +58,7 @@ struct Coord3i {
 };
 
 struct Coord3iHash {
-    size_t operator()(const Coord3i& k) const {
+    size_t operator()(const Coord3i &k) const {
         static const size_t p0 = 73856093;
         static const size_t p1 = 19349669;
         static const size_t p2 = 83492791;
@@ -70,10 +70,10 @@ struct Coord3iHash {
 };
 
 void PointCloudTouchCPU(
-        std::shared_ptr<core::HashMap>&
-                hashmap,  // dummy for now, one pass insertion is faster
-        const core::Tensor& points,
-        core::Tensor& voxel_block_coords,
+        std::shared_ptr<core::HashMap>
+                &hashmap,  // dummy for now, one pass insertion is faster
+        const core::Tensor &points,
+        core::Tensor &voxel_block_coords,
         int64_t voxel_grid_resolution,
         float voxel_size,
         float sdf_trunc) {
@@ -81,7 +81,7 @@ void PointCloudTouchCPU(
     float block_size = voxel_size * resolution;
 
     int64_t n = points.GetLength();
-    const float* pcd_ptr = static_cast<const float*>(points.GetDataPtr());
+    const float *pcd_ptr = static_cast<const float *>(points.GetDataPtr());
 
     tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
     core::ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
@@ -114,7 +114,7 @@ void PointCloudTouchCPU(
 
     voxel_block_coords =
             core::Tensor({block_count, 3}, core::Int32, points.GetDevice());
-    int* block_coords_ptr = static_cast<int*>(voxel_block_coords.GetDataPtr());
+    int *block_coords_ptr = static_cast<int *>(voxel_block_coords.GetDataPtr());
     int count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {
         int64_t offset = count * 3;
@@ -124,11 +124,11 @@ void PointCloudTouchCPU(
     }
 }
 
-void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
-                   const core::Tensor& depth,
-                   const core::Tensor& intrinsics,
-                   const core::Tensor& extrinsics,
-                   core::Tensor& voxel_block_coords,
+void DepthTouchCPU(std::shared_ptr<core::HashMap> &hashmap,
+                   const core::Tensor &depth,
+                   const core::Tensor &intrinsics,
+                   const core::Tensor &extrinsics,
+                   core::Tensor &voxel_block_coords,
                    int64_t voxel_grid_resolution,
                    float voxel_size,
                    float sdf_trunc,
@@ -200,7 +200,7 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
     }
 
     voxel_block_coords = core::Tensor({block_count, 3}, core::Int32, device);
-    int* block_coords_ptr = voxel_block_coords.GetDataPtr<int>();
+    int *block_coords_ptr = voxel_block_coords.GetDataPtr<int>();
     int count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {
         int64_t offset = count * 3;
@@ -213,7 +213,7 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
 #define FN_ARGUMENTS                                                        \
     const core::Tensor &depth, const core::Tensor &color,                   \
             const core::Tensor &indices, const core::Tensor &block_keys,    \
-            std::vector<core::Tensor>&block_values,                         \
+            std::vector<core::Tensor> &block_values,                        \
             const core::Tensor &intrinsics, const core::Tensor &extrinsics, \
             int64_t resolution, float voxel_size, float sdf_trunc,          \
             float depth_scale, float depth_max
@@ -225,6 +225,36 @@ template void IntegrateCPU<uint16_t, uint8_t, float, float, float>(
 template void IntegrateCPU<float, float, float, uint16_t, uint16_t>(
         FN_ARGUMENTS);
 template void IntegrateCPU<float, float, float, float, float>(FN_ARGUMENTS);
+
+#undef FN_ARGUMENTS
+
+#define FN_ARGUMENTS                                                     \
+    std::shared_ptr<core::HashMap> &hashmap,                             \
+            const std::vector<core::Tensor> &block_values,               \
+            const core::Tensor &range_map, core::Tensor &vertex_map,     \
+            core::Tensor &depth_map, core::Tensor &color_map,            \
+            core::Tensor &normal_map, const core::Tensor &intrinsics,    \
+            const core::Tensor &extrinsics, int h, int w,                \
+            int64_t block_resolution, float voxel_size, float sdf_trunc, \
+            float depth_scale, float depth_min, float depth_max,         \
+            float weight_threshold
+
+template void RayCastCPU<float, uint16_t, uint16_t>(FN_ARGUMENTS);
+template void RayCastCPU<float, float, float>(FN_ARGUMENTS);
+
+#undef FN_ARGUMENTS
+
+#define FN_ARGUMENTS                                                           \
+    const core::Tensor &block_indices, const core::Tensor &nb_block_indices,   \
+            const core::Tensor &nb_block_masks,                                \
+            const core::Tensor &block_keys,                                    \
+            const std::vector<core::Tensor> &block_values,                     \
+            core::Tensor &points, core::Tensor &normals, core::Tensor &colors, \
+            int64_t block_resolution, float voxel_size,                        \
+            float weight_threshold, int &valid_size
+
+template void ExtractSurfacePointsCPU<float, uint16_t, uint16_t>(FN_ARGUMENTS);
+template void ExtractSurfacePointsCPU<float, float, float>(FN_ARGUMENTS);
 
 #undef FN_ARGUMENTS
 

@@ -176,19 +176,27 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              float weight_threshold) {
     core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
 
-    if (device_type == core::Device::DeviceType::CPU) {
-        RayCastCPU(hashmap, block_values, range_map, vertex_map, depth_map,
-                   color_map, normal_map, intrinsic, extrinsic, h, w,
-                   block_resolution, voxel_size, sdf_trunc, depth_scale,
-                   depth_min, depth_max, weight_threshold);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(RayCastCUDA, hashmap, block_values, range_map, vertex_map,
-                  depth_map, color_map, normal_map, intrinsic, extrinsic, h, w,
-                  block_resolution, voxel_size, sdf_trunc, depth_scale,
-                  depth_min, depth_max, weight_threshold);
-    } else {
-        utility::LogError("Unimplemented device");
-    }
+    using tsdf_t = float;
+    DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+            block_values[1].GetDtype(), block_values[2].GetDtype(), [&] {
+                if (device_type == core::Device::DeviceType::CPU) {
+                    RayCastCPU<tsdf_t, weight_t, color_t>(
+                            hashmap, block_values, range_map, vertex_map,
+                            depth_map, color_map, normal_map, intrinsic,
+                            extrinsic, h, w, block_resolution, voxel_size,
+                            sdf_trunc, depth_scale, depth_min, depth_max,
+                            weight_threshold);
+                } else if (device_type == core::Device::DeviceType::CUDA) {
+                    RayCastCUDA<tsdf_t, weight_t, color_t>(
+                            hashmap, block_values, range_map, vertex_map,
+                            depth_map, color_map, normal_map, intrinsic,
+                            extrinsic, h, w, block_resolution, voxel_size,
+                            sdf_trunc, depth_scale, depth_min, depth_max,
+                            weight_threshold);
+                } else {
+                    utility::LogError("Unimplemented device");
+                }
+            });
 }
 
 void ExtractSurfacePoints(const core::Tensor& block_indices,
@@ -205,19 +213,25 @@ void ExtractSurfacePoints(const core::Tensor& block_indices,
                           int& valid_size) {
     core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
 
-    if (device_type == core::Device::DeviceType::CPU) {
-        ExtractSurfacePointsCPU(block_indices, nb_block_indices, nb_block_masks,
-                                block_keys, block_values, points, normals,
-                                colors, block_resolution, voxel_size,
-                                weight_threshold, valid_size);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(ExtractSurfacePointsCUDA, block_indices, nb_block_indices,
-                  nb_block_masks, block_keys, block_values, points, normals,
-                  colors, block_resolution, voxel_size, weight_threshold,
-                  valid_size);
-    } else {
-        utility::LogError("Unimplemented device");
-    }
+    using tsdf_t = float;
+    DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+            block_values[1].GetDtype(), block_values[2].GetDtype(), [&] {
+                if (device_type == core::Device::DeviceType::CPU) {
+                    ExtractSurfacePointsCPU<tsdf_t, weight_t, color_t>(
+                            block_indices, nb_block_indices, nb_block_masks,
+                            block_keys, block_values, points, normals, colors,
+                            block_resolution, voxel_size, weight_threshold,
+                            valid_size);
+                } else if (device_type == core::Device::DeviceType::CUDA) {
+                    ExtractSurfacePointsCUDA<tsdf_t, weight_t, color_t>(
+                            block_indices, nb_block_indices, nb_block_masks,
+                            block_keys, block_values, points, normals, colors,
+                            block_resolution, voxel_size, weight_threshold,
+                            valid_size);
+                } else {
+                    utility::LogError("Unimplemented device");
+                }
+            });
 }
 
 }  // namespace voxel_grid

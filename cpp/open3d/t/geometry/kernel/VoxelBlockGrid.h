@@ -138,6 +138,7 @@ void IntegrateCPU(const core::Tensor& depth,
                   float depth_scale,
                   float depth_max);
 
+template <typename tsdf_t, typename weight_t, typename color_t>
 void RayCastCPU(std::shared_ptr<core::HashMap>& hashmap,
                 const std::vector<core::Tensor>& block_values,
                 const core::Tensor& range_map,
@@ -157,6 +158,7 @@ void RayCastCPU(std::shared_ptr<core::HashMap>& hashmap,
                 float depth_max,
                 float weight_threshold);
 
+template <typename tsdf_t, typename weight_t, typename color_t>
 void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
                              const core::Tensor& nb_block_indices,
                              const core::Tensor& nb_block_masks,
@@ -208,6 +210,7 @@ void IntegrateCUDA(const core::Tensor& depth,
                    float depth_scale,
                    float depth_max);
 
+template <typename tsdf_t, typename weight_t, typename color_t>
 void RayCastCUDA(std::shared_ptr<core::HashMap>& hashmap,
                  const std::vector<core::Tensor>& block_values,
                  const core::Tensor& range_map,
@@ -227,6 +230,7 @@ void RayCastCUDA(std::shared_ptr<core::HashMap>& hashmap,
                  float depth_max,
                  float weight_threshold);
 
+template <typename tsdf_t, typename weight_t, typename color_t>
 void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
                               const core::Tensor& nb_block_indices,
                               const core::Tensor& nb_block_masks,
