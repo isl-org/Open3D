@@ -1,3 +1,29 @@
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 """Internal information about the Open3D plugin."""
 
 import json
@@ -41,7 +67,8 @@ LINE_PROPERTIES = ()
 
 
 def create_summary_metadata(description):
-    """Creates summary metadata which defined at ??? proto.
+    """Creates summary metadata. Reserved for future use. Required by
+    TensorBoard.
 
     Arguments:
       description: The description to show in TensorBoard.
@@ -56,27 +83,11 @@ def create_summary_metadata(description):
     )
 
 
-def parse_plugin_metadata(content):
-    """Parse summary metadata to a Python object.
+def parse_plugin_metadata(unused_content):
+    """Parse summary metadata to a Python object. Reserved for future use.
 
     Arguments:
       content: The `content` field of a `SummaryMetadata` proto
         corresponding to the Open3D plugin.
-
-    Returns:
-      A `Open3DPluginData` protobuf object.
-
-    Raises:
-      Error if the version of the plugin is not supported.
     """
     return b''
-    # if not isinstance(content, bytes):
-    #     raise TypeError("Content type must be bytes.")
-    # result = plugin_data_pb2.Open3DPluginData.FromString(content)
-
-    # if result.version not in SUPPORTED_FILEFOPRMAT_VERSIONS:
-    #     raise RuntimeError(
-    #         f"Open3D plugin fileformat version {result.version} is not " +
-    #         f"supported. Supported versions are {SUPPORTED_FILEFOPRMAT_VERSIONS}."
-    #     )
-    # return result

@@ -1,3 +1,29 @@
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 import threading
 import os
 import socket
@@ -6,6 +32,7 @@ import queue
 
 import numpy as np
 
+# TODO(ssheorey) Enable operation without TF, but with PyTorch + Tensorboard
 import tensorflow.compat.v2 as tf
 from tensorboard.compat.proto import summary_pb2
 from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
@@ -331,7 +358,8 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             raise IOError(
                 "[Open3D set_mesh_data] Geometry data serialization for tag "
                 "{tag} step {step} failed!")
-        # TODO: This returns a copy instead of the original. Benchmark
+        # TODO(ssheorey): This returns a copy instead of the original. Benchmark
+        # vs numpy
         data_buffer = bc.get_buffer()
         filename, this_write_location = _async_data_writer.enqueue(
             os.path.join(write_dir, tag.replace('/', '-')), data_buffer)
@@ -404,7 +432,7 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
         # record_if() returns True.
         @lazy_tensor_creator.LazyTensorCreator
         def lazy_tensor():
-            # FIXME: Use public API to get logdir
+            # TODO(@ssheorey): Use public API to get logdir
             from tensorflow.python.ops.summary_ops_v2 import _summary_state
             logdir = _summary_state.writer._metadata['logdir'].numpy().decode(
                 'utf-8')

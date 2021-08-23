@@ -1,3 +1,29 @@
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 """Open3D visualization plugin for Tensorboard"""
 import os
 import sys
@@ -12,6 +38,8 @@ from tensorboard.backend.event_processing.plugin_event_multiplexer import EventM
 from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
 import werkzeug
 from werkzeug import wrappers
+from werkzeug.datastructures import Headers  # Allow remote CivetWeb access
+
 # TODO(ssheorey) Enable operation without TF, but with PyTorch + Tensorboard
 import tensorflow.compat.v2 as tf
 
@@ -28,10 +56,57 @@ from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 o3d.visualization.webrtc_server.enable_webrtc()
 from open3d.visualization._async_event_loop import _async_event_loop
 
+import ipdb
+
+
+class ReadWriteLock:
+    """ A lock object that allows many simultaneous "read locks", but
+    only one "write lock."
+
+    Implmentation from Python Cookbook (O'Reilly)
+    https://www.oreilly.com/library/view/python-cookbook/0596001673/ch06s04.html
+    Credit: Sami Hangaslammi
+    """
+
+    def __init__(self):
+        self._read_ready = threading.Condition(threading.Lock())
+        self._readers = 0
+
+    def acquire_read(self):
+        """Acquire a read lock. Blocks only if a thread has acquired the write
+        lock."""
+        self._read_ready.acquire()
+        try:
+            self._readers += 1
+        finally:
+            self._read_ready.release()
+
+    def release_read(self):
+        """Release a read lock."""
+        self._read_ready.acquire()
+        try:
+            self._readers -= 1
+            if not self._readers:
+                self._read_ready.notifyAll()
+        finally:
+            self._read_ready.release()
+
+    def acquire_write(self):
+        """Acquire a write lock. Blocks until there are no acquired read or
+        write locks."""
+        self._read_ready.acquire()
+        while self._readers > 0:
+            self._read_ready.wait()
+
+    def release_write(self):
+        """Release a write lock."""
+        self._read_ready.release()
+
 
 class LRUCache:
     """Cache storing recent items, i.e. least recently used will be ejected when
-    a new item needs to be added to a full cache.
+    a new item needs to be added to a full cache. This is thread safe for
+    concurrent access.
     """
 
     def __init__(self, max_items=128):
@@ -41,6 +116,9 @@ class LRUCache:
         """
         self.cache = OrderedDict()
         self.max_items = max_items
+        self.rwlock = ReadWriteLock()
+        # hits, misses are not protected against concurrent access for
+        # performance.
         self.hits = 0
         self.misses = 0
 
@@ -50,28 +128,37 @@ class LRUCache:
         Return:
             Value if ``key`` is found, else None.
         """
-        if key not in self.cache:
+        self.rwlock.acquire_read()
+        value = self.cache.get(key)  # None if not found
+        self.rwlock.release_read()
+        if value is None:
             self.misses += 1
             _log.debug(str(self))
             return None
+        self.rwlock.acquire_write()
         self.cache.move_to_end(key)
+        self.rwlock.release_write()
         self.hits += 1
         _log.debug(str(self))
-        return self.cache[key]
+        return value
 
     def put(self, key, value):
         """Add (key, value) pair to the cache. If cache limits are exceeded,
         eject key-value pairs till the cache is within limits."""
+        self.rwlock.acquire_write()
         self.cache[key] = value
         self.cache.move_to_end(key)
         if len(self.cache) > self.max_items:
             self.cache.popitem(last=False)
+        self.rwlock.release_write()
         _log.debug(str(self))
 
     def clear(self):
         """Invalidate cache."""
+        self.rwlock.acquire_write()
         for key in self.cache:
             self.cache.popitem(key)
+        self.rwlock.release_write()
 
     def __str__(self):
         return (f"Items: {len(self.cache)}/{self.max_items}, "
@@ -95,22 +182,30 @@ class Open3DPluginDataReader:
             metadata.PLUGIN_NAME: 0  # Store all metadata in RAM
         }).AddRunsFromDirectory(logdir)
         self._run_to_tags = {}
-        self._lock = threading.Lock()
+        self._event_lock = threading.Lock()  # Protect TB event file data
         # Geometry data reading
         self._tensor_events = dict()
         self.geometry_cache = LRUCache(max_items=cache_max_items)
-        self._file_handles = {}
+        self._file_handles = {}  # {filename, (open_handle, read_lock)}
+        self._file_handles_lock = threading.Lock()
         self.reload_events()
 
     def reload_events(self):
         """Reload event file"""
         self.event_mux.Reload()
         run_tags = self.event_mux.PluginRunToTagToContent(metadata.PLUGIN_NAME)
-        with self._lock:
+        with self._event_lock:
             self._run_to_tags = {
                 run: list(tagdict.keys()) for run, tagdict in run_tags.items()
             }
             self._tensor_events = dict()  # Invalidate index
+        # Close all open files
+        with self._file_handles_lock:
+            while len(self._file_handles) > 0:
+                unused_filename, file_handle = self._file_handles.popitem()
+                with file_handle[1]:
+                    file_handle[0].close()
+
         _log.debug(f"Event data reloaded: {self._run_to_tags}")
 
     def is_active(self):
@@ -120,11 +215,11 @@ class Open3DPluginDataReader:
     @property
     def run_to_tags(self):
         """Locked access to the run_to_tags map."""
-        with self._lock:
+        with self._event_lock:
             return self._run_to_tags
 
     def tensor_events(self, run):
-        with self._lock:
+        with self._event_lock:
             if run not in self._tensor_events:
                 self._tensor_events[run] = {
                     tag: self.event_mux.Tensors(run, tag)
@@ -150,17 +245,23 @@ class Open3DPluginDataReader:
         if geometry is None:  # Read from storage
             data_dir = PluginDirectory(os.path.join(self.logdir, run),
                                        metadata.PLUGIN_NAME)
-            # TODO(ssheorey): Make this a bounded LRU dict. Close files if too many open
-            if filename not in self._file_handles:
-                self._file_handles[filename] = tf.io.gfile.GFile(
-                    os.path.join(data_dir, filename), "rb")
-                if not self._file_handles[filename].seekable():
-                    raise RuntimeError(
-                        os.path.join(data_dir, filename) +
-                        " does not support seeking. This storage is not supported."
-                    )
-            self._file_handles[filename].seek(offset=read_location)
-            buf = self._file_handles[filename].read(read_size)
+            with self._file_handles_lock:
+                if filename not in self._file_handles:
+                    self._file_handles[filename] = (tf.io.gfile.GFile(
+                        os.path.join(data_dir, filename),
+                        "rb"), threading.Lock())
+                    if not self._file_handles[filename][0].seekable():
+                        raise RuntimeError(
+                            os.path.join(data_dir, filename) +
+                            " does not support seeking. This storage is not supported."
+                        )
+                # lock to seek + read
+                file_handle = self._file_handles[filename]
+                file_handle[1].acquire()
+
+            file_handle[0].seek(offset=read_location)
+            buf = file_handle[0].read(read_size)
+            file_handle[1].release()
             msg_tag, msg_step, geometry = o3d.io.rpc.get_data_from_set_mesh_data_buffer(
                 buf)
             if geometry is None:
@@ -227,8 +328,7 @@ class Open3DPluginWindow:
                  data_reader,
                  title="Open3D for Tensorboard",
                  width=1024,
-                 height=768,
-                 font_size=12):
+                 height=768):
         """
         Args:
             window_id (str): Open3D window id. e.g.: "window_0"
@@ -519,7 +619,6 @@ class Open3DPlugin(base_plugin.TBPlugin):
     plugin_name = metadata.PLUGIN_NAME
     _RESOURCE_PATH = os.path.join(os.path.dirname(__file__), "..", "..",
                                   "resources")
-    _DEFAULT_DOWNSAMPLING = 100  # meshes per time series
     _PLUGIN_DIRECTORY_PATH_PART = "/data/plugin/" + metadata.PLUGIN_NAME + "/"
 
     def __init__(self, context):
@@ -539,16 +638,10 @@ class Open3DPlugin(base_plugin.TBPlugin):
     @wrappers.Request.application
     def _new_window(self, request):
 
-        if request.is_multiprocess:
-            return werkzeug.exceptions.ExpectationFailed(
-                "Open3D plugin does not run on a multi-process web server.")
-
         win_width = min(3840,
                         max(640, int(float(request.args.get('width', 1024)))))
         win_height = min(2400,
                          max(480, int(float(request.args.get('height', 768)))))
-        font_size = min(
-            20, max(6, int(float(request.args.get('fontsize', '12px')[:-2]))))
         with self.window_lock:
             this_window_id = f"window_{self._next_wid}"
             self._next_wid += 1
@@ -556,7 +649,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
 
         this_window = Open3DPluginWindow(this_window_id, self.data_reader,
                                          "Open3D for Tensorboard", win_width,
-                                         win_height, font_size)
+                                         win_height)
         with self.window_lock:
             self._windows[this_window_id] = this_window
 
@@ -645,6 +738,10 @@ class Open3DPlugin(base_plugin.TBPlugin):
 
     @wrappers.Request.application
     def _serve_js(self, request):
+        if request.is_multiprocess:
+            return werkzeug.exceptions.ExpectationFailed(
+                "Open3D plugin does not run on a multi-process web server.")
+
         contents = ""
         for js_lib in (os.path.join(self._RESOURCE_PATH, "html", "libs",
                                     "adapter.min.js"),

@@ -32,6 +32,17 @@
 // any purpose.
 // ----------------------------------------------------------------------------
 
+// Disable logging in production
+(function () {
+    const enableLogging = true;
+    if (enableLogging === false) {
+        if (typeof window.console === 'undefined') { window.console = {};}
+        window.console.log = window.console.info = window.console.debug =
+            window.console.warning = window.console.assert =
+            window.console.error = function () {};
+    }
+})();
+
 let WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
 
@@ -80,7 +91,7 @@ let WebRtcStreamer = (function () {
   }
 
   const logAndReturn = function (value) {
-    console.log("logAndReturn: ", value);
+    window.console.log("logAndReturn: ", value);
     return value;
   };
 
@@ -634,8 +645,8 @@ let WebRtcStreamer = (function () {
         const recvs = pc.getReceivers();
 
         recvs.forEach((recv) => {
-          if (recv.track && recv.track.kind === "video" && recv.getParameters !=
-              undefined) {
+          if (recv.track && recv.track.kind === "video" && typeof recv.getParameters !=
+              "undefined") {
             console.log(
               "codecs:" + JSON.stringify(recv.getParameters().codecs)
             );
@@ -715,7 +726,7 @@ let WebRtcStreamer = (function () {
 
     this.videoElt.srcObject = event.stream;
     var promise = this.videoElt.play();
-    if (promise !== undefined) {
+    if (typeof promise !== "undefined") {
       var bind = this;
       promise.catch(function (error) {
         console.warn("error:" + error);
