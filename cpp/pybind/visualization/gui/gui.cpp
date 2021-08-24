@@ -177,7 +177,7 @@ std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
         rendering::Open3DScene *scene,
         int width,
         int height,
-        bool z_in_view_space = false) {
+        bool z_in_view_space /* = false */) {
     return Application::GetInstance().RenderToDepthImage(
             scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
             height, z_in_view_space);

@@ -76,7 +76,8 @@ public:
 
     std::shared_ptr<geometry::Image> RenderToDepthImage(
             bool z_in_view_space = false) {
-        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
+        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_,
+                                                    z_in_view_space);
     }
 
     void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
