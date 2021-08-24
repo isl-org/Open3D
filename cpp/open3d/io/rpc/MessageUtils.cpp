@@ -155,43 +155,54 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
     if (mesh_data.CheckMessage(errstr)) {
         if (mesh_data.O3DTypeIsTriangleMesh() ||
             mesh_data.faces.CheckNonEmpty()) {
-            if (mesh_data.faces.CheckShape({-1, 3}, errstr)) {
-                auto mesh = std::make_shared<t::geometry::TriangleMesh>();
+            auto mesh = std::make_shared<t::geometry::TriangleMesh>();
+            if (mesh_data.vertices.CheckNonEmpty()) {
                 mesh->SetVertexPositions(ArrayToTensor(mesh_data.vertices));
-                for (auto item : mesh_data.vertex_attributes) {
-                    mesh->SetVertexAttr(item.first, ArrayToTensor(item.second));
-                }
-                mesh->SetTriangleIndices(ArrayToTensor(mesh_data.faces));
-                for (auto item : mesh_data.face_attributes) {
-                    mesh->SetTriangleAttr(item.first,
-                                          ArrayToTensor(item.second));
-                }
-                return mesh;
-            } else {
-                LogWarning("MeshDataToGeometry: Invalid shape for faces, {}",
-                           errstr);
             }
+            for (auto item : mesh_data.vertex_attributes) {
+                mesh->SetVertexAttr(item.first, ArrayToTensor(item.second));
+            }
+            if (mesh_data.faces.CheckNonEmpty()) {
+                if (mesh_data.faces.CheckShape({-1, 3}, errstr)) {
+                    mesh->SetTriangleIndices(ArrayToTensor(mesh_data.faces));
+                } else {
+                    LogWarning(
+                            "MeshDataToGeometry: Invalid shape for faces, {}",
+                            errstr);
+                }
+            }
+            for (auto item : mesh_data.face_attributes) {
+                mesh->SetTriangleAttr(item.first, ArrayToTensor(item.second));
+            }
+            return mesh;
         } else if (mesh_data.O3DTypeIsLineSet() ||
                    mesh_data.lines.CheckNonEmpty()) {
-            if (mesh_data.lines.CheckShape({-1, 2}, errstr)) {
-                auto ls = std::make_shared<t::geometry::LineSet>();
+            auto ls = std::make_shared<t::geometry::LineSet>();
+            if (mesh_data.vertices.CheckNonEmpty()) {
                 ls->SetPointPositions(ArrayToTensor(mesh_data.vertices));
-                for (auto item : mesh_data.vertex_attributes) {
-                    ls->SetPointAttr(item.first, ArrayToTensor(item.second));
-                }
-                ls->SetLineIndices(ArrayToTensor(mesh_data.lines));
-                for (auto item : mesh_data.line_attributes) {
-                    ls->SetLineAttr(item.first, ArrayToTensor(item.second));
-                }
-                return ls;
-            } else {
-                LogWarning("MeshDataToGeometry: Invalid shape for lines, {}",
-                           errstr);
             }
+            for (auto item : mesh_data.vertex_attributes) {
+                ls->SetPointAttr(item.first, ArrayToTensor(item.second));
+            }
+            if (mesh_data.lines.CheckNonEmpty()) {
+                if (mesh_data.lines.CheckShape({-1, 2}, errstr)) {
+                    ls->SetLineIndices(ArrayToTensor(mesh_data.lines));
+                } else {
+                    LogWarning(
+                            "MeshDataToGeometry: Invalid shape for lines, {}",
+                            errstr);
+                }
+            }
+            for (auto item : mesh_data.line_attributes) {
+                ls->SetLineAttr(item.first, ArrayToTensor(item.second));
+            }
+            return ls;
         } else if (mesh_data.O3DTypeIsPointCloud() ||
                    mesh_data.vertices.CheckNonEmpty()) {
             auto pcd = std::make_shared<t::geometry::PointCloud>();
-            pcd->SetPointPositions(ArrayToTensor(mesh_data.vertices));
+            if (mesh_data.vertices.CheckNonEmpty()) {
+                pcd->SetPointPositions(ArrayToTensor(mesh_data.vertices));
+            }
             for (auto item : mesh_data.vertex_attributes) {
                 pcd->SetPointAttr(item.first, ArrayToTensor(item.second));
             }
@@ -267,7 +278,7 @@ messages::MeshData GeometryToMeshData(const t::geometry::LineSet& ls) {
         LogError("GeometryToMeshData: LineSet has no points!");
     }
 
-    // triangles
+    // lines
     auto line_attributes = ls.GetLineAttr();
     mesh_data.line_attributes = TensorMapToArrayMap(line_attributes);
     if (mesh_data.line_attributes.count("indices")) {
