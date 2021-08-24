@@ -87,7 +87,6 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
                              std::shared_ptr<ConnectionBase>());
 
 /// Function for sending general mesh data.
-/// \param vertices    Tensor with vertices of shape [N,3]
 ///
 /// \param path               Path descriptor defining a location in the scene
 /// tree. E.g., 'mygroup/mypoints'.
@@ -95,6 +94,8 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
 /// \param time               The time point associated with the object.
 ///
 /// \param layer              The layer for this object.
+///
+/// \param vertices           Tensor with vertices of shape [N,3]
 ///
 /// \param vertex_attributes  Map with Tensors storing vertex attributes. The
 /// first dim of each attribute must match the number of vertices.
@@ -119,13 +120,20 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
 ///
 /// \param textures           Map of Tensors for storing textures.
 ///
-/// \param connection  The connection object used for sending the data.
-///                    If nullptr a default connection object will be used.
+/// \param o3d_type           The type of the geometry. This is one of
+/// "PointCloud", "LineSet", "TriangleMesh". This argument should be specified
+/// for partial data that has no primary key data, e.g., a triangle mesh without
+/// vertices but with other attribute tensors.
 ///
-bool SetMeshData(const core::Tensor& vertices,
-                 const std::string& path = "",
+/// \param connection         The connection object used for sending the data.
+///                           If nullptr a default connection object will be
+///                           used.
+///
+bool SetMeshData(const std::string& path = "",
                  int time = 0,
                  const std::string& layer = "",
+                 const core::Tensor& vertices = core::Tensor({0},
+                                                             core::Float32),
                  const std::map<std::string, core::Tensor>& vertex_attributes =
                          std::map<std::string, core::Tensor>(),
                  const core::Tensor& faces = core::Tensor({0}, core::Int32),
@@ -136,6 +144,7 @@ bool SetMeshData(const core::Tensor& vertices,
                          std::map<std::string, core::Tensor>(),
                  const std::map<std::string, core::Tensor>& textures =
                          std::map<std::string, core::Tensor>(),
+                 const std::string& o3d_type = std::string(),
                  std::shared_ptr<ConnectionBase> connection =
                          std::shared_ptr<ConnectionBase>());
 
