@@ -604,6 +604,518 @@ bool ReadPCDData(FILE *file,
     return true;
 }
 
+// Write functions.
+
+void SetPCDHeaderFieldTypeAndSizeFromDtype(const core::Dtype &dtype,
+                                           PCLPointField &field) {
+    if (dtype == core::Int8) {
+        field.type = 'I';
+        field.size = 1;
+    } else if (dtype == core::Int16) {
+        field.type = 'I';
+        field.size = 2;
+    } else if (dtype == core::Int32) {
+        field.type = 'I';
+        field.size = 4;
+    } else if (dtype == core::Int64) {
+        field.type = 'I';
+        field.size = 8;
+    } else if (dtype == core::UInt8) {
+        field.type = 'U';
+        field.size = 1;
+    } else if (dtype == core::UInt16) {
+        field.type = 'U';
+        field.size = 2;
+    } else if (dtype == core::UInt32) {
+        field.type = 'U';
+        field.size = 4;
+    } else if (dtype == core::UInt64) {
+        field.type = 'U';
+        field.size = 8;
+    } else if (dtype == core::Float32) {
+        field.type = 'F';
+        field.size = 4;
+    } else if (dtype == core::Float64) {
+        field.type = 'F';
+        field.size = 8;
+    } else {
+        utility::LogError("Unsupported data type.");
+    }
+}
+
+bool GenerateHeader(const t::geometry::PointCloud &pointcloud,
+                    const bool write_ascii,
+                    const bool compressed,
+                    PCDHeader &header) {
+    if (!pointcloud.HasPointPositions()) {
+        return false;
+    }
+
+    header.version = "0.7";
+    header.width = static_cast<int>(pointcloud.GetPointPositions().GetLength());
+    header.height = 1;
+    header.points = header.width;
+    header.fields.clear();
+
+    PCLPointField field_x, field_y, field_z;
+    field_x.name = "x";
+    field_x.count = 1;
+    SetPCDHeaderFieldTypeAndSizeFromDtype(
+            pointcloud.GetPointPositions().GetDtype(), field_x);
+    header.fields.push_back(field_x);
+
+    field_y.name = "y";
+    field_y.count = 1;
+    field_y.type = field_x.type;
+    field_y.size = field_x.size;
+    header.fields.push_back(field_y);
+
+    field_z.name = "z";
+    field_z.count = 1;
+    field_z.type = field_x.type;
+    field_z.size = field_x.size;
+    header.fields.push_back(field_z);
+
+    header.elementnum = 3 * field_x.count;
+    header.pointsize = 3 * field_x.size;
+
+    if (pointcloud.HasPointNormals()) {
+        PCLPointField field_normal_x, field_normal_y, field_normal_z;
+
+        field_normal_x.name = "normal_x";
+        field_normal_x.count = 1;
+        SetPCDHeaderFieldTypeAndSizeFromDtype(
+                pointcloud.GetPointPositions().GetDtype(), field_normal_x);
+        header.fields.push_back(field_normal_x);
+
+        field_normal_y.name = "normal_y";
+        field_normal_y.count = 1;
+        field_normal_y.type = field_normal_x.type;
+        field_normal_y.size = field_normal_x.size;
+        header.fields.push_back(field_normal_y);
+
+        field_normal_z.name = "normal_z";
+        field_normal_z.count = 1;
+        field_normal_z.type = field_normal_x.type;
+        field_normal_z.size = field_normal_x.size;
+        header.fields.push_back(field_normal_z);
+
+        header.elementnum += 3 * field_normal_x.count;
+        header.pointsize += 3 * field_normal_x.size;
+    }
+    if (pointcloud.HasPointColors()) {
+        PCLPointField field_colors;
+        field_colors.name = "rgb";
+        field_colors.count = 1;
+        field_colors.type = 'F';
+        field_colors.size = 4;
+        header.fields.push_back(field_colors);
+
+        header.elementnum++;
+        header.pointsize += 4;
+    }
+
+    // Custom attribute support of shape {num_points, 1}.
+    for (auto &kv : pointcloud.GetPointAttr()) {
+        if (kv.first != "positions" && kv.first != "normals" &&
+            kv.first != "colors") {
+            if (kv.second.GetShape() ==
+                core::SizeVector(
+                        {pointcloud.GetPointPositions().GetLength(), 1})) {
+                PCLPointField field_custom_attr;
+                field_custom_attr.name = kv.first;
+                field_custom_attr.count = 1;
+                SetPCDHeaderFieldTypeAndSizeFromDtype(kv.second.GetDtype(),
+                                                      field_custom_attr);
+                header.fields.push_back(field_custom_attr);
+
+                header.elementnum++;
+                header.pointsize += field_custom_attr.size;
+            } else {
+                utility::LogWarning(
+                        "Write PCD : Skipping {} attribute. PointCloud "
+                        "contains {} attribute which is not supported by PCD "
+                        "IO. Only points, normals, colors and attributes with "
+                        "shape (num_points, 1) are supported. Expected shape: "
+                        "{} but got {}.",
+                        kv.first, kv.first,
+                        core::SizeVector(
+                                {pointcloud.GetPointPositions().GetLength(), 1})
+                                .ToString(),
+                        kv.second.GetShape().ToString());
+            }
+        }
+    }
+
+    if (write_ascii) {
+        header.datatype = PCD_DATA_ASCII;
+    } else {
+        if (compressed) {
+            header.datatype = PCD_DATA_BINARY_COMPRESSED;
+        } else {
+            header.datatype = PCD_DATA_BINARY;
+        }
+    }
+    return true;
+}
+
+bool WritePCDHeader(FILE *file, const PCDHeader &header) {
+    fprintf(file, "# .PCD v%s - Point Cloud Data file format\n",
+            header.version.c_str());
+    fprintf(file, "VERSION %s\n", header.version.c_str());
+    fprintf(file, "FIELDS");
+    for (const auto &field : header.fields) {
+        fprintf(file, " %s", field.name.c_str());
+    }
+    fprintf(file, "\n");
+    fprintf(file, "SIZE");
+    for (const auto &field : header.fields) {
+        fprintf(file, " %d", field.size);
+    }
+    fprintf(file, "\n");
+    fprintf(file, "TYPE");
+    for (const auto &field : header.fields) {
+        fprintf(file, " %c", field.type);
+    }
+    fprintf(file, "\n");
+    fprintf(file, "COUNT");
+    for (const auto &field : header.fields) {
+        fprintf(file, " %d", field.count);
+    }
+    fprintf(file, "\n");
+    fprintf(file, "WIDTH %d\n", header.width);
+    fprintf(file, "HEIGHT %d\n", header.height);
+    fprintf(file, "VIEWPOINT 0 0 0 1 0 0 0\n");
+    fprintf(file, "POINTS %d\n", header.points);
+
+    switch (header.datatype) {
+        case PCD_DATA_BINARY:
+            fprintf(file, "DATA binary\n");
+            break;
+        case PCD_DATA_BINARY_COMPRESSED:
+            fprintf(file, "DATA binary_compressed\n");
+            break;
+        case PCD_DATA_ASCII:
+        default:
+            fprintf(file, "DATA ascii\n");
+            break;
+    }
+    return true;
+}
+
+struct WriteAttributePtr {
+    WriteAttributePtr(const std::string &name,
+                      const core::Dtype &dtype,
+                      const void *data_ptr,
+                      const int &group_size)
+        : name_(name),
+          dtype_(dtype),
+          data_ptr_(data_ptr),
+          group_size_(group_size) {}
+
+    const std::string name_;
+    const core::Dtype dtype_;
+    const void *data_ptr_;
+    const int group_size_;
+};
+
+template <typename scalar_t>
+void ColorToUint8(const scalar_t *input_color, uint8_t *output_color) {
+    utility::LogError(
+            "Color format not supported. Supported color format includes "
+            "Float32, Float64, UInt8, UInt16, UInt32.");
+}
+
+template <>
+void ColorToUint8<float>(const float *input_color, uint8_t *output_color) {
+    const float normalisation_factor =
+            static_cast<float>(std::numeric_limits<uint8_t>::max());
+    for (int i = 0; i < 3; ++i) {
+        output_color[i] = static_cast<uint8_t>(
+                std::round(std::min(1.f, std::max(0.f, input_color[2 - i])) *
+                           normalisation_factor));
+    }
+    output_color[3] = 0;
+}
+
+template <>
+void ColorToUint8<double>(const double *input_color, uint8_t *output_color) {
+    const double normalisation_factor =
+            static_cast<double>(std::numeric_limits<uint8_t>::max());
+    for (int i = 0; i < 3; ++i) {
+        output_color[i] = static_cast<uint8_t>(
+                std::round(std::min(1., std::max(0., input_color[2 - i])) *
+                           normalisation_factor));
+    }
+    output_color[3] = 0;
+}
+
+template <>
+void ColorToUint8<uint8_t>(const uint8_t *input_color, uint8_t *output_color) {
+    for (int i = 0; i < 3; ++i) {
+        output_color[i] = input_color[2 - i];
+    }
+    output_color[3] = 0;
+}
+
+template <>
+void ColorToUint8<uint16_t>(const uint16_t *input_color,
+                            uint8_t *output_color) {
+    const uint16_t normalisation_factor =
+            static_cast<uint16_t>(std::numeric_limits<uint8_t>::max() /
+                                  std::numeric_limits<uint16_t>::max());
+    for (int i = 0; i < 3; ++i) {
+        output_color[i] = input_color[2 - i] * normalisation_factor;
+    }
+    output_color[3] = 0;
+}
+
+template <>
+void ColorToUint8<uint32_t>(const uint32_t *input_color,
+                            uint8_t *output_color) {
+    const uint32_t normalisation_factor =
+            static_cast<uint32_t>(std::numeric_limits<uint8_t>::max() /
+                                  std::numeric_limits<uint32_t>::max());
+    for (int i = 0; i < 3; ++i) {
+        output_color[i] = input_color[2 - i] * normalisation_factor;
+    }
+    output_color[3] = 0;
+}
+
+core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
+    core::Tensor packed_color =
+            core::Tensor::Empty({colors_contiguous.GetLength(), 1},
+                                core::Float32, core::Device("CPU:0"));
+    auto packed_color_ptr = packed_color.GetDataPtr<float>();
+
+    DISPATCH_DTYPE_TO_TEMPLATE(colors_contiguous.GetDtype(), [&]() {
+        auto colors_ptr = colors_contiguous.GetDataPtr<scalar_t>();
+        core::ParallelFor(core::Device("CPU:0"), colors_contiguous.GetLength(),
+                          [&](int64_t workload_idx) {
+                              std::uint8_t rgba[4] = {0};
+                              ColorToUint8<scalar_t>(
+                                      colors_ptr + 3 * workload_idx, rgba);
+                              float val = 0;
+                              memcpy(&val, rgba, 4);
+                              packed_color_ptr[workload_idx] = val;
+                          });
+    });
+
+    return packed_color;
+}
+
+template <typename scalar_t>
+int WriteElementDataToFileASCII(const scalar_t &data, FILE *file) {
+    utility::LogError(
+            "Color format not supported. Supported color format includes "
+            "Float32, Float64, Int8, Int16, Int32, Int64, UInt8, UInt16, "
+            "UInt32, UInt64.");
+}
+
+template <>
+int WriteElementDataToFileASCII<float>(const float &data, FILE *file) {
+    return fprintf(file, "%.10g ", data);
+}
+
+template <>
+int WriteElementDataToFileASCII<double>(const double &data, FILE *file) {
+    return fprintf(file, "%.10g ", data);
+}
+
+template <>
+int WriteElementDataToFileASCII<int8_t>(const int8_t &data, FILE *file) {
+    return fprintf(file, "%.10d ", data);
+}
+
+template <>
+int WriteElementDataToFileASCII<int16_t>(const int16_t &data, FILE *file) {
+    return fprintf(file, "%.10hd ", data);
+}
+
+template <>
+int WriteElementDataToFileASCII<int32_t>(const int32_t &data, FILE *file) {
+    return fprintf(file, "%.10d ", data);
+}
+
+template <>
+int WriteElementDataToFileASCII<int64_t>(const int64_t &data, FILE *file) {
+    return fprintf(file, "%.10ld ", data);
+}
+
+template <>
+int WriteElementDataToFileASCII<uint8_t>(const uint8_t &data, FILE *file) {
+    return fprintf(file, "%.10ud ", data);
+}
+
+template <>
+int WriteElementDataToFileASCII<uint16_t>(const uint16_t &data, FILE *file) {
+    return fprintf(file, "%.10uhd ", data);
+}
+
+template <>
+int WriteElementDataToFileASCII<uint32_t>(const uint32_t &data, FILE *file) {
+    return fprintf(file, "%.10ud ", data);
+}
+
+template <>
+int WriteElementDataToFileASCII<uint64_t>(const uint64_t &data, FILE *file) {
+    return fprintf(file, "%.10lud ", data);
+}
+
+template <typename scalar_t>
+size_t WriteElementDataToFileBIN(const scalar_t &data, FILE *file) {
+    return fwrite(&data, sizeof(scalar_t), 1, file);
+}
+
+bool WritePCDData(FILE *file,
+                  const PCDHeader &header,
+                  const geometry::PointCloud &pointcloud,
+                  const WritePointCloudOption &params) {
+    if (pointcloud.IsEmpty()) {
+        utility::LogWarning("Write PLY failed: point cloud has 0 points.");
+        return false;
+    }
+
+    // TODO: Add device transfer in tensor map and use it here.
+    geometry::TensorMap t_map(pointcloud.GetPointAttr().Contiguous());
+    int64_t num_points =
+            static_cast<int64_t>(pointcloud.GetPointPositions().GetLength());
+
+    std::vector<WriteAttributePtr> attribute_ptrs;
+
+    attribute_ptrs.emplace_back("positions", t_map["positions"].GetDtype(),
+                                t_map["positions"].GetDataPtr(), 3);
+
+    if (pointcloud.HasPointNormals()) {
+        attribute_ptrs.emplace_back("normals", t_map["normals"].GetDtype(),
+                                    t_map["normals"].GetDataPtr(), 3);
+    }
+
+    if (pointcloud.HasPointColors()) {
+        t_map["colors"] = PackColorsToFloat(t_map["colors"]);
+        attribute_ptrs.emplace_back("colors", core::Float32,
+                                    t_map["colors"].GetDataPtr(), 1);
+    }
+
+    // Sanity check for the attributes is done before adding it to the
+    // `header.fields`.
+    for (auto &field : header.fields) {
+        if (field.name != "x" && field.name != "y" && field.name != "z" &&
+            field.name != "normal_x" && field.name != "normal_y" &&
+            field.name != "normal_z" && field.name != "rgb" &&
+            field.name != "rgba" && field.count == 1) {
+            attribute_ptrs.emplace_back(field.name,
+                                        t_map[field.name].GetDtype(),
+                                        t_map[field.name].GetDataPtr(), 1);
+        }
+    }
+
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(num_points);
+    if (header.datatype == PCD_DATA_ASCII) {
+        for (int64_t i = 0; i < num_points; ++i) {
+            for (auto &it : attribute_ptrs) {
+                DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
+                    const scalar_t *data_ptr =
+                            static_cast<const scalar_t *>(it.data_ptr_);
+
+                    for (int idx_offset = it.group_size_ * i;
+                         idx_offset < it.group_size_ * (i + 1); ++idx_offset) {
+                        WriteElementDataToFileASCII<scalar_t>(
+                                data_ptr[idx_offset], file);
+                    }
+                });
+            }
+
+            fprintf(file, "\n");
+            if (i % 1000 == 0) {
+                reporter.Update(i);
+            }
+        }
+    } else if (header.datatype == PCD_DATA_BINARY) {
+        std::vector<char> buffer_t;
+        buffer_t.reserve(header.elementnum * header.points);
+
+        for (int64_t i = 0; i < num_points; ++i) {
+            for (auto &it : attribute_ptrs) {
+                DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
+                    const scalar_t *data_ptr =
+                            static_cast<const scalar_t *>(it.data_ptr_);
+
+                    for (int idx_offset = it.group_size_ * i;
+                         idx_offset < it.group_size_ * (i + 1); ++idx_offset) {
+                        const char *rhs_ptr = reinterpret_cast<const char *>(
+                                &data_ptr[idx_offset]);
+                        for (size_t byte = 0; byte < sizeof(scalar_t); byte++) {
+                            char val = *(rhs_ptr + byte);
+                            buffer_t.push_back(val);
+                        }
+                    }
+                });
+            }
+
+            if (i % 1000 == 0) {
+                reporter.Update(i);
+            }
+        }
+
+        fwrite(buffer_t.data(), sizeof(char), buffer_t.size(), file);
+    } else if (header.datatype == PCD_DATA_BINARY_COMPRESSED) {
+        double report_total = double(num_points * 2);
+        // 0%-50% packing into buffer
+        // 50%-75% compressing buffer
+        // 75%-100% writing compressed buffer
+        reporter.SetTotal(int(report_total));
+        int strip_size = header.points;
+        std::uint32_t buffer_size =
+                (std::uint32_t)(header.elementnum * header.points);
+        std::unique_ptr<float[]> buffer(new float[buffer_size]);
+        std::unique_ptr<float[]> buffer_compressed(new float[buffer_size * 2]);
+        for (int64_t i = 0; i < num_points; ++i) {
+            utility::LogError("Unimplemented");
+
+            int idx = 0;
+            for (auto &it : attribute_ptrs) {
+                DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
+                    const scalar_t *data_ptr =
+                            static_cast<const scalar_t *>(it.data_ptr_);
+
+                    for (int idx_offset = it.group_size_ * i;
+                         idx_offset < it.group_size_ * (i + 1); ++idx_offset) {
+                        // TODO : This might not be correct to read. Find
+                        // alternative to dump scalar_t type in buffer instead
+                        // of type casting to float.
+                        buffer[idx * strip_size + i] =
+                                static_cast<float>(data_ptr[idx_offset]);
+                    }
+                });
+            }
+
+            if (i % 1000 == 0) {
+                reporter.Update(i);
+            }
+        }
+
+        std::uint32_t buffer_size_in_bytes = buffer_size * sizeof(float);
+        std::uint32_t size_compressed =
+                lzf_compress(buffer.get(), buffer_size_in_bytes,
+                             buffer_compressed.get(), buffer_size_in_bytes * 2);
+        if (size_compressed == 0) {
+            utility::LogWarning("[WritePCDData] Failed to compress data.");
+            return false;
+        }
+        utility::LogDebug(
+                "[WritePCDData] {:d} bytes data compressed into {:d} bytes.",
+                buffer_size_in_bytes, size_compressed);
+        reporter.Update(int(report_total * 0.75));
+        fwrite(&size_compressed, sizeof(size_compressed), 1, file);
+        fwrite(&buffer_size_in_bytes, sizeof(buffer_size_in_bytes), 1, file);
+        fwrite(buffer_compressed.get(), 1, size_compressed, file);
+    }
+    reporter.Finish();
+    return true;
+}
+
 }  // unnamed namespace
 
 bool ReadPointCloudFromPCD(const std::string &filename,
@@ -637,6 +1149,34 @@ bool ReadPointCloudFromPCD(const std::string &filename,
                       header.has_attr["colors"] ? "yes" : "no");
     if (!ReadPCDData(file, header, pointcloud, params)) {
         utility::LogWarning("Read PCD failed: unable to read data.");
+        fclose(file);
+        return false;
+    }
+    fclose(file);
+    return true;
+}
+
+bool WritePointCloudToPCD(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params) {
+    PCDHeader header;
+    if (!GenerateHeader(pointcloud, bool(params.write_ascii),
+                        bool(params.compressed), header)) {
+        utility::LogWarning("Write PCD failed: unable to generate header.");
+        return false;
+    }
+    FILE *file = utility::filesystem::FOpen(filename.c_str(), "wb");
+    if (file == NULL) {
+        utility::LogWarning("Write PCD failed: unable to open file.");
+        return false;
+    }
+    if (!WritePCDHeader(file, header)) {
+        utility::LogWarning("Write PCD failed: unable to write header.");
+        fclose(file);
+        return false;
+    }
+    if (!WritePCDData(file, header, pointcloud, params)) {
+        utility::LogWarning("Write PCD failed: unable to write data.");
         fclose(file);
         return false;
     }

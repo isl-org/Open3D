@@ -97,6 +97,10 @@ bool ReadPointCloudFromPCD(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params);
 
+bool WritePointCloudToPCD(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params);
+
 }  // namespace io
 }  // namespace t
 }  // namespace open3d
