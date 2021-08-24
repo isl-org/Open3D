@@ -31,6 +31,7 @@
 #include <sstream>
 
 #include "open3d/core/Dtype.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/t/io/PointCloudIO.h"
@@ -77,10 +78,10 @@ public:
     int points;
     PCDDataType datatype;
     std::string viewpoint;
+
     // helper variables
     int elementnum;
     int pointsize;
-
     std::unordered_map<std::string, bool> has_attr;
     std::unordered_map<std::string, core::Dtype> attr_dtype;
 };
@@ -124,8 +125,6 @@ core::Dtype GetDtypeFromPCDHeaderField(char type, int size) {
 }
 
 bool CheckHeader(PCDHeader &header) {
-    utility::LogInfo("Checking Header");
-
     if (header.points <= 0 || header.pointsize <= 0) {
         utility::LogWarning("[CheckHeader] PCD has no data.");
         return false;
@@ -257,7 +256,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
             header.fields.resize(specified_channel_count);
             int count_offset = 0, offset = 0;
             for (size_t i = 0; i < specified_channel_count;
-                 i++, count_offset += 1, offset += 4) {
+                 ++i, count_offset += 1, offset += 4) {
                 header.fields[i].name = st[i + 1];
                 header.fields[i].size = 4;
                 header.fields[i].type = 'F';
@@ -274,7 +273,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
             }
             int offset = 0, col_type = 0;
             for (size_t i = 0; i < specified_channel_count;
-                 i++, offset += col_type) {
+                 ++i, offset += col_type) {
                 sstream >> col_type;
                 header.fields[i].size = col_type;
                 header.fields[i].offset = offset;
@@ -285,7 +284,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
                 utility::LogWarning("[ReadPCDHeader] Bad PCD file format.");
                 return false;
             }
-            for (size_t i = 0; i < specified_channel_count; i++) {
+            for (size_t i = 0; i < specified_channel_count; ++i) {
                 header.fields[i].type = st[i + 1].c_str()[0];
             }
         } else if (line_type.substr(0, 5) == "COUNT") {
@@ -294,7 +293,7 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
                 return false;
             }
             int count_offset = 0, offset = 0, col_count = 0;
-            for (size_t i = 0; i < specified_channel_count; i++) {
+            for (size_t i = 0; i < specified_channel_count; ++i) {
                 sstream >> col_count;
                 header.fields[i].count = col_count;
                 header.fields[i].count_offset = count_offset;
@@ -333,11 +332,11 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
     return true;
 }
 
-struct AttributePtr {
-    AttributePtr(void *data_ptr = nullptr,
-                 const int row_idx = 0,
-                 const int row_length = 0,
-                 const int size = 0)
+struct ReadAttributePtr {
+    ReadAttributePtr(void *data_ptr = nullptr,
+                     const int row_idx = 0,
+                     const int row_length = 0,
+                     const int size = 0)
         : data_ptr_(data_ptr),
           row_idx_(row_idx),
           row_length_(row_length),
@@ -349,7 +348,7 @@ struct AttributePtr {
     const int size_;
 };
 
-inline void ReadASCIIPCDColorsFromField(AttributePtr &attr,
+inline void ReadASCIIPCDColorsFromField(ReadAttributePtr &attr,
                                         const PCLPointField &field,
                                         const char *data_ptr,
                                         const int index) {
@@ -381,7 +380,7 @@ inline void ReadASCIIPCDColorsFromField(AttributePtr &attr,
     }
 }
 
-inline void ReadBinaryPCDColorsFromField(AttributePtr &attr,
+inline void ReadBinaryPCDColorsFromField(ReadAttributePtr &attr,
                                          const PCLPointField &field,
                                          const void *data_ptr,
                                          const int index) {
@@ -403,7 +402,7 @@ inline void ReadBinaryPCDColorsFromField(AttributePtr &attr,
     }
 }
 
-inline void ReadPCDElementsFromField(AttributePtr &attr,
+inline void ReadPCDElementsFromField(ReadAttributePtr &attr,
                                      const PCLPointField &field,
                                      const void *data_ptr,
                                      const int index) {
@@ -422,19 +421,18 @@ bool ReadPCDData(FILE *file,
                  t::geometry::PointCloud &pointcloud,
                  const ReadPointCloudOption &params) {
     // The header should have been checked
-
     pointcloud.Clear();
 
-    std::unordered_map<std::string, AttributePtr> map_field_to_attr_ptr;
+    std::unordered_map<std::string, ReadAttributePtr> map_field_to_attr_ptr;
 
     if (header.has_attr["positions"]) {
         pointcloud.SetPointPositions(core::Tensor::Empty(
                 {header.points, 3}, header.attr_dtype["positions"]));
 
         void *data_ptr = pointcloud.GetPointPositions().GetDataPtr();
-        AttributePtr position_x(data_ptr, 0, 3, header.points);
-        AttributePtr position_y(data_ptr, 1, 3, header.points);
-        AttributePtr position_z(data_ptr, 2, 3, header.points);
+        ReadAttributePtr position_x(data_ptr, 0, 3, header.points);
+        ReadAttributePtr position_y(data_ptr, 1, 3, header.points);
+        ReadAttributePtr position_z(data_ptr, 2, 3, header.points);
 
         map_field_to_attr_ptr.emplace(std::string("x"), position_x);
         map_field_to_attr_ptr.emplace(std::string("y"), position_y);
@@ -449,9 +447,9 @@ bool ReadPCDData(FILE *file,
                 {header.points, 3}, header.attr_dtype["normals"]));
 
         void *data_ptr = pointcloud.GetPointNormals().GetDataPtr();
-        AttributePtr normal_x(data_ptr, 0, 3, header.points);
-        AttributePtr normal_y(data_ptr, 1, 3, header.points);
-        AttributePtr normal_z(data_ptr, 2, 3, header.points);
+        ReadAttributePtr normal_x(data_ptr, 0, 3, header.points);
+        ReadAttributePtr normal_y(data_ptr, 1, 3, header.points);
+        ReadAttributePtr normal_z(data_ptr, 2, 3, header.points);
 
         map_field_to_attr_ptr.emplace(std::string("normal_x"), normal_x);
         map_field_to_attr_ptr.emplace(std::string("normal_y"), normal_y);
@@ -459,13 +457,12 @@ bool ReadPCDData(FILE *file,
     }
     if (header.has_attr["colors"]) {
         // Colors stored in a PCD file is ALWAYS in UInt8 format.
-        // However it is stored as a single packed value, which itself maybe of
-        // Int8, UInt8 or Float32 in ASCII and Float32 in Binary format.
+        // However it is stored as a single packed floating value.
         pointcloud.SetPointColors(
                 core::Tensor::Empty({header.points, 3}, core::UInt8));
 
         void *data_ptr = pointcloud.GetPointColors().GetDataPtr();
-        AttributePtr colors(data_ptr, 0, 3, header.points);
+        ReadAttributePtr colors(data_ptr, 0, 3, header.points);
 
         map_field_to_attr_ptr.emplace(std::string("colors"), colors);
     }
@@ -483,7 +480,7 @@ bool ReadPCDData(FILE *file,
                                         header.attr_dtype[field.name]));
 
             void *data_ptr = pointcloud.GetPointAttr(field.name).GetDataPtr();
-            AttributePtr attr(data_ptr, 0, 1, header.points);
+            ReadAttributePtr attr(data_ptr, 0, 1, header.points);
 
             map_field_to_attr_ptr.emplace(field.name, attr);
         }
@@ -503,7 +500,7 @@ bool ReadPCDData(FILE *file,
             if ((int)strs.size() < header.elementnum) {
                 continue;
             }
-            for (size_t i = 0; i < header.fields.size(); i++) {
+            for (size_t i = 0; i < header.fields.size(); ++i) {
                 const auto &field = header.fields[i];
                 if (field.name == "rgb" || field.name == "rgba") {
                     ReadASCIIPCDColorsFromField(
@@ -522,7 +519,7 @@ bool ReadPCDData(FILE *file,
         }
     } else if (header.datatype == PCD_DATA_BINARY) {
         std::unique_ptr<char[]> buffer(new char[header.pointsize]);
-        for (int i = 0; i < header.points; i++) {
+        for (int i = 0; i < header.points; ++i) {
             if (fread(buffer.get(), header.pointsize, 1, file) != 1) {
                 utility::LogWarning(
                         "[ReadPCDData] Failed to read data record.");
@@ -589,13 +586,13 @@ bool ReadPCDData(FILE *file,
                     double(base_ptr - buffer.get()) / uncompressed_size;
             reporter.Update(int(reporter_total * (progress + .2)));
             if (field.name == "rgb" || field.name == "rgba") {
-                for (int i = 0; i < header.points; i++) {
+                for (int i = 0; i < header.points; ++i) {
                     ReadBinaryPCDColorsFromField(
                             map_field_to_attr_ptr["colors"], field,
                             base_ptr + i * field.size * field.count, i);
                 }
             } else {
-                for (int i = 0; i < header.points; i++) {
+                for (int i = 0; i < header.points; ++i) {
                     ReadPCDElementsFromField(
                             map_field_to_attr_ptr[field.name], field,
                             base_ptr + i * field.size * field.count, i);
