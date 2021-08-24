@@ -36,6 +36,10 @@ namespace rendering {
 
 class Material {
 public:
+    using TextureMaps = std::unordered_map<std::string, t::geometry::Image>;
+    using ScalarPropertyMap = std::unordered_map<std::string, float>;
+    using VectorPropertyMap = std::unordered_map<std::string, Eigen::Vector4f>;
+
     /// Create an empty, invalid material
     Material() = default;
 
@@ -55,6 +59,11 @@ public:
     /// Get the name of the shader for this material
     const std::string &GetShaderName() const { return shader_; }
 
+    /// Returns the texture map map
+    const TextureMaps& GetTextureMaps() const {
+        return texture_maps_;
+    }
+
     /// Get images (texture maps) of this Material. Throws exception if the
     /// image does not exist.
     ///
@@ -63,12 +72,22 @@ public:
         return texture_maps_.at(key);
     }
 
+    /// Returns the map of scalar properties
+    const ScalarPropertyMap& GetScalarProperties() const {
+        return scalar_properties_;
+    }
+
     /// Get scalar properties of this Material. Throws exception if the property
     /// does not exist.
     ///
     /// \param key Property name
     float GetScalarProperty(const std::string &key) {
         return scalar_properties_.at(key);
+    }
+
+    /// Returns the map of vector properties
+    const VectorPropertyMap& GetVectorProperties() const {
+        return vector_properties_;
     }
 
     /// Get vector properties of this Material. Throws exception if the property
