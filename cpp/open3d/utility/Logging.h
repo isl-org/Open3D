@@ -75,13 +75,8 @@
 //
 // Usage  : utility::LogError(format_string, arg0, arg1, ...);
 // Example: utility::LogError("name: {}, age: {}", "dog", 5);
-#define LogError(...)                                                  \
-    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, false, \
-                      __VA_ARGS__)
-// Same as LogError but enforce printing the message in the console.
-#define LogErrorConsole(...)                                          \
-    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, true, \
-                      __VA_ARGS__)
+#define LogError(...) \
+    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 
 // LogWarning is used if an error occurs, but the error is also signaled
 // via a return value (i.e., there is no need to throw an exception). This
@@ -91,39 +86,24 @@
 //
 // Usage  : utility::LogWarning(format_string, arg0, arg1, ...);
 // Example: utility::LogWarning("name: {}, age: {}", "dog", 5);
-#define LogWarning(...)                                                  \
-    Logger::_LogWarning(__FILE__, __LINE__, (const char *)__FN__, false, \
-                        __VA_ARGS__)
-// Same as LogWarning but enforce printing the message in the console.
-#define LogWarningConsole(...)                                          \
-    Logger::_LogWarning(__FILE__, __LINE__, (const char *)__FN__, true, \
-                        __VA_ARGS__)
+#define LogWarning(...) \
+    Logger::_LogWarning(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 
 // LogInfo is used to inform the user with expected output, e.g, pressed a
 // key in the visualizer prints helping information.
 //
 // Usage  : utility::LogInfo(format_string, arg0, arg1, ...);
 // Example: utility::LogInfo("name: {}, age: {}", "dog", 5);
-#define LogInfo(...)                                                  \
-    Logger::_LogInfo(__FILE__, __LINE__, (const char *)__FN__, false, \
-                     __VA_ARGS__)
-// Same as LogInfo but enforce printing the message in the console.
-#define LogInfoConsole(...)                                          \
-    Logger::_LogInfo(__FILE__, __LINE__, (const char *)__FN__, true, \
-                     __VA_ARGS__)
+#define LogInfo(...) \
+    Logger::_LogInfo(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 
 // LogDebug is used to print debug/additional information on the state of
 // the algorithm.
 //
 // Usage  : utility::LogDebug(format_string, arg0, arg1, ...);
 // Example: utility::LogDebug("name: {}, age: {}", "dog", 5);
-#define LogDebug(...)                                                  \
-    Logger::_LogDebug(__FILE__, __LINE__, (const char *)__FN__, false, \
-                      __VA_ARGS__)
-// Same as LogDebug but enforce printing the message in the console.
-#define LogDebugConsole(...)                                          \
-    Logger::_LogDebug(__FILE__, __LINE__, (const char *)__FN__, true, \
-                      __VA_ARGS__)
+#define LogDebug(...) \
+    Logger::_LogDebug(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
 
 namespace open3d {
 namespace utility {
@@ -181,45 +161,37 @@ public:
     static void _LogError [[noreturn]] (const char *file_name,
                                         int line_number,
                                         const char *function_name,
-                                        bool force_console_log,
                                         const char *format,
                                         Args &&... args) {
         Logger::GetInstance().VError(file_name, line_number, function_name,
-                                     force_console_log, format,
-                                     fmt::make_format_args(args...));
+                                     format, fmt::make_format_args(args...));
     }
     template <typename... Args>
     static void _LogWarning(const char *file_name,
                             int line_number,
                             const char *function_name,
-                            bool force_console_log,
                             const char *format,
                             Args &&... args) {
         Logger::GetInstance().VWarning(file_name, line_number, function_name,
-                                       force_console_log, format,
-                                       fmt::make_format_args(args...));
+                                       format, fmt::make_format_args(args...));
     }
     template <typename... Args>
     static void _LogInfo(const char *file_name,
                          int line_number,
                          const char *function_name,
-                         bool force_console_log,
                          const char *format,
                          Args &&... args) {
         Logger::GetInstance().VInfo(file_name, line_number, function_name,
-                                    force_console_log, format,
-                                    fmt::make_format_args(args...));
+                                    format, fmt::make_format_args(args...));
     }
     template <typename... Args>
     static void _LogDebug(const char *file_name,
                           int line_number,
                           const char *function_name,
-                          bool force_console_log,
                           const char *format,
                           Args &&... args) {
         Logger::GetInstance().VDebug(file_name, line_number, function_name,
-                                     force_console_log, format,
-                                     fmt::make_format_args(args...));
+                                     format, fmt::make_format_args(args...));
     }
 
 private:
@@ -227,25 +199,21 @@ private:
     void VError [[noreturn]] (const char *file_name,
                               int line_number,
                               const char *function_name,
-                              bool force_console_log,
                               const char *format,
                               fmt::format_args args) const;
     void VWarning(const char *file_name,
                   int line_number,
                   const char *function_name,
-                  bool force_console_log,
                   const char *format,
                   fmt::format_args args) const;
     void VInfo(const char *file_name,
                int line_number,
                const char *function_name,
-               bool force_console_log,
                const char *format,
                fmt::format_args args) const;
     void VDebug(const char *file_name,
                 int line_number,
                 const char *function_name,
-                bool force_console_log,
                 const char *format,
                 fmt::format_args args) const;
 

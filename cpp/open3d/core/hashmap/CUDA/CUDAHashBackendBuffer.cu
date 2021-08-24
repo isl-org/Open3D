@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CUDA/CUDAHashmapBufferAccessor.h"
+#include <thrust/sequence.h>
+
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
 
 namespace open3d {
 namespace core {
-
-__global__ void ResetHashmapBufferKernel(addr_t *heap, int64_t capacity) {
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < capacity) {
-        heap[i] = i;
-    }
+void CUDAResetHeap(Tensor &heap) {
+    uint32_t *heap_ptr = heap.GetDataPtr<uint32_t>();
+    thrust::sequence(thrust::device, heap_ptr, heap_ptr + heap.GetLength(), 0);
+    OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
-
 }  // namespace core
 }  // namespace open3d

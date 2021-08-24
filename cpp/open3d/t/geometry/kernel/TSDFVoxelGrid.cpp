@@ -30,7 +30,7 @@
 
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/DeviceHashmap.h"
+#include "open3d/core/hashmap/DeviceHashBackend.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -38,7 +38,7 @@ namespace t {
 namespace geometry {
 namespace kernel {
 namespace tsdf {
-void Touch(std::shared_ptr<core::Hashmap>& hashmap,
+void Touch(std::shared_ptr<core::HashMap>& hashmap,
            const core::Tensor& points,
            core::Tensor& voxel_block_coords,
            int64_t voxel_grid_resolution,
@@ -150,7 +150,7 @@ void EstimateRange(const core::Tensor& block_keys,
     }
 }
 
-void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
+void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
              const core::Tensor& block_values,
              const core::Tensor& range_map,
              core::Tensor& vertex_map,

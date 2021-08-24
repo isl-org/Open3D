@@ -113,7 +113,7 @@ static std::vector<Eigen::Matrix<T, N, 1>> TensorToEigenVectorNxVector(
         utility::LogError("Internal error: dtype size mismatch {} != {}.",
                           dtype.ByteSize() * N, sizeof(Eigen::Matrix<T, N, 1>));
     }
-    tensor.AssertShapeCompatible({utility::nullopt, N});
+    tensor.AssertShape({utility::nullopt, N});
 
     // Eigen::VectorNx is not a "fixed-size vectorizable Eigen type" thus it is
     // safe to write directly into std vector memory, see:

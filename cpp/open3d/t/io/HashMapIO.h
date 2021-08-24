@@ -24,39 +24,29 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CPU/TBBHashmap.h"
-#include "open3d/core/hashmap/Dispatch.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#pragma once
+
+#include <string>
+
+#include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 namespace open3d {
-namespace core {
+namespace t {
+namespace io {
 
-/// Non-templated factory.
-std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
-        int64_t init_capacity,
-        const Dtype& dtype_key,
-        const Dtype& dtype_value,
-        const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
-        const Device& device,
-        const HashmapBackend& backend) {
-    if (backend != HashmapBackend::Default && backend != HashmapBackend::TBB) {
-        utility::LogError("Unsupported backend for CPU hashmap.");
-    }
+/// Read a hash map's keys and values from a npz file at 'key' and 'value'.
+/// Return a hash map on CPU.
+///
+/// \param filename The npz file name to read from.
+core::HashMap ReadHashMap(const std::string& filename);
 
-    int64_t dim = element_shape_key.NumElements();
+/// Save a hash map's keys and values to a npz file at 'key' and 'value'.
+///
+/// \param filename The npz file name to write to.
+/// \param hashmap HashMap to save.
+void WriteHashMap(const std::string& filename, const core::HashMap& hashmap);
 
-    int64_t dsize_key = dim * dtype_key.ByteSize();
-    int64_t dsize_value =
-            element_shape_value.NumElements() * dtype_value.ByteSize();
-
-    std::shared_ptr<DeviceHashmap> device_hashmap_ptr;
-    DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
-        device_hashmap_ptr = std::make_shared<TBBHashmap<key_t, hash_t>>(
-                init_capacity, dsize_key, dsize_value, device);
-    });
-    return device_hashmap_ptr;
-}
-
-}  // namespace core
+}  // namespace io
+}  // namespace t
 }  // namespace open3d

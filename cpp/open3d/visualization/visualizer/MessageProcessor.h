@@ -1,3 +1,4 @@
+
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
@@ -26,27 +27,46 @@
 
 #pragma once
 
-#include <string>
-
-#include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/io/rpc/MessageProcessorBase.h"
 
 namespace open3d {
-namespace t {
-namespace io {
 
-/// Read a hash map's keys and values from a npz file at 'key' and 'value'.
-/// Return a hash map on CPU.
-///
-/// \param filename The npz file name to read from.
-core::Hashmap ReadHashmap(const std::string& filename);
+namespace geometry {
+class Geometry3D;
+}  // namespace geometry
 
-/// Save a hash map's keys and values to a npz file at 'key' and 'value'.
-///
-/// \param filename The npz file name to write to.
-/// \param hashmap Hashmap to save.
-void WriteHashmap(const std::string& filename, const core::Hashmap& hashmap);
+namespace visualization {
 
-}  // namespace io
-}  // namespace t
+namespace gui {
+class Window;
+}  // namespace gui
+
+/// MessageProcessor implementation which interfaces with the Open3DScene and a
+/// Window.
+class MessageProcessor : public io::rpc::MessageProcessorBase {
+public:
+    using OnGeometryFunc = std::function<void(
+            std::shared_ptr<geometry::Geometry3D>,  // geometry
+            const std::string&,                     // path
+            int,                                    // time
+            const std::string&)>;                   // layer
+    MessageProcessor(gui::Window* window, OnGeometryFunc on_geometry)
+        : MessageProcessorBase(), window_(window), on_geometry_(on_geometry) {}
+
+    std::shared_ptr<zmq::message_t> ProcessMessage(
+            const io::rpc::messages::Request& req,
+            const io::rpc::messages::SetMeshData& msg,
+            const msgpack::object_handle& obj) override;
+
+private:
+    gui::Window* window_;
+    OnGeometryFunc on_geometry_;
+
+    void SetGeometry(std::shared_ptr<geometry::Geometry3D> geom,
+                     const std::string& path,
+                     int time,
+                     const std::string& layer);
+};
+
+}  // namespace visualization
 }  // namespace open3d

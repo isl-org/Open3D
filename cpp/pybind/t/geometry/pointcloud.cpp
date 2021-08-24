@@ -30,7 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -185,7 +185,7 @@ The attributes of the point cloud have different levels::
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
                 return pointcloud.VoxelDownSample(
-                        voxel_size, core::HashmapBackend::Default);
+                        voxel_size, core::HashBackendType::Default);
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);

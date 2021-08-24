@@ -24,48 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/CUDA/SlabHashmap.h"
-#include "open3d/core/hashmap/CUDA/StdGPUHashmap.h"
-#include "open3d/core/hashmap/Dispatch.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/DeviceHashBackend.h"
+
+#include "open3d/core/hashmap/HashMap.h"
+#include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
-/// Non-templated factory.
-std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
+std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
         int64_t init_capacity,
-        const Dtype& dtype_key,
-        const Dtype& dtype_value,
-        const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
-        const HashmapBackend& backend) {
-    if (backend != HashmapBackend::Default && backend != HashmapBackend::Slab &&
-        backend != HashmapBackend::StdGPU) {
-        utility::LogError("Unsupported backend for CUDA hashmap.");
+        const HashBackendType& backend) {
+    if (device.GetType() == Device::DeviceType::CPU) {
+        return CreateCPUHashBackend(init_capacity, key_dtype, key_element_shape,
+                                    value_dtypes, value_element_shapes, device,
+                                    backend);
     }
-
-    int64_t dim = element_shape_key.NumElements();
-
-    int64_t dsize_key = dim * dtype_key.ByteSize();
-    int64_t dsize_value =
-            element_shape_value.NumElements() * dtype_value.ByteSize();
-
-    std::shared_ptr<DeviceHashmap> device_hashmap_ptr;
-    if (backend == HashmapBackend::Default ||
-        backend == HashmapBackend::StdGPU) {
-        DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
-            device_hashmap_ptr = std::make_shared<StdGPUHashmap<key_t, hash_t>>(
-                    init_capacity, dsize_key, dsize_value, device);
-        });
-    } else {  // if (backend == HashmapBackend::Slab) {
-        DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(dtype_key, dim, [&] {
-            device_hashmap_ptr = std::make_shared<SlabHashmap<key_t, hash_t>>(
-                    init_capacity, dsize_key, dsize_value, device);
-        });
+#if defined(BUILD_CUDA_MODULE)
+    else if (device.GetType() == Device::DeviceType::CUDA) {
+        return CreateCUDAHashBackend(init_capacity, key_dtype,
+                                     key_element_shape, value_dtypes,
+                                     value_element_shapes, device, backend);
     }
-    return device_hashmap_ptr;
+#endif
+    else {
+        utility::LogError("[CreateDeviceHashBackend]: Unimplemented device");
+    }
 }
 
 }  // namespace core

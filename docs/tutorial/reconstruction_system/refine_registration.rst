@@ -21,8 +21,8 @@ Fine-grained registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/refine_registration.py
    :language: python
-   :lineno-start: 38
-   :lines: 5,39-90
+   :lineno-start: 61
+   :lines: 27,62-126
    :linenos:
 
 Two options are given for the fine-grained registration. The ``color`` option is
@@ -35,19 +35,19 @@ Multiway registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/refine_registration.py
    :language: python
-   :lineno-start: 16
-   :lines: 5,17-36
+   :lineno-start: 38
+   :lines: 27,39-59
    :linenos:
 
-This script uses the technique demonstrated in :ref:`/tutorial/pipelines/multiway_registration.ipynb`. Function ``update_posegraph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
+This script uses the technique demonstrated in :ref:`/tutorial/pipelines/multiway_registration.ipynb`. Function ``update_posegraph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
 Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called
 for multiway registration.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/optimize_posegraph.py
    :language: python
-   :lineno-start: 52
-   :lines: 5,53-60
+   :lineno-start: 66
+   :lines: 27,67-74
    :linenos:
 
 Main registration loop
@@ -58,8 +58,8 @@ The function ``make_posegraph_for_refined_scene`` below calls all the functions
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/refine_registration.py
    :language: python
-   :lineno-start: 129
-   :lines: 5,130-176
+   :lineno-start: 170
+   :lines: 27,171-217
    :linenos:
 
 The main workflow is: pairwise local refinement -> multiway registration.

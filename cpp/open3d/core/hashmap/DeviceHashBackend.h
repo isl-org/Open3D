@@ -29,25 +29,24 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/HashmapBuffer.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
 
 namespace open3d {
 namespace core {
 
-enum class HashmapBackend;
+enum class HashBackendType;
 
-class DeviceHashmap {
+class DeviceHashBackend {
 public:
-    /// Comprehensive constructor for the developer.
-    DeviceHashmap(int64_t init_capacity,
-                  int64_t dsize_key,
-                  int64_t dsize_value,
-                  const Device& device)
+    DeviceHashBackend(int64_t init_capacity,
+                      int64_t key_dsize,
+                      const std::vector<int64_t>& value_dsizes,
+                      const Device& device)
         : capacity_(init_capacity),
-          dsize_key_(dsize_key),
-          dsize_value_(dsize_value),
+          key_dsize_(key_dsize),
+          value_dsizes_(value_dsizes),
           device_(device) {}
-    virtual ~DeviceHashmap() {}
+    virtual ~DeviceHashBackend() {}
 
     /// Rehash expects a lot of extra memory space at runtime,
     /// since it consists of
@@ -59,8 +58,8 @@ public:
 
     /// Parallel insert contiguous arrays of keys and values.
     virtual void Insert(const void* input_keys,
-                        const void* input_values,
-                        addr_t* output_iterators,
+                        const std::vector<const void*>& input_values,
+                        buf_index_t* output_buf_indices,
                         bool* output_masks,
                         int64_t count) = 0;
 
@@ -68,13 +67,13 @@ public:
     /// Specifically useful for large value elements (e.g., a tensor), where we
     /// can do in-place management after activation.
     virtual void Activate(const void* input_keys,
-                          addr_t* output_iterators,
+                          buf_index_t* output_buf_indices,
                           bool* output_masks,
                           int64_t count) = 0;
 
     /// Parallel find a contiguous array of keys.
     virtual void Find(const void* input_keys,
-                      addr_t* output_iterators,
+                      buf_index_t* output_buf_indices,
                       bool* output_masks,
                       int64_t count) = 0;
 
@@ -84,67 +83,79 @@ public:
                        int64_t count) = 0;
 
     /// Parallel collect all iterators in the hash table
-    virtual int64_t GetActiveIndices(addr_t* output_indices) = 0;
+    virtual int64_t GetActiveIndices(buf_index_t* output_buf_indices) = 0;
 
     /// Clear stored map without reallocating memory.
     virtual void Clear() = 0;
 
+    /// Get the size (number of valid entries) of the hash map.
     virtual int64_t Size() const = 0;
+
+    /// Get the number of buckets of the hash map.
     virtual int64_t GetBucketCount() const = 0;
+
+    /// Get the current load factor, defined as size / bucket count.
     virtual float LoadFactor() const = 0;
 
+    /// Get the maximum capacity of the hash map.
     int64_t GetCapacity() const { return capacity_; }
-    int64_t GetKeyBytesize() const { return dsize_key_; }
-    int64_t GetValueBytesize() const { return dsize_value_; }
+
+    /// Get the current device.
     Device GetDevice() const { return device_; }
 
-    Tensor& GetKeyBuffer() { return buffer_->GetKeyBuffer(); }
-    Tensor& GetValueBuffer() { return buffer_->GetValueBuffer(); }
-
-    /// Return number of elems per bucket.
-    /// High performance not required, so directly returns a vector.
+    /// Get the number of entries per bucket.
     virtual std::vector<int64_t> BucketSizes() const = 0;
+
+    /// Get the key buffer that stores actual keys.
+    Tensor GetKeyBuffer() { return buffer_->GetKeyBuffer(); }
+
+    /// Get the value buffers that store actual array of values.
+    std::vector<Tensor> GetValueBuffers() { return buffer_->GetValueBuffers(); }
+
+    /// Get the i-th value buffer that store an actual value array.
+    Tensor GetValueBuffer(size_t i = 0) { return buffer_->GetValueBuffer(i); }
 
 public:
     int64_t capacity_;
-    int64_t dsize_key_;
-    int64_t dsize_value_;
+
+    int64_t key_dsize_;
+    std::vector<int64_t> value_dsizes_;
 
     Device device_;
 
-    std::shared_ptr<HashmapBuffer> buffer_;
+    std::shared_ptr<HashBackendBuffer> buffer_;
 };
 
 /// Factory functions:
-/// - Default constructor switch is in DeviceHashmap.cpp
-/// - Default CPU constructor is in CPU/CreateCPUHashmap.cpp
-/// - Default CUDA constructor is in CUDA/CreateCUDAHashmap.cu
-std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
+/// - Default constructor switch is in DeviceHashBackend.cpp
+/// - Default CPU constructor is in CPU/CreateCPUHashBackend.cpp
+/// - Default CUDA constructor is in CUDA/CreateCUDAHashBackend.cu
+std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
         int64_t init_capacity,
-        const Dtype& dtype_key,
-        const Dtype& dtype_value,
-        const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
-        const HashmapBackend& backend);
+        const HashBackendType& backend);
 
-std::shared_ptr<DeviceHashmap> CreateCPUHashmap(
+std::shared_ptr<DeviceHashBackend> CreateCPUHashBackend(
         int64_t init_capacity,
-        const Dtype& dtype_key,
-        const Dtype& dtype_value,
-        const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
-        const HashmapBackend& backend);
+        const HashBackendType& backend);
 
-std::shared_ptr<DeviceHashmap> CreateCUDAHashmap(
+std::shared_ptr<DeviceHashBackend> CreateCUDAHashBackend(
         int64_t init_capacity,
-        const Dtype& dtype_key,
-        const Dtype& dtype_value,
-        const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
-        const HashmapBackend& backend);
+        const HashBackendType& backend);
 
 }  // namespace core
 }  // namespace open3d

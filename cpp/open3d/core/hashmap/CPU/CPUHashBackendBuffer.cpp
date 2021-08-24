@@ -24,39 +24,19 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/DeviceHashmap.h"
-
-#include "open3d/core/hashmap/Hashmap.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
+#include "open3d/core/hashmap/HashBackendBuffer.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace core {
+void CPUResetHeap(Tensor& heap) {
+    uint32_t* heap_ptr = heap.GetDataPtr<uint32_t>();
+    int64_t capacity = heap.GetLength();
 
-std::shared_ptr<DeviceHashmap> CreateDeviceHashmap(
-        int64_t init_capacity,
-        const Dtype& dtype_key,
-        const Dtype& dtype_value,
-        const SizeVector& element_shape_key,
-        const SizeVector& element_shape_value,
-        const Device& device,
-        const HashmapBackend& backend) {
-    if (device.GetType() == Device::DeviceType::CPU) {
-        return CreateCPUHashmap(init_capacity, dtype_key, dtype_value,
-                                element_shape_key, element_shape_value, device,
-                                backend);
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+    for (int64_t i = 0; i < capacity; ++i) {
+        heap_ptr[i] = i;
     }
-#if defined(BUILD_CUDA_MODULE)
-    else if (device.GetType() == Device::DeviceType::CUDA) {
-        return CreateCUDAHashmap(init_capacity, dtype_key, dtype_value,
-                                 element_shape_key, element_shape_value, device,
-                                 backend);
-    }
-#endif
-    else {
-        utility::LogError("[CreateDeviceHashmap]: Unimplemented device");
-    }
-}
-
+};
 }  // namespace core
 }  // namespace open3d

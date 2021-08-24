@@ -48,6 +48,7 @@ void pybind_core(py::module& m) {
     pybind_core_linalg(m_core);
     pybind_core_kernel(m_core);
     pybind_core_hashmap(m_core);
+    pybind_core_hashset(m_core);
     pybind_core_scalar(m_core);
 
     // opn3d::core::nns namespace.

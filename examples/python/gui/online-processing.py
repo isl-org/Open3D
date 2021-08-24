@@ -1,7 +1,8 @@
-###############################################################################
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Open3D: www.open3d.org
 # Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,10 +19,10 @@
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-###############################################################################
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 """Online 3D depth video processing pipeline.
 
 - Connects to a RGBD camera or RGBD video file (currently
@@ -173,7 +174,7 @@ class PipelineModel:
                 log.warning(f"No valid depth data in frame {frame_id})")
                 continue
 
-            n_pts += self.pcd_frame.point['points'].shape[0]
+            n_pts += self.pcd_frame.point['positions'].shape[0]
             if frame_id % 60 == 0 and frame_id > 0:
                 t0, t1 = t1, time.perf_counter()
                 log.debug(f"\nframe_id = {frame_id}, \t {(t1-t0)*1000./60:0.2f}"
@@ -375,7 +376,7 @@ class PipelineView:
         if not self.flag_gui_init:
             # Set dummy point cloud to allocate graphics memory
             dummy_pcd = o3d.t.geometry.PointCloud({
-                'points':
+                'positions':
                     o3d.core.Tensor.zeros((self.max_pcd_vertices, 3),
                                           o3d.core.Dtype.Float32),
                 'colors':
