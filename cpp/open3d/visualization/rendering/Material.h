@@ -46,7 +46,8 @@ public:
     Material(const Material &mat) = default;
 
     /// Create an empty but valid material for the specified shader name
-    Material(const std::string &shader) : shader_(shader) {}
+    Material(const std::string &material_name)
+        : material_name_(material_name) {}
 
     /// Sets a number of properties to the defaults expected by Open3D
     /// shaders
@@ -54,15 +55,13 @@ public:
 
     /// Returns true if the Material was not created with the default
     /// constructor and therefore has a valid shader name.
-    bool IsValid() const { return !shader_.empty(); }
+    bool IsValid() const { return !material_name_.empty(); }
 
     /// Get the name of the shader for this material
-    const std::string &GetShaderName() const { return shader_; }
+    const std::string &GetMaterialName() const { return material_name_; }
 
     /// Returns the texture map map
-    const TextureMaps& GetTextureMaps() const {
-        return texture_maps_;
-    }
+    const TextureMaps &GetTextureMaps() const { return texture_maps_; }
 
     /// Get images (texture maps) of this Material. Throws exception if the
     /// image does not exist.
@@ -73,7 +72,7 @@ public:
     }
 
     /// Returns the map of scalar properties
-    const ScalarPropertyMap& GetScalarProperties() const {
+    const ScalarPropertyMap &GetScalarProperties() const {
         return scalar_properties_;
     }
 
@@ -86,7 +85,7 @@ public:
     }
 
     /// Returns the map of vector properties
-    const VectorPropertyMap& GetVectorProperties() const {
+    const VectorPropertyMap &GetVectorProperties() const {
         return vector_properties_;
     }
 
@@ -128,7 +127,9 @@ public:
     /// user specified shader. The name is NOT checked to ensure it is valid.
     ///
     /// \param shader The name of the shader.
-    void SetShaderName(const std::string &shader) { shader_ = shader; }
+    void SetMaterialName(const std::string &material_name) {
+        material_name_ = material_name;
+    }
 
     /// Return true if the map exists
     ///
@@ -301,7 +302,7 @@ public:
     void SetLineWidth(float value) { SetScalarProperty("line_width", value); }
 
 private:
-    std::string shader_;
+    std::string material_name_;
     std::unordered_map<std::string, t::geometry::Image> texture_maps_;
     std::unordered_map<std::string, float> scalar_properties_;
     std::unordered_map<std::string, Eigen::Vector4f> vector_properties_;

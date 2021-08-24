@@ -31,7 +31,7 @@ namespace visualization {
 namespace rendering {
 
 void Material::SetDefaultProperties() {
-    shader_ = "defaultUnlit";
+    material_name_ = "defaultUnlit";
     SetBaseColor(Eigen::Vector4f(1.f, 1.f, 1.f, 1.f));
     SetBaseMetallic(0.f);
     SetBaseRoughness(1.f);

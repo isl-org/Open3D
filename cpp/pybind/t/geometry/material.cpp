@@ -50,8 +50,8 @@ void pybind_material(py::module& m) {
                  "properties used by Open3D")
             .def("is_valid", &Material::IsValid,
                  "Returns false if material is an empty material")
-            .def_property("shader_name", &Material::GetShaderName,
-                          &Material::SetShaderName)
+            .def_property("shader_name", &Material::GetMaterialName,
+                          &Material::SetMaterialName)
             .def("get_texture_map", &Material::GetTextureMap,
                  "Return the image associated with key")
             .def("set_texture_map", &Material::SetTextureMap,
