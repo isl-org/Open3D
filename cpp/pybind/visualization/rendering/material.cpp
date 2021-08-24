@@ -24,12 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "pybind/open3d_pybind.h"
 #include "open3d/visualization/rendering/Material.h"
 
 #include <string>
 #include <unordered_map>
-
-#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
 namespace visualization {
