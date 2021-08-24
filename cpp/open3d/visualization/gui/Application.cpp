@@ -706,7 +706,8 @@ std::shared_ptr<geometry::Image> Application::RenderToDepthImage(
         rendering::View *view,
         rendering::Scene *scene,
         int width,
-        int height) {
+        int height,
+        bool z_in_view_space /* =false */) {
     std::shared_ptr<geometry::Image> img;
     auto callback = [&img](std::shared_ptr<geometry::Image> _img) {
         img = _img;
@@ -718,7 +719,7 @@ std::shared_ptr<geometry::Image> Application::RenderToDepthImage(
     // C++ callers do not need to know do this themselves.
     view->SetViewport(0, 0, width, height);
 
-    renderer.RenderToDepthImage(view, scene, callback);
+    renderer.RenderToDepthImage(view, scene, callback, z_in_view_space);
     renderer.BeginFrame();
     renderer.EndFrame();
 
