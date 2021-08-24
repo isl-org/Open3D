@@ -64,13 +64,13 @@ std::shared_ptr<DeviceHashBackend> CreateCUDAHashBackend(
         backend == HashBackendType::StdGPU) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(key_dtype, dim, [&] {
             device_hashmap_ptr =
-                    std::make_shared<StdGPUHashBackend<key_t, hash_t>>(
+              std::make_shared<StdGPUHashBackend<key_t, hash_t, eq_t>>(
                             init_capacity, key_dsize, value_dsizes, device);
         });
     } else {  // if (backend == HashBackendType::Slab) {
         DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(key_dtype, dim, [&] {
             device_hashmap_ptr =
-                    std::make_shared<SlabHashBackend<key_t, hash_t>>(
+              std::make_shared<SlabHashBackend<key_t, hash_t, eq_t>>(
                             init_capacity, key_dsize, value_dsizes, device);
         });
     }

@@ -37,7 +37,7 @@
 
 namespace open3d {
 namespace core {
-template <typename Key, typename Hash>
+template <typename Key, typename Hash, typename Eq>
 class TBBHashBackend : public DeviceHashBackend {
 public:
     TBBHashBackend(int64_t init_capacity,
@@ -77,13 +77,13 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>
+    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash, Eq>>
     GetImpl() const {
         return impl_;
     }
 
 protected:
-    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>
+    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash, Eq>>
             impl_;
 
     std::shared_ptr<CPUHashBackendBufferAccessor> buffer_accessor_;
@@ -97,8 +97,8 @@ protected:
     void Allocate(int64_t capacity);
 };
 
-template <typename Key, typename Hash>
-TBBHashBackend<Key, Hash>::TBBHashBackend(
+template <typename Key, typename Hash, typename Eq>
+TBBHashBackend<Key, Hash, Eq>::TBBHashBackend(
         int64_t init_capacity,
         int64_t key_dsize,
         const std::vector<int64_t>& value_dsizes,
@@ -107,16 +107,16 @@ TBBHashBackend<Key, Hash>::TBBHashBackend(
     Allocate(init_capacity);
 }
 
-template <typename Key, typename Hash>
-TBBHashBackend<Key, Hash>::~TBBHashBackend() {}
+template <typename Key, typename Hash, typename Eq>
+TBBHashBackend<Key, Hash, Eq>::~TBBHashBackend() {}
 
-template <typename Key, typename Hash>
-int64_t TBBHashBackend<Key, Hash>::Size() const {
+template <typename Key, typename Hash, typename Eq>
+int64_t TBBHashBackend<Key, Hash, Eq>::Size() const {
     return impl_->size();
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Insert(
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Insert(
         const void* input_keys,
         const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
@@ -138,20 +138,20 @@ void TBBHashBackend<Key, Hash>::Insert(
                count);
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Activate(const void* input_keys,
-                                         buf_index_t* output_buf_indices,
-                                         bool* output_masks,
-                                         int64_t count) {
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Activate(const void* input_keys,
+                                             buf_index_t* output_buf_indices,
+                                             bool* output_masks,
+                                             int64_t count) {
     std::vector<const void*> null_values;
     Insert(input_keys, null_values, output_buf_indices, output_masks, count);
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Find(const void* input_keys,
-                                     buf_index_t* output_buf_indices,
-                                     bool* output_masks,
-                                     int64_t count) {
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
+                                         buf_index_t* output_buf_indices,
+                                         bool* output_masks,
+                                         int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
 #pragma omp parallel for num_threads(utility::EstimateMaxThreads())
@@ -165,10 +165,10 @@ void TBBHashBackend<Key, Hash>::Find(const void* input_keys,
     }
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Erase(const void* input_keys,
-                                      bool* output_masks,
-                                      int64_t count) {
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
+                                          bool* output_masks,
+                                          int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
     for (int64_t i = 0; i < count; ++i) {
@@ -184,8 +184,8 @@ void TBBHashBackend<Key, Hash>::Erase(const void* input_keys,
     }
 }
 
-template <typename Key, typename Hash>
-int64_t TBBHashBackend<Key, Hash>::GetActiveIndices(
+template <typename Key, typename Hash, typename Eq>
+int64_t TBBHashBackend<Key, Hash, Eq>::GetActiveIndices(
         buf_index_t* output_buf_indices) {
     int64_t count = impl_->size();
     int64_t i = 0;
@@ -196,14 +196,14 @@ int64_t TBBHashBackend<Key, Hash>::GetActiveIndices(
     return count;
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Clear() {
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Clear() {
     impl_->clear();
     this->buffer_->ResetHeap();
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Rehash(int64_t buckets) {
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {
     int64_t count = Size();
 
     Tensor active_keys;
@@ -246,13 +246,13 @@ void TBBHashBackend<Key, Hash>::Rehash(int64_t buckets) {
     impl_->rehash(buckets);
 }
 
-template <typename Key, typename Hash>
-int64_t TBBHashBackend<Key, Hash>::GetBucketCount() const {
+template <typename Key, typename Hash, typename Eq>
+int64_t TBBHashBackend<Key, Hash, Eq>::GetBucketCount() const {
     return impl_->unsafe_bucket_count();
 }
 
-template <typename Key, typename Hash>
-std::vector<int64_t> TBBHashBackend<Key, Hash>::BucketSizes() const {
+template <typename Key, typename Hash, typename Eq>
+std::vector<int64_t> TBBHashBackend<Key, Hash, Eq>::BucketSizes() const {
     int64_t bucket_count = impl_->unsafe_bucket_count();
     std::vector<int64_t> ret;
     for (int64_t i = 0; i < bucket_count; ++i) {
@@ -261,13 +261,13 @@ std::vector<int64_t> TBBHashBackend<Key, Hash>::BucketSizes() const {
     return ret;
 }
 
-template <typename Key, typename Hash>
-float TBBHashBackend<Key, Hash>::LoadFactor() const {
+template <typename Key, typename Hash, typename Eq>
+float TBBHashBackend<Key, Hash, Eq>::LoadFactor() const {
     return impl_->load_factor();
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::InsertImpl(
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::InsertImpl(
         const void* input_keys,
         const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
@@ -327,8 +327,8 @@ void TBBHashBackend<Key, Hash>::InsertImpl(
     }
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Allocate(int64_t capacity) {
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     this->buffer_ = std::make_shared<HashBackendBuffer>(
@@ -339,8 +339,8 @@ void TBBHashBackend<Key, Hash>::Allocate(int64_t capacity) {
             std::make_shared<CPUHashBackendBufferAccessor>(*this->buffer_);
 
     impl_ = std::make_shared<
-            tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>(capacity,
-                                                                   Hash());
+            tbb::concurrent_unordered_map<Key, buf_index_t, Hash, Eq>>(
+            capacity, Hash(), Eq());
 }
 
 }  // namespace core

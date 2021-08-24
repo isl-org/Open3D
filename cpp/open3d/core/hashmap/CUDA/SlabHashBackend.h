@@ -34,7 +34,7 @@
 
 namespace open3d {
 namespace core {
-template <typename Key, typename Hash>
+template <typename Key, typename Hash, typename Eq>
 class SlabHashBackend : public DeviceHashBackend {
 public:
     SlabHashBackend(int64_t init_capacity,
@@ -74,12 +74,12 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    SlabHashBackendImpl<Key, Hash> GetImpl() { return impl_; }
+    SlabHashBackendImpl<Key, Hash, Eq> GetImpl() { return impl_; }
 
 protected:
     /// The struct is directly passed to kernels by value, so cannot be a
     /// shared pointer.
-    SlabHashBackendImpl<Key, Hash> impl_;
+    SlabHashBackendImpl<Key, Hash, Eq> impl_;
 
     CUDAHashBackendBufferAccessor buffer_accessor_;
     std::shared_ptr<SlabNodeManager> node_mgr_;
@@ -98,8 +98,8 @@ protected:
     int64_t bucket_count_;
 };
 
-template <typename Key, typename Hash>
-SlabHashBackend<Key, Hash>::SlabHashBackend(
+template <typename Key, typename Hash, typename Eq>
+SlabHashBackend<Key, Hash, Eq>::SlabHashBackend(
         int64_t init_capacity,
         int64_t key_dsize,
         const std::vector<int64_t>& value_dsizes,
@@ -109,13 +109,13 @@ SlabHashBackend<Key, Hash>::SlabHashBackend(
     Allocate(init_buckets, init_capacity);
 }
 
-template <typename Key, typename Hash>
-SlabHashBackend<Key, Hash>::~SlabHashBackend() {
+template <typename Key, typename Hash, typename Eq>
+SlabHashBackend<Key, Hash, Eq>::~SlabHashBackend() {
     Free();
 }
 
-template <typename Key, typename Hash>
-void SlabHashBackend<Key, Hash>::Rehash(int64_t buckets) {
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {
     int64_t count = Size();
 
     Tensor active_keys;
@@ -158,8 +158,8 @@ void SlabHashBackend<Key, Hash>::Rehash(int64_t buckets) {
     }
 }
 
-template <typename Key, typename Hash>
-void SlabHashBackend<Key, Hash>::Insert(
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackend<Key, Hash, Eq>::Insert(
         const void* input_keys,
         const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
@@ -179,20 +179,20 @@ void SlabHashBackend<Key, Hash>::Insert(
                count);
 }
 
-template <typename Key, typename Hash>
-void SlabHashBackend<Key, Hash>::Activate(const void* input_keys,
-                                          buf_index_t* output_buf_indices,
-                                          bool* output_masks,
-                                          int64_t count) {
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackend<Key, Hash, Eq>::Activate(const void* input_keys,
+                                              buf_index_t* output_buf_indices,
+                                              bool* output_masks,
+                                              int64_t count) {
     std::vector<const void*> null_values;
     Insert(input_keys, null_values, output_buf_indices, output_masks, count);
 }
 
-template <typename Key, typename Hash>
-void SlabHashBackend<Key, Hash>::Find(const void* input_keys,
-                                      buf_index_t* output_buf_indices,
-                                      bool* output_masks,
-                                      int64_t count) {
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
+                                          buf_index_t* output_buf_indices,
+                                          bool* output_masks,
+                                          int64_t count) {
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
@@ -207,10 +207,10 @@ void SlabHashBackend<Key, Hash>::Find(const void* input_keys,
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
 
-template <typename Key, typename Hash>
-void SlabHashBackend<Key, Hash>::Erase(const void* input_keys,
-                                       bool* output_masks,
-                                       int64_t count) {
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
+                                           bool* output_masks,
+                                           int64_t count) {
     if (count == 0) return;
 
     OPEN3D_CUDA_CHECK(cudaMemset(output_masks, 0, sizeof(bool) * count));
@@ -233,8 +233,8 @@ void SlabHashBackend<Key, Hash>::Erase(const void* input_keys,
     MemoryManager::Free(buf_indices, this->device_);
 }
 
-template <typename Key, typename Hash>
-int64_t SlabHashBackend<Key, Hash>::GetActiveIndices(
+template <typename Key, typename Hash, typename Eq>
+int64_t SlabHashBackend<Key, Hash, Eq>::GetActiveIndices(
         buf_index_t* output_buf_indices) {
     uint32_t* count = static_cast<uint32_t*>(
             MemoryManager::Malloc(sizeof(uint32_t), this->device_));
@@ -259,8 +259,8 @@ int64_t SlabHashBackend<Key, Hash>::GetActiveIndices(
     return static_cast<int64_t>(ret);
 }
 
-template <typename Key, typename Hash>
-void SlabHashBackend<Key, Hash>::Clear() {
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackend<Key, Hash, Eq>::Clear() {
     // Clear the heap
     this->buffer_->ResetHeap();
 
@@ -274,18 +274,18 @@ void SlabHashBackend<Key, Hash>::Clear() {
     node_mgr_->Reset();
 }
 
-template <typename Key, typename Hash>
-int64_t SlabHashBackend<Key, Hash>::Size() const {
+template <typename Key, typename Hash, typename Eq>
+int64_t SlabHashBackend<Key, Hash, Eq>::Size() const {
     return this->buffer_->GetHeapTopIndex();
 }
 
-template <typename Key, typename Hash>
-int64_t SlabHashBackend<Key, Hash>::GetBucketCount() const {
+template <typename Key, typename Hash, typename Eq>
+int64_t SlabHashBackend<Key, Hash, Eq>::GetBucketCount() const {
     return bucket_count_;
 }
 
-template <typename Key, typename Hash>
-std::vector<int64_t> SlabHashBackend<Key, Hash>::BucketSizes() const {
+template <typename Key, typename Hash, typename Eq>
+std::vector<int64_t> SlabHashBackend<Key, Hash, Eq>::BucketSizes() const {
     thrust::device_vector<int64_t> elems_per_bucket(impl_.bucket_count_);
     thrust::fill(elems_per_bucket.begin(), elems_per_bucket.end(), 0);
 
@@ -304,13 +304,13 @@ std::vector<int64_t> SlabHashBackend<Key, Hash>::BucketSizes() const {
     return result;
 }
 
-template <typename Key, typename Hash>
-float SlabHashBackend<Key, Hash>::LoadFactor() const {
+template <typename Key, typename Hash, typename Eq>
+float SlabHashBackend<Key, Hash, Eq>::LoadFactor() const {
     return float(Size()) / float(this->bucket_count_);
 }
 
-template <typename Key, typename Hash>
-void SlabHashBackend<Key, Hash>::InsertImpl(
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackend<Key, Hash, Eq>::InsertImpl(
         const void* input_keys,
         const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
@@ -350,9 +350,9 @@ void SlabHashBackend<Key, Hash>::InsertImpl(
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }
 
-template <typename Key, typename Hash>
-void SlabHashBackend<Key, Hash>::Allocate(int64_t bucket_count,
-                                          int64_t capacity) {
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackend<Key, Hash, Eq>::Allocate(int64_t bucket_count,
+                                              int64_t capacity) {
     this->bucket_count_ = bucket_count;
     this->capacity_ = capacity;
 
@@ -376,8 +376,8 @@ void SlabHashBackend<Key, Hash>::Allocate(int64_t bucket_count,
     impl_.Setup(this->bucket_count_, node_mgr_->impl_, buffer_accessor_);
 }
 
-template <typename Key, typename Hash>
-void SlabHashBackend<Key, Hash>::Free() {
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackend<Key, Hash, Eq>::Free() {
     buffer_accessor_.Shutdown(this->device_);
     MemoryManager::Free(impl_.bucket_list_head_, this->device_);
 }
