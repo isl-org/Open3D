@@ -24,11 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/open3d_pybind.h"
 #include "open3d/visualization/rendering/Material.h"
 
-#include <string>
-#include <unordered_map>
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
 namespace visualization {
@@ -49,8 +47,13 @@ void pybind_material(py::module& m) {
                  "properties used by Open3D")
             .def("is_valid", &Material::IsValid,
                  "Returns false if material is an empty material")
-            .def_property("shader_name", &Material::GetMaterialName,
+            .def_property("material_name", &Material::GetMaterialName,
                           &Material::SetMaterialName)
+            .def_property_readonly("texture_maps", &Material::GetTextureMaps)
+            .def_property_readonly("scalar_properties",
+                                   &Material::GetScalarProperties)
+            .def_property_readonly("vector_properties",
+                                   &Material::GetVectorProperties)
             .def("get_texture_map", &Material::GetTextureMap,
                  "Return the image associated with key")
             .def("set_texture_map", &Material::SetTextureMap,
