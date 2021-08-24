@@ -127,23 +127,24 @@ A connection writing to a memory buffer.
                      "the connection."},
             });
 
-    m.def("set_mesh_data", &rpc::SetMeshData, "vertices"_a, "path"_a = "",
-          "time"_a = 0, "layer"_a = "",
+    m.def("set_mesh_data", &rpc::SetMeshData, "path"_a = "", "time"_a = 0,
+          "layer"_a = "", "vertices"_a = core::Tensor({0}, core::Float32),
           "vertex_attributes"_a = std::map<std::string, core::Tensor>(),
           "faces"_a = core::Tensor({0}, core::Int32),
           "face_attributes"_a = std::map<std::string, core::Tensor>(),
           "lines"_a = core::Tensor({0}, core::Int32),
           "line_attributes"_a = std::map<std::string, core::Tensor>(),
           "textures"_a = std::map<std::string, core::Tensor>(),
+          "o3d_type"_a = std::string(),
           "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sends a set_mesh_data message.");
     docstring::FunctionDocInject(
             m, "set_mesh_data",
             {
-                    {"vertices", "Tensor defining the vertices."},
                     {"path", "A path descriptor, e.g., 'mygroup/points'."},
                     {"time", "The time associated with this data."},
                     {"layer", "The layer associated with this data."},
+                    {"vertices", "Tensor defining the vertices."},
                     {"vertex_attributes",
                      "dict of Tensors with vertex attributes."},
                     {"faces", "Tensor defining the faces with vertex indices."},
@@ -153,6 +154,12 @@ A connection writing to a memory buffer.
                     {"line_attributes",
                      "dict of Tensors with line attributes."},
                     {"textures", "dict of Tensors with textures."},
+                    {"o3d_type", R"doc(The type of the geometry. This is one of 
+"PointCloud", "LineSet", "TriangleMesh".
+This argument should be specified for partial
+data that has no primary key data, e.g., a triangle
+mesh without vertices but with other attribute
+tensors.)doc"},
                     {"connection",
                      "A Connection object. Use None to automatically create "
                      "the connection."},
