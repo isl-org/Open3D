@@ -459,7 +459,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 #ifndef NDEBUG
-void OutputMaterialProperties(const visualization::rendering::Material& mat) {
+void OutputMaterialProperties(const visualization::rendering::MaterialRecord& mat) {
     utility::LogInfo("Material {}", mat.name);
     utility::LogInfo("\tAlpha: {}", mat.has_alpha);
     utility::LogInfo("\tBase Color: {},{},{},{}", mat.base_color.x(),
