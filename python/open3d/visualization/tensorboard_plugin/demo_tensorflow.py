@@ -29,77 +29,16 @@ import numpy as np
 import tensorflow as tf
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
+from open3d.visualization.tensorboard_plugin.metadata import to_dict_batch
 
-
-def to_dict_batch(o3d_geometry_list):
-    """
-    Convert sequence of identical Open3D geometry types to attribute-tensor
-    dictionary. The geometry seequence forms a batch of data.
-    TODO: This involves a data copy. Add support for List[Open3D geometry]
-    directly to add_3d() if needed.
-
-    Args:
-        o3d_geometry_list (Iterable): Iterable (list / tuple / sequence
-            generator) of Open3D Tensor geometry types.
-    """
-    if len(o3d_geometry_list) == 0:
-        return {}
-    if isinstance(o3d_geometry_list[0], o3d.geometry.PointCloud):
-        vertex_positions = []
-        vertex_colors = []
-        vertex_normals = []
-        for geometry in o3d_geometry_list:
-            vertex_positions.append(np.asarray(geometry.points))
-            vertex_colors.append(np.asarray(geometry.colors))
-            vertex_normals.append(np.asarray(geometry.normals))
-
-        return {
-            'vertex_positions': np.stack(vertex_positions, axis=0),
-            'vertex_colors': np.stack(vertex_colors, axis=0),
-            'vertex_normals': np.stack(vertex_normals, axis=0),
-        }
-    if isinstance(o3d_geometry_list[0], o3d.geometry.TriangleMesh):
-        vertex_positions = []
-        vertex_colors = []
-        vertex_normals = []
-        triangle_indices = []
-        for geometry in o3d_geometry_list:
-            vertex_positions.append(np.asarray(geometry.vertices))
-            vertex_colors.append(np.asarray(geometry.vertex_colors))
-            vertex_normals.append(np.asarray(geometry.vertex_normals))
-            triangle_indices.append(np.asarray(geometry.triangles))
-
-        return {
-            'vertex_positions': np.stack(vertex_positions, axis=0),
-            'vertex_colors': np.stack(vertex_colors, axis=0),
-            'vertex_normals': np.stack(vertex_normals, axis=0),
-            'triangle_indices': np.stack(triangle_indices, axis=0),
-        }
-
-    if isinstance(o3d_geometry_list[0], o3d.geometry.LineSet):
-        vertex_positions = []
-        line_colors = []
-        line_indices = []
-        for geometry in o3d_geometry_list:
-            vertex_positions.append(np.asarray(geometry.points))
-            line_colors.append(np.asarray(geometry.colors))
-            line_indices.append(np.asarray(geometry.lines))
-
-        return {
-            'vertex_positions': np.stack(vertex_positions, axis=0),
-            'line_colors': np.stack(line_colors, axis=0),
-            'line_indices': np.stack(line_indices, axis=0),
-        }
-
-    raise NotImplementedError(
-        f"Geometry type {type(o3d_geometry_list[0])} is not suported yet.")
+BASE_LOGDIR = "demo_logs/tf/"
 
 
 def small_scale(run_name="small_scale"):
     """Basic demo with cube and cylinder with normals and colors.
     """
 
-    writer = tf.summary.create_file_writer("demo_logs/" + run_name)
+    writer = tf.summary.create_file_writer(BASE_LOGDIR + run_name)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube.compute_vertex_normals()
@@ -110,7 +49,7 @@ def small_scale(run_name="small_scale"):
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
     with writer.as_default():
-        for step in range(2):
+        for step in range(3):
             cube.paint_uniform_color(colors[step])
             summary.add_3d('cube', to_dict_batch([cube]), step=step)
             cylinder.paint_uniform_color(colors[step])
@@ -122,7 +61,7 @@ def property_reference(run_name="property_reference"):
     repeated properties of ``vertex_positions`` and ``vertex_normals``.
     """
 
-    writer = tf.summary.create_file_writer("demo_logs/" + run_name)
+    writer = tf.summary.create_file_writer(BASE_LOGDIR + run_name)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube.compute_vertex_normals()
@@ -133,15 +72,17 @@ def property_reference(run_name="property_reference"):
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
     with writer.as_default():
-        for step in range(2):
+        for step in range(3):
             cube.paint_uniform_color(colors[step])
             cube_summary = to_dict_batch([cube])
             if step > 0:
+                cube_summary['vertex_positions'] = 0
                 cube_summary['vertex_normals'] = 0
             summary.add_3d('cube', cube_summary, step=step)
             cylinder.paint_uniform_color(colors[step])
             cylinder_summary = to_dict_batch([cylinder])
             if step > 0:
+                cylinder_summary['vertex_positions'] = 0
                 cylinder_summary['vertex_normals'] = 0
             summary.add_3d('cylinder', cylinder_summary, step=step)
 
@@ -153,7 +94,7 @@ def large_scale(n_steps=20,
     """Generate a large scale summary. Geometry resolution increases linearly
     with step. Each element in a batch is painted a different color.
     """
-    writer = tf.summary.create_file_writer("demo_logs/" + run_name)
+    writer = tf.summary.create_file_writer(BASE_LOGDIR + run_name)
     colors = []
     for k in range(batch_size):
         t = k * np.pi / batch_size

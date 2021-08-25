@@ -29,26 +29,38 @@ import os
 import socket
 import time
 import queue
+import warnings
 
 import numpy as np
 
-# TODO(ssheorey) Enable operation without TF, but with PyTorch + Tensorboard
-import tensorflow.compat.v2 as tf
-from tensorboard.compat.proto import summary_pb2
+from tensorboard.compat.proto.summary_pb2 import Summary
+from tensorboard.compat.proto.tensor_shape_pb2 import TensorShapeProto
+from tensorboard.compat.proto.tensor_pb2 import TensorProto
 from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
 from tensorboard.util import lazy_tensor_creator
-from tensorflow.experimental import dlpack as tf_dlpack
-
+try:
+    import tensorflow as tf
+    from tensorflow.experimental import dlpack as tf_dlpack
+    from tensorflow.io.gfile import makedirs as _makedirs
+    from tensorflow.io.gfile import GFile as _fileopen
+except ImportError:
+    tf = None
+    from os import makedirs
+    from functools import partial
+    # Suppress errors for existing folders.
+    _makedirs = partial(makedirs, exist_ok=True)
+    _fileopen = open
 try:
     import torch
     from torch.utils import dlpack as torch_dlpack
+    from torch.utils.tensorboard import SummaryWriter
 except ImportError:
     torch = None
 
 import open3d as o3d
+from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 from open3d.visualization.tensorboard_plugin import metadata
 _log = metadata.log
-from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 
 
 class _AsyncDataWriter:
@@ -56,9 +68,9 @@ class _AsyncDataWriter:
     queued with ``enqueue()`` and actual writing is done in a separate
     thread. GFile (``tf.io.gfile``) is used for writing to local and remote
     (Google cloud storage with gs:// URI and HDFS with hdfs:// URIs) locations.
-    The filename format is ``{tagfilepath}.{current time
-    (s)}.{hostname}.{Process ID}{filename_extension}`` following the
-    TensorFlow event file name format.
+    If tensorflow is not available, we fallback to Python I/O. The filename
+    format is ``{tagfilepath}.{current time (s)}.{hostname}.{ProcessID}{filename_extension}``
+    following the TensorFlow event file name format.
 
     This class is thread safe. A single global object is created when this module is
     imported by each process.
@@ -86,17 +98,15 @@ class _AsyncDataWriter:
         self._file_next_write_pos = dict()
         # protects _file_handles and _file_next_write_pos
         self._file_lock = threading.Lock()
-        self._writer_thread = threading.Thread(target=self._writer,
-                                               name="Open3DDataWriter",
-                                               daemon=True)
-        self._writer_thread.start()
+        self._writer_thread = threading.Thread()
 
     def _writer(self):
-        """Writer thread main function. Since this is a daemon thread, it will
-        not block program exit and file handles should be safely closed."""
-
+        """Writer thread main function."""
         while True:
-            tagfilepath, data = self._write_queue.get()
+            try:
+                tagfilepath, data = self._write_queue.get(timeout=0.25)
+            except queue.Empty:  # exit if nothing to do.
+                break
             _log.debug(
                 f"Writing {len(data)}b data at "
                 f"{tagfilepath}+{self._file_handles[tagfilepath].tell()}")
@@ -122,9 +132,9 @@ class _AsyncDataWriter:
 
         Args:
             tagfilepath (str): Full file pathname for data. A suffix will be
-                added to get the complete filename. An empty value indicates
+                added to get the complete filename. A None value indicates
                 writing is over and the writer thread should join.
-            data (bytes): Data buffer
+            data (bytes): Data buffer to write.
 
         Returns:
             Tuple of filename and location (in bytes) where the data will be
@@ -138,9 +148,8 @@ class _AsyncDataWriter:
                                                       socket.gethostname(),
                                                       os.getpid(),
                                                       self._filename_extension)
-                tf.io.gfile.makedirs(os.path.dirname(fullfilepath))
-                self._file_handles[tagfilepath] = tf.io.gfile.GFile(
-                    fullfilepath, 'wb')
+                _makedirs(os.path.dirname(fullfilepath))
+                self._file_handles[tagfilepath] = _fileopen(fullfilepath, 'wb')
                 _log.debug(f"msgpack file {fullfilepath} opened for writing.")
                 this_write_loc = 0
                 self._file_next_write_pos[tagfilepath] = len(data)
@@ -150,6 +159,11 @@ class _AsyncDataWriter:
                 fullfilepath = self._file_handles[tagfilepath].name
         # Blocks till queue has available slot.
         self._write_queue.put((tagfilepath, data), block=True)
+        if not self._writer_thread.is_alive():
+            self._writer_thread = threading.Thread(target=self._writer,
+                                                   name="Open3DDataWriter")
+            self._writer_thread.start()
+
         return os.path.basename(fullfilepath), this_write_loc
 
 
@@ -164,14 +178,14 @@ def _to_o3d(tensor):
 
     if isinstance(tensor, o3d.core.Tensor):
         return tensor
-    if isinstance(tensor, tf.Tensor):
+    if tf is not None and isinstance(tensor, tf.Tensor):
         return o3d.core.Tensor.from_dlpack(tf_dlpack.to_dlpack(tensor))
     if torch is not None and isinstance(tensor, torch.Tensor):
         return o3d.core.Tensor.from_dlpack(torch_dlpack.to_dlpack(tensor))
     return o3d.core.Tensor.from_numpy(np.asarray(tensor))
 
 
-def _to_uint8(color_data):
+def _color_to_uint8(color_data):
     """
     Args:
         color_data: o3d.core.Tensor [B,N,3] with any dtype. Float dtypes are
@@ -183,10 +197,10 @@ def _to_uint8(color_data):
     """
     if color_data.dtype == o3d.core.uint8:
         return color_data
-    elif color_data.dtype == o3d.core.uint16:
-        return (color_data / 256).to(dtype=o3d.core.uint8)
-    else:
-        return (255 * color_data).to(dtype=o3d.core.uint8)
+    if color_data.dtype == o3d.core.uint16:
+        return (color_data / 255).to(dtype=o3d.core.uint8)
+    # TODO: This wraps around instead of clipping
+    return (255 * color_data).to(dtype=o3d.core.uint8)
 
 
 def _to_integer(tensor):
@@ -228,7 +242,7 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
 
     # Datatype conversion
     if prop.endswith("_colors"):
-        save_tensor = _to_uint8(save_tensor)  # includes scaling
+        save_tensor = _color_to_uint8(save_tensor)  # includes scaling
     elif prop.endswith("_indices"):
         save_tensor = save_tensor.to(dtype=o3d.core.int32)
     else:
@@ -280,6 +294,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     line_data = {}
     geometry_metadata = plugin_data_pb2.Open3DPluginData(
         version=metadata._VERSION)
+    o3d_type = "PointCloud"
     for prop, tensor in data.items():
         if prop in ('vertex_positions',) + metadata.VERTEX_PROPERTIES:
             prop_name = prop[7:]
@@ -298,6 +313,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                     f"{exp_shape} but is {vertex_data[prop_name].shape}.")
 
         elif prop in ('triangle_indices',) + metadata.TRIANGLE_PROPERTIES:
+            o3d_type = "TriangleMesh"
             prop_name = prop[9:]
             triangle_data[prop_name] = _preprocess(prop, tensor, step,
                                                    max_outputs,
@@ -315,6 +331,8 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                     f"{exp_shape} but is {triangle_data[prop_name].shape}.")
 
         elif prop in ('line_indices',) + metadata.LINE_PROPERTIES:
+            if o3d_type != "TriangleMesh":
+                o3d_type = "LineSet"
             line_data[prop_name] = _preprocess(prop, tensor, step, max_outputs,
                                                geometry_metadata)
             if line_data[prop_name] is None:  # Step reference
@@ -334,36 +352,39 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     faces = triangle_data.pop("indices",
                               o3d.core.Tensor((), dtype=o3d.core.int32))
     lines = line_data.pop("indices", o3d.core.Tensor((), dtype=o3d.core.int32))
-    for b in range(batch_size):
-        bc = o3d.io.rpc.BufferConnection()
+    for bidx in range(batch_size):
+        buf_con = o3d.io.rpc.BufferConnection()
         if not o3d.io.rpc.set_mesh_data(
-                vertices=vertices[b, :, :] if vertices.ndim == 3 else vertices,
                 path=tag,
                 time=step,
                 layer="",
+                vertices=vertices[bidx, :, :]
+                if vertices.ndim == 3 else vertices,
                 vertex_attributes={
-                    prop: tensor[b, :, :]
+                    prop: tensor[bidx, :, :]
                     for prop, tensor in vertex_data.items()
                 },
-                faces=faces[b, :, :] if faces.ndim == 3 else faces,
+                faces=faces[bidx, :, :] if faces.ndim == 3 else faces,
                 face_attributes={
-                    prop: tensor[b, :, :]
+                    prop: tensor[bidx, :, :]
                     for prop, tensor in triangle_data.items()
                 },
-                lines=lines[b, :, :] if lines.ndim == 3 else lines,
+                lines=lines[bidx, :, :] if lines.ndim == 3 else lines,
                 line_attributes={
-                    prop: tensor[b, :, :] for prop, tensor in line_data.items()
+                    prop: tensor[bidx, :, :]
+                    for prop, tensor in line_data.items()
                 },
-                connection=bc):
+                o3d_type=o3d_type,
+                connection=buf_con):
             raise IOError(
                 "[Open3D set_mesh_data] Geometry data serialization for tag "
                 "{tag} step {step} failed!")
         # TODO(ssheorey): This returns a copy instead of the original. Benchmark
         # vs numpy
-        data_buffer = bc.get_buffer()
+        data_buffer = buf_con.get_buffer()
         filename, this_write_location = _async_data_writer.enqueue(
             os.path.join(write_dir, tag.replace('/', '-')), data_buffer)
-        if b == 0:
+        if bidx == 0:
             geometry_metadata.batch_index.filename = filename
         geometry_metadata.batch_index.start_size.add(start=this_write_location,
                                                      size=len(data_buffer))
@@ -382,21 +403,20 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
 
           - ``vertex_positions``: shape `(B, N, 3)` where B is the number of
                 point clouds and must be same for each key. N is the number of
-                3D points. WIll be cast to ``float32``.
+                3D points. Will be cast to ``float32``.
           - ``vertex_colors``: shape `(B, N, 3)` WIll be converted to ``uint8``.
           - ``vertex_normals``: shape `(B, N, 3)` WIll be cast to ``float32``.
           - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
           - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
 
-        For batch_size B=1, the tensors may be rank 2 instead of rank 3.
+        For batch_size B=1, the tensors may have rank 2 instead of rank 3.
         Floating point color data will be clipped to the range [0,1] and
         converted to uint8 range [0,255]. Other data types will be clipped into
         an allowed range for safe casting to uint8.
 
-        Any data tensor (except the primary ``vertex_positions``,
-        ``triangle_indices`` and ``line_indices``), may be replaced by an int
-        scalar referring to a previous step. This allows reusing a previously
-        written property in case that it does not change at different steps.
+        Any data tensor, may be replaced by an int scalar referring to a
+        previous step. This allows reusing a previously written property in case
+        that it does not change at different steps.
       step: Explicit ``int64``-castable monotonic step value for this summary.
         If omitted, this defaults to `tf.summary.experimental.get_step()`, which
         must not be None.
@@ -415,10 +435,15 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
       ValueError: if a default writer exists, but no step was provided and
         `tf.summary.experimental.get_step()` is None.
     """
+    if tf is None:
+        raise RuntimeError(
+            "TensorFlow not found. Please use module level ``add_3d`` only "
+            "with TensorFlow. Use the bound method ``SummaryWriter.add_3d`` "
+            "with PyTorch.")
     if step is None:
         step = tf.summary.experimental.get_step()
     if step is None:
-        raise ValueError("step is not provided or set.")
+        raise ValueError("Step is not provided or set.")
 
     summary_metadata = metadata.create_summary_metadata(description=description)
     # TODO(https://github.com/tensorflow/tensorboard/issues/2109): remove fallback
@@ -445,3 +470,38 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
                                 tensor=lazy_tensor,
                                 step=step,
                                 metadata=summary_metadata)
+
+
+def _add_3d_torch(self,
+                  tag,
+                  data,
+                  step=None,
+                  max_outputs=1,
+                  description=None,
+                  walltime=None):
+    _add_3d_torch.__doc__ = add_3d.__doc__  # Copy docstring from TF function
+    if step is None:
+        raise ValueError("Step is not provided or set.")
+    summary_metadata = metadata.create_summary_metadata(description=description)
+    logdir = self._get_file_writer().get_logdir()
+    write_dir = PluginDirectory(logdir, metadata.PLUGIN_NAME)
+    geometry_metadata_string = _write_geometry_data(write_dir, tag, step, data,
+                                                    max_outputs)
+    tensor_proto = TensorProto(dtype='DT_STRING',
+                               string_val=[geometry_metadata_string],
+                               tensor_shape=TensorShapeProto())
+
+    self._get_file_writer().add_summary(
+        Summary(value=[
+            Summary.Value(
+                tag=tag, tensor=tensor_proto, metadata=summary_metadata)
+        ]), step, walltime)
+
+
+# Make _add_3d_torch a bound method of SummaryWriter class.
+if torch is not None:
+    if not hasattr(SummaryWriter, "add_3d"):
+        SummaryWriter.add_3d = _add_3d_torch
+    else:
+        warnings.warn("Cannot bind add_3d() to SummaryWriter. Binding exists.",
+                      RuntimeWarning)
