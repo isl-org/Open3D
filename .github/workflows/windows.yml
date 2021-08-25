@@ -372,7 +372,7 @@ jobs:
                 # Remove all marker files: Note _ at end of pattern.
                 gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
                 # Rename docs archive:
-                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz
+                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
                     gs://open3d-docs/${{ github.sha }}.tar.gz
             else
                 echo "All wheels / docs not available yet."
