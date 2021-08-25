@@ -682,6 +682,8 @@ class Open3DPlugin(base_plugin.TBPlugin):
         """
         return {
             "/index.js": self._serve_js,
+            "/webrtcstreamer.js": self._serve_js,
+            "/adapter.min.js": self._serve_js,
             "/style.css": self._serve_css,
             "/new_window": self._new_window,
             "/close_window": self._close_window,
@@ -740,17 +742,23 @@ class Open3DPlugin(base_plugin.TBPlugin):
             return werkzeug.exceptions.ExpectationFailed(
                 "Open3D plugin does not run on a multi-process web server.")
 
-        contents = ""
-        for js_lib in (os.path.join(self._RESOURCE_PATH, "html", "libs",
-                                    "adapter.min.js"),
-                       os.path.join(self._RESOURCE_PATH, "html",
-                                    "webrtcstreamer.js"),
-                       os.path.join(os.path.dirname(__file__), "frontend",
-                                    "index.js")):
-            with open(js_lib) as infile:
-                contents += '\n' + infile.read()
-        return werkzeug.Response(contents,
-                                 content_type="application/javascript")
+        js_file = request.path.split('/')[-1]
+        if js_file == "index.js":
+            js_file = os.path.join(os.path.dirname(__file__), "frontend",
+                                   "index.js")
+        elif js_file == "webrtcstreamer.js":
+            js_file = os.path.join(self._RESOURCE_PATH, "html",
+                                   "webrtcstreamer.js")
+        elif js_file == "adapter.min.js":
+            js_file = os.path.join(self._RESOURCE_PATH, "html", "libs",
+                                   "adapter.min.js")
+        else:
+            raise werkzeug.exceptions.NotFound(
+                description=f"JS file {request.path} does not exist.")
+
+        with open(js_file) as infile:
+            return werkzeug.Response(infile.read(),
+                                     content_type="application/javascript")
 
     @wrappers.Request.application
     def _serve_css(self, unused_request):

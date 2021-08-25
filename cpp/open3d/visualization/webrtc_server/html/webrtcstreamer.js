@@ -36,12 +36,12 @@
 (function () {
     const enableLogging = true;
     if (enableLogging === false) {
-        if (typeof window.console === 'undefined') { window.console = {};}
+        if (typeof window.console === "undefined") { window.console = {};}
         window.console.log = window.console.info = window.console.debug =
             window.console.warning = window.console.assert =
             window.console.error = function () {};
     }
-})();
+}())
 
 let WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.

@@ -25,7 +25,8 @@
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// import "webrtcstreamer";
+import "./adapter.min.js";
+import "./webrtcstreamer.js";
 
 class TensorboardOpen3DPluginClient {
 
@@ -280,7 +281,7 @@ class TensorboardOpen3DPluginClient {
             messageId: this.messageId,
             window_id: windowUId,
             class_name: "tensorboard/" + windowUId + "/get_run_tags"
-        }
+        };
         window.console.info("Sending getRunTagsMessage: ", getRunTagsMessage);
         if (this.webRtcClientList.size > 0) {
             let client = this.webRtcClientList.values().next().value;
@@ -333,7 +334,7 @@ class TensorboardOpen3DPluginClient {
                     .then((response) => response.json())
                     .then((response) => this.addConnection(response.window_id,
                         response.logdir, evt.target.id))
-                    .catch(err => window.console.error("Error: /new_window failed:" + err));
+                    .catch((err) => window.console.error("Error: /new_window failed:" + err));
             }
         } else if (evt.target.name ===   "tag-selector-checkboxes") {
             if (evt.target.checked) {
@@ -358,12 +359,13 @@ class TensorboardOpen3DPluginClient {
         if (evt.target.name.startsWith("batch-idx-selector")) {
             if (this.commonBatchIdx != null) {
                 this.commonBatchIdx = evt.target.value;
-                for (const windowUId of this.windowState.keys())
+                for (const windowUId of this.windowState.keys()) {
                     this.requestGeometryUpdate(windowUId);
+                }
             } else {
                 this.windowState.get(windowUId).batch_idx = evt.target.value;
                 this.requestGeometryUpdate(windowUId);
-            };
+            }
         } else if (evt.target.name.startsWith("step-selector")) {
             if (this.commonStep != null) {
                 this.commonStep = evt.target.value;
