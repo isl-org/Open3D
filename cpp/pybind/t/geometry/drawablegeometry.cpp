@@ -24,41 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/t/geometry/DrawableGeometry.h"
 
-#include "open3d/t/geometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
-public:
-    using GeometryBase::GeometryBase;
-
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
-    }
-
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
-};
-
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_drawable_geometry_class(py::module& m);
-void pybind_tensormap(py::module& m);
-void pybind_image(py::module& m);
-void pybind_pointcloud(py::module& m);
-void pybind_lineset(py::module& m);
-void pybind_trianglemesh(py::module& m);
-void pybind_image(py::module& m);
-void pybind_tsdf_voxelgrid(py::module& m);
-void pybind_raycasting_scene(py::module& m);
+void pybind_drawable_geometry_class(py::module& m) {
+    // open3d.t.geometry.DrawableGeometry
+    py::class_<DrawableGeometry, std::shared_ptr<DrawableGeometry>>
+            drawable_geometry(
+                    m, "DrawableGeometry",
+                    "Base class for geometry types which can be visualized.");
+    drawable_geometry.def("has_material", &DrawableGeometry::HasMaterial,
+                          "Returns true if the geometry has a valid material "
+                          "assigned to it.");
+    drawable_geometry.def_property("material", &DrawableGeometry::GetMaterial,
+                                   &DrawableGeometry::SetMaterial);
+}
 
 }  // namespace geometry
 }  // namespace t
