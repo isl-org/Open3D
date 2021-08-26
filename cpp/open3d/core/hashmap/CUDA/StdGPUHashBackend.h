@@ -463,7 +463,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::InsertImpl(
     int64_t n_values = input_values_soa.size() == buffer_accessor_.n_values_
                                ? buffer_accessor_.n_values_
                                : 0;
-    // std::cout << "n_values = " << n_values << "\n";
+
     // https://stackoverflow.com/a/37998941
     const void* const* ptr_input_values_soa =
             thrust::raw_pointer_cast(input_values_soa_device.data());
