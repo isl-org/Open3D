@@ -50,9 +50,8 @@ namespace t {
 namespace io {
 
 namespace {
-using namespace io;
 
-enum PCDDataType {
+enum class PCDDataType {
     PCD_DATA_ASCII = 0,
     PCD_DATA_BINARY = 1,
     PCD_DATA_BINARY_COMPRESSED = 2
@@ -86,148 +85,138 @@ public:
     std::unordered_map<std::string, core::Dtype> attr_dtype;
 };
 
-core::Dtype GetDtypeFromPCDHeaderField(char type, int size) {
+struct ReadAttributePtr {
+    ReadAttributePtr(void *data_ptr = nullptr,
+                     const int row_idx = 0,
+                     const int row_length = 0,
+                     const int size = 0)
+        : data_ptr_(data_ptr),
+          row_idx_(row_idx),
+          row_length_(row_length),
+          size_(size) {}
+
+    void *data_ptr_;
+    const int row_idx_;
+    const int row_length_;
+    const int size_;
+};
+
+struct WriteAttributePtr {
+    WriteAttributePtr(const core::Dtype &dtype,
+                      const void *data_ptr,
+                      const int group_size)
+        : dtype_(dtype), data_ptr_(data_ptr), group_size_(group_size) {}
+
+    const core::Dtype dtype_;
+    const void *data_ptr_;
+    const int group_size_;
+};
+
+}  // namespace
+
+static core::Dtype GetDtypeFromPCDHeaderField(char type, int size) {
     if (type == 'I') {
-        if (size == 1) {
-            return core::Dtype::Int8;
-        } else if (size == 2) {
-            return core::Dtype::Int16;
-        } else if (size == 4) {
-            return core::Dtype::Int32;
-        } else if (size == 8) {
+        if (size == 1) return core::Dtype::Int8;
+        if (size == 2) return core::Dtype::Int16;
+        if (size == 4) return core::Dtype::Int32;
+        if (size == 8)
             return core::Dtype::Int64;
-        } else {
+        else
             utility::LogError("Unsupported data type.");
-        }
     } else if (type == 'U') {
-        if (size == 1) {
-            return core::Dtype::UInt8;
-        } else if (size == 2) {
-            return core::Dtype::UInt16;
-        } else if (size == 4) {
-            return core::Dtype::UInt32;
-        } else if (size == 8) {
+        if (size == 1) return core::Dtype::UInt8;
+        if (size == 2) return core::Dtype::UInt16;
+        if (size == 4) return core::Dtype::UInt32;
+        if (size == 8)
             return core::Dtype::UInt64;
-        } else {
+        else
             utility::LogError("Unsupported data type.");
-        }
     } else if (type == 'F') {
-        if (size == 4) {
-            return core::Dtype::Float32;
-        } else if (size == 8) {
+        if (size == 4) return core::Dtype::Float32;
+        if (size == 8)
             return core::Dtype::Float64;
-        } else {
+        else
             utility::LogError("Unsupported data type.");
-        }
     } else {
         utility::LogError("Unsupported data type.");
     }
 }
 
-bool CheckHeader(PCDHeader &header) {
+static bool InitializeHeader(PCDHeader &header) {
     if (header.points <= 0 || header.pointsize <= 0) {
-        utility::LogWarning("[CheckHeader] PCD has no data.");
+        utility::LogWarning("[Write PCD] PCD has no data.");
         return false;
     }
     if (header.fields.size() == 0 || header.pointsize <= 0) {
-        utility::LogWarning("[CheckHeader] PCD has no fields.");
+        utility::LogWarning("[Write PCD] PCD has no fields.");
         return false;
     }
     header.has_attr["positions"] = false;
     header.has_attr["normals"] = false;
     header.has_attr["colors"] = false;
 
-    bool has_x = false;
-    bool has_y = false;
-    bool has_z = false;
-    bool has_normal_x = false;
-    bool has_normal_y = false;
-    bool has_normal_z = false;
-    bool has_rgb = false;
-    bool has_rgba = false;
-
-    core::Dtype dtype_x;
-    core::Dtype dtype_y;
-    core::Dtype dtype_z;
-    core::Dtype dtype_normals_x;
-    core::Dtype dtype_normals_y;
-    core::Dtype dtype_normals_z;
-    core::Dtype dtype_colors;
-    core::Dtype dtype_rgba;
+    std::unordered_set<std::string> known_field;
+    std::unordered_map<std::string, core::Dtype> field_dtype;
 
     for (const auto &field : header.fields) {
-        if (field.name == "x") {
-            has_x = true;
-            dtype_x = GetDtypeFromPCDHeaderField(field.type, field.size);
-        } else if (field.name == "y") {
-            has_y = true;
-            dtype_y = GetDtypeFromPCDHeaderField(field.type, field.size);
-        } else if (field.name == "z") {
-            has_z = true;
-            dtype_z = GetDtypeFromPCDHeaderField(field.type, field.size);
-        } else if (field.name == "normal_x") {
-            has_normal_x = true;
-            dtype_normals_x =
+        if (field.name == "x" || field.name == "y" || field.name == "z" ||
+            field.name == "normal_x" || field.name == "normal_y" ||
+            field.name == "normal_z" || field.name == "rgb" ||
+            field.name == "rgba") {
+            known_field.insert(field.name);
+            field_dtype[field.name] =
                     GetDtypeFromPCDHeaderField(field.type, field.size);
-        } else if (field.name == "normal_y") {
-            has_normal_y = true;
-            dtype_normals_y =
-                    GetDtypeFromPCDHeaderField(field.type, field.size);
-        } else if (field.name == "normal_z") {
-            has_normal_z = true;
-            dtype_normals_z =
-                    GetDtypeFromPCDHeaderField(field.type, field.size);
-        } else if (field.name == "rgb") {
-            has_rgb = true;
-            dtype_colors = GetDtypeFromPCDHeaderField(field.type, field.size);
-        } else if (field.name == "rgba") {
-            has_rgba = true;
-            dtype_colors = GetDtypeFromPCDHeaderField(field.type, field.size);
         } else {
-            // Support for custom attribute field with shape
-            // {num_points, 1}.
             header.has_attr[field.name] = true;
             header.attr_dtype[field.name] =
                     GetDtypeFromPCDHeaderField(field.type, field.size);
         }
     }
 
-    if (has_x && has_y && has_z) {
-        if ((dtype_x == dtype_y) && (dtype_x == dtype_z)) {
+    if (known_field.count("x") && known_field.count("y") &&
+        known_field.count("z")) {
+        if ((field_dtype["x"] == field_dtype["y"]) &&
+            (field_dtype["x"] == field_dtype["z"])) {
             header.has_attr["positions"] = true;
-            header.attr_dtype["positions"] = dtype_x;
+            header.attr_dtype["positions"] = field_dtype["x"];
         } else {
             utility::LogWarning(
-                    "[CheckHeader] Dtype for positions data are not same.");
+                    "[Write PCD] Dtype for positions data are not "
+                    "same.");
             return false;
         }
     } else {
         utility::LogWarning(
-                "[CheckHeader] Fields for positions data are not complete.");
+                "[Write PCD] Fields for positions data are not "
+                "complete.");
         return false;
     }
 
-    if (has_normal_x && has_normal_y && has_normal_z) {
-        if ((dtype_normals_x == dtype_normals_y) &&
-            (dtype_normals_x == dtype_normals_z)) {
+    if (known_field.count("normal_x") && known_field.count("normal_y") &&
+        known_field.count("normal_z")) {
+        if ((field_dtype["normal_x"] == field_dtype["normal_y"]) &&
+            (field_dtype["normal_x"] == field_dtype["normal_z"])) {
             header.has_attr["normals"] = true;
-            header.attr_dtype["normals"] = dtype_normals_x;
+            header.attr_dtype["normals"] = field_dtype["x"];
         } else {
             utility::LogWarning(
-                    "[CheckHeader] Dtype for normals data are not same.");
+                    "[InitializeHeader] Dtype for normals data are not same.");
             return false;
         }
     }
 
-    if (has_rgb || has_rgba) {
+    if (known_field.count("rgb")) {
         header.has_attr["colors"] = true;
-        header.attr_dtype["colors"] = dtype_colors;
+        header.attr_dtype["colors"] = field_dtype["rgb"];
+    } else if (known_field.count("rgba")) {
+        header.has_attr["colors"] = true;
+        header.attr_dtype["colors"] = field_dtype["rgba"];
     }
 
     return true;
 }
 
-bool ReadPCDHeader(FILE *file, PCDHeader &header) {
+static bool ReadPCDHeader(FILE *file, PCDHeader &header) {
     char line_buffer[DEFAULT_IO_BUFFER_SIZE];
     size_t specified_channel_count = 0;
 
@@ -315,40 +304,24 @@ bool ReadPCDHeader(FILE *file, PCDHeader &header) {
         } else if (line_type.substr(0, 6) == "POINTS") {
             sstream >> header.points;
         } else if (line_type.substr(0, 4) == "DATA") {
-            header.datatype = PCD_DATA_ASCII;
+            header.datatype = PCDDataType::PCD_DATA_ASCII;
             if (st.size() >= 2) {
                 if (st[1].substr(0, 17) == "binary_compressed") {
-                    header.datatype = PCD_DATA_BINARY_COMPRESSED;
+                    header.datatype = PCDDataType::PCD_DATA_BINARY_COMPRESSED;
                 } else if (st[1].substr(0, 6) == "binary") {
-                    header.datatype = PCD_DATA_BINARY;
+                    header.datatype = PCDDataType::PCD_DATA_BINARY;
                 }
             }
             break;
         }
     }
-    if (!CheckHeader(header)) {
+    if (!InitializeHeader(header)) {
         return false;
     }
     return true;
 }
 
-struct ReadAttributePtr {
-    ReadAttributePtr(void *data_ptr = nullptr,
-                     const int row_idx = 0,
-                     const int row_length = 0,
-                     const int size = 0)
-        : data_ptr_(data_ptr),
-          row_idx_(row_idx),
-          row_length_(row_length),
-          size_(size) {}
-
-    void *data_ptr_;
-    const int row_idx_;
-    const int row_length_;
-    const int size_;
-};
-
-inline void ReadASCIIPCDColorsFromField(ReadAttributePtr &attr,
+static void ReadASCIIPCDColorsFromField(ReadAttributePtr &attr,
                                         const PCLPointField &field,
                                         const char *data_ptr,
                                         const int index) {
@@ -360,13 +333,13 @@ inline void ReadASCIIPCDColorsFromField(ReadAttributePtr &attr,
         char *end;
         if (field.type == 'I') {
             std::int32_t value = std::strtol(data_ptr, &end, 0);
-            memcpy(data, &value, 4);
+            memcpy(data, &value, sizeof(std::int32_t));
         } else if (field.type == 'U') {
             std::uint32_t value = std::strtoul(data_ptr, &end, 0);
-            memcpy(data, &value, 4);
+            memcpy(data, &value, sizeof(std::uint32_t));
         } else if (field.type == 'F') {
             float value = std::strtof(data_ptr, &end);
-            memcpy(data, &value, 4);
+            memcpy(data, &value, sizeof(float));
         }
 
         // color data is packed in BGR order.
@@ -381,7 +354,8 @@ inline void ReadASCIIPCDColorsFromField(ReadAttributePtr &attr,
 }
 
 template <typename scalar_t>
-void UnpackASCIIPCDElement(scalar_t &data, const char *data_ptr) {}
+static void UnpackASCIIPCDElement(scalar_t &data,
+                                  const char *data_ptr) = delete;
 
 template <>
 void UnpackASCIIPCDElement<float>(float &data, const char *data_ptr) {
@@ -396,54 +370,62 @@ void UnpackASCIIPCDElement<double>(double &data, const char *data_ptr) {
 }
 
 template <>
-void UnpackASCIIPCDElement<int8_t>(int8_t &data, const char *data_ptr) {
+void UnpackASCIIPCDElement<std::int8_t>(std::int8_t &data,
+                                        const char *data_ptr) {
     char *end;
-    data = static_cast<int8_t>(std::strtol(data_ptr, &end, 0));
+    data = static_cast<std::int8_t>(std::strtol(data_ptr, &end, 0));
 }
 
 template <>
-void UnpackASCIIPCDElement<int16_t>(int16_t &data, const char *data_ptr) {
+void UnpackASCIIPCDElement<std::int16_t>(std::int16_t &data,
+                                         const char *data_ptr) {
     char *end;
-    data = static_cast<int16_t>(std::strtol(data_ptr, &end, 0));
+    data = static_cast<std::int16_t>(std::strtol(data_ptr, &end, 0));
 }
 
 template <>
-void UnpackASCIIPCDElement<int32_t>(int32_t &data, const char *data_ptr) {
+void UnpackASCIIPCDElement<std::int32_t>(std::int32_t &data,
+                                         const char *data_ptr) {
     char *end;
-    data = static_cast<int32_t>(std::strtol(data_ptr, &end, 0));
+    data = static_cast<std::int32_t>(std::strtol(data_ptr, &end, 0));
 }
 
 template <>
-void UnpackASCIIPCDElement<int64_t>(int64_t &data, const char *data_ptr) {
+void UnpackASCIIPCDElement<std::int64_t>(std::int64_t &data,
+                                         const char *data_ptr) {
     char *end;
     data = std::strtol(data_ptr, &end, 0);
 }
 
 template <>
-void UnpackASCIIPCDElement<uint8_t>(uint8_t &data, const char *data_ptr) {
+void UnpackASCIIPCDElement<std::uint8_t>(std::uint8_t &data,
+                                         const char *data_ptr) {
     char *end;
-    data = static_cast<uint8_t>(std::strtoul(data_ptr, &end, 0));
+    data = static_cast<std::uint8_t>(std::strtoul(data_ptr, &end, 0));
 }
 
 template <>
-void UnpackASCIIPCDElement<uint16_t>(uint16_t &data, const char *data_ptr) {
+void UnpackASCIIPCDElement<std::uint16_t>(std::uint16_t &data,
+                                          const char *data_ptr) {
     char *end;
-    data = static_cast<uint16_t>(std::strtoul(data_ptr, &end, 0));
+    data = static_cast<std::uint16_t>(std::strtoul(data_ptr, &end, 0));
 }
 
 template <>
-void UnpackASCIIPCDElement<uint32_t>(uint32_t &data, const char *data_ptr) {
+void UnpackASCIIPCDElement<std::uint32_t>(std::uint32_t &data,
+                                          const char *data_ptr) {
     char *end;
-    data = static_cast<uint32_t>(std::strtoul(data_ptr, &end, 0));
+    data = static_cast<std::uint32_t>(std::strtoul(data_ptr, &end, 0));
 }
 
 template <>
-void UnpackASCIIPCDElement<uint64_t>(uint64_t &data, const char *data_ptr) {
+void UnpackASCIIPCDElement<std::uint64_t>(std::uint64_t &data,
+                                          const char *data_ptr) {
     char *end;
     data = std::strtoul(data_ptr, &end, 0);
 }
 
-inline void ReadASCIIPCDElementsFromField(ReadAttributePtr &attr,
+static void ReadASCIIPCDElementsFromField(ReadAttributePtr &attr,
                                           const PCLPointField &field,
                                           const char *data_ptr,
                                           const int index) {
@@ -457,7 +439,7 @@ inline void ReadASCIIPCDElementsFromField(ReadAttributePtr &attr,
             });
 }
 
-inline void ReadBinaryPCDColorsFromField(ReadAttributePtr &attr,
+static void ReadBinaryPCDColorsFromField(ReadAttributePtr &attr,
                                          const PCLPointField &field,
                                          const void *data_ptr,
                                          const int index) {
@@ -466,7 +448,7 @@ inline void ReadBinaryPCDColorsFromField(ReadAttributePtr &attr,
 
     if (field.size == 4) {
         std::uint8_t data[4] = {0};
-        memcpy(data, data_ptr, 4);
+        memcpy(data, data_ptr, 4 * sizeof(std::uint8_t));
 
         // color data is packed in BGR order.
         attr_data_ptr[0] = data[2];
@@ -479,7 +461,7 @@ inline void ReadBinaryPCDColorsFromField(ReadAttributePtr &attr,
     }
 }
 
-inline void ReadBinaryPCDElementsFromField(ReadAttributePtr &attr,
+static void ReadBinaryPCDElementsFromField(ReadAttributePtr &attr,
                                            const PCLPointField &field,
                                            const void *data_ptr,
                                            const int index) {
@@ -493,10 +475,10 @@ inline void ReadBinaryPCDElementsFromField(ReadAttributePtr &attr,
             });
 }
 
-bool ReadPCDData(FILE *file,
-                 PCDHeader &header,
-                 t::geometry::PointCloud &pointcloud,
-                 const ReadPointCloudOption &params) {
+static bool ReadPCDData(FILE *file,
+                        PCDHeader &header,
+                        t::geometry::PointCloud &pointcloud,
+                        const ReadPointCloudOption &params) {
     // The header should have been checked
     pointcloud.Clear();
 
@@ -566,7 +548,7 @@ bool ReadPCDData(FILE *file,
     utility::CountingProgressReporter reporter(params.update_progress);
     reporter.SetTotal(header.points);
 
-    if (header.datatype == PCD_DATA_ASCII) {
+    if (header.datatype == PCDDataType::PCD_DATA_ASCII) {
         char line_buffer[DEFAULT_IO_BUFFER_SIZE];
         int idx = 0;
         while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file) &&
@@ -594,7 +576,7 @@ bool ReadPCDData(FILE *file,
                 reporter.Update(idx);
             }
         }
-    } else if (header.datatype == PCD_DATA_BINARY) {
+    } else if (header.datatype == PCDDataType::PCD_DATA_BINARY) {
         std::unique_ptr<char[]> buffer(new char[header.pointsize]);
         for (int i = 0; i < header.points; ++i) {
             if (fread(buffer.get(), header.pointsize, 1, file) != 1) {
@@ -618,7 +600,7 @@ bool ReadPCDData(FILE *file,
                 reporter.Update(i);
             }
         }
-    } else if (header.datatype == PCD_DATA_BINARY_COMPRESSED) {
+    } else if (header.datatype == PCDDataType::PCD_DATA_BINARY_COMPRESSED) {
         double reporter_total = 100.0;
         reporter.SetTotal(int(reporter_total));
         reporter.Update(int(reporter_total * 0.01));
@@ -683,8 +665,8 @@ bool ReadPCDData(FILE *file,
 
 // Write functions.
 
-void SetPCDHeaderFieldTypeAndSizeFromDtype(const core::Dtype &dtype,
-                                           PCLPointField &field) {
+static void SetPCDHeaderFieldTypeAndSizeFromDtype(const core::Dtype &dtype,
+                                                  PCLPointField &field) {
     if (dtype == core::Int8) {
         field.type = 'I';
         field.size = 1;
@@ -720,10 +702,10 @@ void SetPCDHeaderFieldTypeAndSizeFromDtype(const core::Dtype &dtype,
     }
 }
 
-bool GenerateHeader(const t::geometry::PointCloud &pointcloud,
-                    const bool write_ascii,
-                    const bool compressed,
-                    PCDHeader &header) {
+static bool GenerateHeader(const t::geometry::PointCloud &pointcloud,
+                           const bool write_ascii,
+                           const bool compressed,
+                           PCDHeader &header) {
     if (!pointcloud.HasPointPositions()) {
         return false;
     }
@@ -741,16 +723,12 @@ bool GenerateHeader(const t::geometry::PointCloud &pointcloud,
             pointcloud.GetPointPositions().GetDtype(), field_x);
     header.fields.push_back(field_x);
 
+    field_y = field_x;
     field_y.name = "y";
-    field_y.count = 1;
-    field_y.type = field_x.type;
-    field_y.size = field_x.size;
     header.fields.push_back(field_y);
 
+    field_z = field_x;
     field_z.name = "z";
-    field_z.count = 1;
-    field_z.type = field_x.type;
-    field_z.size = field_x.size;
     header.fields.push_back(field_z);
 
     header.elementnum = 3 * field_x.count;
@@ -765,16 +743,12 @@ bool GenerateHeader(const t::geometry::PointCloud &pointcloud,
                 pointcloud.GetPointPositions().GetDtype(), field_normal_x);
         header.fields.push_back(field_normal_x);
 
+        field_normal_y = field_normal_x;
         field_normal_y.name = "normal_y";
-        field_normal_y.count = 1;
-        field_normal_y.type = field_normal_x.type;
-        field_normal_y.size = field_normal_x.size;
         header.fields.push_back(field_normal_y);
 
+        field_normal_z = field_normal_x;
         field_normal_z.name = "normal_z";
-        field_normal_z.count = 1;
-        field_normal_z.type = field_normal_x.type;
-        field_normal_z.size = field_normal_x.size;
         header.fields.push_back(field_normal_z);
 
         header.elementnum += 3 * field_normal_x.count;
@@ -825,18 +799,18 @@ bool GenerateHeader(const t::geometry::PointCloud &pointcloud,
     }
 
     if (write_ascii) {
-        header.datatype = PCD_DATA_ASCII;
+        header.datatype = PCDDataType::PCD_DATA_ASCII;
     } else {
         if (compressed) {
-            header.datatype = PCD_DATA_BINARY_COMPRESSED;
+            header.datatype = PCDDataType::PCD_DATA_BINARY_COMPRESSED;
         } else {
-            header.datatype = PCD_DATA_BINARY;
+            header.datatype = PCDDataType::PCD_DATA_BINARY;
         }
     }
     return true;
 }
 
-bool WritePCDHeader(FILE *file, const PCDHeader &header) {
+static bool WritePCDHeader(FILE *file, const PCDHeader &header) {
     fprintf(file, "# .PCD v%s - Point Cloud Data file format\n",
             header.version.c_str());
     fprintf(file, "VERSION %s\n", header.version.c_str());
@@ -866,13 +840,13 @@ bool WritePCDHeader(FILE *file, const PCDHeader &header) {
     fprintf(file, "POINTS %d\n", header.points);
 
     switch (header.datatype) {
-        case PCD_DATA_BINARY:
+        case PCDDataType::PCD_DATA_BINARY:
             fprintf(file, "DATA binary\n");
             break;
-        case PCD_DATA_BINARY_COMPRESSED:
+        case PCDDataType::PCD_DATA_BINARY_COMPRESSED:
             fprintf(file, "DATA binary_compressed\n");
             break;
-        case PCD_DATA_ASCII:
+        case PCDDataType::PCD_DATA_ASCII:
         default:
             fprintf(file, "DATA ascii\n");
             break;
@@ -880,19 +854,8 @@ bool WritePCDHeader(FILE *file, const PCDHeader &header) {
     return true;
 }
 
-struct WriteAttributePtr {
-    WriteAttributePtr(const core::Dtype &dtype,
-                      const void *data_ptr,
-                      const int group_size)
-        : dtype_(dtype), data_ptr_(data_ptr), group_size_(group_size) {}
-
-    const core::Dtype dtype_;
-    const void *data_ptr_;
-    const int group_size_;
-};
-
 template <typename scalar_t>
-void ColorToUint8(const scalar_t *input_color, uint8_t *output_color) {
+static void ColorToUint8(const scalar_t *input_color, uint8_t *output_color) {
     utility::LogError(
             "Color format not supported. Supported color format includes "
             "Float32, Float64, UInt8, UInt16, UInt32.");
@@ -933,11 +896,12 @@ void ColorToUint8<uint8_t>(const uint8_t *input_color, uint8_t *output_color) {
 template <>
 void ColorToUint8<uint16_t>(const uint16_t *input_color,
                             uint8_t *output_color) {
-    const uint16_t normalisation_factor =
-            static_cast<uint16_t>(std::numeric_limits<uint8_t>::max() /
-                                  std::numeric_limits<uint16_t>::max());
+    const float normalisation_factor =
+            static_cast<float>(std::numeric_limits<uint8_t>::max()) /
+            static_cast<float>(std::numeric_limits<uint16_t>::max());
     for (int i = 0; i < 3; ++i) {
-        output_color[i] = input_color[2 - i] * normalisation_factor;
+        output_color[i] = static_cast<uint16_t>(input_color[2 - i] *
+                                                normalisation_factor);
     }
     output_color[3] = 0;
 }
@@ -945,16 +909,17 @@ void ColorToUint8<uint16_t>(const uint16_t *input_color,
 template <>
 void ColorToUint8<uint32_t>(const uint32_t *input_color,
                             uint8_t *output_color) {
-    const uint32_t normalisation_factor =
-            static_cast<uint32_t>(std::numeric_limits<uint8_t>::max() /
-                                  std::numeric_limits<uint32_t>::max());
+    const float normalisation_factor =
+            static_cast<float>(std::numeric_limits<uint8_t>::max()) /
+            static_cast<float>(std::numeric_limits<uint32_t>::max());
     for (int i = 0; i < 3; ++i) {
-        output_color[i] = input_color[2 - i] * normalisation_factor;
+        output_color[i] = static_cast<uint32_t>(input_color[2 - i] *
+                                                normalisation_factor);
     }
     output_color[3] = 0;
 }
 
-core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
+static core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
     core::Tensor packed_color =
             core::Tensor::Empty({colors_contiguous.GetLength(), 1},
                                 core::Float32, core::Device("CPU:0"));
@@ -968,7 +933,7 @@ core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
                               ColorToUint8<scalar_t>(
                                       colors_ptr + 3 * workload_idx, rgba);
                               float val = 0;
-                              memcpy(&val, rgba, 4);
+                              memcpy(&val, rgba, 4 * sizeof(std::uint8_t));
                               packed_color_ptr[workload_idx] = val;
                           });
     });
@@ -977,12 +942,8 @@ core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
 }
 
 template <typename scalar_t>
-int WriteElementDataToFileASCII(const scalar_t &data, FILE *file) {
-    utility::LogError(
-            "Color format not supported. Supported color format includes "
-            "Float32, Float64, Int8, Int16, Int32, Int64, UInt8, UInt16, "
-            "UInt32, UInt64.");
-}
+static int WriteElementDataToFileASCII(const scalar_t &data,
+                                       FILE *file) = delete;
 
 template <>
 int WriteElementDataToFileASCII<float>(const float &data, FILE *file) {
@@ -1034,10 +995,10 @@ int WriteElementDataToFileASCII<uint64_t>(const uint64_t &data, FILE *file) {
     return fprintf(file, "%.10lu ", data);
 }
 
-bool WritePCDData(FILE *file,
-                  const PCDHeader &header,
-                  const geometry::PointCloud &pointcloud,
-                  const WritePointCloudOption &params) {
+static bool WritePCDData(FILE *file,
+                         const PCDHeader &header,
+                         const geometry::PointCloud &pointcloud,
+                         const WritePointCloudOption &params) {
     if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write PLY failed: point cloud has 0 points.");
         return false;
@@ -1078,7 +1039,7 @@ bool WritePCDData(FILE *file,
 
     utility::CountingProgressReporter reporter(params.update_progress);
     reporter.SetTotal(num_points);
-    if (header.datatype == PCD_DATA_ASCII) {
+    if (header.datatype == PCDDataType::PCD_DATA_ASCII) {
         for (int64_t i = 0; i < num_points; ++i) {
             for (auto &it : attribute_ptrs) {
                 DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
@@ -1098,7 +1059,7 @@ bool WritePCDData(FILE *file,
                 reporter.Update(i);
             }
         }
-    } else if (header.datatype == PCD_DATA_BINARY) {
+    } else if (header.datatype == PCDDataType::PCD_DATA_BINARY) {
         std::vector<char> buffer((header.pointsize * header.points));
         uint32_t buffer_index = 0;
         for (int64_t i = 0; i < num_points; ++i) {
@@ -1124,7 +1085,7 @@ bool WritePCDData(FILE *file,
         }
 
         fwrite(buffer.data(), sizeof(char), buffer.size(), file);
-    } else if (header.datatype == PCD_DATA_BINARY_COMPRESSED) {
+    } else if (header.datatype == PCDDataType::PCD_DATA_BINARY_COMPRESSED) {
         // PCD_DATA_BINARY_COMPRESSED data contains attributes in column layout
         // for better compression.
         // For example instead of X Y Z NX NY NZ X Y Z NX NY NZ, the data is
@@ -1185,8 +1146,6 @@ bool WritePCDData(FILE *file,
     reporter.Finish();
     return true;
 }
-
-}  // unnamed namespace
 
 bool ReadPointCloudFromPCD(const std::string &filename,
                            t::geometry::PointCloud &pointcloud,
