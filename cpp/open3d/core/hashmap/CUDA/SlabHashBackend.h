@@ -92,8 +92,8 @@ protected:
                     bool* output_masks,
                     int64_t count);
 
-    void Allocate(int64_t bucket_count, int64_t capacity);
-    void Free();
+    void Allocate(int64_t capacity, int64_t bucket_count) override;
+    void Free() override;
 
     int64_t bucket_count_;
 };
@@ -106,7 +106,7 @@ SlabHashBackend<Key, Hash, Eq>::SlabHashBackend(
         const Device& device)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
     int64_t init_buckets = init_capacity * 2;
-    Allocate(init_buckets, init_capacity);
+    Allocate(init_capacity, init_buckets);
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -140,9 +140,9 @@ void SlabHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {
 
     Free();
 
-    Allocate(buckets,
-             std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
-                      active_keys.GetLength()));
+    Allocate(std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
+                      active_keys.GetLength()),
+             buckets);
 
     if (count > 0) {
         Tensor output_buf_indices({count}, core::Int32, this->device_);
@@ -351,8 +351,8 @@ void SlabHashBackend<Key, Hash, Eq>::InsertImpl(
 }
 
 template <typename Key, typename Hash, typename Eq>
-void SlabHashBackend<Key, Hash, Eq>::Allocate(int64_t bucket_count,
-                                              int64_t capacity) {
+void SlabHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity,
+                                              int64_t bucket_count) {
     this->bucket_count_ = bucket_count;
     this->capacity_ = capacity;
 

@@ -94,7 +94,8 @@ protected:
                     bool* output_masks,
                     int64_t count);
 
-    void Allocate(int64_t capacity);
+    void Allocate(int64_t capacity, int64_t bucket_count) override;
+    void Free() override{};
 };
 
 template <typename Key, typename Hash, typename Eq>
@@ -104,7 +105,7 @@ TBBHashBackend<Key, Hash, Eq>::TBBHashBackend(
         const std::vector<int64_t>& value_dsizes,
         const Device& device)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
-    Allocate(init_capacity);
+    Allocate(init_capacity, 0);
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -228,7 +229,7 @@ void TBBHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {
     int64_t new_capacity =
             int64_t(std::ceil(buckets * avg_capacity_per_bucket));
 
-    Allocate(new_capacity);
+    Allocate(new_capacity, 0);
 
     if (count > 0) {
         Tensor output_buf_indices({count}, core::Int32, this->device_);
@@ -328,7 +329,8 @@ void TBBHashBackend<Key, Hash, Eq>::InsertImpl(
 }
 
 template <typename Key, typename Hash, typename Eq>
-void TBBHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
+void TBBHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity,
+                                             int64_t bucket_count) {
     this->capacity_ = capacity;
 
     this->buffer_ = std::make_shared<HashBackendBuffer>(
