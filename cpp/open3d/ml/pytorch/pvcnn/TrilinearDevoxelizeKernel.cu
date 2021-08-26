@@ -32,7 +32,7 @@
 #include "ATen/cuda/CUDAContext.h"
 #include "open3d/ml/contrib/TrilinearDevoxelize.cuh"
 #include "open3d/ml/contrib/cuda_utils.h"
-#include "open3d/ml/pytorch/pointnet/TrilinearDevoxelizeKernel.h"
+#include "open3d/ml/pytorch/pvcnn/TrilinearDevoxelizeKernel.h"
 
 using namespace open3d::ml::contrib;
 

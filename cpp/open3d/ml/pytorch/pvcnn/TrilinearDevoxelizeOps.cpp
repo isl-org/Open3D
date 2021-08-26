@@ -33,7 +33,7 @@
 
 #ifdef BUILD_CUDA_MODULE
 std::vector<at::Tensor> trilinear_devoxelize_forward(
-        const int r,
+        const int64_t r,
         const bool is_training,
         const at::Tensor coords,
         const at::Tensor features) {
@@ -80,7 +80,7 @@ std::vector<at::Tensor> trilinear_devoxelize_forward(
 at::Tensor trilinear_devoxelize_backward(const at::Tensor grad_y,
                                          const at::Tensor indices,
                                          const at::Tensor weights,
-                                         const int r) {
+                                         const int64_t r) {
     CHECK_CUDA(grad_y);
     CHECK_CUDA(weights);
     CHECK_CUDA(indices);
@@ -107,7 +107,7 @@ at::Tensor trilinear_devoxelize_backward(const at::Tensor grad_y,
 static auto registry = torch::RegisterOperators(
         "open3d::trilinear_devoxelize_forward(int r, bool is_training,"
         "Tensor coords, Tensor features)"
-        " -> (Tensor outs, Tensor inds, Tensor wgts)",
+        " -> (Tensor[])",
         &trilinear_devoxelize_forward);
 
 static auto registry_grad = torch::RegisterOperators(
