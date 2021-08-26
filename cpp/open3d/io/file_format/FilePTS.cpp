@@ -76,31 +76,50 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                     return false;
                 }
                 pointcloud.points_.resize(num_of_pts);
-                if (num_of_fields >= 7) {
-                    // X Y Z I R G B
+                if (num_of_fields >= 6) {
+                    // X Y Z I R G B or X Y Z R G B.
                     pointcloud.colors_.resize(num_of_pts);
                 }
             }
             double x, y, z, i;
             int r, g, b;
-            if (num_of_fields < 7) {
-                if (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
-                    pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
-                }
-            } else {
-                if (sscanf(line_buffer, "%lf %lf %lf %lf %d %d %d", &x, &y, &z,
-                           &i, &r, &g, &b) == 7) {
-                    pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
-                    pointcloud.colors_[idx] = utility::ColorToDouble(r, g, b);
-                }
+            // X Y Z I R G B
+            if (num_of_fields == 7 &&
+                sscanf(line_buffer, "%lf %lf %lf %lf %d %d %d", &x, &y, &z, &i,
+                       &r, &g, &b) == 7) {
+                pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
+                pointcloud.colors_[idx] = utility::ColorToDouble(r, g, b);
             }
+            // X Y Z R G B
+            else if (num_of_fields == 6 &&
+                     sscanf(line_buffer, "%lf %lf %lf %d %d %d", &x, &y, &z, &r,
+                            &g, &b) == 6) {
+                pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
+                pointcloud.colors_[idx] = utility::ColorToDouble(r, g, b);
+            }
+            // X Y Z I
+            else if (num_of_fields == 4 &&
+                     sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z, &i) ==
+                             4) {
+                pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
+            }
+            // X Y Z
+            else if (num_of_fields == 3 &&
+                     sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3) {
+                pointcloud.points_[idx] = Eigen::Vector3d(x, y, z);
+            } else {
+                utility::LogWarning("Read PTS failed at line: {}. ",
+                                    line_buffer);
+                return false;
+            }
+
             idx++;
             if (idx % 1000 == 0) {
                 reporter.Update(idx);
             }
         }
-        reporter.Finish();
 
+        reporter.Finish();
         return true;
     } catch (const std::exception &e) {
         utility::LogWarning("Read PTS failed with exception: {}", e.what());
