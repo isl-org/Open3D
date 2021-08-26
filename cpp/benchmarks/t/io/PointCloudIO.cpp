@@ -111,161 +111,40 @@ void IOReadTensorPointCloud(benchmark::State& state,
     }
 }
 
-BENCHMARK_CAPTURE(IOWriteLegacyPointCloud,
-                  PCD ASCII UNCOMPRESSED,
-                  input_path_pcd,
-                  "test_lpcd_ascii.pcd",
-                  true,
-                  false)
-        ->Unit(benchmark::kMillisecond);
+#define ENUM_BM_IO_EXTENSION_FORMAT(EXTENSION_NAME, FILE_NAME, FORMAT_NAME,    \
+                                    ASCII, COMPRESSED)                         \
+    BENCHMARK_CAPTURE(IOWriteLegacyPointCloud, EXTENSION_NAME##_##FORMAT_NAME, \
+                      input_path_pcd,                                          \
+                      std::string("tensor_") + std::string(FILE_NAME), ASCII,  \
+                      COMPRESSED)                                              \
+            ->Unit(benchmark::kMillisecond);                                   \
+    BENCHMARK_CAPTURE(IOReadLegacyPointCloud, EXTENSION_NAME##_##FORMAT_NAME,  \
+                      std::string("tensor_") + std::string(FILE_NAME))         \
+            ->Unit(benchmark::kMillisecond);                                   \
+    BENCHMARK_CAPTURE(IOWriteTensorPointCloud, EXTENSION_NAME##_##FORMAT_NAME, \
+                      input_path_pcd,                                          \
+                      std::string("legacy_") + std::string(FILE_NAME), ASCII,  \
+                      COMPRESSED)                                              \
+            ->Unit(benchmark::kMillisecond);                                   \
+    BENCHMARK_CAPTURE(IOReadTensorPointCloud, EXTENSION_NAME##_##FORMAT_NAME,  \
+                      std::string("legacy_") + std::string(FILE_NAME))         \
+            ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(IOReadLegacyPointCloud,
-                  PCD ASCII UNCOMPRESSED,
-                  "test_lpcd_ascii.pcd")
-        ->Unit(benchmark::kMillisecond);
+#define ENUM_BM_IO_EXTENSION(EXTENSION_NAME, EXTENSION)                        \
+    ENUM_BM_IO_EXTENSION_FORMAT(                                               \
+            EXTENSION_NAME, std::string("pcd_ascii") + std::string(EXTENSION), \
+            ASCII_UNCOMPRESSED, true, false)                                   \
+    ENUM_BM_IO_EXTENSION_FORMAT(                                               \
+            EXTENSION_NAME, std::string("pcd_bin") + std::string(EXTENSION),   \
+            BINARY_UNCOMPRESSED, false, false)                                 \
+    ENUM_BM_IO_EXTENSION_FORMAT(                                               \
+            EXTENSION_NAME,                                                    \
+            std::string("pcd_bin_compressed") + std::string(EXTENSION),        \
+            BINARY_COMPRESSED, false, true)
 
-BENCHMARK_CAPTURE(IOWriteTensorPointCloud,
-                  PCD ASCII UNCOMPRESSED,
-                  input_path_pcd,
-                  "test_tpcd_ascii.pcd",
-                  true,
-                  false)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadTensorPointCloud,
-                  PCD ASCII UNCOMPRESSED,
-                  "test_tpcd_ascii.pcd")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteLegacyPointCloud,
-                  PCD BINARY UNCOMPRESSED,
-                  input_path_pcd,
-                  "test_lpcd_bin.pcd",
-                  false,
-                  false)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadLegacyPointCloud,
-                  PCD BINARY UNCOMPRESSED,
-                  "test_lpcd_bin.pcd")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteTensorPointCloud,
-                  PCD BINARY UNCOMPRESSED,
-                  input_path_pcd,
-                  "test_tpcd_bin.pcd",
-                  false,
-                  false)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadTensorPointCloud,
-                  PCD BINARY UNCOMPRESSED,
-                  "test_tpcd_bin.pcd")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteLegacyPointCloud,
-                  PCD BINARY COMPRESSED,
-                  input_path_pcd,
-                  "test_lpcd_bin_compressed.pcd",
-                  false,
-                  true)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadLegacyPointCloud,
-                  PCD BINARY COMPRESSED,
-                  "test_lpcd_bin_compressed.pcd")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteTensorPointCloud,
-                  PCD BINARY COMPRESSED,
-                  input_path_pcd,
-                  "test_tpcd_bin_compressed.pcd",
-                  false,
-                  true)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadTensorPointCloud,
-                  PCD BINARY COMPRESSED,
-                  "test_tpcd_bin_compressed.pcd")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteLegacyPointCloud,
-                  PLY ASCII UNCOMPRESSED,
-                  input_path_pcd,
-                  "test_lpcd_ascii.ply",
-                  true,
-                  false)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadLegacyPointCloud,
-                  PLY ASCII UNCOMPRESSED,
-                  "test_lpcd_ascii.ply")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteTensorPointCloud,
-                  PLY ASCII UNCOMPRESSED,
-                  input_path_pcd,
-                  "test_tpcd_ascii.ply",
-                  true,
-                  false)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadTensorPointCloud,
-                  PLY ASCII UNCOMPRESSED,
-                  "test_tpcd_ascii.ply")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteLegacyPointCloud,
-                  PLY BINARY UNCOMPRESSED,
-                  input_path_pcd,
-                  "test_lpcd_bin.ply",
-                  false,
-                  false)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadLegacyPointCloud,
-                  PLY BINARY UNCOMPRESSED,
-                  "test_lpcd_bin.ply")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteTensorPointCloud,
-                  PLY BINARY UNCOMPRESSED,
-                  input_path_pcd,
-                  "test_tpcd_bin.ply",
-                  false,
-                  false)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadTensorPointCloud,
-                  PLY BINARY UNCOMPRESSED,
-                  "test_tpcd_bin.ply")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteLegacyPointCloud,
-                  PLY BINARY COMPRESSED,
-                  input_path_pcd,
-                  "test_lpcd_bin_compressed.ply",
-                  false,
-                  true)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadLegacyPointCloud,
-                  PLY BINARY COMPRESSED,
-                  "test_lpcd_bin_compressed.ply")
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOWriteTensorPointCloud,
-                  PLY BINARY COMPRESSED,
-                  input_path_pcd,
-                  "test_tpcd_bin_compressed.ply",
-                  false,
-                  true)
-        ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(IOReadTensorPointCloud,
-                  PLY BINARY COMPRESSED,
-                  "test_tpcd_bin_compressed.ply")
-        ->Unit(benchmark::kMillisecond);
+ENUM_BM_IO_EXTENSION(PCD, ".pcd")
+ENUM_BM_IO_EXTENSION(PLY, ".ply")
+ENUM_BM_IO_EXTENSION(PTS, ".pts")
 
 }  // namespace geometry
 }  // namespace t
