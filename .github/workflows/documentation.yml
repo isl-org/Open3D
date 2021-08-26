@@ -99,7 +99,7 @@ jobs:
           if-no-files-found: error
 
       - name: Deploy docs
-        # if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/master' }}
         run: |
           # Compress and upload the docs, only for master branch
           docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
@@ -111,7 +111,7 @@ jobs:
           echo "https://storage.googleapis.com/open3d-docs/${tar_file}"
 
       - name: Check wheels and ready documentation archive
-        # if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/master' }}
         run: |
             if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
                 -eq 4 ]; then

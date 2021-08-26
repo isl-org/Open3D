@@ -242,7 +242,7 @@ jobs:
     name: Ready docs archive
     # no need to run on macOS
     runs-on: ubuntu-18.04
-    # if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/master' }}
     needs: [build-wheel]
     steps:
       - name: GCloud CLI setup
