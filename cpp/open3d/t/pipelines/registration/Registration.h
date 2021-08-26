@@ -178,6 +178,12 @@ RegistrationResult RegistrationMultiScaleICP(
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint());
 
+core::Tensor GetInformationMatrixFromPointClouds(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        double max_correspondence_distance,
+        const core::Tensor &init_source_to_target);
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

@@ -65,6 +65,10 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &target_points,
         const core::Tensor &correspondence_indices);
 
+core::Tensor ComputeInformationMatrix(
+        const core::Tensor &target_points,
+        const core::Tensor &correspondence_indices);
+
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

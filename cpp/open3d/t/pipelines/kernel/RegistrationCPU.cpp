@@ -34,7 +34,7 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
+#include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
@@ -304,6 +304,91 @@ void ComputeRtPointToPointCPU(const core::Tensor &source_points,
     R = U.Matmul(S.Matmul(VT));
     t = (target_mean.Reshape({-1}) - R.Matmul(source_mean.T()).Reshape({-1}))
                 .To(dtype);
+}
+
+template <typename scalar_t>
+void ComputeInformationMatrixKernelCPU(const scalar_t *target_points_ptr,
+                                       const int64_t *correspondence_indices,
+                                       const int n,
+                                       scalar_t *global_sum) {
+    // As, AtA is a symmetric matrix, we only need 21 elements instead of 36.
+    std::vector<scalar_t> AtA(21, 0.0);
+
+#ifdef _WIN32
+    std::vector<scalar_t> zeros_21(21, 0.0);
+    AtA = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), zeros_21,
+            [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     ++workload_idx) {
+#else
+    scalar_t *A_reduction = AtA.data();
+#pragma omp parallel for reduction(+ : A_reduction[:21]) schedule(static) num_threads(utility::EstimateMaxThreads())
+    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+#endif
+                    scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
+
+                    bool valid = GetInformationJacobians<scalar_t>(
+                            workload_idx, target_points_ptr,
+                            correspondence_indices, J_x, J_y, J_z);
+
+                    if (valid) {
+                        int i = 0;
+                        for (int j = 0; j < 6; ++j) {
+                            for (int k = 0; k <= j; ++k) {
+                                A_reduction[i] += J_x[j] * J_x[k] +
+                                                  J_y[j] * J_y[k] +
+                                                  J_z[j] * J_z[k];
+                                ++i;
+                            }
+                        }
+                    }
+                }
+#ifdef _WIN32
+                return A_reduction;
+            },
+            // TBB: Defining reduction operation.
+            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
+                std::vector<scalar_t> result(21);
+                for (int j = 0; j < 21; ++j) {
+                    result[j] = a[j] + b[j];
+                }
+                return result;
+            });
+#endif
+
+    for (int i = 0; i < 21; ++i) {
+        global_sum[i] = AtA[i];
+    }
+}
+
+void ComputeInformationMatrixCPU(const core::Tensor &target_points,
+                                 const core::Tensor &correspondence_indices,
+                                 core::Tensor &information_matrix,
+                                 const core::Dtype &dtype,
+                                 const core::Device &device) {
+    int n = correspondence_indices.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({21}, dtype, device);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+
+        kernel::ComputeInformationMatrixKernelCPU(
+                target_points.GetDataPtr<scalar_t>(),
+                correspondence_indices.GetDataPtr<int64_t>(), n,
+                global_sum_ptr);
+
+        scalar_t *GTG_ptr = information_matrix.GetDataPtr<scalar_t>();
+
+        int i = 0;
+        for (int j = 0; j < 6; j++) {
+            for (int k = 0; k <= j; k++) {
+                GTG_ptr[j * 6 + k] = GTG_ptr[k * 6 + j] = global_sum_ptr[i];
+                ++i;
+            }
+        }
+    });
 }
 
 }  // namespace kernel

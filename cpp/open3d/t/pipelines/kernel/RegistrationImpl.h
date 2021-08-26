@@ -70,6 +70,20 @@ void ComputeRtPointToPointCPU(const core::Tensor &source_points,
                               const core::Dtype &dtype,
                               const core::Device &device);
 
+void ComputeInformationMatrixCPU(const core::Tensor &target_points,
+                                 const core::Tensor &correspondence_indices,
+                                 core::Tensor &information_matrix,
+                                 const core::Dtype &dtype,
+                                 const core::Device &device);
+
+#ifdef BUILD_CUDA_MODULE
+void ComputeInformationMatrixCUDA(const core::Tensor &target_points,
+                                  const core::Tensor &correspondence_indices,
+                                  core::Tensor &information_matrix,
+                                  const core::Dtype &dtype,
+                                  const core::Device &device);
+#endif
+
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         int64_t workload_idx,
@@ -123,6 +137,52 @@ template bool GetJacobianPointToPlane(int64_t workload_idx,
                                       const int64_t *correspondence_indices,
                                       double *J_ij,
                                       double &r);
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE inline bool GetInformationJacobians(
+        int64_t workload_idx,
+        const scalar_t *target_points_ptr,
+        const int64_t *correspondence_indices,
+        scalar_t *jacobian_x,
+        scalar_t *jacobian_y,
+        scalar_t *jacobian_z) {
+    if (correspondence_indices[workload_idx] == -1) {
+        return false;
+    }
+
+    const int64_t target_idx = 3 * correspondence_indices[workload_idx];
+
+    jacobian_x[0] = jacobian_x[4] = jacobian_x[5] = 0;
+    jacobian_x[1] = target_points_ptr[target_idx + 2];
+    jacobian_x[2] = -target_points_ptr[target_idx + 1];
+    jacobian_x[3] = 1.0;
+
+    jacobian_y[1] = jacobian_x[3] = jacobian_x[5] = 0;
+    jacobian_y[0] = -target_points_ptr[target_idx + 2];
+    jacobian_y[2] = target_points_ptr[target_idx];
+    jacobian_y[4] = 1.0;
+
+    jacobian_z[2] = jacobian_x[3] = jacobian_x[4] = 0;
+    jacobian_z[0] = target_points_ptr[target_idx + 1];
+    jacobian_z[1] = -target_points_ptr[target_idx];
+    jacobian_z[5] = 1.0;
+
+    return true;
+}
+
+template bool GetInformationJacobians(int64_t workload_idx,
+                                      const float *target_points_ptr,
+                                      const int64_t *correspondence_indices,
+                                      float *jacobian_x,
+                                      float *jacobian_y,
+                                      float *jacobian_z);
+
+template bool GetInformationJacobians(int64_t workload_idx,
+                                      const double *target_points_ptr,
+                                      const int64_t *correspondence_indices,
+                                      double *jacobian_x,
+                                      double *jacobian_y,
+                                      double *jacobian_z);
 
 }  // namespace kernel
 }  // namespace pipelines
