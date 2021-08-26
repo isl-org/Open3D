@@ -26,6 +26,7 @@
 
 #include <liblzf/lzf.h>
 
+#include <cinttypes>
 #include <cstdint>
 #include <cstdio>
 #include <sstream>
@@ -957,42 +958,42 @@ int WriteElementDataToFileASCII<double>(const double &data, FILE *file) {
 
 template <>
 int WriteElementDataToFileASCII<int8_t>(const int8_t &data, FILE *file) {
-    return fprintf(file, "%.10d ", data);
+    return fprintf(file, "%" PRId8 " ", data);
 }
 
 template <>
 int WriteElementDataToFileASCII<int16_t>(const int16_t &data, FILE *file) {
-    return fprintf(file, "%.10hd ", data);
+    return fprintf(file, "%" PRId16 " ", data);
 }
 
 template <>
 int WriteElementDataToFileASCII<int32_t>(const int32_t &data, FILE *file) {
-    return fprintf(file, "%.10d ", data);
+    return fprintf(file, "%" PRId32 " ", data);
 }
 
 template <>
 int WriteElementDataToFileASCII<int64_t>(const int64_t &data, FILE *file) {
-    return fprintf(file, "%.10ld ", data);
+    return fprintf(file, "%" PRId64 " ", data);
 }
 
 template <>
 int WriteElementDataToFileASCII<uint8_t>(const uint8_t &data, FILE *file) {
-    return fprintf(file, "%.10u ", data);
+    return fprintf(file, "%" PRIu8 " ", data);
 }
 
 template <>
 int WriteElementDataToFileASCII<uint16_t>(const uint16_t &data, FILE *file) {
-    return fprintf(file, "%.10uh ", data);
+    return fprintf(file, "%" PRIu16 " ", data);
 }
 
 template <>
 int WriteElementDataToFileASCII<uint32_t>(const uint32_t &data, FILE *file) {
-    return fprintf(file, "%.10u ", data);
+    return fprintf(file, "%" PRIu32 " ", data);
 }
 
 template <>
 int WriteElementDataToFileASCII<uint64_t>(const uint64_t &data, FILE *file) {
-    return fprintf(file, "%.10lu ", data);
+    return fprintf(file, "%" PRIu64 " ", data);
 }
 
 static bool WritePCDData(FILE *file,
