@@ -318,6 +318,7 @@ struct MeshData {
     bool O3DTypeIsTriangleMesh() const { return o3d_type == "TriangleMesh"; }
 
     bool CheckVertices(std::string& errstr) const {
+        if (vertices.shape.empty()) return true;
         std::string tmp = "invalid vertices array:";
         bool status = vertices.CheckNonEmpty(tmp) &&
                       vertices.CheckShape({-1, 3}, tmp);
@@ -378,8 +379,8 @@ struct MeshData {
 
     bool CheckMessage(std::string& errstr) const {
         std::string tmp = "invalid mesh_data message:";
-        bool status = CheckO3DType(errstr) && CheckVertices(errstr) &&
-                      CheckFaces(errstr);
+        bool status =
+                CheckO3DType(tmp) && CheckVertices(tmp) && CheckFaces(tmp);
         if (!status) errstr += tmp;
         return status;
     }
