@@ -224,6 +224,8 @@ protected:
     void PrepareIndicesOutput(Tensor& output_buf_indices, int64_t length) const;
     void PrepareMasksOutput(Tensor& output_masks, int64_t length) const;
 
+    std::pair<int64_t, std::vector<int64_t>> GetCommonValueSizeDivisor();
+
 private:
     std::shared_ptr<DeviceHashBackend> device_hashmap_;
 
@@ -232,6 +234,9 @@ private:
 
     std::vector<Dtype> dtypes_value_;
     std::vector<SizeVector> element_shapes_value_;
+
+    int64_t common_block_size_;
+    std::vector<int64_t> blocks_per_element_;
 };
 
 }  // namespace core

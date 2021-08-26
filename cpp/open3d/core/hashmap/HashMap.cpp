@@ -46,6 +46,8 @@ HashMap::HashMap(int64_t init_capacity,
       key_element_shape_(key_element_shape),
       dtypes_value_({value_dtype}),
       element_shapes_value_({value_element_shape}) {
+    std::tie(common_block_size_, blocks_per_element_) =
+            GetCommonValueSizeDivisor();
     Init(init_capacity, device, backend);
 }
 
@@ -60,6 +62,8 @@ HashMap::HashMap(int64_t init_capacity,
       key_element_shape_(key_element_shape),
       dtypes_value_(dtypes_value),
       element_shapes_value_(element_shapes_value) {
+    std::tie(common_block_size_, blocks_per_element_) =
+            GetCommonValueSizeDivisor();
     Init(init_capacity, device, backend);
 }
 
@@ -474,5 +478,25 @@ void HashMap::PrepareMasksOutput(Tensor& output_masks, int64_t length) const {
     }
 }
 
+std::pair<int64_t, std::vector<int64_t>> HashMap::GetCommonValueSizeDivisor() {
+    const std::vector<int64_t> kDivisors = {16, 12, 8, 4, 2, 1};
+
+    std::vector<int64_t> blocks_per_element;
+
+    for (const auto& divisor : kDivisors) {
+        bool valid = true;
+        blocks_per_element.clear();
+        for (size_t i = 0; i < dtypes_value_.size(); ++i) {
+            int64_t bytesize = element_shapes_value_[i].NumElements() *
+                               dtypes_value_[i].ByteSize();
+            valid = valid && (bytesize % divisor == 0);
+            blocks_per_element.push_back(bytesize / divisor);
+        }
+        if (valid) return std::make_pair(divisor, blocks_per_element);
+    }
+
+    // should never reach here
+    return std::make_pair(1, blocks_per_element);
+}
 }  // namespace core
 }  // namespace open3d

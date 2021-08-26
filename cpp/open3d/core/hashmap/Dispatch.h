@@ -73,8 +73,37 @@
         }                                                                    \
     }()
 
+#define DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(DIVISOR, ...) \
+    [&] {                                              \
+        if (DIVISOR == 16) {                           \
+            using block_t = int4;                      \
+            return __VA_ARGS__();                      \
+        } else if (DIVISOR == 12) {                    \
+            using block_t = int3;                      \
+            return __VA_ARGS__();                      \
+        } else if (DIVISOR == 8) {                     \
+            using block_t = int2;                      \
+            return __VA_ARGS__();                      \
+        } else if (DIVISOR == 4) {                     \
+            using block_t = int;                       \
+            return __VA_ARGS__();                      \
+        } else if (DIVISOR == 2) {                     \
+            using block_t = int16_t;                   \
+            return __VA_ARGS__();                      \
+        } else {                                       \
+            using block_t = uint8_t;                   \
+            return __VA_ARGS__();                      \
+        }                                              \
+    }()
+
 namespace open3d {
 namespace utility {
+
+#ifndef __CUDACC__
+using int4 = MiniVec<int, 4>;
+using int3 = MiniVec<int, 3>;
+using int2 = MiniVec<int, 2>;
+#endif
 
 template <typename T, int N>
 struct MiniVecHash {
