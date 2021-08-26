@@ -52,11 +52,6 @@ public:
                 bool* output_masks,
                 int64_t count) override;
 
-    void Activate(const void* input_keys,
-                  buf_index_t* output_buf_indices,
-                  bool* output_masks,
-                  int64_t count) override;
-
     void Find(const void* input_keys,
               buf_index_t* output_buf_indices,
               bool* output_masks,
@@ -76,6 +71,9 @@ public:
 
     SlabHashBackendImpl<Key, Hash, Eq> GetImpl() { return impl_; }
 
+    void Allocate(int64_t capacity, int64_t bucket_count) override;
+    void Free() override;
+
 protected:
     /// The struct is directly passed to kernels by value, so cannot be a
     /// shared pointer.
@@ -83,17 +81,6 @@ protected:
 
     CUDAHashBackendBufferAccessor buffer_accessor_;
     std::shared_ptr<SlabNodeManager> node_mgr_;
-
-    /// Rehash, Insert, Activate all call InsertImpl. It will be clean to
-    /// separate this implementation and avoid shared checks.
-    void InsertImpl(const void* input_keys,
-                    const std::vector<const void*>& input_values_soa,
-                    buf_index_t* output_buf_indices,
-                    bool* output_masks,
-                    int64_t count);
-
-    void Allocate(int64_t capacity, int64_t bucket_count) override;
-    void Free() override;
 
     int64_t bucket_count_;
 };
@@ -115,78 +102,7 @@ SlabHashBackend<Key, Hash, Eq>::~SlabHashBackend() {
 }
 
 template <typename Key, typename Hash, typename Eq>
-void SlabHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {
-    int64_t count = Size();
-
-    Tensor active_keys;
-    std::vector<Tensor> active_values;
-
-    if (count > 0) {
-        Tensor active_buf_indices = Tensor({count}, core::Int32, this->device_);
-        GetActiveIndices(
-                static_cast<buf_index_t*>(active_buf_indices.GetDataPtr()));
-
-        Tensor active_indices = active_buf_indices.To(core::Int64);
-
-        active_keys = this->buffer_->GetKeyBuffer().IndexGet({active_indices});
-        auto value_buffers = this->GetValueBuffers();
-        for (auto& value_buffer : value_buffers) {
-            active_values.emplace_back(value_buffer.IndexGet({active_indices}));
-        }
-    }
-
-    float avg_capacity_per_bucket =
-            float(this->capacity_) / float(this->bucket_count_);
-
-    Free();
-
-    Allocate(std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
-                      active_keys.GetLength()),
-             buckets);
-
-    if (count > 0) {
-        Tensor output_buf_indices({count}, core::Int32, this->device_);
-        Tensor output_masks({count}, core::Bool, this->device_);
-
-        std::vector<const void*> active_value_ptrs;
-        for (auto& active_value : active_values) {
-            active_value_ptrs.push_back(active_value.GetDataPtr());
-        }
-        InsertImpl(active_keys.GetDataPtr(), active_value_ptrs,
-                   static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
-                   output_masks.GetDataPtr<bool>(), count);
-    }
-}
-
-template <typename Key, typename Hash, typename Eq>
-void SlabHashBackend<Key, Hash, Eq>::Insert(
-        const void* input_keys,
-        const std::vector<const void*>& input_values_soa,
-        buf_index_t* output_buf_indices,
-        bool* output_masks,
-        int64_t count) {
-    int64_t new_size = Size() + count;
-    if (new_size > this->capacity_) {
-        float avg_capacity_per_bucket =
-                float(this->capacity_) / float(this->bucket_count_);
-        int64_t expected_buckets = std::max(
-                int64_t(this->bucket_count_ * 2),
-                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
-        Rehash(expected_buckets);
-    }
-
-    InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks,
-               count);
-}
-
-template <typename Key, typename Hash, typename Eq>
-void SlabHashBackend<Key, Hash, Eq>::Activate(const void* input_keys,
-                                              buf_index_t* output_buf_indices,
-                                              bool* output_masks,
-                                              int64_t count) {
-    std::vector<const void*> null_values;
-    Insert(input_keys, null_values, output_buf_indices, output_masks, count);
-}
+void SlabHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {}
 
 template <typename Key, typename Hash, typename Eq>
 void SlabHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
@@ -310,7 +226,7 @@ float SlabHashBackend<Key, Hash, Eq>::LoadFactor() const {
 }
 
 template <typename Key, typename Hash, typename Eq>
-void SlabHashBackend<Key, Hash, Eq>::InsertImpl(
+void SlabHashBackend<Key, Hash, Eq>::Insert(
         const void* input_keys,
         const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,

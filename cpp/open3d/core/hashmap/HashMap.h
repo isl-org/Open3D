@@ -210,7 +210,8 @@ protected:
     void InsertImpl(const Tensor& input_keys,
                     const std::vector<Tensor>& input_values_soa,
                     Tensor& output_buf_indices,
-                    Tensor& output_masks);
+                    Tensor& output_masks,
+                    bool is_activate_op = false);
 
     void CheckKeyLength(const Tensor& input_keys) const;
     void CheckKeyValueLengthCompatibility(

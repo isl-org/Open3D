@@ -54,11 +54,6 @@ public:
                 bool* output_masks,
                 int64_t count) override;
 
-    void Activate(const void* input_keys,
-                  buf_index_t* output_buf_indices,
-                  bool* output_masks,
-                  int64_t count) override;
-
     void Find(const void* input_keys,
               buf_index_t* output_buf_indices,
               bool* output_masks,
@@ -82,20 +77,14 @@ public:
         return impl_;
     }
 
+    void Allocate(int64_t capacity, int64_t bucket_count) override;
+    void Free() override{};
+
 protected:
     std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash, Eq>>
             impl_;
 
     std::shared_ptr<CPUHashBackendBufferAccessor> buffer_accessor_;
-
-    void InsertImpl(const void* input_keys,
-                    const std::vector<const void*>& input_values_soa,
-                    buf_index_t* output_buf_indices,
-                    bool* output_masks,
-                    int64_t count);
-
-    void Allocate(int64_t capacity, int64_t bucket_count) override;
-    void Free() override{};
 };
 
 template <typename Key, typename Hash, typename Eq>
@@ -114,38 +103,6 @@ TBBHashBackend<Key, Hash, Eq>::~TBBHashBackend() {}
 template <typename Key, typename Hash, typename Eq>
 int64_t TBBHashBackend<Key, Hash, Eq>::Size() const {
     return impl_->size();
-}
-
-template <typename Key, typename Hash, typename Eq>
-void TBBHashBackend<Key, Hash, Eq>::Insert(
-        const void* input_keys,
-        const std::vector<const void*>& input_values_soa,
-        buf_index_t* output_buf_indices,
-        bool* output_masks,
-        int64_t count) {
-    int64_t new_size = Size() + count;
-    if (new_size > this->capacity_) {
-        int64_t bucket_count = GetBucketCount();
-        float avg_capacity_per_bucket =
-                float(this->capacity_) / float(bucket_count);
-
-        int64_t expected_buckets = std::max(
-                bucket_count * 2,
-                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
-
-        Rehash(expected_buckets);
-    }
-    InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks,
-               count);
-}
-
-template <typename Key, typename Hash, typename Eq>
-void TBBHashBackend<Key, Hash, Eq>::Activate(const void* input_keys,
-                                             buf_index_t* output_buf_indices,
-                                             bool* output_masks,
-                                             int64_t count) {
-    std::vector<const void*> null_values;
-    Insert(input_keys, null_values, output_buf_indices, output_masks, count);
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -205,45 +162,6 @@ void TBBHashBackend<Key, Hash, Eq>::Clear() {
 
 template <typename Key, typename Hash, typename Eq>
 void TBBHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {
-    int64_t count = Size();
-
-    Tensor active_keys;
-    std::vector<Tensor> active_values;
-
-    if (count > 0) {
-        Tensor active_buf_indices({count}, core::Int32, this->device_);
-        GetActiveIndices(
-                static_cast<buf_index_t*>(active_buf_indices.GetDataPtr()));
-
-        Tensor active_indices = active_buf_indices.To(core::Int64);
-        active_keys = this->GetKeyBuffer().IndexGet({active_indices});
-
-        auto value_buffers = this->GetValueBuffers();
-        for (auto& value_buffer : value_buffers) {
-            active_values.emplace_back(value_buffer.IndexGet({active_indices}));
-        }
-    }
-
-    float avg_capacity_per_bucket =
-            float(this->capacity_) / float(GetBucketCount());
-    int64_t new_capacity =
-            int64_t(std::ceil(buckets * avg_capacity_per_bucket));
-
-    Allocate(new_capacity, 0);
-
-    if (count > 0) {
-        Tensor output_buf_indices({count}, core::Int32, this->device_);
-        Tensor output_masks({count}, core::Bool, this->device_);
-
-        std::vector<const void*> active_value_ptrs;
-        for (auto& active_value : active_values) {
-            active_value_ptrs.push_back(active_value.GetDataPtr());
-        }
-        InsertImpl(active_keys.GetDataPtr(), active_value_ptrs,
-                   static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
-                   output_masks.GetDataPtr<bool>(), count);
-    }
-
     impl_->rehash(buckets);
 }
 
@@ -268,7 +186,7 @@ float TBBHashBackend<Key, Hash, Eq>::LoadFactor() const {
 }
 
 template <typename Key, typename Hash, typename Eq>
-void TBBHashBackend<Key, Hash, Eq>::InsertImpl(
+void TBBHashBackend<Key, Hash, Eq>::Insert(
         const void* input_keys,
         const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
