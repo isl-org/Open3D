@@ -65,8 +65,8 @@ public:
     char type;
     int count;
     // helper variable
-    int count_offset;
-    int offset;
+    int count_offset = 0;
+    int offset = 0;
 };
 
 struct PCDHeader {

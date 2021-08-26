@@ -36,6 +36,13 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+// The `Read` benchmark functions are dependent on the corresponding `Write`
+// benchmark functions to generate the point cloud file in the required format.
+// To run benchmarks in this file, run the following command from inside the
+// build directory: ./bin/benchmarks --benchmark_filter=".*IO.*"
+
+// This file is just used to load the `point cloud` data. So, format of this
+// file is not important.
 static const std::string input_path_pcd =
         std::string(TEST_DATA_DIR) + "/fragment.ply";
 
