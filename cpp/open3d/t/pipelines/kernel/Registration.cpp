@@ -193,7 +193,7 @@ core::Tensor ComputeInformationMatrix(
     }
 
     core::Tensor information_matrix =
-            core::Tensor::Empty({6, 6}, dtype, device);
+            core::Tensor::Empty({6, 6}, core::Float64, core::Device("CPU:0"));
 
     const core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {

@@ -152,17 +152,17 @@ OPEN3D_HOST_DEVICE inline bool GetInformationJacobians(
 
     const int64_t target_idx = 3 * correspondence_indices[workload_idx];
 
-    jacobian_x[0] = jacobian_x[4] = jacobian_x[5] = 0;
+    jacobian_x[0] = jacobian_x[4] = jacobian_x[5] = 0.0;
     jacobian_x[1] = target_points_ptr[target_idx + 2];
     jacobian_x[2] = -target_points_ptr[target_idx + 1];
     jacobian_x[3] = 1.0;
 
-    jacobian_y[1] = jacobian_x[3] = jacobian_x[5] = 0;
+    jacobian_y[1] = jacobian_y[3] = jacobian_y[5] = 0.0;
     jacobian_y[0] = -target_points_ptr[target_idx + 2];
     jacobian_y[2] = target_points_ptr[target_idx];
     jacobian_y[4] = 1.0;
 
-    jacobian_z[2] = jacobian_x[3] = jacobian_x[4] = 0;
+    jacobian_z[2] = jacobian_z[3] = jacobian_z[4] = 0.0;
     jacobian_z[0] = target_points_ptr[target_idx + 1];
     jacobian_z[1] = -target_points_ptr[target_idx];
     jacobian_z[5] = 1.0;

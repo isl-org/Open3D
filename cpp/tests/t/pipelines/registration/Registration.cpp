@@ -420,14 +420,12 @@ TEST_P(RegistrationPermuteDevices, GetInformationMatrixFromPointCloud) {
                         source_lpcd, target_lpcd, max_correspondence_dist,
                         initial_transform_l);
 
-        auto information_matrix_from_legacy =
-                core::eigen_converter::EigenMatrixToTensor(information_matrix_l)
-                        .To(dtype);
+        core::Tensor information_matrix_from_legacy =
+                core::eigen_converter::EigenMatrixToTensor(
+                        information_matrix_l);
 
-        utility::LogInfo("Information Matrix Tensor : \n{}\n",
-                         information_matrix_t.ToString());
-        utility::LogInfo("Information Matrix Legacy : \n{}\n",
-                         information_matrix_from_legacy.ToString());
+        EXPECT_TRUE(information_matrix_t.AllClose(
+                information_matrix_from_legacy, 1e-1, 1e-1));
     }
 }
 

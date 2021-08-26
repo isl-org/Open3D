@@ -194,12 +194,17 @@ void ComputeInformationMatrixCUDA(const core::Tensor &target_points,
 
         core::cuda::Synchronize();
 
-        scalar_t *GTG_ptr = information_matrix.GetDataPtr<scalar_t>();
+        core::Tensor global_sum_cpu =
+                global_sum.To(core::Device("CPU:0"), core::Float64);
+        double *sum_ptr = global_sum_cpu.GetDataPtr<double>();
+
+        // Information matrix is on CPU of type Float64.
+        double *GTG_ptr = information_matrix.GetDataPtr<double>();
 
         int i = 0;
         for (int j = 0; j < 6; j++) {
             for (int k = 0; k <= j; k++) {
-                GTG_ptr[j * 6 + k] = GTG_ptr[k * 6 + j] = global_sum_ptr[i];
+                GTG_ptr[j * 6 + k] = GTG_ptr[k * 6 + j] = sum_ptr[i];
                 ++i;
             }
         }
