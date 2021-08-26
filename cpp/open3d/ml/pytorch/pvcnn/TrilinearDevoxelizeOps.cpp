@@ -41,8 +41,8 @@ std::vector<at::Tensor> trilinear_devoxelize_forward(
     CHECK_CUDA(coords);
     CHECK_CONTIGUOUS(features);
     CHECK_CONTIGUOUS(coords);
-    CHECK_TYPE(features, torch::kFloat32);
-    CHECK_TYPE(coords, torch::kFloat32);
+    CHECK_TYPE(features, kFloat32);
+    CHECK_TYPE(coords, kFloat32);
 
     int b = features.size(0);
     int c = features.size(1);
@@ -87,9 +87,9 @@ at::Tensor trilinear_devoxelize_backward(const at::Tensor grad_y,
     CHECK_CONTIGUOUS(grad_y);
     CHECK_CONTIGUOUS(weights);
     CHECK_CONTIGUOUS(indices);
-    CHECK_TYPE(grad_y, torch::kFloat32);
-    CHECK_TYPE(weights, torch::kFloat32);
-    CHECK_TYPE(indices, torch::kInt32);
+    CHECK_TYPE(grad_y, kFloat32);
+    CHECK_TYPE(weights, kFloat32);
+    CHECK_TYPE(indices, kInt32);
 
     int b = grad_y.size(0);
     int c = grad_y.size(1);

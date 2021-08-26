@@ -43,10 +43,10 @@ inline int opt_n_threads(int work_size) {
     return max(min(1 << pow_2, TOTAL_THREADS), 1);
 }
 
-inline dim3 optimal_block_config(int x, int y) {
-    const int x_threads = optimal_n_threads(x);
+inline dim3 opt_block_config(int x, int y) {
+    const int x_threads = opt_n_threads(x);
     const int y_threads =
-            max(min(optimal_n_threads(y), TOTAL_THREADS / x_threads), 1);
+            max(min(opt_n_threads(y), TOTAL_THREADS / x_threads), 1);
     dim3 block_config(x_threads, y_threads, 1);
     return block_config;
 }

@@ -52,7 +52,7 @@ void trilinear_devoxelize(int b,
 
     auto stream = at::cuda::getCurrentCUDAStream();
 
-    trilinear_devoxelize_kernel<<<b, optimal_num_threads(n), 0, stream>>>(
+    trilinear_devoxelize_kernel<<<b, opt_n_threads(n), 0, stream>>>(
             b, c, n, r, r2, r3, training, coords, feat, inds, wgts, outs);
 
     err = cudaGetLastError();
@@ -74,7 +74,7 @@ void trilinear_devoxelize_grad(int b,
 
     auto stream = at::cuda::getCurrentCUDAStream();
 
-    trilinear_devoxelize_grad_kernel<<<b, optimal_num_threads(n), 0, stream>>>(
+    trilinear_devoxelize_grad_kernel<<<b, opt_n_threads(n), 0, stream>>>(
             b, c, n, r3, inds, wgts, grad_y, grad_x);
 
     err = cudaGetLastError();
