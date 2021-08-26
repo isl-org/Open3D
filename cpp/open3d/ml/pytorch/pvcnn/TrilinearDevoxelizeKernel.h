@@ -27,30 +27,24 @@
 
 #pragma once
 
-#include <cmath>
+void trilinear_devoxelize(int b,
+                          int c,
+                          int n,
+                          int r,
+                          int r2,
+                          int r3,
+                          bool is_training,
+                          const float *coords,
+                          const float *feat,
+                          int *inds,
+                          float *wgts,
+                          float *outs);
 
-namespace open3d {
-namespace ml {
-namespace contrib {
-
-#define TOTAL_THREADS 1024
-#define THREADS_PER_BLOCK 256
-#define DIVUP(m, n) ((m) / (n) + ((m) % (n) > 0))
-
-inline int opt_n_threads(int work_size) {
-    const int pow_2 = std::log(static_cast<double>(work_size)) / std::log(2.0);
-
-    return max(min(1 << pow_2, TOTAL_THREADS), 1);
-}
-
-inline dim3 optimal_block_config(int x, int y) {
-    const int x_threads = optimal_n_threads(x);
-    const int y_threads =
-            max(min(optimal_n_threads(y), TOTAL_THREADS / x_threads), 1);
-    dim3 block_config(x_threads, y_threads, 1);
-    return block_config;
-}
-
-}  // namespace contrib
-}  // namespace ml
-}  // namespace open3d
+void trilinear_devoxelize_grad(int b,
+                               int c,
+                               int n,
+                               int r3,
+                               const int *inds,
+                               const float *wgts,
+                               const float *grad_y,
+                               float *grad_x);

@@ -62,6 +62,7 @@ target_sources(open3d_torch_ops PRIVATE
     pointnet/BallQueryOps.cpp
     pointnet/InterpolateOps.cpp
     pointnet/SamplingOps.cpp
+    pvcnn/TrilinearDevoxelizeOps.cpp
 )
 
 target_sources(open3d_torch_ops PRIVATE
