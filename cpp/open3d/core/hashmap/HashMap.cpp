@@ -67,6 +67,44 @@ void HashMap::Rehash(int64_t buckets) {
     return device_hashmap_->Rehash(buckets);
 }
 
+std::pair<Tensor, Tensor> HashMap::Insert(const Tensor& input_keys,
+                                          const Tensor& input_values) {
+    Tensor output_buf_indices, output_masks;
+    Insert(input_keys, input_values, output_buf_indices, output_masks);
+    return std::make_pair(output_buf_indices, output_masks);
+}
+
+std::pair<Tensor, Tensor> HashMap::Insert(
+        const Tensor& input_keys, const std::vector<Tensor>& input_values_soa) {
+    Tensor output_buf_indices, output_masks;
+    Insert(input_keys, input_values_soa, output_buf_indices, output_masks);
+    return std::make_pair(output_buf_indices, output_masks);
+}
+
+std::pair<Tensor, Tensor> HashMap::Activate(const Tensor& input_keys) {
+    Tensor output_buf_indices, output_masks;
+    Activate(input_keys, output_buf_indices, output_masks);
+    return std::make_pair(output_buf_indices, output_masks);
+}
+
+std::pair<Tensor, Tensor> HashMap::Find(const Tensor& input_keys) {
+    Tensor output_buf_indices, output_masks;
+    Find(input_keys, output_buf_indices, output_masks);
+    return std::make_pair(output_buf_indices, output_masks);
+}
+
+Tensor HashMap::Erase(const Tensor& input_keys) {
+    Tensor output_masks;
+    Erase(input_keys, output_masks);
+    return output_masks;
+}
+
+Tensor HashMap::GetActiveIndices() const {
+    Tensor output_buf_indices;
+    GetActiveIndices(output_buf_indices);
+    return output_buf_indices;
+}
+
 void HashMap::InsertImpl(const Tensor& input_keys,
                          const std::vector<Tensor>& input_values_soa,
                          Tensor& output_buf_indices,
