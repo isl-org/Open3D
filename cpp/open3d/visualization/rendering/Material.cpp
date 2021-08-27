@@ -24,41 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/visualization/visualization.h"
-
-#include "pybind/visualization/gui/gui.h"
-#include "pybind/visualization/rendering/material.h"
-#include "pybind/visualization/rendering/rendering.h"
-
-#ifdef BUILD_WEBRTC
-#include "pybind/visualization/webrtc_server/webrtc_window_system.h"
-#endif
+#include "open3d/visualization/rendering/Material.h"
 
 namespace open3d {
 namespace visualization {
+namespace rendering {
 
-void pybind_visualization(py::module &m) {
-    py::module m_visualization = m.def_submodule("visualization");
-    pybind_renderoption(m_visualization);
-    pybind_viewcontrol(m_visualization);
-    pybind_visualizer(m_visualization);
-    pybind_visualization_utility(m_visualization);
-    pybind_renderoption_method(m_visualization);
-    pybind_viewcontrol_method(m_visualization);
-    pybind_visualizer_method(m_visualization);
-    pybind_visualization_utility_methods(m_visualization);
-
-#ifdef BUILD_GUI
-    rendering::pybind_rendering(m_visualization);
-    rendering::pybind_material(m_visualization);
-    gui::pybind_gui(m_visualization);
-    pybind_o3dvisualizer(m_visualization);
-#endif
-
-#ifdef BUILD_WEBRTC
-    webrtc_server::pybind_webrtc_server(m_visualization);
-#endif
+void Material::SetDefaultProperties() {
+    material_name_ = "defaultUnlit";
+    SetBaseColor(Eigen::Vector4f(1.f, 1.f, 1.f, 1.f));
+    SetBaseMetallic(0.f);
+    SetBaseRoughness(1.f);
+    SetBaseReflectance(0.5f);
+    SetBaseClearcoat(0.f);
+    SetBaseClearcoatRoughness(0.f);
+    SetAnisotropy(0.f);
+    SetThickness(1.f);
+    SetTransmission(1.f);
+    SetAbsorptionColor(Eigen::Vector4f(1.f, 1.f, 1.f, 1.f));
+    SetAbsorptionDistance(1.f);
+    SetPointSize(3.f);
+    SetLineWidth(1.f);
 }
 
+void Material::SetTextureMap(const std::string &key,
+                             const t::geometry::Image &image) {
+    // Image must be on CPU. If Image is already on CPU the following does not
+    // perform an uneccesasry copy
+    texture_maps_[key] = image.Clone();
+}
+
+}  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

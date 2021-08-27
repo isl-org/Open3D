@@ -251,7 +251,7 @@ public:
                                     {max_points, 3}, core::Dtype::Float32,
                                     core::Device("CPU:0")));
 
-                            auto mat = rendering::Material();
+                            auto mat = rendering::MaterialRecord();
                             mat.shader = "defaultUnlit";
                             mat.sRGB_vertex_color = true;
                             this->widget3d_->GetScene()
@@ -762,7 +762,7 @@ protected:
                                 raycast_depth_colored);
 
                         this->widget3d_->GetScene()->RemoveGeometry("frustum");
-                        auto mat = rendering::Material();
+                        auto mat = rendering::MaterialRecord();
                         mat.shader = "unlitLine";
                         mat.line_width = 5.0f;
                         this->widget3d_->GetScene()->AddGeometry(
@@ -774,7 +774,7 @@ protected:
                             // TPointCloud
                             this->widget3d_->GetScene()->RemoveGeometry(
                                     "trajectory");
-                            auto mat = rendering::Material();
+                            auto mat = rendering::MaterialRecord();
                             mat.shader = "unlitLine";
                             mat.line_width = 5.0f;
                             this->widget3d_->GetScene()->AddGeometry(

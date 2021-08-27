@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/LineSet.h"
+#include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/utility/Logging.h"
@@ -95,7 +96,7 @@ namespace geometry {
 /// Note that `{Get|Set|Has}{Point|Line}Attr()` functions also work "positions"
 /// and "indices".
 
-class LineSet : public Geometry {
+class LineSet : public Geometry, public DrawableGeometry {
 public:
     /// Construct an empty LineSet on the provided device.
     LineSet(const core::Device &device = core::Device("CPU:0"));

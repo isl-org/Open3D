@@ -33,6 +33,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashMap.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
@@ -90,7 +91,7 @@ namespace geometry {
 ///       PointCloud::GetPointAttr("positions")
 ///     - PointCloud::HasPointNormals() is the same as
 ///       PointCloud::HasPointAttr("normals")
-class PointCloud : public Geometry {
+class PointCloud : public Geometry, public DrawableGeometry {
 public:
     /// Construct an empty point cloud on the provided device.
     /// \param device The device on which to initialize the point cloud

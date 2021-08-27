@@ -130,15 +130,15 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
                 std::vector<int64_t> shape(
                         {image.height_, image.width_, image.num_of_channels_});
                 if (image.bytes_per_channel_ == sizeof(uint8_t)) {
-                    msg.data.textures[std::to_string(tex_id)] =
+                    msg.data.texture_maps[std::to_string(tex_id)] =
                             messages::Array::FromPtr(
                                     (uint8_t*)image.data_.data(), shape);
                 } else if (image.bytes_per_channel_ == sizeof(float)) {
-                    msg.data.textures[std::to_string(tex_id)] =
+                    msg.data.texture_maps[std::to_string(tex_id)] =
                             messages::Array::FromPtr((float*)image.data_.data(),
                                                      shape);
                 } else if (image.bytes_per_channel_ == sizeof(double)) {
-                    msg.data.textures[std::to_string(tex_id)] =
+                    msg.data.texture_maps[std::to_string(tex_id)] =
                             messages::Array::FromPtr(
                                     (double*)image.data_.data(), shape);
                 }
@@ -169,7 +169,11 @@ bool SetMeshData(const std::string& path,
                  const std::map<std::string, core::Tensor>& face_attributes,
                  const core::Tensor& lines,
                  const std::map<std::string, core::Tensor>& line_attributes,
-                 const std::map<std::string, core::Tensor>& textures,
+                 const std::string& material_name,
+                 const std::map<std::string, float>& material_scalar_attributes,
+                 const std::map<std::string, Eigen::Vector4f>&
+                         material_vector_attributes,
+                 const std::map<std::string, t::geometry::Image>& texture_maps,
                  const std::string& o3d_type,
                  std::shared_ptr<ConnectionBase> connection) {
     messages::SetMeshData msg;
@@ -264,13 +268,30 @@ bool SetMeshData(const std::string& path,
         }
     }
 
-    for (const auto& item : textures) {
-        if (item.second.NumElements()) {
-            msg.data.textures[item.first] =
-                    messages::Array::FromTensor(item.second);
-        } else {
-            LogError("SetMeshData: Texture {} is empty", item.first);
+    if (!material_name.empty()) {
+        msg.data.material_name = material_name;
+        msg.data.material_scalar_attributes = material_scalar_attributes;
+        for (const auto& item : material_vector_attributes) {
+            msg.data.material_vector_attributes[item.first] = {
+                    item.second[0], item.second[1], item.second[2],
+                    item.second[3]};
         }
+        for (const auto& texture_map : texture_maps) {
+            if (texture_map.second.IsEmpty()) {
+                LogError("SetMeshData: Texture map {} is empty",
+                         texture_map.first);
+            } else {
+                msg.data.texture_maps[texture_map.first] =
+                        messages::Array::FromTensor(
+                                texture_map.second.AsTensor());
+            }
+        }
+
+    } else if (!material_scalar_attributes.empty() ||
+               !material_vector_attributes.empty() || !texture_maps.empty()) {
+        LogError("{}",
+                 "SetMeshData: Please provide a material_name for the texture "
+                 "maps");
     }
 
     {

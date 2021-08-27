@@ -24,41 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/visualization/visualization.h"
+#pragma once
 
-#include "pybind/visualization/gui/gui.h"
-#include "pybind/visualization/rendering/material.h"
-#include "pybind/visualization/rendering/rendering.h"
-
-#ifdef BUILD_WEBRTC
-#include "pybind/visualization/webrtc_server/webrtc_window_system.h"
-#endif
+#include "open3d/visualization/rendering/Material.h"
 
 namespace open3d {
-namespace visualization {
+namespace t {
+namespace geometry {
 
-void pybind_visualization(py::module &m) {
-    py::module m_visualization = m.def_submodule("visualization");
-    pybind_renderoption(m_visualization);
-    pybind_viewcontrol(m_visualization);
-    pybind_visualizer(m_visualization);
-    pybind_visualization_utility(m_visualization);
-    pybind_renderoption_method(m_visualization);
-    pybind_viewcontrol_method(m_visualization);
-    pybind_visualizer_method(m_visualization);
-    pybind_visualization_utility_methods(m_visualization);
+/// \class DrawableGeometry
+///
+/// \brief Mix-in class for geometry types that can be visualized
+class DrawableGeometry {
+public:
+    DrawableGeometry() {}
+    ~DrawableGeometry() {}
 
-#ifdef BUILD_GUI
-    rendering::pybind_rendering(m_visualization);
-    rendering::pybind_material(m_visualization);
-    gui::pybind_gui(m_visualization);
-    pybind_o3dvisualizer(m_visualization);
-#endif
+    /// Check if a material has been applied to this Geometry with SetMaterial.
+    bool HasMaterial() const { return material_.IsValid(); }
 
-#ifdef BUILD_WEBRTC
-    webrtc_server::pybind_webrtc_server(m_visualization);
-#endif
-}
+    /// Get material associated with this Geometry.
+    visualization::rendering::Material const &GetMaterial() const {
+        return material_;
+    }
 
-}  // namespace visualization
+    /// Set the material properties associate with this Geometry
+    void SetMaterial(const visualization::rendering::Material &material) {
+        material_ = material;
+    }
+
+private:
+    /// Material associated with this geometry
+    visualization::rendering::Material material_;
+};
+
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

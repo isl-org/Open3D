@@ -135,18 +135,18 @@ public:
         // --------------------- VISUALIZER ---------------------
         gui::Application::GetInstance().Initialize();
 
-        src_cloud_mat_ = rendering::Material();
+        src_cloud_mat_ = rendering::MaterialRecord();
         src_cloud_mat_.shader = "defaultUnlit";
 
-        tar_cloud_mat_ = rendering::Material();
+        tar_cloud_mat_ = rendering::MaterialRecord();
         tar_cloud_mat_.shader = "defaultUnlit";
 
-        src_corres_mat_ = rendering::Material();
+        src_corres_mat_ = rendering::MaterialRecord();
         src_corres_mat_.shader = "defaultUnlit";
         src_corres_mat_.base_color = Eigen::Vector4f(0.f, 1.0f, 0.0f, 1.0f);
         src_corres_mat_.point_size = 4.0f;
 
-        tar_corres_mat_ = rendering::Material();
+        tar_corres_mat_ = rendering::MaterialRecord();
         tar_corres_mat_.shader = "defaultUnlit";
         tar_corres_mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
         tar_corres_mat_.point_size = 4.0f;
@@ -815,10 +815,10 @@ private:
     core::Dtype dtype_;
 
 private:
-    open3d::visualization::rendering::Material src_cloud_mat_;
-    open3d::visualization::rendering::Material tar_cloud_mat_;
-    open3d::visualization::rendering::Material src_corres_mat_;
-    open3d::visualization::rendering::Material tar_corres_mat_;
+    open3d::visualization::rendering::MaterialRecord src_cloud_mat_;
+    open3d::visualization::rendering::MaterialRecord tar_cloud_mat_;
+    open3d::visualization::rendering::MaterialRecord src_corres_mat_;
+    open3d::visualization::rendering::MaterialRecord tar_corres_mat_;
 
     // For Visualization.
     // The members of this structure can be protected by the mutex lock,

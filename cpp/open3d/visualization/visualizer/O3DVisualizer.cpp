@@ -822,7 +822,7 @@ struct O3DVisualizer::Impl {
                      std::shared_ptr<geometry::Geometry3D> geom,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
                      std::shared_ptr<rendering::TriangleMeshModel> model,
-                     const rendering::Material *material,
+                     const rendering::MaterialRecord *material,
                      const std::string &group,
                      double time,
                      bool is_visible) {
@@ -832,7 +832,7 @@ struct O3DVisualizer::Impl {
         }
         bool is_default_color = false;
         bool no_shadows = false;
-        Material mat;
+        MaterialRecord mat;
         t::geometry::PointCloud *valid_tpcd = nullptr;
 
         if (material) {
@@ -1234,7 +1234,7 @@ struct O3DVisualizer::Impl {
     }
 
     void OverrideMaterial(const std::string &name,
-                          const Material &original_material,
+                          const MaterialRecord &original_material,
                           O3DVisualizer::Shader shader) {
         bool is_lines = (original_material.shader == "unlitLine");
         auto scene = scene_->GetScene();
@@ -1244,7 +1244,7 @@ struct O3DVisualizer::Impl {
             (shader == Shader::UNLIT && is_lines)) {
             scene->ModifyGeometryMaterial(name, original_material);
         } else {
-            Material m = original_material;
+            MaterialRecord m = original_material;
             m.shader = GetShaderString(shader);
             scene->ModifyGeometryMaterial(name, m);
         }
@@ -1931,7 +1931,7 @@ void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<geometry::Geometry3D> geom,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1942,7 +1942,7 @@ void O3DVisualizer::AddGeometry(
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<t::geometry::Geometry> tgeom,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1953,7 +1953,7 @@ void O3DVisualizer::AddGeometry(
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<rendering::TriangleMeshModel> model,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {

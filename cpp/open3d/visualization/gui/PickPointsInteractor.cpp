@@ -36,7 +36,7 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Events.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
@@ -208,7 +208,7 @@ void PickPointsInteractor::SetPickableGeometry(
             // over the occluded points. We paint with a special "mesh index"
             // so that we can to enhanced picking if we hit a mesh index.
             auto mesh_color = CalcIndexColor(kMeshIndex);
-            rendering::Material mat;
+            rendering::MaterialRecord mat;
             mat.shader = "unlitSolidColor";  // ignore any vertex colors!
             mat.base_color = {float(mesh_color.x()), float(mesh_color.y()),
                               float(mesh_color.z()), 1.0f};
@@ -347,8 +347,8 @@ void PickPointsInteractor::ClearPick() {
     SetNeedsRedraw();
 }
 
-rendering::Material PickPointsInteractor::MakeMaterial() {
-    rendering::Material mat;
+rendering::MaterialRecord PickPointsInteractor::MakeMaterial() {
+    rendering::MaterialRecord mat;
     mat.shader = "unlitPolygonOffset";
     mat.point_size = float(point_size_);
     // We are not tonemapping, so src colors are RGB. This prevents the colors

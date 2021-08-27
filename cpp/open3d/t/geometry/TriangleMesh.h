@@ -28,6 +28,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
 
@@ -101,7 +102,7 @@ namespace geometry {
 ///
 /// Note that the we can also use the generalized helper functions for the
 /// default and common attributes.
-class TriangleMesh : public Geometry {
+class TriangleMesh : public Geometry, public DrawableGeometry {
 public:
     /// Construct an empty pointcloud on the provided device.
     /// \param device The device on which to initialize the trianglemesh

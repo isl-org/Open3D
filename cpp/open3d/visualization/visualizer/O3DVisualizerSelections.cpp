@@ -31,7 +31,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/gui/SceneWidget.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 
@@ -40,8 +40,8 @@ namespace visualization {
 namespace visualizer {
 
 namespace {
-rendering::Material MakeMaterial() {
-    rendering::Material m;
+rendering::MaterialRecord MakeMaterial() {
+    rendering::MaterialRecord m;
     m.shader = "defaultUnlit";
     m.base_color = {1.0f, 0.0f, 1.0f, 1.0f};
     return m;
