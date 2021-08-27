@@ -68,7 +68,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
 /// \brief Computes `Information Matrix` of shape {6, 6}, of dtype `Float64` on
 /// device `CPU:0`, from the target point cloud and correspondence indices
 /// w.r.t. target point cloud.
-/// Only target point cloud, and correspondence indices are required.
+/// Only target points and correspondence indices are required.
 ///
 /// \param target_points The target point positions.
 /// \param correspondence_indices Tensor of type Int64 containing indices of
