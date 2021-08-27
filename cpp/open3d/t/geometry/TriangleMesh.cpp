@@ -75,7 +75,7 @@ std::string TriangleMesh::ToString() const {
             GetTriangleIndices().GetLength(),
             GetTriangleIndices().GetDtype().ToString());
 
-    std::string vertices_attr_str = "\nVertices Attributes:";
+    std::string vertices_attr_str = "\nVertex Attributes:";
     if (vertex_attr_.size() == 1) {
         vertices_attr_str += " None.";
     } else {
@@ -90,7 +90,7 @@ std::string TriangleMesh::ToString() const {
         vertices_attr_str[vertices_attr_str.size() - 1] = '.';
     }
 
-    std::string triangles_attr_str = "\nTriangles Attributes:";
+    std::string triangles_attr_str = "\nTriangle Attributes:";
     if (triangle_attr_.size() == 1) {
         triangles_attr_str += " None.";
     } else {
@@ -196,6 +196,25 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                 core::eigen_converter::EigenVector3dVectorToTensor(
                         mesh_legacy.triangle_normals_, float_dtype, device));
     }
+    if (mesh_legacy.HasTriangleUvs()) {
+        // Legacy uses / stores UVs as triangle attributes
+        // Check and set
+        mesh.SetVertexAttr(
+                "texture_uvs",
+                core::eigen_converter::EigenVector2dVectorToTensor(
+                        mesh_legacy.triangle_uvs_, float_dtype, device));
+        // Check length and issue warning on mismatch
+    }
+    // unused by visualizer
+    if (mesh_legacy.HasTriangleMaterialIds()) {
+        mesh.SetTriangleAttr(
+                "material_ids",
+                core::Tensor(
+                        mesh_legacy.triangle_material_ids_,
+                        {static_cast<int64_t>(
+                                mesh_legacy.triangle_material_ids_.size())},
+                        core::Dtype::Int32, device));
+    }
     return mesh;
 }
 
@@ -225,6 +244,15 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
         mesh_legacy.triangle_normals_ =
                 core::eigen_converter::TensorToEigenVector3dVector(
                         GetTriangleNormals());
+    }
+    if (HasVertexAttr("texture_uvs")) {
+        mesh_legacy.triangle_uvs_ =
+                core::eigen_converter::TensorToEigenVector2dVector(
+                        GetVertexAttr("texture_uvs"));
+    }
+    if (HasTriangleAttr("material_ids")) {
+        mesh_legacy.triangle_material_ids_ =
+                GetTriangleAttr("material_ids").ToFlatVector<int32_t>();
     }
 
     return mesh_legacy;

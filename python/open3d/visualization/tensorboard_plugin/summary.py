@@ -30,6 +30,7 @@ import socket
 import time
 import queue
 import warnings
+import ipdb
 
 import numpy as np
 
@@ -39,7 +40,8 @@ from tensorboard.compat.proto.tensor_pb2 import TensorProto
 from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
 from tensorboard.util import lazy_tensor_creator
 try:
-    import tensorflow as tf
+    import tensorflow.compat.v2 as tf
+    # import tensorflow as tf
     from tensorflow.experimental import dlpack as tf_dlpack
     from tensorflow.io.gfile import makedirs as _makedirs
     from tensorflow.io.gfile import GFile as _fileopen
@@ -212,12 +214,13 @@ def _to_integer(tensor):
         if val.ndim != 0:
             return None
         return val
-    except (ValueError, RuntimeError):
+    except (TypeError, ValueError, RuntimeError):
         return None
 
 
 def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
-    """Data conversion and other preprocessing.
+    """Data conversion (format and dtype), validation and other preprocessing.
+    Step reference support.
     TODO(ssheorey): Convert to half precision, compression, etc.
     """
     # Check if property is reference to prior step
@@ -231,9 +234,19 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
             Value(prop),
             step_ref=step_ref)
         return None
+    if isinstance(tensor, dict):  # material
+        # TODO: Data validation
+        material = tensor
+        if "texture_maps" in material:
+            for tex_prop, tex_tensor in material["texture_maps"].items():
+                material["texture_maps"][tex_prop] = o3d.t.geometry.Image(
+                    _to_o3d(tex_tensor))
+        return material
     if tensor.ndim == 2:  # batch_size = 1
         save_tensor = _to_o3d(tensor)
-        save_tensor.reshape((1,) + tuple(save_tensor.shape))
+        shape3 = save_tensor.shape
+        shape3.insert(0, 1)
+        save_tensor = save_tensor.reshape(shape3)
     elif tensor.ndim == 3:
         save_tensor = _to_o3d(tensor[:max_outputs, ...])
     else:
@@ -292,6 +305,13 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     vertex_data = {}
     triangle_data = {}
     line_data = {}
+    material = {
+        "name": "",
+        "scalar_properties": {},
+        "vector_properties": "",
+        "texture_maps": {}
+    }
+
     geometry_metadata = plugin_data_pb2.Open3DPluginData(
         version=metadata._VERSION)
     o3d_type = "PointCloud"
@@ -346,6 +366,9 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 raise ValueError(
                     f"Property {prop} tensor should be of shape "
                     f"{exp_shape} but is {line_data[prop_name].shape}.")
+        elif prop == 'material':
+            material = _preprocess(prop, tensor, step, max_outputs,
+                                   geometry_metadata)
 
     vertices = vertex_data.pop("positions",
                                o3d.core.Tensor((), dtype=o3d.core.int32))
@@ -374,6 +397,10 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                     prop: tensor[bidx, :, :]
                     for prop, tensor in line_data.items()
                 },
+                material_name=material["name"],
+                material_scalar_attributes=material["scalar_properties"],
+                material_vector_attributes=material["vector_properties"],
+                texture_maps=material["texture_maps"],
                 o3d_type=o3d_type,
                 connection=buf_con):
             raise IOError(
@@ -404,10 +431,23 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
           - ``vertex_positions``: shape `(B, N, 3)` where B is the number of
                 point clouds and must be same for each key. N is the number of
                 3D points. Will be cast to ``float32``.
-          - ``vertex_colors``: shape `(B, N, 3)` WIll be converted to ``uint8``.
-          - ``vertex_normals``: shape `(B, N, 3)` WIll be cast to ``float32``.
+          - ``vertex_colors``: shape `(B, N, 3)` Will be converted to ``uint8``.
+          - ``vertex_normals``: shape `(B, N, 3)` Will be cast to ``float32``.
+          -  ``texture_uvs``: shape `(B, N, 2)` UV coordinates for applying
+                material texture maps. Will be cast to ``float32``.
           - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
           - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
+          - ``material``: dict decrribing PBR material for the 3D data. Contents
+                should be:
+              - ``name``: Material name (required). Open3D built-in
+                materials: ``defaultLit``, ``defaultUnlit``,
+              - ``scalar_properties``: Dict with scalar properties from:
+                {base_metallic, base_roughness, base_reflectance, base_clearcoat,
+
+              -  ``vector_properties``: Dict with 4-vector properties from:
+                {base_color, absorption_color}
+              -  ``texture_maps``: Dict with PBR texture maps. Requires
+                 ``texture_uvs`` coordinates. Supported keys:
 
         For batch_size B=1, the tensors may have rank 2 instead of rank 3.
         Floating point color data will be clipped to the range [0,1] and

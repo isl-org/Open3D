@@ -24,12 +24,14 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+import os
 import copy
 import numpy as np
 import tensorflow as tf
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.metadata import to_dict_batch
+import ipdb
 
 BASE_LOGDIR = "demo_logs/tf/"
 
@@ -131,7 +133,44 @@ def large_scale(n_steps=20,
                            step=step)
 
 
+def with_material(model_dir):
+    """Read an obj model from a directory and write as a TensorBoard summary.
+    """
+    model_name = os.path.basename(model_dir)
+    model_path = os.path.join(model_dir, model_name + ".obj")
+    model = o3d.t.geometry.TriangleMesh.from_legacy(
+        o3d.io.read_triangle_mesh(model_path))
+    material = {
+        "name": "defaultLit",
+        "scalar_properties": {},
+        "vector_properties": {},
+        "texture_maps": {}
+    }
+
+    for texture in ("albedo", "normal", "ao", "metallic", "roughness"):
+        texture_file = os.path.join(model_dir, texture + ".png")
+        if os.path.exists(texture_file):
+            material["texture_maps"][texture +
+                                     "_img"] = o3d.t.io.read_image(texture_file)
+
+    if "metallic_img" in material["texture_maps"]:
+        material["scalar_properties"]["base_metallic"] = 1.0
+
+    writer = tf.summary.create_file_writer(BASE_LOGDIR + model_name)
+    with writer.as_default():
+        summary.add_3d(model_name, {
+            "vertex_positions": model.vertex["positions"],
+            "vertex_normals": model.vertex["normals"],
+            "vertex_texture_uvs": model.vertex["texture_uvs"],
+            "triangle_indices": model.triangle["indices"],
+            "material": material
+        },
+                       step=0)
+
+
 if __name__ == "__main__":
-    small_scale()
-    property_reference()
+    # small_scale()
+    # property_reference()
     # large_scale()
+    with_material(
+        "/home/ssheorey/Documents/Open3D/Code/Open3D/examples/test_data/monkey")

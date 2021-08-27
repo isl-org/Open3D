@@ -39,6 +39,7 @@ from tensorboard.backend.event_processing.plugin_asset_util import PluginDirecto
 import werkzeug
 from werkzeug import wrappers
 from werkzeug.datastructures import Headers  # Allow remote CivetWeb access
+import ipdb
 
 try:
     from tensorflow.io.gfile import GFile as _fileopen
@@ -298,7 +299,8 @@ def _postprocess(geometry):
     Tensor API in Open3D.
     """
 
-    if isinstance(geometry, o3d.t.geometry.PointCloud):
+    if (isinstance(geometry, o3d.t.geometry.PointCloud) or
+            isinstance(geometry, o3d.t.geometry.TriangleMesh)):
         return geometry
     legacy = geometry.to_legacy()
     # color is FLoat64 but range is [0,255]!
@@ -554,10 +556,10 @@ class Open3DPluginWindow:
                 geometry = self.data_reader.read_geometry(
                     self.run, tag, self.step, self.batch_idx, self.step_to_idx)
                 _log.debug(f"Displaying geometry {geometry_name}:{geometry}")
-                pp_geometry = _postprocess(geometry)
+                # pp_geometry = _postprocess(geometry)
                 _async_event_loop.run_sync(
                     partial(self.scene_widget.scene.add_geometry, geometry_name,
-                            pp_geometry, self.material))
+                            geometry, self.material))
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
                 _log.debug(f"Removing geometry {current_item}")

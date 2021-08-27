@@ -55,17 +55,14 @@ GEOMETRY_PROPERTY_DIMS = {
     'vertex_positions': 3,
     'vertex_normals': 3,
     'vertex_colors': 3,
-    # 'vertex_uvs': 2,
+    'vertex_texture_uvs': 2,
     'triangle_indices': 3,
-    'line_indices': 2
+    'line_indices': 2,
+    'material': 0
 }
-VERTEX_PROPERTIES = (
-    'vertex_normals',
-    'vertex_colors',
-    # 'vertex_uvs'
-)
+VERTEX_PROPERTIES = ('vertex_normals', 'vertex_colors', 'vertex_texture_uvs')
 TRIANGLE_PROPERTIES = ()
-LINE_PROPERTIES = ()
+LINE_PROPERTIES = ('line_colors',)
 
 
 def create_summary_metadata(description):
