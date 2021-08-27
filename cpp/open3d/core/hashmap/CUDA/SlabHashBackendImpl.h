@@ -153,7 +153,7 @@ __global__ void InsertKernelPass1(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                   bool* output_masks,
                                   int64_t count);
 
-template <typename Key, typename Hash, typename Eq>
+template <typename Key, typename Hash, typename Eq, typename block_t>
 __global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                   const void* const* input_values_soa,
                                   buf_index_t* output_buf_indices,
@@ -545,7 +545,7 @@ __global__ void InsertKernelPass1(SlabHashBackendImpl<Key, Hash, Eq> impl,
     }
 }
 
-template <typename Key, typename Hash, typename Eq>
+template <typename Key, typename Hash, typename Eq, typename block_t>
 __global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                   const void* const* input_values_soa,
                                   buf_index_t* output_buf_indices,
@@ -559,15 +559,17 @@ __global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash, Eq> impl,
 
         if (output_masks[tid]) {
             for (int j = 0; j < n_values; ++j) {
-                void* dst_ptr = impl.buffer_accessor_.GetValuePtr(buf_index, j);
-                int64_t dsize_value = impl.buffer_accessor_.value_dsizes_[j];
+                int64_t blocks_per_element =
+                        impl.buffer_accessor_.value_blocks_per_element_[j];
 
-                // Success: copy remaining input_values
-                MEMCPY_AS_INTS(
-                        dst_ptr,
-                        static_cast<const uint8_t*>(input_values_soa[j]) +
-                                tid * dsize_value,
-                        dsize_value);
+                block_t* dst_value = static_cast<block_t*>(
+                        impl.buffer_accessor_.GetValuePtr(buf_index, j));
+                const block_t* src_value =
+                        static_cast<const block_t*>(input_values_soa[j]) +
+                        blocks_per_element * tid;
+                for (int b = 0; b < blocks_per_element; ++b) {
+                    dst_value[b] = src_value[b];
+                }
             }
         } else {
             impl.buffer_accessor_.DeviceFree(buf_index);

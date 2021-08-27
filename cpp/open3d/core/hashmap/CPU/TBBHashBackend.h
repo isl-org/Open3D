@@ -196,7 +196,6 @@ void TBBHashBackend<Key, Hash, Eq>::Insert(
 
     size_t n_values = value_dsizes_.size();
 
-    bool assign = (input_values_soa.size() == n_values);
     if (input_values_soa.size() != n_values && input_values_soa.size() != 0) {
         utility::LogWarning(
                 "Input values mismatch with actual stored values, fall back to "
@@ -226,14 +225,10 @@ void TBBHashBackend<Key, Hash, Eq>::Insert(
                 uint8_t* dst_value = static_cast<uint8_t*>(
                         buffer_accessor_->GetValuePtr(buf_index, j));
 
-                if (assign) {
-                    const uint8_t* src_value =
-                            static_cast<const uint8_t*>(input_values_soa[j]) +
-                            this->value_dsizes_[j] * i;
-                    std::memcpy(dst_value, src_value, this->value_dsizes_[j]);
-                } else {
-                    std::memset(dst_value, 0, this->value_dsizes_[j]);
-                }
+                const uint8_t* src_value =
+                        static_cast<const uint8_t*>(input_values_soa[j]) +
+                        this->value_dsizes_[j] * i;
+                std::memcpy(dst_value, src_value, this->value_dsizes_[j]);
             }
 
             // Update from dummy 0

@@ -31,6 +31,7 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/CUDA/SlabHashBackendImpl.h"
 #include "open3d/core/hashmap/DeviceHashBackend.h"
+#include "open3d/core/hashmap/Dispatch.h"
 
 namespace open3d {
 namespace core {
@@ -258,10 +259,14 @@ void SlabHashBackend<Key, Hash, Eq>::Insert(
     // https://stackoverflow.com/a/37998941
     const void* const* ptr_input_values_soa =
             thrust::raw_pointer_cast(input_values_soa_device.data());
-    InsertKernelPass2<<<num_blocks, kThreadsPerBlock, 0,
-                        core::cuda::GetStream()>>>(
-            impl_, ptr_input_values_soa, output_buf_indices, output_masks,
-            count, n_values);
+    DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(
+            impl_.buffer_accessor_.common_block_size_, [&]() {
+                InsertKernelPass2<Key, Hash, Eq, block_t>
+                        <<<num_blocks, kThreadsPerBlock, 0,
+                           core::cuda::GetStream()>>>(
+                                impl_, ptr_input_values_soa, output_buf_indices,
+                                output_masks, count, n_values);
+            });
     cuda::Synchronize();
     OPEN3D_CUDA_CHECK(cudaGetLastError());
 }

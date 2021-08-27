@@ -104,6 +104,14 @@ std::vector<int64_t> HashBackendBuffer::GetValueDsizes() const {
     return value_dsizes;
 }
 
+int64_t HashBackendBuffer::GetCommonBlockSize() const {
+    return common_block_size_;
+}
+
+std::vector<int64_t> HashBackendBuffer::GetValueBlocksPerElement() const {
+    return blocks_per_element_;
+}
+
 Tensor HashBackendBuffer::GetIndexHeap() const { return heap_; }
 
 HashBackendBuffer::HeapTop &HashBackendBuffer::GetHeapTop() {

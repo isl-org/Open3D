@@ -47,16 +47,27 @@ public:
 
         // Properties
         capacity_ = hashmap_buffer.GetCapacity();
+        key_dsize_ = hashmap_buffer.GetKeyDsize();
+
         std::vector<int64_t> value_dsizes_host =
                 hashmap_buffer.GetValueDsizes();
-        n_values_ = value_dsizes_host.size();
+        std::vector<int64_t> value_blocks_per_element_host =
+                hashmap_buffer.GetValueBlocksPerElement();
+        n_values_ = value_blocks_per_element_host.size();
 
-        key_dsize_ = hashmap_buffer.GetKeyDsize();
         value_dsizes_ = static_cast<int64_t *>(
                 MemoryManager::Malloc(n_values_ * sizeof(int64_t), device));
+        value_blocks_per_element_ = static_cast<int64_t *>(
+                MemoryManager::Malloc(n_values_ * sizeof(int64_t), device));
+
         MemoryManager::MemcpyFromHost(value_dsizes_, device,
                                       value_dsizes_host.data(),
                                       n_values_ * sizeof(int64_t));
+        MemoryManager::MemcpyFromHost(value_blocks_per_element_, device,
+                                      value_blocks_per_element_host.data(),
+                                      n_values_ * sizeof(int64_t));
+
+        common_block_size_ = hashmap_buffer.GetCommonBlockSize();
 
         // Pointers
         heap_ = hashmap_buffer.GetIndexHeap().GetDataPtr<buf_index_t>();
@@ -81,6 +92,7 @@ public:
     __host__ void Shutdown(const Device &device) {
         MemoryManager::Free(values_, device);
         MemoryManager::Free(value_dsizes_, device);
+        MemoryManager::Free(value_blocks_per_element_, device);
     }
 
     __device__ buf_index_t DeviceAllocate() {
@@ -108,7 +120,11 @@ public:
 
     size_t n_values_;
     uint8_t **values_;
+
+    int64_t common_block_size_;
+
     int64_t *value_dsizes_;
+    int64_t *value_blocks_per_element_;
 
     int64_t capacity_;
 };

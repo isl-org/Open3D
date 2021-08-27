@@ -37,6 +37,7 @@
 #include "open3d/core/StdAllocator.h"
 #include "open3d/core/hashmap/CUDA/CUDAHashBackendBufferAccessor.h"
 #include "open3d/core/hashmap/DeviceHashBackend.h"
+#include "open3d/core/hashmap/Dispatch.h"
 
 namespace open3d {
 namespace core {
@@ -317,7 +318,7 @@ float StdGPUHashBackend<Key, Hash, Eq>::LoadFactor() const {
 }
 
 // Need an explicit kernel for non-const access to map
-template <typename Key, typename Hash, typename Eq>
+template <typename Key, typename Hash, typename Eq, typename block_t>
 __global__ void STDGPUInsertKernel(
         InternalStdGPUHashBackend<Key, Hash, Eq> map,
         CUDAHashBackendBufferAccessor buffer_accessor,
@@ -348,14 +349,16 @@ __global__ void STDGPUInsertKernel(
 
         // Copy/reset non-templated value in buffer
         for (int j = 0; j < n_values; ++j) {
-            const int64_t dsize_value = buffer_accessor.value_dsizes_[j];
-            uint8_t* dst_value = static_cast<uint8_t*>(
+            const int64_t blocks_per_element =
+                    buffer_accessor.value_blocks_per_element_[j];
+
+            block_t* dst_value = static_cast<block_t*>(
                     buffer_accessor.GetValuePtr(buf_index, j));
-            const uint8_t* src_value =
-                    static_cast<const uint8_t*>(input_values_soa[j]) +
-                    dsize_value * tid;
-            for (int byte = 0; byte < dsize_value; ++byte) {
-                dst_value[byte] = src_value[byte];
+            const block_t* src_value =
+                    static_cast<const block_t*>(input_values_soa[j]) +
+                    blocks_per_element * tid;
+            for (int b = 0; b < blocks_per_element; ++b) {
+                dst_value[b] = src_value[b];
             }
         }
 
@@ -388,10 +391,15 @@ void StdGPUHashBackend<Key, Hash, Eq>::Insert(
     const void* const* ptr_input_values_soa =
             thrust::raw_pointer_cast(input_values_soa_device.data());
 
-    STDGPUInsertKernel<<<blocks, threads, 0, core::cuda::GetStream()>>>(
-            impl_, buffer_accessor_, static_cast<const Key*>(input_keys),
-            ptr_input_values_soa, output_buf_indices, output_masks, count,
-            n_values);
+    DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(
+            buffer_accessor_.common_block_size_, [&]() {
+                STDGPUInsertKernel<Key, Hash, Eq, block_t>
+                        <<<blocks, threads, 0, core::cuda::GetStream()>>>(
+                                impl_, buffer_accessor_,
+                                static_cast<const Key*>(input_keys),
+                                ptr_input_values_soa, output_buf_indices,
+                                output_masks, count, n_values);
+            });
     cuda::Synchronize(this->device_);
 }
 
