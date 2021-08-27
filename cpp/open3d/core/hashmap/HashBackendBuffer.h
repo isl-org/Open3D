@@ -114,6 +114,9 @@ protected:
 
     Tensor key_buffer_;
     std::vector<Tensor> value_buffers_;
+
+    int64_t common_block_size_;
+    std::vector<int64_t> blocks_per_element_;
 };
 }  // namespace core
 }  // namespace open3d

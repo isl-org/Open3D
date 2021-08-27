@@ -234,9 +234,6 @@ private:
 
     std::vector<Dtype> dtypes_value_;
     std::vector<SizeVector> element_shapes_value_;
-
-    int64_t common_block_size_;
-    std::vector<int64_t> blocks_per_element_;
 };
 
 }  // namespace core
