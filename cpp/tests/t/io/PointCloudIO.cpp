@@ -436,6 +436,55 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
                 binary_compressed_pcd.GetPointAttr(kv.first), 1e-3, 1e-4));
     }
     std::remove(filename_binary_compressed.c_str());
+
+    // Colors data type will be converted to UInt8 during Write / Read.
+    // Only Float32, Float64, UInt8, UInt16, UInt32 colors data types are
+    // suppoted for conversion.
+
+    // PointCloud with Float32 type white color
+    core::Tensor color_float32 = core::Tensor::Ones(
+            {input_pcd.GetPointPositions().GetLength(), 3}, core::Float32);
+    input_pcd.SetPointColors(color_float32);
+
+    std::string filename_ascii_f32 =
+            std::string(TEST_DATA_DIR) +
+            "/test_pcd_pointcloud_binary_f32_colors.pcd";
+
+    EXPECT_TRUE(t::io::WritePointCloud(
+            filename_ascii_f32, input_pcd,
+            open3d::io::WritePointCloudOption(
+                    /*ascii*/ true, /*compressed*/ false, false, {})));
+
+    t::geometry::PointCloud ascii_f32_pcd;
+    t::io::ReadPointCloud(filename_ascii_f32, ascii_f32_pcd);
+
+    core::Tensor color_uint8 =
+            color_float32.To(core::Dtype::UInt8)
+                    .Mul(std::numeric_limits<uint8_t>::max());
+
+    EXPECT_TRUE(ascii_f32_pcd.GetPointColors().AllClose(color_uint8));
+    std::remove(filename_ascii_f32.c_str());
+
+    // PointCloud with UInt32 type white color
+    core::Tensor color_uint32 =
+            color_float32.To(core::Dtype::UInt32)
+                    .Mul(std::numeric_limits<uint32_t>::max());
+    input_pcd.SetPointColors(color_uint32);
+
+    std::string filename_ascii_uint32 =
+            std::string(TEST_DATA_DIR) +
+            "/test_pcd_pointcloud_binary_uint32_colors.pcd";
+
+    EXPECT_TRUE(t::io::WritePointCloud(
+            filename_ascii_uint32, input_pcd,
+            open3d::io::WritePointCloudOption(
+                    /*ascii*/ true, /*compressed*/ false, false, {})));
+
+    t::geometry::PointCloud ascii_uint32_pcd;
+    t::io::ReadPointCloud(filename_ascii_uint32, ascii_uint32_pcd);
+
+    EXPECT_TRUE(ascii_f32_pcd.GetPointColors().AllClose(color_uint8));
+    std::remove(filename_ascii_uint32.c_str());
 }
 
 }  // namespace tests

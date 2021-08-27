@@ -50,13 +50,7 @@ namespace open3d {
 namespace t {
 namespace io {
 
-namespace {
-
-enum class PCDDataType {
-    PCD_DATA_ASCII = 0,
-    PCD_DATA_BINARY = 1,
-    PCD_DATA_BINARY_COMPRESSED = 2
-};
+enum class PCDDataType { ASCII = 0, BINARY = 1, BINARY_COMPRESSED = 2 };
 
 struct PCLPointField {
 public:
@@ -112,8 +106,6 @@ struct WriteAttributePtr {
     const void *data_ptr_;
     const int group_size_;
 };
-
-}  // namespace
 
 static core::Dtype GetDtypeFromPCDHeaderField(char type, int size) {
     if (type == 'I') {
@@ -305,12 +297,12 @@ static bool ReadPCDHeader(FILE *file, PCDHeader &header) {
         } else if (line_type.substr(0, 6) == "POINTS") {
             sstream >> header.points;
         } else if (line_type.substr(0, 4) == "DATA") {
-            header.datatype = PCDDataType::PCD_DATA_ASCII;
+            header.datatype = PCDDataType::ASCII;
             if (st.size() >= 2) {
                 if (st[1].substr(0, 17) == "binary_compressed") {
-                    header.datatype = PCDDataType::PCD_DATA_BINARY_COMPRESSED;
+                    header.datatype = PCDDataType::BINARY_COMPRESSED;
                 } else if (st[1].substr(0, 6) == "binary") {
-                    header.datatype = PCDDataType::PCD_DATA_BINARY;
+                    header.datatype = PCDDataType::BINARY;
                 }
             }
             break;
@@ -326,21 +318,21 @@ static void ReadASCIIPCDColorsFromField(ReadAttributePtr &attr,
                                         const PCLPointField &field,
                                         const char *data_ptr,
                                         const int index) {
-    uint8_t *attr_data_ptr =
-            static_cast<uint8_t *>(attr.data_ptr_) + index * attr.row_length_;
+    std::uint8_t *attr_data_ptr = static_cast<std::uint8_t *>(attr.data_ptr_) +
+                                  index * attr.row_length_;
 
     if (field.size == 4) {
         std::uint8_t data[4] = {0};
         char *end;
         if (field.type == 'I') {
             std::int32_t value = std::strtol(data_ptr, &end, 0);
-            memcpy(data, &value, sizeof(std::int32_t));
+            std::memcpy(data, &value, sizeof(std::int32_t));
         } else if (field.type == 'U') {
             std::uint32_t value = std::strtoul(data_ptr, &end, 0);
-            memcpy(data, &value, sizeof(std::uint32_t));
+            std::memcpy(data, &value, sizeof(std::uint32_t));
         } else if (field.type == 'F') {
             float value = std::strtof(data_ptr, &end);
-            memcpy(data, &value, sizeof(float));
+            std::memcpy(data, &value, sizeof(float));
         }
 
         // color data is packed in BGR order.
@@ -444,12 +436,12 @@ static void ReadBinaryPCDColorsFromField(ReadAttributePtr &attr,
                                          const PCLPointField &field,
                                          const void *data_ptr,
                                          const int index) {
-    uint8_t *attr_data_ptr =
-            static_cast<uint8_t *>(attr.data_ptr_) + index * attr.row_length_;
+    std::uint8_t *attr_data_ptr = static_cast<std::uint8_t *>(attr.data_ptr_) +
+                                  index * attr.row_length_;
 
     if (field.size == 4) {
         std::uint8_t data[4] = {0};
-        memcpy(data, data_ptr, 4 * sizeof(std::uint8_t));
+        std::memcpy(data, data_ptr, 4 * sizeof(std::uint8_t));
 
         // color data is packed in BGR order.
         attr_data_ptr[0] = data[2];
@@ -472,7 +464,7 @@ static void ReadBinaryPCDElementsFromField(ReadAttributePtr &attr,
                         static_cast<scalar_t *>(attr.data_ptr_) +
                         index * attr.row_length_ + attr.row_idx_;
 
-                memcpy(attr_data_ptr, data_ptr, sizeof(scalar_t));
+                std::memcpy(attr_data_ptr, data_ptr, sizeof(scalar_t));
             });
 }
 
@@ -549,7 +541,7 @@ static bool ReadPCDData(FILE *file,
     utility::CountingProgressReporter reporter(params.update_progress);
     reporter.SetTotal(header.points);
 
-    if (header.datatype == PCDDataType::PCD_DATA_ASCII) {
+    if (header.datatype == PCDDataType::ASCII) {
         char line_buffer[DEFAULT_IO_BUFFER_SIZE];
         int idx = 0;
         while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file) &&
@@ -572,12 +564,12 @@ static bool ReadPCDData(FILE *file,
                             strs[field.count_offset].c_str(), idx);
                 }
             }
-            idx++;
+            ++idx;
             if (idx % 1000 == 0) {
                 reporter.Update(idx);
             }
         }
-    } else if (header.datatype == PCDDataType::PCD_DATA_BINARY) {
+    } else if (header.datatype == PCDDataType::BINARY) {
         std::unique_ptr<char[]> buffer(new char[header.pointsize]);
         for (int i = 0; i < header.points; ++i) {
             if (fread(buffer.get(), header.pointsize, 1, file) != 1) {
@@ -601,7 +593,7 @@ static bool ReadPCDData(FILE *file,
                 reporter.Update(i);
             }
         }
-    } else if (header.datatype == PCDDataType::PCD_DATA_BINARY_COMPRESSED) {
+    } else if (header.datatype == PCDDataType::BINARY_COMPRESSED) {
         double reporter_total = 100.0;
         reporter.SetTotal(int(reporter_total));
         reporter.Update(int(reporter_total * 0.01));
@@ -800,12 +792,12 @@ static bool GenerateHeader(const t::geometry::PointCloud &pointcloud,
     }
 
     if (write_ascii) {
-        header.datatype = PCDDataType::PCD_DATA_ASCII;
+        header.datatype = PCDDataType::ASCII;
     } else {
         if (compressed) {
-            header.datatype = PCDDataType::PCD_DATA_BINARY_COMPRESSED;
+            header.datatype = PCDDataType::BINARY_COMPRESSED;
         } else {
-            header.datatype = PCDDataType::PCD_DATA_BINARY;
+            header.datatype = PCDDataType::BINARY;
         }
     }
     return true;
@@ -841,13 +833,13 @@ static bool WritePCDHeader(FILE *file, const PCDHeader &header) {
     fprintf(file, "POINTS %d\n", header.points);
 
     switch (header.datatype) {
-        case PCDDataType::PCD_DATA_BINARY:
+        case PCDDataType::BINARY:
             fprintf(file, "DATA binary\n");
             break;
-        case PCDDataType::PCD_DATA_BINARY_COMPRESSED:
+        case PCDDataType::BINARY_COMPRESSED:
             fprintf(file, "DATA binary_compressed\n");
             break;
-        case PCDDataType::PCD_DATA_ASCII:
+        case PCDDataType::ASCII:
         default:
             fprintf(file, "DATA ascii\n");
             break;
@@ -856,18 +848,19 @@ static bool WritePCDHeader(FILE *file, const PCDHeader &header) {
 }
 
 template <typename scalar_t>
-static void ColorToUint8(const scalar_t *input_color, uint8_t *output_color) {
+static void ColorToUint8(const scalar_t *input_color,
+                         std::uint8_t *output_color) {
     utility::LogError(
             "Color format not supported. Supported color format includes "
             "Float32, Float64, UInt8, UInt16, UInt32.");
 }
 
 template <>
-void ColorToUint8<float>(const float *input_color, uint8_t *output_color) {
+void ColorToUint8<float>(const float *input_color, std::uint8_t *output_color) {
     const float normalisation_factor =
-            static_cast<float>(std::numeric_limits<uint8_t>::max());
+            static_cast<float>(std::numeric_limits<std::uint8_t>::max());
     for (int i = 0; i < 3; ++i) {
-        output_color[i] = static_cast<uint8_t>(
+        output_color[i] = static_cast<std::uint8_t>(
                 std::round(std::min(1.f, std::max(0.f, input_color[2 - i])) *
                            normalisation_factor));
     }
@@ -875,11 +868,12 @@ void ColorToUint8<float>(const float *input_color, uint8_t *output_color) {
 }
 
 template <>
-void ColorToUint8<double>(const double *input_color, uint8_t *output_color) {
+void ColorToUint8<double>(const double *input_color,
+                          std::uint8_t *output_color) {
     const double normalisation_factor =
-            static_cast<double>(std::numeric_limits<uint8_t>::max());
+            static_cast<double>(std::numeric_limits<std::uint8_t>::max());
     for (int i = 0; i < 3; ++i) {
-        output_color[i] = static_cast<uint8_t>(
+        output_color[i] = static_cast<std::uint8_t>(
                 std::round(std::min(1., std::max(0., input_color[2 - i])) *
                            normalisation_factor));
     }
@@ -887,7 +881,8 @@ void ColorToUint8<double>(const double *input_color, uint8_t *output_color) {
 }
 
 template <>
-void ColorToUint8<uint8_t>(const uint8_t *input_color, uint8_t *output_color) {
+void ColorToUint8<std::uint8_t>(const std::uint8_t *input_color,
+                                std::uint8_t *output_color) {
     for (int i = 0; i < 3; ++i) {
         output_color[i] = input_color[2 - i];
     }
@@ -895,27 +890,27 @@ void ColorToUint8<uint8_t>(const uint8_t *input_color, uint8_t *output_color) {
 }
 
 template <>
-void ColorToUint8<uint16_t>(const uint16_t *input_color,
-                            uint8_t *output_color) {
+void ColorToUint8<std::uint16_t>(const std::uint16_t *input_color,
+                                 std::uint8_t *output_color) {
     const float normalisation_factor =
-            static_cast<float>(std::numeric_limits<uint8_t>::max()) /
-            static_cast<float>(std::numeric_limits<uint16_t>::max());
+            static_cast<float>(std::numeric_limits<std::uint8_t>::max()) /
+            static_cast<float>(std::numeric_limits<std::uint16_t>::max());
     for (int i = 0; i < 3; ++i) {
-        output_color[i] = static_cast<uint16_t>(input_color[2 - i] *
-                                                normalisation_factor);
+        output_color[i] = static_cast<std::uint16_t>(input_color[2 - i] *
+                                                     normalisation_factor);
     }
     output_color[3] = 0;
 }
 
 template <>
-void ColorToUint8<uint32_t>(const uint32_t *input_color,
-                            uint8_t *output_color) {
+void ColorToUint8<std::uint32_t>(const std::uint32_t *input_color,
+                                 std::uint8_t *output_color) {
     const float normalisation_factor =
-            static_cast<float>(std::numeric_limits<uint8_t>::max()) /
-            static_cast<float>(std::numeric_limits<uint32_t>::max());
+            static_cast<float>(std::numeric_limits<std::uint8_t>::max()) /
+            static_cast<float>(std::numeric_limits<std::uint32_t>::max());
     for (int i = 0; i < 3; ++i) {
-        output_color[i] = static_cast<uint32_t>(input_color[2 - i] *
-                                                normalisation_factor);
+        output_color[i] = static_cast<std::uint32_t>(input_color[2 - i] *
+                                                     normalisation_factor);
     }
     output_color[3] = 0;
 }
@@ -929,12 +924,12 @@ static core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
     DISPATCH_DTYPE_TO_TEMPLATE(colors_contiguous.GetDtype(), [&]() {
         auto colors_ptr = colors_contiguous.GetDataPtr<scalar_t>();
         core::ParallelFor(core::Device("CPU:0"), colors_contiguous.GetLength(),
-                          [&](int64_t workload_idx) {
+                          [&](std::int64_t workload_idx) {
                               std::uint8_t rgba[4] = {0};
                               ColorToUint8<scalar_t>(
                                       colors_ptr + 3 * workload_idx, rgba);
                               float val = 0;
-                              memcpy(&val, rgba, 4 * sizeof(std::uint8_t));
+                              std::memcpy(&val, rgba, 4 * sizeof(std::uint8_t));
                               packed_color_ptr[workload_idx] = val;
                           });
     });
@@ -957,42 +952,50 @@ int WriteElementDataToFileASCII<double>(const double &data, FILE *file) {
 }
 
 template <>
-int WriteElementDataToFileASCII<int8_t>(const int8_t &data, FILE *file) {
+int WriteElementDataToFileASCII<std::int8_t>(const std::int8_t &data,
+                                             FILE *file) {
     return fprintf(file, "%" PRId8 " ", data);
 }
 
 template <>
-int WriteElementDataToFileASCII<int16_t>(const int16_t &data, FILE *file) {
+int WriteElementDataToFileASCII<std::int16_t>(const std::int16_t &data,
+                                              FILE *file) {
     return fprintf(file, "%" PRId16 " ", data);
 }
 
 template <>
-int WriteElementDataToFileASCII<int32_t>(const int32_t &data, FILE *file) {
+int WriteElementDataToFileASCII<std::int32_t>(const std::int32_t &data,
+                                              FILE *file) {
     return fprintf(file, "%" PRId32 " ", data);
 }
 
 template <>
-int WriteElementDataToFileASCII<int64_t>(const int64_t &data, FILE *file) {
+int WriteElementDataToFileASCII<std::int64_t>(const std::int64_t &data,
+                                              FILE *file) {
     return fprintf(file, "%" PRId64 " ", data);
 }
 
 template <>
-int WriteElementDataToFileASCII<uint8_t>(const uint8_t &data, FILE *file) {
+int WriteElementDataToFileASCII<std::uint8_t>(const std::uint8_t &data,
+                                              FILE *file) {
     return fprintf(file, "%" PRIu8 " ", data);
 }
 
 template <>
-int WriteElementDataToFileASCII<uint16_t>(const uint16_t &data, FILE *file) {
+int WriteElementDataToFileASCII<std::uint16_t>(const std::uint16_t &data,
+                                               FILE *file) {
     return fprintf(file, "%" PRIu16 " ", data);
 }
 
 template <>
-int WriteElementDataToFileASCII<uint32_t>(const uint32_t &data, FILE *file) {
+int WriteElementDataToFileASCII<std::uint32_t>(const std::uint32_t &data,
+                                               FILE *file) {
     return fprintf(file, "%" PRIu32 " ", data);
 }
 
 template <>
-int WriteElementDataToFileASCII<uint64_t>(const uint64_t &data, FILE *file) {
+int WriteElementDataToFileASCII<std::uint64_t>(const std::uint64_t &data,
+                                               FILE *file) {
     return fprintf(file, "%" PRIu64 " ", data);
 }
 
@@ -1007,8 +1010,8 @@ static bool WritePCDData(FILE *file,
 
     // TODO: Add device transfer in tensor map and use it here.
     geometry::TensorMap t_map(pointcloud.GetPointAttr().Contiguous());
-    const int64_t num_points =
-            static_cast<int64_t>(pointcloud.GetPointPositions().GetLength());
+    const std::int64_t num_points = static_cast<std::int64_t>(
+            pointcloud.GetPointPositions().GetLength());
 
     std::vector<WriteAttributePtr> attribute_ptrs;
 
@@ -1040,8 +1043,8 @@ static bool WritePCDData(FILE *file,
 
     utility::CountingProgressReporter reporter(params.update_progress);
     reporter.SetTotal(num_points);
-    if (header.datatype == PCDDataType::PCD_DATA_ASCII) {
-        for (int64_t i = 0; i < num_points; ++i) {
+    if (header.datatype == PCDDataType::ASCII) {
+        for (std::int64_t i = 0; i < num_points; ++i) {
             for (auto &it : attribute_ptrs) {
                 DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
                     const scalar_t *data_ptr =
@@ -1060,10 +1063,10 @@ static bool WritePCDData(FILE *file,
                 reporter.Update(i);
             }
         }
-    } else if (header.datatype == PCDDataType::PCD_DATA_BINARY) {
+    } else if (header.datatype == PCDDataType::BINARY) {
         std::vector<char> buffer((header.pointsize * header.points));
-        uint32_t buffer_index = 0;
-        for (int64_t i = 0; i < num_points; ++i) {
+        std::uint32_t buffer_index = 0;
+        for (std::int64_t i = 0; i < num_points; ++i) {
             for (auto &it : attribute_ptrs) {
                 DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
                     const scalar_t *data_ptr =
@@ -1071,10 +1074,10 @@ static bool WritePCDData(FILE *file,
 
                     for (int idx_offset = it.group_size_ * i;
                          idx_offset < it.group_size_ * (i + 1); ++idx_offset) {
-                        memcpy(buffer.data() + buffer_index,
-                               reinterpret_cast<const char *>(
-                                       &data_ptr[idx_offset]),
-                               sizeof(scalar_t));
+                        std::memcpy(buffer.data() + buffer_index,
+                                    reinterpret_cast<const char *>(
+                                            &data_ptr[idx_offset]),
+                                    sizeof(scalar_t));
                         buffer_index += sizeof(scalar_t);
                     }
                 });
@@ -1086,13 +1089,13 @@ static bool WritePCDData(FILE *file,
         }
 
         fwrite(buffer.data(), sizeof(char), buffer.size(), file);
-    } else if (header.datatype == PCDDataType::PCD_DATA_BINARY_COMPRESSED) {
-        // PCD_DATA_BINARY_COMPRESSED data contains attributes in column layout
+    } else if (header.datatype == PCDDataType::BINARY_COMPRESSED) {
+        // BINARY_COMPRESSED data contains attributes in column layout
         // for better compression.
         // For example instead of X Y Z NX NY NZ X Y Z NX NY NZ, the data is
         // stored as X X Y Y Z Z NX NX NY NY NZ NZ.
 
-        const int64_t report_total = attribute_ptrs.size() * 2;
+        const std::int64_t report_total = attribute_ptrs.size() * 2;
         // 0%-50% packing into buffer
         // 50%-75% compressing buffer
         // 75%-100% writing compressed buffer
@@ -1103,8 +1106,8 @@ static bool WritePCDData(FILE *file,
         std::vector<char> buffer(buffer_size_in_bytes);
         std::vector<char> buffer_compressed(2 * buffer_size_in_bytes);
 
-        uint32_t buffer_index = 0;
-        int64_t count = 0;
+        std::uint32_t buffer_index = 0;
+        std::int64_t count = 0;
         for (auto &it : attribute_ptrs) {
             DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
                 const scalar_t *data_ptr =
@@ -1112,12 +1115,12 @@ static bool WritePCDData(FILE *file,
 
                 for (int idx_offset = 0; idx_offset < it.group_size_;
                      ++idx_offset) {
-                    for (int64_t i = 0; i < num_points; ++i) {
-                        memcpy(buffer.data() + buffer_index,
-                               reinterpret_cast<const char *>(
-                                       &data_ptr[i * it.group_size_ +
-                                                 idx_offset]),
-                               sizeof(scalar_t));
+                    for (std::int64_t i = 0; i < num_points; ++i) {
+                        std::memcpy(buffer.data() + buffer_index,
+                                    reinterpret_cast<const char *>(
+                                            &data_ptr[i * it.group_size_ +
+                                                      idx_offset]),
+                                    sizeof(scalar_t));
                         buffer_index += sizeof(scalar_t);
                     }
                 }
@@ -1138,7 +1141,7 @@ static bool WritePCDData(FILE *file,
                 "[WritePCDData] {:d} bytes data compressed into {:d} bytes.",
                 buffer_size_in_bytes, size_compressed);
 
-        reporter.Update(static_cast<int64_t>(report_total * 0.75));
+        reporter.Update(static_cast<std::int64_t>(report_total * 0.75));
 
         fwrite(&size_compressed, sizeof(size_compressed), 1, file);
         fwrite(&buffer_size_in_bytes, sizeof(buffer_size_in_bytes), 1, file);
