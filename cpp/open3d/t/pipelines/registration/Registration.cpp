@@ -338,20 +338,22 @@ RegistrationResult RegistrationMultiScaleICP(
 core::Tensor GetInformationMatrixFromPointClouds(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        double max_correspondence_distance,
-        const core::Tensor &init_source_to_target) {
+        const double max_correspondence_distance,
+        const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = source.GetPointPositions().GetDtype();
+    target.GetPointPositions().AssertDtype(dtype);
+    target.GetPointPositions().AssertDevice(device);
 
     geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(init_source_to_target.To(device, dtype));
+    source_transformed.Transform(transformation.To(device, dtype));
 
     open3d::core::nns::NearestNeighborSearch target_nns(
             target.GetPointPositions());
 
     target_nns.HybridIndex(max_correspondence_distance);
 
-    core::Tensor distances, counts, correspondences;
+    core::Tensor correspondences, distances, counts;
     std::tie(correspondences, distances, counts) =
             target_nns.HybridSearch(source_transformed.GetPointPositions(),
                                     max_correspondence_distance, 1);

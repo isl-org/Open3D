@@ -178,11 +178,21 @@ RegistrationResult RegistrationMultiScaleICP(
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint());
 
+/// \brief Computes `Information Matrix`, from the transfromation between source
+/// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},
+/// of dtype `Float64` on device `CPU:0`.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param max_correspondence_distance Maximum correspondence points-pair
+/// distance.
+/// \param transformation The 4x4 transformation matrix to transform
+/// `source` to `target`.
 core::Tensor GetInformationMatrixFromPointClouds(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        double max_correspondence_distance,
-        const core::Tensor &init_source_to_target);
+        const double max_correspondence_distance,
+        const core::Tensor &transformation);
 
 }  // namespace registration
 }  // namespace pipelines
