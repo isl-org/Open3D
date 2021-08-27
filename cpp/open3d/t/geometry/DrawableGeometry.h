@@ -41,10 +41,15 @@ public:
     ~DrawableGeometry() {}
 
     /// Check if a material has been applied to this Geometry with SetMaterial.
-    bool HasMaterial() { return material_.IsValid(); }
+    bool HasMaterial() const { return material_.IsValid(); }
 
     /// Get material associated with this Geometry.
     visualization::rendering::Material &GetMaterial() { return material_; }
+
+    /// Get const reference to material associated with this Geometry
+    const visualization::rendering::Material &GetMaterial() const {
+        return material_;
+    }
 
     /// Set the material properties associate with this Geometry
     void SetMaterial(const visualization::rendering::Material &material) {

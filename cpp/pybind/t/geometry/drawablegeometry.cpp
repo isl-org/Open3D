@@ -41,8 +41,9 @@ void pybind_drawable_geometry_class(py::module& m) {
     drawable_geometry.def("has_material", &DrawableGeometry::HasMaterial,
                           "Returns true if the geometry has a valid material "
                           "assigned to it.");
-    drawable_geometry.def_property("material", &DrawableGeometry::GetMaterial,
-                                   &DrawableGeometry::SetMaterial);
+    drawable_geometry.def_property(
+            "material", py::overload_cast<>(&DrawableGeometry::GetMaterial),
+            &DrawableGeometry::SetMaterial);
 }
 
 }  // namespace geometry
