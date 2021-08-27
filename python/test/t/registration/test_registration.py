@@ -241,12 +241,12 @@ def test_get_information_matrix_from_pointclouds(device):
                                       dtype=o3c.float64,
                                       device=device)
 
-        info_matrix_t = o3d.t.pipelines.registration.get_information_matrix_from_pointclouds(
+        info_matrix_t = o3d.t.pipelines.registration.get_information_matrix_from_point_clouds(
             source_t, target_t, max_correspondence_distance, transformation_t)
 
-        info_matrix_legacy = o3d.pipelines.registration.registration_icp(
+        info_matrix_legacy = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
             source_legacy, target_legacy, max_correspondence_distance,
             transformation_legacy)
 
         np.testing.assert_allclose(info_matrix_t.cpu().numpy(),
-                                   info_matrix_legacy, 1e-1)
+                                   info_matrix_legacy, 1e-1, 1e-1)
