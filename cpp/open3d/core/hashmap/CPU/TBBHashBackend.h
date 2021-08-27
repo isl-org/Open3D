@@ -194,13 +194,7 @@ void TBBHashBackend<Key, Hash, Eq>::Insert(
         int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
-    size_t n_values = value_dsizes_.size();
-
-    if (input_values_soa.size() != n_values && input_values_soa.size() != 0) {
-        utility::LogWarning(
-                "Input values mismatch with actual stored values, fall back to "
-                "activate/reset instead of insertion.");
-    }
+    size_t n_values = input_values_soa.size();
 
 #pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (int64_t i = 0; i < count; ++i) {

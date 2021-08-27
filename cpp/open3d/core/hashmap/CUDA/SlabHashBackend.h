@@ -252,11 +252,8 @@ void SlabHashBackend<Key, Hash, Eq>::Insert(
 
     thrust::device_vector<const void*> input_values_soa_device(
             input_values_soa.begin(), input_values_soa.end());
-    int64_t n_values =
-            input_values_soa.size() == impl_.buffer_accessor_.n_values_
-                    ? impl_.buffer_accessor_.n_values_
-                    : 0;
-    // https://stackoverflow.com/a/37998941
+
+    int64_t n_values = input_values_soa.size();
     const void* const* ptr_input_values_soa =
             thrust::raw_pointer_cast(input_values_soa_device.data());
     DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(
