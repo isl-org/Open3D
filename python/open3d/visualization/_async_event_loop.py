@@ -33,7 +33,6 @@ cannot be started in the main thread. Currently does not work in macOS.
    module is imported.  If you are using remote visualization with WebRTC,
    you must call ``enable_webrtc()`` before importing this module.
 """
-
 import threading
 from collections import deque
 import open3d as o3d
@@ -44,9 +43,9 @@ class _AsyncEventLoop:
     class _Task:
         _g_next_id = 0
 
-        def __init__(self, func):
+        def __init__(self, func, *args, **kwargs):
             self.task_id = self._g_next_id
-            self.func = func
+            self.func = func, args, kwargs
             _AsyncEventLoop._Task._g_next_id += 1
 
     def __init__(self):
@@ -56,6 +55,7 @@ class _AsyncEventLoop:
         # terminal while python print will still remain in the cell.
         o3d.utility.reset_print_function()
         self._lock = threading.Lock()
+        self._cv = threading.Condition(self._lock)
         self._run_queue = deque()
         self._return_vals = {}
         self._started = False
@@ -68,17 +68,21 @@ class _AsyncEventLoop:
             self._thread.start()
             self._started = True
 
-    def run_sync(self, func):
+    def run_sync(self, func, *args, **kwargs):
         """Enqueue task, wait for completion and return result. Can run in any
         thread."""
+        if not self._started:
+            raise RuntimeError("GUI thread has exited.")
+
         with self._lock:
-            task = _AsyncEventLoop._Task(func)
+            task = _AsyncEventLoop._Task(func, *args, **kwargs)
             self._run_queue.append(task)
 
         while True:
+            with self._cv:
+                self._cv.wait_for(lambda: task.task_id in self._return_vals)
             with self._lock:
-                if task.task_id in self._return_vals:
-                    return self._return_vals.pop(task.task_id)
+                return self._return_vals.pop(task.task_id)
 
     def _thread_main(self):
         """Main GUI thread event loop"""
@@ -90,13 +94,14 @@ class _AsyncEventLoop:
             while len(self._run_queue) > 0:
                 with self._lock:
                     task = self._run_queue.popleft()
-                # Release lock while running task. This allows a task to add
-                # more async tasks.
-                retval = task.func()
-                with self._lock:
+                func, args, kwargs = task.func
+                retval = func(*args, **kwargs)
+                with self._cv:
                     self._return_vals[task.task_id] = retval
+                    self._cv.notify_all()
 
             done = not app.run_one_tick()
+        self._started = False
 
 
 # The _AsyncEventLoop class shall only be used to create a singleton instance.

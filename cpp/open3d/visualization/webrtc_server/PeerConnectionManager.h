@@ -287,6 +287,11 @@ class PeerConnectionManager {
                     PeerConnectionStatsCollectorCallback>();
         };
 
+        bool DataChannelsReady() {
+            return !deleting_ && !ice_candidate_list_.empty() &&
+                   local_channel_ != nullptr && remote_channel_ != nullptr;
+        }
+
         virtual ~PeerConnectionObserver() {
             delete local_channel_;
             delete remote_channel_;

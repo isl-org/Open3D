@@ -128,7 +128,6 @@ private:
                 nlen += rlen;
             }
 
-            utility::LogDebug("message: ", body);
             // Parse in.
             std::unique_ptr<Json::CharReader> reader(
                     reader_builder_.newCharReader());

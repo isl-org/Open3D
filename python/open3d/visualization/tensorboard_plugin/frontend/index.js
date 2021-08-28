@@ -31,8 +31,6 @@ import "./webrtcstreamer.js";
 class TensorboardOpen3DPluginClient {
 
     URL_ROUTE_PREFIX = "/data/plugin/Open3D";
-    HTTP_HANDSHAKE_URL = window.location.protocol + "//" + window.location.hostname +
-        ":8888";
     webRtcOptions = "rtptransport=tcp&timeout=60";
     width = Math.round(window.innerWidth * 2/5 - 60);
     height = Math.round(this.width * 3/4);
@@ -156,7 +154,8 @@ class TensorboardOpen3DPluginClient {
         widgetView.insertAdjacentHTML("beforeend", widgetTemplate);
 
         let videoElt = document.getElementById(videoId);
-        let client = new WebRtcStreamer(videoElt, this.HTTP_HANDSHAKE_URL, null, null);
+        // let client = new WebRtcStreamer(videoElt, this.URL_ROUTE_PREFIX, null, null);
+        let client = new WebRtcStreamer(videoElt, this.URL_ROUTE_PREFIX, null, null);
         window.console.info("[addConnection] videoId: " + videoId);
 
         client.connect(windowUId, /*audio*/ null, this.webRtcOptions);
@@ -330,7 +329,7 @@ class TensorboardOpen3DPluginClient {
             } else {    // create new window
                 window.console.info("Requesting window with size: ", this.width, "x", this.height);
                 fetch(this.URL_ROUTE_PREFIX + "/new_window?width=" + this.width + "&height="
-                    + this.height + "&fontsize=" + this.fontsize, null)
+                    + this.height, null)
                     .then((response) => response.json())
                     .then((response) => this.addConnection(response.window_id,
                         response.logdir, evt.target.id))
@@ -369,8 +368,9 @@ class TensorboardOpen3DPluginClient {
         } else if (evt.target.name.startsWith("step-selector")) {
             if (this.commonStep != null) {
                 this.commonStep = evt.target.value;
-                for (const windowUId of this.windowState.keys())
+                for (const windowUId of this.windowState.keys()) {
                     this.requestGeometryUpdate(windowUId);
+                }
             } else {
                 this.windowState.get(windowUId).step = evt.target.value;
                 this.requestGeometryUpdate(windowUId);
@@ -444,7 +444,7 @@ class TensorboardOpen3DPluginClient {
         }
     };
 
-};
+}
 
 /**
  * The main entry point of any TensorBoard iframe plugin.

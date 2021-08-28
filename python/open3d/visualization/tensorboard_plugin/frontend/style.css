@@ -26,7 +26,7 @@
 // ----------------------------------------------------------------------------
  */
 
-/* Style: With config stylelint-config-standard do stylelint --fix filename.css */
+/* Code style: With config stylelint-config-standard do stylelint --fix filename.css */
 
 /* Styles for the Open3D Tensorboard plugin */
 
@@ -114,12 +114,6 @@
   margin-bottom: 1em;
   cursor: pointer;
   text-transform: capitalize;
-
-  /* -webkit-user-select: none; */
-
-  /* -moz-user-select: none; */
-
-  /* -ms-user-select: none; */
   user-select: none;
 }
 
@@ -185,10 +179,6 @@ input[type="radio"] ~ .checkmark {
   height: 0.6em;
   border: solid white;
   border-width: 0 3px 3px 0;
-
-  /* -webkit-transform: rotate(45deg); */
-
-  /* -ms-transform: rotate(45deg); */
   transform: rotate(45deg);
 }
 

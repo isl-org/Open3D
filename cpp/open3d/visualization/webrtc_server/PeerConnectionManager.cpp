@@ -289,14 +289,23 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
             utility::LogWarning("Can't parse received candidate message.");
         } else {
             std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
-            rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-                    peer_connection = this->GetPeerConnection(peerid);
-            if (peer_connection) {
-                if (!peer_connection->AddIceCandidate(candidate.get())) {
-                    utility::LogWarning(
-                            "Failed to apply the received candidate.");
-                } else {
-                    result = true;
+            PeerConnectionObserver *pc_observer =
+                    peerid_to_connection_.count(peerid) > 0
+                            ? peerid_to_connection_[peerid]
+                            : nullptr;
+            if (pc_observer != nullptr && pc_observer->DataChannelsReady()) {
+                utility::LogDebug(
+                        "DataChannels ready. Skipping AddIceCandidate.");
+            } else {
+                rtc::scoped_refptr<webrtc::PeerConnectionInterface>
+                        peer_connection = this->GetPeerConnection(peerid);
+                if (peer_connection) {
+                    if (!peer_connection->AddIceCandidate(candidate.get())) {
+                        utility::LogWarning(
+                                "Failed to apply the received candidate.");
+                    } else {
+                        result = true;
+                    }
                 }
             }
         }
@@ -324,8 +333,6 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
                                       k_session_description_sdp_name, &sdp)) {
         utility::LogWarning("Can't parse received message.");
     } else {
-        utility::LogDebug("in_message:{}||type:{}||sdp:{}", json_message, type,
-                          sdp);
         PeerConnectionObserver *peer_connection_observer =
                 this->CreatePeerConnection(peerid);
         if (!peer_connection_observer) {
@@ -476,8 +483,6 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
                 std::string window_uid = stream->id();
                 bool still_used = this->WindowStillUsed(window_uid);
                 if (!still_used) {
-                    utility::LogDebug("HangUp stream is no more used {}.",
-                                      window_uid);
                     std::lock_guard<std::mutex> mlock(
                             window_uid_to_track_source_mutex_);
                     auto it = window_uid_to_track_source_.find(window_uid);
@@ -564,7 +569,7 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
     if (!obs) {
         utility::LogError("CreatePeerConnection failed.");
     } else {
-        utility::LogInfo("CreatePeerConnection success!");
+        utility::LogDebug("CreatePeerConnection success!");
     }
     return obs;
 }
