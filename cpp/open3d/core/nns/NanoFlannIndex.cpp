@@ -26,9 +26,6 @@
 
 #include "open3d/core/nns/NanoFlannIndex.h"
 
-#include <tbb/blocked_range2d.h>
-#include <tbb/parallel_for.h>
-
 #include <nanoflann.hpp>
 
 #include "open3d/core/Dispatch.h"

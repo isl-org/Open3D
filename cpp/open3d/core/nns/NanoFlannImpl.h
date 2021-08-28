@@ -1,6 +1,5 @@
 #pragma once
 
-#include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
 #include "open3d/core/Atomic.h"
@@ -166,7 +165,7 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
     std::vector<std::vector<index_t>> indices_vec(num_queries);
     std::vector<std::vector<T>> distances_vec(num_queries);
 
-    int64_t num_indices = 0;
+    size_t num_indices = 0;
     auto holder_ = static_cast<NanoFlannIndexHolder<L2, T, index_t> *>(holder);
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
@@ -241,8 +240,9 @@ void HybridSearchCPU(NanoFlannIndexHolderBase *holder,
     index_t *indices_ptr, *counts_ptr;
     T *distances_ptr;
 
-    output_allocator.AllocIndices(&indices_ptr, max_knn * num_queries);
-    output_allocator.AllocDistances(&distances_ptr, max_knn * num_queries);
+    size_t num_indices = static_cast<size_t>(max_knn) * num_queries;
+    output_allocator.AllocIndices(&indices_ptr, num_indices);
+    output_allocator.AllocDistances(&distances_ptr, num_indices);
     output_allocator.AllocCounts(&counts_ptr, num_queries);
 
     auto holder_ = static_cast<NanoFlannIndexHolder<L2, T, index_t> *>(holder);
