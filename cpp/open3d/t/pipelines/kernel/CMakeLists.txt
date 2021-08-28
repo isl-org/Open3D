@@ -1,8 +1,8 @@
 add_library(tpipelines_kernel OBJECT)
 
 target_sources(tpipelines_kernel  PRIVATE
-    ComputeTransform.cpp
-    ComputeTransformCPU.cpp
+    Registration.cpp
+    RegistrationCPU.cpp
     FillInLinearSystem.cpp
     FillInLinearSystemCPU.cpp
     RGBDOdometry.cpp
@@ -12,7 +12,7 @@ target_sources(tpipelines_kernel  PRIVATE
 
 if (BUILD_CUDA_MODULE)
     target_sources(tpipelines_kernel  PRIVATE
-        ComputeTransformCUDA.cu
+        RegistrationCUDA.cu
         FillInLinearSystemCUDA.cu
         RGBDOdometryCUDA.cu
         TransformationConverter.cu
