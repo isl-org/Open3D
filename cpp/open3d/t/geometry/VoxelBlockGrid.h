@@ -170,6 +170,12 @@ public:
     PointCloud ExtractSurfacePoints(int estimate_number = -1,
                                     float weight_threshold = 3.0f);
 
+    /// Save a voxel block grid to a .npz file.
+    void Save(const std::string &file_name) const;
+
+    /// Load a voxel block grid from a .npz file.
+    static VoxelBlockGrid Load(const std::string &file_name);
+
 private:
     float voxel_size_;
     int64_t block_resolution_;

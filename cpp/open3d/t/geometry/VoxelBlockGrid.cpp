@@ -32,6 +32,8 @@
 #include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/kernel/VoxelBlockGrid.h"
+#include "open3d/t/io/NumpyIO.h"
+#include "open3d/utility/FileSystem.h"
 
 namespace open3d {
 namespace t {
@@ -334,6 +336,118 @@ PointCloud VoxelBlockGrid::ExtractSurfacePoints(int estimated_number,
     // pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
 
     return pcd;
+}
+
+void VoxelBlockGrid::Save(const std::string &file_name) const {
+    // TODO(wei): provide 'GetActiveKeyValues' functionality.
+    core::Tensor keys = block_hashmap_->GetKeyTensor();
+    std::vector<core::Tensor> values = block_hashmap_->GetValueTensors();
+
+    core::Device host("CPU:0");
+
+    core::Tensor active_buf_indices_i32 = block_hashmap_->GetActiveIndices();
+    core::Tensor active_indices = active_buf_indices_i32.To(core::Int64);
+
+    std::unordered_map<std::string, core::Tensor> output;
+
+    // Save name attributes
+    output.emplace("voxel_size", core::Tensor(std::vector<float>{voxel_size_},
+                                              {1}, core::Float32, host));
+    output.emplace("block_resolution",
+                   core::Tensor(std::vector<int64_t>{block_resolution_}, {1},
+                                core::Int64, host));
+    // Placeholder
+    output.emplace(block_hashmap_->GetDevice().ToString(),
+                   core::Tensor::Zeros({}, core::Dtype::UInt8, host));
+
+    for (auto &it : name_attr_map_) {
+        // Stupid approach, as we don't support char tensors now.
+        output.emplace(fmt::format("attr_name_{}", it.first),
+                       core::Tensor(std::vector<int>{it.second}, {1},
+                                    core::Int32, host));
+    }
+
+    // Save keys
+    core::Tensor active_keys = keys.IndexGet({active_indices}).To(host);
+    output.emplace("key", active_keys);
+
+    // Save SoA values and name attributes
+    for (auto &it : name_attr_map_) {
+        int value_id = it.second;
+        core::Tensor active_value_i =
+                values[value_id].IndexGet({active_indices}).To(host);
+        output.emplace(fmt::format("value_{:03d}", value_id), active_value_i);
+    }
+
+    std::string ext =
+            utility::filesystem::GetFileExtensionInLowerCase(file_name);
+    std::string postfix = ext != "npz" ? ".npz" : "";
+    t::io::WriteNpz(file_name + postfix, output);
+}
+
+VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
+    std::unordered_map<std::string, core::Tensor> tensor_map =
+            t::io::ReadNpz(file_name);
+
+    std::string prefix = "attr_name_";
+    std::unordered_map<int, std::string> inv_attr_map;
+
+    std::string kCPU = "CPU";
+    std::string kCUDA = "CUDA";
+
+    std::string device_str = "CPU:0";
+    for (auto &it : tensor_map) {
+        if (!it.first.compare(0, prefix.size(), prefix)) {
+            int value_id = it.second[0].Item<int>();
+            inv_attr_map.emplace(value_id, it.first.substr(prefix.size()));
+        }
+        if (!it.first.compare(0, kCPU.size(), kCPU) ||
+            !it.first.compare(0, kCUDA.size(), kCUDA)) {
+            device_str = it.first;
+        }
+    }
+    if (inv_attr_map.size() == 0) {
+        utility::LogError(
+                "Attribute names not found, not a valid file for voxel block "
+                "grids.");
+    }
+
+    core::Device device(device_str);
+
+    std::vector<std::string> attr_names(inv_attr_map.size());
+
+    std::vector<core::Tensor> soa_value_tensor(inv_attr_map.size());
+    std::vector<core::Dtype> attr_dtypes(inv_attr_map.size());
+    std::vector<core::SizeVector> attr_channels(inv_attr_map.size());
+
+    // Not an ideal way to use an unordered map. Assume all the indices are
+    // stored.
+    for (auto &it : inv_attr_map) {
+        int value_id = it.first;
+
+        core::Tensor value_i =
+                tensor_map.at(fmt::format("value_{:03d}", value_id));
+
+        soa_value_tensor[value_id] = value_i.To(device);
+        attr_dtypes[value_id] = value_i.GetDtype();
+
+        core::SizeVector value_i_shape = value_i.GetShape();
+        // capacity, res, res, res
+        value_i_shape.erase(value_i_shape.begin(), value_i_shape.begin() + 4);
+        attr_channels[value_id] = value_i_shape;
+    }
+
+    core::Tensor keys = tensor_map.at("key").To(device);
+    float voxel_size = tensor_map.at("voxel_size")[0].Item<float>();
+    int block_resolution = tensor_map.at("block_resolution")[0].Item<int64_t>();
+
+    VoxelBlockGrid vbg(attr_names, attr_dtypes, attr_channels, voxel_size,
+                       block_resolution, keys.GetLength(), device);
+    auto block_hashmap = vbg.GetHashMap();
+    utility::LogInfo("before insert");
+    block_hashmap.Insert(keys, soa_value_tensor);
+    utility::LogInfo("after insert");
+    return vbg;
 }
 
 }  // namespace geometry
