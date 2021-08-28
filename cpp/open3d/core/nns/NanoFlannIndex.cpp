@@ -29,6 +29,7 @@
 #include <nanoflann.hpp>
 
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/nns/NanoFlannImpl.h"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/ParallelScan.h"

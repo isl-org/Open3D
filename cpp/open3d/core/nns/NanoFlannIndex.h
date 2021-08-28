@@ -30,7 +30,6 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NNSIndex.h"
-#include "open3d/core/nns/NanoFlannImpl.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Logging.h"
 
@@ -121,7 +120,7 @@ public:
 
 protected:
     // Tensor dataset_points_;
-    std::unique_ptr<impl::NanoFlannIndexHolderBase> holder_;
+    std::unique_ptr<NanoFlannIndexHolderBase> holder_;
 };
 }  // namespace nns
 }  // namespace core
