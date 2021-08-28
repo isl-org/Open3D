@@ -151,6 +151,12 @@ void pybind_voxel_block_grid(py::module& m) {
             "Specific operation for TSDF volumes."
             "Extract point cloud at isosurface points.",
             "point_cloud_size_estimate"_a = -1, "weight_threshold"_a = 3.0f);
+
+    vbg.def("save", &VoxelBlockGrid::Save,
+            "Save the voxel block grid to a npz file."
+            "file_name"_a);
+    vbg.def_static("load", &VoxelBlockGrid::Load,
+                   "Load a voxel block grid from a npz file.", "file_name"_a);
 }
 }  // namespace geometry
 }  // namespace t
