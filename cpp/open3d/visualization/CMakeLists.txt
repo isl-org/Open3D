@@ -26,7 +26,7 @@ target_sources(visualization PRIVATE
 )
 
 target_sources(visualization PRIVATE
-    visualizer/Receiver.cpp
+    visualizer/MessageProcessor.cpp
     visualizer/RenderOption.cpp
     visualizer/RenderOptionWithEditing.cpp
     visualizer/ViewControl.cpp

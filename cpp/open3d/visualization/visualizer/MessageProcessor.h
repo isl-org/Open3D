@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "open3d/io/rpc/ReceiverBase.h"
+#include "open3d/io/rpc/MessageProcessorBase.h"
 
 namespace open3d {
 
@@ -41,26 +41,22 @@ namespace gui {
 class Window;
 }  // namespace gui
 
-/// Receiver implementation which interfaces with the Open3DScene and a Window.
-class Receiver : public io::rpc::ReceiverBase {
+/// MessageProcessor implementation which interfaces with the Open3DScene and a
+/// Window.
+class MessageProcessor : public io::rpc::MessageProcessorBase {
 public:
     using OnGeometryFunc = std::function<void(
             std::shared_ptr<geometry::Geometry3D>,  // geometry
             const std::string&,                     // path
             int,                                    // time
             const std::string&)>;                   // layer
-    Receiver(const std::string& address,
-             int timeout,
-             gui::Window* window,
-             OnGeometryFunc on_geometry)
-        : ReceiverBase(address, timeout),
-          window_(window),
-          on_geometry_(on_geometry) {}
+    MessageProcessor(gui::Window* window, OnGeometryFunc on_geometry)
+        : MessageProcessorBase(), window_(window), on_geometry_(on_geometry) {}
 
     std::shared_ptr<zmq::message_t> ProcessMessage(
             const io::rpc::messages::Request& req,
             const io::rpc::messages::SetMeshData& msg,
-            const MsgpackObject& obj) override;
+            const msgpack::object_handle& obj) override;
 
 private:
     gui::Window* window_;

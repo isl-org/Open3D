@@ -101,7 +101,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
     query_points.AssertDtype(core::Float32);
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
         utility::LogError(
@@ -132,7 +132,7 @@ std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
     query_points.AssertDtype(core::Float32);
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
         utility::LogError(

@@ -66,56 +66,83 @@ public:
     void Rehash(int64_t buckets);
 
     /// Parallel insert arrays of keys and values in Tensors.
-    /// The output_buf_indices and output_masks will be overwritten, to be used
-    /// with tensor buffers.
-    /// output_buf_indices stores buffer indices that access buffer tensors
-    /// obtained from GetKeyTensor() and GetValueTensor() via advanced indexing.
-    /// NOTE: output_buf_indices are stored in Int32. A conversion to Int64 is
-    /// required for further indexing.
-    /// output_masks stores if the insertion is
+    /// Return: output_buf_indices stores buffer indices that access buffer
+    /// tensors obtained from GetKeyTensor() and GetValueTensor() via advanced
+    /// indexing.
+    /// NOTE: output_buf_indices are stored in Int32. A conversion to
+    /// Int64 is required for further indexing.
+    /// Return: output_masks stores if the insertion is
     /// a success or failure (key already exists).
-    void Insert(const Tensor& input_keys,
-                const Tensor& input_values,
-                Tensor& output_buf_indices,
-                Tensor& output_masks,
-                bool allow_unsafe = false);
+    std::pair<Tensor, Tensor> Insert(const Tensor& input_keys,
+                                     const Tensor& input_values);
 
     /// Parallel insert arrays of keys and a structure of value arrays in
     /// Tensors.
-    /// The roles of output_buf_indices and output_masks are the same as Insert
-    /// with a single input_value tensor input.
-    void Insert(const Tensor& input_keys,
-                const std::vector<Tensor>& input_values_soa,
-                Tensor& output_buf_indices,
-                Tensor& output_masks,
-                bool allow_unsafe = false);
+    /// Return: output_buf_indices and output_masks, their role are the same as
+    /// in single value Insert interface.
+    std::pair<Tensor, Tensor> Insert(
+            const Tensor& input_keys,
+            const std::vector<Tensor>& input_values_soa);
 
     /// Parallel activate arrays of keys in Tensor.
     /// Specifically useful for large value elements (e.g., a 3D tensor), where
     /// we can do in-place management after activation.
-    /// The roles of output_buf_indices and output_masks are the same as Insert.
-    void Activate(const Tensor& input_keys,
-                  Tensor& output_buf_indices,
-                  Tensor& output_masks,
-                  bool allow_unsafe = false);
+    /// Return: output_buf_indices and output_masks, their roles are the same
+    /// as in Insert.
+    std::pair<Tensor, Tensor> Activate(const Tensor& input_keys);
 
     /// Parallel find an array of keys in Tensor.
-    /// The roles of output_buf_indices is the same as Insert.
-    /// output_masks stores if the finding is a success or failure (key
+    /// Return: output_buf_indices, its role is the same as in Insert.
+    /// Return: output_masks stores if the finding is a success or failure (key
     /// not found).
+    std::pair<Tensor, Tensor> Find(const Tensor& input_keys);
+
+    /// Parallel erase an array of keys in Tensor.
+    /// Return: output_masks stores if the erase is a success or failure (key
+    /// not found all already erased in another thread).
+    Tensor Erase(const Tensor& input_keys);
+
+    /// Parallel collect all indices in the buffer corresponding to the active
+    /// entries in the hash map.
+    /// Return output_buf_indices, collected buffer indices.
+    Tensor GetActiveIndices() const;
+
+    /// Same as Insert with a single value array, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
+    void Insert(const Tensor& input_keys,
+                const Tensor& input_values,
+                Tensor& output_buf_indices,
+                Tensor& output_masks);
+
+    /// Same as Insert with a SoA of values, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
+    void Insert(const Tensor& input_keys,
+                const std::vector<Tensor>& input_values_soa,
+                Tensor& output_buf_indices,
+                Tensor& output_masks);
+
+    /// Same as Activate, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
+    void Activate(const Tensor& input_keys,
+                  Tensor& output_buf_indices,
+                  Tensor& output_masks);
+
+    /// Same as Find, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
     void Find(const Tensor& input_keys,
               Tensor& output_buf_indices,
               Tensor& output_masks);
 
-    /// Parallel erase an array of keys in Tensor.
-    /// The output_masks will be overwritten, to be used
-    /// with tensor buffers.
-    /// output_masks stores if the erase is a success or failure (key not found
-    /// all already erased in another thread).
+    /// Same as Erase, but takes output_masks as input. If its shape and
+    /// type matches, reallocation is not needed.
     void Erase(const Tensor& input_keys, Tensor& output_masks);
 
-    /// Parallel collect all indices in the buffer corresponding to the active
-    /// entries in the hash map. Stored in output_buf_indices.
+    /// Same as GetActiveIndices, but takes output_buf_indices as input. If its
+    /// shape and type matches, reallocation is not needed.
     void GetActiveIndices(Tensor& output_buf_indices) const;
 
     /// Clear stored map without reallocating the buffers.
@@ -184,7 +211,7 @@ protected:
                     const std::vector<Tensor>& input_values_soa,
                     Tensor& output_buf_indices,
                     Tensor& output_masks,
-                    bool allow_unsafe);
+                    bool is_activate_op = false);
 
     void CheckKeyLength(const Tensor& input_keys) const;
     void CheckKeyValueLengthCompatibility(
@@ -196,6 +223,8 @@ protected:
 
     void PrepareIndicesOutput(Tensor& output_buf_indices, int64_t length) const;
     void PrepareMasksOutput(Tensor& output_masks, int64_t length) const;
+
+    std::pair<int64_t, std::vector<int64_t>> GetCommonValueSizeDivisor();
 
 private:
     std::shared_ptr<DeviceHashBackend> device_hashmap_;

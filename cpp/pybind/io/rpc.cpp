@@ -27,6 +27,7 @@
 #include "open3d/io/rpc/BufferConnection.h"
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
+#include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
 #include "open3d/io/rpc/ZMQContext.h"
 #include "pybind/core/tensor_type_caster.h"
@@ -48,7 +49,9 @@ void pybind_rpc(py::module& m_io) {
             m, "_ConnectionBase");
 
     py::class_<rpc::Connection, std::shared_ptr<rpc::Connection>,
-               rpc::ConnectionBase>(m, "Connection")
+               rpc::ConnectionBase>(m, "Connection", R"doc(
+The default connection class which uses a ZeroMQ socket.
+)doc")
             .def(py::init([](std::string address, int connect_timeout,
                              int timeout) {
                      return std::shared_ptr<rpc::Connection>(
@@ -60,7 +63,9 @@ void pybind_rpc(py::module& m_io) {
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
 
     py::class_<rpc::BufferConnection, std::shared_ptr<rpc::BufferConnection>,
-               rpc::ConnectionBase>(m, "BufferConnection")
+               rpc::ConnectionBase>(m, "BufferConnection", R"doc(
+A connection writing to a memory buffer.
+)doc")
             .def(py::init<>())
             .def(
                     "get_buffer",
@@ -122,23 +127,24 @@ void pybind_rpc(py::module& m_io) {
                      "the connection."},
             });
 
-    m.def("set_mesh_data", &rpc::SetMeshData, "vertices"_a, "path"_a = "",
-          "time"_a = 0, "layer"_a = "",
+    m.def("set_mesh_data", &rpc::SetMeshData, "path"_a = "", "time"_a = 0,
+          "layer"_a = "", "vertices"_a = core::Tensor({0}, core::Float32),
           "vertex_attributes"_a = std::map<std::string, core::Tensor>(),
           "faces"_a = core::Tensor({0}, core::Int32),
           "face_attributes"_a = std::map<std::string, core::Tensor>(),
           "lines"_a = core::Tensor({0}, core::Int32),
           "line_attributes"_a = std::map<std::string, core::Tensor>(),
           "textures"_a = std::map<std::string, core::Tensor>(),
+          "o3d_type"_a = std::string(),
           "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sends a set_mesh_data message.");
     docstring::FunctionDocInject(
             m, "set_mesh_data",
             {
-                    {"vertices", "Tensor defining the vertices."},
                     {"path", "A path descriptor, e.g., 'mygroup/points'."},
                     {"time", "The time associated with this data."},
                     {"layer", "The layer associated with this data."},
+                    {"vertices", "Tensor defining the vertices."},
                     {"vertex_attributes",
                      "dict of Tensors with vertex attributes."},
                     {"faces", "Tensor defining the faces with vertex indices."},
@@ -148,6 +154,12 @@ void pybind_rpc(py::module& m_io) {
                     {"line_attributes",
                      "dict of Tensors with line attributes."},
                     {"textures", "dict of Tensors with textures."},
+                    {"o3d_type", R"doc(The type of the geometry. This is one of 
+"PointCloud", "LineSet", "TriangleMesh".
+This argument should be specified for partial
+data that has no primary key data, e.g., a triangle
+mesh without vertices but with other attribute
+tensors.)doc"},
                     {"connection",
                      "A Connection object. Use None to automatically create "
                      "the connection."},
@@ -191,6 +203,14 @@ void pybind_rpc(py::module& m_io) {
                      "A Connection object. Use None to automatically create "
                      "the connection."},
             });
+
+    m.def("data_buffer_to_meta_geometry", &rpc::DataBufferToMetaGeometry,
+          "data"_a, R"doc(
+This function returns the geometry, the path and the time stored in a
+SetMeshData message. data must contain the Request header message followed
+by the SetMeshData message. The function returns None for the geometry if not
+successful.
+)doc");
 }
 
 }  // namespace io

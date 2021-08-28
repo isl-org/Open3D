@@ -216,8 +216,7 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     total_block_count = std::min(total_block_count, hashmap->GetCapacity());
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Tensor block_addrs, block_masks;
-    hashmap->Activate(block_coordi, block_addrs, block_masks,
-                      /*allow_unsafe =*/false);
+    hashmap->Activate(block_coordi, block_addrs, block_masks);
 
     // Customized IndexGet (generic version too slow)
     voxel_block_coords =

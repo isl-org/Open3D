@@ -32,6 +32,7 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -196,7 +197,7 @@ void IntegrateCPU
 #endif
 }
 
-struct BlockCache {
+struct MiniVecCache {
     int x;
     int y;
     int z;
@@ -238,13 +239,14 @@ void RayCastCPU
          float depth_min,
          float depth_max,
          float weight_threshold) {
-    using Key = core::Block<int, 3>;
-    using Hash = core::BlockHash<int, 3>;
+    using Key = utility::MiniVec<int, 3>;
+    using Hash = utility::MiniVecHash<int, 3>;
+    using Eq = utility::MiniVecEq<int, 3>;
 
     auto device_hashmap = hashmap->GetDeviceHashBackend();
 #if defined(__CUDACC__)
     auto cuda_hashmap =
-            std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash>>(
+            std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash, Eq>>(
                     device_hashmap);
     if (cuda_hashmap == nullptr) {
         utility::LogError(
@@ -253,7 +255,7 @@ void RayCastCPU
     auto hashmap_impl = cuda_hashmap->GetImpl();
 #else
     auto cpu_hashmap =
-            std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash>>(
+            std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash, Eq>>(
                     device_hashmap);
     if (cpu_hashmap == nullptr) {
         utility::LogError(
@@ -306,7 +308,7 @@ void RayCastCPU
                                                int x_b, int y_b, int z_b,
                                                int x_v, int y_v, int z_v,
                                                core::buf_index_t block_buf_idx,
-                                               BlockCache& cache) -> int64_t {
+                                               MiniVecCache& cache) -> int64_t {
                     int x_vn = (x_v + block_resolution) % block_resolution;
                     int y_vn = (y_v + block_resolution) % block_resolution;
                     int z_vn = (z_v + block_resolution) % block_resolution;
@@ -319,19 +321,14 @@ void RayCastCPU
                         return block_buf_idx * resolution3 + z_v * resolution2 +
                                y_v * block_resolution + x_v;
                     } else {
-                        Key key;
-                        key.Set(0, x_b + dx_b);
-                        key.Set(1, y_b + dy_b);
-                        key.Set(2, z_b + dz_b);
+                        Key key(x_b + dx_b, y_b + dy_b, z_b + dz_b);
 
-                        int block_buf_idx =
-                                cache.Check(key.Get(0), key.Get(1), key.Get(2));
+                        int block_buf_idx = cache.Check(key[0], key[1], key[2]);
                         if (block_buf_idx < 0) {
                             auto iter = hashmap_impl.find(key);
                             if (iter == hashmap_impl.end()) return -1;
                             block_buf_idx = iter->second;
-                            cache.Update(key.Get(0), key.Get(1), key.Get(2),
-                                         block_buf_idx);
+                            cache.Update(key[0], key[1], key[2], block_buf_idx);
                         }
 
                         return block_buf_idx * resolution3 +
@@ -344,21 +341,17 @@ void RayCastCPU
                                                float x_o, float y_o, float z_o,
                                                float x_d, float y_d, float z_d,
                                                float t,
-                                               BlockCache& cache) -> int64_t {
+                                               MiniVecCache& cache) -> int64_t {
                     float x_g = x_o + t * x_d;
                     float y_g = y_o + t * y_d;
                     float z_g = z_o + t * z_d;
 
-                    // Block coordinate and look up
+                    // MiniVec coordinate and look up
                     int x_b = static_cast<int>(floorf(x_g / block_size));
                     int y_b = static_cast<int>(floorf(y_g / block_size));
                     int z_b = static_cast<int>(floorf(z_g / block_size));
 
-                    Key key;
-                    key.Set(0, x_b);
-                    key.Set(1, y_b);
-                    key.Set(2, z_b);
-
+                    Key key(x_b, y_b, z_b);
                     int block_buf_idx = cache.Check(x_b, y_b, z_b);
                     if (block_buf_idx < 0) {
                         auto iter = hashmap_impl.find(key);
@@ -436,7 +429,7 @@ void RayCastCPU
                 float y_d = (y_g - y_o);
                 float z_d = (z_g - z_o);
 
-                BlockCache cache{0, 0, 0, -1};
+                MiniVecCache cache{0, 0, 0, -1};
                 bool surface_found = false;
                 while (t < t_max) {
                     int64_t linear_idx = GetLinearIdxAtT(x_o, y_o, z_o, x_d,
@@ -483,10 +476,7 @@ void RayCastCPU
                     float y_v = (y_g - float(y_b) * block_size) / voxel_size;
                     float z_v = (z_g - float(z_b) * block_size) / voxel_size;
 
-                    Key key;
-                    key.Set(0, x_b);
-                    key.Set(1, y_b);
-                    key.Set(2, z_b);
+                    Key key(x_b, y_b, z_b);
 
                     int block_buf_idx = cache.Check(x_b, y_b, z_b);
                     if (block_buf_idx < 0) {

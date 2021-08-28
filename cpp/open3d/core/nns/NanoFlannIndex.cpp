@@ -75,7 +75,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     query_points.AssertDtype(GetDtype());
 
     // Check shapes.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
         utility::LogError(
@@ -127,7 +127,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
     // Check shapes.
     int64_t num_query_points = query_points.GetShape()[0];
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
     radii.AssertShape({num_query_points});
 
     Dtype dtype = GetDtype();
@@ -225,7 +225,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
     query_points.AssertDtype(GetDtype());
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
         utility::LogError(

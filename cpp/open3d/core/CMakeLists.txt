@@ -11,6 +11,7 @@ target_sources(core PRIVATE
     MemoryManagerCPU.cpp
     MemoryManagerStatistic.cpp
     ShapeUtil.cpp
+    SizeVector.cpp
     Tensor.cpp
     TensorKey.cpp
     TensorList.cpp
