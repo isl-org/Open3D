@@ -72,7 +72,7 @@ public:
 
     SlabHashBackendImpl<Key, Hash, Eq> GetImpl() { return impl_; }
 
-    void Allocate(int64_t capacity, int64_t bucket_count) override;
+    void Allocate(int64_t capacity) override;
     void Free() override;
 
 protected:
@@ -93,8 +93,7 @@ SlabHashBackend<Key, Hash, Eq>::SlabHashBackend(
         const std::vector<int64_t>& value_dsizes,
         const Device& device)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
-    int64_t init_buckets = init_capacity * 2;
-    Allocate(init_capacity, init_buckets);
+    Allocate(init_capacity);
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -269,9 +268,8 @@ void SlabHashBackend<Key, Hash, Eq>::Insert(
 }
 
 template <typename Key, typename Hash, typename Eq>
-void SlabHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity,
-                                              int64_t bucket_count) {
-    this->bucket_count_ = bucket_count;
+void SlabHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
+    this->bucket_count_ = capacity * 2;
     this->capacity_ = capacity;
 
     // Allocate buffer for key values.

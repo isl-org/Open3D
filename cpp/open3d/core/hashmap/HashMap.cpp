@@ -85,8 +85,7 @@ void HashMap::Rehash(int64_t buckets) {
     device_hashmap_->Free();
     device_hashmap_->Allocate(
             std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
-                     active_keys.GetLength()),
-            buckets);
+                     active_keys.GetLength()));
 
     if (count > 0) {
         Tensor output_buf_indices, output_masks;

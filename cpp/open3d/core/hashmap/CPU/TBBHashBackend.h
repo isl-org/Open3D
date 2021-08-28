@@ -77,7 +77,7 @@ public:
         return impl_;
     }
 
-    void Allocate(int64_t capacity, int64_t bucket_count) override;
+    void Allocate(int64_t capacity) override;
     void Free() override{};
 
 protected:
@@ -94,7 +94,7 @@ TBBHashBackend<Key, Hash, Eq>::TBBHashBackend(
         const std::vector<int64_t>& value_dsizes,
         const Device& device)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
-    Allocate(init_capacity, 0);
+    Allocate(init_capacity);
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -236,8 +236,7 @@ void TBBHashBackend<Key, Hash, Eq>::Insert(
 }
 
 template <typename Key, typename Hash, typename Eq>
-void TBBHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity,
-                                             int64_t bucket_count) {
+void TBBHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     this->buffer_ = std::make_shared<HashBackendBuffer>(

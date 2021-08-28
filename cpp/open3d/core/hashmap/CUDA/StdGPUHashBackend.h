@@ -168,7 +168,7 @@ public:
 
     InternalStdGPUHashBackend<Key, Hash, Eq> GetImpl() const { return impl_; }
 
-    void Allocate(int64_t capacity, int64_t bucket_count);
+    void Allocate(int64_t capacity);
     void Free();
 
 protected:
@@ -186,7 +186,7 @@ StdGPUHashBackend<Key, Hash, Eq>::StdGPUHashBackend(
         const std::vector<int64_t>& value_dsizes,
         const Device& device)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device) {
-    Allocate(init_capacity, 0);
+    Allocate(init_capacity);
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -401,8 +401,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Insert(
 }
 
 template <typename Key, typename Hash, typename Eq>
-void StdGPUHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity,
-                                                int64_t bucket_count) {
+void StdGPUHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     // Allocate buffer for key values.

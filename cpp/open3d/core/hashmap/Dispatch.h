@@ -99,12 +99,6 @@
 namespace open3d {
 namespace utility {
 
-#ifndef __CUDACC__
-using int4 = MiniVec<int, 4>;
-using int3 = MiniVec<int, 3>;
-using int2 = MiniVec<int, 2>;
-#endif
-
 template <typename T, int N>
 struct MiniVecHash {
 public:

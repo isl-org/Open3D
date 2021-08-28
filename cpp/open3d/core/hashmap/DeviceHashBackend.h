@@ -107,7 +107,7 @@ public:
     /// Get the i-th value buffer that store an actual value array.
     Tensor GetValueBuffer(size_t i = 0) { return buffer_->GetValueBuffer(i); }
 
-    virtual void Allocate(int64_t capacity, int64_t bucket_count) = 0;
+    virtual void Allocate(int64_t capacity) = 0;
     virtual void Free() = 0;
 
 public:
