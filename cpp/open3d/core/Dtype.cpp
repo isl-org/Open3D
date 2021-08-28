@@ -77,7 +77,7 @@ Dtype::Dtype(DtypeCode dtype_code, int64_t byte_size, const std::string &name)
     if (name.size() > max_name_len_ - 1) {
         utility::LogError("Name {} must be shorter.", name);
     } else {
-        std::strncpy(name_, name.c_str(), max_name_len_);
+        std::strncpy(name_, name.c_str(), max_name_len_ - 1);
     }
 }
 
