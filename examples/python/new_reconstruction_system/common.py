@@ -74,7 +74,7 @@ def load_intrinsic(config):
         return intrinsic
     elif config.engine == 'tensor':
         return o3d.core.Tensor(intrinsic.intrinsic_matrix,
-                               o3d.core.Dtype.Float32)
+                               o3d.core.Dtype.Float64)
     else:
         print('Unsupported engine {}'.format(config.engine))
 
