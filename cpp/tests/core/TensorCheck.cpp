@@ -56,9 +56,11 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
         FAIL() << "std::runtime_error not thrown.";
     }
 
-    // More tests for macro exstension.
+    // More tests for macro expansion.
     core::AssertTensorDtype(
             t, core::Dtype(core::Dtype::DtypeCode::Float, 4, "Float32"));
+    core::AssertTensorDtype(
+            t, core::Dtype{core::Dtype::DtypeCode::Float, 4, "Float32"});
     try {
         core::AssertTensorDtype(
                 t, core::Dtype(core::Dtype::DtypeCode::Float, 4, "Float64"));
