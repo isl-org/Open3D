@@ -359,8 +359,7 @@ core::Tensor GetInformationMatrixFromPointClouds(
                                     max_correspondence_distance, 1);
 
     correspondences = correspondences.To(core::Int64);
-    double num_correspondences =
-            counts.Sum({0}).To(core::Float64).Item<double>();
+    int32_t num_correspondences = counts.Sum({0}).Item<int32_t>();
 
     if (num_correspondences == 0) {
         utility::LogError(
