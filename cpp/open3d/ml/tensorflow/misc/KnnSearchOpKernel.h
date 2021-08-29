@@ -23,7 +23,7 @@
 #pragma once
 
 #include "../TensorFlowHelper.h"
-#include "open3d/ml/impl/misc/KnnSearch.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -36,7 +36,7 @@ class KnnSearchOpKernel : public tensorflow::OpKernel {
 public:
     explicit KnnSearchOpKernel(tensorflow::OpKernelConstruction* construction)
         : OpKernel(construction) {
-        using namespace open3d::ml::impl;
+        using namespace open3d::core::nns;
         using namespace tensorflow;
         std::string metric_str;
         OP_REQUIRES_OK(construction,
@@ -100,7 +100,7 @@ public:
                         tensorflow::Tensor& query_neighbors_row_splits) = 0;
 
 protected:
-    open3d::ml::impl::Metric metric;
+    open3d::core::nns::Metric metric;
     bool ignore_query_point;
     bool return_distances;
 };

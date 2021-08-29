@@ -26,11 +26,10 @@
 
 #include "open3d/core/nns/NanoFlannIndex.h"
 
-#include <nanoflann.hpp>
-
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/nns/NanoFlannImpl.h"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/ParallelScan.h"
 
@@ -61,7 +60,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
         holder_ = impl::BuildKdTree<scalar_t>(
                 dataset_points_.GetShape(0),
                 dataset_points_.GetDataPtr<scalar_t>(),
-                dataset_points_.GetShape(1));
+                dataset_points_.GetShape(1), /* metric */ L2);
     });
     return true;
 };
@@ -86,15 +85,20 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     const Device device = GetDevice();
 
     Tensor indices, distances;
+    Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
         NeighborSearchAllocator<scalar_t> output_allocator(device);
 
-        impl::KnnSearchCPU(holder_.get(), query_contiguous.GetShape(0),
-                           query_contiguous.GetDataPtr<scalar_t>(),
-                           query_contiguous.GetShape(1), num_neighbors,
-                           /* ignore_query_point */ false,
-                           /* return_distances */ true, output_allocator);
+        impl::KnnSearchCPU(
+                holder_.get(), neighbors_row_splits.GetDataPtr<int64_t>(),
+                dataset_points_.GetShape(0),
+                dataset_points_.GetDataPtr<scalar_t>(),
+                query_contiguous.GetShape(0),
+                query_contiguous.GetDataPtr<scalar_t>(),
+                query_contiguous.GetShape(1), num_neighbors, /* metric */ L2,
+                /* ignore_query_point */ false,
+                /* return_distances */ true, output_allocator);
         indices = output_allocator.NeighborsIndex();
         distances = output_allocator.NeighborsDistance();
         indices = indices.View({num_query_points, num_neighbors});
@@ -131,16 +135,14 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         const Tensor query_contiguous = query_points.Contiguous();
         NeighborSearchAllocator<scalar_t> output_allocator(device);
 
-        nanoflann::SearchParams params;
-        params.sorted = sort;
-
         impl::RadiusSearchCPU(
                 holder_.get(), neighbors_row_splits.GetDataPtr<int64_t>(),
                 query_contiguous.GetShape(0),
                 query_contiguous.GetDataPtr<scalar_t>(),
                 query_contiguous.GetShape(1), radii.GetDataPtr<scalar_t>(),
+                /* metric */ L2,
                 /* ignore_query_point */ false, /* return_distances */ true,
-                &params, output_allocator);
+                sort, output_allocator);
         indices = output_allocator.NeighborsIndex();
         distances = output_allocator.NeighborsDistance();
     });
@@ -186,15 +188,12 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor query_contiguous = query_points.Contiguous();
         NeighborSearchAllocator<scalar_t> output_allocator(device);
 
-        nanoflann::SearchParams params;
-        params.sorted = true;
-
-        impl::HybridSearchCPU(
-                holder_.get(), query_contiguous.GetShape(0),
-                query_contiguous.GetDataPtr<scalar_t>(),
-                query_contiguous.GetShape(1), static_cast<scalar_t>(radius),
-                max_knn, /* ignore_query_point */ false,
-                /* return_distances */ true, &params, output_allocator);
+        impl::HybridSearchCPU(holder_.get(), query_contiguous.GetShape(0),
+                              query_contiguous.GetDataPtr<scalar_t>(),
+                              query_contiguous.GetShape(1),
+                              static_cast<scalar_t>(radius), max_knn,
+                              /* metric*/ L2, /* ignore_query_point */ false,
+                              /* return_distances */ true, output_allocator);
 
         indices = output_allocator.NeighborsIndex().View(
                 {num_query_points, max_knn});
