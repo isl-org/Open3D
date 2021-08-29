@@ -565,9 +565,9 @@ void RayCastCPU
 
 template <typename tsdf_t, typename weight_t, typename color_t>
 #if defined(__CUDACC__)
-void ExtractSurfacePointsCUDA
+void ExtractPointCloudCUDA
 #else
-void ExtractSurfacePointsCPU
+void ExtractPointCloudCPU
 #endif
         (const core::Tensor& indices,
          const core::Tensor& nb_indices,

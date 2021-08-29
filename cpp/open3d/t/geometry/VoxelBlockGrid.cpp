@@ -312,8 +312,8 @@ std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
                           masks_nb.View({27, n, 1}));
 }
 
-PointCloud VoxelBlockGrid::ExtractSurfacePoints(int estimated_number,
-                                                float weight_threshold) {
+PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
+                                             float weight_threshold) {
     core::Tensor active_buf_indices;
     block_hashmap_->GetActiveIndices(active_buf_indices);
 
@@ -326,7 +326,7 @@ PointCloud VoxelBlockGrid::ExtractSurfacePoints(int estimated_number,
 
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
-    kernel::voxel_grid::ExtractSurfacePoints(
+    kernel::voxel_grid::ExtractPointCloud(
             active_buf_indices, active_nb_buf_indices, active_nb_masks,
             block_keys, block_values, points, normals, colors,
             block_resolution_, voxel_size_, weight_threshold, estimated_number);

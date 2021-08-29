@@ -283,8 +283,8 @@ template void RayCastCUDA<float, float, float>(FN_ARGUMENTS);
             int64_t block_resolution, float voxel_size,                        \
             float weight_threshold, int &valid_size
 
-template void ExtractSurfacePointsCUDA<float, uint16_t, uint16_t>(FN_ARGUMENTS);
-template void ExtractSurfacePointsCUDA<float, float, float>(FN_ARGUMENTS);
+template void ExtractPointCloudCUDA<float, uint16_t, uint16_t>(FN_ARGUMENTS);
+template void ExtractPointCloudCUDA<float, float, float>(FN_ARGUMENTS);
 
 #undef FN_ARGUMENTS
 

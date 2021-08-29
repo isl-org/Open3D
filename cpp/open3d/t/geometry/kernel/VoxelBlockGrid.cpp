@@ -194,31 +194,31 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
             });
 }
 
-void ExtractSurfacePoints(const core::Tensor& block_indices,
-                          const core::Tensor& nb_block_indices,
-                          const core::Tensor& nb_block_masks,
-                          const core::Tensor& block_keys,
-                          const std::vector<core::Tensor>& block_values,
-                          core::Tensor& points,
-                          core::Tensor& normals,
-                          core::Tensor& colors,
-                          int64_t block_resolution,
-                          float voxel_size,
-                          float weight_threshold,
-                          int& valid_size) {
+void ExtractPointCloud(const core::Tensor& block_indices,
+                       const core::Tensor& nb_block_indices,
+                       const core::Tensor& nb_block_masks,
+                       const core::Tensor& block_keys,
+                       const std::vector<core::Tensor>& block_values,
+                       core::Tensor& points,
+                       core::Tensor& normals,
+                       core::Tensor& colors,
+                       int64_t block_resolution,
+                       float voxel_size,
+                       float weight_threshold,
+                       int& valid_size) {
     core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
 
     using tsdf_t = float;
     DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
             block_values[1].GetDtype(), block_values[2].GetDtype(), [&] {
                 if (device_type == core::Device::DeviceType::CPU) {
-                    ExtractSurfacePointsCPU<tsdf_t, weight_t, color_t>(
+                    ExtractPointCloudCPU<tsdf_t, weight_t, color_t>(
                             block_indices, nb_block_indices, nb_block_masks,
                             block_keys, block_values, points, normals, colors,
                             block_resolution, voxel_size, weight_threshold,
                             valid_size);
                 } else if (device_type == core::Device::DeviceType::CUDA) {
-                    ExtractSurfacePointsCUDA<tsdf_t, weight_t, color_t>(
+                    ExtractPointCloudCUDA<tsdf_t, weight_t, color_t>(
                             block_indices, nb_block_indices, nb_block_masks,
                             block_keys, block_values, points, normals, colors,
                             block_resolution, voxel_size, weight_threshold,

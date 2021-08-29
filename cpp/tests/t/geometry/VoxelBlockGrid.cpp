@@ -310,13 +310,13 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
 
                 // Check surface extraction
                 auto pcd = std::make_shared<open3d::geometry::PointCloud>(
-                        vbg.ExtractSurfacePoints().ToLegacy());
+                        vbg.ExtractPointCloud().ToLegacy());
                 visualization::DrawGeometries({pcd});
 
                 vbg.Save("tmp.npz");
                 auto vbg_new = VoxelBlockGrid::Load("tmp.npz");
                 auto pcd_new = std::make_shared<open3d::geometry::PointCloud>(
-                        vbg_new.ExtractSurfacePoints().ToLegacy());
+                        vbg_new.ExtractPointCloud().ToLegacy());
                 visualization::DrawGeometries({pcd_new});
             }
         }

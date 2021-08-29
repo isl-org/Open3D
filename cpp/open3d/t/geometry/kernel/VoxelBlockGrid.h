@@ -85,18 +85,18 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              float depth_max,
              float weight_threshold);
 
-void ExtractSurfacePoints(const core::Tensor& block_indices,
-                          const core::Tensor& nb_block_indices,
-                          const core::Tensor& nb_block_masks,
-                          const core::Tensor& block_keys,
-                          const std::vector<core::Tensor>& block_values,
-                          core::Tensor& points,
-                          core::Tensor& normals,
-                          core::Tensor& colors,
-                          int64_t block_resolution,
-                          float voxel_size,
-                          float weight_threshold,
-                          int& valid_size);
+void ExtractPointCloud(const core::Tensor& block_indices,
+                       const core::Tensor& nb_block_indices,
+                       const core::Tensor& nb_block_masks,
+                       const core::Tensor& block_keys,
+                       const std::vector<core::Tensor>& block_values,
+                       core::Tensor& points,
+                       core::Tensor& normals,
+                       core::Tensor& colors,
+                       int64_t block_resolution,
+                       float voxel_size,
+                       float weight_threshold,
+                       int& valid_size);
 
 void PointCloudTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
                         const core::Tensor& points,
@@ -153,18 +153,18 @@ void RayCastCPU(std::shared_ptr<core::HashMap>& hashmap,
                 float weight_threshold);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
-void ExtractSurfacePointsCPU(const core::Tensor& block_indices,
-                             const core::Tensor& nb_block_indices,
-                             const core::Tensor& nb_block_masks,
-                             const core::Tensor& block_keys,
-                             const std::vector<core::Tensor>& block_values,
-                             core::Tensor& points,
-                             core::Tensor& normals,
-                             core::Tensor& colors,
-                             int64_t block_resolution,
-                             float voxel_size,
-                             float weight_threshold,
-                             int& valid_size);
+void ExtractPointCloudCPU(const core::Tensor& block_indices,
+                          const core::Tensor& nb_block_indices,
+                          const core::Tensor& nb_block_masks,
+                          const core::Tensor& block_keys,
+                          const std::vector<core::Tensor>& block_values,
+                          core::Tensor& points,
+                          core::Tensor& normals,
+                          core::Tensor& colors,
+                          int64_t block_resolution,
+                          float voxel_size,
+                          float weight_threshold,
+                          int& valid_size);
 
 #ifdef BUILD_CUDA_MODULE
 void PointCloudTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
@@ -222,18 +222,18 @@ void RayCastCUDA(std::shared_ptr<core::HashMap>& hashmap,
                  float weight_threshold);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
-void ExtractSurfacePointsCUDA(const core::Tensor& block_indices,
-                              const core::Tensor& nb_block_indices,
-                              const core::Tensor& nb_block_masks,
-                              const core::Tensor& block_keys,
-                              const std::vector<core::Tensor>& block_values,
-                              core::Tensor& points,
-                              core::Tensor& normals,
-                              core::Tensor& colors,
-                              int64_t block_resolution,
-                              float voxel_size,
-                              float weight_threshold,
-                              int& valid_size);
+void ExtractPointCloudCUDA(const core::Tensor& block_indices,
+                           const core::Tensor& nb_block_indices,
+                           const core::Tensor& nb_block_masks,
+                           const core::Tensor& block_keys,
+                           const std::vector<core::Tensor>& block_values,
+                           core::Tensor& points,
+                           core::Tensor& normals,
+                           core::Tensor& colors,
+                           int64_t block_resolution,
+                           float voxel_size,
+                           float weight_threshold,
+                           int& valid_size);
 
 #endif
 }  // namespace voxel_grid

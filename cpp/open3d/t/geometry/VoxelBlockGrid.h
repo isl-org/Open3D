@@ -167,8 +167,21 @@ public:
 
     /// Specific operation for TSDF volumes.
     /// Extract point cloud at isosurface points.
-    PointCloud ExtractSurfacePoints(int estimate_number = -1,
-                                    float weight_threshold = 3.0f);
+    /// Weight threshold is used to filter outliers. By default we use 3.0,
+    /// where we assume a reliable surface point comes from the fusion of at
+    /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
+    /// observations.
+    PointCloud ExtractPointCloud(int estimate_number = -1,
+                                 float weight_threshold = 3.0f);
+
+    /// Specific operation for TSDF volumes.
+    /// Extract mesh near iso-surfaces with Marching Cubes.
+    /// Weight threshold is used to filter outliers. By default we use 3.0,
+    /// where we assume a reliable surface point comes from the fusion of at
+    /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
+    /// observations.
+    TriangleMesh ExtractTriangleMesh(int estimate_number = -1,
+                                     float weight_threshold = 3.0f);
 
     /// Save a voxel block grid to a .npz file.
     void Save(const std::string &file_name) const;
