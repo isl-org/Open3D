@@ -1174,6 +1174,8 @@ void Window::OnKeyEvent(const KeyEvent& e) {
         this_mod = int(KeyModifier::ALT);
     } else if (e.key == KEY_META) {
         this_mod = int(KeyModifier::META);
+    } else if (e.key == KEY_ESCAPE) {
+        Close();
     }
 
     if (e.type == KeyEvent::UP) {
