@@ -126,10 +126,6 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                    bool ignore_query_point,
                    bool return_distances,
                    OUTPUT_ALLOCATOR &output_allocator) {
-    // cast NanoFlannIndexHolder
-    auto holder_ =
-            static_cast<NanoFlannIndexHolder<METRIC, T, index_t> *>(holder);
-
     // return empty indices array if there are no points
     if (num_queries == 0 || num_points == 0) {
         std::fill(query_neighbors_row_splits,
@@ -156,14 +152,14 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 
     auto distance_fn = [](const T *const p1, const T *const p2,
                           size_t dimension) {
-        double ret = 0.0;
+        T ret = 0.0;
         for (size_t i = 0; i < dimension; i++) {
             if (METRIC == L2) {
-                double dist = p1[i] - p2[i];
+                T dist = p1[i] - p2[i];
                 dist = dist * dist;
                 ret += dist;
             } else {
-                double dist = std::abs(p1[i] - p2[i]);
+                T dist = std::abs(p1[i] - p2[i]);
                 ret += dist;
             }
         }
@@ -172,6 +168,10 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 
     std::mutex pairs_mutex;
     std::vector<uint32_t> neighbors_count(num_queries, 0);
+
+    // cast NanoFlannIndexHolder
+    auto holder_ =
+            static_cast<NanoFlannIndexHolder<METRIC, T, index_t> *>(holder);
 
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
@@ -245,15 +245,18 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 template <class T, class OUTPUT_ALLOCATOR, int METRIC>
 void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                       int64_t *query_neighbors_row_splits,
+                      size_t num_points,
+                      const T *const points,
                       size_t num_queries,
                       const T *const queries,
                       const size_t dimension,
                       const T *const radii,
                       bool ignore_query_point,
                       bool return_distances,
+                      bool normalize_distances,
                       bool sort,
                       OUTPUT_ALLOCATOR &output_allocator) {
-    if (num_queries == 0) {
+    if (num_queries == 0 || num_points == 0) {
         std::fill(query_neighbors_row_splits,
                   query_neighbors_row_splits + num_queries + 1, 0);
         index_t *indices_ptr;
@@ -264,65 +267,126 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
         return;
     }
 
-    std::vector<std::vector<index_t>> indices_vec(num_queries);
-    std::vector<std::vector<T>> distances_vec(num_queries);
+    struct Pair {
+        int32_t i, j;
+    };
+    std::vector<Pair> pairs;
+
+    auto points_equal = [](const T *const p1, const T *const p2,
+                           size_t dimension) {
+        std::vector<T> p1_vec(p1, p1 + dimension);
+        std::vector<T> p2_vec(p2, p2 + dimension);
+        return p1_vec == p2_vec;
+    };
+
+    auto distance_fn = [](const T *const p1, const T *const p2,
+                          size_t dimension) {
+        T ret = 0.0;
+        for (size_t i = 0; i < dimension; i++) {
+            if (METRIC == L2) {
+                T dist = p1[i] - p2[i];
+                dist = dist * dist;
+                ret += dist;
+            } else {
+                T dist = std::abs(p1[i] - p2[i]);
+                ret += dist;
+            }
+        }
+        return ret;
+    };
+
+    std::mutex pairs_mutex;
+    std::vector<uint32_t> neighbors_count(num_queries, 0);
 
     nanoflann::SearchParams params;
     params.sorted = sort;
 
-    size_t num_indices = 0;
     auto holder_ =
             static_cast<NanoFlannIndexHolder<METRIC, T, index_t> *>(holder);
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
             [&](const tbb::blocked_range<size_t> &r) {
-                std::vector<std::pair<index_t, T>> ret_matches;
+                std::vector<Pair> pairs_private;
+                std::vector<std::pair<index_t, T>> search_result;
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     T radius = radii[i];
-                    T radius_squared = radius * radius;
-                    size_t num_results = holder_->index_->radiusSearch(
-                            &queries[i * dimension], radius_squared,
-                            ret_matches, params);
-                    ret_matches.resize(num_results);
-
-                    std::vector<index_t> indices_vec_i;
-                    std::vector<T> distances_vec_i;
-                    for (auto &it : ret_matches) {
-                        indices_vec_i.push_back(it.first);
-                        distances_vec_i.push_back(it.second);
+                    if (METRIC == L2) {
+                        radius = radius * radius;
                     }
-                    indices_vec[i] = indices_vec_i;
-                    distances_vec[i] = distances_vec_i;
-                    query_neighbors_row_splits[i + 1] =
-                            static_cast<int64_t>(num_results);
 
-                    AtomicFetchAddRelaxed((uint64_t *)&num_indices,
-                                          num_results);
+                    holder_->index_->radiusSearch(&queries[i * dimension],
+                                                  radius, search_result,
+                                                  params);
+
+                    int num_neighbors = 0;
+                    for (const auto &idx_dist : search_result) {
+                        if (ignore_query_point &&
+                            points_equal(&queries[i * dimension],
+                                         &points[idx_dist.first * dimension],
+                                         dimension)) {
+                            continue;
+                        }
+                        pairs_private.push_back(
+                                Pair{int32_t(i), int32_t(idx_dist.first)});
+                        ++num_neighbors;
+                    }
+                    neighbors_count[i] = num_neighbors;
+                }
+                {
+                    std::lock_guard<std::mutex> lock(pairs_mutex);
+                    pairs.insert(pairs.end(), pairs_private.begin(),
+                                 pairs_private.end());
                 }
             });
 
-    index_t *indices_ptr;
-    T *distances_ptr;
-
-    output_allocator.AllocIndices(&indices_ptr, num_indices);
-    output_allocator.AllocDistances(&distances_ptr, num_indices);
-
     query_neighbors_row_splits[0] = 0;
-    utility::InclusivePrefixSum(query_neighbors_row_splits + 1,
-                                query_neighbors_row_splits + num_queries + 1,
+    utility::InclusivePrefixSum(&neighbors_count[0],
+                                &neighbors_count[neighbors_count.size()],
                                 query_neighbors_row_splits + 1);
 
-    for (size_t i = 0; i < indices_vec.size(); ++i) {
-        int64_t start_idx = query_neighbors_row_splits[i];
-        for (size_t j = 0; j < indices_vec[i].size(); ++j) {
-            indices_ptr[start_idx + j] = indices_vec[i][j];
-            distances_ptr[start_idx + j] = distances_vec[i][j];
-        }
-    }
+    index_t *indices_ptr;
+    output_allocator.AllocIndices(&indices_ptr, pairs.size());
+    T *distances_ptr;
+    if (return_distances)
+        output_allocator.AllocDistances(&distances_ptr, pairs.size());
+    else
+        output_allocator.AllocDistances(&distances_ptr, 0);
+
+    std::fill(neighbors_count.begin(), neighbors_count.end(), 0);
+
+    // fill output index and distance arrays
+    tbb::parallel_for(
+            tbb::blocked_range<size_t>(0, pairs.size()),
+            [&](const tbb::blocked_range<size_t> &r) {
+                for (size_t i = r.begin(); i != r.end(); ++i) {
+                    Pair pair = pairs[i];
+
+                    int64_t idx = query_neighbors_row_splits[pair.i] +
+                                  core::AtomicFetchAddRelaxed(
+                                          &neighbors_count[pair.i], 1);
+                    indices_ptr[idx] = pair.j;
+
+                    if (return_distances) {
+                        T dist = distance_fn(&points[pair.j * dimension],
+                                             &queries[pair.i * dimension],
+                                             dimension);
+                        if (normalize_distances) {
+                            if (METRIC == L2) {
+                                dist /= radii[pair.i] * radii[pair.i];
+                            } else {
+                                dist /= radii[pair.i];
+                            }
+                        }
+                        distances_ptr[idx] = dist;
+                    }
+                }
+            });
 }
 
 template <class T, class OUTPUT_ALLOCATOR, int METRIC>
 void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
+                      size_t num_points,
+                      const T *const points,
                       size_t num_queries,
                       const T *const queries,
                       const size_t dimension,
@@ -331,7 +395,7 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                       bool ignore_query_point,
                       bool return_distances,
                       OUTPUT_ALLOCATOR &output_allocator) {
-    if (num_queries == 0) {
+    if (num_queries == 0 || num_points == 0) {
         index_t *indices_ptr, *counts_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
         output_allocator.AllocCounts(&counts_ptr, 0);
@@ -452,6 +516,8 @@ void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 template <class T, class OUTPUT_ALLOCATOR>
 void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                      int64_t *query_neighbors_row_splits,
+                     size_t num_points,
+                     const T *const points,
                      size_t num_queries,
                      const T *const queries,
                      const size_t dimension,
@@ -459,12 +525,13 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                      const Metric metric,
                      bool ignore_query_point,
                      bool return_distances,
+                     bool normalize_distances,
                      bool sort,
                      OUTPUT_ALLOCATOR &output_allocator) {
-#define FN_PARAMETERS                                                    \
-    holder, query_neighbors_row_splits, num_queries, queries, dimension, \
-            radii, ignore_query_point, return_distances, sort,           \
-            output_allocator
+#define FN_PARAMETERS                                                        \
+    holder, query_neighbors_row_splits, num_points, points, num_queries,     \
+            queries, dimension, radii, ignore_query_point, return_distances, \
+            normalize_distances, sort, output_allocator
 
 #define CALL_TEMPLATE(METRIC)                                         \
     if (METRIC == metric) {                                           \
@@ -485,6 +552,8 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
 
 template <class T, class OUTPUT_ALLOCATOR>
 void HybridSearchCPU(NanoFlannIndexHolderBase *holder,
+                     size_t num_points,
+                     const T *const points,
                      size_t num_queries,
                      const T *const queries,
                      const size_t dimension,
@@ -494,9 +563,9 @@ void HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                      bool ignore_query_point,
                      bool return_distances,
                      OUTPUT_ALLOCATOR &output_allocator) {
-#define FN_PARAMETERS                                         \
-    holder, num_queries, queries, dimension, radius, max_knn, \
-            ignore_query_point, return_distances, output_allocator
+#define FN_PARAMETERS                                                    \
+    holder, num_points, points, num_queries, queries, dimension, radius, \
+            max_knn, ignore_query_point, return_distances, output_allocator
 
 #define CALL_TEMPLATE(METRIC)                                         \
     if (METRIC == metric) {                                           \

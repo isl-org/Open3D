@@ -137,12 +137,14 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
         impl::RadiusSearchCPU(
                 holder_.get(), neighbors_row_splits.GetDataPtr<int64_t>(),
+                dataset_points_.GetShape(0),
+                dataset_points_.GetDataPtr<scalar_t>(),
                 query_contiguous.GetShape(0),
                 query_contiguous.GetDataPtr<scalar_t>(),
                 query_contiguous.GetShape(1), radii.GetDataPtr<scalar_t>(),
                 /* metric */ L2,
                 /* ignore_query_point */ false, /* return_distances */ true,
-                sort, output_allocator);
+                /* normalize_distances */ false, sort, output_allocator);
         indices = output_allocator.NeighborsIndex();
         distances = output_allocator.NeighborsDistance();
     });
@@ -188,7 +190,9 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor query_contiguous = query_points.Contiguous();
         NeighborSearchAllocator<scalar_t> output_allocator(device);
 
-        impl::HybridSearchCPU(holder_.get(), query_contiguous.GetShape(0),
+        impl::HybridSearchCPU(holder_.get(), dataset_points_.GetShape(0),
+                              dataset_points_.GetDataPtr<scalar_t>(),
+                              query_contiguous.GetShape(0),
                               query_contiguous.GetDataPtr<scalar_t>(),
                               query_contiguous.GetShape(1),
                               static_cast<scalar_t>(radius), max_knn,
