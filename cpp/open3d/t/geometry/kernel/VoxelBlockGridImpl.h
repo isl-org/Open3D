@@ -75,6 +75,33 @@ DeviceGetLinearIdx(int xo,
            xn;
 }
 
+template <typename tsdf_t>
+inline OPEN3D_DEVICE void DeviceGetNormal(
+        const tsdf_t* tsdf_base_ptr,
+        int xo,
+        int yo,
+        int zo,
+        int curr_block_idx,
+        float* n,
+        int resolution,
+        const NDArrayIndexer& nb_block_masks_indexer,
+        const NDArrayIndexer& nb_block_indices_indexer) {
+    auto GetLinearIdx = [&] OPEN3D_DEVICE(int xo, int yo, int zo) -> int64_t {
+        return DeviceGetLinearIdx(
+                xo, yo, zo, curr_block_idx, static_cast<int>(resolution),
+                nb_block_masks_indexer, nb_block_indices_indexer);
+    };
+    int64_t vxp = GetLinearIdx(xo + 1, yo, zo);
+    int64_t vxn = GetLinearIdx(xo - 1, yo, zo);
+    int64_t vyp = GetLinearIdx(xo, yo + 1, zo);
+    int64_t vyn = GetLinearIdx(xo, yo - 1, zo);
+    int64_t vzp = GetLinearIdx(xo, yo, zo + 1);
+    int64_t vzn = GetLinearIdx(xo, yo, zo - 1);
+    if (vxp >= 0 && vxn >= 0) n[0] = (tsdf_base_ptr[vxp] - tsdf_base_ptr[vxn]);
+    if (vyp >= 0 && vyn >= 0) n[1] = (tsdf_base_ptr[vyp] - tsdf_base_ptr[vyn]);
+    if (vzp >= 0 && vzn >= 0) n[2] = (tsdf_base_ptr[vzp] - tsdf_base_ptr[vzn]);
+};
+
 template <typename input_depth_t,
           typename input_color_t,
           typename tsdf_t,
@@ -979,8 +1006,8 @@ void ExtractTriangleMeshCPU
     utility::LogDebug("Total vertex count = {}", vertex_count);
     vertices = core::Tensor({vertex_count, 3}, core::Float32, device);
 
-    // vertex_normals = core::Tensor({vertex_count, 3}, core::Float32, device);
-    // NDArrayIndexer normal_indexer = NDArrayIndexer(vertex_normals, 1);
+    vertex_normals = core::Tensor({vertex_count, 3}, core::Float32, device);
+    NDArrayIndexer normal_indexer = NDArrayIndexer(vertex_normals, 1);
 
     vertex_colors = core::Tensor({vertex_count, 3}, core::Float32, device);
     NDArrayIndexer color_indexer = NDArrayIndexer(vertex_colors, 1);
@@ -1003,6 +1030,14 @@ void ExtractTriangleMeshCPU
             return DeviceGetLinearIdx(
                     xo, yo, zo, curr_block_idx, static_cast<int>(resolution),
                     nb_block_masks_indexer, nb_block_indices_indexer);
+        };
+
+        auto GetNormal = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                           int curr_block_idx, float* n) {
+            return DeviceGetNormal<tsdf_t>(
+                    tsdf_base_ptr, xo, yo, zo, curr_block_idx, n,
+                    static_cast<int>(resolution), nb_block_masks_indexer,
+                    nb_block_indices_indexer);
         };
 
         // Natural index (0, N) -> (block_idx, voxel_idx)
@@ -1039,6 +1074,13 @@ void ExtractTriangleMeshCPU
         int64_t linear_idx = resolution3 * block_idx + voxel_idx;
         float tsdf_o = tsdf_base_ptr[linear_idx];
 
+        float no[3] = {0}, ne[3] = {0};
+
+        // Get normal at origin
+        GetNormal(static_cast<int>(xv), static_cast<int>(yv),
+                  static_cast<int>(zv), static_cast<int>(workload_block_idx),
+                  no);
+
         // Enumerate 3 edges in the voxel
         for (int e = 0; e < 3; ++e) {
             int vertex_idx = mesh_struct_ptr[e];
@@ -1065,6 +1107,21 @@ void ExtractTriangleMeshCPU
             vertex_ptr[0] = voxel_size * (x + ratio_x);
             vertex_ptr[1] = voxel_size * (y + ratio_y);
             vertex_ptr[2] = voxel_size * (z + ratio_z);
+
+            // Get normal at edge and interpolate
+            float* normal_ptr = normal_indexer.GetDataPtr<float>(idx);
+            GetNormal(static_cast<int>(xv) + (e == 0),
+                      static_cast<int>(yv) + (e == 1),
+                      static_cast<int>(zv) + (e == 2),
+                      static_cast<int>(workload_block_idx), ne);
+            float nx = (1 - ratio) * no[0] + ratio * ne[0];
+            float ny = (1 - ratio) * no[1] + ratio * ne[1];
+            float nz = (1 - ratio) * no[2] + ratio * ne[2];
+            float norm = static_cast<float>(sqrt(nx * nx + ny * ny + nz * nz) +
+                                            1e-5);
+            normal_ptr[0] = nx / norm;
+            normal_ptr[1] = ny / norm;
+            normal_ptr[2] = nz / norm;
 
             float* color_ptr = color_indexer.GetDataPtr<float>(idx);
             float r_o = color_base_ptr[linear_idx * 3 + 0];

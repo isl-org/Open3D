@@ -368,7 +368,7 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
 
     TriangleMesh mesh(vertices, triangles);
     mesh.SetVertexColors(vertex_colors);
-    // mesh.SetVertexNormals(vertex_normals);
+    mesh.SetVertexNormals(vertex_normals);
 
     return mesh;
 }

@@ -30,6 +30,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
+#include "open3d/io/TriangleMeshIO.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
