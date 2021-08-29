@@ -816,6 +816,338 @@ void ExtractTriangleMeshCPU
          float voxel_size,
          float weight_threshold,
          int& vertex_count) {
+    core::Device device = block_indices.GetDevice();
+
+    int64_t resolution = block_resolution;
+    int64_t resolution3 = resolution * resolution * resolution;
+
+    // Shape / transform indexers, no data involved
+    NDArrayIndexer voxel_indexer({resolution, resolution, resolution});
+    int n_blocks = static_cast<int>(block_indices.GetLength());
+
+    // TODO(wei): profile performance by replacing the table to a hashmap.
+    // Voxel-wise mesh info. 4 channels correspond to:
+    // 3 edges' corresponding vertex index + 1 table index.
+    core::Tensor mesh_structure;
+    try {
+        mesh_structure = core::Tensor::Zeros(
+                {n_blocks, resolution, resolution, resolution, 4}, core::Int32,
+                device);
+    } catch (const std::runtime_error&) {
+        utility::LogError(
+                "[MeshExtractionKernel] Unable to allocate assistance mesh "
+                "structure for Marching "
+                "Cubes with {} active voxel blocks. Please consider using a "
+                "larger voxel size (currently {}) for TSDF "
+                "integration, or using tsdf_volume.cpu() to perform mesh "
+                "extraction on CPU.",
+                n_blocks, voxel_size);
+    }
+
+    // Real data indexer
+    NDArrayIndexer mesh_structure_indexer(mesh_structure, 4);
+    NDArrayIndexer nb_block_masks_indexer(nb_block_masks, 2);
+    NDArrayIndexer nb_block_indices_indexer(nb_block_indices, 2);
+
+    // Plain arrays that does not require indexers
+    const int64_t* indices_ptr = block_indices.GetDataPtr<int64_t>();
+    const int64_t* inv_indices_ptr = inv_block_indices.GetDataPtr<int64_t>();
+
+    const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
+    const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
+    const color_t* color_base_ptr = block_values[2].GetDataPtr<color_t>();
+
+    int64_t n = n_blocks * resolution3;
+
+    // Pass 0: analyze mesh structure, set up one-on-one correspondences
+    // from edges to vertices.
+
+    core::ParallelFor(device, n, [=] OPEN3D_DEVICE(int64_t widx) {
+        auto GetLinearIdx = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                              int curr_block_idx) -> int64_t {
+            return DeviceGetLinearIdx(
+                    xo, yo, zo, curr_block_idx, static_cast<int>(resolution),
+                    nb_block_masks_indexer, nb_block_indices_indexer);
+        };
+
+        // Natural index (0, N) -> (block_idx, voxel_idx)
+        int64_t workload_block_idx = widx / resolution3;
+        int64_t voxel_idx = widx % resolution3;
+
+        // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+        int64_t xv, yv, zv;
+        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+        // Check per-vertex sign in the cube to determine cube
+        // type
+        int table_idx = 0;
+        for (int i = 0; i < 8; ++i) {
+            int64_t linear_idx_i =
+                    GetLinearIdx(static_cast<int>(xv) + vtx_shifts[i][0],
+                                 static_cast<int>(yv) + vtx_shifts[i][1],
+                                 static_cast<int>(zv) + vtx_shifts[i][2],
+                                 static_cast<int>(workload_block_idx));
+            if (linear_idx_i < 0) return;
+
+            float tsdf_i = tsdf_base_ptr[linear_idx_i];
+            float weight_i = weight_base_ptr[linear_idx_i];
+            if (weight_i <= weight_threshold) return;
+
+            table_idx |= ((tsdf_i < 0) ? (1 << i) : 0);
+        }
+
+        int* mesh_struct_ptr = mesh_structure_indexer.GetDataPtr<int>(
+                xv, yv, zv, workload_block_idx);
+        mesh_struct_ptr[3] = table_idx;
+
+        if (table_idx == 0 || table_idx == 255) return;
+
+        // Check per-edge sign determine the cube type
+        int edges_with_vertices = edge_table[table_idx];
+        for (int i = 0; i < 12; ++i) {
+            if (edges_with_vertices & (1 << i)) {
+                int64_t xv_i = xv + edge_shifts[i][0];
+                int64_t yv_i = yv + edge_shifts[i][1];
+                int64_t zv_i = zv + edge_shifts[i][2];
+                int edge_i = edge_shifts[i][3];
+
+                int dxb = static_cast<int>(xv_i / resolution);
+                int dyb = static_cast<int>(yv_i / resolution);
+                int dzb = static_cast<int>(zv_i / resolution);
+
+                int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+
+                int64_t block_idx_i =
+                        *nb_block_indices_indexer.GetDataPtr<int64_t>(
+                                workload_block_idx, nb_idx);
+                int* mesh_ptr_i = mesh_structure_indexer.GetDataPtr<int>(
+                        xv_i - dxb * resolution, yv_i - dyb * resolution,
+                        zv_i - dzb * resolution, inv_indices_ptr[block_idx_i]);
+
+                // Non-atomic write, but we are safe
+                mesh_ptr_i[edge_i] = -1;
+            }
+        }
+    });
+
+    // Pass 1: determine valid number of vertices (if not preset)
+#if defined(__CUDACC__)
+    core::Tensor count(std::vector<int>{0}, {}, core::Int32, device);
+
+    int* count_ptr = count.GetDataPtr<int>();
+#else
+    std::atomic<int> count_atomic(0);
+    std::atomic<int>* count_ptr = &count_atomic;
+#endif
+
+    if (vertex_count < 0) {
+        core::ParallelFor(device, n, [=] OPEN3D_DEVICE(int64_t widx) {
+            // Natural index (0, N) -> (block_idx, voxel_idx)
+            int64_t workload_block_idx = widx / resolution3;
+            int64_t voxel_idx = widx % resolution3;
+
+            // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+            int64_t xv, yv, zv;
+            voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+            // Obtain voxel's mesh struct ptr
+            int* mesh_struct_ptr = mesh_structure_indexer.GetDataPtr<int>(
+                    xv, yv, zv, workload_block_idx);
+
+            // Early quit -- no allocated vertex to compute
+            if (mesh_struct_ptr[0] != -1 && mesh_struct_ptr[1] != -1 &&
+                mesh_struct_ptr[2] != -1) {
+                return;
+            }
+
+            // Enumerate 3 edges in the voxel
+            for (int e = 0; e < 3; ++e) {
+                int vertex_idx = mesh_struct_ptr[e];
+                if (vertex_idx != -1) continue;
+
+                OPEN3D_ATOMIC_ADD(count_ptr, 1);
+            }
+        });
+
+#if defined(__CUDACC__)
+        vertex_count = count.Item<int>();
+#else
+        vertex_count = (*count_ptr).load();
+#endif
+    }
+
+    utility::LogDebug("Total vertex count = {}", vertex_count);
+    vertices = core::Tensor({vertex_count, 3}, core::Float32, device);
+
+    // vertex_normals = core::Tensor({vertex_count, 3}, core::Float32, device);
+    // NDArrayIndexer normal_indexer = NDArrayIndexer(vertex_normals, 1);
+
+    vertex_colors = core::Tensor({vertex_count, 3}, core::Float32, device);
+    NDArrayIndexer color_indexer = NDArrayIndexer(vertex_colors, 1);
+
+    NDArrayIndexer block_keys_indexer(block_keys, 1);
+    NDArrayIndexer vertex_indexer(vertices, 1);
+
+#if defined(__CUDACC__)
+    count = core::Tensor(std::vector<int>{0}, {}, core::Int32, device);
+    count_ptr = count.GetDataPtr<int>();
+#else
+    (*count_ptr) = 0;
+#endif
+
+    // Pass 2: extract vertices.
+
+    core::ParallelFor(device, n, [=] OPEN3D_DEVICE(int64_t widx) {
+        auto GetLinearIdx = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                              int curr_block_idx) -> int64_t {
+            return DeviceGetLinearIdx(
+                    xo, yo, zo, curr_block_idx, static_cast<int>(resolution),
+                    nb_block_masks_indexer, nb_block_indices_indexer);
+        };
+
+        // Natural index (0, N) -> (block_idx, voxel_idx)
+        int64_t workload_block_idx = widx / resolution3;
+        int64_t block_idx = indices_ptr[workload_block_idx];
+        int64_t voxel_idx = widx % resolution3;
+
+        // block_idx -> (x_block, y_block, z_block)
+        int* block_key_ptr = block_keys_indexer.GetDataPtr<int>(block_idx);
+        int64_t xb = static_cast<int64_t>(block_key_ptr[0]);
+        int64_t yb = static_cast<int64_t>(block_key_ptr[1]);
+        int64_t zb = static_cast<int64_t>(block_key_ptr[2]);
+
+        // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+        int64_t xv, yv, zv;
+        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+        // global coordinate (in voxels)
+        int64_t x = xb * resolution + xv;
+        int64_t y = yb * resolution + yv;
+        int64_t z = zb * resolution + zv;
+
+        // Obtain voxel's mesh struct ptr
+        int* mesh_struct_ptr = mesh_structure_indexer.GetDataPtr<int>(
+                xv, yv, zv, workload_block_idx);
+
+        // Early quit -- no allocated vertex to compute
+        if (mesh_struct_ptr[0] != -1 && mesh_struct_ptr[1] != -1 &&
+            mesh_struct_ptr[2] != -1) {
+            return;
+        }
+
+        // Obtain voxel ptr
+        int64_t linear_idx = resolution3 * block_idx + voxel_idx;
+        float tsdf_o = tsdf_base_ptr[linear_idx];
+
+        // Enumerate 3 edges in the voxel
+        for (int e = 0; e < 3; ++e) {
+            int vertex_idx = mesh_struct_ptr[e];
+            if (vertex_idx != -1) continue;
+
+            int64_t linear_idx_e =
+                    GetLinearIdx(static_cast<int>(xv) + (e == 0),
+                                 static_cast<int>(yv) + (e == 1),
+                                 static_cast<int>(zv) + (e == 2),
+                                 static_cast<int>(workload_block_idx));
+            OPEN3D_ASSERT(linear_idx_e > 0 &&
+                          "Internal error: GetVoxelAt returns nullptr.");
+            float tsdf_e = tsdf_base_ptr[linear_idx_e];
+            float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
+
+            int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+            mesh_struct_ptr[e] = idx;
+
+            float ratio_x = ratio * int(e == 0);
+            float ratio_y = ratio * int(e == 1);
+            float ratio_z = ratio * int(e == 2);
+
+            float* vertex_ptr = vertex_indexer.GetDataPtr<float>(idx);
+            vertex_ptr[0] = voxel_size * (x + ratio_x);
+            vertex_ptr[1] = voxel_size * (y + ratio_y);
+            vertex_ptr[2] = voxel_size * (z + ratio_z);
+
+            float* color_ptr = color_indexer.GetDataPtr<float>(idx);
+            float r_o = color_base_ptr[linear_idx * 3 + 0];
+            float g_o = color_base_ptr[linear_idx * 3 + 1];
+            float b_o = color_base_ptr[linear_idx * 3 + 2];
+
+            float r_e = color_base_ptr[linear_idx_e * 3 + 0];
+            float g_e = color_base_ptr[linear_idx_e * 3 + 1];
+            float b_e = color_base_ptr[linear_idx_e * 3 + 2];
+
+            color_ptr[0] = ((1 - ratio) * r_o + ratio * r_e) / 255.0f;
+            color_ptr[1] = ((1 - ratio) * g_o + ratio * g_e) / 255.0f;
+            color_ptr[2] = ((1 - ratio) * b_o + ratio * b_e) / 255.0f;
+        }
+    });
+
+    // Pass 3: connect vertices and form triangles.
+    int triangle_count = vertex_count * 3;
+    triangles = core::Tensor({triangle_count, 3}, core::Int64, device);
+    NDArrayIndexer triangle_indexer(triangles, 1);
+
+#if defined(__CUDACC__)
+    count = core::Tensor(std::vector<int>{0}, {}, core::Int32, device);
+    count_ptr = count.GetDataPtr<int>();
+#else
+    (*count_ptr) = 0;
+#endif
+    core::ParallelFor(device, n, [=] OPEN3D_DEVICE(int64_t widx) {
+        // Natural index (0, N) -> (block_idx, voxel_idx)
+        int64_t workload_block_idx = widx / resolution3;
+        int64_t voxel_idx = widx % resolution3;
+
+        // voxel_idx -> (x_voxel, y_voxel, z_voxel)
+        int64_t xv, yv, zv;
+        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+        // Obtain voxel's mesh struct ptr
+        int* mesh_struct_ptr = mesh_structure_indexer.GetDataPtr<int>(
+                xv, yv, zv, workload_block_idx);
+
+        int table_idx = mesh_struct_ptr[3];
+        if (tri_count[table_idx] == 0) return;
+
+        for (size_t tri = 0; tri < 16; tri += 3) {
+            if (tri_table[table_idx][tri] == -1) return;
+
+            int tri_idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+
+            for (size_t vertex = 0; vertex < 3; ++vertex) {
+                int edge = tri_table[table_idx][tri + vertex];
+
+                int64_t xv_i = xv + edge_shifts[edge][0];
+                int64_t yv_i = yv + edge_shifts[edge][1];
+                int64_t zv_i = zv + edge_shifts[edge][2];
+                int64_t edge_i = edge_shifts[edge][3];
+
+                int dxb = static_cast<int>(xv_i / resolution);
+                int dyb = static_cast<int>(yv_i / resolution);
+                int dzb = static_cast<int>(zv_i / resolution);
+
+                int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
+
+                int64_t block_idx_i =
+                        *nb_block_indices_indexer.GetDataPtr<int64_t>(
+                                workload_block_idx, nb_idx);
+                int* mesh_struct_ptr_i = mesh_structure_indexer.GetDataPtr<int>(
+                        xv_i - dxb * resolution, yv_i - dyb * resolution,
+                        zv_i - dzb * resolution, inv_indices_ptr[block_idx_i]);
+
+                int64_t* triangle_ptr =
+                        triangle_indexer.GetDataPtr<int64_t>(tri_idx);
+                triangle_ptr[2 - vertex] = mesh_struct_ptr_i[edge_i];
+            }
+        }
+    });
+
+#if defined(__CUDACC__)
+    triangle_count = count.Item<int>();
+#else
+    triangle_count = (*count_ptr).load();
+#endif
+    utility::LogInfo("Total triangle count = {}", triangle_count);
+    triangles = triangles.Slice(0, 0, triangle_count);
 }
 
 }  // namespace voxel_grid
