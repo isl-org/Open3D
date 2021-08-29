@@ -333,7 +333,7 @@ PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
 
     auto pcd = PointCloud(points.Slice(0, 0, estimated_number));
     pcd.SetPointColors(colors.Slice(0, 0, estimated_number));
-    // pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
+    pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
 
     return pcd;
 }

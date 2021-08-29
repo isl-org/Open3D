@@ -82,3 +82,6 @@ if __name__ == '__main__':
 
     mesh = vbg.extract_triangle_mesh()
     o3d.visualization.draw([mesh.to_legacy()])
+
+    pcd = vbg.extract_point_cloud()
+    o3d.visualization.draw([pcd])

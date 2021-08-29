@@ -707,11 +707,10 @@ void ExtractPointCloudCPU
     NDArrayIndexer point_indexer(points, 1);
 
     // Normals
-    // NDArrayIndexer normal_indexer;
-
-    // normals = core::Tensor({max_count, 3}, core::Float32,
-    //                        block_values.GetDevice());
-    // normal_indexer = NDArrayIndexer(normals, 1);
+    NDArrayIndexer normal_indexer;
+    normals = core::Tensor({valid_size, 3}, core::Float32,
+                           block_values[0].GetDevice());
+    normal_indexer = NDArrayIndexer(normals, 1);
 
     // This pass extracts exact surface points.
 
@@ -730,6 +729,15 @@ void ExtractPointCloudCPU
                                               static_cast<int>(resolution),
                                               nb_block_masks_indexer,
                                               nb_block_indices_indexer);
+                };
+
+                auto GetNormal = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
+                                                   int curr_block_idx,
+                                                   float* n) {
+                    return DeviceGetNormal<tsdf_t>(
+                            tsdf_base_ptr, xo, yo, zo, curr_block_idx, n,
+                            static_cast<int>(resolution),
+                            nb_block_masks_indexer, nb_block_indices_indexer);
                 };
 
                 // Natural index (0, N) -> (block_idx, voxel_idx)
@@ -753,6 +761,13 @@ void ExtractPointCloudCPU
                 float tsdf_o = tsdf_base_ptr[linear_idx];
                 float weight_o = weight_base_ptr[linear_idx];
                 if (weight_o <= weight_threshold) return;
+
+                float no[3] = {0}, ne[3] = {0};
+
+                // Get normal at origin
+                GetNormal(static_cast<int>(xv), static_cast<int>(yv),
+                          static_cast<int>(zv),
+                          static_cast<int>(workload_block_idx), no);
 
                 int64_t x = xb * resolution + xv;
                 int64_t y = yb * resolution + yv;
@@ -785,8 +800,23 @@ void ExtractPointCloudCPU
                         point_ptr[1] = voxel_size * (y + ratio * int(i == 1));
                         point_ptr[2] = voxel_size * (z + ratio * int(i == 2));
 
-                        float* color_ptr = color_indexer.GetDataPtr<float>(idx);
+                        // Get normal at edge and interpolate
+                        float* normal_ptr =
+                                normal_indexer.GetDataPtr<float>(idx);
+                        GetNormal(static_cast<int>(xv) + (i == 0),
+                                  static_cast<int>(yv) + (i == 1),
+                                  static_cast<int>(zv) + (i == 2),
+                                  static_cast<int>(workload_block_idx), ne);
+                        float nx = (1 - ratio) * no[0] + ratio * ne[0];
+                        float ny = (1 - ratio) * no[1] + ratio * ne[1];
+                        float nz = (1 - ratio) * no[2] + ratio * ne[2];
+                        float norm = static_cast<float>(
+                                sqrt(nx * nx + ny * ny + nz * nz) + 1e-5);
+                        normal_ptr[0] = nx / norm;
+                        normal_ptr[1] = ny / norm;
+                        normal_ptr[2] = nz / norm;
 
+                        float* color_ptr = color_indexer.GetDataPtr<float>(idx);
                         const color_t* color_o_ptr =
                                 color_base_ptr + 3 * linear_idx;
                         float r_o = color_o_ptr[0];
