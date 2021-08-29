@@ -796,6 +796,28 @@ void ExtractPointCloudCPU
 #endif
 }
 
+template <typename tsdf_t, typename weight_t, typename color_t>
+#if defined(__CUDACC__)
+void ExtractTriangleMeshCUDA
+#else
+void ExtractTriangleMeshCPU
+#endif
+        (const core::Tensor& block_indices,
+         const core::Tensor& inv_block_indices,
+         const core::Tensor& nb_block_indices,
+         const core::Tensor& nb_block_masks,
+         const core::Tensor& block_keys,
+         const std::vector<core::Tensor>& block_values,
+         core::Tensor& vertices,
+         core::Tensor& triangles,
+         core::Tensor& vertex_normals,
+         core::Tensor& vertex_colors,
+         int64_t block_resolution,
+         float voxel_size,
+         float weight_threshold,
+         int& vertex_count) {
+}
+
 }  // namespace voxel_grid
 }  // namespace kernel
 }  // namespace geometry

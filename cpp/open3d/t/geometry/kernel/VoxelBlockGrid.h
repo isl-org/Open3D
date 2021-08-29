@@ -98,6 +98,22 @@ void ExtractPointCloud(const core::Tensor& block_indices,
                        float weight_threshold,
                        int& valid_size);
 
+void ExtractTriangleMesh(const core::Tensor& block_indices,
+                         const core::Tensor& inv_block_indices,
+                         const core::Tensor& nb_block_indices,
+                         const core::Tensor& nb_block_masks,
+                         const core::Tensor& block_keys,
+                         const std::vector<core::Tensor>& block_values,
+                         core::Tensor& vertices,
+                         core::Tensor& triangles,
+                         core::Tensor& vertex_normals,
+                         core::Tensor& vertex_colors,
+                         int64_t block_resolution,
+                         float voxel_size,
+                         float weight_threshold,
+                         int& vertex_count);
+
+/// CPU
 void PointCloudTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
                         const core::Tensor& points,
                         core::Tensor& voxel_block_coords,
@@ -165,6 +181,22 @@ void ExtractPointCloudCPU(const core::Tensor& block_indices,
                           float voxel_size,
                           float weight_threshold,
                           int& valid_size);
+
+template <typename tsdf_t, typename weight_t, typename color_t>
+void ExtractTriangleMeshCPU(const core::Tensor& block_indices,
+                            const core::Tensor& inv_block_indices,
+                            const core::Tensor& nb_block_indices,
+                            const core::Tensor& nb_block_masks,
+                            const core::Tensor& block_keys,
+                            const std::vector<core::Tensor>& block_values,
+                            core::Tensor& vertices,
+                            core::Tensor& triangles,
+                            core::Tensor& vertex_normals,
+                            core::Tensor& vertex_colors,
+                            int64_t block_resolution,
+                            float voxel_size,
+                            float weight_threshold,
+                            int& vertex_count);
 
 #ifdef BUILD_CUDA_MODULE
 void PointCloudTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
@@ -234,6 +266,22 @@ void ExtractPointCloudCUDA(const core::Tensor& block_indices,
                            float voxel_size,
                            float weight_threshold,
                            int& valid_size);
+
+template <typename tsdf_t, typename weight_t, typename color_t>
+void ExtractTriangleMeshCUDA(const core::Tensor& block_indices,
+                             const core::Tensor& inv_block_indices,
+                             const core::Tensor& nb_block_indices,
+                             const core::Tensor& nb_block_masks,
+                             const core::Tensor& block_keys,
+                             const std::vector<core::Tensor>& block_values,
+                             core::Tensor& vertices,
+                             core::Tensor& triangles,
+                             core::Tensor& vertex_normals,
+                             core::Tensor& vertex_colors,
+                             int64_t block_resolution,
+                             float voxel_size,
+                             float weight_threshold,
+                             int& vertex_count);
 
 #endif
 }  // namespace voxel_grid

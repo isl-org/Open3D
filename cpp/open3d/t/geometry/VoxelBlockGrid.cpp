@@ -39,6 +39,37 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
+        std::shared_ptr<core::HashMap> &hashmap,
+        const core::Tensor &active_buf_indices) {
+    // Fixed radius search for spatially hashed voxel blocks.
+    // A generalization will be implementing dense/sparse fixed radius
+    // search with coordinates as hashmap keys.
+    core::Tensor key_buffer_int3_tensor = hashmap->GetKeyTensor();
+
+    core::Tensor active_keys = key_buffer_int3_tensor.IndexGet(
+            {active_buf_indices.To(core::Int64)});
+    int64_t n = active_keys.GetShape()[0];
+
+    // Fill in radius nearest neighbors.
+    core::Tensor keys_nb({27, n, 3}, core::Int32, hashmap->GetDevice());
+    for (int nb = 0; nb < 27; ++nb) {
+        int dz = nb / 9;
+        int dy = (nb % 9) / 3;
+        int dx = nb % 3;
+        core::Tensor dt =
+                core::Tensor(std::vector<int>{dx - 1, dy - 1, dz - 1}, {1, 3},
+                             core::Int32, hashmap->GetDevice());
+        keys_nb[nb] = active_keys + dt;
+    }
+    keys_nb = keys_nb.View({27 * n, 3});
+
+    core::Tensor buf_indices_nb, masks_nb;
+    hashmap->Find(keys_nb, buf_indices_nb, masks_nb);
+    return std::make_pair(buf_indices_nb.View({27, n, 1}),
+                          masks_nb.View({27, n, 1}));
+}
+
 VoxelBlockGrid::VoxelBlockGrid(
         const std::vector<std::string> &attr_names,
         const std::vector<core::Dtype> &attr_dtypes,
@@ -281,37 +312,6 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
     return renderings_map;
 }
 
-std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
-        std::shared_ptr<core::HashMap> &hashmap,
-        const core::Tensor &active_buf_indices) {
-    // Fixed radius search for spatially hashed voxel blocks.
-    // A generalization will be implementing dense/sparse fixed radius
-    // search with coordinates as hashmap keys.
-    core::Tensor key_buffer_int3_tensor = hashmap->GetKeyTensor();
-
-    core::Tensor active_keys = key_buffer_int3_tensor.IndexGet(
-            {active_buf_indices.To(core::Int64)});
-    int64_t n = active_keys.GetShape()[0];
-
-    // Fill in radius nearest neighbors.
-    core::Tensor keys_nb({27, n, 3}, core::Int32, hashmap->GetDevice());
-    for (int nb = 0; nb < 27; ++nb) {
-        int dz = nb / 9;
-        int dy = (nb % 9) / 3;
-        int dx = nb % 3;
-        core::Tensor dt =
-                core::Tensor(std::vector<int>{dx - 1, dy - 1, dz - 1}, {1, 3},
-                             core::Int32, hashmap->GetDevice());
-        keys_nb[nb] = active_keys + dt;
-    }
-    keys_nb = keys_nb.View({27 * n, 3});
-
-    core::Tensor buf_indices_nb, masks_nb;
-    hashmap->Find(keys_nb, buf_indices_nb, masks_nb);
-    return std::make_pair(buf_indices_nb.View({27, n, 1}),
-                          masks_nb.View({27, n, 1}));
-}
-
 PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
                                              float weight_threshold) {
     core::Tensor active_buf_indices;
@@ -336,6 +336,41 @@ PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
     // pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
 
     return pcd;
+}
+
+TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
+                                                 float weight_threshold) {
+    core::Tensor active_buf_indices_i32 = block_hashmap_->GetActiveIndices();
+    core::Tensor active_nb_buf_indices, active_nb_masks;
+    std::tie(active_nb_buf_indices, active_nb_masks) =
+            BufferRadiusNeighbors(block_hashmap_, active_buf_indices_i32);
+
+    core::Device device = block_hashmap_->GetDevice();
+    // Map active indices to [0, num_blocks] to be allocated for surface mesh.
+    int64_t num_blocks = block_hashmap_->Size();
+    core::Tensor inverse_index_map({block_hashmap_->GetCapacity()}, core::Int64,
+                                   device);
+    core::Tensor iota_map =
+            core::Tensor::Arange(0, num_blocks, 1, core::Int64, device);
+    inverse_index_map.IndexSet({active_buf_indices_i32.To(core::Int64)},
+                               iota_map);
+
+    core::Tensor vertices, triangles, vertex_normals, vertex_colors;
+    int vertex_count = estimated_number;
+
+    core::Tensor block_keys = block_hashmap_->GetKeyTensor();
+    std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
+    kernel::voxel_grid::ExtractTriangleMesh(
+            active_buf_indices_i32.To(core::Int64), inverse_index_map,
+            active_nb_buf_indices.To(core::Int64), active_nb_masks, block_keys,
+            block_values, vertices, triangles, vertex_normals, vertex_colors,
+            block_resolution_, voxel_size_, weight_threshold, vertex_count);
+
+    TriangleMesh mesh(vertices, triangles);
+    mesh.SetVertexColors(vertex_colors);
+    mesh.SetVertexNormals(vertex_normals);
+
+    return mesh;
 }
 
 void VoxelBlockGrid::Save(const std::string &file_name) const {
