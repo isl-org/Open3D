@@ -372,64 +372,75 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
 }
 
 bool FilamentScene::AddGeometry(const std::string& object_name,
-                                const t::geometry::PointCloud& point_cloud,
+                                const t::geometry::Geometry& geometry,
                                 const MaterialRecord& material,
                                 const std::string& downsampled_name /*= ""*/,
                                 size_t downsample_threshold /*= SIZE_MAX*/) {
     // Tensor::Min() and Tensor::Max() can be very slow on certain setups,
     // in particular macOS with clang 11.0.0. This is a temporary fix.
-    auto ComputeAABB =
-            [](const t::geometry::PointCloud& cloud) -> filament::Box {
-        Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
-        Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
-        const auto& points = cloud.GetPointPositions();
-        const size_t n = points.GetLength();
-        float* pts = (float*)points.GetDataPtr();
-        for (size_t i = 0; i < 3 * n; i += 3) {
-            min_pt[0] = std::min(min_pt[0], pts[i]);
-            min_pt[1] = std::min(min_pt[1], pts[i + 1]);
-            min_pt[2] = std::min(min_pt[2], pts[i + 2]);
-            max_pt[0] = std::max(max_pt[0], pts[i]);
-            max_pt[1] = std::max(max_pt[1], pts[i + 1]);
-            max_pt[2] = std::max(max_pt[2], pts[i + 2]);
-        }
+    // TODO: Is this still a problem? Even if it is move to the BufferBuilders
+    //    auto ComputeAABB =
+    //[](const t::geometry::PointCloud& cloud) -> filament::Box {
+    // Eigen::Vector3f min_pt = {1e30f, 1e30f, 1e30f};
+    // Eigen::Vector3f max_pt = {-1e30f, -1e30f, -1e30f};
+    // const auto& points = cloud.GetPointPositions();
+    // const size_t n = points.GetLength();
+    // float* pts = (float*)points.GetDataPtr();
+    // for (size_t i = 0; i < 3 * n; i += 3) {
+    // min_pt[0] = std::min(min_pt[0], pts[i]);
+    // min_pt[1] = std::min(min_pt[1], pts[i + 1]);
+    // min_pt[2] = std::min(min_pt[2], pts[i + 2]);
+    // max_pt[0] = std::max(max_pt[0], pts[i]);
+    // max_pt[1] = std::max(max_pt[1], pts[i + 1]);
+    // max_pt[2] = std::max(max_pt[2], pts[i + 2]);
+    //}
 
-        filament::math::float3 min(min_pt.x(), min_pt.y(), min_pt.z());
-        filament::math::float3 max(max_pt.x(), max_pt.y(), max_pt.z());
+    // filament::math::float3 min(min_pt.x(), min_pt.y(), min_pt.z());
+    // filament::math::float3 max(max_pt.x(), max_pt.y(), max_pt.z());
 
-        filament::Box aabb;
-        aabb.set(min, max);
-        if (aabb.isEmpty()) {
-            min -= 1.f;
-            max += 1.f;
-            aabb.set(min, max);
-        }
-        return aabb;
-    };
+    // filament::Box aabb;
+    // aabb.set(min, max);
+    // if (aabb.isEmpty()) {
+    // min -= 1.f;
+    // max += 1.f;
+    // aabb.set(min, max);
+    //}
+    // return aabb;
+    //    };
 
     // Basic sanity checks
-    if (point_cloud.IsEmpty()) {
-        utility::LogWarning("Point cloud for object {} is empty", object_name);
-        return false;
-    }
-    const auto& points = point_cloud.GetPointPositions();
-    if (points.GetDtype() != core::Float32) {
-        utility::LogWarning("tensor point cloud must have Dtype of Float32");
+    if (geometry.IsEmpty()) {
+        utility::LogWarning("Geometry for object {} is empty", object_name);
         return false;
     }
 
-    t::geometry::PointCloud cpu_pcloud;
-    std::unique_ptr<GeometryBuffersBuilder> buffer_builder;
-    if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    // Geometry must be on CPU
+    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
+    if (!buffer_builder) {
         utility::LogWarning(
-                "GPU resident tensor point clouds are not supported at this "
-                "time for direct visualization. Copying point cloud to CPU.");
-        cpu_pcloud = point_cloud.To(core::Device("CPU:0"));
-        buffer_builder = GeometryBuffersBuilder::GetBuilder(cpu_pcloud);
-    } else {
-        cpu_pcloud = point_cloud;
-        buffer_builder = GeometryBuffersBuilder::GetBuilder(point_cloud);
+                "Unable to create GPU resources for object {}. Please check "
+                "console for further details.",
+                object_name);
+        return false;
     }
+    //    const auto& points = point_cloud.GetPointPositions();
+    // if (points.GetDtype() != core::Float32) {
+    // utility::LogWarning("tensor point cloud must have Dtype of Float32");
+    // return false;
+    //}
+
+    // t::geometry::PointCloud cpu_pcloud;
+    // std::unique_ptr<GeometryBuffersBuilder> buffer_builder;
+    // if (points.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    // utility::LogWarning(
+    //"GPU resident tensor point clouds are not supported at this "
+    //"time for direct visualization. Copying point cloud to CPU.");
+    // cpu_pcloud = point_cloud.To(core::Device("CPU:0"));
+    // buffer_builder = GeometryBuffersBuilder::GetBuilder(cpu_pcloud);
+    //} else {
+    // cpu_pcloud = point_cloud;
+    // buffer_builder = GeometryBuffersBuilder::GetBuilder(point_cloud);
+    //}
 
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
@@ -439,7 +450,7 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
-    filament::Box aabb = ComputeAABB(cpu_pcloud);
+    filament::Box aabb = buffer_builder->ComputeAABB();
     bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
                                               aabb, vb, ib, material);
     if (success && ib_downsampled) {

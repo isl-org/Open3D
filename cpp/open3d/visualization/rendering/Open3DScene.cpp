@@ -28,8 +28,8 @@
 
 #include <algorithm>
 
+#include "open3d/geometry/Geometry.h"
 #include "open3d/geometry/LineSet.h"
-#include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/rendering/MaterialRecord.h"
@@ -283,7 +283,7 @@ void Open3DScene::AddGeometry(
 
 void Open3DScene::AddGeometry(
         const std::string& name,
-        const t::geometry::PointCloud* geom,
+        const t::geometry::Geometry* geom,
         const MaterialRecord& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;

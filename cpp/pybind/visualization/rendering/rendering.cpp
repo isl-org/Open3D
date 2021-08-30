@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/ColorGrading.h"
 #include "open3d/visualization/rendering/Gradient.h"
@@ -482,7 +483,7 @@ void pybind_rendering_classes(py::module &m) {
                  "Adds a Geometry with a material to the scene")
             .def("add_geometry",
                  (bool (Scene::*)(
-                         const std::string &, const t::geometry::PointCloud &,
+                         const std::string &, const t::geometry::Geometry &,
                          const MaterialRecord &, const std::string &, size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
@@ -600,7 +601,7 @@ void pybind_rendering_classes(py::module &m) {
                  "add_downsampled_copy_for_fast_rendering"_a = true)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
-                                   const t::geometry::PointCloud *,
+                                   const t::geometry::Geometry *,
                                    const MaterialRecord &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,

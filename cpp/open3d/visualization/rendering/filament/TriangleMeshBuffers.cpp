@@ -52,6 +52,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -479,6 +480,39 @@ filament::Box TriangleMeshBuffersBuilder::ComputeAABB() {
 
     Box aabb;
     aabb.set(min, max);
+
+    return aabb;
+}
+
+TMeshBuffersBuilder::TMeshBuffersBuilder(
+        const t::geometry::TriangleMesh& geometry)
+    : geometry_(geometry) {}
+
+RenderableManager::PrimitiveType TMeshBuffersBuilder::GetPrimitiveType() const {
+    return RenderableManager::PrimitiveType::TRIANGLES;
+}
+
+GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
+    return {};
+}
+
+filament::Box TMeshBuffersBuilder::ComputeAABB() {
+    auto min_bounds = geometry_.GetMinBound();
+    auto max_bounds = geometry_.GetMaxBound();
+    auto* min_bounds_float = min_bounds.GetDataPtr<float>();
+    auto* max_bounds_float = max_bounds.GetDataPtr<float>();
+
+    const filament::math::float3 min_pt(
+            min_bounds_float[0], min_bounds_float[1], min_bounds_float[2]);
+    const filament::math::float3 max_pt(
+            max_bounds_float[0], max_bounds_float[1], max_bounds_float[2]);
+
+    Box aabb;
+    aabb.set(min_pt, max_pt);
+    if (aabb.isEmpty()) {
+        const filament::math::float3 offset(0.1, 0.1, 0.1);
+        aabb.set(min_pt - offset, max_pt + offset);
+    }
 
     return aabb;
 }
