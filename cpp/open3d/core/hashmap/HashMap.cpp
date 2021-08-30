@@ -67,6 +67,7 @@ void HashMap::Reserve(int64_t capacity) {
     int64_t count = Size();
     if (capacity <= count) {
         utility::LogDebug("Target capacity smaller then current size, abort.");
+        return;
     }
 
     Tensor active_keys;
