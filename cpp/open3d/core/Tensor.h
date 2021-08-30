@@ -38,6 +38,7 @@
 #include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/TensorInit.h"
 #include "open3d/core/TensorKey.h"
 

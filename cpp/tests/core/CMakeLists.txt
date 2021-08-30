@@ -13,6 +13,7 @@ target_sources(tests PRIVATE
     ShapeUtil.cpp
     SizeVector.cpp
     Tensor.cpp
+    TensorCheck.cpp
     TensorList.cpp
     TensorObject.cpp
 )
