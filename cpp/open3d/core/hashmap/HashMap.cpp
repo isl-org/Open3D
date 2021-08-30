@@ -63,8 +63,11 @@ HashMap::HashMap(int64_t init_capacity,
     Init(init_capacity, device, backend);
 }
 
-void HashMap::Rehash(int64_t buckets) {
+void HashMap::Reserve(int64_t capacity) {
     int64_t count = Size();
+    if (capacity <= count) {
+        utility::LogDebug("Target capacity smaller then current size, abort.");
+    }
 
     Tensor active_keys;
     std::vector<Tensor> active_values;
@@ -80,20 +83,15 @@ void HashMap::Rehash(int64_t buckets) {
         }
     }
 
-    float avg_capacity_per_bucket =
-            float(GetCapacity()) / float(GetBucketCount());
     device_hashmap_->Free();
-    device_hashmap_->Allocate(
-            std::max(int64_t(std::ceil(buckets * avg_capacity_per_bucket)),
-                     active_keys.GetLength()));
+    device_hashmap_->Allocate(capacity);
+    device_hashmap_->Reserve(capacity);
 
     if (count > 0) {
         Tensor output_buf_indices, output_masks;
         InsertImpl(active_keys, active_values, output_buf_indices,
                    output_masks);
     }
-
-    device_hashmap_->Rehash(buckets);
 }
 
 std::pair<Tensor, Tensor> HashMap::Insert(const Tensor& input_keys,
@@ -175,14 +173,9 @@ void HashMap::Insert(const Tensor& input_keys,
     int64_t length = input_keys.GetLength();
     int64_t new_size = Size() + length;
     int64_t capacity = GetCapacity();
-    int64_t bucket_count = GetBucketCount();
 
     if (new_size > capacity) {
-        float avg_capacity_per_bucket = float(capacity) / float(bucket_count);
-        int64_t expected_buckets = std::max(
-                int64_t(bucket_count * 2),
-                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
-        Rehash(expected_buckets);
+        Reserve(std::max(new_size, capacity * 2));
     }
     InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks);
 }
@@ -193,14 +186,9 @@ void HashMap::Activate(const Tensor& input_keys,
     int64_t length = input_keys.GetLength();
     int64_t new_size = Size() + length;
     int64_t capacity = GetCapacity();
-    int64_t bucket_count = GetBucketCount();
 
     if (new_size > capacity) {
-        float avg_capacity_per_bucket = float(capacity) / float(bucket_count);
-        int64_t expected_buckets = std::max(
-                int64_t(bucket_count * 2),
-                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
-        Rehash(expected_buckets);
+        Reserve(std::max(new_size, capacity * 2));
     }
 
     std::vector<Tensor> null_tensors_soa;

@@ -45,7 +45,7 @@ public:
 
     ~SlabHashBackend();
 
-    void Rehash(int64_t buckets) override;
+    void Reserve(int64_t capacity) override;
 
     void Insert(const void* input_keys,
                 const std::vector<const void*>& input_values_soa,
@@ -102,7 +102,7 @@ SlabHashBackend<Key, Hash, Eq>::~SlabHashBackend() {
 }
 
 template <typename Key, typename Hash, typename Eq>
-void SlabHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {}
+void SlabHashBackend<Key, Hash, Eq>::Reserve(int64_t capacity) {}
 
 template <typename Key, typename Hash, typename Eq>
 void SlabHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
