@@ -72,8 +72,6 @@ const Dtype Bool = Dtype::Bool;
 
 Dtype::Dtype(DtypeCode dtype_code, int64_t byte_size, const std::string &name)
     : dtype_code_(dtype_code), byte_size_(byte_size) {
-    (void)dtype_code_;
-    (void)byte_size_;
     if (name.size() > max_name_len_ - 1) {
         utility::LogError("Name {} must be shorter.", name);
     } else {
