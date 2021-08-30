@@ -136,7 +136,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     query_points.AssertDtype(dtype);
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
     queries_row_splits.AssertShape(points_row_splits_.GetShape());
     if (num_query_points != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
@@ -209,7 +209,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     query_points.AssertDtype(dtype);
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    query_points.AssertShape({utility::nullopt, GetDimension()});
     queries_row_splits.AssertShape(points_row_splits_.GetShape());
     if (num_query_points != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(

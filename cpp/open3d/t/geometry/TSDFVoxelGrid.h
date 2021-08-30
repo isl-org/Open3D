@@ -31,7 +31,7 @@
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
@@ -69,8 +69,8 @@ public:
                   int64_t block_resolution = 16, /*  block Tensor resolution  */
                   int64_t block_count = 1000,
                   const core::Device &device = core::Device("CPU:0"),
-                  const core::HashmapBackend &backend =
-                          core::HashmapBackend::Default);
+                  const core::HashBackendType &backend =
+                          core::HashBackendType::Default);
 
     ~TSDFVoxelGrid(){};
 
@@ -164,9 +164,9 @@ public:
 
     core::Device GetDevice() const { return device_; }
 
-    std::shared_ptr<core::Hashmap> GetBlockHashmap() { return block_hashmap_; }
+    std::shared_ptr<core::HashMap> GetBlockHashMap() { return block_hashmap_; }
 
-    std::shared_ptr<core::Hashmap> GetBlockHashmap() const {
+    std::shared_ptr<core::HashMap> GetBlockHashMap() const {
         return block_hashmap_;
     }
 
@@ -183,23 +183,21 @@ private:
 
     core::Device device_ = core::Device("CPU:0");
 
-    /// Return addrs and masks for radius (3) neighbor entries.
+    /// Return buf_indices and masks for radius (3) neighbor entries.
     /// We first find all active entries in the hashmap with there coordinates.
     /// We then query these coordinates and their 3^3 neighbors.
-    /// addrs_nb: indexer used for the internal hashmap to access voxel block
-    /// coordinates in the 3^3 neighbors.
-    /// masks_nb: flag used for hashmap to indicate whether a query is a
-    /// success.
-    /// Currently we preserve a dense output (27 x active_entries) without
-    /// compression / reduction.
+    /// buf_indices_nb: indexer used for the internal hashmap to access voxel
+    /// block coordinates in the 3^3 neighbors. masks_nb: flag used for hashmap
+    /// to indicate whether a query is a success. Currently we preserve a dense
+    /// output (27 x active_entries) without compression / reduction.
     std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
-            const core::Tensor &active_addrs);
+            const core::Tensor &active_buf_indices);
 
     // Global hashmap
-    std::shared_ptr<core::Hashmap> block_hashmap_;
+    std::shared_ptr<core::HashMap> block_hashmap_;
 
     // Local hashmap for the `unique` operation of input points
-    std::shared_ptr<core::Hashmap> point_hashmap_;
+    std::shared_ptr<core::HashMap> point_hashmap_;
 
     core::Tensor active_block_coords_;
 };

@@ -3,7 +3,7 @@ target_sources(tests PRIVATE
     CUDAUtils.cpp
     Device.cpp
     EigenConverter.cpp
-    Hashmap.cpp
+    HashMap.cpp
     Indexer.cpp
     Linalg.cpp
     MemoryManager.cpp
@@ -13,6 +13,7 @@ target_sources(tests PRIVATE
     ShapeUtil.cpp
     SizeVector.cpp
     Tensor.cpp
+    TensorCheck.cpp
     TensorList.cpp
     TensorObject.cpp
 )

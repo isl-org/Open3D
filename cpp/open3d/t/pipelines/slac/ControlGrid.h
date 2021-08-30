@@ -27,7 +27,7 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
@@ -81,8 +81,8 @@ public:
     /// Get the neighbor indices per grid to construct the regularizer.
     /// \return A 6-way neighbor grid map for all the active entries of shape
     /// (N, ).
-    /// - addrs Active indices in the buffer of shape (N, )
-    /// - addrs_nb Neighbor indices (including non-allocated entries) for
+    /// - buf_indices Active indices in the buffer of shape (N, )
+    /// - buf_indices_nb Neighbor indices (including non-allocated entries) for
     /// the active entries of shape (N, 6).
     /// - masks_nb Corresponding neighbor masks of shape (N, 6).
     std::tuple<core::Tensor, core::Tensor, core::Tensor> GetNeighborGridMap();
@@ -128,7 +128,7 @@ public:
     /// in-place).
     core::Tensor GetCurrPositions() { return ctr_hashmap_->GetValueTensor(); }
 
-    std::shared_ptr<core::Hashmap> GetHashmap() { return ctr_hashmap_; }
+    std::shared_ptr<core::HashMap> GetHashMap() { return ctr_hashmap_; }
     int64_t Size() { return ctr_hashmap_->Size(); }
 
     core::Device GetDevice() { return device_; }
@@ -142,7 +142,7 @@ private:
     float grid_size_;
 
     core::Device device_ = core::Device("CPU:0");
-    std::shared_ptr<core::Hashmap> ctr_hashmap_;
+    std::shared_ptr<core::HashMap> ctr_hashmap_;
 };
 
 }  // namespace slac

@@ -123,13 +123,13 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     // AssertSavedCorrespondences();
 
     // Write control grids.
-    auto hashmap = control_grid.GetHashmap();
-    core::Tensor active_addrs;
-    hashmap->GetActiveIndices(active_addrs);
-    active_addrs = active_addrs.To(core::Int64);
+    auto hashmap = control_grid.GetHashMap();
+    core::Tensor active_buf_indices;
+    hashmap->GetActiveIndices(active_buf_indices);
+    active_buf_indices = active_buf_indices.To(core::Int64);
 
     hashmap->GetKeyTensor()
-            .IndexGet({active_addrs})
+            .IndexGet({active_buf_indices})
             .Save(params.GetSubfolderName() + "/ctr_grid_keys.npy");
     // Check if same.
     core::Tensor output_control_grid_keys = core::Tensor::Load(
@@ -138,7 +138,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
             test_slac_folder + "/0.050" + "/ctr_grid_keys.npy");
 
     hashmap->GetValueTensor()
-            .IndexGet({active_addrs})
+            .IndexGet({active_buf_indices})
             .Save(params.GetSubfolderName() + "/ctr_grid_values.npy");
     // Check if same.
     core::Tensor output_control_grid_values = core::Tensor::Load(

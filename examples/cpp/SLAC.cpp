@@ -102,8 +102,8 @@ int main(int argc, char* argv[]) {
             argc, argv, "--fitness_threshold", 0.3);
     params.max_iterations_ =
             utility::GetProgramOptionAsInt(argc, argv, "--iterations", 5);
-    params.device_ =
-            utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
+    params.device_ = core::Device(
+            utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0"));
 
     // Debug
     auto debug_option = t::pipelines::slac::SLACDebugOption();
@@ -127,15 +127,15 @@ int main(int argc, char* argv[]) {
                         fragment_fnames, *pose_graph, params, debug_option);
 
         // Write control grids
-        auto hashmap = control_grid.GetHashmap();
-        core::Tensor active_addrs;
-        hashmap->GetActiveIndices(active_addrs);
-        active_addrs = active_addrs.To(core::Dtype::Int64);
+        auto hashmap = control_grid.GetHashMap();
+        core::Tensor active_buf_indices;
+        hashmap->GetActiveIndices(active_buf_indices);
+        active_buf_indices = active_buf_indices.To(core::Dtype::Int64);
         hashmap->GetKeyTensor()
-                .IndexGet({active_addrs})
+                .IndexGet({active_buf_indices})
                 .Save(params.GetSubfolderName() + "/ctr_grid_keys.npy");
         hashmap->GetValueTensor()
-                .IndexGet({active_addrs})
+                .IndexGet({active_buf_indices})
                 .Save(params.GetSubfolderName() + "/ctr_grid_values.npy");
     }
 
