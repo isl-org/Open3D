@@ -151,6 +151,11 @@ public:
 
     /// Specific operation for TSDF volumes.
     /// Perform volumetric ray casting in the selected block coordinates.
+    /// Return selected properties from the frame.
+    /// Supported attributes:
+    /// Conventional rendering: vertex, depth, color, normal, range
+    /// Differentiable rendering (voxel-wise): mask, index, (interpolation)
+    /// ratio.
     /// The block coordinates in the frustum can be taken from
     /// GetUniqueBlockCoordinates.
     /// All the block coordinates can be taken from GetHashMap().GetKeyTensor().

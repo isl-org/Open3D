@@ -348,12 +348,13 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
     core::Device device = block_hashmap_->GetDevice();
     // Map active indices to [0, num_blocks] to be allocated for surface mesh.
     int64_t num_blocks = block_hashmap_->Size();
-    core::Tensor inverse_index_map({block_hashmap_->GetCapacity()}, core::Int64,
+    core::Tensor inverse_index_map({block_hashmap_->GetCapacity()}, core::Int32,
                                    device);
     core::Tensor iota_map =
-            core::Tensor::Arange(0, num_blocks, 1, core::Int64, device);
+            core::Tensor::Arange(0, num_blocks, 1, core::Int32, device);
     inverse_index_map.IndexSet({active_buf_indices_i32.To(core::Int64)},
                                iota_map);
+    printf("start kernel\n");
 
     core::Tensor vertices, triangles, vertex_normals, vertex_colors;
     int vertex_count = estimated_number;
@@ -361,10 +362,10 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
     std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
     kernel::voxel_grid::ExtractTriangleMesh(
-            active_buf_indices_i32.To(core::Int64), inverse_index_map,
-            active_nb_buf_indices.To(core::Int64), active_nb_masks, block_keys,
-            block_values, vertices, triangles, vertex_normals, vertex_colors,
-            block_resolution_, voxel_size_, weight_threshold, vertex_count);
+            active_buf_indices_i32, inverse_index_map, active_nb_buf_indices,
+            active_nb_masks, block_keys, block_values, vertices, triangles,
+            vertex_normals, vertex_colors, block_resolution_, voxel_size_,
+            weight_threshold, vertex_count);
 
     TriangleMesh mesh(vertices, triangles);
     mesh.SetVertexColors(vertex_colors);

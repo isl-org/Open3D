@@ -97,9 +97,9 @@ inline OPEN3D_DEVICE void DeviceGetNormal(
     int64_t vyn = GetLinearIdx(xo, yo - 1, zo);
     int64_t vzp = GetLinearIdx(xo, yo, zo + 1);
     int64_t vzn = GetLinearIdx(xo, yo, zo - 1);
-    if (vxp >= 0 && vxn >= 0) n[0] = (tsdf_base_ptr[vxp] - tsdf_base_ptr[vxn]);
-    if (vyp >= 0 && vyn >= 0) n[1] = (tsdf_base_ptr[vyp] - tsdf_base_ptr[vyn]);
-    if (vzp >= 0 && vzn >= 0) n[2] = (tsdf_base_ptr[vzp] - tsdf_base_ptr[vzn]);
+    if (vxp >= 0 && vxn >= 0) n[0] = tsdf_base_ptr[vxp] - tsdf_base_ptr[vxn];
+    if (vyp >= 0 && vyn >= 0) n[1] = tsdf_base_ptr[vyp] - tsdf_base_ptr[vyn];
+    if (vzp >= 0 && vzn >= 0) n[2] = tsdf_base_ptr[vzp] - tsdf_base_ptr[vzn];
 };
 
 template <typename input_depth_t,
@@ -907,8 +907,8 @@ void ExtractTriangleMeshCPU
     NDArrayIndexer nb_block_indices_indexer(nb_block_indices, 2);
 
     // Plain arrays that does not require indexers
-    const int64_t* indices_ptr = block_indices.GetDataPtr<int64_t>();
-    const int64_t* inv_indices_ptr = inv_block_indices.GetDataPtr<int64_t>();
+    const int* indices_ptr = block_indices.GetDataPtr<int>();
+    const int* inv_indices_ptr = inv_block_indices.GetDataPtr<int>();
 
     const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
     const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
@@ -919,6 +919,7 @@ void ExtractTriangleMeshCPU
     // Pass 0: analyze mesh structure, set up one-on-one correspondences
     // from edges to vertices.
 
+    printf("pass 0\n");
     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(int64_t widx) {
         auto GetLinearIdx = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                               int curr_block_idx) -> int64_t {
@@ -974,9 +975,8 @@ void ExtractTriangleMeshCPU
 
                 int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-                int64_t block_idx_i =
-                        *nb_block_indices_indexer.GetDataPtr<int64_t>(
-                                workload_block_idx, nb_idx);
+                int block_idx_i = *nb_block_indices_indexer.GetDataPtr<int>(
+                        workload_block_idx, nb_idx);
                 int* mesh_ptr_i = mesh_structure_indexer.GetDataPtr<int>(
                         xv_i - dxb * resolution, yv_i - dyb * resolution,
                         zv_i - dzb * resolution, inv_indices_ptr[block_idx_i]);
@@ -997,6 +997,7 @@ void ExtractTriangleMeshCPU
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
+    printf("pass 1\n");
     if (vertex_count < 0) {
         core::ParallelFor(device, n, [=] OPEN3D_DEVICE(int64_t widx) {
             // Natural index (0, N) -> (block_idx, voxel_idx)
@@ -1054,6 +1055,7 @@ void ExtractTriangleMeshCPU
 
     // Pass 2: extract vertices.
 
+    printf("pass 2\n");
     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(int64_t widx) {
         auto GetLinearIdx = [&] OPEN3D_DEVICE(int xo, int yo, int zo,
                                               int curr_block_idx) -> int64_t {
@@ -1214,9 +1216,8 @@ void ExtractTriangleMeshCPU
 
                 int nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
-                int64_t block_idx_i =
-                        *nb_block_indices_indexer.GetDataPtr<int64_t>(
-                                workload_block_idx, nb_idx);
+                int block_idx_i = *nb_block_indices_indexer.GetDataPtr<int>(
+                        workload_block_idx, nb_idx);
                 int* mesh_struct_ptr_i = mesh_structure_indexer.GetDataPtr<int>(
                         xv_i - dxb * resolution, yv_i - dyb * resolution,
                         zv_i - dzb * resolution, inv_indices_ptr[block_idx_i]);
