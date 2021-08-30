@@ -1185,12 +1185,12 @@ void ExtractTriangleMeshCPU
         index_t table_idx = mesh_struct_ptr[3];
         if (tri_count[table_idx] == 0) return;
 
-        for (size_t tri = 0; tri < 16; tri += 3) {
+        for (index_t tri = 0; tri < 16; tri += 3) {
             if (tri_table[table_idx][tri] == -1) return;
 
             index_t tri_idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
-            for (size_t vertex = 0; vertex < 3; ++vertex) {
+            for (index_t vertex = 0; vertex < 3; ++vertex) {
                 index_t edge = tri_table[table_idx][tri + vertex];
 
                 index_t xv_i = xv + edge_shifts[edge][0];
