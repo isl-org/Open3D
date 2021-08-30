@@ -138,11 +138,6 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
         return;
     }
 
-    struct Pair {
-        int32_t i, j;
-    };
-    std::vector<Pair> pairs;
-
     auto points_equal = [](const T *const p1, const T *const p2,
                            size_t dimension) {
         std::vector<T> p1_vec(p1, p1 + dimension);
@@ -150,23 +145,8 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
         return p1_vec == p2_vec;
     };
 
-    auto distance_fn = [](const T *const p1, const T *const p2,
-                          size_t dimension) {
-        T ret = 0.0;
-        for (size_t i = 0; i < dimension; i++) {
-            if (METRIC == L2) {
-                T dist = p1[i] - p2[i];
-                dist = dist * dist;
-                ret += dist;
-            } else {
-                T dist = std::abs(p1[i] - p2[i]);
-                ret += dist;
-            }
-        }
-        return ret;
-    };
-
-    std::mutex pairs_mutex;
+    std::vector<std::vector<index_t>> neighbors_indices(num_queries);
+    std::vector<std::vector<T>> neighbors_distances(num_queries);
     std::vector<uint32_t> neighbors_count(num_queries, 0);
 
     // cast NanoFlannIndexHolder
@@ -176,8 +156,6 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
             [&](const tbb::blocked_range<size_t> &r) {
-                std::vector<Pair> pairs_private;
-
                 std::vector<index_t> result_indices(knn);
                 std::vector<T> result_distances(knn);
                 for (size_t i = r.begin(); i != r.end(); ++i) {
@@ -193,15 +171,14 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                                          &points[idx * dimension], dimension)) {
                             continue;
                         }
-                        pairs_private.push_back(Pair{int32_t(i), int32_t(idx)});
+                        neighbors_indices[i].push_back(idx);
+                        if (return_distances) {
+                            T dist = result_distances[valid_i];
+                            neighbors_distances[i].push_back(dist);
+                        }
                         ++num_neighbors;
                     }
                     neighbors_count[i] = num_neighbors;
-                }
-                {
-                    std::lock_guard<std::mutex> lock(pairs_mutex);
-                    pairs.insert(pairs.end(), pairs_private.begin(),
-                                 pairs_private.end());
                 }
             });
 
@@ -210,36 +187,34 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                                 &neighbors_count[neighbors_count.size()],
                                 query_neighbors_row_splits + 1);
 
+    int64_t num_indices = query_neighbors_row_splits[num_queries];
+
     index_t *indices_ptr;
-    output_allocator.AllocIndices(&indices_ptr, pairs.size());
+    output_allocator.AllocIndices(&indices_ptr, num_indices);
     T *distances_ptr;
     if (return_distances)
-        output_allocator.AllocDistances(&distances_ptr, pairs.size());
+        output_allocator.AllocDistances(&distances_ptr, num_indices);
     else
         output_allocator.AllocDistances(&distances_ptr, 0);
 
     std::fill(neighbors_count.begin(), neighbors_count.end(), 0);
 
     // fill output index and distance arrays
-    tbb::parallel_for(
-            tbb::blocked_range<size_t>(0, pairs.size()),
-            [&](const tbb::blocked_range<size_t> &r) {
-                for (size_t i = r.begin(); i != r.end(); ++i) {
-                    Pair pair = pairs[i];
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, num_queries),
+                      [&](const tbb::blocked_range<size_t> &r) {
+                          for (size_t i = r.begin(); i != r.end(); ++i) {
+                              int64_t start_idx = query_neighbors_row_splits[i];
+                              std::copy(neighbors_indices[i].begin(),
+                                        neighbors_indices[i].end(),
+                                        &indices_ptr[start_idx]);
 
-                    int64_t idx = query_neighbors_row_splits[pair.i] +
-                                  core::AtomicFetchAddRelaxed(
-                                          &neighbors_count[pair.i], 1);
-                    indices_ptr[idx] = pair.j;
-
-                    if (return_distances) {
-                        T dist = distance_fn(&points[pair.j * dimension],
-                                             &queries[pair.i * dimension],
-                                             dimension);
-                        distances_ptr[idx] = dist;
-                    }
-                }
-            });
+                              if (return_distances) {
+                                  std::copy(neighbors_distances[i].begin(),
+                                            neighbors_distances[i].end(),
+                                            &distances_ptr[start_idx]);
+                              }
+                          }
+                      });
 }
 
 template <class T, class OUTPUT_ALLOCATOR, int METRIC>
@@ -457,7 +432,7 @@ std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
                                                       const T *const points,
                                                       size_t dimension,
                                                       const Metric metric) {
-    NanoFlannIndexHolderBase *holder;
+    NanoFlannIndexHolderBase *holder = nullptr;
 #define FN_PARAMETERS num_points, points, dimension, &holder
 
 #define CALL_TEMPLATE(METRIC)                   \
