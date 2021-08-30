@@ -329,12 +329,6 @@ void PointCloud::EstimateColorGradients(
                 "estimating color gradient.");
     }
 
-    if (!radius.has_value()) {
-        utility::LogError(
-                "KNN Search based EstimateColorGradient is not implemented "
-                "yet. Please provide radius parameter value.");
-    }
-
     const core::Device device = GetDevice();
     const core::Device::DeviceType device_type = device.GetType();
 
