@@ -91,9 +91,9 @@ inline OPEN3D_DEVICE void DeviceGetNormal(
         const ArrayIndexer& nb_block_indices_indexer) {
     auto GetLinearIdx = [&] OPEN3D_DEVICE(index_t xo, index_t yo,
                                           index_t zo) -> index_t {
-        return DeviceGetLinearIdx(
-                xo, yo, zo, curr_block_idx, static_cast<index_t>(resolution),
-                nb_block_masks_indexer, nb_block_indices_indexer);
+        return DeviceGetLinearIdx(xo, yo, zo, curr_block_idx, resolution,
+                                  nb_block_masks_indexer,
+                                  nb_block_indices_indexer);
     };
     index_t vxp = GetLinearIdx(xo + 1, yo, zo);
     index_t vxn = GetLinearIdx(xo - 1, yo, zo);
@@ -163,9 +163,9 @@ void IntegrateCPU
         // block_idx -> (x_block, y_block, z_block)
         index_t* block_key_ptr =
                 block_keys_indexer.GetDataPtr<index_t>(block_idx);
-        index_t xb = static_cast<index_t>(block_key_ptr[0]);
-        index_t yb = static_cast<index_t>(block_key_ptr[1]);
-        index_t zb = static_cast<index_t>(block_key_ptr[2]);
+        index_t xb = block_key_ptr[0];
+        index_t yb = block_key_ptr[1];
+        index_t zb = block_key_ptr[2];
 
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         index_t xv, yv, zv;
@@ -643,8 +643,7 @@ void ExtractPointCloudCPU
                                         index_t xo, index_t yo, index_t zo,
                                         index_t curr_block_idx) -> index_t {
                 return DeviceGetLinearIdx(xo, yo, zo, curr_block_idx,
-                                          static_cast<index_t>(resolution),
-                                          nb_block_masks_indexer,
+                                          resolution, nb_block_masks_indexer,
                                           nb_block_indices_indexer);
             };
 
@@ -666,10 +665,8 @@ void ExtractPointCloudCPU
             // Enumerate x-y-z directions
             for (index_t i = 0; i < 3; ++i) {
                 index_t linear_idx_i =
-                        GetLinearIdx(static_cast<index_t>(xv) + (i == 0),
-                                     static_cast<index_t>(yv) + (i == 1),
-                                     static_cast<index_t>(zv) + (i == 2),
-                                     static_cast<index_t>(workload_block_idx));
+                        GetLinearIdx(xv + (i == 0), yv + (i == 1),
+                                     zv + (i == 2), workload_block_idx);
                 if (linear_idx_i < 0) continue;
 
                 float tsdf_i = tsdf_base_ptr[linear_idx_i];
@@ -710,8 +707,7 @@ void ExtractPointCloudCPU
         auto GetLinearIdx = [&] OPEN3D_DEVICE(
                                     index_t xo, index_t yo, index_t zo,
                                     index_t curr_block_idx) -> index_t {
-            return DeviceGetLinearIdx(xo, yo, zo, curr_block_idx,
-                                      static_cast<index_t>(resolution),
+            return DeviceGetLinearIdx(xo, yo, zo, curr_block_idx, resolution,
                                       nb_block_masks_indexer,
                                       nb_block_indices_indexer);
         };
@@ -719,9 +715,8 @@ void ExtractPointCloudCPU
         auto GetNormal = [&] OPEN3D_DEVICE(index_t xo, index_t yo, index_t zo,
                                            index_t curr_block_idx, float* n) {
             return DeviceGetNormal<tsdf_t>(
-                    tsdf_base_ptr, xo, yo, zo, curr_block_idx, n,
-                    static_cast<index_t>(resolution), nb_block_masks_indexer,
-                    nb_block_indices_indexer);
+                    tsdf_base_ptr, xo, yo, zo, curr_block_idx, n, resolution,
+                    nb_block_masks_indexer, nb_block_indices_indexer);
         };
 
         // Natural index (0, N) -> (block_idx, voxel_idx)
@@ -733,9 +728,9 @@ void ExtractPointCloudCPU
         // block_idx -> (x_block, y_block, z_block)
         index_t* block_key_ptr =
                 block_keys_indexer.GetDataPtr<index_t>(block_idx);
-        index_t xb = static_cast<index_t>(block_key_ptr[0]);
-        index_t yb = static_cast<index_t>(block_key_ptr[1]);
-        index_t zb = static_cast<index_t>(block_key_ptr[2]);
+        index_t xb = block_key_ptr[0];
+        index_t yb = block_key_ptr[1];
+        index_t zb = block_key_ptr[2];
 
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         index_t xv, yv, zv;
@@ -749,9 +744,7 @@ void ExtractPointCloudCPU
         float no[3] = {0}, ne[3] = {0};
 
         // Get normal at origin
-        GetNormal(static_cast<index_t>(xv), static_cast<index_t>(yv),
-                  static_cast<index_t>(zv),
-                  static_cast<index_t>(workload_block_idx), no);
+        GetNormal(xv, yv, zv, workload_block_idx, no);
 
         index_t x = xb * resolution + xv;
         index_t y = yb * resolution + yv;
@@ -760,10 +753,8 @@ void ExtractPointCloudCPU
         // Enumerate x-y-z axis
         for (index_t i = 0; i < 3; ++i) {
             index_t linear_idx_i =
-                    GetLinearIdx(static_cast<index_t>(xv) + (i == 0),
-                                 static_cast<index_t>(yv) + (i == 1),
-                                 static_cast<index_t>(zv) + (i == 2),
-                                 static_cast<index_t>(workload_block_idx));
+                    GetLinearIdx(xv + (i == 0), yv + (i == 1), zv + (i == 2),
+                                 workload_block_idx);
             if (linear_idx_i < 0) continue;
 
             float tsdf_i = tsdf_base_ptr[linear_idx_i];
@@ -786,10 +777,8 @@ void ExtractPointCloudCPU
 
                 // Get normal at edge and interpolate
                 float* normal_ptr = normal_indexer.GetDataPtr<float>(idx);
-                GetNormal(static_cast<index_t>(xv) + (i == 0),
-                          static_cast<index_t>(yv) + (i == 1),
-                          static_cast<index_t>(zv) + (i == 2),
-                          static_cast<index_t>(workload_block_idx), ne);
+                GetNormal(xv + (i == 0), yv + (i == 1), zv + (i == 2),
+                          workload_block_idx, ne);
                 float nx = (1 - ratio) * no[0] + ratio * ne[0];
                 float ny = (1 - ratio) * no[1] + ratio * ne[1];
                 float nz = (1 - ratio) * no[2] + ratio * ne[2];
@@ -897,7 +886,6 @@ void ExtractTriangleMeshCPU
     // Pass 0: analyze mesh structure, set up one-on-one correspondences
     // from edges to vertices.
 
-    printf("pass 0\n");
     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t widx) {
         auto GetLinearIdx = [&] OPEN3D_DEVICE(
                                     index_t xo, index_t yo, index_t zo,
@@ -921,10 +909,8 @@ void ExtractTriangleMeshCPU
         index_t table_idx = 0;
         for (index_t i = 0; i < 8; ++i) {
             index_t linear_idx_i =
-                    GetLinearIdx(static_cast<index_t>(xv) + vtx_shifts[i][0],
-                                 static_cast<index_t>(yv) + vtx_shifts[i][1],
-                                 static_cast<index_t>(zv) + vtx_shifts[i][2],
-                                 static_cast<index_t>(workload_block_idx));
+                    GetLinearIdx(xv + vtx_shifts[i][0], yv + vtx_shifts[i][1],
+                                 zv + vtx_shifts[i][2], workload_block_idx);
             if (linear_idx_i < 0) return;
 
             float tsdf_i = tsdf_base_ptr[linear_idx_i];
@@ -949,9 +935,9 @@ void ExtractTriangleMeshCPU
                 index_t zv_i = zv + edge_shifts[i][2];
                 index_t edge_i = edge_shifts[i][3];
 
-                index_t dxb = static_cast<index_t>(xv_i / resolution);
-                index_t dyb = static_cast<index_t>(yv_i / resolution);
-                index_t dzb = static_cast<index_t>(zv_i / resolution);
+                index_t dxb = xv_i / resolution;
+                index_t dyb = yv_i / resolution;
+                index_t dzb = zv_i / resolution;
 
                 index_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
@@ -981,7 +967,6 @@ void ExtractTriangleMeshCPU
     std::atomic<index_t>* count_ptr = &count_atomic;
 #endif
 
-    printf("pass 1\n");
     if (vertex_count < 0) {
         core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t widx) {
             // Natural index (0, N) -> (block_idx, voxel_idx)
@@ -1040,13 +1025,11 @@ void ExtractTriangleMeshCPU
 
     // Pass 2: extract vertices.
 
-    printf("pass 2\n");
     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t widx) {
         auto GetLinearIdx = [&] OPEN3D_DEVICE(
                                     index_t xo, index_t yo, index_t zo,
                                     index_t curr_block_idx) -> index_t {
-            return DeviceGetLinearIdx(xo, yo, zo, curr_block_idx,
-                                      static_cast<index_t>(resolution),
+            return DeviceGetLinearIdx(xo, yo, zo, curr_block_idx, resolution,
                                       nb_block_masks_indexer,
                                       nb_block_indices_indexer);
         };
@@ -1054,9 +1037,8 @@ void ExtractTriangleMeshCPU
         auto GetNormal = [&] OPEN3D_DEVICE(index_t xo, index_t yo, index_t zo,
                                            index_t curr_block_idx, float* n) {
             return DeviceGetNormal<tsdf_t>(
-                    tsdf_base_ptr, xo, yo, zo, curr_block_idx, n,
-                    static_cast<index_t>(resolution), nb_block_masks_indexer,
-                    nb_block_indices_indexer);
+                    tsdf_base_ptr, xo, yo, zo, curr_block_idx, n, resolution,
+                    nb_block_masks_indexer, nb_block_indices_indexer);
         };
 
         // Natural index (0, N) -> (block_idx, voxel_idx)
@@ -1067,9 +1049,9 @@ void ExtractTriangleMeshCPU
         // block_idx -> (x_block, y_block, z_block)
         index_t* block_key_ptr =
                 block_keys_indexer.GetDataPtr<index_t>(block_idx);
-        index_t xb = static_cast<index_t>(block_key_ptr[0]);
-        index_t yb = static_cast<index_t>(block_key_ptr[1]);
-        index_t zb = static_cast<index_t>(block_key_ptr[2]);
+        index_t xb = block_key_ptr[0];
+        index_t yb = block_key_ptr[1];
+        index_t zb = block_key_ptr[2];
 
         // voxel_idx -> (x_voxel, y_voxel, z_voxel)
         index_t xv, yv, zv;
@@ -1097,9 +1079,7 @@ void ExtractTriangleMeshCPU
         float no[3] = {0}, ne[3] = {0};
 
         // Get normal at origin
-        GetNormal(static_cast<index_t>(xv), static_cast<index_t>(yv),
-                  static_cast<index_t>(zv),
-                  static_cast<index_t>(workload_block_idx), no);
+        GetNormal(xv, yv, zv, workload_block_idx, no);
 
         // Enumerate 3 edges in the voxel
         for (index_t e = 0; e < 3; ++e) {
@@ -1107,10 +1087,8 @@ void ExtractTriangleMeshCPU
             if (vertex_idx != -1) continue;
 
             index_t linear_idx_e =
-                    GetLinearIdx(static_cast<index_t>(xv) + (e == 0),
-                                 static_cast<index_t>(yv) + (e == 1),
-                                 static_cast<index_t>(zv) + (e == 2),
-                                 static_cast<index_t>(workload_block_idx));
+                    GetLinearIdx(xv + (e == 0), yv + (e == 1), zv + (e == 2),
+                                 workload_block_idx);
             OPEN3D_ASSERT(linear_idx_e > 0 &&
                           "Internal error: GetVoxelAt returns nullptr.");
             float tsdf_e = tsdf_base_ptr[linear_idx_e];
@@ -1130,10 +1108,8 @@ void ExtractTriangleMeshCPU
 
             // Get normal at edge and interpolate
             float* normal_ptr = normal_indexer.GetDataPtr<float>(idx);
-            GetNormal(static_cast<index_t>(xv) + (e == 0),
-                      static_cast<index_t>(yv) + (e == 1),
-                      static_cast<index_t>(zv) + (e == 2),
-                      static_cast<index_t>(workload_block_idx), ne);
+            GetNormal(xv + (e == 0), yv + (e == 1), zv + (e == 2),
+                      workload_block_idx, ne);
             float nx = (1 - ratio) * no[0] + ratio * ne[0];
             float ny = (1 - ratio) * no[1] + ratio * ne[1];
             float nz = (1 - ratio) * no[2] + ratio * ne[2];
@@ -1198,9 +1174,9 @@ void ExtractTriangleMeshCPU
                 index_t zv_i = zv + edge_shifts[edge][2];
                 index_t edge_i = edge_shifts[edge][3];
 
-                index_t dxb = static_cast<index_t>(xv_i / resolution);
-                index_t dyb = static_cast<index_t>(yv_i / resolution);
-                index_t dzb = static_cast<index_t>(zv_i / resolution);
+                index_t dxb = xv_i / resolution;
+                index_t dyb = yv_i / resolution;
+                index_t dzb = zv_i / resolution;
 
                 index_t nb_idx = (dxb + 1) + (dyb + 1) * 3 + (dzb + 1) * 9;
 
