@@ -128,7 +128,7 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                    bool return_distances,
                    OUTPUT_ALLOCATOR &output_allocator) {
     // return empty indices array if there are no points
-    if (num_queries == 0 || num_points == 0) {
+    if (num_queries == 0 || num_points == 0 || holder == nullptr) {
         std::fill(query_neighbors_row_splits,
                   query_neighbors_row_splits + num_queries + 1, 0);
         index_t *indices_ptr;
@@ -232,7 +232,7 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                       bool normalize_distances,
                       bool sort,
                       OUTPUT_ALLOCATOR &output_allocator) {
-    if (num_queries == 0 || num_points == 0) {
+    if (num_queries == 0 || num_points == 0 || holder == nullptr) {
         std::fill(query_neighbors_row_splits,
                   query_neighbors_row_splits + num_queries + 1, 0);
         index_t *indices_ptr;
@@ -348,7 +348,7 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                       bool ignore_query_point,
                       bool return_distances,
                       OUTPUT_ALLOCATOR &output_allocator) {
-    if (num_queries == 0 || num_points == 0) {
+    if (num_queries == 0 || num_points == 0 || holder == nullptr) {
         index_t *indices_ptr, *counts_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
         output_allocator.AllocCounts(&counts_ptr, 0);
@@ -405,6 +405,20 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
 
 }  // namespace
 
+/// Build KD Tree. This function build a KDTree for given dataset points.
+///
+/// \tparam T   Floating-point data type for the point positions.
+///
+///
+/// \param num_points   The number of points.
+///
+/// \param points   Array with the point positions.
+///
+/// \param dimension    The dimension of points.
+///
+/// \param metric   Onf of L1, L2, Linf. Defines the distance metric for the
+/// search
+///
 template <class T>
 std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
                                                       const T *const points,
@@ -431,6 +445,58 @@ std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
     return std::unique_ptr<NanoFlannIndexHolderBase>(holder);
 }
 
+/// KNN search. This function computes a list of neighbor indices
+/// for each query point. The lists are stored linearly and an exclusive prefix
+/// sum defines the start and end of each list in the array.
+/// In addition the function optionally can return the distances for each
+/// neighbor in the same format as the indices to the neighbors.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \tparam OUTPUT_ALLOCATOR    Type of the output_allocator. See
+///         \p output_allocator for more information.
+///
+///
+/// \param holder   The pointer that point to NanFlannIndexHolder that is built
+///        with BuildKdTree function.
+///
+/// \param query_neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
+///
+/// \param num_points    The number of points.
+///
+/// \param points    Array with the point positions. This may be the same
+///        array as \p queries.
+///
+/// \param num_queries    The number of query points.
+///
+/// \param queries    Array with the query positions. This may be the same
+///                   array as \p points.
+///
+/// \param dimension    The dimension of \p points and \p queries.
+///
+/// \param knn    The number of neighbors to search.
+///
+/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+///        search.
+///
+/// \param ignore_query_point    If true then points with the same position as
+///        the query point will be ignored.
+///
+/// \param return_distances    If true then this function will return the
+///        distances for each neighbor to its query point in the same format
+///        as the indices.
+///        Note that for the L2 metric the squared distances will be returned!!
+///
+/// \param output_allocator    An object that implements functions for
+///         allocating the output arrays. The object must implement functions
+///         AllocIndices(int32_t** ptr, size_t size) and
+///         AllocDistances(T** ptr, size_t size). Both functions should
+///         allocate memory and return a pointer to that memory in ptr.
+///         Argument size specifies the size of the array as the number of
+///         elements. Both functions must accept the argument size==0.
+///         In this case ptr does not need to be set.
+///
 template <class T, class OUTPUT_ALLOCATOR>
 void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                   int64_t *query_neighbors_row_splits,
@@ -466,6 +532,65 @@ void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 #undef FN_PARAMETERS
 }
 
+/// Radius search. This function computes a list of neighbor indices
+/// for each query point. The lists are stored linearly and an exclusive prefix
+/// sum defines the start and end of each list in the array.
+/// In addition the function optionally can return the distances for each
+/// neighbor in the same format as the indices to the neighbors.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \tparam OUTPUT_ALLOCATOR    Type of the output_allocator. See
+///         \p output_allocator for more information.
+///
+///
+/// \param holder   The pointer that point to NanFlannIndexHolder that is built
+///        with BuildKdTree function.
+///
+/// \param query_neighbors_row_splits    This is the output pointer for the
+///        prefix sum. The length of this array is \p num_queries + 1.
+///
+/// \param num_points    The number of points.
+///
+/// \param points    Array with the point positions. This may be the same
+///        array as \p queries.
+///
+/// \param num_queries    The number of query points.
+///
+/// \param queries    Array with the query positions. This may be the same
+///                   array as \p points.
+///
+/// \param dimension    The dimension of \p points and \p queries.
+///
+/// \param radii    A vector of search radii with length \p num_queries.
+///
+/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+///        search.
+///
+/// \param ignore_query_point    If true then points with the same position as
+///        the query point will be ignored.
+///
+/// \param return_distances    If true then this function will return the
+///        distances for each neighbor to its query point in the same format
+///        as the indices.
+///        Note that for the L2 metric the squared distances will be returned!!
+///
+/// \param normalize_distances    If true then the returned distances are
+///        normalized in the range [0,1]. Note that for L2 the normalized
+///        distance is squared.
+///
+/// \param sort     If true then sort the resulting indices and distances in
+///        ascending order of distances.
+///
+/// \param output_allocator    An object that implements functions for
+///         allocating the output arrays. The object must implement functions
+///         AllocIndices(int32_t** ptr, size_t size) and
+///         AllocDistances(T** ptr, size_t size). Both functions should
+///         allocate memory and return a pointer to that memory in ptr.
+///         Argument size specifies the size of the array as the number of
+///         elements. Both functions must accept the argument size==0.
+///         In this case ptr does not need to be set.
+///
 template <class T, class OUTPUT_ALLOCATOR>
 void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                      int64_t *query_neighbors_row_splits,
@@ -503,6 +628,57 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
 #undef FN_PARAMETERS
 }
 
+/// Hybrid search. This function computes a list of neighbor indices
+/// for each query point. The lists are stored linearly and an exclusive prefix
+/// sum defines the start and end of each list in the array.
+/// In addition the function optionally can return the distances for each
+/// neighbor in the same format as the indices to the neighbors.
+///
+/// \tparam T    Floating-point data type for the point positions.
+///
+/// \tparam OUTPUT_ALLOCATOR    Type of the output_allocator. See
+///         \p output_allocator for more information.
+///
+///
+/// \param holder   The pointer that point to NanFlannIndexHolder that is built
+///        with BuildKdTree function.
+///
+/// \param num_points    The number of points.
+///
+/// \param points    Array with the point positions. This may be the same
+///        array as \p queries.
+///
+/// \param num_queries    The number of query points.
+///
+/// \param queries    Array with the query positions. This may be the same
+///                   array as \p points.
+///
+/// \param dimension    The dimension of \p points and \p queries.
+///
+/// \param radius    The radius value that defines the neighbors region.
+///
+/// \param max_knn    The maximum number of neighbors to search.
+///
+/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+///        search.
+///
+/// \param ignore_query_point    If true then points with the same position as
+///        the query point will be ignored.
+///
+/// \param return_distances    If true then this function will return the
+///        distances for each neighbor to its query point in the same format
+///        as the indices.
+///        Note that for the L2 metric the squared distances will be returned!!
+///
+/// \param output_allocator    An object that implements functions for
+///         allocating the output arrays. The object must implement functions
+///         AllocIndices(int32_t** ptr, size_t size) and
+///         AllocDistances(T** ptr, size_t size). Both functions should
+///         allocate memory and return a pointer to that memory in ptr.
+///         Argument size specifies the size of the array as the number of
+///         elements. Both functions must accept the argument size==0.
+///         In this case ptr does not need to be set.
+///
 template <class T, class OUTPUT_ALLOCATOR>
 void HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                      size_t num_points,
