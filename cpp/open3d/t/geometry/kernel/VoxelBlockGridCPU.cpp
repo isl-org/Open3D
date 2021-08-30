@@ -46,15 +46,17 @@ namespace geometry {
 namespace kernel {
 namespace voxel_grid {
 
+using index_t = int;
+
 struct Coord3i {
-    Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
+    Coord3i(index_t x, index_t y, index_t z) : x_(x), y_(y), z_(z) {}
     bool operator==(const Coord3i &other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
 
-    int64_t x_;
-    int64_t y_;
-    int64_t z_;
+    index_t x_;
+    index_t y_;
+    index_t z_;
 };
 
 struct Coord3iHash {
@@ -74,37 +76,43 @@ void PointCloudTouchCPU(
                 &hashmap,  // dummy for now, one pass insertion is faster
         const core::Tensor &points,
         core::Tensor &voxel_block_coords,
-        int64_t voxel_grid_resolution,
+        index_t voxel_grid_resolution,
         float voxel_size,
         float sdf_trunc) {
-    int64_t resolution = voxel_grid_resolution;
+    index_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
 
-    int64_t n = points.GetLength();
+    index_t n = points.GetLength();
     const float *pcd_ptr = static_cast<const float *>(points.GetDataPtr());
 
     tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
-    core::ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
+    core::ParallelFor(core::Device("CPU:0"), n, [&](index_t workload_idx) {
         float x = pcd_ptr[3 * workload_idx + 0];
         float y = pcd_ptr[3 * workload_idx + 1];
         float z = pcd_ptr[3 * workload_idx + 2];
 
-        int xb_lo = static_cast<int>(std::floor((x - sdf_trunc) / block_size));
-        int xb_hi = static_cast<int>(std::floor((x + sdf_trunc) / block_size));
-        int yb_lo = static_cast<int>(std::floor((y - sdf_trunc) / block_size));
-        int yb_hi = static_cast<int>(std::floor((y + sdf_trunc) / block_size));
-        int zb_lo = static_cast<int>(std::floor((z - sdf_trunc) / block_size));
-        int zb_hi = static_cast<int>(std::floor((z + sdf_trunc) / block_size));
-        for (int xb = xb_lo; xb <= xb_hi; ++xb) {
-            for (int yb = yb_lo; yb <= yb_hi; ++yb) {
-                for (int zb = zb_lo; zb <= zb_hi; ++zb) {
+        index_t xb_lo =
+                static_cast<index_t>(std::floor((x - sdf_trunc) / block_size));
+        index_t xb_hi =
+                static_cast<index_t>(std::floor((x + sdf_trunc) / block_size));
+        index_t yb_lo =
+                static_cast<index_t>(std::floor((y - sdf_trunc) / block_size));
+        index_t yb_hi =
+                static_cast<index_t>(std::floor((y + sdf_trunc) / block_size));
+        index_t zb_lo =
+                static_cast<index_t>(std::floor((z - sdf_trunc) / block_size));
+        index_t zb_hi =
+                static_cast<index_t>(std::floor((z + sdf_trunc) / block_size));
+        for (index_t xb = xb_lo; xb <= xb_hi; ++xb) {
+            for (index_t yb = yb_lo; yb <= yb_hi; ++yb) {
+                for (index_t zb = zb_lo; zb <= zb_hi; ++zb) {
                     set.emplace(xb, yb, zb);
                 }
             }
         }
     });
 
-    int64_t block_count = set.size();
+    index_t block_count = set.size();
     if (block_count == 0) {
         utility::LogError(
                 "No block is touched in TSDF volume, abort integration. Please "
@@ -114,13 +122,14 @@ void PointCloudTouchCPU(
 
     voxel_block_coords =
             core::Tensor({block_count, 3}, core::Int32, points.GetDevice());
-    int *block_coords_ptr = static_cast<int *>(voxel_block_coords.GetDataPtr());
-    int count = 0;
+    index_t *block_coords_ptr =
+            static_cast<index_t *>(voxel_block_coords.GetDataPtr());
+    index_t count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {
-        int64_t offset = count * 3;
-        block_coords_ptr[offset + 0] = static_cast<int>(it->x_);
-        block_coords_ptr[offset + 1] = static_cast<int>(it->y_);
-        block_coords_ptr[offset + 2] = static_cast<int>(it->z_);
+        index_t offset = count * 3;
+        block_coords_ptr[offset + 0] = static_cast<index_t>(it->x_);
+        block_coords_ptr[offset + 1] = static_cast<index_t>(it->y_);
+        block_coords_ptr[offset + 2] = static_cast<index_t>(it->z_);
     }
 }
 
@@ -129,30 +138,30 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap> &hashmap,
                    const core::Tensor &intrinsics,
                    const core::Tensor &extrinsics,
                    core::Tensor &voxel_block_coords,
-                   int64_t voxel_grid_resolution,
+                   index_t voxel_grid_resolution,
                    float voxel_size,
                    float sdf_trunc,
                    float depth_scale,
                    float depth_max,
-                   int stride) {
+                   index_t stride) {
     core::Device device = depth.GetDevice();
     NDArrayIndexer depth_indexer(depth, 2);
     core::Tensor pose = t::geometry::InverseTransformation(extrinsics);
     TransformIndexer ti(intrinsics, pose, 1.0f);
 
     // Output
-    int64_t rows_strided = depth_indexer.GetShape(0) / stride;
-    int64_t cols_strided = depth_indexer.GetShape(1) / stride;
-    int64_t n = rows_strided * cols_strided;
+    index_t rows_strided = depth_indexer.GetShape(0) / stride;
+    index_t cols_strided = depth_indexer.GetShape(1) / stride;
+    index_t n = rows_strided * cols_strided;
 
-    int64_t resolution = voxel_grid_resolution;
+    index_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
 
     tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        core::ParallelFor(device, n, [&](int64_t workload_idx) {
-            int64_t y = (workload_idx / cols_strided) * stride;
-            int64_t x = (workload_idx % cols_strided) * stride;
+        core::ParallelFor(device, n, [&](index_t workload_idx) {
+            index_t y = (workload_idx / cols_strided) * stride;
+            index_t x = (workload_idx % cols_strided) * stride;
 
             float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) / depth_scale;
             if (d > 0 && d < depth_max) {
@@ -171,18 +180,18 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap> &hashmap,
                 float y_d = y_g - y_o;
                 float z_d = z_g - z_o;
 
-                const int step_size = 3;
+                const index_t step_size = 3;
                 const float t_min = std::max(d - sdf_trunc, 0.0f);
                 const float t_max = std::min(d + sdf_trunc, depth_max);
                 const float t_step = (t_max - t_min) / step_size;
 
                 float t = t_min;
-                for (int step = 0; step <= step_size; ++step) {
-                    int xb = static_cast<int>(
+                for (index_t step = 0; step <= step_size; ++step) {
+                    index_t xb = static_cast<index_t>(
                             std::floor((x_o + t * x_d) / block_size));
-                    int yb = static_cast<int>(
+                    index_t yb = static_cast<index_t>(
                             std::floor((y_o + t * y_d) / block_size));
-                    int zb = static_cast<int>(
+                    index_t zb = static_cast<index_t>(
                             std::floor((z_o + t * z_d) / block_size));
                     set.emplace(xb, yb, zb);
                     t += t_step;
@@ -191,7 +200,7 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap> &hashmap,
         });
     });
 
-    int64_t block_count = set.size();
+    index_t block_count = set.size();
     if (block_count == 0) {
         utility::LogError(
                 "No block is touched in TSDF volume, abort integration. Please "
@@ -200,13 +209,13 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap> &hashmap,
     }
 
     voxel_block_coords = core::Tensor({block_count, 3}, core::Int32, device);
-    int *block_coords_ptr = voxel_block_coords.GetDataPtr<int>();
-    int count = 0;
+    index_t *block_coords_ptr = voxel_block_coords.GetDataPtr<index_t>();
+    index_t count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {
-        int64_t offset = count * 3;
-        block_coords_ptr[offset + 0] = static_cast<int>(it->x_);
-        block_coords_ptr[offset + 1] = static_cast<int>(it->y_);
-        block_coords_ptr[offset + 2] = static_cast<int>(it->z_);
+        index_t offset = count * 3;
+        block_coords_ptr[offset + 0] = static_cast<index_t>(it->x_);
+        block_coords_ptr[offset + 1] = static_cast<index_t>(it->y_);
+        block_coords_ptr[offset + 2] = static_cast<index_t>(it->z_);
     }
 }
 
@@ -215,7 +224,7 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap> &hashmap,
             const core::Tensor &indices, const core::Tensor &block_keys,    \
             std::vector<core::Tensor> &block_values,                        \
             const core::Tensor &intrinsics, const core::Tensor &extrinsics, \
-            int64_t resolution, float voxel_size, float sdf_trunc,          \
+            index_t resolution, float voxel_size, float sdf_trunc,          \
             float depth_scale, float depth_max
 
 template void IntegrateCPU<uint16_t, uint8_t, float, uint16_t, uint16_t>(
@@ -228,14 +237,14 @@ template void IntegrateCPU<float, float, float, float, float>(FN_ARGUMENTS);
 
 #undef FN_ARGUMENTS
 
-#define FN_ARGUMENTS                                                        \
-    std::shared_ptr<core::HashMap> &hashmap,                                \
-            const std::vector<core::Tensor> &block_values,                  \
-            const core::Tensor &range_map,                                  \
-            std::unordered_map<std::string, core::Tensor> &renderings_map,  \
-            const core::Tensor &intrinsics, const core::Tensor &extrinsics, \
-            int h, int w, int64_t block_resolution, float voxel_size,       \
-            float sdf_trunc, float depth_scale, float depth_min,            \
+#define FN_ARGUMENTS                                                          \
+    std::shared_ptr<core::HashMap> &hashmap,                                  \
+            const std::vector<core::Tensor> &block_values,                    \
+            const core::Tensor &range_map,                                    \
+            std::unordered_map<std::string, core::Tensor> &renderings_map,    \
+            const core::Tensor &intrinsics, const core::Tensor &extrinsics,   \
+            index_t h, index_t w, index_t block_resolution, float voxel_size, \
+            float sdf_trunc, float depth_scale, float depth_min,              \
             float depth_max, float weight_threshold
 
 template void RayCastCPU<float, uint16_t, uint16_t>(FN_ARGUMENTS);
@@ -249,8 +258,8 @@ template void RayCastCPU<float, float, float>(FN_ARGUMENTS);
             const core::Tensor &block_keys,                                    \
             const std::vector<core::Tensor> &block_values,                     \
             core::Tensor &points, core::Tensor &normals, core::Tensor &colors, \
-            int64_t block_resolution, float voxel_size,                        \
-            float weight_threshold, int &valid_size
+            index_t block_resolution, float voxel_size,                        \
+            float weight_threshold, index_t &valid_size
 
 template void ExtractPointCloudCPU<float, uint16_t, uint16_t>(FN_ARGUMENTS);
 template void ExtractPointCloudCPU<float, float, float>(FN_ARGUMENTS);
@@ -265,8 +274,8 @@ template void ExtractPointCloudCPU<float, float, float>(FN_ARGUMENTS);
             const std::vector<core::Tensor> &block_values,                    \
             core::Tensor &vertices, core::Tensor &triangles,                  \
             core::Tensor &vertex_normals, core::Tensor &vertex_colors,        \
-            int64_t block_resolution, float voxel_size,                       \
-            float weight_threshold, int &vertex_count
+            index_t block_resolution, float voxel_size,                       \
+            float weight_threshold, index_t &vertex_count
 
 template void ExtractTriangleMeshCPU<float, uint16_t, uint16_t>(FN_ARGUMENTS);
 template void ExtractTriangleMeshCPU<float, float, float>(FN_ARGUMENTS);

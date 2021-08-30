@@ -37,10 +37,12 @@ namespace geometry {
 namespace kernel {
 namespace voxel_grid {
 
+using index_t = int;
+
 void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
                      const core::Tensor& points,
                      core::Tensor& voxel_block_coords,
-                     int64_t voxel_grid_resolution,
+                     index_t voxel_grid_resolution,
                      float voxel_size,
                      float sdf_trunc);
 
@@ -49,12 +51,12 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
                 const core::Tensor& intrinsics,
                 const core::Tensor& extrinsics,
                 core::Tensor& voxel_block_coords,
-                int64_t voxel_grid_resolution,
+                index_t voxel_grid_resolution,
                 float voxel_size,
                 float sdf_trunc,
                 float depth_scale,
                 float depth_max,
-                int stride);
+                index_t stride);
 
 void Integrate(const core::Tensor& depth,
                const core::Tensor& color,
@@ -63,7 +65,7 @@ void Integrate(const core::Tensor& depth,
                std::vector<core::Tensor>& block_values,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
-               int64_t resolution,
+               index_t resolution,
                float voxel_size,
                float sdf_trunc,
                float depth_scale,
@@ -75,9 +77,9 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              std::unordered_map<std::string, core::Tensor>& renderings_map,
              const core::Tensor& intrinsics,
              const core::Tensor& extrinsics,
-             int h,
-             int w,
-             int64_t block_resolution,
+             index_t h,
+             index_t w,
+             index_t block_resolution,
              float voxel_size,
              float sdf_trunc,
              float depth_scale,
@@ -93,10 +95,10 @@ void ExtractPointCloud(const core::Tensor& block_indices,
                        core::Tensor& points,
                        core::Tensor& normals,
                        core::Tensor& colors,
-                       int64_t block_resolution,
+                       index_t block_resolution,
                        float voxel_size,
                        float weight_threshold,
-                       int& valid_size);
+                       index_t& valid_size);
 
 void ExtractTriangleMesh(const core::Tensor& block_indices,
                          const core::Tensor& inv_block_indices,
@@ -108,16 +110,16 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
                          core::Tensor& triangles,
                          core::Tensor& vertex_normals,
                          core::Tensor& vertex_colors,
-                         int64_t block_resolution,
+                         index_t block_resolution,
                          float voxel_size,
                          float weight_threshold,
-                         int& vertex_count);
+                         index_t& vertex_count);
 
 /// CPU
 void PointCloudTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
                         const core::Tensor& points,
                         core::Tensor& voxel_block_coords,
-                        int64_t voxel_grid_resolution,
+                        index_t voxel_grid_resolution,
                         float voxel_size,
                         float sdf_trunc);
 
@@ -126,12 +128,12 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
                    const core::Tensor& intrinsics,
                    const core::Tensor& extrinsics,
                    core::Tensor& voxel_block_coords,
-                   int64_t voxel_grid_resolution,
+                   index_t voxel_grid_resolution,
                    float voxel_size,
                    float sdf_trunc,
                    float depth_scale,
                    float depth_max,
-                   int stride);
+                   index_t stride);
 
 template <typename input_depth_t,
           typename input_color_t,
@@ -145,7 +147,7 @@ void IntegrateCPU(const core::Tensor& depth,
                   std::vector<core::Tensor>& block_values,
                   const core::Tensor& intrinsics,
                   const core::Tensor& extrinsics,
-                  int64_t resolution,
+                  index_t resolution,
                   float voxel_size,
                   float sdf_trunc,
                   float depth_scale,
@@ -158,9 +160,9 @@ void RayCastCPU(std::shared_ptr<core::HashMap>& hashmap,
                 std::unordered_map<std::string, core::Tensor>& renderings_map,
                 const core::Tensor& intrinsics,
                 const core::Tensor& extrinsics,
-                int h,
-                int w,
-                int64_t block_resolution,
+                index_t h,
+                index_t w,
+                index_t block_resolution,
                 float voxel_size,
                 float sdf_trunc,
                 float depth_scale,
@@ -177,10 +179,10 @@ void ExtractPointCloudCPU(const core::Tensor& block_indices,
                           core::Tensor& points,
                           core::Tensor& normals,
                           core::Tensor& colors,
-                          int64_t block_resolution,
+                          index_t block_resolution,
                           float voxel_size,
                           float weight_threshold,
-                          int& valid_size);
+                          index_t& valid_size);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
 void ExtractTriangleMeshCPU(const core::Tensor& block_indices,
@@ -193,16 +195,16 @@ void ExtractTriangleMeshCPU(const core::Tensor& block_indices,
                             core::Tensor& triangles,
                             core::Tensor& vertex_normals,
                             core::Tensor& vertex_colors,
-                            int64_t block_resolution,
+                            index_t block_resolution,
                             float voxel_size,
                             float weight_threshold,
-                            int& vertex_count);
+                            index_t& vertex_count);
 
 #ifdef BUILD_CUDA_MODULE
 void PointCloudTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
                          const core::Tensor& points,
                          core::Tensor& voxel_block_coords,
-                         int64_t voxel_grid_resolution,
+                         index_t voxel_grid_resolution,
                          float voxel_size,
                          float sdf_trunc);
 
@@ -211,12 +213,12 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
                     const core::Tensor& intrinsics,
                     const core::Tensor& extrinsics,
                     core::Tensor& voxel_block_coords,
-                    int64_t voxel_grid_resolution,
+                    index_t voxel_grid_resolution,
                     float voxel_size,
                     float sdf_trunc,
                     float depth_scale,
                     float depth_max,
-                    int stride);
+                    index_t stride);
 
 template <typename input_depth_t,
           typename input_color_t,
@@ -230,7 +232,7 @@ void IntegrateCUDA(const core::Tensor& depth,
                    std::vector<core::Tensor>& block_values,
                    const core::Tensor& intrinsics,
                    const core::Tensor& extrinsics,
-                   int64_t resolution,
+                   index_t resolution,
                    float voxel_size,
                    float sdf_trunc,
                    float depth_scale,
@@ -243,9 +245,9 @@ void RayCastCUDA(std::shared_ptr<core::HashMap>& hashmap,
                  std::unordered_map<std::string, core::Tensor>& renderings_map,
                  const core::Tensor& intrinsics,
                  const core::Tensor& extrinsics,
-                 int h,
-                 int w,
-                 int64_t block_resolution,
+                 index_t h,
+                 index_t w,
+                 index_t block_resolution,
                  float voxel_size,
                  float sdf_trunc,
                  float depth_scale,
@@ -262,10 +264,10 @@ void ExtractPointCloudCUDA(const core::Tensor& block_indices,
                            core::Tensor& points,
                            core::Tensor& normals,
                            core::Tensor& colors,
-                           int64_t block_resolution,
+                           index_t block_resolution,
                            float voxel_size,
                            float weight_threshold,
-                           int& valid_size);
+                           index_t& valid_size);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
 void ExtractTriangleMeshCUDA(const core::Tensor& block_indices,
@@ -278,10 +280,10 @@ void ExtractTriangleMeshCUDA(const core::Tensor& block_indices,
                              core::Tensor& triangles,
                              core::Tensor& vertex_normals,
                              core::Tensor& vertex_colors,
-                             int64_t block_resolution,
+                             index_t block_resolution,
                              float voxel_size,
                              float weight_threshold,
-                             int& vertex_count);
+                             index_t& vertex_count);
 
 #endif
 }  // namespace voxel_grid

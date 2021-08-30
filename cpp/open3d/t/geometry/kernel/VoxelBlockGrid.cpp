@@ -40,10 +40,12 @@ namespace geometry {
 namespace kernel {
 namespace voxel_grid {
 
+using index_t = int;
+
 void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
                      const core::Tensor& points,
                      core::Tensor& voxel_block_coords,
-                     int64_t voxel_grid_resolution,
+                     index_t voxel_grid_resolution,
                      float voxel_size,
                      float sdf_trunc) {
     core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
@@ -64,12 +66,12 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
                 const core::Tensor& intrinsic,
                 const core::Tensor& extrinsic,
                 core::Tensor& voxel_block_coords,
-                int64_t voxel_grid_resolution,
+                index_t voxel_grid_resolution,
                 float voxel_size,
                 float sdf_trunc,
                 float depth_scale,
                 float depth_max,
-                int stride) {
+                index_t stride) {
     core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
 
     if (device_type == core::Device::DeviceType::CPU) {
@@ -126,7 +128,7 @@ void Integrate(const core::Tensor& depth,
                std::vector<core::Tensor>& block_values,
                const core::Tensor& intrinsic,
                const core::Tensor& extrinsic,
-               int64_t resolution,
+               index_t resolution,
                float voxel_size,
                float sdf_trunc,
                float depth_scale,
@@ -162,9 +164,9 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              std::unordered_map<std::string, core::Tensor>& renderings_map,
              const core::Tensor& intrinsic,
              const core::Tensor& extrinsic,
-             int h,
-             int w,
-             int64_t block_resolution,
+             index_t h,
+             index_t w,
+             index_t block_resolution,
              float voxel_size,
              float sdf_trunc,
              float depth_scale,
@@ -202,7 +204,7 @@ void ExtractPointCloud(const core::Tensor& block_indices,
                        core::Tensor& points,
                        core::Tensor& normals,
                        core::Tensor& colors,
-                       int64_t block_resolution,
+                       index_t block_resolution,
                        float voxel_size,
                        float weight_threshold,
                        int& valid_size) {
@@ -239,7 +241,7 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
                          core::Tensor& triangles,
                          core::Tensor& vertex_normals,
                          core::Tensor& vertex_colors,
-                         int64_t block_resolution,
+                         index_t block_resolution,
                          float voxel_size,
                          float weight_threshold,
                          int& vertex_count) {

@@ -47,66 +47,68 @@ namespace kernel {
 namespace voxel_grid {
 
 struct Coord3i {
-    OPEN3D_HOST_DEVICE Coord3i(int x, int y, int z) : x_(x), y_(y), z_(z) {}
+    OPEN3D_HOST_DEVICE Coord3i(index_t x, index_t y, index_t z)
+        : x_(x), y_(y), z_(z) {}
     OPEN3D_HOST_DEVICE bool operator==(const Coord3i &other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
 
-    int64_t x_;
-    int64_t y_;
-    int64_t z_;
+    index_t x_;
+    index_t y_;
+    index_t z_;
 };
 
 void PointCloudTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
                          const core::Tensor &points,
                          core::Tensor &voxel_block_coords,
-                         int64_t voxel_grid_resolution,
+                         index_t voxel_grid_resolution,
                          float voxel_size,
                          float sdf_trunc) {
-    int64_t resolution = voxel_grid_resolution;
+    index_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
 
-    int64_t n = points.GetLength();
+    index_t n = points.GetLength();
     const float *pcd_ptr = static_cast<const float *>(points.GetDataPtr());
 
     core::Device device = points.GetDevice();
     core::Tensor block_coordi({8 * n, 3}, core::Int32, device);
-    int *block_coordi_ptr = static_cast<int *>(block_coordi.GetDataPtr());
-    core::Tensor count(std::vector<int>{0}, {}, core::Int32, device);
-    int *count_ptr = static_cast<int *>(count.GetDataPtr());
+    index_t *block_coordi_ptr =
+            static_cast<index_t *>(block_coordi.GetDataPtr());
+    core::Tensor count(std::vector<index_t>{0}, {}, core::Int32, device);
+    index_t *count_ptr = static_cast<index_t *>(count.GetDataPtr());
 
-    core::ParallelFor(
-            hashmap->GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                float x = pcd_ptr[3 * workload_idx + 0];
-                float y = pcd_ptr[3 * workload_idx + 1];
-                float z = pcd_ptr[3 * workload_idx + 2];
+    core::ParallelFor(hashmap->GetDevice(), n,
+                      [=] OPEN3D_DEVICE(index_t workload_idx) {
+                          float x = pcd_ptr[3 * workload_idx + 0];
+                          float y = pcd_ptr[3 * workload_idx + 1];
+                          float z = pcd_ptr[3 * workload_idx + 2];
 
-                int xb_lo =
-                        static_cast<int>(floorf((x - sdf_trunc) / block_size));
-                int xb_hi =
-                        static_cast<int>(floorf((x + sdf_trunc) / block_size));
-                int yb_lo =
-                        static_cast<int>(floorf((y - sdf_trunc) / block_size));
-                int yb_hi =
-                        static_cast<int>(floorf((y + sdf_trunc) / block_size));
-                int zb_lo =
-                        static_cast<int>(floorf((z - sdf_trunc) / block_size));
-                int zb_hi =
-                        static_cast<int>(floorf((z + sdf_trunc) / block_size));
+                          index_t xb_lo = static_cast<index_t>(
+                                  floorf((x - sdf_trunc) / block_size));
+                          index_t xb_hi = static_cast<index_t>(
+                                  floorf((x + sdf_trunc) / block_size));
+                          index_t yb_lo = static_cast<index_t>(
+                                  floorf((y - sdf_trunc) / block_size));
+                          index_t yb_hi = static_cast<index_t>(
+                                  floorf((y + sdf_trunc) / block_size));
+                          index_t zb_lo = static_cast<index_t>(
+                                  floorf((z - sdf_trunc) / block_size));
+                          index_t zb_hi = static_cast<index_t>(
+                                  floorf((z + sdf_trunc) / block_size));
 
-                for (int xb = xb_lo; xb <= xb_hi; ++xb) {
-                    for (int yb = yb_lo; yb <= yb_hi; ++yb) {
-                        for (int zb = zb_lo; zb <= zb_hi; ++zb) {
-                            int idx = atomicAdd(count_ptr, 1);
-                            block_coordi_ptr[3 * idx + 0] = xb;
-                            block_coordi_ptr[3 * idx + 1] = yb;
-                            block_coordi_ptr[3 * idx + 2] = zb;
-                        }
-                    }
-                }
-            });
+                          for (index_t xb = xb_lo; xb <= xb_hi; ++xb) {
+                              for (index_t yb = yb_lo; yb <= yb_hi; ++yb) {
+                                  for (index_t zb = zb_lo; zb <= zb_hi; ++zb) {
+                                      index_t idx = atomicAdd(count_ptr, 1);
+                                      block_coordi_ptr[3 * idx + 0] = xb;
+                                      block_coordi_ptr[3 * idx + 1] = yb;
+                                      block_coordi_ptr[3 * idx + 2] = zb;
+                                  }
+                              }
+                          }
+                      });
 
-    int total_block_count = count.Item<int>();
+    index_t total_block_count = count.Item<index_t>();
     if (total_block_count == 0) {
         utility::LogError(
                 "[CUDATSDFTouchKernel] No block is touched in TSDF volume, "
@@ -115,7 +117,7 @@ void PointCloudTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     }
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Tensor block_buf_indices, block_masks;
-    hashmap->Activate(block_coordi.Slice(0, 0, count.Item<int>()),
+    hashmap->Activate(block_coordi.Slice(0, 0, count.Item<index_t>()),
                       block_buf_indices, block_masks);
     voxel_block_coords = block_coordi.IndexGet({block_masks});
 }
@@ -125,24 +127,24 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
                     const core::Tensor &intrinsics,
                     const core::Tensor &extrinsics,
                     core::Tensor &voxel_block_coords,
-                    int64_t voxel_grid_resolution,
+                    index_t voxel_grid_resolution,
                     float voxel_size,
                     float sdf_trunc,
                     float depth_scale,
                     float depth_max,
-                    int stride) {
+                    index_t stride) {
     core::Device device = depth.GetDevice();
     NDArrayIndexer depth_indexer(depth, 2);
     core::Tensor pose = t::geometry::InverseTransformation(extrinsics);
     TransformIndexer ti(intrinsics, pose, 1.0f);
 
     // Output
-    int64_t rows_strided = depth_indexer.GetShape(0) / stride;
-    int64_t cols_strided = depth_indexer.GetShape(1) / stride;
-    int64_t n = rows_strided * cols_strided;
+    index_t rows_strided = depth_indexer.GetShape(0) / stride;
+    index_t cols_strided = depth_indexer.GetShape(1) / stride;
+    index_t n = rows_strided * cols_strided;
 
-    const int64_t step_size = 3;
-    const int64_t est_multipler_factor = (step_size + 1);
+    const index_t step_size = 3;
+    const index_t est_multipler_factor = (step_size + 1);
 
     static core::Tensor block_coordi;
     if (block_coordi.GetLength() != est_multipler_factor * n) {
@@ -151,16 +153,17 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     }
 
     // Counter
-    core::Tensor count(std::vector<int>{0}, {1}, core::Dtype::Int32, device);
-    int *count_ptr = count.GetDataPtr<int>();
-    int *block_coordi_ptr = block_coordi.GetDataPtr<int>();
+    core::Tensor count(std::vector<index_t>{0}, {1}, core::Dtype::Int32,
+                       device);
+    index_t *count_ptr = count.GetDataPtr<index_t>();
+    index_t *block_coordi_ptr = block_coordi.GetDataPtr<index_t>();
 
-    int64_t resolution = voxel_grid_resolution;
+    index_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
     DISPATCH_DTYPE_TO_TEMPLATE(depth.GetDtype(), [&]() {
-        core::ParallelFor(device, n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-            int64_t y = (workload_idx / cols_strided) * stride;
-            int64_t x = (workload_idx % cols_strided) * stride;
+        core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx) {
+            index_t y = (workload_idx / cols_strided) * stride;
+            index_t x = (workload_idx % cols_strided) * stride;
 
             float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) / depth_scale;
             if (d > 0 && d < depth_max) {
@@ -184,15 +187,15 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
                 const float t_step = (t_max - t_min) / step_size;
 
                 float t = t_min;
-                int idx = OPEN3D_ATOMIC_ADD(count_ptr, (step_size + 1));
-                for (int step = 0; step <= step_size; ++step) {
-                    int offset = (step + idx) * 3;
+                index_t idx = OPEN3D_ATOMIC_ADD(count_ptr, (step_size + 1));
+                for (index_t step = 0; step <= step_size; ++step) {
+                    index_t offset = (step + idx) * 3;
 
-                    int xb = static_cast<int>(
+                    index_t xb = static_cast<index_t>(
                             floorf((x_o + t * x_d) / block_size));
-                    int yb = static_cast<int>(
+                    index_t yb = static_cast<index_t>(
                             floorf((y_o + t * y_d) / block_size));
-                    int zb = static_cast<int>(
+                    index_t zb = static_cast<index_t>(
                             floorf((z_o + t * z_d) / block_size));
 
                     block_coordi_ptr[offset + 0] = xb;
@@ -205,7 +208,7 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
         });
     });
 
-    int64_t total_block_count = static_cast<int64_t>(count[0].Item<int>());
+    index_t total_block_count = static_cast<index_t>(count[0].Item<index_t>());
     if (total_block_count == 0) {
         utility::LogError(
                 "No block is touched in TSDF volume, "
@@ -213,7 +216,8 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
                 "especially depth_scale and voxel_size");
     }
 
-    total_block_count = std::min(total_block_count, hashmap->GetCapacity());
+    total_block_count = std::min(total_block_count,
+                                 static_cast<index_t>(hashmap->GetCapacity()));
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Tensor block_addrs, block_masks;
     hashmap->Activate(block_coordi, block_addrs, block_masks);
@@ -221,15 +225,15 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     // Customized IndexGet (generic version too slow)
     voxel_block_coords =
             core::Tensor({hashmap->Size(), 3}, core::Int32, device);
-    int *voxel_block_coord_ptr = voxel_block_coords.GetDataPtr<int>();
+    index_t *voxel_block_coord_ptr = voxel_block_coords.GetDataPtr<index_t>();
     bool *block_masks_ptr = block_masks.GetDataPtr<bool>();
     count[0] = 0;
     core::ParallelFor(device, total_block_count,
-                      [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                      [=] OPEN3D_DEVICE(index_t workload_idx) {
                           if (block_masks_ptr[workload_idx]) {
-                              int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
-                              int offset_lhs = 3 * idx;
-                              int offset_rhs = 3 * workload_idx;
+                              index_t idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                              index_t offset_lhs = 3 * idx;
+                              index_t offset_rhs = 3 * workload_idx;
                               voxel_block_coord_ptr[offset_lhs + 0] =
                                       block_coordi_ptr[offset_rhs + 0];
                               voxel_block_coord_ptr[offset_lhs + 1] =
@@ -246,7 +250,7 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
             const core::Tensor &indices, const core::Tensor &block_keys,    \
             std::vector<core::Tensor> &block_values,                        \
             const core::Tensor &intrinsics, const core::Tensor &extrinsics, \
-            int64_t resolution, float voxel_size, float sdf_trunc,          \
+            index_t resolution, float voxel_size, float sdf_trunc,          \
             float depth_scale, float depth_max
 
 template void IntegrateCUDA<uint16_t, uint8_t, float, uint16_t, uint16_t>(
@@ -259,14 +263,14 @@ template void IntegrateCUDA<float, float, float, float, float>(FN_ARGUMENTS);
 
 #undef FN_ARGUMENTS
 
-#define FN_ARGUMENTS                                                        \
-    std::shared_ptr<core::HashMap> &hashmap,                                \
-            const std::vector<core::Tensor> &block_values,                  \
-            const core::Tensor &range_map,                                  \
-            std::unordered_map<std::string, core::Tensor> &renderings_map,  \
-            const core::Tensor &intrinsics, const core::Tensor &extrinsics, \
-            int h, int w, int64_t block_resolution, float voxel_size,       \
-            float sdf_trunc, float depth_scale, float depth_min,            \
+#define FN_ARGUMENTS                                                          \
+    std::shared_ptr<core::HashMap> &hashmap,                                  \
+            const std::vector<core::Tensor> &block_values,                    \
+            const core::Tensor &range_map,                                    \
+            std::unordered_map<std::string, core::Tensor> &renderings_map,    \
+            const core::Tensor &intrinsics, const core::Tensor &extrinsics,   \
+            index_t h, index_t w, index_t block_resolution, float voxel_size, \
+            float sdf_trunc, float depth_scale, float depth_min,              \
             float depth_max, float weight_threshold
 
 template void RayCastCUDA<float, uint16_t, uint16_t>(FN_ARGUMENTS);
@@ -280,8 +284,8 @@ template void RayCastCUDA<float, float, float>(FN_ARGUMENTS);
             const core::Tensor &block_keys,                                    \
             const std::vector<core::Tensor> &block_values,                     \
             core::Tensor &points, core::Tensor &normals, core::Tensor &colors, \
-            int64_t block_resolution, float voxel_size,                        \
-            float weight_threshold, int &valid_size
+            index_t block_resolution, float voxel_size,                        \
+            float weight_threshold, index_t &valid_size
 
 template void ExtractPointCloudCUDA<float, uint16_t, uint16_t>(FN_ARGUMENTS);
 template void ExtractPointCloudCUDA<float, float, float>(FN_ARGUMENTS);
@@ -298,10 +302,10 @@ void ExtractTriangleMeshCUDA(const core::Tensor &block_indices,
                              core::Tensor &triangles,
                              core::Tensor &vertex_normals,
                              core::Tensor &vertex_colors,
-                             int64_t block_resolution,
+                             index_t block_resolution,
                              float voxel_size,
                              float weight_threshold,
-                             int &vertex_count);
+                             index_t &vertex_count);
 
 #define FN_ARGUMENTS                                                          \
     const core::Tensor &block_indices, const core::Tensor &inv_block_indices, \
@@ -311,8 +315,8 @@ void ExtractTriangleMeshCUDA(const core::Tensor &block_indices,
             const std::vector<core::Tensor> &block_values,                    \
             core::Tensor &vertices, core::Tensor &triangles,                  \
             core::Tensor &vertex_normals, core::Tensor &vertex_colors,        \
-            int64_t block_resolution, float voxel_size,                       \
-            float weight_threshold, int &vertex_count
+            index_t block_resolution, float voxel_size,                       \
+            float weight_threshold, index_t &vertex_count
 
 template void ExtractTriangleMeshCUDA<float, uint16_t, uint16_t>(FN_ARGUMENTS);
 template void ExtractTriangleMeshCUDA<float, float, float>(FN_ARGUMENTS);
