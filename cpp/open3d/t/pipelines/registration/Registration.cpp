@@ -218,8 +218,16 @@ InitializePointCloudPyramidForMultiScaleICP(
     if (estimation.GetTransformationEstimationType() ==
                 TransformationEstimationType::ColoredICP &&
         !target.HasPointAttr("color_gradients")) {
-        target_down_pyramid[num_iterations - 1].EstimateColorGradients(
-                30, max_correspondence_distance * 2.0);
+        if (voxel_sizes[num_iterations - 1] == -1) {
+            utility::LogWarning(
+                    "Use voxel size parameter, for better performance in "
+                    "ColoredICP.");
+            target_down_pyramid[num_iterations - 1].EstimateColorGradients(
+                    30, max_correspondence_distance * 2.0);
+        } else {
+            target_down_pyramid[num_iterations - 1].EstimateColorGradients(
+                    30, voxel_sizes[num_iterations - 1] * 2.0);
+        }
     }
 
     for (int k = num_iterations - 2; k >= 0; k--) {
