@@ -16,10 +16,10 @@ REGISTER_OP("Open3DTrilinearDevoxelize")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             ::tensorflow::shape_inference::ShapeHandle
                     dims1;  // (batch_size, 3, N)
-            TF_RETURN_IF_ERROR(c->WithRank(c - input(0), 3, &dims1));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 3, &dims1));
             ::tensorflow::shape_inference::ShapeHandle
                     dims2;  // (batch_size, C, R, R, R)
-            TF_RETURN_IF_ERROR(c->WithRank(c - input(1), 5, &dims2));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 5, &dims2));
 
             ::tensorflow::shape_inference::ShapeHandle out1, out2;
             out1 = c->MakeShape({c->Dim(dims2, 0), c->Dim(dims2, 1),
@@ -44,16 +44,16 @@ REGISTER_OP("Open3DTrilinearDevoxelizeGrad")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             ::tensorflow::shape_inference::ShapeHandle
                     dims1;  // (batch_size, C, N)
-            TF_RETURN_IF_ERROR(c->WithRank(c - input(0), 3, &dims1));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 3, &dims1));
             ::tensorflow::shape_inference::ShapeHandle
                     dims2;  // (batch_size, 8, N)
-            TF_RETURN_IF_ERROR(c->WithRank(c - input(1), 3, &dims2));
+            TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 3, &dims2));
 
             ::tensorflow::shape_inference::ShapeHandle out;
             int r_;
             TF_RETURN_IF_ERROR(c->GetAttr("r", &r_));
-            out = c->MakeShape({c->Dim(dims1, 0), c->Dim(dims1, 1), r, r,
-                                r});  // (batch_size, C, R, R, R)
+            out = c->MakeShape({c->Dim(dims1, 0), c->Dim(dims1, 1), r_, r_,
+                                r_});  // (batch_size, C, R, R, R)
 
             c->set_output(0, out);
 
