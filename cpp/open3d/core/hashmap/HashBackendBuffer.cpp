@@ -34,6 +34,23 @@ HashBackendBuffer::HashBackendBuffer(int64_t capacity,
                                      int64_t key_dsize,
                                      std::vector<int64_t> value_dsizes,
                                      const Device &device) {
+    // First compute common bytesize divisor for fast copying values.
+    const std::vector<int64_t> kDivisors = {16, 12, 8, 4, 2, 1};
+
+    for (const auto &divisor : kDivisors) {
+        bool valid = true;
+        blocks_per_element_.clear();
+        for (size_t i = 0; i < value_dsizes.size(); ++i) {
+            int64_t bytesize = value_dsizes[i];
+            valid = valid && (bytesize % divisor == 0);
+            blocks_per_element_.push_back(bytesize / divisor);
+        }
+        if (valid) {
+            common_block_size_ = divisor;
+            break;
+        }
+    }
+
     heap_ = Tensor({capacity}, core::UInt32, device);
 
     key_buffer_ = Tensor({capacity},
@@ -85,6 +102,14 @@ std::vector<int64_t> HashBackendBuffer::GetValueDsizes() const {
         value_dsizes.push_back(value_buffer.GetDtype().ByteSize());
     }
     return value_dsizes;
+}
+
+int64_t HashBackendBuffer::GetCommonBlockSize() const {
+    return common_block_size_;
+}
+
+std::vector<int64_t> HashBackendBuffer::GetValueBlocksPerElement() const {
+    return blocks_per_element_;
 }
 
 Tensor HashBackendBuffer::GetIndexHeap() const { return heap_; }
