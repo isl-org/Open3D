@@ -689,16 +689,16 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseColorGradientKernel(
         scalar_t s = vt[0] * nt[0] + vt[1] * nt[1] + vt[2] * nt[2];
 
         int i = 1;
-        for (i = 1; i < indices_count; i++) {
-            int64_t neighbour_idx = 3 * indices_ptr[i];
+        for (; i < indices_count; i++) {
+            int64_t neighbour_idx_offset = 3 * indices_ptr[i];
 
-            if (neighbour_idx == -1) {
+            if (neighbour_idx_offset == -1) {
                 break;
             }
 
-            scalar_t vt_adj[3] = {points_ptr[neighbour_idx],
-                                  points_ptr[neighbour_idx + 1],
-                                  points_ptr[neighbour_idx + 2]};
+            scalar_t vt_adj[3] = {points_ptr[neighbour_idx_offset],
+                                  points_ptr[neighbour_idx_offset + 1],
+                                  points_ptr[neighbour_idx_offset + 2]};
 
             // p' = p - d * n [where d = p.dot(n) - s]
             // Computing the scalar d.
@@ -709,9 +709,9 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseColorGradientKernel(
             scalar_t vt_proj[3] = {vt_adj[0] - d * nt[0], vt_adj[1] - d * nt[1],
                                    vt_adj[2] - d * nt[2]};
 
-            scalar_t it_adj = (colors_ptr[neighbour_idx + 0] +
-                               colors_ptr[neighbour_idx + 1] +
-                               colors_ptr[neighbour_idx + 2]) /
+            scalar_t it_adj = (colors_ptr[neighbour_idx_offset + 0] +
+                               colors_ptr[neighbour_idx_offset + 1] +
+                               colors_ptr[neighbour_idx_offset + 2]) /
                               3.0;
 
             scalar_t A[3] = {vt_proj[0] - vt[0], vt_proj[1] - vt[1],

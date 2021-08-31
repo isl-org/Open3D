@@ -191,53 +191,53 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianColoredICP(
     const int64_t target_idx = 3 * correspondence_indices[workload_idx];
     const int64_t source_idx = 3 * workload_idx;
 
-    scalar_t vs[3] = {source_points_ptr[source_idx],
-                      source_points_ptr[source_idx + 1],
-                      source_points_ptr[source_idx + 2]};
+    const scalar_t vs[3] = {source_points_ptr[source_idx],
+                            source_points_ptr[source_idx + 1],
+                            source_points_ptr[source_idx + 2]};
 
-    scalar_t vt[3] = {target_points_ptr[target_idx],
-                      target_points_ptr[target_idx + 1],
-                      target_points_ptr[target_idx + 2]};
+    const scalar_t vt[3] = {target_points_ptr[target_idx],
+                            target_points_ptr[target_idx + 1],
+                            target_points_ptr[target_idx + 2]};
 
-    scalar_t nt[3] = {target_normals_ptr[target_idx],
-                      target_normals_ptr[target_idx + 1],
-                      target_normals_ptr[target_idx + 2]};
+    const scalar_t nt[3] = {target_normals_ptr[target_idx],
+                            target_normals_ptr[target_idx + 1],
+                            target_normals_ptr[target_idx + 2]};
 
-    scalar_t d = (vs[0] - vt[0]) * nt[0] + (vs[1] - vt[1]) * nt[1] +
-                 (vs[2] - vt[2]) * nt[2];
+    const scalar_t d = (vs[0] - vt[0]) * nt[0] + (vs[1] - vt[1]) * nt[1] +
+                       (vs[2] - vt[2]) * nt[2];
 
-    J_G[0] = (-vs[2] * nt[1] + vs[1] * nt[2]);
-    J_G[1] = (vs[2] * nt[0] - vs[0] * nt[2]);
-    J_G[2] = (-vs[1] * nt[0] + vs[0] * nt[1]);
-    J_G[3] = nt[0];
-    J_G[4] = nt[1];
-    J_G[5] = nt[2];
-    r_G = d;
+    J_G[0] = sqrt_lambda_geometric * (-vs[2] * nt[1] + vs[1] * nt[2]);
+    J_G[1] = sqrt_lambda_geometric * (vs[2] * nt[0] - vs[0] * nt[2]);
+    J_G[2] = sqrt_lambda_geometric * (-vs[1] * nt[0] + vs[0] * nt[1]);
+    J_G[3] = sqrt_lambda_geometric * nt[0];
+    J_G[4] = sqrt_lambda_geometric * nt[1];
+    J_G[5] = sqrt_lambda_geometric * nt[2];
+    r_G = sqrt_lambda_geometric * d;
 
-    scalar_t vs_proj[3] = {vs[0] - d * nt[0], vs[1] - d * nt[1],
-                           vs[2] - d * nt[2]};
+    const scalar_t vs_proj[3] = {vs[0] - d * nt[0], vs[1] - d * nt[1],
+                                 vs[2] - d * nt[2]};
 
-    scalar_t is =
+    const scalar_t intensity_source =
             (source_colors_ptr[source_idx] + source_colors_ptr[source_idx + 1] +
              source_colors_ptr[source_idx + 2]) /
             3.0;
 
-    scalar_t it =
+    const scalar_t intensity_target =
             (target_colors_ptr[target_idx] + target_colors_ptr[target_idx + 1] +
              target_colors_ptr[target_idx + 2]) /
             3.0;
 
-    scalar_t dit[3] = {target_color_gradients_ptr[target_idx],
-                       target_color_gradients_ptr[target_idx + 1],
-                       target_color_gradients_ptr[target_idx + 2]};
+    const scalar_t dit[3] = {target_color_gradients_ptr[target_idx],
+                             target_color_gradients_ptr[target_idx + 1],
+                             target_color_gradients_ptr[target_idx + 2]};
 
-    scalar_t is_proj = dit[0] * (vs_proj[0] - vt[0]) +
-                       dit[1] * (vs_proj[1] - vt[1]) +
-                       dit[2] * (vs_proj[2] - vt[2]) + it;
+    const scalar_t is_proj = dit[0] * (vs_proj[0] - vt[0]) +
+                             dit[1] * (vs_proj[1] - vt[1]) +
+                             dit[2] * (vs_proj[2] - vt[2]) + intensity_target;
 
-    scalar_t s = dit[0] * nt[0] + dit[1] * nt[1] + dit[2] * nt[2];
-    scalar_t ditM[3] = {s * nt[0] - dit[0], s * nt[1] - dit[1],
-                        s * nt[2] - dit[2]};
+    const scalar_t s = dit[0] * nt[0] + dit[1] * nt[1] + dit[2] * nt[2];
+    const scalar_t ditM[3] = {s * nt[0] - dit[0], s * nt[1] - dit[1],
+                              s * nt[2] - dit[2]};
 
     J_I[0] = sqrt_lambda_photometric * (-vs[2] * ditM[1] + vs[1] * ditM[2]);
     J_I[1] = sqrt_lambda_photometric * (vs[2] * ditM[0] - vs[0] * ditM[2]);
@@ -245,7 +245,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianColoredICP(
     J_I[3] = sqrt_lambda_photometric * ditM[0];
     J_I[4] = sqrt_lambda_photometric * ditM[1];
     J_I[5] = sqrt_lambda_photometric * ditM[2];
-    r_I = sqrt_lambda_photometric * (is - is_proj);
+    r_I = sqrt_lambda_photometric * (intensity_source - is_proj);
 
     return true;
 }

@@ -100,49 +100,28 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
                                      const TransformationEstimationType& type) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Error);
 
+    std::string source_pointcloud_filename =
+            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
+    std::string target_pointcloud_filename =
+            std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
+
     geometry::PointCloud source(device), target(device);
-
-    std::string source_pointcloud_filename;
-    std::string target_pointcloud_filename;
-
-    core::Tensor init_trans;
-    std::shared_ptr<TransformationEstimation> estimation;
-    if (type == TransformationEstimationType::PointToPlane) {
-        estimation = std::make_shared<TransformationEstimationPointToPlane>();
-
-        init_trans = core::Tensor(initial_transform_flat, {4, 4}, core::Float32,
-                                  device)
-                             .To(dtype);
-
-        source_pointcloud_filename =
-                std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
-        target_pointcloud_filename =
-                std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
-    } else if (type == TransformationEstimationType::PointToPoint) {
-        estimation = std::make_shared<TransformationEstimationPointToPoint>();
-
-        init_trans = core::Tensor(initial_transform_flat, {4, 4}, core::Float32,
-                                  device)
-                             .To(dtype);
-
-        source_pointcloud_filename =
-                std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
-        target_pointcloud_filename =
-                std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_1.pcd";
-    } else if (type == TransformationEstimationType::ColoredICP) {
-        estimation = std::make_shared<TransformationEstimationForColoredICP>();
-
-        init_trans = core::Tensor::Eye(4, core::Float64, device);
-
-        source_pointcloud_filename =
-                std::string(TEST_DATA_DIR) + "/ColoredICP/frag_115.ply";
-        target_pointcloud_filename =
-                std::string(TEST_DATA_DIR) + "/ColoredICP/frag_115.ply";
-    }
-
     std::tie(source, target) = LoadTensorPointCloudFromFile(
             source_pointcloud_filename, target_pointcloud_filename,
             voxel_downsampling_factor, dtype, device);
+
+    std::shared_ptr<TransformationEstimation> estimation;
+    if (type == TransformationEstimationType::PointToPlane) {
+        estimation = std::make_shared<TransformationEstimationPointToPlane>();
+    } else if (type == TransformationEstimationType::PointToPoint) {
+        estimation = std::make_shared<TransformationEstimationPointToPoint>();
+    } else if (type == TransformationEstimationType::ColoredICP) {
+        estimation = std::make_shared<TransformationEstimationForColoredICP>();
+    }
+
+    core::Tensor init_trans =
+            core::Tensor(initial_transform_flat, {4, 4}, core::Float32, device)
+                    .To(dtype);
 
     RegistrationResult reg_result(init_trans);
 
