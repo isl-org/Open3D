@@ -34,6 +34,7 @@ import multiprocessing
 from functools import partial
 import time
 import sys
+from check_license import MatchHeader
 
 # Yapf requires python 3.6+
 if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
@@ -263,7 +264,6 @@ class PythonFormatter:
                 if do_apply_style:
                     self._apply_style(file_path, self.style_config)
         print("Formatting takes {:.2f}s".format(time.time() - start_time))
-
         return changed_files
 
 
@@ -378,13 +378,17 @@ if __name__ == "__main__":
     python_style_config = str(pwd.parent / ".style.yapf")
 
     # Check or apply style
-    cpp_formatter = CppFormatter(_glob_files(CPP_FORMAT_DIRS,
-                                             ["cpp", "h", "h.in", "cu", "cuh"]),
+    cpp_file_paths = _glob_files(CPP_FORMAT_DIRS,
+                                 ["cpp", "h", "h.in", "cu", "cuh"])
+    cpp_formatter = CppFormatter(cpp_file_paths,
                                  clang_format_bin=clang_format_bin)
-    python_formatter = PythonFormatter(_glob_files(PYTHON_FORMAT_DIRS, ["py"]),
+
+    python_file_paths = _glob_files(PYTHON_FORMAT_DIRS, ["py"])
+    python_formatter = PythonFormatter(python_file_paths,
                                        style_config=python_style_config)
-    jupyter_formatter = JupyterFormatter(_glob_files(JUPYTER_FORMAT_DIRS,
-                                                     ["ipynb"]),
+
+    jupyter_file_paths = _glob_files(JUPYTER_FORMAT_DIRS, ["ipynb"])
+    jupyter_formatter = JupyterFormatter(jupyter_file_paths,
                                          style_config=python_style_config)
 
     changed_files = []
@@ -401,13 +405,27 @@ if __name__ == "__main__":
                               no_parallel=args.no_parallel,
                               verbose=args.verbose))
 
-    if len(changed_files) != 0:
-        if args.do_apply_style:
+    # Check license header
+    match_header = MatchHeader(cpp_file_paths, python_file_paths)
+    files_wrong_header = match_header.run()
+
+    if (len(changed_files) == 0 and len(files_wrong_header) == 0):
+        print("All files passed style check.")
+        exit(0)
+
+    if args.do_apply_style:
+        if len(changed_files) != 0:
             print("Style applied to the following files:")
             print("\n".join(changed_files))
-        else:
+        if len(files_wrong_header) != 0:
+            print("Please correct license header in the following files:")
+            print("\n".join(files_wrong_header))
+            raise RuntimeError(
+                "Found incorrect license header. See utils/check_license.py for license information."
+            )
+    else:
+        changed_files.extend(files_wrong_header)
+        if len(changed_files) != 0:
             print("Style error found in the following files:")
             print("\n".join(changed_files))
             exit(1)
-    else:
-        print("All files passed style check.")
