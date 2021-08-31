@@ -1192,9 +1192,8 @@ bool ReadPointCloudFromPCD(const std::string &filename,
 bool WritePointCloudToPCD(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params) {
-    pointcloud.GetPointPositions().AssertDevice(
-            core::Device("CPU:0"),
-            "Write PCD failed: expects point cloud to be on CPU device.");
+    core::AssertTensorDevice(pointcloud.GetPointPositions(),
+                             core::Device("CPU:0"));
 
     PCDHeader header;
     if (!GenerateHeader(pointcloud, bool(params.write_ascii),
