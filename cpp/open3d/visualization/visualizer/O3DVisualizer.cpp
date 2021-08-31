@@ -833,14 +833,12 @@ struct O3DVisualizer::Impl {
         bool is_default_color = false;
         bool no_shadows = false;
         MaterialRecord mat;
-        t::geometry::PointCloud *valid_tpcd = nullptr;
 
         if (material) {
             mat = *material;
             is_default_color = false;
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
-            valid_tpcd = t_cloud.get();
         } else if (model) {
             // Adding a triangle mesh model. Shader needs to be set to
             // defaultLit for O3D shader handling logic to work.
@@ -872,7 +870,6 @@ struct O3DVisualizer::Impl {
             } else if (t_cloud) {
                 has_colors = t_cloud->HasPointColors();
                 has_normals = t_cloud->HasPointNormals();
-                valid_tpcd = t_cloud.get();
             } else if (lines) {
                 has_colors = !lines->colors_.empty();
                 no_shadows = true;
@@ -886,7 +883,7 @@ struct O3DVisualizer::Impl {
                 has_normals = !mesh->vertex_normals_.empty();
                 has_colors = true;  // always want base_color as white
             } else if (t_mesh) {
-                has_normals = !t_mesh->HasVertexNormals();
+                has_normals = t_mesh->HasVertexNormals();
                 has_colors = true;  // always want base_color as white
             } else if (voxel_grid) {
                 has_normals = false;
@@ -978,15 +975,15 @@ struct O3DVisualizer::Impl {
         // Do we have a geometry, tgeometry or model?
         if (geom) {
             scene->AddGeometry(name, geom.get(), mat);
-        } else if (tgeom && valid_tpcd) {
-            scene->AddGeometry(name, valid_tpcd, mat);
+        } else if (tgeom) {
+            scene->AddGeometry(name, tgeom.get(), mat);
         } else if (model) {
             scene->AddModel(name, *model);
         } else {
             utility::LogWarning(
                     "No valid geometry specified to O3DVisualizer. Only "
-                    "supported "
-                    "geometries are Geometry3D and TGeometry PointClouds.");
+                    "supported geometries are Geometry3D and TGeometry "
+                    "PointClouds and TriangleMeshes.");
         }
 
         if (no_shadows) {
