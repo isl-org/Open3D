@@ -111,7 +111,7 @@ static auto registry = torch::RegisterOperators(
         &trilinear_devoxelize_forward);
 
 static auto registry_grad = torch::RegisterOperators(
-        "open3d::trilinear_devoxelize_grad(Tensor grad_y,"
+        "open3d::trilinear_devoxelize_backward(Tensor grad_y,"
         "Tensor indices, Tensor weights, int r)"
         " -> Tensor grad_x",
         &trilinear_devoxelize_backward);
