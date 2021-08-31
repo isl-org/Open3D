@@ -26,6 +26,7 @@
 
 #include <cstdio>
 
+#include "open3d/core/TensorCheck.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/FileSystem.h"
@@ -230,13 +231,16 @@ bool WritePointCloudToPTS(const std::string &filename,
 
         // Assert attribute shapes.
         if (pointcloud.HasPointPositions()) {
-            pointcloud.GetPointPositions().AssertShape({num_points, 3});
+            core::AssertTensorShape(pointcloud.GetPointPositions(),
+                                    {num_points, 3});
         }
         if (pointcloud.HasPointColors()) {
-            pointcloud.GetPointColors().AssertShape({num_points, 3});
+            core::AssertTensorShape(pointcloud.GetPointColors(),
+                                    {num_points, 3});
         }
         if (pointcloud.HasPointAttr("intensities")) {
-            pointcloud.GetPointAttr("intensities").AssertShape({num_points, 1});
+            core::AssertTensorShape(pointcloud.GetPointAttr("intensities"),
+                                    {num_points, 1});
         }
 
         reporter.SetTotal(num_points);

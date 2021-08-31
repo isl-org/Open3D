@@ -26,6 +26,7 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
+#include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/Registration.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
@@ -40,8 +41,8 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
         const core::Tensor &correspondences) const {
     core::Device device = source.GetDevice();
 
-    target.GetPointPositions().AssertDtype(
-            source.GetPointPositions().GetDtype());
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -86,8 +87,8 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         const core::Tensor &correspondences) const {
     core::Device device = source.GetDevice();
 
-    target.GetPointPositions().AssertDtype(
-            source.GetPointPositions().GetDtype());
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -145,16 +146,15 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
     }
 
     const core::Device device = source.GetPointPositions().GetDevice();
-    target.GetPointPositions().AssertDevice(device);
-    correspondences.AssertDevice(device);
+    core::AssertTensorDevice(target.GetPointPositions(), device);
+    core::AssertTensorDevice(correspondences, device);
 
     const core::Dtype dtype = source.GetPointPositions().GetDtype();
-    source.GetPointColors().AssertDtype(dtype);
-    target.GetPointPositions().AssertDtype(dtype);
-    target.GetPointNormals().AssertDtype(dtype);
-    target.GetPointColors().AssertDtype(dtype);
-    target.GetPointAttr("color_gradients").AssertDtype(dtype);
-    correspondences.AssertDtype(core::Dtype::Int64);
+    core::AssertTensorDtype(source.GetPointColors(), dtype);
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDtype(target.GetPointNormals(), dtype);
+    core::AssertTensorDtype(target.GetPointAttr("color_gradients"), dtype);
+    core::AssertTensorDtype(correspondences, core::Dtype::Int64);
 
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
     double lambda_photometric = 1.0 - lambda_geometric_;

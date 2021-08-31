@@ -350,5 +350,142 @@ TEST_P(PointCloudIOPermuteDevices, WriteDeviceTestPLY) {
     std::remove(filename.c_str());
 }
 
+TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
+    // Read PointCloud from PLY file.
+    t::geometry::PointCloud input_pcd;
+    // Using PLY Read to load the data.
+    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply",
+                          input_pcd, {"auto", false, false, false});
+
+    // Adding custom attributes of different dtypes.
+    core::Tensor custom_attr_uint8 = core::Tensor::Ones(
+            {input_pcd.GetPointPositions().GetLength(), 1}, core::UInt8);
+    input_pcd.SetPointAttr("custom_attr_uint8", custom_attr_uint8);
+
+    core::Tensor custom_attr_uint32 = core::Tensor::Ones(
+            {input_pcd.GetPointPositions().GetLength(), 1}, core::UInt32);
+    input_pcd.SetPointAttr("custom_attr_uint32", custom_attr_uint32);
+
+    core::Tensor custom_attr_int32 = core::Tensor::Ones(
+            {input_pcd.GetPointPositions().GetLength(), 1}, core::Int32);
+    input_pcd.SetPointAttr("custom_attr_int32", custom_attr_int32);
+
+    core::Tensor custom_attr_int64 = core::Tensor::Ones(
+            {input_pcd.GetPointPositions().GetLength(), 1}, core::Int64);
+    input_pcd.SetPointAttr("custom_attr_int64", custom_attr_int64);
+
+    core::Tensor custom_attr_float = core::Tensor::Ones(
+            {input_pcd.GetPointPositions().GetLength(), 1}, core::Float32);
+    input_pcd.SetPointAttr("custom_attr_float", custom_attr_float);
+
+    core::Tensor custom_attr_double = core::Tensor::Ones(
+            {input_pcd.GetPointPositions().GetLength(), 1}, core::Float64);
+    input_pcd.SetPointAttr("custom_attr_double", custom_attr_double);
+
+    // PCD IO for ASCII format.
+    std::string filename_ascii =
+            std::string(TEST_DATA_DIR) + "/test_pcd_pointcloud_ascii.pcd";
+
+    EXPECT_TRUE(t::io::WritePointCloud(
+            filename_ascii, input_pcd,
+            open3d::io::WritePointCloudOption(
+                    /*ascii*/ true, /*compressed*/ false, false, {})));
+
+    t::geometry::PointCloud ascii_pcd;
+    t::io::ReadPointCloud(filename_ascii, ascii_pcd);
+
+    for (auto &kv : input_pcd.GetPointAttr()) {
+        EXPECT_TRUE(kv.second.AllClose(ascii_pcd.GetPointAttr(kv.first), 1e-3,
+                                       1e-4));
+    }
+    std::remove(filename_ascii.c_str());
+
+    // PCD IO for Binary format.
+    std::string filename_binary =
+            std::string(TEST_DATA_DIR) + "/test_pcd_pointcloud_binary.pcd";
+
+    EXPECT_TRUE(t::io::WritePointCloud(
+            filename_binary, input_pcd,
+            open3d::io::WritePointCloudOption(
+                    /*ascii*/ false, /*compressed*/ false, false, {})));
+
+    t::geometry::PointCloud binary_pcd;
+    t::io::ReadPointCloud(filename_binary, binary_pcd);
+
+    for (auto &kv : input_pcd.GetPointAttr()) {
+        EXPECT_TRUE(kv.second.AllClose(binary_pcd.GetPointAttr(kv.first), 1e-3,
+                                       1e-4));
+    }
+    std::remove(filename_binary.c_str());
+
+    // PCD IO for Binary Compressed format.
+    std::string filename_binary_compressed =
+            std::string(TEST_DATA_DIR) +
+            "/test_pcd_pointcloud_binary_compressed.pcd";
+
+    EXPECT_TRUE(t::io::WritePointCloud(
+            filename_binary_compressed, input_pcd,
+            open3d::io::WritePointCloudOption(
+                    /*ascii*/ false, /*compressed*/ true, false, {})));
+
+    t::geometry::PointCloud binary_compressed_pcd;
+    t::io::ReadPointCloud(filename_binary_compressed, binary_compressed_pcd);
+
+    for (auto &kv : input_pcd.GetPointAttr()) {
+        EXPECT_TRUE(kv.second.AllClose(
+                binary_compressed_pcd.GetPointAttr(kv.first), 1e-3, 1e-4));
+    }
+    std::remove(filename_binary_compressed.c_str());
+
+    // Colors data type will be converted to UInt8 during Write / Read.
+    // Only Float32, Float64, UInt8, UInt16, UInt32 colors data types are
+    // suppoted for conversion.
+
+    // PointCloud with Float32 type white color
+    core::Tensor color_float32 = core::Tensor::Ones(
+            {input_pcd.GetPointPositions().GetLength(), 3}, core::Float32);
+    input_pcd.SetPointColors(color_float32);
+
+    std::string filename_ascii_f32 =
+            std::string(TEST_DATA_DIR) +
+            "/test_pcd_pointcloud_binary_f32_colors.pcd";
+
+    EXPECT_TRUE(t::io::WritePointCloud(
+            filename_ascii_f32, input_pcd,
+            open3d::io::WritePointCloudOption(
+                    /*ascii*/ true, /*compressed*/ false, false, {})));
+
+    t::geometry::PointCloud ascii_f32_pcd;
+    t::io::ReadPointCloud(filename_ascii_f32, ascii_f32_pcd);
+
+    core::Tensor color_uint8 =
+            color_float32.To(core::Dtype::UInt8)
+                    .Mul(std::numeric_limits<uint8_t>::max());
+
+    EXPECT_TRUE(ascii_f32_pcd.GetPointColors().AllClose(color_uint8));
+    std::remove(filename_ascii_f32.c_str());
+
+    // PointCloud with UInt32 type white color
+    core::Tensor color_uint32 =
+            color_float32.To(core::Dtype::UInt32)
+                    .Mul(std::numeric_limits<uint32_t>::max());
+    input_pcd.SetPointColors(color_uint32);
+
+    std::string filename_ascii_uint32 =
+            std::string(TEST_DATA_DIR) +
+            "/test_pcd_pointcloud_binary_uint32_colors.pcd";
+
+    EXPECT_TRUE(t::io::WritePointCloud(
+            filename_ascii_uint32, input_pcd,
+            open3d::io::WritePointCloudOption(
+                    /*ascii*/ true, /*compressed*/ false, false, {})));
+
+    t::geometry::PointCloud ascii_uint32_pcd;
+    t::io::ReadPointCloud(filename_ascii_uint32, ascii_uint32_pcd);
+
+    EXPECT_TRUE(ascii_f32_pcd.GetPointColors().AllClose(color_uint8));
+    std::remove(filename_ascii_uint32.c_str());
+}
+
 }  // namespace tests
 }  // namespace open3d

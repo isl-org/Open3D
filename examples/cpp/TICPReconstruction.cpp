@@ -756,7 +756,7 @@ private:
             const int64_t& num_iterations,
             const core::Device& device,
             const core::Dtype& dtype) {
-        init_source_to_target.AssertShape({4, 4});
+        core::AssertTensorShape(init_source_to_target, {4, 4});
 
         if (target.GetPointPositions().GetDtype() != dtype) {
             utility::LogError(

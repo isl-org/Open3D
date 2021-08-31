@@ -42,6 +42,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/TensorList.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
