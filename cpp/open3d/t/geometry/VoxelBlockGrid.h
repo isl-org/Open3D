@@ -96,6 +96,9 @@ public:
     /// (4, 0, 0, 1), (4, 1, 0, 1), (4, 0, 1, 1), (4, 1, 1, 1),
     /// }
     /// Note: the slicing order is z-y-x.
+    core::Tensor GetVoxelIndices(const core::Tensor &buf_indices) const;
+
+    /// Get all active voxel indices.
     core::Tensor GetVoxelIndices() const;
 
     /// Get a (3, hashmap.Size() * resolution^3) coordinate tensor of active

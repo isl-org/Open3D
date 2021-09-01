@@ -137,13 +137,11 @@ core::Tensor VoxelBlockGrid::GetVoxelCoordinates(
     return voxel_coords;
 }
 
-core::Tensor VoxelBlockGrid::GetVoxelIndices() const {
+core::Tensor VoxelBlockGrid::GetVoxelIndices(
+        const core::Tensor &buf_indices) const {
     core::Device device = block_hashmap_->GetDevice();
 
-    core::Tensor active_buf_indices;
-    block_hashmap_->GetActiveIndices(active_buf_indices);
-
-    int64_t n_blocks = active_buf_indices.GetLength();
+    int64_t n_blocks = buf_indices.GetLength();
 
     int64_t resolution = block_resolution_;
     int64_t resolution2 = resolution * resolution;
@@ -159,18 +157,22 @@ core::Tensor VoxelBlockGrid::GetVoxelIndices() const {
 
     /// operator % is not supported now
     core::Tensor voxel_z = remainder / resolution2;
-    core::Tensor voxel_y = (remainder - (voxel_z * resolution2)) / resolution;
-    core::Tensor voxel_x = remainder - (remainder / resolution) * resolution;
+    remainder = remainder - voxel_z * resolution2;
+    core::Tensor voxel_y = remainder / resolution;
+    core::Tensor voxel_x = remainder - voxel_y * resolution;
 
     core::Tensor voxel_indices = core::Tensor({4, n_blocks * resolution3},
                                               core::Dtype::Int64, device);
-    voxel_indices[0] =
-            active_buf_indices.IndexGet({block_idx}).To(core::Dtype::Int64);
+    voxel_indices[0] = buf_indices.IndexGet({block_idx}).To(core::Dtype::Int64);
     voxel_indices[1] = voxel_x;
     voxel_indices[2] = voxel_y;
     voxel_indices[3] = voxel_z;
 
     return voxel_indices;
+}
+
+core::Tensor VoxelBlockGrid::GetVoxelIndices() const {
+    return GetVoxelIndices(block_hashmap_->GetActiveIndices());
 }
 
 core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(

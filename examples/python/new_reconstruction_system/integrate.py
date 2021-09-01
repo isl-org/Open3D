@@ -48,6 +48,9 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             vbg.integrate(frustum_block_coords, depth, color, intrinsic,
                           extrinsic, config.depth_scale, config.depth_max)
 
+            if i % 10 == 0 and i > 0:
+                pcd = vbg.extract_point_cloud()
+                o3d.visualization.draw([pcd])
             dt = time.time() - start
         print('Finished integrating {} frames in {} seconds'.format(
             n_files, dt))

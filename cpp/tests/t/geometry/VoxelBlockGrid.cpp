@@ -292,13 +292,13 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                         vbg.GetVoxelCoordinates(voxel_indices);
                 core::Tensor tsdf =
                         vbg.GetAttribute("tsdf")
-                                .IndexGet({voxel_indices[0], voxel_indices[1],
-                                           voxel_indices[2], voxel_indices[3]})
+                                .IndexGet({voxel_indices[0], voxel_indices[3],
+                                           voxel_indices[2], voxel_indices[1]})
                                 .View({-1});
                 core::Tensor weight =
                         vbg.GetAttribute("weight")
-                                .IndexGet({voxel_indices[0], voxel_indices[1],
-                                           voxel_indices[2], voxel_indices[3]})
+                                .IndexGet({voxel_indices[0], voxel_indices[3],
+                                           voxel_indices[2], voxel_indices[1]})
                                 .View({-1});
 
                 core::Tensor mask = tsdf.Abs().Lt(0.3) && weight.Gt(1);

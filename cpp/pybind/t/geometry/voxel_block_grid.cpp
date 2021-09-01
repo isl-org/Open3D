@@ -71,25 +71,31 @@ void pybind_voxel_block_grid(py::module& m) {
             "Get the attribute tensor to be indexed with voxel_indices.",
             "attribute_name"_a);
 
-    vbg.def("voxel_indices", &VoxelBlockGrid::GetVoxelIndices,
-            "Get a (4, N), Int64 index tensor for active voxels, used for "
-            "advanced indexing.                                                "
-            "Returned index tensor can access selected value buffers in order "
-            "of  "
-            "(buf_index, index_voxel_x, index_voxel_y, index_voxel_z).         "
-            "Example:                                                          "
-            "For a voxel block grid with (2, 2, 2) block resolution,           "
+    vbg.def("voxel_indices",
+            py::overload_cast<const core::Tensor&>(
+                    &VoxelBlockGrid::GetVoxelIndices, py::const_),
+            "Get a (4, N), Int64 index tensor for input buffer indices, used "
+            "for advanced indexing.   "
+            "Returned index tensor can access selected value buffer"
+            "in the order of  "
+            "(buf_index, index_voxel_x, index_voxel_y, index_voxel_z).       "
+            "Example:                                                        "
+            "For a voxel block grid with (2, 2, 2) block resolution,         "
             "if the active block coordinates are at buffer index {(2, 4)} "
-            "given by"
-            "active_indices() from the underlying hash map,                    "
-            "the returned result will be a (4, 2 x 8) tensor:                  "
-            "{                                                                 "
-            "(2, 0, 0, 0), (2, 1, 0, 0), (2, 0, 1, 0), (2, 1, 1, 0),           "
-            "(2, 0, 0, 1), (2, 1, 0, 1), (2, 0, 1, 1), (2, 1, 1, 1),           "
-            "(4, 0, 0, 0), (4, 1, 0, 0), (4, 0, 1, 0), (4, 1, 1, 0),           "
-            "(4, 0, 0, 1), (4, 1, 0, 1), (4, 0, 1, 1), (4, 1, 1, 1),           "
+            "given by active_indices() from the underlying hash map,         "
+            "the returned result will be a (4, 2 x 8) tensor:                "
+            "{                                                               "
+            "(2, 0, 0, 0), (2, 1, 0, 0), (2, 0, 1, 0), (2, 1, 1, 0),         "
+            "(2, 0, 0, 1), (2, 1, 0, 1), (2, 0, 1, 1), (2, 1, 1, 1),         "
+            "(4, 0, 0, 0), (4, 1, 0, 0), (4, 0, 1, 0), (4, 1, 1, 0),         "
+            "(4, 0, 0, 1), (4, 1, 0, 1), (4, 0, 1, 1), (4, 1, 1, 1),         "
             "}"
             "Note: the slicing order is z-y-x.");
+
+    vbg.def("voxel_indices",
+            py::overload_cast<>(&VoxelBlockGrid::GetVoxelIndices, py::const_),
+            "Get a (4, N) Int64 idnex tensor for all the active voxels stored "
+            "in the hash map, used for advanced indexing.");
 
     vbg.def("voxel_coordinates", &VoxelBlockGrid::GetVoxelCoordinates,
             "Get a (3, hashmap.Size() * resolution^3) coordinate tensor of "
