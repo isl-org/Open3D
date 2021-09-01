@@ -37,7 +37,7 @@ class SamplePointsFixture : public benchmark::Fixture {
 public:
     void SetUp(const benchmark::State& state) {
         trimesh = open3d::io::CreateMeshFromFile(
-                utility::GetDataPathCommon("/knot.ply"));
+                utility::GetDataPathCommon("knot.ply"));
     }
 
     void TearDown(const benchmark::State& state) {
