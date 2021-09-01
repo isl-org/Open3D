@@ -34,7 +34,7 @@ import multiprocessing
 from functools import partial
 import time
 import sys
-from check_license import MatchHeader
+from check_license_header import MatchHeader
 
 # Yapf requires python 3.6+
 if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
@@ -387,8 +387,8 @@ if __name__ == "__main__":
     python_formatter = PythonFormatter(python_file_paths,
                                        style_config=python_style_config)
 
-    jupyter_file_paths = _glob_files(JUPYTER_FORMAT_DIRS, ["ipynb"])
-    jupyter_formatter = JupyterFormatter(jupyter_file_paths,
+    jupyter_formatter = JupyterFormatter(_glob_files(JUPYTER_FORMAT_DIRS,
+                                                     ["ipynb"]),
                                          style_config=python_style_config)
 
     changed_files = []
