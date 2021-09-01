@@ -31,7 +31,7 @@
 
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/Helper.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -286,7 +286,7 @@ TEST(HalfEdgeTriangleMesh, Constructor_PartialHexagon) {
 
 TEST(HalfEdgeTriangleMesh, Constructor_Sphere) {
     geometry::TriangleMesh mesh;
-    io::ReadTriangleMesh(std::string(TEST_DATA_DIR) + "/sphere.ply", mesh);
+    io::ReadTriangleMesh(GetDataPathCommon("sphere.ply"), mesh);
     auto het_mesh =
             geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
     assert_same_vertices_and_triangles(mesh, *het_mesh);

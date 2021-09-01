@@ -26,8 +26,8 @@
 
 #include "open3d/core/TensorCheck.h"
 
-#include "CoreTest.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
+#include "tests/core/CoreTest.h"
 
 namespace open3d {
 namespace tests {

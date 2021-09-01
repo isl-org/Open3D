@@ -37,7 +37,7 @@
 #include "open3d/t/io/TSDFVoxelGridIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -68,22 +68,19 @@ t::geometry::TSDFVoxelGrid IntegrateTestScene(
              {0, 0, 1}});
 
     // Extrinsics
-    std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
+    std::string trajectory_path = GetDataPathCommon("RGBD/odometry.log");
     auto trajectory =
             io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
 
     for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
         // Load image
         t::geometry::Image depth =
-                t::io::CreateImageFromFile(
-                        fmt::format("{}/RGBD/depth/{:05d}.png",
-                                    std::string(TEST_DATA_DIR), i))
+                t::io::CreateImageFromFile(GetDataPathCommon(fmt::format(
+                                                   "RGBD/depth/{:05d}.png", i)))
                         ->To(device);
         t::geometry::Image color =
-                t::io::CreateImageFromFile(
-                        fmt::format("{}/RGBD/color/{:05d}.jpg",
-                                    std::string(TEST_DATA_DIR), i))
+                t::io::CreateImageFromFile(GetDataPathCommon(fmt::format(
+                                                   "RGBD/color/{:05d}.jpg", i)))
                         ->To(device);
 
         Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
@@ -113,7 +110,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, Integrate) {
 
         auto pcd = voxel_grid.ExtractSurfacePoints().ToLegacy();
         auto pcd_gt = *io::CreatePointCloudFromFile(
-                std::string(TEST_DATA_DIR) + "/RGBD/example_tsdf_pcd.ply");
+                GetDataPathCommon("RGBD/example_tsdf_pcd.ply"));
         auto result = pipelines::registration::EvaluateRegistration(
                 pcd, pcd_gt, dist_threshold);
 
@@ -172,8 +169,7 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
              {0, 0, 1}});
 
     // Extrinsic
-    std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
+    std::string trajectory_path = GetDataPathCommon("RGBD/odometry.log");
     auto trajectory =
             io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
     size_t n = trajectory->parameters_.size();
@@ -216,9 +212,8 @@ TEST_P(TSDFVoxelGridPermuteDevices, DISABLED_Raycast) {
             // There are CPU/CUDA numerical differences around edges, so
             // we need to be tolerant.
             core::Tensor vertex_map_gt = core::Tensor::Load(
-                    fmt::format("{}/open3d_downloads/RGBD/"
-                                "raycast_vtx_{:03d}.npy",
-                                std::string(TEST_DATA_DIR), n - 1));
+                    GetDataPathDownload() +
+                    fmt::format("/RGBD/raycast_vtx_{:03d}.npy", n - 1));
             vertex_map.Save(fmt::format("raycast_vtx_{:03d}.npy", n - 1));
             int64_t discrepancy_count =
                     ((vertex_map.To(core::Device("CPU:0")) - vertex_map_gt)

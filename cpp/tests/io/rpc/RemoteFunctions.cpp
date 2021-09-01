@@ -35,7 +35,7 @@
 #include "open3d/io/rpc/DummyReceiver.h"
 #include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/ZMQContext.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 using namespace open3d::io::rpc;
 

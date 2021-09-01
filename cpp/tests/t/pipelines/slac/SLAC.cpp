@@ -41,7 +41,7 @@
 #include "open3d/t/pipelines/slac/SLACOptimizer.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Timer.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -72,8 +72,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     core::Device device = GetParam();
 
     std::string dataset_folder =
-            std::string(TEST_DATA_DIR) +
-            "/reconstruction_system/livingroom1_clean_micro";
+            GetDataPathCommon("/reconstruction_system/livingroom1_clean_micro");
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string scene_folder = dataset_folder + "/test_scene";
     std::string slac_folder = dataset_folder + "/output_slac";
@@ -86,8 +85,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
         utility::LogError(
                 "No fragment found in {}, please make sure the test dataset "
                 "has been downloaded in "
-                "open3d_downloads/tests/reconstruction_system/ been "
-                "downloaded.",
+                "test_data/open3d_downloads/tests/reconstruction_system/.",
                 fragment_folder);
     }
     std::sort(fragment_fnames.begin(), fragment_fnames.end());
@@ -182,8 +180,7 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     core::Device device = GetParam();
 
     std::string dataset_folder =
-            std::string(TEST_DATA_DIR) +
-            "/reconstruction_system/livingroom1_clean_micro";
+            GetDataPathCommon("/reconstruction_system/livingroom1_clean_micro");
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string color_folder = dataset_folder + "/image";
     std::string depth_folder = dataset_folder + "/depth";
