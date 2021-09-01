@@ -30,7 +30,6 @@
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace benchmarks {

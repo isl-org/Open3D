@@ -350,8 +350,8 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
     // Read PointCloud from PLY file.
     t::geometry::PointCloud input_pcd;
     // Using PLY Read to load the data.
-    t::io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply",
-                          input_pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), input_pcd,
+                          {"auto", false, false, false});
 
     // Adding custom attributes of different dtypes.
     core::Tensor custom_attr_uint8 = core::Tensor::Ones(
@@ -380,7 +380,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     // PCD IO for ASCII format.
     std::string filename_ascii =
-            std::string(TEST_DATA_DIR) + "/test_pcd_pointcloud_ascii.pcd";
+            utility::GetDataPathCommon("test_pcd_pointcloud_ascii.pcd");
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii, input_pcd,
@@ -398,7 +398,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     // PCD IO for Binary format.
     std::string filename_binary =
-            std::string(TEST_DATA_DIR) + "/test_pcd_pointcloud_binary.pcd";
+            utility::GetDataPathCommon("test_pcd_pointcloud_binary.pcd");
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_binary, input_pcd,
@@ -415,9 +415,8 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
     std::remove(filename_binary.c_str());
 
     // PCD IO for Binary Compressed format.
-    std::string filename_binary_compressed =
-            std::string(TEST_DATA_DIR) +
-            "/test_pcd_pointcloud_binary_compressed.pcd";
+    std::string filename_binary_compressed = utility::GetDataPathCommon(
+            "test_pcd_pointcloud_binary_compressed.pcd");
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_binary_compressed, input_pcd,
@@ -442,9 +441,8 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
             {input_pcd.GetPointPositions().GetLength(), 3}, core::Float32);
     input_pcd.SetPointColors(color_float32);
 
-    std::string filename_ascii_f32 =
-            std::string(TEST_DATA_DIR) +
-            "/test_pcd_pointcloud_binary_f32_colors.pcd";
+    std::string filename_ascii_f32 = utility::GetDataPathCommon(
+            "test_pcd_pointcloud_binary_f32_colors.pcd");
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii_f32, input_pcd,
@@ -467,9 +465,8 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
                     .Mul(std::numeric_limits<uint32_t>::max());
     input_pcd.SetPointColors(color_uint32);
 
-    std::string filename_ascii_uint32 =
-            std::string(TEST_DATA_DIR) +
-            "/test_pcd_pointcloud_binary_uint32_colors.pcd";
+    std::string filename_ascii_uint32 = utility::GetDataPathCommon(
+            "/test_pcd_pointcloud_binary_uint32_colors.pcd");
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii_uint32, input_pcd,

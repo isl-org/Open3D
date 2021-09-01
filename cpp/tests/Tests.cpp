@@ -24,12 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// TEST_DATA_DIR defined in CMakeLists.txt
-// Put it here to avoid editor warnings
-#ifndef TEST_DATA_DIR
-#define TEST_DATA_DIR
-#endif
-
 #include "tests/Tests.h"
 
 namespace open3d {

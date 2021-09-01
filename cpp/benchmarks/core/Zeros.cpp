@@ -28,7 +28,6 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace core {
