@@ -46,7 +46,7 @@ public:
                    const Device& device);
     ~TBBHashBackend();
 
-    void Rehash(int64_t buckets) override;
+    void Reserve(int64_t capacity) override;
 
     void Insert(const void* input_keys,
                 const std::vector<const void*>& input_values_soa,
@@ -161,8 +161,8 @@ void TBBHashBackend<Key, Hash, Eq>::Clear() {
 }
 
 template <typename Key, typename Hash, typename Eq>
-void TBBHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {
-    impl_->rehash(buckets);
+void TBBHashBackend<Key, Hash, Eq>::Reserve(int64_t capacity) {
+    impl_->rehash(std::ceil(capacity / impl_->max_load_factor()));
 }
 
 template <typename Key, typename Hash, typename Eq>

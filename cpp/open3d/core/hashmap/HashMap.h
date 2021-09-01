@@ -62,8 +62,8 @@ public:
     /// Default destructor.
     ~HashMap() = default;
 
-    /// Rehash the internal hash map with the given number of buckets.
-    void Rehash(int64_t buckets);
+    /// Reserve the internal hash map with the given capacity by rehashing.
+    void Reserve(int64_t capacity);
 
     /// Parallel insert arrays of keys and values in Tensors.
     /// Return: output_buf_indices stores buffer indices that access buffer

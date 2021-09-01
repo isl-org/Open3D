@@ -139,7 +139,7 @@ public:
                       const Device& device);
     ~StdGPUHashBackend();
 
-    void Rehash(int64_t buckets) override;
+    void Reserve(int64_t capacity) override;
 
     void Insert(const void* input_keys,
                 const std::vector<const void*>& input_values_soa,
@@ -300,7 +300,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Clear() {
 }
 
 template <typename Key, typename Hash, typename Eq>
-void StdGPUHashBackend<Key, Hash, Eq>::Rehash(int64_t buckets) {}
+void StdGPUHashBackend<Key, Hash, Eq>::Reserve(int64_t capacity) {}
 
 template <typename Key, typename Hash, typename Eq>
 int64_t StdGPUHashBackend<Key, Hash, Eq>::GetBucketCount() const {

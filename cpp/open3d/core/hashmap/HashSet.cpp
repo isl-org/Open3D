@@ -45,7 +45,7 @@ HashSet::HashSet(int64_t init_capacity,
             std::vector<SizeVector>{}, device, backend);
 }
 
-void HashSet::Rehash(int64_t buckets) { return internal_->Rehash(buckets); }
+void HashSet::Reserve(int64_t capacity) { return internal_->Reserve(capacity); }
 
 std::pair<Tensor, Tensor> HashSet::Insert(const Tensor& input_keys) {
     Tensor output_buf_indices, output_masks;

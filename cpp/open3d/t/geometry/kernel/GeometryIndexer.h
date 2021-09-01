@@ -30,6 +30,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Timer.h"
@@ -47,16 +48,16 @@ public:
     TransformIndexer(const core::Tensor& intrinsics,
                      const core::Tensor& extrinsics,
                      float scale = 1.0f) {
-        intrinsics.AssertShape({3, 3});
-        intrinsics.AssertDtype(core::Float64);
-        intrinsics.AssertDevice(core::Device("CPU:0"));
+        core::AssertTensorShape(intrinsics, {3, 3});
+        core::AssertTensorDtype(intrinsics, core::Float64);
+        core::AssertTensorDevice(intrinsics, core::Device("CPU:0"));
         if (!intrinsics.IsContiguous()) {
             utility::LogError("Intrinsics is not contiguous");
         }
 
-        extrinsics.AssertShape({4, 4});
-        extrinsics.AssertDtype(core::Float64);
-        extrinsics.AssertDevice(core::Device("CPU:0"));
+        core::AssertTensorShape(extrinsics, {4, 4});
+        core::AssertTensorDtype(extrinsics, core::Float64);
+        core::AssertTensorDevice(extrinsics, core::Device("CPU:0"));
         if (!extrinsics.IsContiguous()) {
             utility::LogError("Extrinsics is not contiguous");
         }

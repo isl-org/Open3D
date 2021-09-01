@@ -30,6 +30,7 @@
 
 #include "open3d/core/Indexer.h"
 #include "open3d/core/ParallelFor.h"
+#include "open3d/core/TensorCheck.h"
 
 namespace open3d {
 namespace core {
@@ -113,7 +114,7 @@ static std::vector<Eigen::Matrix<T, N, 1>> TensorToEigenVectorNxVector(
         utility::LogError("Internal error: dtype size mismatch {} != {}.",
                           dtype.ByteSize() * N, sizeof(Eigen::Matrix<T, N, 1>));
     }
-    tensor.AssertShape({utility::nullopt, N});
+    AssertTensorShape(tensor, {utility::nullopt, N});
 
     // Eigen::VectorNx is not a "fixed-size vectorizable Eigen type" thus it is
     // safe to write directly into std vector memory, see:

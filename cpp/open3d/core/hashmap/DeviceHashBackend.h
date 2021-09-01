@@ -48,13 +48,13 @@ public:
           device_(device) {}
     virtual ~DeviceHashBackend() {}
 
-    /// Rehash expects a lot of extra memory space at runtime,
+    /// Reserve expects a lot of extra memory space at runtime,
     /// since it consists of
     /// 1) dumping all key value pairs to a buffer
     /// 2) creating a new hash table
     /// 3) parallel inserting dumped key value pairs
     /// 4) deallocating old hash table
-    virtual void Rehash(int64_t buckets) = 0;
+    virtual void Reserve(int64_t capacity) = 0;
 
     /// Parallel insert contiguous arrays of keys and values.
     virtual void Insert(const void* input_keys,

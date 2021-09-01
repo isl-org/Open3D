@@ -38,6 +38,7 @@
 #include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/TensorInit.h"
 #include "open3d/core/TensorKey.h"
 
@@ -1055,31 +1056,6 @@ public:
 
     /// Load tensor from numpy's npy format.
     static Tensor Load(const std::string& file_name);
-
-    /// Assert that Tensor's shape is the same or is compatible wih the expected
-    /// shape.
-    ///
-    /// \param expected_shape If the expected_shape is a non-dynamic shape
-    /// (e.g. a SizeVector, or if the shape does not contain "nullopt"), the
-    /// tensor is checked to have the same as the expected shape, otherwise the
-    /// tensor is checked to have compatible shape with the expected shape.
-    ///
-    /// Check that the tensor has shape {100, 3} (non-dynamic shape):
-    ///     t.AssertShape({100, 3});
-    ///     t.AssertShape(SizeVector{100, 3});
-    /// Check that the tensor has shape {N, 3} (dynamic shape):
-    ///     t.AssertShape({utility::nullopt, 3});
-    ///     t.AssertShape(DynamicSizeVector{utility::nullopt, 3});
-    void AssertShape(const DynamicSizeVector& expected_shape,
-                     const std::string& error_msg = "") const;
-
-    /// Assert that the Tensor has the specified device.
-    void AssertDevice(const Device& expected_device,
-                      const std::string& error_msg = "") const;
-
-    /// Assert that the Tensor has the specified dtype.
-    void AssertDtype(const Dtype& expected_dtype,
-                     const std::string& error_msg = "") const;
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;

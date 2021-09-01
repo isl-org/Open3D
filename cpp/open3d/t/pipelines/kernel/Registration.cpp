@@ -24,9 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/kernel/ComputeTransform.h"
+#include "open3d/t/pipelines/kernel/Registration.h"
 
-#include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
+#include "open3d/core/TensorCheck.h"
+#include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 
 namespace open3d {
 namespace t {
@@ -45,9 +46,9 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
         utility::LogError("Only Float32 and Float64 dtypes are supported.");
     }
 
-    target_points.AssertDtype(dtype);
-    target_normals.AssertDtype(dtype);
-    target_points.AssertDevice(device);
+    core::AssertTensorDtype(target_points, dtype);
+    core::AssertTensorDtype(target_normals, dtype);
+    core::AssertTensorDevice(target_points, device);
 
     if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
         utility::LogError("Source and/or target point cloud is empty.");
@@ -95,8 +96,8 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         utility::LogError("Only Float32 and Float64 dtypes are supported.");
     }
 
-    target_points.AssertDtype(dtype);
-    target_points.AssertDevice(device);
+    core::AssertTensorDtype(target_points, dtype);
+    core::AssertTensorDevice(target_points, device);
 
     if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
         utility::LogError("Source and/or target point cloud is empty.");
@@ -173,6 +174,42 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         utility::LogError("Unimplemented device.");
     }
     return std::make_tuple(R, t);
+}
+
+core::Tensor ComputeInformationMatrix(
+        const core::Tensor &target_points,
+        const core::Tensor &correspondence_indices) {
+    const core::Device device = target_points.GetDevice();
+    const core::Dtype dtype = target_points.GetDtype();
+
+    if (dtype != core::Float64 && dtype != core::Float32) {
+        utility::LogError("Only Float32 and Float64 dtypes are supported.");
+    }
+
+    if (target_points.GetLength() == 0) {
+        utility::LogError("Target point cloud is empty.");
+    }
+    if (correspondence_indices.GetLength() == 0) {
+        utility::LogError("No correspondence present.");
+    }
+
+    core::Tensor information_matrix =
+            core::Tensor::Empty({6, 6}, core::Float64, core::Device("CPU:0"));
+
+    const core::Device::DeviceType device_type = device.GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        ComputeInformationMatrixCPU(target_points.Contiguous(),
+                                    correspondence_indices.Contiguous(),
+                                    information_matrix, dtype, device);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(ComputeInformationMatrixCUDA, target_points.Contiguous(),
+                  correspondence_indices.Contiguous(), information_matrix,
+                  dtype, device);
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+
+    return information_matrix;
 }
 
 }  // namespace kernel

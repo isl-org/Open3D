@@ -27,6 +27,7 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 
 namespace open3d {
 namespace t {
@@ -93,9 +94,9 @@ inline void CheckBlockCoorinates(const core::Tensor& block_coords) {
 
 /// TODO(wei): find a proper place for such functionalities
 inline core::Tensor InverseTransformation(const core::Tensor& T) {
-    T.AssertShape({4, 4});
-    T.AssertDtype(core::Float64);
-    T.AssertDevice(core::Device("CPU:0"));
+    core::AssertTensorShape(T, {4, 4});
+    core::AssertTensorDtype(T, core::Float64);
+    core::AssertTensorDevice(T, core::Device("CPU:0"));
     if (!T.IsContiguous()) {
         utility::LogError("T is expected to be contiguous");
     }

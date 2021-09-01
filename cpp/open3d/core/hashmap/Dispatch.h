@@ -73,6 +73,10 @@
         }                                                                    \
     }()
 
+#ifdef __CUDACC__
+// Reinterpret hash maps' void* value arrays as CUDA primitive types arrays, to
+// avoid slow memcpy or byte-by-byte copy in kernels.
+// Not used in the CPU version since memcpy is relatively fast on CPU.
 #define DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(DIVISOR, ...) \
     [&] {                                              \
         if (DIVISOR == 16) {                           \
@@ -95,6 +99,7 @@
             return __VA_ARGS__();                      \
         }                                              \
     }()
+#endif
 
 namespace open3d {
 namespace utility {
