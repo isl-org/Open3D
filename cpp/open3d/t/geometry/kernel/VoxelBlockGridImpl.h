@@ -298,21 +298,18 @@ void RayCastCPU
     core::Device device = hashmap->GetDevice();
     ArrayIndexer range_map_indexer(range_map, 2);
 
-    ArrayIndexer vertex_map_indexer;
-    ArrayIndexer depth_map_indexer;
-    ArrayIndexer color_map_indexer;
-    ArrayIndexer normal_map_indexer;
-    vertex_map_indexer = ArrayIndexer(renderings_map.at("vertex"), 2);
-    depth_map_indexer = ArrayIndexer(renderings_map.at("depth"), 2);
-    color_map_indexer = ArrayIndexer(renderings_map.at("color"), 2);
-    normal_map_indexer = ArrayIndexer(renderings_map.at("normal"), 2);
+    ArrayIndexer vertex_map_indexer(renderings_map.at("vertex"), 2);
+    ArrayIndexer depth_map_indexer(renderings_map.at("depth"), 2);
+    ArrayIndexer color_map_indexer(renderings_map.at("color"), 2);
+    ArrayIndexer normal_map_indexer(renderings_map.at("normal"), 2);
 
-    ArrayIndexer index_map_indexer;
-    ArrayIndexer mask_map_indexer;
-    ArrayIndexer ratio_map_indexer;
-    index_map_indexer = ArrayIndexer(renderings_map.at("index"), 2);
-    mask_map_indexer = ArrayIndexer(renderings_map.at("mask"), 2);
-    ratio_map_indexer = ArrayIndexer(renderings_map.at("ratio"), 2);
+    ArrayIndexer index_map_indexer(renderings_map.at("index"), 2);
+    ArrayIndexer mask_map_indexer(renderings_map.at("mask"), 2);
+    ArrayIndexer ratio_map_indexer(renderings_map.at("ratio"), 2);
+
+    ArrayIndexer grad_x_indexer(renderings_map.at("grad_ratio_x"), 2);
+    ArrayIndexer grad_y_indexer(renderings_map.at("grad_ratio_y"), 2);
+    ArrayIndexer grad_z_indexer(renderings_map.at("grad_ratio_z"), 2);
 
     const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
     const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
@@ -424,7 +421,11 @@ void RayCastCPU
 
         bool* mask_ptr = mask_map_indexer.GetDataPtr<bool>(x, y);
         float* ratio_ptr = ratio_map_indexer.GetDataPtr<float>(x, y);
-        index_t* index_ptr = index_map_indexer.GetDataPtr<index_t>(x, y);
+        int64_t* index_ptr = index_map_indexer.GetDataPtr<int64_t>(x, y);
+
+        float* grad_x_ptr = grad_x_indexer.GetDataPtr<float>(x, y);
+        float* grad_y_ptr = grad_y_indexer.GetDataPtr<float>(x, y);
+        float* grad_z_ptr = grad_z_indexer.GetDataPtr<float>(x, y);
 
         const float* range = range_map_indexer.GetDataPtr<float>(x / 8, y / 8);
         float t = range[0];
@@ -546,13 +547,17 @@ void RayCastCPU
                     color_ptr[2] += r * color_base_ptr[color_linear_idx + 2];
 
                     float tsdf_k = tsdf_base_ptr[linear_idx_k];
-                    float grad_x = ry * rz * tsdf_k * (2 * dx_v - 1);
-                    float grad_y = rx * rz * tsdf_k * (2 * dy_v - 1);
-                    float grad_z = rx * ry * tsdf_k * (2 * dz_v - 1);
+                    float grad_x_deriv = ry * rz * (2 * dx_v - 1);
+                    float grad_y_deriv = rx * rz * (2 * dy_v - 1);
+                    float grad_z_deriv = rx * ry * (2 * dz_v - 1);
 
-                    normal_ptr[0] += grad_x;
-                    normal_ptr[1] += grad_y;
-                    normal_ptr[2] += grad_z;
+                    grad_x_ptr[k] = grad_x_deriv;
+                    grad_y_ptr[k] = grad_y_deriv;
+                    grad_z_ptr[k] = grad_z_deriv;
+
+                    normal_ptr[0] += grad_x_deriv * tsdf_k;
+                    normal_ptr[1] += grad_y_deriv * tsdf_k;
+                    normal_ptr[2] += grad_z_deriv * tsdf_k;
 
                     sum_r += r;
                 }

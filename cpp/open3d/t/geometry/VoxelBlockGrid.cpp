@@ -299,6 +299,13 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
     renderings_map["index"] =
             core::Tensor({height, width, 8}, core::Int64, device);
 
+    renderings_map["grad_ratio_x"] =
+            core::Tensor({height, width, 8}, core::Float32, device);
+    renderings_map["grad_ratio_y"] =
+            core::Tensor({height, width, 8}, core::Float32, device);
+    renderings_map["grad_ratio_z"] =
+            core::Tensor({height, width, 8}, core::Float32, device);
+
     renderings_map["range"] = range_minmax_map;
 
     float trunc_multiplier = block_resolution_ * 0.5;
@@ -460,6 +467,7 @@ VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
     // stored.
     for (auto &it : inv_attr_map) {
         int value_id = it.first;
+        attr_names[value_id] = it.second;
 
         core::Tensor value_i =
                 tensor_map.at(fmt::format("value_{:03d}", value_id));
@@ -480,9 +488,7 @@ VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
     VoxelBlockGrid vbg(attr_names, attr_dtypes, attr_channels, voxel_size,
                        block_resolution, keys.GetLength(), device);
     auto block_hashmap = vbg.GetHashMap();
-    utility::LogInfo("before insert");
     block_hashmap.Insert(keys, soa_value_tensor);
-    utility::LogInfo("after insert");
     return vbg;
 }
 
