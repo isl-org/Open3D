@@ -71,8 +71,8 @@ static bool IsPointCloudSimilar(t::geometry::PointCloud source,
 TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     core::Device device = GetParam();
 
-    std::string dataset_folder =
-            GetDataPathCommon("/reconstruction_system/livingroom1_clean_micro");
+    std::string dataset_folder = utility::GetDataPathCommon(
+            "/reconstruction_system/livingroom1_clean_micro");
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string scene_folder = dataset_folder + "/test_scene";
     std::string slac_folder = dataset_folder + "/output_slac";
@@ -179,8 +179,8 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
 TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     core::Device device = GetParam();
 
-    std::string dataset_folder =
-            GetDataPathCommon("/reconstruction_system/livingroom1_clean_micro");
+    std::string dataset_folder = utility::GetDataPathCommon(
+            "/reconstruction_system/livingroom1_clean_micro");
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string color_folder = dataset_folder + "/image";
     std::string depth_folder = dataset_folder + "/depth";

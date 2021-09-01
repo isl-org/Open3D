@@ -28,7 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include "benchmarks/Benchmarks.h"
+#include "open3d/utility/DataManager.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {

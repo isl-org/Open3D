@@ -46,22 +46,5 @@ void NotImplemented() {
     GTEST_NONFATAL_FAILURE_("Not implemented");
 }
 
-std::string GetDataPathCommon(const std::string& relative_path) {
-    if (relative_path.empty()) {
-        return std::string(TEST_DATA_DIR);
-    } else {
-        return std::string(TEST_DATA_DIR) + "/" + relative_path;
-    }
-}
-
-std::string GetDataPathDownload(const std::string& relative_path) {
-    if (relative_path.empty()) {
-        return std::string(TEST_DATA_DIR) + "/open3d_downloads";
-    } else {
-        return std::string(TEST_DATA_DIR) + "/open3d_downloads/" +
-               relative_path;
-    }
-}
-
 }  // namespace tests
 }  // namespace open3d

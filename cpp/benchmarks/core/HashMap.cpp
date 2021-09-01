@@ -30,7 +30,6 @@
 
 #include <random>
 
-#include "benchmarks/Benchmarks.h"
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
@@ -38,6 +37,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace core {

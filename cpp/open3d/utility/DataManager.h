@@ -24,12 +24,32 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "benchmarks/Benchmarks.h"
+/// \file DataManager.h
+///
+/// TEST_DATA_DIR should be defined as a compile flag. The relative paths are
+/// computed from TEST_DATA_DIR. The code that uses TEST_DATA_DIR should be
+/// header-only, that is, we should not bake in a TEST_DATA_DIR value in the
+/// Open3D main library.
+
+#pragma once
+
+// Avoid editor warnings.
+#ifndef TEST_DATA_DIR
+#define TEST_DATA_DIR
+#endif
+
+#include <string>
 
 namespace open3d {
-namespace benchmarks {
+namespace utility {
 
-std::string GetDataPathCommon(const std::string& relative_path) {
+/// Computes the full path of a file/directory inside the Open3D common data
+/// root. If \p relative_path is specified, the full path is computed by
+/// appending the \p relative_path to the common data root; otherwise, the
+/// common data root is returned.
+///
+/// \param relative_path Relative path to Open3D common data root.
+inline std::string GetDataPathCommon(const std::string& relative_path = "") {
     if (relative_path.empty()) {
         return std::string(TEST_DATA_DIR);
     } else {
@@ -37,7 +57,13 @@ std::string GetDataPathCommon(const std::string& relative_path) {
     }
 }
 
-std::string GetDataPathDownload(const std::string& relative_path) {
+/// Computes the full path of a file/directory inside the Open3D download data
+/// root. If \p relative_path is specified, the full path is computed by
+/// appending the \p relative_path to the download data root; otherwise, the
+/// download data root is returned.
+///
+/// \param relative_path Relative path to Open3D download data root.
+inline std::string GetDataPathDownload(const std::string& relative_path = "") {
     if (relative_path.empty()) {
         return std::string(TEST_DATA_DIR) + "/open3d_downloads";
     } else {
@@ -46,5 +72,5 @@ std::string GetDataPathDownload(const std::string& relative_path) {
     }
 }
 
-}  // namespace benchmarks
+}  // namespace utility
 }  // namespace open3d

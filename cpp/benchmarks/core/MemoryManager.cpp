@@ -28,8 +28,8 @@
 
 #include <benchmark/benchmark.h>
 
-#include "benchmarks/Benchmarks.h"
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace core {

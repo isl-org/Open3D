@@ -28,11 +28,11 @@
 
 #include <benchmark/benchmark.h>
 
-#include "benchmarks/Benchmarks.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
+#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace t {
@@ -42,9 +42,9 @@ namespace registration {
 // Testing parameters:
 // Filename for pointcloud registration data.
 static const std::string source_pointcloud_filename =
-        benchmarks::GetDataPathCommon("ICP/cloud_bin_0.pcd");
+        utility::GetDataPathCommon("ICP/cloud_bin_0.pcd");
 static const std::string target_pointcloud_filename =
-        benchmarks::GetDataPathCommon("ICP/cloud_bin_1.pcd");
+        utility::GetDataPathCommon("ICP/cloud_bin_1.pcd");
 
 static const double voxel_downsampling_factor = 0.02;
 
