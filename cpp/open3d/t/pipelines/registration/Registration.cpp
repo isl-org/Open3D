@@ -27,6 +27,7 @@
 #include "open3d/t/pipelines/registration/Registration.h"
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/kernel/Registration.h"
@@ -43,7 +44,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         open3d::core::nns::NearestNeighborSearch &target_nns,
         double max_correspondence_distance,
         const core::Tensor &transformation) {
-    transformation.AssertShape({4, 4});
+    core::AssertTensorShape(transformation, {4, 4});
 
     core::Tensor transformation_host =
             transformation.To(core::Device("CPU:0"), core::Float64);
@@ -121,7 +122,7 @@ static void AssertInputMultiScaleICP(
         const int64_t &num_iterations,
         const core::Device &device,
         const core::Dtype &dtype) {
-    init_source_to_target.AssertShape({4, 4});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
 
     if (target.GetPointPositions().GetDtype() != dtype) {
         utility::LogError(
@@ -342,8 +343,8 @@ core::Tensor GetInformationMatrixFromPointClouds(
         const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = source.GetPointPositions().GetDtype();
-    target.GetPointPositions().AssertDtype(dtype);
-    target.GetPointPositions().AssertDevice(device);
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDevice(target.GetPointPositions(), device);
 
     geometry::PointCloud source_transformed = source.Clone();
     source_transformed.Transform(transformation.To(device, dtype));

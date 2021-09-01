@@ -220,11 +220,11 @@ void HashClearInt(benchmark::State& state,
     }
 }
 
-void HashRehashInt(benchmark::State& state,
-                   int capacity,
-                   int duplicate_factor,
-                   const Device& device,
-                   const HashBackendType& backend) {
+void HashReserveInt(benchmark::State& state,
+                    int capacity,
+                    int duplicate_factor,
+                    const Device& device,
+                    const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<int, int> data(capacity, slots);
 
@@ -254,7 +254,7 @@ void HashRehashInt(benchmark::State& state,
         cuda::Synchronize(device);
         state.ResumeTiming();
 
-        hashmap.Rehash(2 * capacity);
+        hashmap.Reserve(2 * capacity);
 
         cuda::Synchronize(device);
         state.PauseTiming();
@@ -445,11 +445,11 @@ void HashClearInt3(benchmark::State& state,
     }
 }
 
-void HashRehashInt3(benchmark::State& state,
-                    int capacity,
-                    int duplicate_factor,
-                    const Device& device,
-                    const HashBackendType& backend) {
+void HashReserveInt3(benchmark::State& state,
+                     int capacity,
+                     int duplicate_factor,
+                     const Device& device,
+                     const HashBackendType& backend) {
     int slots = std::max(1, capacity / duplicate_factor);
     HashData<Int3, int> data(capacity, slots);
 
@@ -482,7 +482,7 @@ void HashRehashInt3(benchmark::State& state,
         cuda::Synchronize(device);
         state.ResumeTiming();
 
-        hashmap.Rehash(2 * capacity);
+        hashmap.Reserve(2 * capacity);
 
         cuda::Synchronize(device);
         state.PauseTiming();
@@ -542,8 +542,8 @@ ENUM_BM_BACKEND(HashFindInt)
 ENUM_BM_BACKEND(HashFindInt3)
 ENUM_BM_BACKEND(HashClearInt)
 ENUM_BM_BACKEND(HashClearInt3)
-ENUM_BM_BACKEND(HashRehashInt)
-ENUM_BM_BACKEND(HashRehashInt3)
+ENUM_BM_BACKEND(HashReserveInt)
+ENUM_BM_BACKEND(HashReserveInt3)
 
 }  // namespace core
 }  // namespace open3d
