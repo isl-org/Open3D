@@ -10,7 +10,7 @@ ARG CCACHE_VERSION=4.3
 ARG PYTHON_VERSION=3.6
 
 # Forward all ARG to ENV
-# ci_utils.sh require these environment variables
+# ci_utils.sh requires these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
