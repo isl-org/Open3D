@@ -47,6 +47,8 @@ jobs:
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
+      # Be verbose and explicit here such that a developer can directly copy the
+      # `.github/workflows/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
           if   [ "${{ env.PYTHON_VERSION }}" = "3.6" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
