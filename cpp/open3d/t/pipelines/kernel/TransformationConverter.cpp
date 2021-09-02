@@ -15,7 +15,7 @@
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EposePRESS OR
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -30,6 +30,7 @@
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
 #include "open3d/utility/Logging.h"
 
@@ -50,11 +51,11 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
     }
 
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
-    R.AssertShape({3, 3});
-    R.AssertDtype(dtype);
-    t.AssertShape({3});
-    t.AssertDevice(device);
-    t.AssertDtype(dtype);
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorDtype(R, dtype);
+    core::AssertTensorShape(t, {3});
+    core::AssertTensorDevice(t, device);
+    core::AssertTensorDtype(t, dtype);
 
     // Rotation.
     transformation.SetItem(
@@ -101,7 +102,7 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
                 dtype.ToString());
     }
 
-    pose.AssertShape({6});
+    core::AssertTensorShape(pose, {6});
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     transformation = transformation.Contiguous();
     core::Tensor pose_ = pose.Contiguous();

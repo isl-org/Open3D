@@ -27,8 +27,10 @@
 #include "open3d/t/pipelines/registration/Registration.h"
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/pipelines/kernel/Registration.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -42,7 +44,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         open3d::core::nns::NearestNeighborSearch &target_nns,
         double max_correspondence_distance,
         const core::Tensor &transformation) {
-    transformation.AssertShape({4, 4});
+    core::AssertTensorShape(transformation, {4, 4});
 
     core::Tensor transformation_host =
             transformation.To(core::Device("CPU:0"), core::Float64);
@@ -120,7 +122,7 @@ static void AssertInputMultiScaleICP(
         const int64_t &num_iterations,
         const core::Device &device,
         const core::Dtype &dtype) {
-    init_source_to_target.AssertShape({4, 4});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
 
     if (target.GetPointPositions().GetDtype() != dtype) {
         utility::LogError(
@@ -332,6 +334,42 @@ RegistrationResult RegistrationMultiScaleICP(
     // ---- Iterating over different resolution scale END ---------------------
 
     return result;
+}
+
+core::Tensor GetInformationMatrixFromPointClouds(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const double max_correspondence_distance,
+        const core::Tensor &transformation) {
+    core::Device device = source.GetDevice();
+    core::Dtype dtype = source.GetPointPositions().GetDtype();
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDevice(target.GetPointPositions(), device);
+
+    geometry::PointCloud source_transformed = source.Clone();
+    source_transformed.Transform(transformation.To(device, dtype));
+
+    open3d::core::nns::NearestNeighborSearch target_nns(
+            target.GetPointPositions());
+
+    target_nns.HybridIndex(max_correspondence_distance);
+
+    core::Tensor correspondences, distances, counts;
+    std::tie(correspondences, distances, counts) =
+            target_nns.HybridSearch(source_transformed.GetPointPositions(),
+                                    max_correspondence_distance, 1);
+
+    correspondences = correspondences.To(core::Int64);
+    int32_t num_correspondences = counts.Sum({0}).Item<int32_t>();
+
+    if (num_correspondences == 0) {
+        utility::LogError(
+                "0 correspondence present between the pointclouds. Try "
+                "increasing the max_correspondence_distance parameter.");
+    }
+
+    return kernel::ComputeInformationMatrix(target.GetPointPositions(),
+                                            correspondences);
 }
 
 }  // namespace registration

@@ -99,7 +99,7 @@ void ControlGrid::Touch(const geometry::PointCloud& pcd) {
 }
 
 void ControlGrid::Compactify() {
-    ctr_hashmap_->Rehash(ctr_hashmap_->Size() * 2);
+    ctr_hashmap_->Reserve(ctr_hashmap_->Size() * 2);
 
     core::Tensor active_buf_indices;
     ctr_hashmap_->GetActiveIndices(active_buf_indices);

@@ -29,6 +29,7 @@
 #include <string>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
@@ -216,14 +217,14 @@ public:
     /// \param key Attribute name.
     /// \param value A tensor.
     void SetPointAttr(const std::string &key, const core::Tensor &value) {
-        value.AssertDevice(device_);
+        core::AssertTensorDevice(value, device_);
         point_attr_[key] = value;
     }
 
     /// Set the value of the "positions" attribute in point_attr_.
     /// Convenience function.
     void SetPointPositions(const core::Tensor &value) {
-        value.AssertShape({utility::nullopt, 3});
+        core::AssertTensorShape(value, {utility::nullopt, 3});
         SetPointAttr("positions", value);
     }
 
@@ -233,20 +234,20 @@ public:
     /// \param key Attribute name.
     /// \param value A tensor.
     void SetLineAttr(const std::string &key, const core::Tensor &value) {
-        value.AssertDevice(device_);
+        core::AssertTensorDevice(value, device_);
         line_attr_[key] = value;
     }
 
     /// Set the value of the "indices" attribute in line_attr_.
     void SetLineIndices(const core::Tensor &value) {
-        value.AssertShape({utility::nullopt, 2});
+        core::AssertTensorShape(value, {utility::nullopt, 2});
         SetLineAttr("indices", value);
     }
 
     /// Set the value of the "colors" attribute in line_attr_.
     /// This is a convenience function.
     void SetLineColors(const core::Tensor &value) {
-        value.AssertShape({utility::nullopt, 3});
+        core::AssertTensorShape(value, {utility::nullopt, 3});
         SetLineAttr("colors", value);
     }
 

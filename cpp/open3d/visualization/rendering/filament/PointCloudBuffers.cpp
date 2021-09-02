@@ -283,14 +283,21 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     const auto geometry_aabb = geometry_.GetAxisAlignedBoundingBox();
-
-    const filament::math::float3 min(geometry_aabb.min_bound_.x(),
-                                     geometry_aabb.min_bound_.y(),
-                                     geometry_aabb.min_bound_.z());
-    const filament::math::float3 max(geometry_aabb.max_bound_.x(),
-                                     geometry_aabb.max_bound_.y(),
-                                     geometry_aabb.max_bound_.z());
-
+    filament::math::float3 min(geometry_aabb.min_bound_.x(),
+                               geometry_aabb.min_bound_.y(),
+                               geometry_aabb.min_bound_.z());
+    filament::math::float3 max(geometry_aabb.max_bound_.x(),
+                               geometry_aabb.max_bound_.y(),
+                               geometry_aabb.max_bound_.z());
+    // Filament chokes on empty bounding boxes so don't allow it
+    if (geometry_aabb.IsEmpty()) {
+        min.x -= 0.1f;
+        min.y -= 0.1f;
+        min.z -= 0.1f;
+        max.x += 0.1f;
+        max.y += 0.1f;
+        max.z += 0.1f;
+    }
     Box aabb;
     aabb.set(min, max);
 

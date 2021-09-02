@@ -111,6 +111,11 @@ std::vector<std::string> SplitString(const std::string& str,
                                      const std::string& delimiters = " ",
                                      bool trim_empty_str = true);
 
+/// Returns true of the source string contains the destination string.
+/// \param src Source string.
+/// \param dst Destination string.
+bool ContainsString(const std::string& src, const std::string& dst);
+
 /// String util: find length of current word staring from a position
 /// By default, alpha numeric chars and chars in valid_chars are considered
 /// as valid charactors in a word
