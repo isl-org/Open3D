@@ -297,6 +297,12 @@ add_compile_options("${HARDENING_CFLAGS}")
 add_link_options("${HARDENING_LDFLAGS}")
 add_compile_definitions("${HARDENING_DEFINITIONS}")
 
+# Explicitly specifiy the preference of using -pthread over -lpthread.
+# This must be defined here since CUDA calls find_package(Threads) internally.
+# -pthread is disabled since some compilers, e.g. the ISPC compiler, have
+# problems with this compile flag and issue errors.
+set(THREADS_PREFER_PTHREAD_FLAG FALSE)
+
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
     include(Open3DMakeCudaArchitectures)

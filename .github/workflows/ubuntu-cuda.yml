@@ -35,7 +35,7 @@ jobs:
       # - Keep the default values consistent with Dockerfile.cuda
       # - Keep the usage orders consistent.
       BASE_IMAGE: nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       BUILD_COMMON_CUDA_ARCHS: ${{ matrix.is_master && 'ON' || 'OFF' }}
       CCACHE_TAR_NAME: open3d-ubuntu-1804-cuda-ci-ccache
       CMAKE_VERSION: cmake-3.19.7-Linux-x86_64
@@ -183,9 +183,18 @@ jobs:
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
-      - name: Rename documentation archive
+      - name: Check wheels and ready documentation archive
         run: |
-          docs_tar_file="${{ github.sha }}.tar.gz"
-          gsutil mv gs://open3d-docs/wait_for_wheels_${docs_tar_file} gs://open3d-docs/${docs_tar_file}
-          echo "All development wheels available. Documentation archive is ready for deployment:"
-          echo "https://storage.googleapis.com/open3d-docs/${docs_tar_file}"
+            touch marker_file
+            gsutil cp marker_file gs://open3d-docs/${{ github.sha }}_ready_ubuntu
+            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
+                -eq 4 ]; then
+                echo "All wheels and docs available. Making docs ready."
+                # Remove all marker files: Note _ at end of pattern.
+                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
+                # Rename docs archive:
+                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
+                    gs://open3d-docs/${{ github.sha }}.tar.gz
+            else
+                echo "All wheels / docs not available yet."
+            fi

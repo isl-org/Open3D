@@ -35,7 +35,7 @@
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace t_reg = open3d::t::pipelines::registration;
 namespace l_reg = open3d::pipelines::registration;
@@ -385,6 +385,47 @@ TEST_P(RegistrationPermuteDevices, RobustKernel) {
                         EXPECT_NEAR(weight, 0.714213, 1e-3);
                     });
         });
+    }
+}
+
+TEST_P(RegistrationPermuteDevices, GetInformationMatrixFromPointCloud) {
+    core::Device device = GetParam();
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
+        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
+
+        open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
+        open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
+
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
+
+        // Initial transformation input for legacy implementation.
+        Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
+
+        // Identity transformation.
+        double max_correspondence_dist = 3.0;
+
+        // Tensor information matrix.
+        core::Tensor information_matrix_t =
+                t_reg::GetInformationMatrixFromPointClouds(
+                        source_tpcd, target_tpcd, max_correspondence_dist,
+                        initial_transform_t);
+
+        // Legacy evaluation.
+        Eigen::Matrix6d information_matrix_l =
+                l_reg::GetInformationMatrixFromPointClouds(
+                        source_lpcd, target_lpcd, max_correspondence_dist,
+                        initial_transform_l);
+
+        core::Tensor information_matrix_from_legacy =
+                core::eigen_converter::EigenMatrixToTensor(
+                        information_matrix_l);
+
+        EXPECT_TRUE(information_matrix_t.AllClose(
+                information_matrix_from_legacy, 1e-1, 1e-1));
     }
 }
 
