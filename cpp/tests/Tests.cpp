@@ -29,19 +29,16 @@
 namespace open3d {
 namespace tests {
 
-TEST(ImageIO, DISABLED_CreateImageFromFile) { NotImplemented(); }
+void NotImplemented() {
+    std::cout << "\033[0;32m"
+              << "[          ] "
+              << "\033[0;0m";
+    std::cout << "\033[0;31m"
+              << "Not implemented."
+              << "\033[0;0m" << std::endl;
 
-TEST(ImageIO, DISABLED_ReadImage) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_WriteImage) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_ReadImageFromPNG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_WriteImageToPNG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_ReadImageFromJPG) { NotImplemented(); }
-
-TEST(ImageIO, DISABLED_WriteImageToJPG) { NotImplemented(); }
+    GTEST_NONFATAL_FAILURE_("Not implemented");
+}
 
 }  // namespace tests
 }  // namespace open3d
