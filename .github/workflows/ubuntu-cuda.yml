@@ -35,7 +35,7 @@ jobs:
       # - Keep the default values consistent with Dockerfile.cuda
       # - Keep the usage orders consistent.
       BASE_IMAGE: nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       BUILD_COMMON_CUDA_ARCHS: ${{ matrix.is_master && 'ON' || 'OFF' }}
       CCACHE_TAR_NAME: open3d-ubuntu-1804-cuda-ci-ccache
       CMAKE_VERSION: cmake-3.19.7-Linux-x86_64
