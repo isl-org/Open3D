@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # The following environment variables are required:
 SUDO=${SUDO:=sudo}
