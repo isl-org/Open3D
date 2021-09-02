@@ -911,6 +911,13 @@ struct O3DVisualizer::Impl {
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
 
+            // If T Geometry has a valid material convert it to MaterialRecord
+            if (t_mesh && t_mesh->HasMaterial()) {
+                t_mesh->GetMaterial().ToMaterialRecord(mat);
+            } else if (t_cloud && t_cloud->HasMaterial()) {
+                t_cloud->GetMaterial().ToMaterialRecord(mat);
+            }
+
             // Finally assign material properties if geometry is a triangle mesh
             auto tmesh =
                     std::dynamic_pointer_cast<geometry::TriangleMesh>(geom);
