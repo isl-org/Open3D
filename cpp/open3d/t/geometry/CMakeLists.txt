@@ -1,6 +1,6 @@
 add_subdirectory(kernel)
 
-add_library(tgeometry OBJECT $<TARGET_OBJECTS:tgeometry_kernel>)
+add_library(tgeometry OBJECT)
 
 target_sources(tgeometry PRIVATE
     Image.cpp

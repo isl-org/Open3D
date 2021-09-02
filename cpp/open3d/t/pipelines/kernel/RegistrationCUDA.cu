@@ -29,8 +29,8 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/kernel/ComputeTransformImpl.h"
 #include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
+#include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
@@ -128,6 +128,87 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
     core::cuda::Synchronize();
 
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
+}
+
+template <typename scalar_t>
+__global__ void ComputeInformationMatrixKernelCUDA(
+        const scalar_t *target_points_ptr,
+        const int64_t *correspondence_indices,
+        const int n,
+        scalar_t *global_sum) {
+    __shared__ scalar_t local_sum0[kThread1DUnit];
+    __shared__ scalar_t local_sum1[kThread1DUnit];
+    __shared__ scalar_t local_sum2[kThread1DUnit];
+
+    const int tid = threadIdx.x;
+
+    local_sum0[tid] = 0;
+    local_sum1[tid] = 0;
+    local_sum2[tid] = 0;
+
+    const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (workload_idx >= n) return;
+
+    scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0}, reduction[21] = {0};
+
+    bool valid = GetInformationJacobians<scalar_t>(
+            workload_idx, target_points_ptr, correspondence_indices, J_x, J_y,
+            J_z);
+
+    if (valid) {
+        int i = 0;
+        for (int j = 0; j < 6; ++j) {
+            for (int k = 0; k <= j; ++k) {
+                reduction[i] +=
+                        J_x[j] * J_x[k] + J_y[j] * J_y[k] + J_z[j] * J_z[k];
+                ++i;
+            }
+        }
+    }
+
+    ReduceSum6x6InformationJacobian<scalar_t, kThread1DUnit>(
+            tid, valid, reduction, local_sum0, local_sum1, local_sum2,
+            global_sum);
+}
+
+void ComputeInformationMatrixCUDA(const core::Tensor &target_points,
+                                  const core::Tensor &correspondence_indices,
+                                  core::Tensor &information_matrix,
+                                  const core::Dtype &dtype,
+                                  const core::Device &device) {
+    int n = correspondence_indices.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({21}, dtype, device);
+    const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
+    const dim3 threads(kThread1DUnit);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+
+        ComputeInformationMatrixKernelCUDA<<<blocks, threads, 0,
+                                             core::cuda::GetStream()>>>(
+                target_points.GetDataPtr<scalar_t>(),
+                correspondence_indices.GetDataPtr<int64_t>(), n,
+                global_sum_ptr);
+
+        core::cuda::Synchronize();
+
+        core::Tensor global_sum_cpu =
+                global_sum.To(core::Device("CPU:0"), core::Float64);
+        double *sum_ptr = global_sum_cpu.GetDataPtr<double>();
+
+        // Information matrix is on CPU of type Float64.
+        double *GTG_ptr = information_matrix.GetDataPtr<double>();
+
+        int i = 0;
+        for (int j = 0; j < 6; j++) {
+            for (int k = 0; k <= j; k++) {
+                GTG_ptr[j * 6 + k] = GTG_ptr[k * 6 + j] = sum_ptr[i];
+                ++i;
+            }
+        }
+    });
 }
 
 }  // namespace kernel

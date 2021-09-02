@@ -48,13 +48,13 @@ public:
           device_(device) {}
     virtual ~DeviceHashBackend() {}
 
-    /// Rehash expects a lot of extra memory space at runtime,
+    /// Reserve expects a lot of extra memory space at runtime,
     /// since it consists of
     /// 1) dumping all key value pairs to a buffer
     /// 2) creating a new hash table
     /// 3) parallel inserting dumped key value pairs
     /// 4) deallocating old hash table
-    virtual void Rehash(int64_t buckets) = 0;
+    virtual void Reserve(int64_t capacity) = 0;
 
     /// Parallel insert contiguous arrays of keys and values.
     virtual void Insert(const void* input_keys,
@@ -62,14 +62,6 @@ public:
                         buf_index_t* output_buf_indices,
                         bool* output_masks,
                         int64_t count) = 0;
-
-    /// Parallel activate contiguous arrays of keys without copying values.
-    /// Specifically useful for large value elements (e.g., a tensor), where we
-    /// can do in-place management after activation.
-    virtual void Activate(const void* input_keys,
-                          buf_index_t* output_buf_indices,
-                          bool* output_masks,
-                          int64_t count) = 0;
 
     /// Parallel find a contiguous array of keys.
     virtual void Find(const void* input_keys,
@@ -114,6 +106,9 @@ public:
 
     /// Get the i-th value buffer that store an actual value array.
     Tensor GetValueBuffer(size_t i = 0) { return buffer_->GetValueBuffer(i); }
+
+    virtual void Allocate(int64_t capacity) = 0;
+    virtual void Free() = 0;
 
 public:
     int64_t capacity_;

@@ -176,7 +176,7 @@ TEST_P(ImagePermuteDevices, Copy) {
 // Float32/64 and LinearTransform().
 // Currently needs IPP.
 TEST_P(ImagePermuteDevices,
-       OPEN3D_CONCATENATE(IPP_CONDITIONAL_TEST_STR, To_LinearTransform)) {
+       OPEN3D_CONCAT(IPP_CONDITIONAL_TEST_STR, To_LinearTransform)) {
     using ::testing::ElementsAreArray;
     using ::testing::FloatEq;
     core::Device device = GetParam();

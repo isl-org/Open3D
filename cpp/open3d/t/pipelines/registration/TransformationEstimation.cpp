@@ -26,7 +26,8 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
-#include "open3d/t/pipelines/kernel/ComputeTransform.h"
+#include "open3d/core/TensorCheck.h"
+#include "open3d/t/pipelines/kernel/Registration.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
@@ -40,8 +41,8 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
         const core::Tensor &correspondences) const {
     core::Device device = source.GetDevice();
 
-    target.GetPointPositions().AssertDtype(
-            source.GetPointPositions().GetDtype());
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",
@@ -86,8 +87,8 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         const core::Tensor &correspondences) const {
     core::Device device = source.GetDevice();
 
-    target.GetPointPositions().AssertDtype(
-            source.GetPointPositions().GetDtype());
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
     if (target.GetDevice() != device) {
         utility::LogError(
                 "Target Pointcloud device {} != Source Pointcloud's device {}.",

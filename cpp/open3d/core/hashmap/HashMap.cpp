@@ -63,17 +63,86 @@ HashMap::HashMap(int64_t init_capacity,
     Init(init_capacity, device, backend);
 }
 
-void HashMap::Rehash(int64_t buckets) {
-    return device_hashmap_->Rehash(buckets);
+void HashMap::Reserve(int64_t capacity) {
+    int64_t count = Size();
+    if (capacity <= count) {
+        utility::LogDebug("Target capacity smaller then current size, abort.");
+        return;
+    }
+
+    Tensor active_keys;
+    std::vector<Tensor> active_values;
+
+    if (count > 0) {
+        Tensor active_buf_indices = GetActiveIndices();
+        Tensor active_indices = active_buf_indices.To(core::Int64);
+
+        active_keys = GetKeyTensor().IndexGet({active_indices});
+        auto value_buffers = GetValueTensors();
+        for (auto& value_buffer : value_buffers) {
+            active_values.emplace_back(value_buffer.IndexGet({active_indices}));
+        }
+    }
+
+    device_hashmap_->Free();
+    device_hashmap_->Allocate(capacity);
+    device_hashmap_->Reserve(capacity);
+
+    if (count > 0) {
+        Tensor output_buf_indices, output_masks;
+        InsertImpl(active_keys, active_values, output_buf_indices,
+                   output_masks);
+    }
+}
+
+std::pair<Tensor, Tensor> HashMap::Insert(const Tensor& input_keys,
+                                          const Tensor& input_values) {
+    Tensor output_buf_indices, output_masks;
+    Insert(input_keys, input_values, output_buf_indices, output_masks);
+    return std::make_pair(output_buf_indices, output_masks);
+}
+
+std::pair<Tensor, Tensor> HashMap::Insert(
+        const Tensor& input_keys, const std::vector<Tensor>& input_values_soa) {
+    Tensor output_buf_indices, output_masks;
+    Insert(input_keys, input_values_soa, output_buf_indices, output_masks);
+    return std::make_pair(output_buf_indices, output_masks);
+}
+
+std::pair<Tensor, Tensor> HashMap::Activate(const Tensor& input_keys) {
+    Tensor output_buf_indices, output_masks;
+    Activate(input_keys, output_buf_indices, output_masks);
+    return std::make_pair(output_buf_indices, output_masks);
+}
+
+std::pair<Tensor, Tensor> HashMap::Find(const Tensor& input_keys) {
+    Tensor output_buf_indices, output_masks;
+    Find(input_keys, output_buf_indices, output_masks);
+    return std::make_pair(output_buf_indices, output_masks);
+}
+
+Tensor HashMap::Erase(const Tensor& input_keys) {
+    Tensor output_masks;
+    Erase(input_keys, output_masks);
+    return output_masks;
+}
+
+Tensor HashMap::GetActiveIndices() const {
+    Tensor output_buf_indices;
+    GetActiveIndices(output_buf_indices);
+    return output_buf_indices;
 }
 
 void HashMap::InsertImpl(const Tensor& input_keys,
                          const std::vector<Tensor>& input_values_soa,
                          Tensor& output_buf_indices,
-                         Tensor& output_masks) {
-    CheckKeyValueLengthCompatibility(input_keys, input_values_soa);
+                         Tensor& output_masks,
+                         bool is_activate_op) {
     CheckKeyCompatibility(input_keys);
-    CheckValueCompatibility(input_values_soa);
+    if (!is_activate_op) {
+        CheckKeyValueLengthCompatibility(input_keys, input_values_soa);
+        CheckValueCompatibility(input_values_soa);
+    }
 
     int64_t length = input_keys.GetLength();
     PrepareIndicesOutput(output_buf_indices, length);
@@ -94,30 +163,38 @@ void HashMap::Insert(const Tensor& input_keys,
                      const Tensor& input_values,
                      Tensor& output_buf_indices,
                      Tensor& output_masks) {
-    InsertImpl(input_keys, {input_values}, output_buf_indices, output_masks);
+    Insert(input_keys, std::vector<Tensor>{input_values}, output_buf_indices,
+           output_masks);
 }
 
 void HashMap::Insert(const Tensor& input_keys,
                      const std::vector<Tensor>& input_values_soa,
                      Tensor& output_buf_indices,
                      Tensor& output_masks) {
+    int64_t length = input_keys.GetLength();
+    int64_t new_size = Size() + length;
+    int64_t capacity = GetCapacity();
+
+    if (new_size > capacity) {
+        Reserve(std::max(new_size, capacity * 2));
+    }
     InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks);
 }
 
 void HashMap::Activate(const Tensor& input_keys,
                        Tensor& output_buf_indices,
                        Tensor& output_masks) {
-    CheckKeyLength(input_keys);
-    CheckKeyCompatibility(input_keys);
-
     int64_t length = input_keys.GetLength();
-    PrepareIndicesOutput(output_buf_indices, length);
-    PrepareMasksOutput(output_masks, length);
+    int64_t new_size = Size() + length;
+    int64_t capacity = GetCapacity();
 
-    device_hashmap_->Activate(
-            input_keys.GetDataPtr(),
-            static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
-            output_masks.GetDataPtr<bool>(), length);
+    if (new_size > capacity) {
+        Reserve(std::max(new_size, capacity * 2));
+    }
+
+    std::vector<Tensor> null_tensors_soa;
+    InsertImpl(input_keys, null_tensors_soa, output_buf_indices, output_masks,
+               /* is_activate_op */ true);
 }
 
 void HashMap::Find(const Tensor& input_keys,
@@ -343,7 +420,7 @@ void HashMap::CheckValueCompatibility(
         utility::LogError(
                 "Input number of value arrays ({}) mismatches with stored "
                 "({})",
-                input_values_soa.size() != element_shapes_value_.size());
+                input_values_soa.size(), element_shapes_value_.size());
     }
 
     for (size_t i = 0; i < input_values_soa.size(); ++i) {

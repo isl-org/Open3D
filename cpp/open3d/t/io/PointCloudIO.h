@@ -77,6 +77,14 @@ bool WritePointCloudToXYZI(const std::string &filename,
                            const geometry::PointCloud &pointcloud,
                            const WritePointCloudOption &params);
 
+bool ReadPointCloudFromPCD(const std::string &filename,
+                           geometry::PointCloud &pointcloud,
+                           const ReadPointCloudOption &params);
+
+bool WritePointCloudToPCD(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params);
+
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params);

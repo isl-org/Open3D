@@ -270,6 +270,17 @@ void pybind_registration_methods(py::module &m) {
           "estimation_method"_a = TransformationEstimationPointToPoint());
     docstring::FunctionDocInject(m, "registration_multi_scale_icp",
                                  map_shared_argument_docstrings);
+
+    m.def("get_information_matrix_from_point_clouds",
+          &GetInformationMatrixFromPointClouds,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for computing information matrix from transformation "
+          "matrix. Information matrix is tensor of shape {6, 6}, dtype Float64 "
+          "on CPU device.",
+          "source"_a, "target"_a, "max_correspondence_distance"_a,
+          "transformation"_a);
+    docstring::FunctionDocInject(m, "get_information_matrix_from_point_clouds",
+                                 map_shared_argument_docstrings);
 }
 
 void pybind_registration(py::module &m) {

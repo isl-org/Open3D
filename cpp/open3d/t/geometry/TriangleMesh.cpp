@@ -33,6 +33,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 
@@ -123,8 +124,8 @@ TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
 
 TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
                                       bool relative) {
-    translation.AssertShape({3});
-    translation.AssertDevice(device_);
+    core::AssertTensorShape(translation, {3});
+    core::AssertTensorDevice(translation, device_);
 
     core::Tensor transform = translation;
     if (!relative) {
@@ -135,8 +136,8 @@ TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
 }
 
 TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
-    center.AssertShape({3});
-    center.AssertDevice(device_);
+    core::AssertTensorShape(center, {3});
+    core::AssertTensorDevice(center, device_);
 
     core::Tensor points = GetVertexPositions();
     points.Sub_(center).Mul_(scale).Add_(center);

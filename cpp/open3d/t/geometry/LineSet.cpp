@@ -31,6 +31,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/kernel/Transform.h"
@@ -123,8 +124,8 @@ LineSet &LineSet::Transform(const core::Tensor &transformation) {
 }
 
 LineSet &LineSet::Translate(const core::Tensor &translation, bool relative) {
-    translation.AssertShape({3});
-    translation.AssertDevice(device_);
+    core::AssertTensorShape(translation, {3});
+    core::AssertTensorDevice(translation, device_);
 
     core::Tensor transform = translation;
     if (!relative) {
@@ -135,8 +136,8 @@ LineSet &LineSet::Translate(const core::Tensor &translation, bool relative) {
 }
 
 LineSet &LineSet::Scale(double scale, const core::Tensor &center) {
-    center.AssertShape({3});
-    center.AssertDevice(device_);
+    core::AssertTensorShape(center, {3});
+    core::AssertTensorDevice(center, device_);
 
     core::Tensor point_positions = GetPointPositions();
     point_positions.Sub_(center).Mul_(scale).Add_(center);

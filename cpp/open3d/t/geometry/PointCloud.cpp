@@ -34,6 +34,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
@@ -52,7 +53,7 @@ PointCloud::PointCloud(const core::Device &device)
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDevice()) {
-    points.AssertShape({utility::nullopt, 3});
+    core::AssertTensorShape(points, {utility::nullopt, 3});
     SetPointPositions(points);
 }
 
@@ -64,7 +65,8 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
         utility::LogError("\"positions\" attribute must be specified.");
     }
     device_ = map_keys_to_tensors.at("positions").GetDevice();
-    map_keys_to_tensors.at("positions").AssertShape({utility::nullopt, 3});
+    core::AssertTensorShape(map_keys_to_tensors.at("positions"),
+                            {utility::nullopt, 3});
     point_attr_ = TensorMap("positions", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());
 }
@@ -123,8 +125,8 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
     for (auto &kv : point_attr_) {
         if (other.HasPointAttr(kv.first)) {
             auto other_attr = other.GetPointAttr(kv.first);
-            other_attr.AssertDtype(kv.second.GetDtype());
-            other_attr.AssertDevice(kv.second.GetDevice());
+            core::AssertTensorDtype(other_attr, kv.second.GetDtype());
+            core::AssertTensorDevice(other_attr, kv.second.GetDevice());
 
             // Checking shape compatibility.
             auto other_attr_shape = other_attr.GetShape();
@@ -173,8 +175,8 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
-    translation.AssertShape({3});
-    translation.AssertDevice(device_);
+    core::AssertTensorShape(translation, {3});
+    core::AssertTensorDevice(translation, device_);
 
     core::Tensor transform = translation;
     if (!relative) {
@@ -185,8 +187,8 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
 }
 
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
-    center.AssertShape({3});
-    center.AssertDevice(device_);
+    core::AssertTensorShape(center, {3});
+    core::AssertTensorDevice(center, device_);
 
     core::Tensor points = GetPointPositions();
     points.Sub_(center).Mul_(scale).Add_(center);
