@@ -20,8 +20,8 @@ __usage="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    openblas_x86_64    : Build OpenBLAS x86_64 with Python wheel
-    openblas_arm64     : Build OpenBLAS ARM64 with Python wheel
+    openblas_x86_64    : Build with OpenBLAS x86_64
+    openblas_arm64     : Build with OpenBLAS ARM64
     cuda_wheel_py36_dev: Build CUDA Python 3.6 wheel, developer mode
     cuda_wheel_py37_dev: Build CUDA Python 3.7 wheel, developer mode
     cuda_wheel_py38_dev: Build CUDA Python 3.8 wheel, developer mode
