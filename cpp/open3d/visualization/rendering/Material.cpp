@@ -26,6 +26,8 @@
 
 #include "open3d/visualization/rendering/Material.h"
 
+#include "open3d/visualization/rendering/MaterialRecord.h"
+
 namespace open3d {
 namespace visualization {
 namespace rendering {
@@ -49,9 +51,88 @@ void Material::SetDefaultProperties() {
 
 void Material::SetTextureMap(const std::string &key,
                              const t::geometry::Image &image) {
-    // Image must be on CPU. If Image is already on CPU the following does not
-    // perform an uneccesasry copy
+    // Keep a clone of the Image since texture maps get asynchronously copied to
+    // GPU and may be used internally again later
     texture_maps_[key] = image.Clone();
+}
+
+void Material::ToMaterialRecord(MaterialRecord &record) const {
+    record.shader = GetMaterialName();
+    // Convert base material properties
+    if (HasBaseColor()) {
+        record.base_color = GetBaseColor();
+    }
+    if (HasBaseMetallic()) {
+        record.base_metallic = GetBaseMetallic();
+    }
+    if (HasBaseRoughness()) {
+        record.base_roughness = GetBaseRoughness();
+    }
+    if (HasBaseReflectance()) {
+        record.base_reflectance = GetBaseReflectance();
+    }
+    if (HasBaseClearcoat()) {
+        record.base_clearcoat = GetBaseClearcoat();
+    }
+    if (HasBaseClearcoatRoughness()) {
+        record.base_clearcoat_roughness = GetBaseClearcoatRoughness();
+    }
+    if (HasAnisotropy()) {
+        record.base_anisotropy = GetAnisotropy();
+    }
+    if (HasThickness()) {
+        record.thickness = GetThickness();
+    }
+    if (HasTransmission()) {
+        record.transmission = GetTransmission();
+    }
+    if (HasAbsorptionColor()) {
+        record.absorption_color = Eigen::Vector3f(GetAbsorptionColor().data());
+    }
+    if (HasAbsorptionDistance()) {
+        record.absorption_distance = GetAbsorptionDistance();
+    }
+    // Convert maps
+    if (HasAlbedoMap()) {
+        record.albedo_img =
+                std::make_shared<geometry::Image>(GetAlbedoMap().ToLegacy());
+    }
+    if (HasNormalMap()) {
+        record.normal_img =
+                std::make_shared<geometry::Image>(GetNormalMap().ToLegacy());
+    }
+    if (HasAOMap()) {
+        record.ao_img =
+                std::make_shared<geometry::Image>(GetAOMap().ToLegacy());
+    }
+    if (HasMetallicMap()) {
+        record.metallic_img =
+                std::make_shared<geometry::Image>(GetMetallicMap().ToLegacy());
+    }
+    if (HasRoughnessMap()) {
+        record.roughness_img =
+                std::make_shared<geometry::Image>(GetRoughnessMap().ToLegacy());
+    }
+    if (HasReflectanceMap()) {
+        record.reflectance_img = std::make_shared<geometry::Image>(
+                GetReflectanceMap().ToLegacy());
+    }
+    if (HasClearcoatMap()) {
+        record.clearcoat_img =
+                std::make_shared<geometry::Image>(GetClearcoatMap().ToLegacy());
+    }
+    if (HasClearcoatRoughnessMap()) {
+        record.clearcoat_roughness_img = std::make_shared<geometry::Image>(
+                GetClearcoatRoughnessMap().ToLegacy());
+    }
+    if (HasAnisotropyMap()) {
+        record.anisotropy_img = std::make_shared<geometry::Image>(
+                GetAnisotropyMap().ToLegacy());
+    }
+    if (HasAORoughnessMetalMap()) {
+        record.ao_rough_metal_img = std::make_shared<geometry::Image>(
+                GetAORoughnessMetalMap().ToLegacy());
+    }
 }
 
 }  // namespace rendering

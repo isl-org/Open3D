@@ -400,11 +400,19 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     auto ib = std::get<1>(buffers);
     auto ib_downsampled = std::get<2>(buffers);
     filament::Box aabb = buffer_builder->ComputeAABB();
+    // NOTE: pointer not checked because if we get to this point then we know
+    // that the dynamic cast must succeed
+    auto* drawable_geom =
+            dynamic_cast<const t::geometry::DrawableGeometry*>(&geometry);
+    MaterialRecord internal_material = material;
+    if (drawable_geom->HasMaterial()) {
+        drawable_geom->GetMaterial().ToMaterialRecord(internal_material);
+    }
     bool success = CreateAndAddFilamentEntity(object_name, *buffer_builder,
-                                              aabb, vb, ib, material);
+                                              aabb, vb, ib, internal_material);
     if (success && ib_downsampled) {
         if (!CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
-                                        vb, ib_downsampled, material,
+                                        vb, ib_downsampled, internal_material,
                                         BufferReuse::kYes)) {
             // If we failed to create a downsampled cloud, which would be
             // unlikely, create another entity with the original buffers

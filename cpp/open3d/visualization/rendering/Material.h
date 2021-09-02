@@ -34,6 +34,8 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+class MaterialRecord;
+
 class Material {
 public:
     using TextureMaps = std::unordered_map<std::string, t::geometry::Image>;
@@ -328,6 +330,9 @@ public:
 
     void SetPointSize(float value) { SetScalarProperty("point_size", value); }
     void SetLineWidth(float value) { SetScalarProperty("line_width", value); }
+
+    /// Fills a legacy MaterialRecord constructed from this Material
+    void ToMaterialRecord(MaterialRecord &record) const;
 
 private:
     std::string material_name_;
