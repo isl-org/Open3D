@@ -43,7 +43,7 @@ class Image;
 
 namespace t {
 namespace geometry {
-class PointCloud;
+class Geometry;
 }
 }  // namespace t
 
@@ -101,7 +101,7 @@ public:
     //       from Python, which is using unique_ptr. The pointer must live long
     //       enough to get copied to the GPU by the render thread.
     void AddGeometry(const std::string& name,
-                     const t::geometry::PointCloud* geom,
+                     const t::geometry::Geometry* geom,
                      const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     bool HasGeometry(const std::string& name) const;

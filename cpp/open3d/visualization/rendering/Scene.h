@@ -42,8 +42,9 @@ class Image;
 
 namespace t {
 namespace geometry {
+class Geometry;
 class PointCloud;
-}
+}  // namespace geometry
 }  // namespace t
 
 namespace visualization {
@@ -95,7 +96,7 @@ public:
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;
     virtual bool AddGeometry(const std::string& object_name,
-                             const t::geometry::PointCloud& point_cloud,
+                             const t::geometry::Geometry& geometry,
                              const MaterialRecord& material,
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;

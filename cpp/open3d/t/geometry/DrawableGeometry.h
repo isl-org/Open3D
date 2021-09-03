@@ -48,6 +48,11 @@ public:
         return material_;
     }
 
+    /// Get const reference to material associated with this Geometry
+    const visualization::rendering::Material &GetMaterial() const {
+        return material_;
+    }
+
     /// Set the material properties associate with this Geometry
     void SetMaterial(const visualization::rendering::Material &material) {
         material_ = material;

@@ -66,7 +66,7 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
-               Geometry>
+               Geometry, DrawableGeometry>
             pointcloud(m, "PointCloud",
                        R"(
 A point cloud contains a list of 3D points. The point cloud class stores the

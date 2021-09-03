@@ -26,6 +26,9 @@
 
 #pragma once
 
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
+
 // clang-format off
 // NOTE: This header must precede the Filament headers otherwise a conflict
 // occurs between Filament and standard headers
@@ -63,12 +66,6 @@ class PointCloud;
 class TriangleMesh;
 }  // namespace geometry
 
-namespace t {
-namespace geometry {
-class PointCloud;
-}
-}  // namespace t
-
 namespace visualization {
 namespace rendering {
 
@@ -85,7 +82,7 @@ public:
     static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(
             const geometry::Geometry3D& geometry);
     static std::unique_ptr<GeometryBuffersBuilder> GetBuilder(
-            const t::geometry::PointCloud& geometry);
+            const t::geometry::Geometry& geometry);
 
     virtual ~GeometryBuffersBuilder() = default;
 
@@ -150,6 +147,20 @@ private:
     const geometry::PointCloud& geometry_;
 };
 
+class TMeshBuffersBuilder : public GeometryBuffersBuilder {
+public:
+    explicit TMeshBuffersBuilder(const t::geometry::TriangleMesh& geometry);
+
+    filament::RenderableManager::PrimitiveType GetPrimitiveType()
+            const override;
+
+    Buffers ConstructBuffers() override;
+    filament::Box ComputeAABB() override;
+
+private:
+    t::geometry::TriangleMesh geometry_;
+};
+
 class TPointCloudBuffersBuilder : public GeometryBuffersBuilder {
 public:
     explicit TPointCloudBuffersBuilder(const t::geometry::PointCloud& geometry);
@@ -161,7 +172,7 @@ public:
     filament::Box ComputeAABB() override;
 
 private:
-    const t::geometry::PointCloud& geometry_;
+    t::geometry::PointCloud geometry_;
 };
 
 class LineSetBuffersBuilder : public GeometryBuffersBuilder {

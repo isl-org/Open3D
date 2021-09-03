@@ -117,7 +117,7 @@ public:
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
-                     const t::geometry::PointCloud& point_cloud,
+                     const t::geometry::Geometry& geometry,
                      const MaterialRecord& material,
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;

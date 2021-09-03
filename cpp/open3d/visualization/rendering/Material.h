@@ -34,6 +34,8 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+class MaterialRecord;
+
 class Material {
 public:
     using TextureMaps = std::unordered_map<std::string, t::geometry::Image>;
@@ -67,7 +69,7 @@ public:
     /// image does not exist.
     ///
     /// \param key Map name
-    t::geometry::Image &GetTextureMap(const std::string &key) {
+    const t::geometry::Image &GetTextureMap(const std::string &key) const {
         return texture_maps_.at(key);
     }
 
@@ -80,7 +82,7 @@ public:
     /// does not exist.
     ///
     /// \param key Property name
-    float GetScalarProperty(const std::string &key) {
+    float GetScalarProperty(const std::string &key) const {
         return scalar_properties_.at(key);
     }
 
@@ -93,7 +95,7 @@ public:
     /// does not exist.
     ///
     /// \param key Property name
-    Eigen::Vector4f GetVectorProperty(const std::string &key) {
+    Eigen::Vector4f GetVectorProperty(const std::string &key) const {
         return vector_properties_.at(key);
     }
 
@@ -157,37 +159,49 @@ public:
     /// The following are convenience methods for common PBR material properties
     ///
     ////////////////////////////////////////////////////////////////////////////
-    t::geometry::Image &GetAlbedoMap() { return GetTextureMap("albedo"); }
-    t::geometry::Image &GetNormalMap() { return GetTextureMap("normal"); }
-    t::geometry::Image &GetAOMap() { return GetTextureMap("ao"); }
-    t::geometry::Image &GetMetallicMap() { return GetTextureMap("metallic"); }
-    t::geometry::Image &GetRoughnessMap() { return GetTextureMap("roughness"); }
-    t::geometry::Image &GetReflectanceMap() {
+    const t::geometry::Image &GetAlbedoMap() const {
+        return GetTextureMap("albedo");
+    }
+    const t::geometry::Image &GetNormalMap() const {
+        return GetTextureMap("normal");
+    }
+    const t::geometry::Image &GetAOMap() const { return GetTextureMap("ao"); }
+    const t::geometry::Image &GetMetallicMap() const {
+        return GetTextureMap("metallic");
+    }
+    const t::geometry::Image &GetRoughnessMap() const {
+        return GetTextureMap("roughness");
+    }
+    const t::geometry::Image &GetReflectanceMap() const {
         return GetTextureMap("reflectance");
     }
-    t::geometry::Image &GetClearcoatMap() { return GetTextureMap("clearcoat"); }
-    t::geometry::Image &GetClearcoatRoughnessMap() {
+    const t::geometry::Image &GetClearcoatMap() const {
+        return GetTextureMap("clearcoat");
+    }
+    const t::geometry::Image &GetClearcoatRoughnessMap() const {
         return GetTextureMap("clearcoat_roughness");
     }
-    t::geometry::Image &GetAnisotropyMap() {
+    const t::geometry::Image &GetAnisotropyMap() const {
         return GetTextureMap("anisotropy");
     }
-    t::geometry::Image &GetAORoughnessMetalMap() {
+    const t::geometry::Image &GetAORoughnessMetalMap() const {
         return GetTextureMap("ao_rough_metal");
     }
 
-    bool HasAlbedoMap() { return HasTextureMap("albedo"); }
-    bool HasNormalMap() { return HasTextureMap("normal"); }
-    bool HasAOMap() { return HasTextureMap("ao"); }
-    bool HasMetallicMap() { return HasTextureMap("metallic"); }
-    bool HasRoughnessMap() { return HasTextureMap("roughness"); }
-    bool HasReflectanceMap() { return HasTextureMap("reflectance"); }
-    bool HasClearcoatMap() { return HasTextureMap("clearcoat"); }
-    bool HasClearcoatRoughnessMap() {
+    bool HasAlbedoMap() const { return HasTextureMap("albedo"); }
+    bool HasNormalMap() const { return HasTextureMap("normal"); }
+    bool HasAOMap() const { return HasTextureMap("ao"); }
+    bool HasMetallicMap() const { return HasTextureMap("metallic"); }
+    bool HasRoughnessMap() const { return HasTextureMap("roughness"); }
+    bool HasReflectanceMap() const { return HasTextureMap("reflectance"); }
+    bool HasClearcoatMap() const { return HasTextureMap("clearcoat"); }
+    bool HasClearcoatRoughnessMap() const {
         return HasTextureMap("clearcoat_roughness");
     }
-    bool HasAnisotropyMap() { return HasTextureMap("anisotropy"); }
-    bool HasAORoughnessMetalMap() { return HasTextureMap("ao_rough_metal"); }
+    bool HasAnisotropyMap() const { return HasTextureMap("anisotropy"); }
+    bool HasAORoughnessMetalMap() const {
+        return HasTextureMap("ao_rough_metal");
+    }
 
     void SetAlbedoMap(const t::geometry::Image &image) {
         SetTextureMap("albedo", image);
@@ -220,37 +234,53 @@ public:
         SetTextureMap("ao_rough_metal", image);
     }
 
-    Eigen::Vector4f GetBaseColor() { return GetVectorProperty("base_color"); }
-    float GetBaseMetallic() { return GetScalarProperty("base_metallic"); }
-    float GetBaseRoughness() { return GetScalarProperty("base_roughness"); }
-    float GetBaseReflectance() { return GetScalarProperty("base_reflectance"); }
-    float GetBaseClearcoat() { return GetScalarProperty("base_clearcoat"); }
-    float GetBaseClearcoatRoughness() {
+    Eigen::Vector4f GetBaseColor() const {
+        return GetVectorProperty("base_color");
+    }
+    float GetBaseMetallic() const { return GetScalarProperty("base_metallic"); }
+    float GetBaseRoughness() const {
+        return GetScalarProperty("base_roughness");
+    }
+    float GetBaseReflectance() const {
+        return GetScalarProperty("base_reflectance");
+    }
+    float GetBaseClearcoat() const {
+        return GetScalarProperty("base_clearcoat");
+    }
+    float GetBaseClearcoatRoughness() const {
         return GetScalarProperty("base_clearcoat_roughness");
     }
-    float GetAnisotropy() { return GetScalarProperty("base_anisotropy"); }
-    float GetThickness() { return GetScalarProperty("thickness"); }
-    float GetTransmission() { return GetScalarProperty("transmission"); }
-    Eigen::Vector4f GetAbsorptionColor() {
+    float GetAnisotropy() const { return GetScalarProperty("base_anisotropy"); }
+    float GetThickness() const { return GetScalarProperty("thickness"); }
+    float GetTransmission() const { return GetScalarProperty("transmission"); }
+    Eigen::Vector4f GetAbsorptionColor() const {
         return GetVectorProperty("absorption_color");
     }
-    float GetAbsorptionDistance() {
+    float GetAbsorptionDistance() const {
         return GetScalarProperty("absorption_distance");
     }
 
-    bool HasBaseColor() { return HasVectorProperty("base_color"); }
-    bool HasBaseMetallic() { return HasScalarProperty("base_metallic"); }
-    bool HasBaseRoughness() { return HasScalarProperty("base_roughness"); }
-    bool HasBaseReflectance() { return HasScalarProperty("base_reflectance"); }
-    bool HasBaseClearcoat() { return HasScalarProperty("base_clearcoat"); }
-    bool HasBaseClearcoatRoughness() {
+    bool HasBaseColor() const { return HasVectorProperty("base_color"); }
+    bool HasBaseMetallic() const { return HasScalarProperty("base_metallic"); }
+    bool HasBaseRoughness() const {
+        return HasScalarProperty("base_roughness");
+    }
+    bool HasBaseReflectance() const {
+        return HasScalarProperty("base_reflectance");
+    }
+    bool HasBaseClearcoat() const {
+        return HasScalarProperty("base_clearcoat");
+    }
+    bool HasBaseClearcoatRoughness() const {
         return HasScalarProperty("base_clearcoat_roughness");
     }
-    bool HasAnisotropy() { return HasScalarProperty("base_anisotropy"); }
-    bool HasThickness() { return HasScalarProperty("thickness"); }
-    bool HasTransmission() { return HasScalarProperty("transmission"); }
-    bool HasAbsorptionColor() { return HasVectorProperty("absorption_color"); }
-    bool HasAbsorptionDistance() {
+    bool HasAnisotropy() const { return HasScalarProperty("base_anisotropy"); }
+    bool HasThickness() const { return HasScalarProperty("thickness"); }
+    bool HasTransmission() const { return HasScalarProperty("transmission"); }
+    bool HasAbsorptionColor() const {
+        return HasVectorProperty("absorption_color");
+    }
+    bool HasAbsorptionDistance() const {
         return HasScalarProperty("absorption_distance");
     }
 
@@ -292,14 +322,17 @@ public:
     /// shaders
     ///
     ////////////////////////////////////////////////////////////////////////////
-    float GetPointSize() { return GetScalarProperty("point_size"); }
-    float GetLineWidth() { return GetScalarProperty("line_width"); }
+    float GetPointSize() const { return GetScalarProperty("point_size"); }
+    float GetLineWidth() const { return GetScalarProperty("line_width"); }
 
-    bool HasPointSize() { return HasScalarProperty("point_size"); }
-    bool HasLineWidth() { return HasScalarProperty("line_width"); }
+    bool HasPointSize() const { return HasScalarProperty("point_size"); }
+    bool HasLineWidth() const { return HasScalarProperty("line_width"); }
 
     void SetPointSize(float value) { SetScalarProperty("point_size", value); }
     void SetLineWidth(float value) { SetScalarProperty("line_width", value); }
+
+    /// Fills a legacy MaterialRecord constructed from this Material
+    void ToMaterialRecord(MaterialRecord &record) const;
 
 private:
     std::string material_name_;
