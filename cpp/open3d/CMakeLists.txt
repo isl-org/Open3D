@@ -79,6 +79,38 @@ if (BUILD_WEBRTC)
     )
 endif()
 
+# Apply the workaround linking on all defined object libraries.
+# Non-affected libraries will be automatically skipped.
+if (BUILD_ISPC_MODULE)
+    open3d_ispc_target_sources_ISPC_TARGET_OBJECTS(Open3D PRIVATE
+        camera
+        core
+        geometry
+        tgeometry
+        tgeometry_kernel
+        io
+        tio
+        ml_contrib
+        pipelines
+        tpipelines
+        tpipelines_kernel
+        utility
+        visualization
+    )
+
+    if (BUILD_GUI)
+        open3d_ispc_target_sources_ISPC_TARGET_OBJECTS(Open3D PRIVATE
+            GUI
+        )
+    endif()
+
+    if (BUILD_WEBRTC)
+        open3d_ispc_target_sources_ISPC_TARGET_OBJECTS(Open3D PRIVATE
+            webrtc_server
+        )
+    endif()
+endif()
+
 # Source group for Visual Studio
 add_source_group(camera)
 add_source_group(core)
