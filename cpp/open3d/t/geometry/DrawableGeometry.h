@@ -44,9 +44,7 @@ public:
     bool HasMaterial() const { return material_.IsValid(); }
 
     /// Get material associated with this Geometry.
-    visualization::rendering::Material const &GetMaterial() const {
-        return material_;
-    }
+    visualization::rendering::Material &GetMaterial() { return material_; }
 
     /// Get const reference to material associated with this Geometry
     const visualization::rendering::Material &GetMaterial() const {

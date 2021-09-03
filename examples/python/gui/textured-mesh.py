@@ -27,45 +27,31 @@
 import sys
 import os
 import open3d as o3d
-import open3d.visualization.gui as gui
-import open3d.visualization.rendering as rendering
 
 
 def main():
     if len(sys.argv) < 2:
-        print("""Usage: texture-model.py [model directory]
+        print("""Usage: textured-mesh.h [model directory]
     This example will load [model directory].obj plus any of albedo, normal,
     ao, metallic and roughness textures present.""")
         sys.exit()
 
-    model_dir = sys.argv[1]
+    model_dir = os.path.normpath(os.path.realpath(sys.argv[1]))
     model_name = os.path.join(model_dir, os.path.basename(model_dir) + ".obj")
-    model = o3d.io.read_triangle_mesh(model_name)
-    material = o3d.visualization.rendering.Material()
-    material.shader = "defaultLit"
+    mesh = o3d.t.geometry.TriangleMesh.from_legacy(
+        o3d.io.read_triangle_mesh(model_name))
+    material = o3d.visualization.Material()
+    material.material_name = "defaultLit"
 
-    albedo_name = os.path.join(model_dir, "albedo.png")
-    normal_name = os.path.join(model_dir, "normal.png")
-    ao_name = os.path.join(model_dir, "ao.png")
-    metallic_name = os.path.join(model_dir, "metallic.png")
-    roughness_name = os.path.join(model_dir, "roughness.png")
-    if os.path.exists(albedo_name):
-        material.albedo_img = o3d.io.read_image(albedo_name)
-    if os.path.exists(normal_name):
-        material.normal_img = o3d.io.read_image(normal_name)
-    if os.path.exists(ao_name):
-        material.ao_img = o3d.io.read_image(ao_name)
-    if os.path.exists(metallic_name):
-        material.base_metallic = 1.0
-        material.metallic_img = o3d.io.read_image(metallic_name)
-    if os.path.exists(roughness_name):
-        material.roughness_img = o3d.io.read_image(roughness_name)
+    for texture in ("albedo", "normal", "ao", "metallic", "roughness"):
+        texture_file = os.path.join(model_dir, texture + ".png")
+        if os.path.exists(texture_file):
+            material.texture_maps[texture +
+                                  "_img"] = o3d.t.io.read_image(texture_file)
+    if "metallic_img" in material.texture_maps:
+        material.scalar_properties["base_metallic"] = 1.0
 
-    o3d.visualization.draw([{
-        "name": "cube",
-        "geometry": model,
-        "material": material
-    }])
+    o3d.visualization.draw(mesh, title=model_name)
 
 
 if __name__ == "__main__":

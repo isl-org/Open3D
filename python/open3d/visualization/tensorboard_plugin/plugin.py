@@ -181,7 +181,7 @@ class Open3DPluginDataReader:
                                               batch_idx, step_to_idx)
             # "vertex_normals" -> ["vertex", "normals"]
             prop_map, prop_attribute = prop.split("_")
-            # geometry.vertex["normals" = geometry_ref.vertex["normals"]
+            # geometry.vertex["normals"] = geometry_ref.vertex["normals"]
             getattr(geometry, prop_map)[prop_attribute] = getattr(
                 geometry_ref, prop_map)[prop_attribute]
 
@@ -435,9 +435,8 @@ class Open3DPluginWindow:
                 geometry = self.data_reader.read_geometry(
                     self.run, tag, self.step, self.batch_idx, self.step_to_idx)
                 _log.debug(f"Displaying geometry {geometry_name}:{geometry}")
-                # pp_geometry = _postprocess(geometry)
                 _async_event_loop.run_sync(self.window.add_geometry,
-                                           geometry_name, pp_geometry)
+                                           geometry_name, geometry)
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
                 _log.debug(f"Removing geometry {current_item}")
@@ -445,6 +444,7 @@ class Open3DPluginWindow:
                                            current_item)
         self.geometry_list = new_geometry_list
 
+        _async_event_loop.run_sync(self.window.reset_camera_to_default)
         _async_event_loop.run_sync(self.window.post_redraw)
 
         if not self.init_done.is_set():

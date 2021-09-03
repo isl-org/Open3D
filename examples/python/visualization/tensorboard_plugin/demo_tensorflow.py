@@ -172,4 +172,4 @@ if __name__ == "__main__":
     # property_reference()
     # large_scale()
     with_material(
-        "/home/ssheorey/Documents/Open3D/Code/Open3D/examples/test_data/monkey")
+        os.path.join(os.path.basename(__file__), "test_data", "monkey"))

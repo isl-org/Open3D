@@ -198,16 +198,22 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                         mesh_legacy.triangle_normals_, float_dtype, device));
     }
     if (mesh_legacy.HasTriangleUvs()) {
-        // Legacy uses / stores UVs as triangle attributes
-        // Check and set
-        mesh.SetVertexAttr(
-                "texture_uvs",
-                core::eigen_converter::EigenVector2dVectorToTensor(
-                        mesh_legacy.triangle_uvs_, float_dtype, device));
+        // Legacy uses UVs as triangle attributes
         // Check length and issue warning on mismatch
+        if (mesh_legacy.triangle_uvs_.size() != mesh_legacy.vertices_.size()) {
+            utility::LogWarning(
+                    "Ignoring UV coordinates since n_vertices ({}) != "
+                    "length(UV) ({})",
+                    mesh_legacy.vertices_.size(),
+                    mesh_legacy.triangle_uvs_.size());
+        } else {
+            mesh.SetVertexAttr(
+                    "texture_uvs",
+                    core::eigen_converter::EigenVector2dVectorToTensor(
+                            mesh_legacy.triangle_uvs_, float_dtype, device));
+        }
     }
-    // unused by visualizer
-    if (mesh_legacy.HasTriangleMaterialIds()) {
+    if (mesh_legacy.HasTriangleMaterialIds()) {  // unused by visualizer
         mesh.SetTriangleAttr(
                 "material_ids",
                 core::Tensor(

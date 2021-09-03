@@ -339,7 +339,7 @@ void pybind_rendering_classes(py::module &m) {
 
     // ---- Material ----
     py::class_<MaterialRecord> mat(
-            m, "Material",
+            m, "MaterialRecord",
             "Describes the real-world, physically based (PBR) "
             "material used to render a geometry");
     mat.def(py::init<>())
