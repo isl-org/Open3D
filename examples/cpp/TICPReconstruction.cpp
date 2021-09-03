@@ -322,7 +322,7 @@ protected:
         core::Dtype dtype = source.GetPointPositions().GetDtype();
 
         // ---- Asserts START
-        init_source_to_target.AssertShape({4, 4});
+        core::AssertTensorShape(init_source_to_target, {4, 4});
 
         if (target.GetPointPositions().GetDtype() != dtype) {
             utility::LogError(

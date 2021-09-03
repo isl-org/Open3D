@@ -28,9 +28,7 @@
 import os
 import sys
 import threading
-from collections import OrderedDict
 import json
-from functools import partial
 
 import numpy as np
 from tensorboard.plugins import base_plugin
@@ -38,8 +36,6 @@ from tensorboard.backend.event_processing.plugin_event_multiplexer import EventM
 from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
 import werkzeug
 from werkzeug import wrappers
-from werkzeug.datastructures import Headers  # Allow remote CivetWeb access
-import ipdb
 
 try:
     from tensorflow.io.gfile import GFile as _fileopen
@@ -50,119 +46,16 @@ if sys.platform == 'darwin':
     raise NotImplementedError("Open3D for TensorBoard does not run on macOS.")
 import open3d as o3d
 # TODO: Check for GPU / EGL else TensorBoard will crash.
-import open3d.visualization.gui as gui
-import open3d.visualization.rendering as rendering
-from open3d.visualization.tensorboard_plugin import metadata
-_log = metadata.log
+from open3d.visualization import O3DVisualizer
+from open3d.visualization import gui
+from open3d.visualization import rendering
+from open3d.visualization import webrtc_server
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 # Set window system before the GUI event loop
-o3d.visualization.webrtc_server.enable_webrtc()
+webrtc_server.enable_webrtc()
 from open3d.visualization._async_event_loop import _async_event_loop
-
-
-class ReadWriteLock:
-    """ A lock object that allows many simultaneous "read locks", but
-    only one "write lock."
-
-    Implmentation from Python Cookbook (O'Reilly)
-    https://www.oreilly.com/library/view/python-cookbook/0596001673/ch06s04.html
-    Credit: Sami Hangaslammi
-    """
-
-    def __init__(self):
-        self._read_ready = threading.Condition(threading.Lock())
-        self._readers = 0
-
-    def acquire_read(self):
-        """Acquire a read lock. Blocks only if a thread has acquired the write
-        lock."""
-        self._read_ready.acquire()
-        try:
-            self._readers += 1
-        finally:
-            self._read_ready.release()
-
-    def release_read(self):
-        """Release a read lock."""
-        self._read_ready.acquire()
-        try:
-            self._readers -= 1
-            if not self._readers:
-                self._read_ready.notifyAll()
-        finally:
-            self._read_ready.release()
-
-    def acquire_write(self):
-        """Acquire a write lock. Blocks until there are no acquired read or
-        write locks."""
-        self._read_ready.acquire()
-        while self._readers > 0:
-            self._read_ready.wait()
-
-    def release_write(self):
-        """Release a write lock."""
-        self._read_ready.release()
-
-
-class LRUCache:
-    """Cache storing recent items, i.e. least recently used will be ejected when
-    a new item needs to be added to a full cache. This is thread safe for
-    concurrent access.
-    """
-
-    def __init__(self, max_items=128):
-        """
-        Args:
-            max_items (int): Max items in cache.
-        """
-        self.cache = OrderedDict()
-        self.max_items = max_items
-        self.rwlock = ReadWriteLock()
-        # hits, misses are not protected against concurrent access for
-        # performance.
-        self.hits = 0
-        self.misses = 0
-
-    def get(self, key):
-        """Retrieve value corresponding to ``key`` from the cache.
-
-        Return:
-            Value if ``key`` is found, else None.
-        """
-        self.rwlock.acquire_read()
-        value = self.cache.get(key)  # None if not found
-        self.rwlock.release_read()
-        if value is None:
-            self.misses += 1
-            _log.debug(str(self))
-            return None
-        self.rwlock.acquire_write()
-        self.cache.move_to_end(key)
-        self.rwlock.release_write()
-        self.hits += 1
-        _log.debug(str(self))
-        return value
-
-    def put(self, key, value):
-        """Add (key, value) pair to the cache. If cache limits are exceeded,
-        eject key-value pairs till the cache is within limits."""
-        self.rwlock.acquire_write()
-        self.cache[key] = value
-        self.cache.move_to_end(key)
-        if len(self.cache) > self.max_items:
-            self.cache.popitem(last=False)
-        self.rwlock.release_write()
-        _log.debug(str(self))
-
-    def clear(self):
-        """Invalidate cache."""
-        self.rwlock.acquire_write()
-        self.cache.clear()
-        self.rwlock.release_write()
-
-    def __str__(self):
-        return (f"Items: {len(self.cache)}/{self.max_items}, "
-                f"Hits: {self.hits}, Misses: {self.misses}")
+from open3d.visualization.tensorboard_plugin import metadata
+from open3d.visualization.tensorboard_plugin.util import LRUCache, _log
 
 
 class Open3DPluginDataReader:
@@ -210,7 +103,8 @@ class Open3DPluginDataReader:
 
     def is_active(self):
         """Do we have any Open3D data to display?"""
-        return any(len(tags) > 0 for tags in self._run_to_tags.values())
+        with self._event_lock:
+            return any(len(tags) > 0 for tags in self._run_to_tags.values())
 
     @property
     def run_to_tags(self):
@@ -319,19 +213,13 @@ class Open3DPluginWindow:
     """Create and manage a single Open3D WebRTC GUI window.
     """
 
-    # Settings to match tensorboard
-    BG_COLOR = gui.Color(0.95, 0.95, 0.95)
-    FONT_COLOR = gui.Color(0.5, 0.5, 0.5)
-
     def __init__(self,
-                 window_id,
                  data_reader,
                  title="Open3D for Tensorboard",
                  width=1024,
                  height=768):
         """
         Args:
-            window_id (str): Open3D window id. e.g.: "window_0"
             data_reader: Open3DPluginDataReader object to read Tensorboard event
                 files and Open3D geometry files.
             title (str): Window title. [Unused in WebRTC]
@@ -351,20 +239,11 @@ class Open3DPluginWindow:
         # self.all_tensor_events[self.tags[0]][prop][self.idx].step == self.step
         self.all_tensor_events = dict()
 
-        self.window_id = window_id
-        self.scene_widget = None  # Access only through _async_event_loop
+        self.window = None  # Access only through _async_event_loop
         self.geometry_list = []
         self.init_done = threading.Event()  # Notify when WebRTC is ready
 
-        # Register frontend callbacks
-        class_name_base = "tensorboard/" + window_id
-        o3d.visualization.webrtc_server.register_data_channel_message_callback(
-            class_name_base + "/get_run_tags", self._get_run_tags)
-        o3d.visualization.webrtc_server.register_data_channel_message_callback(
-            class_name_base + "/update_geometry", self._update_geometry)
-
-        _async_event_loop.run_sync(
-            partial(self._create_ui, title, width, height))
+        _async_event_loop.run_sync(self._create_ui, title, width, height)
         self._update_scene()
 
     def _get_run_tags(self, message):
@@ -557,47 +436,41 @@ class Open3DPluginWindow:
                     self.run, tag, self.step, self.batch_idx, self.step_to_idx)
                 _log.debug(f"Displaying geometry {geometry_name}:{geometry}")
                 # pp_geometry = _postprocess(geometry)
-                _async_event_loop.run_sync(
-                    partial(self.scene_widget.scene.add_geometry, geometry_name,
-                            geometry, self.material))
+                _async_event_loop.run_sync(self.window.add_geometry,
+                                           geometry_name, pp_geometry)
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
                 _log.debug(f"Removing geometry {current_item}")
-                _async_event_loop.run_sync(
-                    partial(self.scene_widget.scene.remove_geometry,
-                            current_item))
+                _async_event_loop.run_sync(self.window.remove_geometry,
+                                           current_item)
         self.geometry_list = new_geometry_list
 
-        _async_event_loop.run_sync(self.scene_widget.force_redraw)
+        _async_event_loop.run_sync(self.window.post_redraw)
 
         if not self.init_done.is_set():
             self.init_done.set()
-        _log.debug(f"Displaying complete!")
+        _log.debug("Displaying complete!")
 
     def _create_ui(self, title, width, height):
-        """Create new Open3D application window and rendering widgets.
+        """Create new Open3D application window and rendering widgets. Must run
+        in the GUI thread.
 
         Args:
             title (str): Window title (unused).
             width (int): Window width.
             height (int): Window height.
         """
-        self.window = gui.Application.instance.create_window(
-            title, width, height)
-        # self.window_uid = o3d.webrtc_server.get_window_uid()
+        self.window = O3DVisualizer(title, width, height)
+        self.window.show_menu(False)
         # Add 3D scene
-        self.material = o3d.visualization.rendering.Material()
-        self.material.shader = "defaultLit"
-        # Set n_pixels displayed for each 3D point, accounting for HiDPI scaling
-        self.material.point_size = 2 * self.window.scaling
-        self.scene_widget = gui.SceneWidget()
-        # sequence_ui.add_child(self.scene_widget)
-        self.window.add_child(self.scene_widget)
-        self.scene_widget.enable_scene_caching(True)
-        self.scene_widget.scene = rendering.Open3DScene(self.window.renderer)
-        self.scene_widget.scene.set_background([1, 1, 1, 1])  # White background
-        self.scene_widget.scene.set_lighting(
-            rendering.Open3DScene.LightingProfile.SOFT_SHADOWS, [0, -6, 0])
+        self.window.set_background((1, 1, 1, 1), None)  # White background
+        # Register frontend callbacks
+        class_name_base = "tensorboard/" + self.window.uid
+        webrtc_server.register_data_channel_message_callback(
+            class_name_base + "/get_run_tags", self._get_run_tags)
+        webrtc_server.register_data_channel_message_callback(
+            class_name_base + "/update_geometry", self._update_geometry)
+        gui.Application.instance.add_window(self.window)
 
 
 class Open3DPlugin(base_plugin.TBPlugin):
@@ -620,6 +493,9 @@ class Open3DPlugin(base_plugin.TBPlugin):
     _RESOURCE_PATH = os.path.join(os.path.dirname(__file__), "..", "..",
                                   "resources")
     _PLUGIN_DIRECTORY_PATH_PART = "/data/plugin/" + metadata.PLUGIN_NAME + "/"
+    # Browser security: Do not guess response content type by inspection.
+    _HEADERS = [("X-Content-Type-Options", "nosniff")]
+    _ERROR_RESPONSE = werkzeug.Response(headers=_HEADERS)
 
     def __init__(self, context):
         """Instantiates Open3D plugin.
@@ -630,47 +506,15 @@ class Open3DPlugin(base_plugin.TBPlugin):
         self._logdir = context.logdir
         self.data_reader = Open3DPluginDataReader(self._logdir)
         self.window_lock = threading.Lock()  # protect _windows and _next_wid
+        self._http_api_lock = threading.Lock()
         self._windows = {}
-        self._next_wid = 0
+        webrtc_server.disable_http_handshake()
+        # TODO(@ssheorey): Remove before merge
         o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)
-        # o3d.visualization.webrtc_server.disable_http_handshake()
-
-    @wrappers.Request.application
-    def _new_window(self, request):
-
-        win_width = min(3840,
-                        max(640, int(float(request.args.get('width', 1024)))))
-        win_height = min(2400,
-                         max(480, int(float(request.args.get('height', 768)))))
-        with self.window_lock:
-            this_window_id = f"window_{self._next_wid}"
-            self._next_wid += 1
-            # TODO: Use GetWebRTCUID() instead
-
-        this_window = Open3DPluginWindow(this_window_id, self.data_reader,
-                                         "Open3D for Tensorboard", win_width,
-                                         win_height)
-        with self.window_lock:
-            self._windows[this_window_id] = this_window
-
-        response = f'{{"window_id": "{this_window_id}", "logdir": "{self._logdir}"}}'
-        this_window.init_done.wait()  # Wait for WebRTC initialization
-        return werkzeug.Response(response, content_type="application/json")
-
-    @wrappers.Request.application
-    def _close_window(self, request):
-
-        this_window_id = request.args.get('window_id', "")
-        if this_window_id not in self._windows.keys():
-            _log.warning(f"Invalid Window ID {this_window_id}")
-            return werkzeug.exceptions.NotFound(
-                f"Invalid Window ID {this_window_id}")
-
-        self._windows[this_window_id].window.close()
-        with self.window_lock:
-            del self._windows[this_window_id]
-        _log.debug(f"Window {this_window_id} closed.")
-        return werkzeug.Response(f"Closed window_{this_window_id}")
+        # Dummy window to ensure GUI remains active even if all user windows are
+        # closed.
+        _async_event_loop.run_sync(gui.Application.instance.create_window,
+                                   "Open3D Dummy Window", 32, 32)
 
     def get_plugin_apps(self):
         """Returns a set of WSGI applications that the plugin implements.
@@ -719,6 +563,45 @@ class Open3DPlugin(base_plugin.TBPlugin):
         #     `webfiles.zip`. Mutually exclusive with legacy `element_name`
 
     @wrappers.Request.application
+    def _new_window(self, request):
+
+        win_width = min(3840,
+                        max(640, int(float(request.args.get('width', 1024)))))
+        win_height = min(2400,
+                         max(480, int(float(request.args.get('height', 768)))))
+
+        this_window = Open3DPluginWindow(self.data_reader,
+                                         "Open3D for Tensorboard", win_width,
+                                         win_height)
+        with self.window_lock:
+            self._windows[this_window.window.uid] = this_window
+
+        response = (f'{{"window_id": "{this_window.window.uid}", "logdir": '
+                    f'"{self._logdir}"}}')
+        this_window.init_done.wait()  # Wait for WebRTC initialization
+        return werkzeug.Response(response,
+                                 content_type="application/json",
+                                 headers=self._HEADERS)
+
+    @wrappers.Request.application
+    def _close_window(self, request):
+
+        this_window_id = request.args.get('window_id', "")
+        if this_window_id not in self._windows.keys():
+            _log.warning(f"Invalid Window ID {this_window_id}")
+            return werkzeug.exceptions.NotFound(
+                f"Invalid Window ID {this_window_id}",
+                response=self._ERROR_RESPONSE)
+
+        _async_event_loop.run_sync(self._windows[this_window_id].window.close)
+        with self.window_lock:
+            del self._windows[this_window_id]
+        _log.debug(f"Window {this_window_id} closed.")
+        return werkzeug.Response(f"Closed window {this_window_id}",
+                                 content_type="text/plain",
+                                 headers=self._HEADERS)
+
+    @wrappers.Request.application
     def _webrtc_http_api(self, request):
         try:
             entry_point = request.path[(len(self._PLUGIN_DIRECTORY_PATH_PART) -
@@ -726,45 +609,56 @@ class Open3DPlugin(base_plugin.TBPlugin):
             query_string = (b'?' + request.query_string
                             if request.query_string else b'')
             data = request.get_data()
-            _log.debug("Request:{}|{}|{}".format(entry_point, query_string,
-                                                 data))
-            response = o3d.visualization.webrtc_server.call_http_api(
-                entry_point, query_string, data)
-            _log.debug("Response: {}".format(response))
+            if len(self._windows) == 0:
+                raise werkzeug.exceptions.BadRequest(
+                    description="No windows exist to service this request: "
+                    f"{request}",
+                    response=self._ERROR_RESPONSE)
+
+            with self._http_api_lock:
+                response = webrtc_server.call_http_api(entry_point,
+                                                       query_string, data)
+
         except RuntimeError:
             raise werkzeug.exceptions.BadRequest(
-                description=f"request is not a function call, ignored: {request}"
-            )
+                description="Request is not a function call, ignored: "
+                f"{request}",
+                response=self._ERROR_RESPONSE)
         else:
-            return werkzeug.Response(response, content_type="application/json")
+            return werkzeug.Response(response,
+                                     content_type="application/json",
+                                     headers=self._HEADERS)
 
     @wrappers.Request.application
     def _serve_js(self, request):
         if request.is_multiprocess:
             return werkzeug.exceptions.ExpectationFailed(
-                "Open3D plugin does not run on a multi-process web server.")
+                "Open3D plugin does not run on a multi-process web server.",
+                response=self._ERROR_RESPONSE)
 
         js_file = request.path.split('/')[-1]
         if js_file == "index.js":
             js_file = os.path.join(os.path.dirname(__file__), "frontend",
-                                   "index.js")
+                                   js_file)
         elif js_file == "webrtcstreamer.js":
-            js_file = os.path.join(self._RESOURCE_PATH, "html",
-                                   "webrtcstreamer.js")
+            js_file = os.path.join(self._RESOURCE_PATH, "html", js_file)
         elif js_file == "adapter.min.js":
-            js_file = os.path.join(self._RESOURCE_PATH, "html", "libs",
-                                   "adapter.min.js")
+            js_file = os.path.join(self._RESOURCE_PATH, "html", "libs", js_file)
         else:
             raise werkzeug.exceptions.NotFound(
-                description=f"JS file {request.path} does not exist.")
+                description=f"JS file {request.path} does not exist.",
+                response=self._ERROR_RESPONSE)
 
         with open(js_file) as infile:
             return werkzeug.Response(infile.read(),
-                                     content_type="application/javascript")
+                                     content_type="application/javascript",
+                                     headers=self._HEADERS)
 
     @wrappers.Request.application
     def _serve_css(self, unused_request):
         with open(
                 os.path.join(os.path.dirname(__file__), "frontend",
                              "style.css")) as cssfile:
-            return werkzeug.Response(cssfile.read(), content_type="text/css")
+            return werkzeug.Response(cssfile.read(),
+                                     content_type="text/css",
+                                     headers=self._HEADERS)

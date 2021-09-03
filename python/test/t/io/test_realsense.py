@@ -37,9 +37,10 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import test_data_dir
 
 
+@pytest.mark.xfail(strict=False, reason="May fail depending on test state.")
 @pytest.mark.skipif(os.getenv('GITHUB_SHA') is not None or
                     not hasattr(o3d.t.io, 'RSBagReader'),
-                    reason="Hangs in Github Actions, but succeeds locally or "
+                    reason="Hangs in Github Actions, succeeds locally or "
                     "not built with librealsense")
 def test_RSBagReader():
 

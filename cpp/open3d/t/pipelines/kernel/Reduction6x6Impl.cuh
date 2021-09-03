@@ -186,6 +186,35 @@ __device__ inline void ReduceSum6x6LinearSystem(const int tid,
         __syncthreads();
     }
 }
+
+template <typename scalar_t, size_t BLOCK_SIZE>
+__device__ inline void ReduceSum6x6InformationJacobian(
+        const int tid,
+        bool valid,
+        const scalar_t* reduction,
+        volatile scalar_t* local_sum0,
+        volatile scalar_t* local_sum1,
+        volatile scalar_t* local_sum2,
+        scalar_t* global_sum) {
+    // Sum reduction: JtJ(21)
+    for (size_t i = 0; i < 21; i += 3) {
+        local_sum0[tid] = valid ? reduction[i + 0] : 0;
+        local_sum1[tid] = valid ? reduction[i + 1] : 0;
+        local_sum2[tid] = valid ? reduction[i + 2] : 0;
+        __syncthreads();
+
+        BlockReduceSum<scalar_t, BLOCK_SIZE>(tid, local_sum0, local_sum1,
+                                             local_sum2);
+
+        if (tid == 0) {
+            atomicAdd(&global_sum[i + 0], local_sum0[0]);
+            atomicAdd(&global_sum[i + 1], local_sum1[0]);
+            atomicAdd(&global_sum[i + 2], local_sum2[0]);
+        }
+        __syncthreads();
+    }
+}
+
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

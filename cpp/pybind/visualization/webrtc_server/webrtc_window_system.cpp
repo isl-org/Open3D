@@ -39,8 +39,6 @@ static void pybind_webrtc_server_functions(py::module &m) {
             "call_http_api",
             [](const std::string &entry_point, const std::string &query_string,
                const std::string &data) {
-                utility::LogDebug("call_http_api|{}|{}|{}|", entry_point,
-                                  query_string, data);
                 return WebRTCWindowSystem::GetInstance()->CallHttpAPI(
                         entry_point, query_string, data);
             },

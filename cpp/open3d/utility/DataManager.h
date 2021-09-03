@@ -24,44 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+/// \file DataManager.h
+///
+/// TEST_DATA_DIR should be defined as a compile flag. The relative paths are
+/// computed from TEST_DATA_DIR. The code that uses TEST_DATA_DIR should be
+/// header-only, that is, we should not bake in a TEST_DATA_DIR value in the
+/// Open3D main library.
+
 #pragma once
 
-// TEST_DATA_DIR defined in CMakeLists.txt
-// Put it here to avoid editor warnings
+// Avoid editor warnings.
 #ifndef TEST_DATA_DIR
 #define TEST_DATA_DIR
 #endif
 
-#include <gtest/gtest.h>
-
-#include <Eigen/Core>
-#include <sstream>
 #include <string>
-#include <vector>
-
-#include "open3d/Macro.h"
-#include "tests/test_utility/Compare.h"
-#include "tests/test_utility/Print.h"
-#include "tests/test_utility/Rand.h"
-#include "tests/test_utility/Raw.h"
-#include "tests/test_utility/Sort.h"
-
-// GPU_CONDITIONAL_COMPILE_STR is "" if gpu is available, otherwise "DISABLED_"
-// The GPU_CONDITIONAL_COMPILE_STR value is configured in CMake
-#define CUDA_CONDITIONAL_TEST(test_name) \
-    OPEN3D_CONCATENATE(GPU_CONDITIONAL_TEST_STR, test_name)
 
 namespace open3d {
-namespace tests {
+namespace utility {
 
-// Eigen Zero()
-const Eigen::Vector2d Zero2d = Eigen::Vector2d::Zero();
-const Eigen::Vector3d Zero3d = Eigen::Vector3d::Zero();
-const Eigen::Matrix<double, 6, 1> Zero6d = Eigen::Matrix<double, 6, 1>::Zero();
-const Eigen::Vector2i Zero2i = Eigen::Vector2i::Zero();
+/// Computes the full path of a file/directory inside the Open3D common data
+/// root. If \p relative_path is specified, the full path is computed by
+/// appending the \p relative_path to the common data root; otherwise, the
+/// common data root is returned.
+///
+/// \param relative_path Relative path to Open3D common data root.
+inline std::string GetDataPathCommon(const std::string& relative_path = "") {
+    if (relative_path.empty()) {
+        return std::string(TEST_DATA_DIR);
+    } else {
+        return std::string(TEST_DATA_DIR) + "/" + relative_path;
+    }
+}
 
-// Mechanism for reporting unit tests for which there is no implementation yet.
-void NotImplemented();
+/// Computes the full path of a file/directory inside the Open3D download data
+/// root. If \p relative_path is specified, the full path is computed by
+/// appending the \p relative_path to the download data root; otherwise, the
+/// download data root is returned.
+///
+/// \param relative_path Relative path to Open3D download data root.
+inline std::string GetDataPathDownload(const std::string& relative_path = "") {
+    if (relative_path.empty()) {
+        return std::string(TEST_DATA_DIR) + "/open3d_downloads";
+    } else {
+        return std::string(TEST_DATA_DIR) + "/open3d_downloads/" +
+               relative_path;
+    }
+}
 
-}  // namespace tests
+}  // namespace utility
 }  // namespace open3d

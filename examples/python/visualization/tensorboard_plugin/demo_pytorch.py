@@ -27,20 +27,18 @@
 import os
 import copy
 import numpy as np
-import tensorflow as tf
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
-from open3d.visualization.tensorboard_plugin.metadata import to_dict_batch
-import ipdb
-
-BASE_LOGDIR = "demo_logs/tf/"
+from open3d.visualization.tensorboard_plugin.util import to_dict_batch
+from torch.utils.tensorboard import SummaryWriter
+BASE_LOGDIR = "demo_logs/pytorch/"
 
 
 def small_scale(run_name="small_scale"):
     """Basic demo with cube and cylinder with normals and colors.
     """
 
-    writer = tf.summary.create_file_writer(BASE_LOGDIR + run_name)
+    writer = SummaryWriter("demo_logs/" + run_name)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube.compute_vertex_normals()
@@ -63,7 +61,7 @@ def property_reference(run_name="property_reference"):
     repeated properties of ``vertex_positions`` and ``vertex_normals``.
     """
 
-    writer = tf.summary.create_file_writer(BASE_LOGDIR + run_name)
+    writer = SummaryWriter("demo_logs/" + run_name)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube.compute_vertex_normals()
@@ -96,7 +94,7 @@ def large_scale(n_steps=20,
     """Generate a large scale summary. Geometry resolution increases linearly
     with step. Each element in a batch is painted a different color.
     """
-    writer = tf.summary.create_file_writer(BASE_LOGDIR + run_name)
+    writer = SummaryWriter("demo_logs/" + run_name)
     colors = []
     for k in range(batch_size):
         t = k * np.pi / batch_size
@@ -156,7 +154,7 @@ def with_material(model_dir):
     if "metallic_img" in material["texture_maps"]:
         material["scalar_properties"]["base_metallic"] = 1.0
 
-    writer = tf.summary.create_file_writer(BASE_LOGDIR + model_name)
+    writer = SummaryWriter(BASE_LOGDIR + model_name)
     with writer.as_default():
         summary.add_3d(model_name, {
             "vertex_positions": model.vertex["positions"],
@@ -169,8 +167,6 @@ def with_material(model_dir):
 
 
 if __name__ == "__main__":
-    # small_scale()
-    # property_reference()
+    small_scale()
+    property_reference()
     # large_scale()
-    with_material(
-        "/home/ssheorey/Documents/Open3D/Code/Open3D/examples/test_data/monkey")

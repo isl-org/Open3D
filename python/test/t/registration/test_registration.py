@@ -184,7 +184,7 @@ def test_registration_icp_point_to_point(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_test_registration_icp_point_to_plane(device):
+def test_registration_icp_point_to_plane(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
@@ -219,3 +219,34 @@ def test_test_registration_icp_point_to_plane(device):
                                    reg_p2plane_legacy.inlier_rmse, 0.001)
         np.testing.assert_allclose(reg_p2plane_t.fitness,
                                    reg_p2plane_legacy.fitness, 0.001)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_get_information_matrix_from_pointclouds(device):
+
+    supported_dtypes = [o3c.float32, o3c.float64]
+    for dtype in supported_dtypes:
+        source_t, target_t = get_pcds(dtype, device)
+
+        source_legacy = source_t.to_legacy()
+        target_legacy = target_t.to_legacy()
+
+        max_correspondence_distance = 3.0
+
+        transformation_legacy = np.array([[0.862, 0.011, -0.507, 0.5],
+                                          [-0.139, 0.967, -0.215, 0.7],
+                                          [0.487, 0.255, 0.835, -1.4],
+                                          [0.0, 0.0, 0.0, 1.0]])
+        transformation_t = o3c.Tensor(transformation_legacy,
+                                      dtype=o3c.float64,
+                                      device=device)
+
+        info_matrix_t = o3d.t.pipelines.registration.get_information_matrix_from_point_clouds(
+            source_t, target_t, max_correspondence_distance, transformation_t)
+
+        info_matrix_legacy = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
+            source_legacy, target_legacy, max_correspondence_distance,
+            transformation_legacy)
+
+        np.testing.assert_allclose(info_matrix_t.cpu().numpy(),
+                                   info_matrix_legacy, 1e-1, 1e-1)

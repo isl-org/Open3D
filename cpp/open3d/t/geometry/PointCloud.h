@@ -31,6 +31,7 @@
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/hashmap/HashMap.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
@@ -175,19 +176,19 @@ public:
 
     /// Set the value of the "positions" attribute. Convenience function.
     void SetPointPositions(const core::Tensor &value) {
-        value.AssertShape({utility::nullopt, 3});
+        core::AssertTensorShape(value, {utility::nullopt, 3});
         SetPointAttr("positions", value);
     }
 
     /// Set the value of the "colors" attribute. Convenience function.
     void SetPointColors(const core::Tensor &value) {
-        value.AssertShape({utility::nullopt, 3});
+        core::AssertTensorShape(value, {utility::nullopt, 3});
         SetPointAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute. Convenience function.
     void SetPointNormals(const core::Tensor &value) {
-        value.AssertShape({utility::nullopt, 3});
+        core::AssertTensorShape(value, {utility::nullopt, 3});
         SetPointAttr("normals", value);
     }
 

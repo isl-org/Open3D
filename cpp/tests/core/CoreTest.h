@@ -30,7 +30,7 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/SizeVector.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 #ifdef BUILD_CUDA_MODULE
 #include "open3d/core/CUDAUtils.h"

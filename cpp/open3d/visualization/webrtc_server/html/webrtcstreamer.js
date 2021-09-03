@@ -32,8 +32,8 @@
 // any purpose.
 // ----------------------------------------------------------------------------
 
-// Disable logging in production
 (function () {
+// TODO(@ssheorey): Set to false before merge
     const enableLogging = true;
     if (enableLogging === false) {
         if (typeof window.console === "undefined") { window.console = {};}
@@ -41,7 +41,7 @@
             window.console.warning = window.console.assert =
             window.console.error = function () {};
     }
-}())
+}());
 
 let WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
@@ -128,7 +128,6 @@ let WebRtcStreamer = (function () {
    * additional web server is required to process the http requests.
    */
   WebRtcStreamer.getMediaList = function (url = "", commsFetch = null) {
-    // url = "http://localhost:6006/data/plugin/Open3D";
     return WebRtcStreamer.remoteCall(url + "/api/getMediaList", {}, commsFetch);
   };
 
@@ -186,10 +185,8 @@ let WebRtcStreamer = (function () {
     if (!this.iceServers) {
       console.log("Get IceServers");
 
-      let url = "http://localhost:6006/data/plugin/Open3D";
       WebRtcStreamer.remoteCall(
         this.srvurl + "/api/getIceServers",
-        // url + "/api/getIceServers",
         {},
         this.commsFetch
       )
@@ -510,7 +507,6 @@ let WebRtcStreamer = (function () {
     options,
     stream
   ) {
-    let url = "http://localhost:6006/data/plugin/Open3D";
     this.iceServers = iceServers;
     this.pcConfig = iceServers || { iceServers: [] };
     try {
@@ -518,7 +514,6 @@ let WebRtcStreamer = (function () {
 
       var callurl =
         this.srvurl +
-         // url +
         "/api/call?peerid=" +
         this.pc.peerid +
         "&url=" +
@@ -690,7 +685,7 @@ let WebRtcStreamer = (function () {
    * RTCPeerConnection IceCandidate callback
    */
   WebRtcStreamer.prototype.onIceCandidate = function (event) {
-    if (event.candidate) {
+    if (event.candidate && event.candidate.candidate) {  // skip empty candidate
       if (this.pc.currentRemoteDescription) {
         this.addIceCandidate(this.pc.peerid, event.candidate);
       } else {
@@ -791,7 +786,7 @@ let WebRtcStreamer = (function () {
   };
 
   return WebRtcStreamer;
-})();
+}());
 
 if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
   module.exports = WebRtcStreamer;
