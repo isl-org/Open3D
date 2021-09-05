@@ -86,6 +86,7 @@ class _AsyncEventLoop:
 
     def _thread_main(self):
         """Main GUI thread event loop"""
+        # TODO(Sameer): This event loop uses up a CPU core completely
         app = o3d.visualization.gui.Application.instance
         app.initialize()
 
@@ -101,7 +102,8 @@ class _AsyncEventLoop:
                     self._cv.notify_all()
 
             done = not app.run_one_tick()
-        self._started = False
+
+        self._started = False  # Main GUI thread has exited
 
 
 # The _AsyncEventLoop class shall only be used to create a singleton instance.

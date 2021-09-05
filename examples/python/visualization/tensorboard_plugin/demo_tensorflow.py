@@ -37,8 +37,8 @@ BASE_LOGDIR = "demo_logs/tf/"
 def small_scale(run_name="small_scale"):
     """Basic demo with cube and cylinder with normals and colors.
     """
-
-    writer = tf.summary.create_file_writer(BASE_LOGDIR + run_name)
+    logdir = BASE_LOGDIR + run_name
+    writer = tf.summary.create_file_writer(logdir)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube.compute_vertex_normals()
@@ -51,17 +51,23 @@ def small_scale(run_name="small_scale"):
     with writer.as_default():
         for step in range(3):
             cube.paint_uniform_color(colors[step])
-            summary.add_3d('cube', to_dict_batch([cube]), step=step)
+            summary.add_3d('cube',
+                           to_dict_batch([cube]),
+                           step=step,
+                           logdir=logdir)
             cylinder.paint_uniform_color(colors[step])
-            summary.add_3d('cylinder', to_dict_batch([cylinder]), step=step)
+            summary.add_3d('cylinder',
+                           to_dict_batch([cylinder]),
+                           step=step,
+                           logdir=logdir)
 
 
 def property_reference(run_name="property_reference"):
     """Produces identical visualization to small_scale, but does not store
     repeated properties of ``vertex_positions`` and ``vertex_normals``.
     """
-
-    writer = tf.summary.create_file_writer(BASE_LOGDIR + run_name)
+    logdir = BASE_LOGDIR + run_name
+    writer = tf.summary.create_file_writer(logdir)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube.compute_vertex_normals()
@@ -78,13 +84,16 @@ def property_reference(run_name="property_reference"):
             if step > 0:
                 cube_summary['vertex_positions'] = 0
                 cube_summary['vertex_normals'] = 0
-            summary.add_3d('cube', cube_summary, step=step)
+            summary.add_3d('cube', cube_summary, step=step, logdir=logdir)
             cylinder.paint_uniform_color(colors[step])
             cylinder_summary = to_dict_batch([cylinder])
             if step > 0:
                 cylinder_summary['vertex_positions'] = 0
                 cylinder_summary['vertex_normals'] = 0
-            summary.add_3d('cylinder', cylinder_summary, step=step)
+            summary.add_3d('cylinder',
+                           cylinder_summary,
+                           step=step,
+                           logdir=logdir)
 
 
 def large_scale(n_steps=20,
@@ -94,7 +103,8 @@ def large_scale(n_steps=20,
     """Generate a large scale summary. Geometry resolution increases linearly
     with step. Each element in a batch is painted a different color.
     """
-    writer = tf.summary.create_file_writer(BASE_LOGDIR + run_name)
+    logdir = BASE_LOGDIR + run_name
+    writer = tf.summary.create_file_writer(logdir)
     colors = []
     for k in range(batch_size):
         t = k * np.pi / batch_size
@@ -123,12 +133,14 @@ def large_scale(n_steps=20,
                 moebius_list[b].paint_uniform_color(colors[b])
             summary.add_3d('cylinder',
                            to_dict_batch(cylinder_list),
-                           max_outputs=batch_size,
-                           step=step)
+                           step=step,
+                           logdir=logdir,
+                           max_outputs=batch_size)
             summary.add_3d('moebius',
                            to_dict_batch(moebius_list),
-                           max_outputs=batch_size,
-                           step=step)
+                           step=step,
+                           logdir=logdir,
+                           max_outputs=batch_size)
 
 
 if __name__ == "__main__":

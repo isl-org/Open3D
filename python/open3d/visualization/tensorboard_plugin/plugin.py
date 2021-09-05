@@ -188,26 +188,6 @@ class Open3DPluginDataReader:
         return geometry
 
 
-def _postprocess(geometry):
-    """Post process geometry before displaying to account for WIP
-    Tensor API in Open3D.
-    """
-
-    if isinstance(geometry, o3d.t.geometry.PointCloud):
-        return geometry
-    legacy = geometry.to_legacy()
-    # color is FLoat64 but range is [0,255]!
-    if isinstance(geometry, o3d.t.geometry.TriangleMesh):
-        if legacy.has_vertex_colors():
-            legacy.vertex_colors = o3d.utility.Vector3dVector(
-                np.asarray(legacy.vertex_colors) / 255)
-    elif isinstance(geometry, o3d.t.geometry.TriangleMesh):
-        if legacy.has_colors():
-            legacy.colors = o3d.utility.Vector3dVector(
-                np.asarray(legacy.colors) / 255)
-    return legacy
-
-
 class Open3DPluginWindow:
     """Create and manage a single Open3D WebRTC GUI window.
     """
@@ -434,9 +414,8 @@ class Open3DPluginWindow:
                 geometry = self.data_reader.read_geometry(
                     self.run, tag, self.step, self.batch_idx, self.step_to_idx)
                 _log.debug(f"Displaying geometry {geometry_name}:{geometry}")
-                pp_geometry = _postprocess(geometry)
                 _async_event_loop.run_sync(self.window.add_geometry,
-                                           geometry_name, pp_geometry)
+                                           geometry_name, geometry)
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
                 _log.debug(f"Removing geometry {current_item}")
@@ -444,6 +423,7 @@ class Open3DPluginWindow:
                                            current_item)
         self.geometry_list = new_geometry_list
 
+        _async_event_loop.run_sync(self.window.reset_camera_to_default)
         _async_event_loop.run_sync(self.window.post_redraw)
 
         if not self.init_done.is_set():
@@ -512,8 +492,9 @@ class Open3DPlugin(base_plugin.TBPlugin):
         o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)
         # Dummy window to ensure GUI remains active even if all user windows are
         # closed.
-        _async_event_loop.run_sync(gui.Application.instance.create_window,
-                                   "Open3D Dummy Window", 32, 32)
+        self._dummy_window = _async_event_loop.run_sync(
+            gui.Application.instance.create_window, "Open3D Dummy Window", 32,
+            32)
 
     def get_plugin_apps(self):
         """Returns a set of WSGI applications that the plugin implements.

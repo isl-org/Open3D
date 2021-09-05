@@ -24,6 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+"""Summary writer for the TensorBoard Open3D plugin"""
 import threading
 import os
 import socket
@@ -60,7 +61,7 @@ except ImportError:
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 from open3d.visualization.tensorboard_plugin import metadata
-_log = metadata.log
+from open3d.visualization.tensorboard_plugin.util import _log
 
 
 class _AsyncDataWriter:
@@ -199,8 +200,7 @@ def _color_to_uint8(color_data):
         return color_data
     if color_data.dtype == o3d.core.uint16:
         return (color_data / 255).to(dtype=o3d.core.uint8)
-    # TODO: This wraps around instead of clipping
-    return (255 * color_data).to(dtype=o3d.core.uint8)
+    return (255 * color_data.clip(0, 1)).to(dtype=o3d.core.uint8)
 
 
 def _to_integer(tensor):
@@ -212,7 +212,7 @@ def _to_integer(tensor):
         if val.ndim != 0:
             return None
         return val
-    except (ValueError, RuntimeError):
+    except (TypeError, ValueError, RuntimeError):
         return None
 
 
@@ -391,12 +391,12 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     return geometry_metadata.SerializeToString()
 
 
-def add_3d(name, data, step=None, max_outputs=1, description=None):
+def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
     """Write 3D geometry data as summary.
 
     Args:
-      name: A name for this summary. The summary tag used for TensorBoard will
-        be this name prefixed by any active name scopes.
+      name / tag: A name for this summary. The summary tag used for TensorBoard
+        will be this name prefixed by any active name scopes.
       data: A dictionary of ``Tensor``s representing 3D data. Tensorflow,
         PyTorch, Numpy and Open3D tensors are supported. The following keys
         are supported:
@@ -414,12 +414,14 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
         converted to uint8 range [0,255]. Other data types will be clipped into
         an allowed range for safe casting to uint8.
 
-        Any data tensor, may be replaced by an int scalar referring to a
+        Any data tensor, may be replaced by an ``int`` scalar referring to a
         previous step. This allows reusing a previously written property in case
         that it does not change at different steps.
       step: Explicit ``int64``-castable monotonic step value for this summary.
-        If omitted, this defaults to `tf.summary.experimental.get_step()`, which
-        must not be None.
+        [`TensorFlow`: If ``None``, this defaults to
+        `tf.summary.experimental.get_step()`, which must not be ``None``.]
+      logdir: The logging directory used to create the SummaryWriter.
+        [`PyTorch`: This will be inferred if not provided or ``None``.]
       max_outputs: Optional ``int`` or rank-0 integer ``Tensor``. At most this
         many images will be emitted at each step. When more than
         `max_outputs` many images are provided, the first ``max_outputs`` many
@@ -444,6 +446,8 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
         step = tf.summary.experimental.get_step()
     if step is None:
         raise ValueError("Step is not provided or set.")
+    if logdir is None:
+        raise ValueError("logdir must be provided with TensorFlow.")
 
     summary_metadata = metadata.create_summary_metadata(description=description)
     # TODO(https://github.com/tensorflow/tensorboard/issues/2109): remove fallback
@@ -457,10 +461,6 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
         # record_if() returns True.
         @lazy_tensor_creator.LazyTensorCreator
         def lazy_tensor():
-            # TODO(@ssheorey): Use public API to get logdir
-            from tensorflow.python.ops.summary_ops_v2 import _summary_state
-            logdir = _summary_state.writer._metadata['logdir'].numpy().decode(
-                'utf-8')
             write_dir = PluginDirectory(logdir, metadata.PLUGIN_NAME)
             geometry_metadata_string = _write_geometry_data(
                 write_dir, tag, step, data, max_outputs)
@@ -475,15 +475,17 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
 def _add_3d_torch(self,
                   tag,
                   data,
-                  step=None,
+                  step,
+                  logdir=None,
                   max_outputs=1,
-                  description=None,
-                  walltime=None):
+                  description=None):
+    walltime = None
     _add_3d_torch.__doc__ = add_3d.__doc__  # Copy docstring from TF function
     if step is None:
         raise ValueError("Step is not provided or set.")
     summary_metadata = metadata.create_summary_metadata(description=description)
-    logdir = self._get_file_writer().get_logdir()
+    if logdir is None:
+        logdir = self._get_file_writer().get_logdir()
     write_dir = PluginDirectory(logdir, metadata.PLUGIN_NAME)
     geometry_metadata_string = _write_geometry_data(write_dir, tag, step, data,
                                                     max_outputs)
