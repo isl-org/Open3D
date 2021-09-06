@@ -224,7 +224,7 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
     step_ref = _to_integer(tensor)
     if step_ref is not None:
         if step_ref < 0 or step_ref >= step:
-            raise ValueError(f"Out of order step refernce {step_ref} for "
+            raise ValueError(f"Out of order step reference {step_ref} for "
                              f"property {prop} at step {step}")
         geometry_metadata.property_references.add(
             geometry_property=plugin_data_pb2.Open3DPluginData.GeometryProperty.

@@ -32,15 +32,8 @@ import json
 
 import numpy as np
 from tensorboard.plugins import base_plugin
-from tensorboard.backend.event_processing.plugin_event_multiplexer import EventMultiplexer
-from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
 import werkzeug
 from werkzeug import wrappers
-
-try:
-    from tensorflow.io.gfile import GFile as _fileopen
-except ImportError:
-    _fileopen = open
 
 if sys.platform == 'darwin':
     raise NotImplementedError("Open3D for TensorBoard does not run on macOS.")
@@ -55,137 +48,8 @@ from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 webrtc_server.enable_webrtc()
 from open3d.visualization._async_event_loop import _async_event_loop
 from open3d.visualization.tensorboard_plugin import metadata
-from open3d.visualization.tensorboard_plugin.util import LRUCache, _log
-
-
-class Open3DPluginDataReader:
-    """Manage TB event data and geometry data for common use by all
-    Open3DPluginWindow instances. This is thread safe for simultaneous use by
-    multiple browser clients with a multi-threaded web server. Read geometry
-    data is cached in memory.
-
-    Args:
-        logdir (str): TensorBoard logs directory.
-        cache_max_items (int): Max geometry elements to be cached in memory.
-    """
-
-    def __init__(self, logdir, cache_max_items=128):
-        self.logdir = logdir
-        self.event_mux = EventMultiplexer(tensor_size_guidance={
-            metadata.PLUGIN_NAME: 0  # Store all metadata in RAM
-        }).AddRunsFromDirectory(logdir)
-        self._run_to_tags = {}
-        self._event_lock = threading.Lock()  # Protect TB event file data
-        # Geometry data reading
-        self._tensor_events = dict()
-        self.geometry_cache = LRUCache(max_items=cache_max_items)
-        self._file_handles = {}  # {filename, (open_handle, read_lock)}
-        self._file_handles_lock = threading.Lock()
-        self.reload_events()
-
-    def reload_events(self):
-        """Reload event file"""
-        self.event_mux.Reload()
-        run_tags = self.event_mux.PluginRunToTagToContent(metadata.PLUGIN_NAME)
-        with self._event_lock:
-            self._run_to_tags = {
-                run: list(tagdict.keys()) for run, tagdict in run_tags.items()
-            }
-            self._tensor_events = dict()  # Invalidate index
-        # Close all open files
-        with self._file_handles_lock:
-            while len(self._file_handles) > 0:
-                unused_filename, file_handle = self._file_handles.popitem()
-                with file_handle[1]:
-                    file_handle[0].close()
-
-        _log.debug(f"Event data reloaded: {self._run_to_tags}")
-
-    def is_active(self):
-        """Do we have any Open3D data to display?"""
-        with self._event_lock:
-            return any(len(tags) > 0 for tags in self._run_to_tags.values())
-
-    @property
-    def run_to_tags(self):
-        """Locked access to the run_to_tags map."""
-        with self._event_lock:
-            return self._run_to_tags
-
-    def tensor_events(self, run):
-        with self._event_lock:
-            if run not in self._tensor_events:
-                self._tensor_events[run] = {
-                    tag: self.event_mux.Tensors(run, tag)
-                    for tag in self._run_to_tags[run]
-                }
-            return self._tensor_events[run]
-
-    def read_geometry(self, run, tag, step, batch_idx, step_to_idx):
-        """Geometry reader from msgpack files.
-        TODO(ssheorey): Add CRC-32C
-        """
-        idx = step_to_idx[step]
-        metadata_proto = plugin_data_pb2.Open3DPluginData()
-        run_tensor_events = self.tensor_events(run)
-        metadata_proto.ParseFromString(
-            run_tensor_events[tag][idx].tensor_proto.string_val[0])
-        data_dir = PluginDirectory(os.path.join(self.logdir, run),
-                                   metadata.PLUGIN_NAME)
-        filename = os.path.join(data_dir, metadata_proto.batch_index.filename)
-        read_location = metadata_proto.batch_index.start_size[batch_idx].start
-        read_size = metadata_proto.batch_index.start_size[batch_idx].size
-        cache_key = (filename, read_location, read_size, run, tag, step,
-                     batch_idx)
-        geometry = self.geometry_cache.get(cache_key)
-        if geometry is None:  # Read from storage
-            with self._file_handles_lock:
-                if filename not in self._file_handles:
-                    self._file_handles[filename] = (_fileopen(filename, "rb"),
-                                                    threading.Lock())
-                    if not self._file_handles[filename][0].seekable():
-                        raise RuntimeError(
-                            filename +
-                            " does not support seeking. This storage is not supported."
-                        )
-                # lock to seek + read
-                file_handle = self._file_handles[filename]
-                file_handle[1].acquire()
-
-            file_handle[0].seek(read_location)
-            buf = file_handle[0].read(read_size)
-            file_handle[1].release()
-            msg_tag, msg_step, geometry = o3d.io.rpc.data_buffer_to_meta_geometry(
-                buf)
-            if geometry is None:
-                raise IOError(f"Geometry {cache_key} reading failed! Possible "
-                              "msgpack or TensorFlow event file corruption.")
-            if tag != msg_tag or step != msg_step:
-                _log.warning(
-                    f"Mismatch between TensorFlow event (tag={tag}, step={step}) and "
-                    f"mesgpack (tag={msg_tag}, step={msg_step}) data. Possible data"
-                    " corruption.")
-            _log.debug(f"Geometry {cache_key} reading successful!")
-            self.geometry_cache.put(cache_key, geometry)
-
-        # Fill in properties by reference
-        for prop_ref in metadata_proto.property_references:
-            prop = plugin_data_pb2.Open3DPluginData.GeometryProperty.Name(
-                prop_ref.geometry_property)
-            if prop_ref.step_ref >= step:
-                _log.warning(
-                    f"Incorrect future step reference {prop_ref.step_ref} for"
-                    f" property {prop} of geometry at step {step}. Ignoring.")
-                continue
-            geometry_ref = self.read_geometry(run, tag, prop_ref.step_ref,
-                                              batch_idx, step_to_idx)
-            # "vertex_normals" -> ["vertex", "normals"]
-            prop_map, prop_attribute = prop.split("_")
-            # geometry.vertex["normals" = geometry_ref.vertex["normals"]
-            getattr(geometry, prop_map)[prop_attribute] = getattr(
-                geometry_ref, prop_map)[prop_attribute]
-
-        return geometry
+from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
+from open3d.visualization.tensorboard_plugin.util import _log
 
 
 class Open3DPluginWindow:
