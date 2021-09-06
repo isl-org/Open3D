@@ -23,48 +23,52 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+#pragma once
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <memory>
 
-#include <cstring>
-#include <string>
+namespace open3d {
+namespace utility {
 
-#ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAUtils.h"
-#endif
+/// Set of known ISA targets.
+enum class ISATarget {
+    /* x86 */
+    SSE2 = 100,
+    SSE4 = 101,
+    AVX = 102,
+    AVX2 = 103,
+    AVX512KNL = 104,
+    AVX512SKX = 105,
+    /* ARM */
+    NEON = 200,
+    /* GPU */
+    GENX = 300,
+    /* Special values */
+    UNKNOWN = -1,
+    /* Additional value for disabled support */
+    DISABLED = -100
+};
 
-#include "open3d/Open3D.h"
-#include "tests/Tests.h"
+/// \brief ISA information.
+class ISAInfo {
+public:
+    static ISAInfo& GetInstance();
 
-#ifdef BUILD_CUDA_MODULE
-/// Returns true if --disable_p2p flag is used.
-bool ShallDisableP2P(int argc, char** argv) {
-    bool shall_disable_p2p = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--disable_p2p") == 0) {
-            shall_disable_p2p = true;
-            break;
-        }
-    }
-    return shall_disable_p2p;
-}
-#endif
+    ~ISAInfo() = default;
+    ISAInfo(const ISAInfo&) = delete;
+    void operator=(const ISAInfo&) = delete;
 
-int main(int argc, char** argv) {
-    using namespace open3d;
+    /// Returns the dispatched ISA target that will be used in kernel code.
+    ISATarget SelectedTarget() const;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    utility::CPUInfo::GetInstance().Print();
-    utility::ISAInfo::GetInstance().Print();
+    /// Prints ISAInfo in the console.
+    void Print() const;
 
-#ifdef BUILD_CUDA_MODULE
-    if (ShallDisableP2P(argc, argv)) {
-        core::CUDAState::GetInstance().ForceDisableP2PForTesting();
-        utility::LogInfo("P2P device transfer has been disabled.");
-    }
-#endif
+private:
+    ISAInfo();
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
 
-    testing::InitGoogleMock(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+}  // namespace utility
+}  // namespace open3d

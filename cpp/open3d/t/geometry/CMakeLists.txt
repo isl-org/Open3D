@@ -1,6 +1,6 @@
 add_subdirectory(kernel)
 
-add_library(tgeometry OBJECT)
+open3d_ispc_add_library(tgeometry OBJECT)
 
 target_sources(tgeometry PRIVATE
     Image.cpp
