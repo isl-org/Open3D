@@ -23,7 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
 """Summary writer for the TensorBoard Open3D plugin"""
 import threading
 import os
@@ -192,26 +191,25 @@ def _color_to_uint8(color_data):
         color_data: o3d.core.Tensor [B,N,3] with any dtype. Float dtypes are
         expected to have values in [0,1] and 8 bit Int dtypes in [0,255] and 16
         bit Int types in [0,2^16-1]
+
     Returns:
         color_data with the same shape, but as uint8 dtype.
-
     """
     if color_data.dtype == o3d.core.uint8:
         return color_data
     if color_data.dtype == o3d.core.uint16:
-        return (color_data / 255).to(dtype=o3d.core.uint8)
+        return (color_data // 256).to(dtype=o3d.core.uint8)
     return (255 * color_data.clip(0, 1)).to(dtype=o3d.core.uint8)
 
 
 def _to_integer(tensor):
-    """Test converting to scalar integer (np.int64) and return it. Return None
-    on failure.
+    """Test converting a tensor (TF, PyTorch, Open3D, Numpy array or a scalar)
+    to scalar integer (np.int64) and return it. Return None on failure.
     """
     try:
-        val = np.int64(tensor)
-        if val.ndim != 0:
+        if hasattr(tensor, 'ndim') and tensor.ndim > 0:
             return None
-        return val
+        return np.int64(tensor)
     except (TypeError, ValueError, RuntimeError):
         return None
 
@@ -224,7 +222,7 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
     step_ref = _to_integer(tensor)
     if step_ref is not None:
         if step_ref < 0 or step_ref >= step:
-            raise ValueError(f"Out of order step refernce {step_ref} for "
+            raise ValueError(f"Out of order step reference {step_ref} for "
                              f"property {prop} at step {step}")
         geometry_metadata.property_references.add(
             geometry_property=plugin_data_pb2.Open3DPluginData.GeometryProperty.
@@ -235,10 +233,10 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
         save_tensor = _to_o3d(tensor)
         save_tensor.reshape((1,) + tuple(save_tensor.shape))
     elif tensor.ndim == 3:
-        save_tensor = _to_o3d(tensor[:max_outputs, ...])
+        save_tensor = _to_o3d(tensor[:max_outputs])
     else:
-        raise ValueError(f"Property {prop} tensor should be of shape "
-                         f"BxNxNp but is {tensor.shape}.")
+        raise ValueError(f"Property {prop} tensor should be of shape (N,Np) or"
+                         f" (B,N,Np) or a scalar but is {tensor.shape}.")
 
     # Datatype conversion
     if prop.endswith("_colors"):

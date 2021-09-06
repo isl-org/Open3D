@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
 
 // To generate plugin_data_pb2.py, use this command:
 // protoc -I=. --python_out=. plugin_data.proto

@@ -23,13 +23,12 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
 """Run the GUI event loop in a non-main thread. This allows using the
 GUI from plugins to other apps (e.g.: Jupyter or Tensorboard) where the GUI
 cannot be started in the main thread. Currently does not work in macOS.
 
 .. note:: This is a singleton class implemented with this module as a
-   holder. The ``_async_event_loop`` singleton is started whenever this
+   holder. The ``async_event_loop`` singleton is started whenever this
    module is imported.  If you are using remote visualization with WebRTC,
    you must call ``enable_webrtc()`` before importing this module.
 """
@@ -109,4 +108,4 @@ class _AsyncEventLoop:
 # The _AsyncEventLoop class shall only be used to create a singleton instance.
 # There are different ways to achieve this, here we use the module as a holder
 # for singleton variables, see: https://stackoverflow.com/a/31887/1255535.
-_async_event_loop = _AsyncEventLoop()
+async_event_loop = _AsyncEventLoop()
