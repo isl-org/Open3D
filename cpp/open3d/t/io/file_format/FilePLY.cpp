@@ -44,10 +44,12 @@ namespace io {
 struct PLYReaderState {
     struct AttrState {
         std::string name_;
+        void *data_ptr_;
+        int stride_;
         int64_t size_;
-        core::Tensor data_;
         int64_t current_size_;
     };
+
     // Allow fast access of attr_state by name.
     std::unordered_map<std::string, std::shared_ptr<AttrState>>
             name_to_attr_state_;
@@ -68,39 +70,17 @@ static int ReadAttributeCallback(p_ply_argument argument) {
         return 0;
     }
 
-    T *data_ptr = attr_state->data_.GetDataPtr<T>();
-    data_ptr[attr_state->current_size_++] =
-            static_cast<T>(ply_get_argument_value(argument));
+    T *data_ptr = static_cast<T *>(attr_state->data_ptr_);
+    const int64_t index = attr_state->stride_ * attr_state->stride_ +
+                          attr_state->current_size_;
+    data_ptr[index] = static_cast<T>(ply_get_argument_value(argument));
 
-    if (attr_state->current_size_ % 1000 == 0) {
+    ++attr_state->current_size_;
+
+    if (attr_state->stride_ == 0 && attr_state->current_size_ % 1000 == 0) {
         state_ptr->progress_bar_->Update(attr_state->current_size_);
     }
     return 1;
-}
-
-// TODO: ConcatColumns can be implemented in Tensor.cpp as a generic function.
-static core::Tensor ConcatColumns(const core::Tensor &a,
-                                  const core::Tensor &b,
-                                  const core::Tensor &c) {
-    if (a.NumDims() != 1 || b.NumDims() != 1 || c.NumDims() != 1) {
-        utility::LogError("Read PLY failed: only 1D attributes are supported.");
-    }
-
-    if ((a.GetLength() != b.GetLength()) || (a.GetLength() != c.GetLength())) {
-        utility::LogError("Read PLY failed: size mismatch in base attributes.");
-    }
-    if ((a.GetDtype() != b.GetDtype()) || (a.GetDtype() != c.GetDtype())) {
-        utility::LogError(
-                "Read PLY failed: datatype mismatch in base attributes.");
-    }
-
-    core::Tensor combined =
-            core::Tensor::Empty({a.GetLength(), 3}, a.GetDtype());
-    combined.IndexExtract(1, 0) = a;
-    combined.IndexExtract(1, 1) = b;
-    combined.IndexExtract(1, 2) = c;
-
-    return combined;
 }
 
 // Some of these datatypes are supported by Tensor but are added here just
@@ -209,6 +189,10 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         return false;
     }
 
+    bool positions_init = false;
+    bool normals_init = false;
+    bool colors_init = false;
+
     p_ply_property attribute = ply_get_next_property(element, nullptr);
 
     while (attribute) {
@@ -222,6 +206,7 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                     "datatype \"{}\".",
                     name, GetDtypeString(type));
         } else {
+            auto attr_state = std::make_shared<PLYReaderState::AttrState>();
             long size = 0;
             long id = static_cast<long>(state.id_to_attr_state_.size());
             DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(type), [&]() {
@@ -235,15 +220,82 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                         "size of {} ({}).",
                         name, size, element_name, element_size);
             }
+            const std::string attr_name = std::string(name);
 
-            auto attr_state = std::make_shared<PLYReaderState::AttrState>();
-            attr_state->name_ = name;
-            attr_state->data_ = core::Tensor({size}, GetDtype(type));
-            attr_state->size_ = size;
+            if (attr_name == "x" || attr_name == "y" || attr_name == "z") {
+                if (!positions_init) {
+                    pointcloud.SetPointPositions(core::Tensor::Empty(
+                            {element_size, 3}, GetDtype(type)));
+                    positions_init = true;
+                }
+
+                attr_state->name_ = "positions";
+                attr_state->data_ptr_ =
+                        pointcloud.GetPointPositions().GetDataPtr();
+
+                if (attr_name == "x") {
+                    attr_state->stride_ = 0;
+                } else if (attr_name == "y") {
+                    attr_state->stride_ = 1;
+                } else {
+                    attr_state->stride_ = 2;
+                }
+            } else if (attr_name == "nx" || attr_name == "ny" ||
+                       attr_name == "nz") {
+                if (!normals_init) {
+                    pointcloud.SetPointNormals(core::Tensor::Empty(
+                            {element_size, 3}, GetDtype(type)));
+                    normals_init = true;
+                }
+
+                attr_state->name_ = "normals";
+                attr_state->data_ptr_ =
+                        pointcloud.GetPointNormals().GetDataPtr();
+
+                if (attr_name == "nx") {
+                    attr_state->stride_ = 0;
+                } else if (attr_name == "ny") {
+                    attr_state->stride_ = 1;
+                } else {
+                    attr_state->stride_ = 2;
+                }
+
+            } else if (attr_name == "red" || attr_name == "green" ||
+                       attr_name == "blue") {
+                if (!colors_init) {
+                    pointcloud.SetPointColors(core::Tensor::Empty(
+                            {element_size, 3}, GetDtype(type)));
+                    colors_init = true;
+                }
+
+                attr_state->name_ = "colors";
+                attr_state->data_ptr_ =
+                        pointcloud.GetPointColors().GetDataPtr();
+
+                if (attr_name == "red") {
+                    attr_state->stride_ = 0;
+                } else if (attr_name == "green") {
+                    attr_state->stride_ = 1;
+                } else {
+                    attr_state->stride_ = 2;
+                }
+            } else {
+                attr_state->name_ = attr_name;
+                attr_state->stride_ = 0;
+
+                pointcloud.SetPointAttr(
+                        attr_name,
+                        core::Tensor::Empty({size, 1}, GetDtype(type)));
+                attr_state->data_ptr_ =
+                        pointcloud.GetPointAttr(attr_name).GetDataPtr();
+            }
+
+            attr_state->size_ = element_size;
             attr_state->current_size_ = 0;
-            state.name_to_attr_state_.insert({name, attr_state});
+            state.name_to_attr_state_.insert({attr_name, attr_state});
             state.id_to_attr_state_.push_back(attr_state);
         }
+
         attribute = ply_get_next_property(element, attribute);
     }
 
@@ -258,51 +310,6 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         return false;
     }
 
-    pointcloud.Clear();
-
-    // Add base attributes.
-    if (state.name_to_attr_state_.count("x") != 0 &&
-        state.name_to_attr_state_.count("y") != 0 &&
-        state.name_to_attr_state_.count("z") != 0) {
-        core::Tensor points =
-                ConcatColumns(state.name_to_attr_state_.at("x")->data_,
-                              state.name_to_attr_state_.at("y")->data_,
-                              state.name_to_attr_state_.at("z")->data_);
-        state.name_to_attr_state_.erase("x");
-        state.name_to_attr_state_.erase("y");
-        state.name_to_attr_state_.erase("z");
-        pointcloud.SetPointPositions(points);
-    }
-    if (state.name_to_attr_state_.count("nx") != 0 &&
-        state.name_to_attr_state_.count("ny") != 0 &&
-        state.name_to_attr_state_.count("nz") != 0) {
-        core::Tensor normals =
-                ConcatColumns(state.name_to_attr_state_.at("nx")->data_,
-                              state.name_to_attr_state_.at("ny")->data_,
-                              state.name_to_attr_state_.at("nz")->data_);
-        state.name_to_attr_state_.erase("nx");
-        state.name_to_attr_state_.erase("ny");
-        state.name_to_attr_state_.erase("nz");
-        pointcloud.SetPointNormals(normals);
-    }
-    if (state.name_to_attr_state_.count("red") != 0 &&
-        state.name_to_attr_state_.count("green") != 0 &&
-        state.name_to_attr_state_.count("blue") != 0) {
-        core::Tensor colors =
-                ConcatColumns(state.name_to_attr_state_.at("red")->data_,
-                              state.name_to_attr_state_.at("green")->data_,
-                              state.name_to_attr_state_.at("blue")->data_);
-        state.name_to_attr_state_.erase("red");
-        state.name_to_attr_state_.erase("green");
-        state.name_to_attr_state_.erase("blue");
-        pointcloud.SetPointColors(colors);
-    }
-
-    // Add rest of the attributes.
-    for (auto const &it : state.name_to_attr_state_) {
-        pointcloud.SetPointAttr(it.second->name_,
-                                it.second->data_.Reshape({element_size, 1}));
-    }
     ply_close(ply_file);
     reporter.Finish();
 
