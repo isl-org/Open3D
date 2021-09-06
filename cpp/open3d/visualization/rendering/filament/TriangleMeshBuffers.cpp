@@ -568,6 +568,7 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
         return {};
     }
 
+    // Vertices
     const size_t vertex_array_size = n_vertices * 3 * sizeof(float);
     float* vertex_array = static_cast<float*>(malloc(vertex_array_size));
     memcpy(vertex_array, points.GetDataPtr(), vertex_array_size);
@@ -576,25 +577,23 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
             GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(pts_descriptor));
 
+    // Per-vertex color
     const size_t color_array_size = n_vertices * 3 * sizeof(float);
     float* color_array = static_cast<float*>(malloc(color_array_size));
     if (geometry_.HasVertexColors()) {
         memcpy(color_array, geometry_.GetVertexColors().GetDataPtr(),
                color_array_size);
-        VertexBuffer::BufferDescriptor color_descriptor(
-                color_array, color_array_size,
-                GeometryBuffersBuilder::DeallocateBuffer);
-        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
     } else {
         for (size_t i = 0; i < n_vertices * 3; ++i) {
             color_array[i] = 1.f;
         }
-        VertexBuffer::BufferDescriptor color_descriptor(
-                color_array, color_array_size,
-                GeometryBuffersBuilder::DeallocateBuffer);
-        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
     }
+    VertexBuffer::BufferDescriptor color_descriptor(
+            color_array, color_array_size,
+            GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
 
+    // Normals
     const size_t normal_array_size = n_vertices * 4 * sizeof(float);
     if (geometry_.HasVertexNormals()) {
         const auto& normals = geometry_.GetVertexNormals();
@@ -628,10 +627,15 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
         vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
     }
 
+    // UVs
     const size_t uv_array_size = n_vertices * 2 * sizeof(float);
     float* uv_array = static_cast<float*>(malloc(uv_array_size));
-    // TODO: Support UVs
-    memset(uv_array, 0, uv_array_size);
+    if (geometry_.HasVertexAttr("texture_uvs")) {
+        memcpy(uv_array, geometry_.GetVertexAttr("texture_uvs").GetDataPtr(),
+               uv_array_size);
+    } else {
+        memset(uv_array, 0x0, uv_array_size);
+    }
     VertexBuffer::BufferDescriptor uv_descriptor(
             uv_array, uv_array_size, GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 3, std::move(uv_descriptor));
