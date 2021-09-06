@@ -46,6 +46,7 @@ struct PLYReaderState {
         std::string name_;
         void *data_ptr_;
         int stride_;
+        int offset_;
         int64_t size_;
         int64_t current_size_;
     };
@@ -71,8 +72,8 @@ static int ReadAttributeCallback(p_ply_argument argument) {
     }
 
     T *data_ptr = static_cast<T *>(attr_state->data_ptr_);
-    const int64_t index = attr_state->stride_ * attr_state->stride_ +
-                          attr_state->current_size_;
+    const int64_t index = attr_state->stride_ * attr_state->current_size_ +
+                          attr_state->offset_;
     data_ptr[index] = static_cast<T>(ply_get_argument_value(argument));
 
     ++attr_state->current_size_;
@@ -233,12 +234,13 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                 attr_state->data_ptr_ =
                         pointcloud.GetPointPositions().GetDataPtr();
 
+                attr_state->stride_ = 3;
                 if (attr_name == "x") {
-                    attr_state->stride_ = 0;
+                    attr_state->offset_ = 0;
                 } else if (attr_name == "y") {
-                    attr_state->stride_ = 1;
+                    attr_state->offset_ = 1;
                 } else {
-                    attr_state->stride_ = 2;
+                    attr_state->offset_ = 2;
                 }
             } else if (attr_name == "nx" || attr_name == "ny" ||
                        attr_name == "nz") {
@@ -252,12 +254,13 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                 attr_state->data_ptr_ =
                         pointcloud.GetPointNormals().GetDataPtr();
 
+                attr_state->stride_ = 3;
                 if (attr_name == "nx") {
-                    attr_state->stride_ = 0;
+                    attr_state->offset_ = 0;
                 } else if (attr_name == "ny") {
-                    attr_state->stride_ = 1;
+                    attr_state->offset_ = 1;
                 } else {
-                    attr_state->stride_ = 2;
+                    attr_state->offset_ = 2;
                 }
 
             } else if (attr_name == "red" || attr_name == "green" ||
@@ -272,16 +275,18 @@ bool ReadPointCloudFromPLY(const std::string &filename,
                 attr_state->data_ptr_ =
                         pointcloud.GetPointColors().GetDataPtr();
 
+                attr_state->stride_ = 3;
                 if (attr_name == "red") {
-                    attr_state->stride_ = 0;
+                    attr_state->offset_ = 0;
                 } else if (attr_name == "green") {
-                    attr_state->stride_ = 1;
+                    attr_state->offset_ = 1;
                 } else {
-                    attr_state->stride_ = 2;
+                    attr_state->offset_ = 2;
                 }
             } else {
                 attr_state->name_ = attr_name;
-                attr_state->stride_ = 0;
+                attr_state->stride_ = 1;
+                attr_state->offset_ = 0;
 
                 pointcloud.SetPointAttr(
                         attr_name,
