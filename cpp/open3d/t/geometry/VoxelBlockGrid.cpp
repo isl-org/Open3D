@@ -341,8 +341,11 @@ PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
             block_resolution_, voxel_size_, weight_threshold, estimated_number);
 
     auto pcd = PointCloud(points.Slice(0, 0, estimated_number));
-    pcd.SetPointColors(colors.Slice(0, 0, estimated_number));
     pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
+
+    if (colors.GetLength() == normals.GetLength()) {
+        pcd.SetPointColors(colors.Slice(0, 0, estimated_number));
+    }
 
     return pcd;
 }
@@ -363,7 +366,6 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
             core::Tensor::Arange(0, num_blocks, 1, core::Int32, device);
     inverse_index_map.IndexSet({active_buf_indices_i32.To(core::Int64)},
                                iota_map);
-    printf("start kernel\n");
 
     core::Tensor vertices, triangles, vertex_normals, vertex_colors;
     int vertex_count = estimated_number;
@@ -377,8 +379,10 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
             weight_threshold, vertex_count);
 
     TriangleMesh mesh(vertices, triangles);
-    mesh.SetVertexColors(vertex_colors);
     mesh.SetVertexNormals(vertex_normals);
+    if (vertex_colors.GetLength() == vertices.GetLength()) {
+        mesh.SetVertexColors(vertex_colors);
+    }
 
     return mesh;
 }

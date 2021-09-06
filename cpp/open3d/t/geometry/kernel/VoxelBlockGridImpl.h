@@ -622,7 +622,10 @@ void ExtractPointCloudCPU
 
     const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
     const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
-    const color_t* color_base_ptr = block_values[2].GetDataPtr<color_t>();
+
+    const color_t* color_base_ptr =
+            block_values.size() < 3 ? nullptr
+                                    : block_values[2].GetDataPtr<color_t>();
 
     index_t n_blocks = indices.GetLength();
     index_t n = n_blocks * resolution3;
@@ -705,8 +708,10 @@ void ExtractPointCloudCPU
 
     // Colors
     ArrayIndexer color_indexer;
-    colors = core::Tensor({valid_size, 3}, core::Float32, device);
-    color_indexer = ArrayIndexer(colors, 1);
+    if (color_base_ptr) {
+        colors = core::Tensor({valid_size, 3}, core::Float32, device);
+        color_indexer = ArrayIndexer(colors, 1);
+    }
 
     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx) {
         auto GetLinearIdx = [&] OPEN3D_DEVICE(
@@ -793,20 +798,24 @@ void ExtractPointCloudCPU
                 normal_ptr[1] = ny / norm;
                 normal_ptr[2] = nz / norm;
 
-                float* color_ptr = color_indexer.GetDataPtr<float>(idx);
-                const color_t* color_o_ptr = color_base_ptr + 3 * linear_idx;
-                float r_o = color_o_ptr[0];
-                float g_o = color_o_ptr[1];
-                float b_o = color_o_ptr[2];
+                if (color_base_ptr) {
+                    float* color_ptr = color_indexer.GetDataPtr<float>(idx);
+                    const color_t* color_o_ptr =
+                            color_base_ptr + 3 * linear_idx;
+                    float r_o = color_o_ptr[0];
+                    float g_o = color_o_ptr[1];
+                    float b_o = color_o_ptr[2];
 
-                const color_t* color_i_ptr = color_base_ptr + 3 * linear_idx_i;
-                float r_i = color_i_ptr[0];
-                float g_i = color_i_ptr[1];
-                float b_i = color_i_ptr[2];
+                    const color_t* color_i_ptr =
+                            color_base_ptr + 3 * linear_idx_i;
+                    float r_i = color_i_ptr[0];
+                    float g_i = color_i_ptr[1];
+                    float b_i = color_i_ptr[2];
 
-                color_ptr[0] = ((1 - ratio) * r_o + ratio * r_i) / 255.0f;
-                color_ptr[1] = ((1 - ratio) * g_o + ratio * g_i) / 255.0f;
-                color_ptr[2] = ((1 - ratio) * b_o + ratio * b_i) / 255.0f;
+                    color_ptr[0] = ((1 - ratio) * r_o + ratio * r_i) / 255.0f;
+                    color_ptr[1] = ((1 - ratio) * g_o + ratio * g_i) / 255.0f;
+                    color_ptr[2] = ((1 - ratio) * b_o + ratio * b_i) / 255.0f;
+                }
             }
         }
     });
@@ -884,7 +893,10 @@ void ExtractTriangleMeshCPU
 
     const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
     const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
-    const color_t* color_base_ptr = block_values[2].GetDataPtr<color_t>();
+
+    const color_t* color_base_ptr =
+            block_values.size() < 3 ? nullptr
+                                    : block_values[2].GetDataPtr<color_t>();
 
     index_t n = n_blocks * resolution3;
 
@@ -1015,8 +1027,11 @@ void ExtractTriangleMeshCPU
     vertex_normals = core::Tensor({vertex_count, 3}, core::Float32, device);
     ArrayIndexer normal_indexer = ArrayIndexer(vertex_normals, 1);
 
-    vertex_colors = core::Tensor({vertex_count, 3}, core::Float32, device);
-    ArrayIndexer color_indexer = ArrayIndexer(vertex_colors, 1);
+    ArrayIndexer color_indexer;
+    if (color_base_ptr) {
+        vertex_colors = core::Tensor({vertex_count, 3}, core::Float32, device);
+        color_indexer = ArrayIndexer(vertex_colors, 1);
+    }
 
     ArrayIndexer block_keys_indexer(block_keys, 1);
     ArrayIndexer vertex_indexer(vertices, 1);
@@ -1124,18 +1139,20 @@ void ExtractTriangleMeshCPU
             normal_ptr[1] = ny / norm;
             normal_ptr[2] = nz / norm;
 
-            float* color_ptr = color_indexer.GetDataPtr<float>(idx);
-            float r_o = color_base_ptr[linear_idx * 3 + 0];
-            float g_o = color_base_ptr[linear_idx * 3 + 1];
-            float b_o = color_base_ptr[linear_idx * 3 + 2];
+            if (color_base_ptr) {
+                float* color_ptr = color_indexer.GetDataPtr<float>(idx);
+                float r_o = color_base_ptr[linear_idx * 3 + 0];
+                float g_o = color_base_ptr[linear_idx * 3 + 1];
+                float b_o = color_base_ptr[linear_idx * 3 + 2];
 
-            float r_e = color_base_ptr[linear_idx_e * 3 + 0];
-            float g_e = color_base_ptr[linear_idx_e * 3 + 1];
-            float b_e = color_base_ptr[linear_idx_e * 3 + 2];
+                float r_e = color_base_ptr[linear_idx_e * 3 + 0];
+                float g_e = color_base_ptr[linear_idx_e * 3 + 1];
+                float b_e = color_base_ptr[linear_idx_e * 3 + 2];
 
-            color_ptr[0] = ((1 - ratio) * r_o + ratio * r_e) / 255.0f;
-            color_ptr[1] = ((1 - ratio) * g_o + ratio * g_e) / 255.0f;
-            color_ptr[2] = ((1 - ratio) * b_o + ratio * b_e) / 255.0f;
+                color_ptr[0] = ((1 - ratio) * r_o + ratio * r_e) / 255.0f;
+                color_ptr[1] = ((1 - ratio) * g_o + ratio * g_e) / 255.0f;
+                color_ptr[2] = ((1 - ratio) * b_o + ratio * b_e) / 255.0f;
+            }
         }
     });
 

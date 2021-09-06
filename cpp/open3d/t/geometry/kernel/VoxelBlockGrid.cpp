@@ -211,8 +211,13 @@ void ExtractPointCloud(const core::Tensor& block_indices,
     core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
 
     using tsdf_t = float;
+
+    // TODO: use TensorMap instead
+    core::Dtype color_dtype = (block_values.size() < 3)
+                                      ? core::Dtype::Float32
+                                      : block_values[2].GetDtype();
     DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-            block_values[1].GetDtype(), block_values[2].GetDtype(), [&] {
+            block_values[1].GetDtype(), color_dtype, [&] {
                 if (device_type == core::Device::DeviceType::CPU) {
                     ExtractPointCloudCPU<tsdf_t, weight_t, color_t>(
                             block_indices, nb_block_indices, nb_block_masks,
@@ -248,8 +253,11 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
     core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
 
     using tsdf_t = float;
+    core::Dtype color_dtype = (block_values.size() < 3)
+                                      ? core::Dtype::Float32
+                                      : block_values[2].GetDtype();
     DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-            block_values[1].GetDtype(), block_values[2].GetDtype(), [&] {
+            block_values[1].GetDtype(), color_dtype, [&] {
                 if (device_type == core::Device::DeviceType::CPU) {
                     ExtractTriangleMeshCPU<tsdf_t, weight_t, color_t>(
                             block_indices, inv_block_indices, nb_block_indices,
