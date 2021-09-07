@@ -50,10 +50,6 @@ struct PLYReaderState {
         int64_t size_;
         int64_t current_size_;
     };
-
-    // Allow fast access of attr_state by name.
-    std::unordered_map<std::string, std::shared_ptr<AttrState>>
-            name_to_attr_state_;
     // Allow fast access of attr_state by index.
     std::vector<std::shared_ptr<AttrState>> id_to_attr_state_;
     utility::CountingProgressReporter *progress_bar_;
@@ -78,7 +74,7 @@ static int ReadAttributeCallback(p_ply_argument argument) {
 
     ++attr_state->current_size_;
 
-    if (attr_state->stride_ == 0 && attr_state->current_size_ % 1000 == 0) {
+    if (attr_state->offset_ == 0 && attr_state->current_size_ % 1000 == 0) {
         state_ptr->progress_bar_->Update(attr_state->current_size_);
     }
     return 1;
@@ -154,6 +150,27 @@ static core::Dtype GetDtype(e_ply_type type) {
     }
 }
 
+static std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
+        const std::string &name) {
+    // Positions attribute.
+    if (name == "x") return std::make_tuple("positions", 3, 0);
+    if (name == "y") return std::make_tuple("positions", 3, 1);
+    if (name == "z") return std::make_tuple("positions", 3, 2);
+
+    // Normals attribute.
+    if (name == "nx") return std::make_tuple("normals", 3, 0);
+    if (name == "ny") return std::make_tuple("normals", 3, 1);
+    if (name == "nz") return std::make_tuple("normals", 3, 2);
+
+    // Colors attribute.
+    if (name == "red") return std::make_tuple("colors", 3, 0);
+    if (name == "green") return std::make_tuple("colors", 3, 1);
+    if (name == "blue") return std::make_tuple("colors", 3, 2);
+
+    // Other attribute.
+    return std::make_tuple(name, 1, 0);
+}
+
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const open3d::io::ReadPointCloudOption &params) {
@@ -190,9 +207,8 @@ bool ReadPointCloudFromPLY(const std::string &filename,
         return false;
     }
 
-    bool positions_init = false;
-    bool normals_init = false;
-    bool colors_init = false;
+    std::unordered_map<std::string, bool> primary_attr_init = {
+            {"positions", false}, {"normals", false}, {"colors", false}};
 
     p_ply_property attribute = ply_get_next_property(element, nullptr);
 
@@ -223,81 +239,31 @@ bool ReadPointCloudFromPLY(const std::string &filename,
             }
             const std::string attr_name = std::string(name);
 
-            if (attr_name == "x" || attr_name == "y" || attr_name == "z") {
-                if (!positions_init) {
-                    pointcloud.SetPointPositions(core::Tensor::Empty(
-                            {element_size, 3}, GetDtype(type)));
-                    positions_init = true;
-                }
+            std::tie(attr_state->name_, attr_state->stride_,
+                     attr_state->offset_) =
+                    GetNameStrideOffsetForAttribute(attr_name);
 
-                attr_state->name_ = "positions";
-                attr_state->data_ptr_ =
-                        pointcloud.GetPointPositions().GetDataPtr();
-
-                attr_state->stride_ = 3;
-                if (attr_name == "x") {
-                    attr_state->offset_ = 0;
-                } else if (attr_name == "y") {
-                    attr_state->offset_ = 1;
-                } else {
-                    attr_state->offset_ = 2;
-                }
-            } else if (attr_name == "nx" || attr_name == "ny" ||
-                       attr_name == "nz") {
-                if (!normals_init) {
-                    pointcloud.SetPointNormals(core::Tensor::Empty(
-                            {element_size, 3}, GetDtype(type)));
-                    normals_init = true;
-                }
-
-                attr_state->name_ = "normals";
-                attr_state->data_ptr_ =
-                        pointcloud.GetPointNormals().GetDataPtr();
-
-                attr_state->stride_ = 3;
-                if (attr_name == "nx") {
-                    attr_state->offset_ = 0;
-                } else if (attr_name == "ny") {
-                    attr_state->offset_ = 1;
-                } else {
-                    attr_state->offset_ = 2;
-                }
-
-            } else if (attr_name == "red" || attr_name == "green" ||
-                       attr_name == "blue") {
-                if (!colors_init) {
-                    pointcloud.SetPointColors(core::Tensor::Empty(
-                            {element_size, 3}, GetDtype(type)));
-                    colors_init = true;
-                }
-
-                attr_state->name_ = "colors";
-                attr_state->data_ptr_ =
-                        pointcloud.GetPointColors().GetDataPtr();
-
-                attr_state->stride_ = 3;
-                if (attr_name == "red") {
-                    attr_state->offset_ = 0;
-                } else if (attr_name == "green") {
-                    attr_state->offset_ = 1;
-                } else {
-                    attr_state->offset_ = 2;
+            if (primary_attr_init.count(attr_state->name_)) {
+                if (primary_attr_init.at(attr_state->name_) == false) {
+                    pointcloud.SetPointAttr(
+                            attr_state->name_,
+                            core::Tensor::Empty(
+                                    {element_size, attr_state->stride_},
+                                    GetDtype(type)));
+                    primary_attr_init[attr_state->name_] = true;
                 }
             } else {
-                attr_state->name_ = attr_name;
-                attr_state->stride_ = 1;
-                attr_state->offset_ = 0;
-
                 pointcloud.SetPointAttr(
-                        attr_name,
-                        core::Tensor::Empty({size, 1}, GetDtype(type)));
-                attr_state->data_ptr_ =
-                        pointcloud.GetPointAttr(attr_name).GetDataPtr();
+                        attr_state->name_,
+                        core::Tensor::Empty({element_size, attr_state->stride_},
+                                            GetDtype(type)));
             }
+
+            attr_state->data_ptr_ =
+                    pointcloud.GetPointAttr(attr_state->name_).GetDataPtr();
 
             attr_state->size_ = element_size;
             attr_state->current_size_ = 0;
-            state.name_to_attr_state_.insert({attr_name, attr_state});
             state.id_to_attr_state_.push_back(attr_state);
         }
 
