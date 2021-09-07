@@ -1,6 +1,3 @@
-# Minium test for Open3D with OpenBLAS/LAPACK on both x86_64 and aarch64.
-# This test is intentionally kept minimal and self-contained.
-
 name: Ubuntu OpenBLAS CI
 
 on:
@@ -19,10 +16,6 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
-    env:
-      BASE_IMAGE: ubuntu:20.04
-      CMAKE_VER: cmake-3.19.7-Linux-x86_64
-      CCACHE_TAR_NAME: open3d-x86_64-ci-ccache
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -41,11 +34,7 @@ jobs:
 
       - name: Docker build
         run: |
-          docker build --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} \
-                       --build-arg CMAKE_VER=${{ env.CMAKE_VER }} \
-                       --build-arg CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} \
-                       -t open3d-openblas-ci:latest \
-                       -f .github/workflows/Dockerfile.openblas .
+          .github/workflows/docker_build.sh openblas_x86_64
 
       - name: C++ tests
         run: |
@@ -54,15 +43,9 @@ jobs:
       - name: Python tests
         run: |
           docker run --rm open3d-openblas-ci:latest \
-            pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
-
-      # https://stackoverflow.com/a/49357803/1255535
-      - name: Copy ccache out from the container
-        run: |
-          docker run -v ${GITHUB_WORKSPACE}:/opt/mount \
-            --rm --entrypoint \
-            cp open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz /opt/mount/${{ env.CCACHE_TAR_NAME }}.tar.gz
-          sudo chown $(id -u):$(id -g) ${{ env.CCACHE_TAR_NAME }}.tar.gz
+            pytest python/test/ \
+            --ignore python/test/ml_ops/ \
+            --ignore python/test/t/io/test_realsense.py
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -74,17 +57,24 @@ jobs:
 
       - name: Upload ccache to GCS
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/open3d-x86_64-ci-ccache.tar.gz gs://open3d-ci-cache/ || true
 
 
+  # How to resolve GitHub Actions ARM64 build timeout.
+  #
+  # When there are large amount of code change (e.g. changed some headers that
+  # causes re-compilation of many files), the GitHub Actions build could timeout
+  # due to excessive ccache misses. The solution is to build the branch manually
+  # and update the ccache artifacts on the Google Cloud bucket. Run:
+  #
+  # ```bash
+  # .github/workflows/docker_build.sh openblas_arm64
+  # gsutil cp open3d-arm64-ci-ccache.tar.gz gs://open3d-ci-cache/
+  # ```
   openblas_arm64:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
-    env:
-      BASE_IMAGE: arm64v8/ubuntu:20.04
-      CMAKE_VER: cmake-3.19.7-Linux-aarch64
-      CCACHE_TAR_NAME: open3d-arm64-ci-ccache
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -102,19 +92,14 @@ jobs:
           maximize_ubuntu_github_actions_build_space
 
       # https://www.stereolabs.com/docs/docker/building-arm-container-on-x86/
-      - name: Setup Docker with QEMU
+      - name: Install QEMU dependencies
         run: |
           sudo apt-get update
           sudo apt-get --yes install qemu binfmt-support qemu-user-static
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
       - name: Docker build
         run: |
-          docker build --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} \
-                       --build-arg CMAKE_VER=${{ env.CMAKE_VER }} \
-                       --build-arg CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} \
-                       -t open3d-openblas-ci:latest \
-                       -f .github/workflows/Dockerfile.openblas .
+          .github/workflows/docker_build.sh openblas_arm64
 
       - name: C++ tests
         run: |
@@ -123,15 +108,9 @@ jobs:
       - name: Python tests
         run: |
           docker run --rm open3d-openblas-ci:latest \
-            pytest python/test/ --ignore python/test/ml_ops/ --ignore python/test/t/io/test_realsense.py
-
-      # https://stackoverflow.com/a/49357803/1255535
-      - name: Copy ccache out from the container
-        run: |
-          docker run -v ${GITHUB_WORKSPACE}:/opt/mount \
-            --rm --entrypoint \
-            cp open3d-openblas-ci:latest /${{ env.CCACHE_TAR_NAME }}.tar.gz /opt/mount/${{ env.CCACHE_TAR_NAME }}.tar.gz
-          sudo chown $(id -u):$(id -g) ${{ env.CCACHE_TAR_NAME }}.tar.gz
+            pytest python/test/ \
+            --ignore python/test/ml_ops/ \
+            --ignore python/test/t/io/test_realsense.py
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -143,4 +122,4 @@ jobs:
 
       - name: Upload ccache to GCS
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/open3d-arm64-ci-ccache.tar.gz gs://open3d-ci-cache/ || true

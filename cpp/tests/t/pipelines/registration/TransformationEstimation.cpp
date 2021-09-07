@@ -29,7 +29,7 @@
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/pipelines/registration/Registration.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
