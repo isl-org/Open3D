@@ -28,7 +28,8 @@
 
 #include "pybind/open3d_pybind.h"
 
-PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, open3d::t::geometry::Image>)
+PYBIND11_MAKE_OPAQUE(
+        std::unordered_map<std::string, open3d::t::geometry::Image>)
 PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, float>)
 PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, Eigen::Vector4f>)
 
