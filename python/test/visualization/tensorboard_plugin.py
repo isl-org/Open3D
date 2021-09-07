@@ -28,6 +28,7 @@ import os
 import tempfile
 from time import sleep
 import shutil
+import subprocess as sp
 import numpy as np
 import pytest
 pytest.importorskip("tensorboard")
@@ -36,6 +37,8 @@ import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.util import to_dict_batch
 from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
+
+from open3d_test import test_data_dir
 
 
 @pytest.fixture
@@ -173,8 +176,9 @@ def test_pytorch_summary(geometry_data):
 
 def test_plugin_data_reader(geometry_data):
     """Test reading summary data"""
-    logdir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                          'test_logdir')
+    shutil.unpack_archive(
+        os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
+    logdir = "test_tensorboard_plugin"
     cube = geometry_data['cube']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
@@ -197,3 +201,5 @@ def test_plugin_data_reader(geometry_data):
                 cube_out.vertex['normals'] == cube_ref.vertex['normals']).all()
             assert (
                 cube_out.vertex['colors'] == cube_ref.vertex['colors']).all()
+
+    shutil.rmtree(logdir)

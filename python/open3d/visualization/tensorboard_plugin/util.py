@@ -32,6 +32,7 @@ import threading
 import numpy as np
 from tensorboard.backend.event_processing.plugin_event_multiplexer import EventMultiplexer
 from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
+from tensorboard.compat.tensorflow_stub.pywrap_tensorflow import masked_crc32c
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 from open3d.visualization.tensorboard_plugin import metadata
@@ -235,6 +236,8 @@ class Open3DPluginDataReader:
         filename = os.path.join(data_dir, metadata_proto.batch_index.filename)
         read_location = metadata_proto.batch_index.start_size[batch_idx].start
         read_size = metadata_proto.batch_index.start_size[batch_idx].size
+        read_masked_crc32c = metadata_proto.batch_index.start_size[
+            batch_idx].masked_crc32c
         cache_key = (filename, read_location, read_size, run, tag, step,
                      batch_idx)
         geometry = self.geometry_cache.get(cache_key)
@@ -254,6 +257,9 @@ class Open3DPluginDataReader:
             file_handle[0].seek(read_location)
             buf = file_handle[0].read(read_size)
             file_handle[1].release()
+            if not read_masked_crc32c == masked_crc32c(buf):
+                raise IOError(f"Geometry {cache_key} reading failed! CRC "
+                              "mismatch in msgpack data.")
             msg_tag, msg_step, geometry = o3d.io.rpc.data_buffer_to_meta_geometry(
                 buf)
             if geometry is None:

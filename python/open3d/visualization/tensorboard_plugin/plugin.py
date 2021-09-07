@@ -51,6 +51,26 @@ from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
 from open3d.visualization.tensorboard_plugin.util import _log
 
 
+def _postprocess(geometry):
+    """Post process geometry before displaying to account for WIP
+    Tensor API in Open3D.
+    """
+
+    if isinstance(geometry, o3d.t.geometry.PointCloud):
+        return geometry
+    legacy = geometry.to_legacy()
+    # color is FLoat64 but range is [0,255]!
+    if isinstance(geometry, o3d.t.geometry.TriangleMesh):
+        if legacy.has_vertex_colors():
+            legacy.vertex_colors = o3d.utility.Vector3dVector(
+                np.asarray(legacy.vertex_colors) / 255)
+    elif isinstance(geometry, o3d.t.geometry.TriangleMesh):
+        if legacy.has_colors():
+            legacy.colors = o3d.utility.Vector3dVector(
+                np.asarray(legacy.colors) / 255)
+    return legacy
+
+
 class Open3DPluginWindow:
     """Create and manage a single Open3D WebRTC GUI window.
     """
@@ -81,11 +101,11 @@ class Open3DPluginWindow:
         # self.all_tensor_events[self.tags[0]][prop][self.idx].step == self.step
         self.all_tensor_events = dict()
 
-        self.window = None  # Access only through _async_event_loop
+        self.window = None  # Access only through async_event_loop
         self.geometry_list = []
         self.init_done = threading.Event()  # Notify when WebRTC is ready
 
-        _async_event_loop.run_sync(self._create_ui, title, width, height)
+        async_event_loop.run_sync(self._create_ui, title, width, height)
         self._update_scene()
 
     def _get_run_tags(self, message):
@@ -251,7 +271,7 @@ class Open3DPluginWindow:
         self._validate_step(int(message["step"]))
         self._validate_batch_idx(int(message["batch_idx"]))
 
-        self._update_scene()
+        status = self._update_scene()
 
         # Compose reply
         message["current"] = {
@@ -262,36 +282,48 @@ class Open3DPluginWindow:
             "batch_size": self.batch_size,
             "batch_idx": self.batch_idx,
             "wall_time": self.wall_time,
-            "status": "OK"
+            "status": status
         }
         return json.dumps(message)
 
     def _update_scene(self):
         """Update scene by adding / removing geometry elements and redraw.
         """
+        status = ""
         new_geometry_list = []
         for tag in self.tags:
             geometry_name = f"{self.run}/{tag}/b{self.batch_idx}/s{self.step}"
             new_geometry_list.append(geometry_name)
             if geometry_name not in self.geometry_list:
-                geometry = self.data_reader.read_geometry(
-                    self.run, tag, self.step, self.batch_idx, self.step_to_idx)
-                _log.debug(f"Displaying geometry {geometry_name}:{geometry}")
-                _async_event_loop.run_sync(self.window.add_geometry,
-                                           geometry_name, geometry)
+                try:
+                    geometry = self.data_reader.read_geometry(
+                        self.run, tag, self.step, self.batch_idx,
+                        self.step_to_idx)
+                    _log.debug(
+                        f"Displaying geometry {geometry_name}:{geometry}")
+                    pp_geometry = _postprocess(geometry)
+                    async_event_loop.run_sync(self.window.add_geometry,
+                                              geometry_name, pp_geometry)
+                except IOError as err:
+                    new_geometry_list.pop()
+                    err_msg = f"Error reading {geometry_name}: {err}"
+                    status = '\n'.join((status, err_msg))
+                    _log.warning(err_msg)
+
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
                 _log.debug(f"Removing geometry {current_item}")
-                _async_event_loop.run_sync(self.window.remove_geometry,
-                                           current_item)
+                async_event_loop.run_sync(self.window.remove_geometry,
+                                          current_item)
         self.geometry_list = new_geometry_list
 
-        _async_event_loop.run_sync(self.window.reset_camera_to_default)
-        _async_event_loop.run_sync(self.window.post_redraw)
+        async_event_loop.run_sync(self.window.reset_camera_to_default)
+        async_event_loop.run_sync(self.window.post_redraw)
 
         if not self.init_done.is_set():
             self.init_done.set()
         _log.debug("Displaying complete!")
+        return "OK" if len(status) == 0 else status[1:]
 
     def _create_ui(self, title, width, height):
         """Create new Open3D application window and rendering widgets. Must run
@@ -355,7 +387,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
         o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)
         # Dummy window to ensure GUI remains active even if all user windows are
         # closed.
-        self._dummy_window = _async_event_loop.run_sync(
+        self._dummy_window = async_event_loop.run_sync(
             gui.Application.instance.create_window, "Open3D Dummy Window", 32,
             32)
 
@@ -436,7 +468,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
                 f"Invalid Window ID {this_window_id}",
                 response=self._ERROR_RESPONSE)
 
-        _async_event_loop.run_sync(self._windows[this_window_id].window.close)
+        async_event_loop.run_sync(self._windows[this_window_id].window.close)
         with self.window_lock:
             del self._windows[this_window_id]
         _log.debug(f"Window {this_window_id} closed.")
