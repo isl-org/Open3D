@@ -175,6 +175,31 @@ core::Tensor VoxelBlockGrid::GetVoxelIndices() const {
     return GetVoxelIndices(block_hashmap_->GetActiveIndices());
 }
 
+std::pair<core::Tensor, core::Tensor>
+VoxelBlockGrid::GetVoxelCoordinatesAndFlattenedIndices() {
+    core::Tensor active_buf_indices = block_hashmap_->GetActiveIndices();
+    return GetVoxelCoordinatesAndFlattenedIndices(active_buf_indices);
+}
+
+std::pair<core::Tensor, core::Tensor>
+VoxelBlockGrid::GetVoxelCoordinatesAndFlattenedIndices(
+        const core::Tensor &buf_indices) {
+    // (N x resolution^3, 3) Float32; (N x resolution^3, 1) Int64
+    int64_t n = buf_indices.GetLength();
+
+    int64_t resolution3 =
+            block_resolution_ * block_resolution_ * block_resolution_;
+
+    core::Device device = block_hashmap_->GetDevice();
+    core::Tensor voxel_coords({n * resolution3, 3}, core::Float32, device);
+    core::Tensor flattened_indices({n * resolution3}, core::Int64, device);
+
+    kernel::voxel_grid::GetVoxelCoordinatesAndFlattenedIndices(
+            buf_indices, block_hashmap_->GetKeyTensor(), voxel_coords,
+            flattened_indices, block_resolution_, voxel_size_);
+    return std::make_pair(voxel_coords, flattened_indices);
+}
+
 core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
         const Image &depth,
         const core::Tensor &intrinsic,

@@ -119,6 +119,28 @@ void pybind_voxel_block_grid(py::module& m) {
             "coordinates, multiply by voxel size.",
             "voxel_indices"_a);
 
+    vbg.def("voxel_coordinates_and_flattened_indices",
+            py::overload_cast<const core::Tensor&>(
+                    &VoxelBlockGrid::GetVoxelCoordinatesAndFlattenedIndices),
+            "Get a (buf_indices.shape[0] * resolution^3, 3), Float32 voxel "
+            "coordinate tensor,"
+            "and a (buf_indices.shape[0] * resolution^3, 1), Int64 voxel index "
+            "tensor.",
+            "buf_indices"_a);
+
+    vbg.def("voxel_coordinates_and_flattened_indices",
+            py::overload_cast<>(
+                    &VoxelBlockGrid::GetVoxelCoordinatesAndFlattenedIndices),
+            "Get a (hashmap.size() * resolution^3, 3), Float32 voxel "
+            "coordinate tensor,"
+            "and a (hashmap.size() * resolution^3, 1), Int64 voxel index "
+            "tensor.");
+
+    vbg.def("compute_unique_block_coordinates",
+            py::overload_cast<const PointCloud&>(
+                    &VoxelBlockGrid::GetUniqueBlockCoordinates),
+            "Obtain active block coordinates from a point cloud.", "pcd"_a);
+
     vbg.def("compute_unique_block_coordinates",
             py::overload_cast<const Image&, const core::Tensor&,
                               const core::Tensor&, float, float>(

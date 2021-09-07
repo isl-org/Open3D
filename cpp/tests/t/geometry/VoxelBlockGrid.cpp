@@ -286,28 +286,56 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                     }
                 }
 
-                // Check customized indexing and processing
-                core::Tensor voxel_indices = vbg.GetVoxelIndices();
-                core::Tensor voxel_coords =
-                        vbg.GetVoxelCoordinates(voxel_indices);
-                core::Tensor tsdf =
-                        vbg.GetAttribute("tsdf")
-                                .IndexGet({voxel_indices[0], voxel_indices[3],
-                                           voxel_indices[2], voxel_indices[1]})
-                                .View({-1});
-                core::Tensor weight =
-                        vbg.GetAttribute("weight")
-                                .IndexGet({voxel_indices[0], voxel_indices[3],
-                                           voxel_indices[2], voxel_indices[1]})
-                                .View({-1});
+                // Check customized indexing and processing -- kernelized
+                {
+                    core::Tensor voxel_coords, voxel_indices;
+                    std::tie(voxel_coords, voxel_indices) =
+                            vbg.GetVoxelCoordinatesAndFlattenedIndices();
 
-                core::Tensor mask = tsdf.Abs().Lt(0.3) && weight.Gt(1);
-                core::Tensor valid_coords = voxel_coords.T().IndexGet({mask});
-                PointCloud valid_pcd(valid_coords);
-                auto vis_valid_pcd =
-                        std::make_shared<open3d::geometry::PointCloud>(
-                                valid_pcd.ToLegacy());
-                visualization::DrawGeometries({vis_valid_pcd});
+                    core::Tensor tsdf =
+                            vbg.GetAttribute("tsdf").View({-1}).IndexGet(
+                                    {voxel_indices});
+                    core::Tensor weight =
+                            vbg.GetAttribute("weight").View({-1}).IndexGet(
+                                    {voxel_indices});
+
+                    core::Tensor mask = tsdf.Abs().Lt(0.3) && weight.Gt(1);
+                    core::Tensor valid_coords = voxel_coords.IndexGet({mask});
+
+                    PointCloud valid_pcd(valid_coords);
+                    auto vis_valid_pcd =
+                            std::make_shared<open3d::geometry::PointCloud>(
+                                    valid_pcd.ToLegacy());
+                    visualization::DrawGeometries({vis_valid_pcd});
+                }
+
+                // Check customized indexing and processing -- non-kernelized
+                {
+                    core::Tensor voxel_indices = vbg.GetVoxelIndices();
+                    core::Tensor voxel_coords =
+                            vbg.GetVoxelCoordinates(voxel_indices);
+                    core::Tensor tsdf = vbg.GetAttribute("tsdf")
+                                                .IndexGet({voxel_indices[0],
+                                                           voxel_indices[3],
+                                                           voxel_indices[2],
+                                                           voxel_indices[1]})
+                                                .View({-1});
+                    core::Tensor weight = vbg.GetAttribute("weight")
+                                                  .IndexGet({voxel_indices[0],
+                                                             voxel_indices[3],
+                                                             voxel_indices[2],
+                                                             voxel_indices[1]})
+                                                  .View({-1});
+
+                    core::Tensor mask = tsdf.Abs().Lt(0.3) && weight.Gt(1);
+                    core::Tensor valid_coords =
+                            voxel_coords.T().IndexGet({mask});
+                    PointCloud valid_pcd(valid_coords);
+                    auto vis_valid_pcd =
+                            std::make_shared<open3d::geometry::PointCloud>(
+                                    valid_pcd.ToLegacy());
+                    visualization::DrawGeometries({vis_valid_pcd});
+                }
 
                 // Check surface extraction
                 auto pcd = std::make_shared<open3d::geometry::PointCloud>(

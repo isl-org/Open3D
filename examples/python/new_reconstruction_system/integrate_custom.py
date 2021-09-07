@@ -61,15 +61,14 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
 
             # Find buf indices in the underlying engine
             buf_indices, masks = vbg.hashmap().find(frustum_block_coords)
-            voxel_indices = vbg.voxel_indices(buf_indices)
 
-            voxel_coords = voxel_size * vbg.voxel_coordinates(voxel_indices).to(
-                o3d.core.Dtype.Float32)
+            voxel_coords, voxel_indices = vbg.voxel_coordinates_and_flattened_indices(
+                buf_indices)
 
             # Now project them to the depth and find association
             # (3, N) -> (2, N)
             extrinsic_dev = extrinsic.to(device, o3d.core.Dtype.Float32)
-            xyz = extrinsic_dev[:3, :3] @ voxel_coords + extrinsic_dev[:3, 3:]
+            xyz = extrinsic_dev[:3, :3] @ voxel_coords.T() + extrinsic_dev[:3, 3:]
 
             # o3d.visualization.draw(
             #     [o3d.t.geometry.PointCloud(xyz.T())])
@@ -96,25 +95,21 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             sdf[sdf >= trunc] = trunc
             sdf = sdf / trunc
 
-            weight = vbg.attribute('weight')
-            color = vbg.attribute('color')
-            tsdf = vbg.attribute('tsdf')
+            weight = vbg.attribute('weight').reshape((-1, 1))
+            color = vbg.attribute('color').reshape((-1, 3))
+            tsdf = vbg.attribute('tsdf').reshape((-1, 1))
 
-            block_idx = voxel_indices[0][mask_proj][mask_inlier]
-            vx = voxel_indices[1][mask_proj][mask_inlier]
-            vy = voxel_indices[2][mask_proj][mask_inlier]
-            vz = voxel_indices[3][mask_proj][mask_inlier]
-
-            w = weight[block_idx, vz, vy, vx]
+            valid_voxel_indices = voxel_indices[mask_proj][mask_inlier]
+            w = weight[valid_voxel_indices]
             wp = w + 1
 
-            tsdf[block_idx, vz, vy, vx] \
-                = (tsdf[block_idx, vz, vy, vx] * w +
+            tsdf[valid_voxel_indices] \
+                = (tsdf[valid_voxel_indices] * w +
                    sdf[mask_inlier].reshape(w.shape)) / (wp)
-            color[block_idx, vz, vy, vx] \
-                = (color[block_idx, vz, vy, vx] * w +
+            color[valid_voxel_indices] \
+                = (color[valid_voxel_indices] * w +
                          color_readings[mask_inlier]) / (wp)
-            weight[block_idx, vz, vy, vx] = wp
+            weight[valid_voxel_indices] = wp
 
             dt = time.time() - start
         print('Finished integrating {} frames in {} seconds'.format(

@@ -49,6 +49,55 @@ namespace voxel_grid {
 using index_t = int;
 using ArrayIndexer = TArrayIndexer<index_t>;
 
+#if defined(__CUDACC__)
+void GetVoxelCoordinatesAndFlattenedIndicesCUDA
+#else
+void GetVoxelCoordinatesAndFlattenedIndicesCPU
+#endif
+        (const core::Tensor& buf_indices,
+         const core::Tensor& block_keys,
+         core::Tensor& voxel_coords,
+         core::Tensor& flattened_indices,
+         index_t resolution,
+         float voxel_size) {
+    core::Device device = buf_indices.GetDevice();
+
+    const index_t* buf_indices_ptr = buf_indices.GetDataPtr<index_t>();
+    const index_t* block_key_ptr = block_keys.GetDataPtr<index_t>();
+
+    float* voxel_coords_ptr = voxel_coords.GetDataPtr<float>();
+    int64_t* flattened_indices_ptr = flattened_indices.GetDataPtr<int64_t>();
+
+    index_t n = flattened_indices.GetLength();
+    ArrayIndexer voxel_indexer({resolution, resolution, resolution});
+    index_t resolution3 = resolution * resolution * resolution;
+
+    core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx) {
+        index_t block_idx = buf_indices_ptr[workload_idx / resolution3];
+        index_t voxel_idx = workload_idx % resolution3;
+
+        index_t block_key_offset = block_idx * 3;
+        index_t xb = block_key_ptr[block_key_offset + 0];
+        index_t yb = block_key_ptr[block_key_offset + 1];
+        index_t zb = block_key_ptr[block_key_offset + 2];
+
+        index_t xv, yv, zv;
+        voxel_indexer.WorkloadToCoord(voxel_idx, &xv, &yv, &zv);
+
+        float x = (xb * resolution + xv) * voxel_size;
+        float y = (yb * resolution + yv) * voxel_size;
+        float z = (zb * resolution + zv) * voxel_size;
+
+        flattened_indices_ptr[workload_idx] =
+                block_idx * resolution3 + voxel_idx;
+
+        index_t voxel_coords_offset = workload_idx * 3;
+        voxel_coords_ptr[voxel_coords_offset + 0] = x;
+        voxel_coords_ptr[voxel_coords_offset + 1] = y;
+        voxel_coords_ptr[voxel_coords_offset + 2] = z;
+    });
+}
+
 inline OPEN3D_DEVICE index_t
 DeviceGetLinearIdx(index_t xo,
                    index_t yo,

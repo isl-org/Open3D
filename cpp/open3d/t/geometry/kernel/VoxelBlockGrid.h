@@ -58,6 +58,13 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
                 float depth_max,
                 index_t stride);
 
+void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
+                                            const core::Tensor& block_keys,
+                                            core::Tensor& voxel_coords,
+                                            core::Tensor& flattened_indices,
+                                            index_t block_resolution,
+                                            float voxel_size);
+
 void Integrate(const core::Tensor& depth,
                const core::Tensor& color,
                const core::Tensor& block_indices,
@@ -134,6 +141,13 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap>& hashmap,
                    float depth_scale,
                    float depth_max,
                    index_t stride);
+
+void GetVoxelCoordinatesAndFlattenedIndicesCPU(const core::Tensor& buf_indices,
+                                               const core::Tensor& block_keys,
+                                               core::Tensor& voxel_coords,
+                                               core::Tensor& flattened_indices,
+                                               index_t block_resolution,
+                                               float voxel_size);
 
 template <typename input_depth_t,
           typename input_color_t,
@@ -219,6 +233,13 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
                     float depth_scale,
                     float depth_max,
                     index_t stride);
+
+void GetVoxelCoordinatesAndFlattenedIndicesCUDA(const core::Tensor& buf_indices,
+                                                const core::Tensor& block_keys,
+                                                core::Tensor& voxel_coords,
+                                                core::Tensor& flattened_indices,
+                                                index_t block_resolution,
+                                                float voxel_size);
 
 template <typename input_depth_t,
           typename input_color_t,

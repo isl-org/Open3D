@@ -87,6 +87,27 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
     }
 }
 
+void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
+                                            const core::Tensor& block_keys,
+                                            core::Tensor& voxel_coords,
+                                            core::Tensor& flattened_indices,
+                                            index_t block_resolution,
+                                            float voxel_size) {
+    core::Device::DeviceType device_type = block_keys.GetDevice().GetType();
+
+    if (device_type == core::Device::DeviceType::CPU) {
+        GetVoxelCoordinatesAndFlattenedIndicesCPU(
+                buf_indices, block_keys, voxel_coords, flattened_indices,
+                block_resolution, voxel_size);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(GetVoxelCoordinatesAndFlattenedIndicesCUDA, buf_indices,
+                  block_keys, voxel_coords, flattened_indices, block_resolution,
+                  voxel_size);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 #define DISPATCH_VALUE_DTYPE_TO_TEMPLATE(WEIGHT_DTYPE, COLOR_DTYPE, ...)   \
     [&] {                                                                  \
         if (WEIGHT_DTYPE == open3d::core::Float32 &&                       \

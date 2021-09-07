@@ -118,6 +118,11 @@ public:
     /// coordinates, multiply by voxel size.
     core::Tensor GetVoxelCoordinates(const core::Tensor &voxel_indices) const;
 
+    std::pair<core::Tensor, core::Tensor>
+    GetVoxelCoordinatesAndFlattenedIndices();
+    std::pair<core::Tensor, core::Tensor>
+    GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor &buf_indices);
+
     /// Get a (3, M) active block coordinates from a depth image, with potential
     /// duplicates removed.
     /// Note: these coordinates are not activated in the internal sparse voxel

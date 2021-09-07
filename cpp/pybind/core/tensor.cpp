@@ -673,7 +673,11 @@ Returns:
                "Transpose <=2-D tensor by swapping dimension 0 and 1."
                "0-D and 1-D Tensor remains the same.");
     tensor.def(
-            "reshape", &Tensor::Reshape,
+            "reshape",
+            [](const Tensor& tensor, const py::handle& new_shape) {
+                SizeVector new_shape_sv = PyHandleToSizeVector(new_shape);
+                return tensor.Reshape(new_shape_sv);
+            },
             R"(Returns a tensor with the same data and number of elements as input, but
 with the specified shape. When possible, the returned tensor will be a view of
 input. Otherwise, it will be a copy.
