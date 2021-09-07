@@ -17,7 +17,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     syntax='proto3',
     serialized_options=None,
     serialized_pb=_b(
-        '\n\x11plugin_data.proto\x12\x12tensorboard.open3d\"\x8b\x05\n\x10Open3DPluginData\x12\x0f\n\x07version\x18\x01 \x01(\x05\x12S\n\x13property_references\x18\x02 \x03(\x0b\x32\x36.tensorboard.open3d.Open3DPluginData.PropertyReference\x12\x44\n\x0b\x62\x61tch_index\x18\x03 \x01(\x0b\x32/.tensorboard.open3d.Open3DPluginData.BatchIndex\x1aw\n\x11PropertyReference\x12P\n\x11geometry_property\x18\x01 \x01(\x0e\x32\x35.tensorboard.open3d.Open3DPluginData.GeometryProperty\x12\x10\n\x08step_ref\x18\x02 \x01(\x04\x1a(\n\tStartSize\x12\r\n\x05start\x18\x01 \x01(\x04\x12\x0c\n\x04size\x18\x02 \x01(\x04\x1a\x62\n\nBatchIndex\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x42\n\nstart_size\x18\x02 \x03(\x0b\x32..tensorboard.open3d.Open3DPluginData.StartSize\"\xc3\x01\n\x10GeometryProperty\x12\x14\n\x10vertex_positions\x10\x00\x12\x12\n\x0evertex_normals\x10\x01\x12\x11\n\rvertex_colors\x10\x02\x12\x0e\n\nvertex_uvs\x10\x03\x12\x14\n\x10triangle_indices\x10\x04\x12\x13\n\x0ftriangle_colors\x10\x05\x12\x14\n\x10triangle_normals\x10\x06\x12\x10\n\x0cline_indices\x10\x07\x12\x0f\n\x0bline_colors\x10\x08\x62\x06proto3'
+        '\n\x11plugin_data.proto\x12\x12tensorboard.open3d\"\xaa\x05\n\x10Open3DPluginData\x12\x0f\n\x07version\x18\x01 \x01(\x05\x12S\n\x13property_references\x18\x02 \x03(\x0b\x32\x36.tensorboard.open3d.Open3DPluginData.PropertyReference\x12\x44\n\x0b\x62\x61tch_index\x18\x03 \x01(\x0b\x32/.tensorboard.open3d.Open3DPluginData.BatchIndex\x1aw\n\x11PropertyReference\x12P\n\x11geometry_property\x18\x01 \x01(\x0e\x32\x35.tensorboard.open3d.Open3DPluginData.GeometryProperty\x12\x10\n\x08step_ref\x18\x02 \x01(\x04\x1a?\n\tStartSize\x12\r\n\x05start\x18\x01 \x01(\x04\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x15\n\rmasked_crc32c\x18\x03 \x01(\r\x1a\x62\n\nBatchIndex\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x42\n\nstart_size\x18\x02 \x03(\x0b\x32..tensorboard.open3d.Open3DPluginData.StartSize\"\xcb\x01\n\x10GeometryProperty\x12\x14\n\x10vertex_positions\x10\x00\x12\x12\n\x0evertex_normals\x10\x01\x12\x11\n\rvertex_colors\x10\x02\x12\x16\n\x12vertex_texture_uvs\x10\x03\x12\x14\n\x10triangle_indices\x10\x04\x12\x13\n\x0ftriangle_colors\x10\x05\x12\x14\n\x10triangle_normals\x10\x06\x12\x10\n\x0cline_indices\x10\x07\x12\x0f\n\x0bline_colors\x10\x08\x62\x06proto3'
     ))
 
 _OPEN3DPLUGINDATA_GEOMETRYPROPERTY = _descriptor.EnumDescriptor(
@@ -41,7 +41,7 @@ _OPEN3DPLUGINDATA_GEOMETRYPROPERTY = _descriptor.EnumDescriptor(
                                         number=2,
                                         serialized_options=None,
                                         type=None),
-        _descriptor.EnumValueDescriptor(name='vertex_uvs',
+        _descriptor.EnumValueDescriptor(name='vertex_texture_uvs',
                                         index=3,
                                         number=3,
                                         serialized_options=None,
@@ -74,8 +74,8 @@ _OPEN3DPLUGINDATA_GEOMETRYPROPERTY = _descriptor.EnumDescriptor(
     ],
     containing_type=None,
     serialized_options=None,
-    serialized_start=498,
-    serialized_end=693,
+    serialized_start=521,
+    serialized_end=724,
 )
 _sym_db.RegisterEnumDescriptor(_OPEN3DPLUGINDATA_GEOMETRYPROPERTY)
 
@@ -176,6 +176,24 @@ _OPEN3DPLUGINDATA_STARTSIZE = _descriptor.Descriptor(
             extension_scope=None,
             serialized_options=None,
             file=DESCRIPTOR),
+        _descriptor.FieldDescriptor(
+            name='masked_crc32c',
+            full_name=
+            'tensorboard.open3d.Open3DPluginData.StartSize.masked_crc32c',
+            index=2,
+            number=3,
+            type=13,
+            cpp_type=3,
+            label=1,
+            has_default_value=False,
+            default_value=0,
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR),
     ],
     extensions=[],
     nested_types=[],
@@ -186,7 +204,7 @@ _OPEN3DPLUGINDATA_STARTSIZE = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[],
     serialized_start=355,
-    serialized_end=395,
+    serialized_end=418,
 )
 
 _OPEN3DPLUGINDATA_BATCHINDEX = _descriptor.Descriptor(
@@ -240,8 +258,8 @@ _OPEN3DPLUGINDATA_BATCHINDEX = _descriptor.Descriptor(
     syntax='proto3',
     extension_ranges=[],
     oneofs=[],
-    serialized_start=397,
-    serialized_end=495,
+    serialized_start=420,
+    serialized_end=518,
 )
 
 _OPEN3DPLUGINDATA = _descriptor.Descriptor(
@@ -318,7 +336,7 @@ _OPEN3DPLUGINDATA = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[],
     serialized_start=42,
-    serialized_end=693,
+    serialized_end=724,
 )
 
 _OPEN3DPLUGINDATA_PROPERTYREFERENCE.fields_by_name[

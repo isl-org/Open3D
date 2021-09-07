@@ -37,6 +37,7 @@ from tensorboard.compat.proto.summary_pb2 import Summary
 from tensorboard.compat.proto.tensor_shape_pb2 import TensorShapeProto
 from tensorboard.compat.proto.tensor_pb2 import TensorProto
 from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
+from tensorboard.compat.tensorflow_stub.pywrap_tensorflow import masked_crc32c
 from tensorboard.util import lazy_tensor_creator
 try:
     import tensorflow as tf
@@ -384,8 +385,10 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             os.path.join(write_dir, tag.replace('/', '-')), data_buffer)
         if bidx == 0:
             geometry_metadata.batch_index.filename = filename
-        geometry_metadata.batch_index.start_size.add(start=this_write_location,
-                                                     size=len(data_buffer))
+        geometry_metadata.batch_index.start_size.add(
+            start=this_write_location,
+            size=len(data_buffer),
+            masked_crc32c=masked_crc32c(data_buffer))
     return geometry_metadata.SerializeToString()
 
 
