@@ -15,6 +15,8 @@ import imageio
 import torch
 from torch.utils.dlpack import from_dlpack
 
+from tqdm import tqdm
+
 
 def to_torch(o3d_tensor):
     return from_dlpack(o3d_tensor.to_dlpack())
@@ -39,19 +41,19 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
         res = 8
 
         vbg = o3d.t.geometry.VoxelBlockGrid(
-            ('tsdf', 'weight', 'color'),
-            (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32,
-             o3d.core.Dtype.Float32), ((1), (1), (3)), voxel_size, res, 100000,
-            o3d.core.Device('CUDA:0'))
+            ('tsdf', 'weight'),
+            (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32), ((1), (1)),
+            voxel_size, res, 100000, o3d.core.Device('CUDA:0'))
 
         start = time.time()
-        for i in range(n_files):
+        for i in tqdm(range(n_files)):
             print('Integrating frame {}/{}'.format(i, n_files))
 
             depth = o3d.t.io.read_image(depth_file_names[i]).to(device)
             color = o3d.t.io.read_image(color_file_names[i]).to(device)
             extrinsic = extrinsics[i]
 
+            start = time.time()
             # Get active frustum block coordinates from input
             frustum_block_coords = vbg.compute_unique_block_coordinates(
                 depth, intrinsic, extrinsic, config.depth_scale,
@@ -61,14 +63,23 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
 
             # Find buf indices in the underlying engine
             buf_indices, masks = vbg.hashmap().find(frustum_block_coords)
+            torch.cuda.synchronize()
+            end = time.time()
+            print('hash map preparation: {}'.format(end - start))
 
+            start = time.time()
             voxel_coords, voxel_indices = vbg.voxel_coordinates_and_flattened_indices(
                 buf_indices)
+            torch.cuda.synchronize()
+            end = time.time()
+            print('enumerate voxels: {}'.format(end - start))
 
             # Now project them to the depth and find association
             # (3, N) -> (2, N)
+            start = time.time()
             extrinsic_dev = extrinsic.to(device, o3d.core.Dtype.Float32)
-            xyz = extrinsic_dev[:3, :3] @ voxel_coords.T() + extrinsic_dev[:3, 3:]
+            xyz = extrinsic_dev[:3, :3] @ voxel_coords.T() + extrinsic_dev[:3,
+                                                                           3:]
 
             # o3d.visualization.draw(
             #     [o3d.t.geometry.PointCloud(xyz.T())])
@@ -78,15 +89,22 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             d = uvd[2]
             u = (uvd[0] / d).round().to(o3d.core.Dtype.Int64)
             v = (uvd[1] / d).round().to(o3d.core.Dtype.Int64)
+            torch.cuda.synchronize()
+            end = time.time()
+            print('geometry transformation: {}'.format(end - start))
+
+            start = time.time()
             mask_proj = (d > 0) & (u >= 0) & (v >= 0) & (u < depth.columns) & (
                 v < depth.rows)
 
-            depth_readings = depth.as_tensor().to(
-                o3d.core.Dtype.Float32)[v[mask_proj], u[mask_proj],
-                                        0] / config.depth_scale
-            color_readings = color.as_tensor().to(
-                o3d.core.Dtype.Float32)[v[mask_proj], u[mask_proj]]
-            sdf = depth_readings.to(o3d.core.Dtype.Float32) - d[mask_proj]
+            v_proj = v[mask_proj]
+            u_proj = u[mask_proj]
+            d_proj = d[mask_proj]
+            depth_readings = depth.as_tensor()[v_proj, u_proj, 0].to(
+                o3d.core.Dtype.Float32) / config.depth_scale
+            color_readings = color.as_tensor()[v_proj, u_proj].to(
+                o3d.core.Dtype.Float32)
+            sdf = depth_readings - d_proj
 
             mask_inlier = (depth_readings > 0) \
                 & (depth_readings < config.depth_max) \
@@ -94,9 +112,13 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
 
             sdf[sdf >= trunc] = trunc
             sdf = sdf / trunc
+            torch.cuda.synchronize()
+            end = time.time()
+            print('association: {}'.format(end - start))
 
+            start = time.time()
             weight = vbg.attribute('weight').reshape((-1, 1))
-            color = vbg.attribute('color').reshape((-1, 3))
+            # color = vbg.attribute('color').reshape((-1, 3))
             tsdf = vbg.attribute('tsdf').reshape((-1, 1))
 
             valid_voxel_indices = voxel_indices[mask_proj][mask_inlier]
@@ -106,14 +128,14 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             tsdf[valid_voxel_indices] \
                 = (tsdf[valid_voxel_indices] * w +
                    sdf[mask_inlier].reshape(w.shape)) / (wp)
-            color[valid_voxel_indices] \
-                = (color[valid_voxel_indices] * w +
-                         color_readings[mask_inlier]) / (wp)
+            # color[valid_voxel_indices] \
+            #     = (color[valid_voxel_indices] * w +
+            #              color_readings[mask_inlier]) / (wp)
             weight[valid_voxel_indices] = wp
+            torch.cuda.synchronize()
+            end = time.time()
+            print('update: {}'.format(end - start))
 
-            dt = time.time() - start
-        print('Finished integrating {} frames in {} seconds'.format(
-            n_files, dt))
         print('Saving to {}...'.format(config.npz_file))
         vbg.save(config.npz_file)
         print('Saving finished')
