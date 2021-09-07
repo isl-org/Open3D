@@ -288,15 +288,18 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
         if (!candidate.get()) {
             utility::LogWarning("Can't parse received candidate message.");
         } else {
-            std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
-            PeerConnectionObserver *pc_observer =
-                    peerid_to_connection_.count(peerid) > 0
-                            ? peerid_to_connection_[peerid]
-                            : nullptr;
-            if (pc_observer != nullptr && pc_observer->DataChannelsReady()) {
+            bool dc_ready = false;
+            {  // avoid holding lock in the else{} block
+                std::lock_guard<std::mutex> mutex_lock(
+                        peerid_data_channel_mutex_);
+                dc_ready = peerid_data_channel_ready_.count(peerid) > 0;
+            }
+            if (dc_ready) {
                 utility::LogDebug(
                         "DataChannels ready. Skipping AddIceCandidate.");
             } else {
+                std::lock_guard<std::mutex> mutex_lock(
+                        peerid_to_connection_mutex_);
                 rtc::scoped_refptr<webrtc::PeerConnectionInterface>
                         peer_connection = this->GetPeerConnection(peerid);
                 if (peer_connection) {
