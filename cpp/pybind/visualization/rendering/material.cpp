@@ -64,25 +64,7 @@ void pybind_material(py::module& m) {
             .def_property_readonly("scalar_properties",
                                    &Material::GetScalarProperties)
             .def_property_readonly("vector_properties",
-                                   &Material::GetVectorProperties)
-            .def("get_texture_map", &Material::GetTextureMap,
-                 "Return the image associated with key")
-            .def("set_texture_map", &Material::SetTextureMap,
-                 "Associates image with key")
-            .def("has_texture_map", &Material::HasTextureMap,
-                 "Returns true if the material has the specified map")
-            .def("get_scalar_property", &Material::GetScalarProperty,
-                 "Return the scalar property associated with key")
-            .def("set_scalar_property", &Material::SetScalarProperty,
-                 "Set value of a scalar property of the Material")
-            .def("has_scalar_property", &Material::HasScalarProperty,
-                 "Returns true if the material has the scalar property")
-            .def("get_vector_property", &Material::GetVectorProperty,
-                 "Return the vector property associated with key")
-            .def("set_vector_property", &Material::SetVectorProperty,
-                 "Set value of a vector property of the Material")
-            .def("has_vector_property", &Material::HasVectorProperty,
-                 "Returns true if the material has the vector property");
+                                   &Material::GetVectorProperties);
 }
 
 }  // namespace rendering
