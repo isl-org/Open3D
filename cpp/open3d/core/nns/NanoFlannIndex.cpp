@@ -32,6 +32,7 @@
 #include <nanoflann.hpp>
 
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/ParallelScan.h"
 
@@ -72,10 +73,10 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                                                     int knn) const {
     // Check dtype.
-    query_points.AssertDtype(GetDtype());
+    AssertTensorDtype(query_points, GetDtype());
 
     // Check shapes.
-    query_points.AssertShape({utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
         utility::LogError(
@@ -122,13 +123,13 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         const Tensor &query_points, const Tensor &radii, bool sort) const {
     // Check dtype.
-    query_points.AssertDtype(GetDtype());
-    radii.AssertDtype(GetDtype());
+    AssertTensorDtype(query_points, GetDtype());
+    AssertTensorDtype(radii, GetDtype());
 
     // Check shapes.
     int64_t num_query_points = query_points.GetShape()[0];
-    query_points.AssertShape({utility::nullopt, GetDimension()});
-    radii.AssertShape({num_query_points});
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(radii, {num_query_points});
 
     Dtype dtype = GetDtype();
     Tensor indices;
@@ -224,8 +225,8 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
-    query_points.AssertDtype(GetDtype());
-    query_points.AssertShape({utility::nullopt, GetDimension()});
+    AssertTensorDtype(query_points, GetDtype());
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
         utility::LogError(

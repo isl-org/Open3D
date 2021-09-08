@@ -28,7 +28,7 @@
 
 #include <json/json.h>
 
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

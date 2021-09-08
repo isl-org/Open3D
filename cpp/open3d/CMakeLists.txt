@@ -62,6 +62,7 @@ target_sources(Open3D PRIVATE
     $<TARGET_OBJECTS:ml_contrib>
     $<TARGET_OBJECTS:pipelines>
     $<TARGET_OBJECTS:tpipelines>
+    $<TARGET_OBJECTS:tpipelines_kernel>
     $<TARGET_OBJECTS:utility>
     $<TARGET_OBJECTS:visualization>
 )

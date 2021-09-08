@@ -60,7 +60,7 @@ namespace core {
 // They are equivalent, but we differentiate them in the implementation to
 // emphasize the differences.
 
-template <typename Key, typename Hash>
+template <typename Key, typename Hash, typename Eq>
 class SlabHashBackendImpl {
 public:
     SlabHashBackendImpl();
@@ -127,6 +127,7 @@ public:
 
 public:
     Hash hash_fn_;
+    Eq eq_fn_;
     int64_t bucket_count_;
 
     Slab* bucket_list_head_;
@@ -138,63 +139,63 @@ public:
 };
 
 /// Kernels
-template <typename Key, typename Hash>
-__global__ void InsertKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void InsertKernelPass0(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                   const void* input_keys,
                                   buf_index_t* output_buf_indices,
                                   int heap_counter_prev,
                                   int64_t count);
 
-template <typename Key, typename Hash>
-__global__ void InsertKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void InsertKernelPass1(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                   const void* input_keys,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count);
 
-template <typename Key, typename Hash>
-__global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq, typename block_t>
+__global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                   const void* const* input_values_soa,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
                                   int64_t count,
                                   int64_t n_values);
 
-template <typename Key, typename Hash>
-__global__ void FindKernel(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void FindKernel(SlabHashBackendImpl<Key, Hash, Eq> impl,
                            const void* input_keys,
                            buf_index_t* output_buf_indices,
                            bool* output_masks,
                            int64_t count);
 
-template <typename Key, typename Hash>
-__global__ void EraseKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void EraseKernelPass0(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                  const void* input_keys,
                                  buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count);
 
-template <typename Key, typename Hash>
-__global__ void EraseKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void EraseKernelPass1(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                  buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count);
 
-template <typename Key, typename Hash>
-__global__ void GetActiveIndicesKernel(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void GetActiveIndicesKernel(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                        buf_index_t* output_buf_indices,
                                        uint32_t* output_count);
 
-template <typename Key, typename Hash>
-__global__ void CountElemsPerBucketKernel(SlabHashBackendImpl<Key, Hash> impl,
-                                          int64_t* bucket_elem_counts);
+template <typename Key, typename Hash, typename Eq>
+__global__ void CountElemsPerBucketKernel(
+        SlabHashBackendImpl<Key, Hash, Eq> impl, int64_t* bucket_elem_counts);
 
-template <typename Key, typename Hash>
-SlabHashBackendImpl<Key, Hash>::SlabHashBackendImpl()
+template <typename Key, typename Hash, typename Eq>
+SlabHashBackendImpl<Key, Hash, Eq>::SlabHashBackendImpl()
     : bucket_count_(0), bucket_list_head_(nullptr) {}
 
-template <typename Key, typename Hash>
-void SlabHashBackendImpl<Key, Hash>::Setup(
+template <typename Key, typename Hash, typename Eq>
+void SlabHashBackendImpl<Key, Hash, Eq>::Setup(
         int64_t init_buckets,
         const SlabNodeManagerImpl& allocator_impl,
         const CUDAHashBackendBufferAccessor& buffer_accessor) {
@@ -203,12 +204,13 @@ void SlabHashBackendImpl<Key, Hash>::Setup(
     buffer_accessor_ = buffer_accessor;
 }
 
-template <typename Key, typename Hash>
-__device__ bool SlabHashBackendImpl<Key, Hash>::Insert(bool lane_active,
-                                                       uint32_t lane_id,
-                                                       uint32_t bucket_id,
-                                                       const Key& key,
-                                                       buf_index_t buf_index) {
+template <typename Key, typename Hash, typename Eq>
+__device__ bool SlabHashBackendImpl<Key, Hash, Eq>::Insert(
+        bool lane_active,
+        uint32_t lane_id,
+        uint32_t bucket_id,
+        const Key& key,
+        buf_index_t buf_index) {
     uint32_t work_queue = 0;
     uint32_t prev_work_queue = 0;
     uint32_t slab_ptr = kHeadSlabAddr;
@@ -307,8 +309,8 @@ __device__ bool SlabHashBackendImpl<Key, Hash>::Insert(bool lane_active,
     return mask;
 }
 
-template <typename Key, typename Hash>
-__device__ Pair<buf_index_t, bool> SlabHashBackendImpl<Key, Hash>::Find(
+template <typename Key, typename Hash, typename Eq>
+__device__ Pair<buf_index_t, bool> SlabHashBackendImpl<Key, Hash, Eq>::Find(
         bool lane_active,
         uint32_t lane_id,
         uint32_t bucket_id,
@@ -374,8 +376,8 @@ __device__ Pair<buf_index_t, bool> SlabHashBackendImpl<Key, Hash>::Find(
     return make_pair(buf_index, mask);
 }
 
-template <typename Key, typename Hash>
-__device__ Pair<buf_index_t, bool> SlabHashBackendImpl<Key, Hash>::Erase(
+template <typename Key, typename Hash, typename Eq>
+__device__ Pair<buf_index_t, bool> SlabHashBackendImpl<Key, Hash, Eq>::Erase(
         bool lane_active,
         uint32_t lane_id,
         uint32_t bucket_id,
@@ -435,10 +437,9 @@ __device__ Pair<buf_index_t, bool> SlabHashBackendImpl<Key, Hash>::Erase(
     return make_pair(buf_index, mask);
 }
 
-template <typename Key, typename Hash>
-__device__ void SlabHashBackendImpl<Key, Hash>::WarpSyncKey(const Key& key,
-                                                            uint32_t lane_id,
-                                                            Key& ret_key) {
+template <typename Key, typename Hash, typename Eq>
+__device__ void SlabHashBackendImpl<Key, Hash, Eq>::WarpSyncKey(
+        const Key& key, uint32_t lane_id, Key& ret_key) {
     auto dst_key_ptr = reinterpret_cast<int*>(&ret_key);
     auto src_key_ptr = reinterpret_cast<const int*>(&key);
     for (int i = 0; i < key_size_in_int_; ++i) {
@@ -447,8 +448,8 @@ __device__ void SlabHashBackendImpl<Key, Hash>::WarpSyncKey(const Key& key,
     }
 }
 
-template <typename Key, typename Hash>
-__device__ int32_t SlabHashBackendImpl<Key, Hash>::WarpFindKey(
+template <typename Key, typename Hash, typename Eq>
+__device__ int32_t SlabHashBackendImpl<Key, Hash, Eq>::WarpFindKey(
         const Key& key, uint32_t lane_id, uint32_t slab_entry) {
     bool is_lane_found =
             // Select key lanes.
@@ -457,38 +458,39 @@ __device__ int32_t SlabHashBackendImpl<Key, Hash>::WarpFindKey(
             && (slab_entry != kEmptyNodeAddr)
             // Find keys in buffer. Now slab_entry is interpreted as buf_index.
             &&
-            (*static_cast<Key*>(buffer_accessor_.GetKeyPtr(slab_entry)) == key);
+            eq_fn_(*static_cast<Key*>(buffer_accessor_.GetKeyPtr(slab_entry)),
+                   key);
 
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_found)) - 1;
 }
 
-template <typename Key, typename Hash>
+template <typename Key, typename Hash, typename Eq>
 __device__ int32_t
-SlabHashBackendImpl<Key, Hash>::WarpFindEmpty(uint32_t slab_entry) {
+SlabHashBackendImpl<Key, Hash, Eq>::WarpFindEmpty(uint32_t slab_entry) {
     bool is_lane_empty = (slab_entry == kEmptyNodeAddr);
     return __ffs(__ballot_sync(kNodePtrLanesMask, is_lane_empty)) - 1;
 }
 
-template <typename Key, typename Hash>
+template <typename Key, typename Hash, typename Eq>
 __device__ int64_t
-SlabHashBackendImpl<Key, Hash>::ComputeBucket(const Key& key) const {
+SlabHashBackendImpl<Key, Hash, Eq>::ComputeBucket(const Key& key) const {
     return hash_fn_(key) % bucket_count_;
 }
 
-template <typename Key, typename Hash>
+template <typename Key, typename Hash, typename Eq>
 __device__ uint32_t
-SlabHashBackendImpl<Key, Hash>::AllocateSlab(uint32_t lane_id) {
+SlabHashBackendImpl<Key, Hash, Eq>::AllocateSlab(uint32_t lane_id) {
     return node_mgr_impl_.WarpAllocate(lane_id);
 }
 
-template <typename Key, typename Hash>
-__device__ __forceinline__ void SlabHashBackendImpl<Key, Hash>::FreeSlab(
+template <typename Key, typename Hash, typename Eq>
+__device__ __forceinline__ void SlabHashBackendImpl<Key, Hash, Eq>::FreeSlab(
         uint32_t slab_ptr) {
     node_mgr_impl_.FreeUntouched(slab_ptr);
 }
 
-template <typename Key, typename Hash>
-__global__ void InsertKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void InsertKernelPass0(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                   const void* input_keys,
                                   buf_index_t* output_buf_indices,
                                   int heap_counter_prev,
@@ -506,8 +508,8 @@ __global__ void InsertKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
     }
 }
 
-template <typename Key, typename Hash>
-__global__ void InsertKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void InsertKernelPass1(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                   const void* input_keys,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
@@ -543,8 +545,8 @@ __global__ void InsertKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
     }
 }
 
-template <typename Key, typename Hash>
-__global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq, typename block_t>
+__global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                   const void* const* input_values_soa,
                                   buf_index_t* output_buf_indices,
                                   bool* output_masks,
@@ -557,15 +559,17 @@ __global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash> impl,
 
         if (output_masks[tid]) {
             for (int j = 0; j < n_values; ++j) {
-                void* dst_ptr = impl.buffer_accessor_.GetValuePtr(buf_index, j);
-                int64_t dsize_value = impl.buffer_accessor_.value_dsizes_[j];
+                int64_t blocks_per_element =
+                        impl.buffer_accessor_.value_blocks_per_element_[j];
 
-                // Success: copy remaining input_values
-                MEMCPY_AS_INTS(
-                        dst_ptr,
-                        static_cast<const uint8_t*>(input_values_soa[j]) +
-                                tid * dsize_value,
-                        dsize_value);
+                block_t* dst_value = static_cast<block_t*>(
+                        impl.buffer_accessor_.GetValuePtr(buf_index, j));
+                const block_t* src_value =
+                        static_cast<const block_t*>(input_values_soa[j]) +
+                        blocks_per_element * tid;
+                for (int b = 0; b < blocks_per_element; ++b) {
+                    dst_value[b] = src_value[b];
+                }
             }
         } else {
             impl.buffer_accessor_.DeviceFree(buf_index);
@@ -573,8 +577,8 @@ __global__ void InsertKernelPass2(SlabHashBackendImpl<Key, Hash> impl,
     }
 }
 
-template <typename Key, typename Hash>
-__global__ void FindKernel(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void FindKernel(SlabHashBackendImpl<Key, Hash, Eq> impl,
                            const void* input_keys,
                            buf_index_t* output_buf_indices,
                            bool* output_masks,
@@ -612,8 +616,8 @@ __global__ void FindKernel(SlabHashBackendImpl<Key, Hash> impl,
     }
 }
 
-template <typename Key, typename Hash>
-__global__ void EraseKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void EraseKernelPass0(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                  const void* input_keys,
                                  buf_index_t* output_buf_indices,
                                  bool* output_masks,
@@ -647,8 +651,8 @@ __global__ void EraseKernelPass0(SlabHashBackendImpl<Key, Hash> impl,
     }
 }
 
-template <typename Key, typename Hash>
-__global__ void EraseKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void EraseKernelPass1(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                  buf_index_t* output_buf_indices,
                                  bool* output_masks,
                                  int64_t count) {
@@ -658,8 +662,8 @@ __global__ void EraseKernelPass1(SlabHashBackendImpl<Key, Hash> impl,
     }
 }
 
-template <typename Key, typename Hash>
-__global__ void GetActiveIndicesKernel(SlabHashBackendImpl<Key, Hash> impl,
+template <typename Key, typename Hash, typename Eq>
+__global__ void GetActiveIndicesKernel(SlabHashBackendImpl<Key, Hash, Eq> impl,
                                        buf_index_t* output_buf_indices,
                                        uint32_t* output_count) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -698,9 +702,9 @@ __global__ void GetActiveIndicesKernel(SlabHashBackendImpl<Key, Hash> impl,
     }
 }
 
-template <typename Key, typename Hash>
-__global__ void CountElemsPerBucketKernel(SlabHashBackendImpl<Key, Hash> impl,
-                                          int64_t* bucket_elem_counts) {
+template <typename Key, typename Hash, typename Eq>
+__global__ void CountElemsPerBucketKernel(
+        SlabHashBackendImpl<Key, Hash, Eq> impl, int64_t* bucket_elem_counts) {
     uint32_t tid = threadIdx.x + blockIdx.x * blockDim.x;
     uint32_t lane_id = threadIdx.x & 0x1F;
 
