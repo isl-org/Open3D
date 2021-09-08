@@ -433,6 +433,9 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
     const uint32_t color_start_offset = 3 * sizeof(float);
     uint32_t n_vertices = 0;
     float* vertex_data = nullptr;
+    uint32_t n_indices = 0;
+    IndexType* line_indices = nullptr;
+    uint32_t indices_bytes = 0;
 
     // Two separate paths for lines with colors and those without
     if (geometry_.HasLineColors()) {
@@ -458,20 +461,25 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
             *vertex_data_ptr++ = *current_vertex;
             *vertex_data_ptr++ = *(current_vertex + 1);
             *vertex_data_ptr++ = *(current_vertex + 2);
-            *vertex_data_ptr++ = *color_data++;
-            *vertex_data_ptr++ = *color_data++;
-            *vertex_data_ptr++ = *color_data++;
+            *vertex_data_ptr++ = *color_data;
+            *vertex_data_ptr++ = *(color_data + 1);
+            *vertex_data_ptr++ = *(color_data + 2);
             *vertex_data_ptr++ = 1.f;
             uint32_t idx2 = *index_data++;
             current_vertex = points[idx2].GetDataPtr<float>();
             *vertex_data_ptr++ = *current_vertex;
             *vertex_data_ptr++ = *(current_vertex + 1);
             *vertex_data_ptr++ = *(current_vertex + 2);
-            *vertex_data_ptr++ = *color_data++;
-            *vertex_data_ptr++ = *color_data++;
-            *vertex_data_ptr++ = *color_data++;
+            *vertex_data_ptr++ = *color_data;
+            *vertex_data_ptr++ = *(color_data + 1);
+            *vertex_data_ptr++ = *(color_data + 2);
             *vertex_data_ptr++ = 1.f;
+            color_data += 3;
         }
+        indices_bytes = n_vertices * sizeof(IndexType);
+        n_indices = n_vertices;
+        line_indices = static_cast<IndexType*>(malloc(indices_bytes));
+        std::iota(line_indices, line_indices + n_vertices, 0);
     } else {
         n_vertices = points.GetLength();
         auto position_data = static_cast<const float*>(points.GetDataPtr());
@@ -487,6 +495,12 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
             *vertex_data_ptr++ = 1.f;
             *vertex_data_ptr++ = 1.f;
         }
+        indices_bytes =
+                geometry_.GetLineIndices().GetLength() * 2 * sizeof(IndexType);
+        n_indices = geometry_.GetLineIndices().GetLength() * 2;
+        line_indices = static_cast<IndexType*>(malloc(indices_bytes));
+        memcpy(line_indices, geometry_.GetLineIndices().GetDataPtr(),
+               indices_bytes);
     }
 
     VertexBuffer* vbuf = VertexBuffer::Builder()
@@ -512,18 +526,14 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
     vbuf->setBufferAt(engine, 0, std::move(vb_descriptor));
 
     // Copy line index data
-    const auto& line_indices = geometry_.GetLineIndices();
-    uint32_t indices_bytes = line_indices.GetLength() * 2 * sizeof(IndexType);
-    void* indices = malloc(indices_bytes);
-    memcpy(indices, line_indices.GetDataPtr(), indices_bytes);
-    auto ib_handle = resource_mgr.CreateIndexBuffer(
-            line_indices.GetLength() * 2, sizeof(IndexType));
+    auto ib_handle =
+            resource_mgr.CreateIndexBuffer(n_indices, sizeof(IndexType));
     if (!ib_handle) {
-        free(indices);
+        free(line_indices);
         return {};
     }
     auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
-    IndexBuffer::BufferDescriptor ib_descriptor(indices, indices_bytes);
+    IndexBuffer::BufferDescriptor ib_descriptor(line_indices, indices_bytes);
     ib_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     ibuf->setBuffer(engine, std::move(ib_descriptor));
 
