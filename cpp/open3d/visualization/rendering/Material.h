@@ -34,7 +34,7 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class MaterialRecord;
+struct MaterialRecord;
 
 class Material {
 public:
