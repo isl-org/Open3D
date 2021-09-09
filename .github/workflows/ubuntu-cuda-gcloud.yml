@@ -53,7 +53,7 @@ jobs:
           docker push ${GCLOUD_DOCKER_TAG}
       - name: Explicit fail
         run: |
-          exit 0
+          exit 1
       - name: Docker cleanup
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
