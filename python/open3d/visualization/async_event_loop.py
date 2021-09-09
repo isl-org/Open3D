@@ -35,6 +35,7 @@ cannot be started in the main thread. Currently does not work in macOS.
 import threading
 from collections import deque
 import open3d as o3d
+from open3d.visualization.tensorboard_plugin.util import _log
 
 
 class _AsyncEventLoop:
@@ -75,12 +76,15 @@ class _AsyncEventLoop:
 
         with self._lock:
             task = _AsyncEventLoop._Task(func, *args, **kwargs)
+            _log.debug(f"[async_event_loop] Enqueue {func.__name__} with args:"
+                       f" {args} {kwargs}")
             self._run_queue.append(task)
 
         while True:
             with self._cv:
                 self._cv.wait_for(lambda: task.task_id in self._return_vals)
             with self._lock:
+                _log.debug(f"[async_event_loop] Completed {func.__name__}")
                 return self._return_vals.pop(task.task_id)
 
     def _thread_main(self):
