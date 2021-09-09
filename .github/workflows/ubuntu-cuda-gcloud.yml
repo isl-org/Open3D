@@ -47,7 +47,7 @@ jobs:
       - name: Docker push
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
-          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}:latest
+          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
           GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
           echo "To tag"
           docker image tag ${DOCKER_TAG} ${GCLOUD_DOCKER_TAG}

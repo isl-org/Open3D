@@ -141,7 +141,7 @@ cuda_wheel() {
     PYTHON_VERSION=3.6
 
     # Docker tag
-    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}:latest
+    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
 
     pushd ${OPEN3D_ROOT}
     docker build \
