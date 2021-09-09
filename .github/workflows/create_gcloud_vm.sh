@@ -1,27 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# __usage="USAGE:
-#     $(basename $0) VM_NAME
-
-#     Creates a VM with the given name. Upon successful VM creation, the zone
-#     infomration will be written in /tmp/gcloud_vm_zone.txt.
-# "
-
-# OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
-
-# print_usage_and_exit() {
-#     echo "$__usage"
-#     exit 1
-# }
-
-# if [[ "$#" -ne 1 ]]; then
-#     echo "Error: invalid number of arguments." >&2
-#     print_usage_and_exit
-# fi
-
-# VM_NAME="$1"
-# echo "Creating VM with name ${VM_NAME}"
+# The following environment variables are assumed
+echo "VM_NAME: ${VM_NAME}"
+echo "GCE_PROJECT: ${GCE_PROJECT}"     # Hidden by GHA
+echo "GCE_GPU_CI_SA: ${GCE_GPU_CI_SA}" # Hidden by GHA
 
 # GCE_ZONES=(us-west1-a
 #            us-west1-b
@@ -40,10 +23,6 @@ set -euo pipefail
 #            asia-southeast1-b
 #            asia-southeast1-c
 #            australia-southeast1-a)
-
-echo "VM_NAME: ${VM_NAME}"
-echo "GCE_PROJECT: ${GCE_PROJECT}" # Will be hidden by GHA
-echo "GCE_GPU_CI_SA: ${GCE_GPU_CI_SA}" # Will be hidden by GHA
 
 gcloud compute instances create ${VM_NAME} \
     --project open3d-dev \
