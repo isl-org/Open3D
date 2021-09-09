@@ -55,6 +55,7 @@ jobs:
         run: |
           exit 1
       - name: Docker cleanup
+        if: always()
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
           DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
