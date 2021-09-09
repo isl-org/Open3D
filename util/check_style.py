@@ -378,9 +378,23 @@ if __name__ == "__main__":
     python_style_config = str(pwd.parent / ".style.yapf")
 
     # Check or apply style
-    cpp_formatter = CppFormatter(_glob_files(CPP_FORMAT_DIRS,
-                                             ["cpp", "h", "h.in", "cu", "cuh"]),
-                                 clang_format_bin=clang_format_bin)
+    cpp_formatter = CppFormatter(
+        _glob_files(
+            CPP_FORMAT_DIRS,
+            [
+                # C++
+                "h",
+                "cpp",
+                # CUDA
+                "cuh",
+                "cu",
+                # ISPC
+                "isph",
+                "ispc",
+                # Generated files
+                "h.in",
+            ]),
+        clang_format_bin=clang_format_bin)
     python_formatter = PythonFormatter(_glob_files(PYTHON_FORMAT_DIRS, ["py"]),
                                        style_config=python_style_config)
     jupyter_formatter = JupyterFormatter(_glob_files(JUPYTER_FORMAT_DIRS,
