@@ -34,7 +34,6 @@ until ((GCE_ZID >= ${#GCE_ZONES[@]})) ||
         --service-account="${GCE_GPU_CI_SA}" \
         --image-family common-cu110 \
         --image-project deeplearning-platform-release \
-        --zone=australia-southeast1-a \
         --accelerator="count=2,type=nvidia-tesla-t4" \
         --maintenance-policy=TERMINATE \
         --machine-type=n1-standard-4 \
