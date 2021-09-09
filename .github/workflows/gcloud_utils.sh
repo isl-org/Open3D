@@ -38,11 +38,14 @@ set -euo pipefail
 # https://cloud.google.com/compute/docs/containers/deploying-containers
 # docker pull gcr.io/open3d-dev/open3d-ubuntu-cuda-gcloud-ci:2-bionic-d90752d
 
+VM_NAME="open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d"
+GCE_DOCKER_TAG="gcr.io/open3d-dev/open3d-ubuntu-cuda-gcloud-ci:2-bionic-d90752d"
+
 # Create container
-# --service-account="$GCE_GPU_CI_SA" \
-gcloud compute instances create open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
+# --no-service-account --no-scopes \
+gcloud compute instances create ${VM_NAME} \
     --project open3d-dev \
-    --no-service-account --no-scopes \
+    --service-account="$GCE_GPU_CI_SA" \
     --image-family common-cu110 \
     --image-project deeplearning-platform-release \
     --zone=us-east1-c \
@@ -53,16 +56,16 @@ gcloud compute instances create open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
     --boot-disk-type=pd-ssd
 
 # Nvidia-driver takes about 1 minute to install in the background
-sleep 120s
+sleep 90s
 
-gcloud compute ssh open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
+gcloud compute ssh ${VM_NAME} \
     --zone=us-east1-c \
     --command "nvidia-smi"
 
-gcloud compute ssh open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
+gcloud compute ssh ${VM_NAME} \
     --zone=us-east1-c \
-    --command "which docker"
+    --command "sudo docker run -d --rm ${GCE_DOCKER_TAG} cat hello.txt"
 
-gcloud compute instances delete open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
+gcloud compute instances delete ${VM_NAME} \
     --zone=us-east1-c \
     --quiet
