@@ -40,6 +40,7 @@ set -euo pipefail
 
 VM_NAME="open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d"
 GCE_DOCKER_TAG="gcr.io/open3d-dev/open3d-ubuntu-cuda-gcloud-ci:2-bionic-d90752d"
+ZONE=australia-southeast1-a
 
 # Create container
 # --no-service-account --no-scopes \
@@ -48,7 +49,7 @@ gcloud compute instances create ${VM_NAME} \
     --service-account="$GCE_GPU_CI_SA" \
     --image-family common-cu110 \
     --image-project deeplearning-platform-release \
-    --zone=us-east1-c \
+    --zone=${ZONE} \
     --accelerator="count=2,type=nvidia-tesla-t4" \
     --maintenance-policy=TERMINATE \
     --machine-type=n1-standard-4 \
@@ -59,13 +60,13 @@ gcloud compute instances create ${VM_NAME} \
 sleep 90s
 
 gcloud compute ssh ${VM_NAME} \
-    --zone=us-east1-c \
+    --zone=${ZONE} \
     --command "nvidia-smi"
 
 gcloud compute ssh ${VM_NAME} \
-    --zone=us-east1-c \
+    --zone=${ZONE} \
     --command "sudo docker run -d --rm ${GCE_DOCKER_TAG} cat hello.txt"
 
 gcloud compute instances delete ${VM_NAME} \
-    --zone=us-east1-c \
+    --zone=${ZONE} \
     --quiet
