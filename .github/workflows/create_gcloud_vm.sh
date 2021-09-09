@@ -24,35 +24,31 @@ echo "GCE_GPU_CI_SA: ${GCE_GPU_CI_SA}" # Hidden by GHA
 #            asia-southeast1-c
 #            australia-southeast1-a)
 
-gcloud compute instances create ${VM_NAME} \
-    --project=${GCE_PROJECT} \
-    --service-account="${GCE_GPU_CI_SA}" \
-    --image-family common-cu110 \
-    --image-project deeplearning-platform-release \
-    --zone=australia-southeast1-a \
-    --accelerator="count=2,type=nvidia-tesla-t4" \
-    --maintenance-policy=TERMINATE \
-    --machine-type=n1-standard-4 \
-    --boot-disk-type=pd-ssd \
-    --metadata="install-nvidia-driver=True,proxy-mode=project_editors"
+GCE_ZID=0
+until ((GCE_ZID >= ${#GCE_ZONES[@]})) ||
+    gcloud compute instances create ${VM_NAME} \
+        --project=${GCE_PROJECT} \
+        --zone="${GCE_ZONES[$GCE_ZID]}" \
+        --service-account="${GCE_GPU_CI_SA}" \
+        --image-family common-cu110 \
+        --image-project deeplearning-platform-release \
+        --zone=australia-southeast1-a \
+        --accelerator="count=2,type=nvidia-tesla-t4" \
+        --maintenance-policy=TERMINATE \
+        --machine-type=n1-standard-4 \
+        --boot-disk-type=pd-ssd \
+        --metadata="install-nvidia-driver=True,proxy-mode=project_editors"; do
+    ((GCE_ZID = GCE_ZID + 1))
+done
+
+# Export environment variable for next step
+export VM_ZONE
+VM_ZONE="${GCE_ZONES[$GCE_ZID]}"
+echo "VM created in VM_ZONE=${VM_ZONE}"
+echo "VM_ZONE=${VM_ZONE}" >> "$GITHUB_ENV"
 
 # Wait for nvidia driver installation (~1min)
 sleep 90s
 
-gcloud compute ssh ${VM_NAME} \
-    --zone=australia-southeast1-a \
-    --command "sudo gcloud auth configure-docker"
-
-# GCE_ZID=0
-# until ((GCE_ZID >= ${#GCE_ZONES[@]})) ||
-#     gcloud compute instances create "$GCE_INSTANCE" \
-#         --zone="${GCE_ZONES[$GCE_ZID]}" \
-#         --accelerator="$GCE_GPU" \
-#         --maintenance-policy=TERMINATE \
-#         --machine-type=$GCE_INSTANCE_TYPE \
-#         --boot-disk-size=$GCE_BOOT_DISK_SIZE \
-#         --boot-disk-type=$GCE_BOOT_DISK_TYPE \
-#         --image-family="$GCE_VM_CUSTOM_IMAGE_FAMILY" \
-#         --service-account="$GCE_GPU_CI_SA"; do
-#     ((GCE_ZID = GCE_ZID + 1))
-# done
+# 0 => success
+exit $((GCE_ZID >= ${#GCE_INSTANCE_ZONE[@]}))

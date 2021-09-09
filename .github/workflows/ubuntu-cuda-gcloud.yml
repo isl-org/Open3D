@@ -60,16 +60,20 @@ jobs:
       - name: VM create
         run: |
           .github/workflows/create_gcloud_vm.sh
+          echo "VM created successfully in zone ${{ env.VM_ZONE }}"
       - name: VM Docker run
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} \
-            --zone=australia-southeast1-a \
+            --zone=${{ env.VM_ZONE }} \
+            --command "sudo gcloud auth configure-docker"
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
             --command "sudo docker run -i --rm ${{ env.GCLOUD_DOCKER_TAG}} cat hello.txt"
       - name: VM delete
         if: always()
         run: |
           gcloud compute instances delete ${{ env.VM_NAME }} \
-            --zone=australia-southeast1-a \
+            --zone=${{ env.VM_ZONE }} \
             --quiet
       - name: Docker delete
         if: always()
