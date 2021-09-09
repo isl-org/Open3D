@@ -30,7 +30,6 @@
 
 #include <Eigen/Eigen>
 
-#include "benchmarks/Benchmarks.h"
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"

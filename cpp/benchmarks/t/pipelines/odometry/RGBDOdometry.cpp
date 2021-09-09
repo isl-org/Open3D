@@ -28,7 +28,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include "benchmarks/Benchmarks.h"
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
