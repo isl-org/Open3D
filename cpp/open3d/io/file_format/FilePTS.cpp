@@ -44,19 +44,14 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params) {
     try {
-        // Pointcloud is empty if the file is not read successfully.
-        pointcloud.Clear();
-
-        // Get num_points.
         utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
             utility::LogWarning("Read PTS failed: unable to open file: {}",
                                 filename);
             return false;
         }
-
         size_t num_of_pts = 0;
-        int num_of_fields = 0;
+        size_t num_of_fields = 0;
         const char *line_buffer;
         if ((line_buffer = file.ReadLine())) {
             sscanf(line_buffer, "%zu", &num_of_pts);
@@ -68,22 +63,27 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         utility::CountingProgressReporter reporter(params.update_progress);
         reporter.SetTotal(num_of_pts);
 
-        size_t num_fields = 0;
-        if ((line_buffer = file.ReadLine())) {
-            num_fields = utility::SplitString(line_buffer, " ").size();
+        pointcloud.Clear();
 
-            if (num_fields == 7 || num_fields == 4) {
+        // Store data start position.
+        int64_t start_pos = ftell(file.GetFILE());
+
+        if ((line_buffer = file.ReadLine())) {
+            num_of_fields = utility::SplitString(line_buffer, " ").size();
+
+            if (num_of_fields == 7 || num_of_fields == 4) {
                 utility::LogWarning(
-                        "Read PTS: Intensity attribute is not supported.");
+                        "Read PTS: only points and colors attributes are "
+                        "supported.");
             }
 
             // X Y Z I R G B or X Y Z R G B.
-            if (num_fields == 7 || num_fields == 6) {
+            if (num_of_fields == 7 || num_of_fields == 6) {
                 pointcloud.points_.resize(num_of_pts);
                 pointcloud.colors_.resize(num_of_pts);
             }
-            // X Y Z I or  X Y Z.
-            else if (num_fields == 4 || num_fields == 3) {
+            // X Y Z I or X Y Z.
+            else if (num_of_fields == 4 || num_of_fields == 3) {
                 pointcloud.points_.resize(num_of_pts);
             } else {
                 utility::LogWarning("Read PTS failed: unknown pts format: {}",
@@ -91,6 +91,9 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                 return false;
             }
         }
+
+        // Go to data start position.
+        fseek(file.GetFILE(), start_pos, 0);
 
         size_t idx = 0;
         while (idx < num_of_pts && (line_buffer = file.ReadLine())) {
