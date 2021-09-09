@@ -19,14 +19,24 @@ jobs:
       PYTHON_VERSION: 3.6
       CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-gcloud-ci-ccache
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
+      # - name: Cancel outdated
+      #   uses: fkirc/skip-duplicate-actions@master
+      #   with:
+      #     github_token: ${{ github.token }}
       - name: Checkout source code
         uses: actions/checkout@v2
         with:
           submodules: true
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+      - name: GCloud CLI authenticate
+        run: |
+          gcloud auth configure-docker
+          gcloud info
       # - name: Maximize build space
       #   run: |
       #     source util/ci_utils.sh
@@ -34,3 +44,11 @@ jobs:
       - name: Docker build
         run: |
           .github/workflows/docker_build.sh 2-bionic
+      - name: Docker push
+        run: |
+          GIT_HASH=$(git rev-parse --short HEAD)
+          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}:latest
+          GCLOUD_DOCKER_TAG=${REGISTRY_HOSTNAME}/${GCE_PROJECT}/${DOCKER_TAG}
+          docker image tag ${DOCKER_TAG} ${GCLOUD_DOCKER_TAG}
+          docker push ${GCLOUD_DOCKER_TAG}
+          echo "Pushed to GCloud"
