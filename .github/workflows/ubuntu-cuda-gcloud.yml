@@ -18,8 +18,6 @@ jobs:
       DEVELOPER_BUILD: ON
       PYTHON_VERSION: 3.6
       CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-gcloud-ci-ccache
-      GCE_PROJECT: ${{ secrets.GCE_PROJECT }}
-      GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
     steps:
       # - name: Cancel outdated
       #   uses: fkirc/skip-duplicate-actions@master
@@ -66,10 +64,10 @@ jobs:
                      asia-southeast1-b asia-southeast1-c australia-southeast1-a)
           GCE_ZID=0
           until ((GCE_ZID >= ${#GCE_ZONES[@]})) ||
-            gcloud compute instances create ${VM_NAME} \
-              --project=${GCE_PROJECT} \
+            gcloud compute instances create ${{ env.VM_NAME }} \
+              --project=${{ secrets.GCE_PROJECT }} \
               --zone="${GCE_ZONES[$GCE_ZID]}" \
-              --service-account="${GCE_GPU_CI_SA}" \
+              --service-account="${{ secrets.GCE_GPU_CI_SA }}" \
               --image-family common-cu110 \
               --image-project deeplearning-platform-release \
               --accelerator="count=2,type=nvidia-tesla-t4" \
