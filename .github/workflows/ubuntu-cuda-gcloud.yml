@@ -69,9 +69,12 @@ jobs:
             --accelerator="count=2,type=nvidia-tesla-t4" \
             --maintenance-policy=TERMINATE \
             --machine-type=n1-standard-4 \
-            --metadata "install-nvidia-driver=True,proxy-mode=project_editors" \
-            --boot-disk-type=pd-ssd
+            --boot-disk-type=pd-ssd \
+            --metadata="install-nvidia-driver=True,proxy-mode=project_editors" \
           sleep 90s # Wait for nvidia driver installation
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=australia-southeast1-a \
+            --command "sudo gcloud auth configure-docker"
       - name: VM Docker run
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} \
