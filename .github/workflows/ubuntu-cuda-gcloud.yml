@@ -51,6 +51,9 @@ jobs:
           GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
           docker image tag ${DOCKER_TAG} ${GCLOUD_DOCKER_TAG}
           docker push ${GCLOUD_DOCKER_TAG}
+      - name: Explicit fail
+        run: |
+          exit 0
       - name: Docker cleanup
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
