@@ -150,7 +150,6 @@ cuda_wheel() {
         -t open3d-ubuntu-cuda-gcloud-ci-2-bionic:latest \
         -f .github/workflows/Dockerfile.ubuntu-cuda-gcloud .
     popd
-    exit 0
 }
 
 3-ML-SHARED-bionic() {
