@@ -40,8 +40,7 @@ set -euo pipefail
 
 # Create container
 # --service-account="$GCE_GPU_CI_SA" \
-gcloud compute instances create \
-    open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
+gcloud compute instances create open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
     --project open3d-dev \
     --no-service-account --no-scopes \
     --image-family common-cu110 \
@@ -50,21 +49,20 @@ gcloud compute instances create \
     --accelerator="count=2,type=nvidia-tesla-t4" \
     --maintenance-policy=TERMINATE \
     --machine-type=n1-standard-4 \
+    --metadata "install-nvidia-driver=True,proxy-mode=project_editors" \
     --boot-disk-type=pd-ssd
 
-# gcloud compute ssh \
-#     open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
-#     --zone=us-east1-c \
-#     --command "nvidia-smi"
+# Nvidia-driver takes about 1 minute to install in the background
+sleep 120s
 
-# gcloud compute ssh "${GCE_INSTANCE}" --zone "${GCE_INSTANCE_ZONE[$GCE_ZID]}" --command \
-#     "sudo docker run --detach --interactive --name open3d_gpu_ci --gpus all \
-#         --env NPROC=$NPROC \
-#         --env SHARED=${SHARED[$CI_CONFIG_ID]} \
-#         --env BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE[$CI_CONFIG_ID]} \
-#         --env BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS[$CI_CONFIG_ID]} \
-#         --env BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS[$CI_CONFIG_ID]} \
-#         --env OPEN3D_ML_ROOT=/root/Open3D/Open3D-ML \
-#         $DC_IMAGE_TAG; \
-#         sudo docker exec --interactive  open3d_gpu_ci util/run_ci.sh"
-# ;;
+gcloud compute ssh open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
+    --zone=us-east1-c \
+    --command "nvidia-smi"
+
+gcloud compute ssh open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
+    --zone=us-east1-c \
+    --command "which docker"
+
+gcloud compute instances delete open3d-ubuntu-cuda-gcloud-ci-2-bionic-d90752d \
+    --zone=us-east1-c \
+    --quiet
