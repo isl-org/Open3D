@@ -317,8 +317,9 @@ class Open3DPluginWindow:
                                           current_item)
         self.geometry_list = new_geometry_list
 
+        # Includes force_redraw()
         async_event_loop.run_sync(self.window.reset_camera_to_default)
-        async_event_loop.run_sync(self.window.post_redraw)
+        # async_event_loop.run_sync(self.window.post_redraw)
 
         if not self.init_done.is_set():
             self.init_done.set()

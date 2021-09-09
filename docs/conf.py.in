@@ -61,6 +61,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
     "nbsphinx",
     'm2r2',
 ]
@@ -86,7 +87,7 @@ master_doc = "index"
 
 # General information about the project.
 project = u"Open3D"
-copyright = u"2018 - 2020, www.open3d.org"
+copyright = u"2018 - 2021, www.open3d.org"
 author = u"www.open3d.org"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -213,6 +214,9 @@ texinfo_documents = [(
 # Version 1: Changed to 'groupwise': __init__ first, then methods, then
 #            properties. Within each, sorted alphabetically.
 autodoc_member_order = "groupwise"
+
+# Show TODO elements in the documentation
+todo_include_todos = True
 
 
 def is_enum_class(func, func_name):
