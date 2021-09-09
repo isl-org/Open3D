@@ -52,6 +52,7 @@ jobs:
           .github/workflows/docker_build.sh 2-bionic
       - name: Docker push
         run: |
+          gcloud auth configure-docker
           docker image tag ${{ env.DOCKER_TAG }} ${{ env.GCLOUD_DOCKER_TAG }}
           docker push ${{ env.GCLOUD_DOCKER_TAG }}
       - name: VM create
