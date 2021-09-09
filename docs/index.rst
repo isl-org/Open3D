@@ -44,6 +44,13 @@ Open3D: A Modern Library for 3D Data Processing
 
 
 .. toctree::
+    :maxdepth: 2
+    :caption: Tutorial (New API)
+
+    tutorial/tensor_api/core/index
+
+
+.. toctree::
     :maxdepth: 1
     :caption: Contribute
 

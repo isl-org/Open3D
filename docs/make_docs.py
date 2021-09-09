@@ -388,9 +388,9 @@ class JupyterDocsBuilder:
         nb_direct_copy = ['tensor.ipynb']
         example_dirs = [
             "geometry",
-            "core",
             "pipelines",
             "visualization",
+            "tensor_api/core",
         ]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir).parent / "examples" /
