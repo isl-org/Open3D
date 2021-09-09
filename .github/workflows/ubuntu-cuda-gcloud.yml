@@ -43,17 +43,21 @@ jobs:
       #     maximize_ubuntu_github_actions_build_space
       - name: Set container and vm names in GITHUB_ENV
         run: |
-          echo "GIT_HASH=$(git rev-parse --short HEAD)"                            >> $GITHUB_ENV
-          echo "DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}"      >> $GITHUB_ENV
-          echo "GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}" >> $GITHUB_ENV
-          echo "VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}"         >> $GITHUB_ENV
+          GIT_HASH=$(git rev-parse --short HEAD)
+          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
+          GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
+          VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
+          echo "GIT_HASH=${GIT_HASH}"                   >> $GITHUB_ENV
+          echo "DOCKER_TAG=${DOCKER_TAG}"               >> $GITHUB_ENV
+          echo "GCLOUD_DOCKER_TAG=${GCLOUD_DOCKER_TAG}" >> $GITHUB_ENV
+          echo "VM_NAME=${VM_NAME}"                     >> $GITHUB_ENV
       - name: Docker build
         run: |
           .github/workflows/docker_build.sh 2-bionic
       - name: Docker push
         run: |
-          docker image tag ${{ env.DOCKER_TAG }} ${{ env.GCLOUD_DOCKER_TAG}}
-          docker push ${{ env.GCLOUD_DOCKER_TAG}}
+          docker image tag ${{ env.DOCKER_TAG }} ${{ env.GCLOUD_DOCKER_TAG }}
+          docker push ${{ env.GCLOUD_DOCKER_TAG }}
       - name: VM create
         run: |
           gcloud compute instances create ${{ env.VM_NAME }} \
