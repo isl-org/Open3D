@@ -1,6 +1,28 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 # examples/python/reconstruction_system/slac.py
 
@@ -55,13 +77,14 @@ def run(config):
             ply_file_names, pose_graph_fragment, slac_params, debug_option)
 
         hashmap = ctrl_grid.get_hashmap()
-        active_addrs = hashmap.get_active_addrs().to(o3d.core.Dtype.Int64)
+        active_buf_indices = hashmap.get_active_buf_indices().to(
+            o3d.core.Dtype.Int64)
 
-        key_tensor = hashmap.get_key_tensor()[active_addrs]
+        key_tensor = hashmap.get_key_tensor()[active_buf_indices]
         key_tensor.save(
             join(slac_params.get_subfolder_name(), "ctr_grid_keys.npy"))
 
-        value_tensor = hashmap.get_value_tensor()[active_addrs]
+        value_tensor = hashmap.get_value_tensor()[active_buf_indices]
         value_tensor.save(
             join(slac_params.get_subfolder_name(), "ctr_grid_values.npy"))
 

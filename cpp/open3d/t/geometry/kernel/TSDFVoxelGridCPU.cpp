@@ -32,7 +32,7 @@
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/CPU/TBBHashmap.h"
+#include "open3d/core/hashmap/CPU/TBBHashBackend.h"
 #include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -68,7 +68,7 @@ struct Coord3iHash {
     }
 };
 
-void TouchCPU(std::shared_ptr<core::Hashmap>&
+void TouchCPU(std::shared_ptr<core::HashMap>&
                       hashmap,  // dummy for now, one pass insertion is faster
               const core::Tensor& points,
               core::Tensor& voxel_block_coords,

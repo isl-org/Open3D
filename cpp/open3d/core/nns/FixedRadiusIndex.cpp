@@ -27,6 +27,7 @@
 #include "open3d/core/nns/FixedRadiusIndex.h"
 
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -133,11 +134,11 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     int64_t num_query_points = query_points.GetShape()[0];
 
     // Check dtype.
-    query_points.AssertDtype(dtype);
+    AssertTensorDtype(query_points, dtype);
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
-    queries_row_splits.AssertShape(points_row_splits_.GetShape());
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(queries_row_splits, points_row_splits_.GetShape());
     if (num_query_points != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
                 "[FixedRadiusIndex::SearchRadius] query_points and "
@@ -145,7 +146,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     }
 
     // Check device.
-    query_points.AssertDevice(device);
+    AssertTensorDevice(query_points, device);
 
     if (radius <= 0) {
         utility::LogError(
@@ -206,11 +207,11 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     int64_t num_query_points = query_points.GetShape()[0];
 
     // Check dtype.
-    query_points.AssertDtype(dtype);
+    AssertTensorDtype(query_points, dtype);
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
-    queries_row_splits.AssertShape(points_row_splits_.GetShape());
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(queries_row_splits, points_row_splits_.GetShape());
     if (num_query_points != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
                 "[FixedRadiusIndex::SearchRadius] query_points and "
@@ -218,7 +219,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     }
 
     // Check device.
-    query_points.AssertDevice(device);
+    AssertTensorDevice(query_points, device);
 
     if (radius <= 0) {
         utility::LogError(

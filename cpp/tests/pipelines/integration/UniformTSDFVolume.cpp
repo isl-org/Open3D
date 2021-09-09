@@ -100,7 +100,8 @@ TEST(UniformTSDFVolume, Constructor) {
 
 TEST(UniformTSDFVolume, RealData) {
     // Poses
-    std::string trajectory_path = GetDataPathCommon("/RGBD/odometry.log");
+    std::string trajectory_path =
+            utility::GetDataPathCommon("RGBD/odometry.log");
     std::vector<Eigen::Matrix4d> poses;
     if (!ReadPoses(trajectory_path, poses)) {
         throw std::runtime_error("Cannot read trajectory file");
@@ -125,15 +126,15 @@ TEST(UniformTSDFVolume, RealData) {
         // Color
         geometry::Image im_color;
         std::ostringstream im_color_path;
-        im_color_path << GetDataPathCommon("/RGBD/color/") << std::setfill('0')
-                      << std::setw(5) << i << ".jpg";
+        im_color_path << utility::GetDataPathCommon("RGBD/color/")
+                      << std::setfill('0') << std::setw(5) << i << ".jpg";
         io::ReadImage(im_color_path.str(), im_color);
 
         // Depth
         geometry::Image im_depth;
         std::ostringstream im_depth_path;
-        im_depth_path << GetDataPathCommon("/RGBD/depth/") << std::setfill('0')
-                      << std::setw(5) << i << ".png";
+        im_depth_path << utility::GetDataPathCommon("RGBD/depth/")
+                      << std::setfill('0') << std::setw(5) << i << ".png";
         io::ReadImage(im_depth_path.str(), im_depth);
 
         // Ingegrate

@@ -39,6 +39,7 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -59,7 +60,7 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
     int dimension = GetDimension();
 
     // Check dtype.
-    dataset_points_.AssertDtype(core::Float32);
+    AssertTensorDtype(dataset_points_, core::Float32);
 
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
@@ -98,10 +99,10 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
 std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                                                 int knn) const {
     // Check dtype.
-    query_points.AssertDtype(core::Float32);
+    AssertTensorDtype(query_points, core::Float32);
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
         utility::LogError(
@@ -129,10 +130,10 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
 std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
     // Check dtype.
-    query_points.AssertDtype(core::Float32);
+    AssertTensorDtype(query_points, core::Float32);
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
         utility::LogError(

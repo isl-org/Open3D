@@ -309,6 +309,14 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetPointSize(int(std::round(value)));
     });
     mat_grid->AddChild(point_size_);
+
+    mat_grid->AddChild(std::make_shared<gui::Label>(""));
+    generate_normals_ = std::make_shared<SmallButton>("Estimate PCD Normals");
+    generate_normals_->SetOnClicked(
+            [this]() { model_.EstimateNormalsClicked(); });
+    generate_normals_->SetEnabled(false);
+    mat_grid->AddChild(generate_normals_);
+
     materials->AddChild(mat_grid);
 
     AddFixed(separation_height);
@@ -333,6 +341,10 @@ void GuiSettingsView::ShowFileMaterialEntry(bool show) {
                  " [default]")
                         .c_str());
     }
+}
+
+void GuiSettingsView::EnableEstimateNormals(bool enable) {
+    generate_normals_->SetEnabled(enable);
 }
 
 void GuiSettingsView::Update() {

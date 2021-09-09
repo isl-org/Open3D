@@ -256,6 +256,42 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
               std::vector<float>({2, 2, 1}));
 }
 
+TEST_P(PointCloudPermuteDevices, EstimateNormals) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0},
+                                                      {1, 1, 1}},
+                                                     device);
+    t::geometry::PointCloud pcd(points);
+
+    // Estimate normals using Hybrid Search.
+    pcd.EstimateNormals(4, 2.0);
+
+    core::Tensor normals =
+            core::Tensor::Init<double>({{0.57735, 0.57735, 0.57735},
+                                        {-0.57735, -0.57735, 0.57735},
+                                        {0.57735, -0.57735, 0.57735},
+                                        {-0.57735, 0.57735, 0.57735},
+                                        {-0.57735, 0.57735, 0.57735},
+                                        {0.57735, -0.57735, 0.57735},
+                                        {-0.57735, -0.57735, 0.57735},
+                                        {0.57735, 0.57735, 0.57735}},
+                                       device);
+
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+    pcd.RemovePointAttr("normals");
+
+    // Estimate normals using KNN Search.
+    pcd.EstimateNormals(4);
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+}
+
 TEST_P(PointCloudPermuteDevices, FromLegacy) {
     core::Device device = GetParam();
     geometry::PointCloud legacy_pcd;
@@ -640,7 +676,7 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     t::geometry::PointCloud pcd =
             t::geometry::PointCloud::FromLegacy(
                     *io::CreatePointCloudFromFile(
-                            GetDataPathCommon("/ICP/cloud_bin_2.pcd")))
+                            utility::GetDataPathCommon("ICP/cloud_bin_2.pcd")))
                     .To(device);
     auto pcd_down = pcd.VoxelDownSample(0.1);
     io::WritePointCloud(fmt::format("down_{}.pcd", device.ToString()),

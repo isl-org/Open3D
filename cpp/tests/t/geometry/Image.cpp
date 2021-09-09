@@ -176,7 +176,7 @@ TEST_P(ImagePermuteDevices, Copy) {
 // Float32/64 and LinearTransform().
 // Currently needs IPP.
 TEST_P(ImagePermuteDevices,
-       OPEN3D_CONCATENATE(IPP_CONDITIONAL_TEST_STR, To_LinearTransform)) {
+       OPEN3D_CONCAT(IPP_CONDITIONAL_TEST_STR, To_LinearTransform)) {
     using ::testing::ElementsAreArray;
     using ::testing::FloatEq;
     core::Device device = GetParam();
@@ -856,8 +856,8 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =
-            t::io::CreateImageFromFile(
-                    GetDataPathCommon(fmt::format("RGBD/depth/{:05d}.png", 1)))
+            t::io::CreateImageFromFile(utility::GetDataPathCommon(fmt::format(
+                                               "RGBD/depth/{:05d}.png", 1)))
                     ->To(device);
 
     float invalid_fill = 0.0f;
@@ -873,8 +873,8 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =
-            t::io::CreateImageFromFile(
-                    GetDataPathCommon(fmt::format("RGBD/depth/{:05d}.png", 1)))
+            t::io::CreateImageFromFile(utility::GetDataPathCommon(fmt::format(
+                                               "RGBD/depth/{:05d}.png", 1)))
                     ->To(device);
 
     float invalid_fill = 0.0f;
@@ -905,8 +905,8 @@ TEST_P(ImagePermuteDevices, DISABLED_ColorizeDepth) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =
-            t::io::CreateImageFromFile(
-                    GetDataPathCommon(fmt::format("RGBD/depth/{:05d}.png", 1)))
+            t::io::CreateImageFromFile(utility::GetDataPathCommon(fmt::format(
+                                               "RGBD/depth/{:05d}.png", 1)))
                     ->To(device);
 
     auto color_depth = depth.ColorizeDepth(1000.0, 0.0, 3.0);

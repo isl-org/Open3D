@@ -31,12 +31,15 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/TensorCheck.h"
+#include "open3d/core/hashmap/HashSet.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 
@@ -51,7 +54,7 @@ PointCloud::PointCloud(const core::Device &device)
 
 PointCloud::PointCloud(const core::Tensor &points)
     : PointCloud(points.GetDevice()) {
-    points.AssertShapeCompatible({utility::nullopt, 3});
+    core::AssertTensorShape(points, {utility::nullopt, 3});
     SetPointPositions(points);
 }
 
@@ -63,8 +66,8 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
         utility::LogError("\"positions\" attribute must be specified.");
     }
     device_ = map_keys_to_tensors.at("positions").GetDevice();
-    map_keys_to_tensors.at("positions")
-            .AssertShapeCompatible({utility::nullopt, 3});
+    core::AssertTensorShape(map_keys_to_tensors.at("positions"),
+                            {utility::nullopt, 3});
     point_attr_ = TensorMap("positions", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());
 }
@@ -123,8 +126,8 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
     for (auto &kv : point_attr_) {
         if (other.HasPointAttr(kv.first)) {
             auto other_attr = other.GetPointAttr(kv.first);
-            other_attr.AssertDtype(kv.second.GetDtype());
-            other_attr.AssertDevice(kv.second.GetDevice());
+            core::AssertTensorDtype(other_attr, kv.second.GetDtype());
+            core::AssertTensorDevice(other_attr, kv.second.GetDevice());
 
             // Checking shape compatibility.
             auto other_attr_shape = other_attr.GetShape();
@@ -173,8 +176,8 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
-    translation.AssertShape({3});
-    translation.AssertDevice(device_);
+    core::AssertTensorShape(translation, {3});
+    core::AssertTensorDevice(translation, device_);
 
     core::Tensor transform = translation;
     if (!relative) {
@@ -185,8 +188,8 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
 }
 
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
-    center.AssertShape({3});
-    center.AssertDevice(device_);
+    core::AssertTensorShape(center, {3});
+    core::AssertTensorDevice(center, device_);
 
     core::Tensor points = GetPointPositions();
     points.Sub_(center).Mul_(scale).Add_(center);
@@ -204,19 +207,18 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
 }
 
 PointCloud PointCloud::VoxelDownSample(
-        double voxel_size, const core::HashmapBackend &backend) const {
+        double voxel_size, const core::HashBackendType &backend) const {
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
     core::Tensor points_voxeld = GetPointPositions() / voxel_size;
     core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
 
-    core::Hashmap points_voxeli_hashmap(points_voxeli.GetLength(), core::Int64,
-                                        core::Int32, {3}, {1}, device_,
-                                        backend);
+    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
+                                        {3}, device_, backend);
 
-    core::Tensor addrs, masks;
-    points_voxeli_hashmap.Activate(points_voxeli, addrs, masks);
+    core::Tensor buf_indices, masks;
+    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
 
     PointCloud pcd_down(GetPointPositions().GetDevice());
     for (auto &kv : point_attr_) {
@@ -231,6 +233,162 @@ PointCloud PointCloud::VoxelDownSample(
     }
 
     return pcd_down;
+}
+
+void PointCloud::EstimateNormals(
+        const int max_knn /* = 30*/,
+        const utility::optional<double> radius /*= utility::nullopt*/) {
+    core::Dtype dtype = this->GetPointPositions().GetDtype();
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                "Only Float32 and Float64 type color attribute supported for "
+                "estimating color gradient.");
+    }
+    const bool has_normals = HasPointNormals();
+    const core::Device device = GetDevice();
+    const core::Device::DeviceType device_type = device.GetType();
+
+    if (!has_normals) {
+        this->SetPointNormals(core::Tensor::Empty(
+                {GetPointPositions().GetLength(), 3}, dtype, device));
+    } else {
+        if (this->GetPointNormals().GetDtype() != dtype) {
+            utility::LogError(
+                    "Normals attribute must have same dtype as positions.");
+        }
+        this->SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    this->SetPointAttr(
+            "covariances",
+            core::Tensor::Empty({GetPointPositions().GetLength(), 3, 3}, dtype,
+                                device));
+
+    if (radius.has_value()) {
+        utility::LogDebug("Using Hybrid Search for computing covariances");
+        // Computes and sets `covariances` attribute using Hybrid Search
+        // mehtod.
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value(), max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateCovariancesUsingHybridSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), radius.value(),
+                      max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogDebug("Using KNN Search for computing covariances");
+        // Computes and sets `covariances` attribute using KNN Search method.
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    }
+
+    // Estimate `normal` of each point using its `covariance` matrix.
+    if (device_type == core::Device::DeviceType::CPU) {
+        kernel::pointcloud::EstimateNormalsFromCovariancesCPU(
+                this->GetPointAttr("covariances"), this->GetPointNormals(),
+                has_normals);
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(kernel::pointcloud::EstimateNormalsFromCovariancesCUDA,
+                  this->GetPointAttr("covariances"), this->GetPointNormals(),
+                  has_normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    // TODO (@rishabh): Don't remove covariances attribute, when
+    // EstimateCovariance functionality is exposed.
+    RemovePointAttr("covariances");
+}
+
+void PointCloud::EstimateColorGradients(
+        const int max_knn /* = 30*/,
+        const utility::optional<double> radius /*= utility::nullopt*/) {
+    if (!HasPointColors() || !HasPointNormals()) {
+        utility::LogError(
+                "PointCloud must have colors and normals attribute "
+                "to compute color gradients.");
+    }
+
+    core::Dtype dtype = this->GetPointColors().GetDtype();
+    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
+        utility::LogError(
+                "Only Float32 and Float64 type color attribute supported for "
+                "estimating color gradient.");
+    }
+
+    const core::Device device = GetDevice();
+    const core::Device::DeviceType device_type = device.GetType();
+
+    if (!this->HasPointAttr("color_gradients")) {
+        this->SetPointAttr(
+                "color_gradients",
+                core::Tensor::Empty({GetPointPositions().GetLength(), 3}, dtype,
+                                    device));
+    } else {
+        if (this->GetPointAttr("color_gradients").GetDtype() != dtype) {
+            utility::LogError(
+                    "color_gradients attribute must be of same dtype as "
+                    "points.");
+        }
+        // If color_gradients attribute is already present, do not re-compute.
+        return;
+    }
+
+    // Compute and set `color_gradients` attribute.
+    if (radius.has_value()) {
+        utility::LogDebug("Using Hybrid Search for computing color_gradients");
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateColorGradientsUsingHybridSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), radius.value(),
+                    max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateColorGradientsUsingHybridSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointNormals().Contiguous(),
+                      this->GetPointColors().Contiguous(),
+                      this->GetPointAttr("color_gradients"), radius.value(),
+                      max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogDebug("Using KNN Search for computing color_gradients");
+        if (device_type == core::Device::DeviceType::CPU) {
+            kernel::pointcloud::EstimateColorGradientsUsingKNNSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), max_knn);
+        } else if (device_type == core::Device::DeviceType::CUDA) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateColorGradientsUsingKNNSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointNormals().Contiguous(),
+                      this->GetPointColors().Contiguous(),
+                      this->GetPointAttr("color_gradients"), max_knn);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    }
 }
 
 static PointCloud CreatePointCloudWithNormals(

@@ -66,9 +66,9 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/depth/00000.png"));
+            utility::GetDataPathCommon("RGBD/depth/00000.png"));
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/depth/00002.png"));
+            utility::GetDataPathCommon("RGBD/depth/00002.png"));
 
     src_depth = src_depth.To(device);
     dst_depth = dst_depth.To(device);
@@ -134,13 +134,13 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/depth/00000.png"));
+            utility::GetDataPathCommon("RGBD/depth/00000.png"));
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/depth/00002.png"));
+            utility::GetDataPathCommon("RGBD/depth/00002.png"));
     t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/color/00000.jpg"));
+            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
     t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/color/00002.jpg"));
+            utility::GetDataPathCommon("RGBD/color/00002.jpg"));
 
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);
@@ -201,13 +201,13 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/depth/00000.png"));
+            utility::GetDataPathCommon("RGBD/depth/00000.png"));
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/depth/00002.png"));
+            utility::GetDataPathCommon("RGBD/depth/00002.png"));
     t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/color/00000.jpg"));
+            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
     t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/color/00002.jpg"));
+            utility::GetDataPathCommon("RGBD/color/00002.jpg"));
 
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);
@@ -268,13 +268,13 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/depth/00000.png"));
+            utility::GetDataPathCommon("RGBD/depth/00000.png"));
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/depth/00002.png"));
+            utility::GetDataPathCommon("RGBD/depth/00002.png"));
     t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/color/00000.jpg"));
+            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
     t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            GetDataPathCommon("RGBD/color/00002.jpg"));
+            utility::GetDataPathCommon("RGBD/color/00002.jpg"));
 
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);

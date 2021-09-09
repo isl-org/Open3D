@@ -38,6 +38,7 @@
 #include "open3d/t/geometry/kernel/TSDFVoxel.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/MiniVec.h"
 #include "open3d/utility/Timer.h"
 
 namespace open3d {
@@ -1121,7 +1122,7 @@ void EstimateRangeCPU
 #endif
 }
 
-struct BlockCache {
+struct MiniVecCache {
     int x;
     int y;
     int z;
@@ -1147,7 +1148,7 @@ void RayCastCUDA
 #else
 void RayCastCPU
 #endif
-        (std::shared_ptr<core::DeviceHashmap>& hashmap,
+        (std::shared_ptr<core::DeviceHashBackend>& hashmap,
          const core::Tensor& block_values,
          const core::Tensor& range_map,
          core::Tensor& vertex_map,
@@ -1165,12 +1166,14 @@ void RayCastCPU
          float depth_min,
          float depth_max,
          float weight_threshold) {
-    using Key = core::Block<int, 3>;
-    using Hash = core::BlockHash<int, 3>;
+    using Key = utility::MiniVec<int, 3>;
+    using Hash = utility::MiniVecHash<int, 3>;
+    using Eq = utility::MiniVecEq<int, 3>;
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
     auto cuda_hashmap =
-            std::dynamic_pointer_cast<core::StdGPUHashmap<Key, Hash>>(hashmap);
+            std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash, Eq>>(
+                    hashmap);
     if (cuda_hashmap == nullptr) {
         utility::LogError(
                 "Unsupported backend: CUDA raycasting only supports STDGPU.");
@@ -1178,7 +1181,8 @@ void RayCastCPU
     auto hashmap_impl = cuda_hashmap->GetImpl();
 #else
     auto cpu_hashmap =
-            std::dynamic_pointer_cast<core::TBBHashmap<Key, Hash>>(hashmap);
+            std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash, Eq>>(
+                    hashmap);
     auto hashmap_impl = *cpu_hashmap->GetImpl();
 #endif
 
@@ -1229,11 +1233,11 @@ void RayCastCPU
         core::ParallelFor(
                 hashmap->GetDevice(), rows * cols,
                 [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    auto GetVoxelAtP = [&] OPEN3D_DEVICE(
-                                               int x_b, int y_b, int z_b,
-                                               int x_v, int y_v, int z_v,
-                                               core::addr_t block_addr,
-                                               BlockCache& cache) -> voxel_t* {
+                    auto GetVoxelAtP =
+                            [&] OPEN3D_DEVICE(int x_b, int y_b, int z_b,
+                                              int x_v, int y_v, int z_v,
+                                              core::buf_index_t block_addr,
+                                              MiniVecCache& cache) -> voxel_t* {
                         int x_vn = (x_v + block_resolution) % block_resolution;
                         int y_vn = (y_v + block_resolution) % block_resolution;
                         int z_vn = (z_v + block_resolution) % block_resolution;
@@ -1247,18 +1251,14 @@ void RayCastCPU
                                     .GetDataPtr<voxel_t>(x_v, y_v, z_v,
                                                          block_addr);
                         } else {
-                            Key key;
-                            key.Set(0, x_b + dx_b);
-                            key.Set(1, y_b + dy_b);
-                            key.Set(2, z_b + dz_b);
-
-                            int block_addr = cache.Check(key.Get(0), key.Get(1),
-                                                         key.Get(2));
+                            Key key(x_b + dx_b, y_b + dy_b, z_b + dz_b);
+                            int block_addr =
+                                    cache.Check(key[0], key[1], key[2]);
                             if (block_addr < 0) {
                                 auto iter = hashmap_impl.find(key);
                                 if (iter == hashmap_impl.end()) return nullptr;
                                 block_addr = iter->second;
-                                cache.Update(key.Get(0), key.Get(1), key.Get(2),
+                                cache.Update(key[0], key[1], key[2],
                                              block_addr);
                             }
 
@@ -1268,25 +1268,21 @@ void RayCastCPU
                         }
                     };
 
-                    auto GetVoxelAtT = [&] OPEN3D_DEVICE(
-                                               float x_o, float y_o, float z_o,
-                                               float x_d, float y_d, float z_d,
-                                               float t,
-                                               BlockCache& cache) -> voxel_t* {
+                    auto GetVoxelAtT =
+                            [&] OPEN3D_DEVICE(float x_o, float y_o, float z_o,
+                                              float x_d, float y_d, float z_d,
+                                              float t,
+                                              MiniVecCache& cache) -> voxel_t* {
                         float x_g = x_o + t * x_d;
                         float y_g = y_o + t * y_d;
                         float z_g = z_o + t * z_d;
 
-                        // Block coordinate and look up
+                        // MiniVec coordinate and look up
                         int x_b = static_cast<int>(floorf(x_g / block_size));
                         int y_b = static_cast<int>(floorf(y_g / block_size));
                         int z_b = static_cast<int>(floorf(z_g / block_size));
 
-                        Key key;
-                        key.Set(0, x_b);
-                        key.Set(1, y_b);
-                        key.Set(2, z_b);
-
+                        Key key(x_b, y_b, z_b);
                         int block_addr = cache.Check(x_b, y_b, z_b);
                         if (block_addr < 0) {
                             auto iter = hashmap_impl.find(key);
@@ -1363,7 +1359,7 @@ void RayCastCPU
                     float y_d = (y_g - y_o);
                     float z_d = (z_g - z_o);
 
-                    BlockCache cache{0, 0, 0, -1};
+                    MiniVecCache cache{0, 0, 0, -1};
                     bool surface_found = false;
                     while (t < t_max) {
                         voxel_t* voxel_ptr = GetVoxelAtT(x_o, y_o, z_o, x_d,
@@ -1421,10 +1417,7 @@ void RayCastCPU
                             float z_v = (z_g - float(z_b) * block_size) /
                                         voxel_size;
 
-                            Key key;
-                            key.Set(0, x_b);
-                            key.Set(1, y_b);
-                            key.Set(2, z_b);
+                            Key key(x_b, y_b, z_b);
 
                             int block_addr = cache.Check(x_b, y_b, z_b);
                             if (block_addr < 0) {

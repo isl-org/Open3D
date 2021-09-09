@@ -135,10 +135,8 @@ void pybind_registration_classes(py::module &m) {
                PyTransformationEstimation<TransformationEstimation>>
             te(m, "TransformationEstimation",
                "Base class that estimates a transformation between two "
-               "point "
-               "clouds. The virtual function ComputeTransformation() must "
-               "be "
-               "implemented in subclasses.");
+               "point clouds. The virtual function ComputeTransformation() "
+               "must be implemented in subclasses.");
     te.def("compute_rmse", &TransformationEstimation::ComputeRMSE, "source"_a,
            "target"_a, "correspondences"_a,
            "Compute RMSE between source and target points cloud given "
@@ -198,15 +196,61 @@ void pybind_registration_classes(py::module &m) {
             te_p2l);
     py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
             te_p2l);
-    te_p2l.def(py::init([](const RobustKernel &robust_kernel) {
-                   return new TransformationEstimationPointToPlane(
-                           robust_kernel);
+    te_p2l.def(py::init([](const RobustKernel &kernel) {
+                   return new TransformationEstimationPointToPlane(kernel);
                }),
-               "robust_kernel"_a)
+               "kernel"_a)
             .def("__repr__",
                  [](const TransformationEstimationPointToPlane &te) {
                      return std::string("TransformationEstimationPointToPlane");
-                 });
+                 })
+            .def_readwrite("kernel",
+                           &TransformationEstimationPointToPlane::kernel_,
+                           "Robust Kernel used in the Optimization");
+
+    // open3d.t.pipelines.registration.TransformationEstimationForColoredICP
+    // TransformationEstimation
+    py::class_<
+            TransformationEstimationForColoredICP,
+            PyTransformationEstimation<TransformationEstimationForColoredICP>,
+            TransformationEstimation>
+            te_col(m, "TransformationEstimationForColoredICP",
+                   "Class to estimate a transformation between two point "
+                   "clouds using color information");
+    py::detail::bind_default_constructor<TransformationEstimationForColoredICP>(
+            te_col);
+    py::detail::bind_copy_functions<TransformationEstimationForColoredICP>(
+            te_col);
+    te_col.def(py::init([](double lambda_geometric, RobustKernel &kernel) {
+                   return new TransformationEstimationForColoredICP(
+                           lambda_geometric, kernel);
+               }),
+               "lambda_geometric"_a, "kernel"_a)
+            .def(py::init([](const double lambda_geometric) {
+                     return new TransformationEstimationForColoredICP(
+                             lambda_geometric);
+                 }),
+                 "lambda_geometric"_a)
+            .def(py::init([](const RobustKernel kernel) {
+                     auto te = TransformationEstimationForColoredICP();
+                     te.kernel_ = kernel;
+                     return te;
+                 }),
+                 "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationForColoredICP &te) {
+                     return std::string(
+                                    "TransformationEstimationForColoredICP "
+                                    "with lambda_geometric: ") +
+                            std::to_string(te.lambda_geometric_);
+                 })
+            .def_readwrite(
+                    "lambda_geometric",
+                    &TransformationEstimationForColoredICP::lambda_geometric_,
+                    "lambda_geometric")
+            .def_readwrite("kernel",
+                           &TransformationEstimationForColoredICP::kernel_,
+                           "Robust Kernel used in the Optimization");
 }
 
 // Registration functions have similar arguments, sharing arg
@@ -271,6 +315,17 @@ void pybind_registration_methods(py::module &m) {
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint());
     docstring::FunctionDocInject(m, "registration_multi_scale_icp",
+                                 map_shared_argument_docstrings);
+
+    m.def("get_information_matrix_from_point_clouds",
+          &GetInformationMatrixFromPointClouds,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for computing information matrix from transformation "
+          "matrix. Information matrix is tensor of shape {6, 6}, dtype Float64 "
+          "on CPU device.",
+          "source"_a, "target"_a, "max_correspondence_distance"_a,
+          "transformation"_a);
+    docstring::FunctionDocInject(m, "get_information_matrix_from_point_clouds",
                                  map_shared_argument_docstrings);
 }
 

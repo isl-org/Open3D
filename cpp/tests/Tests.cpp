@@ -24,12 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// TEST_DATA_DIR defined in CMakeLists.txt
-// Put it here to avoid editor warnings
-#ifndef TEST_DATA_DIR
-#define TEST_DATA_DIR
-#endif
-
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -44,23 +38,6 @@ void NotImplemented() {
               << "\033[0;0m" << std::endl;
 
     GTEST_NONFATAL_FAILURE_("Not implemented");
-}
-
-std::string GetDataPathCommon(const std::string& relative_path) {
-    if (relative_path.empty()) {
-        return std::string(TEST_DATA_DIR);
-    } else {
-        return std::string(TEST_DATA_DIR) + "/" + relative_path;
-    }
-}
-
-std::string GetDataPathDownload(const std::string& relative_path) {
-    if (relative_path.empty()) {
-        return std::string(TEST_DATA_DIR) + "/open3d_downloads";
-    } else {
-        return std::string(TEST_DATA_DIR) + "/open3d_downloads/" +
-               relative_path;
-    }
 }
 
 }  // namespace tests

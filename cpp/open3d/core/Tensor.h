@@ -38,6 +38,7 @@
 #include "open3d/core/Scalar.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/TensorInit.h"
 #include "open3d/core/TensorKey.h"
 
@@ -1055,22 +1056,6 @@ public:
 
     /// Load tensor from numpy's npy format.
     static Tensor Load(const std::string& file_name);
-
-    /// Assert that the Tensor has the specified shape.
-    void AssertShape(const SizeVector& expected_shape,
-                     const std::string& error_msg = "") const;
-
-    /// Assert that Tensor's shape is compatible with a dynamic shape.
-    void AssertShapeCompatible(const DynamicSizeVector& expected_shape,
-                               const std::string& error_msg = "") const;
-
-    /// Assert that the Tensor has the specified device.
-    void AssertDevice(const Device& expected_device,
-                      const std::string& error_msg = "") const;
-
-    /// Assert that the Tensor has the specified dtype.
-    void AssertDtype(const Dtype& expected_dtype,
-                     const std::string& error_msg = "") const;
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
