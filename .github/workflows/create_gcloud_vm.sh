@@ -53,4 +53,4 @@ echo "VM_ZONE=${VM_ZONE}" >> "$GITHUB_ENV"
 sleep 90s
 
 # 0 => success
-exit $((GCE_ZID >= ${#GCE_INSTANCE_ZONE[@]}))
+exit $((GCE_ZID >= ${#VM_ZONE[@]}))
