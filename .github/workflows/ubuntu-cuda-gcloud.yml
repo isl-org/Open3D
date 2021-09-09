@@ -49,8 +49,12 @@ jobs:
           GIT_HASH=$(git rev-parse --short HEAD)
           DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
           GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
-          echo "To tag"
           docker image tag ${DOCKER_TAG} ${GCLOUD_DOCKER_TAG}
-          echo "To push"
           docker push ${GCLOUD_DOCKER_TAG}
-          echo "Pushed to GCloud"
+      - name: Docker cleanup
+        run: |
+          GIT_HASH=$(git rev-parse --short HEAD)
+          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
+          GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
+          docker push ${GCLOUD_DOCKER_TAG}
+          gcloud container images delete ${GCLOUD_DOCKER_TAG}
