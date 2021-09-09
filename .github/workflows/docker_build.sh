@@ -152,7 +152,7 @@ cuda_wheel() {
         --build-arg CCACHE_VERSION=${CCACHE_VERSION} \
         --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
         -t ${DOCKER_TAG} \
-        -f .github/workflows/Dockerfile.ubuntu-cuda-gcloud .
+        -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
 }
 
