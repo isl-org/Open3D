@@ -33,10 +33,10 @@ jobs:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_PROJECT }}
-      # - name: Maximize build space
-      #   run: |
-      #     source util/ci_utils.sh
-      #     maximize_ubuntu_github_actions_build_space
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
       - name: Set container and vm names in GITHUB_ENV
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
