@@ -41,12 +41,13 @@ set -euo pipefail
 #            asia-southeast1-c
 #            australia-southeast1-a)
 
-echo "VM_NAME:"
-echo ${VM_NAME}
+echo "VM_NAME: ${VM_NAME}"
+echo "GCE_PROJECT: ${GCE_PROJECT}" # Will be hidden by GHA
+echo "GCE_GPU_CI_SA: ${GCE_GPU_CI_SA}" # Will be hidden by GHA
 
-gcloud compute instances create ${{ env.VM_NAME }} \
+gcloud compute instances create ${VM_NAME} \
     --project open3d-dev \
-    --service-account="${{ secrets.GCE_GPU_CI_SA }}" \
+    --service-account="${GCE_GPU_CI_SA}" \
     --image-family common-cu110 \
     --image-project deeplearning-platform-release \
     --zone=australia-southeast1-a \
@@ -59,7 +60,7 @@ gcloud compute instances create ${{ env.VM_NAME }} \
 # Wait for nvidia driver installation (~1min)
 sleep 90s
 
-gcloud compute ssh ${{ env.VM_NAME }} \
+gcloud compute ssh ${VM_NAME} \
     --zone=australia-southeast1-a \
     --command "sudo gcloud auth configure-docker"
 

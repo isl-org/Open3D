@@ -18,6 +18,8 @@ jobs:
       DEVELOPER_BUILD: ON
       PYTHON_VERSION: 3.6
       CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-gcloud-ci-ccache
+      GCE_PROJECT: ${{ secrets.GCE_PROJECT }}
+      GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
     steps:
       # - name: Cancel outdated
       #   uses: fkirc/skip-duplicate-actions@master
