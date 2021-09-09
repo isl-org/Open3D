@@ -51,14 +51,11 @@ jobs:
           GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
           docker image tag ${DOCKER_TAG} ${GCLOUD_DOCKER_TAG}
           docker push ${GCLOUD_DOCKER_TAG}
-      - name: Explicit fail
-        run: |
-          exit 1
-      - name: Docker cleanup
-        if: always()
-        run: |
-          GIT_HASH=$(git rev-parse --short HEAD)
-          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
-          GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
-          docker push ${GCLOUD_DOCKER_TAG}
-          gcloud container images delete ${GCLOUD_DOCKER_TAG}
+      # - name: Docker cleanup
+      #   if: always()
+      #   run: |
+      #     GIT_HASH=$(git rev-parse --short HEAD)
+      #     DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
+      #     GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
+      #     docker push ${GCLOUD_DOCKER_TAG}
+      #     gcloud container images delete ${GCLOUD_DOCKER_TAG}
