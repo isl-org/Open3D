@@ -41,9 +41,6 @@ set -euo pipefail
 #            asia-southeast1-c
 #            australia-southeast1-a)
 
-echo "env.VM_NAME:"
-echo ${{ env.VM_NAME }}
-
 echo "VM_NAME:"
 echo ${VM_NAME}
 
