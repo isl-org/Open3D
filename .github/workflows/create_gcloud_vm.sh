@@ -25,7 +25,7 @@ echo "GCE_GPU_CI_SA: ${GCE_GPU_CI_SA}" # Hidden by GHA
 #            australia-southeast1-a)
 
 gcloud compute instances create ${VM_NAME} \
-    --project open3d-dev \
+    --project=${GCE_PROJECT} \
     --service-account="${GCE_GPU_CI_SA}" \
     --image-family common-cu110 \
     --image-project deeplearning-platform-release \
