@@ -30,9 +30,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
 
-# Miniconda requires bash as the default shell.
-SHELL ["/bin/bash", "-c"]
-
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
     git  \
