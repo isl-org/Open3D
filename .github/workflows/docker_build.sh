@@ -30,10 +30,10 @@ OPTION:
     cuda_wheel_py37    : Build CUDA Python 3.7 wheel, release mode
     cuda_wheel_py38    : Build CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39    : Build CUDA Python 3.9 wheel, release mode
-    2-bionic           : Build CUDA GCloud container, bionic
-    3-ML-SHARED-bionic : Build CUDA GCloud container, bionic, with ML, shared
-    4-ML-bionic        : Build CUDA GCloud container, bionic, with ML
-    5-ML-focal         : Build CUDA GCloud container, focal , with ML
+    2-bionic           : Build CUDA GCloud container, ubuntu 1804
+    3-ML-SHARED-bionic : Build CUDA GCloud container, ubuntu 1804, with ML, shared
+    4-ML-bionic        : Build CUDA GCloud container, ubuntu 1804, with ML
+    5-ML-focal         : Build CUDA GCloud container, ubuntu 2004, with ML
 "
 
 OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
@@ -133,9 +133,9 @@ cuda_wheel() {
 
 2-bionic() {
     # Docker build ARGs
-    BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
+    BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     DEVELOPER_BUILD=ON
-    CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-gcloud-ci-ccache
+    CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache # Share with other 1804 cuda
     CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
     CCACHE_VERSION=4.3
     PYTHON_VERSION=3.6
@@ -154,6 +154,10 @@ cuda_wheel() {
         -t ${DOCKER_TAG} \
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
+
+    docker run -v ${PWD}:/opt/mount --rm open3d-ubuntu-cuda-ci:latest \
+        bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount"
+    sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
 }
 
 3-ML-SHARED-bionic() {
