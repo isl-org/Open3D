@@ -57,7 +57,9 @@ def geometry_data():
 
 
 def test_tensorflow_summary(geometry_data):
-    """Test writing summary from TensorBoard"""
+    """Test writing summary from TensorBoard
+    TODO (Sameer): Separate tests for PointCloud and LineSet
+    """
 
     tf = pytest.importorskip("tensorflow")
     logdir = tempfile.mkdtemp(prefix='open3d_tb_plugin_test')

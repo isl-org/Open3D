@@ -335,7 +335,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             line_data[prop_name] = _preprocess(prop, tensor, step, max_outputs,
                                                geometry_metadata)
             if line_data[prop_name] is None:  # Step reference
-                del vertex_data[prop_name]
+                del line_data[prop_name]
                 continue
             if n_lines is None:  # Get tensor dims from earlier property
                 _, n_lines, _ = line_data[prop_name].shape
@@ -347,7 +347,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                     f"{exp_shape} but is {line_data[prop_name].shape}.")
 
     vertices = vertex_data.pop("positions",
-                               o3d.core.Tensor((), dtype=o3d.core.int32))
+                               o3d.core.Tensor((), dtype=o3d.core.float32))
     faces = triangle_data.pop("indices",
                               o3d.core.Tensor((), dtype=o3d.core.int32))
     lines = line_data.pop("indices", o3d.core.Tensor((), dtype=o3d.core.int32))
