@@ -34,7 +34,6 @@ import multiprocessing
 from functools import partial
 import time
 import sys
-from check_license_header import MatchHeader
 
 # Yapf requires python 3.6+
 if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
@@ -148,15 +147,49 @@ def _find_clang_format():
 
 class CppFormatter:
 
+    standard_header = """// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+"""
+
     def __init__(self, file_paths, clang_format_bin):
         self.file_paths = file_paths
         self.clang_format_bin = clang_format_bin
 
     @staticmethod
-    def _check_style(file_path, clang_format_bin):
+    def _check_style(file_path, standard_header, clang_format_bin):
         """
-        Returns true if style is valid.
+        Returns (true, true) if (style, header) are valid.
         """
+
+        is_valid_header = False
+        with open(file_path, 'r') as f:
+            content = f.read()
+            if content[:len(standard_header)] == standard_header:
+                is_valid_header = True
+
         cmd = [
             clang_format_bin,
             "-style=file",
@@ -165,9 +198,10 @@ class CppFormatter:
         ]
         result = subprocess.check_output(cmd).decode("utf-8")
         if "<replacement " in result:
-            return False
+            is_valid_style = False
         else:
-            return True
+            is_valid_style = True
+        return (is_valid_style, is_valid_header)
 
     @staticmethod
     def _apply_style(file_path, clang_format_bin):
@@ -194,40 +228,83 @@ class CppFormatter:
         if no_parallel:
             is_valid_files = map(
                 partial(self._check_style,
-                        clang_format_bin=self.clang_format_bin),
-                self.file_paths)
+                        clang_format_bin=self.clang_format_bin,
+                        standard_header=self.standard_header), self.file_paths)
         else:
             with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
                 is_valid_files = pool.map(
                     partial(self._check_style,
-                            clang_format_bin=self.clang_format_bin),
+                            clang_format_bin=self.clang_format_bin,
+                            standard_header=self.standard_header),
                     self.file_paths)
 
         changed_files = []
+        files_wrong_header = []
         for is_valid, file_path in zip(is_valid_files, self.file_paths):
-            if not is_valid:
+            if not is_valid[0]:
                 changed_files.append(file_path)
                 if do_apply_style:
                     self._apply_style(file_path, self.clang_format_bin)
+            if not is_valid[1]:
+                files_wrong_header.append(file_path)
         print("Formatting takes {:.2f}s".format(time.time() - start_time))
 
-        return changed_files
+        return (changed_files, files_wrong_header)
 
 
 class PythonFormatter:
+
+    standard_header = """# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+"""
 
     def __init__(self, file_paths, style_config):
         self.file_paths = file_paths
         self.style_config = style_config
 
     @staticmethod
-    def _check_style(file_path, style_config):
+    def _check_style(file_path, standard_header, style_config):
         """
-        Returns true if style is valid.
+        Returns (true,true) if (style, header) are valid.
         """
+
+        is_valid_header = False
+        # Skip auto generated file "docs/conf.py"
+        if file_path.endswith("docs/conf.py"):
+            is_valid_header = True
+        else:
+            with open(file_path, 'r') as f:
+                content = f.read()
+                if len(content) == 0 or content[:len(standard_header
+                                                    )] == standard_header:
+                    is_valid_header = True
+
         _, _, changed = yapf.yapflib.yapf_api.FormatFile(
             file_path, style_config=style_config, in_place=False)
-        return not changed
+        return (not changed, is_valid_header)
 
     @staticmethod
     def _apply_style(file_path, style_config):
@@ -249,22 +326,28 @@ class PythonFormatter:
         start_time = time.time()
         if no_parallel:
             is_valid_files = map(
-                partial(self._check_style, style_config=self.style_config),
-                self.file_paths)
+                partial(self._check_style,
+                        standard_header=self.standard_header,
+                        style_config=self.style_config), self.file_paths)
         else:
             with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
                 is_valid_files = pool.map(
-                    partial(self._check_style, style_config=self.style_config),
-                    self.file_paths)
+                    partial(self._check_style,
+                            standard_header=self.standard_header,
+                            style_config=self.style_config), self.file_paths)
 
         changed_files = []
+        files_wrong_header = []
         for is_valid, file_path in zip(is_valid_files, self.file_paths):
-            if not is_valid:
+            if not is_valid[0]:
                 changed_files.append(file_path)
                 if do_apply_style:
                     self._apply_style(file_path, self.style_config)
+            if not is_valid[1]:
+                files_wrong_header.append(file_path)
+
         print("Formatting takes {:.2f}s".format(time.time() - start_time))
-        return changed_files
+        return (changed_files, files_wrong_header)
 
 
 class JupyterFormatter:
@@ -392,22 +475,25 @@ if __name__ == "__main__":
                                          style_config=python_style_config)
 
     changed_files = []
-    changed_files.extend(
-        cpp_formatter.run(do_apply_style=args.do_apply_style,
-                          no_parallel=args.no_parallel,
-                          verbose=args.verbose))
-    changed_files.extend(
-        python_formatter.run(do_apply_style=args.do_apply_style,
-                             no_parallel=args.no_parallel,
-                             verbose=args.verbose))
+    files_wrong_header = []
+    changed_files_cpp, files_wrong_header_cpp = cpp_formatter.run(
+        do_apply_style=args.do_apply_style,
+        no_parallel=args.no_parallel,
+        verbose=args.verbose)
+    changed_files.extend(changed_files_cpp)
+    files_wrong_header.extend(files_wrong_header_cpp)
+
+    changed_files_python, files_wrong_header_python = python_formatter.run(
+        do_apply_style=args.do_apply_style,
+        no_parallel=args.no_parallel,
+        verbose=args.verbose)
+    changed_files.extend(changed_files_python)
+    files_wrong_header.extend(files_wrong_header_python)
+
     changed_files.extend(
         jupyter_formatter.run(do_apply_style=args.do_apply_style,
                               no_parallel=args.no_parallel,
                               verbose=args.verbose))
-
-    # Check license header
-    match_header = MatchHeader(cpp_file_paths, python_file_paths)
-    files_wrong_header = match_header.run()
 
     if (len(changed_files) == 0 and len(files_wrong_header) == 0):
         print("All files passed style check.")
