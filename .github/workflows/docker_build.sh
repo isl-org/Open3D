@@ -30,9 +30,14 @@ OPTION:
     cuda_wheel_py37    : Build CUDA Python 3.7 wheel, release mode
     cuda_wheel_py38    : Build CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39    : Build CUDA Python 3.9 wheel, release mode
+    2-bionic           : Build CUDA GCloud container, bionic
+    3-ML-SHARED-bionic : Build CUDA GCloud container, bionic, with ML, shared
+    4-ML-bionic        : Build CUDA GCloud container, bionic, with ML
+    5-ML-focal         : Build CUDA GCloud container, focal , with ML
 "
 
 OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
+GIT_HASH="$(git rev-parse --short HEAD)"
 
 print_usage_and_exit() {
     echo "$__usage"
@@ -126,6 +131,47 @@ cuda_wheel() {
     sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
 }
 
+2-bionic() {
+    # Docker build ARGs
+    BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
+    DEVELOPER_BUILD=ON
+    CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-gcloud-ci-ccache
+    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+    CCACHE_VERSION=4.3
+    PYTHON_VERSION=3.6
+
+    # Docker tag
+    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
+
+    pushd ${OPEN3D_ROOT}
+    docker build \
+        --build-arg BASE_IMAGE=${BASE_IMAGE} \
+        --build-arg DEVELOPER_BUILD=${DEVELOPER_BUILD} \
+        --build-arg CCACHE_TAR_NAME=${CCACHE_TAR_NAME} \
+        --build-arg CMAKE_VERSION=${CMAKE_VERSION} \
+        --build-arg CCACHE_VERSION=${CCACHE_VERSION} \
+        --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
+        -t ${DOCKER_TAG} \
+        -f .github/workflows/Dockerfile.ubuntu-cuda-gcloud .
+    popd
+}
+
+3-ML-SHARED-bionic() {
+    echo "3-ML-SHARED-bionic unimplemented."
+    exit 1
+}
+
+4-ML-bionic() {
+    echo "4-ML-bionic unimplemented."
+    exit 1
+}
+
+5-ML-focal() {
+    echo "5-ML-focal unimplemented."
+    exit 1
+}
+
+
 if [[ "$#" -ne 1 ]]; then
     echo "Error: invalid number of arguments." >&2
     print_usage_and_exit
@@ -161,6 +207,18 @@ case "$1" in
         ;;
     cuda_wheel_py39)
         cuda_wheel py39
+        ;;
+    2-bionic)
+        2-bionic
+        ;;
+    3-ML-SHARED-bionic)
+        3-ML-SHARED-bionic
+        ;;
+    4-ML-bionic)
+        4-ML-bionic
+        ;;
+    5-ML-focal)
+        5-ML-focal
         ;;
     *)
         echo "Error: invalid argument: ${1}." >&2

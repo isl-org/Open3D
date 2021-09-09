@@ -1,0 +1,104 @@
+name: Ubuntu CUDA GCloud CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  build-container:
+    name: Build container
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    env:
+      DEVELOPER_BUILD: ON
+      PYTHON_VERSION: 3.6
+      CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-gcloud-ci-ccache
+    steps:
+      # - name: Cancel outdated
+      #   uses: fkirc/skip-duplicate-actions@master
+      #   with:
+      #     github_token: ${{ github.token }}
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+      # - name: Maximize build space
+      #   run: |
+      #     source util/ci_utils.sh
+      #     maximize_ubuntu_github_actions_build_space
+      - name: Set container and vm names in GITHUB_ENV
+        run: |
+          GIT_HASH=$(git rev-parse --short HEAD)
+          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
+          GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
+          VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
+          echo "GIT_HASH=${GIT_HASH}"                   >> $GITHUB_ENV
+          echo "DOCKER_TAG=${DOCKER_TAG}"               >> $GITHUB_ENV
+          echo "GCLOUD_DOCKER_TAG=${GCLOUD_DOCKER_TAG}" >> $GITHUB_ENV
+          echo "VM_NAME=${VM_NAME}"                     >> $GITHUB_ENV
+      - name: Docker build
+        run: |
+          .github/workflows/docker_build.sh 2-bionic
+      - name: Docker push
+        run: |
+          gcloud auth configure-docker
+          docker image tag ${{ env.DOCKER_TAG }} ${{ env.GCLOUD_DOCKER_TAG }}
+          docker push ${{ env.GCLOUD_DOCKER_TAG }}
+      - name: VM create
+        run: |
+          GCE_ZONES=(us-west1-a us-west1-b us-central1-a us-central1-b
+                     us-central1-f us-east1-c us-east1-d us-east4-b
+                     southamerica-east1-c europe-west2-b europe-west3-b
+                     europe-west4-b europe-west4-c europe-west2-a
+                     asia-southeast1-b asia-southeast1-c australia-southeast1-a)
+          GCE_ZID=0
+          until ((GCE_ZID >= ${#GCE_ZONES[@]})) ||
+            gcloud compute instances create ${{ env.VM_NAME }} \
+              --project=${{ secrets.GCE_PROJECT }} \
+              --zone="${GCE_ZONES[$GCE_ZID]}" \
+              --service-account="${{ secrets.GCE_GPU_CI_SA }}" \
+              --image-family common-cu110 \
+              --image-project deeplearning-platform-release \
+              --accelerator="count=2,type=nvidia-tesla-t4" \
+              --maintenance-policy=TERMINATE \
+              --machine-type=n1-standard-4 \
+              --boot-disk-size=64GB \
+              --boot-disk-type=pd-ssd \
+              --metadata="install-nvidia-driver=True,proxy-mode=project_editors"; do
+            ((GCE_ZID = GCE_ZID + 1))
+          done
+          VM_ZONE="${GCE_ZONES[$GCE_ZID]}"
+          echo "VM created successfully in VM_ZONE=${VM_ZONE}"
+          echo "VM_ZONE=${VM_ZONE}" >> "$GITHUB_ENV"
+          sleep 90s # Wait for nvidia driver installation
+          exit $((GCE_ZID >= ${#GCE_ZONES[@]})) # 0 => success
+      - name: VM Docker run
+        run: |
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --command "sudo gcloud auth configure-docker"
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --command "sudo docker run -i --rm ${{ env.GCLOUD_DOCKER_TAG}} cat hello.txt"
+      - name: VM delete
+        if: always()
+        run: |
+          gcloud compute instances delete ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --quiet
+      - name: Docker delete
+        if: always()
+        run: |
+          docker push ${{ env.GCLOUD_DOCKER_TAG}}
+          gcloud container images delete ${{ env.GCLOUD_DOCKER_TAG}}
