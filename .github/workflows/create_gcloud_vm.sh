@@ -6,23 +6,25 @@ echo "VM_NAME: ${VM_NAME}"
 echo "GCE_PROJECT: ${GCE_PROJECT}"     # Hidden by GHA
 echo "GCE_GPU_CI_SA: ${GCE_GPU_CI_SA}" # Hidden by GHA
 
-# GCE_ZONES=(us-west1-a
-#            us-west1-b
-#            us-central1-a
-#            us-central1-b
-#            us-central1-f
-#            us-east1-c
-#            us-east1-d
-#            us-east4-b
-#            southamerica-east1-c
-#            europe-west2-b
-#            europe-west3-b
-#            europe-west4-b
-#            europe-west4-c
-#            europe-west2-a
-#            asia-southeast1-b
-#            asia-southeast1-c
-#            australia-southeast1-a)
+GCE_ZONES=(
+    us-west1-a
+    us-west1-b
+    us-central1-a
+    us-central1-b
+    us-central1-f
+    us-east1-c
+    us-east1-d
+    us-east4-b
+    southamerica-east1-c
+    europe-west2-b
+    europe-west3-b
+    europe-west4-b
+    europe-west4-c
+    europe-west2-a
+    asia-southeast1-b
+    asia-southeast1-c
+    australia-southeast1-a
+)
 
 GCE_ZID=0
 until ((GCE_ZID >= ${#GCE_ZONES[@]})) ||
