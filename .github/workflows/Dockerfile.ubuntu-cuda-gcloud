@@ -1,0 +1,30 @@
+# FROM must be called before other ARGS except for ARG BASE_IMAGE
+ARG BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
+FROM ${BASE_IMAGE}
+
+# Customizable build arguments from cuda.yml
+ARG DEVELOPER_BUILD=ON
+ARG CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-gcloud-ci-ccache
+ARG CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+ARG CCACHE_VERSION=4.3
+ARG PYTHON_VERSION=3.6
+
+# Forward all ARG to ENV
+# ci_utils.sh requires these environment variables
+ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
+ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
+ENV CMAKE_VERSION=${CMAKE_VERSION}
+ARG CCACHE_VERSION=${CCACHE_VERSION}
+ENV PYTHON_VERSION=${PYTHON_VERSION}
+
+# Prevent interactive inputs when installing packages
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
+
+# Miniconda requires bash as the default shell.
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /
+RUN echo "Hello world" > hello.txt
+RUN echo "Docker build done."
