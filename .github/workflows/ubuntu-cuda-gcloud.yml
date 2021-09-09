@@ -52,6 +52,7 @@ jobs:
           docker image tag ${DOCKER_TAG} ${GCLOUD_DOCKER_TAG}
           docker push ${GCLOUD_DOCKER_TAG}
       - name: VM create
+        run: |
           GIT_HASH=$(git rev-parse --short HEAD)
           VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
           gcloud compute instances create ${VM_NAME} \
@@ -67,6 +68,7 @@ jobs:
             --boot-disk-type=pd-ssd
           sleep 90s # Wait for nvidia driver installation
       - name: VM Docker run
+        run: |
           gcloud compute ssh ${VM_NAME} \
             --zone=us-east1-c \
             --command "nvidia-smi"
@@ -74,6 +76,8 @@ jobs:
             --zone=us-east1-c \
             --command "sudo docker run -it --rm ${GCE_DOCKER_TAG} cat hello.txt"
       - name: VM delete
+        if: always()
+        run: |
           gcloud compute instances delete ${VM_NAME} \
             --zone=us-east1-c \
             --quiet
