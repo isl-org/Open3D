@@ -40,11 +40,6 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-namespace open3d {
-namespace t {
-namespace pipelines {
-namespace registration {
-
 // Testing parameters:
 // Filename for pointcloud registration data.
 static const std::string source_pointcloud_filename =

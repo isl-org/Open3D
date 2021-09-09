@@ -126,20 +126,20 @@ static void RGBDOdometryMultiScale(
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-<<<<<<< HEAD
-            benchmarks::GetDataPathCommon("RGBD/depth/00000.png"));
+            utility::GetDataPathCommon("RGBD/depth/00000.png"));
     t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            benchmarks::GetDataPathCommon("RGBD/color/00000.jpg"));
+            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
 
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
+            utility::GetDataPathCommon("RGBD/depth/00002.png"));
     t::geometry::Image dst_color = *t::io::CreateImageFromFile(
             utility::GetDataPathCommon("RGBD/color/00002.jpg"));
->>>>>>> 69cdca37b18d834270343ec603433120a445a61f
 
     t::geometry::RGBDImage source, target;
     source.color_ = src_color.To(device);
     source.depth_ = src_depth.To(device);
     target.color_ = dst_color.To(device);
+    target.depth_ = dst_depth.To(device);
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
 
