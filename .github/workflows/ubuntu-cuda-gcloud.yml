@@ -41,21 +41,22 @@ jobs:
       #   run: |
       #     source util/ci_utils.sh
       #     maximize_ubuntu_github_actions_build_space
+      - name: Set container and vm names in GITHUB_ENV
+        run: |
+          echo "GIT_HASH=$(git rev-parse --short HEAD)"                            >> $GITHUB_ENV
+          echo "DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}"      >> $GITHUB_ENV
+          echo "GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}" >> $GITHUB_ENV
+          echo "VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}"         >> $GITHUB_ENV
       - name: Docker build
         run: |
           .github/workflows/docker_build.sh 2-bionic
       - name: Docker push
         run: |
-          GIT_HASH=$(git rev-parse --short HEAD)
-          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
-          GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
-          docker image tag ${DOCKER_TAG} ${GCLOUD_DOCKER_TAG}
-          docker push ${GCLOUD_DOCKER_TAG}
+          docker image tag ${{ env.DOCKER_TAG }} ${{ env.GCLOUD_DOCKER_TAG}}
+          docker push ${{ env.GCLOUD_DOCKER_TAG}}
       - name: VM create
         run: |
-          GIT_HASH=$(git rev-parse --short HEAD)
-          VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
-          gcloud compute instances create ${VM_NAME} \
+          gcloud compute instances create ${{ env.VM_NAME }} \
             --project open3d-dev \
             --service-account="${{ secrets.GCE_GPU_CI_SA }}" \
             --image-family common-cu110 \
@@ -69,16 +70,16 @@ jobs:
           sleep 90s # Wait for nvidia driver installation
       - name: VM Docker run
         run: |
-          gcloud compute ssh ${VM_NAME} \
+          gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=australia-southeast1-a \
             --command "nvidia-smi"
-          gcloud compute ssh ${VM_NAME} \
+          gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=australia-southeast1-a \
             --command "sudo docker run -it --rm ${GCE_DOCKER_TAG} cat hello.txt"
       - name: VM delete
         if: always()
         run: |
-          gcloud compute instances delete ${VM_NAME} \
+          gcloud compute instances delete ${{ env.VM_NAME }} \
             --zone=australia-southeast1-a \
             --quiet
       - name: Docker delete
