@@ -80,8 +80,8 @@ jobs:
             ((GCE_ZID = GCE_ZID + 1))
           done
           VM_ZONE="${GCE_ZONES[$GCE_ZID]}"
+          echo "VM created successfully in VM_ZONE=${VM_ZONE}"
           echo "VM_ZONE=${VM_ZONE}" >> "$GITHUB_ENV"
-          echo "VM created successfully in zone ${{ env.VM_ZONE }}"
           sleep 90s # Wait for nvidia driver installation (~1min)
           exit $((GCE_ZID >= ${#GCE_ZONES[@]})) # 0 => success
       - name: VM Docker run
