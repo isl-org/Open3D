@@ -16,7 +16,7 @@ on:
 jobs:
   build-wheel:
     name: Build wheel
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -110,7 +110,7 @@ jobs:
 
   test-wheel-cpu:
     name: Test wheel CPU
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-wheel]
     strategy:
       fail-fast: false
@@ -163,7 +163,7 @@ jobs:
 
   ready-docs:
     name: Ready docs archive
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     if: ${{ github.ref == 'refs/heads/master' }}
     needs: [build-wheel]
     steps:
