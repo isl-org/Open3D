@@ -1,6 +1,7 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# FROM ${BASE_IMAGE}
+FROM ubuntu:20.04
 
 # Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-c"]
