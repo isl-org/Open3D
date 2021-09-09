@@ -79,7 +79,7 @@ jobs:
             --command "nvidia-smi"
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=australia-southeast1-a \
-            --command "sudo docker run -it --rm ${GCE_DOCKER_TAG} cat hello.txt"
+            --command "sudo docker run -i --rm ${GCE_DOCKER_TAG} cat hello.txt"
       - name: VM delete
         if: always()
         run: |
