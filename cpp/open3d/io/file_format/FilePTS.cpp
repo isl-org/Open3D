@@ -44,12 +44,17 @@ bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params) {
     try {
+        // Pointcloud is empty if the file is not read successfully.
+        pointcloud.Clear();
+
+        // Get num_points.
         utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
             utility::LogWarning("Read PTS failed: unable to open file: {}",
                                 filename);
             return false;
         }
+
         size_t num_of_pts = 0;
         int num_of_fields = 0;
         const char *line_buffer;
@@ -63,24 +68,32 @@ bool ReadPointCloudFromPTS(const std::string &filename,
         utility::CountingProgressReporter reporter(params.update_progress);
         reporter.SetTotal(num_of_pts);
 
-        pointcloud.Clear();
+        size_t num_fields = 0;
+        if ((line_buffer = file.ReadLine())) {
+            num_fields = utility::SplitString(line_buffer, " ").size();
+
+            if (num_fields == 7 || num_fields == 4) {
+                utility::LogWarning(
+                        "Read PTS: Intensity attribute is not supported.");
+            }
+
+            // X Y Z I R G B or X Y Z R G B.
+            if (num_fields == 7 || num_fields == 6) {
+                pointcloud.points_.resize(num_of_pts);
+                pointcloud.colors_.resize(num_of_pts);
+            }
+            // X Y Z I or  X Y Z.
+            else if (num_fields == 4 || num_fields == 3) {
+                pointcloud.points_.resize(num_of_pts);
+            } else {
+                utility::LogWarning("Read PTS failed: unknown pts format: {}",
+                                    line_buffer);
+                return false;
+            }
+        }
+
         size_t idx = 0;
         while (idx < num_of_pts && (line_buffer = file.ReadLine())) {
-            if (num_of_fields == 0) {
-                std::vector<std::string> st =
-                        utility::SplitString(line_buffer, " ");
-                num_of_fields = (int)st.size();
-                if (num_of_fields < 3) {
-                    utility::LogWarning(
-                            "Read PTS failed: insufficient data fields.");
-                    return false;
-                }
-                pointcloud.points_.resize(num_of_pts);
-                if (num_of_fields >= 6) {
-                    // X Y Z I R G B or X Y Z R G B.
-                    pointcloud.colors_.resize(num_of_pts);
-                }
-            }
             double x, y, z, i;
             int r, g, b;
             // X Y Z I R G B
