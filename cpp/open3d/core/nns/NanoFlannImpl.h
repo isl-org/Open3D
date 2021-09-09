@@ -184,8 +184,8 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
             });
 
     query_neighbors_row_splits[0] = 0;
-    utility::InclusivePrefixSum(&neighbors_count[0],
-                                &neighbors_count[neighbors_count.size()],
+    utility::InclusivePrefixSum(neighbors_count.data(),
+                                neighbors_count.data() + neighbors_count.size(),
                                 query_neighbors_row_splits + 1);
 
     int64_t num_indices = query_neighbors_row_splits[num_queries];
@@ -292,8 +292,8 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
             });
 
     query_neighbors_row_splits[0] = 0;
-    utility::InclusivePrefixSum(&neighbors_count[0],
-                                &neighbors_count[neighbors_count.size()],
+    utility::InclusivePrefixSum(neighbors_count.data(),
+                                neighbors_count.data() + neighbors_count.size(),
                                 query_neighbors_row_splits + 1);
 
     int64_t num_indices = query_neighbors_row_splits[num_queries];
