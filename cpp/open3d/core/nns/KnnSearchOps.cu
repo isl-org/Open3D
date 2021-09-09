@@ -51,13 +51,41 @@ void KnnSearchCUDA(const Tensor& points,
     int num_queries = queries.GetShape(0);
     knn = num_points > knn ? knn : num_points;
 
-    impl::KnnSearchCUDA(stream, points.GetShape(0), points.GetDataPtr<T>(),
-                        queries.GetShape(0), queries.GetDataPtr<T>(),
-                        points_row_splits.GetShape(0),
-                        points_row_splits.GetDataPtr<int64_t>(),
-                        queries_row_splits.GetShape(0),
-                        queries_row_splits.GetDataPtr<int64_t>(), knn,
-                        output_allocator);
+    switch (points.GetShape(1)) {
+#define CASE(NDIM)                                                  \
+    case NDIM: {                                                    \
+        impl::KnnSearchCUDA<T, NeighborSearchAllocator<T>, NDIM>(   \
+                stream, points.GetShape(0), points.GetDataPtr<T>(), \
+                queries.GetShape(0), queries.GetDataPtr<T>(),       \
+                points_row_splits.GetShape(0),                      \
+                points_row_splits.GetDataPtr<int64_t>(),            \
+                queries_row_splits.GetShape(0),                     \
+                queries_row_splits.GetDataPtr<int64_t>(), knn,      \
+                output_allocator);                                  \
+    } break;
+        CASE(1)
+        CASE(2)
+        CASE(3)
+        CASE(4)
+        CASE(5)
+        CASE(6)
+        CASE(7)
+        CASE(8)
+        CASE(9)
+        CASE(10)
+        CASE(12)
+        CASE(13)
+        CASE(14)
+        CASE(15)
+        CASE(16)
+        CASE(17)
+        CASE(18)
+        CASE(19)
+        CASE(20)
+        default:
+            break;
+#undef CASE
+    }
 
     neighbors_index =
             output_allocator.NeighborsIndex().View({num_queries, knn});
