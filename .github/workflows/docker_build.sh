@@ -30,6 +30,10 @@ OPTION:
     cuda_wheel_py37    : Build CUDA Python 3.7 wheel, release mode
     cuda_wheel_py38    : Build CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39    : Build CUDA Python 3.9 wheel, release mode
+    2-bionic           : Build CUDA GCloud container, bionic
+    3-ML-SHARED-bionic : Build CUDA GCloud container, bionic, with ML, shared
+    4-ML-bionic        : Build CUDA GCloud container, bionic, with ML
+    5-ML-focal         : Build CUDA GCloud container, focal , with ML
 "
 
 OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
@@ -126,6 +130,27 @@ cuda_wheel() {
     sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
 }
 
+2-bionic() {
+    echo "I am in 2-bionic()"
+    exit 0
+}
+
+3-ML-SHARED-bionic() {
+    echo "3-ML-SHARED-bionic unimplemented."
+    exit 1
+}
+
+4-ML-bionic() {
+    echo "4-ML-bionic unimplemented."
+    exit 1
+}
+
+5-ML-focal() {
+    echo "5-ML-focal unimplemented."
+    exit 1
+}
+
+
 if [[ "$#" -ne 1 ]]; then
     echo "Error: invalid number of arguments." >&2
     print_usage_and_exit
@@ -161,6 +186,18 @@ case "$1" in
         ;;
     cuda_wheel_py39)
         cuda_wheel py39
+        ;;
+    2-bionic)
+        2-bionic
+        ;;
+    3-ML-SHARED-bionic)
+        3-ML-SHARED-bionic
+        ;;
+    4-ML-bionic)
+        4-ML-bionic
+        ;;
+    5-ML-focal)
+        5-ML-focal
         ;;
     *)
         echo "Error: invalid argument: ${1}." >&2
