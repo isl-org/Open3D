@@ -132,6 +132,24 @@ cuda_wheel() {
 
 2-bionic() {
     echo "I am in 2-bionic()"
+    BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
+    DEVELOPER_BUILD=ON
+    CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-gcloud-ci-ccache
+    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+    CCACHE_VERSION=4.3
+    PYTHON_VERSION=3.6
+
+    pushd ${OPEN3D_ROOT}
+    docker build \
+        --build-arg BASE_IMAGE=${BASE_IMAGE} \
+        --build-arg DEVELOPER_BUILD=${DEVELOPER_BUILD} \
+        --build-arg CCACHE_TAR_NAME=${CCACHE_TAR_NAME} \
+        --build-arg CMAKE_VERSION=${CMAKE_VERSION} \
+        --build-arg CCACHE_VERSION=${CCACHE_VERSION} \
+        --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
+        -t open3d-ubuntu-cuda-gcloud-ci-2-bionic:latest \
+        -f .github/workflows/Dockerfile.ubuntu-cuda-gcloud .
+    popd
     exit 0
 }
 
