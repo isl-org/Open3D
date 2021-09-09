@@ -1,13 +1,21 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
-ARG BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# Customizable build arguments from cuda.yml
-ARG DEVELOPER_BUILD=ON
-ARG CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-ARG CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-ARG CCACHE_VERSION=4.3
-ARG PYTHON_VERSION=3.6
+# For miniconda and the rest of this Dockerfile
+SHELL ["/bin/bash", "-c"]
+
+# Required build args, should be specified in docker_build.sh
+ARG DEVELOPER_BUILD
+ARG CCACHE_TAR_NAME
+ARG CMAKE_VERSION
+ARG CCACHE_VERSION
+ARG PYTHON_VERSION
+RUN if [[ -z "${DEVELOPER_BUILD}" ]]; then echo "ARG DEVELOPER_BUILD not provided"; exit 1; fi
+RUN if [[ -z "${CCACHE_TAR_NAME}" ]]; then echo "ARG CCACHE_TAR_NAME not provided"; exit 1; fi
+RUN if [[ -z "${CMAKE_VERSION}"   ]]; then echo "ARG CMAKE_VERSION   not provided"; exit 1; fi
+RUN if [[ -z "${CCACHE_VERSION}"  ]]; then echo "ARG CCACHE_VERSION  not provided"; exit 1; fi
+RUN if [[ -z "${PYTHON_VERSION}"  ]]; then echo "ARG PYTHON_VERSION  not provided"; exit 1; fi
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
