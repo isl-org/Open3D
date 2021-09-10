@@ -141,22 +141,18 @@ cuda_wheel() {
     sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
 }
 
-2-bionic() {
-    # Docker build ARGs
-    BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
-    DEVELOPER_BUILD=ON
-    CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache # Share with other 1804 cuda
-    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-    CCACHE_VERSION=4.3
-    PYTHON_VERSION=3.6
-    BUILD_WHEEL=OFF
-    BUILD_ALL=ON
-    SHARED=OFF
-    BUILD_TENSORFLOW_OPS=OFF
-    BUILD_PYTORCH_OPS=OFF
-
-    # Docker tag
-    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
+cuda_gcloud_build() {
+    echo "[cuda_gcloud_build()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[cuda_gcloud_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
+    echo "[cuda_gcloud_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
+    echo "[cuda_gcloud_build()] CMAKE_VERSION=${CMAKE_VERSION}"
+    echo "[cuda_gcloud_build()] CCACHE_VERSION=${CCACHE_VERSION}"
+    echo "[cuda_gcloud_build()] PYTHON_VERSION=${PYTHON_VERSION}"
+    echo "[cuda_gcloud_build()] BUILD_WHEEL=${BUILD_WHEEL}"
+    echo "[cuda_gcloud_build()] BUILD_ALL=${BUILD_ALL}"
+    echo "[cuda_gcloud_build()] SHARED=${SHARED}"
+    echo "[cuda_gcloud_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
+    echo "[cuda_gcloud_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
 
     pushd ${OPEN3D_ROOT}
     docker build \
@@ -181,19 +177,72 @@ cuda_wheel() {
     # sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
 }
 
+2-bionic() {
+    BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+    DEVELOPER_BUILD=ON
+    CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
+    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+    CCACHE_VERSION=4.3
+    PYTHON_VERSION=3.6
+    BUILD_WHEEL=OFF
+    BUILD_ALL=ON
+    SHARED=OFF
+    BUILD_TENSORFLOW_OPS=OFF
+    BUILD_PYTORCH_OPS=OFF
+
+    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
+    cuda_gcloud_build
+}
+
 3-ML-SHARED-bionic() {
-    echo "3-ML-SHARED-bionic unimplemented."
-    exit 1
+    BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+    DEVELOPER_BUILD=ON
+    CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
+    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+    CCACHE_VERSION=4.3
+    PYTHON_VERSION=3.6
+    BUILD_WHEEL=OFF
+    BUILD_ALL=ON
+    SHARED=ON
+    BUILD_TENSORFLOW_OPS=ON
+    BUILD_PYTORCH_OPS=ON
+
+    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:3-ML-SHARED-bionic-${GIT_HASH}
+    cuda_gcloud_build
 }
 
 4-ML-bionic() {
-    echo "4-ML-bionic unimplemented."
-    exit 1
+    BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+    DEVELOPER_BUILD=ON
+    CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
+    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+    CCACHE_VERSION=4.3
+    PYTHON_VERSION=3.6
+    BUILD_WHEEL=OFF
+    BUILD_ALL=ON
+    SHARED=OFF
+    BUILD_TENSORFLOW_OPS=ON
+    BUILD_PYTORCH_OPS=ON
+
+    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:4-ML-bionic-${GIT_HASH}
+    cuda_gcloud_build
 }
 
 5-ML-focal() {
-    echo "5-ML-focal unimplemented."
-    exit 1
+    BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
+    DEVELOPER_BUILD=ON
+    CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-ci-ccache
+    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+    CCACHE_VERSION=4.3
+    PYTHON_VERSION=3.6
+    BUILD_WHEEL=OFF
+    BUILD_ALL=ON
+    SHARED=OFF
+    BUILD_TENSORFLOW_OPS=ON
+    BUILD_PYTORCH_OPS=ON
+
+    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:5-ML-focal-${GIT_HASH}
+    cuda_gcloud_build
 }
 
 
