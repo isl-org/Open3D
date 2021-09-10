@@ -291,7 +291,7 @@ class PythonFormatter:
     @staticmethod
     def _check_style(file_path, standard_header, style_config):
         """
-        Returns (true,true) if (style, header) are valid.
+        Returns (true, true) if (style, header) are valid.
         """
 
         is_valid_header = False
