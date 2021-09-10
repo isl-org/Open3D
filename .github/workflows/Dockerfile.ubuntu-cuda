@@ -1,6 +1,7 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# FROM ${BASE_IMAGE}  # TODO: update after debugging
+FROM ubuntu:20.04
 
 # For miniconda and the rest of this Dockerfile
 SHELL ["/bin/bash", "-c"]
