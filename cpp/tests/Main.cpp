@@ -35,7 +35,7 @@
 #endif
 
 #include "open3d/Open3D.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 #ifdef BUILD_CUDA_MODULE
 /// Returns true if --disable_p2p flag is used.
@@ -53,14 +53,17 @@ bool ShallDisableP2P(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     using namespace open3d;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     utility::CPUInfo::GetInstance().Print();
+
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {
         core::CUDAState::GetInstance().ForceDisableP2PForTesting();
         utility::LogInfo("P2P device transfer has been disabled.");
     }
 #endif
+
     testing::InitGoogleMock(&argc, argv);
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     return RUN_ALL_TESTS();
 }

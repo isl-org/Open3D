@@ -9,7 +9,6 @@ add_subdirectory(t/io)
 add_subdirectory(t/pipelines)
 
 target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
-target_compile_definitions(benchmarks PRIVATE BENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/data/Benchmark")
 
 target_link_libraries(benchmarks PRIVATE Open3D::Open3D)
 if (BUILD_CUDA_MODULE)
@@ -35,3 +34,4 @@ target_sources(benchmarks PRIVATE
     Main.cpp
 )
 target_link_libraries(benchmarks PRIVATE benchmark::benchmark)
+target_include_directories(benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

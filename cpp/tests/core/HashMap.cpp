@@ -36,7 +36,7 @@
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Optional.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {

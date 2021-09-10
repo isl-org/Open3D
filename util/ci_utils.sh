@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # The following environment variables are required:
 SUDO=${SUDO:=sudo}
@@ -13,7 +14,6 @@ if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
         BUILD_CUDA_MODULE=OFF
     fi
 fi
-BUILD_COMMON_CUDA_ARCHS=${BUILD_COMMON_CUDA_ARCHS:-OFF}
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$BUILD_CUDA_MODULE" == OFF ]; then
@@ -224,7 +224,7 @@ build_all() {
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
-        -DBUILD_COMMON_CUDA_ARCHS=OFF
+        -DBUILD_COMMON_CUDA_ARCHS=ON
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
@@ -321,7 +321,8 @@ build_pip_conda_package() {
         rm -r "${rebuild_list[@]}" || true
         set -x # Echo commands on
         cmake -DBUILD_CUDA_MODULE=ON \
-            -DBUILD_COMMON_CUDA_ARCHS="${BUILD_COMMON_CUDA_ARCHS}" "${cmakeOptions[@]}" ..
+              -DBUILD_COMMON_CUDA_ARCHS=ON \
+              "${cmakeOptions[@]}" ..
         set +x # Echo commands off
     fi
     echo
