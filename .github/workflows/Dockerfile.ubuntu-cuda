@@ -164,7 +164,7 @@ RUN if [ "${BUILD_ALL}" = "ON" ] \
                  -DBUILD_BENCHMARKS=ON \
                  -DBUILD_EXAMPLES=ON \
                  .. \
-        && make make VERBOSE=1 -j$(nproc) \
+        && make VERBOSE=1 -j$(nproc) \
         && make install-pip-package -j$(nproc) \
     ;else \
         echo "BUILD_ALL=${BUILD_ALL}, build all skipped." \
