@@ -84,7 +84,6 @@ jobs:
           exit $((GCE_ZID >= ${#GCE_ZONES[@]})) # 0 => success
       - name: VM Docker run
         run: |
-          gcloud compute os-login ssh-keys remove --key-file "${HOME}"/.ssh/google_compute_engine.pub
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "sudo gcloud auth configure-docker"
@@ -97,6 +96,7 @@ jobs:
           gcloud compute instances delete ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --quiet
+          gcloud compute os-login ssh-keys remove --key-file "${HOME}"/.ssh/google_compute_engine.pub
       - name: Docker delete
         if: always()
         run: |
