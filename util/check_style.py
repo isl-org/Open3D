@@ -228,24 +228,27 @@ class CppFormatter:
         if no_parallel:
             is_valid_files = map(
                 partial(self._check_style,
-                        clang_format_bin=self.clang_format_bin,
-                        standard_header=self.standard_header), self.file_paths)
+                        standard_header=self.standard_header,
+                        clang_format_bin=self.clang_format_bin),
+                self.file_paths)
         else:
             with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
                 is_valid_files = pool.map(
                     partial(self._check_style,
-                            clang_format_bin=self.clang_format_bin,
-                            standard_header=self.standard_header),
+                            standard_header=self.standard_header,
+                            clang_format_bin=self.clang_format_bin),
                     self.file_paths)
 
         changed_files = []
         files_wrong_header = []
         for is_valid, file_path in zip(is_valid_files, self.file_paths):
-            if not is_valid[0]:
+            is_valid_style = is_valid[0]
+            is_valid_header = is_valid[1]
+            if not is_valid_style:
                 changed_files.append(file_path)
                 if do_apply_style:
                     self._apply_style(file_path, self.clang_format_bin)
-            if not is_valid[1]:
+            if not is_valid_header:
                 files_wrong_header.append(file_path)
         print("Formatting takes {:.2f}s".format(time.time() - start_time))
 
@@ -339,11 +342,13 @@ class PythonFormatter:
         changed_files = []
         files_wrong_header = []
         for is_valid, file_path in zip(is_valid_files, self.file_paths):
-            if not is_valid[0]:
+            is_valid_style = is_valid[0]
+            is_valid_header = is_valid[1]
+            if not is_valid_style:
                 changed_files.append(file_path)
                 if do_apply_style:
                     self._apply_style(file_path, self.style_config)
-            if not is_valid[1]:
+            if not is_valid_header:
                 files_wrong_header.append(file_path)
 
         print("Formatting takes {:.2f}s".format(time.time() - start_time))
@@ -509,9 +514,9 @@ if __name__ == "__main__":
             print("\n".join(files_wrong_header))
             exit(1)
     else:
-        changed_files_without_duplicates = list(
+        changed_files_no_duplicates = list(
             set(changed_files + files_wrong_header))
         if len(changed_files) != 0:
             print("Style error found in the following files:")
-            print("\n".join(changed_files_without_duplicates))
+            print("\n".join(changed_files_no_duplicates))
             exit(1)
