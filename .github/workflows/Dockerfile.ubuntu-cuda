@@ -31,15 +31,15 @@ ENV BUILD_WHEEL=${BUILD_WHEEL}
 RUN echo "BUILD_WHEEL=${BUILD_WHEEL}"
 
 RUN if [ "${BUILD_WHEEL}" = "ON" ] \
-    ; then \
+    ;then \
         echo "Build wheel: ON" \
      && echo "Build wheel: ON line 2" \
      && echo "Build wheel: ON line 3" \
-    ; else \
+    ;else \
         echo "Build wheel: OFF" \
      && echo "Build wheel: OFF line 2" \
      && echo "Build wheel: OFF line 3" \
-    ; fi
+    ;fi
 
 RUN exit 1
 
