@@ -514,9 +514,9 @@ if __name__ == "__main__":
             print("\n".join(files_wrong_header))
             exit(1)
     else:
-        changed_files_no_duplicates = list(
-            set(changed_files + files_wrong_header))
-        if len(changed_files_no_duplicates) != 0:
+        error_files_no_duplicates = list(set(changed_files +
+                                             files_wrong_header))
+        if len(error_files_no_duplicates) != 0:
             print("Style error found in the following files:")
-            print("\n".join(changed_files_no_duplicates))
+            print("\n".join(error_files_no_duplicates))
             exit(1)
