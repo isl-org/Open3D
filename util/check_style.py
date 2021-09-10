@@ -509,8 +509,9 @@ if __name__ == "__main__":
             print("Style applied to the following files:")
             print("\n".join(changed_files))
         if len(files_wrong_header) != 0:
-            print("Please correct license header in the following files. \
-                See utils/check_style.py for header information.")
+            print(
+                "Please correct license header in the following files. See utils/check_style.py for header information."
+            )
             print("\n".join(files_wrong_header))
             exit(1)
     else:
