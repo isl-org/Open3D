@@ -23,19 +23,19 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
 """Run the GUI event loop in a non-main thread. This allows using the
 GUI from plugins to other apps (e.g.: Jupyter or Tensorboard) where the GUI
 cannot be started in the main thread. Currently does not work in macOS.
 
 .. note:: This is a singleton class implemented with this module as a
-   holder. The ``_async_event_loop`` singleton is started whenever this
+   holder. The ``async_event_loop`` singleton is started whenever this
    module is imported.  If you are using remote visualization with WebRTC,
    you must call ``enable_webrtc()`` before importing this module.
 """
 import threading
 from collections import deque
 import open3d as o3d
+from open3d.visualization.tensorboard_plugin.util import _log
 
 
 class _AsyncEventLoop:
@@ -76,16 +76,20 @@ class _AsyncEventLoop:
 
         with self._lock:
             task = _AsyncEventLoop._Task(func, *args, **kwargs)
+            _log.debug(f"[async_event_loop] Enqueue {func.__name__} with args:"
+                       f" {args} {kwargs}")
             self._run_queue.append(task)
 
         while True:
             with self._cv:
                 self._cv.wait_for(lambda: task.task_id in self._return_vals)
             with self._lock:
+                _log.debug(f"[async_event_loop] Completed {func.__name__}")
                 return self._return_vals.pop(task.task_id)
 
     def _thread_main(self):
         """Main GUI thread event loop"""
+        # TODO(Sameer): This event loop uses up a CPU core completely
         app = o3d.visualization.gui.Application.instance
         app.initialize()
 
@@ -101,10 +105,11 @@ class _AsyncEventLoop:
                     self._cv.notify_all()
 
             done = not app.run_one_tick()
-        self._started = False
+
+        self._started = False  # Main GUI thread has exited
 
 
 # The _AsyncEventLoop class shall only be used to create a singleton instance.
 # There are different ways to achieve this, here we use the module as a holder
 # for singleton variables, see: https://stackoverflow.com/a/31887/1255535.
-_async_event_loop = _AsyncEventLoop()
+async_event_loop = _AsyncEventLoop()

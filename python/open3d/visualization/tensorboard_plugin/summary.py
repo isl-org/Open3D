@@ -23,7 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
+"""Summary writer for the TensorBoard Open3D plugin"""
 import threading
 import os
 import socket
@@ -38,6 +38,7 @@ from tensorboard.compat.proto.summary_pb2 import Summary
 from tensorboard.compat.proto.tensor_shape_pb2 import TensorShapeProto
 from tensorboard.compat.proto.tensor_pb2 import TensorProto
 from tensorboard.backend.event_processing.plugin_asset_util import PluginDirectory
+from tensorboard.compat.tensorflow_stub.pywrap_tensorflow import masked_crc32c
 from tensorboard.util import lazy_tensor_creator
 try:
     import tensorflow.compat.v2 as tf
@@ -62,7 +63,7 @@ except ImportError:
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 from open3d.visualization.tensorboard_plugin import metadata
-_log = metadata.log
+from open3d.visualization.tensorboard_plugin.util import _log
 
 
 class _AsyncDataWriter:
@@ -193,27 +194,25 @@ def _color_to_uint8(color_data):
         color_data: o3d.core.Tensor [B,N,3] with any dtype. Float dtypes are
         expected to have values in [0,1] and 8 bit Int dtypes in [0,255] and 16
         bit Int types in [0,2^16-1]
+
     Returns:
         color_data with the same shape, but as uint8 dtype.
-
     """
     if color_data.dtype == o3d.core.uint8:
         return color_data
     if color_data.dtype == o3d.core.uint16:
-        return (color_data / 255).to(dtype=o3d.core.uint8)
-    # TODO: This wraps around instead of clipping
-    return (255 * color_data).to(dtype=o3d.core.uint8)
+        return (color_data // 256).to(dtype=o3d.core.uint8)
+    return (255 * color_data.clip(0, 1)).to(dtype=o3d.core.uint8)
 
 
 def _to_integer(tensor):
-    """Test converting to scalar integer (np.int64) and return it. Return None
-    on failure.
+    """Test converting a tensor (TF, PyTorch, Open3D, Numpy array or a scalar)
+    to scalar integer (np.int64) and return it. Return None on failure.
     """
     try:
-        val = np.int64(tensor)
-        if val.ndim != 0:
+        if hasattr(tensor, 'ndim') and tensor.ndim > 0:
             return None
-        return val
+        return np.int64(tensor)
     except (TypeError, ValueError, RuntimeError):
         return None
 
@@ -227,7 +226,7 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
     step_ref = _to_integer(tensor)
     if step_ref is not None:
         if step_ref < 0 or step_ref >= step:
-            raise ValueError(f"Out of order step refernce {step_ref} for "
+            raise ValueError(f"Out of order step reference {step_ref} for "
                              f"property {prop} at step {step}")
         geometry_metadata.property_references.add(
             geometry_property=plugin_data_pb2.Open3DPluginData.GeometryProperty.
@@ -248,10 +247,10 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
         shape3.insert(0, 1)
         save_tensor = save_tensor.reshape(shape3)
     elif tensor.ndim == 3:
-        save_tensor = _to_o3d(tensor[:max_outputs, ...])
+        save_tensor = _to_o3d(tensor[:max_outputs])
     else:
-        raise ValueError(f"Property {prop} tensor should be of shape "
-                         f"BxNxNp but is {tensor.shape}.")
+        raise ValueError(f"Property {prop} tensor should be of shape (N,Np) or"
+                         f" (B,N,Np) or a scalar but is {tensor.shape}.")
 
     # Datatype conversion
     if prop.endswith("_colors"):
@@ -413,17 +412,19 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             os.path.join(write_dir, tag.replace('/', '-')), data_buffer)
         if bidx == 0:
             geometry_metadata.batch_index.filename = filename
-        geometry_metadata.batch_index.start_size.add(start=this_write_location,
-                                                     size=len(data_buffer))
+        geometry_metadata.batch_index.start_size.add(
+            start=this_write_location,
+            size=len(data_buffer),
+            masked_crc32c=masked_crc32c(data_buffer))
     return geometry_metadata.SerializeToString()
 
 
-def add_3d(name, data, step=None, max_outputs=1, description=None):
+def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
     """Write 3D geometry data as summary.
 
     Args:
-      name: A name for this summary. The summary tag used for TensorBoard will
-        be this name prefixed by any active name scopes.
+      name / tag: A name for this summary. The summary tag used for TensorBoard
+        will be this name prefixed by any active name scopes.
       data: A dictionary of ``Tensor``s representing 3D data. Tensorflow,
         PyTorch, Numpy and Open3D tensors are supported. The following keys
         are supported:
@@ -454,12 +455,14 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
         converted to uint8 range [0,255]. Other data types will be clipped into
         an allowed range for safe casting to uint8.
 
-        Any data tensor, may be replaced by an int scalar referring to a
+        Any data tensor, may be replaced by an ``int`` scalar referring to a
         previous step. This allows reusing a previously written property in case
         that it does not change at different steps.
       step: Explicit ``int64``-castable monotonic step value for this summary.
-        If omitted, this defaults to `tf.summary.experimental.get_step()`, which
-        must not be None.
+        [`TensorFlow`: If ``None``, this defaults to
+        `tf.summary.experimental.get_step()`, which must not be ``None``.]
+      logdir: The logging directory used to create the SummaryWriter.
+        [`PyTorch`: This will be inferred if not provided or ``None``.]
       max_outputs: Optional ``int`` or rank-0 integer ``Tensor``. At most this
         many images will be emitted at each step. When more than
         `max_outputs` many images are provided, the first ``max_outputs`` many
@@ -484,6 +487,8 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
         step = tf.summary.experimental.get_step()
     if step is None:
         raise ValueError("Step is not provided or set.")
+    if logdir is None:
+        raise ValueError("logdir must be provided with TensorFlow.")
 
     summary_metadata = metadata.create_summary_metadata(description=description)
     # TODO(https://github.com/tensorflow/tensorboard/issues/2109): remove fallback
@@ -497,10 +502,6 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
         # record_if() returns True.
         @lazy_tensor_creator.LazyTensorCreator
         def lazy_tensor():
-            # TODO(@ssheorey): Use public API to get logdir
-            from tensorflow.python.ops.summary_ops_v2 import _summary_state
-            logdir = _summary_state.writer._metadata['logdir'].numpy().decode(
-                'utf-8')
             write_dir = PluginDirectory(logdir, metadata.PLUGIN_NAME)
             geometry_metadata_string = _write_geometry_data(
                 write_dir, tag, step, data, max_outputs)
@@ -515,15 +516,17 @@ def add_3d(name, data, step=None, max_outputs=1, description=None):
 def _add_3d_torch(self,
                   tag,
                   data,
-                  step=None,
+                  step,
+                  logdir=None,
                   max_outputs=1,
-                  description=None,
-                  walltime=None):
+                  description=None):
+    walltime = None
     _add_3d_torch.__doc__ = add_3d.__doc__  # Copy docstring from TF function
     if step is None:
         raise ValueError("Step is not provided or set.")
     summary_metadata = metadata.create_summary_metadata(description=description)
-    logdir = self._get_file_writer().get_logdir()
+    if logdir is None:
+        logdir = self._get_file_writer().get_logdir()
     write_dir = PluginDirectory(logdir, metadata.PLUGIN_NAME)
     geometry_metadata_string = _write_geometry_data(write_dir, tag, step, data,
                                                     max_outputs)

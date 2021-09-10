@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
 
 // To generate plugin_data_pb2.py, use this command:
 // protoc -I=. --python_out=. plugin_data.proto
@@ -44,7 +43,7 @@ message Open3DPluginData {
     vertex_positions = 0;
     vertex_normals = 1;
     vertex_colors = 2;
-    vertex_uvs = 3;
+    vertex_texture_uvs = 3;
     triangle_indices = 4;
     triangle_colors = 5;
     triangle_normals = 6;
@@ -62,6 +61,7 @@ message Open3DPluginData {
   message StartSize {
       uint64 start = 1;
       uint64 size = 2;
+      uint32 masked_crc32c = 3;
   }
 
 // Index for a batch of geometry data

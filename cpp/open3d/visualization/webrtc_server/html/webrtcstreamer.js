@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
 // Contains source code from
 // https://github.com/mpromonet/webrtc-streamer
 //
@@ -33,23 +32,23 @@
 // ----------------------------------------------------------------------------
 
 (function () {
-// TODO(@ssheorey): Set to false before merge
-    const enableLogging = true;
-    if (enableLogging === false) {
-        if (typeof window.console === "undefined") { window.console = {};}
-        window.console.log = window.console.info = window.console.debug =
-            window.console.warning = window.console.assert =
-            window.console.error = function () {};
-    }
+  // TODO(@ssheorey): Set to false before merge
+  const enableLogging = true;
+  if (enableLogging === false) {
+    if (typeof window.console === "undefined") { window.console = {};}
+    window.console.log = window.console.info = window.console.debug =
+      window.console.warning = window.console.assert =
+      window.console.error = function () {};
+  }
 }());
 
 let WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
 
   // Query style from the user's browser and match Open3D style
-    function css (element, property) {
+  function css (element, property) {
     return window.getComputedStyle(element, null).getPropertyValue(property);
-}
+  }
 
   /**
    * Interface with WebRTC-streamer API
@@ -68,10 +67,10 @@ let WebRtcStreamer = (function () {
     this.srvurl =
       srvurl ||
       location.protocol +
-        "//" +
-        window.location.hostname +
-        ":" +
-        window.location.port;
+      "//" +
+      window.location.hostname +
+      ":" +
+      window.location.port;
     this.pc = null;
     this.dataChannel = null;
 
@@ -588,9 +587,9 @@ let WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.createPeerConnection = function () {
     console.log(
       "createPeerConnection  config: " +
-        JSON.stringify(this.pcConfig) +
-        " option:" +
-        JSON.stringify(this.pcOptions)
+      JSON.stringify(this.pcConfig) +
+      " option:" +
+      JSON.stringify(this.pcOptions)
     );
     this.pc = new RTCPeerConnection(this.pcConfig, this.pcOptions);
     var pc = this.pc;
@@ -622,13 +621,13 @@ let WebRtcStreamer = (function () {
         }
       }
     };
-      // Remote data channel receives data
+    // Remote data channel receives data
     pc.ondatachannel = function (evt) {
       console.log("remote datachannel created:" + JSON.stringify(evt));
 
       evt.channel.onopen = function () {
         console.log("remote datachannel open");
-          // Forward event to others who want to access remote data
+        // Forward event to others who want to access remote data
         bind.videoElt.dispatchEvent(new CustomEvent("RemoteDataChannelOpen", {detail: evt}));
       };
       evt.channel.onmessage = function (event) {
@@ -641,7 +640,7 @@ let WebRtcStreamer = (function () {
 
         recvs.forEach((recv) => {
           if (recv.track && recv.track.kind === "video" && typeof recv.getParameters !=
-              "undefined") {
+            "undefined") {
             console.log(
               "codecs:" + JSON.stringify(recv.getParameters().codecs)
             );
@@ -650,15 +649,15 @@ let WebRtcStreamer = (function () {
       }
     };
 
-      // Local datachannel sends data
+    // Local datachannel sends data
     try {
       this.dataChannel = pc.createDataChannel("ClientDataChannel");
       var dataChannel = this.dataChannel;
       dataChannel.onopen = function () {
         console.log("local datachannel open");
-          // Forward event to others who want to access remote data
+        // Forward event to others who want to access remote data
         bind.videoElt.dispatchEvent(new CustomEvent("LocalDataChannelOpen", {
-            detail: {channel: dataChannel}
+          detail: {channel: dataChannel}
         }));
       };
       dataChannel.onmessage = function (evt) {
@@ -674,9 +673,9 @@ let WebRtcStreamer = (function () {
 
     console.log(
       "Created RTCPeerConnection with config: " +
-        JSON.stringify(this.pcConfig) +
-        "option:" +
-        JSON.stringify(this.pcOptions)
+      JSON.stringify(this.pcConfig) +
+      "option:" +
+      JSON.stringify(this.pcOptions)
     );
     return pc;
   };
@@ -791,5 +790,5 @@ let WebRtcStreamer = (function () {
 if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
   module.exports = WebRtcStreamer;
 } else {
-    window.WebRtcStreamer = WebRtcStreamer;
+  window.WebRtcStreamer = WebRtcStreamer;
 }

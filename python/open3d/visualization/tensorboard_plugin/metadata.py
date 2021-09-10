@@ -23,7 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
 """Internal information about the Open3D plugin."""
 
 from tensorboard.compat.proto.summary_pb2 import SummaryMetadata

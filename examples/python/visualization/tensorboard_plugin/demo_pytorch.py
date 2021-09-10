@@ -37,7 +37,6 @@ BASE_LOGDIR = "demo_logs/pytorch/"
 def small_scale(run_name="small_scale"):
     """Basic demo with cube and cylinder with normals and colors.
     """
-
     writer = SummaryWriter("demo_logs/" + run_name)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
@@ -48,19 +47,17 @@ def small_scale(run_name="small_scale"):
                                                          split=4)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
-    with writer.as_default():
-        for step in range(3):
-            cube.paint_uniform_color(colors[step])
-            summary.add_3d('cube', to_dict_batch([cube]), step=step)
-            cylinder.paint_uniform_color(colors[step])
-            summary.add_3d('cylinder', to_dict_batch([cylinder]), step=step)
+    for step in range(3):
+        cube.paint_uniform_color(colors[step])
+        writer.add_3d('cube', to_dict_batch([cube]), step=step)
+        cylinder.paint_uniform_color(colors[step])
+        writer.add_3d('cylinder', to_dict_batch([cylinder]), step=step)
 
 
 def property_reference(run_name="property_reference"):
     """Produces identical visualization to small_scale, but does not store
     repeated properties of ``vertex_positions`` and ``vertex_normals``.
     """
-
     writer = SummaryWriter("demo_logs/" + run_name)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
@@ -71,20 +68,19 @@ def property_reference(run_name="property_reference"):
                                                          split=4)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
-    with writer.as_default():
-        for step in range(3):
-            cube.paint_uniform_color(colors[step])
-            cube_summary = to_dict_batch([cube])
-            if step > 0:
-                cube_summary['vertex_positions'] = 0
-                cube_summary['vertex_normals'] = 0
-            summary.add_3d('cube', cube_summary, step=step)
-            cylinder.paint_uniform_color(colors[step])
-            cylinder_summary = to_dict_batch([cylinder])
-            if step > 0:
-                cylinder_summary['vertex_positions'] = 0
-                cylinder_summary['vertex_normals'] = 0
-            summary.add_3d('cylinder', cylinder_summary, step=step)
+    for step in range(3):
+        cube.paint_uniform_color(colors[step])
+        cube_summary = to_dict_batch([cube])
+        if step > 0:
+            cube_summary['vertex_positions'] = 0
+            cube_summary['vertex_normals'] = 0
+        writer.add_3d('cube', cube_summary, step=step)
+        cylinder.paint_uniform_color(colors[step])
+        cylinder_summary = to_dict_batch([cylinder])
+        if step > 0:
+            cylinder_summary['vertex_positions'] = 0
+            cylinder_summary['vertex_normals'] = 0
+        writer.add_3d('cylinder', cylinder_summary, step=step)
 
 
 def large_scale(n_steps=20,
@@ -99,36 +95,35 @@ def large_scale(n_steps=20,
     for k in range(batch_size):
         t = k * np.pi / batch_size
         colors.append(((1 + np.sin(t)) / 2, (1 + np.cos(t)) / 2, t / np.pi))
-    with writer.as_default():
-        for step in range(n_steps):
-            resolution = base_resolution * (step + 1)
-            cylinder_list = []
-            moebius_list = []
-            cylinder = o3d.geometry.TriangleMesh.create_cylinder(
-                radius=1.0, height=2.0, resolution=resolution, split=4)
-            cylinder.compute_vertex_normals()
-            moebius = o3d.geometry.TriangleMesh.create_moebius(
-                length_split=int(3.5 * resolution),
-                width_split=int(0.75 * resolution),
-                twists=1,
-                raidus=1,
-                flatness=1,
-                width=1,
-                scale=1)
-            moebius.compute_vertex_normals()
-            for b in range(batch_size):
-                cylinder_list.append(copy.deepcopy(cylinder))
-                cylinder_list[b].paint_uniform_color(colors[b])
-                moebius_list.append(copy.deepcopy(moebius))
-                moebius_list[b].paint_uniform_color(colors[b])
-            summary.add_3d('cylinder',
-                           to_dict_batch(cylinder_list),
-                           max_outputs=batch_size,
-                           step=step)
-            summary.add_3d('moebius',
-                           to_dict_batch(moebius_list),
-                           max_outputs=batch_size,
-                           step=step)
+    for step in range(n_steps):
+        resolution = base_resolution * (step + 1)
+        cylinder_list = []
+        moebius_list = []
+        cylinder = o3d.geometry.TriangleMesh.create_cylinder(
+            radius=1.0, height=2.0, resolution=resolution, split=4)
+        cylinder.compute_vertex_normals()
+        moebius = o3d.geometry.TriangleMesh.create_moebius(
+            length_split=int(3.5 * resolution),
+            width_split=int(0.75 * resolution),
+            twists=1,
+            raidus=1,
+            flatness=1,
+            width=1,
+            scale=1)
+        moebius.compute_vertex_normals()
+        for b in range(batch_size):
+            cylinder_list.append(copy.deepcopy(cylinder))
+            cylinder_list[b].paint_uniform_color(colors[b])
+            moebius_list.append(copy.deepcopy(moebius))
+            moebius_list[b].paint_uniform_color(colors[b])
+        writer.add_3d('cylinder',
+                      to_dict_batch(cylinder_list),
+                      step=step,
+                      max_outputs=batch_size)
+        writer.add_3d('moebius',
+                      to_dict_batch(moebius_list),
+                      step=step,
+                      max_outputs=batch_size)
 
 
 def with_material(model_dir):
@@ -148,10 +143,10 @@ def with_material(model_dir):
     for texture in ("albedo", "normal", "ao", "metallic", "roughness"):
         texture_file = os.path.join(model_dir, texture + ".png")
         if os.path.exists(texture_file):
-            material["texture_maps"][texture +
-                                     "_img"] = o3d.t.io.read_image(texture_file)
+            material["texture_maps"][texture] = o3d.t.io.read_image(
+                texture_file)
 
-    if "metallic_img" in material["texture_maps"]:
+    if "metallic" in material["texture_maps"]:
         material["scalar_properties"]["base_metallic"] = 1.0
 
     writer = SummaryWriter(BASE_LOGDIR + model_name)
@@ -170,3 +165,5 @@ if __name__ == "__main__":
     small_scale()
     property_reference()
     # large_scale()
+    with_material(
+        os.path.join(os.path.basename(__file__), "test_data", "monkey"))
