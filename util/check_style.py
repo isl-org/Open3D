@@ -504,14 +504,14 @@ if __name__ == "__main__":
             print("Style applied to the following files:")
             print("\n".join(changed_files))
         if len(files_wrong_header) != 0:
-            print("Please correct license header in the following files:")
+            print("Please correct license header in the following files. \
+                See utils/check_style.py for header information.")
             print("\n".join(files_wrong_header))
-            raise RuntimeError(
-                "Found incorrect license header. See utils/check_license.py for license information."
-            )
+            exit(1)
     else:
-        changed_files.extend(files_wrong_header)
+        changed_files_without_duplicates = list(
+            set(changed_files + files_wrong_header))
         if len(changed_files) != 0:
             print("Style error found in the following files:")
-            print("\n".join(changed_files))
+            print("\n".join(changed_files_without_duplicates))
             exit(1)
