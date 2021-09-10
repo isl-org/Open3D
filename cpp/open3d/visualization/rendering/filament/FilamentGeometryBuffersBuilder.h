@@ -45,6 +45,8 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293)
+// Filament uses this as an enum which conflicts with windows.h
+#undef OPAQUE
 #endif // _MSC_VER
 
 #include <filament/Box.h>
