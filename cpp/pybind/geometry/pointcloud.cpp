@@ -190,7 +190,8 @@ void pybind_pointcloud(py::module &m) {
             .def("segment_plane", &PointCloud::SegmentPlane,
                  "Segments a plane in the point cloud using the RANSAC "
                  "algorithm.",
-                 "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a, "seed"_a = -1)
+                 "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a,
+                 "seed"_a = -1)
             .def_static(
                     "create_from_depth_image",
                     &PointCloud::CreateFromDepthImage,
