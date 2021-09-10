@@ -11,13 +11,21 @@ ARG CCACHE_TAR_NAME
 ARG CMAKE_VERSION
 ARG CCACHE_VERSION
 ARG PYTHON_VERSION
-ARG BUILD_WHEEL
-RUN if [ -z "${DEVELOPER_BUILD}" ]; then echo "Error: ARG DEVELOPER_BUILD not specified."; exit 1; fi
-RUN if [ -z "${CCACHE_TAR_NAME}" ]; then echo "Error: ARG CCACHE_TAR_NAME not specified."; exit 1; fi
-RUN if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi
-RUN if [ -z "${CCACHE_VERSION}"  ]; then echo "Error: ARG CCACHE_VERSION  not specified."; exit 1; fi
-RUN if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi
-RUN if [ -z "${BUILD_WHEEL}"     ]; then echo "Error: ARG BUILD_WHEEL     not specified."; exit 1; fi
+ARG BUILD_WHEEL  # pip wheel and conda wheel.
+ARG BUILD_ALL    # C++ tests, pip wheel, examples, benchmarks.
+ARG SHARED
+ARG BUILD_TENSORFLOW_OPS
+ARG BUILD_PYTORCH_OPS
+RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi
+RUN if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi
+RUN if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi
+RUN if [ -z "${CCACHE_VERSION}"       ]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi
+RUN if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi
+RUN if [ -z "${BUILD_WHEEL}"          ]; then echo "Error: ARG BUILD_WHEEL          not specified."; exit 1; fi
+RUN if [ -z "${BUILD_ALL}"            ]; then echo "Error: ARG BUILD_ALL            not specified."; exit 1; fi
+RUN if [ -z "${SHARED}"               ]; then echo "Error: ARG SHARED               not specified."; exit 1; fi
+RUN if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi
+RUN if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
@@ -27,6 +35,20 @@ ENV CMAKE_VERSION=${CMAKE_VERSION}
 ARG CCACHE_VERSION=${CCACHE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV BUILD_WHEEL=${BUILD_WHEEL}
+ENV BUILD_ALL=${BUILD_ALL}
+ENV SHARED=${SHARED}
+ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+
+# Cannot have BUILD_WHEEL == BUILD_ALL == ON
+# TODO(yixing): Refacotor this. Ideally we should specify the CMake argument
+# and the build behavior independently. Currently, BUILD_WHEEL have a hard-code
+# combination of CMake arguments.
+RUN if [ "${BUILD_WHEEL}" = "ON" ] && [ "${BUILD_ALL}" = "ON" ] \
+    ;then \
+        echo "Cannot have BUILD_WHEEL == BUILD_ALL == ON" \
+        && exit 1 \
+    ;fi
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -120,13 +142,32 @@ WORKDIR /root/Open3D
 RUN if [ "${BUILD_WHEEL}" = "ON" ] \
     ;then \
         export NPROC=$(nproc) \
-        && export SHARED=OFF \
-        && export BUILD_TENSORFLOW_OPS=ON \
-        && export BUILD_PYTORCH_OPS=ON \
         && source /root/Open3D/util/ci_utils.sh \
         && build_pip_conda_package build_azure_kinect build_jupyter \
     ;else \
         echo "BUILD_WHEEL=${BUILD_WHEEL}, build Python wheel skipped." \
+    ;fi
+
+# Build "all": C++ tests, pip wheel, examples, benchmarks
+RUN if [ "${BUILD_ALL}" = "ON" ] \
+    ;then \
+        mkdir build \
+        && cd build \
+        && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
+                 -DCMAKE_BUILD_TYPE=Release \
+                 -DBUILD_LIBREALSENSE=ON \
+                 -DBUILD_CUDA_MODULE=ON \
+                 -DBUILD_COMMON_CUDA_ARCHS=ON \
+                 -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
+                 -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+                 -DBUILD_UNIT_TESTS=ON \
+                 -DBUILD_BENCHMARKS=ON \
+                 -DBUILD_EXAMPLES=ON \
+                 .. \
+        && make make VERBOSE=1 -j$(nproc) \
+        && make install-pip-package -j$(nproc) \
+    ;else \
+        echo "BUILD_ALL=${BUILD_ALL}, build all skipped." \
     ;fi
 
 # Compress ccache folder, move to / directory

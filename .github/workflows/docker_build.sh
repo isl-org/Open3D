@@ -85,6 +85,10 @@ cuda_wheel() {
     CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
     CCACHE_VERSION=4.3
     BUILD_WHEEL=ON
+    BUILD_ALL=OFF
+    SHARED=OFF
+    BUILD_TENSORFLOW_OPS=ON
+    BUILD_PYTORCH_OPS=ON
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel()] options: ${options}"
@@ -118,6 +122,10 @@ cuda_wheel() {
         --build-arg CCACHE_VERSION=${CCACHE_VERSION} \
         --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
         --build-arg BUILD_WHEEL=${BUILD_WHEEL} \
+        --build-arg BUILD_ALL=${BUILD_ALL} \
+        --build-arg SHARED=${SHARED} \
+        --build-arg BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
+        --build-arg BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
         -t open3d-ubuntu-cuda-ci:latest \
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
@@ -142,6 +150,10 @@ cuda_wheel() {
     CCACHE_VERSION=4.3
     PYTHON_VERSION=3.6
     BUILD_WHEEL=OFF
+    BUILD_ALL=ON
+    SHARED=OFF
+    BUILD_TENSORFLOW_OPS=OFF
+    BUILD_PYTORCH_OPS=OFF
 
     # Docker tag
     DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
@@ -155,6 +167,10 @@ cuda_wheel() {
         --build-arg CCACHE_VERSION=${CCACHE_VERSION} \
         --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
         --build-arg BUILD_WHEEL=${BUILD_WHEEL} \
+        --build-arg BUILD_ALL=${BUILD_ALL} \
+        --build-arg SHARED=${SHARED} \
+        --build-arg BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
+        --build-arg BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
         -t ${DOCKER_TAG} \
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
