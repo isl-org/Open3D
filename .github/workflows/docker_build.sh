@@ -112,7 +112,6 @@ cuda_wheel() {
     echo "[cuda_wheel()] PYTHON_VERSION: ${PYTHON_VERSION}"
     echo "[cuda_wheel()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
 
-    # Docker build
     pushd ${OPEN3D_ROOT}
     docker build \
         --build-arg BASE_IMAGE=${BASE_IMAGE} \
@@ -130,7 +129,6 @@ cuda_wheel() {
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
 
-    # Extract pip wheel, conda package, ccache
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v ${PWD}:/opt/mount --rm open3d-ubuntu-cuda-ci:latest \
         bash -c "cp ${python_package_dir}/pip_package/open3d*.whl                /opt/mount && \
@@ -171,10 +169,9 @@ cuda_gcloud_build() {
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
 
-    # TODO: re-enable this after debugging
-    # docker run -v ${PWD}:/opt/mount --rm ${DOCKER_TAG} \
-    #     bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount"
-    # sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
+    docker run -v ${PWD}:/opt/mount --rm ${DOCKER_TAG} \
+        bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount"
+    sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
 }
 
 2-bionic() {
