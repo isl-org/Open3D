@@ -28,21 +28,6 @@ ARG CCACHE_VERSION=${CCACHE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV BUILD_WHEEL=${BUILD_WHEEL}
 
-RUN echo "BUILD_WHEEL=${BUILD_WHEEL}"
-
-RUN if [ "${BUILD_WHEEL}" = "ON" ] \
-    ;then \
-        echo "Build wheel: ON" \
-     && echo "Build wheel: ON line 2" \
-     && echo "Build wheel: ON line 3" \
-    ;else \
-        echo "Build wheel: OFF" \
-     && echo "Build wheel: OFF line 2" \
-     && echo "Build wheel: OFF line 3" \
-    ;fi
-
-RUN exit 1
-
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
@@ -132,12 +117,17 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build python wheel
-RUN export NPROC=$(nproc) \
- && export SHARED=OFF \
- && export BUILD_TENSORFLOW_OPS=ON \
- && export BUILD_PYTORCH_OPS=ON \
- && source /root/Open3D/util/ci_utils.sh \
- && build_pip_conda_package build_azure_kinect build_jupyter
+RUN if [ "${BUILD_WHEEL}" = "ON" ] \
+    ;then \
+        export NPROC=$(nproc) \
+        && export SHARED=OFF \
+        && export BUILD_TENSORFLOW_OPS=ON \
+        && export BUILD_PYTORCH_OPS=ON \
+        && source /root/Open3D/util/ci_utils.sh \
+        && build_pip_conda_package build_azure_kinect build_jupyter \
+    ;else \
+        echo "BUILD_WHEEL=${BUILD_WHEEL}, build Python wheel skipped." \
+    ;fi
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
