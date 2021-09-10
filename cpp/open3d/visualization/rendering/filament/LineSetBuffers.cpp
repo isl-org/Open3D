@@ -381,6 +381,181 @@ Box LineSetBuffersBuilder::ComputeAABB() {
     return aabb;
 }
 
+TLineSetBuffersBuilder::TLineSetBuffersBuilder(
+        const t::geometry::LineSet& geometry)
+    : geometry_(geometry) {
+    // Make sure geometry is on CPU
+    auto pts = geometry.GetPointPositions();
+    if (pts.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        utility::LogWarning(
+                "GPU resident line sets are not currently supported for "
+                "visualization. Copying data to CPU.");
+        geometry_ = geometry.To(core::Device("CPU:0"));
+    }
+
+    // Make sure data types are Float32 for points
+    if (pts.GetDtype() != core::Float32) {
+        utility::LogWarning(
+                "Tensor point cloud points must have DType of Float32 not {}. "
+                "Converting.",
+                pts.GetDtype().ToString());
+        geometry_.GetPointPositions() = pts.To(core::Float32);
+    }
+    // Colors should be Float32 but will often by UInt8
+    if (geometry_.HasLineColors() &&
+        geometry_.GetLineColors().GetDtype() != core::Float32) {
+        auto colors = geometry_.GetLineColors();
+        geometry_.GetLineColors() = colors.To(core::Float32);
+        if (colors.GetDtype() == core::UInt8) {
+            geometry_.GetLineColors() = geometry_.GetLineColors() / 255.0f;
+        }
+    }
+    // Make sure line indices are Uint32
+    if (geometry_.HasLineIndices() &&
+        geometry_.GetLineIndices().GetDtype() != core::UInt32) {
+        auto indices = geometry_.GetLineIndices();
+        geometry_.GetLineIndices() = indices.To(core::UInt32);
+    }
+}
+
+RenderableManager::PrimitiveType TLineSetBuffersBuilder::GetPrimitiveType()
+        const {
+    return RenderableManager::PrimitiveType::LINES;
+}
+
+GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
+    auto& engine = EngineInstance::GetInstance();
+    auto& resource_mgr = EngineInstance::GetResourceManager();
+
+    const auto& points = geometry_.GetPointPositions();
+
+    const uint32_t vertex_stride = 7 * sizeof(float);
+    const uint32_t color_start_offset = 3 * sizeof(float);
+    uint32_t n_vertices = 0;
+    float* vertex_data = nullptr;
+    uint32_t n_indices = 0;
+    IndexType* line_indices = nullptr;
+    uint32_t indices_bytes = 0;
+
+    // Two separate paths for lines with colors and those without
+    if (geometry_.HasLineColors()) {
+        // NOTE: The following code naively duplicates vertex positions for each
+        // line in case there are multiple different colored lines sharing a
+        // vertex. This could be made more intelligent to avoid uneccessary
+        // duplication but as a practical matter there shouldn't be much if any
+        // performance difference. This can be revisited in the future if
+        // necessary.
+        const auto& lines = geometry_.GetLineIndices();
+        const auto& colors = geometry_.GetLineColors();
+        n_vertices = lines.GetLength() * 2;
+        vertex_data = static_cast<float*>(malloc(n_vertices * vertex_stride));
+        float* vertex_data_ptr = vertex_data;
+        const uint32_t* index_data =
+                static_cast<const uint32_t*>(lines.GetDataPtr());
+        const float* color_data =
+                static_cast<const float*>(colors.GetDataPtr());
+        for (int i = 0; i < lines.GetLength(); ++i) {
+            // Vertex one of the line
+            uint32_t idx1 = *index_data++;
+            const float* current_vertex = points[idx1].GetDataPtr<float>();
+            *vertex_data_ptr++ = *current_vertex;
+            *vertex_data_ptr++ = *(current_vertex + 1);
+            *vertex_data_ptr++ = *(current_vertex + 2);
+            *vertex_data_ptr++ = *color_data;
+            *vertex_data_ptr++ = *(color_data + 1);
+            *vertex_data_ptr++ = *(color_data + 2);
+            *vertex_data_ptr++ = 1.f;
+            uint32_t idx2 = *index_data++;
+            current_vertex = points[idx2].GetDataPtr<float>();
+            *vertex_data_ptr++ = *current_vertex;
+            *vertex_data_ptr++ = *(current_vertex + 1);
+            *vertex_data_ptr++ = *(current_vertex + 2);
+            *vertex_data_ptr++ = *color_data;
+            *vertex_data_ptr++ = *(color_data + 1);
+            *vertex_data_ptr++ = *(color_data + 2);
+            *vertex_data_ptr++ = 1.f;
+            color_data += 3;
+        }
+        indices_bytes = n_vertices * sizeof(IndexType);
+        n_indices = n_vertices;
+        line_indices = static_cast<IndexType*>(malloc(indices_bytes));
+        std::iota(line_indices, line_indices + n_vertices, 0);
+    } else {
+        n_vertices = points.GetLength();
+        auto position_data = static_cast<const float*>(points.GetDataPtr());
+        const auto vertex_array_size = n_vertices * vertex_stride;
+        vertex_data = static_cast<float*>(malloc(vertex_array_size));
+        float* vertex_data_ptr = vertex_data;
+        for (auto i = 0ul; i < n_vertices; ++i) {
+            *vertex_data_ptr++ = *position_data++;
+            *vertex_data_ptr++ = *position_data++;
+            *vertex_data_ptr++ = *position_data++;
+            *vertex_data_ptr++ = 1.f;
+            *vertex_data_ptr++ = 1.f;
+            *vertex_data_ptr++ = 1.f;
+            *vertex_data_ptr++ = 1.f;
+        }
+        indices_bytes =
+                geometry_.GetLineIndices().GetLength() * 2 * sizeof(IndexType);
+        n_indices = geometry_.GetLineIndices().GetLength() * 2;
+        line_indices = static_cast<IndexType*>(malloc(indices_bytes));
+        memcpy(line_indices, geometry_.GetLineIndices().GetDataPtr(),
+               indices_bytes);
+    }
+
+    VertexBuffer* vbuf = VertexBuffer::Builder()
+                                 .bufferCount(1)
+                                 .vertexCount(n_vertices)
+                                 .attribute(VertexAttribute::POSITION, 0,
+                                            VertexBuffer::AttributeType::FLOAT3,
+                                            0, vertex_stride)
+                                 .attribute(VertexAttribute::COLOR, 0,
+                                            VertexBuffer::AttributeType::FLOAT4,
+                                            color_start_offset, vertex_stride)
+                                 .build(engine);
+    VertexBufferHandle vb_handle;
+    if (vbuf) {
+        vb_handle = resource_mgr.AddVertexBuffer(vbuf);
+    } else {
+        return {};
+    }
+
+    VertexBuffer::BufferDescriptor vb_descriptor(vertex_data,
+                                                 n_vertices * vertex_stride);
+    vb_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 0, std::move(vb_descriptor));
+
+    // Copy line index data
+    auto ib_handle =
+            resource_mgr.CreateIndexBuffer(n_indices, sizeof(IndexType));
+    if (!ib_handle) {
+        free(line_indices);
+        return {};
+    }
+    auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
+    IndexBuffer::BufferDescriptor ib_descriptor(line_indices, indices_bytes);
+    ib_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
+    ibuf->setBuffer(engine, std::move(ib_descriptor));
+
+    return {vb_handle, ib_handle, IndexBufferHandle()};
+}
+
+filament::Box TLineSetBuffersBuilder::ComputeAABB() {
+    auto min_bounds = geometry_.GetMinBound();
+    auto max_bounds = geometry_.GetMaxBound();
+    auto* min_bounds_float = min_bounds.GetDataPtr<float>();
+    auto* max_bounds_float = max_bounds.GetDataPtr<float>();
+
+    const filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
+                                     min_bounds_float[2]);
+    const filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
+                                     max_bounds_float[2]);
+
+    Box aabb;
+    aabb.set(min, max);
+    return aabb;
+}
+
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d

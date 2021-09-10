@@ -38,6 +38,7 @@
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/rpc/ZMQReceiver.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/FileSystem.h"
@@ -863,6 +864,8 @@ struct O3DVisualizer::Impl {
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
             auto t_mesh =
                     std::dynamic_pointer_cast<t::geometry::TriangleMesh>(tgeom);
+            auto t_lines =
+                    std::dynamic_pointer_cast<t::geometry::LineSet>(tgeom);
 
             if (cloud) {
                 has_colors = !cloud->colors_.empty();
@@ -872,6 +875,9 @@ struct O3DVisualizer::Impl {
                 has_normals = t_cloud->HasPointNormals();
             } else if (lines) {
                 has_colors = !lines->colors_.empty();
+                no_shadows = true;
+            } else if (t_lines) {
+                has_colors = t_lines->HasLineColors();
                 no_shadows = true;
             } else if (obb) {
                 has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
@@ -916,6 +922,8 @@ struct O3DVisualizer::Impl {
                 t_mesh->GetMaterial().ToMaterialRecord(mat);
             } else if (t_cloud && t_cloud->HasMaterial()) {
                 t_cloud->GetMaterial().ToMaterialRecord(mat);
+            } else if (t_lines && t_lines->HasMaterial()) {
+                t_lines->GetMaterial().ToMaterialRecord(mat);
             }
 
             // Finally assign material properties if geometry is a triangle mesh

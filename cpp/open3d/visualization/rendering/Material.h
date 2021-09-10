@@ -34,7 +34,7 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-class MaterialRecord;
+struct MaterialRecord;
 
 class Material {
 public:
@@ -47,7 +47,7 @@ public:
 
     Material(const Material &mat) = default;
 
-    /// Create an empty but valid material for the specified shader name
+    /// Create an empty but valid material for the specified material name
     Material(const std::string &material_name)
         : material_name_(material_name) {}
 
@@ -59,7 +59,7 @@ public:
     /// constructor and therefore has a valid shader name.
     bool IsValid() const { return !material_name_.empty(); }
 
-    /// Get the name of the shader for this material
+    /// Get the name of the material.
     const std::string &GetMaterialName() const { return material_name_; }
 
     /// Returns the texture map map
@@ -125,8 +125,9 @@ public:
         vector_properties_[key] = value;
     }
 
-    /// Set shader name. The shader name should match the name of a built in or
-    /// user specified shader. The name is NOT checked to ensure it is valid.
+    /// Set material name. The material name should match the name of a built
+    // in or user specified shader. The name is NOT checked to ensure it is
+    // valid.
     ///
     /// \param shader The name of the shader.
     void SetMaterialName(const std::string &material_name) {
