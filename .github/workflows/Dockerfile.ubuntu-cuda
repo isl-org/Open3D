@@ -12,12 +12,12 @@ ARG CMAKE_VERSION
 ARG CCACHE_VERSION
 ARG PYTHON_VERSION
 ARG BUILD_WHEEL
-RUN if [[ -z "${DEVELOPER_BUILD}" ]]; then echo "Error: ARG DEVELOPER_BUILD not specified."; exit 1; fi
-RUN if [[ -z "${CCACHE_TAR_NAME}" ]]; then echo "Error: ARG CCACHE_TAR_NAME not specified."; exit 1; fi
-RUN if [[ -z "${CMAKE_VERSION}"   ]]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi
-RUN if [[ -z "${CCACHE_VERSION}"  ]]; then echo "Error: ARG CCACHE_VERSION  not specified."; exit 1; fi
-RUN if [[ -z "${PYTHON_VERSION}"  ]]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi
-RUN if [[ -z "${BUILD_WHEEL}"     ]]; then echo "Error: ARG BUILD_WHEEL     not specified."; exit 1; fi
+RUN if [ -z "${DEVELOPER_BUILD}" ]; then echo "Error: ARG DEVELOPER_BUILD not specified."; exit 1; fi
+RUN if [ -z "${CCACHE_TAR_NAME}" ]; then echo "Error: ARG CCACHE_TAR_NAME not specified."; exit 1; fi
+RUN if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi
+RUN if [ -z "${CCACHE_VERSION}"  ]; then echo "Error: ARG CCACHE_VERSION  not specified."; exit 1; fi
+RUN if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi
+RUN if [ -z "${BUILD_WHEEL}"     ]; then echo "Error: ARG BUILD_WHEEL     not specified."; exit 1; fi
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
