@@ -133,10 +133,10 @@ RUN apt-get update && apt-get install -y \
 RUN npm install -g yarn \
  && yarn --version
 
-# # Open3D repo
-# # Always keep /root/Open3D as the WORKDIR
-# COPY . /root/Open3D
-# WORKDIR /root/Open3D
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY . /root/Open3D
+WORKDIR /root/Open3D
 
 # # Build python wheel
 # RUN if [ "${BUILD_WHEEL}" = "ON" ] \
