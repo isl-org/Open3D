@@ -47,8 +47,9 @@ sys.path.append(os.path.join(_pwd, os.pardir, "test_data"))
 from download_utils import download_all_files as _download_all_files
 _download_all_files()
 
-interactive = True
+from download_utils import get_data_path_common, get_data_path_download 
 
+interactive = True
 
 def jupyter_draw_geometries(
     geoms,

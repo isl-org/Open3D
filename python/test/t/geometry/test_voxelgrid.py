@@ -28,7 +28,7 @@ import open3d as o3d
 import numpy as np
 import pytest
 
-from open3d_test import get_data_path_download, list_devices, get_data_path_common, get_data_path_download
+from open3d_test import list_devices, get_data_path_common, get_data_path_download
 
 
 class CameraPose:

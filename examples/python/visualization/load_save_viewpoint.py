@@ -29,6 +29,9 @@
 import numpy as np
 import open3d as o3d
 
+import sys
+sys.path.append('..')
+from open3d_tutorial import get_data_path_common
 
 def save_view_point(pcd, filename):
     vis = o3d.visualization.Visualizer()
@@ -52,6 +55,6 @@ def load_view_point(pcd, filename):
 
 
 if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud("../../test_data/fragment.pcd")
+    pcd = o3d.io.read_point_cloud(get_data_path_common("fragment.pcd"))
     save_view_point(pcd, "viewpoint.json")
     load_view_point(pcd, "viewpoint.json")

@@ -29,6 +29,10 @@
 import numpy as np
 import open3d as o3d
 
+import sys
+sys.path.append('..')
+from open3d_tutorial import get_data_path_common
+
 if __name__ == "__main__":
 
     print("Testing camera in open3d ...")
@@ -46,17 +50,14 @@ if __name__ == "__main__":
 
     print("Read a trajectory and combine all the RGB-D images.")
     pcds = []
-    trajectory = o3d.io.read_pinhole_camera_trajectory(
-        "../../test_data/RGBD/trajectory.log")
+    trajectory = o3d.io.read_pinhole_camera_trajectory(get_data_path_common("RGBD/trajectory.log"))
     o3d.io.write_pinhole_camera_trajectory("test.json", trajectory)
     print(trajectory)
     print(trajectory.parameters[0].extrinsic)
     print(np.asarray(trajectory.parameters[0].extrinsic))
     for i in range(5):
-        im1 = o3d.io.read_image(
-            "../../test_data/RGBD/depth/{:05d}.png".format(i))
-        im2 = o3d.io.read_image(
-            "../../test_data/RGBD/color/{:05d}.jpg".format(i))
+        im1 = o3d.io.read_image(get_data_path_common("RGBD/depth/{:05d}.png".format(i)))
+        im2 = o3d.io.read_image(get_data_path_common("RGBD/color/{:05d}.jpg".format(i)))
         im = o3d.geometry.RGBDImage.create_from_color_and_depth(
             im2, im1, 1000.0, 5.0, False)
         pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
