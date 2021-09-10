@@ -416,7 +416,7 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
 ///
 /// \param dimension    The dimension of points.
 ///
-/// \param metric   Onf of L1, L2, Linf. Defines the distance metric for the
+/// \param metric   Onf of L1, L2. Defines the distance metric for the
 /// search
 ///
 template <class T>
@@ -477,7 +477,7 @@ std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
 ///
 /// \param knn    The number of neighbors to search.
 ///
-/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+/// \param metric    One of L1, L2. Defines the distance metric for the
 ///        search.
 ///
 /// \param ignore_query_point    If true then points with the same position as
@@ -564,7 +564,7 @@ void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 ///
 /// \param radii    A vector of search radii with length \p num_queries.
 ///
-/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+/// \param metric    One of L1, L2. Defines the distance metric for the
 ///        search.
 ///
 /// \param ignore_query_point    If true then points with the same position as
@@ -659,7 +659,7 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
 ///
 /// \param max_knn    The maximum number of neighbors to search.
 ///
-/// \param metric    One of L1, L2, Linf. Defines the distance metric for the
+/// \param metric    One of L1, L2. Defines the distance metric for the
 ///        search.
 ///
 /// \param ignore_query_point    If true then points with the same position as

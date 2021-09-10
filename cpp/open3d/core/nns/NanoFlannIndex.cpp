@@ -119,7 +119,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
     AssertTensorShape(radii, {num_query_points});
 
-    // Check if the raii has negative values.
+    // Check if the radii has negative values.
     Tensor below_zero = radii.Le(0);
     if (below_zero.Any()) {
         utility::LogError(
