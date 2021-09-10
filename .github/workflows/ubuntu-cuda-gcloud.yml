@@ -90,14 +90,14 @@ jobs:
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "sudo docker run -i --rm --gpus all ${{ env.GCLOUD_DOCKER_TAG }} nvidia-smi"
-      # - name: VM delete
-      #   if: always()
-      #   run: |
-      #     gcloud compute instances delete ${{ env.VM_NAME }} \
-      #       --zone=${{ env.VM_ZONE }} \
-      #       --quiet
-      # - name: Docker delete
-      #   if: always()
-      #   run: |
-      #     docker push ${{ env.GCLOUD_DOCKER_TAG }}
-      #     gcloud container images delete ${{ env.GCLOUD_DOCKER_TAG }}
+      - name: VM delete
+        if: always()
+        run: |
+          gcloud compute instances delete ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --quiet
+      - name: Docker delete
+        if: always()
+        run: |
+          docker push ${{ env.GCLOUD_DOCKER_TAG }}
+          gcloud container images delete ${{ env.GCLOUD_DOCKER_TAG }}
