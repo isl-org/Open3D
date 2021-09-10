@@ -175,9 +175,10 @@ cuda_wheel() {
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
 
-    docker run -v ${PWD}:/opt/mount --rm ${DOCKER_TAG} \
-        bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount"
-    sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
+    # TODO: re-enable this after debugging
+    # docker run -v ${PWD}:/opt/mount --rm ${DOCKER_TAG} \
+    #     bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount"
+    # sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
 }
 
 3-ML-SHARED-bionic() {
