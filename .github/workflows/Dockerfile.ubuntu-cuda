@@ -133,49 +133,49 @@ RUN apt-get update && apt-get install -y \
 RUN npm install -g yarn \
  && yarn --version
 
-# # Open3D repo
-# # Always keep /root/Open3D as the WORKDIR
-# COPY . /root/Open3D
-# WORKDIR /root/Open3D
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY . /root/Open3D
+WORKDIR /root/Open3D
 
-# # Build python wheel
-# RUN if [ "${BUILD_WHEEL}" = "ON" ] \
-#     ;then \
-#         export NPROC=$(nproc) \
-#         && source /root/Open3D/util/ci_utils.sh \
-#         && build_pip_conda_package build_azure_kinect build_jupyter \
-#     ;else \
-#         echo "BUILD_WHEEL=${BUILD_WHEEL}, build Python wheel skipped." \
-#     ;fi
+# Build python wheel
+RUN if [ "${BUILD_WHEEL}" = "ON" ] \
+    ;then \
+        export NPROC=$(nproc) \
+        && source /root/Open3D/util/ci_utils.sh \
+        && build_pip_conda_package build_azure_kinect build_jupyter \
+    ;else \
+        echo "BUILD_WHEEL=${BUILD_WHEEL}, build Python wheel skipped." \
+    ;fi
 
-# # Build "all": C++ tests, pip wheel, examples, benchmarks
-# RUN if [ "${BUILD_ALL}" = "ON" ] \
-#     ;then \
-#         mkdir build \
-#         && cd build \
-#         && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
-#                  -DCMAKE_BUILD_TYPE=Release \
-#                  -DBUILD_LIBREALSENSE=ON \
-#                  -DBUILD_CUDA_MODULE=ON \
-#                  -DBUILD_COMMON_CUDA_ARCHS=ON \
-#                  -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
-#                  -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
-#                  -DBUILD_UNIT_TESTS=ON \
-#                  -DBUILD_BENCHMARKS=ON \
-#                  -DBUILD_EXAMPLES=ON \
-#                  .. \
-#         && make VERBOSE=1 -j$(nproc) \
-#         && make install-pip-package -j$(nproc) \
-#     ;else \
-#         echo "BUILD_ALL=${BUILD_ALL}, build all skipped." \
-#     ;fi
+# Build "all": C++ tests, pip wheel, examples, benchmarks
+RUN if [ "${BUILD_ALL}" = "ON" ] \
+    ;then \
+        mkdir build \
+        && cd build \
+        && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
+                 -DCMAKE_BUILD_TYPE=Release \
+                 -DBUILD_LIBREALSENSE=ON \
+                 -DBUILD_CUDA_MODULE=ON \
+                 -DBUILD_COMMON_CUDA_ARCHS=ON \
+                 -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
+                 -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+                 -DBUILD_UNIT_TESTS=ON \
+                 -DBUILD_BENCHMARKS=ON \
+                 -DBUILD_EXAMPLES=ON \
+                 .. \
+        && make VERBOSE=1 -j$(nproc) \
+        && make install-pip-package -j$(nproc) \
+    ;else \
+        echo "BUILD_ALL=${BUILD_ALL}, build all skipped." \
+    ;fi
 
-# # Compress ccache folder, move to / directory
-# RUN ccache -s \
-#  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
-#  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
-#  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
-#  && cd ${CCACHE_DIR_PARENT} \
-#  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME}
+# Compress ccache folder, move to / directory
+RUN ccache -s \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && cd ${CCACHE_DIR_PARENT} \
+ && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME}
 
-# RUN echo "Docker build done."
+RUN echo "Docker build done."
