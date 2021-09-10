@@ -32,6 +32,7 @@ import sys
 sys.path.append('..')
 from open3d_tutorial import get_data_path_common
 
+
 def custom_key_action_without_kb_repeat_delay(pcd):
     rotating = False
 

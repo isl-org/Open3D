@@ -39,6 +39,7 @@ _test_data_dir = Path(__file__).parent.absolute().resolve()
 # Typically "Open3D/examples/test_data/open3d_downloads", the download dir.
 _download_dir = os.path.join(_test_data_dir, "open3d_downloads")
 
+
 def get_data_path_common(relative_path=""):
     if not relative_path:
         return _test_data_dir

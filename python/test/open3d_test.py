@@ -43,7 +43,7 @@ test_data_dir = os.path.join(_pwd, os.pardir, os.pardir, "examples",
 # how to manage the test data files.
 sys.path.append(test_data_dir)
 
-from download_utils import get_data_path_common, get_data_path_download 
+from download_utils import get_data_path_common, get_data_path_download
 from download_utils import download_all_files as _download_all_files
 _download_all_files()
 

@@ -35,6 +35,7 @@ import sys
 sys.path.append('..')
 from open3d_tutorial import get_data_path_common
 
+
 def visualize_non_blocking(vis, pcds):
     for pcd in pcds:
         vis.update_geometry(pcd)

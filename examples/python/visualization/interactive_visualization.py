@@ -34,6 +34,7 @@ import sys
 sys.path.append('..')
 from open3d_tutorial import get_data_path_common
 
+
 def demo_crop_geometry():
     print("Demo for manual geometry cropping")
     print(
@@ -75,8 +76,10 @@ def pick_points(pcd):
 
 def demo_manual_registration():
     print("Demo for manual ICP")
-    source = o3d.io.read_point_cloud(get_data_path_common("ICP/cloud_bin_0.pcd"))
-    target = o3d.io.read_point_cloud(get_data_path_common("ICP/cloud_bin_2.pcd"))
+    source = o3d.io.read_point_cloud(
+        get_data_path_common("ICP/cloud_bin_0.pcd"))
+    target = o3d.io.read_point_cloud(
+        get_data_path_common("ICP/cloud_bin_2.pcd"))
     print("Visualization of two point clouds before manual alignment")
     draw_registration_result(source, target, np.identity(4))
 

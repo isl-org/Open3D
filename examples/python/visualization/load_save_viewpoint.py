@@ -33,6 +33,7 @@ import sys
 sys.path.append('..')
 from open3d_tutorial import get_data_path_common
 
+
 def save_view_point(pcd, filename):
     vis = o3d.visualization.Visualizer()
     vis.create_window()

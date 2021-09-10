@@ -35,6 +35,7 @@ import sys
 sys.path.append('..')
 from open3d_tutorial import get_data_path_common
 
+
 def custom_draw_geometry(pcd):
     # The following code achieves the same effect as:
     # o3d.visualization.draw_geometries([pcd])
@@ -72,7 +73,8 @@ def custom_draw_geometry_load_option(pcd):
     vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(pcd)
-    vis.get_render_option().load_from_json(get_data_path_common("renderoption.json"))
+    vis.get_render_option().load_from_json(
+        get_data_path_common("renderoption.json"))
     vis.run()
     vis.destroy_window()
 
@@ -85,7 +87,8 @@ def custom_draw_geometry_with_key_callback(pcd):
         return False
 
     def load_render_option(vis):
-        vis.get_render_option().load_from_json(get_data_path_common("renderoption.json"))
+        vis.get_render_option().load_from_json(
+            get_data_path_common("renderoption.json"))
         return False
 
     def capture_depth(vis):
@@ -151,7 +154,8 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
     vis = custom_draw_geometry_with_camera_trajectory.vis
     vis.create_window()
     vis.add_geometry(pcd)
-    vis.get_render_option().load_from_json(get_data_path_common("renderoption.json"))
+    vis.get_render_option().load_from_json(
+        get_data_path_common("renderoption.json"))
     vis.register_animation_callback(move_forward)
     vis.run()
     vis.destroy_window()

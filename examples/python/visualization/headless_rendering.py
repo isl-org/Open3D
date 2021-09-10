@@ -35,6 +35,7 @@ import sys
 sys.path.append('..')
 from open3d_tutorial import get_data_path_common
 
+
 def custom_draw_geometry_with_camera_trajectory(pcd):
     custom_draw_geometry_with_camera_trajectory.index = -1
     custom_draw_geometry_with_camera_trajectory.trajectory =\
@@ -78,7 +79,8 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
     vis = custom_draw_geometry_with_camera_trajectory.vis
     vis.create_window()
     vis.add_geometry(pcd)
-    vis.get_render_option().load_from_json(get_data_path_common("renderoption.json"))
+    vis.get_render_option().load_from_json(
+        get_data_path_common("renderoption.json"))
     vis.register_animation_callback(move_forward)
     vis.run()
     vis.destroy_window()
