@@ -43,7 +43,6 @@ OrientedBoundingBox& OrientedBoundingBox::Clear() {
     R_ = Eigen::Matrix3d::Identity();
     color_.setOnes();
     return *this;
-
 }
 
 bool OrientedBoundingBox::IsEmpty() const { return Volume() <= 0; }
