@@ -12,7 +12,7 @@ System requirements
 
   * Ubuntu 18.04+: GCC 5+, Clang 7+
   * macOS 10.14+: XCode 8.0+
-  * Windows 10 (64-bit): Visual Studio 2019+
+  * Windows 10 (64-bit): Visual Studio 2019 16.5+
 
 * CMake: 3.19+
 

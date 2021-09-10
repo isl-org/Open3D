@@ -26,42 +26,44 @@
 
 #pragma once
 
-#include <cassert>
+/// OPEN3D_CONCAT(s1, s2)
+///
+/// Concatenates the expanded expressions s1 and s2.
+#define OPEN3D_CONCAT_IMPL_(s1, s2) s1##s2
+#define OPEN3D_CONCAT(s1, s2) OPEN3D_CONCAT_IMPL_(s1, s2)
 
-// https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define OPEN3D_DLL_IMPORT __declspec(dllimport)
-#define OPEN3D_DLL_EXPORT __declspec(dllexport)
-#define OPEN3D_DLL_LOCAL
-#else
-#define OPEN3D_DLL_IMPORT [[gnu::visibility("default")]]
-#define OPEN3D_DLL_EXPORT [[gnu::visibility("default")]]
-#define OPEN3D_DLL_LOCAL [[gnu::visibility("hidden")]]
-#endif
+/// OPEN3D_STRINGIFY(s)
+///
+/// Converts the expanded expression s to a string.
+#define OPEN3D_STRINGIFY_IMPL_(s) #s
+#define OPEN3D_STRINGIFY(s) OPEN3D_STRINGIFY_IMPL_(s)
 
-#ifdef OPEN3D_STATIC
-#define OPEN3D_API
-#define OPEN3D_LOCAL
-#else
-#define OPEN3D_LOCAL OPEN3D_DLL_LOCAL
-#if defined(OPEN3D_ENABLE_DLL_EXPORTS)
-#define OPEN3D_API OPEN3D_DLL_EXPORT
-#else
-#define OPEN3D_API OPEN3D_DLL_IMPORT
-#endif
-#endif
+/// OPEN3D_NUM_ARGS(...)
+///
+/// Returns the number of supplied arguments.
+///
+/// Note: Only works for 1-10 arguments.
+#define OPEN3D_GET_NTH_ARG_(...) OPEN3D_GET_NTH_ARG_IMPL_(__VA_ARGS__)
+#define OPEN3D_GET_NTH_ARG_IMPL_(arg1, arg2, arg3, arg4, arg5, arg6, arg7, \
+                                 arg8, arg9, arg10, N, ...)                \
+    N
+#define OPEN3D_REVERSE_NUM_SEQUENCE_() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
+#define OPEN3D_NUM_ARGS(...) \
+    OPEN3D_GET_NTH_ARG_(__VA_ARGS__, OPEN3D_REVERSE_NUM_SEQUENCE_())
 
-// Compiler-specific function macro.
-// Ref: https://stackoverflow.com/a/4384825
-#ifdef _WIN32
-#define OPEN3D_FUNCTION __FUNCSIG__
-#else
-#define OPEN3D_FUNCTION __PRETTY_FUNCTION__
-#endif
-
-// Assertion for CUDA device code.
-// Usage:
-//     OPEN3D_ASSERT(condition);
-//     OPEN3D_ASSERT(condition && "Error message");
-// For host-only code, consider using utility::LogError();
-#define OPEN3D_ASSERT(...) assert((__VA_ARGS__))
+/// OPEN3D_OVERLOAD(func, ...)
+///
+/// Overloads the enumerated macros func1, func2, etc. based on the number of
+/// additional arguments.
+///
+/// Example:
+///
+/// #define FOO_1(x1) foo(x1)
+/// #define FOO_2(x1, x2) bar(x1, x2)
+/// #define FOO(...) OPEN3D_OVERLOAD(FOO_, __VA_ARGS__)(__VA_ARGS__)
+///
+/// FOO(1)    -> foo(1)
+/// FOO(2, 3) -> bar(2, 3)
+///
+#define OPEN3D_OVERLOAD(func, ...) \
+    OPEN3D_CONCAT(func, OPEN3D_NUM_ARGS(__VA_ARGS__))

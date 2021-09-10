@@ -88,6 +88,12 @@ function(open3d_set_global_properties target)
             # The examples' .pdb files use up a lot of space and cause us to run
             # out of space on Github Actions. Compressing gives us another couple of GB.
             target_link_options(${target} PRIVATE /pdbcompress)
+            # Enable compliant preprocessor
+            target_compile_options(${target} PRIVATE
+                $<$<COMPILE_LANGUAGE:C>:/Zc:preprocessor>
+                $<$<COMPILE_LANGUAGE:CXX>:/Zc:preprocessor>
+                $<$<COMPILE_LANGUAGE:CUDA>:"-Xcompiler /Zc:preprocessor">
+            )
         endif()
     elseif(APPLE)
         target_compile_definitions(${target} PRIVATE UNIX APPLE)

@@ -27,7 +27,6 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 
 #include "open3d/core/Device.h"
 #include "open3d/utility/Logging.h"
@@ -50,7 +49,7 @@ static constexpr int64_t OPEN3D_PARFOR_THREAD = 4;
 
 /// Calls f(n) with the "grid-stride loops" pattern.
 template <int64_t block_size, int64_t thread_size, typename func_t>
-__global__ void __ElementWiseKernel(int64_t n, func_t f) {
+__global__ void ElementWiseKernel_(int64_t n, func_t f) {
     int64_t items_per_block = block_size * thread_size;
     int64_t idx = blockIdx.x * items_per_block + threadIdx.x;
 #pragma unroll
@@ -62,20 +61,9 @@ __global__ void __ElementWiseKernel(int64_t n, func_t f) {
     }
 }
 
-/// Run a function in parallel with CUDA.
-///
-/// \param device The device for the ParallelFor to run on.
-/// \param n The number of workloads.
-/// \param func The function to be executed in parallel. The function should
-/// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
-///
-/// \note This is optimized for uniform work items, i.e. where each call to \p
-/// func takes the same time.
-/// \note If you use a lambda function, capture only the required variables
-/// instead of all to prevent accidental race conditions. If you want the
-/// kernel to be used on both CPU and CUDA, capture the variables by value.
+/// Run a function in parallel on CUDA.
 template <typename func_t>
-void ParallelFor(const Device& device, int64_t n, const func_t& func) {
+void ParallelForCUDA_(const Device& device, int64_t n, const func_t& func) {
     if (device.GetType() != Device::DeviceType::CUDA) {
         utility::LogError("ParallelFor for CUDA cannot run on device {}.",
                           device.ToString());
@@ -88,7 +76,7 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
     int64_t items_per_block = OPEN3D_PARFOR_BLOCK * OPEN3D_PARFOR_THREAD;
     int64_t grid_size = (n + items_per_block - 1) / items_per_block;
 
-    __ElementWiseKernel<OPEN3D_PARFOR_BLOCK, OPEN3D_PARFOR_THREAD>
+    ElementWiseKernel_<OPEN3D_PARFOR_BLOCK, OPEN3D_PARFOR_THREAD>
             <<<grid_size, OPEN3D_PARFOR_BLOCK, 0, core::cuda::GetStream()>>>(
                     n, func);
     OPEN3D_GET_LAST_CUDA_ERROR("ParallelFor failed.");
@@ -96,20 +84,9 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 
 #else
 
-/// \brief Run a function in parallel on CPU.
-///
-/// \param device The device for the ParallelFor to run on.
-/// \param n The number of workloads.
-/// \param func The function to be executed in parallel. The function should
-/// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
-///
-/// \note This is optimized for uniform work items, i.e. where each call to \p
-/// func takes the same time.
-/// \note If you use a lambda function, capture only the required variables
-/// instead of all to prevent accidental race conditions. If you want the
-/// kernel to be used on both CPU and CUDA, capture the variables by value.
+/// Run a function in parallel on CPU.
 template <typename func_t>
-void ParallelFor(const Device& device, int64_t n, const func_t& func) {
+void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
     if (device.GetType() != Device::DeviceType::CPU) {
         utility::LogError("ParallelFor for CPU cannot run on device {}.",
                           device.ToString());
@@ -125,6 +102,27 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 }
 
 #endif
+
+/// Run a function in parallel on CPU or CUDA.
+///
+/// \param device The device for the parallel for loop to run on.
+/// \param n The number of workloads.
+/// \param func The function to be executed in parallel. The function should
+/// take an int64_t workload index and returns void, i.e., `void func(int64_t)`.
+///
+/// \note This is optimized for uniform work items, i.e. where each call to \p
+/// func takes the same time.
+/// \note If you use a lambda function, capture only the required variables
+/// instead of all to prevent accidental race conditions. If you want the
+/// kernel to be used on both CPU and CUDA, capture the variables by value.
+template <typename func_t>
+void ParallelFor(const Device& device, int64_t n, const func_t& func) {
+#ifdef __CUDACC__
+    ParallelForCUDA_(device, n, func);
+#else
+    ParallelForCPU_(device, n, func);
+#endif
+}
 
 }  // namespace core
 }  // namespace open3d

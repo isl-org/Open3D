@@ -9,6 +9,8 @@ target_sources(tests PRIVATE
     MemoryManager.cpp
     NanoFlannIndex.cpp
     NearestNeighborSearch.cpp
+    ParallelFor.cpp
+    ParallelForVectorized.cpp
     Scalar.cpp
     ShapeUtil.cpp
     SizeVector.cpp
@@ -22,6 +24,12 @@ if (BUILD_CUDA_MODULE)
     target_sources(tests PRIVATE
         FixedRadiusIndex.cpp
         KnnIndex.cpp
+    )
+endif()
+
+if (BUILD_ISPC_MODULE)
+    open3d_ispc_target_sources(tests PRIVATE
+        ParallelForVectorized.ispc
     )
 endif()
 

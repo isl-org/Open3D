@@ -24,44 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/core/ParallelFor.h"
 
-#include <cassert>
+#include <vector>
 
-// https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define OPEN3D_DLL_IMPORT __declspec(dllimport)
-#define OPEN3D_DLL_EXPORT __declspec(dllexport)
-#define OPEN3D_DLL_LOCAL
-#else
-#define OPEN3D_DLL_IMPORT [[gnu::visibility("default")]]
-#define OPEN3D_DLL_EXPORT [[gnu::visibility("default")]]
-#define OPEN3D_DLL_LOCAL [[gnu::visibility("hidden")]]
-#endif
+#include "tests/Tests.h"
 
-#ifdef OPEN3D_STATIC
-#define OPEN3D_API
-#define OPEN3D_LOCAL
-#else
-#define OPEN3D_LOCAL OPEN3D_DLL_LOCAL
-#if defined(OPEN3D_ENABLE_DLL_EXPORTS)
-#define OPEN3D_API OPEN3D_DLL_EXPORT
-#else
-#define OPEN3D_API OPEN3D_DLL_IMPORT
-#endif
-#endif
+namespace open3d {
+namespace tests {
 
-// Compiler-specific function macro.
-// Ref: https://stackoverflow.com/a/4384825
-#ifdef _WIN32
-#define OPEN3D_FUNCTION __FUNCSIG__
-#else
-#define OPEN3D_FUNCTION __PRETTY_FUNCTION__
-#endif
+TEST(ParallelFor, LambdaFunction) {
+    const size_t N = 10000000;
+    std::vector<int64_t> v(N);
 
-// Assertion for CUDA device code.
-// Usage:
-//     OPEN3D_ASSERT(condition);
-//     OPEN3D_ASSERT(condition && "Error message");
-// For host-only code, consider using utility::LogError();
-#define OPEN3D_ASSERT(...) assert((__VA_ARGS__))
+    core::ParallelFor(core::Device("CPU:0"), v.size(),
+                      [&](int64_t idx) { v[idx] = idx; });
+
+    for (int64_t i = 0; i < static_cast<int64_t>(v.size()); ++i) {
+        ASSERT_EQ(v[i], i);
+    }
+}
+
+}  // namespace tests
+}  // namespace open3d
