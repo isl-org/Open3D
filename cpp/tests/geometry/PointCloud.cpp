@@ -126,25 +126,25 @@ TEST(PointCloud, GetAxisAlignedBoundingBox) {
     aabb = pcd.GetAxisAlignedBoundingBox();
     EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(0, 0, 0));
-    EXPECT_EQ(aabb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
 
     pcd = geometry::PointCloud({{0, 0, 0}});
     aabb = pcd.GetAxisAlignedBoundingBox();
     EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(0, 0, 0));
-    EXPECT_EQ(aabb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
 
     pcd = geometry::PointCloud({{0, 2, 0}, {1, 1, 2}, {1, 0, 3}});
     aabb = pcd.GetAxisAlignedBoundingBox();
     EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(1, 2, 3));
-    EXPECT_EQ(aabb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
 
     pcd = geometry::PointCloud({{0, 0, 0}, {1, 2, 3}});
     aabb = pcd.GetAxisAlignedBoundingBox();
     EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(1, 2, 3));
-    EXPECT_EQ(aabb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
 }
 
 TEST(PointCloud, GetOrientedBoundingBox) {
@@ -187,7 +187,7 @@ TEST(PointCloud, GetOrientedBoundingBox) {
     obb = pcd.GetOrientedBoundingBox();
     EXPECT_EQ(obb.center_, Eigen::Vector3d(1.5, 1, 0.5));
     EXPECT_EQ(obb.extent_, Eigen::Vector3d(3, 2, 1));
-    EXPECT_EQ(obb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(obb.color_, Eigen::Vector3d(1, 1, 1));
     EXPECT_EQ(obb.R_, Eigen::Matrix3d::Identity());
     ExpectEQ(Sort(obb.GetBoxPoints()),
              Sort(std::vector<Eigen::Vector3d>({{0, 0, 0},

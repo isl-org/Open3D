@@ -44,14 +44,14 @@ TEST(AxisAlignedBoundingBox, EmptyConstructor) {
     EXPECT_TRUE(box.IsEmpty());
     ExpectEQ(box.min_bound_, Vector3d{0, 0, 0});
     ExpectEQ(box.max_bound_, Vector3d{0, 0, 0});
-    ExpectEQ(box.color_, Vector3d{0, 0, 0});
+    ExpectEQ(box.color_, Vector3d{1, 1, 1});
 }
 
 TEST(AxisAlignedBoundingBox, ConstructorBounds) {
     AxisAlignedBoundingBox box({1, 2, 3}, {4, 5, 6});
     ExpectEQ(box.min_bound_, Vector3d{1, 2, 3});
     ExpectEQ(box.max_bound_, Vector3d{4, 5, 6});
-    ExpectEQ(box.color_, Vector3d{0, 0, 0});
+    ExpectEQ(box.color_, Vector3d{1, 1, 1});
 }
 
 TEST(AxisAlignedBoundingBox, BoundAccessors) {
