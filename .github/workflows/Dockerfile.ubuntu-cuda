@@ -170,12 +170,12 @@ RUN if [ "${BUILD_ALL}" = "ON" ] \
         echo "BUILD_ALL=${BUILD_ALL}, build all skipped." \
     ;fi
 
-# # Compress ccache folder, move to / directory
-# RUN ccache -s \
-#  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
-#  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
-#  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
-#  && cd ${CCACHE_DIR_PARENT} \
-#  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME}
+# Compress ccache folder, move to / directory
+RUN ccache -s \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && cd ${CCACHE_DIR_PARENT} \
+ && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME}
 
-# RUN echo "Docker build done."
+RUN echo "Docker build done."
