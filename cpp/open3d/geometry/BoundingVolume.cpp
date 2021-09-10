@@ -41,8 +41,9 @@ OrientedBoundingBox& OrientedBoundingBox::Clear() {
     center_.setZero();
     extent_.setZero();
     R_ = Eigen::Matrix3d::Identity();
-    color_.setZero();
+    color_.setOnes();
     return *this;
+
 }
 
 bool OrientedBoundingBox::IsEmpty() const { return Volume() <= 0; }
