@@ -84,6 +84,7 @@ cuda_wheel() {
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
     CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
     CCACHE_VERSION=4.3
+    BUILD_WHEEL=ON
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel()] options: ${options}"
@@ -116,6 +117,7 @@ cuda_wheel() {
         --build-arg CMAKE_VERSION=${CMAKE_VERSION} \
         --build-arg CCACHE_VERSION=${CCACHE_VERSION} \
         --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
+        --build-arg BUILD_WHEEL=${BUILD_WHEEL} \
         -t open3d-ubuntu-cuda-ci:latest \
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
@@ -139,6 +141,7 @@ cuda_wheel() {
     CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
     CCACHE_VERSION=4.3
     PYTHON_VERSION=3.6
+    BUILD_WHEEL=OFF
 
     # Docker tag
     DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
@@ -151,6 +154,7 @@ cuda_wheel() {
         --build-arg CMAKE_VERSION=${CMAKE_VERSION} \
         --build-arg CCACHE_VERSION=${CCACHE_VERSION} \
         --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
+        --build-arg BUILD_WHEEL=${BUILD_WHEEL} \
         -t ${DOCKER_TAG} \
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
