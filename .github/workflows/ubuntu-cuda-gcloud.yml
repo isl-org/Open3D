@@ -41,6 +41,7 @@ jobs:
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
           DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
+          DOCKER_TAR=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}.tar.gz
           GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
           VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
           echo "GIT_HASH=${GIT_HASH}"                   >> $GITHUB_ENV
