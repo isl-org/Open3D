@@ -96,80 +96,80 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
 RUN ccache -s
 
-# # Miniconda
-# ENV PATH="/root/miniconda3/bin:${PATH}"
-# RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-#  && bash Miniconda3-latest-Linux-x86_64.sh -b \
-#  && rm Miniconda3-latest-Linux-x86_64.sh \
-#  && conda --version
-# ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-# RUN conda create -y -n open3d python=${PYTHON_VERSION} \
-#  && source activate open3d
-# RUN which python \
-#  && python --version
+# Miniconda
+ENV PATH="/root/miniconda3/bin:${PATH}"
+RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+ && bash Miniconda3-latest-Linux-x86_64.sh -b \
+ && rm Miniconda3-latest-Linux-x86_64.sh \
+ && conda --version
+ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
+RUN conda create -y -n open3d python=${PYTHON_VERSION} \
+ && source activate open3d
+RUN which python \
+ && python --version
 
-# # Checkout Open3D-ML master branch
-# # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
-# ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-# RUN git clone --recursive https://github.com/intel-isl/Open3D-ML.git ${OPEN3D_ML_ROOT}
+# Checkout Open3D-ML master branch
+# TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
+ENV OPEN3D_ML_ROOT=/root/Open3D-ML
+RUN git clone --recursive https://github.com/intel-isl/Open3D-ML.git ${OPEN3D_ML_ROOT}
 
-# # Open3D C++ dependencies
-# # Done before copying the full Open3D directory for better Docker caching
-# COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
-# RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
-#  && rm -rf /var/lib/apt/lists/*
+# Open3D C++ dependencies
+# Done before copying the full Open3D directory for better Docker caching
+COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
+RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
+ && rm -rf /var/lib/apt/lists/*
 
-# # Open3D Python dependencies
-# COPY ./util/ci_utils.sh /root/Open3D/util/
-# COPY ./python/requirements.txt /root/Open3D/python/
-# COPY ./python/requirements_jupyter.txt /root/Open3D/python/
-# RUN source /root/Open3D/util/ci_utils.sh \
-#  && install_python_dependencies with-conda with-jupyter
+# Open3D Python dependencies
+COPY ./util/ci_utils.sh /root/Open3D/util/
+COPY ./python/requirements.txt /root/Open3D/python/
+COPY ./python/requirements_jupyter.txt /root/Open3D/python/
+RUN source /root/Open3D/util/ci_utils.sh \
+ && install_python_dependencies with-conda with-jupyter
 
-# # Open3D WebRTC dependencies
-# RUN apt-get update && apt-get install -y \
-#     nodejs \
-#     npm \
-#  && rm -rf /var/lib/apt/lists/*
-# RUN npm install -g yarn \
-#  && yarn --version
+# Open3D WebRTC dependencies
+RUN apt-get update && apt-get install -y \
+    nodejs \
+    npm \
+ && rm -rf /var/lib/apt/lists/*
+RUN npm install -g yarn \
+ && yarn --version
 
-# # Open3D repo
-# # Always keep /root/Open3D as the WORKDIR
-# COPY . /root/Open3D
-# WORKDIR /root/Open3D
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY . /root/Open3D
+WORKDIR /root/Open3D
 
-# # Build python wheel
-# RUN if [ "${BUILD_WHEEL}" = "ON" ] \
-#     ;then \
-#         export NPROC=$(nproc) \
-#         && source /root/Open3D/util/ci_utils.sh \
-#         && build_pip_conda_package build_azure_kinect build_jupyter \
-#     ;else \
-#         echo "BUILD_WHEEL=${BUILD_WHEEL}, build Python wheel skipped." \
-#     ;fi
+# Build python wheel
+RUN if [ "${BUILD_WHEEL}" = "ON" ] \
+    ;then \
+        export NPROC=$(nproc) \
+        && source /root/Open3D/util/ci_utils.sh \
+        && build_pip_conda_package build_azure_kinect build_jupyter \
+    ;else \
+        echo "BUILD_WHEEL=${BUILD_WHEEL}, build Python wheel skipped." \
+    ;fi
 
-# # Build "all": C++ tests, pip wheel, examples, benchmarks
-# RUN if [ "${BUILD_ALL}" = "ON" ] \
-#     ;then \
-#         mkdir build \
-#         && cd build \
-#         && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
-#                  -DCMAKE_BUILD_TYPE=Release \
-#                  -DBUILD_LIBREALSENSE=ON \
-#                  -DBUILD_CUDA_MODULE=ON \
-#                  -DBUILD_COMMON_CUDA_ARCHS=ON \
-#                  -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
-#                  -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
-#                  -DBUILD_UNIT_TESTS=ON \
-#                  -DBUILD_BENCHMARKS=ON \
-#                  -DBUILD_EXAMPLES=ON \
-#                  .. \
-#         && make VERBOSE=1 -j$(nproc) \
-#         && make install-pip-package -j$(nproc) \
-#     ;else \
-#         echo "BUILD_ALL=${BUILD_ALL}, build all skipped." \
-#     ;fi
+# Build "all": C++ tests, pip wheel, examples, benchmarks
+RUN if [ "${BUILD_ALL}" = "ON" ] \
+    ;then \
+        mkdir build \
+        && cd build \
+        && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
+                 -DCMAKE_BUILD_TYPE=Release \
+                 -DBUILD_LIBREALSENSE=ON \
+                 -DBUILD_CUDA_MODULE=ON \
+                 -DBUILD_COMMON_CUDA_ARCHS=ON \
+                 -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
+                 -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+                 -DBUILD_UNIT_TESTS=ON \
+                 -DBUILD_BENCHMARKS=ON \
+                 -DBUILD_EXAMPLES=ON \
+                 .. \
+        && make VERBOSE=1 -j$(nproc) \
+        && make install-pip-package -j$(nproc) \
+    ;else \
+        echo "BUILD_ALL=${BUILD_ALL}, build all skipped." \
+    ;fi
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
