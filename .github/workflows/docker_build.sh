@@ -131,14 +131,16 @@ cuda_wheel() {
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
 
+    docker run -v ${PWD}:/opt/mount --rm ${DOCKER_TAG} \
+        bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount"
+    sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
+
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v ${PWD}:/opt/mount --rm ${DOCKER_TAG} \
-        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl                /opt/mount && \
-                 cp ${python_package_dir}/conda_package/linux-64/open3d*.tar.bz2 /opt/mount && \
+        bash -c "cp ${python_package_dir}/conda_package/linux-64/open3d*.tar.bz2 /opt/mount && \
                  cp /${CCACHE_TAR_NAME}.tar.gz                                   /opt/mount"
     sudo chown $(id -u):$(id -g) open3d*.whl
     sudo chown $(id -u):$(id -g) open3d*.tar.bz2
-    sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
 }
 
 cuda_gcloud_build() {
