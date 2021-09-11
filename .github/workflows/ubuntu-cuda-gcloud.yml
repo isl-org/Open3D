@@ -83,7 +83,7 @@ jobs:
           echo "VM_ZONE=${VM_ZONE}" >> "$GITHUB_ENV"
           sleep 90s # Wait for nvidia driver installation
           exit $((GCE_ZID >= ${#GCE_ZONES[@]})) # 0 => success
-      - name: VM Docker run
+      - name: VM Docker pull
         run: |
           # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
           for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
@@ -99,6 +99,8 @@ jobs:
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "sudo docker pull ${{ env.GCLOUD_DOCKER_TAG }}"
+      - name: VM Docker run
+        run: |
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "sudo docker run -i --rm --gpus all ${{ env.GCLOUD_DOCKER_TAG }} nvidia-smi"
