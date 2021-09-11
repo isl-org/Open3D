@@ -86,13 +86,18 @@ jobs:
                     && tar -xvzf Open3D.tar.gz \
                     && ls -alh \
                     && ls -alh Open3D"
-      - name: Docker build
+      - name: VM Docker build
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
-            --command "Open3D/.github/workflows/docker_build.sh 2-bionic"
+            --command "sudo Open3D/.github/workflows/docker_build.sh 2-bionic"
           echo "Docker DOCKER_TAG=${{ env.DOCKER_TAG }} is built."
           echo "CCache tar CCACHE_TAR_NAME=${{ env.CCACHE_TAR_NAME }} is generated."
+      - name: VM Docker run
+        run: |
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --command "sudo docker run -i --rm --gpus all ${{ env.DOCKER_TAG }} nvidia-smi"
       # - name: Docker save
       #   run: |
       #     docker image ls
