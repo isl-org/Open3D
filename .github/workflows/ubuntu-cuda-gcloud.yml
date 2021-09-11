@@ -102,8 +102,8 @@ jobs:
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "sudo gcloud auth configure-docker \
-                    && df -h \
-                    && sudo docker pull ${{ env.GCLOUD_DOCKER_TAG }}"
+                    && gsutil cp gs://open3d-docker/${{ env.DOCKER_TAR }} ${{ env.DOCKER_TAR }} \
+                    && sudo docker load --input ${{ env.GCLOUD_DOCKER_TAG }}"
       - name: VM Docker run
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} \
