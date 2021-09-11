@@ -80,7 +80,9 @@ jobs:
               echo "Removing ssh key"; \
               gcloud compute os-login ssh-keys remove --key $i || true; \
           done
-          gcloud compute scp --recurse ${GITHUB_WORKSPACE} ${{ env.VM_NAME }}:~ \
+          # gcloud compute scp --recurse ${GITHUB_WORKSPACE} ${{ env.VM_NAME }}:~ \
+          #   --zone=${{ env.VM_ZONE }}
+          gcloud compute scp ${GITHUB_WORKSPACE}/../Open3D.tar.gz ${{ env.VM_NAME }}:~ \
             --zone=${{ env.VM_ZONE }}
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
