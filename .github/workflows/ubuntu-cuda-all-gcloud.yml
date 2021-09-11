@@ -48,9 +48,9 @@ jobs:
       - name: Set global DOCKER_TAG and VM_NAME
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
-          echo "DOCKER_TAG=${DOCKER_TAG_PREFIX}-${GIT_HASH}" >> $GITHUB_ENV
-          echo "CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"          >> $GITHUB_ENV
-          echo "VM_NAME=${VM_NAME_PREFIX}--${GIT_HASH}"      >> $GITHUB_ENV
+          echo "DOCKER_TAG=${{ matrix.DOCKER_TAG_PREFIX }}-${GIT_HASH}" >> $GITHUB_ENV
+          echo "CCACHE_TAR_NAME=${{ matrix.CCACHE_TAR_NAME }}"          >> $GITHUB_ENV
+          echo "VM_NAME=${{ matrix.VM_NAME_PREFIX }}-${GIT_HASH}"       >> $GITHUB_ENV
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
         with:
