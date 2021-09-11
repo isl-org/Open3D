@@ -31,9 +31,9 @@ OPTION:
     cuda_wheel_py38    : Build CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39    : Build CUDA Python 3.9 wheel, release mode
     2-bionic           : Build CUDA GCloud container, ubuntu 1804
-    3-ML-SHARED-bionic : Build CUDA GCloud container, ubuntu 1804, with ML, shared
-    4-ML-bionic        : Build CUDA GCloud container, ubuntu 1804, with ML
-    5-ML-focal         : Build CUDA GCloud container, ubuntu 2004, with ML
+    3-ml-shared-bionic : Build CUDA GCloud container, ubuntu 1804, with ML, shared
+    4-ml-bionic        : Build CUDA GCloud container, ubuntu 1804, with ML
+    5-ml-focal         : Build CUDA GCloud container, ubuntu 2004, with ML
 "
 
 OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
@@ -200,7 +200,7 @@ cuda_gcloud_build() {
     cuda_gcloud_build
 }
 
-3-ML-SHARED-bionic() {
+3-ml-shared-bionic() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     DEVELOPER_BUILD=ON
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
@@ -211,11 +211,11 @@ cuda_gcloud_build() {
     BUILD_TENSORFLOW_OPS=ON
     BUILD_PYTORCH_OPS=ON
 
-    DOCKER_TAG=open3d-ubuntu-cuda-ci:3-ML-SHARED-bionic-${GIT_HASH}
+    DOCKER_TAG=open3d-ubuntu-cuda-ci:3-ml-shared-bionic-${GIT_HASH}
     cuda_gcloud_build
 }
 
-4-ML-bionic() {
+4-ml-bionic() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     DEVELOPER_BUILD=ON
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
@@ -226,11 +226,11 @@ cuda_gcloud_build() {
     BUILD_TENSORFLOW_OPS=ON
     BUILD_PYTORCH_OPS=ON
 
-    DOCKER_TAG=open3d-ubuntu-cuda-ci:4-ML-bionic-${GIT_HASH}
+    DOCKER_TAG=open3d-ubuntu-cuda-ci:4-ml-bionic-${GIT_HASH}
     cuda_gcloud_build
 }
 
-5-ML-focal() {
+5-ml-focal() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
     DEVELOPER_BUILD=ON
     CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-ci-ccache
@@ -241,7 +241,7 @@ cuda_gcloud_build() {
     BUILD_TENSORFLOW_OPS=ON
     BUILD_PYTORCH_OPS=ON
 
-    DOCKER_TAG=open3d-ubuntu-cuda-ci:5-ML-focal-${GIT_HASH}
+    DOCKER_TAG=open3d-ubuntu-cuda-ci:5-ml-focal-${GIT_HASH}
     cuda_gcloud_build
 }
 
@@ -285,14 +285,14 @@ case "$1" in
     2-bionic)
         2-bionic
         ;;
-    3-ML-SHARED-bionic)
-        3-ML-SHARED-bionic
+    3-ml-shared-bionic)
+        3-ml-shared-bionic
         ;;
-    4-ML-bionic)
-        4-ML-bionic
+    4-ml-bionic)
+        4-ml-bionic
         ;;
-    5-ML-focal)
-        5-ML-focal
+    5-ml-focal)
+        5-ml-focal
         ;;
     *)
         echo "Error: invalid argument: ${1}." >&2
