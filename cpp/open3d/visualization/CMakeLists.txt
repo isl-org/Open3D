@@ -1,4 +1,4 @@
-add_library(visualization OBJECT)
+open3d_ispc_add_library(visualization OBJECT)
 
 target_sources(visualization PRIVATE
     shader/GeometryRenderer.cpp
