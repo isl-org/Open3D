@@ -36,12 +36,14 @@ OPTION:
     5-ML-focal         : Build CUDA GCloud container, ubuntu 2004, with ML
 "
 
-# Shared variables
 OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
+
+# Derive short git hash for Docker tag.
 pushd ${OPEN3D_ROOT}
-ls -alh
 GIT_HASH="$(git rev-parse --short HEAD)"
 popd
+
+# Shared variables
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
 
@@ -159,11 +161,7 @@ cuda_gcloud_build() {
     echo "[cuda_gcloud_build()] SHARED=${SHARED}"
     echo "[cuda_gcloud_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[cuda_gcloud_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-
     echo "[cuda_gcloud_build()] DOCKER_TAG=${DOCKER_TAG}"
-
-    echo "CCACHE_TAR_NAME=${CCACHE_TAR_NAME}" >> $GITHUB_ENV
-    echo "DOCKER_TAG=${DOCKER_TAG}" >> $GITHUB_ENV
 
     pushd ${OPEN3D_ROOT}
     docker build \

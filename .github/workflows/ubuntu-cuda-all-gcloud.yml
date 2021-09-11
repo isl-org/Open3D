@@ -30,9 +30,10 @@ jobs:
           cd ${GITHUB_WORKSPACE}/..
           tar -czvf Open3D.tar.gz Open3D
           ls -alh
-      - name: Set GCloud VM_NAME in GITHUB_ENV
+      - name: Set global DOCKER_TAG and VM_NAME
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
+          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
           VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
           echo "GIT_HASH=${GIT_HASH}"                   >> $GITHUB_ENV
           echo "VM_NAME=${VM_NAME}"                     >> $GITHUB_ENV
