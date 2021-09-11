@@ -88,9 +88,11 @@ jobs:
                     && tar -xvzf Open3D.tar.gz \
                     && ls -alh \
                     && ls -alh Open3D"
-      # - name: Docker build
-      #   run: |
-      #     .github/workflows/docker_build.sh 2-bionic
+      - name: Docker build
+        run: |
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --command "Open3D/.github/workflows/docker_build.sh 2-bionic"
       # - name: Docker save
       #   run: |
       #     docker image ls
