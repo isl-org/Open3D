@@ -24,8 +24,6 @@ jobs:
       #     github_token: ${{ github.token }}
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
       - name: Package code
         run: |
           # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
@@ -77,6 +75,11 @@ jobs:
           exit $((GCE_ZID >= ${#GCE_ZONES[@]})) # 0 => success
       - name: VM copy code
         run: |
+          # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
+          for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
+              echo "Removing ssh key"; \
+              gcloud compute os-login ssh-keys remove --key $i || true; \
+          done
           gcloud compute scp --recurse ${GITHUB_WORKSPACE} ${{ env.VM_NAME }}:~ \
             --zone=${{ env.VM_ZONE }}
           gcloud compute ssh ${{ env.VM_NAME }} \
