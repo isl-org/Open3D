@@ -18,8 +18,8 @@ jobs:
         # Must be consistent with docker_build.sh
         include:
           - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-gcloud-ci:2-bionic
-          - CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
-          - VM_NAME_PREFIX   : open3d-ubuntu-cuda-gcloud-ci-2-bionic
+            CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
+            VM_NAME_PREFIX   : open3d-ubuntu-cuda-gcloud-ci-2-bionic
     env:
       DEVELOPER_BUILD: ON
       PYTHON_VERSION: 3.6
