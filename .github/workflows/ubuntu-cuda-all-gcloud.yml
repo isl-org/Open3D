@@ -17,18 +17,18 @@ jobs:
       matrix:
         # Must be consistent with docker_build.sh
         include:
-          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-gcloud-ci:2-bionic
+          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:2-bionic
             CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
-            VM_NAME_PREFIX   : open3d-ubuntu-cuda-gcloud-ci-2-bionic
-          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-gcloud-ci:3-ML-SHARED-bionic
+            VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-2-bionic
+          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:3-ML-SHARED-bionic
             CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
-            VM_NAME_PREFIX   : open3d-ubuntu-cuda-gcloud-ci-3-ML-SHARED-bionic
-          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-gcloud-ci:4-ML-bionic
+            VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-3-ML-SHARED-bionic
+          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:4-ML-bionic
             CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
-            VM_NAME_PREFIX   : open3d-ubuntu-cuda-gcloud-ci-4-ML-bionic
-          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-gcloud-ci:5-ML-focal
+            VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-4-ML-bionic
+          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:5-ML-focal
             CCACHE_TAR_NAME  : open3d-ubuntu-2004-cuda-ci-ccache
-            VM_NAME_PREFIX   : open3d-ubuntu-cuda-gcloud-ci-5-ML-focal
+            VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-5-ML-focal
     env:
       DEVELOPER_BUILD: ON
       PYTHON_VERSION: 3.6

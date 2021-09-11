@@ -39,9 +39,9 @@ jobs:
       - name: Set container and vm names in GITHUB_ENV
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
-          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
-          DOCKER_TAR=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}.tar.gz
-          VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
+          DOCKER_TAG=open3d-ubuntu-cuda-ci:2-bionic-${GIT_HASH}
+          DOCKER_TAR=open3d-ubuntu-cuda-ci-2-bionic-${GIT_HASH}.tar.gz
+          VM_NAME=open3d-ubuntu-cuda-ci-2-bionic-${GIT_HASH}
           echo "GIT_HASH=${GIT_HASH}"                   >> $GITHUB_ENV
           echo "DOCKER_TAG=${DOCKER_TAG}"               >> $GITHUB_ENV
           echo "DOCKER_TAR=${DOCKER_TAR}"               >> $GITHUB_ENV

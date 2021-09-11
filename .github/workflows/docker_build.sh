@@ -118,7 +118,7 @@ cuda_wheel() {
     echo "[cuda_wheel()] PYTHON_VERSION: ${PYTHON_VERSION}"
     echo "[cuda_wheel()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
 
-    DOCKER_TAG=open3d-ubuntu-cuda-ci:${PYTHON_VERSION}-${DEVELOPER_BUILD}-${GIT_HASH}
+    DOCKER_TAG=open3d-ubuntu-cuda-ci:wheel-${PYTHON_VERSION}-${DEVELOPER_BUILD}-${GIT_HASH}
 
     pushd ${OPEN3D_ROOT}
     docker build \
@@ -196,7 +196,7 @@ cuda_gcloud_build() {
     BUILD_TENSORFLOW_OPS=OFF
     BUILD_PYTORCH_OPS=OFF
 
-    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
+    DOCKER_TAG=open3d-ubuntu-cuda-ci:2-bionic-${GIT_HASH}
     cuda_gcloud_build
 }
 
@@ -211,7 +211,7 @@ cuda_gcloud_build() {
     BUILD_TENSORFLOW_OPS=ON
     BUILD_PYTORCH_OPS=ON
 
-    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:3-ML-SHARED-bionic-${GIT_HASH}
+    DOCKER_TAG=open3d-ubuntu-cuda-ci:3-ML-SHARED-bionic-${GIT_HASH}
     cuda_gcloud_build
 }
 
@@ -226,7 +226,7 @@ cuda_gcloud_build() {
     BUILD_TENSORFLOW_OPS=ON
     BUILD_PYTORCH_OPS=ON
 
-    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:4-ML-bionic-${GIT_HASH}
+    DOCKER_TAG=open3d-ubuntu-cuda-ci:4-ML-bionic-${GIT_HASH}
     cuda_gcloud_build
 }
 
@@ -241,7 +241,7 @@ cuda_gcloud_build() {
     BUILD_TENSORFLOW_OPS=ON
     BUILD_PYTORCH_OPS=ON
 
-    DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:5-ML-focal-${GIT_HASH}
+    DOCKER_TAG=open3d-ubuntu-cuda-ci:5-ML-focal-${GIT_HASH}
     cuda_gcloud_build
 }
 
