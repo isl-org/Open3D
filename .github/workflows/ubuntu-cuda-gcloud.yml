@@ -92,13 +92,9 @@ jobs:
           done
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
-            --command "sudo gcloud auth configure-docker"
-          gcloud compute ssh ${{ env.VM_NAME }} \
-            --zone=${{ env.VM_ZONE }} \
-            --command "df -h"
-          gcloud compute ssh ${{ env.VM_NAME }} \
-            --zone=${{ env.VM_ZONE }} \
-            --command "sudo docker pull ${{ env.GCLOUD_DOCKER_TAG }}"
+            --command "sudo gcloud auth configure-docker \
+                    && df -h \
+                    && sudo docker pull ${{ env.GCLOUD_DOCKER_TAG }}"
       - name: VM Docker run
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} \
