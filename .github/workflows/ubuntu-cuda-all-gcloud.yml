@@ -20,15 +20,15 @@ jobs:
           - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:2-bionic
             CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
             VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-2-bionic
-          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:3-ml-shared-bionic
-            CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
-            VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-3-ml-shared-bionic
-          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:4-ml-bionic
-            CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
-            VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-4-ml-bionic
-          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:5-ml-focal
-            CCACHE_TAR_NAME  : open3d-ubuntu-2004-cuda-ci-ccache
-            VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-5-ml-focal
+          # - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:3-ml-shared-bionic
+          #   CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
+          #   VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-3-ml-shared-bionic
+          # - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:4-ml-bionic
+          #   CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
+          #   VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-4-ml-bionic
+          # - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-ci:5-ml-focal
+          #   CCACHE_TAR_NAME  : open3d-ubuntu-2004-cuda-ci-ccache
+          #   VM_NAME_PREFIX   : open3d-ubuntu-cuda-ci-5-ml-focal
     env:
       DEVELOPER_BUILD: ON
       PYTHON_VERSION: 3.6
@@ -94,6 +94,7 @@ jobs:
               echo "Removing ssh key"; \
               gcloud compute os-login ssh-keys remove --key $i || true; \
           done
+          gcloud compute config-ssh
           gcloud compute scp ${GITHUB_WORKSPACE}/../Open3D.tar.gz ${{ env.VM_NAME }}:~ \
             --zone=${{ env.VM_ZONE }}
           gcloud compute ssh ${{ env.VM_NAME }} \
@@ -104,7 +105,6 @@ jobs:
                     && ls -alh Open3D"
       - name: VM Docker build
         run: |
-          gcloud compute config-ssh
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "sudo Open3D/.github/workflows/docker_build.sh 2-bionic"
