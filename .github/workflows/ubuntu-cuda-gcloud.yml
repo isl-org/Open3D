@@ -49,6 +49,13 @@ jobs:
       - name: Docker build
         run: |
           .github/workflows/docker_build.sh 2-bionic
+      - name: CCache upload
+        run: |
+          # if: ${{ github.ref == 'refs/heads/master' }}
+          echo "CCache tar name: ${{ env.CCACHE_TAR_NAME }}"
+          ls -alh
+          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
+
       - name: Docker save
         run: |
           docker save ${{ env.DOCKER_TAG }} | gzip > ${{ env.DOCKER_TAR }}

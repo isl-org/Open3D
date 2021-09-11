@@ -190,6 +190,8 @@ cuda_gcloud_build() {
     BUILD_TENSORFLOW_OPS=OFF
     BUILD_PYTORCH_OPS=OFF
 
+    echo "CCACHE_TAR_NAME=${CCACHE_TAR_NAME}" >> $GITHUB_ENV
+
     DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
     cuda_gcloud_build
 }
@@ -204,6 +206,8 @@ cuda_gcloud_build() {
     SHARED=ON
     BUILD_TENSORFLOW_OPS=ON
     BUILD_PYTORCH_OPS=ON
+
+    echo "CCACHE_TAR_NAME=${CCACHE_TAR_NAME}" >> $GITHUB_ENV
 
     DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:3-ML-SHARED-bionic-${GIT_HASH}
     cuda_gcloud_build
@@ -220,6 +224,8 @@ cuda_gcloud_build() {
     BUILD_TENSORFLOW_OPS=ON
     BUILD_PYTORCH_OPS=ON
 
+    echo "CCACHE_TAR_NAME=${CCACHE_TAR_NAME}" >> $GITHUB_ENV
+
     DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:4-ML-bionic-${GIT_HASH}
     cuda_gcloud_build
 }
@@ -234,6 +240,8 @@ cuda_gcloud_build() {
     SHARED=OFF
     BUILD_TENSORFLOW_OPS=ON
     BUILD_PYTORCH_OPS=ON
+
+    echo "CCACHE_TAR_NAME=${CCACHE_TAR_NAME}" >> $GITHUB_ENV
 
     DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:5-ML-focal-${GIT_HASH}
     cuda_gcloud_build
