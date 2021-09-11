@@ -42,12 +42,10 @@ jobs:
           GIT_HASH=$(git rev-parse --short HEAD)
           DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
           DOCKER_TAR=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}.tar.gz
-          GCLOUD_DOCKER_TAG=gcr.io/${{ secrets.GCE_PROJECT }}/${DOCKER_TAG}
           VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
           echo "GIT_HASH=${GIT_HASH}"                   >> $GITHUB_ENV
           echo "DOCKER_TAG=${DOCKER_TAG}"               >> $GITHUB_ENV
           echo "DOCKER_TAR=${DOCKER_TAR}"               >> $GITHUB_ENV
-          echo "GCLOUD_DOCKER_TAG=${GCLOUD_DOCKER_TAG}" >> $GITHUB_ENV
           echo "VM_NAME=${VM_NAME}"                     >> $GITHUB_ENV
       - name: Docker build
         run: |
@@ -58,11 +56,6 @@ jobs:
       - name: Docker upload
         run: |
           gsutil cp ${{ env.DOCKER_TAR }} gs://open3d-docker/
-      - name: Docker push
-        run: |
-          gcloud auth configure-docker
-          docker image tag ${{ env.DOCKER_TAG }} ${{ env.GCLOUD_DOCKER_TAG }}
-          docker push ${{ env.GCLOUD_DOCKER_TAG }}
       - name: VM create
         run: |
           GCE_ZONES=(us-west1-a us-west1-b us-central1-a us-central1-b
@@ -92,7 +85,7 @@ jobs:
           echo "VM_ZONE=${VM_ZONE}" >> "$GITHUB_ENV"
           sleep 90s # Wait for nvidia driver installation
           exit $((GCE_ZID >= ${#GCE_ZONES[@]})) # 0 => success
-      - name: VM Docker pull
+      - name: VM Docker download
         run: |
           # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
           for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
@@ -101,11 +94,20 @@ jobs:
           done
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
+            --command "df -h"
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
             --command "sudo gcloud auth configure-docker \
                     && gsutil cp gs://open3d-docker/${{ env.DOCKER_TAR }} ${{ env.DOCKER_TAR }} \
                     && sudo docker load --input ${{ env.DOCKER_TAR }}"
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --command "df -h"
       - name: VM Docker run
         run: |
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --command "df -h"
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "sudo docker run -i --rm --gpus all ${{ env.DOCKER_TAG }} nvidia-smi"
@@ -118,11 +120,6 @@ jobs:
           gcloud compute instances delete ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --quiet
-      - name: Docker delete
-        if: always()
-        run: |
-          docker push ${{ env.GCLOUD_DOCKER_TAG }}
-          gcloud container images delete ${{ env.GCLOUD_DOCKER_TAG }}
       - name: Docker delete
         if: always()
         run: |
