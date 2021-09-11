@@ -39,7 +39,8 @@ OPTION:
 # Shared variables
 OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
 pushd ${OPEN3D_ROOT}
-    GIT_HASH="$(git rev-parse --short HEAD)"
+ls -alh
+GIT_HASH="$(git rev-parse --short HEAD)"
 popd
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
