@@ -112,6 +112,8 @@ cuda_wheel() {
     echo "[cuda_wheel()] PYTHON_VERSION: ${PYTHON_VERSION}"
     echo "[cuda_wheel()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
 
+    DOCKER_TAG=open3d-ubuntu-cuda-ci:${PYTHON_VERSION}-${DEVELOPER_BUILD}-${GIT_HASH}
+
     pushd ${OPEN3D_ROOT}
     docker build \
         --build-arg BASE_IMAGE=${BASE_IMAGE} \
@@ -125,12 +127,12 @@ cuda_wheel() {
         --build-arg SHARED=${SHARED} \
         --build-arg BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
         --build-arg BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
-        -t open3d-ubuntu-cuda-ci:latest \
+        -t ${DOCKER_TAG} \
         -f .github/workflows/Dockerfile.ubuntu-cuda .
     popd
 
     python_package_dir=/root/Open3D/build/lib/python_package
-    docker run -v ${PWD}:/opt/mount --rm open3d-ubuntu-cuda-ci:latest \
+    docker run -v ${PWD}:/opt/mount --rm ${DOCKER_TAG} \
         bash -c "cp ${python_package_dir}/pip_package/open3d*.whl                /opt/mount && \
                  cp ${python_package_dir}/conda_package/linux-64/open3d*.tar.bz2 /opt/mount && \
                  cp /${CCACHE_TAR_NAME}.tar.gz                                   /opt/mount"
