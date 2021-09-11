@@ -32,9 +32,12 @@ import os
 import time
 import threading
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-RGB_DIR = os.path.join(SCRIPT_DIR, "../../test_data/RGBD/color")
-DEPTH_DIR = os.path.join(SCRIPT_DIR, "../../test_data/RGBD/depth")
+import sys
+sys.path.append('..')
+from open3d_tutorial import get_data_path_common
+
+RGB_DIR = get_data_path_common("RGBD/color")
+DEPTH_DIR = get_data_path_common("RGBD/depth")
 
 
 def rescale_greyscale(img):

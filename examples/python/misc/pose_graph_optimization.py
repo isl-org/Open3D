@@ -29,6 +29,10 @@
 import open3d as o3d
 import numpy as np
 
+import sys
+sys.path.append('..')
+from open3d_tutorial import get_data_path_common
+
 if __name__ == "__main__":
 
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
@@ -49,26 +53,30 @@ if __name__ == "__main__":
     print(
         "Optimizing Fragment o3d.pipelines.registration.PoseGraph using open3d ..."
     )
-    data_path = "../../test_data/GraphOptimization/"
+
     pose_graph_fragment = o3d.io.read_pose_graph(
-        data_path + "pose_graph_example_fragment.json")
+        get_data_path_common(
+            "GraphOptimization/pose_graph_example_fragment.json"))
     print(pose_graph_fragment)
     o3d.pipelines.registration.global_optimization(pose_graph_fragment, method,
                                                    criteria, option)
     o3d.io.write_pose_graph(
-        data_path + "pose_graph_example_fragment_optimized.json",
+        get_data_path_common(
+            "GraphOptimization/pose_graph_example_fragment_optimized.json"),
         pose_graph_fragment)
     print("")
 
     print(
         "Optimizing Global o3d.pipelines.registration.PoseGraph using open3d ..."
     )
-    pose_graph_global = o3d.io.read_pose_graph(data_path +
-                                               "pose_graph_example_global.json")
+    pose_graph_global = o3d.io.read_pose_graph(
+        get_data_path_common(
+            "GraphOptimization/pose_graph_example_global.json"))
     print(pose_graph_global)
     o3d.pipelines.registration.global_optimization(pose_graph_global, method,
                                                    criteria, option)
     o3d.io.write_pose_graph(
-        data_path + "pose_graph_example_global_optimized.json",
+        get_data_path_common(
+            "GraphOptimization/pose_graph_example_global_optimized.json"),
         pose_graph_global)
     print("")

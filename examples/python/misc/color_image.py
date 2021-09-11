@@ -33,11 +33,15 @@ import matplotlib.image as mpimg
 import open3d as o3d
 #conda install pillow matplotlib
 
+import sys
+sys.path.append('..')
+from open3d_tutorial import get_data_path_common
+
 if __name__ == "__main__":
 
     print("Testing image in open3d ...")
     print("Convert an image to numpy and draw it with matplotlib.")
-    x = o3d.io.read_image("../../test_data/image.PNG")
+    x = o3d.io.read_image(get_data_path_common("image.PNG"))
     print(x)
     plt.imshow(np.asarray(x))
     plt.show()
@@ -66,7 +70,7 @@ if __name__ == "__main__":
     plt.show()
 
     print("Testing basic image processing module.")
-    im_raw = mpimg.imread("../../test_data/lena_color.jpg")
+    im_raw = mpimg.imread(get_data_path_common("lena_color.jpg"))
     im = o3d.geometry.Image(im_raw)
     im_g3 = im.filter(o3d.geometry.ImageFilterType.Gaussian3)
     im_g5 = im.filter(o3d.geometry.ImageFilterType.Gaussian5)

@@ -38,6 +38,10 @@ sys.path.append("../utility")
 from initialize_config import *
 from file import *
 
+import sys
+sys.path.append('..')
+from open3d_tutorial import get_data_path_common
+
 
 def parse_keys(filename):
     with open(filename, 'r') as f:

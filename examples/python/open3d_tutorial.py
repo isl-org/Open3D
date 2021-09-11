@@ -115,15 +115,9 @@ def edges_to_lineset(mesh, edges, color):
     return ls
 
 
-def _relative_path(path):
-    script_path = os.path.realpath(__file__)
-    script_dir = os.path.dirname(script_path)
-    return os.path.join(script_dir, path)
-
-
 def download_fountain_dataset():
-    fountain_path = _relative_path("../test_data/fountain_small")
-    fountain_zip_path = _relative_path("../test_data/fountain.zip")
+    fountain_path = get_data_path_common("fountain_small")
+    fountain_zip_path = get_data_path_common("fountain.zip")
     if not os.path.exists(fountain_path):
         print("downloading fountain dataset")
         url = "https://github.com/isl-org/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
@@ -213,7 +207,7 @@ def get_intersecting_boxes_mesh():
 
 
 def get_armadillo_mesh():
-    armadillo_path = _relative_path("../test_data/Armadillo.ply")
+    armadillo_path = get_data_path_common("Armadillo.ply")
     if not os.path.exists(armadillo_path):
         print("downloading armadillo mesh")
         url = "http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz"
@@ -229,7 +223,7 @@ def get_armadillo_mesh():
 
 
 def get_bunny_mesh():
-    bunny_path = _relative_path("../test_data/Bunny.ply")
+    bunny_path = get_data_path_common("Bunny.ply")
     if not os.path.exists(bunny_path):
         print("downloading bunny mesh")
         url = "http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz"
@@ -254,13 +248,13 @@ def get_bunny_mesh():
 
 
 def get_knot_mesh():
-    mesh = o3d.io.read_triangle_mesh(_relative_path("../test_data/knot.ply"))
+    mesh = o3d.io.read_triangle_mesh(get_data_path_common("knot.ply"))
     mesh.compute_vertex_normals()
     return mesh
 
 
 def get_eagle_pcd():
-    path = _relative_path("../test_data/eagle.ply")
+    path = get_data_path_common("eagle.ply")
     if not os.path.exists(path):
         print("downloading eagle pcl")
         url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"

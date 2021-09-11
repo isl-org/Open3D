@@ -30,8 +30,6 @@ import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import os
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-
 
 # This example displays a point cloud and if you Ctrl-click on a point
 # (Cmd-click on macOS) it will show the coordinates of the point.
@@ -133,8 +131,8 @@ def main():
     # This example will also work with a triangle mesh, or any 3D object.
     # If you use a triangle mesh you will probably want to set the material
     # shader to "defaultLit" instead of "defaultUnlit".
-    cloud = o3d.io.read_point_cloud(SCRIPT_DIR +
-                                    "/../../test_data/ICP/cloud_bin_0.pcd")
+    cloud = o3d.io.read_point_cloud(
+        o3dtut.get_data_path_common("ICP/cloud_bin_0.pcd"))
     ex = ExampleApp(cloud)
 
     app.run()
