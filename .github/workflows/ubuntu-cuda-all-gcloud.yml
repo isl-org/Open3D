@@ -102,12 +102,15 @@ jobs:
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "sudo docker run -i --rm --gpus all ${{ env.DOCKER_TAG }} nvidia-smi"
-      # - name: CCache upload
-      #   run: |
-      #     # if: ${{ github.ref == 'refs/heads/master' }}
-      #     echo "CCache tar name: ${{ env.CCACHE_TAR_NAME }}"
-      #     ls -alh
-      #     gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
+      - name: CCache upload
+        run: |
+          # if: ${{ github.ref == 'refs/heads/master' }}
+          # ls -alh
+          # gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
+          echo "Theoretical CCache tar name: ${{ env.CCACHE_TAR_NAME }}"
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --command "ls -alh"
       - name: VM delete
         if: always()
         run: |

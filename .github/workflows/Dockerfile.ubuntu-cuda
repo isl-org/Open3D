@@ -18,84 +18,84 @@ ARG SHARED
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 
-# RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
-#  && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
-#  && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
-#  && if [ -z "${CCACHE_VERSION}"       ]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
-#  && if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
-#  && if [ -z "${BUILD_WHEEL}"          ]; then echo "Error: ARG BUILD_WHEEL          not specified."; exit 1; fi \
-#  && if [ -z "${BUILD_ALL}"            ]; then echo "Error: ARG BUILD_ALL            not specified."; exit 1; fi \
-#  && if [ -z "${SHARED}"               ]; then echo "Error: ARG SHARED               not specified."; exit 1; fi \
-#  && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
-#  && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi
+RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
+ && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
+ && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
+ && if [ -z "${CCACHE_VERSION}"       ]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
+ && if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
+ && if [ -z "${BUILD_WHEEL}"          ]; then echo "Error: ARG BUILD_WHEEL          not specified."; exit 1; fi \
+ && if [ -z "${BUILD_ALL}"            ]; then echo "Error: ARG BUILD_ALL            not specified."; exit 1; fi \
+ && if [ -z "${SHARED}"               ]; then echo "Error: ARG SHARED               not specified."; exit 1; fi \
+ && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
+ && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi
 
-# # Forward all ARG to ENV
-# # ci_utils.sh requires these environment variables
-# ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
-# ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
-# ENV CMAKE_VERSION=${CMAKE_VERSION}
-# ARG CCACHE_VERSION=${CCACHE_VERSION}
-# ENV PYTHON_VERSION=${PYTHON_VERSION}
-# ENV BUILD_WHEEL=${BUILD_WHEEL}
-# ENV BUILD_ALL=${BUILD_ALL}
-# ENV SHARED=${SHARED}
-# ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
-# ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+# Forward all ARG to ENV
+# ci_utils.sh requires these environment variables
+ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
+ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
+ENV CMAKE_VERSION=${CMAKE_VERSION}
+ARG CCACHE_VERSION=${CCACHE_VERSION}
+ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV BUILD_WHEEL=${BUILD_WHEEL}
+ENV BUILD_ALL=${BUILD_ALL}
+ENV SHARED=${SHARED}
+ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 
-# # Cannot have BUILD_WHEEL == BUILD_ALL == ON
-# # TODO(yixing): Refacotor this. Ideally we should specify the CMake argument
-# # and the build behavior independently. Currently, BUILD_WHEEL have a hard-code
-# # combination of CMake arguments.
-# RUN if [ "${BUILD_WHEEL}" = "ON" ] && [ "${BUILD_ALL}" = "ON" ] \
-#     ;then \
-#         echo "Cannot have BUILD_WHEEL == BUILD_ALL == ON" \
-#         && exit 1 \
-#     ;fi
+# Cannot have BUILD_WHEEL == BUILD_ALL == ON
+# TODO(yixing): Refacotor this. Ideally we should specify the CMake argument
+# and the build behavior independently. Currently, BUILD_WHEEL have a hard-code
+# combination of CMake arguments.
+RUN if [ "${BUILD_WHEEL}" = "ON" ] && [ "${BUILD_ALL}" = "ON" ] \
+    ;then \
+        echo "Cannot have BUILD_WHEEL == BUILD_ALL == ON" \
+        && exit 1 \
+    ;fi
 
-# # Prevent interactive inputs when installing packages
-# ENV DEBIAN_FRONTEND=noninteractive
-# ENV TZ=America/Los_Angeles
-# ENV SUDO=command
+# Prevent interactive inputs when installing packages
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
 
-# # Dependencies: basic
-# RUN apt-get update && apt-get install -y \
-#     git  \
-#     wget \
-#  && rm -rf /var/lib/apt/lists/*
+# Dependencies: basic
+RUN apt-get update && apt-get install -y \
+    git  \
+    wget \
+ && rm -rf /var/lib/apt/lists/*
 
-# # Dependencies: cmake
-# RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
-#  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
-#  && tar -xf ${CMAKE_VERSION}.tar.gz \
-#  && cp -ar ${CMAKE_VERSION} ${HOME}
-# ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
+# Dependencies: cmake
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -xf ${CMAKE_VERSION}.tar.gz \
+ && cp -ar ${CMAKE_VERSION} ${HOME}
+ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 
-# # Dependencies: ccache
-# WORKDIR /root
-# RUN git clone https://github.com/ccache/ccache.git \
-#  && cd ccache \
-#  && git checkout v${CCACHE_VERSION} -b ${CCACHE_VERSION} \
-#  && mkdir build \
-#  && cd build \
-#  && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON .. \
-#  && make install -j$(nproc) \
-#  && which ccache \
-#  && ccache --version \
-#  && ccache -s
+# Dependencies: ccache
+WORKDIR /root
+RUN git clone https://github.com/ccache/ccache.git \
+ && cd ccache \
+ && git checkout v${CCACHE_VERSION} -b ${CCACHE_VERSION} \
+ && mkdir build \
+ && cd build \
+ && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON .. \
+ && make install -j$(nproc) \
+ && which ccache \
+ && ccache --version \
+ && ccache -s
 
-# # Download ccache from GCS bucket (optional)
-# # Example directory structure:
-# # CCACHE_DIR        = ~/.cache/ccache
-# # CCACHE_DIR_NAME   = ccache
-# # CCACHE_DIR_PARENT = ~/.cache
-# RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
-#  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
-#  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
-#  && mkdir -p ${CCACHE_DIR_PARENT} \
-#  && cd ${CCACHE_DIR_PARENT} \
-#  && (wget https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
-#  && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
-# RUN ccache -s
+# Download ccache from GCS bucket (optional)
+# Example directory structure:
+# CCACHE_DIR        = ~/.cache/ccache
+# CCACHE_DIR_NAME   = ccache
+# CCACHE_DIR_PARENT = ~/.cache
+RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && mkdir -p ${CCACHE_DIR_PARENT} \
+ && cd ${CCACHE_DIR_PARENT} \
+ && (wget https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
+RUN ccache -s
 
 # # Miniconda
 # ENV PATH="/root/miniconda3/bin:${PATH}"
@@ -172,12 +172,12 @@ ARG BUILD_PYTORCH_OPS
 #         echo "BUILD_ALL=${BUILD_ALL}, build all skipped." \
 #     ;fi
 
-# # Compress ccache folder, move to / directory
-# RUN ccache -s \
-#  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
-#  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
-#  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
-#  && cd ${CCACHE_DIR_PARENT} \
-#  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME}
+# Compress ccache folder, move to / directory
+RUN ccache -s \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && cd ${CCACHE_DIR_PARENT} \
+ && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME}
 
-# RUN echo "Docker build done."
+RUN echo "Docker build done."
