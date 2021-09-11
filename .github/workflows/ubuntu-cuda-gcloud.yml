@@ -17,7 +17,6 @@ jobs:
     env:
       DEVELOPER_BUILD: ON
       PYTHON_VERSION: 3.6
-      CCACHE_TAR_NAME: open3d-ubuntu-2004-cuda-gcloud-ci-ccache
     steps:
       # - name: Cancel outdated
       #   uses: fkirc/skip-duplicate-actions@master
