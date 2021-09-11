@@ -77,7 +77,8 @@ jobs:
           exit $((GCE_ZID >= ${#GCE_ZONES[@]})) # 0 => success
       - name: VM copy code
         run: |
-          gcloud compute scp --recurse ${GITHUB_WORKSPACE} ${{ env.VM_NAME }}:~
+          gcloud compute scp --recurse ${GITHUB_WORKSPACE} ${{ env.VM_NAME }}:~ \
+            --zone=${{ env.VM_ZONE }}
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "ls -alh"
