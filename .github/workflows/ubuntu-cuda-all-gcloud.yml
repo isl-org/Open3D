@@ -82,6 +82,9 @@ jobs:
           done
           # gcloud compute scp --recurse ${GITHUB_WORKSPACE} ${{ env.VM_NAME }}:~ \
           #   --zone=${{ env.VM_ZONE }}
+          gcloud compute ssh ${{ env.VM_NAME }} \
+            --zone=${{ env.VM_ZONE }} \
+            --command "ls -alh"
           gcloud compute scp ${GITHUB_WORKSPACE}/../Open3D.tar.gz ${{ env.VM_NAME }}:~ \
             --zone=${{ env.VM_ZONE }}
           gcloud compute ssh ${{ env.VM_NAME }} \
