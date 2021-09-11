@@ -36,8 +36,11 @@ OPTION:
     5-ML-focal         : Build CUDA GCloud container, ubuntu 2004, with ML
 "
 
+# Shared variables
 OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
 GIT_HASH="$(git rev-parse --short HEAD)"
+CCACHE_VERSION=4.3
+CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
 
 print_usage_and_exit() {
     echo "$__usage"
@@ -49,11 +52,11 @@ openblas() {
     echo "[openblas()] options: ${options}"
     if [[ "x86_64" =~ ^($options)$ ]]; then
         BASE_IMAGE=ubuntu:20.04
-        CMAKE_VER=cmake-3.19.7-Linux-x86_64
+        CMAKE_VER=cmake-3.19.7-Linux-x86_64 # TODO: unify with the rest
         CCACHE_TAR_NAME=open3d-x86_64-ci-ccache
     elif [[ "arm64" =~ ^($options)$ ]]; then
         BASE_IMAGE=arm64v8/ubuntu:20.04
-        CMAKE_VER=cmake-3.19.7-Linux-aarch64
+        CMAKE_VER=cmake-3.19.7-Linux-aarch64 # TODO: unify with the rest
         CCACHE_TAR_NAME=open3d-arm64-ci-ccache
         docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     else
@@ -82,8 +85,6 @@ openblas() {
 cuda_wheel() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-    CCACHE_VERSION=4.3
     BUILD_WHEEL=ON
     BUILD_ALL=OFF
     SHARED=OFF
@@ -182,8 +183,6 @@ cuda_gcloud_build() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     DEVELOPER_BUILD=ON
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-    CCACHE_VERSION=4.3
     PYTHON_VERSION=3.6
     BUILD_WHEEL=OFF
     BUILD_ALL=ON
@@ -199,8 +198,6 @@ cuda_gcloud_build() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     DEVELOPER_BUILD=ON
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-    CCACHE_VERSION=4.3
     PYTHON_VERSION=3.6
     BUILD_WHEEL=OFF
     BUILD_ALL=ON
@@ -216,8 +213,6 @@ cuda_gcloud_build() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     DEVELOPER_BUILD=ON
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-    CCACHE_VERSION=4.3
     PYTHON_VERSION=3.6
     BUILD_WHEEL=OFF
     BUILD_ALL=ON
@@ -233,8 +228,6 @@ cuda_gcloud_build() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
     DEVELOPER_BUILD=ON
     CCACHE_TAR_NAME=open3d-ubuntu-2004-cuda-ci-ccache
-    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-    CCACHE_VERSION=4.3
     PYTHON_VERSION=3.6
     BUILD_WHEEL=OFF
     BUILD_ALL=ON
