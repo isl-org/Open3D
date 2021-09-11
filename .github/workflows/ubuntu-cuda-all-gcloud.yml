@@ -14,6 +14,12 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
+      matrix:
+        # Must be consistent with docker_build.sh
+        include:
+          - DOCKER_TAG_PREFIX: open3d-ubuntu-cuda-gcloud-ci:2-bionic
+          - CCACHE_TAR_NAME  : open3d-ubuntu-1804-cuda-ci-ccache
+          - VM_NAME_PREFIX   : open3d-ubuntu-cuda-gcloud-ci-2-bionic
     env:
       DEVELOPER_BUILD: ON
       PYTHON_VERSION: 3.6
@@ -33,13 +39,9 @@ jobs:
       - name: Set global DOCKER_TAG and VM_NAME
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
-          DOCKER_TAG=open3d-ubuntu-cuda-gcloud-ci:2-bionic-${GIT_HASH}
-          CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-          VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
-          echo "GIT_HASH=${GIT_HASH}"               >> $GITHUB_ENV
-          echo "DOCKER_TAG=${DOCKER_TAG}"           >> $GITHUB_ENV
-          echo "CCACHE_TAR_NAME=${CCACHE_TAR_NAME}" >> $GITHUB_ENV
-          echo "VM_NAME=${VM_NAME}"                 >> $GITHUB_ENV
+          echo "DOCKER_TAG=${DOCKER_TAG_PREFIX}-${GIT_HASH}" >> $GITHUB_ENV
+          echo "CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"          >> $GITHUB_ENV
+          echo "VM_NAME=${VM_NAME_PREFIX}--${GIT_HASH}"      >> $GITHUB_ENV
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
         with:
