@@ -90,10 +90,10 @@ jobs:
         run: |
           # https://github.com/kyma-project/test-infra/issues/93#issuecomment-457263589
           # https://stackoverflow.com/a/49647883
-          # for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
-          #     echo "Removing ssh key"; \
-          #     gcloud compute os-login ssh-keys remove --key $i || true; \
-          # done
+          for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
+              echo "Removing ssh key"; \
+              gcloud compute os-login ssh-keys remove --key $i || true; \
+          done
           gcloud compute scp ${GITHUB_WORKSPACE}/../Open3D.tar.gz ${{ env.VM_NAME }}:~ \
             --zone=${{ env.VM_ZONE }}
           gcloud compute ssh ${{ env.VM_NAME }} \
@@ -104,6 +104,7 @@ jobs:
                     && ls -alh Open3D"
       - name: VM Docker build
         run: |
+          gcloud compute config-ssh
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "sudo Open3D/.github/workflows/docker_build.sh 2-bionic"
