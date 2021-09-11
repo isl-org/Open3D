@@ -103,12 +103,12 @@ jobs:
             --zone=${{ env.VM_ZONE }} \
             --command "sudo gcloud auth configure-docker \
                     && gsutil cp gs://open3d-docker/${{ env.DOCKER_TAR }} ${{ env.DOCKER_TAR }} \
-                    && sudo docker load --input ${{ env.GCLOUD_DOCKER_TAG }}"
+                    && sudo docker load --input ${{ env.DOCKER_TAR }}"
       - name: VM Docker run
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
-            --command "sudo docker run -i --rm --gpus all ${{ env.GCLOUD_DOCKER_TAG }} nvidia-smi"
+            --command "sudo docker run -i --rm --gpus all ${{ env.DOCKER_TAR }} nvidia-smi"
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "df -h"
