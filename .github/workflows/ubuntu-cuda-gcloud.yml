@@ -50,6 +50,12 @@ jobs:
       - name: Docker build
         run: |
           .github/workflows/docker_build.sh 2-bionic
+      - name: Docker save
+        run: |
+          docker save ${{ env.DOCKER_TAG }} | gzip > ${{ env.DOCKER_TAR }}
+      - name: Docker upload
+        run: |
+          gsutil cp ${{ env.DOCKER_TAR }} gs://open3d-docker/
       - name: Docker push
         run: |
           gcloud auth configure-docker
@@ -114,3 +120,7 @@ jobs:
         run: |
           docker push ${{ env.GCLOUD_DOCKER_TAG }}
           gcloud container images delete ${{ env.GCLOUD_DOCKER_TAG }}
+      - name: Docker delete
+        if: always()
+        run: |
+          gsutil rm gs://open3d-docker/${{ env.DOCKER_TAR }}
