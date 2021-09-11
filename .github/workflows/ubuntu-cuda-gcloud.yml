@@ -46,6 +46,7 @@ jobs:
           VM_NAME=open3d-ubuntu-cuda-gcloud-ci-2-bionic-${GIT_HASH}
           echo "GIT_HASH=${GIT_HASH}"                   >> $GITHUB_ENV
           echo "DOCKER_TAG=${DOCKER_TAG}"               >> $GITHUB_ENV
+          echo "DOCKER_TAR=${DOCKER_TAR}"               >> $GITHUB_ENV
           echo "GCLOUD_DOCKER_TAG=${GCLOUD_DOCKER_TAG}" >> $GITHUB_ENV
           echo "VM_NAME=${VM_NAME}"                     >> $GITHUB_ENV
       - name: Docker build
