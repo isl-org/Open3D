@@ -108,7 +108,7 @@ jobs:
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
-            --command "sudo docker run -i --rm --gpus all ${{ env.DOCKER_TAR }} nvidia-smi"
+            --command "sudo docker run -i --rm --gpus all ${{ env.DOCKER_TAG }} nvidia-smi"
           gcloud compute ssh ${{ env.VM_NAME }} \
             --zone=${{ env.VM_ZONE }} \
             --command "df -h"
