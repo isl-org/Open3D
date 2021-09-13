@@ -26,42 +26,54 @@
 
 #pragma once
 
-#include <cassert>
+namespace open3d {
+namespace utility {
 
-// https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define OPEN3D_DLL_IMPORT __declspec(dllimport)
-#define OPEN3D_DLL_EXPORT __declspec(dllexport)
-#define OPEN3D_DLL_LOCAL
-#else
-#define OPEN3D_DLL_IMPORT [[gnu::visibility("default")]]
-#define OPEN3D_DLL_EXPORT [[gnu::visibility("default")]]
-#define OPEN3D_DLL_LOCAL [[gnu::visibility("hidden")]]
-#endif
+/// Generic functor for overloading (lambda) functions.
+/// See Overload(...) function on how to use it.
+///
+/// \note In C++17, this could be simplified to:
+///
+/// \code
+/// template <typename... Ts>
+/// struct Overloaded : Ts... {
+///     using Ts::operator()...;
+/// };
+/// \endcode
+template <typename... Ts>
+struct Overloaded;
 
-#ifdef OPEN3D_STATIC
-#define OPEN3D_API
-#define OPEN3D_LOCAL
-#else
-#define OPEN3D_LOCAL OPEN3D_DLL_LOCAL
-#if defined(OPEN3D_ENABLE_DLL_EXPORTS)
-#define OPEN3D_API OPEN3D_DLL_EXPORT
-#else
-#define OPEN3D_API OPEN3D_DLL_IMPORT
-#endif
-#endif
+template <typename T1, typename... Ts>
+struct Overloaded<T1, Ts...> : T1, Overloaded<Ts...> {
+    Overloaded(T1 t1, Ts... ts) : T1(t1), Overloaded<Ts...>(ts...) {}
 
-// Compiler-specific function macro.
-// Ref: https://stackoverflow.com/a/4384825
-#ifdef _WIN32
-#define OPEN3D_FUNCTION __FUNCSIG__
-#else
-#define OPEN3D_FUNCTION __PRETTY_FUNCTION__
-#endif
+    using T1::operator();
+    using Overloaded<Ts...>::operator();
+};
 
-// Assertion for CUDA device code.
-// Usage:
-//     OPEN3D_ASSERT(condition);
-//     OPEN3D_ASSERT(condition && "Error message");
-// For host-only code, consider using utility::LogError();
-#define OPEN3D_ASSERT(...) assert((__VA_ARGS__))
+template <typename T1>
+struct Overloaded<T1> : T1 {
+    Overloaded(T1 t1) : T1(t1) {}
+
+    using T1::operator();
+};
+
+/// Overloads an arbitrary set of (lambda) functions.
+///
+/// Example:
+///
+/// \code
+/// auto Func = utility::Overload(
+///         [&](int i) { utility::LogInfo("Got int {}", i); },
+///         [&](float f) { utility::LogInfo("Got float {}", f); });
+///
+/// Func(1);     // Prints: Got int 1
+/// Func(2.4f);  // Prints: Got float 2.4
+/// \endcode
+template <typename... Ts>
+Overloaded<Ts...> Overload(Ts... ts) {
+    return Overloaded<Ts...>(ts...);
+}
+
+}  // namespace utility
+}  // namespace open3d
