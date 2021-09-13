@@ -5,5 +5,6 @@ target_sources(tests PRIVATE
     IJsonConvertible.cpp
     ISAInfo.cpp
     Logging.cpp
+    Preprocessor.cpp
     Timer.cpp
 )
