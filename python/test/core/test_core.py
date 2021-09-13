@@ -440,6 +440,12 @@ def test_getitem(device):
     np.testing.assert_equal(o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].cpu().numpy(),
                             np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3])
 
+    # Slice a zero-dim tensor
+    with pytest.raises(Exception):
+        o3c.Tensor.ones((), device=device)[:]
+    with pytest.raises(Exception):
+        o3c.Tensor.ones((), device=device)[0:1]
+
 
 @pytest.mark.parametrize("device", list_devices())
 def test_setitem(device):
@@ -547,6 +553,12 @@ def test_setitem(device):
     np_t[2, 2] = False
     o3_t[2, 2] = False
     np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
+
+    # Slice a zero-dim tensor
+    with pytest.raises(Exception):
+        o3c.Tensor.ones((), device=device)[:] = 0
+    with pytest.raises(Exception):
+        o3c.Tensor.ones((), device=device)[0:1] = 0
 
 
 @pytest.mark.parametrize(
