@@ -224,7 +224,6 @@ class Open3DPluginDataReader:
 
     def read_geometry(self, run, tag, step, batch_idx, step_to_idx):
         """Geometry reader from msgpack files.
-        TODO(ssheorey): Add CRC-32C
         """
         idx = step_to_idx[step]
         metadata_proto = plugin_data_pb2.Open3DPluginData()
@@ -312,6 +311,7 @@ def to_dict_batch(o3d_geometry_list):
         vertex_positions = []
         vertex_colors = []
         vertex_normals = []
+        material = []
         for geometry in o3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.points))
             vertex_colors.append(np.asarray(geometry.colors))

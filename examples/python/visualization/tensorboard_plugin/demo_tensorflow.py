@@ -148,6 +148,7 @@ def with_material(model_dir):
     """Read an obj model from a directory and write as a TensorBoard summary.
     """
     model_name = os.path.basename(model_dir)
+    logdir = BASE_LOGDIR + model_name
     model_path = os.path.join(model_dir, model_name + ".obj")
     model = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.io.read_triangle_mesh(model_path))
@@ -167,7 +168,7 @@ def with_material(model_dir):
     if "metallic" in material["texture_maps"]:
         material["scalar_properties"]["base_metallic"] = 1.0
 
-    writer = tf.summary.create_file_writer(BASE_LOGDIR + model_name)
+    writer = tf.summary.create_file_writer(logdir)
     with writer.as_default():
         summary.add_3d(model_name, {
             "vertex_positions": model.vertex["positions"],
@@ -176,12 +177,14 @@ def with_material(model_dir):
             "triangle_indices": model.triangle["indices"],
             "material": material
         },
-                       step=0)
+                       step=0,
+                       logdir=logdir)
 
 
 if __name__ == "__main__":
     # small_scale()
-    # property_reference()
+    property_reference()
     # large_scale()
-    with_material(
-        os.path.join(os.path.basename(__file__), "test_data", "monkey"))
+    model_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
+                             '..', '..', "test_data", "monkey")
+    with_material(model_dir)

@@ -37,7 +37,7 @@ BASE_LOGDIR = "demo_logs/pytorch/"
 def small_scale(run_name="small_scale"):
     """Basic demo with cube and cylinder with normals and colors.
     """
-    writer = SummaryWriter("demo_logs/" + run_name)
+    writer = SummaryWriter(BASE_LOGDIR + run_name)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube.compute_vertex_normals()
@@ -58,7 +58,7 @@ def property_reference(run_name="property_reference"):
     """Produces identical visualization to small_scale, but does not store
     repeated properties of ``vertex_positions`` and ``vertex_normals``.
     """
-    writer = SummaryWriter("demo_logs/" + run_name)
+    writer = SummaryWriter(BASE_LOGDIR + run_name)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube.compute_vertex_normals()
@@ -90,7 +90,7 @@ def large_scale(n_steps=20,
     """Generate a large scale summary. Geometry resolution increases linearly
     with step. Each element in a batch is painted a different color.
     """
-    writer = SummaryWriter("demo_logs/" + run_name)
+    writer = SummaryWriter(BASE_LOGDIR + run_name)
     colors = []
     for k in range(batch_size):
         t = k * np.pi / batch_size
@@ -130,6 +130,7 @@ def with_material(model_dir):
     """Read an obj model from a directory and write as a TensorBoard summary.
     """
     model_name = os.path.basename(model_dir)
+    logdir = BASE_LOGDIR + model_name
     model_path = os.path.join(model_dir, model_name + ".obj")
     model = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.io.read_triangle_mesh(model_path))
@@ -149,21 +150,21 @@ def with_material(model_dir):
     if "metallic" in material["texture_maps"]:
         material["scalar_properties"]["base_metallic"] = 1.0
 
-    writer = SummaryWriter(BASE_LOGDIR + model_name)
-    with writer.as_default():
-        summary.add_3d(model_name, {
-            "vertex_positions": model.vertex["positions"],
-            "vertex_normals": model.vertex["normals"],
-            "vertex_texture_uvs": model.vertex["texture_uvs"],
-            "triangle_indices": model.triangle["indices"],
-            "material": material
-        },
-                       step=0)
+    writer = SummaryWriter(logdir)
+    writer.add_3d(model_name, {
+        "vertex_positions": model.vertex["positions"],
+        "vertex_normals": model.vertex["normals"],
+        "vertex_texture_uvs": model.vertex["texture_uvs"],
+        "triangle_indices": model.triangle["indices"],
+        "material": material
+    },
+                  step=0)
 
 
 if __name__ == "__main__":
-    small_scale()
+    # small_scale()
     property_reference()
     # large_scale()
-    with_material(
-        os.path.join(os.path.basename(__file__), "test_data", "monkey"))
+    model_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
+                             '..', '..', "test_data", "monkey")
+    with_material(model_dir)

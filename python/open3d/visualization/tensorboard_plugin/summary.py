@@ -212,12 +212,16 @@ def _to_integer(tensor):
     try:
         if hasattr(tensor, 'ndim') and tensor.ndim > 0:
             return None
+        if hasattr(tensor, 'dtype') and 'int' not in repr(tensor.dtype).lower():
+            return None
+        if hasattr(tensor, 'numpy'):
+            return tensor.numpy().astype(np.int64)
         return np.int64(tensor)
     except (TypeError, ValueError, RuntimeError):
         return None
 
 
-def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
+def _preprocess(prop, tensor, step, max_outputs, geometry_metadata, material):
     """Data conversion (format and dtype), validation and other preprocessing.
     Step reference support.
     TODO(ssheorey): Convert to half precision, compression, etc.
@@ -233,15 +237,24 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
             Value(prop),
             step_ref=step_ref)
         return None
-    if isinstance(tensor, dict):  # material
-        # TODO: Data validation
+    if prop == "material_name":
+        if isinstance(tensor, str) or isinstance(tensor, bytes):
+            save_tensor = (tensor,)
+        else:
+            save_tensor = tensor
+    elif prop.startswith(material_scalar_
+
+
         material = tensor
         if "texture_maps" in material:
             for tex_prop, tex_tensor in material["texture_maps"].items():
                 material["texture_maps"][tex_prop] = o3d.t.geometry.Image(
-                    _to_o3d(tex_tensor))
+                    _to_o3d(tex_tensor)).to(o3d.core.uint8)
         return material
-    if tensor.ndim == 2:  # batch_size = 1
+    if tensor.ndim == 0:  # batch_size = 1, material_scalar_*
+
+    elif tensor.ndim == 1:  # batch_size = 1
+    elif tensor.ndim == 2:  # batch_size = 1
         save_tensor = _to_o3d(tensor)
         shape3 = save_tensor.shape
         shape3.insert(0, 1)
@@ -249,8 +262,8 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
     elif tensor.ndim == 3:
         save_tensor = _to_o3d(tensor[:max_outputs])
     else:
-        raise ValueError(f"Property {prop} tensor should be of shape (N,Np) or"
-                         f" (B,N,Np) or a scalar but is {tensor.shape}.")
+        raise ValueError(f"Property {prop} tensor should be of shape (N, Np) or"
+                         f" (B, N, Np) or a scalar but is {tensor.shape}.")
 
     # Datatype conversion
     if prop.endswith("_colors"):
@@ -307,7 +320,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     material = {
         "name": "",
         "scalar_properties": {},
-        "vector_properties": "",
+        "vector_properties": {},
         "texture_maps": {}
     }
 
@@ -355,7 +368,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             line_data[prop_name] = _preprocess(prop, tensor, step, max_outputs,
                                                geometry_metadata)
             if line_data[prop_name] is None:  # Step reference
-                del vertex_data[prop_name]
+                del line_data[prop_name]
                 continue
             if n_lines is None:  # Get tensor dims from earlier property
                 _, n_lines, _ = line_data[prop_name].shape
@@ -365,12 +378,23 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 raise ValueError(
                     f"Property {prop} tensor should be of shape "
                     f"{exp_shape} but is {line_data[prop_name].shape}.")
-        elif prop == 'material':
-            material = _preprocess(prop, tensor, step, max_outputs,
-                                   geometry_metadata)
+
+        elif prop == "material_name":
+            save_tensor = _preprocess(prop, tensor, step, max_outputs,
+                                      geometry_metadata)
+            if save_tensor is None:  # Step reference
+                continue
+            material["name"] = save_tensor
+        elif (prop.startswith("material_scalar_") and prop[16:] in
+                metadata.MATERIAL_SCALAR_PROPERTIES):
+            material["scalar_properties"][prop[16:]] = save_tensor
+        elif prop.startswith("material_vector_"):
+            material["vector_properties"][prop[16:]] = save_tensor
+        elif prop.startswith("material_texture_map_"):
+            material["texture_maps"][prop[21:]] = save_tensor
 
     vertices = vertex_data.pop("positions",
-                               o3d.core.Tensor((), dtype=o3d.core.int32))
+                               o3d.core.Tensor((), dtype=o3d.core.float32))
     faces = triangle_data.pop("indices",
                               o3d.core.Tensor((), dtype=o3d.core.int32))
     lines = line_data.pop("indices", o3d.core.Tensor((), dtype=o3d.core.int32))
@@ -396,10 +420,10 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                     prop: tensor[bidx, :, :]
                     for prop, tensor in line_data.items()
                 },
-                material_name=material["name"],
-                material_scalar_attributes=material["scalar_properties"],
-                material_vector_attributes=material["vector_properties"],
-                texture_maps=material["texture_maps"],
+                material_name=material["name"][bidx],
+                material_scalar_attributes=material["scalar_properties"][bidx],
+                material_vector_attributes=material["vector_properties"][bidx],
+                texture_maps=material["texture_maps"][bidx],
                 o3d_type=o3d_type,
                 connection=buf_con):
             raise IOError(
@@ -438,30 +462,43 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
                 material texture maps. Will be cast to ``float32``.
           - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
           - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
-          - ``material``: dict decrribing PBR material for the 3D data. Contents
-                should be:
-              - ``name``: Material name (required). Open3D built-in
-                materials: ``defaultLit``, ``defaultUnlit``,
-              - ``scalar_properties``: Dict with scalar properties from:
-                {base_metallic, base_roughness, base_reflectance, base_clearcoat,
+          - ``material_name``: shape `(B,)` and dtype ``str``. PBR material name is
+            required to specify any material properties.  Open3D built-in
+            materials: ``defaultLit``, ``defaultUnlit``, ``unlitLine``.
+          - ``material_scalar_*PROPERTY*``: Any material scalar property with
+            float values of shape `(B,)`. e.g. To specify the property
+            `metallic`, use the key `material_scalar_metallic`.
+          -  ``material_vector_*PROPERTY*``: Any material 4-vector property with
+             float values of shape `(B, 4)` e.g. To specify the property
+            `baseColor`, use the key `material_vector_baseColor`.
+          -  ``material_texture_map_*TEXTURE_MAP*``: PBR Material texture maps.
+             e.g. ``material_texture_map_metallic`` represents a texture map
+             describing the metallic property for rendering.
+             Values are Tensors with shape `(B, Nr, Nc, C)`, corresponding to a
+             batch of texture maps with `C` channels and shape `(Nr, Nc)`. The
+             geometry must have ``texture_uvs`` coordinates to use any texture
+             map.
 
-              -  ``vector_properties``: Dict with 4-vector properties from:
-                {base_color, absorption_color}
-              -  ``texture_maps``: Dict with PBR texture maps. Requires
-                 ``texture_uvs`` coordinates. Supported keys:
+        For batch_size B=1, the tensors may drop a rank (e.g. (N,3)
+        vertex_positions, (4,) material vector properties or float scalar ()
+        material scalar properties.)
 
-        For batch_size B=1, the tensors may have rank 2 instead of rank 3.
-        Floating point color data will be clipped to the range [0,1] and
-        converted to uint8 range [0,255]. Other data types will be clipped into
-        an allowed range for safe casting to uint8.
+        Floating point color and texture map data will be clipped to the range
+        [0,1] and converted to ``uint8`` range [0,255]. ``uint16`` data will be
+        compressed to the range [0,255].
 
         Any data tensor, may be replaced by an ``int`` scalar referring to a
         previous step. This allows reusing a previously written property in case
         that it does not change at different steps.
+
+        Please see the `Filament Materials Guide
+        <https://google.github.io/filament/Materials.html#materialmodels>`__ for
+        a complete explanation of material properties.
+
       step: Explicit ``int64``-castable monotonic step value for this summary.
         [`TensorFlow`: If ``None``, this defaults to
         `tf.summary.experimental.get_step()`, which must not be ``None``.]
-      logdir: The logging directory used to create the SummaryWriter.
+      logdir: The logging directory used to create the ``SummaryWriter``.
         [`PyTorch`: This will be inferred if not provided or ``None``.]
       max_outputs: Optional ``int`` or rank-0 integer ``Tensor``. At most this
         many images will be emitted at each step. When more than

@@ -29,7 +29,6 @@ import sys
 import threading
 import json
 
-import numpy as np
 from tensorboard.plugins import base_plugin
 import werkzeug
 from werkzeug import wrappers
@@ -40,7 +39,6 @@ import open3d as o3d
 # TODO: Check for GPU / EGL else TensorBoard will crash.
 from open3d.visualization import O3DVisualizer
 from open3d.visualization import gui
-from open3d.visualization import rendering
 from open3d.visualization import webrtc_server
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 # Set window system before the GUI event loop
@@ -281,8 +279,8 @@ class Open3DPluginWindow:
                         self.step_to_idx)
                     _log.debug(
                         f"Displaying geometry {geometry_name}:{geometry}")
-                    _async_event_loop.run_sync(self.window.add_geometry,
-                                               geometry_name, geometry)
+                    async_event_loop.run_sync(self.window.add_geometry,
+                                              geometry_name, geometry)
                 except IOError as err:
                     new_geometry_list.pop()
                     err_msg = f"Error reading {geometry_name}: {err}"
