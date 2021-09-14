@@ -26,6 +26,9 @@
 
 #pragma once
 
+#include <filament/Box.h>
+#include <filament/RenderableManager.h>
+
 #include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
@@ -48,9 +51,6 @@
 // Filament uses this as an enum which conflicts with windows.h
 #undef OPAQUE
 #endif // _MSC_VER
-
-#include <filament/Box.h>
-#include <filament/RenderableManager.h>
 
 #ifdef _MSC_VER
 #pragma warning(pop)
