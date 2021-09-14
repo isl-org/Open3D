@@ -96,6 +96,8 @@ def test_implicit_conversion(device):
     assert t.reshape([4, 3]).shape == (4, 3)
     with pytest.raises(TypeError, match="incompatible function arguments"):
         t.reshape((4, 3.0))
+    with pytest.raises(TypeError, match="incompatible function arguments"):
+        t.reshape((4.0, 3.0))
     with pytest.raises(RuntimeError, match="Invalid shape dimension"):
         t.reshape((4, -3))
 
