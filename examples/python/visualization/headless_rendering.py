@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 
 import sys
 sys.path.append('..')
-from open3d_tutorial import get_data_path_common
+from data_manager import get_data_path_common
 
 
 def custom_draw_geometry_with_camera_trajectory(pcd):

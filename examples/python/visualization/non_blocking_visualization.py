@@ -32,7 +32,7 @@ import copy
 
 import sys
 sys.path.append('..')
-from open3d_tutorial import get_data_path_common
+from data_manager import get_data_path_common
 
 if __name__ == "__main__":
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)

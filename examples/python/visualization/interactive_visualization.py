@@ -32,7 +32,7 @@ import open3d as o3d
 
 import sys
 sys.path.append('..')
-from open3d_tutorial import get_data_path_common
+from data_manager import get_data_path_common
 
 
 def demo_crop_geometry():

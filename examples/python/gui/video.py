@@ -34,7 +34,7 @@ import threading
 
 import sys
 sys.path.append('..')
-from open3d_tutorial import get_data_path_common
+from data_manager import get_data_path_common
 
 RGB_DIR = get_data_path_common("RGBD/color")
 DEPTH_DIR = get_data_path_common("RGBD/depth")

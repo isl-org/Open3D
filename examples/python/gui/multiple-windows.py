@@ -30,6 +30,8 @@ import os
 import threading
 import time
 
+from data_manager import get_data_path_common
+
 CLOUD_NAME = "points"
 
 
@@ -94,7 +96,7 @@ class MultiWinApp:
         # the scene or any part of the UI.
 
         self.cloud = o3d.io.read_point_cloud(
-            o3dtut.get_data_path_common("ICP/cloud_bin_0.pcd"))
+            get_data_path_common("ICP/cloud_bin_0.pcd"))
         bounds = self.cloud.get_axis_aligned_bounding_box()
         extent = bounds.get_extent()
 
