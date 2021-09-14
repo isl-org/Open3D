@@ -26,6 +26,7 @@
 
 #include "open3d/t/pipelines/kernel/Registration.h"
 
+#include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 
 namespace open3d {
@@ -45,9 +46,9 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
         utility::LogError("Only Float32 and Float64 dtypes are supported.");
     }
 
-    target_points.AssertDtype(dtype);
-    target_normals.AssertDtype(dtype);
-    target_points.AssertDevice(device);
+    core::AssertTensorDtype(target_points, dtype);
+    core::AssertTensorDtype(target_normals, dtype);
+    core::AssertTensorDevice(target_points, device);
 
     if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
         utility::LogError("Source and/or target point cloud is empty.");
@@ -95,8 +96,8 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         utility::LogError("Only Float32 and Float64 dtypes are supported.");
     }
 
-    target_points.AssertDtype(dtype);
-    target_points.AssertDevice(device);
+    core::AssertTensorDtype(target_points, dtype);
+    core::AssertTensorDevice(target_points, device);
 
     if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
         utility::LogError("Source and/or target point cloud is empty.");

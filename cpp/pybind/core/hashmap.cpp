@@ -68,7 +68,7 @@ const std::unordered_map<std::string, std::string> argument_docs = {
          "Input values stored in a tensor of shape (N, value_element_shape)."},
         {"list_values",
          "List of input values stored in tensors of corresponding shapes."},
-        {"buckets", "Number of buckets for rehashing."},
+        {"capacity", "New capacity for rehashing."},
         {"file_name", "File name of the corresponding .npz file."},
         {"values_buffer_id", "Index of the value buffer tensor."},
         {"device_id", "Target CUDA device ID."}};
@@ -189,9 +189,9 @@ void pybind_core_hashmap(py::module& m) {
                        "Load a hash map from a .npz file.", "file_name"_a);
     docstring::ClassMethodDocInject(m, "HashMap", "load", argument_docs);
 
-    hashmap.def("rehash", &HashMap::Rehash,
-                "Rehash the hash map given the buckets.", "buckets"_a);
-    docstring::ClassMethodDocInject(m, "HashMap", "rehash", argument_docs);
+    hashmap.def("reserve", &HashMap::Reserve,
+                "Reserve the hash map given the capacity.", "capacity"_a);
+    docstring::ClassMethodDocInject(m, "HashMap", "reserve", argument_docs);
 
     hashmap.def("key_tensor", &HashMap::GetKeyTensor,
                 "Get the key tensor stored in the buffer.");
@@ -303,9 +303,9 @@ void pybind_core_hashset(py::module& m) {
                        "Load a hash set from a .npz file.", "file_name"_a);
     docstring::ClassMethodDocInject(m, "HashSet", "load", argument_docs);
 
-    hashset.def("rehash", &HashSet::Rehash,
-                "Rehash the hash set given the buckets.", "buckets"_a);
-    docstring::ClassMethodDocInject(m, "HashSet", "rehash", argument_docs);
+    hashset.def("reserve", &HashSet::Reserve,
+                "Reserve the hash set given the capacity.", "capacity"_a);
+    docstring::ClassMethodDocInject(m, "HashSet", "reserve", argument_docs);
 
     hashset.def("key_tensor", &HashSet::GetKeyTensor,
                 "Get the key tensor stored in the buffer.");

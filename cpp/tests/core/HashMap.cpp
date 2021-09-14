@@ -264,7 +264,7 @@ TEST_P(HashMapPermuteDevices, Erase) {
     }
 }
 
-TEST_P(HashMapPermuteDevices, Rehash) {
+TEST_P(HashMapPermuteDevices, Reserve) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
     if (device.GetType() == core::Device::DeviceType::CUDA) {
@@ -292,7 +292,7 @@ TEST_P(HashMapPermuteDevices, Rehash) {
         hashmap.Insert(keys, values, buf_indices, masks);
         EXPECT_EQ(masks.To(core::Int64).Sum({0}).Item<int64_t>(), slots);
 
-        hashmap.Rehash(hashmap.GetBucketCount() * 2);
+        hashmap.Reserve(hashmap.GetBucketCount() * 2);
         EXPECT_EQ(hashmap.Size(), slots);
 
         core::Tensor active_buf_indices;
