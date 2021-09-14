@@ -23,12 +23,12 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-
 import os
 import tempfile
 from time import sleep
-import shutil
 import subprocess as sp
+import webbrowser
+import shutil
 import numpy as np
 import pytest
 pytest.importorskip("tensorboard")
@@ -49,16 +49,23 @@ def geometry_data():
     cube[0].compute_vertex_normals()
     cube[1].compute_vertex_normals()
 
+    cube_ls = tuple(
+        o3d.geometry.LineSet.create_from_triangle_mesh(c) for c in cube)
+
     colors = (((1.0, 0.0, 0.0), (0.0, 1.0, 1.0)),
               ((0.0, 1.0, 0.0), (1.0, 0.0, 1.0)), ((0.0, 0.0, 1.0), (1.0, 1.0,
                                                                      0.0)))
 
-    return {'cube': cube, 'colors': colors, 'max_outputs': 2}
+    return {
+        'cube': cube,
+        'cube_ls': cube_ls,
+        'colors': colors,
+        'max_outputs': 2
+    }
 
 
 def test_tensorflow_summary(geometry_data):
-    """Test writing summary from TensorBoard
-    TODO (Sameer): Separate tests for PointCloud and LineSet
+    """Test writing summary from TensorFlow
     """
 
     tf = pytest.importorskip("tensorflow")
@@ -70,15 +77,16 @@ def test_tensorflow_summary(geometry_data):
                         np.array)
 
     cube = geometry_data['cube']
+    cube_ls = geometry_data['cube_ls']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
     with writer.as_default():
         for step in range(3):
             cube[0].paint_uniform_color(colors[step][0])
             cube[1].paint_uniform_color(colors[step][1])
-            cube_summary = to_dict_batch(cube)
             # Randomly convert to TF, Open3D, Numpy tensors, or use property
             # reference
+            cube_summary = to_dict_batch(cube)
             if step > 0:
                 cube_summary['vertex_positions'] = 0
                 cube_summary['vertex_normals'] = 0
@@ -89,6 +97,22 @@ def test_tensorflow_summary(geometry_data):
                     cube_summary[prop] = rng.choice(tensor_converter)(tensor)
             summary.add_3d('cube',
                            cube_summary,
+                           step=step,
+                           logdir=logdir,
+                           max_outputs=max_outputs)
+            cube_summary.pop('triangle_indices')  # Convert to PointCloud
+            summary.add_3d('cube_pcd',
+                           cube_summary,
+                           step=step,
+                           logdir=logdir,
+                           max_outputs=max_outputs)
+            cube_ls[0].paint_uniform_color(colors[step][0])
+            cube_ls[1].paint_uniform_color(colors[step][1])
+            cube_ls_summary = to_dict_batch(cube_ls)
+            for prop, tensor in cube_ls_summary.items():
+                cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
+            summary.add_3d('cube_ls',
+                           cube_ls_summary,
                            step=step,
                            logdir=logdir,
                            max_outputs=max_outputs)
@@ -109,7 +133,8 @@ def test_tensorflow_summary(geometry_data):
     assert (dirpath[:2] == dirpath_ref[:2] and
             dirpath[2][0][:20] == dirpath_ref[2][0][:20])
     assert filenames[0][0][:20] == filenames_ref[0][0][:20]
-    assert set(x.split('.')[0] for x in filenames[2]) == set(('cube',))
+    assert set(x.split('.')[0] for x in filenames[2]) == set(
+        ('cube', 'cube_pcd', 'cube_ls'))
     assert filenames_ref[2][0][-8:] == '.msgpack'
 
     # Note: The event file written during this test cannot be reliably verified
@@ -132,6 +157,7 @@ def test_pytorch_summary(geometry_data):
     tensor_converter = (torch.from_numpy, o3d.core.Tensor.from_numpy, np.array)
 
     cube = geometry_data['cube']
+    cube_ls = geometry_data['cube_ls']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
     for step in range(3):
@@ -149,6 +175,20 @@ def test_pytorch_summary(geometry_data):
             for prop, tensor in cube_summary.items():
                 cube_summary[prop] = rng.choice(tensor_converter)(tensor)
         writer.add_3d('cube', cube_summary, step=step, max_outputs=max_outputs)
+        cube_summary.pop('triangle_indices')  # Convert to PointCloud
+        writer.add_3d('cube_pcd',
+                      cube_summary,
+                      step=step,
+                      max_outputs=max_outputs)
+        cube_ls[0].paint_uniform_color(colors[step][0])
+        cube_ls[1].paint_uniform_color(colors[step][1])
+        cube_ls_summary = to_dict_batch(cube_ls)
+        for prop, tensor in cube_ls_summary.items():
+            cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
+        writer.add_3d('cube_ls',
+                      cube_ls_summary,
+                      step=step,
+                      max_outputs=max_outputs)
 
     sleep(0.25)  # msgpack writing disk flush time
     dirpath_ref = [
@@ -166,7 +206,8 @@ def test_pytorch_summary(geometry_data):
     assert (dirpath[:2] == dirpath_ref[:2] and
             dirpath[2][0][:20] == dirpath_ref[2][0][:20])
     assert filenames[0][0][:20] == filenames_ref[0][0][:20]
-    assert set(x.split('.')[0] for x in filenames[2]) == set(('cube',))
+    assert set(x.split('.')[0] for x in filenames[2]) == set(
+        ('cube', 'cube_pcd', 'cube_ls'))
     assert filenames_ref[2][0][-8:] == '.msgpack'
 
     # Note: The event file written during this test cannot be reliably verified
@@ -182,26 +223,72 @@ def test_plugin_data_reader(geometry_data):
         os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
     logdir = "test_tensorboard_plugin"
     cube = geometry_data['cube']
+    cube_ls = geometry_data['cube_ls']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
 
     reader = Open3DPluginDataReader(logdir)
     assert reader.is_active()
-    assert reader.run_to_tags == {'.': ['cube']}
+    assert reader.run_to_tags == {'.': ['cube', 'cube_pcd', 'cube_ls']}
     step_to_idx = {i: i for i in range(3)}
     for step in range(3):
         for batch_idx in range(max_outputs):
-            cube_out = reader.read_geometry(".", "cube", step, batch_idx,
-                                            step_to_idx)
             cube[batch_idx].paint_uniform_color(colors[step][batch_idx])
             cube_ref = o3d.t.geometry.TriangleMesh.from_legacy(cube[batch_idx])
+            cube_ref.triangle["indices"] = cube_ref.triangle["indices"].to(
+                o3d.core.int32)
             cube_ref.vertex['colors'] = (cube_ref.vertex['colors'] * 255).to(
                 o3d.core.uint8)
+
+            cube_out = reader.read_geometry(".", "cube", step, batch_idx,
+                                            step_to_idx)
             assert (cube_out.vertex['positions'] == cube_ref.vertex['positions']
                    ).all()
             assert (
                 cube_out.vertex['normals'] == cube_ref.vertex['normals']).all()
             assert (
                 cube_out.vertex['colors'] == cube_ref.vertex['colors']).all()
+            assert (cube_out.triangle['indices'] == cube_ref.triangle['indices']
+                   ).all()
 
+            cube_pcd_out = reader.read_geometry(".", "cube_pcd", step,
+                                                batch_idx, step_to_idx)
+            assert (cube_pcd_out.point['positions'] ==
+                    cube_ref.vertex['positions']).all()
+            assert (cube_pcd_out.point['normals'] == cube_ref.vertex['normals']
+                   ).all()
+            assert (cube_pcd_out.point['colors'] == cube_ref.vertex['colors']
+                   ).all()
+
+            cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
+            cube_ls_ref = o3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
+            cube_ls_ref.line["indices"] = cube_ls_ref.line["indices"].to(
+                o3d.core.int32)
+            cube_ls_ref.line['colors'] = (cube_ls_ref.line['colors'] * 255).to(
+                o3d.core.uint8)
+
+            cube_ls_out = reader.read_geometry(".", "cube_ls", step, batch_idx,
+                                               step_to_idx)
+            assert (cube_ls_out.point['positions'] ==
+                    cube_ls_ref.point['positions']).all()
+            assert (cube_ls_out.line['indices'] == cube_ls_ref.line['indices']
+                   ).all()
+            assert (
+                cube_ls_out.line['colors'] == cube_ls_ref.line['colors']).all()
+
+    shutil.rmtree(logdir)
+
+
+@pytest.mark.skip(reason="This will only run on a local machine with GPU.")
+def test_tensorboard_app():
+    shutil.unpack_archive(
+        os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
+    logdir = "test_tensorboard_plugin"
+    with sp.Popen(['tensorboard', '--logdir', logdir]) as tb_proc:
+        sleep(5)
+        webbrowser.open('http://localhost:6006/')
+        sleep(5)
+        tb_proc.terminate()
+        sleep(2)
+        tb_proc.kill()
     shutil.rmtree(logdir)

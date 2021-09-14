@@ -73,8 +73,8 @@ class _AsyncDataWriter:
     format is ``{tagfilepath}.{current time (s)}.{hostname}.{ProcessID}{filename_extension}``
     following the TensorFlow event file name format.
 
-    This class is thread safe. A single global object is created when this module is
-    imported by each process.
+    This class is thread safe. A single global object is created when this
+    module is imported by each process.
     """
 
     def __init__(self,
@@ -86,8 +86,8 @@ class _AsyncDataWriter:
             max_queue (int): enqueue will block if more than ``max_queue``
                 writes are pending.
             flush_secs (Number): Data is flushed to disk / network periodically
-                with this interval. Note that the data may still be in an OS buffer
-                and not on disk.
+                with this interval. Note that the data may still be in an OS
+                buffer and not on disk.
             filename_extension (str): Extension for binary file.
         """
         self._max_queue = max_queue
@@ -332,6 +332,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         elif prop in ('line_indices',) + metadata.LINE_PROPERTIES:
             if o3d_type != "TriangleMesh":
                 o3d_type = "LineSet"
+            prop_name = prop[5:]
             line_data[prop_name] = _preprocess(prop, tensor, step, max_outputs,
                                                geometry_metadata)
             if line_data[prop_name] is None:  # Step reference
@@ -340,7 +341,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             if n_lines is None:  # Get tensor dims from earlier property
                 _, n_lines, _ = line_data[prop_name].shape
             exp_shape = (batch_size, n_lines,
-                         metadata.GEOMETRY_PROPERTY_DIMS[prop_name])
+                         metadata.GEOMETRY_PROPERTY_DIMS[prop])
             if tuple(line_data[prop_name].shape) != exp_shape:
                 raise ValueError(
                     f"Property {prop} tensor should be of shape "
