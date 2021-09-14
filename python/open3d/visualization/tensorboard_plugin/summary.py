@@ -174,18 +174,29 @@ class _AsyncDataWriter:
 _async_data_writer = _AsyncDataWriter()
 
 
-def _to_o3d(tensor):
+def _to_o3d(tensor, min_ndim=None, max_len=None):
     """Convert Tensorflow, PyTorch and Numpy tensors to Open3D tensor without
-    copying.
-    """
+    copying. Python lists and tuples are also accepted, but will be copied.
 
+    Args:
+        tensor: Input tensor to be converted.
+        min_ndim (int): Tensor shape will be padded with ones on the left to
+            reach this minimum number of dimensions.
+        max_len (int): The max size along the first dimension. Other data will
+            be discarded.
+    """
     if isinstance(tensor, o3d.core.Tensor):
-        return tensor
-    if tf is not None and isinstance(tensor, tf.Tensor):
-        return o3d.core.Tensor.from_dlpack(tf_dlpack.to_dlpack(tensor))
-    if torch is not None and isinstance(tensor, torch.Tensor):
-        return o3d.core.Tensor.from_dlpack(torch_dlpack.to_dlpack(tensor))
-    return o3d.core.Tensor.from_numpy(np.asarray(tensor))
+        pass
+    elif tf is not None and isinstance(tensor, tf.Tensor):
+        tensor = o3d.core.Tensor.from_dlpack(tf_dlpack.to_dlpack(tensor))
+    elif torch is not None and isinstance(tensor, torch.Tensor):
+        tensor = o3d.core.Tensor.from_dlpack(torch_dlpack.to_dlpack(tensor))
+    else:
+        tensor = o3d.core.Tensor.from_numpy(np.asarray(tensor))
+    exp_shape = tensor.shape
+    for _ in range(tensor.ndim, min_ndim):
+        exp_shape.insert(0, 1)
+    return tensor.reshape(exp_shape)[:max_len]
 
 
 def _color_to_uint8(color_data):
@@ -221,7 +232,12 @@ def _to_integer(tensor):
         return None
 
 
-def _preprocess(prop, tensor, step, max_outputs, geometry_metadata, material):
+def _preprocess(prop,
+                tensor,
+                step,
+                max_outputs,
+                geometry_metadata,
+                material=None):
     """Data conversion (format and dtype), validation and other preprocessing.
     Step reference support.
     TODO(ssheorey): Convert to half precision, compression, etc.
@@ -237,33 +253,51 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata, material):
             Value(prop),
             step_ref=step_ref)
         return None
+
     if prop == "material_name":
-        if isinstance(tensor, str) or isinstance(tensor, bytes):
-            save_tensor = (tensor,)
+        if isinstance(tensor, (bytes, str)):
+            material.name = (tensor,)
+        elif isinstance(tensor[0], (bytes, str)):
+            material.name = tensor
         else:
-            save_tensor = tensor
-    elif prop.startswith(material_scalar_
+            raise ValueError(
+                f"Value of the key `material_name` should be a str, bytes or"
+                f" Sequence of str or bytes. Got {tensor} instead.")
+        return material.name
+    if (prop.startswith("material_scalar_") and
+            prop[16:] in metadata.MATERIAL_SCALAR_PROPERTIES):
+        save_tensor = _to_o3d(tensor, min_ndim=1, max_len=max_outputs)
+        if save_tensor.ndim != 1:
+            raise ValueError(f"Material scalar property {prop} has shape "
+                             f"{tensor.shape} instead of (B,)")
+        material["scalar_properties"][prop[16:]] = save_tensor
+        return save_tensor
+    if (prop.startswith("material_vector_") and
+            prop[16:] in metadata.MATERIAL_VECTOR_PROPERTIES):
+        save_tensor = _to_o3d(tensor, min_ndim=2, max_len=max_outputs)
+        if save_tensor.ndim != 2 or save_tensor.shape[-1] != 4:
+            raise ValueError(f"Material vector property {prop} has shape "
+                             f"{tensor.shape} instead of (B, 4)")
+        material["vector_properties"][prop[16:]] = save_tensor
+        return save_tensor
+    if (prop.startswith("material_texture_map_") and
+        (prop[21:] in metadata.MATERIAL_SCALAR_PROPERTIES or
+         prop[21:] in metadata.MATERIAL_VECTOR_PROPERTIES)):
+        save_tensor = _to_o3d(tensor, min_ndim=4, max_len=max_outputs)
+        if save_tensor.ndim != 4:
+            raise ValueError(f"Material texture map {prop} has shape "
+                             f"{tensor.shape} instead of (B, Nr, Nc, C)")
+        material["texture_maps"][prop[21:]] = tuple(
+            o3d.t.geometry.Image(save_tensor[bidx]).to(o3d.core.uint8)
+            for bidx in range(save_tensor.shape[0]))
+        return save_tensor
+    if prop.startswith("material_"):
+        raise ValueError(f"Unknown material property {prop}.")
 
-
-        material = tensor
-        if "texture_maps" in material:
-            for tex_prop, tex_tensor in material["texture_maps"].items():
-                material["texture_maps"][tex_prop] = o3d.t.geometry.Image(
-                    _to_o3d(tex_tensor)).to(o3d.core.uint8)
-        return material
-    if tensor.ndim == 0:  # batch_size = 1, material_scalar_*
-
-    elif tensor.ndim == 1:  # batch_size = 1
-    elif tensor.ndim == 2:  # batch_size = 1
-        save_tensor = _to_o3d(tensor)
-        shape3 = save_tensor.shape
-        shape3.insert(0, 1)
-        save_tensor = save_tensor.reshape(shape3)
-    elif tensor.ndim == 3:
-        save_tensor = _to_o3d(tensor[:max_outputs])
-    else:
-        raise ValueError(f"Property {prop} tensor should be of shape (N, Np) or"
-                         f" (B, N, Np) or a scalar but is {tensor.shape}.")
+    save_tensor = _to_o3d(tensor, min_ndim=3, max_len=max_outputs)
+    if save_tensor.ndim != 3:
+        raise ValueError(f"Property {prop} tensor has shape {tensor.shape} "
+                         f"instead of (B, N, 2) or (B, N, 3)")
 
     # Datatype conversion
     if prop.endswith("_colors"):
@@ -380,19 +414,9 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                     f"Property {prop} tensor should be of shape "
                     f"{exp_shape} but is {line_data[prop_name].shape}.")
 
-        elif prop == "material_name":
-            save_tensor = _preprocess(prop, tensor, step, max_outputs,
-                                      geometry_metadata)
-            if save_tensor is None:  # Step reference
-                continue
-            material["name"] = save_tensor
-        elif (prop.startswith("material_scalar_") and prop[16:] in
-                metadata.MATERIAL_SCALAR_PROPERTIES):
-            material["scalar_properties"][prop[16:]] = save_tensor
-        elif prop.startswith("material_vector_"):
-            material["vector_properties"][prop[16:]] = save_tensor
-        elif prop.startswith("material_texture_map_"):
-            material["texture_maps"][prop[21:]] = save_tensor
+        elif prop.startswith("material_"):  # Set propery in material directly
+            _preprocess(prop, tensor, step, max_outputs, geometry_metadata,
+                        material)
 
     vertices = vertex_data.pop("positions",
                                o3d.core.Tensor((), dtype=o3d.core.float32))

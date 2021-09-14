@@ -35,18 +35,6 @@ _VERSION = 14
 
 SUPPORTED_FILEFOPRMAT_VERSIONS = [14]
 
-GEOMETRY_PROPERTY_SHAPE = {
-    'vertex_positions': (-1, -1, 3),
-    'vertex_normals': (-1, -1, 3),
-    'vertex_colors': (-1, -1, 3),
-    'vertex_texture_uvs': (-1, -1, 2),
-    'triangle_indices': (-1, -1, 3),
-    'line_indices': (-1, -1, 2),
-    'material_name': (-1),
-    'material_scalar_': (-1),
-    'material_vector_': (-1, 4),
-    'material_texture_map_': (-1, -1, -1, -1),
-}
 GEOMETRY_PROPERTY_DIMS = {
     'vertex_positions': 3,
     'vertex_normals': 3,
@@ -58,9 +46,31 @@ GEOMETRY_PROPERTY_DIMS = {
 VERTEX_PROPERTIES = ('vertex_normals', 'vertex_colors', 'vertex_texture_uvs')
 TRIANGLE_PROPERTIES = ()
 LINE_PROPERTIES = ('line_colors',)
-MATERIAL_SCALAR_PROPERTIES = ('',)
-MATERIAL_VECTOR_PROPERTIES = ('',)
-MATERIAL_TEXTURE_MAPS = ('',)
+MATERIAL_SCALAR_PROPERTIES = (
+    'metallic',
+    'roughness',
+    'reflectance',
+    'sheenRoughness',
+    'clearCoat',
+    'clearCoatRoughness',
+    'anisotropy',
+    'ambientOcclusion',
+    'ior',
+    'transmission',
+    'microThickness',
+    'thickness',
+)
+MATERIAL_VECTOR_PROPERTIES = (
+    'baseColor',
+    'sheenColor',
+    'anisotropyDirection',
+    'normal',
+    'bentNormal',
+    'clearCoatNormal',
+    'emissive',
+    'postLightingColor',
+    'absorption',
+)
 
 
 def create_summary_metadata(description):
