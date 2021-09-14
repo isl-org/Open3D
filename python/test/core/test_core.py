@@ -145,49 +145,6 @@ def test_device():
     assert o3c.Device("CUDA", 1).__str__() == "CUDA:1"
 
 
-def test_size_vector():
-    # List
-    sv = o3c.SizeVector([-1, 2, 3])
-    assert "{}".format(sv) == "SizeVector[-1, 2, 3]"
-
-    # Tuple
-    sv = o3c.SizeVector((-1, 2, 3))
-    assert "{}".format(sv) == "SizeVector[-1, 2, 3]"
-
-    # Numpy 1D array
-    sv = o3c.SizeVector(np.array([-1, 2, 3]))
-    assert "{}".format(sv) == "SizeVector[-1, 2, 3]"
-
-    # Empty
-    sv = o3c.SizeVector()
-    assert "{}".format(sv) == "SizeVector[]"
-    sv = o3c.SizeVector([])
-    assert "{}".format(sv) == "SizeVector[]"
-    sv = o3c.SizeVector(())
-    assert "{}".format(sv) == "SizeVector[]"
-    sv = o3c.SizeVector(np.array([]))
-    assert "{}".format(sv) == "SizeVector[]"
-
-    # Not integer: thorws exception
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector([1.9, 2, 3])
-
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector([-1.5, 2, 3])
-
-    # 2D list exception
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector([[1, 2], [3, 4]])
-
-    # 2D Numpy array exception
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector(np.array([[1, 2], [3, 4]]))
-
-    # Garbage input
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector(["foo", "bar"])
-
-
 @pytest.mark.parametrize("dtype", list_dtypes())
 @pytest.mark.parametrize("device", list_devices())
 def test_tensor_constructor(dtype, device):
