@@ -75,8 +75,8 @@ class _AsyncDataWriter:
     format is ``{tagfilepath}.{current time (s)}.{hostname}.{ProcessID}{filename_extension}``
     following the TensorFlow event file name format.
 
-    This class is thread safe. A single global object is created when this module is
-    imported by each process.
+    This class is thread safe. A single global object is created when this
+    module is imported by each process.
     """
 
     def __init__(self,
@@ -88,8 +88,8 @@ class _AsyncDataWriter:
             max_queue (int): enqueue will block if more than ``max_queue``
                 writes are pending.
             flush_secs (Number): Data is flushed to disk / network periodically
-                with this interval. Note that the data may still be in an OS buffer
-                and not on disk.
+                with this interval. Note that the data may still be in an OS
+                buffer and not on disk.
             filename_extension (str): Extension for binary file.
         """
         self._max_queue = max_queue
@@ -365,6 +365,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         elif prop in ('line_indices',) + metadata.LINE_PROPERTIES:
             if o3d_type != "TriangleMesh":
                 o3d_type = "LineSet"
+            prop_name = prop[5:]
             line_data[prop_name] = _preprocess(prop, tensor, step, max_outputs,
                                                geometry_metadata)
             if line_data[prop_name] is None:  # Step reference
@@ -373,7 +374,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             if n_lines is None:  # Get tensor dims from earlier property
                 _, n_lines, _ = line_data[prop_name].shape
             exp_shape = (batch_size, n_lines,
-                         metadata.GEOMETRY_PROPERTY_DIMS[prop_name])
+                         metadata.GEOMETRY_PROPERTY_DIMS[prop])
             if tuple(line_data[prop_name].shape) != exp_shape:
                 raise ValueError(
                     f"Property {prop} tensor should be of shape "
@@ -447,12 +448,11 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
     """Write 3D geometry data as summary.
 
     Args:
-      name / tag: A name for this summary. The summary tag used for TensorBoard
+      name (str): A name or tag for this summary. The summary tag used for TensorBoard
         will be this name prefixed by any active name scopes.
-      data: A dictionary of ``Tensor``s representing 3D data. Tensorflow,
+      data (dict): A dictionary of tensors representing 3D data. Tensorflow,
         PyTorch, Numpy and Open3D tensors are supported. The following keys
         are supported:
-
           - ``vertex_positions``: shape `(B, N, 3)` where B is the number of
                 point clouds and must be same for each key. N is the number of
                 3D points. Will be cast to ``float32``.
@@ -505,7 +505,8 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
         `max_outputs` many images are provided, the first ``max_outputs`` many
         images will be used and the rest silently discarded.
       description: Optional long-form description for this summary, as a
-        constant ``str``. Markdown is supported. Defaults to empty.
+        constant ``str``. Markdown is supported. Defaults to empty. Currently
+        unused.
 
     Returns:
       True on success, or false if no summary was emitted because no default
@@ -513,7 +514,52 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
 
     Raises:
       ValueError: if a default writer exists, but no step was provided and
-        `tf.summary.experimental.get_step()` is None.
+        `tf.summary.experimental.get_step()` is None. Also raised when used with
+        Tensorflow and ``logdir`` is not provided or ``None``.
+      RuntimeError: Module level function is used without a TensorFlow
+        installation. Use the PyTorch `SummaryWriter.add_3d()` bound method
+        instead.
+
+    Examples:
+        With Tensorflow:
+
+        .. code::
+
+            import tensorflow as tf
+            import open3d as o3d
+            from open3d.visualization.tensorboard_plugin import summary
+            from open3d.visualization.tensorboard_plugin.util import to_dict_batch
+
+            logdir = "demo_logs/"
+            writer = tf.summary.create_file_writer(logdir)
+            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+            cube.compute_vertex_normals()
+            colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
+            with writer.as_default():
+                for step in range(3):
+                    cube.paint_uniform_color(colors[step])
+                    summary.add_3d('cube',
+                                   to_dict_batch([cube]),
+                                   step=step,
+                                   logdir=logdir)
+
+        With PyTorch:
+
+        .. code::
+
+            from torch.utils.tensorboard import SummaryWriter
+            import open3d as o3d
+            from open3d.visualization.tensorboard_plugin import summary
+            from open3d.visualization.tensorboard_plugin.util import to_dict_batch
+            writer = SummaryWriter("demo_logs/")
+            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+            cube.compute_vertex_normals()
+            colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
+            for step in range(3):
+                cube.paint_uniform_color(colors[step])
+                writer.add_3d('cube', to_dict_batch([cube]), step=step)
+
+        Now use ``tensorboard --logdir demo_logs`` to visualize the 3D data.
     """
     if tf is None:
         raise RuntimeError(
@@ -558,7 +604,6 @@ def _add_3d_torch(self,
                   max_outputs=1,
                   description=None):
     walltime = None
-    _add_3d_torch.__doc__ = add_3d.__doc__  # Copy docstring from TF function
     if step is None:
         raise ValueError("Step is not provided or set.")
     summary_metadata = metadata.create_summary_metadata(description=description)
@@ -578,10 +623,11 @@ def _add_3d_torch(self,
         ]), step, walltime)
 
 
-# Make _add_3d_torch a bound method of SummaryWriter class.
+# Make _add_3d_torch a bound method of SummaryWriter class. (MonkeyPatching)
 if torch is not None:
     if not hasattr(SummaryWriter, "add_3d"):
         SummaryWriter.add_3d = _add_3d_torch
+        SummaryWriter.add_3d.__doc__ = add_3d.__doc__  # Copy docstring from TF function
     else:
         warnings.warn("Cannot bind add_3d() to SummaryWriter. Binding exists.",
                       RuntimeWarning)

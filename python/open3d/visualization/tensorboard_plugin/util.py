@@ -285,7 +285,10 @@ class Open3DPluginDataReader:
                                               batch_idx, step_to_idx)
             # "vertex_normals" -> ["vertex", "normals"]
             prop_map, prop_attribute = prop.split("_")
-            # geometry.vertex["normals" = geometry_ref.vertex["normals"]
+            if prop_map == "vertex" and not isinstance(
+                    geometry, o3d.t.geometry.TriangleMesh):
+                prop_map = "point"
+            # geometry.vertex["normals"] = geometry_ref.vertex["normals"]
             getattr(geometry, prop_map)[prop_attribute] = getattr(
                 geometry_ref, prop_map)[prop_attribute]
 
@@ -293,10 +296,9 @@ class Open3DPluginDataReader:
 
 
 def to_dict_batch(o3d_geometry_list):
-    """
-    Convert sequence of identical Open3D geometry types to attribute-tensor
-    dictionary. The geometry seequence forms a batch of data. Only common
-    attributes are supported.
+    """Convert sequence of identical (legacy) Open3D geometry types to
+    attribute-tensor dictionary. The geometry seequence forms a batch of data.
+    Custom attributes are not supported.
 
     TODO: This involves a data copy. Add support for List[Open3D geometry]
     directly to add_3d() if needed.
@@ -304,6 +306,10 @@ def to_dict_batch(o3d_geometry_list):
     Args:
         o3d_geometry_list (Iterable): Iterable (list / tuple / sequence
             generator) of Open3D Tensor geometry types.
+
+    Returns:
+        Dict[str: numpy.array]: Dictionary of property names and corresponding
+        Numpy arrays.
     """
     if len(o3d_geometry_list) == 0:
         return {}
@@ -317,12 +323,13 @@ def to_dict_batch(o3d_geometry_list):
             vertex_colors.append(np.asarray(geometry.colors))
             vertex_normals.append(np.asarray(geometry.normals))
 
-        return {
+        geo_dict = {
             'vertex_positions': np.stack(vertex_positions, axis=0),
             'vertex_colors': np.stack(vertex_colors, axis=0),
             'vertex_normals': np.stack(vertex_normals, axis=0),
         }
-    if isinstance(o3d_geometry_list[0], o3d.geometry.TriangleMesh):
+
+    elif isinstance(o3d_geometry_list[0], o3d.geometry.TriangleMesh):
         vertex_positions = []
         vertex_colors = []
         vertex_normals = []
@@ -333,14 +340,14 @@ def to_dict_batch(o3d_geometry_list):
             vertex_normals.append(np.asarray(geometry.vertex_normals))
             triangle_indices.append(np.asarray(geometry.triangles))
 
-        return {
+        geo_dict = {
             'vertex_positions': np.stack(vertex_positions, axis=0),
             'vertex_colors': np.stack(vertex_colors, axis=0),
             'vertex_normals': np.stack(vertex_normals, axis=0),
             'triangle_indices': np.stack(triangle_indices, axis=0),
         }
 
-    if isinstance(o3d_geometry_list[0], o3d.geometry.LineSet):
+    elif isinstance(o3d_geometry_list[0], o3d.geometry.LineSet):
         vertex_positions = []
         line_colors = []
         line_indices = []
@@ -349,11 +356,18 @@ def to_dict_batch(o3d_geometry_list):
             line_colors.append(np.asarray(geometry.colors))
             line_indices.append(np.asarray(geometry.lines))
 
-        return {
+        geo_dict = {
             'vertex_positions': np.stack(vertex_positions, axis=0),
             'line_colors': np.stack(line_colors, axis=0),
             'line_indices': np.stack(line_indices, axis=0),
         }
 
-    raise NotImplementedError(
-        f"Geometry type {type(o3d_geometry_list[0])} is not suported yet.")
+    else:
+        raise NotImplementedError(
+            f"Geometry type {type(o3d_geometry_list[0])} is not suported yet.")
+
+    # remove empty arrays
+    for prop in tuple(geo_dict.keys()):
+        if geo_dict[prop].size == 0:
+            del geo_dict[prop]
+    return geo_dict

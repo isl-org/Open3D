@@ -26,11 +26,12 @@
 # ----------------------------------------------------------------------------
 import os
 import copy
+import os
 import numpy as np
-import tensorflow as tf
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.util import to_dict_batch
+import tensorflow as tf
 
 BASE_LOGDIR = "demo_logs/tf/"
 
@@ -38,7 +39,7 @@ BASE_LOGDIR = "demo_logs/tf/"
 def small_scale(run_name="small_scale"):
     """Basic demo with cube and cylinder with normals and colors.
     """
-    logdir = BASE_LOGDIR + run_name
+    logdir = os.path.join(BASE_LOGDIR, run_name)
     writer = tf.summary.create_file_writer(logdir)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
@@ -67,7 +68,7 @@ def property_reference(run_name="property_reference"):
     """Produces identical visualization to small_scale, but does not store
     repeated properties of ``vertex_positions`` and ``vertex_normals``.
     """
-    logdir = BASE_LOGDIR + run_name
+    logdir = os.path.join(BASE_LOGDIR, run_name)
     writer = tf.summary.create_file_writer(logdir)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
@@ -97,14 +98,14 @@ def property_reference(run_name="property_reference"):
                            logdir=logdir)
 
 
-def large_scale(n_steps=20,
+def large_scale(n_steps=16,
                 batch_size=1,
                 base_resolution=200,
                 run_name="large_scale"):
     """Generate a large scale summary. Geometry resolution increases linearly
     with step. Each element in a batch is painted a different color.
     """
-    logdir = BASE_LOGDIR + run_name
+    logdir = os.path.join(BASE_LOGDIR, run_name)
     writer = tf.summary.create_file_writer(logdir)
     colors = []
     for k in range(batch_size):
@@ -148,7 +149,7 @@ def with_material(model_dir):
     """Read an obj model from a directory and write as a TensorBoard summary.
     """
     model_name = os.path.basename(model_dir)
-    logdir = BASE_LOGDIR + model_name
+    logdir = os.path.join(BASE_LOGDIR, model_name)
     model_path = os.path.join(model_dir, model_name + ".obj")
     model = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.io.read_triangle_mesh(model_path))

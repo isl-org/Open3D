@@ -294,6 +294,7 @@ class Open3DPluginWindow:
                                           current_item)
         self.geometry_list = new_geometry_list
 
+        # Includes force_redraw()
         async_event_loop.run_sync(self.window.reset_camera_to_default)
 
         if not self.init_done.is_set():
@@ -355,7 +356,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
         """
         self._logdir = context.logdir
         self.data_reader = Open3DPluginDataReader(self._logdir)
-        self.window_lock = threading.Lock()  # protect _windows and _next_wid
+        self.window_lock = threading.Lock()  # protect self._windows
         self._http_api_lock = threading.Lock()
         self._windows = {}
         webrtc_server.disable_http_handshake()

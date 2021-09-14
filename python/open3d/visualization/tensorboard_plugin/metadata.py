@@ -47,6 +47,14 @@ GEOMETRY_PROPERTY_SHAPE = {
     'material_vector_': (-1, 4),
     'material_texture_map_': (-1, -1, -1, -1),
 }
+GEOMETRY_PROPERTY_DIMS = {
+    'vertex_positions': 3,
+    'vertex_normals': 3,
+    'vertex_colors': 3,
+    'triangle_indices': 3,
+    'line_indices': 2,
+    'line_colors': 3
+}
 VERTEX_PROPERTIES = ('vertex_normals', 'vertex_colors', 'vertex_texture_uvs')
 TRIANGLE_PROPERTIES = ()
 LINE_PROPERTIES = ('line_colors',)

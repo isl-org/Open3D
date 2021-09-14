@@ -41,10 +41,8 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 .. code-block:: bash
 
     # Install deps
-    pip install -U sphinx==3.5.4 sphinx-rtd-theme==0.5.1 nbsphinx==0.8.3 matplotlib==3.3.3 jinja2==2.11.3
-
     # Patched m2r: https://github.com/sphinx-doc/sphinx/issues/7420#issuecomment-657160798
-    pip install -U m2r2==0.2.7
+    pip install -U sphinx==3.3.1 sphinx-rtd-theme==0.5.2 nbsphinx==0.8.3 matplotlib==3.3.3 jinja2==2.11.3 m2r2==0.2.7
 
 
 Build
