@@ -33,6 +33,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/t/io/ImageIO.h"
+#include "open3d/utility/Preprocessor.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/Tests.h"
 
