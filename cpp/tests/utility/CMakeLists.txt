@@ -5,5 +5,12 @@ target_sources(tests PRIVATE
     IJsonConvertible.cpp
     ISAInfo.cpp
     Logging.cpp
+    Preprocessor.cpp
     Timer.cpp
 )
+
+if (BUILD_ISPC_MODULE)
+    open3d_ispc_target_sources(tests PRIVATE
+        Helper.ispc
+    )
+endif()
