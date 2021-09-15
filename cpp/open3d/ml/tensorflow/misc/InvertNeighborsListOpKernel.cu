@@ -108,6 +108,9 @@ private:
                                     .TypeConstraint<attrtype>("TAttr") \
                                     .HostMemory("num_points"),         \
                             InvertNeighborsListOpKernelCUDA<type, attrtype>);
+REG_KB(int32_t, uint8_t)
+REG_KB(int32_t, int8_t)
+REG_KB(int32_t, int16_t)
 REG_KB(int32_t, int32_t)
 REG_KB(int32_t, int64)
 REG_KB(int32_t, float)
