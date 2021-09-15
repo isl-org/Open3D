@@ -292,7 +292,6 @@ class PythonFormatter:
         """
 
         is_valid_header = False
-        # Skip auto generated file "docs/conf.py"
         with open(file_path, 'r') as f:
             content = f.read()
             if len(content) == 0 or content.startswith(
