@@ -451,8 +451,10 @@ class Open3DPlugin(base_plugin.TBPlugin):
         with self.window_lock:
             self._windows[this_window.window.uid] = this_window
 
-        response = (f'{{"window_id": "{this_window.window.uid}", "logdir": '
-                    f'"{self._logdir}"}}')
+        response = json.dumps({
+            "window_id": this_window.window.uid,
+            "logdir": self._logdir
+        })
         this_window.init_done.wait()  # Wait for WebRTC initialization
         return werkzeug.Response(response,
                                  content_type="application/json",
