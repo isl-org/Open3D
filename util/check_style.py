@@ -179,15 +179,14 @@ class CppFormatter:
         self.clang_format_bin = clang_format_bin
 
     @staticmethod
-    def _check_style(file_path, standard_header, clang_format_bin):
+    def _check_style(file_path, clang_format_bin):
         """
-        Returns (true, true) if (style, header) are valid.
+        Returns (true, true) if (style, header) is valid.
         """
 
         is_valid_header = False
         with open(file_path, 'r') as f:
-            content = f.read()
-            if content[:len(standard_header)] == standard_header:
+            if f.read().startswith(CppFormatter.standard_header):
                 is_valid_header = True
 
         cmd = [
@@ -228,19 +227,17 @@ class CppFormatter:
         if no_parallel:
             is_valid_files = map(
                 partial(self._check_style,
-                        standard_header=self.standard_header,
                         clang_format_bin=self.clang_format_bin),
                 self.file_paths)
         else:
             with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
                 is_valid_files = pool.map(
                     partial(self._check_style,
-                            standard_header=self.standard_header,
                             clang_format_bin=self.clang_format_bin),
                     self.file_paths)
 
         changed_files = []
-        files_wrong_header = []
+        wrong_header_files = []
         for is_valid, file_path in zip(is_valid_files, self.file_paths):
             is_valid_style = is_valid[0]
             is_valid_header = is_valid[1]
@@ -249,10 +246,10 @@ class CppFormatter:
                 if do_apply_style:
                     self._apply_style(file_path, self.clang_format_bin)
             if not is_valid_header:
-                files_wrong_header.append(file_path)
+                wrong_header_files.append(file_path)
         print("Formatting takes {:.2f}s".format(time.time() - start_time))
 
-        return (changed_files, files_wrong_header)
+        return (changed_files, wrong_header_files)
 
 
 class PythonFormatter:
@@ -289,21 +286,18 @@ class PythonFormatter:
         self.style_config = style_config
 
     @staticmethod
-    def _check_style(file_path, standard_header, style_config):
+    def _check_style(file_path, style_config):
         """
-        Returns (true, true) if (style, header) are valid.
+        Returns (true, true) if (style, header) is valid.
         """
 
         is_valid_header = False
         # Skip auto generated file "docs/conf.py"
-        if file_path.endswith("docs/conf.py"):
-            is_valid_header = True
-        else:
-            with open(file_path, 'r') as f:
-                content = f.read()
-                if len(content) == 0 or content[:len(standard_header
-                                                    )] == standard_header:
-                    is_valid_header = True
+        with open(file_path, 'r') as f:
+            content = f.read()
+            if len(content) == 0 or content.startswith(
+                    PythonFormatter.standard_header):
+                is_valid_header = True
 
         _, _, changed = yapf.yapflib.yapf_api.FormatFile(
             file_path, style_config=style_config, in_place=False)
@@ -329,18 +323,16 @@ class PythonFormatter:
         start_time = time.time()
         if no_parallel:
             is_valid_files = map(
-                partial(self._check_style,
-                        standard_header=self.standard_header,
-                        style_config=self.style_config), self.file_paths)
+                partial(self._check_style, style_config=self.style_config),
+                self.file_paths)
         else:
             with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
                 is_valid_files = pool.map(
-                    partial(self._check_style,
-                            standard_header=self.standard_header,
-                            style_config=self.style_config), self.file_paths)
+                    partial(self._check_style, style_config=self.style_config),
+                    self.file_paths)
 
         changed_files = []
-        files_wrong_header = []
+        wrong_header_files = []
         for is_valid, file_path in zip(is_valid_files, self.file_paths):
             is_valid_style = is_valid[0]
             is_valid_header = is_valid[1]
@@ -349,10 +341,10 @@ class PythonFormatter:
                 if do_apply_style:
                     self._apply_style(file_path, self.style_config)
             if not is_valid_header:
-                files_wrong_header.append(file_path)
+                wrong_header_files.append(file_path)
 
         print("Formatting takes {:.2f}s".format(time.time() - start_time))
-        return (changed_files, files_wrong_header)
+        return (changed_files, wrong_header_files)
 
 
 class JupyterFormatter:
@@ -464,39 +456,58 @@ if __name__ == "__main__":
     clang_format_bin = _find_clang_format()
     pwd = Path(os.path.dirname(os.path.abspath(__file__)))
     python_style_config = str(pwd.parent / ".style.yapf")
+    open3d_root_dir = pwd.parent
+
+    cpp_file_list = _glob_files(CPP_FORMAT_DIRS,
+                                ["cpp", "h", "h.in", "cu", "cuh"])
+    python_file_list = _glob_files(PYTHON_FORMAT_DIRS, ["py"])
+
+    # Remove auto generated files
+    auto_generated_files = [
+        "docs/conf.py", "cpp/open3d/visualization/shader/Shader.h"
+    ]
+
+    auto_generated_files_abs = [
+        os.path.join(open3d_root_dir, x) for x in auto_generated_files
+    ]
+    cpp_file_list_final = [
+        x for x in cpp_file_list if x not in auto_generated_files_abs
+    ]
+    python_file_list_final = [
+        x for x in python_file_list if x not in auto_generated_files_abs
+    ]
 
     # Check or apply style
-    cpp_formatter = CppFormatter(_glob_files(CPP_FORMAT_DIRS,
-                                             ["cpp", "h", "h.in", "cu", "cuh"]),
+    cpp_formatter = CppFormatter(cpp_file_list_final,
                                  clang_format_bin=clang_format_bin)
-    python_formatter = PythonFormatter(_glob_files(PYTHON_FORMAT_DIRS, ["py"]),
+    python_formatter = PythonFormatter(python_file_list_final,
                                        style_config=python_style_config)
     jupyter_formatter = JupyterFormatter(_glob_files(JUPYTER_FORMAT_DIRS,
                                                      ["ipynb"]),
                                          style_config=python_style_config)
 
     changed_files = []
-    files_wrong_header = []
-    changed_files_cpp, files_wrong_header_cpp = cpp_formatter.run(
+    wrong_header_files = []
+    changed_files_cpp, wrong_header_files_cpp = cpp_formatter.run(
         do_apply_style=args.do_apply_style,
         no_parallel=args.no_parallel,
         verbose=args.verbose)
     changed_files.extend(changed_files_cpp)
-    files_wrong_header.extend(files_wrong_header_cpp)
+    wrong_header_files.extend(wrong_header_files_cpp)
 
-    changed_files_python, files_wrong_header_python = python_formatter.run(
+    changed_files_python, wrong_header_files_python = python_formatter.run(
         do_apply_style=args.do_apply_style,
         no_parallel=args.no_parallel,
         verbose=args.verbose)
     changed_files.extend(changed_files_python)
-    files_wrong_header.extend(files_wrong_header_python)
+    wrong_header_files.extend(wrong_header_files_python)
 
     changed_files.extend(
         jupyter_formatter.run(do_apply_style=args.do_apply_style,
                               no_parallel=args.no_parallel,
                               verbose=args.verbose))
 
-    if (len(changed_files) == 0 and len(files_wrong_header) == 0):
+    if len(changed_files) == 0 and len(wrong_header_files) == 0:
         print("All files passed style check.")
         exit(0)
 
@@ -504,15 +515,14 @@ if __name__ == "__main__":
         if len(changed_files) != 0:
             print("Style applied to the following files:")
             print("\n".join(changed_files))
-        if len(files_wrong_header) != 0:
-            print(
-                "Please correct license header in the following files. See utils/check_style.py for header information."
-            )
-            print("\n".join(files_wrong_header))
+        if len(wrong_header_files) != 0:
+            print("Please correct license header *manually* in the following "
+                  "files (see util/check_style.py for the standard header):")
+            print("\n".join(wrong_header_files))
             exit(1)
     else:
         error_files_no_duplicates = list(set(changed_files +
-                                             files_wrong_header))
+                                             wrong_header_files))
         if len(error_files_no_duplicates) != 0:
             print("Style error found in the following files:")
             print("\n".join(error_files_no_duplicates))
