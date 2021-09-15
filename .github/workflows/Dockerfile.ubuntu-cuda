@@ -4,16 +4,14 @@ FROM ${BASE_IMAGE}
 
 # Customizable build arguments from cuda.yml
 ARG DEVELOPER_BUILD=ON
-ARG BUILD_COMMON_CUDA_ARCHS=OFF
 ARG CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
 ARG CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
 ARG CCACHE_VERSION=4.3
 ARG PYTHON_VERSION=3.6
 
 # Forward all ARG to ENV
-# Some shell scripts require these environment variables
+# ci_utils.sh requires these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
-ENV BUILD_COMMON_CUDA_ARCHS=${BUILD_COMMON_CUDA_ARCHS}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
 ARG CCACHE_VERSION=${CCACHE_VERSION}

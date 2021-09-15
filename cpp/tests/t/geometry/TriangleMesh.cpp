@@ -27,8 +27,9 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 
 #include "core/CoreTest.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/TensorList.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -368,12 +369,18 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
     EXPECT_TRUE(mesh.HasTriangleNormals());
     EXPECT_FALSE(mesh.HasTriangleColors());
 
-    EXPECT_NO_THROW(mesh.GetVertexPositions().AssertDtype(float_dtype));
-    EXPECT_NO_THROW(mesh.GetVertexPositions().AssertDtype(float_dtype));
-    EXPECT_NO_THROW(mesh.GetVertexColors().AssertDtype(float_dtype));
-    EXPECT_NO_THROW(mesh.GetVertexNormals().AssertDtype(float_dtype));
-    EXPECT_NO_THROW(mesh.GetTriangleIndices().AssertDtype(int_dtype));
-    EXPECT_NO_THROW(mesh.GetTriangleNormals().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(
+            core::AssertTensorDtype(mesh.GetVertexPositions(), float_dtype));
+    EXPECT_NO_THROW(
+            core::AssertTensorDtype(mesh.GetVertexPositions(), float_dtype));
+    EXPECT_NO_THROW(
+            core::AssertTensorDtype(mesh.GetVertexColors(), float_dtype));
+    EXPECT_NO_THROW(
+            core::AssertTensorDtype(mesh.GetVertexNormals(), float_dtype));
+    EXPECT_NO_THROW(
+            core::AssertTensorDtype(mesh.GetTriangleIndices(), int_dtype));
+    EXPECT_NO_THROW(
+            core::AssertTensorDtype(mesh.GetTriangleNormals(), float_dtype));
 
     EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
             core::Tensor::Ones({2, 3}, float_dtype, device) * 0));

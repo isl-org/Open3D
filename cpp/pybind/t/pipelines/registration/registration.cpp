@@ -196,15 +196,61 @@ void pybind_registration_classes(py::module &m) {
             te_p2l);
     py::detail::bind_copy_functions<TransformationEstimationPointToPlane>(
             te_p2l);
-    te_p2l.def(py::init([](const RobustKernel &robust_kernel) {
-                   return new TransformationEstimationPointToPlane(
-                           robust_kernel);
+    te_p2l.def(py::init([](const RobustKernel &kernel) {
+                   return new TransformationEstimationPointToPlane(kernel);
                }),
-               "robust_kernel"_a)
+               "kernel"_a)
             .def("__repr__",
                  [](const TransformationEstimationPointToPlane &te) {
                      return std::string("TransformationEstimationPointToPlane");
-                 });
+                 })
+            .def_readwrite("kernel",
+                           &TransformationEstimationPointToPlane::kernel_,
+                           "Robust Kernel used in the Optimization");
+
+    // open3d.t.pipelines.registration.TransformationEstimationForColoredICP
+    // TransformationEstimation
+    py::class_<
+            TransformationEstimationForColoredICP,
+            PyTransformationEstimation<TransformationEstimationForColoredICP>,
+            TransformationEstimation>
+            te_col(m, "TransformationEstimationForColoredICP",
+                   "Class to estimate a transformation between two point "
+                   "clouds using color information");
+    py::detail::bind_default_constructor<TransformationEstimationForColoredICP>(
+            te_col);
+    py::detail::bind_copy_functions<TransformationEstimationForColoredICP>(
+            te_col);
+    te_col.def(py::init([](double lambda_geometric, RobustKernel &kernel) {
+                   return new TransformationEstimationForColoredICP(
+                           lambda_geometric, kernel);
+               }),
+               "lambda_geometric"_a, "kernel"_a)
+            .def(py::init([](const double lambda_geometric) {
+                     return new TransformationEstimationForColoredICP(
+                             lambda_geometric);
+                 }),
+                 "lambda_geometric"_a)
+            .def(py::init([](const RobustKernel kernel) {
+                     auto te = TransformationEstimationForColoredICP();
+                     te.kernel_ = kernel;
+                     return te;
+                 }),
+                 "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationForColoredICP &te) {
+                     return std::string(
+                                    "TransformationEstimationForColoredICP "
+                                    "with lambda_geometric: ") +
+                            std::to_string(te.lambda_geometric_);
+                 })
+            .def_readwrite(
+                    "lambda_geometric",
+                    &TransformationEstimationForColoredICP::lambda_geometric_,
+                    "lambda_geometric")
+            .def_readwrite("kernel",
+                           &TransformationEstimationForColoredICP::kernel_,
+                           "Robust Kernel used in the Optimization");
 }
 
 // Registration functions have similar arguments, sharing arg

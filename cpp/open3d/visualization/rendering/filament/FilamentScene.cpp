@@ -337,14 +337,12 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     }
 
     // Build Filament buffers
-    auto geometry_buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
-    if (!geometry_buffer_builder) {
+    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
+    if (!buffer_builder) {
         utility::LogWarning("Geometry type {} is not supported yet!",
                             static_cast<size_t>(geometry.GetGeometryType()));
         return false;
     }
-
-    auto buffer_builder = GeometryBuffersBuilder::GetBuilder(geometry);
     if (!downsampled_name.empty()) {
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }

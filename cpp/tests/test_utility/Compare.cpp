@@ -35,17 +35,6 @@ std::string LineInfo(const char* file, int line) {
     return ss.str();
 }
 
-void NotImplemented() {
-    std::cout << "\033[0;32m"
-              << "[          ] "
-              << "\033[0;0m";
-    std::cout << "\033[0;31m"
-              << "Not implemented."
-              << "\033[0;0m" << std::endl;
-
-    GTEST_NONFATAL_FAILURE_("Not implemented");
-}
-
 void ExpectEQInternal(const std::string& line_info,
                       const uint8_t* const v0,
                       const uint8_t* const v1,

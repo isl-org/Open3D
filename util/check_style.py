@@ -458,8 +458,21 @@ if __name__ == "__main__":
     python_style_config = str(pwd.parent / ".style.yapf")
     open3d_root_dir = pwd.parent
 
-    cpp_file_list = _glob_files(CPP_FORMAT_DIRS,
-                                ["cpp", "h", "h.in", "cu", "cuh"])
+    cpp_file_list = _glob_files(
+        CPP_FORMAT_DIRS,
+        [
+            # C++
+            "h",
+            "cpp",
+            # CUDA
+            "cuh",
+            "cu",
+            # ISPC
+            "isph",
+            "ispc",
+            # Generated files
+            "h.in",
+        ])
     python_file_list = _glob_files(PYTHON_FORMAT_DIRS, ["py"])
 
     # Remove auto generated files

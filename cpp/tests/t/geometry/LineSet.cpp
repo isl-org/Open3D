@@ -29,8 +29,9 @@
 #include <gmock/gmock.h>
 
 #include "core/CoreTest.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/TensorList.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -385,9 +386,12 @@ TEST_P(LineSetPermuteDevices, FromLegacy) {
     EXPECT_TRUE(lineset.HasLineIndices());
     EXPECT_TRUE(lineset.HasLineColors());
 
-    EXPECT_NO_THROW(lineset.GetPointPositions().AssertDtype(float_dtype));
-    EXPECT_NO_THROW(lineset.GetLineIndices().AssertDtype(int_dtype));
-    EXPECT_NO_THROW(lineset.GetLineColors().AssertDtype(float_dtype));
+    EXPECT_NO_THROW(
+            core::AssertTensorDtype(lineset.GetPointPositions(), float_dtype));
+    EXPECT_NO_THROW(
+            core::AssertTensorDtype(lineset.GetLineIndices(), int_dtype));
+    EXPECT_NO_THROW(
+            core::AssertTensorDtype(lineset.GetLineColors(), float_dtype));
 
     EXPECT_TRUE(lineset.GetPointPositions().AllClose(
             core::Tensor::Ones({2, 3}, float_dtype, device) * 0));

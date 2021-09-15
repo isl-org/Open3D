@@ -48,13 +48,7 @@
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 
-// Compiler-specific function macro.
-// Ref: https://stackoverflow.com/a/4384825
-#ifdef _WIN32
-#define __FN__ __FUNCSIG__
-#else
-#define __FN__ __PRETTY_FUNCTION__
-#endif
+#include "open3d/Macro.h"
 
 // Mimic "macro in namespace" by concatenating `utility::` and a macro.
 // Ref: https://stackoverflow.com/a/11791202
@@ -75,8 +69,9 @@
 //
 // Usage  : utility::LogError(format_string, arg0, arg1, ...);
 // Example: utility::LogError("name: {}, age: {}", "dog", 5);
-#define LogError(...) \
-    Logger::_LogError(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+#define LogError(...)                     \
+    Logger::LogError_(__FILE__, __LINE__, \
+                      static_cast<const char *>(OPEN3D_FUNCTION), __VA_ARGS__)
 
 // LogWarning is used if an error occurs, but the error is also signaled
 // via a return value (i.e., there is no need to throw an exception). This
@@ -86,24 +81,28 @@
 //
 // Usage  : utility::LogWarning(format_string, arg0, arg1, ...);
 // Example: utility::LogWarning("name: {}, age: {}", "dog", 5);
-#define LogWarning(...) \
-    Logger::_LogWarning(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+#define LogWarning(...)                                             \
+    Logger::LogWarning_(__FILE__, __LINE__,                         \
+                        static_cast<const char *>(OPEN3D_FUNCTION), \
+                        __VA_ARGS__)
 
 // LogInfo is used to inform the user with expected output, e.g, pressed a
 // key in the visualizer prints helping information.
 //
 // Usage  : utility::LogInfo(format_string, arg0, arg1, ...);
 // Example: utility::LogInfo("name: {}, age: {}", "dog", 5);
-#define LogInfo(...) \
-    Logger::_LogInfo(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+#define LogInfo(...)                     \
+    Logger::LogInfo_(__FILE__, __LINE__, \
+                     static_cast<const char *>(OPEN3D_FUNCTION), __VA_ARGS__)
 
 // LogDebug is used to print debug/additional information on the state of
 // the algorithm.
 //
 // Usage  : utility::LogDebug(format_string, arg0, arg1, ...);
 // Example: utility::LogDebug("name: {}, age: {}", "dog", 5);
-#define LogDebug(...) \
-    Logger::_LogDebug(__FILE__, __LINE__, (const char *)__FN__, __VA_ARGS__)
+#define LogDebug(...)                     \
+    Logger::LogDebug_(__FILE__, __LINE__, \
+                      static_cast<const char *>(OPEN3D_FUNCTION), __VA_ARGS__)
 
 namespace open3d {
 namespace utility {
@@ -158,64 +157,88 @@ public:
     VerbosityLevel GetVerbosityLevel() const;
 
     template <typename... Args>
-    static void _LogError [[noreturn]] (const char *file_name,
-                                        int line_number,
-                                        const char *function_name,
+    static void LogError_ [[noreturn]] (const char *file,
+                                        int line,
+                                        const char *function,
                                         const char *format,
                                         Args &&... args) {
-        Logger::GetInstance().VError(file_name, line_number, function_name,
-                                     format, fmt::make_format_args(args...));
+        if (sizeof...(Args) > 0) {
+            Logger::GetInstance().VError(
+                    file, line, function,
+                    FormatArgs(format, fmt::make_format_args(args...)));
+        } else {
+            Logger::GetInstance().VError(file, line, function,
+                                         std::string(format));
+        }
     }
     template <typename... Args>
-    static void _LogWarning(const char *file_name,
-                            int line_number,
-                            const char *function_name,
+    static void LogWarning_(const char *file,
+                            int line,
+                            const char *function,
                             const char *format,
                             Args &&... args) {
-        Logger::GetInstance().VWarning(file_name, line_number, function_name,
-                                       format, fmt::make_format_args(args...));
+        if (sizeof...(Args) > 0) {
+            Logger::GetInstance().VWarning(
+                    file, line, function,
+                    FormatArgs(format, fmt::make_format_args(args...)));
+        } else {
+            Logger::GetInstance().VWarning(file, line, function,
+                                           std::string(format));
+        }
     }
     template <typename... Args>
-    static void _LogInfo(const char *file_name,
-                         int line_number,
-                         const char *function_name,
+    static void LogInfo_(const char *file,
+                         int line,
+                         const char *function,
                          const char *format,
                          Args &&... args) {
-        Logger::GetInstance().VInfo(file_name, line_number, function_name,
-                                    format, fmt::make_format_args(args...));
+        if (sizeof...(Args) > 0) {
+            Logger::GetInstance().VInfo(
+                    file, line, function,
+                    FormatArgs(format, fmt::make_format_args(args...)));
+        } else {
+            Logger::GetInstance().VInfo(file, line, function,
+                                        std::string(format));
+        }
     }
     template <typename... Args>
-    static void _LogDebug(const char *file_name,
-                          int line_number,
-                          const char *function_name,
+    static void LogDebug_(const char *file,
+                          int line,
+                          const char *function,
                           const char *format,
                           Args &&... args) {
-        Logger::GetInstance().VDebug(file_name, line_number, function_name,
-                                     format, fmt::make_format_args(args...));
+        if (sizeof...(Args) > 0) {
+            Logger::GetInstance().VDebug(
+                    file, line, function,
+                    FormatArgs(format, fmt::make_format_args(args...)));
+        } else {
+            Logger::GetInstance().VDebug(file, line, function,
+                                         std::string(format));
+        }
     }
 
 private:
     Logger();
-    void VError [[noreturn]] (const char *file_name,
-                              int line_number,
-                              const char *function_name,
-                              const char *format,
-                              fmt::format_args args) const;
-    void VWarning(const char *file_name,
-                  int line_number,
-                  const char *function_name,
-                  const char *format,
-                  fmt::format_args args) const;
-    void VInfo(const char *file_name,
-               int line_number,
-               const char *function_name,
-               const char *format,
-               fmt::format_args args) const;
-    void VDebug(const char *file_name,
-                int line_number,
-                const char *function_name,
-                const char *format,
-                fmt::format_args args) const;
+    static std::string FormatArgs(const char *format, fmt::format_args args) {
+        std::string err_msg = fmt::vformat(format, args);
+        return err_msg;
+    }
+    void VError [[noreturn]] (const char *file,
+                              int line,
+                              const char *function,
+                              const std::string &message) const;
+    void VWarning(const char *file,
+                  int line,
+                  const char *function,
+                  const std::string &message) const;
+    void VInfo(const char *file,
+               int line,
+               const char *function,
+               const std::string &message) const;
+    void VDebug(const char *file,
+                int line,
+                const char *function,
+                const std::string &message) const;
 
 private:
     struct Impl;

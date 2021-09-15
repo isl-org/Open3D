@@ -1,4 +1,4 @@
-add_library(io OBJECT)
+open3d_ispc_add_library(io OBJECT)
 
 target_sources(io PRIVATE
     FeatureIO.cpp

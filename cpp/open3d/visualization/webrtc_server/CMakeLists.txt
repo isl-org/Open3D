@@ -1,4 +1,4 @@
-add_library(webrtc_server OBJECT)
+open3d_ispc_add_library(webrtc_server OBJECT)
 
 target_sources(webrtc_server PRIVATE
     BitmapTrackSource.cpp

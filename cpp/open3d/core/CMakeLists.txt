@@ -1,4 +1,4 @@
-add_library(core OBJECT)
+open3d_ispc_add_library(core OBJECT)
 
 target_sources(core PRIVATE
     AdvancedIndexing.cpp
@@ -13,6 +13,7 @@ target_sources(core PRIVATE
     ShapeUtil.cpp
     SizeVector.cpp
     Tensor.cpp
+    TensorCheck.cpp
     TensorKey.cpp
     TensorList.cpp
 )

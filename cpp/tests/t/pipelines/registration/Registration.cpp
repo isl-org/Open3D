@@ -30,12 +30,13 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace t_reg = open3d::t::pipelines::registration;
 namespace l_reg = open3d::pipelines::registration;
@@ -304,6 +305,75 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
         EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.0005);
         EXPECT_NEAR(reg_p2plane_t.inlier_rmse_, reg_p2plane_l.inlier_rmse_,
                     0.0005);
+    }
+}
+
+TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
+    core::Device device = GetParam();
+
+    t::geometry::PointCloud source_tpcd, target_tpcd;
+    t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) + "/ColoredICP/frag_115.ply",
+            source_tpcd);
+    t::io::ReadPointCloud(
+            std::string(TEST_DATA_DIR) + "/ColoredICP/frag_116.ply",
+            target_tpcd);
+    source_tpcd = source_tpcd.To(device);
+    target_tpcd = target_tpcd.To(device);
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        for (auto& kv : source_tpcd.GetPointAttr()) {
+            if (kv.first == "colors") {
+                source_tpcd.SetPointAttr(
+                        kv.first, kv.second.To(device, dtype).Div(255.0));
+            } else {
+                source_tpcd.SetPointAttr(kv.first, kv.second.To(device, dtype));
+            }
+        }
+        for (auto& kv : target_tpcd.GetPointAttr()) {
+            if (kv.first == "colors") {
+                target_tpcd.SetPointAttr(
+                        kv.first, kv.second.To(device, dtype).Div(255.0));
+            } else {
+                target_tpcd.SetPointAttr(kv.first, kv.second.To(device, dtype));
+            }
+        }
+
+        open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
+        open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
+
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t = core::Tensor::Eye(4, dtype, device);
+
+        // Initial transformation input for legacy implementation.
+        Eigen::Matrix4d initial_transform_l =
+                core::eigen_converter::TensorToEigenMatrixXd(
+                        initial_transform_t);
+
+        double max_correspondence_dist = 0.01;
+        double relative_fitness = 1e-6;
+        double relative_rmse = 1e-6;
+        int max_iterations = 2;
+
+        // PointToPlane - Tensor.
+        t_reg::RegistrationResult reg_p2plane_t = t_reg::RegistrationICP(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                initial_transform_t,
+                t_reg::TransformationEstimationForColoredICP(),
+                t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
+
+        // PointToPlane - Legacy.
+        l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationColoredICP(
+                source_lpcd, target_lpcd, max_correspondence_dist,
+                initial_transform_l,
+                l_reg::TransformationEstimationForColoredICP(),
+                l_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                              max_iterations));
+
+        EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.02);
+        EXPECT_NEAR(reg_p2plane_t.inlier_rmse_, reg_p2plane_l.inlier_rmse_,
+                    0.02);
     }
 }
 

@@ -27,11 +27,11 @@
 
 #include <vector>
 
-#include "open3d/ml/impl/misc/NeighborSearchCommon.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace open3d::core::nns;
 
 template <class T>
 void KnnSearchCPU(const torch::Tensor& points,
