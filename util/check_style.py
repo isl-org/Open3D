@@ -184,10 +184,11 @@ class CppFormatter:
         Returns (true, true) if (style, header) is valid.
         """
 
-        is_valid_header = False
         with open(file_path, 'r') as f:
             if f.read().startswith(CppFormatter.standard_header):
                 is_valid_header = True
+            else:
+                is_valid_header = False
 
         cmd = [
             clang_format_bin,
@@ -291,12 +292,13 @@ class PythonFormatter:
         Returns (true, true) if (style, header) is valid.
         """
 
-        is_valid_header = False
         with open(file_path, 'r') as f:
             content = f.read()
             if len(content) == 0 or content.startswith(
                     PythonFormatter.standard_header):
                 is_valid_header = True
+            else:
+                is_valid_header = False
 
         _, _, changed = yapf.yapflib.yapf_api.FormatFile(
             file_path, style_config=style_config, in_place=False)
@@ -455,44 +457,26 @@ if __name__ == "__main__":
     clang_format_bin = _find_clang_format()
     pwd = Path(os.path.dirname(os.path.abspath(__file__)))
     python_style_config = str(pwd.parent / ".style.yapf")
-    open3d_root_dir = pwd.parent
-
-    cpp_file_list = _glob_files(
-        CPP_FORMAT_DIRS,
-        [
-            # C++
-            "h",
-            "cpp",
-            # CUDA
-            "cuh",
-            "cu",
-            # ISPC
-            "isph",
-            "ispc",
-            # Generated files
-            "h.in",
-        ])
-    python_file_list = _glob_files(PYTHON_FORMAT_DIRS, ["py"])
-
-    # Remove auto generated files
-    auto_generated_files = [
-        "docs/conf.py", "cpp/open3d/visualization/shader/Shader.h"
-    ]
-
-    auto_generated_files_abs = [
-        os.path.join(open3d_root_dir, x) for x in auto_generated_files
-    ]
-    cpp_file_list_final = [
-        x for x in cpp_file_list if x not in auto_generated_files_abs
-    ]
-    python_file_list_final = [
-        x for x in python_file_list if x not in auto_generated_files_abs
-    ]
 
     # Check or apply style
-    cpp_formatter = CppFormatter(cpp_file_list_final,
-                                 clang_format_bin=clang_format_bin)
-    python_formatter = PythonFormatter(python_file_list_final,
+    cpp_formatter = CppFormatter(
+        _glob_files(
+            CPP_FORMAT_DIRS,
+            [
+                # C++
+                "h",
+                "cpp",
+                # CUDA
+                "cuh",
+                "cu",
+                # ISPC
+                "isph",
+                "ispc",
+                # Generated files
+                "h.in",
+            ]),
+        clang_format_bin=clang_format_bin)
+    python_formatter = PythonFormatter(_glob_files(PYTHON_FORMAT_DIRS, ["py"]),
                                        style_config=python_style_config)
     jupyter_formatter = JupyterFormatter(_glob_files(JUPYTER_FORMAT_DIRS,
                                                      ["ipynb"]),
