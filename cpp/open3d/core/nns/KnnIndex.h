@@ -45,6 +45,15 @@ void KnnSearchCUDA(const Tensor& points,
                    int knn,
                    Tensor& neighbors_index,
                    Tensor& neighbors_distance);
+
+template <class T>
+void KnnSearchCUDANew(const Tensor& points,
+                      const Tensor& points_row_splits,
+                      const Tensor& queries,
+                      const Tensor& queries_row_splits,
+                      int knn,
+                      Tensor& neighbors_index,
+                      Tensor& neighbors_distance);
 #endif
 
 class KnnIndex : public NNSIndex {
@@ -71,9 +80,15 @@ public:
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override;
+
+    std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
+                                        int knn,
+                                        bool test) const;
+
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         const Tensor& queries_row_splits,
-                                        int knn) const;
+                                        int knn,
+                                        bool test = false) const;
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor& query_points,
                                                     const Tensor& radii,

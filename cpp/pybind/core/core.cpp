@@ -52,7 +52,9 @@ void pybind_core(py::module& m) {
     pybind_core_scalar(m_core);
 
     // opn3d::core::nns namespace.
-    nns::pybind_core_nns(m_core);
+    py::module m_nns = m_core.def_submodule("nns");
+    nns::pybind_core_nns(m_nns);
+    nns::pybind_core_knn(m_nns);
 }
 
 }  // namespace core
