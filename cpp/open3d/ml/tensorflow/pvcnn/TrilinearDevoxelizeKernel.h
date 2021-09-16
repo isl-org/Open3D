@@ -37,7 +37,7 @@ public:
             tensorflow::OpKernelConstruction* context)
         : tensorflow::OpKernel(context) {
         using namespace tensorflow;
-        OP_REQUIRES_OK(context, context->GetAttr("r", &r));
+        OP_REQUIRES_OK(context, context->GetAttr("resolution", &r));
         OP_REQUIRES_OK(context, context->GetAttr("is_training", &is_training));
         OP_REQUIRES(context, r > 0,
                     errors::InvalidArgument(
@@ -122,7 +122,7 @@ public:
             tensorflow::OpKernelConstruction* context)
         : tensorflow::OpKernel(context) {
         using namespace tensorflow;
-        OP_REQUIRES_OK(context, context->GetAttr("r", &r));
+        OP_REQUIRES_OK(context, context->GetAttr("resolution", &r));
         OP_REQUIRES(
                 context, r > 0,
                 errors::InvalidArgument(

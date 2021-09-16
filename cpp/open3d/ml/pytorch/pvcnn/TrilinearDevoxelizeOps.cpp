@@ -43,6 +43,20 @@ std::vector<at::Tensor> trilinear_devoxelize_forward(
     CHECK_TYPE(features, kFloat32);
     CHECK_TYPE(coords, kFloat32);
 
+    CHECK_SAME_DTYPE(features, coords);
+
+    // check input shapes
+    {
+        using namespace open3d::ml::op_util;
+        Dim batch_size("batch_size");
+        Dim feat_dim("feat_dim");
+        Dim num_points("num_points");
+        Dim resolution("resolution");
+        CHECK_SHAPE(coords, batch_size, 3, num_points);
+        CHECK_SHAPE(features, batch_size, feat_dim, resolution, resolution,
+                    resolution);
+    }
+
     int b = features.size(0);
     int c = features.size(1);
     int n = coords.size(2);
@@ -86,9 +100,22 @@ at::Tensor trilinear_devoxelize_backward(const at::Tensor grad_y,
     CHECK_CONTIGUOUS(grad_y);
     CHECK_CONTIGUOUS(weights);
     CHECK_CONTIGUOUS(indices);
+    CHECK_TYPE(indices, kInt32);
     CHECK_TYPE(grad_y, kFloat32);
     CHECK_TYPE(weights, kFloat32);
-    CHECK_TYPE(indices, kInt32);
+
+    CHECK_SAME_DTYPE(weights, grad_y);
+
+    // check input shapes
+    {
+        using namespace open3d::ml::op_util;
+        Dim batch_size("batch_size");
+        Dim feat_dim("feat_dim");
+        Dim num_points("num_points");
+        CHECK_SHAPE(grad_y, batch_size, feat_dim, num_points);
+        CHECK_SHAPE(indices, batch_size, 8, num_points);
+        CHECK_SHAPE(weights, batch_size, 8, num_points);
+    }
 
     int b = grad_y.size(0);
     int c = grad_y.size(1);
