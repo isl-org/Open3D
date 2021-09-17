@@ -88,12 +88,13 @@ class TensorboardOpen3DPluginClient {
     */
     addAppEventListeners = () => {
         window.addEventListener("beforeunload", this.closeWindow);
+        // TODO: Ensure TB data reload maintains app state
         // Listen for the user clicking on the main TB reload button
-        let tbReloadButton =
-            parent.document.querySelector(".reload-button");
-        if (tbReloadButton != null) {
-            tbReloadButton.addEventListener("click", this.reloadRunTags);
-        }
+        // let tbReloadButton =
+        //     parent.document.querySelector(".reload-button");
+        // if (tbReloadButton != null) {
+        //     tbReloadButton.addEventListener("click", this.reloadRunTags);
+        // }
         // App option handling
         document.getElementById("ui-options-step").addEventListener("change", (evt) => {
             if (evt.target.checked) {
@@ -272,17 +273,17 @@ class TensorboardOpen3DPluginClient {
      * the event file. Automatically run on loading.
      */
     reloadRunTags = () => {
-        this.messageId += 1;
-        // Any _open_ window_id may be used.
-        const windowUId = this.webRtcClientList.keys().next().value;
-        const getRunTagsMessage = {
-            messageId: this.messageId,
-            window_id: windowUId,
-            class_name: "tensorboard/" + windowUId + "/get_run_tags"
-        };
-        window.console.info("Sending getRunTagsMessage: ", getRunTagsMessage);
         if (this.webRtcClientList.size > 0) {
             let client = this.webRtcClientList.values().next().value;
+            // Any _open_ window_id may be used.
+            const windowUId = this.webRtcClientList.keys().next().value;
+            this.messageId += 1;
+            const getRunTagsMessage = {
+                messageId: this.messageId,
+                window_id: windowUId,
+                class_name: "tensorboard/" + windowUId + "/get_run_tags"
+            };
+            window.console.info("Sending getRunTagsMessage: ", getRunTagsMessage);
             client.dataChannel.send(JSON.stringify(getRunTagsMessage));
         } else {
             window.console.warn("No webRtcStreamer object initialized!");
