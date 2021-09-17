@@ -89,7 +89,6 @@ class _AsyncEventLoop:
 
     def _thread_main(self):
         """Main GUI thread event loop"""
-        # TODO(Sameer): This event loop uses up a CPU core completely
         app = o3d.visualization.gui.Application.instance
         app.initialize()
 

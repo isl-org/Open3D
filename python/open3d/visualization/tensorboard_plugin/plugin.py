@@ -387,6 +387,57 @@ class Open3DPlugin(base_plugin.TBPlugin):
         self._dummy_window = async_event_loop.run_sync(
             gui.Application.instance.create_window, "Open3D Dummy Window", 32,
             32)
+        webrtc_server.register_data_channel_message_callback(
+            "tensorboard/show_hide_axes", self._show_hide)
+        webrtc_server.register_data_channel_message_callback(
+            "tensorboard/show_hide_ground", self._show_hide)
+
+    def _show_hide(self, message):
+        """
+        JSON message format:: json
+
+            {
+              "messageId": 3,
+              "class_name": "tensorboard/show_hide_axes",
+              "window_uid_list": ["window_4", "window_5"],
+              show: false
+            }
+
+        All correct window_ids will have their axes shown / hidden. A return
+        status message is provided.
+        Response:: json
+
+            {
+              "messageId": 3,
+              "class_name": "tensorboard/show_hide_axes",
+              "window_uid_list": ["window_5"],
+              show: false,
+              status: "Bad window"   # or "OK"
+            }
+        """
+        try:
+            _log.debug(f"[DC message recv] {message}")
+            message = json.loads(message)
+            show = bool(message["show"])
+            status = "OK"
+            for window_uid in tuple(message["window_uid_list"]):
+                window_uid = str(window_uid)
+                plugin_window = self._windows.get(str(window_uid))
+                # ipdb.set_trace()
+                if plugin_window is not None:
+                    if message["class_name"] == "tensorboard/show_hide_axes":
+                        plugin_window.window.show_axes = show
+                    elif message[
+                            "class_name"] == "tensorboard/show_hide_ground":
+                        plugin_window.window.show_ground = show
+                    async_event_loop.run_sync(plugin_window.window.post_redraw)
+                else:
+                    status = "Bad window."
+                    message["window_uid_list"].pop(window_uid)
+            message["status"] = status
+            return json.dumps(message)
+        except Exception as e:
+            return json.dumps({"message": message, "status": repr(e)})
 
     def get_plugin_apps(self):
         """Returns a set of WSGI applications that the plugin implements.

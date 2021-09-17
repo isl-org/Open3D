@@ -217,6 +217,14 @@ let WebRtcStreamer = (function () {
     this.addEventListeners(videourl);
   };
 
+  // Default function to send JSON data over data channel. Override to
+  // implement features such as synchronized updates over multiple windows.
+  WebRtcStreamer.prototype.sendJsonData = function (jsonData) {
+    if (typeof this.dataChannel != "undefined") {
+      this.dataChannel.send(JSON.stringify(jsonData));
+    }
+  }
+
   WebRtcStreamer.prototype.addEventListeners = function (windowUID) {
     if (this.videoElt) {
       var parentDivElt = this.videoElt.parentElement;
@@ -257,7 +265,7 @@ let WebRtcStreamer = (function () {
           height: parseInt(heightInputElt.value),
           width: parseInt(widthInputElt.value),
         };
-        this.dataChannel.send(JSON.stringify(resizeEvent));
+        this.sendJsonData(resizeEvent);
       };
       controllerDivElt.appendChild(resizeButtonElt);
 
@@ -301,7 +309,7 @@ let WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.sendJsonData(open3dMouseEvent);
         },
         false
       );
@@ -322,7 +330,7 @@ let WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.sendJsonData(open3dMouseEvent);
         },
         false
       );
@@ -342,7 +350,7 @@ let WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.sendJsonData(open3dMouseEvent);
         },
         false
       );
@@ -363,7 +371,7 @@ let WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.sendJsonData(open3dMouseEvent);
         },
         false
       );
@@ -385,7 +393,7 @@ let WebRtcStreamer = (function () {
               buttons: event.buttons, // MouseButtons ORed together
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.sendJsonData(open3dMouseEvent);
         },
         false
       );
@@ -408,7 +416,7 @@ let WebRtcStreamer = (function () {
               buttons: 1, // MouseButtons ORed together
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.sendJsonData(open3dMouseEvent);
         },
         false
       );
@@ -427,7 +435,7 @@ let WebRtcStreamer = (function () {
               count: 1,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.sendJsonData(open3dMouseEvent);
         },
         false
       );
@@ -463,7 +471,7 @@ let WebRtcStreamer = (function () {
               isTrackpad: isTrackpad ? 1 : 0,
             },
           };
-          this.dataChannel.send(JSON.stringify(open3dMouseEvent));
+          this.sendJsonData(open3dMouseEvent);
         },
         { passive: false }
       );
