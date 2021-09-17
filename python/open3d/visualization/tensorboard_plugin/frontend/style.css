@@ -69,6 +69,7 @@
 
 /* Container for a single run */
 .webrtc {
+  z-index: 1000;
   /* Child of a flex container */
   flex: 1 1 576;
 
@@ -189,4 +190,27 @@ input[type="radio"] ~ .checkmark {
   height: 0.6em;
   border-radius: 50%;
   background: white;
+}
+
+/* Busy indicator while loading
+ * From: https://www.w3schools.com/howto/howto_css_loader.asp
+ */
+.loader {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  top: 50%;
+  left: 50%;
+  border: 16px solid whitesmoke;
+  border-top: 16px solid darkgray;
+  border-bottom: 16px solid darkgray;
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
+  z-index: 2000;    /* Higher than for .webrtc */
+  opacity: 50%;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

@@ -196,20 +196,20 @@ class TensorboardOpen3DPluginClient {
     // Add a video element to display WebRTC stream.
     const widgetTemplate = `
         <div class="webrtc" id="widget_${videoId}">
-            <div class="batchidx-step-selector">
-                <div id="batch-idx-selector-div-${windowUId}"></div>
-                <div id="step-selector-div-${windowUId}"></div>
-            </div>
-            <video id="${videoId}" muted="true" playsinline="true">
-                Your browser does not support HTML5 video.
-            </video>
+          <div class="batchidx-step-selector">
+            <div id="batch-idx-selector-div-${windowUId}"></div>
+            <div id="step-selector-div-${windowUId}"></div>
+          </div>
+          <div id="loader_${videoId}"></div>
+          <video id="${videoId}" muted="true" playsinline="true">
+            Your browser does not support HTML5 video.
+          </video>
         </div>
         `;
     let widgetView = document.getElementById("widget-view");
     widgetView.insertAdjacentHTML("beforeend", widgetTemplate);
 
     let videoElt = document.getElementById(videoId);
-    // let client = new WebRtcStreamer(videoElt, this.URL_ROUTE_PREFIX, null, null);
     let client = new WebRtcStreamer(videoElt, this.URL_ROUTE_PREFIX, null, null);
     window.console.info("[addConnection] videoId: " + videoId);
 
@@ -362,6 +362,8 @@ requestGeometryUpdate = (windowUId) => {
   };
   window.console.info("Sending updateGeometryMessage:", updateGeometryMessage);
   this.webRtcClientList.get(windowUId).sendJsonData(updateGeometryMessage);
+  // add busy indicator
+  document.getElementById("loader_video_" + windowUId).classList.add("loader");
 };
 
 /**
@@ -492,9 +494,10 @@ processDCMessage = (windowUId, evt) => {
       message.current.step_limits[1], message.current.step);
     // Init with miliseconds
     const wallTime = new Date(message.current.wall_time * 1000);
-    document.getElementById("video_" + windowUId).title =
-      message.current.run + " at " + wallTime.toLocaleString();
-
+    document.getElementById("video_" + windowUId).title = message.current.run
+      + " at " + wallTime.toLocaleString();
+    // remove busy indicator
+    document.getElementById("loader_video_" + windowUId).classList.remove("loader");
   }
 };
 
