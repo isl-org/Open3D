@@ -122,7 +122,7 @@ class Open3DPluginWindow:
         _log.debug(f"[DC message recv] {message}")
         self.data_reader.reload_events()
         self._validate_run(self.run)
-        self._validate_tags(self.tags)
+        self._validate_tags(self.tags, non_empty=True)
         self._validate_step(self.step)
         self._validate_batch_idx(self.batch_idx)
         # Compose reply
@@ -150,22 +150,17 @@ class Open3DPluginWindow:
         self.run = selected_run
         self.all_tensor_events = self.data_reader.tensor_events(self.run)
 
-    def _validate_tags(self, selected_tags):
-        """Validate tags assuming self.run is valid. Use self.tags or first
-        valid tag in case selected tags are invalid. Also loads all tensor
-        data for validated run-tags combination and unloads data for unselected
-        tags.
+    def _validate_tags(self, selected_tags, non_empty=False):
+        """Validate tags assuming self.run is valid. If non_empty is requested,
+        validated tags will have the first available tag added if selected_tags
+        is empty or invalid. Also loads all tensor data for validated run-tags
+        combination and unloads data for unselected tags.
         """
         selected_tags = [
             t for t in selected_tags
             if t in self.data_reader.run_to_tags[self.run]
         ]
-        if len(selected_tags) == 0:
-            selected_tags = [
-                t for t in self.tags
-                if t in self.data_reader.run_to_tags[self.run]
-            ]
-        if len(selected_tags) == 0 and len(
+        if non_empty and len(selected_tags) == 0 and len(
                 self.data_reader.run_to_tags[self.run]) > 0:
             selected_tags = self.data_reader.run_to_tags[
                 self.run][:1]  # Only first tag default
@@ -292,10 +287,12 @@ class Open3DPluginWindow:
                 _log.debug(f"Removing geometry {current_item}")
                 async_event_loop.run_sync(self.window.remove_geometry,
                                           current_item)
+        if len(self.geometry_list
+              ) == 0:  # Reset view only if previous empty scene
+            async_event_loop.run_sync(self.window.reset_camera_to_default)
+        else:
+            async_event_loop.run_sync(self.window.post_redraw)
         self.geometry_list = new_geometry_list
-
-        # Includes force_redraw()
-        async_event_loop.run_sync(self.window.reset_camera_to_default)
 
         if not self.init_done.is_set():
             self.init_done.set()
@@ -428,8 +425,10 @@ class Open3DPlugin(base_plugin.TBPlugin):
         with self.window_lock:
             self._windows[this_window.window.uid] = this_window
 
-        response = (f'{{"window_id": "{this_window.window.uid}", "logdir": '
-                    f'"{self._logdir}"}}')
+        response = json.dumps({
+            "window_id": this_window.window.uid,
+            "logdir": self._logdir
+        })
         this_window.init_done.wait()  # Wait for WebRTC initialization
         return werkzeug.Response(response,
                                  content_type="application/json",

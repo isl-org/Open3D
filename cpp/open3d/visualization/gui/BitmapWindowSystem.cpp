@@ -27,6 +27,7 @@
 #include "open3d/visualization/gui/BitmapWindowSystem.h"
 
 #include <chrono>
+#include <mutex>
 #include <queue>
 #include <thread>
 
@@ -111,11 +112,39 @@ struct BitmapTextInputEvent : public BitmapEvent {
     }
 };
 
+/// Thread safe event queue (multiple producers and consumers). pop_front() and
+/// push() are protected by a mutex. push() may fail if the mutex cannot be
+/// acquired immediately. empty() is not protected and is not reliable.
+struct BitmapEventQueue : public std::queue<std::shared_ptr<BitmapEvent>> {
+    using value_t = std::shared_ptr<BitmapEvent>;
+    using super = std::queue<value_t>;
+
+    using super::empty;  // not reliable
+    using super::super;
+    // pop + front needs to be atomic for thread safety. This is exception safe
+    // since shared_ptr copy ctor is noexcept, when it is returned by value.
+    value_t pop_front() {
+        std::lock_guard<std::mutex> lock(evt_q_mutex_);
+        value_t evt = super::front();
+        super::pop();
+        return evt;
+    }
+    void push(const value_t &event) {
+        if (evt_q_mutex_.try_lock()) {
+            super::push(event);
+            evt_q_mutex_.unlock();
+        }
+    }
+
+private:
+    std::mutex evt_q_mutex_;
+};
+
 }  // namespace
 
 struct BitmapWindowSystem::Impl {
     BitmapWindowSystem::OnDrawCallback on_draw_;
-    std::queue<std::shared_ptr<BitmapEvent>> event_queue_;
+    BitmapEventQueue event_queue_;
 };
 
 BitmapWindowSystem::BitmapWindowSystem(Rendering mode /*= Rendering::NORMAL*/)
@@ -140,21 +169,16 @@ void BitmapWindowSystem::SetOnWindowDraw(OnDrawCallback callback) {
     impl_->on_draw_ = callback;
 }
 
+// Processes any events in the queue and sleeps till timeout_secs are pver.
 void BitmapWindowSystem::WaitEventsTimeout(double timeout_secs) {
-    auto t0 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> duration;
-    double dt;
-    do {
-        duration = std::chrono::steady_clock::now() - t0;
-        dt = duration.count();
-        if (!impl_->event_queue_.empty()) {
-            impl_->event_queue_.front()->Execute();
-            impl_->event_queue_.pop();
-            break;
-        } else {
-            std::this_thread::yield();
-        }
-    } while (dt < timeout_secs);
+    auto t_end = std::chrono::steady_clock::now() +
+                 std::chrono::duration<double>(timeout_secs);
+    while (!impl_->event_queue_.empty() &&
+           std::chrono::steady_clock::now() < t_end) {
+        impl_->event_queue_.pop_front()->Execute();
+        std::this_thread::yield();
+    }
+    std::this_thread::sleep_until(t_end);
 }
 
 Size BitmapWindowSystem::GetScreenSize(OSWindow w) {
@@ -178,10 +202,9 @@ void BitmapWindowSystem::DestroyWindow(OSWindow w) {
     // seems to have fallen into the same trap as the first iteration of this
     // code and not considered the possibility of item resources meeting an
     // untimely end. As a result, we need to do some copying of queues.
-    std::queue<std::shared_ptr<BitmapEvent>> filtered_reversed;
+    BitmapEventQueue filtered_reversed;
     while (!impl_->event_queue_.empty()) {
-        auto e = impl_->event_queue_.front();
-        impl_->event_queue_.pop();
+        auto e = impl_->event_queue_.pop_front();
         if (e->event_target != the_deceased) {
             filtered_reversed.push(e);
         }
@@ -190,8 +213,7 @@ void BitmapWindowSystem::DestroyWindow(OSWindow w) {
     // main queue and get the original queue, but filtered of references
     // to this dying window.
     while (!filtered_reversed.empty()) {
-        impl_->event_queue_.push(filtered_reversed.front());
-        filtered_reversed.pop();
+        impl_->event_queue_.push(filtered_reversed.pop_front());
     }
     // Requiem aeternam dona ei. Requiscat in pace.
     delete (BitmapWindow *)w;
