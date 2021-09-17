@@ -321,12 +321,7 @@ function(open3d_ispc_make_build_rules_ target)
 
         # Add files to ISPC_OBJECTS property.
         # This will later be used to resolve library.
-        get_target_property(TARGET_ISPC_OBJECTS ${target} ISPC_OBJECTS)
-        if (NOT TARGET_ISPC_OBJECTS)
-            set(TARGET_ISPC_OBJECTS "")
-        endif()
-        list(APPEND TARGET_ISPC_OBJECTS ${TARGET_OBJECT_FILES})
-        set_target_properties(${target} PROPERTIES ISPC_OBJECTS "${TARGET_ISPC_OBJECTS}")
+        set_property(TARGET ${target} APPEND PROPERTY ISPC_OBJECTS "${TARGET_OBJECT_FILES}")
     endif()
 endfunction()
 
@@ -522,7 +517,7 @@ function(open3d_ispc_target_sources target)
             endif()
         endforeach()
 
-        set_target_properties(${target} PROPERTIES ISPC_SOURCES "${TARGET_ISPC_SOURCES}")
+        set_property(TARGET ${target} APPEND PROPERTY ISPC_SOURCES "${TARGET_ISPC_SOURCES}")
     endif()
 endfunction()
 

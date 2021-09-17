@@ -23,30 +23,46 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-// Copyright 2018 Google Inc. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
-#include <benchmark/benchmark.h>
+// Eigen still applies __host__ __device__ annotation to defaulted functions for
+// some classes. This causes compiler errors on Windows + CUDA. Disable CUDA
+// support for Eigen until this issue has been fixed upstream.
+#define EIGEN_NO_CUDA
 
-#include "open3d/Open3D.h"
+#include <vector>
 
-int main(int argc, char** argv) {
-    open3d::utility::CPUInfo::GetInstance().Print();
-    open3d::utility::ISAInfo::GetInstance().Print();
-    benchmark::Initialize(&argc, argv);
-    if (benchmark::ReportUnrecognizedArguments(argc, argv)) {
-        return 1;
-    }
-    benchmark::RunSpecifiedBenchmarks();
+#include "open3d/Macro.h"
+#include "open3d/core/Dispatch.h"
+#include "open3d/core/Dtype.h"
+#include "open3d/core/ParallelFor.h"
+#include "open3d/core/Tensor.h"
+#include "tests/Tests.h"
+#include "tests/core/CoreTest.h"
+
+namespace open3d {
+namespace tests {
+
+// CUDA does not allow using extended lambdas in private class scope like in
+// googletest's internal test class.
+void RunParallelForOn(core::Tensor& tensor) {
+    int64_t* tensor_data = tensor.GetDataPtr<int64_t>();
+    core::ParallelFor(
+            tensor.GetDevice(), tensor.NumElements(),
+            [=] OPEN3D_HOST_DEVICE(int64_t idx) { tensor_data[idx] = idx; });
 }
+
+TEST(ParallelFor, LambdaCUDA) {
+    const core::Device device("CUDA:0");
+    const size_t N = 10000000;
+    core::Tensor tensor({N, 1}, core::Int64, device);
+
+    RunParallelForOn(tensor);
+
+    core::Tensor tensor_cpu = tensor.To(core::Device("CPU:0"));
+    for (int64_t i = 0; i < tensor.NumElements(); ++i) {
+        ASSERT_EQ(tensor_cpu.GetDataPtr<int64_t>()[i], i);
+    }
+}
+
+}  // namespace tests
+}  // namespace open3d

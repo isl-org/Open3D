@@ -23,30 +23,57 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-// Copyright 2018 Google Inc. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
-#include <benchmark/benchmark.h>
+#pragma once
 
-#include "open3d/Open3D.h"
+namespace open3d {
+namespace utility {
 
-int main(int argc, char** argv) {
-    open3d::utility::CPUInfo::GetInstance().Print();
-    open3d::utility::ISAInfo::GetInstance().Print();
-    benchmark::Initialize(&argc, argv);
-    if (benchmark::ReportUnrecognizedArguments(argc, argv)) {
-        return 1;
-    }
-    benchmark::RunSpecifiedBenchmarks();
+/// Generic functor for overloading (lambda) functions.
+/// See Overload(...) function on how to use it.
+///
+/// \note In C++17, this could be simplified to:
+///
+/// \code
+/// template <typename... Ts>
+/// struct Overloaded : Ts... {
+///     using Ts::operator()...;
+/// };
+/// \endcode
+template <typename... Ts>
+struct Overloaded;
+
+template <typename T1, typename... Ts>
+struct Overloaded<T1, Ts...> : T1, Overloaded<Ts...> {
+    Overloaded(T1 t1, Ts... ts) : T1(t1), Overloaded<Ts...>(ts...) {}
+
+    using T1::operator();
+    using Overloaded<Ts...>::operator();
+};
+
+template <typename T1>
+struct Overloaded<T1> : T1 {
+    Overloaded(T1 t1) : T1(t1) {}
+
+    using T1::operator();
+};
+
+/// Overloads an arbitrary set of (lambda) functions.
+///
+/// Example:
+///
+/// \code
+/// auto Func = utility::Overload(
+///         [&](int i) { utility::LogInfo("Got int {}", i); },
+///         [&](float f) { utility::LogInfo("Got float {}", f); });
+///
+/// Func(1);     // Prints: Got int 1
+/// Func(2.4f);  // Prints: Got float 2.4
+/// \endcode
+template <typename... Ts>
+Overloaded<Ts...> Overload(Ts... ts) {
+    return Overloaded<Ts...>(ts...);
 }
+
+}  // namespace utility
+}  // namespace open3d

@@ -1,4 +1,4 @@
-add_executable(benchmarks)
+open3d_ispc_add_executable(benchmarks)
 
 add_subdirectory(core)
 add_subdirectory(geometry)
