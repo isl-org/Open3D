@@ -203,7 +203,6 @@ void IntegrateCPU
 
     bool integrate_color =
             block_value_map.Contains("color") && color.NumElements() > 0;
-
     color_t* color_base_ptr = nullptr;
     ArrayIndexer color_indexer;
     if (integrate_color) {
@@ -655,7 +654,7 @@ void ExtractPointCloudCPU
          const core::Tensor& nb_indices,
          const core::Tensor& nb_masks,
          const core::Tensor& block_keys,
-         const std::vector<core::Tensor>& block_values,
+         const TensorMap& block_value_map,
          core::Tensor& points,
          core::Tensor& normals,
          core::Tensor& colors,
@@ -680,12 +679,20 @@ void ExtractPointCloudCPU
     // Plain arrays that does not require indexers
     const index_t* indices_ptr = indices.GetDataPtr<index_t>();
 
-    const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
-    const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
-
-    const color_t* color_base_ptr =
-            block_values.size() < 3 ? nullptr
-                                    : block_values[2].GetDataPtr<color_t>();
+    if (!block_value_map.Contains("tsdf") ||
+        !block_value_map.Contains("weight")) {
+        utility::LogError(
+                "TSDF and/or weight not allocated in blocks, please implement "
+                "customized integration.");
+    }
+    const tsdf_t* tsdf_base_ptr =
+            block_value_map.at("tsdf").GetDataPtr<tsdf_t>();
+    const weight_t* weight_base_ptr =
+            block_value_map.at("weight").GetDataPtr<weight_t>();
+    const color_t* color_base_ptr = nullptr;
+    if (block_value_map.Contains("color")) {
+        color_base_ptr = block_value_map.at("color").GetDataPtr<color_t>();
+    }
 
     index_t n_blocks = indices.GetLength();
     index_t n = n_blocks * resolution3;
@@ -693,7 +700,7 @@ void ExtractPointCloudCPU
     // Output
 #if defined(__CUDACC__)
     core::Tensor count(std::vector<index_t>{0}, {1}, core::Int32,
-                       block_values[0].GetDevice());
+                       block_keys.GetDevice());
     index_t* count_ptr = count.GetDataPtr<index_t>();
 #else
     std::atomic<index_t> count_atomic(0);
@@ -905,7 +912,7 @@ void ExtractTriangleMeshCPU
          const core::Tensor& nb_block_indices,
          const core::Tensor& nb_block_masks,
          const core::Tensor& block_keys,
-         const std::vector<core::Tensor>& block_values,
+         const TensorMap& block_value_map,
          core::Tensor& vertices,
          core::Tensor& triangles,
          core::Tensor& vertex_normals,
@@ -951,15 +958,22 @@ void ExtractTriangleMeshCPU
     const index_t* indices_ptr = block_indices.GetDataPtr<index_t>();
     const index_t* inv_indices_ptr = inv_block_indices.GetDataPtr<index_t>();
 
-    const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
-    const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
-
-    const color_t* color_base_ptr =
-            block_values.size() < 3 ? nullptr
-                                    : block_values[2].GetDataPtr<color_t>();
+    if (!block_value_map.Contains("tsdf") ||
+        !block_value_map.Contains("weight")) {
+        utility::LogError(
+                "TSDF and/or weight not allocated in blocks, please implement "
+                "customized integration.");
+    }
+    const tsdf_t* tsdf_base_ptr =
+            block_value_map.at("tsdf").GetDataPtr<tsdf_t>();
+    const weight_t* weight_base_ptr =
+            block_value_map.at("weight").GetDataPtr<weight_t>();
+    const color_t* color_base_ptr = nullptr;
+    if (block_value_map.Contains("color")) {
+        color_base_ptr = block_value_map.at("color").GetDataPtr<color_t>();
+    }
 
     index_t n = n_blocks * resolution3;
-
     // Pass 0: analyze mesh structure, set up one-on-one correspondences
     // from edges to vertices.
 

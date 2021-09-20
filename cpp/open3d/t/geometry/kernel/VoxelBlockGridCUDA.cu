@@ -281,8 +281,7 @@ template void RayCastCUDA<float, float, float>(FN_ARGUMENTS);
 #define FN_ARGUMENTS                                                           \
     const core::Tensor &block_indices, const core::Tensor &nb_block_indices,   \
             const core::Tensor &nb_block_masks,                                \
-            const core::Tensor &block_keys,                                    \
-            const std::vector<core::Tensor> &block_values,                     \
+            const core::Tensor &block_keys, const TensorMap &block_value_map,  \
             core::Tensor &points, core::Tensor &normals, core::Tensor &colors, \
             index_t block_resolution, float voxel_size,                        \
             float weight_threshold, index_t &valid_size
@@ -311,8 +310,7 @@ void ExtractTriangleMeshCUDA(const core::Tensor &block_indices,
     const core::Tensor &block_indices, const core::Tensor &inv_block_indices, \
             const core::Tensor &nb_block_indices,                             \
             const core::Tensor &nb_block_masks,                               \
-            const core::Tensor &block_keys,                                   \
-            const std::vector<core::Tensor> &block_values,                    \
+            const core::Tensor &block_keys, const TensorMap &block_value_map, \
             core::Tensor &vertices, core::Tensor &triangles,                  \
             core::Tensor &vertex_normals, core::Tensor &vertex_colors,        \
             index_t block_resolution, float voxel_size,                       \

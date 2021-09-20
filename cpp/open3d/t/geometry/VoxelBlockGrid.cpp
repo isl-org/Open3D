@@ -376,10 +376,11 @@ PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
     core::Tensor points, normals, colors;
 
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
-    std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
+    TensorMap block_value_map =
+            ConstructTensorMap(*block_hashmap_, name_attr_map_);
     kernel::voxel_grid::ExtractPointCloud(
             active_buf_indices, active_nb_buf_indices, active_nb_masks,
-            block_keys, block_values, points, normals, colors,
+            block_keys, block_value_map, points, normals, colors,
             block_resolution_, voxel_size_, weight_threshold, estimated_number);
 
     auto pcd = PointCloud(points.Slice(0, 0, estimated_number));
@@ -413,10 +414,11 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
     int vertex_count = estimated_number;
 
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
-    std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
+    TensorMap block_value_map =
+            ConstructTensorMap(*block_hashmap_, name_attr_map_);
     kernel::voxel_grid::ExtractTriangleMesh(
             active_buf_indices_i32, inverse_index_map, active_nb_buf_indices,
-            active_nb_masks, block_keys, block_values, vertices, triangles,
+            active_nb_masks, block_keys, block_value_map, vertices, triangles,
             vertex_normals, vertex_colors, block_resolution_, voxel_size_,
             weight_threshold, vertex_count);
 

@@ -232,7 +232,7 @@ void ExtractPointCloud(const core::Tensor& block_indices,
                        const core::Tensor& nb_block_indices,
                        const core::Tensor& nb_block_masks,
                        const core::Tensor& block_keys,
-                       const std::vector<core::Tensor>& block_values,
+                       const TensorMap& block_value_map,
                        core::Tensor& points,
                        core::Tensor& normals,
                        core::Tensor& colors,
@@ -243,25 +243,29 @@ void ExtractPointCloud(const core::Tensor& block_indices,
     core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
 
     using tsdf_t = float;
+    core::Dtype block_weight_dtype = core::Dtype::Float32;
+    core::Dtype block_color_dtype = core::Dtype::Float32;
+    if (block_value_map.Contains("weight")) {
+        block_weight_dtype = block_value_map.at("weight").GetDtype();
+    }
+    if (block_value_map.Contains("color")) {
+        block_color_dtype = block_value_map.at("color").GetDtype();
+    }
 
-    // TODO: use TensorMap instead
-    core::Dtype color_dtype = (block_values.size() < 3)
-                                      ? core::Dtype::Float32
-                                      : block_values[2].GetDtype();
     DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-            block_values[1].GetDtype(), color_dtype, [&] {
+            block_weight_dtype, block_color_dtype, [&] {
                 if (device_type == core::Device::DeviceType::CPU) {
                     ExtractPointCloudCPU<tsdf_t, weight_t, color_t>(
                             block_indices, nb_block_indices, nb_block_masks,
-                            block_keys, block_values, points, normals, colors,
-                            block_resolution, voxel_size, weight_threshold,
-                            valid_size);
+                            block_keys, block_value_map, points, normals,
+                            colors, block_resolution, voxel_size,
+                            weight_threshold, valid_size);
                 } else if (device_type == core::Device::DeviceType::CUDA) {
                     ExtractPointCloudCUDA<tsdf_t, weight_t, color_t>(
                             block_indices, nb_block_indices, nb_block_masks,
-                            block_keys, block_values, points, normals, colors,
-                            block_resolution, voxel_size, weight_threshold,
-                            valid_size);
+                            block_keys, block_value_map, points, normals,
+                            colors, block_resolution, voxel_size,
+                            weight_threshold, valid_size);
                 } else {
                     utility::LogError("Unimplemented device");
                 }
@@ -273,7 +277,7 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
                          const core::Tensor& nb_block_indices,
                          const core::Tensor& nb_block_masks,
                          const core::Tensor& block_keys,
-                         const std::vector<core::Tensor>& block_values,
+                         const TensorMap& block_value_map,
                          core::Tensor& vertices,
                          core::Tensor& triangles,
                          core::Tensor& vertex_normals,
@@ -285,23 +289,29 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
     core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
 
     using tsdf_t = float;
-    core::Dtype color_dtype = (block_values.size() < 3)
-                                      ? core::Dtype::Float32
-                                      : block_values[2].GetDtype();
+    core::Dtype block_weight_dtype = core::Dtype::Float32;
+    core::Dtype block_color_dtype = core::Dtype::Float32;
+    if (block_value_map.Contains("weight")) {
+        block_weight_dtype = block_value_map.at("weight").GetDtype();
+    }
+    if (block_value_map.Contains("color")) {
+        block_color_dtype = block_value_map.at("color").GetDtype();
+    }
+
     DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-            block_values[1].GetDtype(), color_dtype, [&] {
+            block_weight_dtype, block_color_dtype, [&] {
                 if (device_type == core::Device::DeviceType::CPU) {
                     ExtractTriangleMeshCPU<tsdf_t, weight_t, color_t>(
                             block_indices, inv_block_indices, nb_block_indices,
-                            nb_block_masks, block_keys, block_values, vertices,
-                            triangles, vertex_normals, vertex_colors,
+                            nb_block_masks, block_keys, block_value_map,
+                            vertices, triangles, vertex_normals, vertex_colors,
                             block_resolution, voxel_size, weight_threshold,
                             vertex_count);
                 } else if (device_type == core::Device::DeviceType::CUDA) {
                     ExtractTriangleMeshCUDA<tsdf_t, weight_t, color_t>(
                             block_indices, inv_block_indices, nb_block_indices,
-                            nb_block_masks, block_keys, block_values, vertices,
-                            triangles, vertex_normals, vertex_colors,
+                            nb_block_masks, block_keys, block_value_map,
+                            vertices, triangles, vertex_normals, vertex_colors,
                             block_resolution, voxel_size, weight_threshold,
                             vertex_count);
                 } else {
