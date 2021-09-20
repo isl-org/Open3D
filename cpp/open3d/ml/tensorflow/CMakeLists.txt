@@ -174,3 +174,7 @@ if (BUILD_CUDA_MODULE)
         )
     endif()
 endif()
+
+install(TARGETS open3d_tf_ops EXPORT Open3DTargets
+    LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
+)
