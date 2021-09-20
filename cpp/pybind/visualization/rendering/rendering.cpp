@@ -332,8 +332,7 @@ void pybind_rendering_classes(py::module &m) {
                            "[R, G, B, A]. Color values must be in [0.0, 1.0]");
     gradient.def(py::init<>())
             .def(py::init<std::vector<Gradient::Point>>())
-            .def_property("points", &Gradient::GetPoints,
-                          &Gradient::SetPoints)
+            .def_property("points", &Gradient::GetPoints, &Gradient::SetPoints)
             .def_property("mode", &Gradient::GetMode, &Gradient::SetMode);
 
     // ---- Material ----
