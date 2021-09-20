@@ -40,7 +40,7 @@ namespace t {
 namespace geometry {
 
 ////////////////////
-/// Local function
+/// Local functions
 std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
         std::shared_ptr<core::HashMap> &hashmap,
         const core::Tensor &active_buf_indices) {
@@ -70,6 +70,18 @@ std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
     hashmap->Find(keys_nb, buf_indices_nb, masks_nb);
     return std::make_pair(buf_indices_nb.View({27, n, 1}),
                           masks_nb.View({27, n, 1}));
+}
+
+TensorMap ConstructTensorMap(
+        const core::HashMap &block_hashmap,
+        std::unordered_map<std::string, int> name_attr_map) {
+    TensorMap tensor_map("tsdf");
+    for (auto it : name_attr_map) {
+        std::string name = it.first;
+        int buf_idx = it.second;
+        tensor_map[name] = block_hashmap.GetValueTensor(buf_idx);
+    }
+    return tensor_map;
 }
 ////////////////////
 
@@ -276,12 +288,15 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
     block_hashmap_->Find(block_coords, buf_indices, masks);
 
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
-    std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
+    TensorMap block_value_map =
+            ConstructTensorMap(*block_hashmap_, name_attr_map_);
+
     float trunc_multiplier = block_resolution_ * 0.5;
-    kernel::voxel_grid::Integrate(
-            depth.AsTensor(), color.AsTensor(), buf_indices, block_keys,
-            block_values, intrinsic, extrinsic, block_resolution_, voxel_size_,
-            voxel_size_ * trunc_multiplier, depth_scale, depth_max);
+    kernel::voxel_grid::Integrate(depth.AsTensor(), color.AsTensor(),
+                                  buf_indices, block_keys, block_value_map,
+                                  intrinsic, extrinsic, block_resolution_,
+                                  voxel_size_, voxel_size_ * trunc_multiplier,
+                                  depth_scale, depth_max);
 }
 
 TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,

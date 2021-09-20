@@ -169,7 +169,7 @@ void IntegrateCPU
          const core::Tensor& color,
          const core::Tensor& indices,
          const core::Tensor& block_keys,
-         std::vector<core::Tensor>& block_values,
+         TensorMap& block_value_map,
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          index_t resolution,
@@ -187,20 +187,29 @@ void IntegrateCPU
 
     ArrayIndexer block_keys_indexer(block_keys, 1);
     ArrayIndexer depth_indexer(depth, 2);
-    ArrayIndexer color_indexer;
-
-    bool integrate_color = false;
-    if (color.NumElements() != 0) {
-        color_indexer = ArrayIndexer(color, 2);
-        integrate_color = true;
-    }
-
     core::Device device = block_keys.GetDevice();
 
     const index_t* indices_ptr = indices.GetDataPtr<index_t>();
-    tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
-    weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
-    color_t* color_base_ptr = block_values[2].GetDataPtr<color_t>();
+
+    if (!block_value_map.Contains("tsdf") ||
+        !block_value_map.Contains("weight")) {
+        utility::LogError(
+                "TSDF and/or weight not allocated in blocks, please implement "
+                "customized integration.");
+    }
+    tsdf_t* tsdf_base_ptr = block_value_map.at("tsdf").GetDataPtr<tsdf_t>();
+    weight_t* weight_base_ptr =
+            block_value_map.at("weight").GetDataPtr<weight_t>();
+
+    bool integrate_color =
+            block_value_map.Contains("color") && color.NumElements() > 0;
+
+    color_t* color_base_ptr = nullptr;
+    ArrayIndexer color_indexer;
+    if (integrate_color) {
+        color_base_ptr = block_value_map.at("color").GetDataPtr<color_t>();
+        color_indexer = ArrayIndexer(color, 2);
+    }
 
     index_t n = indices.GetLength() * resolution3;
     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx) {
@@ -256,14 +265,16 @@ void IntegrateCPU
 
         tsdf_t* tsdf_ptr = tsdf_base_ptr + linear_idx;
         weight_t* weight_ptr = weight_base_ptr + linear_idx;
-        color_t* color_ptr = color_base_ptr + 3 * linear_idx;
 
         float inv_wsum = 1.0f / (*weight_ptr + 1);
         float weight = *weight_ptr;
         *tsdf_ptr = (weight * (*tsdf_ptr) + sdf) * inv_wsum;
+
         if (integrate_color) {
+            color_t* color_ptr = color_base_ptr + 3 * linear_idx;
             input_color_t* input_color_ptr =
                     color_indexer.GetDataPtr<input_color_t>(ui, vi);
+
             for (index_t i = 0; i < 3; ++i) {
                 color_ptr[i] =
                         (weight * color_ptr[i] + input_color_ptr[i]) * inv_wsum;

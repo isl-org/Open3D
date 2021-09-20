@@ -146,7 +146,7 @@ void Integrate(const core::Tensor& depth,
                const core::Tensor& color,
                const core::Tensor& block_indices,
                const core::Tensor& block_keys,
-               std::vector<core::Tensor>& block_values,
+               TensorMap& block_value_map,
                const core::Tensor& intrinsic,
                const core::Tensor& extrinsic,
                index_t resolution,
@@ -157,21 +157,32 @@ void Integrate(const core::Tensor& depth,
     core::Device::DeviceType device_type = depth.GetDevice().GetType();
 
     using tsdf_t = float;
+    core::Dtype block_weight_dtype = core::Dtype::Float32;
+    core::Dtype block_color_dtype = core::Dtype::Float32;
+    if (block_value_map.Contains("weight")) {
+        block_weight_dtype = block_value_map.at("weight").GetDtype();
+    }
+    if (block_value_map.Contains("color")) {
+        block_color_dtype = block_value_map.at("color").GetDtype();
+    }
+
     DISPATCH_INPUT_DTYPE_TO_TEMPLATE(depth.GetDtype(), color.GetDtype(), [&] {
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-                block_values[1].GetDtype(), block_values[2].GetDtype(), [&] {
+                block_weight_dtype, block_color_dtype, [&] {
                     if (device_type == core::Device::DeviceType::CPU) {
                         IntegrateCPU<input_depth_t, input_color_t, tsdf_t,
                                      weight_t, color_t>(
                                 depth, color, block_indices, block_keys,
-                                block_values, intrinsic, extrinsic, resolution,
-                                voxel_size, sdf_trunc, depth_scale, depth_max);
+                                block_value_map, intrinsic, extrinsic,
+                                resolution, voxel_size, sdf_trunc, depth_scale,
+                                depth_max);
                     } else if (device_type == core::Device::DeviceType::CUDA) {
                         IntegrateCUDA<input_depth_t, input_color_t, tsdf_t,
                                       weight_t, color_t>(
                                 depth, color, block_indices, block_keys,
-                                block_values, intrinsic, extrinsic, resolution,
-                                voxel_size, sdf_trunc, depth_scale, depth_max);
+                                block_value_map, intrinsic, extrinsic,
+                                resolution, voxel_size, sdf_trunc, depth_scale,
+                                depth_max);
                     } else {
                         utility::LogError("Unimplemented device");
                     }

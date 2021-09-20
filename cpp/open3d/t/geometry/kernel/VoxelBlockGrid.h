@@ -30,6 +30,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashMap.h"
+#include "open3d/t/geometry/TensorMap.h"
 
 namespace open3d {
 namespace t {
@@ -69,7 +70,7 @@ void Integrate(const core::Tensor& depth,
                const core::Tensor& color,
                const core::Tensor& block_indices,
                const core::Tensor& block_keys,
-               std::vector<core::Tensor>& block_values,
+               TensorMap& block_value_map,
                const core::Tensor& intrinsics,
                const core::Tensor& extrinsics,
                index_t resolution,
@@ -158,7 +159,7 @@ void IntegrateCPU(const core::Tensor& depth,
                   const core::Tensor& color,
                   const core::Tensor& block_indices,
                   const core::Tensor& block_keys,
-                  std::vector<core::Tensor>& block_values,
+                  TensorMap& block_value_map,
                   const core::Tensor& intrinsics,
                   const core::Tensor& extrinsics,
                   index_t resolution,
@@ -250,7 +251,7 @@ void IntegrateCUDA(const core::Tensor& depth,
                    const core::Tensor& color,
                    const core::Tensor& block_indices,
                    const core::Tensor& block_keys,
-                   std::vector<core::Tensor>& block_values,
+                   TensorMap& block_value_map,
                    const core::Tensor& intrinsics,
                    const core::Tensor& extrinsics,
                    index_t resolution,

@@ -219,13 +219,13 @@ void DepthTouchCPU(std::shared_ptr<core::HashMap> &hashmap,
     }
 }
 
-#define FN_ARGUMENTS                                                        \
-    const core::Tensor &depth, const core::Tensor &color,                   \
-            const core::Tensor &indices, const core::Tensor &block_keys,    \
-            std::vector<core::Tensor> &block_values,                        \
-            const core::Tensor &intrinsics, const core::Tensor &extrinsics, \
-            index_t resolution, float voxel_size, float sdf_trunc,          \
-            float depth_scale, float depth_max
+#define FN_ARGUMENTS                                                     \
+    const core::Tensor &depth, const core::Tensor &color,                \
+            const core::Tensor &indices, const core::Tensor &block_keys, \
+            TensorMap &value_tensor_map, const core::Tensor &intrinsics, \
+            const core::Tensor &extrinsics, index_t resolution,          \
+            float voxel_size, float sdf_trunc, float depth_scale,        \
+            float depth_max
 
 template void IntegrateCPU<uint16_t, uint8_t, float, uint16_t, uint16_t>(
         FN_ARGUMENTS);
