@@ -39,6 +39,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+////////////////////
+/// Local function
 std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
         std::shared_ptr<core::HashMap> &hashmap,
         const core::Tensor &active_buf_indices) {
@@ -69,6 +71,7 @@ std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
     return std::make_pair(buf_indices_nb.View({27, n, 1}),
                           masks_nb.View({27, n, 1}));
 }
+////////////////////
 
 VoxelBlockGrid::VoxelBlockGrid(
         const std::vector<std::string> &attr_names,
@@ -281,16 +284,15 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
             voxel_size_ * trunc_multiplier, depth_scale, depth_max);
 }
 
-std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
-        const core::Tensor &block_coords,
-        const core::Tensor &intrinsic,
-        const core::Tensor &extrinsic,
-        int width,
-        int height,
-        float depth_scale,
-        float depth_min,
-        float depth_max,
-        float weight_threshold) {
+TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
+                                  const core::Tensor &intrinsic,
+                                  const core::Tensor &extrinsic,
+                                  int width,
+                                  int height,
+                                  float depth_scale,
+                                  float depth_min,
+                                  float depth_max,
+                                  float weight_threshold) {
     CheckBlockCoorinates(block_coords);
     CheckIntrinsicTensor(intrinsic);
     CheckExtrinsicTensor(extrinsic);
@@ -305,14 +307,14 @@ std::unordered_map<std::string, core::Tensor> VoxelBlockGrid::RayCast(
             block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
             down_factor, block_resolution_, voxel_size_, depth_min, depth_max);
 
-    std::unordered_map<std::string, core::Tensor> renderings_map;
+    TensorMap renderings_map("vertex");
     renderings_map["vertex"] =
+            core::Tensor({height, width, 3}, core::Float32, device);
+    renderings_map["normal"] =
             core::Tensor({height, width, 3}, core::Float32, device);
     renderings_map["depth"] =
             core::Tensor({height, width, 1}, core::Float32, device);
     renderings_map["color"] =
-            core::Tensor({height, width, 3}, core::Float32, device);
-    renderings_map["normal"] =
             core::Tensor({height, width, 3}, core::Float32, device);
 
     // Mask indicating if its 8 voxel neighbors are all valid.
@@ -435,7 +437,7 @@ void VoxelBlockGrid::Save(const std::string &file_name) const {
                    core::Tensor::Zeros({}, core::Dtype::UInt8, host));
 
     for (auto &it : name_attr_map_) {
-        // Stupid approach, as we don't support char tensors now.
+        // Workaround, as we don't support char tensors now.
         output.emplace(fmt::format("attr_name_{}", it.first),
                        core::Tensor(std::vector<int>{it.second}, {1},
                                     core::Int32, host));

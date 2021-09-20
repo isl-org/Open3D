@@ -118,10 +118,16 @@ public:
     /// coordinates, multiply by voxel size.
     core::Tensor GetVoxelCoordinates(const core::Tensor &voxel_indices) const;
 
-    std::pair<core::Tensor, core::Tensor>
-    GetVoxelCoordinatesAndFlattenedIndices();
+    /// Accelerated combination of GetVoxelIndices and GetVoxelCoordinates.
+    /// Returns a (N, 3) coordinate in float, and a (N, ) flattend index tensor,
+    /// where N is the number of active voxels located at buf_indices.
     std::pair<core::Tensor, core::Tensor>
     GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor &buf_indices);
+
+    /// Same as above, but N is the number of all the active voxels with blocks
+    /// stored in the hash map.
+    std::pair<core::Tensor, core::Tensor>
+    GetVoxelCoordinatesAndFlattenedIndices();
 
     /// Get a (3, M) active block coordinates from a depth image, with potential
     /// duplicates removed.
@@ -167,16 +173,15 @@ public:
     /// The block coordinates in the frustum can be taken from
     /// GetUniqueBlockCoordinates.
     /// All the block coordinates can be taken from GetHashMap().GetKeyTensor().
-    std::unordered_map<std::string, core::Tensor> RayCast(
-            const core::Tensor &block_coords,
-            const core::Tensor &intrinsic,
-            const core::Tensor &extrinsic,
-            int width,
-            int height,
-            float depth_scale = 1000.0f,
-            float depth_min = 0.1f,
-            float depth_max = 3.0f,
-            float weight_threshold = 3.0f);
+    TensorMap RayCast(const core::Tensor &block_coords,
+                      const core::Tensor &intrinsic,
+                      const core::Tensor &extrinsic,
+                      int width,
+                      int height,
+                      float depth_scale = 1000.0f,
+                      float depth_min = 0.1f,
+                      float depth_max = 3.0f,
+                      float weight_threshold = 3.0f);
 
     /// Specific operation for TSDF volumes.
     /// Extract point cloud at isosurface points.
