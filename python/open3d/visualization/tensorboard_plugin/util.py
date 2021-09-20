@@ -313,11 +313,13 @@ def to_dict_batch(o3d_geometry_list):
     """
     if len(o3d_geometry_list) == 0:
         return {}
+    vertex_positions = []
+    vertex_colors = []
+    vertex_normals = []
+    triangle_indices = []
+    line_colors = []
+    line_indices = []
     if isinstance(o3d_geometry_list[0], o3d.geometry.PointCloud):
-        vertex_positions = []
-        vertex_colors = []
-        vertex_normals = []
-        material = []
         for geometry in o3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.points))
             vertex_colors.append(np.asarray(geometry.colors))
@@ -330,10 +332,6 @@ def to_dict_batch(o3d_geometry_list):
         }
 
     elif isinstance(o3d_geometry_list[0], o3d.geometry.TriangleMesh):
-        vertex_positions = []
-        vertex_colors = []
-        vertex_normals = []
-        triangle_indices = []
         for geometry in o3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.vertices))
             vertex_colors.append(np.asarray(geometry.vertex_colors))
@@ -348,9 +346,6 @@ def to_dict_batch(o3d_geometry_list):
         }
 
     elif isinstance(o3d_geometry_list[0], o3d.geometry.LineSet):
-        vertex_positions = []
-        line_colors = []
-        line_indices = []
         for geometry in o3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.points))
             line_colors.append(np.asarray(geometry.colors))

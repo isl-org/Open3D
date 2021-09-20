@@ -55,10 +55,31 @@ def geometry_data():
     colors = (((1.0, 0.0, 0.0), (0.0, 1.0, 1.0)),
               ((0.0, 1.0, 0.0), (1.0, 0.0, 1.0)), ((0.0, 0.0, 1.0), (1.0, 1.0,
                                                                      0.0)))
+    rng = np.random.default_rng()
+    material = {
+        "material_name": ("defaultLit", "defaultUnlit"),
+        "material_scalar_point_size": (2, 20),
+        "material_scalar_metallic": (0.25, 0.75),
+        "material_vector_base_color": (
+            (0.25, 0.25, 0.25, 1.0), (0.25, 0.25, 0.25, 1.0)),
+        "material_texture_map_metallic":
+            rng.integers(0, 256, (2, 8, 8, 1), dtype=np.uint8),
+        "material_texture_map_base_color":
+            rng.integers(0, 256, (2, 8, 8, 3), dtype=np.uint8),
+    }
+
+    material_ls = {
+        "material_name": ("unlitLine", "unlitLine"),
+        "material_scalar_line_width": (2, 20),
+        "material_vector_base_color": (
+            (0.25, 0.25, 0.25, 1.0), (0.25, 0.25, 0.25, 1.0))
+    }
 
     return {
         'cube': cube,
+        'material': material,
         'cube_ls': cube_ls,
+        'material_ls': material_ls,
         'colors': colors,
         'max_outputs': 2
     }
@@ -72,21 +93,23 @@ def test_tensorflow_summary(geometry_data):
     logdir = tempfile.mkdtemp(prefix='open3d_tb_plugin_test')
     writer = tf.summary.create_file_writer(logdir)
 
-    rng = np.random
+    rng = np.random.default_rng()
     tensor_converter = (tf.convert_to_tensor, o3d.core.Tensor.from_numpy,
                         np.array)
 
-    cube = geometry_data['cube']
-    cube_ls = geometry_data['cube_ls']
+    cube, material = geometry_data['cube'], geometry_data['material']
+    cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
+        'material_ls']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
     with writer.as_default():
         for step in range(3):
             cube[0].paint_uniform_color(colors[step][0])
             cube[1].paint_uniform_color(colors[step][1])
+            cube_summary = to_dict_batch(cube)
+            cube_summary.update(material)
             # Randomly convert to TF, Open3D, Numpy tensors, or use property
             # reference
-            cube_summary = to_dict_batch(cube)
             if step > 0:
                 cube_summary['vertex_positions'] = 0
                 cube_summary['vertex_normals'] = 0
@@ -94,7 +117,10 @@ def test_tensorflow_summary(geometry_data):
                     cube_summary['vertex_colors'])
             else:
                 for prop, tensor in cube_summary.items():
-                    cube_summary[prop] = rng.choice(tensor_converter)(tensor)
+                    if (not prop.startswith("material_") or
+                            prop.startswith("material_texture_map_")):
+                        cube_summary[prop] = rng.choice(tensor_converter)(
+                            tensor)
             summary.add_3d('cube',
                            cube_summary,
                            step=step,
@@ -109,8 +135,11 @@ def test_tensorflow_summary(geometry_data):
             cube_ls[0].paint_uniform_color(colors[step][0])
             cube_ls[1].paint_uniform_color(colors[step][1])
             cube_ls_summary = to_dict_batch(cube_ls)
+            cube_ls_summary.update(material_ls)
             for prop, tensor in cube_ls_summary.items():
-                cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
+                if (not prop.startswith("material_") or
+                        prop.startswith("material_texture_map_")):
+                    cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
             summary.add_3d('cube_ls',
                            cube_ls_summary,
                            step=step,
@@ -141,9 +170,10 @@ def test_tensorflow_summary(geometry_data):
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
     # Complete write is guaranteed after Python has exited.
-    shutil.rmtree(logdir)
+    # shutil.rmtree(logdir)
 
 
+# @pytest.mark.skip(reason="This will only run on a local machine with GPU.")
 def test_pytorch_summary(geometry_data):
     """Test writing summary from PyTorch"""
 
@@ -153,17 +183,19 @@ def test_pytorch_summary(geometry_data):
     logdir = tempfile.mkdtemp(prefix='open3d_tb_plugin_test')
     writer = SummaryWriter(logdir)
 
-    rng = np.random
+    rng = np.random.default_rng()
     tensor_converter = (torch.from_numpy, o3d.core.Tensor.from_numpy, np.array)
 
-    cube = geometry_data['cube']
-    cube_ls = geometry_data['cube_ls']
+    cube, material = geometry_data['cube'], geometry_data['material']
+    cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
+        'material_ls']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
     for step in range(3):
         cube[0].paint_uniform_color(colors[step][0])
         cube[1].paint_uniform_color(colors[step][1])
         cube_summary = to_dict_batch(cube)
+        cube_summary.update(material)
         # Randomly convert to PyTorch, Open3D, Numpy tensors, or use property
         # reference
         if step > 0:
@@ -173,7 +205,9 @@ def test_pytorch_summary(geometry_data):
                 cube_summary['vertex_colors'])
         else:
             for prop, tensor in cube_summary.items():
-                cube_summary[prop] = rng.choice(tensor_converter)(tensor)
+                if (not prop.startswith("material_") or
+                        prop.startswith("material_texture_map_")):
+                    cube_summary[prop] = rng.choice(tensor_converter)(tensor)
         writer.add_3d('cube', cube_summary, step=step, max_outputs=max_outputs)
         cube_summary.pop('triangle_indices')  # Convert to PointCloud
         writer.add_3d('cube_pcd',
@@ -183,8 +217,11 @@ def test_pytorch_summary(geometry_data):
         cube_ls[0].paint_uniform_color(colors[step][0])
         cube_ls[1].paint_uniform_color(colors[step][1])
         cube_ls_summary = to_dict_batch(cube_ls)
+        cube_ls_summary.update(material_ls)
         for prop, tensor in cube_ls_summary.items():
-            cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
+            if (not prop.startswith("material_") or
+                    prop.startswith("material_texture_map_")):
+                cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
         writer.add_3d('cube_ls',
                       cube_ls_summary,
                       step=step,
@@ -214,16 +251,31 @@ def test_pytorch_summary(geometry_data):
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
     # Complete write is guaranteed after Python has exited.
-    shutil.rmtree(logdir)
+    # shutil.rmtree(logdir)
 
 
+def check_material_dict(o3d_geo, material, batch_idx):
+    assert o3d_geo.has_valid_material()
+    assert o3d_geo.material.material_name == material['material_name'][
+        batch_idx]
+    for prop, value in material['scalar_properties'].items():
+        assert o3d_geo.material.scalar_properties[prop] == value[batch_idx]
+    for prop, value in material['vector_properties'].items():
+        assert all(o3d_geo.material.vector_properties[prop] == value[batch_idx])
+    for prop, value in material['texture_maps'].items():
+        assert (o3d_geo.material.texture_maps[prop].as_tensor() ==
+                value[batch_idx].as_tensor()).all()
+
+
+@pytest.mark.skip(reason="This will only run on a local machine with GPU.")
 def test_plugin_data_reader(geometry_data):
     """Test reading summary data"""
     shutil.unpack_archive(
         os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
     logdir = "test_tensorboard_plugin"
-    cube = geometry_data['cube']
-    cube_ls = geometry_data['cube_ls']
+    cube, material = geometry_data['cube'], geometry_data['material']
+    cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
+        'material_ls']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
 
@@ -250,15 +302,18 @@ def test_plugin_data_reader(geometry_data):
                 cube_out.vertex['colors'] == cube_ref.vertex['colors']).all()
             assert (cube_out.triangle['indices'] == cube_ref.triangle['indices']
                    ).all()
+            check_material_dict(cube_out, material, batch_idx)
 
             cube_pcd_out = reader.read_geometry(".", "cube_pcd", step,
                                                 batch_idx, step_to_idx)
             assert (cube_pcd_out.point['positions'] ==
                     cube_ref.vertex['positions']).all()
+            assert cube_pcd_out.has_valid_material()
             assert (cube_pcd_out.point['normals'] == cube_ref.vertex['normals']
                    ).all()
             assert (cube_pcd_out.point['colors'] == cube_ref.vertex['colors']
                    ).all()
+            check_material_dict(cube_pcd_out, material, batch_idx)
 
             cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
             cube_ls_ref = o3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
@@ -275,8 +330,9 @@ def test_plugin_data_reader(geometry_data):
                    ).all()
             assert (
                 cube_ls_out.line['colors'] == cube_ls_ref.line['colors']).all()
+            check_material_dict(cube_ls_out, material_ls, batch_idx)
 
-    shutil.rmtree(logdir)
+    # shutil.rmtree(logdir)
 
 
 @pytest.mark.skip(reason="This will only run on a local machine with GPU.")

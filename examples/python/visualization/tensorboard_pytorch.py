@@ -139,21 +139,18 @@ def with_material(model_dir):
     model_path = os.path.join(model_dir, model_name + ".obj")
     model = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.io.read_triangle_mesh(model_path))
-    material = {
-        "name": "defaultLit",
-        "scalar_properties": {},
-        "vector_properties": {},
-        "texture_maps": {}
-    }
+    material_name = "defaultLit"
+    material_scalar_properties = {}
+    material_vector_properties = {}
+    material_texture_maps = {}
 
     for texture in ("albedo", "normal", "ao", "metallic", "roughness"):
         texture_file = os.path.join(model_dir, texture + ".png")
         if os.path.exists(texture_file):
-            material["texture_maps"][texture] = o3d.t.io.read_image(
-                texture_file)
+            material_texture_maps[texture] = o3d.t.io.read_image(texture_file)
 
-    if "metallic" in material["texture_maps"]:
-        material["scalar_properties"]["base_metallic"] = 1.0
+    if "metallic" in material_texture_maps:
+        material_scalar_properties["base_metallic"] = 1.0
 
     writer = SummaryWriter(logdir)
     writer.add_3d(model_name, {
@@ -161,7 +158,10 @@ def with_material(model_dir):
         "vertex_normals": model.vertex["normals"],
         "vertex_texture_uvs": model.vertex["texture_uvs"],
         "triangle_indices": model.triangle["indices"],
-        "material": material
+        "material_name": material_name,
+        "material_scalar_properties": material_scalar_properties,
+        "material_vector_properties": material_vector_properties,
+        "material_texture_maps": material_texture_maps
     },
                   step=0)
 

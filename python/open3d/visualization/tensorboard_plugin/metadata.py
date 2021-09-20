@@ -39,6 +39,7 @@ GEOMETRY_PROPERTY_DIMS = {
     'vertex_positions': 3,
     'vertex_normals': 3,
     'vertex_colors': 3,
+    'vertex_texture_uvs': 2,
     'triangle_indices': 3,
     'line_indices': 2,
     'line_colors': 3
@@ -47,30 +48,39 @@ VERTEX_PROPERTIES = ('vertex_normals', 'vertex_colors', 'vertex_texture_uvs')
 TRIANGLE_PROPERTIES = ()
 LINE_PROPERTIES = ('line_colors',)
 MATERIAL_SCALAR_PROPERTIES = (
+    'point_size',
+    'line_width',
     'metallic',
     'roughness',
     'reflectance',
-    'sheenRoughness',
-    'clearCoat',
-    'clearCoatRoughness',
+    'sheen_roughness',
+    'clear_coat',
+    'clear_coat_roughness',
     'anisotropy',
-    'ambientOcclusion',
+    'ambient_occlusion',
     'ior',
     'transmission',
-    'microThickness',
+    'micro_thickness',
     'thickness',
 )
 MATERIAL_VECTOR_PROPERTIES = (
-    'baseColor',
-    'sheenColor',
-    'anisotropyDirection',
+    'base_color',
+    'sheen_color',
+    'anisotropy_direction',
     'normal',
-    'bentNormal',
-    'clearCoatNormal',
+    'bent_normal',
+    'clear_coat_normal',
     'emissive',
-    'postLightingColor',
+    'post_lighting_color',
     'absorption',
 )
+
+SUPPORTED_PROPERTIES = set(
+    tuple(GEOMETRY_PROPERTY_DIMS.keys()) + ("material_name",) +
+    tuple("material_scalar_" + p for p in MATERIAL_SCALAR_PROPERTIES) +
+    tuple("material_vector_" + p for p in MATERIAL_VECTOR_PROPERTIES) +
+    tuple("material_texture_map_" + p
+          for p in (MATERIAL_SCALAR_PROPERTIES + MATERIAL_VECTOR_PROPERTIES)))
 
 
 def create_summary_metadata(description):

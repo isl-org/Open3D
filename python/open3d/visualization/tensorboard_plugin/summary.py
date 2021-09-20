@@ -226,8 +226,9 @@ def _to_integer(tensor):
         if hasattr(tensor, 'dtype') and 'int' not in repr(tensor.dtype).lower():
             return None
         if hasattr(tensor, 'numpy'):
-            return tensor.numpy().astype(np.int64)
-        return np.int64(tensor)
+            tensor_int = tensor.numpy().astype(np.int64)
+        tensor_int = np.int64(tensor)
+        return tensor_int if tensor_int.size == 1 else None
     except (TypeError, ValueError, RuntimeError):
         return None
 
@@ -242,7 +243,28 @@ def _preprocess(prop,
     Step reference support.
     TODO(ssheorey): Convert to half precision, compression, etc.
     """
-    # Check if property is reference to prior step
+
+    if prop == "material_name":
+        if isinstance(tensor, (bytes, str)):
+            material["name"] = (tensor,)
+        elif isinstance(tensor[0], (bytes, str)):
+            material["name"] = tensor
+        else:
+            raise ValueError(
+                f"Value of the key `material_name` should be a str, bytes or"
+                f" Sequence of str or bytes. Got {tensor} instead.")
+        return material["name"]
+    if (prop.startswith("material_scalar_") and
+            prop[16:] in metadata.MATERIAL_SCALAR_PROPERTIES):
+        save_tensor = _to_o3d(tensor, min_ndim=1, max_len=max_outputs)
+        if save_tensor.ndim != 1:
+            raise ValueError(f"Material scalar property {prop} has shape "
+                             f"{tensor.shape} instead of (B,)")
+        material["scalar_properties"][prop[16:]] = save_tensor
+        return save_tensor
+
+    # Check if property is reference to prior step (not allowed for
+    # material_name and material_scalar_*)
     step_ref = _to_integer(tensor)
     if step_ref is not None:
         if step_ref < 0 or step_ref >= step:
@@ -254,24 +276,6 @@ def _preprocess(prop,
             step_ref=step_ref)
         return None
 
-    if prop == "material_name":
-        if isinstance(tensor, (bytes, str)):
-            material.name = (tensor,)
-        elif isinstance(tensor[0], (bytes, str)):
-            material.name = tensor
-        else:
-            raise ValueError(
-                f"Value of the key `material_name` should be a str, bytes or"
-                f" Sequence of str or bytes. Got {tensor} instead.")
-        return material.name
-    if (prop.startswith("material_scalar_") and
-            prop[16:] in metadata.MATERIAL_SCALAR_PROPERTIES):
-        save_tensor = _to_o3d(tensor, min_ndim=1, max_len=max_outputs)
-        if save_tensor.ndim != 1:
-            raise ValueError(f"Material scalar property {prop} has shape "
-                             f"{tensor.shape} instead of (B,)")
-        material["scalar_properties"][prop[16:]] = save_tensor
-        return save_tensor
     if (prop.startswith("material_vector_") and
             prop[16:] in metadata.MATERIAL_VECTOR_PROPERTIES):
         save_tensor = _to_o3d(tensor, min_ndim=2, max_len=max_outputs)
@@ -332,7 +336,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         raise TypeError(
             "data should be a dict of geometry property names and tensors.")
     unknown_props = [
-        prop for prop in data if prop not in metadata.GEOMETRY_PROPERTY_DIMS
+        prop for prop in data if prop not in metadata.SUPPORTED_PROPERTIES
     ]
     if unknown_props:
         raise ValueError(
@@ -446,9 +450,18 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                     for prop, tensor in line_data.items()
                 },
                 material_name=material["name"][bidx],
-                material_scalar_attributes=material["scalar_properties"][bidx],
-                material_vector_attributes=material["vector_properties"][bidx],
-                texture_maps=material["texture_maps"][bidx],
+                material_scalar_attributes={
+                    prop: val[bidx].item()
+                    for prop, val in material["scalar_properties"].items()
+                },
+                material_vector_attributes={
+                    prop: val[bidx].numpy()
+                    for prop, val in material["vector_properties"].items()
+                },
+                texture_maps={
+                    prop: val[bidx]
+                    for prop, val in material["texture_maps"].items()
+                },
                 o3d_type=o3d_type,
                 connection=buf_con):
             raise IOError(
@@ -511,9 +524,11 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
         [0,1] and converted to ``uint8`` range [0,255]. ``uint16`` data will be
         compressed to the range [0,255].
 
-        Any data tensor, may be replaced by an ``int`` scalar referring to a
-        previous step. This allows reusing a previously written property in case
-        that it does not change at different steps.
+        Any data tensor (with ndim>=2, including batch_size, i.e. excluding
+        ``material_name`` and ``material_scalar_*PROPERTY*``), may be replaced by
+        an ``int`` scalar referring to a previous step. This allows reusing a
+        previously written property in case that it does not change at different
+        steps.
 
         Please see the `Filament Materials Guide
         <https://google.github.io/filament/Materials.html#materialmodels>`__ for
