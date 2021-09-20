@@ -1,4 +1,4 @@
-add_library(utility OBJECT)
+open3d_ispc_add_library(utility OBJECT)
 
 target_sources(utility PRIVATE
     Console.cpp
@@ -7,10 +7,17 @@ target_sources(utility PRIVATE
     FileSystem.cpp
     Helper.cpp
     IJsonConvertible.cpp
+    ISAInfo.cpp
     Logging.cpp
     Parallel.cpp
     Timer.cpp
 )
+
+if (BUILD_ISPC_MODULE)
+    open3d_ispc_target_sources(utility PRIVATE
+        ISAInfo.ispc
+    )
+endif()
 
 open3d_show_and_abort_on_warning(utility)
 open3d_set_global_properties(utility)

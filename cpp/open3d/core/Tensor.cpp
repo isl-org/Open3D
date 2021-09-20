@@ -310,6 +310,9 @@ Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+        if (NumDims() == 0) {
+            utility::LogError("Cannot slice a scalar (0-dim) tensor.");
+        }
         TensorKey tk_new = tk.InstantiateDimSize(shape_[0]);
         return Slice(0, tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
