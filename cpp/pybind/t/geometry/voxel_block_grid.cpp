@@ -172,7 +172,9 @@ void pybind_voxel_block_grid(py::module& m) {
             "All the block coordinates can be taken from "
             "hashmap().key_tensor()",
             "block_coords"_a, "intrinsic"_a, "extrinsic"_a, "width"_a,
-            "height"_a, "depth_scale"_a = 1000.0f, "depth_min"_a = 0.1f,
+            "height"_a,
+            "render_attributes"_a = std::vector<std::string>{"depth", "color"},
+            "depth_scale"_a = 1000.0f, "depth_min"_a = 0.1f,
             "depth_max"_a = 3.0f, "weight_threshold"_a = 3.0f);
 
     vbg.def("extract_point_cloud", &VoxelBlockGrid::ExtractPointCloud,

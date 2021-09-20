@@ -10,16 +10,8 @@ import matplotlib.pyplot as plt
 
 from config import ConfigParser
 from common import load_image_file_names, save_poses, load_intrinsic, load_extrinsics
-import imageio
-
-import torch
-from torch.utils.dlpack import from_dlpack
 
 from tqdm import tqdm
-
-
-def to_torch(o3d_tensor):
-    return from_dlpack(o3d_tensor.to_dlpack())
 
 
 def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
@@ -63,14 +55,14 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
 
             # Find buf indices in the underlying engine
             buf_indices, masks = vbg.hashmap().find(frustum_block_coords)
-            torch.cuda.synchronize()
+            o3d.core.cuda.synchronize()
             end = time.time()
             print('hash map preparation: {}'.format(end - start))
 
             start = time.time()
             voxel_coords, voxel_indices = vbg.voxel_coordinates_and_flattened_indices(
                 buf_indices)
-            torch.cuda.synchronize()
+            o3d.core.cuda.synchronize()
             end = time.time()
             print('enumerate voxels: {}'.format(end - start))
 
@@ -89,7 +81,7 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             d = uvd[2]
             u = (uvd[0] / d).round().to(o3d.core.Dtype.Int64)
             v = (uvd[1] / d).round().to(o3d.core.Dtype.Int64)
-            torch.cuda.synchronize()
+            o3d.core.cuda.synchronize()
             end = time.time()
             print('geometry transformation: {}'.format(end - start))
 
@@ -112,7 +104,7 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
 
             sdf[sdf >= trunc] = trunc
             sdf = sdf / trunc
-            torch.cuda.synchronize()
+            o3d.core.cuda.synchronize()
             end = time.time()
             print('association: {}'.format(end - start))
 
@@ -132,7 +124,7 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             #     = (color[valid_voxel_indices] * w +
             #              color_readings[mask_inlier]) / (wp)
             weight[valid_voxel_indices] = wp
-            torch.cuda.synchronize()
+            o3d.core.cuda.synchronize()
             end = time.time()
             print('update: {}'.format(end - start))
 
