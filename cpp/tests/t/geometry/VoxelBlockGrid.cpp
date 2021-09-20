@@ -236,8 +236,10 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                         backend != core::HashBackendType::Slab) {
                         auto result = vbg.RayCast(
                                 frustum_block_coords, intrinsic, extrinsics[i],
-                                depth.GetCols(), depth.GetRows(), depth_scale,
-                                depth_min, depth_max, 1.0);
+                                depth.GetCols(), depth.GetRows(),
+                                {"normal", "depth", "color", "index", "mask",
+                                 "ratio"},
+                                depth_scale, depth_min, depth_max, 1.0);
 
                         t::geometry::Image normal_raycast(result["normal"]);
                         visualization::DrawGeometries(

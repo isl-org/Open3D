@@ -304,6 +304,7 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
                                   const core::Tensor &extrinsic,
                                   int width,
                                   int height,
+                                  const std::vector<std::string> attrs,
                                   float depth_scale,
                                   float depth_min,
                                   float depth_max,
@@ -313,7 +314,6 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
     CheckExtrinsicTensor(extrinsic);
 
     // Extrinsic: world to camera -> pose: camera to world
-    core::Tensor vertex_map, depth_map, color_map, normal_map;
     core::Device device = block_hashmap_->GetDevice();
 
     const int down_factor = 8;
@@ -322,43 +322,44 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
             block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
             down_factor, block_resolution_, voxel_size_, depth_min, depth_max);
 
-    TensorMap renderings_map("vertex");
-    renderings_map["vertex"] =
-            core::Tensor({height, width, 3}, core::Float32, device);
-    renderings_map["normal"] =
-            core::Tensor({height, width, 3}, core::Float32, device);
-    renderings_map["depth"] =
-            core::Tensor({height, width, 1}, core::Float32, device);
-    renderings_map["color"] =
-            core::Tensor({height, width, 3}, core::Float32, device);
+    static const std::unordered_map<std::string, int> kAttrChannelMap = {
+            {"vertex", 3},      {"normal", 3},       {"depth", 1},
+            {"color", 3},       {"mask", 1},         {"ratio", 8},
+            {"index", 8},       {"grad_ratio_x", 8}, {"grad_ratio_y", 8},
+            {"grad_ratio_z", 8}};
 
-    // Mask indicating if its 8 voxel neighbors are all valid.
-    renderings_map["mask"] =
-            core::Tensor::Zeros({height, width, 8}, core::Bool, device);
-    // Ratio for trilinear-interpolation.
-    renderings_map["ratio"] =
-            core::Tensor({height, width, 8}, core::Float32, device);
-    // Each index is a linearized from a 4D index (block_idx, dx, dy, dz).
-    // This 1D index can access flattened value tensors.
-    renderings_map["index"] =
-            core::Tensor({height, width, 8}, core::Int64, device);
+    auto get_dtype = [&](const std::string &attr_name) -> core::Dtype {
+        if (attr_name == "mask") {
+            return core::Dtype::Bool;
+        } else if (attr_name == "index") {
+            return core::Dtype::Int64;
+        } else {
+            return core::Dtype::Float32;
+        }
+    };
 
-    renderings_map["grad_ratio_x"] =
-            core::Tensor({height, width, 8}, core::Float32, device);
-    renderings_map["grad_ratio_y"] =
-            core::Tensor({height, width, 8}, core::Float32, device);
-    renderings_map["grad_ratio_z"] =
-            core::Tensor({height, width, 8}, core::Float32, device);
-
+    TensorMap renderings_map("range");
     renderings_map["range"] = range_minmax_map;
+    for (const auto &attr : attrs) {
+        if (kAttrChannelMap.count(attr) == 0) {
+            utility::LogError(
+                    "Unsupported attribute {}, please implement customized ray "
+                    "casting.");
+        }
+        int channel = kAttrChannelMap.at(attr);
+        core::Dtype dtype = get_dtype(attr);
+        renderings_map[attr] =
+                core::Tensor({height, width, channel}, dtype, device);
+    }
 
     float trunc_multiplier = block_resolution_ * 0.5;
-    std::vector<core::Tensor> block_values = block_hashmap_->GetValueTensors();
-    kernel::voxel_grid::RayCast(block_hashmap_, block_values, range_minmax_map,
-                                renderings_map, intrinsic, extrinsic, height,
-                                width, block_resolution_, voxel_size_,
-                                voxel_size_ * trunc_multiplier, depth_scale,
-                                depth_min, depth_max, weight_threshold);
+    TensorMap block_value_map =
+            ConstructTensorMap(*block_hashmap_, name_attr_map_);
+    kernel::voxel_grid::RayCast(
+            block_hashmap_, block_value_map, range_minmax_map, renderings_map,
+            intrinsic, extrinsic, height, width, block_resolution_, voxel_size_,
+            voxel_size_ * trunc_multiplier, depth_scale, depth_min, depth_max,
+            weight_threshold);
 
     return renderings_map;
 }

@@ -332,6 +332,8 @@ public:
         return shape_[i];
     }
 
+    inline OPEN3D_HOST_DEVICE void* GetDataPtr() const { return ptr_; }
+
     template <typename T>
     inline OPEN3D_HOST_DEVICE T* GetDataPtr(index_t x) const {
         return static_cast<T*>(static_cast<void*>(static_cast<uint8_t*>(ptr_) +

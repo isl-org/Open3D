@@ -315,9 +315,9 @@ void RayCastCUDA
 void RayCastCPU
 #endif
         (std::shared_ptr<core::HashMap>& hashmap,
-         const std::vector<core::Tensor>& block_values,
+         const TensorMap& block_value_map,
          const core::Tensor& range_map,
-         std::unordered_map<std::string, core::Tensor>& renderings_map,
+         TensorMap& renderings_map,
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          index_t h,
@@ -355,24 +355,83 @@ void RayCastCPU
 #endif
 
     core::Device device = hashmap->GetDevice();
+
     ArrayIndexer range_map_indexer(range_map, 2);
 
-    ArrayIndexer vertex_map_indexer(renderings_map.at("vertex"), 2);
-    ArrayIndexer depth_map_indexer(renderings_map.at("depth"), 2);
-    ArrayIndexer color_map_indexer(renderings_map.at("color"), 2);
-    ArrayIndexer normal_map_indexer(renderings_map.at("normal"), 2);
+    // Geometry
+    ArrayIndexer depth_map_indexer;
+    ArrayIndexer vertex_map_indexer;
+    ArrayIndexer normal_map_indexer;
 
-    ArrayIndexer index_map_indexer(renderings_map.at("index"), 2);
-    ArrayIndexer mask_map_indexer(renderings_map.at("mask"), 2);
-    ArrayIndexer ratio_map_indexer(renderings_map.at("ratio"), 2);
+    // Diff rendering
+    ArrayIndexer index_map_indexer;
+    ArrayIndexer mask_map_indexer;
+    ArrayIndexer ratio_map_indexer;
+    ArrayIndexer grad_x_indexer;
+    ArrayIndexer grad_y_indexer;
+    ArrayIndexer grad_z_indexer;
 
-    ArrayIndexer grad_x_indexer(renderings_map.at("grad_ratio_x"), 2);
-    ArrayIndexer grad_y_indexer(renderings_map.at("grad_ratio_y"), 2);
-    ArrayIndexer grad_z_indexer(renderings_map.at("grad_ratio_z"), 2);
+    // Color
+    ArrayIndexer color_map_indexer;
 
-    const tsdf_t* tsdf_base_ptr = block_values[0].GetDataPtr<tsdf_t>();
-    const weight_t* weight_base_ptr = block_values[1].GetDataPtr<weight_t>();
-    const color_t* color_base_ptr = block_values[2].GetDataPtr<color_t>();
+    if (!block_value_map.Contains("tsdf") ||
+        !block_value_map.Contains("weight")) {
+        utility::LogError(
+                "TSDF and/or weight not allocated in blocks, please implement "
+                "customized integration.");
+    }
+    const tsdf_t* tsdf_base_ptr =
+            block_value_map.at("tsdf").GetDataPtr<tsdf_t>();
+    const weight_t* weight_base_ptr =
+            block_value_map.at("weight").GetDataPtr<weight_t>();
+
+    // Geometry
+    if (renderings_map.Contains("depth")) {
+        depth_map_indexer = ArrayIndexer(renderings_map.at("depth"), 2);
+    }
+    if (renderings_map.Contains("vertex")) {
+        vertex_map_indexer = ArrayIndexer(renderings_map.at("vertex"), 2);
+    }
+    if (renderings_map.Contains("normal")) {
+        normal_map_indexer = ArrayIndexer(renderings_map.at("normal"), 2);
+    }
+
+    // Diff rendering
+    if (renderings_map.Contains("index")) {
+        index_map_indexer = ArrayIndexer(renderings_map.at("index"), 2);
+    }
+    if (renderings_map.Contains("ratio")) {
+        ratio_map_indexer = ArrayIndexer(renderings_map.at("ratio"), 2);
+    }
+    if (renderings_map.Contains("mask")) {
+        mask_map_indexer = ArrayIndexer(renderings_map.at("mask"), 2);
+    }
+    if (renderings_map.Contains("grad_ratio_x")) {
+        grad_x_indexer = ArrayIndexer(renderings_map.at("grad_ratio_x"), 2);
+    }
+    if (renderings_map.Contains("grad_ratio_y")) {
+        grad_y_indexer = ArrayIndexer(renderings_map.at("grad_ratio_y"), 2);
+    }
+    if (renderings_map.Contains("grad_ratio_z")) {
+        grad_z_indexer = ArrayIndexer(renderings_map.at("grad_ratio_z"), 2);
+    }
+
+    // Color
+    bool render_color = false;
+    if (block_value_map.Contains("color") && renderings_map.Contains("color")) {
+        render_color = true;
+        color_map_indexer = ArrayIndexer(renderings_map.at("color"), 2);
+    }
+    const color_t* color_base_ptr =
+            render_color ? block_value_map.at("color").GetDataPtr<color_t>()
+                         : nullptr;
+
+    bool visit_neighbors =
+            render_color || normal_map_indexer.GetDataPtr() ||
+            mask_map_indexer.GetDataPtr() || index_map_indexer.GetDataPtr() ||
+            ratio_map_indexer.GetDataPtr() || grad_x_indexer.GetDataPtr() ||
+            grad_y_indexer.GetDataPtr() || grad_z_indexer.GetDataPtr();
+
     TransformIndexer c2w_transform_indexer(
             intrinsics, t::geometry::InverseTransformation(extrinsics));
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
@@ -457,36 +516,65 @@ void RayCastCPU
         index_t y = workload_idx / cols;
         index_t x = workload_idx % cols;
 
-        float *depth_ptr = nullptr, *vertex_ptr = nullptr, *color_ptr = nullptr,
-              *normal_ptr = nullptr;
-
-        depth_ptr = depth_map_indexer.GetDataPtr<float>(x, y);
-        depth_ptr[0] = 0;
-
-        vertex_ptr = vertex_map_indexer.GetDataPtr<float>(x, y);
-        vertex_ptr[0] = 0;
-        vertex_ptr[1] = 0;
-        vertex_ptr[2] = 0;
-
-        color_ptr = color_map_indexer.GetDataPtr<float>(x, y);
-        color_ptr[0] = 0;
-        color_ptr[1] = 0;
-        color_ptr[2] = 0;
-
-        normal_ptr = normal_map_indexer.GetDataPtr<float>(x, y);
-        normal_ptr[0] = 0;
-        normal_ptr[1] = 0;
-        normal_ptr[2] = 0;
-
-        bool* mask_ptr = mask_map_indexer.GetDataPtr<bool>(x, y);
-        float* ratio_ptr = ratio_map_indexer.GetDataPtr<float>(x, y);
-        int64_t* index_ptr = index_map_indexer.GetDataPtr<int64_t>(x, y);
-
-        float* grad_x_ptr = grad_x_indexer.GetDataPtr<float>(x, y);
-        float* grad_y_ptr = grad_y_indexer.GetDataPtr<float>(x, y);
-        float* grad_z_ptr = grad_z_indexer.GetDataPtr<float>(x, y);
-
         const float* range = range_map_indexer.GetDataPtr<float>(x / 8, y / 8);
+
+        float* depth_ptr = nullptr;
+        float* vertex_ptr = nullptr;
+        float* color_ptr = nullptr;
+        float* normal_ptr = nullptr;
+        bool* mask_ptr = nullptr;
+        float* ratio_ptr = nullptr;
+        int64_t* index_ptr = nullptr;
+        float* grad_x_ptr = nullptr;
+        float* grad_y_ptr = nullptr;
+        float* grad_z_ptr = nullptr;
+
+        if (vertex_map_indexer.GetDataPtr()) {
+            vertex_ptr = vertex_map_indexer.GetDataPtr<float>(x, y);
+            vertex_ptr[0] = 0;
+            vertex_ptr[1] = 0;
+            vertex_ptr[2] = 0;
+        }
+        if (depth_map_indexer.GetDataPtr()) {
+            depth_ptr = depth_map_indexer.GetDataPtr<float>(x, y);
+            depth_ptr[0] = 0;
+        }
+        if (normal_map_indexer.GetDataPtr()) {
+            normal_ptr = normal_map_indexer.GetDataPtr<float>(x, y);
+            normal_ptr[0] = 0;
+            normal_ptr[1] = 0;
+            normal_ptr[2] = 0;
+        }
+
+        if (mask_map_indexer.GetDataPtr()) {
+            mask_ptr = mask_map_indexer.GetDataPtr<bool>(x, y);
+        }
+
+        if (ratio_map_indexer.GetDataPtr()) {
+            ratio_ptr = ratio_map_indexer.GetDataPtr<float>(x, y);
+        }
+
+        if (index_map_indexer.GetDataPtr()) {
+            index_ptr = index_map_indexer.GetDataPtr<int64_t>(x, y);
+        }
+
+        if (grad_x_indexer.GetDataPtr()) {
+            grad_x_ptr = grad_x_indexer.GetDataPtr<float>(x, y);
+        }
+        if (grad_y_indexer.GetDataPtr()) {
+            grad_y_ptr = grad_y_indexer.GetDataPtr<float>(x, y);
+        }
+        if (grad_z_indexer.GetDataPtr()) {
+            grad_z_ptr = grad_z_indexer.GetDataPtr<float>(x, y);
+        }
+
+        if (color_map_indexer.GetDataPtr()) {
+            color_ptr = color_map_indexer.GetDataPtr<float>(x, y);
+            color_ptr[0] = 0;
+            color_ptr[1] = 0;
+            color_ptr[2] = 0;
+        }
+
         float t = range[0];
         const float t_max = range[1];
         if (t >= t_max) return;
@@ -546,10 +634,15 @@ void RayCastCPU
             z_g = z_o + t_intersect * z_d;
 
             // Trivial vertex assignment
-            *depth_ptr = t_intersect * depth_scale;
-            w2c_transform_indexer.RigidTransform(x_g, y_g, z_g, vertex_ptr + 0,
-                                                 vertex_ptr + 1,
-                                                 vertex_ptr + 2);
+            if (depth_ptr) {
+                *depth_ptr = t_intersect * depth_scale;
+            }
+            if (vertex_ptr) {
+                w2c_transform_indexer.RigidTransform(
+                        x_g, y_g, z_g, vertex_ptr + 0, vertex_ptr + 1,
+                        vertex_ptr + 2);
+            }
+            if (!visit_neighbors) return;
 
             // Trilinear interpolation
             // TODO(wei): simplify the flow by splitting the
@@ -590,33 +683,51 @@ void RayCastCPU
                         z_v_floor + dz_v, block_buf_idx, cache);
 
                 if (linear_idx_k >= 0 && weight_base_ptr[linear_idx_k] > 0) {
-                    mask_ptr[k] = true;
-                    index_ptr[k] = linear_idx_k;
-
                     float rx = dx_v * (ratio_x) + (1 - dx_v) * (1 - ratio_x);
                     float ry = dy_v * (ratio_y) + (1 - dy_v) * (1 - ratio_y);
                     float rz = dz_v * (ratio_z) + (1 - dz_v) * (1 - ratio_z);
-
                     float r = rx * ry * rz;
-                    ratio_ptr[k] = r;
 
-                    index_t color_linear_idx = linear_idx_k * 3;
-                    color_ptr[0] += r * color_base_ptr[color_linear_idx + 0];
-                    color_ptr[1] += r * color_base_ptr[color_linear_idx + 1];
-                    color_ptr[2] += r * color_base_ptr[color_linear_idx + 2];
+                    if (ratio_ptr) {
+                        ratio_ptr[k] = r;
+                    }
+                    if (mask_ptr) {
+                        mask_ptr[k] = true;
+                    }
+                    if (index_ptr) {
+                        index_ptr[k] = linear_idx_k;
+                    }
 
                     float tsdf_k = tsdf_base_ptr[linear_idx_k];
                     float grad_x_deriv = ry * rz * (2 * dx_v - 1);
                     float grad_y_deriv = rx * rz * (2 * dy_v - 1);
                     float grad_z_deriv = rx * ry * (2 * dz_v - 1);
 
-                    grad_x_ptr[k] = grad_x_deriv;
-                    grad_y_ptr[k] = grad_y_deriv;
-                    grad_z_ptr[k] = grad_z_deriv;
+                    if (grad_x_ptr) {
+                        grad_x_ptr[k] = grad_x_deriv;
+                    }
+                    if (grad_y_ptr) {
+                        grad_y_ptr[k] = grad_y_deriv;
+                    }
+                    if (grad_z_ptr) {
+                        grad_z_ptr[k] = grad_z_deriv;
+                    }
 
-                    normal_ptr[0] += grad_x_deriv * tsdf_k;
-                    normal_ptr[1] += grad_y_deriv * tsdf_k;
-                    normal_ptr[2] += grad_z_deriv * tsdf_k;
+                    if (normal_ptr) {
+                        normal_ptr[0] += grad_x_deriv * tsdf_k;
+                        normal_ptr[1] += grad_y_deriv * tsdf_k;
+                        normal_ptr[2] += grad_z_deriv * tsdf_k;
+                    }
+
+                    if (color_ptr) {
+                        index_t color_linear_idx = linear_idx_k * 3;
+                        color_ptr[0] +=
+                                r * color_base_ptr[color_linear_idx + 0];
+                        color_ptr[1] +=
+                                r * color_base_ptr[color_linear_idx + 1];
+                        color_ptr[2] +=
+                                r * color_base_ptr[color_linear_idx + 2];
+                    }
 
                     sum_r += r;
                 }
@@ -624,17 +735,21 @@ void RayCastCPU
 
             if (sum_r > 0) {
                 sum_r *= 255.0;
-                color_ptr[0] /= sum_r;
-                color_ptr[1] /= sum_r;
-                color_ptr[2] /= sum_r;
+                if (color_ptr) {
+                    color_ptr[0] /= sum_r;
+                    color_ptr[1] /= sum_r;
+                    color_ptr[2] /= sum_r;
+                }
 
-                float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
-                                  normal_ptr[1] * normal_ptr[1] +
-                                  normal_ptr[2] * normal_ptr[2]);
-                w2c_transform_indexer.Rotate(
-                        -normal_ptr[0] / norm, -normal_ptr[1] / norm,
-                        -normal_ptr[2] / norm, normal_ptr + 0, normal_ptr + 1,
-                        normal_ptr + 2);
+                if (normal_ptr) {
+                    float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
+                                      normal_ptr[1] * normal_ptr[1] +
+                                      normal_ptr[2] * normal_ptr[2]);
+                    w2c_transform_indexer.Rotate(
+                            -normal_ptr[0] / norm, -normal_ptr[1] / norm,
+                            -normal_ptr[2] / norm, normal_ptr + 0,
+                            normal_ptr + 1, normal_ptr + 2);
+                }
             }
         }  // surface-found
     });

@@ -191,9 +191,9 @@ void Integrate(const core::Tensor& depth,
 }
 
 void RayCast(std::shared_ptr<core::HashMap>& hashmap,
-             const std::vector<core::Tensor>& block_values,
+             const TensorMap& block_value_map,
              const core::Tensor& range_map,
-             std::unordered_map<std::string, core::Tensor>& renderings_map,
+             TensorMap& renderings_map,
              const core::Tensor& intrinsic,
              const core::Tensor& extrinsic,
              index_t h,
@@ -208,17 +208,26 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
     core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
 
     using tsdf_t = float;
+    core::Dtype block_weight_dtype = core::Dtype::Float32;
+    core::Dtype block_color_dtype = core::Dtype::Float32;
+    if (block_value_map.Contains("weight")) {
+        block_weight_dtype = block_value_map.at("weight").GetDtype();
+    }
+    if (block_value_map.Contains("color")) {
+        block_color_dtype = block_value_map.at("color").GetDtype();
+    }
+
     DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-            block_values[1].GetDtype(), block_values[2].GetDtype(), [&] {
+            block_weight_dtype, block_color_dtype, [&] {
                 if (device_type == core::Device::DeviceType::CPU) {
                     RayCastCPU<tsdf_t, weight_t, color_t>(
-                            hashmap, block_values, range_map, renderings_map,
+                            hashmap, block_value_map, range_map, renderings_map,
                             intrinsic, extrinsic, h, w, block_resolution,
                             voxel_size, sdf_trunc, depth_scale, depth_min,
                             depth_max, weight_threshold);
                 } else if (device_type == core::Device::DeviceType::CUDA) {
                     RayCastCUDA<tsdf_t, weight_t, color_t>(
-                            hashmap, block_values, range_map, renderings_map,
+                            hashmap, block_value_map, range_map, renderings_map,
                             intrinsic, extrinsic, h, w, block_resolution,
                             voxel_size, sdf_trunc, depth_scale, depth_min,
                             depth_max, weight_threshold);

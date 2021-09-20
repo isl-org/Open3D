@@ -178,6 +178,7 @@ public:
                       const core::Tensor &extrinsic,
                       int width,
                       int height,
+                      const std::vector<std::string> attrs = {"depth", "color"},
                       float depth_scale = 1000.0f,
                       float depth_min = 0.1f,
                       float depth_max = 3.0f,
