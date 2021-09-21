@@ -171,7 +171,7 @@ def test_icp_point_to_point(device):
             o3d.t.pipelines.registration.ICPConvergenceCriteria(
                 max_iteration=2))
 
-        reg_p2p_legacy = o3d.pipelines.registration.icp(
+        reg_p2p_legacy = o3d.pipelines.registration.registration_icp(
             source_legacy, target_legacy, max_correspondence_distance,
             init_trans_legacy,
             o3d.pipelines.registration.TransformationEstimationPointToPoint(),
@@ -209,7 +209,7 @@ def test_icp_point_to_plane(device):
             o3d.t.pipelines.registration.ICPConvergenceCriteria(
                 max_iteration=2))
 
-        reg_p2plane_legacy = o3d.pipelines.registration.icp(
+        reg_p2plane_legacy = o3d.pipelines.registration.registration_icp(
             source_legacy, target_legacy, max_correspondence_distance,
             init_trans_legacy,
             o3d.pipelines.registration.TransformationEstimationPointToPlane(),
@@ -222,7 +222,7 @@ def test_icp_point_to_plane(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_get_information_matrix_from_pointclouds(device):
+def test_get_information_matrix(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
@@ -241,7 +241,7 @@ def test_get_information_matrix_from_pointclouds(device):
                                       dtype=o3c.float64,
                                       device=device)
 
-        info_matrix_t = o3d.t.pipelines.registration.get_information_matrix_from_point_clouds(
+        info_matrix_t = o3d.t.pipelines.registration.get_information_matrix(
             source_t, target_t, max_correspondence_distance, transformation_t)
 
         info_matrix_legacy = o3d.pipelines.registration.get_information_matrix_from_point_clouds(
