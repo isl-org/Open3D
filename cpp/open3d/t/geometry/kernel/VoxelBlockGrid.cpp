@@ -177,12 +177,17 @@ void Integrate(const core::Tensor& depth,
                                 resolution, voxel_size, sdf_trunc, depth_scale,
                                 depth_max);
                     } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
                         IntegrateCUDA<input_depth_t, input_color_t, tsdf_t,
                                       weight_t, color_t>(
                                 depth, color, block_indices, block_keys,
                                 block_value_map, intrinsic, extrinsic,
                                 resolution, voxel_size, sdf_trunc, depth_scale,
                                 depth_max);
+#else
+                        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+
                     } else {
                         utility::LogError("Unimplemented device");
                     }
@@ -226,11 +231,15 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
                             voxel_size, sdf_trunc, depth_scale, depth_min,
                             depth_max, weight_threshold);
                 } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
                     RayCastCUDA<tsdf_t, weight_t, color_t>(
                             hashmap, block_value_map, range_map, renderings_map,
                             intrinsic, extrinsic, h, w, block_resolution,
                             voxel_size, sdf_trunc, depth_scale, depth_min,
                             depth_max, weight_threshold);
+#else
+                    utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
                 } else {
                     utility::LogError("Unimplemented device");
                 }
@@ -270,11 +279,15 @@ void ExtractPointCloud(const core::Tensor& block_indices,
                             colors, block_resolution, voxel_size,
                             weight_threshold, valid_size);
                 } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
                     ExtractPointCloudCUDA<tsdf_t, weight_t, color_t>(
                             block_indices, nb_block_indices, nb_block_masks,
                             block_keys, block_value_map, points, normals,
                             colors, block_resolution, voxel_size,
                             weight_threshold, valid_size);
+#else
+                    utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
                 } else {
                     utility::LogError("Unimplemented device");
                 }
@@ -317,12 +330,17 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
                             block_resolution, voxel_size, weight_threshold,
                             vertex_count);
                 } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
                     ExtractTriangleMeshCUDA<tsdf_t, weight_t, color_t>(
                             block_indices, inv_block_indices, nb_block_indices,
                             nb_block_masks, block_keys, block_value_map,
                             vertices, triangles, vertex_normals, vertex_colors,
                             block_resolution, voxel_size, weight_threshold,
                             vertex_count);
+#else
+                    utility::LogError(
+                            "Not compiled with CUDA, but CUDA device is used.");
+#endif
                 } else {
                     utility::LogError("Unimplemented device");
                 }
