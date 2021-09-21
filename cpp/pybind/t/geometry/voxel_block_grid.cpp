@@ -44,21 +44,10 @@ void pybind_voxel_block_grid(py::module& m) {
             "the block_resolution is set to 1, then the VoxelBlockGrid "
             "degenerates to a sparse voxel grid.");
 
-    vbg.def(py::init([](const std::vector<std::string>& attr_names,
-                        const std::vector<core::Dtype>& attr_dtypes,
-                        const std::vector<py::handle>& attr_channels,
-                        float voxel_size, int64_t block_resolution,
-                        int64_t block_count, const core::Device& device) {
-                std::vector<core::SizeVector> attr_channel_svs;
-                for (const auto& handle : attr_channels) {
-                    auto attr_channel = core::PyHandleToSizeVector(handle);
-                    attr_channel_svs.push_back(attr_channel);
-                }
-
-                return VoxelBlockGrid(attr_names, attr_dtypes, attr_channel_svs,
-                                      voxel_size, block_resolution, block_count,
-                                      device);
-            }),
+    vbg.def(py::init<const std::vector<std::string>&,
+                     const std::vector<core::Dtype>&,
+                     const std::vector<core::SizeVector>&, float, int64_t,
+                     int64_t, const core::Device&>(),
             "attr_names"_a, "attr_dtypes"_a, "attr_channels"_a,
             "voxel_size"_a = 0.0058, "block_resolution"_a = 8,
             "block_count"_a = 10000, "device"_a = core::Device("CPU:0"));

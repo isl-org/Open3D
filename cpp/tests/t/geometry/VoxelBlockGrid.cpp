@@ -187,7 +187,7 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
     }
 }
 
-TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
+TEST_P(VoxelBlockGridPermuteDevices, DISABLED_Integrate) {
     core::Device device = GetParam();
 
     std::vector<core::HashBackendType> backends;
