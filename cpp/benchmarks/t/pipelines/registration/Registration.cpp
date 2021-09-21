@@ -102,10 +102,10 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
     return std::make_tuple(source, target);
 }
 
-static void BenchmarkRegistrationICP(benchmark::State& state,
-                                     const core::Device& device,
-                                     const core::Dtype& dtype,
-                                     const TransformationEstimationType& type) {
+static void BenchmarkICP(benchmark::State& state,
+                         const core::Device& device,
+                         const core::Dtype& dtype,
+                         const TransformationEstimationType& type) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Error);
 
     geometry::PointCloud source(device), target(device);
@@ -129,30 +129,28 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
     RegistrationResult reg_result(init_trans);
 
     // Warm up.
-    reg_result = RegistrationICP(
-            source, target, max_correspondence_distance, init_trans,
-            *estimation,
-            ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                   max_iterations));
+    reg_result = ICP(source, target, max_correspondence_distance, init_trans,
+                     *estimation,
+                     ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                            max_iterations));
 
     for (auto _ : state) {
-        reg_result = RegistrationICP(
-                source, target, max_correspondence_distance, init_trans,
-                *estimation,
-                ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                       max_iterations));
+        reg_result = ICP(source, target, max_correspondence_distance,
+                         init_trans, *estimation,
+                         ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                                max_iterations));
         core::cuda::Synchronize(device);
     }
 }
 
-#define ENUM_ICP_METHOD_DEVICE(METHOD_NAME, TRANSFORMATION_TYPE, DEVICE)      \
-    BENCHMARK_CAPTURE(BenchmarkRegistrationICP, DEVICE METHOD_NAME##_Float32, \
-                      core::Device(DEVICE), core::Float32,                    \
-                      TRANSFORMATION_TYPE)                                    \
-            ->Unit(benchmark::kMillisecond);                                  \
-    BENCHMARK_CAPTURE(BenchmarkRegistrationICP, DEVICE METHOD_NAME##_Float64, \
-                      core::Device(DEVICE), core::Float64,                    \
-                      TRANSFORMATION_TYPE)                                    \
+#define ENUM_ICP_METHOD_DEVICE(METHOD_NAME, TRANSFORMATION_TYPE, DEVICE) \
+    BENCHMARK_CAPTURE(BenchmarkICP, DEVICE METHOD_NAME##_Float32,        \
+                      core::Device(DEVICE), core::Float32,               \
+                      TRANSFORMATION_TYPE)                               \
+            ->Unit(benchmark::kMillisecond);                             \
+    BENCHMARK_CAPTURE(BenchmarkICP, DEVICE METHOD_NAME##_Float64,        \
+                      core::Device(DEVICE), core::Float64,               \
+                      TRANSFORMATION_TYPE)                               \
             ->Unit(benchmark::kMillisecond);
 
 ENUM_ICP_METHOD_DEVICE(PointToPoint,

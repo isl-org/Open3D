@@ -203,7 +203,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     }
 }
 
-TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
+TEST_P(RegistrationPermuteDevices, ICPPointToPoint) {
     core::Device device = GetParam();
 
     for (auto dtype : {core::Float32, core::Float64}) {
@@ -232,7 +232,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
         int max_iterations = 2;
 
         // PointToPoint - Tensor.
-        t_reg::RegistrationResult reg_p2p_t = t_reg::RegistrationICP(
+        t_reg::RegistrationResult reg_p2p_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
                 initial_transform_t,
                 t_reg::TransformationEstimationPointToPoint(),
@@ -252,7 +252,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     }
 }
 
-TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
+TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
     core::Device device = GetParam();
 
     for (auto dtype : {core::Float32, core::Float64}) {
@@ -283,7 +283,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
         // L1Loss Method:
 
         // PointToPlane - Tensor.
-        t_reg::RegistrationResult reg_p2plane_t = t_reg::RegistrationICP(
+        t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
                 initial_transform_t,
                 t_reg::TransformationEstimationPointToPlane(
@@ -356,7 +356,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
         int max_iterations = 2;
 
         // PointToPlane - Tensor.
-        t_reg::RegistrationResult reg_p2plane_t = t_reg::RegistrationICP(
+        t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
                 initial_transform_t,
                 t_reg::TransformationEstimationForColoredICP(),
@@ -479,10 +479,9 @@ TEST_P(RegistrationPermuteDevices, GetInformationMatrixFromPointCloud) {
         double max_correspondence_dist = 3.0;
 
         // Tensor information matrix.
-        core::Tensor information_matrix_t =
-                t_reg::GetInformationMatrixFromPointClouds(
-                        source_tpcd, target_tpcd, max_correspondence_dist,
-                        initial_transform_t);
+        core::Tensor information_matrix_t = t_reg::GetInformationMatrix(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                initial_transform_t);
 
         // Legacy evaluation.
         Eigen::Matrix6d information_matrix_l =

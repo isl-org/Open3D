@@ -81,8 +81,8 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
     return std::make_tuple(source, target);
 }
 
-static void BenchmarkRegistrationICPLegacy(
-        benchmark::State& state, const TransformationEstimationType& type) {
+static void BenchmarkICPLegacy(benchmark::State& state,
+                               const TransformationEstimationType& type) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
@@ -122,12 +122,12 @@ static void BenchmarkRegistrationICPLegacy(
                       reg_result.inlier_rmse_);
 }
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
+BENCHMARK_CAPTURE(BenchmarkICPLegacy,
                   PointToPlane / CPU,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
+BENCHMARK_CAPTURE(BenchmarkICPLegacy,
                   PointToPoint / CPU,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);

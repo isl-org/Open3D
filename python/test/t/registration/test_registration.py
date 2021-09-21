@@ -146,7 +146,7 @@ def test_evaluate_registration(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_registration_icp_point_to_point(device):
+def test_icp_point_to_point(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
@@ -165,13 +165,13 @@ def test_registration_icp_point_to_point(device):
                                   dtype=o3c.float64,
                                   device=device)
 
-        reg_p2p_t = o3d.t.pipelines.registration.registration_icp(
+        reg_p2p_t = o3d.t.pipelines.registration.icp(
             source_t, target_t, max_correspondence_distance, init_trans_t,
             o3d.t.pipelines.registration.TransformationEstimationPointToPoint(),
             o3d.t.pipelines.registration.ICPConvergenceCriteria(
                 max_iteration=2))
 
-        reg_p2p_legacy = o3d.pipelines.registration.registration_icp(
+        reg_p2p_legacy = o3d.pipelines.registration.icp(
             source_legacy, target_legacy, max_correspondence_distance,
             init_trans_legacy,
             o3d.pipelines.registration.TransformationEstimationPointToPoint(),
@@ -184,7 +184,7 @@ def test_registration_icp_point_to_point(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-def test_registration_icp_point_to_plane(device):
+def test_icp_point_to_plane(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
     for dtype in supported_dtypes:
@@ -203,13 +203,13 @@ def test_registration_icp_point_to_plane(device):
                                   dtype=o3c.float64,
                                   device=device)
 
-        reg_p2plane_t = o3d.t.pipelines.registration.registration_icp(
+        reg_p2plane_t = o3d.t.pipelines.registration.icp(
             source_t, target_t, max_correspondence_distance, init_trans_t,
             o3d.t.pipelines.registration.TransformationEstimationPointToPlane(),
             o3d.t.pipelines.registration.ICPConvergenceCriteria(
                 max_iteration=2))
 
-        reg_p2plane_legacy = o3d.pipelines.registration.registration_icp(
+        reg_p2plane_legacy = o3d.pipelines.registration.icp(
             source_legacy, target_legacy, max_correspondence_distance,
             init_trans_legacy,
             o3d.pipelines.registration.TransformationEstimationPointToPlane(),
