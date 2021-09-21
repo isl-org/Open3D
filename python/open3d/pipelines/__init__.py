@@ -28,13 +28,5 @@ import open3d as o3d
 
 if o3d.__DEVICE_API__ == 'cuda':
     from open3d.cuda.pybind.pipelines import *
-    from open3d.cuda.pybind.pipelines.color_map import *
-    from open3d.cuda.pybind.pipelines.integration import *
-    from open3d.cuda.pybind.pipelines.odometry import *
-    from open3d.cuda.pybind.pipelines.registration import *
 else:
     from open3d.cpu.pybind.pipelines import *
-    from open3d.cpu.pybind.pipelines.color_map import *
-    from open3d.cpu.pybind.pipelines.integration import *
-    from open3d.cpu.pybind.pipelines.odometry import *
-    from open3d.cpu.pybind.pipelines.registration import *

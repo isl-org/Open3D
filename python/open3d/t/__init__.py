@@ -28,11 +28,5 @@ import open3d as o3d
 
 if o3d.__DEVICE_API__ == 'cuda':
     from open3d.cuda.pybind.t import *
-    from open3d.cuda.pybind.t.io import *
-    from open3d.cuda.pybind.t.geometry import *
-    from open3d.cuda.pybind.t.pipelines import *
 else:
     from open3d.cpu.pybind.t import *
-    from open3d.cpu.pybind.t.io import *
-    from open3d.cpu.pybind.t.geometry import *
-    from open3d.cpu.pybind.t.pipelines import *

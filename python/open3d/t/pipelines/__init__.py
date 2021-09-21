@@ -28,13 +28,5 @@ import open3d as o3d
 
 if o3d.__DEVICE_API__ == 'cuda':
     from open3d.cuda.pybind.t.pipelines import *
-    from open3d.cuda.pybind.t.pipelines.odometry import *
-    from open3d.cuda.pybind.t.pipelines.registration import *
-    from open3d.cuda.pybind.t.pipelines.slac import *
-    from open3d.cuda.pybind.t.pipelines.slam import *
 else:
     from open3d.cpu.pybind.t.pipelines import *
-    from open3d.cpu.pybind.t.pipelines.odometry import *
-    from open3d.cpu.pybind.t.pipelines.registration import *
-    from open3d.cpu.pybind.t.pipelines.slac import *
-    from open3d.cpu.pybind.t.pipelines.slam import *
