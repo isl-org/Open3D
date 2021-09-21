@@ -1,8 +1,8 @@
 # This is a config file for the examples/cpp/TICPRegistration.cpp. 
 # When voxel_size is -1, no downsampling is performed.
 
- source_path = ../../../examples/test_data/ColoredICP/frag_115.ply
- target_path = ../../../examples/test_data/ColoredICP/frag_116.ply
+ source_path = ../../../test_data/ColoredICP/frag_115.ply
+ target_path = ../../../test_data/ColoredICP/frag_116.ply
 
  registration_method = ColoredICP
 

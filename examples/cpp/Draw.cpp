@@ -30,7 +30,7 @@
 
 using namespace open3d;
 
-const std::string TEST_DIR = "../../../examples/test_data";
+const std::string TEST_DIR = "../../../test_data";
 
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
