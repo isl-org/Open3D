@@ -31,8 +31,10 @@ class TensorboardOpen3DPluginClient {
 
   URL_ROUTE_PREFIX = "/data/plugin/Open3D";
   webRtcOptions = "rtptransport=tcp&timeout=60";
-  width = Math.round(window.innerWidth * 2/5 - 60);
-  height = Math.round(this.width * 3/4);
+  width = 640;
+  height = 480;
+  full_width = 1280;   // video stream width, height
+  full_height = 960;
   messageId = 0;
   webRtcClientList = new Map(); // {windowUId -> webRtcStreamer}
   windowState = new Map();     // {windowUId -> Geometry state (run, tags, batch_idx, step)}
@@ -85,31 +87,39 @@ class TensorboardOpen3DPluginClient {
             </div>
             `;
     document.body.insertAdjacentHTML("beforeend", DASHBOARD_HTML);
+    this.requestNewWindow();
+  }
+
+  /*  Request Open3D for a new window.
+   *  @param {string} run Populate the window with data from this run. If
+   *  undefined, the first run is chosen by default.
+   */
+  requestNewWindow = (run) => {
     // Ask Open3D for a new window
-    window.console.info("Requesting window with size: ", this.width, "x", this.height);
-    fetch(this.URL_ROUTE_PREFIX + "/new_window?width=" + this.width + "&height="
-      + this.height, null)
+    window.console.info("Requesting window with size: (" + this.full_width +
+      "," + this.full_height + ")");
+    fetch(this.URL_ROUTE_PREFIX + "/new_window?width=" + this.full_width + "&height="
+      + this.full_height, null)
       .then((response) => response.json())
       .then((response) => this.addConnection(response.window_id,
-        response.logdir))
+        response.logdir, run))
       .then(this.addAppEventListeners)
       .catch((err) => window.console.error("Error: /new_window failed:" + err));
-  }
+  };
 
   /** Add App level event listeners.
   */
   addAppEventListeners = () => {
     window.addEventListener("beforeunload", this.closeWindow);
-    // TODO: Ensure TB data reload maintains app state
     // Listen for the user clicking on the main TB reload button
-    // let tbReloadButton =
-    //   parent.document.querySelector(".reload-button");
-    // if (tbReloadButton != null) {
-    //   tbReloadButton.addEventListener("click", this.reloadRunTags);
-    // }
+    let tbReloadButton =
+      parent.document.querySelector(".reload-button");
+    if (tbReloadButton != null) {
+      tbReloadButton.addEventListener("click", this.reloadRunTags);
+    }
     // App option handling
     document.getElementById("ui-options-view").addEventListener("change", (evt) => {
-      if (evt.target.checked) {
+      if (evt.target.checked) {   // sync future viewpoint changes
         for (let [windowUId, webRtcClient] of this.webRtcClientList) {
           webRtcClient.sendJsonData = (jsonData) => {
             if (jsonData.class_name === "MouseEvent") {
@@ -120,6 +130,14 @@ class TensorboardOpen3DPluginClient {
             webRtcClient.dataChannel.send(JSON.stringify(jsonData));
           }
         }
+				this.messageId += 1;
+				const syncViewMessage = {   // sync current viewpoint
+					messageId: this.messageId,
+					window_uid_list: Array.from(this.windowState.keys()),
+					class_name: "tensorboard/sync_view",
+				};
+				window.console.info("Sending syncViewMessage:", syncViewMessage);
+				this.webRtcClientList.values().next().value.sendJsonData(syncViewMessage);
       } else {
         for (let [windowUId, webRtcClient] of this.webRtcClientList) {
           webRtcClient.sendJsonData = WebRtcStreamer.prototype.sendJsonData;
@@ -195,16 +213,32 @@ class TensorboardOpen3DPluginClient {
 
     // Add a video element to display WebRTC stream.
     const widgetTemplate = `
-        <div class="webrtc" id="widget_${videoId}">
-          <div class="batchidx-step-selector">
+        <table class="webrtc" id="widget_${videoId}">
+          <tr>
+          <td><button id="zoom-${windowUId}" type="button">
+            <svg viewBox="0 0 36 36" width="100%">
+              <path d="m 10,16 2,0 0,-4 4,0 0,-2 L 10,10 l 0,6 0,0 z"></path>
+              <path d="m 20,10 0,2 4,0 0,4 2,0 L 26,10 l -6,0 0,0 z"></path>
+              <path d="m 24,24 -4,0 0,2 L 26,26 l 0,-6 -2,0 0,4 0,0 z"></path>
+              <path d="M 12,20 10,20 10,26 l 6,0 0,-2 -4,0 0,-4 0,0 z"></path>
+            </svg>
+          </button></td>
+          <td class="batchidx-step-selector">
             <div id="batch-idx-selector-div-${windowUId}"></div>
             <div id="step-selector-div-${windowUId}"></div>
-          </div>
-          <div id="loader_${videoId}"></div>
-          <video id="${videoId}" muted="true" playsinline="true">
+          </td>
+          <td><button id="settings-${windowUId}" type="button">
+            <svg viewBox="0 0 24 24">
+                <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path>
+            </svg>
+          </button></td>
+          </tr>
+          <tr><td colspan=3><div id="loader_${videoId}"></div>
+          <video id="${videoId}" muted="true" playsinline="true" width=${this.width} height=${this.height}>
             Your browser does not support HTML5 video.
           </video>
-        </div>
+          </td></tr>
+        </table>
         `;
     let widgetView = document.getElementById("widget-view");
     widgetView.insertAdjacentHTML("beforeend", widgetTemplate);
@@ -238,7 +272,39 @@ class TensorboardOpen3DPluginClient {
       videoElt.addEventListener("RemoteDataChannelOpen",
         this.requestGeometryUpdate.bind(this, windowUId));
     }
+    document.getElementById("zoom-"+ windowUId).addEventListener(
+      "click", this.toggleZoom.bind(this, windowUId));
+    document.getElementById("settings-"+ windowUId).addEventListener(
+      "click", this.toggleSettings.bind(this, windowUId));
   };
+
+  /* Callback to toggle WebRTC window size in the browser.
+   */
+	toggleZoom = (windowUId) => {
+		let elem = document.getElementById("video_" + windowUId);
+		if (elem.width <= this.width) {        // zoom
+      elem.width = this.full_width;
+      elem.height = this.full_height;
+		} else {                                // original
+      elem.width = this.width;
+      elem.height = this.height;
+		}
+    window.console.debug(`New ${windowUId} size: (${elem.width}, ${elem.height})`);
+	};
+
+  /* Callback to toggle O3DVisualizer settings panel.
+   */
+	toggleSettings = (windowUId) => {
+		this.messageId += 1;
+		const toggleSettingsMessage = {
+			messageId: this.messageId,
+			window_uid: windowUId,
+			class_name: "tensorboard/" + windowUId + "/toggle_settings",
+		};
+		window.console.info("Sending toggleSettingsMessage:", toggleSettingsMessage);
+		this.webRtcClientList.get(windowUId).sendJsonData(toggleSettingsMessage);
+	};
+
 
   /**
    * Create generic checkbox and radio button selectors used for Run and Tag
@@ -295,8 +361,8 @@ class TensorboardOpen3DPluginClient {
       const sliderTemplate=`
             <form oninput="document.getElementById("${nameWid}_output").value
                 = document.getElementById("${nameWid}").valueAsNumber;">
-                <label> ${displayName + ": [" + min.toString() + "-" +
-                    max.toString() + "] "}
+                <label> <span> ${displayName + ": [" + min.toString() + "-" +
+                    max.toString() + "] "} </span>
                     <input type="range" id="${nameWid}" name="${nameWid}" min="${min}"
                         max="${max}" value="${value}">
                     </input>
@@ -312,8 +378,8 @@ class TensorboardOpen3DPluginClient {
   }
 
   /**
-   * Event handler for window close. Disconnect all server data channel
-   * connections and close all server windows.
+   * Event handler for browser tab / window close. Disconnect all server data
+   * channel connections and close all server windows.
    */
   closeWindow = (evt) => {
     for (let [windowUId, webRtcClient] of this.webRtcClientList) {
@@ -383,13 +449,7 @@ onRunTagselect = (evt) => {
         window.console.info("Hiding window " + windowUId + " with run " + evt.target.id);
       }
     } else {    // create new window
-      window.console.info("Requesting window with size: ", this.width, "x", this.height);
-      fetch(this.URL_ROUTE_PREFIX + "/new_window?width=" + this.width + "&height="
-        + this.height, null)
-        .then((response) => response.json())
-        .then((response) => this.addConnection(response.window_id,
-          response.logdir, evt.target.id))
-        .catch((err) => window.console.error("Error: /new_window failed:" + err));
+      this.requestNewWindow(evt.target.id);
     }
   } else if (evt.target.name ===   "tag-selector-checkboxes") {
     if (evt.target.checked) {
@@ -455,14 +515,9 @@ processDCMessage = (windowUId, evt) => {
   }
   if (message.class_name.endsWith("get_run_tags")) {
     const runToTags = message.run_to_tags;
-    this.runWindow.set(message.current.run, windowUId);
-    this.windowState.set(windowUId, message.current);
-    window.console.debug("[After get_run_tags] this.runWindow: ",
-      this.runWindow, "this.windowState:", this.windowState);
     this.createSelector("run-selector-checkboxes", "run-selector",
       Object.getOwnPropertyNames(runToTags), "checkbox",
       [message.current.run]);
-
     this.selectedTags = new Set(message.current.tags);
     let allTags = new Set();
     for (const run in runToTags) {
@@ -472,13 +527,27 @@ processDCMessage = (windowUId, evt) => {
     }
     this.createSelector("tag-selector-checkboxes", "tag-selector",
       allTags, "checkbox", this.selectedTags);
-    this.createSlider(windowUId, "batch-idx-selector", "Batch index",
-      "batch-idx-selector-div-" + windowUId, 0, message.current.batch_size - 1,
-      message.current.batch_idx);
-    this.createSlider(windowUId, "step-selector", "Step",
-      "step-selector-div-" + windowUId, message.current.step_limits[0],
-      message.current.step_limits[1], message.current.step);
-    this.requestGeometryUpdate(windowUId);
+
+    if (this.windowState.size === 0) { // First load
+        this.runWindow.set(message.current.run, windowUId);
+        this.windowState.set(windowUId, message.current);
+        window.console.debug("[After get_run_tags] this.runWindow: ",
+          this.runWindow, "this.windowState:", this.windowState);
+    }
+    for (const [windowUId, state] of this.windowState) {
+      if (runToTags.hasOwnProperty(state.run)) { // update window
+        this.requestGeometryUpdate(windowUId);
+      } else {   // stale run: close window
+        fetch(this.URL_ROUTE_PREFIX +  "/close_window?window_id=" + windowUId, null)
+          .then((response) => response.json())
+          .then((response) => window.console.log(response))
+          .then(this.runWindow.delete(state.run))
+          .then(this.windowState.delete(windowUId))
+          .then(this.webRtcClientList.delete(windowUId))
+          .then(document.getElementById("widget_video_" + windowUId).remove())
+          .catch((err) => window.console.error("Error closing widget:", err));
+      }
+    }
   } else if (message.class_name.endsWith("update_geometry")) {
     // Sync state with server
     window.console.assert(message.window_uid === windowUId,

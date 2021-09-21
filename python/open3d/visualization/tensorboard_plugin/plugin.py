@@ -141,25 +141,28 @@ class Open3DPluginWindow:
               }
             }
         """
-        _log.debug(f"[DC message recv] {message}")
-        self.data_reader.reload_events()
-        self._validate_run(self.run)
-        self._validate_tags(self.tags, non_empty=True)
-        self._validate_step(self.step)
-        self._validate_batch_idx(self.batch_idx)
-        # Compose reply
-        message = json.loads(message)
-        message["run_to_tags"] = self.data_reader.run_to_tags
-        message["current"] = {
-            "run": self.run,
-            "tags": self.tags,
-            "step_limits": self.step_limits,
-            "step": self.step,
-            "batch_size": self.batch_size,
-            "batch_idx": self.batch_idx,
-            "wall_time": self.wall_time
-        }
-        return json.dumps(message)
+        try:
+            _log.debug(f"[DC message recv] {message}")
+            self.data_reader.reload_events()
+            self._validate_run(self.run)
+            self._validate_tags(self.tags, non_empty=True)
+            self._validate_step(self.step)
+            self._validate_batch_idx(self.batch_idx)
+            # Compose reply
+            message = json.loads(message)
+            message["run_to_tags"] = self.data_reader.run_to_tags
+            message["current"] = {
+                "run": self.run,
+                "tags": self.tags,
+                "step_limits": self.step_limits,
+                "step": self.step,
+                "batch_size": self.batch_size,
+                "batch_idx": self.batch_idx,
+                "wall_time": self.wall_time
+            }
+            return json.dumps(message)
+        except Exception as e:
+            return json.dumps({"message": message, "status": repr(e)})
 
     def _validate_run(self, selected_run):
         """Validate selected_run. Use self.run or the first valid run in case
@@ -259,27 +262,59 @@ class Open3DPluginWindow:
               "status": OK
             }
         """
-        _log.debug(f"[DC message recv] {message}")
-        message = json.loads(message)
-        self._validate_run(message["run"])
-        self._validate_tags(message["tags"])
-        self._validate_step(int(message["step"]))
-        self._validate_batch_idx(int(message["batch_idx"]))
+        try:
+            _log.debug(f"[DC message recv] {message}")
+            message = json.loads(message)
+            self._validate_run(message["run"])
+            self._validate_tags(message["tags"])
+            self._validate_step(int(message["step"]))
+            self._validate_batch_idx(int(message["batch_idx"]))
 
-        status = self._update_scene()
+            status = self._update_scene()
 
-        # Compose reply
-        message["current"] = {
-            "run": self.run,
-            "tags": self.tags,
-            "step_limits": self.step_limits,
-            "step": self.step,
-            "batch_size": self.batch_size,
-            "batch_idx": self.batch_idx,
-            "wall_time": self.wall_time,
-            "status": status
-        }
-        return json.dumps(message)
+            # Compose reply
+            message["current"] = {
+                "run": self.run,
+                "tags": self.tags,
+                "step_limits": self.step_limits,
+                "step": self.step,
+                "batch_size": self.batch_size,
+                "batch_idx": self.batch_idx,
+                "wall_time": self.wall_time,
+                "status": status
+            }
+            return json.dumps(message)
+        except Exception as e:
+            return json.dumps({"message": message, "status": repr(e)})
+
+    def _toggle_settings(self, message):
+        """
+        JSON message format:: json
+
+            {
+              "messageId": 2,
+              "window_uid": "window_2",
+              "class_name": "tensorboard/window_2/toggle_settings",
+            }
+
+        Response:: json
+
+            {
+              "messageId": 2,
+              "window_uid": "window_2",
+              "class_name": "tensorboard/window_2/toggle_settings",
+              "status": "OK"
+            }
+        """
+        try:
+            _log.debug(f"[DC message recv] {message}")
+            message = json.loads(message)
+            self.window.show_settings = not self.window.show_settings
+            async_event_loop.run_sync(self.window.post_redraw)
+            message["status"] = "OK"
+            return json.dumps(message)
+        except Exception as e:
+            return json.dumps({"message": message, "status": repr(e)})
 
     def _update_scene(self):
         """Update scene by adding / removing geometry elements and redraw.
@@ -341,6 +376,8 @@ class Open3DPluginWindow:
             class_name_base + "/get_run_tags", self._get_run_tags)
         webrtc_server.register_data_channel_message_callback(
             class_name_base + "/update_geometry", self._update_geometry)
+        webrtc_server.register_data_channel_message_callback(
+            class_name_base + "/toggle_settings", self._toggle_settings)
         gui.Application.instance.add_window(self.window)
 
 
@@ -391,6 +428,8 @@ class Open3DPlugin(base_plugin.TBPlugin):
             "tensorboard/show_hide_axes", self._show_hide)
         webrtc_server.register_data_channel_message_callback(
             "tensorboard/show_hide_ground", self._show_hide)
+        webrtc_server.register_data_channel_message_callback(
+            "tensorboard/sync_view", self._sync_view)
 
     def _show_hide(self, message):
         """
@@ -419,22 +458,65 @@ class Open3DPlugin(base_plugin.TBPlugin):
             _log.debug(f"[DC message recv] {message}")
             message = json.loads(message)
             show = bool(message["show"])
-            status = "OK"
-            for window_uid in tuple(message["window_uid_list"]):
-                window_uid = str(window_uid)
-                plugin_window = self._windows.get(str(window_uid))
-                # ipdb.set_trace()
-                if plugin_window is not None:
-                    if message["class_name"] == "tensorboard/show_hide_axes":
-                        plugin_window.window.show_axes = show
-                    elif message[
-                            "class_name"] == "tensorboard/show_hide_ground":
-                        plugin_window.window.show_ground = show
-                    async_event_loop.run_sync(plugin_window.window.post_redraw)
-                else:
-                    status = "Bad window."
-                    message["window_uid_list"].pop(window_uid)
-            message["status"] = status
+            message["status"] = 'OK'
+            window_uid_list = [
+                str(w)
+                for w in message["window_uid_list"]
+                if str(w) in self._windows
+            ]
+            for window_uid in window_uid_list:
+                window = self._windows[window_uid].window
+                if message["class_name"] == "tensorboard/show_hide_axes":
+                    window.show_axes = show
+                elif message["class_name"] == "tensorboard/show_hide_ground":
+                    window.show_ground = show
+                async_event_loop.run_sync(window.post_redraw)
+            message["window_uid_list"] = window_uid_list
+            return json.dumps(message)
+        except Exception as e:
+            return json.dumps({"message": message, "status": repr(e)})
+
+    def _sync_view(self, message):
+        """
+        JSON message format:: json
+
+            {
+              "messageId": 0,
+              "window_uid_list": ["window_2", "window_3"], ,
+              "class_name": "tensorboard/sync_view",
+            }
+
+        Response:: json
+
+            {
+              "messageId": 0,
+              "window_uid_list": ["window_2", "window_3"], ,
+              "class_name": "tensorboard/sync_view",
+              "status": "OK"
+            }
+        """
+        try:
+            _log.debug(f"[DC message recv] {message}")
+            message = json.loads(message)
+            message["status"] = 'OK'
+            window_uid_list = [
+                str(w)
+                for w in message["window_uid_list"]
+                if str(w) in self._windows
+            ]
+            if len(window_uid_list) < 2:
+                return json.dumps(message)
+            target_camera = self._windows[
+                window_uid_list[0]].window.scene.camera
+
+            def copy_target_camera():
+                for window_uid in window_uid_list[1:]:
+                    o3dvis = self._windows[window_uid].window
+                    o3dvis.scene.camera.copy_from(target_camera)
+                    o3dvis.post_redraw()
+
+            async_event_loop.run_sync(copy_target_camera)
+            message["window_uid_list"] = window_uid_list
             return json.dumps(message)
         except Exception as e:
             return json.dumps({"message": message, "status": repr(e)})

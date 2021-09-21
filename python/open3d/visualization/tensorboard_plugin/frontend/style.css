@@ -33,7 +33,7 @@
   /* Layout children as flex */
   display: flex;
   flex-direction: row;
-  padding: 2em;
+  padding: 1em;
 }
 
 /* Options for the whole plugin, runs and tag selection */
@@ -70,8 +70,6 @@
 /* Container for a single run */
 .webrtc {
   z-index: 1000;
-  /* Child of a flex container */
-  flex: 1 1 576;
 
   /* Layout children as flex */
   display: flex;
@@ -79,22 +77,39 @@
   padding: 1em;
 }
 
+.webrtc td {
+  text-align: center;
+}
+
+.webrtc button {
+  width: 3em;
+  display: inline;
+}
+
+.webrtc button svg {
+  height: 100%;
+}
+
 .batchidx-step-selector {
   display: flex;
   flex-direction: column;
-  width: 60%;
   padding: 5px;
-  align-items: end;
   color: #424242;  /* TB --paper-grey-800 */
 }
 
 .batchidx-step-selector input {
   vertical-align: middle;
+  width: 50%;
 }
 
 .batchidx-step-selector label {
-  width: 20em;
   font-weight: bold;
+}
+
+.batchidx-step-selector label span {
+  width: 16em;
+  text-align: right;
+  display: inline-block;
 }
 
 .batchidx-step-selector output {
