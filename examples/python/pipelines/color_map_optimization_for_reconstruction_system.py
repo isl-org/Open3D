@@ -30,13 +30,18 @@ import argparse
 import os
 import sys
 import json
-from trajectory_io import *
 import open3d as o3d
 
 sys.path.append('../reconstruction_system')
 sys.path.append("../utility")
+sys.path.append("../geometry")
+
+from trajectory_io import *
 from initialize_config import *
 from file import *
+
+sys.path.append('..')
+from data_manager import get_data_path_common
 
 
 def parse_keys(filename):

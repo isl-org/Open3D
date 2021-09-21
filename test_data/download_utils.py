@@ -31,12 +31,27 @@ import json
 import hashlib
 import io
 import time
+import os
 
 # Typically "Open3D/test_data", the test data dir.
 _test_data_dir = Path(__file__).parent.absolute().resolve()
 
-# Typically "Open3D/test_data/open3d_downloads", the download dir.
-_download_dir = _test_data_dir / "open3d_downloads"
+# Typically "Open3D/examples/test_data/open3d_downloads", the download dir.
+_download_dir = os.path.join(_test_data_dir, "open3d_downloads")
+
+
+def get_data_path_common(relative_path=""):
+    if not relative_path:
+        return _test_data_dir
+    else:
+        return os.path.join(_test_data_dir, relative_path)
+
+
+def get_data_path_download(relative_path=""):
+    if not relative_path:
+        return _download_dir
+    else:
+        return os.path.join(_download_dir, relative_path)
 
 
 def _compute_sha256(path):

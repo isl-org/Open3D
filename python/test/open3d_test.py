@@ -42,6 +42,8 @@ test_data_dir = os.path.join(_pwd, os.pardir, os.pardir, "examples",
 # unit tests. See https://github.com/isl-org/open3d_downloads for details on
 # how to manage the test data files.
 sys.path.append(test_data_dir)
+
+from download_utils import get_data_path_common, get_data_path_download
 from download_utils import download_all_files as _download_all_files
 _download_all_files()
 
@@ -92,8 +94,8 @@ def list_devices_with_torch():
 
 
 def download_fountain_dataset():
-    fountain_path = os.path.join(test_data_dir, "fountain_small")
-    fountain_zip_path = os.path.join(test_data_dir, "fountain.zip")
+    fountain_path = get_data_path_common("fountain_small")
+    fountain_zip_path = get_data_path_common("fountain.zip")
     if not os.path.exists(fountain_path):
         print("Downloading fountain dataset")
         url = "https://github.com/isl-org/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
