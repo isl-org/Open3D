@@ -66,8 +66,6 @@ if _build_config["BUILD_CUDA_MODULE"]:
         _pybind_cuda = _CDLL(
             str(next((_Path(__file__).parent / 'cuda').glob('pybind*'))))
         if _pybind_cuda.open3d_core_cuda_device_count() > 0:
-            from open3d.cuda.pybind import (camera, geometry, io, pipelines,
-                                            utility, t)
             from open3d.cuda import pybind
             __DEVICE_API__ = 'cuda'
         else:
@@ -87,10 +85,8 @@ if _build_config["BUILD_CUDA_MODULE"]:
             "binding library.", ImportWarning)
 
 if __DEVICE_API__ == 'cpu':
-    from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility, t)
     from open3d.cpu import pybind
 
-import open3d.core
 import open3d.visualization
 
 __version__ = "@PROJECT_VERSION@"
