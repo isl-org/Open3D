@@ -33,7 +33,8 @@ import random
 import sys
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-from data_manager import get_data_path_common
+import open3d_tutorial as o3dtut
+from open3d_tutorial import get_data_path_common
 
 
 def normalize(v):

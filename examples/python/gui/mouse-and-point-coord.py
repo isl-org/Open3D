@@ -30,6 +30,8 @@ import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import os
 
+import sys
+sys.path.append('..')
 from data_manager import get_data_path_common
 
 

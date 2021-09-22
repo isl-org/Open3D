@@ -30,6 +30,8 @@ import os
 import threading
 import time
 
+import sys
+sys.path.append('..')
 from data_manager import get_data_path_common
 
 CLOUD_NAME = "points"
