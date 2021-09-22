@@ -55,7 +55,6 @@ def geometry_data():
     colors = (((1.0, 0.0, 0.0), (0.0, 1.0, 1.0)),
               ((0.0, 1.0, 0.0), (1.0, 0.0, 1.0)), ((0.0, 0.0, 1.0), (1.0, 1.0,
                                                                      0.0)))
-    rng = np.random.default_rng()
     material = {
         "material_name": ("defaultLit", "defaultUnlit"),
         "material_scalar_point_size": (2, 20),
@@ -63,9 +62,9 @@ def geometry_data():
         "material_vector_base_color": (
             (0.25, 0.25, 0.25, 1.0), (0.25, 0.25, 0.25, 1.0)),
         "material_texture_map_metallic":
-            rng.integers(0, 256, (2, 8, 8, 1), dtype=np.uint8),
+            np.full((2, 8, 8, 1), 128, dtype=np.uint8),
         "material_texture_map_base_color":
-            rng.integers(0, 256, (2, 8, 8, 3), dtype=np.uint8),
+            np.full((2, 8, 8, 3), 64, dtype=np.uint8),
     }
 
     material_ls = {
@@ -85,12 +84,12 @@ def geometry_data():
     }
 
 
-def test_tensorflow_summary(geometry_data):
+def test_tensorflow_summary(geometry_data, tmp_path):
     """Test writing summary from TensorFlow
     """
 
     tf = pytest.importorskip("tensorflow")
-    logdir = tempfile.mkdtemp(prefix='open3d_tb_plugin_test')
+    logdir = str(tmp_path)
     writer = tf.summary.create_file_writer(logdir)
 
     rng = np.random.default_rng()
@@ -117,6 +116,7 @@ def test_tensorflow_summary(geometry_data):
                     cube_summary['vertex_colors'])
             else:
                 for prop, tensor in cube_summary.items():
+                    # skip material scalar and vector props
                     if (not prop.startswith("material_") or
                             prop.startswith("material_texture_map_")):
                         cube_summary[prop] = rng.choice(tensor_converter)(
@@ -173,14 +173,13 @@ def test_tensorflow_summary(geometry_data):
     # shutil.rmtree(logdir)
 
 
-# @pytest.mark.skip(reason="This will only run on a local machine with GPU.")
-def test_pytorch_summary(geometry_data):
+def test_pytorch_summary(geometry_data, tmp_path):
     """Test writing summary from PyTorch"""
 
     torch = pytest.importorskip("torch")
     torch_tb = pytest.importorskip("torch.utils.tensorboard")
     SummaryWriter = torch_tb.SummaryWriter
-    logdir = tempfile.mkdtemp(prefix='open3d_tb_plugin_test')
+    logdir = str(tmp_path)
     writer = SummaryWriter(logdir)
 
     rng = np.random.default_rng()
@@ -205,6 +204,7 @@ def test_pytorch_summary(geometry_data):
                 cube_summary['vertex_colors'])
         else:
             for prop, tensor in cube_summary.items():
+                # skip material scalar and vector props
                 if (not prop.startswith("material_") or
                         prop.startswith("material_texture_map_")):
                     cube_summary[prop] = rng.choice(tensor_converter)(tensor)
@@ -251,28 +251,47 @@ def test_pytorch_summary(geometry_data):
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
     # Complete write is guaranteed after Python has exited.
-    # shutil.rmtree(logdir)
+    shutil.rmtree(logdir)
 
 
 def check_material_dict(o3d_geo, material, batch_idx):
     assert o3d_geo.has_valid_material()
     assert o3d_geo.material.material_name == material['material_name'][
         batch_idx]
-    for prop, value in material['scalar_properties'].items():
-        assert o3d_geo.material.scalar_properties[prop] == value[batch_idx]
-    for prop, value in material['vector_properties'].items():
-        assert all(o3d_geo.material.vector_properties[prop] == value[batch_idx])
-    for prop, value in material['texture_maps'].items():
-        assert (o3d_geo.material.texture_maps[prop].as_tensor() ==
-                value[batch_idx].as_tensor()).all()
+    for prop, value in material.items():
+        if prop == "material_name":
+            assert o3d_geo.material.material_name == material[prop][batch_idx]
+        elif prop.startswith("material_scalar_"):
+            assert o3d_geo.material.scalar_properties[
+                prop[16:]] == value[batch_idx]
+        elif prop.startswith("material_vector_"):
+            assert all(o3d_geo.material.vector_properties[prop[16:]] ==
+                       value[batch_idx])
+        elif prop.startswith("material_texture_map_"):
+            if value[batch_idx].dtype == np.uint8:
+                ref_value = value[batch_idx]
+            elif value[batch_idx].dtype == np.uint16:
+                ref_value = (value[batch_idx] // 256).astype(np.uint8)
+            elif value[batch_idx].dtype in (np.float32, np.float64):
+                ref_value = (value[batch_idx] * 255).astype(np.uint8)
+            else:
+                raise ValueError("Reference texture map has unsupported dtype:"
+                                 f"{value[batch_idx].dtype}")
+            assert (o3d_geo.material.texture_maps[
+                prop[21:]].as_tensor().numpy() == ref_value).all()
 
 
-@pytest.mark.skip(reason="This will only run on a local machine with GPU.")
-def test_plugin_data_reader(geometry_data):
-    """Test reading summary data"""
+@pytest.fixture
+def logdir():
+    """Extract logdir zipto provide logdir for tests, cleanup afterwards."""
     shutil.unpack_archive(
         os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
-    logdir = "test_tensorboard_plugin"
+    yield "test_tensorboard_plugin"
+    shutil.rmtree("test_tensorboard_plugin")
+
+
+def test_plugin_data_reader(geometry_data, logdir):
+    """Test reading summary data"""
     cube, material = geometry_data['cube'], geometry_data['material']
     cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
         'material_ls']
@@ -332,14 +351,9 @@ def test_plugin_data_reader(geometry_data):
                 cube_ls_out.line['colors'] == cube_ls_ref.line['colors']).all()
             check_material_dict(cube_ls_out, material_ls, batch_idx)
 
-    # shutil.rmtree(logdir)
 
-
-@pytest.mark.skip(reason="This will only run on a local machine with GPU.")
-def test_tensorboard_app():
-    shutil.unpack_archive(
-        os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
-    logdir = "test_tensorboard_plugin"
+@pytest.mark.skip(reason="This will only run on a machine with GPU and GUI.")
+def test_tensorboard_app(logdir):
     with sp.Popen(['tensorboard', '--logdir', logdir]) as tb_proc:
         sleep(5)
         webbrowser.open('http://localhost:6006/')
@@ -347,4 +361,3 @@ def test_tensorboard_app():
         tb_proc.terminate()
         sleep(2)
         tb_proc.kill()
-    shutil.rmtree(logdir)

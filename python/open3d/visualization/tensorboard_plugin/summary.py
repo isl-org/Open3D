@@ -292,7 +292,7 @@ def _preprocess(prop,
             raise ValueError(f"Material texture map {prop} has shape "
                              f"{tensor.shape} instead of (B, Nr, Nc, C)")
         material["texture_maps"][prop[21:]] = tuple(
-            o3d.t.geometry.Image(save_tensor[bidx]).to(o3d.core.uint8)
+            o3d.t.geometry.Image(_color_to_uint8(save_tensor[bidx]))
             for bidx in range(save_tensor.shape[0]))
         return save_tensor
     if prop.startswith("material_"):
