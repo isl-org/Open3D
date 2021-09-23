@@ -14,7 +14,7 @@ target_sources(utility PRIVATE
 )
 
 if (BUILD_ISPC_MODULE)
-    open3d_ispc_target_sources(utility PRIVATE
+    target_sources(utility PRIVATE
         ISAInfo.ispc
     )
 endif()

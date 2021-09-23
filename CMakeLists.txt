@@ -341,8 +341,12 @@ if (BUILD_ISPC_MODULE)
 
     message(STATUS "Using ISPC instruction sets: ${CMAKE_ISPC_INSTRUCTION_SETS}")
 
-    option(ISPC_FORCE_LEGACY "Force legacy ISPC language emulation over first-class CMake support" OFF)
-    mark_as_advanced(ISPC_FORCE_LEGACY)
+    if (CMAKE_ISPC_COMPILER_LOADED OR (CMAKE_GENERATOR MATCHES "Make" OR CMAKE_GENERATOR MATCHES "Ninja"))
+        option(ISPC_USE_LEGACY_EMULATION "Use legacy ISPC language emulation over first-class CMake support" OFF)
+    else()
+        option(ISPC_USE_LEGACY_EMULATION "Use legacy ISPC language emulation over first-class CMake support" ON)
+    endif()
+    mark_as_advanced(ISPC_USE_LEGACY_EMULATION)
     option(ISPC_PRINT_LEGACY_COMPILE_COMMANDS "Prints legacy compile commands on CMake configuration time" ON)
     mark_as_advanced(ISPC_PRINT_LEGACY_COMPILE_COMMANDS)
 
