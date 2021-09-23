@@ -62,11 +62,6 @@ target_sources(open3d_tf_ops PRIVATE
 )
 
 target_sources(open3d_tf_ops PRIVATE
-    tf_neighbors/tf_batch_neighbors.cpp
-    tf_neighbors/tf_neighbors.cpp
-)
-
-target_sources(open3d_tf_ops PRIVATE
     tf_subsampling/tf_batch_subsampling.cpp
     tf_subsampling/tf_subsampling.cpp
 )
@@ -74,7 +69,6 @@ target_sources(open3d_tf_ops PRIVATE
 target_sources(open3d_tf_ops PRIVATE
     ../contrib/Cloud.cpp
     ../contrib/GridSubsampling.cpp
-    ../contrib/neighbors.cpp
     ../contrib/Nms.cpp
 )
 
