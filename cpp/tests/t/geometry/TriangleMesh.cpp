@@ -151,8 +151,8 @@ TEST_P(TriangleMeshPermuteDevices, ToString) {
     std::string text =
             "TriangleMesh on " + device.ToString() +
             " [2 vertices (Float32) and 2 triangles (Int64)]."
-            "\nVertices Attributes: colors (dtype = Float32, shape = {2, 3})."
-            "\nTriangles Attributes: normals (dtype = Float32, shape = {2, "
+            "\nVertex Attributes: colors (dtype = Float32, shape = {2, 3})."
+            "\nTriangle Attributes: normals (dtype = Float32, shape = {2, "
             "3}).";
 
     EXPECT_STREQ(mesh.ToString().c_str(), text.c_str());
@@ -163,8 +163,8 @@ TEST_P(TriangleMeshPermuteDevices, ToString) {
     // Mesh with only primary attributes.
     std::string text_2 = "TriangleMesh on " + device.ToString() +
                          " [2 vertices (Float32) and 2 triangles (Int64)]."
-                         "\nVertices Attributes: None."
-                         "\nTriangles Attributes: None.";
+                         "\nVertex Attributes: None."
+                         "\nTriangle Attributes: None.";
 
     EXPECT_STREQ(mesh.ToString().c_str(), text_2.c_str());
 
