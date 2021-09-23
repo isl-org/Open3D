@@ -10,7 +10,7 @@ target_sources(tests PRIVATE
 )
 
 if (BUILD_ISPC_MODULE)
-    open3d_ispc_target_sources(tests PRIVATE
+    target_sources(tests PRIVATE
         Helper.ispc
     )
 endif()
