@@ -462,12 +462,6 @@ open3d_find_package_3rdparty_library(3rdparty_threads
     PACKAGE Threads
     TARGETS Threads::Threads
 )
-if(THREADS_HAVE_PTHREAD_ARG)
-    set_property(TARGET Threads::Threads
-                 PROPERTY INTERFACE_COMPILE_OPTIONS
-                 "$<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:SHELL:-Xcompiler -pthread>"
-                 "$<$<AND:$<NOT:$<COMPILE_LANGUAGE:ISPC>>,$<NOT:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>>>:-pthread>")
-endif()
 
 # Assimp
 include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
