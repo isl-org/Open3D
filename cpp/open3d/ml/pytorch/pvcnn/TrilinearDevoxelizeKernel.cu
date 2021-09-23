@@ -35,23 +35,23 @@
 
 using namespace open3d::ml::contrib;
 
-void trilinear_devoxelize(int b,
-                          int c,
-                          int n,
-                          int r,
-                          int r2,
-                          int r3,
-                          bool training,
-                          const float *coords,
-                          const float *feat,
-                          int *inds,
-                          float *wgts,
-                          float *outs) {
+void TrilinearDevoxelize(int b,
+                         int c,
+                         int n,
+                         int r,
+                         int r2,
+                         int r3,
+                         bool training,
+                         const float *coords,
+                         const float *feat,
+                         int *inds,
+                         float *wgts,
+                         float *outs) {
     cudaError_t err;
 
     auto stream = at::cuda::getCurrentCUDAStream();
 
-    trilinear_devoxelize_kernel<<<b, opt_n_threads(n), 0, stream>>>(
+    TrilinearDevoxelizeKernel<<<b, OptNumThreads(n), 0, stream>>>(
             b, c, n, r, r2, r3, training, coords, feat, inds, wgts, outs);
 
     err = cudaGetLastError();
@@ -61,19 +61,19 @@ void trilinear_devoxelize(int b,
     }
 }
 
-void trilinear_devoxelize_grad(int b,
-                               int c,
-                               int n,
-                               int r3,
-                               const int *inds,
-                               const float *wgts,
-                               const float *grad_y,
-                               float *grad_x) {
+void TrilinearDevoxelizeGrad(int b,
+                             int c,
+                             int n,
+                             int r3,
+                             const int *inds,
+                             const float *wgts,
+                             const float *grad_y,
+                             float *grad_x) {
     cudaError_t err;
 
     auto stream = at::cuda::getCurrentCUDAStream();
 
-    trilinear_devoxelize_grad_kernel<<<b, opt_n_threads(n), 0, stream>>>(
+    TrilinearDevoxelizeGradKernel<<<b, OptNumThreads(n), 0, stream>>>(
             b, c, n, r3, inds, wgts, grad_y, grad_x);
 
     err = cudaGetLastError();

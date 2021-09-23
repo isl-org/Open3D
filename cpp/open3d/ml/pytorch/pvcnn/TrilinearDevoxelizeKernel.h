@@ -45,18 +45,18 @@
 /// \param wgts    weight for trilinear interpolation [b, 8, n]
 /// \param outs    Outputs, FloatTensor[b, c, n]
 ///
-void trilinear_devoxelize(int b,
-                          int c,
-                          int n,
-                          int r,
-                          int r2,
-                          int r3,
-                          bool is_training,
-                          const float *coords,
-                          const float *feat,
-                          int *inds,
-                          float *wgts,
-                          float *outs);
+void TrilinearDevoxelize(int b,
+                         int c,
+                         int n,
+                         int r,
+                         int r2,
+                         int r3,
+                         bool is_training,
+                         const float *coords,
+                         const float *feat,
+                         int *inds,
+                         float *wgts,
+                         float *outs);
 
 /// This function computes gradient for trilinear devoxelization op.
 /// It computes gradient for the input voxelgrid.
@@ -70,11 +70,11 @@ void trilinear_devoxelize(int b,
 /// \param grad_y    The gradient passed from top.
 /// \param grad_x   The computed gradient for voxelgrid.
 ///
-void trilinear_devoxelize_grad(int b,
-                               int c,
-                               int n,
-                               int r3,
-                               const int *inds,
-                               const float *wgts,
-                               const float *grad_y,
-                               float *grad_x);
+void TrilinearDevoxelizeGrad(int b,
+                             int c,
+                             int n,
+                             int r3,
+                             const int *inds,
+                             const float *wgts,
+                             const float *grad_y,
+                             float *grad_x);

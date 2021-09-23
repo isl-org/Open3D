@@ -58,7 +58,7 @@ public:
 
         cudaError_t err;
 
-        trilinear_devoxelize_kernel<<<b, opt_n_threads(n), 0, stream>>>(
+        TrilinearDevoxelizeKernel<<<b, OptNumThreads(n), 0, stream>>>(
                 b, c, n, r, r2, r3, training, coords, feat, inds, wgts, outs);
 
         err = cudaGetLastError();
@@ -92,7 +92,7 @@ public:
 
         cudaError_t err;
 
-        trilinear_devoxelize_grad_kernel<<<b, opt_n_threads(n), 0, stream>>>(
+        TrilinearDevoxelizeGradKernel<<<b, OptNumThreads(n), 0, stream>>>(
                 b, c, n, r3, inds, wgts, grad_y, grad_x);
 
         err = cudaGetLastError();
