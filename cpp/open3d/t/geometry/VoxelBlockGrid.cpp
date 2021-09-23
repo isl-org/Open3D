@@ -323,10 +323,19 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
             down_factor, block_resolution_, voxel_size_, depth_min, depth_max);
 
     static const std::unordered_map<std::string, int> kAttrChannelMap = {
-            {"vertex", 3},      {"normal", 3},       {"depth", 1},
-            {"color", 3},       {"mask", 1},         {"ratio", 8},
-            {"index", 8},       {"grad_ratio_x", 8}, {"grad_ratio_y", 8},
-            {"grad_ratio_z", 8}};
+            // Conventional rendering
+            {"vertex", 3},
+            {"normal", 3},
+            {"depth", 1},
+            {"color", 3},
+            // Diff rendering
+            // Each pixel corresponds to info at 8 neighbor grid points
+            {"index", 8},
+            {"mask", 8},
+            {"interp_ratio", 8},
+            {"interp_ratio_dx", 8},
+            {"interp_ratio_dy", 8},
+            {"interp_ratio_dz", 8}};
 
     auto get_dtype = [&](const std::string &attr_name) -> core::Dtype {
         if (attr_name == "mask") {

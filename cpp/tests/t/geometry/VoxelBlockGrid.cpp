@@ -298,18 +298,19 @@ TEST_P(VoxelBlockGridPermuteDevices, RayCasting) {
             EXPECT_TRUE(result_rendering.Contains("depth"));
             EXPECT_TRUE(result_rendering.Contains("color"));
 
-            auto result_diff_rendering =
-                    vbg.RayCast(frustum_block_coords, intrinsic, extrinsics[i],
-                                depth.GetCols(), depth.GetRows(),
-                                {"mask", "ratio", "index", "grad_ratio_x",
-                                 "grad_ratio_y", "grad_ratio_z"},
-                                depth_scale, depth_min, depth_max, 1.0);
-            EXPECT_TRUE(result_diff_rendering.Contains("mask"));
-            EXPECT_TRUE(result_diff_rendering.Contains("ratio"));
+            auto result_diff_rendering = vbg.RayCast(
+                    frustum_block_coords, intrinsic, extrinsics[i],
+                    depth.GetCols(), depth.GetRows(),
+                    {"index", "mask", "interp_ratio", "interp_ratio_dx",
+                     "interp_ratio_dy", "interp_ratio_dz"},
+                    depth_scale, depth_min, depth_max, 1.0);
             EXPECT_TRUE(result_diff_rendering.Contains("index"));
-            EXPECT_TRUE(result_diff_rendering.Contains("grad_ratio_x"));
-            EXPECT_TRUE(result_diff_rendering.Contains("grad_ratio_y"));
-            EXPECT_TRUE(result_diff_rendering.Contains("grad_ratio_z"));
+            EXPECT_TRUE(result_diff_rendering.Contains("mask"));
+            EXPECT_TRUE(result_diff_rendering.Contains("interp_ratio"));
+
+            EXPECT_TRUE(result_diff_rendering.Contains("interp_ratio_dx"));
+            EXPECT_TRUE(result_diff_rendering.Contains("interp_ratio_dy"));
+            EXPECT_TRUE(result_diff_rendering.Contains("interp_ratio_dz"));
         }
     }
 }
