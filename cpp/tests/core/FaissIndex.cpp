@@ -144,7 +144,7 @@ TEST_P(FaissPermuteDevices, HybridSearch) {
     core::nns::FaissIndex index(dataset_points);
 
     // raidus = 0.1, knn = 1
-    float radius = 0.1;
+    double radius = 0.1;
     int max_knn = 1;
     core::Tensor gt_indices = core::Tensor::Init<int64_t>({{1}}, device);
     core::Tensor gt_distances = core::Tensor::Init<float>({{0.00626358}}, device);
@@ -159,7 +159,7 @@ TEST_P(FaissPermuteDevices, HybridSearch) {
     EXPECT_EQ(counts.GetShape(), shape_counts);
     EXPECT_TRUE(indices.AllClose(gt_indices));
     EXPECT_TRUE(distances.AllClose(gt_distances));
-    EXPECT_TRUE(gt_counts.AllClose(gt_counts));
+    EXPECT_TRUE(counts.AllClose(gt_counts));
 }
 
 }  // namespace tests
