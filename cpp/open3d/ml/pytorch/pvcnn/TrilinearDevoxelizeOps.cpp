@@ -12,8 +12,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -133,12 +133,12 @@ static auto registry = torch::RegisterOperators(
         "open3d::trilinear_devoxelize_forward(int r, bool is_training,"
         "Tensor coords, Tensor features)"
         " -> (Tensor[])",
-        &TrilinearDevoxelize);
+        &trilinear_devoxelize_forward);
 
 static auto registry_grad = torch::RegisterOperators(
         "open3d::trilinear_devoxelize_backward(Tensor grad_y,"
         "Tensor indices, Tensor weights, int r)"
         " -> Tensor grad_x",
-        &TrilinearDevoxelizeGrad);
+        &trilinear_devoxelize_backward);
 
 #endif

@@ -137,7 +137,10 @@ Minimal example::
   #                 shape=(1, 8, 5), dtype=float32)
 
 coords: List of 3D coordinates for which features to be interpolated.
-  The shape of this tensor is [B, 3, N].
+  The shape of this tensor is [B, 3, N]. The range of coordinates is
+  [0, resolution-1]. If all of the adjacent position of any coordinate are out
+  of range, then the interpolated features will be 0. Voxel centers are at integral
+  values of voxel grid.
 
 features: A voxel grid of shape [B, C, R, R, R]. Here R is resolution.
 
