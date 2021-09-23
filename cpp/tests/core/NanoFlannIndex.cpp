@@ -92,6 +92,7 @@ TEST(NanoFlannIndex, SearchKnn) {
               0.0199108, 0.0286952, 0.0362638, 0.0411266}},
             device);
     std::tie(indices, distances) = index.SearchKnn(query_points, 12);
+    
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
     EXPECT_TRUE(indices.AllClose(gt_indices));
