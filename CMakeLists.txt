@@ -311,7 +311,7 @@ add_compile_definitions("${HARDENING_DEFINITIONS}")
 # This must be defined here since CUDA calls find_package(Threads) internally.
 # -pthread is disabled since some compilers, e.g. the ISPC compiler, have
 # problems with this compile flag and issue errors.
-set(THREADS_PREFER_PTHREAD_FLAG FALSE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
