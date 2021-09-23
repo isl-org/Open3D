@@ -222,7 +222,7 @@ class PyAPIDocsBuilder:
         class_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isclass(obj[1]) and not obj[0][0] == '_'
+            if inspect.isclass(obj[1]) and not obj[0].startswith('_')
         ]
         for class_name in class_names:
             file_name = "%s.%s.rst" % (full_module_name, class_name)

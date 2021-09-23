@@ -48,9 +48,8 @@ _log.propagate = False
 _stream_handler = logging.StreamHandler()
 _stream_handler.setFormatter(
     logging.Formatter('[%(name)s %(levelname)s T:%(threadName)s] %(message)s'))
-# TODO(@ssheorey): Change to WARNING before merge
-_stream_handler.setLevel(logging.DEBUG)
-_log.setLevel(logging.DEBUG)
+_stream_handler.setLevel(logging.WARNING)
+_log.setLevel(logging.WARNING)
 _log.addHandler(_stream_handler)
 
 

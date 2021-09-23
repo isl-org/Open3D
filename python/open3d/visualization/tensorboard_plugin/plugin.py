@@ -380,8 +380,6 @@ class Open3DPlugin(base_plugin.TBPlugin):
         self._http_api_lock = threading.Lock()
         self._windows = {}
         webrtc_server.disable_http_handshake()
-        # TODO(@ssheorey): Remove before merge
-        o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)
         # Dummy window to ensure GUI remains active even if all user windows are
         # closed.
         self._dummy_window = async_event_loop.run_sync(
