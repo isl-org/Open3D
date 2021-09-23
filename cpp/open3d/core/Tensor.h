@@ -342,6 +342,12 @@ public:
     /// ```
     Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
 
+    /// \brief Appends tensor to the current tensor, along the first dimention.
+    /// Dtype, Device and Dimentions (except the length or the first dimention),
+    /// must be same.
+    Tensor Append(const Tensor& other,
+                  const utility::optional<int> axis = utility::nullopt) const;
+
     /// Assign (copy) values from another Tensor, shape, dtype, device may
     /// change. Slices of the original Tensor still keeps the original memory.
     /// After assignment, the Tensor will be contiguous.

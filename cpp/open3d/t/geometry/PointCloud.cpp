@@ -157,8 +157,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
             utility::LogError(
                     "The pointcloud is missing attribute {}. The pointcloud "
                     "being appended, must have all the attributes present in "
-                    "the "
-                    "pointcloud it is being appended to.",
+                    "the pointcloud it is being appended to.",
                     kv.first);
         }
     }

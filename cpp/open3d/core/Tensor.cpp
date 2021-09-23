@@ -37,6 +37,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
@@ -453,6 +454,101 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
     }
 
     return *this;
+}
+
+static Tensor StackAlongAxis(const Tensor& tensor,
+                             const Tensor& other,
+                             int axis) {
+    SizeVector shape = tensor.GetShape();
+    SizeVector other_shape = other.GetShape();
+
+    const std::size_t shape_size = shape.size();
+    if (shape_size < static_cast<size_t>(axis)) {
+        utility::LogError(
+                "Can't append to tensor with shape {}, along axis = {}.",
+                tensor.GetShape(), axis);
+    }
+
+    // Asserting shape compatibility for appending.
+    int offset;
+    if (other_shape.size() == shape_size) {
+        offset = 0;
+        shape[axis] += other.GetShape()[axis];
+    } else if (other_shape.size() == shape_size - 1) {
+        offset = -1;
+        shape[axis] += 1;
+    } else {
+        utility::LogError(
+                "Failed to append tensor with num_dimentions {}, to "
+                "num_dimentions {}.",
+                other_shape.size(), shape_size);
+    }
+    for (int i = 0; i < static_cast<int>(shape_size); ++i) {
+        if (i < axis && shape[i] != other_shape[i]) {
+            utility::LogError(
+                    "Failed to append tensor with dimentions {}, to dimentions "
+                    "{}.",
+                    other_shape[i], shape[i]);
+        }
+        if (i > axis && shape[i] != other_shape[i + offset]) {
+            utility::LogError(
+                    "Failed to append tensor with dimentions {}, to dimentions "
+                    "{}.",
+                    other_shape[i], shape[i]);
+        }
+    }
+
+    std::vector<TensorKey> tks_tensor;
+    std::vector<TensorKey> tks_other;
+    for (int i = 0; i < axis; ++i) {
+        tks_tensor.push_back(
+                core::TensorKey::Slice(0, tensor.GetShape()[i], 1));
+        tks_other.push_back(core::TensorKey::Slice(0, tensor.GetShape()[i], 1));
+    }
+    tks_tensor.push_back(core::TensorKey::Slice(0, tensor.GetShape()[axis], 1));
+    tks_other.push_back(
+            core::TensorKey::Slice(tensor.GetShape()[axis], shape[axis], 1));
+
+    Tensor combined_tensor(shape, tensor.GetDtype(), tensor.GetDevice());
+
+    combined_tensor.SetItem(tks_tensor, tensor);
+
+    // {x, y} shaped tensor copy to {x, y, 1} is not broadcast compatible.
+    // So, reshape the tensor.
+    if (offset == -1) {
+        shape[axis] = 1;
+        combined_tensor.SetItem(tks_other, other.Reshape(shape));
+        return combined_tensor;
+    }
+
+    return combined_tensor.SetItem(tks_other, other);
+}
+
+Tensor Tensor::Append(const Tensor& other,
+                      const utility::optional<int> axis) const {
+    core::AssertTensorDevice(other, GetDevice());
+    core::AssertTensorDtype(other, GetDtype());
+
+    core::Tensor combined_tensor;
+
+    if (!axis.has_value()) {
+        // Flatten both the tensor and append.
+
+        const int64_t num_elements = NumElements();
+        const int64_t other_num_elements = other.NumElements();
+        const int64_t combined_num_elements = num_elements + other_num_elements;
+        combined_tensor =
+                Tensor::Empty({combined_num_elements}, GetDtype(), GetDevice());
+        combined_tensor.SetItem(core::TensorKey::Slice(0, num_elements, 1),
+                                this->Reshape({num_elements}));
+        combined_tensor.SetItem(
+                core::TensorKey::Slice(num_elements, combined_num_elements, 1),
+                other.Reshape({other_num_elements}));
+
+        return combined_tensor;
+    } else {
+        return StackAlongAxis(*this, other, axis.value());
+    }
 }
 
 /// Assign (copy) values from another Tensor, shape, dtype, device may change.

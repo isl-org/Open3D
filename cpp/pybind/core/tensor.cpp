@@ -424,6 +424,19 @@ void pybind_core_tensor(py::module& m) {
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
             "dtype"_a = py::none(), "device"_a = py::none());
 
+    tensor.def(
+            "append",
+            [](Tensor& tensor, const Tensor& other,
+               const utility::optional<int> axis) {
+                if (axis.has_value()) {
+                    return tensor.Append(other, axis);
+                }
+                return tensor.Append(other);
+            },
+            "Appends the tensor to the current tensor. The data-type, "
+            "device must be same and shape must be compatible.",
+            "other"_a, "axis"_a = py::none());
+
     // Device transfer.
     tensor.def(
             "cpu",
