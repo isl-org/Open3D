@@ -81,7 +81,7 @@ TEST(NanoFlannIndex, SearchKnn) {
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
     EXPECT_TRUE(indices.AllClose(gt_indices));
-    EXPECT_TRUE(distances.AllClose(distances));
+    EXPECT_TRUE(distances.AllClose(gt_distances));
 
     // if k > size.
     shape = core::SizeVector{1, 10};
@@ -113,8 +113,7 @@ TEST(NanoFlannIndex, SearchRadius) {
                                                               {0.1, 0.0, 0.0}},
                                                              device);
     core::Tensor query_points = 
-            core::Tensor::Init<double>({{0.064705, 0.043921, 0.087843}}, device);
-    core::Tensor radii = core::Tensor::Init<double>({0.1});
+        core::Tensor::Init<double>({{0.064705, 0.043921, 0.087843}}, device);
     core::Tensor gt_indices, gt_distances, gt_neighbors_row_splits;
 
     // Set up index.
@@ -131,6 +130,7 @@ TEST(NanoFlannIndex, SearchRadius) {
     gt_distances = core::Tensor::Init<double>(
             {0.00626358, 0.00747938}, device);
     gt_neighbors_row_splits = core::Tensor::Init<int64_t>({0, 2}, device);
+    core::Tensor radii = core::Tensor::Init<double>({0.1});
 
     std::tie(indices, distances, neighbors_row_splits) = index.SearchRadius(query_points, radii, false);
 
