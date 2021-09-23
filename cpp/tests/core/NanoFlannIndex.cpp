@@ -136,6 +136,7 @@ TEST(NanoFlannIndex, SearchRadius) {
 
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
+    EXPECT_EQ(neighbors_row_splits.GetShape(), shape);
     EXPECT_TRUE(indices.AllClose(gt_indices));
     EXPECT_TRUE(distances.AllClose(gt_distances));
     EXPECT_TRUE(neighbors_row_splits.AllClose(gt_neighbors_row_splits));
