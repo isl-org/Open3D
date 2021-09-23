@@ -823,7 +823,7 @@ void ExtractPointCloudCPU
 #endif
 
     if (valid_size < 0) {
-        utility::LogWarning(
+        utility::LogDebug(
                 "No estimated max point cloud size provided, using a 2-pass "
                 "estimation. Surface extraction could be slow.");
         // This pass determines valid number of points.
@@ -1413,7 +1413,7 @@ void ExtractTriangleMeshCPU
 #else
     triangle_count = (*count_ptr).load();
 #endif
-    utility::LogInfo("Total triangle count = {}", triangle_count);
+    utility::LogDebug("Total triangle count = {}", triangle_count);
     triangles = triangles.Slice(0, 0, triangle_count);
 }
 
