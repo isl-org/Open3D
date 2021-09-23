@@ -172,5 +172,26 @@ TEST_P(IndexerPermuteDevices, GetPointers) {
     EXPECT_EQ(indexer.GetOutputPtr(5), output_base_ptr + 5 * dtype_byte_size);
 }
 
+TEST_P(IndexerPermuteDevices, IsContiguous) {
+    core::Device device = GetParam();
+
+    core::Tensor input0({3, 1, 1}, core::Float32, device);
+    core::Tensor input1({2, 1}, core::Float32, device);
+    core::Tensor output({3, 2, 1}, core::Float32, device);
+    core::Indexer indexer({input0, input1}, output);
+
+    EXPECT_FALSE(indexer.GetInput(0).IsContiguous());  // Broadcasted.
+    EXPECT_FALSE(indexer.GetInput(1).IsContiguous());  // Broadcasted.
+    EXPECT_TRUE(indexer.GetOutput().IsContiguous());
+
+    EXPECT_TRUE(core::TensorRef(input0).IsContiguous());
+    EXPECT_TRUE(core::TensorRef(input1).IsContiguous());
+    EXPECT_TRUE(core::TensorRef(output).IsContiguous());
+
+    EXPECT_TRUE(input0.IsContiguous());
+    EXPECT_TRUE(input1.IsContiguous());
+    EXPECT_TRUE(output.IsContiguous());
+}
+
 }  // namespace tests
 }  // namespace open3d
