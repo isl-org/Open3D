@@ -146,12 +146,24 @@ void pybind_voxel_block_grid(py::module& m) {
                     &VoxelBlockGrid::GetUniqueBlockCoordinates),
             "Obtain active block coordinates from a point cloud.", "pcd"_a);
 
-    vbg.def("integrate", &VoxelBlockGrid::Integrate,
+    vbg.def("integrate",
+            py::overload_cast<const core::Tensor&, const Image&, const Image&,
+                              const core::Tensor&, const core::Tensor&, float,
+                              float>(&VoxelBlockGrid::Integrate),
             "Specific operation for TSDF volumes."
             "Integrate an RGB-D frame in the selected block coordinates using "
             "pinhole camera model.",
             "block_coords"_a, "depth"_a, "color"_a, "intrinsic"_a,
             "extrinsic"_a, "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f);
+
+    vbg.def("integrate",
+            py::overload_cast<const core::Tensor&, const Image&,
+                              const core::Tensor&, const core::Tensor&, float,
+                              float>(&VoxelBlockGrid::Integrate),
+            "Specific operation for TSDF volumes."
+            "Similar to RGB-D integration, but only applied to depth images.",
+            "block_coords"_a, "depth"_a, "intrinsic"_a, "extrinsic"_a,
+            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f);
 
     vbg.def("ray_cast", &VoxelBlockGrid::RayCast,
             "Specific operation for TSDF volumes."

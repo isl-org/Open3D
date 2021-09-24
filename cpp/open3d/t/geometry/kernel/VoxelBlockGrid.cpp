@@ -202,7 +202,14 @@ void Integrate(const core::Tensor& depth,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    DISPATCH_INPUT_DTYPE_TO_TEMPLATE(depth.GetDtype(), color.GetDtype(), [&] {
+    core::Dtype input_depth_dtype = depth.GetDtype();
+    core::Dtype input_color_dtype = (input_depth_dtype == core::Dtype::Float32)
+                                            ? core::Dtype::Float32
+                                            : core::Dtype::UInt8;
+    if (color.NumElements() > 0) {
+        input_color_dtype = color.GetDtype();
+    }
+    DISPATCH_INPUT_DTYPE_TO_TEMPLATE(input_depth_dtype, input_color_dtype, [&] {
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
                     IntegrateDeviceDispatcher<input_depth_t, input_color_t,

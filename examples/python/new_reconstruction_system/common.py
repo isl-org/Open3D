@@ -32,7 +32,7 @@ import open3d as o3d
 import glob
 
 
-def load_image_file_names(config):
+def load_depth_file_names(config):
     if not os.path.exists(config.path_dataset):
         print(
             'Path \'{}\' not found.'.format(config.path_dataset),
@@ -41,25 +41,32 @@ def load_image_file_names(config):
         return [], []
 
     depth_folder = os.path.join(config.path_dataset, config.depth_folder)
-    color_folder = os.path.join(config.path_dataset, config.color_folder)
 
     # Only 16-bit png depth is supported
     depth_file_names = glob.glob(os.path.join(depth_folder, '*.png'))
     n_depth = len(depth_file_names)
     if n_depth == 0:
         print('Depth image not found in {}, abort!'.format(depth_folder))
+        return []
+
+    return sorted(depth_file_names)
+
+
+def load_rgbd_file_names(config):
+    depth_file_names = load_depth_file_names(config)
+    if len(depth_file_names) == 0:
         return [], []
 
-    # Try png
+    color_folder = os.path.join(config.path_dataset, config.color_folder)
     extensions = ['*.png', '*.jpg']
     for ext in extensions:
         color_file_names = glob.glob(os.path.join(color_folder, ext))
-        if len(color_file_names) == n_depth:
-            return sorted(depth_file_names), sorted(color_file_names)
+        if len(color_file_names) == len(depth_file_names):
+            return depth_file_names, sorted(color_file_names)
 
     print('Found {} depth images in {}, but cannot find matched number of '
           'color images in {} with extensions {}, abort!'.format(
-              n_depth, depth_folder, color_folder, extensions))
+              len(depth_file_names), depth_folder, color_folder, extensions))
     return [], []
 
 

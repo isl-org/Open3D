@@ -9,7 +9,7 @@ import time
 import matplotlib.pyplot as plt
 
 from config import ConfigParser
-from common import load_image_file_names, save_poses, load_intrinsic, load_extrinsics
+from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics
 
 from tqdm import tqdm
 
@@ -25,7 +25,7 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
         print('Voxel block grid npz file {} not found, trying to integrate...'.
               format(config.path_npz))
 
-        n_files = len(color_file_names)
+        n_files = len(depth_file_names)
         device = o3d.core.Device(config.device)
 
         voxel_size = 3.0 / 512
@@ -47,7 +47,6 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
         start = time.time()
         for i in tqdm(range(n_files)):
             depth = o3d.t.io.read_image(depth_file_names[i]).to(device)
-            color = o3d.t.io.read_image(color_file_names[i]).to(device)
             extrinsic = extrinsics[i]
 
             start = time.time()
@@ -93,8 +92,6 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             d_proj = d[mask_proj]
             depth_readings = depth.as_tensor()[v_proj, u_proj, 0].to(
                 o3d.core.Dtype.Float32) / config.depth_scale
-            color_readings = color.as_tensor()[v_proj, u_proj].to(
-                o3d.core.Dtype.Float32)
             sdf = depth_readings - d_proj
 
             mask_inlier = (depth_readings > 0) \
@@ -110,7 +107,6 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             weight = vbg.attribute('weight').reshape((-1, 1))
             tsdf = vbg.attribute('tsdf').reshape((-1, 1))
 
-
             valid_voxel_indices = voxel_indices[mask_proj][mask_inlier]
             w = weight[valid_voxel_indices]
             wp = w + 1
@@ -119,6 +115,10 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
                 = (tsdf[valid_voxel_indices] * w +
                    sdf[mask_inlier].reshape(w.shape)) / (wp)
             if config.integrate_color:
+                color = o3d.t.io.read_image(color_file_names[i]).to(device)
+                color_readings = color.as_tensor()[v_proj, u_proj].to(
+                    o3d.core.Dtype.Float32)
+
                 color = vbg.attribute('color').reshape((-1, 3))
                 color[valid_voxel_indices] \
                     = (color[valid_voxel_indices] * w +
@@ -151,7 +151,12 @@ if __name__ == '__main__':
                default='vbg.npz')
     config = parser.get_config()
 
-    depth_file_names, color_file_names = load_image_file_names(config)
+    if config.integrate_color:
+        depth_file_names, color_file_names = load_rgbd_file_names(config)
+    else:
+        depth_file_names = load_depth_file_names(config)
+        color_file_names = None
+
     intrinsic = load_intrinsic(config)
     extrinsics = load_extrinsics(config.path_trajectory, config)
 

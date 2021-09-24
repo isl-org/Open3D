@@ -9,8 +9,7 @@ import time
 import matplotlib.pyplot as plt
 
 from config import ConfigParser
-from common import load_image_file_names, save_poses, load_intrinsic, load_extrinsics
-import imageio
+from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics
 
 
 def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
@@ -24,7 +23,7 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
         print('Voxel block grid npz file {} not found, trying to integrate...'.
               format(config.path_npz))
 
-        n_files = len(color_file_names)
+        n_files = len(depth_file_names)
         device = o3d.core.Device(config.device)
 
         if config.integrate_color:
@@ -44,14 +43,19 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             print('Integrating frame {}/{}'.format(i, n_files))
 
             depth = o3d.t.io.read_image(depth_file_names[i]).to(device)
-            color = o3d.t.io.read_image(color_file_names[i]).to(device)
             extrinsic = extrinsics[i]
 
             frustum_block_coords = vbg.compute_unique_block_coordinates(
                 depth, intrinsic, extrinsic, config.depth_scale,
                 config.depth_max)
-            vbg.integrate(frustum_block_coords, depth, color, intrinsic,
-                          extrinsic, config.depth_scale, config.depth_max)
+
+            if config.integrate_color:
+                color = o3d.t.io.read_image(color_file_names[i]).to(device)
+                vbg.integrate(frustum_block_coords, depth, color, intrinsic,
+                              extrinsic, config.depth_scale, config.depth_max)
+            else:
+                vbg.integrate(frustum_block_coords, depth, intrinsic, extrinsic,
+                              config.depth_scale, config.depth_max)
             dt = time.time() - start
         print('Finished integrating {} frames in {} seconds'.format(
             n_files, dt))
@@ -78,10 +82,14 @@ if __name__ == '__main__':
                default='vbg.npz')
     config = parser.get_config()
 
-    depth_file_names, color_file_names = load_image_file_names(config)
+    if config.integrate_color:
+        depth_file_names, color_file_names = load_rgbd_file_names(config)
+    else:
+        depth_file_names = load_depth_file_names(config)
+        color_file_names = None
+
     intrinsic = load_intrinsic(config)
     extrinsics = load_extrinsics(config.path_trajectory, config)
-
     vbg = integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
                     config)
 

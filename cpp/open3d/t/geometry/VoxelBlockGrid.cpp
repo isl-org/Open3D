@@ -272,14 +272,28 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(const PointCloud &pcd) {
 
 void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
                                const Image &depth,
+                               const core::Tensor &intrinsic,
+                               const core::Tensor &extrinsic,
+                               float depth_scale,
+                               float depth_max) {
+    Integrate(block_coords, depth, Image(), intrinsic, extrinsic, depth_scale,
+              depth_max);
+}
+
+void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
+                               const Image &depth,
                                const Image &color,
                                const core::Tensor &intrinsic,
                                const core::Tensor &extrinsic,
                                float depth_scale,
                                float depth_max) {
+    bool integrate_color = color.AsTensor().NumElements() > 0;
+
     CheckBlockCoorinates(block_coords);
     CheckDepthTensor(depth.AsTensor());
-    CheckColorTensor(color.AsTensor());
+    if (integrate_color) {
+        CheckColorTensor(color.AsTensor());
+    }
     CheckIntrinsicTensor(intrinsic);
     CheckExtrinsicTensor(extrinsic);
 
