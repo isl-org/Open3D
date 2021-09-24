@@ -51,9 +51,8 @@ Model::Model(float voxel_size,
                   voxel_size,
                   block_resolution,
                   est_block_count,
-                  device) {
-    T_frame_to_world_ = (T_init.To(core::Device("CPU:0")));
-}
+                  device),
+      T_frame_to_world_(T_init.To(core::Device("CPU:0"))) {}
 
 void Model::SynthesizeModelFrame(Frame& raycast_frame,
                                  float depth_scale,

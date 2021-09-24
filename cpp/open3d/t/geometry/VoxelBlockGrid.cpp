@@ -39,9 +39,7 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-////////////////////
-/// Local functions
-std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
+static std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
         std::shared_ptr<core::HashMap> &hashmap,
         const core::Tensor &active_buf_indices) {
     // Fixed radius search for spatially hashed voxel blocks.
@@ -72,18 +70,17 @@ std::pair<core::Tensor, core::Tensor> BufferRadiusNeighbors(
                           masks_nb.View({27, n, 1}));
 }
 
-TensorMap ConstructTensorMap(
+static TensorMap ConstructTensorMap(
         const core::HashMap &block_hashmap,
         std::unordered_map<std::string, int> name_attr_map) {
     TensorMap tensor_map("tsdf");
-    for (auto it : name_attr_map) {
-        std::string name = it.first;
-        int buf_idx = it.second;
+    for (auto &v : name_attr_map) {
+        std::string name = v.first;
+        int buf_idx = v.second;
         tensor_map[name] = block_hashmap.GetValueTensor(buf_idx);
     }
     return tensor_map;
 }
-////////////////////
 
 VoxelBlockGrid::VoxelBlockGrid(
         const std::vector<std::string> &attr_names,
@@ -95,6 +92,16 @@ VoxelBlockGrid::VoxelBlockGrid(
         const core::Device &device,
         const core::HashBackendType &backend)
     : voxel_size_(voxel_size), block_resolution_(block_resolution) {
+    // Sanity check
+    if (voxel_size <= 0) {
+        utility::LogError("voxel size must be positive, but got {}",
+                          voxel_size);
+    }
+    if (block_resolution <= 0) {
+        utility::LogError("block resolution must be positive, but got {}",
+                          block_resolution);
+    }
+
     // Check property lengths
     size_t n_attrs = attr_names.size();
     if (attr_dtypes.size() != n_attrs) {
@@ -130,9 +137,11 @@ VoxelBlockGrid::VoxelBlockGrid(
 }
 
 core::Tensor VoxelBlockGrid::GetAttribute(const std::string &attr_name) const {
+    AssertInitialized();
     if (name_attr_map_.count(attr_name) == 0) {
         utility::LogWarning("Attribute {} not found, return empty tensor.",
                             attr_name);
+        return core::Tensor();
     }
     int buffer_idx = name_attr_map_.at(attr_name);
     return block_hashmap_->GetValueTensor(buffer_idx);
@@ -140,6 +149,7 @@ core::Tensor VoxelBlockGrid::GetAttribute(const std::string &attr_name) const {
 
 core::Tensor VoxelBlockGrid::GetVoxelCoordinates(
         const core::Tensor &voxel_indices) const {
+    AssertInitialized();
     core::Tensor key_tensor = block_hashmap_->GetKeyTensor();
 
     core::Tensor voxel_coords =
@@ -154,6 +164,7 @@ core::Tensor VoxelBlockGrid::GetVoxelCoordinates(
 
 core::Tensor VoxelBlockGrid::GetVoxelIndices(
         const core::Tensor &buf_indices) const {
+    AssertInitialized();
     core::Device device = block_hashmap_->GetDevice();
 
     int64_t n_blocks = buf_indices.GetLength();
@@ -187,18 +198,21 @@ core::Tensor VoxelBlockGrid::GetVoxelIndices(
 }
 
 core::Tensor VoxelBlockGrid::GetVoxelIndices() const {
+    AssertInitialized();
     return GetVoxelIndices(block_hashmap_->GetActiveIndices());
 }
 
 std::pair<core::Tensor, core::Tensor>
 VoxelBlockGrid::GetVoxelCoordinatesAndFlattenedIndices() {
-    core::Tensor active_buf_indices = block_hashmap_->GetActiveIndices();
-    return GetVoxelCoordinatesAndFlattenedIndices(active_buf_indices);
+    AssertInitialized();
+    return GetVoxelCoordinatesAndFlattenedIndices(
+            block_hashmap_->GetActiveIndices());
 }
 
 std::pair<core::Tensor, core::Tensor>
 VoxelBlockGrid::GetVoxelCoordinatesAndFlattenedIndices(
         const core::Tensor &buf_indices) {
+    AssertInitialized();
     // (N x resolution^3, 3) Float32; (N x resolution^3, 1) Int64
     int64_t n = buf_indices.GetLength();
 
@@ -222,6 +236,7 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
         float depth_scale,
         float depth_max,
         float trunc_voxel_multiplier) {
+    AssertInitialized();
     CheckDepthTensor(depth.AsTensor());
     CheckIntrinsicTensor(intrinsic);
     CheckExtrinsicTensor(extrinsic);
@@ -251,6 +266,7 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
 
 core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
         const PointCloud &pcd, float trunc_voxel_multiplier) {
+    AssertInitialized();
     core::Tensor positions = pcd.GetPointPositions();
 
     const int64_t est_neighbor_multiplier = 8;
@@ -287,6 +303,7 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
                                const core::Tensor &extrinsic,
                                float depth_scale,
                                float depth_max) {
+    AssertInitialized();
     bool integrate_color = color.AsTensor().NumElements() > 0;
 
     CheckBlockCoorinates(block_coords);
@@ -323,6 +340,7 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
                                   float depth_min,
                                   float depth_max,
                                   float weight_threshold) {
+    AssertInitialized();
     CheckBlockCoorinates(block_coords);
     CheckIntrinsicTensor(intrinsic);
     CheckExtrinsicTensor(extrinsic);
@@ -389,6 +407,7 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
 
 PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
                                              float weight_threshold) {
+    AssertInitialized();
     core::Tensor active_buf_indices;
     block_hashmap_->GetActiveIndices(active_buf_indices);
 
@@ -419,6 +438,7 @@ PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
 
 TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
                                                  float weight_threshold) {
+    AssertInitialized();
     core::Tensor active_buf_indices_i32 = block_hashmap_->GetActiveIndices();
     core::Tensor active_nb_buf_indices, active_nb_masks;
     std::tie(active_nb_buf_indices, active_nb_masks) =
@@ -456,6 +476,7 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
 }
 
 void VoxelBlockGrid::Save(const std::string &file_name) const {
+    AssertInitialized();
     // TODO(wei): provide 'GetActiveKeyValues' functionality.
     core::Tensor keys = block_hashmap_->GetKeyTensor();
     std::vector<core::Tensor> values = block_hashmap_->GetValueTensors();
@@ -498,8 +519,15 @@ void VoxelBlockGrid::Save(const std::string &file_name) const {
 
     std::string ext =
             utility::filesystem::GetFileExtensionInLowerCase(file_name);
-    std::string postfix = ext != "npz" ? ".npz" : "";
-    t::io::WriteNpz(file_name + postfix, output);
+    if (ext != "npz") {
+        utility::LogWarning(
+                "File name for a voxel grid should be with the extension "
+                ".npz. Saving to {}.npz",
+                file_name);
+        t::io::WriteNpz(file_name + ".npz", output);
+    } else {
+        t::io::WriteNpz(file_name, output);
+    }
 }
 
 VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
@@ -539,9 +567,9 @@ VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
 
     // Not an ideal way to use an unordered map. Assume all the indices are
     // stored.
-    for (auto &it : inv_attr_map) {
-        int value_id = it.first;
-        attr_names[value_id] = it.second;
+    for (auto &v : inv_attr_map) {
+        int value_id = v.first;
+        attr_names[value_id] = v.second;
 
         core::Tensor value_i =
                 tensor_map.at(fmt::format("value_{:03d}", value_id));
@@ -564,6 +592,12 @@ VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
     auto block_hashmap = vbg.GetHashMap();
     block_hashmap.Insert(keys, soa_value_tensor);
     return vbg;
+}
+
+void VoxelBlockGrid::AssertInitialized() const {
+    if (block_hashmap_ == nullptr) {
+        utility::LogError("VoxelBlockGrid not initialized.");
+    }
 }
 
 }  // namespace geometry

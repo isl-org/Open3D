@@ -40,8 +40,6 @@ namespace geometry {
 namespace kernel {
 namespace voxel_grid {
 
-using index_t = int;
-
 void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
                      const core::Tensor& points,
                      core::Tensor& voxel_block_coords,

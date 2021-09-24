@@ -26,10 +26,6 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashMap.h"
 #include "open3d/t/geometry/Geometry.h"
@@ -63,15 +59,12 @@ public:
     VoxelBlockGrid(const std::vector<std::string> &attr_names,
                    const std::vector<core::Dtype> &attr_dtypes,
                    const std::vector<core::SizeVector> &attr_channels,
-                   float voxel_size,
+                   float voxel_size = 0.0058,
                    int64_t block_resolution = 16,
                    int64_t block_count = 10000,
                    const core::Device &device = core::Device("CPU:0"),
                    const core::HashBackendType &backend =
                            core::HashBackendType::Default);
-
-    /// Default destructor.
-    ~VoxelBlockGrid() = default;
 
     /// Get the underlying hash map that stores values in structure of arrays
     /// (SoA).
@@ -144,7 +137,7 @@ public:
 
     /// Obtain active block coordinates from a point cloud.
     core::Tensor GetUniqueBlockCoordinates(const PointCloud &pcd,
-                                           float trunc_voxel_multiplier = 3.0);
+                                           float trunc_voxel_multiplier = 4.0);
 
     /// Specific operation for TSDF volumes.
     /// Integrate an RGB-D frame in the selected block coordinates using pinhole
@@ -222,6 +215,8 @@ public:
     static VoxelBlockGrid Load(const std::string &file_name);
 
 private:
+    void AssertInitialized() const;
+
     float voxel_size_ = -1;
     int64_t block_resolution_ = -1;
 

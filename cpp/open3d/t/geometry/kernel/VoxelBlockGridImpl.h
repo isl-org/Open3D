@@ -205,9 +205,16 @@ void IntegrateCPU
             block_value_map.Contains("color") && color.NumElements() > 0;
     color_t* color_base_ptr = nullptr;
     ArrayIndexer color_indexer;
+
+    float color_multiplier = 1.0;
     if (integrate_color) {
         color_base_ptr = block_value_map.at("color").GetDataPtr<color_t>();
         color_indexer = ArrayIndexer(color, 2);
+
+        // Float32: [0, 1] -> [0, 255]
+        if (color.GetDtype() == core::Float32) {
+            color_multiplier = 255.0;
+        }
     }
 
     index_t n = indices.GetLength() * resolution3;
@@ -275,8 +282,9 @@ void IntegrateCPU
                     color_indexer.GetDataPtr<input_color_t>(ui, vi);
 
             for (index_t i = 0; i < 3; ++i) {
-                color_ptr[i] =
-                        (weight * color_ptr[i] + input_color_ptr[i]) * inv_wsum;
+                color_ptr[i] = (weight * color_ptr[i] +
+                                input_color_ptr[i] * color_multiplier) *
+                               inv_wsum;
             }
         }
         *weight_ptr = weight + 1;

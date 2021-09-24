@@ -49,7 +49,7 @@ void pybind_voxel_block_grid(py::module& m) {
                      const std::vector<core::SizeVector>&, float, int64_t,
                      int64_t, const core::Device&>(),
             "attr_names"_a, "attr_dtypes"_a, "attr_channels"_a,
-            "voxel_size"_a = 0.0058, "block_resolution"_a = 8,
+            "voxel_size"_a = 0.0058, "block_resolution"_a = 16,
             "block_count"_a = 10000, "device"_a = core::Device("CPU:0"));
 
     vbg.def("hashmap", &VoxelBlockGrid::GetHashMap,
@@ -134,13 +134,13 @@ void pybind_voxel_block_grid(py::module& m) {
             "Note: these coordinates are not activated in the internal sparse "
             "voxel block. They need to be inserted in the hash map.",
             "depth"_a, "intrinsic"_a, "extrinsic"_a, "depth_scale"_a = 1000.0f,
-            "depth_max"_a = 3.0f, "trunc_voxle_multiplier"_a = 4.0);
+            "depth_max"_a = 3.0f, "trunc_voxel_multiplier"_a = 4.0);
 
     vbg.def("compute_unique_block_coordinates",
             py::overload_cast<const PointCloud&, float>(
                     &VoxelBlockGrid::GetUniqueBlockCoordinates),
             "Obtain active block coordinates from a point cloud.", "pcd"_a,
-            "trunc_voxel_multiplier"_a = 3.0);
+            "trunc_voxel_multiplier"_a = 4.0);
 
     vbg.def("integrate",
             py::overload_cast<const core::Tensor&, const Image&, const Image&,

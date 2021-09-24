@@ -33,8 +33,8 @@
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/NumpyIO.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-// #include "tests/UnitTest.h"
 
 namespace open3d {
 namespace tests {
@@ -146,6 +146,29 @@ TEST_P(VoxelBlockGridPermuteDevices, Construct) {
     }
 }
 
+TEST_P(VoxelBlockGridPermuteDevices, Exceptions) {
+    core::Tensor intrinsic = GetIntrinsicTensor();
+    std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
+    float depth_scale = 1000.0;
+    float depth_max = 3.0;
+    Image depth = *t::io::CreateImageFromFile(
+            fmt::format("{}/RGBD/depth/00000.png", std::string(TEST_DATA_DIR)));
+
+    Image color = *t::io::CreateImageFromFile(
+            fmt::format("{}/RGBD/color/00000.jpg", std::string(TEST_DATA_DIR)));
+
+    auto vbg = VoxelBlockGrid();
+    EXPECT_THROW(vbg.GetUniqueBlockCoordinates(depth, intrinsic, extrinsics[0],
+                                               depth_scale, depth_max),
+                 std::runtime_error);
+    EXPECT_THROW(vbg.Integrate(core::Tensor(), depth, color, intrinsic,
+                               extrinsics[0]),
+                 std::runtime_error);
+
+    EXPECT_THROW(vbg.ExtractTriangleMesh(), std::runtime_error);
+    EXPECT_THROW(vbg.ExtractPointCloud(), std::runtime_error);
+}
+
 TEST_P(VoxelBlockGridPermuteDevices, Indexing) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends = EnumerateBackends(device);
@@ -218,7 +241,7 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
         // Hard-coded result -- implementation could change,
         // freeze result of test_data when stable.
         EXPECT_EQ(block_coords_from_depth.GetLength(), 4873);
-        EXPECT_EQ(block_coords_from_pcd.GetLength(), 6227);
+        EXPECT_EQ(block_coords_from_pcd.GetLength(), 7491);
     }
 }
 
@@ -252,6 +275,27 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                             kResolutionTriangles[block_resolution], 6);
             }
         }
+    }
+}
+
+TEST_P(VoxelBlockGridPermuteDevices, IO) {
+    core::Device device = GetParam();
+    std::vector<core::HashBackendType> backends = EnumerateBackends(device);
+
+    std::string file_name = "tmp.npz";
+    for (auto backend : backends) {
+        auto vbg = Integrate(backend, core::UInt16, device, 16);
+        vbg.Save(file_name);
+
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name));
+        auto pcd = vbg.ExtractPointCloud();
+
+        auto vbg_loaded = VoxelBlockGrid::Load(file_name);
+        auto pcd_loaded = vbg_loaded.ExtractPointCloud();
+
+        EXPECT_EQ(pcd.GetPointPositions().GetLength(),
+                  pcd_loaded.GetPointPositions().GetLength());
+        utility::filesystem::RemoveFile(file_name);
     }
 }
 
