@@ -62,7 +62,7 @@ TEST_P(FaissPermuteDevices, KnnSearch) {
                                                              {0.0, 0.2, 0.2},
                                                              {0.1, 0.0, 0.0}},
                                                             device);
-    core::Tensor query_points = 
+    core::Tensor query_points =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, device);
     core::Tensor gt_indices, gt_distances;
 
@@ -103,9 +103,9 @@ TEST_P(FaissPermuteDevices, KnnSearch) {
     EXPECT_TRUE(distances.AllClose(gt_distances));
 
     // Multiple points.
-    query_points = core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843},
-                                              {0.064705, 0.043921, 0.087843}},
-                                             device);
+    query_points = core::Tensor::Init<float>(
+            {{0.064705, 0.043921, 0.087843}, {0.064705, 0.043921, 0.087843}},
+            device);
     shape = core::SizeVector{2, 3};
     gt_indices = core::Tensor::Init<int64_t>({{1, 4, 9}, {1, 4, 9}}, device);
     gt_distances =
@@ -120,7 +120,8 @@ TEST_P(FaissPermuteDevices, KnnSearch) {
     EXPECT_TRUE(distances.AllClose(gt_distances));
 
     // Fails on double type.
-    EXPECT_THROW(index.SetTensorData(dataset_points.To(core::Float64)), std::runtime_error);
+    EXPECT_THROW(index.SetTensorData(dataset_points.To(core::Float64)),
+                 std::runtime_error);
 }
 
 TEST_P(FaissPermuteDevices, HybridSearch) {
@@ -137,7 +138,7 @@ TEST_P(FaissPermuteDevices, HybridSearch) {
                                                              {0.0, 0.2, 0.2},
                                                              {0.1, 0.0, 0.0}},
                                                             device);
-    core::Tensor query_points = 
+    core::Tensor query_points =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, device);
 
     // Set up index.
@@ -147,12 +148,14 @@ TEST_P(FaissPermuteDevices, HybridSearch) {
     double radius = 0.1;
     int max_knn = 1;
     core::Tensor gt_indices = core::Tensor::Init<int64_t>({{1}}, device);
-    core::Tensor gt_distances = core::Tensor::Init<float>({{0.00626358}}, device);
+    core::Tensor gt_distances =
+            core::Tensor::Init<float>({{0.00626358}}, device);
     core::Tensor gt_counts = core::Tensor::Init<int64_t>({1}, device);
     core::Tensor indices, distances, counts;
     core::SizeVector shape{1, 1};
     core::SizeVector shape_counts{1};
-    std::tie(indices, distances, counts) = index.SearchHybrid(query_points, radius, max_knn);
+    std::tie(indices, distances, counts) =
+            index.SearchHybrid(query_points, radius, max_knn);
 
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
