@@ -175,7 +175,7 @@ def extract_pointcloud(volume, config, file_name=None):
             o3d.io.write_point_cloud(file_name, pcd)
 
     elif config.engine == 'tensor':
-        pcd = volume.extract_surface_points(
+        pcd = volume.extract_point_clound(
             weight_threshold=config.surface_weight_thr)
 
         if file_name is not None:
@@ -193,7 +193,7 @@ def extract_trianglemesh(volume, config, file_name=None):
             o3d.io.write_triangle_mesh(file_name, mesh)
 
     elif config.engine == 'tensor':
-        mesh = volume.extract_surface_mesh(
+        mesh = volume.extract_triangle_mesh(
             weight_threshold=config.surface_weight_thr)
         mesh = mesh.to_legacy()
 

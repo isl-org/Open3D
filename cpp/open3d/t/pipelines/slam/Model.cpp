@@ -40,18 +40,18 @@ namespace pipelines {
 namespace slam {
 
 Model::Model(float voxel_size,
-             float sdf_trunc,
              int block_resolution,
              int est_block_count,
              const core::Tensor& T_init,
-             const core::Device& device) {
-    voxel_grid_ = std::make_shared<t::geometry::VoxelBlockGrid>(
-            std::vector<std::string>({"tsdf", "weight", "color"}),
-            std::vector<core::Dtype>(
-                    {core::Float32, core::UInt16, core::UInt16}),
-            std::vector<core::SizeVector>({{1}, {1}, {3}}), voxel_size,
-            block_resolution, est_block_count, device);
-
+             const core::Device& device)
+    : voxel_grid_(std::vector<std::string>({"tsdf", "weight", "color"}),
+                  std::vector<core::Dtype>(
+                          {core::Float32, core::UInt16, core::UInt16}),
+                  std::vector<core::SizeVector>({{1}, {1}, {3}}),
+                  voxel_size,
+                  block_resolution,
+                  est_block_count,
+                  device) {
     T_frame_to_world_ = (T_init.To(core::Device("CPU:0")));
 }
 
@@ -60,7 +60,7 @@ void Model::SynthesizeModelFrame(Frame& raycast_frame,
                                  float depth_min,
                                  float depth_max,
                                  bool enable_color) {
-    auto result = voxel_grid_->RayCast(
+    auto result = voxel_grid_.RayCast(
             frustum_block_coords_, raycast_frame.GetIntrinsics(),
             t::geometry::InverseTransformation(GetCurrentFramePose()),
             raycast_frame.GetWidth(), raycast_frame.GetHeight(),
@@ -106,23 +106,23 @@ void Model::Integrate(const Frame& input_frame,
     core::Tensor intrinsic = input_frame.GetIntrinsics();
     core::Tensor extrinsic =
             t::geometry::InverseTransformation(GetCurrentFramePose());
-    frustum_block_coords_ = voxel_grid_->GetUniqueBlockCoordinates(
+    frustum_block_coords_ = voxel_grid_.GetUniqueBlockCoordinates(
             depth, intrinsic, extrinsic, depth_scale, depth_max);
-    voxel_grid_->Integrate(frustum_block_coords_, depth, color, intrinsic,
-                           extrinsic);
+    voxel_grid_.Integrate(frustum_block_coords_, depth, color, intrinsic,
+                          extrinsic);
 }
 
 t::geometry::PointCloud Model::ExtractPointCloud(int estimated_number,
                                                  float weight_threshold) {
-    return voxel_grid_->ExtractPointCloud(estimated_number, weight_threshold);
+    return voxel_grid_.ExtractPointCloud(estimated_number, weight_threshold);
 }
 
 t::geometry::TriangleMesh Model::ExtractTriangleMesh(int estimated_number,
                                                      float weight_threshold) {
-    return voxel_grid_->ExtractTriangleMesh(estimated_number, weight_threshold);
+    return voxel_grid_.ExtractTriangleMesh(estimated_number, weight_threshold);
 }
 
-core::HashMap Model::GetHashMap() { return voxel_grid_->GetHashMap(); }
+core::HashMap Model::GetHashMap() { return voxel_grid_.GetHashMap(); }
 }  // namespace slam
 }  // namespace pipelines
 }  // namespace t

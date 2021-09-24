@@ -274,7 +274,7 @@ public:
                             // access pattern.
                             this->model_ =
                                     std::make_shared<t::pipelines::slam::Model>(
-                                            voxel_size, voxel_size * 6, 16,
+                                            voxel_size, 16,
                                             prop_values_.bucket_count,
                                             core::Tensor::Eye(
                                                     4, core::Dtype::Float64,

@@ -139,10 +139,12 @@ public:
                                            const core::Tensor &intrinsic,
                                            const core::Tensor &extrinsic,
                                            float depth_scale = 1000.0f,
-                                           float depth_max = 3.0f);
+                                           float depth_max = 3.0f,
+                                           float trunc_voxel_multiplier = 4.0);
 
     /// Obtain active block coordinates from a point cloud.
-    core::Tensor GetUniqueBlockCoordinates(const PointCloud &pcd);
+    core::Tensor GetUniqueBlockCoordinates(const PointCloud &pcd,
+                                           float trunc_voxel_multiplier = 3.0);
 
     /// Specific operation for TSDF volumes.
     /// Integrate an RGB-D frame in the selected block coordinates using pinhole

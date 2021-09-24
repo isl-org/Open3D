@@ -220,7 +220,8 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
         const core::Tensor &intrinsic,
         const core::Tensor &extrinsic,
         float depth_scale,
-        float depth_max) {
+        float depth_max,
+        float trunc_voxel_multiplier) {
     CheckDepthTensor(depth.AsTensor());
     CheckIntrinsicTensor(intrinsic);
     CheckExtrinsicTensor(extrinsic);
@@ -239,17 +240,17 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
     }
 
     core::Tensor block_coords;
-    float trunc_multiplier = block_resolution_ * 0.5;
     kernel::voxel_grid::DepthTouch(frustum_hashmap_, depth.AsTensor(),
                                    intrinsic, extrinsic, block_coords,
                                    block_resolution_, voxel_size_,
-                                   voxel_size_ * trunc_multiplier, depth_scale,
-                                   depth_max, down_factor);
+                                   voxel_size_ * trunc_voxel_multiplier,
+                                   depth_scale, depth_max, down_factor);
 
     return block_coords;
 }
 
-core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(const PointCloud &pcd) {
+core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(
+        const PointCloud &pcd, float trunc_voxel_multiplier) {
     core::Tensor positions = pcd.GetPointPositions();
 
     const int64_t est_neighbor_multiplier = 8;
@@ -263,10 +264,9 @@ core::Tensor VoxelBlockGrid::GetUniqueBlockCoordinates(const PointCloud &pcd) {
     }
 
     core::Tensor block_coords;
-    float trunc_multiplier = block_resolution_ * 0.5 - 1;
     kernel::voxel_grid::PointCloudTouch(
             frustum_hashmap_, positions, block_coords, block_resolution_,
-            voxel_size_, voxel_size_ * trunc_multiplier);
+            voxel_size_, voxel_size_ * trunc_voxel_multiplier);
     return block_coords;
 }
 
