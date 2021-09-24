@@ -48,6 +48,8 @@ namespace geometry {
 /// a sparse voxel grid.
 class VoxelBlockGrid {
 public:
+    VoxelBlockGrid() = default;
+
     /// \brief Default Constructor.
     /// Example:
     /// VoxelBlockGrid({"tsdf", "weight", "color"},
@@ -218,8 +220,8 @@ public:
     static VoxelBlockGrid Load(const std::string &file_name);
 
 private:
-    float voxel_size_;
-    int64_t block_resolution_;
+    float voxel_size_ = -1;
+    int64_t block_resolution_ = -1;
 
     // Global hash map: 3D coords -> voxel blocks in SoA.
     std::shared_ptr<core::HashMap> block_hashmap_;
