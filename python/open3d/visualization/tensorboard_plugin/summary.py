@@ -210,6 +210,9 @@ def _to_integer(tensor):
     try:
         if hasattr(tensor, 'ndim') and tensor.ndim > 0:
             return None
+        # sequence of tensors
+        if hasattr(tensor[0], 'ndim') and tensor[0].ndim > 0:
+            return None
         return np.int64(tensor)
     except (TypeError, ValueError, RuntimeError):
         return None
@@ -230,24 +233,40 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
             Value(prop),
             step_ref=step_ref)
         return None
-    if tensor.ndim == 2:  # batch_size = 1
-        save_tensor = _to_o3d(tensor)
-        save_tensor.reshape((1,) + tuple(save_tensor.shape))
-    elif tensor.ndim == 3:
-        save_tensor = _to_o3d(tensor[:max_outputs])
+    if tensor[0].ndim == 2:  # (B,N,_) tensor or sequence of rank 2 tensors
+        if max_outputs is None:
+            max_outputs = len(tensor)
+        save_tensor = tuple(_to_o3d(tensor[k]) for k in range(max_outputs))
+    elif tensor.ndim == 2:  # batch_size = 1
+        save_tensor = (_to_o3d(tensor),)
     else:
-        raise ValueError(f"Property {prop} tensor should be of shape (N,Np) or"
-                         f" (B,N,Np) or a scalar but is {tensor.shape}.")
+        raise ValueError(f"Property {prop} tensor should be of shape (N, Np) or"
+                         f" (B, N, Np) or a scalar but is {tensor.shape}.")
 
     # Datatype conversion
     if prop.endswith("_colors"):
-        save_tensor = _color_to_uint8(save_tensor)  # includes scaling
+        save_tensor = tuple(
+            _color_to_uint8(st) for st in save_tensor)  # includes scaling
     elif prop.endswith("_indices"):
-        save_tensor = save_tensor.to(dtype=o3d.core.int32)
+        save_tensor = tuple(st.to(dtype=o3d.core.int32) for st in save_tensor)
     else:
-        save_tensor = save_tensor.to(dtype=o3d.core.float32)
+        save_tensor = tuple(st.to(dtype=o3d.core.float32) for st in save_tensor)
 
     return save_tensor
+
+
+def _check_prop_shape(prop, tensor_tuple, exp_shape):
+    if len(tensor_tuple) != exp_shape[0]:
+        raise ValueError(f"Property {prop} tensor should have length "
+                         f"{exp_shape[0]} but is {len(tensor_tuple)}.")
+    if tuple(len(tensor_tuple[k]) for k in range(exp_shape[0])) != exp_shape[1]:
+        raise ValueError(
+            f"Property {prop} tensor should have shape[1] {exp_shape[1]} but "
+            f"is {tuple(len(tensor_tuple[k]) for k in range(exp_shape[0]))}.")
+    if any(tensor_tuple[k].shape[1] != exp_shape[2]
+           for k in range(exp_shape[0])):
+        raise ValueError(f"Property {prop} tensor should have shape[2] "
+                         f"{exp_shape[2]}")
 
 
 def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
@@ -303,13 +322,12 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 del vertex_data[prop_name]
                 continue
             if batch_size is None:  # Get tensor dims from earlier property
-                batch_size, n_vertices, _ = vertex_data[prop_name].shape
+                batch_size = len(vertex_data[prop_name])
+                n_vertices = tuple(
+                    len(vertex_data[prop_name][k]) for k in range(batch_size))
             exp_shape = (batch_size, n_vertices,
                          metadata.GEOMETRY_PROPERTY_DIMS[prop])
-            if tuple(vertex_data[prop_name].shape) != exp_shape:
-                raise ValueError(
-                    f"Property {prop} tensor should be of shape "
-                    f"{exp_shape} but is {vertex_data[prop_name].shape}.")
+            _check_prop_shape(prop, vertex_data[prop_name], exp_shape)
 
         elif prop in ('triangle_indices',) + metadata.TRIANGLE_PROPERTIES:
             o3d_type = "TriangleMesh"
@@ -321,13 +339,11 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 del triangle_data[prop_name]
                 continue
             if n_triangles is None:  # Get tensor dims from earlier property
-                _, n_triangles, _ = triangle_data[prop_name].shape
+                n_triangles = tuple(
+                    len(triangle_data[prop_name][k]) for k in range(batch_size))
             exp_shape = (batch_size, n_triangles,
                          metadata.GEOMETRY_PROPERTY_DIMS[prop])
-            if tuple(triangle_data[prop_name].shape) != exp_shape:
-                raise ValueError(
-                    f"Property {prop} tensor should be of shape "
-                    f"{exp_shape} but is {triangle_data[prop_name].shape}.")
+            _check_prop_shape(prop, triangle_data[prop_name], exp_shape)
 
         elif prop in ('line_indices',) + metadata.LINE_PROPERTIES:
             if o3d_type != "TriangleMesh":
@@ -339,13 +355,11 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 del line_data[prop_name]
                 continue
             if n_lines is None:  # Get tensor dims from earlier property
-                _, n_lines, _ = line_data[prop_name].shape
+                n_lines = tuple(
+                    len(line_data[prop_name][k]) for k in range(batch_size))
             exp_shape = (batch_size, n_lines,
                          metadata.GEOMETRY_PROPERTY_DIMS[prop])
-            if tuple(line_data[prop_name].shape) != exp_shape:
-                raise ValueError(
-                    f"Property {prop} tensor should be of shape "
-                    f"{exp_shape} but is {line_data[prop_name].shape}.")
+            _check_prop_shape(prop, line_data[prop_name], exp_shape)
 
     vertices = vertex_data.pop("positions",
                                o3d.core.Tensor((), dtype=o3d.core.float32))
@@ -358,21 +372,18 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 path=tag,
                 time=step,
                 layer="",
-                vertices=vertices[bidx, :, :]
-                if vertices.ndim == 3 else vertices,
+                vertices=vertices[bidx] if len(vertices) > 0 else vertices,
                 vertex_attributes={
-                    prop: tensor[bidx, :, :]
-                    for prop, tensor in vertex_data.items()
+                    prop: tensor[bidx] for prop, tensor in vertex_data.items()
                 },
-                faces=faces[bidx, :, :] if faces.ndim == 3 else faces,
+                faces=faces[bidx] if len(faces) > 0 else faces,
                 face_attributes={
-                    prop: tensor[bidx, :, :]
+                    prop: tensor[bidx]
                     for prop, tensor in triangle_data.items()
                 },
-                lines=lines[bidx, :, :] if lines.ndim == 3 else lines,
+                lines=lines[bidx] if len(lines) > 0 else lines,
                 line_attributes={
-                    prop: tensor[bidx, :, :]
-                    for prop, tensor in line_data.items()
+                    prop: tensor[bidx] for prop, tensor in line_data.items()
                 },
                 o3d_type=o3d_type,
                 connection=buf_con):
@@ -397,8 +408,8 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
     """Write 3D geometry data as summary.
 
     Args:
-      name (str): A name or tag for this summary. The summary tag used for TensorBoard
-        will be this name prefixed by any active name scopes.
+      name (str): A name or tag for this summary. The summary tag used for
+        TensorBoard will be this name prefixed by any active name scopes.
       data (dict): A dictionary of tensors representing 3D data. Tensorflow,
         PyTorch, Numpy and Open3D tensors are supported. The following keys
         are supported:

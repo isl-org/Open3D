@@ -64,7 +64,8 @@ def _postprocess(geometry):
         if legacy.has_vertex_colors():
             legacy.vertex_colors = o3d.utility.Vector3dVector(
                 np.asarray(legacy.vertex_colors) / 255)
-    elif isinstance(geometry, o3d.t.geometry.TriangleMesh):
+    elif isinstance(geometry,
+                    (o3d.t.geometry.TriangleMesh, o3d.t.geometry.LineSet)):
         if legacy.has_colors():
             legacy.colors = o3d.utility.Vector3dVector(
                 np.asarray(legacy.colors) / 255)

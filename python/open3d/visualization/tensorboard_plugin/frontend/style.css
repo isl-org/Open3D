@@ -81,6 +81,14 @@
   text-align: center;
 }
 
+.webrtc td:first-child {
+  text-align: left;
+}
+
+.webrtc td:last-child {
+  text-align: right;
+}
+
 .webrtc button {
   width: 3em;
   display: inline;
