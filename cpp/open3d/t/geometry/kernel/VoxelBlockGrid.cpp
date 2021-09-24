@@ -140,44 +140,6 @@ void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
         }                                                                  \
     }()
 
-template <typename input_depth_t,
-          typename input_color_t,
-          typename tsdf_t,
-          typename weight_t,
-          typename color_t>
-void IntegrateDeviceDispatcher(const core::Tensor& depth,
-                               const core::Tensor& color,
-                               const core::Tensor& block_indices,
-                               const core::Tensor& block_keys,
-                               TensorMap& block_value_map,
-                               const core::Tensor& intrinsic,
-                               const core::Tensor& extrinsic,
-                               index_t resolution,
-                               float voxel_size,
-                               float sdf_trunc,
-                               float depth_scale,
-                               float depth_max) {
-    core::Device::DeviceType device_type = depth.GetDevice().GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
-        IntegrateCPU<input_depth_t, input_color_t, tsdf_t, weight_t, color_t>(
-                depth, color, block_indices, block_keys, block_value_map,
-                intrinsic, extrinsic, resolution, voxel_size, sdf_trunc,
-                depth_scale, depth_max);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
-#ifdef BUILD_CUDA_MODULE
-        IntegrateCUDA<input_depth_t, input_color_t, tsdf_t, weight_t, color_t>(
-                depth, color, block_indices, block_keys, block_value_map,
-                intrinsic, extrinsic, resolution, voxel_size, sdf_trunc,
-                depth_scale, depth_max);
-#else
-        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
-#endif
-
-    } else {
-        utility::LogError("Unimplemented device");
-    }
-}
-
 void Integrate(const core::Tensor& depth,
                const core::Tensor& color,
                const core::Tensor& block_indices,
@@ -207,46 +169,35 @@ void Integrate(const core::Tensor& depth,
     if (color.NumElements() > 0) {
         input_color_dtype = color.GetDtype();
     }
-    DISPATCH_INPUT_DTYPE_TO_TEMPLATE(input_depth_dtype, input_color_dtype, [&] {
-        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-                block_weight_dtype, block_color_dtype, [&] {
-                    IntegrateDeviceDispatcher<input_depth_t, input_color_t,
-                                              tsdf_t, weight_t, color_t>(
-                            depth, color, block_indices, block_keys,
-                            block_value_map, intrinsic, extrinsic, resolution,
-                            voxel_size, sdf_trunc, depth_scale, depth_max);
-                });
-    });
-}
 
-template <typename tsdf_t, typename weight_t, typename color_t>
-void RayCastDeviceDispatcher(std::shared_ptr<core::HashMap>& hashmap,
-                             const TensorMap& block_value_map,
-                             const core::Tensor& range_map,
-                             TensorMap& renderings_map,
-                             const core::Tensor& intrinsic,
-                             const core::Tensor& extrinsic,
-                             index_t h,
-                             index_t w,
-                             index_t block_resolution,
-                             float voxel_size,
-                             float sdf_trunc,
-                             float depth_scale,
-                             float depth_min,
-                             float depth_max,
-                             float weight_threshold) {
-    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
+    core::Device::DeviceType device_type = depth.GetDevice().GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        RayCastCPU<tsdf_t, weight_t, color_t>(
-                hashmap, block_value_map, range_map, renderings_map, intrinsic,
-                extrinsic, h, w, block_resolution, voxel_size, sdf_trunc,
-                depth_scale, depth_min, depth_max, weight_threshold);
+        DISPATCH_INPUT_DTYPE_TO_TEMPLATE(
+                input_depth_dtype, input_color_dtype, [&] {
+                    DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                            block_weight_dtype, block_color_dtype, [&] {
+                                IntegrateCPU<input_depth_t, input_color_t,
+                                             tsdf_t, weight_t, color_t>(
+                                        depth, color, block_indices, block_keys,
+                                        block_value_map, intrinsic, extrinsic,
+                                        resolution, voxel_size, sdf_trunc,
+                                        depth_scale, depth_max);
+                            });
+                });
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        RayCastCUDA<tsdf_t, weight_t, color_t>(
-                hashmap, block_value_map, range_map, renderings_map, intrinsic,
-                extrinsic, h, w, block_resolution, voxel_size, sdf_trunc,
-                depth_scale, depth_min, depth_max, weight_threshold);
+        DISPATCH_INPUT_DTYPE_TO_TEMPLATE(
+                input_depth_dtype, input_color_dtype, [&] {
+                    DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                            block_weight_dtype, block_color_dtype, [&] {
+                                IntegrateCUDA<input_depth_t, input_color_t,
+                                              tsdf_t, weight_t, color_t>(
+                                        depth, color, block_indices, block_keys,
+                                        block_value_map, intrinsic, extrinsic,
+                                        resolution, voxel_size, sdf_trunc,
+                                        depth_scale, depth_max);
+                            });
+                });
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -280,41 +231,27 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-            block_weight_dtype, block_color_dtype, [&] {
-                RayCastDeviceDispatcher<tsdf_t, weight_t, color_t>(
-                        hashmap, block_value_map, range_map, renderings_map,
-                        intrinsic, extrinsic, h, w, block_resolution,
-                        voxel_size, sdf_trunc, depth_scale, depth_min,
-                        depth_max, weight_threshold);
-            });
-}
-
-template <typename tsdf_t, typename weight_t, typename color_t>
-void ExtractPointCloudDeviceDispatcher(const core::Tensor& block_indices,
-                                       const core::Tensor& nb_block_indices,
-                                       const core::Tensor& nb_block_masks,
-                                       const core::Tensor& block_keys,
-                                       const TensorMap& block_value_map,
-                                       core::Tensor& points,
-                                       core::Tensor& normals,
-                                       core::Tensor& colors,
-                                       index_t block_resolution,
-                                       float voxel_size,
-                                       float weight_threshold,
-                                       int& valid_size) {
-    core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
+    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ExtractPointCloudCPU<tsdf_t, weight_t, color_t>(
-                block_indices, nb_block_indices, nb_block_masks, block_keys,
-                block_value_map, points, normals, colors, block_resolution,
-                voxel_size, weight_threshold, valid_size);
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_weight_dtype, block_color_dtype, [&] {
+                    RayCastCPU<tsdf_t, weight_t, color_t>(
+                            hashmap, block_value_map, range_map, renderings_map,
+                            intrinsic, extrinsic, h, w, block_resolution,
+                            voxel_size, sdf_trunc, depth_scale, depth_min,
+                            depth_max, weight_threshold);
+                });
+
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ExtractPointCloudCUDA<tsdf_t, weight_t, color_t>(
-                block_indices, nb_block_indices, nb_block_masks, block_keys,
-                block_value_map, points, normals, colors, block_resolution,
-                voxel_size, weight_threshold, valid_size);
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_weight_dtype, block_color_dtype, [&] {
+                    RayCastCUDA<tsdf_t, weight_t, color_t>(
+                            hashmap, block_value_map, range_map, renderings_map,
+                            intrinsic, extrinsic, h, w, block_resolution,
+                            voxel_size, sdf_trunc, depth_scale, depth_min,
+                            depth_max, weight_threshold);
+                });
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -345,45 +282,27 @@ void ExtractPointCloud(const core::Tensor& block_indices,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-            block_weight_dtype, block_color_dtype, [&] {
-                ExtractPointCloudDeviceDispatcher<tsdf_t, weight_t, color_t>(
-                        block_indices, nb_block_indices, nb_block_masks,
-                        block_keys, block_value_map, points, normals, colors,
-                        block_resolution, voxel_size, weight_threshold,
-                        valid_size);
-            });
-}
-
-template <typename tsdf_t, typename weight_t, typename color_t>
-void ExtractTriangleMeshDeviceDispatcher(const core::Tensor& block_indices,
-                                         const core::Tensor& inv_block_indices,
-                                         const core::Tensor& nb_block_indices,
-                                         const core::Tensor& nb_block_masks,
-                                         const core::Tensor& block_keys,
-                                         const TensorMap& block_value_map,
-                                         core::Tensor& vertices,
-                                         core::Tensor& triangles,
-                                         core::Tensor& vertex_normals,
-                                         core::Tensor& vertex_colors,
-                                         index_t block_resolution,
-                                         float voxel_size,
-                                         float weight_threshold,
-                                         int& vertex_count) {
     core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ExtractTriangleMeshCPU<tsdf_t, weight_t, color_t>(
-                block_indices, inv_block_indices, nb_block_indices,
-                nb_block_masks, block_keys, block_value_map, vertices,
-                triangles, vertex_normals, vertex_colors, block_resolution,
-                voxel_size, weight_threshold, vertex_count);
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_weight_dtype, block_color_dtype, [&] {
+                    ExtractPointCloudCPU<tsdf_t, weight_t, color_t>(
+                            block_indices, nb_block_indices, nb_block_masks,
+                            block_keys, block_value_map, points, normals,
+                            colors, block_resolution, voxel_size,
+                            weight_threshold, valid_size);
+                });
+
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        ExtractTriangleMeshCUDA<tsdf_t, weight_t, color_t>(
-                block_indices, inv_block_indices, nb_block_indices,
-                nb_block_masks, block_keys, block_value_map, vertices,
-                triangles, vertex_normals, vertex_colors, block_resolution,
-                voxel_size, weight_threshold, vertex_count);
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_weight_dtype, block_color_dtype, [&] {
+                    ExtractPointCloudCUDA<tsdf_t, weight_t, color_t>(
+                            block_indices, nb_block_indices, nb_block_masks,
+                            block_keys, block_value_map, points, normals,
+                            colors, block_resolution, voxel_size,
+                            weight_threshold, valid_size);
+                });
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -416,15 +335,34 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
-            block_weight_dtype, block_color_dtype, [&] {
-                ExtractTriangleMeshDeviceDispatcher<tsdf_t, weight_t, color_t>(
-                        block_indices, inv_block_indices, nb_block_indices,
-                        nb_block_masks, block_keys, block_value_map, vertices,
-                        triangles, vertex_normals, vertex_colors,
-                        block_resolution, voxel_size, weight_threshold,
-                        vertex_count);
-            });
+    core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
+    if (device_type == core::Device::DeviceType::CPU) {
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_weight_dtype, block_color_dtype, [&] {
+                    ExtractTriangleMeshCPU<tsdf_t, weight_t, color_t>(
+                            block_indices, inv_block_indices, nb_block_indices,
+                            nb_block_masks, block_keys, block_value_map,
+                            vertices, triangles, vertex_normals, vertex_colors,
+                            block_resolution, voxel_size, weight_threshold,
+                            vertex_count);
+                });
+    } else if (device_type == core::Device::DeviceType::CUDA) {
+#ifdef BUILD_CUDA_MODULE
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_weight_dtype, block_color_dtype, [&] {
+                    ExtractTriangleMeshCUDA<tsdf_t, weight_t, color_t>(
+                            block_indices, inv_block_indices, nb_block_indices,
+                            nb_block_masks, block_keys, block_value_map,
+                            vertices, triangles, vertex_normals, vertex_colors,
+                            block_resolution, voxel_size, weight_threshold,
+                            vertex_count);
+                });
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
 }
 
 }  // namespace voxel_grid
