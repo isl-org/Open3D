@@ -528,9 +528,10 @@ void RayCastCPU
         float* vertex_ptr = nullptr;
         float* color_ptr = nullptr;
         float* normal_ptr = nullptr;
-        bool* mask_ptr = nullptr;
-        float* ratio_ptr = nullptr;
+
         int64_t* index_ptr = nullptr;
+        bool* mask_ptr = nullptr;
+        float* interp_ratio_ptr = nullptr;
         float* interp_ratio_dx_ptr = nullptr;
         float* interp_ratio_dy_ptr = nullptr;
         float* interp_ratio_dz_ptr = nullptr;
@@ -554,27 +555,60 @@ void RayCastCPU
 
         if (mask_indexer.GetDataPtr()) {
             mask_ptr = mask_indexer.GetDataPtr<bool>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                mask_ptr[i] = false;
+            }
         }
-
-        if (interp_ratio_indexer.GetDataPtr()) {
-            ratio_ptr = interp_ratio_indexer.GetDataPtr<float>(x, y);
-        }
-
         if (index_indexer.GetDataPtr()) {
             index_ptr = index_indexer.GetDataPtr<int64_t>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                index_ptr[i] = 0;
+            }
         }
-
+        if (interp_ratio_indexer.GetDataPtr()) {
+            interp_ratio_ptr = interp_ratio_indexer.GetDataPtr<float>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                interp_ratio_ptr[i] = 0;
+            }
+        }
         if (interp_ratio_dx_indexer.GetDataPtr()) {
             interp_ratio_dx_ptr =
                     interp_ratio_dx_indexer.GetDataPtr<float>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                interp_ratio_dx_ptr[i] = 0;
+            }
         }
         if (interp_ratio_dy_indexer.GetDataPtr()) {
             interp_ratio_dy_ptr =
                     interp_ratio_dy_indexer.GetDataPtr<float>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                interp_ratio_dy_ptr[i] = 0;
+            }
         }
         if (interp_ratio_dz_indexer.GetDataPtr()) {
             interp_ratio_dz_ptr =
                     interp_ratio_dz_indexer.GetDataPtr<float>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                interp_ratio_dz_ptr[i] = 0;
+            }
         }
 
         if (color_indexer.GetDataPtr()) {
@@ -697,8 +731,8 @@ void RayCastCPU
                     float rz = dz_v * (ratio_z) + (1 - dz_v) * (1 - ratio_z);
                     float r = rx * ry * rz;
 
-                    if (ratio_ptr) {
-                        ratio_ptr[k] = r;
+                    if (interp_ratio_ptr) {
+                        interp_ratio_ptr[k] = r;
                     }
                     if (mask_ptr) {
                         mask_ptr[k] = true;

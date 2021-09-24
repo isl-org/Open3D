@@ -315,5 +315,120 @@ TEST_P(VoxelBlockGridPermuteDevices, RayCasting) {
     }
 }
 
+TEST_P(VoxelBlockGridPermuteDevices, DISABLED_RayCastingVisualize) {
+    core::Device device = GetParam();
+    std::vector<core::HashBackendType> backends =
+            EnumerateBackends(device, /* include_slab = */ false);
+
+    core::Tensor intrinsic = GetIntrinsicTensor();
+    std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
+    const float depth_scale = 1000.0;
+    const float depth_min = 0.1;
+    const float depth_max = 3.0;
+
+    for (auto backend : backends) {
+        for (auto &dtype : std::vector<core::Dtype>{core::Float32}) {
+            auto vbg = Integrate(backend, dtype, device,
+                                 /* block_resolution = */ 8);
+
+            int i = extrinsics.size() - 1;
+
+            Image depth = t::io::CreateImageFromFile(
+                                  fmt::format("{}/RGBD/depth/{:05d}.png",
+                                              std::string(TEST_DATA_DIR), i))
+                                  ->To(device);
+            core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
+                    depth, intrinsic, extrinsics[i], depth_scale, depth_max);
+
+            int width = depth.GetCols();
+            int height = depth.GetRows();
+
+            // Select sets
+            auto result =
+                    vbg.RayCast(frustum_block_coords, intrinsic, extrinsics[i],
+                                width, height,
+                                {"vertex", "normal", "depth", "color", "index",
+                                 "mask", "interp_ratio", "interp_ratio_dx",
+                                 "interp_ratio_dy", "interp_ratio_dz"},
+                                depth_scale, depth_min, depth_max, 1.0);
+
+            auto to_legacy_ptr = [=](const Image &im_t) {
+                return std::make_shared<open3d::geometry::Image>(
+                        im_t.ToLegacy());
+            };
+
+            // Conventional rendering
+            visualization::DrawGeometries(
+                    {to_legacy_ptr(Image(result["vertex"]))});
+            visualization::DrawGeometries(
+                    {to_legacy_ptr(Image(result["normal"]))});
+            visualization::DrawGeometries({to_legacy_ptr(
+                    Image(result["depth"]).ColorizeDepth(1000.0, 0, 4))});
+            visualization::DrawGeometries(
+                    {to_legacy_ptr(Image(result["color"]))});
+
+            // Differentiable rendering
+
+            // Render color
+            auto color_tensor = vbg.GetAttribute("color").Reshape({-1, 3});
+
+            // (H * W * 8)
+            core::Tensor nb_indices =
+                    result["index"].Reshape(core::SizeVector({-1}));
+
+            // (H * W * 8, 3)
+            core::Tensor nb_colors = color_tensor.IndexGet({nb_indices});
+
+            // (H * W * 8, 1)
+            core::Tensor nb_interp_ratio =
+                    result["interp_ratio"].Reshape(core::SizeVector({-1, 1}));
+
+            // (H, W, 3)
+            core::Tensor nb_sum_color =
+                    (nb_colors * nb_interp_ratio)
+                            .Reshape(core::SizeVector({height, width, 8, 3}))
+                            .Sum({2});
+
+            visualization::DrawGeometries(
+                    {to_legacy_ptr(Image(nb_sum_color / 255.0))});
+
+            // Render normal
+            auto tsdf_tensor = vbg.GetAttribute("tsdf").Reshape({-1, 1});
+
+            // (H * W * 8, 1)
+            core::Tensor nb_tsdfs = tsdf_tensor.IndexGet({nb_indices});
+            core::Tensor nb_interp_ratio_dx = result["interp_ratio_dx"].Reshape(
+                    core::SizeVector({-1, 1}));
+            core::Tensor nb_interp_ratio_dy = result["interp_ratio_dy"].Reshape(
+                    core::SizeVector({-1, 1}));
+            core::Tensor nb_interp_ratio_dz = result["interp_ratio_dz"].Reshape(
+                    core::SizeVector({-1, 1}));
+
+            // (H * W * 8, 1)
+            core::Tensor nx = nb_interp_ratio_dx * nb_tsdfs;
+            core::Tensor ny = nb_interp_ratio_dy * nb_tsdfs;
+            core::Tensor nz = nb_interp_ratio_dz * nb_tsdfs;
+
+            // (H * W) x 3
+            nx = nx.Reshape(core::SizeVector({height * width, 8})).Sum({1});
+            ny = ny.Reshape(core::SizeVector({height * width, 8})).Sum({1});
+            nz = nz.Reshape(core::SizeVector({height * width, 8})).Sum({1});
+            core::Tensor norm = (nx * nx + ny * ny + nz * nz).Sqrt();
+            nx = nx / norm;
+            ny = ny / norm;
+            nz = nz / norm;
+
+            core::Tensor normals = core::Tensor({3, height * width},
+                                                core::Dtype::Float32, device);
+            normals.SetItem({core::TensorKey::Index(0)}, nx);
+            normals.SetItem({core::TensorKey::Index(1)}, ny);
+            normals.SetItem({core::TensorKey::Index(2)}, nz);
+            normals =
+                    normals.T().Reshape({height, width, 3}).Contiguous().Neg_();
+            visualization::DrawGeometries({to_legacy_ptr(normals)});
+        }
+    }
+}
+
 }  // namespace tests
 }  // namespace open3d
