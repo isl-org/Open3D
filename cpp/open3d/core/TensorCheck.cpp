@@ -51,6 +51,26 @@ void AssertTensorDtype_(const char* file,
     utility::Logger::LogError_(file, line, function, error_message.c_str());
 }
 
+void AssertTensorDtype_(const char* file,
+                        int line,
+                        const char* function,
+                        const Tensor& tensor,
+                        const std::vector<Dtype>& dtype) {
+    for (auto& it : dtype) {
+        if (tensor.GetDtype() == it) {
+            return;
+        }
+    }
+    std::string error_message = fmt::format(
+            "Tensor has dtype {}, but is expected to have dtype among",
+            tensor.GetDtype().ToString());
+    for (auto& it : dtype) {
+        error_message += fmt::format(" {}", it.ToString());
+    }
+
+    utility::Logger::LogError_(file, line, function, error_message.c_str());
+}
+
 void AssertTensorDevice_(const char* file,
                          int line,
                          const char* function,

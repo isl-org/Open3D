@@ -34,6 +34,29 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
+static void AssertEmptyTensor(const core::Tensor &tensor,
+                              const std::string &name) {
+    if (!tensor.GetLength()) {
+        utility::LogError("{} is empty.", name);
+    }
+}
+
+static void AssertValidCorrespondences(
+        const core::Tensor &correspondence_indices,
+        const core::Tensor &source_points) {
+    core::AssertTensorDtype(correspondence_indices, core::Int64);
+    core::AssertTensorDevice(correspondence_indices, source_points.GetDevice());
+
+    if (correspondence_indices.GetShape() !=
+        core::SizeVector({source_points.GetLength(), 1})) {
+        utility::LogError(
+                "Correspondences must be of same length as source point-cloud "
+                "positions. Expected correspondences of shape {}, but got {}.",
+                core::SizeVector({source_points.GetLength(), 1}).ToString(),
+                correspondence_indices.GetShape().ToString());
+    }
+}
+
 core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_points,
                                      const core::Tensor &target_normals,
@@ -42,20 +65,14 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     const core::Device device = source_points.GetDevice();
     const core::Dtype dtype = source_points.GetDtype();
 
-    if (dtype != core::Float64 && dtype != core::Float32) {
-        utility::LogError("Only Float32 and Float64 dtypes are supported.");
-    }
-
+    core::AssertTensorDtype(source_points, {core::Float64, core::Float32});
     core::AssertTensorDtype(target_points, dtype);
     core::AssertTensorDtype(target_normals, dtype);
     core::AssertTensorDevice(target_points, device);
 
-    if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
-        utility::LogError("Source and/or target point cloud is empty.");
-    }
-    if (correspondence_indices.GetLength() == 0) {
-        utility::LogError("No correspondence present.");
-    }
+    AssertEmptyTensor(source_points, "Source PointCloud");
+    AssertEmptyTensor(target_points, "Target PointCloud");
+    AssertValidCorrespondences(correspondence_indices, source_points);
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
@@ -97,24 +114,17 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
     const core::Device device = source_points.GetDevice();
     const core::Dtype dtype = source_points.GetDtype();
 
-    if (dtype != core::Float64 && dtype != core::Float32) {
-        utility::LogError("Only Float32 and Float64 dtypes are supported.");
-    }
-
+    core::AssertTensorDtype(source_points, {core::Float64, core::Float32});
     core::AssertTensorDtype(source_colors, dtype);
     core::AssertTensorDtype(target_points, dtype);
     core::AssertTensorDtype(target_normals, dtype);
     core::AssertTensorDtype(target_colors, dtype);
     core::AssertTensorDtype(target_color_gradients, dtype);
-
     core::AssertTensorDevice(target_points, device);
 
-    if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
-        utility::LogError("Source and/or target point cloud is empty.");
-    }
-    if (correspondence_indices.GetLength() == 0) {
-        utility::LogError("No correspondence present.");
-    }
+    AssertEmptyTensor(source_points, "Source PointCloud");
+    AssertEmptyTensor(target_points, "Target PointCloud");
+    AssertValidCorrespondences(correspondence_indices, source_points);
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
@@ -154,23 +164,16 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     const core::Device device = source_points.GetDevice();
     const core::Dtype dtype = source_points.GetDtype();
 
-    if (dtype != core::Float64 && dtype != core::Float32) {
-        utility::LogError("Only Float32 and Float64 dtypes are supported.");
-    }
-
+    core::AssertTensorDtype(source_points, {core::Float64, core::Float32});
     core::AssertTensorDtype(target_points, dtype);
     core::AssertTensorDevice(target_points, device);
 
-    if (source_points.GetLength() == 0 || target_points.GetLength() == 0) {
-        utility::LogError("Source and/or target point cloud is empty.");
-    }
-    if (correspondence_indices.GetLength() == 0) {
-        utility::LogError("No correspondence present.");
-    }
+    AssertEmptyTensor(source_points, "Source PointCloud");
+    AssertEmptyTensor(target_points, "Target PointCloud");
+    AssertValidCorrespondences(correspondence_indices, source_points);
 
     // [Output] Rotation and translation tensor of type Float64.
-    core::Tensor R;
-    core::Tensor t;
+    core::Tensor R, t;
 
     int inlier_count = 0;
 
@@ -244,16 +247,9 @@ core::Tensor ComputeInformationMatrix(
     const core::Device device = target_points.GetDevice();
     const core::Dtype dtype = target_points.GetDtype();
 
-    if (dtype != core::Float64 && dtype != core::Float32) {
-        utility::LogError("Only Float32 and Float64 dtypes are supported.");
-    }
-
-    if (target_points.GetLength() == 0) {
-        utility::LogError("Target point cloud is empty.");
-    }
-    if (correspondence_indices.GetLength() == 0) {
-        utility::LogError("No correspondence present.");
-    }
+    core::AssertTensorDtype(target_points, {core::Float64, core::Float32});
+    AssertEmptyTensor(target_points, "Target PointCloud");
+    AssertValidCorrespondences(correspondence_indices, target_points);
 
     core::Tensor information_matrix =
             core::Tensor::Empty({6, 6}, core::Float64, core::Device("CPU:0"));

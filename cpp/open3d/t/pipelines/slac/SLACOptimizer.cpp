@@ -181,6 +181,8 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
             tpcd_j_nns.HybridSearch(tpcd_i_transformed_Tij.GetPointPositions(),
                                     distance_threshold, 1);
 
+    target_indices = target_indices.To(core::Int64);
+
     // Get the correspondence_set Transformed of shape {C, 2}.
     core::Tensor correspondence_set =
             ConvertCorrespondencesTargetIndexedToCx2Form(target_indices);

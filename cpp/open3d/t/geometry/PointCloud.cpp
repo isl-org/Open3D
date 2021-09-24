@@ -166,6 +166,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
+    // Asserts are performed in the kernel.
     kernel::transform::TransformPoints(transformation, GetPointPositions());
     if (HasPointNormals()) {
         kernel::transform::TransformNormals(transformation, GetPointNormals());
@@ -198,6 +199,7 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
+    // Asserts are performed in the kernel.
     kernel::transform::RotatePoints(R, GetPointPositions(), center);
 
     if (HasPointNormals()) {
@@ -238,24 +240,20 @@ PointCloud PointCloud::VoxelDownSample(
 void PointCloud::EstimateNormals(
         const int max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
-    core::Dtype dtype = this->GetPointPositions().GetDtype();
-    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
-        utility::LogError(
-                "Only Float32 and Float64 type color attribute supported for "
-                "estimating color gradient.");
-    }
-    const bool has_normals = HasPointNormals();
+    core::AssertTensorDtype(this->GetPointPositions(),
+                            {core::Float32, core::Float64});
+
+    const core::Dtype dtype = this->GetPointPositions().GetDtype();
     const core::Device device = GetDevice();
     const core::Device::DeviceType device_type = device.GetType();
+    const bool has_normals = HasPointNormals();
 
     if (!has_normals) {
         this->SetPointNormals(core::Tensor::Empty(
                 {GetPointPositions().GetLength(), 3}, dtype, device));
     } else {
-        if (this->GetPointNormals().GetDtype() != dtype) {
-            utility::LogError(
-                    "Normals attribute must have same dtype as positions.");
-        }
+        core::AssertTensorDtype(this->GetPointNormals(), dtype);
+
         this->SetPointNormals(GetPointNormals().Contiguous());
     }
 
@@ -323,14 +321,10 @@ void PointCloud::EstimateColorGradients(
                 "PointCloud must have colors and normals attribute "
                 "to compute color gradients.");
     }
+    core::AssertTensorDtype(this->GetPointColors(),
+                            {core::Float32, core::Float64});
 
-    core::Dtype dtype = this->GetPointColors().GetDtype();
-    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
-        utility::LogError(
-                "Only Float32 and Float64 type color attribute supported for "
-                "estimating color gradient.");
-    }
-
+    const core::Dtype dtype = this->GetPointColors().GetDtype();
     const core::Device device = GetDevice();
     const core::Device::DeviceType device_type = device.GetType();
 

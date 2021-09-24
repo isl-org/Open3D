@@ -78,6 +78,12 @@ void AssertTensorDtype_(const char* file,
                         const Tensor& tensor,
                         const Dtype& dtype);
 
+void AssertTensorDtype_(const char* file,
+                        int line,
+                        const char* function,
+                        const Tensor& tensor,
+                        const std::vector<Dtype>& dtype);
+
 void AssertTensorDevice_(const char* file,
                          int line,
                          const char* function,
