@@ -15,23 +15,29 @@ import imageio
 
 def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
               config):
-    if os.path.exists(config.npz_file):
+    if os.path.exists(config.path_npz):
         print('Voxel block grid npz file {} found, trying to load...'.format(
-            config.npz_file))
-        vbg = o3d.t.geometry.VoxelBlockGrid.load(config.npz_file)
+            config.path_npz))
+        vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz)
         print('Loading finished.')
     else:
         print('Voxel block grid npz file {} not found, trying to integrate...'.
-              format(config.npz_file))
+              format(config.path_npz))
 
         n_files = len(color_file_names)
         device = o3d.core.Device(config.device)
 
-        vbg = o3d.t.geometry.VoxelBlockGrid(
-            ('tsdf', 'weight', 'color'),
-            (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32,
-             o3d.core.Dtype.Float32), ((1), (1), (3)), 3.0 / 512, 8, 100000,
-            o3d.core.Device('CUDA:0'))
+        if config.integrate_color:
+            vbg = o3d.t.geometry.VoxelBlockGrid(
+                ('tsdf', 'weight', 'color'),
+                (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32,
+                 o3d.core.Dtype.Float32), ((1), (1), (3)), 3.0 / 512, 8, 100000,
+                o3d.core.Device('CUDA:0'))
+        else:
+            vbg = o3d.t.geometry.VoxelBlockGrid(
+                ('tsdf', 'weight'),
+                (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32), ((1), (1)),
+                3.0 / 512, 8, 100000, o3d.core.Device('CUDA:0'))
 
         start = time.time()
         for i in range(n_files):
@@ -44,18 +50,13 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             frustum_block_coords = vbg.compute_unique_block_coordinates(
                 depth, intrinsic, extrinsic, config.depth_scale,
                 config.depth_max)
-
             vbg.integrate(frustum_block_coords, depth, color, intrinsic,
                           extrinsic, config.depth_scale, config.depth_max)
-
-            if i % 10 == 0 and i > 0:
-                pcd = vbg.extract_point_cloud()
-                o3d.visualization.draw([pcd])
             dt = time.time() - start
         print('Finished integrating {} frames in {} seconds'.format(
             n_files, dt))
-        print('Saving to {}...'.format(config.npz_file))
-        vbg.save(config.npz_file)
+        print('Saving to {}...'.format(config.path_npz))
+        vbg.save(config.path_npz)
         print('Saving finished')
 
     return vbg
@@ -69,9 +70,10 @@ if __name__ == '__main__':
         help='YAML config file path. Please refer to default_config.yml as a '
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
+    parser.add('--integrate_color', action='store_true')
     parser.add('--path_trajectory',
                help='path to the trajectory .log or .json file.')
-    parser.add('--npz_file',
+    parser.add('--path_npz',
                help='path to the npz file that stores voxel block grid.',
                default='vbg.npz')
     config = parser.get_config()

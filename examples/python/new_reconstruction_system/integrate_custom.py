@@ -16,14 +16,14 @@ from tqdm import tqdm
 
 def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
               config):
-    if os.path.exists(config.npz_file):
+    if os.path.exists(config.path_npz):
         print('Voxel block grid npz file {} found, trying to load...'.format(
-            config.npz_file))
-        vbg = o3d.t.geometry.VoxelBlockGrid.load(config.npz_file)
+            config.path_npz))
+        vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz)
         print('Loading finished.')
     else:
         print('Voxel block grid npz file {} not found, trying to integrate...'.
-              format(config.npz_file))
+              format(config.path_npz))
 
         n_files = len(color_file_names)
         device = o3d.core.Device(config.device)
@@ -32,15 +32,20 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
         trunc = voxel_size * 4
         res = 8
 
-        vbg = o3d.t.geometry.VoxelBlockGrid(
-            ('tsdf', 'weight'),
-            (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32), ((1), (1)),
-            voxel_size, res, 100000, o3d.core.Device('CUDA:0'))
+        if config.integrate_color:
+            vbg = o3d.t.geometry.VoxelBlockGrid(
+                ('tsdf', 'weight', 'color'),
+                (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32,
+                 o3d.core.Dtype.Float32), ((1), (1), (3)), 3.0 / 512, 8, 100000,
+                o3d.core.Device('CUDA:0'))
+        else:
+            vbg = o3d.t.geometry.VoxelBlockGrid(
+                ('tsdf', 'weight'),
+                (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32), ((1), (1)),
+                3.0 / 512, 8, 100000, o3d.core.Device('CUDA:0'))
 
         start = time.time()
         for i in tqdm(range(n_files)):
-            print('Integrating frame {}/{}'.format(i, n_files))
-
             depth = o3d.t.io.read_image(depth_file_names[i]).to(device)
             color = o3d.t.io.read_image(color_file_names[i]).to(device)
             extrinsic = extrinsics[i]
@@ -57,14 +62,12 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             buf_indices, masks = vbg.hashmap().find(frustum_block_coords)
             o3d.core.cuda.synchronize()
             end = time.time()
-            print('hash map preparation: {}'.format(end - start))
 
             start = time.time()
             voxel_coords, voxel_indices = vbg.voxel_coordinates_and_flattened_indices(
                 buf_indices)
             o3d.core.cuda.synchronize()
             end = time.time()
-            print('enumerate voxels: {}'.format(end - start))
 
             # Now project them to the depth and find association
             # (3, N) -> (2, N)
@@ -73,9 +76,6 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             xyz = extrinsic_dev[:3, :3] @ voxel_coords.T() + extrinsic_dev[:3,
                                                                            3:]
 
-            # o3d.visualization.draw(
-            #     [o3d.t.geometry.PointCloud(xyz.T())])
-
             intrinsic_dev = intrinsic.to(device, o3d.core.Dtype.Float32)
             uvd = intrinsic_dev @ xyz
             d = uvd[2]
@@ -83,7 +83,6 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             v = (uvd[1] / d).round().to(o3d.core.Dtype.Int64)
             o3d.core.cuda.synchronize()
             end = time.time()
-            print('geometry transformation: {}'.format(end - start))
 
             start = time.time()
             mask_proj = (d > 0) & (u >= 0) & (v >= 0) & (u < depth.columns) & (
@@ -106,12 +105,11 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             sdf = sdf / trunc
             o3d.core.cuda.synchronize()
             end = time.time()
-            print('association: {}'.format(end - start))
 
             start = time.time()
             weight = vbg.attribute('weight').reshape((-1, 1))
-            # color = vbg.attribute('color').reshape((-1, 3))
             tsdf = vbg.attribute('tsdf').reshape((-1, 1))
+
 
             valid_voxel_indices = voxel_indices[mask_proj][mask_inlier]
             w = weight[valid_voxel_indices]
@@ -120,16 +118,18 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             tsdf[valid_voxel_indices] \
                 = (tsdf[valid_voxel_indices] * w +
                    sdf[mask_inlier].reshape(w.shape)) / (wp)
-            # color[valid_voxel_indices] \
-            #     = (color[valid_voxel_indices] * w +
-            #              color_readings[mask_inlier]) / (wp)
+            if config.integrate_color:
+                color = vbg.attribute('color').reshape((-1, 3))
+                color[valid_voxel_indices] \
+                    = (color[valid_voxel_indices] * w +
+                             color_readings[mask_inlier]) / (wp)
+
             weight[valid_voxel_indices] = wp
             o3d.core.cuda.synchronize()
             end = time.time()
-            print('update: {}'.format(end - start))
 
-        print('Saving to {}...'.format(config.npz_file))
-        vbg.save(config.npz_file)
+        print('Saving to {}...'.format(config.path_npz))
+        vbg.save(config.path_npz)
         print('Saving finished')
 
     return vbg
@@ -143,9 +143,10 @@ if __name__ == '__main__':
         help='YAML config file path. Please refer to default_config.yml as a '
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
+    parser.add('--integrate_color', action='store_true')
     parser.add('--path_trajectory',
                help='path to the trajectory .log or .json file.')
-    parser.add('--npz_file',
+    parser.add('--path_npz',
                help='path to the npz file that stores voxel block grid.',
                default='vbg.npz')
     config = parser.get_config()
