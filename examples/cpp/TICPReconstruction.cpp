@@ -306,7 +306,7 @@ protected:
 
     void UpdateMain() {
         // ----- Class members passed to function arguments
-        // ----- in t::pipeline::registration::RegistrationMultiScaleICP
+        // ----- in t::pipeline::registration::MultiScaleICP
         const t::geometry::PointCloud source = source_.To(device_);
         const t::geometry::PointCloud target = target_.To(device_);
         const std::vector<double> voxel_sizes = voxel_sizes_;
@@ -316,7 +316,7 @@ protected:
         const core::Tensor init_source_to_target = transformation_;
         auto& estimation = *estimation_;
 
-        // ----- RegistrationMultiScaleICP Function directly taken from
+        // ----- MultiScaleICP Function directly taken from
         // ----- t::pipelines::registration, and added O3DVisualizer to it.
         core::Device device = source.GetDevice();
         core::Dtype dtype = source.GetPointPositions().GetDtype();
@@ -780,7 +780,7 @@ private:
         if (!(criterias.size() == voxel_sizes.size() &&
               criterias.size() == max_correspondence_distances.size())) {
             utility::LogError(
-                    " [RegistrationMultiScaleICP]: Size of criterias, "
+                    " [MultiScaleICP]: Size of criterias, "
                     "voxel_size,"
                     " max_correspondence_distances vectors must be same.");
         }
