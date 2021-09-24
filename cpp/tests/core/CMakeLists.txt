@@ -28,7 +28,7 @@ if (BUILD_CUDA_MODULE)
 endif()
 
 if (BUILD_ISPC_MODULE)
-    open3d_ispc_target_sources(tests PRIVATE
+    target_sources(tests PRIVATE
         ParallelFor.ispc
     )
 endif()

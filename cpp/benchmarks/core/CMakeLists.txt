@@ -7,7 +7,7 @@ target_sources(benchmarks PRIVATE
 )
 
 if (BUILD_ISPC_MODULE)
-    open3d_ispc_target_sources(benchmarks PRIVATE
+    target_sources(benchmarks PRIVATE
         ParallelFor.ispc
     )
 endif()
