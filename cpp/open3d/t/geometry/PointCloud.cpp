@@ -393,6 +393,7 @@ static PointCloud CreatePointCloudWithNormals(
         float depth_scale,
         float depth_max,
         int stride) {
+    // Asserts are performed in +1 level functions using this static function.
     using core::None;
     using core::Tensor;
     using core::TensorKey;
@@ -478,13 +479,9 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             float depth_max,
                                             int stride,
                                             bool with_normals) {
-    core::Dtype dtype = depth.AsTensor().GetDtype();
-    if (dtype != core::UInt16 && dtype != core::Float32) {
-        utility::LogError(
-                "Unsupported dtype for CreateFromDepthImage, expected UInt16 "
-                "or Float32, but got {}.",
-                dtype.ToString());
-    }
+    core::AssertTensorDtype(depth.AsTensor(), {core::UInt16, core::Float32});
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
 
     if (with_normals) {
         return CreatePointCloudWithNormals(depth, Image(), intrinsics,
@@ -506,13 +503,10 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
                                            float depth_max,
                                            int stride,
                                            bool with_normals) {
-    auto dtype = rgbd_image.depth_.AsTensor().GetDtype();
-    if (dtype != core::UInt16 && dtype != core::Float32) {
-        utility::LogError(
-                "Unsupported dtype for CreateFromRGBDImage, expected UInt16 "
-                "or Float32, but got {}.",
-                dtype.ToString());
-    }
+    core::AssertTensorDtype(rgbd_image.depth_.AsTensor(),
+                            {core::UInt16, core::Float32});
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
 
     Image image_colors = rgbd_image.color_.To(core::Float32, /*copy=*/false);
 
@@ -535,6 +529,9 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
                                                 const core::Tensor &extrinsics,
                                                 float depth_scale,
                                                 float depth_max) {
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
+
     core::Tensor depth =
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
     kernel::pointcloud::Project(depth, utility::nullopt, GetPointPositions(),
@@ -555,6 +552,8 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
                 "Unable to project to RGBD without the Color attribute in the "
                 "point cloud.");
     }
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
 
     core::Tensor depth =
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);

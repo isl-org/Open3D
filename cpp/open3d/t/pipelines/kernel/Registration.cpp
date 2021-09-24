@@ -248,8 +248,9 @@ core::Tensor ComputeInformationMatrix(
     const core::Dtype dtype = target_points.GetDtype();
 
     core::AssertTensorDtype(target_points, {core::Float64, core::Float32});
+    core::AssertTensorDtype(correspondence_indices, core::Int64);
+    core::AssertTensorDevice(correspondence_indices, device);
     AssertEmptyTensor(target_points, "Target PointCloud");
-    AssertValidCorrespondences(correspondence_indices, target_points);
 
     core::Tensor information_matrix =
             core::Tensor::Empty({6, 6}, core::Float64, core::Device("CPU:0"));

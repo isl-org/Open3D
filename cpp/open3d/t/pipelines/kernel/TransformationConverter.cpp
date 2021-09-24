@@ -40,22 +40,16 @@ namespace pipelines {
 namespace kernel {
 
 core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
-    core::Device device = R.GetDevice();
-    core::Dtype dtype = R.GetDtype();
+    const core::Device device = R.GetDevice();
+    const core::Dtype dtype = R.GetDtype();
 
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                " [RtToTransformation]: Only Float32 abd Float64 supported, "
-                "but got {} ",
-                dtype.ToString());
-    }
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(t, {3});
+    core::AssertTensorDtype(R, {core::Float32, core::Float64});
+    core::AssertTensorDtype(t, dtype);
+    core::AssertTensorDevice(t, device);
 
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
-    core::AssertTensorShape(R, {3, 3});
-    core::AssertTensorDtype(R, dtype);
-    core::AssertTensorShape(t, {3});
-    core::AssertTensorDevice(t, device);
-    core::AssertTensorDtype(t, dtype);
 
     // Rotation.
     transformation.SetItem(
@@ -92,17 +86,11 @@ static void PoseToTransformationDevice(
 }
 
 core::Tensor PoseToTransformation(const core::Tensor &pose) {
-    core::Device device = pose.GetDevice();
-    core::Dtype dtype = pose.GetDtype();
-
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                " [PoseToTransformation]: Only Float32 abd Float64 supported, "
-                "but got {} ",
-                dtype.ToString());
-    }
-
     core::AssertTensorShape(pose, {6});
+    core::AssertTensorDtype(pose, {core::Float32, core::Float64});
+
+    const core::Device device = pose.GetDevice();
+    const core::Dtype dtype = pose.GetDtype();
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     transformation = transformation.Contiguous();
     core::Tensor pose_ = pose.Contiguous();
