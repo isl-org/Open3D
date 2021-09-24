@@ -460,13 +460,12 @@ static Tensor StackAlongAxis(const Tensor& tensor,
                              const Tensor& other,
                              int axis) {
     SizeVector shape = tensor.GetShape();
-    SizeVector other_shape = other.GetShape();
+    const SizeVector other_shape = other.GetShape();
 
     const std::size_t shape_size = shape.size();
     if (shape_size < static_cast<size_t>(axis)) {
-        utility::LogError(
-                "Can't append to tensor with shape {}, along axis = {}.",
-                tensor.GetShape(), axis);
+        utility::LogError("axis {} is out of bounds for array of dimension {}.",
+                          axis, tensor.GetShape());
     }
 
     // Asserting shape compatibility for appending.
@@ -475,26 +474,32 @@ static Tensor StackAlongAxis(const Tensor& tensor,
         offset = 0;
         shape[axis] += other.GetShape()[axis];
     } else if (other_shape.size() == shape_size - 1) {
+        // This for examples allows, appending tensor of shape shape [x, y, z]
+        // to tensor of shape [N, x, y, z] along axis 0, to give tensor of shape
+        // [N+1, x, y, z].
         offset = -1;
         shape[axis] += 1;
     } else {
         utility::LogError(
-                "Failed to append tensor with num_dimentions {}, to "
-                "num_dimentions {}.",
+                "Tensor with {} dimentions, can not be appended to tensor with "
+                "{} dimentions.",
                 other_shape.size(), shape_size);
     }
+
     for (int i = 0; i < static_cast<int>(shape_size); ++i) {
         if (i < axis && shape[i] != other_shape[i]) {
             utility::LogError(
-                    "Failed to append tensor with dimentions {}, to dimentions "
-                    "{}.",
-                    other_shape[i], shape[i]);
+                    "Failed to append tensor with shape {}, to shape {}. "
+                    "Expected dimention value {}, but got {}.",
+                    other_shape.ToString(), shape.ToString(), other_shape[i],
+                    shape[i]);
         }
         if (i > axis && shape[i] != other_shape[i + offset]) {
             utility::LogError(
-                    "Failed to append tensor with dimentions {}, to dimentions "
-                    "{}.",
-                    other_shape[i], shape[i]);
+                    "Failed to append tensor with shape {}, to shape {}. "
+                    "Expected dimention value {}, but got {}.",
+                    other_shape.ToString(), shape.ToString(),
+                    other_shape[i + offset], shape[i]);
         }
     }
 
@@ -524,30 +529,30 @@ static Tensor StackAlongAxis(const Tensor& tensor,
     return combined_tensor.SetItem(tks_other, other);
 }
 
-Tensor Tensor::Append(const Tensor& other,
-                      const utility::optional<int> axis) const {
-    core::AssertTensorDevice(other, GetDevice());
-    core::AssertTensorDtype(other, GetDtype());
+Tensor Tensor::Append(const Tensor& tensor,
+                      const Tensor& other,
+                      const utility::optional<int> axis) {
+    core::AssertTensorDevice(other, tensor.GetDevice());
+    core::AssertTensorDtype(other, tensor.GetDtype());
 
     core::Tensor combined_tensor;
 
     if (!axis.has_value()) {
         // Flatten both the tensor and append.
-
-        const int64_t num_elements = NumElements();
+        const int64_t num_elements = tensor.NumElements();
         const int64_t other_num_elements = other.NumElements();
         const int64_t combined_num_elements = num_elements + other_num_elements;
-        combined_tensor =
-                Tensor::Empty({combined_num_elements}, GetDtype(), GetDevice());
+        combined_tensor = Tensor::Empty({combined_num_elements},
+                                        tensor.GetDtype(), tensor.GetDevice());
         combined_tensor.SetItem(core::TensorKey::Slice(0, num_elements, 1),
-                                this->Reshape({num_elements}));
+                                tensor.Reshape({num_elements}));
         combined_tensor.SetItem(
                 core::TensorKey::Slice(num_elements, combined_num_elements, 1),
                 other.Reshape({other_num_elements}));
 
         return combined_tensor;
     } else {
-        return StackAlongAxis(*this, other, axis.value());
+        return StackAlongAxis(tensor, other, axis.value());
     }
 }
 
