@@ -62,11 +62,6 @@ target_sources(open3d_tf_ops PRIVATE
 )
 
 target_sources(open3d_tf_ops PRIVATE
-    tf_neighbors/tf_batch_neighbors.cpp
-    tf_neighbors/tf_neighbors.cpp
-)
-
-target_sources(open3d_tf_ops PRIVATE
     tf_subsampling/tf_batch_subsampling.cpp
     tf_subsampling/tf_subsampling.cpp
 )
@@ -74,7 +69,6 @@ target_sources(open3d_tf_ops PRIVATE
 target_sources(open3d_tf_ops PRIVATE
     ../contrib/Cloud.cpp
     ../contrib/GridSubsampling.cpp
-    ../contrib/neighbors.cpp
     ../contrib/Nms.cpp
 )
 
@@ -174,3 +168,8 @@ if (BUILD_CUDA_MODULE)
         )
     endif()
 endif()
+
+install(TARGETS open3d_tf_ops EXPORT Open3DTFOps
+    LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
+)
+install(EXPORT Open3DTFOps NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})

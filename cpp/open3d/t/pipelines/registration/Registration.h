@@ -136,7 +136,7 @@ RegistrationResult EvaluateRegistration(
 /// Float64 on CPU.
 /// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
-RegistrationResult RegistrationICP(
+RegistrationResult ICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance,
@@ -167,7 +167,7 @@ RegistrationResult RegistrationICP(
 /// \param init_source_to_target Initial transformation estimation of type
 /// Float64 on CPU.
 /// \param estimation Estimation method.
-RegistrationResult RegistrationMultiScaleICP(
+RegistrationResult MultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
@@ -188,11 +188,10 @@ RegistrationResult RegistrationMultiScaleICP(
 /// distance.
 /// \param transformation The 4x4 transformation matrix to transform
 /// `source` to `target`.
-core::Tensor GetInformationMatrixFromPointClouds(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const double max_correspondence_distance,
-        const core::Tensor &transformation);
+core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
+                                  const geometry::PointCloud &target,
+                                  const double max_correspondence_distance,
+                                  const core::Tensor &transformation);
 
 }  // namespace registration
 }  // namespace pipelines

@@ -9,7 +9,6 @@
 # - open3d_ispc_enable_language(...)
 # - open3d_ispc_add_library(...)
 # - open3d_ispc_add_executable(...)
-# - open3d_ispc_target_sources(...)
 #
 # Additional workaround functionality:
 # - open3d_ispc_target_sources_TARGET_OBJECTS(...)
@@ -105,11 +104,14 @@ function(open3d_collect_property_values_ target property accepted_genex_conditio
         endif()
     endwhile()
 
-    # Search first-level/direct dependencies of target
+    # Search dependencies of target in breath-first search order
     get_target_property(TARGET_LIBRARIES ${target} LINK_LIBRARIES)
     if (TARGET_LIBRARIES)
-        foreach(lib IN ITEMS ${TARGET_LIBRARIES})
-            if (TARGET ${lib})
+        while(TARGET_LIBRARIES)
+            list(POP_FRONT TARGET_LIBRARIES lib)
+
+            list(FIND PROCESSED_TARGET_LIBRARIES ${lib} lib_processed)
+            if (TARGET ${lib} AND lib_processed STREQUAL "-1")
                 get_target_property(TARGET_PROPS ${lib} INTERFACE_${property})
 
                 # Concatenate generator expressions with lists
@@ -139,8 +141,13 @@ function(open3d_collect_property_values_ target property accepted_genex_conditio
                     endif()
                 endwhile()
 
+                get_target_property(TARGET_LIB_LIBRARIES ${lib} INTERFACE_LINK_LIBRARIES)
+                if (TARGET_LIB_LIBRARIES)
+                    list(APPEND TARGET_LIBRARIES ${TARGET_LIB_LIBRARIES})
+                endif()
+                list(APPEND PROCESSED_TARGET_LIBRARIES ${lib})
             endif()
-        endforeach()
+        endwhile()
     endif()
 
     list(REMOVE_DUPLICATES ${output_variable})
@@ -172,13 +179,19 @@ function(open3d_ispc_make_build_rules_ target)
         message(FATAL_ERROR "Calling from different directory than where \"${target}\" has been created. Unable to setup required build rule dependencies.")
     endif()
 
-    get_target_property(TARGET_ISPC_SOURCES ${target} ISPC_SOURCES)
-    if (TARGET_ISPC_SOURCES)
+    get_target_property(TARGET_ALL_SOURCES ${target} SOURCES)
+    if (TARGET_ALL_SOURCES)
         open3d_get_target_relative_object_dir_(${target} TARGET_RELATIVE_OBJECT_DIR)
 
-        # Use object file extension from C language
+        # Use object file extension from C or C++ language
         if (NOT DEFINED CMAKE_ISPC_OUTPUT_EXTENSION)
-            set(CMAKE_ISPC_OUTPUT_EXTENSION ${CMAKE_C_OUTPUT_EXTENSION})
+            if (DEFINED CMAKE_C_OUTPUT_EXTENSION)
+                set(CMAKE_ISPC_OUTPUT_EXTENSION ${CMAKE_C_OUTPUT_EXTENSION})
+            elseif (DEFINED CMAKE_CXX_OUTPUT_EXTENSION)
+                set(CMAKE_ISPC_OUTPUT_EXTENSION ${CMAKE_CXX_OUTPUT_EXTENSION})
+            else()
+                message(FATAL_ERROR "Unable to infer output extension for ISPC source files.")
+            endif()
         endif()
 
         open3d_get_target_property_(TARGET_HEADER_SUFFIX ${target} ISPC_HEADER_SUFFIX "_ispc.h")
@@ -238,11 +251,13 @@ function(open3d_ispc_make_build_rules_ target)
         list(TRANSFORM OUTPUT_TARGET_INCLUDES PREPEND "-I")
         list(TRANSFORM OUTPUT_TARGET_DEFINITIONS PREPEND "-D")
 
-        foreach (file IN LISTS TARGET_ISPC_SOURCES)
+        list(SORT OUTPUT_TARGET_DEFINITIONS)
+
+        foreach (file IN LISTS TARGET_ALL_SOURCES)
             get_filename_component(FILE_EXT "${file}" LAST_EXT)
 
             if (NOT FILE_EXT STREQUAL ".ispc")
-                message(FATAL_ERROR "File \"${file}\" is not an ISPC source file.")
+                # Ignore non-ISPC files
             else()
                 # Process ISPC files
                 get_filename_component(FILE_FULL_PATH "${file}" ABSOLUTE)
@@ -304,7 +319,7 @@ function(open3d_ispc_make_build_rules_ target)
                     # Strip double spaces caused by empty lists
                     string(REGEX REPLACE "[ ]+" " " FILE_COMPILE_COMMAND_PROCESSED "${FILE_COMPILE_COMMAND_PROCESSED}")
 
-                    message(STATUS "${file}: ${FILE_COMPILE_COMMAND_PROCESSED}")
+                    message(STATUS "${FILE_FULL_PATH}:\n${FILE_COMPILE_COMMAND_PROCESSED}")
                 endif()
 
                 list(APPEND TARGET_OBJECT_FILES "${OBJECT_FILE_LIST}")
@@ -351,7 +366,7 @@ macro(open3d_ispc_enable_language lang)
         message(FATAL_ERROR "Enabling language \"${lang}\" != \"ISPC\" is not possible. Only \"open3d_ispc_enable_language(ISPC)\" is supported")
     endif()
 
-    if(NOT BUILD_ISPC_MODULE OR (NOT ISPC_FORCE_LEGACY AND (CMAKE_GENERATOR MATCHES "Make" OR CMAKE_GENERATOR MATCHES "Ninja")))
+    if(NOT ISPC_USE_LEGACY_EMULATION)
         enable_language(ISPC)
     else()
         # Set CMAKE_ISPC_COMPILER
@@ -389,23 +404,27 @@ endmacro()
 #
 # This is a drop-in replacement of add_library(...).
 #
-# Forwards all arguments to add_library(...) and sets up ISPC properties.
+# Forwards all arguments to add_library(...) and enables support to process
+# ISPC source files through target_sources(...).
 #
 # Limitations:
-# - Adding ISPC source files is only supported via open3d_ispc_target_sources(...).
+# - Only PRIVATE sources are supported.
+# - Properties that affect build rule generation must be specified until the
+#   directory where the target <target> has been created is fully processed.
+#   This includes:
+#   - (CMAKE_)ISPC_OUTPUT_EXTENSION
+#   - (CMAKE_)ISPC_HEADER_DIRECTORY
+#   - (CMAKE_)ISPC_HEADER_SUFFIX
+#   - (CMAKE_)ISPC_FLAGS
+#   - INCLUDE_DIRECTORIES
+#   - COMPILE_DEFINITIONS
+#   - COMPILE_OPTIONS
+# - Dependency scanning for ISPC header and source files is limited by the
+#   capabilities of the IMPLICIT_DEPENDS option of add_custom_command.
 function(open3d_ispc_add_library target)
-    # Check correct usage
-    foreach(arg IN ITEMS ${ARGV})
-        get_filename_component(FILE_EXT "${arg}" LAST_EXT)
-
-        if (FILE_EXT STREQUAL ".ispc")
-            message(FATAL_ERROR "Passing ISPC file \"${arg}\" via \"open3d_ispc_add_library()\" is not supported. Use \"open3d_ispc_target_sources()\" instead.")
-        endif()
-    endforeach()
-
     add_library(${ARGV})
 
-    if(NOT BUILD_ISPC_MODULE OR (NOT ISPC_FORCE_LEGACY AND (CMAKE_GENERATOR MATCHES "Make" OR CMAKE_GENERATOR MATCHES "Ninja")))
+    if(NOT BUILD_ISPC_MODULE OR NOT ISPC_USE_LEGACY_EMULATION)
         # Nothing to do
     else()
         open3d_init_target_property_(${target} ISPC_HEADER_SUFFIX "_ispc.h")
@@ -421,46 +440,11 @@ endfunction()
 #
 # This is a drop-in replacement of add_executable(...).
 #
-# Forwards all arguments to add_executable(...) and sets up ISPC properties.
-#
-# Limitations:
-# - Adding ISPC source files is only supported via open3d_ispc_target_sources(...).
-function(open3d_ispc_add_executable target)
-    # Check correct usage
-    foreach(arg IN ITEMS ${ARGV})
-        get_filename_component(FILE_EXT "${arg}" LAST_EXT)
-
-        if (FILE_EXT STREQUAL ".ispc")
-            message(FATAL_ERROR "Passing ISPC file \"${arg}\" via \"open3d_ispc_add_executable()\" is not supported. Use \"open3d_ispc_target_sources()\" instead.")
-        endif()
-    endforeach()
-
-    add_executable(${ARGV})
-
-    if(NOT BUILD_ISPC_MODULE OR (NOT ISPC_FORCE_LEGACY AND (CMAKE_GENERATOR MATCHES "Make" OR CMAKE_GENERATOR MATCHES "Ninja")))
-        # Nothing to do
-    else()
-        open3d_init_target_property_(${target} ISPC_HEADER_SUFFIX "_ispc.h")
-        open3d_init_target_property_(${target} ISPC_HEADER_DIRECTORY)
-        open3d_init_target_property_(${target} ISPC_INSTRUCTION_SETS)
-
-        # Deferred call must be wrapped again to correctly dereference target variable.
-        cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_ispc_make_build_rules_ ${target})")
-    endif()
-endfunction()
-
-# open3d_ispc_target_sources(<target>
-#     PRIVATE <src1> [<src2>...]
-# )
-#
-# This is a drop-in replacement of target_sources(...).
-#
-# Forwards any non-ISPC source files to the target_sources() command and
-# adds custom build rules for ISPC source files.
+# Forwards all arguments to add_executable(...) and enables support to process
+# ISPC source files through target_sources(...).
 #
 # Limitations:
 # - Only PRIVATE sources are supported.
-# - Only relative source file paths are supported.
 # - Properties that affect build rule generation must be specified until the
 #   directory where the target <target> has been created is fully processed.
 #   This includes:
@@ -473,51 +457,18 @@ endfunction()
 #   - COMPILE_OPTIONS
 # - Dependency scanning for ISPC header and source files is limited by the
 #   capabilities of the IMPLICIT_DEPENDS option of add_custom_command.
-function(open3d_ispc_target_sources target)
-    cmake_parse_arguments(PARSE_ARGV 1 ARG "" "" "PRIVATE")
+function(open3d_ispc_add_executable target)
+    add_executable(${ARGV})
 
-    # Check correct usage
-    if (ARG_UNPARSED_ARGUMENTS)
-        message(FATAL_ERROR "Unknown arguments: ${ARG_UNPARSED_ARGUMENTS}")
-    endif()
-
-    if (ARG_KEYWORDS_MISSING_VALUES)
-        message(FATAL_ERROR "Missing values for arguments: ${ARG_KEYWORDS_MISSING_VALUES}")
-    endif()
-
-    if (NOT ARG_PRIVATE)
-        message(FATAL_ERROR "No sources specified.")
-    endif()
-
-    if(NOT BUILD_ISPC_MODULE OR (NOT ISPC_FORCE_LEGACY AND (CMAKE_GENERATOR MATCHES "Make" OR CMAKE_GENERATOR MATCHES "Ninja")))
-        target_sources(${target} PRIVATE
-            ${ARG_PRIVATE}
-        )
+    if(NOT BUILD_ISPC_MODULE OR NOT ISPC_USE_LEGACY_EMULATION)
+        # Nothing to do
     else()
-        get_target_property(TARGET_SOURCE_DIR ${target} SOURCE_DIR)
-        file(RELATIVE_PATH TARGET_RELATIVE_SOURCE_DIR "${TARGET_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+        open3d_init_target_property_(${target} ISPC_HEADER_SUFFIX "_ispc.h")
+        open3d_init_target_property_(${target} ISPC_HEADER_DIRECTORY)
+        open3d_init_target_property_(${target} ISPC_INSTRUCTION_SETS)
 
-        foreach (file IN LISTS ARG_PRIVATE)
-            if (IS_ABSOLUTE "${file}")
-                message(FATAL_ERROR "Expected relative path for file \"${file}\".")
-            endif()
-
-            get_filename_component(FILE_EXT "${file}" LAST_EXT)
-
-            if (NOT FILE_EXT STREQUAL ".ispc")
-                # Forward non-ISPC files
-                target_sources(${target} PRIVATE ${file})
-            else()
-                # Process ISPC files
-                if (TARGET_RELATIVE_SOURCE_DIR)
-                    list(APPEND TARGET_ISPC_SOURCES "${TARGET_RELATIVE_SOURCE_DIR}/${file}")
-                else()
-                    list(APPEND TARGET_ISPC_SOURCES "${file}")
-                endif()
-            endif()
-        endforeach()
-
-        set_property(TARGET ${target} APPEND PROPERTY ISPC_SOURCES "${TARGET_ISPC_SOURCES}")
+        # Deferred call must be wrapped again to correctly dereference target variable.
+        cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_ispc_make_build_rules_ ${target})")
     endif()
 endfunction()
 
@@ -554,7 +505,7 @@ function(open3d_ispc_target_sources_TARGET_OBJECTS target)
         )
     endforeach()
 
-    if(NOT BUILD_ISPC_MODULE OR (NOT ISPC_FORCE_LEGACY AND (CMAKE_GENERATOR MATCHES "Make" OR CMAKE_GENERATOR MATCHES "Ninja")))
+    if(NOT BUILD_ISPC_MODULE OR NOT ISPC_USE_LEGACY_EMULATION)
         # Nothing to do
     else()
         # Process dependencies

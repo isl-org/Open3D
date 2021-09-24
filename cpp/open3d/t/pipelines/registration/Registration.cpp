@@ -100,15 +100,15 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
             transformation);
 }
 
-RegistrationResult RegistrationICP(const geometry::PointCloud &source,
-                                   const geometry::PointCloud &target,
-                                   double max_correspondence_distance,
-                                   const core::Tensor &init_source_to_target,
-                                   const TransformationEstimation &estimation,
-                                   const ICPConvergenceCriteria &criteria) {
-    return RegistrationMultiScaleICP(source, target, {-1}, {criteria},
-                                     {max_correspondence_distance},
-                                     init_source_to_target, estimation);
+RegistrationResult ICP(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       double max_correspondence_distance,
+                       const core::Tensor &init_source_to_target,
+                       const TransformationEstimation &estimation,
+                       const ICPConvergenceCriteria &criteria) {
+    return MultiScaleICP(source, target, {-1}, {criteria},
+                         {max_correspondence_distance}, init_source_to_target,
+                         estimation);
 }
 
 static void AssertInputMultiScaleICP(
@@ -143,7 +143,7 @@ static void AssertInputMultiScaleICP(
     if (!(criterias.size() == voxel_sizes.size() &&
           criterias.size() == max_correspondence_distances.size())) {
         utility::LogError(
-                " [RegistrationMultiScaleICP]: Size of criterias, voxel_size,"
+                " [MultiScaleICP]: Size of criterias, voxel_size,"
                 " max_correspondence_distances vectors must be same.");
     }
     if (estimation.GetTransformationEstimationType() ==
@@ -296,7 +296,7 @@ static RegistrationResult DoSingleScaleIterationsICP(
     return result;
 }
 
-RegistrationResult RegistrationMultiScaleICP(
+RegistrationResult MultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
@@ -361,11 +361,10 @@ RegistrationResult RegistrationMultiScaleICP(
     return result;
 }
 
-core::Tensor GetInformationMatrixFromPointClouds(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const double max_correspondence_distance,
-        const core::Tensor &transformation) {
+core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
+                                  const geometry::PointCloud &target,
+                                  const double max_correspondence_distance,
+                                  const core::Tensor &transformation) {
     core::Device device = source.GetDevice();
     core::Dtype dtype = source.GetPointPositions().GetDtype();
     core::AssertTensorDtype(target.GetPointPositions(), dtype);
