@@ -228,11 +228,11 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
 
     // Again, hard-coded result
     std::unordered_map<int, int> kResolutionPoints = {{8, 225628},
-                                                      {16, 256717}};
+                                                      {16, 254787}};
     std::unordered_map<int, int> kResolutionVertices = {{8, 223075},
-                                                        {16, 256234}};
+                                                        {16, 254339}};
     std::unordered_map<int, int> kResolutionTriangles = {{8, 409271},
-                                                         {16, 493929}};
+                                                         {16, 490301}};
 
     for (auto backend : backends) {
         for (int block_resolution : std::vector<int>{8, 16}) {
