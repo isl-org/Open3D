@@ -424,10 +424,6 @@ void pybind_core_tensor(py::module& m) {
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
             "dtype"_a = py::none(), "device"_a = py::none());
 
-    tensor.def_static("from_numpy", [](py::array np_array) {
-        return core::PyArrayToTensor(np_array, true);
-    });
-
     tensor.def_static(
             "append",
             [](const Tensor& arr, const Tensor& values,
