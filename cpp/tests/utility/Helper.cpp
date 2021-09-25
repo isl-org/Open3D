@@ -35,6 +35,18 @@
 namespace open3d {
 namespace tests {
 
+TEST(Helper, JoinStrings) {
+    std::vector<std::string> strings;
+
+    strings = {"a", "b", "c"};
+    EXPECT_EQ(utility::JoinStrings(strings), "a, b, c");
+    EXPECT_EQ(utility::JoinStrings(strings, "-"), "a-b-c");
+
+    strings = {};
+    EXPECT_EQ(utility::JoinStrings(strings), "");
+    EXPECT_EQ(utility::JoinStrings(strings, "-"), "");
+}
+
 TEST(Helper, UniformRandIntGeneratorWithFixedSeed) {
     std::array<int, 1024> values;
     utility::UniformRandIntGenerator rand_generator(0, 9, 42);
