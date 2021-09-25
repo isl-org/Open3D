@@ -74,7 +74,7 @@ def test_test_occlusions():
     triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
 
     scene = o3d.t.geometry.RaycastingScene()
-    geom_id = scene.add_triangles(vertices, triangles)
+    scene.add_triangles(vertices, triangles)
 
     rays = o3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
                            dtype=o3d.core.float32)
