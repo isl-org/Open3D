@@ -29,8 +29,8 @@
 import math
 import re
 import sys
-import numpy as np
 import matplotlib.image as mpimg
+import numpy as np
 import open3d as o3d
 sys.path.append("../utility")
 from file import join, make_clean_folder, get_rgbd_file_lists
