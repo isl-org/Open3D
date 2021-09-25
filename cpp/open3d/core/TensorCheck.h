@@ -47,7 +47,7 @@
 /// printed in the error message.
 ///
 /// Example: check that the tensor has dtype Float32 or Float64
-/// core::AssertTensorDtype(tensor, {core::Float32, core::Float64});
+/// core::AssertTensorDtypes(tensor, {core::Float32, core::Float64});
 #define AssertTensorDtypes(tensor, ...)                                    \
     tensor_check::AssertTensorDtypes_(                                     \
             __FILE__, __LINE__, static_cast<const char*>(OPEN3D_FUNCTION), \
