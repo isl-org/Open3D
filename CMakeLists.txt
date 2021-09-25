@@ -41,6 +41,7 @@ if(NOT LINUX_AARCH64)
 else()
     option(BUILD_ISPC_MODULE          "Build the ISPC module"                    OFF)
 endif()
+option(BUILD_COMMON_ISPC_ISAS     "Build for common ISPC ISAs (for release)" OFF)
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
@@ -341,6 +342,15 @@ endif ()
 # ISPC language emulation support
 include(Open3DISPC)
 
+if (CMAKE_ISPC_COMPILER_LOADED OR (CMAKE_GENERATOR MATCHES "Make" OR CMAKE_GENERATOR MATCHES "Ninja"))
+    option(ISPC_USE_LEGACY_EMULATION "Use legacy ISPC language emulation over first-class CMake support" OFF)
+else()
+    option(ISPC_USE_LEGACY_EMULATION "Use legacy ISPC language emulation over first-class CMake support" ON)
+endif()
+mark_as_advanced(ISPC_USE_LEGACY_EMULATION)
+option(ISPC_PRINT_LEGACY_COMPILE_COMMANDS "Prints legacy compile commands on CMake configuration time" ON)
+mark_as_advanced(ISPC_PRINT_LEGACY_COMPILE_COMMANDS)
+
 # Build ISPC module by default if ISPC is available
 if (BUILD_ISPC_MODULE)
     include(Open3DFetchISPCCompiler)
@@ -351,15 +361,6 @@ if (BUILD_ISPC_MODULE)
     set(CMAKE_ISPC_INSTRUCTION_SETS ${ISPC_ISAS})
 
     message(STATUS "Using ISPC instruction sets: ${CMAKE_ISPC_INSTRUCTION_SETS}")
-
-    if (CMAKE_ISPC_COMPILER_LOADED OR (CMAKE_GENERATOR MATCHES "Make" OR CMAKE_GENERATOR MATCHES "Ninja"))
-        option(ISPC_USE_LEGACY_EMULATION "Use legacy ISPC language emulation over first-class CMake support" OFF)
-    else()
-        option(ISPC_USE_LEGACY_EMULATION "Use legacy ISPC language emulation over first-class CMake support" ON)
-    endif()
-    mark_as_advanced(ISPC_USE_LEGACY_EMULATION)
-    option(ISPC_PRINT_LEGACY_COMPILE_COMMANDS "Prints legacy compile commands on CMake configuration time" ON)
-    mark_as_advanced(ISPC_PRINT_LEGACY_COMPILE_COMMANDS)
 
     open3d_ispc_enable_language(ISPC)
 
