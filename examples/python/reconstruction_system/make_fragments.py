@@ -27,8 +27,10 @@
 # examples/python/reconstruction_system/make_fragments.py
 
 import math
+import re
 import sys
 import numpy as np
+import matplotlib.image as mpimg
 import open3d as o3d
 sys.path.append("../utility")
 from file import join, make_clean_folder, get_rgbd_file_lists
@@ -42,15 +44,55 @@ if with_opencv:
     from opencv_pose_estimation import pose_estimation
 
 
+def read_nyu_pgm(filename, byteorder='>'):
+    with open(filename, 'rb') as f:
+        buffer = f.read()
+    try:
+        header, width, height, maxval = re.search(
+            b"(^P5\s(?:\s*#.*[\r\n])*"
+            b"(\d+)\s(?:\s*#.*[\r\n])*"
+            b"(\d+)\s(?:\s*#.*[\r\n])*"
+            b"(\d+)\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
+    except AttributeError:
+        raise ValueError("Not a raw PGM file: '%s'" % filename)
+    img = np.frombuffer(buffer,
+                        dtype=byteorder + 'u2',
+                        count=int(width) * int(height),
+                        offset=len(header)).reshape((int(height), int(width)))
+    img_out = img.astype('u2')
+    return img_out
+
+
 def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
-    color = o3d.io.read_image(color_file)
-    depth = o3d.io.read_image(depth_file)
-    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-        color,
-        depth,
-        depth_scale=config["depth_scale"],
-        depth_trunc=config["max_depth"],
-        convert_rgb_to_intensity=convert_rgb_to_intensity)
+    if config["depth_map_type"] == "nyu":
+        color_raw = mpimg.imread(color_file)
+        depth_raw = read_nyu_pgm(depth_file)
+        color = o3d.geometry.Image(color_raw)
+        depth = o3d.geometry.Image(depth_raw)
+    else:
+        color = o3d.io.read_image(color_file)
+        depth = o3d.io.read_image(depth_file)
+
+    if config["depth_map_type"] == "redwood":
+        create_rgbd_from = o3d.geometry.RGBDImage.create_from_redwood_format
+    elif config["depth_map_type"] == "sun":
+        create_rgbd_from = o3d.geometry.RGBDImage.create_from_sun_format
+    elif config["depth_map_type"] == "nyu":
+        create_rgbd_from = o3d.geometry.RGBDImage.create_from_nyu_format
+    elif config["depth_map_type"] == "tum":
+        create_rgbd_from = o3d.geometry.RGBDImage.create_from_tum_format
+
+    if config["depth_map_type"] in ["redwood", "sun", "nyu", "tum"]:
+        rgbd_image = create_rgbd_from(
+            color, depth, convert_rgb_to_intensity=convert_rgb_to_intensity)
+    else:
+        rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            color,
+            depth,
+            depth_scale=config["depth_scale"],
+            depth_trunc=config["max_depth"],
+            convert_rgb_to_intensity=convert_rgb_to_intensity)
+
     return rgbd_image
 
 
