@@ -184,7 +184,7 @@ def test_compute_lots_of_closest_points():
     triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
 
     scene = o3d.t.geometry.RaycastingScene()
-    geom_id = scene.add_triangles(vertices, triangles)
+    scene.add_triangles(vertices, triangles)
 
     rs = np.random.RandomState(123)
     query_points = o3d.core.Tensor.from_numpy(
