@@ -290,6 +290,55 @@ struct RaycastingScene::Impl {
         }
     }
 
+    void TestOcclusions(const float* const rays,
+                        const size_t num_rays,
+                        const float tnear,
+                        const float tfar,
+                        int8_t* occluded) {
+        if (!scene_committed_) {
+            rtcCommitScene(scene_);
+            scene_committed_ = true;
+        }
+
+        struct RTCIntersectContext context;
+        rtcInitIntersectContext(&context);
+
+        std::vector<RTCRay> rayvec(std::min(num_rays, MAX_BATCH_SIZE));
+
+        const int num_batches = utility::DivUp(num_rays, rayvec.size());
+
+        for (int n = 0; n < num_batches; ++n) {
+            size_t start_idx = n * rayvec.size();
+            size_t end_idx = std::min(num_rays, (n + 1) * rayvec.size());
+
+            for (size_t i = start_idx; i < end_idx; ++i) {
+                RTCRay& ray = rayvec[i - start_idx];
+                const float* r = &rays[i * 6];
+                ray.org_x = r[0];
+                ray.org_y = r[1];
+                ray.org_z = r[2];
+                ray.dir_x = r[3];
+                ray.dir_y = r[4];
+                ray.dir_z = r[5];
+                ray.tnear = tnear;
+                ray.tfar = tfar;
+                ray.mask = 0;
+                ray.id = i - start_idx;
+                ray.flags = 0;
+            }
+
+            rtcOccluded1M(scene_, &context, &rayvec[0], end_idx - start_idx,
+                          sizeof(RTCRay));
+
+            for (size_t i = start_idx; i < end_idx; ++i) {
+                RTCRay ray = rayvec[i - start_idx];
+                size_t idx = ray.id + start_idx;
+                occluded[idx] = int8_t(
+                        -std::numeric_limits<float>::infinity() == ray.tfar);
+            }
+        }
+    }
+
     void CountIntersections(const float* const rays,
                             const size_t num_rays,
                             int* intersections) {
@@ -480,6 +529,25 @@ std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
                            result["primitive_ids"].GetDataPtr<uint32_t>(),
                            result["primitive_uvs"].GetDataPtr<float>(),
                            result["primitive_normals"].GetDataPtr<float>());
+
+    return result;
+}
+
+core::Tensor RaycastingScene::TestOcclusions(const core::Tensor& rays,
+                                             const float tnear,
+                                             const float tfar) {
+    AssertTensorDtypeLastDimDeviceMinNDim<float>(rays, "rays", 6,
+                                                 impl_->tensor_device_);
+    auto shape = rays.GetShape();
+    shape.pop_back();  // Remove last dim, we want to use this shape for the
+                       // results.
+    size_t num_rays = shape.NumElements();
+
+    core::Tensor result(shape, core::Bool);
+
+    auto data = rays.Contiguous();
+    impl_->TestOcclusions(data.GetDataPtr<float>(), num_rays, tnear, tfar,
+                          reinterpret_cast<int8_t*>(result.GetDataPtr<bool>()));
 
     return result;
 }
