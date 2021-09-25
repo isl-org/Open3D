@@ -80,6 +80,9 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDtypes) {
     core::Device device = GetParam();
     core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
 
+    core::AssertTensorDtypes(t, {core::Float32});
+    core::AssertTensorDtypes(t, {core::Float32, core::Float64});
+
     try {
         core::AssertTensorDtypes(t, {core::Int32, core::Int64});
         FAIL() << "Should not reach here.";
