@@ -76,7 +76,7 @@ class TensorboardOpen3DPluginClient {
                     </label>
 
                     <h3>Runs</h3>
-                    <p id="logdir"></p>
+                    <p id="logdir" title="logdir"></p>
                     <div id="run-selector"></div>
 
                     <h3>Tags</h3>
@@ -215,7 +215,8 @@ class TensorboardOpen3DPluginClient {
     const widgetTemplate = `
         <table class="webrtc" id="widget_${videoId}">
           <tr>
-          <td><button id="zoom-${windowUId}" type="button">
+          <td><button id="zoom-${windowUId}" type="button"
+            title="Make window larger / smaller">
             <svg viewBox="0 0 36 36" width="100%">
               <path d="m 10,16 2,0 0,-4 4,0 0,-2 L 10,10 l 0,6 0,0 z"></path>
               <path d="m 20,10 0,2 4,0 0,4 2,0 L 26,10 l -6,0 0,0 z"></path>
@@ -227,7 +228,8 @@ class TensorboardOpen3DPluginClient {
             <div id="batch-idx-selector-div-${windowUId}"></div>
             <div id="step-selector-div-${windowUId}"></div>
           </td>
-          <td><button id="settings-${windowUId}" type="button">
+          <td><button id="settings-${windowUId}" type="button"
+            title="Show / hide settings">
             <svg viewBox="0 0 24 24">
                 <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path>
             </svg>

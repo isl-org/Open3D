@@ -29,6 +29,13 @@
 
 /* Styles for the Open3D Tensorboard plugin */
 
+html,
+body {
+  font-family: Roboto, sans-serif;
+  color: #212121;   /* TB: --paper-gray-900 */
+  background-color: #f5f5f5;  /* --tb-layout-background-color */
+}
+
 #open3d-dashboard {
   /* Layout children as flex */
   display: flex;
@@ -43,10 +50,10 @@
   flex-direction: column;
   height: 100%;
   min-width: 10em;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+  word-break: break-all;
   padding: 5px;
-  color: #424242;  /* TB --paper-grey-800 */
+  color: #424242;  /* --paper-grey-800 */
 }
 
 #run-selector,
@@ -59,6 +66,8 @@
 
 /* width is 6x left selctor, min-width=576px */
 #widget-view {
+  background-color: #fff;  /* --primary-background-color */
+
   /* parent is flex container. Most of the width increase goes here. */
   flex: 16 576;
 
@@ -173,9 +182,9 @@ input[type="radio"] ~ .checkmark {
   background-color: #ccc;
 }
 
-/* When the checkbox is checked, add a blue background */
+/* When the checkbox is checked, add a TB gray background */
 .container input:checked ~ .checkmark {
-  background-color: #2196f3;
+  background-color: #757575;
 }
 
 /* Create the checkmark/indicator (hidden when not checked) */

@@ -39,8 +39,7 @@ if sys.platform == 'darwin':
 import open3d as o3d
 # TODO: Check for GPU / EGL else TensorBoard will crash.
 from open3d.visualization import O3DVisualizer
-from open3d.visualization import gui
-from open3d.visualization import rendering
+from open3d.visualization.gui import Application
 from open3d.visualization import webrtc_server
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 # Set window system before the GUI event loop
@@ -379,7 +378,7 @@ class Open3DPluginWindow:
             class_name_base + "/update_geometry", self._update_geometry)
         webrtc_server.register_data_channel_message_callback(
             class_name_base + "/toggle_settings", self._toggle_settings)
-        gui.Application.instance.add_window(self.window)
+        Application.instance.add_window(self.window)
 
 
 class Open3DPlugin(base_plugin.TBPlugin):
@@ -423,8 +422,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
         # Dummy window to ensure GUI remains active even if all user windows are
         # closed.
         self._dummy_window = async_event_loop.run_sync(
-            gui.Application.instance.create_window, "Open3D Dummy Window", 32,
-            32)
+            Application.instance.create_window, "Open3D Dummy Window", 32, 32)
         webrtc_server.register_data_channel_message_callback(
             "tensorboard/show_hide_axes", self._show_hide)
         webrtc_server.register_data_channel_message_callback(
