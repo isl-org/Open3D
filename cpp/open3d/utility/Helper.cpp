@@ -65,8 +65,7 @@ bool ContainsString(const std::string& src, const std::string& dst) {
 std::string JoinStrings(const std::vector<std::string>& strs,
                         const std::string& delimiter) {
     std::ostringstream oss;
-
-    for (size_t i = 0; i < strs.size(); i++) {
+    for (size_t i = 0; i < strs.size(); ++i) {
         oss << strs[i];
         if (i != strs.size() - 1) {
             oss << delimiter;
