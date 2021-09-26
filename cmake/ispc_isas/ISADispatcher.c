@@ -24,42 +24,34 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include <stdio.h>
 
-#include "open3d/t/geometry/Geometry.h"
-#include "pybind/open3d_pybind.h"
+#include "ISADispatcher_ispc.h"
 
-namespace open3d {
-namespace t {
-namespace geometry {
+const char* ToTargetString(enum ISATarget target) {
+    switch (target) {
+        /* x86 */
+        case SSE2:
+            return "sse2";
+        case SSE4:
+            return "sse4";
+        case AVX:
+            return "avx1";
+        case AVX2:
+            return "avx2";
+        case AVX512KNL:
+            return "avx512knl";
+        case AVX512SKX:
+            return "avx512skx";
 
-// Geometry trampoline class.
-template <class GeometryBase = Geometry>
-class PyGeometry : public GeometryBase {
-public:
-    using GeometryBase::GeometryBase;
-
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
+        /* Return invalid string for unknown ISAs */
+        default:
+            return "UNKNOWN";
     }
+}
 
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
-    }
-};
-
-void pybind_geometry(py::module& m);
-void pybind_geometry_class(py::module& m);
-void pybind_tensormap(py::module& m);
-void pybind_image(py::module& m);
-void pybind_pointcloud(py::module& m);
-void pybind_lineset(py::module& m);
-void pybind_trianglemesh(py::module& m);
-void pybind_image(py::module& m);
-void pybind_tsdf_voxelgrid(py::module& m);
-void pybind_voxel_block_grid(py::module& m);
-void pybind_raycasting_scene(py::module& m);
-
-}  // namespace geometry
-}  // namespace t
-}  // namespace open3d
+int main() {
+    printf("%s-i%dx%d", ToTargetString(GetISATarget()), GetISAElementWidth(),
+           GetISAWidth());
+    return 0;
+}

@@ -24,12 +24,13 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import os
 import numpy as np
 import open3d as o3d
 import time
 
 from config import ConfigParser
-from common import load_image_file_names, save_poses, load_intrinsic, extract_trianglemesh
+from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh
 
 
 def slam(depth_file_names, color_file_names, intrinsic, config):
@@ -37,7 +38,7 @@ def slam(depth_file_names, color_file_names, intrinsic, config):
     device = o3d.core.Device(config.device)
 
     T_frame_to_model = o3d.core.Tensor(np.identity(4))
-    model = o3d.t.pipelines.slam.Model(config.voxel_size, config.sdf_trunc, 16,
+    model = o3d.t.pipelines.slam.Model(config.voxel_size, 16,
                                        config.block_count, T_frame_to_model,
                                        device)
     depth_ref = o3d.t.io.read_image(depth_file_names[0])
@@ -85,14 +86,23 @@ if __name__ == '__main__':
         help='YAML config file path. Please refer to default_config.yml as a '
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
+    parser.add('--path_npz',
+               help='path to the npz file that stores voxel block grid.',
+               default='output.npz')
     config = parser.get_config()
 
-    depth_file_names, color_file_names = load_image_file_names(config)
+    depth_file_names, color_file_names = load_rgbd_file_names(config)
     intrinsic = load_intrinsic(config)
 
-    volume, poses = slam(depth_file_names, color_file_names, intrinsic, config)
-    save_poses('output.log', poses)
-    save_poses('output.json', poses)
+    if not os.path.exists(config.path_npz):
+        volume, poses = slam(depth_file_names, color_file_names, intrinsic,
+                             config)
+        print('Saving to {}...'.format(config.path_npz))
+        volume.save(config.path_npz)
+        save_poses('output.log', poses)
+        print('Saving finished')
+    else:
+        volume = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz)
 
     mesh = extract_trianglemesh(volume, config, 'output.ply')
     o3d.visualization.draw([mesh])
