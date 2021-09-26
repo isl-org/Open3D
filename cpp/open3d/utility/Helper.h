@@ -116,6 +116,9 @@ std::vector<std::string> SplitString(const std::string& str,
 /// \param dst Destination string.
 bool ContainsString(const std::string& src, const std::string& dst);
 
+std::string JoinStrings(const std::vector<std::string>& strs,
+                        const std::string& delimiter = ", ");
+
 /// String util: find length of current word staring from a position
 /// By default, alpha numeric chars and chars in valid_chars are considered
 /// as valid charactors in a word

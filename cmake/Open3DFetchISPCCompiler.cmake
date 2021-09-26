@@ -51,7 +51,6 @@ function(open3d_fetch_ispc_compiler)
 
         FetchContent_MakeAvailable(ext_ispc)
 
-        # Point to the ISPC compiler via ISPC language environment variable
-        set(ENV{ISPC} "${ext_ispc_SOURCE_DIR}/bin/ispc")
+        set(CMAKE_ISPC_COMPILER "${ext_ispc_SOURCE_DIR}/bin/ispc" PARENT_SCOPE)
     endif()
 endfunction()
