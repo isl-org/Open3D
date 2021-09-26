@@ -1057,6 +1057,62 @@ public:
     /// Load tensor from numpy's npy format.
     static Tensor Load(const std::string& file_name);
 
+    /// Iterator for Tensor.
+    struct Iterator {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Tensor;
+        using pointer = Tensor*;
+        using reference = Tensor;  // Typically Tensor&, but a tensor slice
+                                   // creates a new object with shared memory.
+
+        // Iterator must be constructible, copy-constructible, copy-assignable,
+        // destructible and swappable.
+        Iterator(Tensor* tensor, int64_t index);
+        Iterator(const Iterator&);
+        ~Iterator();
+        reference operator*() const;
+        pointer operator->();
+        Iterator& operator++();
+        Iterator operator++(int);
+        friend bool operator==(const Iterator& a, const Iterator& b);
+        friend bool operator!=(const Iterator& a, const Iterator& b);
+
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> impl_;
+    };
+
+    /// Returns the beginning of the tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    ///
+    /// Example usage:
+    /// \code{.cpp}
+    /// for (Tensor& slice: tensor) {
+    ///     // Do something with slice
+    /// }
+    /// for (auto iter = tensor.begin(); iter != tensor.end(); ++iter) {
+    ///     // Do something with *iter
+    /// }
+    /// \endcode
+    Iterator begin();
+
+    /// Returns the end of the tensor iterator. The iterator iterates over the
+    /// first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    ///
+    /// Example usage:
+    /// \code{.cpp}
+    /// for (Tensor& slice: tensor) {
+    ///     // Do something with slice
+    /// }
+    /// for (auto iter = tensor.begin(); iter != tensor.end(); ++iter) {
+    ///     // Do something with *iter
+    /// }
+    /// \endcode
+    Iterator end();
+
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
@@ -1073,8 +1129,7 @@ private:
     }
 
 protected:
-    /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension
-    /// i.
+    /// SizeVector of the Tensor. shape_[i] is the legnth of dimension i.
     SizeVector shape_ = {0};
 
     /// Stride of a Tensor.
