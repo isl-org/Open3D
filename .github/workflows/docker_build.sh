@@ -70,8 +70,8 @@ openblas() {
 
     # Extract ccache
     docker run -v ${PWD}:/opt/mount --rm open3d-openblas-ci:latest \
-        cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount
-    sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
+        bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount && \
+                 chown $(id -u):$(id -g) /opt/mount/*"
 }
 
 cuda_wheel() {
@@ -120,10 +120,8 @@ cuda_wheel() {
     docker run -v ${PWD}:/opt/mount --rm open3d-ubuntu-cuda-ci:latest \
         bash -c "cp ${python_package_dir}/pip_package/open3d*.whl                /opt/mount && \
                  cp ${python_package_dir}/conda_package/linux-64/open3d*.tar.bz2 /opt/mount && \
-                 cp /${CCACHE_TAR_NAME}.tar.gz                                   /opt/mount"
-    sudo chown $(id -u):$(id -g) open3d*.whl
-    sudo chown $(id -u):$(id -g) open3d*.tar.bz2
-    sudo chown $(id -u):$(id -g) ${CCACHE_TAR_NAME}.tar.gz
+                 cp /${CCACHE_TAR_NAME}.tar.gz                                   /opt/mount && \
+                 chown $(id -u):$(id -g) /opt/mount/*"
 }
 
 if [[ "$#" -ne 1 ]]; then
