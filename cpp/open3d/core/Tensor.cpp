@@ -197,6 +197,73 @@ public:
     }
 };
 
+struct Tensor::Iterator::Impl {
+    Tensor* tensor_;
+    int64_t index_;
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for Iterator::operator->.
+};
+
+Tensor::Iterator::Iterator(Tensor* tensor, int64_t index)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = tensor;
+    impl_->index_ = index;
+}
+
+Tensor::Iterator::Iterator(const Tensor::Iterator& other) {
+    impl_ = std::make_unique<Impl>();
+    impl_->tensor_ = other.impl_->tensor_;
+    impl_->index_ = other.impl_->index_;
+}
+
+// Empty destructor since Impl is incomplete type in Tensor.h.
+// https://stackoverflow.com/a/34073093/1255535
+Tensor::Iterator::~Iterator() {}
+
+Tensor::Iterator::reference Tensor::Iterator::operator*() const {
+    return impl_->tensor_->operator[](impl_->index_);
+}
+
+Tensor::Iterator::pointer Tensor::Iterator::operator->() {
+    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
+    return &impl_->tensor_slice_;
+}
+
+Tensor::Iterator& Tensor::Iterator::operator++() {
+    impl_->index_++;
+    return *this;
+}
+
+Tensor::Iterator Tensor::Iterator::operator++(int) {
+    Iterator tmp(impl_->tensor_, impl_->index_);
+    impl_->index_++;
+    return tmp;
+}
+
+bool operator==(const Tensor::Iterator& a, const Tensor::Iterator& b) {
+    return a.impl_->tensor_ == b.impl_->tensor_ &&
+           a.impl_->index_ == b.impl_->index_;
+}
+
+bool operator!=(const Tensor::Iterator& a, const Tensor::Iterator& b) {
+    return !(a == b);
+}
+
+Tensor::Iterator Tensor::begin() {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return Iterator(this, 0);
+}
+
+Tensor::Iterator Tensor::end() {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return Iterator(this, shape_[0]);
+}
+
 // Equivalent to `Tensor& operator=(const Tensor& other) & = default;`.
 // Manual implentaiton is need to avoid MSVC bug (error C2580:  multiple
 // versions of a defaulted special member functions are not allowed.)

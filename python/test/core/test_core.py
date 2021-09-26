@@ -1239,3 +1239,40 @@ def test_save_load(device):
         o3_t_load = o3c.Tensor.load(file_name)
         assert o3_t_load.is_contiguous()
         np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_iterator(device):
+    # 0-d.
+    o3_t = o3c.Tensor.ones((), dtype=o3c.float32, device=device)
+    with pytest.raises(Exception, match=r'Cannot iterate a scalar'):
+        for o3_t_slice in o3_t:
+            pass
+
+    # 1-d.
+    o3_t = o3c.Tensor([0, 1, 2], device=device)
+    np_t = np.array([0, 1, 2])
+    for o3_t_slice, np_t_slice in zip(o3_t, np_t):
+        np.testing.assert_equal(o3_t_slice.cpu().numpy(), np_t_slice)
+
+    # TODO: 1-d with assignment (assigning to a 0-d slice) is not possible with
+    # our current slice API. This issue is not related to the iterator.
+    # Operator [:] requires 1 or more dimensions. We need to implement the [...]
+    # operator. See: https://stackoverflow.com/a/49581266/1255535.
+
+    # 2-d.
+    o3_t = o3c.Tensor([[0, 1, 2], [3, 4, 5]], device=device)
+    np_t = np.array([[0, 1, 2], [3, 4, 5]])
+    for o3_t_slice, np_t_slice in zip(o3_t, np_t):
+        np.testing.assert_equal(o3_t_slice.cpu().numpy(), np_t_slice)
+
+    # 2-d with assignment.
+    o3_t = o3c.Tensor([[0, 1, 2], [3, 4, 5]], device=device)
+    new_o3_t_slices = [
+        o3c.Tensor([0, 10, 20], device=device),
+        o3c.Tensor([30, 40, 50], device=device)
+    ]
+    for o3_t_slice, new_o3_t_slice in zip(o3_t, new_o3_t_slices):
+        o3_t_slice[:] = new_o3_t_slice
+    np.testing.assert_equal(o3_t.cpu().numpy(),
+                            np.array([[0, 10, 20], [30, 40, 50]]))
