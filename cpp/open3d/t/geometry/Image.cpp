@@ -178,8 +178,7 @@ Image Image::RGBToGray() const {
                                        GetDevice());
     if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
         CUDA_CALL(npp::RGBToGray, data_, dst_im.data_);
-    } else if (HAVE_IPPICV &&
-               data_.GetDevice().GetType() == core::Device::DeviceType::CPU) {
+    } else if (data_.GetDevice().GetType() == core::Device::DeviceType::CPU) {
         IPP_CALL(ipp::RGBToGray, data_, dst_im.data_);
     } else {
         utility::LogError(

@@ -49,14 +49,7 @@ LineSet::LineSet(const core::Device &device)
 LineSet::LineSet(const core::Tensor &point_positions,
                  const core::Tensor &line_indices)
     : LineSet([&]() {
-          if (point_positions.GetDevice() != line_indices.GetDevice()) {
-              utility::LogError(
-                      "'point_positions' device {} does not match "
-                      "'line_indices' device "
-                      "{}.",
-                      point_positions.GetDevice().ToString(),
-                      line_indices.GetDevice().ToString());
-          }
+          core::AssertTensorDevice(line_indices, point_positions.GetDevice());
           return point_positions.GetDevice();
       }()) {
     SetPointPositions(point_positions);
