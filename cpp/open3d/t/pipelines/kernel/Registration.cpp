@@ -41,22 +41,6 @@ static void AssertEmptyTensor(const core::Tensor &tensor,
     }
 }
 
-static void AssertValidCorrespondences(
-        const core::Tensor &correspondence_indices,
-        const core::Tensor &source_points) {
-    core::AssertTensorDtype(correspondence_indices, core::Int64);
-    core::AssertTensorDevice(correspondence_indices, source_points.GetDevice());
-
-    if (correspondence_indices.GetShape() !=
-        core::SizeVector({source_points.GetLength(), 1})) {
-        utility::LogError(
-                "Correspondences must be of same length as source point-cloud "
-                "positions. Expected correspondences of shape {}, but got {}.",
-                core::SizeVector({source_points.GetLength(), 1}).ToString(),
-                correspondence_indices.GetShape().ToString());
-    }
-}
-
 core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_points,
                                      const core::Tensor &target_normals,
@@ -72,7 +56,11 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
 
     AssertEmptyTensor(source_points, "Source PointCloud");
     AssertEmptyTensor(target_points, "Target PointCloud");
-    AssertValidCorrespondences(correspondence_indices, source_points);
+
+    core::AssertTensorDtype(correspondence_indices, core::Int64);
+    core::AssertTensorDevice(correspondence_indices, source_points.GetDevice());
+    core::AssertTensorShape(correspondence_indices,
+                            {source_points.GetLength()});
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
@@ -124,7 +112,11 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
 
     AssertEmptyTensor(source_points, "Source PointCloud");
     AssertEmptyTensor(target_points, "Target PointCloud");
-    AssertValidCorrespondences(correspondence_indices, source_points);
+
+    core::AssertTensorDtype(correspondence_indices, core::Int64);
+    core::AssertTensorDevice(correspondence_indices, source_points.GetDevice());
+    core::AssertTensorShape(correspondence_indices,
+                            {source_points.GetLength()});
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
@@ -170,7 +162,11 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
 
     AssertEmptyTensor(source_points, "Source PointCloud");
     AssertEmptyTensor(target_points, "Target PointCloud");
-    AssertValidCorrespondences(correspondence_indices, source_points);
+
+    core::AssertTensorDtype(correspondence_indices, core::Int64);
+    core::AssertTensorDevice(correspondence_indices, source_points.GetDevice());
+    core::AssertTensorShape(correspondence_indices,
+                            {source_points.GetLength()});
 
     // [Output] Rotation and translation tensor of type Float64.
     core::Tensor R, t;

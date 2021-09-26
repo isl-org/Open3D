@@ -35,22 +35,6 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-static void AssertValidCorrespondences(
-        const core::Tensor &correspondence_indices,
-        const core::Tensor &source_points) {
-    core::AssertTensorDtype(correspondence_indices, core::Int64);
-    core::AssertTensorDevice(correspondence_indices, source_points.GetDevice());
-
-    if (correspondence_indices.GetShape() !=
-        core::SizeVector({source_points.GetLength(), 1})) {
-        utility::LogError(
-                "Correspondences must be of same length as source point-cloud "
-                "positions. Expected correspondences of shape {}, but got {}.",
-                core::SizeVector({source_points.GetLength(), 1}).ToString(),
-                correspondence_indices.GetShape().ToString());
-    }
-}
-
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -59,7 +43,11 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
                             source.GetPointPositions().GetDtype());
     core::AssertTensorDevice(target.GetPointPositions(),
                              source.GetPointPositions().GetDevice());
-    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+    core::AssertTensorDtype(correspondences, core::Int64);
+    core::AssertTensorDevice(correspondences,
+                             source.GetPointPositions().GetDevice());
+    core::AssertTensorShape(correspondences,
+                            {source.GetPointPositions().GetLength()});
 
     core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
     core::Tensor neighbour_indices =
@@ -101,7 +89,11 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
                             source.GetPointPositions().GetDtype());
     core::AssertTensorDevice(target.GetPointPositions(),
                              source.GetPointPositions().GetDevice());
-    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+    core::AssertTensorDtype(correspondences, core::Int64);
+    core::AssertTensorDevice(correspondences,
+                             source.GetPointPositions().GetDevice());
+    core::AssertTensorShape(correspondences,
+                            {source.GetPointPositions().GetLength()});
 
     if (!target.HasPointNormals()) {
         utility::LogError("Target pointcloud missing normals attribute.");
@@ -169,7 +161,11 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
     core::AssertTensorDtype(target.GetPointPositions(), dtype);
     core::AssertTensorDtype(target.GetPointNormals(), dtype);
     core::AssertTensorDtype(target.GetPointAttr("color_gradients"), dtype);
-    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+    core::AssertTensorDtype(correspondences, core::Int64);
+    core::AssertTensorDevice(correspondences,
+                             source.GetPointPositions().GetDevice());
+    core::AssertTensorShape(correspondences,
+                            {source.GetPointPositions().GetLength()});
 
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
     double lambda_photometric = 1.0 - lambda_geometric_;

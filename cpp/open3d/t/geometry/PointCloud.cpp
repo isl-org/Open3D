@@ -240,8 +240,8 @@ PointCloud PointCloud::VoxelDownSample(
 void PointCloud::EstimateNormals(
         const int max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
-    core::AssertTensorDtype(this->GetPointPositions(),
-                            {core::Float32, core::Float64});
+    core::AssertTensorDtypes(this->GetPointPositions(),
+                             {core::Float32, core::Float64});
 
     const core::Dtype dtype = this->GetPointPositions().GetDtype();
     const core::Device device = GetDevice();
@@ -321,8 +321,8 @@ void PointCloud::EstimateColorGradients(
                 "PointCloud must have colors and normals attribute "
                 "to compute color gradients.");
     }
-    core::AssertTensorDtype(this->GetPointColors(),
-                            {core::Float32, core::Float64});
+    core::AssertTensorDtypes(this->GetPointColors(),
+                             {core::Float32, core::Float64});
 
     const core::Dtype dtype = this->GetPointColors().GetDtype();
     const core::Device device = GetDevice();
@@ -479,7 +479,7 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             float depth_max,
                                             int stride,
                                             bool with_normals) {
-    core::AssertTensorDtype(depth.AsTensor(), {core::UInt16, core::Float32});
+    core::AssertTensorDtypes(depth.AsTensor(), {core::UInt16, core::Float32});
     core::AssertTensorShape(intrinsics, {3, 3});
     core::AssertTensorShape(extrinsics, {4, 4});
 
@@ -503,8 +503,8 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
                                            float depth_max,
                                            int stride,
                                            bool with_normals) {
-    core::AssertTensorDtype(rgbd_image.depth_.AsTensor(),
-                            {core::UInt16, core::Float32});
+    core::AssertTensorDtypes(rgbd_image.depth_.AsTensor(),
+                             {core::UInt16, core::Float32});
     core::AssertTensorShape(intrinsics, {3, 3});
     core::AssertTensorShape(extrinsics, {4, 4});
 

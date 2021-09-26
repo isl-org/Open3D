@@ -59,7 +59,7 @@ void ComputeOdometryResultPointToPlane(
     core::AssertTensorDevice(target_normal_map, device);
 
     core::AssertTensorShape(intrinsics, {3, 3});
-    core::AssertTensorShape(init_source_to_target, {3, 3});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
 
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
@@ -116,7 +116,7 @@ void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
     core::AssertTensorDevice(target_intensity_dy, device);
 
     core::AssertTensorShape(intrinsics, {3, 3});
-    core::AssertTensorShape(init_source_to_target, {3, 3});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
 
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
@@ -182,7 +182,7 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
     core::AssertTensorDevice(target_intensity_dy, device);
 
     core::AssertTensorShape(intrinsics, {3, 3});
-    core::AssertTensorShape(init_source_to_target, {3, 3});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
 
     static const core::Device host("CPU:0");
     core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();

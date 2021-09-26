@@ -161,7 +161,6 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     core::AssertTensorDevice(tpcd_j.GetPointPositions(), device);
     core::AssertTensorDtype(tpcd_j.GetPointPositions(), dtype);
 
-    // TODO (@rishabh): AssertTransformation / IsTransformation.
     core::AssertTensorShape(T_i, {4, 4});
     core::AssertTensorShape(T_j, {4, 4});
     core::AssertTensorShape(T_ij, {4, 4});

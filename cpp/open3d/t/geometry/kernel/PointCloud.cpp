@@ -55,6 +55,9 @@ void Unproject(const core::Tensor& depth,
                 "values.");
     }
 
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
+
     core::Device device = depth.GetDevice();
     core::Device::DeviceType device_type = device.GetType();
 
@@ -87,6 +90,9 @@ void Project(
                 "[Project] Both or none of image_colors and colors must have "
                 "values.");
     }
+
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
 
     core::Device device = depth.GetDevice();
 
