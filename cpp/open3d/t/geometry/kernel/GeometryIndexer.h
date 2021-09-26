@@ -143,6 +143,14 @@ public:
         *fy = fy_;
     }
 
+    OPEN3D_HOST_DEVICE void GetCameraPosition(float* x,
+                                              float* y,
+                                              float* z) const {
+        *x = extrinsic_[0][3];
+        *y = extrinsic_[1][3];
+        *z = extrinsic_[2][3];
+    }
+
 private:
     float extrinsic_[3][4];
 
@@ -167,64 +175,66 @@ private:
 /// 3D: x, y, z
 /// 4D: x, y, z, t
 const int64_t MAX_RESOLUTION_DIMS = 4;
-class NDArrayIndexer {
+
+template <typename index_t>
+class TArrayIndexer {
 public:
-    NDArrayIndexer() : ptr_(nullptr), element_byte_size_(0), active_dims_(0) {
-        for (int i = 0; i < MAX_RESOLUTION_DIMS; ++i) {
+    TArrayIndexer() : ptr_(nullptr), element_byte_size_(0), active_dims_(0) {
+        for (index_t i = 0; i < MAX_RESOLUTION_DIMS; ++i) {
             shape_[i] = 0;
         }
     }
 
-    NDArrayIndexer(const core::Tensor& ndarray, int64_t active_dims) {
+    TArrayIndexer(const core::Tensor& ndarray, index_t active_dims) {
         if (!ndarray.IsContiguous()) {
             utility::LogError(
-                    "[NDArrayIndexer] Only support contiguous tensors for "
+                    "[TArrayIndexer] Only support contiguous tensors for "
                     "general operations.");
         }
 
         core::SizeVector shape = ndarray.GetShape();
-        int64_t n = ndarray.NumDims();
+        index_t n = ndarray.NumDims();
         if (active_dims > MAX_RESOLUTION_DIMS || active_dims > n) {
             utility::LogError(
-                    "[NDArrayIndexer] Tensor shape too large, only <= {} and "
+                    "[TArrayIndexer] Tensor shape too large, only <= {} and "
                     "<= {} array dim is supported, but received {}.",
                     MAX_RESOLUTION_DIMS, n, active_dims);
         }
 
         // Leading dimensions are coordinates
         active_dims_ = active_dims;
-        for (int64_t i = 0; i < active_dims_; ++i) {
+        for (index_t i = 0; i < active_dims_; ++i) {
             shape_[i] = shape[i];
         }
         // Trailing dimensions are channels
         element_byte_size_ = ndarray.GetDtype().ByteSize();
-        for (int64_t i = active_dims_; i < n; ++i) {
+        for (index_t i = active_dims_; i < n; ++i) {
             element_byte_size_ *= shape[i];
         }
 
         // Fill-in rest to make compiler happy, not actually used.
-        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+        for (index_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
             shape_[i] = 0;
         }
         ptr_ = const_cast<void*>(ndarray.GetDataPtr());
     }
 
     /// Only used for simple shapes
-    NDArrayIndexer(const core::SizeVector& shape) {
-        int64_t n = static_cast<int64_t>(shape.size());
+    TArrayIndexer(const core::SizeVector& shape) {
+        index_t n = static_cast<index_t>(shape.size());
         if (n > MAX_RESOLUTION_DIMS) {
             utility::LogError(
-                    "[NDArrayIndexer] SizeVector too large, only <= {} is "
+                    "[TArrayIndexer] SizeVector too large, only <= {} is "
                     "supported, but received {}.",
                     MAX_RESOLUTION_DIMS, n);
         }
         active_dims_ = n;
-        for (int64_t i = 0; i < active_dims_; ++i) {
+        for (index_t i = 0; i < active_dims_; ++i) {
             shape_[i] = shape[i];
         }
 
         // Fill-in rest to make compiler happy, not actually used.
-        for (int64_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
+        for (index_t i = active_dims_; i < MAX_RESOLUTION_DIMS; ++i) {
             shape_[i] = 0;
         }
 
@@ -233,54 +243,54 @@ public:
         ptr_ = nullptr;
     }
 
-    OPEN3D_HOST_DEVICE int64_t ElementByteSize() { return element_byte_size_; }
+    OPEN3D_HOST_DEVICE index_t ElementByteSize() { return element_byte_size_; }
 
-    OPEN3D_HOST_DEVICE int64_t NumElements() {
-        int64_t num_elems = 1;
-        for (int64_t i = 0; i < active_dims_; ++i) {
+    OPEN3D_HOST_DEVICE index_t NumElements() {
+        index_t num_elems = 1;
+        for (index_t i = 0; i < active_dims_; ++i) {
             num_elems *= shape_[i];
         }
         return num_elems;
     }
 
     /// 2D coordinate => workload
-    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
-                                                   int64_t y_in,
-                                                   int64_t* workload) const {
+    inline OPEN3D_HOST_DEVICE void CoordToWorkload(index_t x_in,
+                                                   index_t y_in,
+                                                   index_t* workload) const {
         *workload = y_in * shape_[1] + x_in;
     }
 
     /// 3D coordinate => workload
-    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
-                                                   int64_t y_in,
-                                                   int64_t z_in,
-                                                   int64_t* workload) const {
+    inline OPEN3D_HOST_DEVICE void CoordToWorkload(index_t x_in,
+                                                   index_t y_in,
+                                                   index_t z_in,
+                                                   index_t* workload) const {
         *workload = (z_in * shape_[1] + y_in) * shape_[2] + x_in;
     }
 
     /// 4D coordinate => workload
-    inline OPEN3D_HOST_DEVICE void CoordToWorkload(int64_t x_in,
-                                                   int64_t y_in,
-                                                   int64_t z_in,
-                                                   int64_t t_in,
-                                                   int64_t* workload) const {
+    inline OPEN3D_HOST_DEVICE void CoordToWorkload(index_t x_in,
+                                                   index_t y_in,
+                                                   index_t z_in,
+                                                   index_t t_in,
+                                                   index_t* workload) const {
         *workload = ((t_in * shape_[1] + z_in) * shape_[2] + y_in) * shape_[3] +
                     x_in;
     }
 
     /// Workload => 2D coordinate
-    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
-                                                   int64_t* x_out,
-                                                   int64_t* y_out) const {
+    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(index_t workload,
+                                                   index_t* x_out,
+                                                   index_t* y_out) const {
         *x_out = workload % shape_[1];
         *y_out = workload / shape_[1];
     }
 
     /// Workload => 3D coordinate
-    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
-                                                   int64_t* x_out,
-                                                   int64_t* y_out,
-                                                   int64_t* z_out) const {
+    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(index_t workload,
+                                                   index_t* x_out,
+                                                   index_t* y_out,
+                                                   index_t* z_out) const {
         *x_out = workload % shape_[2];
         workload = (workload - *x_out) / shape_[2];
         *y_out = workload % shape_[1];
@@ -288,11 +298,11 @@ public:
     }
 
     /// Workload => 4D coordinate
-    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(int64_t workload,
-                                                   int64_t* x_out,
-                                                   int64_t* y_out,
-                                                   int64_t* z_out,
-                                                   int64_t* t_out) const {
+    inline OPEN3D_HOST_DEVICE void WorkloadToCoord(index_t workload,
+                                                   index_t* x_out,
+                                                   index_t* y_out,
+                                                   index_t* z_out,
+                                                   index_t* t_out) const {
         *x_out = workload % shape_[3];
         workload = (workload - *x_out) / shape_[3];
         *y_out = workload % shape_[2];
@@ -318,40 +328,42 @@ public:
                x <= shape_[3] - 1.0f;
     }
 
-    inline OPEN3D_HOST_DEVICE int64_t GetShape(int i) const {
+    inline OPEN3D_HOST_DEVICE index_t GetShape(int i) const {
         return shape_[i];
     }
 
+    inline OPEN3D_HOST_DEVICE void* GetDataPtr() const { return ptr_; }
+
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x) const {
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(index_t x) const {
         return static_cast<T*>(static_cast<void*>(static_cast<uint8_t*>(ptr_) +
                                                   x * element_byte_size_));
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x, int64_t y) const {
-        int64_t workload;
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(index_t x, index_t y) const {
+        index_t workload;
         CoordToWorkload(x, y, &workload);
         return static_cast<T*>(static_cast<void*>(
                 static_cast<uint8_t*>(ptr_) + workload * element_byte_size_));
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
-                                            int64_t y,
-                                            int64_t z) const {
-        int64_t workload;
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(index_t x,
+                                            index_t y,
+                                            index_t z) const {
+        index_t workload;
         CoordToWorkload(x, y, z, &workload);
         return static_cast<T*>(static_cast<void*>(
                 static_cast<uint8_t*>(ptr_) + workload * element_byte_size_));
     }
 
     template <typename T>
-    inline OPEN3D_HOST_DEVICE T* GetDataPtr(int64_t x,
-                                            int64_t y,
-                                            int64_t z,
-                                            int64_t t) const {
-        int64_t workload;
+    inline OPEN3D_HOST_DEVICE T* GetDataPtr(index_t x,
+                                            index_t y,
+                                            index_t z,
+                                            index_t t) const {
+        index_t workload;
         CoordToWorkload(x, y, z, t, &workload);
         return static_cast<T*>(static_cast<void*>(
                 static_cast<uint8_t*>(ptr_) + workload * element_byte_size_));
@@ -359,11 +371,13 @@ public:
 
 private:
     void* ptr_;
-    int64_t element_byte_size_;
-    int64_t active_dims_;
+    index_t element_byte_size_;
+    index_t active_dims_;
 
-    int64_t shape_[MAX_RESOLUTION_DIMS];
+    index_t shape_[MAX_RESOLUTION_DIMS];
 };
+
+using NDArrayIndexer = TArrayIndexer<int64_t>;
 
 }  // namespace kernel
 }  // namespace geometry
