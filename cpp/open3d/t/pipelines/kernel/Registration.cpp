@@ -65,7 +65,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
     const core::Device device = source_points.GetDevice();
     const core::Dtype dtype = source_points.GetDtype();
 
-    core::AssertTensorDtype(source_points, {core::Float64, core::Float32});
+    core::AssertTensorDtypes(source_points, {core::Float64, core::Float32});
     core::AssertTensorDtype(target_points, dtype);
     core::AssertTensorDtype(target_normals, dtype);
     core::AssertTensorDevice(target_points, device);
@@ -114,7 +114,7 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
     const core::Device device = source_points.GetDevice();
     const core::Dtype dtype = source_points.GetDtype();
 
-    core::AssertTensorDtype(source_points, {core::Float64, core::Float32});
+    core::AssertTensorDtypes(source_points, {core::Float64, core::Float32});
     core::AssertTensorDtype(source_colors, dtype);
     core::AssertTensorDtype(target_points, dtype);
     core::AssertTensorDtype(target_normals, dtype);
@@ -164,7 +164,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     const core::Device device = source_points.GetDevice();
     const core::Dtype dtype = source_points.GetDtype();
 
-    core::AssertTensorDtype(source_points, {core::Float64, core::Float32});
+    core::AssertTensorDtypes(source_points, {core::Float64, core::Float32});
     core::AssertTensorDtype(target_points, dtype);
     core::AssertTensorDevice(target_points, device);
 
@@ -247,7 +247,7 @@ core::Tensor ComputeInformationMatrix(
     const core::Device device = target_points.GetDevice();
     const core::Dtype dtype = target_points.GetDtype();
 
-    core::AssertTensorDtype(target_points, {core::Float64, core::Float32});
+    core::AssertTensorDtypes(target_points, {core::Float64, core::Float32});
     core::AssertTensorDtype(correspondence_indices, core::Int64);
     core::AssertTensorDevice(correspondence_indices, device);
     AssertEmptyTensor(target_points, "Target PointCloud");

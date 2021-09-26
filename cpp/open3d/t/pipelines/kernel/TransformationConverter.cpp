@@ -40,12 +40,13 @@ namespace pipelines {
 namespace kernel {
 
 core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(t, {3});
+    core::AssertTensorDtypes(R, {core::Float32, core::Float64});
+
     const core::Device device = R.GetDevice();
     const core::Dtype dtype = R.GetDtype();
 
-    core::AssertTensorShape(R, {3, 3});
-    core::AssertTensorShape(t, {3});
-    core::AssertTensorDtype(R, {core::Float32, core::Float64});
     core::AssertTensorDtype(t, dtype);
     core::AssertTensorDevice(t, device);
 
@@ -87,7 +88,7 @@ static void PoseToTransformationDevice(
 
 core::Tensor PoseToTransformation(const core::Tensor &pose) {
     core::AssertTensorShape(pose, {6});
-    core::AssertTensorDtype(pose, {core::Float32, core::Float64});
+    core::AssertTensorDtypes(pose, {core::Float32, core::Float64});
 
     const core::Device device = pose.GetDevice();
     const core::Dtype dtype = pose.GetDtype();
