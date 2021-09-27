@@ -225,7 +225,7 @@ Tensor::Iterator::reference Tensor::Iterator::operator*() const {
     return impl_->tensor_->operator[](impl_->index_);
 }
 
-Tensor::Iterator::pointer Tensor::Iterator::operator->() {
+Tensor::Iterator::pointer Tensor::Iterator::operator->() const {
     impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
     return &impl_->tensor_slice_;
 }
@@ -241,13 +241,13 @@ Tensor::Iterator Tensor::Iterator::operator++(int) {
     return tmp;
 }
 
-bool operator==(const Tensor::Iterator& a, const Tensor::Iterator& b) {
-    return a.impl_->tensor_ == b.impl_->tensor_ &&
-           a.impl_->index_ == b.impl_->index_;
+bool Tensor::Iterator::operator==(const Tensor::Iterator& other) const {
+    return impl_->tensor_ == other.impl_->tensor_ &&
+           impl_->index_ == other.impl_->index_;
 }
 
-bool operator!=(const Tensor::Iterator& a, const Tensor::Iterator& b) {
-    return !(a == b);
+bool Tensor::Iterator::operator!=(const Tensor::Iterator& other) const {
+    return !(*this == other);
 }
 
 Tensor::Iterator Tensor::begin() {

@@ -1085,11 +1085,11 @@ public:
         Iterator(const Iterator&);
         ~Iterator();
         reference operator*() const;
-        pointer operator->();
+        pointer operator->() const;
         Iterator& operator++();
         Iterator operator++(int);
-        friend bool operator==(const Iterator& a, const Iterator& b);
-        friend bool operator!=(const Iterator& a, const Iterator& b);
+        bool operator==(const Iterator& other) const;
+        bool operator!=(const Iterator& other) const;
 
     private:
         struct Impl;
