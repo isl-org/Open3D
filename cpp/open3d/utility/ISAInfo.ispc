@@ -24,25 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/ml/contrib/contrib_nns.h"
+#include "open3d/utility/ISAInfo.isph"
 
-#include "pybind/docstring.h"
-#include "pybind/ml/contrib/contrib.h"
-#include "pybind/open3d_pybind.h"
-#include "pybind/pybind_utils.h"
+#if ISPC_POINTER_SIZE != 64
+#error Detected platform which is not 64-bit.
+#endif
 
-namespace open3d {
-namespace ml {
-namespace contrib {
+#if ISPC_FP64_SUPPORTED != 1
+#error 64-bit float support is not available.
+#endif
 
-void pybind_contrib_nns(py::module& m_contrib) {
-    m_contrib.def("knn_search", &KnnSearch, "query_points"_a,
-                  "dataset_points"_a, "knn"_a);
-    m_contrib.def("radius_search", &RadiusSearch, "query_points"_a,
-                  "dataset_points"_a, "query_batches"_a, "dataset_batches"_a,
-                  "radius"_a);
-}
-
-}  // namespace contrib
-}  // namespace ml
-}  // namespace open3d
+OPEN3D_DEFINE_ISA_INFO_GETTERS(open3d_utility_)

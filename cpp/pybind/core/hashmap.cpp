@@ -35,7 +35,6 @@
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/utility/Logging.h"
 #include "pybind/core/core.h"
-#include "pybind/core/tensor_converter.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
@@ -78,43 +77,17 @@ void pybind_core_hashmap(py::module& m) {
                                 "A HashMap is an unordered map from key to "
                                 "value wrapped by Tensors.");
 
-    hashmap.def(py::init([](int64_t init_capacity, const Dtype& key_dtype,
-                            const py::handle& key_element_shape,
-                            const Dtype& value_dtype,
-                            const py::handle& value_element_shape,
-                            const Device& device) {
-                    SizeVector key_element_shape_sv =
-                            PyHandleToSizeVector(key_element_shape);
-                    SizeVector value_element_shape_sv =
-                            PyHandleToSizeVector(value_element_shape);
-                    return HashMap(init_capacity, key_dtype,
-                                   key_element_shape_sv, value_dtype,
-                                   value_element_shape_sv, device);
-                }),
+    hashmap.def(py::init<int64_t, const Dtype&, const SizeVector&, const Dtype&,
+                         const SizeVector&, const Device&>(),
                 "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
                 "value_dtype"_a, "value_element_shape"_a,
                 "device"_a = Device("CPU:0"));
-    hashmap.def(
-            py::init([](int64_t init_capacity, const Dtype& key_dtype,
-                        const py::handle& key_element_shape,
-                        const std::vector<Dtype>& value_dtypes,
-                        const std::vector<py::handle>& value_element_shapes,
-                        const Device& device) {
-                SizeVector key_element_shape_sv =
-                        PyHandleToSizeVector(key_element_shape);
-
-                std::vector<SizeVector> value_element_shapes_sv;
-                for (auto& handle : value_element_shapes) {
-                    SizeVector value_element_shape_sv =
-                            PyHandleToSizeVector(handle);
-                    value_element_shapes_sv.push_back(value_element_shape_sv);
-                }
-                return HashMap(init_capacity, key_dtype, key_element_shape_sv,
-                               value_dtypes, value_element_shapes_sv, device);
-            }),
-            "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
-            "value_dtypes"_a, "value_element_shapes"_a,
-            "device"_a = Device("CPU:0"));
+    hashmap.def(py::init<int64_t, const Dtype&, const SizeVector&,
+                         const std::vector<Dtype>&,
+                         const std::vector<SizeVector>&, const Device&>(),
+                "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
+                "value_dtypes"_a, "value_element_shapes"_a,
+                "device"_a = Device("CPU:0"));
     docstring::ClassMethodDocInject(m, "HashMap", "__init__", argument_docs);
 
     hashmap.def(
@@ -243,16 +216,10 @@ void pybind_core_hashset(py::module& m) {
             m, "HashSet",
             "A HashSet is an unordered set of keys wrapped by Tensors.");
 
-    hashset.def(py::init([](int64_t init_capacity, const Dtype& key_dtype,
-                            const py::handle& key_element_shape,
-                            const Device& device) {
-                    SizeVector key_element_shape_sv =
-                            PyHandleToSizeVector(key_element_shape);
-                    return HashSet(init_capacity, key_dtype,
-                                   key_element_shape_sv, device);
-                }),
-                "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
-                "device"_a = Device("CPU:0"));
+    hashset.def(
+            py::init<int64_t, const Dtype&, const SizeVector&, const Device&>(),
+            "init_capacity"_a, "key_dtype"_a, "key_element_shape"_a,
+            "device"_a = Device("CPU:0"));
     docstring::ClassMethodDocInject(m, "HashSet", "__init__", argument_docs);
 
     hashset.def(

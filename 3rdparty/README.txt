@@ -9,7 +9,7 @@ libusb. Run corresponding script file under "script" directory to automatically
 config them.
 
 --------------------------------------------------------------------------------
-Eigen                       3.4-rc1                            Mainly MPL2 license
+Eigen                       3.4                              Mainly MPL2 license
 A high-level C++ library of template headers for linear algebra, matrix and
 vector operations, numerical solvers and related algorithms
 http://eigen.tuxfamily.org/

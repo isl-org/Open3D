@@ -57,6 +57,7 @@ void pybind_lineset(py::module& m);
 void pybind_trianglemesh(py::module& m);
 void pybind_image(py::module& m);
 void pybind_tsdf_voxelgrid(py::module& m);
+void pybind_voxel_block_grid(py::module& m);
 void pybind_raycasting_scene(py::module& m);
 
 }  // namespace geometry

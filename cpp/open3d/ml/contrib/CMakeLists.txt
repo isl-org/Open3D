@@ -2,7 +2,6 @@ add_library(ml_contrib OBJECT)
 
 target_sources(ml_contrib PRIVATE
     Cloud.cpp
-    contrib_nns.cpp
     GridSubsampling.cpp
     IoU.cpp
 )

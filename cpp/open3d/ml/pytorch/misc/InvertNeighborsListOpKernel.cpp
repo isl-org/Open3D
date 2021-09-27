@@ -73,6 +73,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCPU(
                                           const torch::Tensor&,          \
                                           const torch::Tensor&);
 
+INSTANTIATE(int32_t, uint8_t)
+INSTANTIATE(int32_t, int8_t)
+INSTANTIATE(int32_t, int16_t)
 INSTANTIATE(int32_t, int32_t)
 INSTANTIATE(int32_t, int64_t)
 INSTANTIATE(int32_t, float)
