@@ -211,8 +211,8 @@ Tensor::Iterator::Iterator(Tensor* tensor, int64_t index)
     impl_->index_ = index;
 }
 
-Tensor::Iterator::Iterator(const Tensor::Iterator& other) {
-    impl_ = std::make_unique<Impl>();
+Tensor::Iterator::Iterator(const Tensor::Iterator& other)
+    : impl_(std::make_unique<Impl>()) {
     impl_->tensor_ = other.impl_->tensor_;
     impl_->index_ = other.impl_->index_;
 }
