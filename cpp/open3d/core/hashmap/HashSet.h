@@ -46,39 +46,55 @@ public:
     /// Default destructor.
     ~HashSet() = default;
 
-    /// Rehash the internal hash map with the given number of buckets.
-    void Rehash(int64_t buckets);
+    /// Reserve the internal hash map with the capcity by rehashing.
+    void Reserve(int64_t capacity);
 
     /// Parallel insert arrays of keys and values in Tensors.
-    /// The output_buf_indices and output_masks will be overwritten, to be used
-    /// with tensor buffers.
-    /// output_buf_indices stores buffer indices that access buffer tensors
-    /// obtained from GetKeyTensor() via advanced indexing.
-    /// NOTE: output_buf_indices are stored in Int32. A conversion to Int64 is
-    /// required for further indexing.
-    /// output_masks stores if the insertion is
+    /// Return: output_buf_indices stores buffer indices that access buffer
+    /// tensors obtained from GetKeyTensor() and GetValueTensor() via advanced
+    /// indexing.
+    /// NOTE: output_buf_indices are stored in Int32. A conversion to
+    /// Int64 is required for further indexing.
+    /// Return: output_masks stores if the insertion is
     /// a success or failure (key already exists).
+    std::pair<Tensor, Tensor> Insert(const Tensor& input_keys);
+
+    /// Parallel find an array of keys in Tensor.
+    /// Return: output_buf_indices, its role is the same as in Insert.
+    /// Return: output_masks stores if the finding is a success or failure (key
+    /// not found).
+    std::pair<Tensor, Tensor> Find(const Tensor& input_keys);
+
+    /// Parallel erase an array of keys in Tensor.
+    /// Return: output_masks stores if the erase is a success or failure (key
+    /// not found all already erased in another thread).
+    Tensor Erase(const Tensor& input_keys);
+
+    /// Parallel collect all indices in the buffer corresponding to the active
+    /// entries in the hash map.
+    /// Return output_buf_indices, collected buffer indices.
+    Tensor GetActiveIndices() const;
+
+    /// Same as Insert, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
     void Insert(const Tensor& input_keys,
                 Tensor& output_buf_indices,
                 Tensor& output_masks);
 
-    /// Parallel find an array of keys in Tensor.
-    /// The roles of output_buf_indices is the same as Insert.
-    /// output_masks stores if the finding is a success or failure (key
-    /// not found).
+    /// Same as Find, but takes output_buf_indices
+    /// and output_masks as input. If their shapes and types match, reallocation
+    /// is not needed.
     void Find(const Tensor& input_keys,
               Tensor& output_buf_indices,
               Tensor& output_masks);
 
-    /// Parallel erase an array of keys in Tensor.
-    /// The output_masks will be overwritten, to be used
-    /// with tensor buffers.
-    /// output_masks stores if the erase is a success or failure (key not found
-    /// all already erased in another thread).
+    /// Same as Erase, but takes output_masks as input. If its shape and
+    /// type matches, reallocation is not needed.
     void Erase(const Tensor& input_keys, Tensor& output_masks);
 
-    /// Parallel collect all indices in the buffer corresponding to the active
-    /// entries in the hash map. Stored in output_buf_indices.
+    /// Same as GetActiveIndices, but takes output_buf_indices as input. If its
+    /// shape and type matches, reallocation is not needed.
     void GetActiveIndices(Tensor& output_buf_indices) const;
 
     /// Clear stored map without reallocating the buffers.

@@ -26,6 +26,8 @@
 
 #include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
 
+#include "open3d/core/TensorCheck.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {
@@ -40,12 +42,12 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
                               int i,
                               int j,
                               float threshold) {
-    AtA.AssertDtype(core::Float32);
-    Atb.AssertDtype(core::Float32);
-    residual.AssertDtype(core::Float32);
-    Ti_ps.AssertDtype(core::Float32);
-    Tj_qs.AssertDtype(core::Float32);
-    Ri_normal_ps.AssertDtype(core::Float32);
+    core::AssertTensorDtype(AtA, core::Float32);
+    core::AssertTensorDtype(Atb, core::Float32);
+    core::AssertTensorDtype(residual, core::Float32);
+    core::AssertTensorDtype(Ti_ps, core::Float32);
+    core::AssertTensorDtype(Tj_qs, core::Float32);
+    core::AssertTensorDtype(Ri_normal_ps, core::Float32);
 
     core::Device device = AtA.GetDevice();
     if (Atb.GetDevice() != device) {
@@ -98,14 +100,14 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
                              int j,
                              int n,
                              float threshold) {
-    AtA.AssertDtype(core::Float32);
-    Atb.AssertDtype(core::Float32);
-    residual.AssertDtype(core::Float32);
-    Ti_ps.AssertDtype(core::Float32);
-    Tj_qs.AssertDtype(core::Float32);
-    normal_ps.AssertDtype(core::Float32);
-    Ri_normal_ps.AssertDtype(core::Float32);
-    RjT_Ri_normal_ps.AssertDtype(core::Float32);
+    core::AssertTensorDtype(AtA, core::Float32);
+    core::AssertTensorDtype(Atb, core::Float32);
+    core::AssertTensorDtype(residual, core::Float32);
+    core::AssertTensorDtype(Ti_ps, core::Float32);
+    core::AssertTensorDtype(Tj_qs, core::Float32);
+    core::AssertTensorDtype(normal_ps, core::Float32);
+    core::AssertTensorDtype(Ri_normal_ps, core::Float32);
+    core::AssertTensorDtype(RjT_Ri_normal_ps, core::Float32);
 
     core::Device device = AtA.GetDevice();
     if (Atb.GetDevice() != device) {
@@ -157,9 +159,9 @@ void FillInSLACRegularizerTerm(core::Tensor &AtA,
                                float weight,
                                int n,
                                int anchor_idx) {
-    AtA.AssertDtype(core::Float32);
-    Atb.AssertDtype(core::Float32);
-    residual.AssertDtype(core::Float32);
+    core::AssertTensorDtype(AtA, core::Float32);
+    core::AssertTensorDtype(Atb, core::Float32);
+    core::AssertTensorDtype(residual, core::Float32);
 
     core::Device device = AtA.GetDevice();
     if (Atb.GetDevice() != device) {

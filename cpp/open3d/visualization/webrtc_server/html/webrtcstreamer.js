@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
 // Contains source code from
 // https://github.com/mpromonet/webrtc-streamer
 //
@@ -32,8 +31,24 @@
 // any purpose.
 // ----------------------------------------------------------------------------
 
-var WebRtcStreamer = (function () {
+(function () {
+  const enableLogging = false;
+  if (enableLogging === false) {
+    if (typeof window.console === "undefined") { window.console = {};}
+    window.console.log = window.console.info = window.console.debug =
+      window.console.warning = window.console.assert =
+      window.console.error = function () {};
+  }
+}());
+
+let WebRtcStreamer = (function () {
   // Immediately-executing anonymous functions to enforce variable scope.
+
+  // Query style from the user's browser and match Open3D style
+  function css (element, property) {
+    return window.getComputedStyle(element, null).getPropertyValue(property);
+  }
+
   /**
    * Interface with WebRTC-streamer API
    * @constructor
@@ -51,10 +66,10 @@ var WebRtcStreamer = (function () {
     this.srvurl =
       srvurl ||
       location.protocol +
-        "//" +
-        window.location.hostname +
-        ":" +
-        window.location.port;
+      "//" +
+      window.location.hostname +
+      ":" +
+      window.location.port;
     this.pc = null;
     this.dataChannel = null;
 
@@ -73,13 +88,13 @@ var WebRtcStreamer = (function () {
     this.commsFetch = commsFetch;
   }
 
-  logAndReturn = function (value) {
-    console.log("logAndReturn: ", value);
+  const logAndReturn = function (value) {
+    window.console.log("logAndReturn: ", value);
     return value;
   };
 
   /**
-   * Call remove server API.
+   * Call remote server API.
    * Non-prototype (static) method, we don't need to new an instance to use it.
    * See https://stackoverflow.com/a/1635143/1255535.
    * @param {string} url Remote URL, e.g. "/api/getMediaList"
@@ -232,10 +247,10 @@ var WebRtcStreamer = (function () {
         );
         var widthInputElt = document.getElementById(windowUID + "_width_input");
         if (!heightInputElt || !widthInputElt) {
-          Console.warn("Cannot resize, missing height/width inputs.");
+          console.warn("Cannot resize, missing height/width inputs.");
           return;
         }
-        var resizeEvent = {
+        const resizeEvent = {
           window_uid: windowUID,
           class_name: "ResizeEvent",
           height: parseInt(heightInputElt.value),
@@ -361,7 +376,7 @@ var WebRtcStreamer = (function () {
           var open3dMouseEvent = {
             window_uid: windowUID,
             class_name: "MouseEvent",
-            type: event.buttons == 0 ? "MOVE" : "DRAG",
+            type: event.buttons === 0 ? "MOVE" : "DRAG",
             x: event.offsetX,
             y: event.offsetY,
             modifiers: WebRtcStreamer._getModifiers(event),
@@ -431,8 +446,8 @@ var WebRtcStreamer = (function () {
           // Flip the sign and set absolute value to 1.
           var dx = event.deltaX;
           var dy = event.deltaY;
-          dx = dx == 0 ? dx : (-dx / Math.abs(dx)) * 1;
-          dy = dy == 0 ? dy : (-dy / Math.abs(dy)) * 1;
+          dx = dx === 0 ? dx : (-dx / Math.abs(dx)) * 1;
+          dy = dy === 0 ? dy : (-dy / Math.abs(dy)) * 1;
 
           var open3dMouseEvent = {
             window_uid: windowUID,
@@ -473,7 +488,7 @@ var WebRtcStreamer = (function () {
       try {
         this.pc.close();
       } catch (e) {
-        console.log("Failure close peer connection:" + e);
+        console.warn("Failure close peer connection:" + e);
       }
       this.pc = null;
       this.dataChannel = null;
@@ -539,7 +554,7 @@ var WebRtcStreamer = (function () {
                 .catch((error) => bind.onError("call " + error));
             },
             function (error) {
-              console.log("setLocalDescription error:" + JSON.stringify(error));
+              console.warn("setLocalDescription error:" + JSON.stringify(error));
             }
           );
         },
@@ -571,9 +586,9 @@ var WebRtcStreamer = (function () {
   WebRtcStreamer.prototype.createPeerConnection = function () {
     console.log(
       "createPeerConnection  config: " +
-        JSON.stringify(this.pcConfig) +
-        " option:" +
-        JSON.stringify(this.pcOptions)
+      JSON.stringify(this.pcConfig) +
+      " option:" +
+      JSON.stringify(this.pcOptions)
     );
     this.pc = new RTCPeerConnection(this.pcConfig, this.pcOptions);
     var pc = this.pc;
@@ -583,7 +598,7 @@ var WebRtcStreamer = (function () {
     pc.onicecandidate = function (evt) {
       bind.onIceCandidate.call(bind, evt);
     };
-    pc.onaddstream = function (evt) {
+    pc.onaddstream = function (evt) {   // TODO: Deprecated. Switch to ontrack.
       bind.onAddStream.call(bind, evt);
     };
     pc.oniceconnectionstatechange = function (evt) {
@@ -605,11 +620,14 @@ var WebRtcStreamer = (function () {
         }
       }
     };
+    // Remote data channel receives data
     pc.ondatachannel = function (evt) {
       console.log("remote datachannel created:" + JSON.stringify(evt));
 
       evt.channel.onopen = function () {
         console.log("remote datachannel open");
+        // Forward event to others who want to access remote data
+        bind.videoElt.dispatchEvent(new CustomEvent("RemoteDataChannelOpen", {detail: evt}));
       };
       evt.channel.onmessage = function (event) {
         console.log("remote datachannel recv:" + JSON.stringify(event.data));
@@ -620,7 +638,8 @@ var WebRtcStreamer = (function () {
         const recvs = pc.getReceivers();
 
         recvs.forEach((recv) => {
-          if (recv.track && recv.track.kind === "video") {
+          if (recv.track && recv.track.kind === "video" && typeof recv.getParameters !=
+            "undefined") {
             console.log(
               "codecs:" + JSON.stringify(recv.getParameters().codecs)
             );
@@ -629,11 +648,16 @@ var WebRtcStreamer = (function () {
       }
     };
 
+    // Local datachannel sends data
     try {
       this.dataChannel = pc.createDataChannel("ClientDataChannel");
       var dataChannel = this.dataChannel;
       dataChannel.onopen = function () {
         console.log("local datachannel open");
+        // Forward event to others who want to access remote data
+        bind.videoElt.dispatchEvent(new CustomEvent("LocalDataChannelOpen", {
+          detail: {channel: dataChannel}
+        }));
       };
       dataChannel.onmessage = function (evt) {
         console.log("local datachannel recv:" + JSON.stringify(evt.data));
@@ -643,14 +667,14 @@ var WebRtcStreamer = (function () {
         bind.onClose();
       };
     } catch (e) {
-      console.log("Cannot create datachannel error: " + e);
+      console.warn("Cannot create datachannel error: " + e);
     }
 
     console.log(
       "Created RTCPeerConnection with config: " +
-        JSON.stringify(this.pcConfig) +
-        "option:" +
-        JSON.stringify(this.pcOptions)
+      JSON.stringify(this.pcConfig) +
+      "option:" +
+      JSON.stringify(this.pcOptions)
     );
     return pc;
   };
@@ -659,7 +683,7 @@ var WebRtcStreamer = (function () {
    * RTCPeerConnection IceCandidate callback
    */
   WebRtcStreamer.prototype.onIceCandidate = function (event) {
-    if (event.candidate) {
+    if (event.candidate && event.candidate.candidate) {  // skip empty candidate
       if (this.pc.currentRemoteDescription) {
         this.addIceCandidate(this.pc.peerid, event.candidate);
       } else {
@@ -695,7 +719,7 @@ var WebRtcStreamer = (function () {
 
     this.videoElt.srcObject = event.stream;
     var promise = this.videoElt.play();
-    if (promise !== undefined) {
+    if (typeof promise !== "undefined") {
       var bind = this;
       promise.catch(function (error) {
         console.warn("error:" + error);
@@ -723,7 +747,7 @@ var WebRtcStreamer = (function () {
         bind.getIceCandidate.call(bind);
       },
       function (error) {
-        console.log("setRemoteDescription error:" + JSON.stringify(error));
+        console.warn("setRemoteDescription error:" + JSON.stringify(error));
       }
     );
   };
@@ -744,7 +768,7 @@ var WebRtcStreamer = (function () {
             console.log("addIceCandidate OK");
           },
           function (error) {
-            console.log("addIceCandidate error:" + JSON.stringify(error));
+            console.warn("addIceCandidate error:" + JSON.stringify(error));
           }
         );
       }
@@ -756,12 +780,14 @@ var WebRtcStreamer = (function () {
    * AJAX callback for Error
    */
   WebRtcStreamer.prototype.onError = function (status) {
-    console.log("onError:" + status);
+    console.warn("onError:" + status);
   };
 
   return WebRtcStreamer;
-})();
+}());
 
-if (typeof module !== "undefined" && typeof module.exports !== "undefined")
+if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
   module.exports = WebRtcStreamer;
-else window.WebRtcStreamer = WebRtcStreamer;
+} else {
+  window.WebRtcStreamer = WebRtcStreamer;
+}
