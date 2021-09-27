@@ -32,8 +32,7 @@
 // ----------------------------------------------------------------------------
 
 (function () {
-  // TODO(@ssheorey): Set to false before merge
-  const enableLogging = true;
+  const enableLogging = false;
   if (enableLogging === false) {
     if (typeof window.console === "undefined") { window.console = {};}
     window.console.log = window.console.info = window.console.debug =
