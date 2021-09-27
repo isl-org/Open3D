@@ -221,13 +221,13 @@ Tensor& Tensor::operator=(Tensor&& other) & {
     return *this;
 }
 
-/// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`
+/// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`.
 Tensor& Tensor::operator=(const Tensor& other) && {
     kernel::Copy(other, *this);
     return *this;
 }
 
-/// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`
+/// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`.
 Tensor& Tensor::operator=(Tensor&& other) && {
     kernel::Copy(other, *this);
     return *this;

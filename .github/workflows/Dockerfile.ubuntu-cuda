@@ -29,6 +29,7 @@ SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y \
     git  \
     wget \
+    curl \
  && rm -rf /var/lib/apt/lists/*
 
 # Dependencies: cmake
@@ -99,10 +100,10 @@ RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-conda with-jupyter
 
 # Open3D WebRTC dependencies
-RUN apt-get update && apt-get install -y \
-    nodejs \
-    npm \
- && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+ && apt-get install -y nodejs \
+ && rm -rf /var/lib/apt/lists/* \
+ && node --version
 RUN npm install -g yarn \
  && yarn --version
 
