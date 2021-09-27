@@ -575,12 +575,9 @@ static const std::unordered_map<std::string, std::string>
                 {"checkers",
                  "Vector of Checker class to check if two point "
                  "clouds can be aligned. One of "
-                 "(``"
-                 "CorrespondenceCheckerBasedOnEdgeLength``, "
-                 "``"
-                 "CorrespondenceCheckerBasedOnDistance``, "
-                 "``"
-                 "CorrespondenceCheckerBasedOnNormal``)"},
+                 "(``CorrespondenceCheckerBasedOnEdgeLength``, "
+                 "``CorrespondenceCheckerBasedOnDistance``, "
+                 "``CorrespondenceCheckerBasedOnNormal``)"},
                 {"confidence",
                  "Desired probability of success for RANSAC. Used for "
                  "estimating early termination by k = log(1 - "
@@ -591,14 +588,10 @@ static const std::unordered_map<std::string, std::string>
                 {"criteria", "Convergence criteria"},
                 {"estimation_method",
                  "Estimation method. One of "
-                 "(``"
-                 "TransformationEstimationPointToPoint``, "
-                 "``"
-                 "TransformationEstimationPointToPlane``, "
-                 "``"
-                 "TransformationEstimationForGeneralizedICP``, "
-                 "``"
-                 "TransformationEstimationForColoredICP``)"},
+                 "(``TransformationEstimationPointToPoint``, "
+                 "``TransformationEstimationPointToPlane``, "
+                 "``TransformationEstimationForGeneralizedICP``, "
+                 "``TransformationEstimationForColoredICP``)"},
                 {"init", "Initial transformation estimation"},
                 {"lambda_geometric", "lambda_geometric value"},
                 {"epsilon", "epsilon value"},

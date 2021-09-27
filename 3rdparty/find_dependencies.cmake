@@ -457,8 +457,6 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 # Threads
-set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-set(THREADS_PREFER_PTHREAD_FLAG TRUE) # -pthread instead of -lpthread
 open3d_find_package_3rdparty_library(3rdparty_threads
     REQUIRED
     PACKAGE Threads

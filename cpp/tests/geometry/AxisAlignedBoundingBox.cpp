@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/BoundingVolume.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 using namespace open3d::geometry;
 using namespace ::testing;

@@ -3,7 +3,6 @@ target_sources(pybind PRIVATE
 )
 
 target_sources(pybind PRIVATE
-    contrib/contrib_nns.cpp
     contrib/contrib_subsample.cpp
     contrib/contrib.cpp
     contrib/iou.cpp

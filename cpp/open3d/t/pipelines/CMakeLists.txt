@@ -1,25 +1,6 @@
 add_subdirectory(kernel)
 
-add_library(tpipelines OBJECT $<TARGET_OBJECTS:tpipelines_kernel>)
-
-target_sources(tpipelines PRIVATE
-    kernel/ComputeTransform.cpp
-    kernel/ComputeTransformCPU.cpp
-    kernel/FillInLinearSystem.cpp
-    kernel/FillInLinearSystemCPU.cpp
-    kernel/RGBDOdometry.cpp
-    kernel/RGBDOdometryCPU.cpp
-    kernel/TransformationConverter.cpp
-)
-
-if (BUILD_CUDA_MODULE)
-    target_sources(tpipelines PRIVATE
-        kernel/ComputeTransformCUDA.cu
-        kernel/FillInLinearSystemCUDA.cu
-        kernel/RGBDOdometryCUDA.cu
-        kernel/TransformationConverter.cu
-    )
-endif()
+open3d_ispc_add_library(tpipelines OBJECT)
 
 target_sources(tpipelines PRIVATE
     odometry/RGBDOdometry.cpp

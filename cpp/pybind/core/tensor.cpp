@@ -176,37 +176,38 @@
                 .cpp_name(self);                                          \
     });
 
-#define BIND_REDUCTION_OP(py_name, cpp_name)                            \
-    tensor.def(                                                         \
-            #py_name,                                                   \
-            [](const Tensor& tensor, utility::optional<py::handle> dim, \
-               bool keepdim) {                                          \
-                SizeVector reduction_dims;                              \
-                if (dim.has_value()) {                                  \
-                    reduction_dims = PyHandleToSizeVector(dim.value()); \
-                } else {                                                \
-                    for (int64_t i = 0; i < tensor.NumDims(); i++) {    \
-                        reduction_dims.push_back(i);                    \
-                    }                                                   \
-                }                                                       \
-                return tensor.cpp_name(reduction_dims, keepdim);        \
-            },                                                          \
+#define BIND_REDUCTION_OP(py_name, cpp_name)                                   \
+    tensor.def(                                                                \
+            #py_name,                                                          \
+            [](const Tensor& tensor, const utility::optional<SizeVector>& dim, \
+               bool keepdim) {                                                 \
+                SizeVector reduction_dims;                                     \
+                if (dim.has_value()) {                                         \
+                    reduction_dims = dim.value();                              \
+                } else {                                                       \
+                    for (int64_t i = 0; i < tensor.NumDims(); i++) {           \
+                        reduction_dims.push_back(i);                           \
+                    }                                                          \
+                }                                                              \
+                return tensor.cpp_name(reduction_dims, keepdim);               \
+            },                                                                 \
             "dim"_a = py::none(), "keepdim"_a = false);
 
-#define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)                   \
-    tensor.def(                                                           \
-            #py_name,                                                     \
-            [](const Tensor& tensor, utility::optional<py::handle> dim) { \
-                SizeVector reduction_dims;                                \
-                if (dim.has_value()) {                                    \
-                    reduction_dims = PyHandleToSizeVector(dim.value());   \
-                } else {                                                  \
-                    for (int64_t i = 0; i < tensor.NumDims(); i++) {      \
-                        reduction_dims.push_back(i);                      \
-                    }                                                     \
-                }                                                         \
-                return tensor.cpp_name(reduction_dims);                   \
-            },                                                            \
+#define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)              \
+    tensor.def(                                                      \
+            #py_name,                                                \
+            [](const Tensor& tensor,                                 \
+               const utility::optional<SizeVector>& dim) {           \
+                SizeVector reduction_dims;                           \
+                if (dim.has_value()) {                               \
+                    reduction_dims = dim.value();                    \
+                } else {                                             \
+                    for (int64_t i = 0; i < tensor.NumDims(); i++) { \
+                        reduction_dims.push_back(i);                 \
+                    }                                                \
+                }                                                    \
+                return tensor.cpp_name(reduction_dims);              \
+            },                                                       \
             "dim"_a = py::none());
 
 namespace open3d {
@@ -246,30 +247,6 @@ static void BindTensorCreation(py::module& m,
             },
             "Create Tensor with a given shape.", "shape"_a,
             "dtype"_a = py::none(), "device"_a = py::none());
-    tensor.def_static(
-            py_name.c_str(),
-            [cpp_func](const py::tuple& shape, utility::optional<Dtype> dtype,
-                       utility::optional<Device> device) {
-                return cpp_func(
-                        PyTupleToSizeVector(shape),
-                        dtype.has_value() ? dtype.value() : core::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "Create Tensor with a given shape."
-            "shape"_a,
-            "dtype"_a = py::none(), "device"_a = py::none());
-    tensor.def_static(
-            py_name.c_str(),
-            [cpp_func](const py::list& shape, utility::optional<Dtype> dtype,
-                       utility::optional<Device> device) {
-                return cpp_func(
-                        PyListToSizeVector(shape),
-                        dtype.has_value() ? dtype.value() : core::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "Create Tensor with a given shape."
-            "shape"_a,
-            "dtype"_a = py::none(), "device"_a = py::none());
 
     docstring::ClassMethodDocInject(m, "Tensor", py_name, argument_docs);
 }
@@ -283,30 +260,6 @@ static void BindTensorFullCreation(py::module& m, py::class_<Tensor>& tensor) {
                utility::optional<Device> device) {
                 return Tensor::Full<T>(
                         shape, fill_value,
-                        dtype.has_value() ? dtype.value() : core::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
-            "device"_a = py::none());
-    tensor.def_static(
-            "full",
-            [](const py::tuple& shape, T fill_value,
-               utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
-                return Tensor::Full<T>(
-                        PyTupleToSizeVector(shape), fill_value,
-                        dtype.has_value() ? dtype.value() : core::Float32,
-                        device.has_value() ? device.value() : Device("CPU:0"));
-            },
-            "shape"_a, "fill_value"_a, "dtype"_a = py::none(),
-            "device"_a = py::none());
-    tensor.def_static(
-            "full",
-            [](const py::list& shape, T fill_value,
-               utility::optional<Dtype> dtype,
-               utility::optional<Device> device) {
-                return Tensor::Full<T>(
-                        PyListToSizeVector(shape), fill_value,
                         dtype.has_value() ? dtype.value() : core::Float32,
                         device.has_value() ? device.value() : Device("CPU:0"));
             },

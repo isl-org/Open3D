@@ -30,7 +30,7 @@
 #include <limits>
 
 #include "open3d/core/Tensor.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
