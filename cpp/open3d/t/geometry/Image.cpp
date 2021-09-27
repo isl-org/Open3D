@@ -106,9 +106,17 @@ Image Image::To(core::Dtype dtype,
     if (!scale_.has_value() &&
         (dtype == core::Float32 || dtype == core::Float64)) {
         if (GetDtype() == core::UInt8) {
-            scale = 1. / 255;
+            scale = 1.0 /
+                    static_cast<double>(std::numeric_limits<uint8_t>::max());
         } else if (GetDtype() == core::UInt16) {
-            scale = 1. / 65535;
+            scale = 1.0 /
+                    static_cast<double>(std::numeric_limits<uint16_t>::max());
+        } else if (GetDtype() == core::UInt32) {
+            scale = 1.0 /
+                    static_cast<double>(std::numeric_limits<uint32_t>::max());
+        } else if (GetDtype() == core::UInt64) {
+            scale = 1.0 /
+                    static_cast<double>(std::numeric_limits<uint64_t>::max());
         }
     } else {
         scale = scale_.value_or(1.0);

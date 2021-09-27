@@ -119,6 +119,9 @@ PointCloud PointCloud::To(const core::Device &device, bool copy) const {
 PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
 PointCloud PointCloud::Append(const PointCloud &other) const {
+    // TODO (@rishabh): Add Append to Tensor -> TensorMap -> Use that in
+    // t::geometry.
+
     PointCloud pcd(GetDevice());
 
     int64_t length = GetPointPositions().GetLength();
@@ -157,8 +160,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
             utility::LogError(
                     "The pointcloud is missing attribute {}. The pointcloud "
                     "being appended, must have all the attributes present in "
-                    "the "
-                    "pointcloud it is being appended to.",
+                    "the pointcloud it is being appended to.",
                     kv.first);
         }
     }
@@ -166,7 +168,6 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
-    // Asserts are performed in the kernel.
     kernel::transform::TransformPoints(transformation, GetPointPositions());
     if (HasPointNormals()) {
         kernel::transform::TransformNormals(transformation, GetPointNormals());
@@ -199,7 +200,6 @@ PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
-    // Asserts are performed in the kernel.
     kernel::transform::RotatePoints(R, GetPointPositions(), center);
 
     if (HasPointNormals()) {
@@ -608,6 +608,14 @@ open3d::geometry::PointCloud PointCloud::ToLegacy() const {
             normalization_factor =
                     1.0 /
                     static_cast<double>(std::numeric_limits<uint16_t>::max());
+        } else if (point_color_dtype == core::UInt32) {
+            normalization_factor =
+                    1.0 /
+                    static_cast<double>(std::numeric_limits<uint32_t>::max());
+        } else if (point_color_dtype == core::UInt64) {
+            normalization_factor =
+                    1.0 /
+                    static_cast<double>(std::numeric_limits<uint64_t>::max());
         } else if (point_color_dtype != core::Float32 &&
                    point_color_dtype != core::Float64) {
             utility::LogWarning(

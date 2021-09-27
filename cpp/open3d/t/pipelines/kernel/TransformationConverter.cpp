@@ -117,6 +117,8 @@ void DecodeAndSolve6x6(const core::Tensor &A_reduction,
                        int &inlier_count) {
     const core::Device host(core::Device("CPU:0"));
     core::Tensor A_1x29_host = A_reduction.To(host, core::Float64);
+    core::AssertTensorShape(A_reduction, {29});
+
     double *A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
 
     core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Float64, host);
