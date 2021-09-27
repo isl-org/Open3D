@@ -231,7 +231,6 @@ void UnaryEWCPU(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 LaunchUnaryEWKernel(indexer, CPUIsNanElementKernel<scalar_t>);
             } else if (op_code == UnaryEWOpCode::IsInf) {
                 LaunchUnaryEWKernel(indexer, CPUIsInfElementKernel<scalar_t>);
-
             } else if (op_code == UnaryEWOpCode::IsFinite) {
                 LaunchUnaryEWKernel(indexer,
                                     CPUIsFiniteElementKernel<scalar_t>);
