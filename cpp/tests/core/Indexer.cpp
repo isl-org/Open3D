@@ -177,19 +177,24 @@ TEST_P(IndexerPermuteDevices, IsContiguous) {
 
     core::Tensor input0({3, 1, 1}, core::Float32, device);
     core::Tensor input1({2, 1}, core::Float32, device);
+    core::Tensor input2_full({3, 4, 1}, core::Float32, device);
+    core::Tensor input2 = input2_full.Slice(1, 0, 4, 2);  // Shape {3, 2, 1}.
     core::Tensor output({3, 2, 1}, core::Float32, device);
-    core::Indexer indexer({input0, input1}, output);
+    core::Indexer indexer({input0, input1, input2}, output);
 
     EXPECT_FALSE(indexer.GetInput(0).IsContiguous());  // Broadcasted.
     EXPECT_FALSE(indexer.GetInput(1).IsContiguous());  // Broadcasted.
+    EXPECT_FALSE(indexer.GetInput(2).IsContiguous());  // Sliced.
     EXPECT_TRUE(indexer.GetOutput().IsContiguous());
 
     EXPECT_TRUE(core::TensorRef(input0).IsContiguous());
     EXPECT_TRUE(core::TensorRef(input1).IsContiguous());
+    EXPECT_FALSE(core::TensorRef(input2).IsContiguous());
     EXPECT_TRUE(core::TensorRef(output).IsContiguous());
 
     EXPECT_TRUE(input0.IsContiguous());
     EXPECT_TRUE(input1.IsContiguous());
+    EXPECT_FALSE(input2.IsContiguous());
     EXPECT_TRUE(output.IsContiguous());
 }
 
