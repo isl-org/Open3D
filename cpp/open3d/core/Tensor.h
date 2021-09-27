@@ -833,6 +833,19 @@ public:
     /// the reduction is applied to all dimensions.
     bool Any() const;
 
+    /// Returns true if the two tensors are element-wise equal.
+    ///
+    /// - If the device is not the same: throws exception.
+    /// - If the dtype is not the same: throws exception.
+    /// - If the shape is not the same: returns false.
+    /// - Returns true if: the device, dtype and shape are the same and all
+    ///   corresponding elements are equal.
+    ///
+    /// TODO: support nan
+    ///
+    /// \param other The other tensor to compare with.
+    bool AllEqual(const Tensor& other) const;
+
     /// Returns true if the two tensors are element-wise equal within a
     /// tolerance.
     ///

@@ -3021,7 +3021,6 @@ TEST_P(TensorPermuteDevices, Clip_) {
 
 TEST_P(TensorPermuteDevices, Iterator) {
     core::Device device = GetParam();
-    (void)device;
 
     core::Tensor t;
     std::vector<core::Tensor> t_slices;  // Ground-truth slices.
@@ -3040,7 +3039,7 @@ TEST_P(TensorPermuteDevices, Iterator) {
         // Assignment still possible as AsRvalue() returns a new Tensor object.
         t_slice.AsRvalue() = 10;
     }
-    EXPECT_TRUE(t.AllClose(core::Tensor::Init<int>({10, 10, 10}, device)));
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
     // operator*()
     t = core::Tensor::Init<int>({0, 1, 2}, device);
@@ -3053,7 +3052,7 @@ TEST_P(TensorPermuteDevices, Iterator) {
     for (core::Tensor t_slice : t) {
         t_slice.AsRvalue() = 10;
     }
-    EXPECT_TRUE(t.AllClose(core::Tensor::Init<int>({10, 10, 10}, device)));
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
     // operator->()
     t = core::Tensor::Init<int>({0, 1, 2}, device);
@@ -3066,7 +3065,7 @@ TEST_P(TensorPermuteDevices, Iterator) {
     for (core::Tensor::Iterator iter = t.begin(); iter != t.end(); ++iter) {
         iter->AsRvalue() = 10;
     }
-    EXPECT_TRUE(t.AllClose(core::Tensor::Init<int>({10, 10, 10}, device)));
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
     // 0-d.
     t = core::Tensor::Init<int>(10, device);
@@ -3080,6 +3079,43 @@ TEST_P(TensorPermuteDevices, Iterator) {
         EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
         index++;
     }
+}
+
+TEST_P(TensorPermuteDevicePairs, AllEqual) {
+    core::Device device_a;
+    core::Device device_b;
+    std::tie(device_a, device_b) = GetParam();
+
+    core::Tensor src;
+    core::Tensor dst;
+
+    // Normal case.
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<float>({0, 1, 2.5}, device_b);
+    EXPECT_FALSE(src.AllEqual(dst));
+
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<float>({0, 1, 2}, device_b);
+    EXPECT_TRUE(src.AllEqual(dst));
+
+    // Different device.
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<float>({0, 1, 2}, device_b);
+    if (device_a != device_b) {
+        EXPECT_ANY_THROW(src.AllEqual(dst));
+    } else {
+        EXPECT_TRUE(src.AllEqual(dst));
+    }
+
+    // Different dtype.
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<int>({0, 1, 2}, device_a);
+    EXPECT_ANY_THROW(src.AllEqual(dst));
+
+    // Different shape.
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<float>({{0, 1, 2}}, device_a);
+    EXPECT_FALSE(src.AllEqual(dst));
 }
 
 }  // namespace tests

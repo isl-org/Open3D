@@ -1607,6 +1607,15 @@ Tensor Tensor::Load(const std::string& file_name) {
     return t::io::ReadNpy(file_name);
 }
 
+bool Tensor::AllEqual(const Tensor& other) const {
+    core::AssertTensorDevice(other, GetDevice());
+    core::AssertTensorDtype(other, GetDtype());
+    if (shape_ != other.shape_) {
+        return false;
+    }
+    return (*this == other).All();
+}
+
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
     // TODO: support nan;
     return IsClose(other, rtol, atol).All();
