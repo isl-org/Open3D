@@ -23,14 +23,56 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-"""Functionality for quickly building Graphical User Interfaces."""
+"""Internal information about the Open3D plugin."""
 
-if "@BUILD_GUI@" == "ON":
-    import open3d
-    if open3d.__DEVICE_API__ == 'cuda':
-        from open3d.cuda.pybind.visualization.gui import *
-    else:
-        from open3d.cpu.pybind.visualization.gui import *
-else:
-    print("Open3D was not compiled with BUILD_GUI, but script is importing "
-          "open3d.visualization.gui")
+from tensorboard.compat.proto.summary_pb2 import SummaryMetadata
+
+PLUGIN_NAME = "Open3D"
+
+# The most recent value for the `version` field of the
+# `Open3DPluginData` proto. Sync with Open3D version (MAJOR*100 + MINOR)
+_VERSION = 14
+
+SUPPORTED_FILEFOPRMAT_VERSIONS = [14]
+
+GEOMETRY_PROPERTY_DIMS = {
+    'vertex_positions': 3,
+    'vertex_normals': 3,
+    'vertex_colors': 3,
+    'triangle_indices': 3,
+    'line_indices': 2,
+    'line_colors': 3
+}
+VERTEX_PROPERTIES = (
+    'vertex_normals',
+    'vertex_colors',
+)
+TRIANGLE_PROPERTIES = ()
+LINE_PROPERTIES = ('line_colors',)
+
+
+def create_summary_metadata(description):
+    """Creates summary metadata. Reserved for future use. Required by
+    TensorBoard.
+
+    Arguments:
+      description: The description to show in TensorBoard.
+
+    Returns:
+      A `SummaryMetadata` protobuf object.
+    """
+    return SummaryMetadata(
+        summary_description=description,
+        plugin_data=SummaryMetadata.PluginData(plugin_name=PLUGIN_NAME,
+                                               content=b''),
+    )
+
+
+def parse_plugin_metadata(unused_content):
+    """Parse summary metadata to a Python object. Reserved for future use.
+
+    Arguments:
+      content: The `content` field of a `SummaryMetadata` proto
+        corresponding to the Open3D plugin.
+    """
+    return b''

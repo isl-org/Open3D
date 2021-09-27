@@ -398,8 +398,10 @@ test_wheel() {
 run_python_tests() {
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
-    python -m pip install -U scipy=="$SCIPY_VER" pytest=="$PYTEST_VER" \
-        pytest-randomly=="$PYTEST_RANDOMLY_VER"
+    python -m pip install -U pytest=="$PYTEST_VER" \
+        pytest-randomly=="$PYTEST_RANDOMLY_VER" \
+        scipy=="$SCIPY_VER" \
+        tensorboard=="$TENSORFLOW_VER"
     echo Add --rondomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
