@@ -876,6 +876,8 @@ FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cu \
                          *.cuh \
+                         *.ispc \
+                         *.isph \
                          *.cxx \
                          *.cpp \
                          *.c++ \

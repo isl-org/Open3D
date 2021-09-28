@@ -37,7 +37,7 @@
 
 namespace open3d {
 namespace core {
-template <typename Key, typename Hash>
+template <typename Key, typename Hash, typename Eq>
 class TBBHashBackend : public DeviceHashBackend {
 public:
     TBBHashBackend(int64_t init_capacity,
@@ -46,18 +46,13 @@ public:
                    const Device& device);
     ~TBBHashBackend();
 
-    void Rehash(int64_t buckets) override;
+    void Reserve(int64_t capacity) override;
 
     void Insert(const void* input_keys,
                 const std::vector<const void*>& input_values_soa,
                 buf_index_t* output_buf_indices,
                 bool* output_masks,
                 int64_t count) override;
-
-    void Activate(const void* input_keys,
-                  buf_index_t* output_buf_indices,
-                  bool* output_masks,
-                  int64_t count) override;
 
     void Find(const void* input_keys,
               buf_index_t* output_buf_indices,
@@ -77,28 +72,23 @@ public:
     std::vector<int64_t> BucketSizes() const override;
     float LoadFactor() const override;
 
-    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>
+    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash, Eq>>
     GetImpl() const {
         return impl_;
     }
 
+    void Allocate(int64_t capacity) override;
+    void Free() override{};
+
 protected:
-    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>
+    std::shared_ptr<tbb::concurrent_unordered_map<Key, buf_index_t, Hash, Eq>>
             impl_;
 
     std::shared_ptr<CPUHashBackendBufferAccessor> buffer_accessor_;
-
-    void InsertImpl(const void* input_keys,
-                    const std::vector<const void*>& input_values_soa,
-                    buf_index_t* output_buf_indices,
-                    bool* output_masks,
-                    int64_t count);
-
-    void Allocate(int64_t capacity);
 };
 
-template <typename Key, typename Hash>
-TBBHashBackend<Key, Hash>::TBBHashBackend(
+template <typename Key, typename Hash, typename Eq>
+TBBHashBackend<Key, Hash, Eq>::TBBHashBackend(
         int64_t init_capacity,
         int64_t key_dsize,
         const std::vector<int64_t>& value_dsizes,
@@ -107,51 +97,19 @@ TBBHashBackend<Key, Hash>::TBBHashBackend(
     Allocate(init_capacity);
 }
 
-template <typename Key, typename Hash>
-TBBHashBackend<Key, Hash>::~TBBHashBackend() {}
+template <typename Key, typename Hash, typename Eq>
+TBBHashBackend<Key, Hash, Eq>::~TBBHashBackend() {}
 
-template <typename Key, typename Hash>
-int64_t TBBHashBackend<Key, Hash>::Size() const {
+template <typename Key, typename Hash, typename Eq>
+int64_t TBBHashBackend<Key, Hash, Eq>::Size() const {
     return impl_->size();
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Insert(
-        const void* input_keys,
-        const std::vector<const void*>& input_values_soa,
-        buf_index_t* output_buf_indices,
-        bool* output_masks,
-        int64_t count) {
-    int64_t new_size = Size() + count;
-    if (new_size > this->capacity_) {
-        int64_t bucket_count = GetBucketCount();
-        float avg_capacity_per_bucket =
-                float(this->capacity_) / float(bucket_count);
-
-        int64_t expected_buckets = std::max(
-                bucket_count * 2,
-                int64_t(std::ceil(new_size / avg_capacity_per_bucket)));
-
-        Rehash(expected_buckets);
-    }
-    InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks,
-               count);
-}
-
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Activate(const void* input_keys,
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
                                          buf_index_t* output_buf_indices,
                                          bool* output_masks,
                                          int64_t count) {
-    std::vector<const void*> null_values;
-    Insert(input_keys, null_values, output_buf_indices, output_masks, count);
-}
-
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Find(const void* input_keys,
-                                     buf_index_t* output_buf_indices,
-                                     bool* output_masks,
-                                     int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
 #pragma omp parallel for num_threads(utility::EstimateMaxThreads())
@@ -165,10 +123,10 @@ void TBBHashBackend<Key, Hash>::Find(const void* input_keys,
     }
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Erase(const void* input_keys,
-                                      bool* output_masks,
-                                      int64_t count) {
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
+                                          bool* output_masks,
+                                          int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
     for (int64_t i = 0; i < count; ++i) {
@@ -184,8 +142,8 @@ void TBBHashBackend<Key, Hash>::Erase(const void* input_keys,
     }
 }
 
-template <typename Key, typename Hash>
-int64_t TBBHashBackend<Key, Hash>::GetActiveIndices(
+template <typename Key, typename Hash, typename Eq>
+int64_t TBBHashBackend<Key, Hash, Eq>::GetActiveIndices(
         buf_index_t* output_buf_indices) {
     int64_t count = impl_->size();
     int64_t i = 0;
@@ -196,63 +154,24 @@ int64_t TBBHashBackend<Key, Hash>::GetActiveIndices(
     return count;
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Clear() {
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Clear() {
     impl_->clear();
     this->buffer_->ResetHeap();
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Rehash(int64_t buckets) {
-    int64_t count = Size();
-
-    Tensor active_keys;
-    std::vector<Tensor> active_values;
-
-    if (count > 0) {
-        Tensor active_buf_indices({count}, core::Int32, this->device_);
-        GetActiveIndices(
-                static_cast<buf_index_t*>(active_buf_indices.GetDataPtr()));
-
-        Tensor active_indices = active_buf_indices.To(core::Int64);
-        active_keys = this->GetKeyBuffer().IndexGet({active_indices});
-
-        auto value_buffers = this->GetValueBuffers();
-        for (auto& value_buffer : value_buffers) {
-            active_values.emplace_back(value_buffer.IndexGet({active_indices}));
-        }
-    }
-
-    float avg_capacity_per_bucket =
-            float(this->capacity_) / float(GetBucketCount());
-    int64_t new_capacity =
-            int64_t(std::ceil(buckets * avg_capacity_per_bucket));
-
-    Allocate(new_capacity);
-
-    if (count > 0) {
-        Tensor output_buf_indices({count}, core::Int32, this->device_);
-        Tensor output_masks({count}, core::Bool, this->device_);
-
-        std::vector<const void*> active_value_ptrs;
-        for (auto& active_value : active_values) {
-            active_value_ptrs.push_back(active_value.GetDataPtr());
-        }
-        InsertImpl(active_keys.GetDataPtr(), active_value_ptrs,
-                   static_cast<buf_index_t*>(output_buf_indices.GetDataPtr()),
-                   output_masks.GetDataPtr<bool>(), count);
-    }
-
-    impl_->rehash(buckets);
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Reserve(int64_t capacity) {
+    impl_->rehash(std::ceil(capacity / impl_->max_load_factor()));
 }
 
-template <typename Key, typename Hash>
-int64_t TBBHashBackend<Key, Hash>::GetBucketCount() const {
+template <typename Key, typename Hash, typename Eq>
+int64_t TBBHashBackend<Key, Hash, Eq>::GetBucketCount() const {
     return impl_->unsafe_bucket_count();
 }
 
-template <typename Key, typename Hash>
-std::vector<int64_t> TBBHashBackend<Key, Hash>::BucketSizes() const {
+template <typename Key, typename Hash, typename Eq>
+std::vector<int64_t> TBBHashBackend<Key, Hash, Eq>::BucketSizes() const {
     int64_t bucket_count = impl_->unsafe_bucket_count();
     std::vector<int64_t> ret;
     for (int64_t i = 0; i < bucket_count; ++i) {
@@ -261,13 +180,13 @@ std::vector<int64_t> TBBHashBackend<Key, Hash>::BucketSizes() const {
     return ret;
 }
 
-template <typename Key, typename Hash>
-float TBBHashBackend<Key, Hash>::LoadFactor() const {
+template <typename Key, typename Hash, typename Eq>
+float TBBHashBackend<Key, Hash, Eq>::LoadFactor() const {
     return impl_->load_factor();
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::InsertImpl(
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Insert(
         const void* input_keys,
         const std::vector<const void*>& input_values_soa,
         buf_index_t* output_buf_indices,
@@ -275,14 +194,7 @@ void TBBHashBackend<Key, Hash>::InsertImpl(
         int64_t count) {
     const Key* input_keys_templated = static_cast<const Key*>(input_keys);
 
-    size_t n_values = value_dsizes_.size();
-
-    bool assign = (input_values_soa.size() == n_values);
-    if (input_values_soa.size() != n_values && input_values_soa.size() != 0) {
-        utility::LogWarning(
-                "Input values mismatch with actual stored values, fall back to "
-                "activate/reset instead of insertion.");
-    }
+    size_t n_values = input_values_soa.size();
 
 #pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (int64_t i = 0; i < count; ++i) {
@@ -307,14 +219,10 @@ void TBBHashBackend<Key, Hash>::InsertImpl(
                 uint8_t* dst_value = static_cast<uint8_t*>(
                         buffer_accessor_->GetValuePtr(buf_index, j));
 
-                if (assign) {
-                    const uint8_t* src_value =
-                            static_cast<const uint8_t*>(input_values_soa[j]) +
-                            this->value_dsizes_[j] * i;
-                    std::memcpy(dst_value, src_value, this->value_dsizes_[j]);
-                } else {
-                    std::memset(dst_value, 0, this->value_dsizes_[j]);
-                }
+                const uint8_t* src_value =
+                        static_cast<const uint8_t*>(input_values_soa[j]) +
+                        this->value_dsizes_[j] * i;
+                std::memcpy(dst_value, src_value, this->value_dsizes_[j]);
             }
 
             // Update from dummy 0
@@ -327,8 +235,8 @@ void TBBHashBackend<Key, Hash>::InsertImpl(
     }
 }
 
-template <typename Key, typename Hash>
-void TBBHashBackend<Key, Hash>::Allocate(int64_t capacity) {
+template <typename Key, typename Hash, typename Eq>
+void TBBHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
 
     this->buffer_ = std::make_shared<HashBackendBuffer>(
@@ -339,8 +247,8 @@ void TBBHashBackend<Key, Hash>::Allocate(int64_t capacity) {
             std::make_shared<CPUHashBackendBufferAccessor>(*this->buffer_);
 
     impl_ = std::make_shared<
-            tbb::concurrent_unordered_map<Key, buf_index_t, Hash>>(capacity,
-                                                                   Hash());
+            tbb::concurrent_unordered_map<Key, buf_index_t, Hash, Eq>>(
+            capacity, Hash(), Eq());
 }
 
 }  // namespace core

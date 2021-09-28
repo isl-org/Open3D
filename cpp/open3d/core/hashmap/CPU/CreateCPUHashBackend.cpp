@@ -59,8 +59,9 @@ std::shared_ptr<DeviceHashBackend> CreateCPUHashBackend(
 
     std::shared_ptr<DeviceHashBackend> device_hashmap_ptr;
     DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(key_dtype, dim, [&] {
-        device_hashmap_ptr = std::make_shared<TBBHashBackend<key_t, hash_t>>(
-                init_capacity, key_dsize, value_dsizes, device);
+        device_hashmap_ptr =
+                std::make_shared<TBBHashBackend<key_t, hash_t, eq_t>>(
+                        init_capacity, key_dsize, value_dsizes, device);
     });
     return device_hashmap_ptr;
 }

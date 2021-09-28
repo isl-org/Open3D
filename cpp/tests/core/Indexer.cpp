@@ -30,7 +30,7 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/SizeVector.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
@@ -170,6 +170,32 @@ TEST_P(IndexerPermuteDevices, GetPointers) {
     EXPECT_EQ(indexer.GetOutputPtr(3), output_base_ptr + 3 * dtype_byte_size);
     EXPECT_EQ(indexer.GetOutputPtr(4), output_base_ptr + 4 * dtype_byte_size);
     EXPECT_EQ(indexer.GetOutputPtr(5), output_base_ptr + 5 * dtype_byte_size);
+}
+
+TEST_P(IndexerPermuteDevices, IsContiguous) {
+    core::Device device = GetParam();
+
+    core::Tensor input0({3, 1, 1}, core::Float32, device);
+    core::Tensor input1({2, 1}, core::Float32, device);
+    core::Tensor input2_full({3, 4, 1}, core::Float32, device);
+    core::Tensor input2 = input2_full.Slice(1, 0, 4, 2);  // Shape {3, 2, 1}.
+    core::Tensor output({3, 2, 1}, core::Float32, device);
+    core::Indexer indexer({input0, input1, input2}, output);
+
+    EXPECT_FALSE(indexer.GetInput(0).IsContiguous());  // Broadcasted.
+    EXPECT_FALSE(indexer.GetInput(1).IsContiguous());  // Broadcasted.
+    EXPECT_FALSE(indexer.GetInput(2).IsContiguous());  // Sliced.
+    EXPECT_TRUE(indexer.GetOutput().IsContiguous());
+
+    EXPECT_TRUE(core::TensorRef(input0).IsContiguous());
+    EXPECT_TRUE(core::TensorRef(input1).IsContiguous());
+    EXPECT_FALSE(core::TensorRef(input2).IsContiguous());
+    EXPECT_TRUE(core::TensorRef(output).IsContiguous());
+
+    EXPECT_TRUE(input0.IsContiguous());
+    EXPECT_TRUE(input1.IsContiguous());
+    EXPECT_FALSE(input2.IsContiguous());
+    EXPECT_TRUE(output.IsContiguous());
 }
 
 }  // namespace tests

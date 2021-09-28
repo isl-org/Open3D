@@ -1,4 +1,4 @@
-add_library(pipelines OBJECT)
+open3d_ispc_add_library(pipelines OBJECT)
 
 target_sources(pipelines PRIVATE
     color_map/ColorMapUtils.cpp

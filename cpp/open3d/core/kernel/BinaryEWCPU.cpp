@@ -134,48 +134,6 @@ static void CPUNeqElementKernel(const void* lhs, const void* rhs, void* dst) {
             *static_cast<const src_t*>(lhs) != *static_cast<const src_t*>(rhs));
 }
 
-template <typename src_t, typename dst_t>
-static void LaunchBoolBinaryEWCPUKernel(const Tensor& lhs,
-                                        const Tensor& rhs,
-                                        Tensor& dst,
-                                        BinaryEWOpCode op_code,
-                                        const Indexer& indexer) {
-    switch (op_code) {
-        case BinaryEWOpCode::LogicalAnd:
-            LaunchBinaryEWKernel(indexer,
-                                 CPULogicalAndElementKernel<src_t, dst_t>);
-            break;
-        case BinaryEWOpCode::LogicalOr:
-            LaunchBinaryEWKernel(indexer,
-                                 CPULogicalOrElementKernel<src_t, dst_t>);
-            break;
-        case BinaryEWOpCode::LogicalXor:
-            LaunchBinaryEWKernel(indexer,
-                                 CPULogicalXorElementKernel<src_t, dst_t>);
-            break;
-        case BinaryEWOpCode::Gt:
-            LaunchBinaryEWKernel(indexer, CPUGtElementKernel<src_t, dst_t>);
-            break;
-        case BinaryEWOpCode::Lt:
-            LaunchBinaryEWKernel(indexer, CPULtElementKernel<src_t, dst_t>);
-            break;
-        case BinaryEWOpCode::Ge:
-            LaunchBinaryEWKernel(indexer, CPUGeqElementKernel<src_t, dst_t>);
-            break;
-        case BinaryEWOpCode::Le:
-            LaunchBinaryEWKernel(indexer, CPULeqElementKernel<src_t, dst_t>);
-            break;
-        case BinaryEWOpCode::Eq:
-            LaunchBinaryEWKernel(indexer, CPUEqElementKernel<src_t, dst_t>);
-            break;
-        case BinaryEWOpCode::Ne:
-            LaunchBinaryEWKernel(indexer, CPUNeqElementKernel<src_t, dst_t>);
-            break;
-        default:
-            break;
-    }
-}
-
 void BinaryEWCPU(const Tensor& lhs,
                  const Tensor& rhs,
                  Tensor& dst,
@@ -185,26 +143,116 @@ void BinaryEWCPU(const Tensor& lhs,
 
     if (s_boolean_binary_ew_op_codes.find(op_code) !=
         s_boolean_binary_ew_op_codes.end()) {
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-            if (dst_dtype == src_dtype) {
-                // Inplace boolean op's output type is the same as the
-                // input. e.g. np.logical_and(a, b, out=a), where a, b are
-                // floats.
-                Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
-                LaunchBoolBinaryEWCPUKernel<scalar_t, scalar_t>(
-                        lhs, rhs, dst, op_code, indexer);
-            } else if (dst_dtype == core::Bool) {
-                // By default, output is boolean type.
-                Indexer indexer({lhs, rhs}, dst,
-                                DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
-                LaunchBoolBinaryEWCPUKernel<scalar_t, bool>(lhs, rhs, dst,
-                                                            op_code, indexer);
-            } else {
-                utility::LogError(
-                        "Boolean op's output type must be boolean or the "
-                        "same type as the input.");
-            }
-        });
+        if (dst_dtype == src_dtype) {
+            // Inplace boolean op's output type is the same as the
+            // input. e.g. np.logical_and(a, b, out=a), where a, b are
+            // floats.
+            Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+                switch (op_code) {
+                    case BinaryEWOpCode::LogicalAnd:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPULogicalAndElementKernel<scalar_t, scalar_t>);
+                        break;
+                    case BinaryEWOpCode::LogicalOr:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPULogicalOrElementKernel<scalar_t, scalar_t>);
+                        break;
+                    case BinaryEWOpCode::LogicalXor:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPULogicalXorElementKernel<scalar_t, scalar_t>);
+                        break;
+                    case BinaryEWOpCode::Gt:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPUGtElementKernel<scalar_t, scalar_t>);
+                        break;
+                    case BinaryEWOpCode::Lt:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPULtElementKernel<scalar_t, scalar_t>);
+                        break;
+                    case BinaryEWOpCode::Ge:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPUGeqElementKernel<scalar_t, scalar_t>);
+                        break;
+                    case BinaryEWOpCode::Le:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPULeqElementKernel<scalar_t, scalar_t>);
+                        break;
+                    case BinaryEWOpCode::Eq:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPUEqElementKernel<scalar_t, scalar_t>);
+                        break;
+                    case BinaryEWOpCode::Ne:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPUNeqElementKernel<scalar_t, scalar_t>);
+                        break;
+                    default:
+                        break;
+                }
+            });
+        } else if (dst_dtype == core::Bool) {
+            // By default, output is boolean type.
+            Indexer indexer({lhs, rhs}, dst,
+                            DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+            DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+                switch (op_code) {
+                    case BinaryEWOpCode::LogicalAnd:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPULogicalAndElementKernel<scalar_t, bool>);
+                        break;
+                    case BinaryEWOpCode::LogicalOr:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPULogicalOrElementKernel<scalar_t, bool>);
+                        break;
+                    case BinaryEWOpCode::LogicalXor:
+                        LaunchBinaryEWKernel(
+                                indexer,
+                                CPULogicalXorElementKernel<scalar_t, bool>);
+                        break;
+                    case BinaryEWOpCode::Gt:
+                        LaunchBinaryEWKernel(
+                                indexer, CPUGtElementKernel<scalar_t, bool>);
+                        break;
+                    case BinaryEWOpCode::Lt:
+                        LaunchBinaryEWKernel(
+                                indexer, CPULtElementKernel<scalar_t, bool>);
+                        break;
+                    case BinaryEWOpCode::Ge:
+                        LaunchBinaryEWKernel(
+                                indexer, CPUGeqElementKernel<scalar_t, bool>);
+                        break;
+                    case BinaryEWOpCode::Le:
+                        LaunchBinaryEWKernel(
+                                indexer, CPULeqElementKernel<scalar_t, bool>);
+                        break;
+                    case BinaryEWOpCode::Eq:
+                        LaunchBinaryEWKernel(
+                                indexer, CPUEqElementKernel<scalar_t, bool>);
+                        break;
+                    case BinaryEWOpCode::Ne:
+                        LaunchBinaryEWKernel(
+                                indexer, CPUNeqElementKernel<scalar_t, bool>);
+                        break;
+                    default:
+                        break;
+                }
+            });
+        } else {
+            utility::LogError(
+                    "Boolean op's output type must be boolean or the "
+                    "same type as the input.");
+        }
     } else {
         Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {

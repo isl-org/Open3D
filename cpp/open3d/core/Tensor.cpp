@@ -221,13 +221,13 @@ Tensor& Tensor::operator=(Tensor&& other) & {
     return *this;
 }
 
-/// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`
+/// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`.
 Tensor& Tensor::operator=(const Tensor& other) && {
     kernel::Copy(other, *this);
     return *this;
 }
 
-/// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`
+/// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`.
 Tensor& Tensor::operator=(Tensor&& other) && {
     kernel::Copy(other, *this);
     return *this;
@@ -310,6 +310,9 @@ Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+        if (NumDims() == 0) {
+            utility::LogError("Cannot slice a scalar (0-dim) tensor.");
+        }
         TensorKey tk_new = tk.InstantiateDimSize(shape_[0]);
         return Slice(0, tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {
@@ -714,12 +717,8 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
                               index_tensors.size());
         }
         Tensor index_tensor = index_tensors[0];
-        index_tensor.AssertShape(
-                {}, fmt::format("{}, but got shape {}.", error_prefix,
-                                index_tensor.GetShape().ToString()));
-        index_tensor.AssertDtype(
-                core::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
-                                        index_tensor.GetDtype().ToString()));
+        core::AssertTensorShape(index_tensor, {});
+        core::AssertTensorDtype(index_tensor, core::Bool);
 
         if (index_tensor.IsNonZero()) {
             // E.g. np.array(5)[np.array(True)].
@@ -750,12 +749,8 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                               index_tensors.size());
         }
         Tensor index_tensor = index_tensors[0];
-        index_tensor.AssertShape(
-                {}, fmt::format("{}, but got shape {}.", error_prefix,
-                                index_tensor.GetShape().ToString()));
-        index_tensor.AssertDtype(
-                core::Bool, fmt::format("{}, but got dtype {}.", error_prefix,
-                                        index_tensor.GetDtype().ToString()));
+        core::AssertTensorShape(index_tensor, {});
+        core::AssertTensorDtype(index_tensor, core::Bool);
 
         // Example index set
         // t = np.array(5)
@@ -1574,57 +1569,6 @@ bool Tensor::IsSame(const Tensor& other) const {
     return blob_ == other.blob_ && shape_ == other.shape_ &&
            strides_ == other.strides_ && data_ptr_ == other.data_ptr_ &&
            dtype_ == other.dtype_;
-}
-
-void Tensor::AssertShape(const DynamicSizeVector& expected_shape,
-                         const std::string& error_msg) const {
-    if (expected_shape.IsDynamic()) {
-        GetShape().AssertCompatible(expected_shape, error_msg);
-    } else {
-        SizeVector static_shape = expected_shape.ToSizeVector();
-        if (shape_ != static_shape) {
-            if (error_msg.empty()) {
-                utility::LogError(
-                        "Tensor has shape {}, but it is expected to be {}.",
-                        shape_, static_shape);
-            } else {
-                utility::LogError(
-                        "Tensor has shape {}, but it is expected to be {}: {}",
-                        shape_, static_shape, error_msg);
-            }
-        }
-    }
-}
-
-void Tensor::AssertDevice(const Device& expected_device,
-                          const std::string& error_msg) const {
-    if (GetDevice() != expected_device) {
-        if (error_msg.empty()) {
-            utility::LogError("Tensor has device {}, but is expected to be {}",
-                              GetDevice().ToString(),
-                              expected_device.ToString());
-        } else {
-            utility::LogError(
-                    "Tensor has device {}, but is expected to be {}: {}",
-                    GetDevice().ToString(), expected_device.ToString(),
-                    error_msg);
-        }
-    }
-}
-
-void Tensor::AssertDtype(const Dtype& expected_dtype,
-                         const std::string& error_msg) const {
-    if (GetDtype() != expected_dtype) {
-        if (error_msg.empty()) {
-            utility::LogError("Tensor has dtype {}, but is expected to be {}.",
-                              GetDtype().ToString(), expected_dtype.ToString());
-        } else {
-            utility::LogError(
-                    "Tensor has dtype {}, but is expected to be {}: {}",
-                    GetDtype().ToString(), expected_dtype.ToString(),
-                    error_msg);
-        }
-    }
 }
 
 Tensor Tensor::Matmul(const Tensor& rhs) const {

@@ -63,7 +63,9 @@ public:
 
     Dtype() : Dtype(DtypeCode::Undefined, 1, "Undefined") {}
 
-    Dtype(DtypeCode dtype_code, int64_t byte_size, const std::string &name);
+    explicit Dtype(DtypeCode dtype_code,
+                   int64_t byte_size,
+                   const std::string &name);
 
     /// Convert from C++ types to Dtype. Known types are explicitly specialized,
     /// e.g. FromType<float>(). Unsupported type results in an exception.

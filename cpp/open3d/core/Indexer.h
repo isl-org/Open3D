@@ -132,6 +132,12 @@ struct TensorRef {
         }
     }
 
+    /// \brief Permute (dimension shuffle) the reference to a Tensor.
+    ///
+    /// \param dims The desired ordering of dimensions.
+    ///
+    /// Note: This only affects this Tensor reference, but not the underlying
+    /// Tensor.
     void Permute(const SizeVector& dims) {
         // Check dims are permuntation of [0, 1, 2, ..., n-1]
         if (static_cast<int64_t>(dims.size()) != ndims_) {
@@ -161,6 +167,17 @@ struct TensorRef {
             shape_[i] = new_shape[i];
             byte_strides_[i] = new_byte_strides[i];
         }
+    }
+
+    /// Returns True if the underlying memory buffer is contiguous.
+    inline bool IsContiguous() const {
+        SizeVector shape(ndims_);
+        SizeVector strides(ndims_);
+        for (int64_t i = 0; i < ndims_; ++i) {
+            shape[i] = shape_[i];
+            strides[i] = byte_strides_[i] / dtype_byte_size_;
+        }
+        return shape_util::DefaultStrides(shape) == strides;
     }
 
     bool operator==(const TensorRef& other) const {
@@ -325,6 +342,9 @@ public:
     /// Number of input Tensors.
     int64_t NumInputs() const { return num_inputs_; }
 
+    /// Number of output Tensors.
+    int64_t NumOutputs() const { return num_outputs_; }
+
     /// Returns input TensorRef.
     TensorRef& GetInput(int64_t i) {
         if (i >= num_inputs_ || i < 0) {
@@ -392,7 +412,8 @@ public:
         if (input_idx < 0 || input_idx >= num_inputs_) {
             return nullptr;
         }
-        return GetWorkloadDataPtr(inputs_[input_idx], workload_idx);
+        return GetWorkloadDataPtr(inputs_[input_idx],
+                                  inputs_contiguous_[input_idx], workload_idx);
     }
 
     /// Get output Tensor data pointer based on \p workload_idx.
@@ -400,11 +421,20 @@ public:
     /// \param workload_idx The index of the compute workload, similar to
     /// thread_id, if a thread only processes one workload.
     OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
-        return GetWorkloadDataPtr(outputs_[0], workload_idx);
+        return GetWorkloadDataPtr(outputs_[0], outputs_contiguous_[0],
+                                  workload_idx);
     }
+
+    /// Get output Tensor data pointer based on \p workload_idx.
+    ///
+    /// \param output_idx Output tensor index.
+    /// \param workload_idx The index of the compute workload, similar to
+    /// thread_id, if a thread only processes one workload.
     OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t output_idx,
                                           int64_t workload_idx) const {
-        return GetWorkloadDataPtr(outputs_[output_idx], workload_idx);
+        return GetWorkloadDataPtr(outputs_[output_idx],
+                                  outputs_contiguous_[output_idx],
+                                  workload_idx);
     }
 
 protected:
@@ -419,6 +449,9 @@ protected:
 
     /// Update master_strides_ based on master_shape_.
     void UpdateMasterStrides();
+
+    /// Update input_contiguous_ and output_contiguous_.
+    void UpdateContiguousFlags();
 
     /// Broadcast src to dst by setting shape 1 to omitted dimensions and
     /// setting stride 0 to brocasted dimensions.
@@ -461,6 +494,7 @@ protected:
     /// Note: can be optimized by computing all input ptrs and output ptr
     /// together.
     OPEN3D_HOST_DEVICE char* GetWorkloadDataPtr(const TensorRef& tr,
+                                                bool tr_contiguous,
                                                 int64_t workload_idx) const {
         // For 0-sized input reduction op, the output Tensor
         // workload_idx == 1 > NumWorkloads() == 0.
@@ -468,9 +502,15 @@ protected:
             return nullptr;
         }
         int64_t offset = 0;
-        for (int64_t i = 0; i < ndims_; ++i) {
-            offset += workload_idx / master_strides_[i] * tr.byte_strides_[i];
-            workload_idx = workload_idx % master_strides_[i];
+        if (tr_contiguous) {
+            return static_cast<char*>(tr.data_ptr_) +
+                   workload_idx * tr.dtype_byte_size_;
+        } else {
+            for (int64_t i = 0; i < ndims_; ++i) {
+                offset +=
+                        workload_idx / master_strides_[i] * tr.byte_strides_[i];
+                workload_idx = workload_idx % master_strides_[i];
+            }
         }
         return static_cast<char*>(tr.data_ptr_) + offset;
     }
@@ -482,8 +522,14 @@ protected:
     /// Array of input TensorRefs.
     TensorRef inputs_[MAX_INPUTS];
 
-    /// Output TensorRef.
+    /// Array of output TensorRefs.
     TensorRef outputs_[MAX_OUTPUTS];
+
+    /// Array of contiguous flags for all input TensorRefs.
+    bool inputs_contiguous_[MAX_INPUTS];
+
+    /// Array of contiguous flags for all output TensorRefs.
+    bool outputs_contiguous_[MAX_OUTPUTS];
 
     /// Indexer's global shape. The shape's number of elements is the
     /// same as GetNumWorkloads() for the Indexer.

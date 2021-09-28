@@ -27,6 +27,7 @@
 #include "open3d/t/pipelines/slac/SLACOptimizer.h"
 
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/pipelines/slac/FillInLinearSystemImpl.h"
@@ -157,13 +158,13 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     core::Device device = tpcd_i.GetDevice();
     core::Dtype dtype = tpcd_i.GetPointPositions().GetDtype();
 
-    tpcd_j.GetPointPositions().AssertDevice(device);
-    tpcd_j.GetPointPositions().AssertDtype(dtype);
+    core::AssertTensorDevice(tpcd_j.GetPointPositions(), device);
+    core::AssertTensorDtype(tpcd_j.GetPointPositions(), dtype);
 
     // TODO (@rishabh): AssertTransformation / IsTransformation.
-    T_i.AssertShape({4, 4});
-    T_j.AssertShape({4, 4});
-    T_ij.AssertShape({4, 4});
+    core::AssertTensorShape(T_i, {4, 4});
+    core::AssertTensorShape(T_j, {4, 4});
+    core::AssertTensorShape(T_ij, {4, 4});
 
     PointCloud tpcd_i_transformed_Tij = tpcd_i.Clone();
     tpcd_i_transformed_Tij.Transform(T_ij.To(device, dtype));

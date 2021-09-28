@@ -1,4 +1,4 @@
-add_library(GUI OBJECT)
+open3d_ispc_add_library(GUI OBJECT)
 
 target_sources(GUI PRIVATE
     Application.cpp

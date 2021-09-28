@@ -90,7 +90,7 @@ jobs:
     env:
       BUILD_CUDA_MODULE: OFF
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -237,3 +237,33 @@ jobs:
           source util/ci_utils.sh
           echo "Running Open3D python tests..."
           run_python_tests
+
+  ready-docs:
+    name: Ready docs archive
+    # no need to run on macOS
+    runs-on: ubuntu-18.04
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [build-wheel]
+    steps:
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+      - name: Check wheels and ready documentation archive
+        run: |
+            touch marker_file
+            gsutil cp marker_file gs://open3d-docs/${{ github.sha }}_ready_macos
+            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
+                -eq 4 ]; then
+                echo "All wheels and docs available. Making docs ready."
+                # Remove all marker files: Note _ at end of pattern.
+                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
+                # Rename docs archive:
+                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
+                    gs://open3d-docs/${{ github.sha }}.tar.gz
+            else
+                echo "All wheels / docs not available yet. Docs not ready."
+            fi

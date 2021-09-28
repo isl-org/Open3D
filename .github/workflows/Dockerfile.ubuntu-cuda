@@ -4,16 +4,14 @@ FROM ${BASE_IMAGE}
 
 # Customizable build arguments from cuda.yml
 ARG DEVELOPER_BUILD=ON
-ARG BUILD_COMMON_CUDA_ARCHS=OFF
 ARG CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
 ARG CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
 ARG CCACHE_VERSION=4.3
 ARG PYTHON_VERSION=3.6
 
 # Forward all ARG to ENV
-# Some shell scripts require these environment variables
+# ci_utils.sh requires these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
-ENV BUILD_COMMON_CUDA_ARCHS=${BUILD_COMMON_CUDA_ARCHS}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
 ARG CCACHE_VERSION=${CCACHE_VERSION}
@@ -31,6 +29,7 @@ SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y \
     git  \
     wget \
+    curl \
  && rm -rf /var/lib/apt/lists/*
 
 # Dependencies: cmake
@@ -63,9 +62,12 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && (wget https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
  && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
-RUN ccache -s
+# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# *not* determined by ccache's default, but the downloaded ccache file's config.
+RUN ccache -M 5G \
+ && ccache -s
 
 # Miniconda
 ENV PATH="/root/miniconda3/bin:${PATH}"
@@ -98,10 +100,13 @@ RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-conda with-jupyter
 
 # Open3D WebRTC dependencies
-RUN apt-get update && apt-get install -y \
-    nodejs \
-    npm \
- && rm -rf /var/lib/apt/lists/*
+RUN NODE_SETUP_SHA256=22e2048e76f0b0dd5e126cb816e59665ca4b402ffe9bb542005ad661b36a9eb6 \
+ && wget https://deb.nodesource.com/setup_16.x \
+ && sha256sum --status -c <(echo "$NODE_SETUP_SHA256 setup_16.x") \
+ && bash setup_16.x \
+ && apt-get install -y nodejs \
+ && rm -rf /var/lib/apt/lists/* \
+ && node --version
 RUN npm install -g yarn \
  && yarn --version
 

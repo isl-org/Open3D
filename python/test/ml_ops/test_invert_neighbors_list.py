@@ -34,7 +34,8 @@ pytestmark = mltest.default_marks
 
 # the supported dtypes for the attributes
 value_dtypes = pytest.mark.parametrize(
-    'dtype', [np.int32, np.int64, np.float32, np.float64])
+    'dtype',
+    [np.uint8, np.int8, np.int16, np.int32, np.int64, np.float32, np.float64])
 
 attributes = pytest.mark.parametrize('attributes',
                                      ['scalar', 'none', 'multidim'])

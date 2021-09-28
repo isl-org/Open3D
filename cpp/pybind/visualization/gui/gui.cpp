@@ -271,10 +271,9 @@ void pybind_gui_classes(py::module &m) {
                         InitializeForPython(resource_dir);
                     },
                     "Initializes the application with location of the "
-                    "resources "
-                    "provided by the caller. One of the `initialize` functions "
-                    "_must_ be called prior to using anything in the gui "
-                    "module")
+                    "resources provided by the caller. One of the `initialize` "
+                    "functions _must_ be called prior to using anything in the "
+                    "gui module")
             .def("add_font", &Application::AddFont,
                  "Adds a font. Must be called after initialize() and before "
                  "a window is created. Returns the font id, which can be used "
@@ -368,10 +367,8 @@ void pybind_gui_classes(py::module &m) {
                         instance.AddWindow(TakeOwnership(window));
                     },
                     "Adds a window to the application. This is only necessary "
-                    "when "
-                    "creating object that is a Window directly, rather than "
-                    "with "
-                    "create_window")
+                    "when creating an object that is a Window directly, rather "
+                    "than with create_window")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "

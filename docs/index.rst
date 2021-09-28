@@ -74,3 +74,4 @@ Open3D: A Modern Library for 3D Data Processing
     python_api/open3d.pipelines
     python_api/open3d.utility
     python_api/open3d.visualization
+    python_api/open3d.visualization.tensorboard_plugin.summary
