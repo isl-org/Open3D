@@ -513,6 +513,11 @@ void VisualizerWithVertexSelection::KeyPressCallback(
                 ui_selected_points_geometry_ptr_->PaintUniformColor(
                         SELECTED_POINTS_COLOR);
                 ui_selected_points_renderer_ptr_->UpdateGeometry();
+                
+                if (on_selection_changed_) {
+                    on_selection_changed_();
+                }
+                
                 is_redraw_required_ = true;
             } else {
                 Visualizer::KeyPressCallback(window, key, scancode, action,
