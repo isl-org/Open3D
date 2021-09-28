@@ -1,4 +1,4 @@
-add_library(core OBJECT)
+open3d_ispc_add_library(core OBJECT)
 
 target_sources(core PRIVATE
     AdvancedIndexing.cpp

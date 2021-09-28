@@ -210,10 +210,10 @@ private:
         voxel_sizes_[icp_scale_levels_ - 1] = DONT_RESAMPLE;
 
         // ---------------- Warm up -----------------------
-        auto result = RegistrationMultiScaleICP(
-                pointclouds_device_[0].To(device_),
-                pointclouds_device_[1].To(device_), voxel_sizes_, criterias_,
-                search_radius_, initial_transform, *estimation_);
+        auto result = MultiScaleICP(pointclouds_device_[0].To(device_),
+                                    pointclouds_device_[1].To(device_),
+                                    voxel_sizes_, criterias_, search_radius_,
+                                    initial_transform, *estimation_);
         // ------------------------------------------------
 
         utility::SetVerbosityLevel(verbosity_);
@@ -244,9 +244,9 @@ private:
 
             // Computes the transformation from pcd_[i] to pcd_[i + 1], for
             // `Frame to Frame Odometry`.
-            auto result = RegistrationMultiScaleICP(
-                    source, target, voxel_sizes_, criterias_, search_radius_,
-                    initial_transform, *estimation_);
+            auto result = MultiScaleICP(source, target, voxel_sizes_,
+                                        criterias_, search_radius_,
+                                        initial_transform, *estimation_);
 
             // `cumulative_transform` before update is from `i to 0`.
             // `result.transformation_` is from i to i + 1.
@@ -695,7 +695,7 @@ private:
     bool visualize_output_;
 
 private:
-    // RegistrationMultiScaleICP parameters.
+    // MultiScaleICP parameters.
     std::vector<double> voxel_sizes_;
     std::vector<double> search_radius_;
     std::vector<ICPConvergenceCriteria> criterias_;

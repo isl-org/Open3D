@@ -40,8 +40,7 @@ from tensorboard.backend.event_processing.plugin_asset_util import PluginDirecto
 from tensorboard.compat.tensorflow_stub.pywrap_tensorflow import masked_crc32c
 from tensorboard.util import lazy_tensor_creator
 try:
-    import tensorflow.compat.v2 as tf
-    # import tensorflow as tf
+    import tensorflow as tf
     from tensorflow.experimental import dlpack as tf_dlpack
     from tensorflow.io.gfile import makedirs as _makedirs
     from tensorflow.io.gfile import GFile as _fileopen
@@ -201,7 +200,7 @@ def _to_o3d(tensor, min_ndim=None, max_len=None):
 def _color_to_uint8(color_data):
     """
     Args:
-        color_data: o3d.core.Tensor [B,N,3] with any dtype. Float dtypes are
+        color_data: o3d.core.Tensor (B,N,3) with any dtype. Float dtypes are
         expected to have values in [0,1] and 8 bit Int dtypes in [0,255] and 16
         bit Int types in [0,2^16-1]
 
@@ -494,8 +493,8 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
                 3D points. Will be cast to ``float32``.
           - ``vertex_colors``: shape `(B, N, 3)` Will be converted to ``uint8``.
           - ``vertex_normals``: shape `(B, N, 3)` Will be cast to ``float32``.
-          -  ``texture_uvs``: shape `(B, N, 2)` UV coordinates for applying
-                material texture maps. Will be cast to ``float32``.
+          - ``texture_uvs``: shape `(B, N, 2)` UV coordinates for applying
+            material texture maps. Will be cast to ``float32``.
           - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
           - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
           - ``material_name``: shape `(B,)` and dtype ``str``. PBR material name is
@@ -533,18 +532,18 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
         <https://google.github.io/filament/Materials.html#materialmodels>`__ for
         a complete explanation of material properties.
 
-      step: Explicit ``int64``-castable monotonic step value for this summary.
+      step (int): Explicit ``int64``-castable monotonic step value for this summary.
         [`TensorFlow`: If ``None``, this defaults to
         `tf.summary.experimental.get_step()`, which must not be ``None``.]
-      logdir: The logging directory used to create the ``SummaryWriter``.
-        [`PyTorch`: This will be inferred if not provided or ``None``.]
-      max_outputs: Optional ``int`` or rank-0 integer ``Tensor``. At most this
-        many images will be emitted at each step. When more than
-        `max_outputs` many images are provided, the first ``max_outputs`` many
-        images will be used and the rest silently discarded.
-      description: Optional long-form description for this summary, as a
-        constant ``str``. Markdown is supported. Defaults to empty. Currently
-        unused.
+      logdir (str): The logging directory used to create the SummaryWriter.
+        [`PyTorch`: This will be automatically inferred if not provided or
+        ``None``.]
+      max_outputs (int): Optional integer. At most this many 3D elements will be
+        emitted at each step. When more than `max_outputs` 3D elements are
+        provided, the first ``max_outputs`` 3D elements will be used and the
+        rest silently discarded.
+      description (str): Optional long-form description for this summary.
+        Markdown is supported. Defaults to empty. Currently unused.
 
     Returns:
       True on success, or false if no summary was emitted because no default
@@ -559,6 +558,7 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
         instead.
 
     Examples:
+        # TODO(ssheorey): Update example with material properties.
         With Tensorflow:
 
         .. code::
@@ -570,7 +570,8 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
 
             logdir = "demo_logs/"
             writer = tf.summary.create_file_writer(logdir)
-            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4,
+                create_uv_map=True)
             cube.compute_vertex_normals()
             colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
             with writer.as_default():
@@ -590,7 +591,8 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
             from open3d.visualization.tensorboard_plugin import summary
             from open3d.visualization.tensorboard_plugin.util import to_dict_batch
             writer = SummaryWriter("demo_logs/")
-            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4,
+                create_uv_map=True)
             cube.compute_vertex_normals()
             colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
             for step in range(3):
