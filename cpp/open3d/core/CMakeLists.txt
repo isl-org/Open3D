@@ -110,6 +110,17 @@ if (BUILD_CUDA_MODULE)
     )
 endif()
 
+if (BUILD_ISPC_MODULE)
+    target_sources(core PRIVATE
+        Indexer.ispc
+    )
+
+    target_sources(core PRIVATE
+        kernel/BinaryEWCPU.ispc
+        kernel/UnaryEWCPU.ispc
+    )
+endif()
+
 if (WITH_FAISS)
     target_sources(core PRIVATE
         nns/FaissIndex.cpp

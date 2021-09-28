@@ -29,6 +29,7 @@ endif()
 
 if (BUILD_ISPC_MODULE)
     target_sources(tests PRIVATE
+        Indexer.ispc
         ParallelFor.ispc
     )
 endif()
