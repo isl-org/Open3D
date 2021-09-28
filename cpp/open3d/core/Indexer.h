@@ -36,6 +36,13 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/MiniVec.h"
 
+#ifdef BUILD_ISPC_MODULE
+namespace ispc {
+struct TensorRef;
+struct Indexer;
+}  // namespace ispc
+#endif
+
 namespace open3d {
 namespace core {
 
@@ -200,6 +207,11 @@ struct TensorRef {
     int64_t shape_[MAX_DIMS];
     int64_t byte_strides_[MAX_DIMS];
 };
+
+#ifdef BUILD_ISPC_MODULE
+/// Copies a TensorRef object to the corresponsing ISPC-compatible class.
+void ToISPC(const TensorRef& tensor_ref, ispc::TensorRef* ispc_tensor_ref);
+#endif
 
 enum class DtypePolicy {
     NONE,        // Do not check. Expects the kernel to handle the conversion.
@@ -560,6 +572,11 @@ protected:
     /// reductions.
     bool accumulate_ = false;
 };
+
+#ifdef BUILD_ISPC_MODULE
+/// Copies an Indexer object to the corresponsing ISPC-compatible class.
+void ToISPC(const Indexer& indexer, ispc::Indexer* ispc_indexer);
+#endif
 
 class IndexerIterator {
 public:

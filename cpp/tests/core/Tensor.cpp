@@ -2057,11 +2057,17 @@ TEST_P(TensorPermuteDevices, Sin) {
 
     core::Tensor src(src_vals, {2, 3}, core::Float32, device);
     core::Tensor dst = src.Sin();
-    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+    std::vector<float> dst_vector = dst.ToFlatVector<float>();
+    for (size_t i = 0; i < dst_vector.size(); ++i) {
+        EXPECT_FLOAT_EQ(dst_vector[i], dst_vals[i]);
+    }
 
     // Inplace version.
     src.Sin_();
-    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+    std::vector<float> src_vector = src.ToFlatVector<float>();
+    for (size_t i = 0; i < src_vector.size(); ++i) {
+        EXPECT_FLOAT_EQ(src_vector[i], dst_vals[i]);
+    }
 
     // Only works for float types, throws exception otherwise.
     src = core::Tensor({2, 3}, core::Int32, device);
@@ -2079,11 +2085,17 @@ TEST_P(TensorPermuteDevices, Cos) {
 
     core::Tensor src(src_vals, {2, 3}, core::Float32, device);
     core::Tensor dst = src.Cos();
-    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+    std::vector<float> dst_vector = dst.ToFlatVector<float>();
+    for (size_t i = 0; i < dst_vector.size(); ++i) {
+        EXPECT_FLOAT_EQ(dst_vector[i], dst_vals[i]);
+    }
 
     // Inplace version.
     src.Cos_();
-    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+    std::vector<float> src_vector = src.ToFlatVector<float>();
+    for (size_t i = 0; i < src_vector.size(); ++i) {
+        EXPECT_FLOAT_EQ(src_vector[i], dst_vals[i]);
+    }
 
     // Only works for float types, throws exception otherwise.
     src = core::Tensor({2, 3}, core::Int32, device);
@@ -2120,11 +2132,17 @@ TEST_P(TensorPermuteDevices, Exp) {
 
     core::Tensor src(src_vals, {2, 3}, core::Float32, device);
     core::Tensor dst = src.Exp();
-    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+    std::vector<float> dst_vector = dst.ToFlatVector<float>();
+    for (size_t i = 0; i < dst_vector.size(); ++i) {
+        EXPECT_FLOAT_EQ(dst_vector[i], dst_vals[i]);
+    }
 
     // Inplace version.
     src.Exp_();
-    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+    std::vector<float> src_vector = src.ToFlatVector<float>();
+    for (size_t i = 0; i < src_vector.size(); ++i) {
+        EXPECT_FLOAT_EQ(src_vector[i], dst_vals[i]);
+    }
 
     // Only works for float types, throws exception otherwise.
     src = core::Tensor({2, 3}, core::Int32, device);
