@@ -83,6 +83,46 @@
     TEMPLATE(bool)                              \
     OPEN3D_INSTANTIATE_TEMPLATE()
 
+/// OPEN3D_INSTANTIATE_INTEGER_TEMPLATE()
+///
+/// Instantiates a template-like function defined by the TEMPLATE(T) macro for
+/// the following types:
+/// - unsigned + signed {8,16,32,64} bit integers,
+///
+/// See OPEN3D_INSTANTIATE_TEMPLATE() for more details.
+#define OPEN3D_INSTANTIATE_INTEGER_TEMPLATE() \
+    TEMPLATE(uint8_t)                         \
+    TEMPLATE(int8_t)                          \
+    TEMPLATE(uint16_t)                        \
+    TEMPLATE(int16_t)                         \
+    TEMPLATE(uint32_t)                        \
+    TEMPLATE(int32_t)                         \
+    TEMPLATE(uint64_t)                        \
+    TEMPLATE(int64_t)
+
+/// OPEN3D_INSTANTIATE_INTEGER_TEMPLATE_WITH_BOOL()
+///
+/// Instantiates a template-like function defined by the TEMPLATE(T) macro for
+/// the following types:
+/// - bool
+/// - unsigned + signed {8,16,32,64} bit integers,
+///
+/// See OPEN3D_INSTANTIATE_TEMPLATE() for more details.
+#define OPEN3D_INSTANTIATE_INTEGER_TEMPLATE_WITH_BOOL() \
+    TEMPLATE(bool)                                      \
+    OPEN3D_INSTANTIATE_INTEGER_TEMPLATE()
+
+/// OPEN3D_INSTANTIATE_FLOAT_TEMPLATE()
+///
+/// Instantiates a template-like function defined by the TEMPLATE(T) macro for
+/// the following types:
+/// - float, double
+///
+/// See OPEN3D_INSTANTIATE_TEMPLATE() for more details.
+#define OPEN3D_INSTANTIATE_FLOAT_TEMPLATE() \
+    TEMPLATE(float)                         \
+    TEMPLATE(double)
+
 /// OPEN3D_EXPORT_VECTORIZED(ISPCKernel, ISPCFunction, ...)
 ///
 /// Defines a kernel which calls the provided function.

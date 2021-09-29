@@ -28,8 +28,28 @@
 
 #include <numeric>
 
+#ifdef BUILD_ISPC_MODULE
+#include "Indexer_ispc.h"
+#endif
+
 namespace open3d {
 namespace core {
+
+#ifdef BUILD_ISPC_MODULE
+ispc::TensorRef TensorRef::ToISPC() const {
+    ispc::TensorRef ispc_tensor_ref;
+
+    ispc_tensor_ref.data_ptr_ = data_ptr_;
+    ispc_tensor_ref.ndims_ = ndims_;
+    ispc_tensor_ref.dtype_byte_size_ = dtype_byte_size_;
+    for (int64_t i = 0; i < ndims_; ++i) {
+        ispc_tensor_ref.shape_[i] = shape_[i];
+        ispc_tensor_ref.byte_strides_[i] = byte_strides_[i];
+    }
+
+    return ispc_tensor_ref;
+}
+#endif
 
 Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                  const Tensor& output_tensor,
@@ -611,6 +631,30 @@ void Indexer::ReductionRestride(TensorRef& dst,
         }
     }
 }
+
+#ifdef BUILD_ISPC_MODULE
+ispc::Indexer Indexer::ToISPC() const {
+    ispc::Indexer ispc_indexer;
+
+    ispc_indexer.num_inputs_ = NumInputs();
+    ispc_indexer.num_outputs_ = NumOutputs();
+    for (int64_t i = 0; i < NumInputs(); ++i) {
+        ispc_indexer.inputs_[i] = GetInput(i).ToISPC();
+        ispc_indexer.inputs_contiguous_[i] = GetInput(i).IsContiguous();
+    }
+    for (int64_t i = 0; i < NumOutputs(); ++i) {
+        ispc_indexer.outputs_[i] = GetOutput(i).ToISPC();
+        ispc_indexer.outputs_contiguous_[i] = GetOutput(i).IsContiguous();
+    }
+    for (int64_t i = 0; i < NumDims(); ++i) {
+        ispc_indexer.master_shape_[i] = GetMasterShape()[i];
+        ispc_indexer.master_strides_[i] = GetMasterStrides()[i];
+    }
+    ispc_indexer.ndims_ = NumDims();
+
+    return ispc_indexer;
+}
+#endif
 
 IndexerIterator::IndexerIterator(const Indexer& indexer) : indexer_(indexer) {}
 

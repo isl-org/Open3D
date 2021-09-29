@@ -303,7 +303,7 @@ function(open3d_ispc_make_build_rules_ target)
                     COMMAND ${CMAKE_ISPC_COMPILER} ${OUTPUT_TARGET_DEFINITIONS} ${OUTPUT_TARGET_INCLUDES} ${CMAKE_ISPC_FLAGS} ${TARGET_ISA_FLAGS} ${TARGET_ARCH_FLAG} ${TARGET_PIC_FLAG} ${OUTPUT_TARGET_OPTIONS} -o ${OBJECT_FILE_FULL_PATH} --emit-obj ${FILE_FULL_PATH} -h ${HEADER_FILE_FULL_PATH}
                     IMPLICIT_DEPENDS C ${FILE_FULL_PATH}
                     COMMENT "${FILE_COMMENT}"
-                    MAIN_DEPENDENCY ${FILE_FULL_PATH} DEPENDS ${CMAKE_ISPC_COMPILER}
+                    MAIN_DEPENDENCY ${FILE_FULL_PATH}
                     VERBATIM
                 )
 

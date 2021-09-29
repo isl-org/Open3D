@@ -36,6 +36,15 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/MiniVec.h"
 
+// The generated "Indexer_ispc.h" header will not be available outside the
+// library. Therefore, forward declare all exported ISPC classes.
+#ifdef BUILD_ISPC_MODULE
+namespace ispc {
+struct TensorRef;
+struct Indexer;
+}  // namespace ispc
+#endif
+
 namespace open3d {
 namespace core {
 
@@ -193,6 +202,11 @@ struct TensorRef {
     }
 
     bool operator!=(const TensorRef& other) const { return !(*this == other); }
+
+#ifdef BUILD_ISPC_MODULE
+    /// Converts this object to an corresponsing ISPC-compatible object.
+    ispc::TensorRef ToISPC() const;
+#endif
 
     void* data_ptr_;
     int64_t ndims_ = 0;
@@ -436,6 +450,11 @@ public:
                                   outputs_contiguous_[output_idx],
                                   workload_idx);
     }
+
+#ifdef BUILD_ISPC_MODULE
+    /// Converts this object to an corresponsing ISPC-compatible object.
+    ispc::Indexer ToISPC() const;
+#endif
 
 protected:
     /// Merge adjacent dimensions if either dim is 1 or if:
