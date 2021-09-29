@@ -3036,11 +3036,11 @@ TEST_P(TensorPermuteDevicePairs, AllEqual) {
 
     // Normal case.
     src = core::Tensor::Init<float>({0, 1, 2}, device_a);
-    dst = core::Tensor::Init<float>({0, 1, 2.5}, device_b);
+    dst = core::Tensor::Init<float>({0, 1, 2.5}, device_a);
     EXPECT_FALSE(src.AllEqual(dst));
 
     src = core::Tensor::Init<float>({0, 1, 2}, device_a);
-    dst = core::Tensor::Init<float>({0, 1, 2}, device_b);
+    dst = core::Tensor::Init<float>({0, 1, 2}, device_a);
     EXPECT_TRUE(src.AllEqual(dst));
 
     // Different device.
