@@ -264,6 +264,75 @@ Tensor::Iterator Tensor::end() {
     return Iterator(this, shape_[0]);
 }
 
+struct Tensor::ConstIterator::Impl {
+    const Tensor* tensor_;
+    int64_t index_;
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for ConstIterator::operator->.
+};
+
+Tensor::ConstIterator::ConstIterator(const Tensor* tensor, int64_t index)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = tensor;
+    impl_->index_ = index;
+}
+
+Tensor::ConstIterator::ConstIterator(const Tensor::ConstIterator& other)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = other.impl_->tensor_;
+    impl_->index_ = other.impl_->index_;
+}
+
+// Empty destructor since Impl is incomplete type in Tensor.h.
+// https://stackoverflow.com/a/34073093/1255535
+Tensor::ConstIterator::~ConstIterator() {}
+
+Tensor::ConstIterator::reference Tensor::ConstIterator::operator*() const {
+    return impl_->tensor_->operator[](impl_->index_);
+}
+
+Tensor::ConstIterator::pointer Tensor::ConstIterator::operator->() const {
+    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
+    return &impl_->tensor_slice_;
+}
+
+Tensor::ConstIterator& Tensor::ConstIterator::operator++() {
+    impl_->index_++;
+    return *this;
+}
+
+Tensor::ConstIterator Tensor::ConstIterator::operator++(int) {
+    ConstIterator tmp(impl_->tensor_, impl_->index_);
+    impl_->index_++;
+    return tmp;
+}
+
+bool Tensor::ConstIterator::operator==(
+        const Tensor::ConstIterator& other) const {
+    return impl_->tensor_ == other.impl_->tensor_ &&
+           impl_->index_ == other.impl_->index_;
+}
+
+bool Tensor::ConstIterator::operator!=(
+        const Tensor::ConstIterator& other) const {
+    return !(*this == other);
+}
+
+Tensor::ConstIterator Tensor::cbegin() const {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return ConstIterator(this, 0);
+}
+
+Tensor::ConstIterator Tensor::cend() const {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return ConstIterator(this, shape_[0]);
+}
+
 // Equivalent to `Tensor& operator=(const Tensor& other) & = default;`.
 // Manual implentaiton is need to avoid MSVC bug (error C2580:  multiple
 // versions of a defaulted special member functions are not allowed.)

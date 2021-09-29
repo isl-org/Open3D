@@ -64,6 +64,13 @@ INSTANTIATE_TEST_SUITE_P(
                 testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
                 testing::ValuesIn(PermuteDevices::TestCases())));
 
+/// Convert to const reference.
+/// https://stackoverflow.com/a/15519125/1255535
+template <typename T>
+static constexpr const T &AsConst(T &t) noexcept {
+    return t;
+}
+
 TEST_P(TensorPermuteDevices, Constructor) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Float32;
@@ -3019,68 +3026,6 @@ TEST_P(TensorPermuteDevices, Clip_) {
     EXPECT_TRUE(t.AllClose(t_ref));
 }
 
-TEST_P(TensorPermuteDevices, Iterator) {
-    core::Device device = GetParam();
-
-    core::Tensor t;
-    std::vector<core::Tensor> t_slices;  // Ground-truth slices.
-    int index = 0;
-
-    // operator*() with const &
-    t = core::Tensor::Init<int>({0, 1, 2}, device);
-    t_slices = {t[0], t[1], t[2]};
-    index = 0;
-    for (const core::Tensor &t_slice : t) {
-        // IsSame() check if the underlying memory are the same.
-        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
-        index++;
-    }
-    for (const core::Tensor &t_slice : t) {
-        // Assignment still possible as AsRvalue() returns a new Tensor object.
-        t_slice.AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
-
-    // operator*()
-    t = core::Tensor::Init<int>({0, 1, 2}, device);
-    t_slices = {t[0], t[1], t[2]};
-    index = 0;
-    for (core::Tensor t_slice : t) {
-        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
-        index++;
-    }
-    for (core::Tensor t_slice : t) {
-        t_slice.AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
-
-    // operator->()
-    t = core::Tensor::Init<int>({0, 1, 2}, device);
-    t_slices = {t[0], t[1], t[2]};
-    index = 0;
-    for (core::Tensor::Iterator iter = t.begin(); iter != t.end(); ++iter) {
-        EXPECT_TRUE(iter->IsSame(t_slices[index]));
-        index++;
-    }
-    for (core::Tensor::Iterator iter = t.begin(); iter != t.end(); ++iter) {
-        iter->AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
-
-    // 0-d.
-    t = core::Tensor::Init<int>(10, device);
-    EXPECT_ANY_THROW(t.begin());
-
-    // 2-d.
-    t = core::Tensor::Init<int>({{0, 1, 2}, {3, 4, 5}}, device);
-    t_slices = {t[0], t[1]};
-    index = 0;
-    for (const core::Tensor &t_slice : t) {
-        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
-        index++;
-    }
-}
-
 TEST_P(TensorPermuteDevicePairs, AllEqual) {
     core::Device device_a;
     core::Device device_b;
@@ -3116,6 +3061,196 @@ TEST_P(TensorPermuteDevicePairs, AllEqual) {
     src = core::Tensor::Init<float>({0, 1, 2}, device_a);
     dst = core::Tensor::Init<float>({{0, 1, 2}}, device_a);
     EXPECT_FALSE(src.AllEqual(dst));
+}
+
+TEST_P(TensorPermuteDevices, Iterator) {
+    core::Device device = GetParam();
+
+    core::Tensor t;
+    std::vector<core::Tensor> t_slices;  // Ground-truth slices.
+    int index = 0;
+
+    // operator*() -> const core::Tensor &.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (const core::Tensor &t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (const core::Tensor &t_slice : t) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator*() -> core::Tensor.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor t_slice : t) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator*() -> const core::Tensor &&.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (const core::Tensor &&t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (const core::Tensor &&t_slice : t) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator*() -> core::Tensor &&.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor &&t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor &&t_slice : t) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator->().
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor::Iterator iter = t.begin(); iter != t.end(); ++iter) {
+        EXPECT_TRUE(iter->IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor::Iterator iter = t.begin(); iter != t.end(); ++iter) {
+        iter->AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // 0-d.
+    t = core::Tensor::Init<int>(10, device);
+    EXPECT_ANY_THROW(t.begin());
+
+    // 2-d.
+    t = core::Tensor::Init<int>({{0, 1, 2}, {3, 4, 5}}, device);
+    t_slices = {t[0], t[1]};
+    index = 0;
+    for (const core::Tensor &t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+}
+
+TEST_P(TensorPermuteDevices, ConstIterator) {
+    core::Device device = GetParam();
+
+    core::Tensor t;
+    std::vector<core::Tensor> t_slices;  // Ground-truth slices.
+    int index = 0;
+
+    // operator*() -> const core::Tensor &.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (const core::Tensor &t_slice : AsConst(t)) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (const core::Tensor &t_slice : AsConst(t)) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator*() -> core::Tensor.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor t_slice : AsConst(t)) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor t_slice : AsConst(t)) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator*() -> const core::Tensor &&.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (const core::Tensor &&t_slice : AsConst(t)) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (const core::Tensor &&t_slice : AsConst(t)) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator*() -> core::Tensor &&.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor &&t_slice : AsConst(t)) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor &&t_slice : AsConst(t)) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator->() with cbegin() and cend().
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor::ConstIterator iter = t.cbegin(); iter != t.cend();
+         ++iter) {
+        EXPECT_TRUE(iter->IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor::ConstIterator iter = t.cbegin(); iter != t.cend();
+         ++iter) {
+        iter->AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator->() with overloaded begin() and end().
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    const core::Tensor &t_const = t;
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor::ConstIterator iter = t_const.begin();
+         iter != t_const.end(); ++iter) {
+        EXPECT_TRUE(iter->IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor::ConstIterator iter = t_const.begin();
+         iter != t_const.end(); ++iter) {
+        iter->AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // 0-d.
+    t = core::Tensor::Init<int>(10, device);
+    EXPECT_ANY_THROW(t.begin());
+
+    // 2-d.
+    t = core::Tensor::Init<int>({{0, 1, 2}, {3, 4, 5}}, device);
+    t_slices = {t[0], t[1]};
+    index = 0;
+    for (const core::Tensor &t_slice : AsConst(t)) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
 }
 
 }  // namespace tests

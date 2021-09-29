@@ -1096,35 +1096,63 @@ public:
         std::unique_ptr<Impl> impl_;
     };
 
+    /// Const iterator for Tensor.
+    struct ConstIterator {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = const Tensor;
+        using pointer = Tensor*;
+        using reference = Tensor;  // Typically Tensor&, but a tensor slice
+                                   // creates a new object with shared memory.
+
+        // ConstIterator must be constructible, copy-constructible,
+        // copy-assignable, destructible and swappable.
+        ConstIterator(const Tensor* tensor, int64_t index);
+        ConstIterator(const ConstIterator&);
+        ~ConstIterator();
+        reference operator*() const;
+        pointer operator->() const;
+        ConstIterator& operator++();
+        ConstIterator operator++(int);
+        bool operator==(const ConstIterator& other) const;
+        bool operator!=(const ConstIterator& other) const;
+
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> impl_;
+    };
+
     /// Returns the beginning of the tensor iterator. The iterator iterates over
     /// the first dimension of the tensor. The generated tensor slices share the
     /// same memory with the original tensor.
-    ///
-    /// Example usage:
-    /// \code{.cpp}
-    /// for (Tensor& slice: tensor) {
-    ///     // Do something with slice
-    /// }
-    /// for (auto iter = tensor.begin(); iter != tensor.end(); ++iter) {
-    ///     // Do something with *iter
-    /// }
-    /// \endcode
     Iterator begin();
 
     /// Returns the end of the tensor iterator. The iterator iterates over the
     /// first dimension of the tensor. The generated tensor slices share the
     /// same memory with the original tensor.
-    ///
-    /// Example usage:
-    /// \code{.cpp}
-    /// for (Tensor& slice: tensor) {
-    ///     // Do something with slice
-    /// }
-    /// for (auto iter = tensor.begin(); iter != tensor.end(); ++iter) {
-    ///     // Do something with *iter
-    /// }
-    /// \endcode
     Iterator end();
+
+    /// Returns the beginning of the const tensor iterator. The iterator
+    /// iterates over the first dimension of the tensor. The generated tensor
+    /// slices share the same memory with the original tensor.
+    ConstIterator cbegin() const;
+
+    /// Returns the end of the const tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    ConstIterator cend() const;
+
+    /// Returns the beginning of the const tensor iterator. The iterator
+    /// iterates over the first dimension of the tensor. The generated tensor
+    /// slices share the same memory with the original tensor. This is
+    /// equivalent to Tensor::cbegin().
+    ConstIterator begin() const { return cbegin(); }
+
+    /// Returns the end of the const tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor. This is equivalent to
+    /// Tensor::cend().
+    ConstIterator end() const { return cend(); }
 
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
