@@ -438,14 +438,19 @@ public:
                  int64_t step = 1) const;
 
     /// Convert to rvalue such that the Tensor can be assigned.
-    /// E.g. in numpy \code{.py}
+    ///
+    /// E.g. in numpy
+    /// \code{.py}
     /// tensor_a = tensor_b     # tensor_a is lvalue, tensor_a variable will
     ///                         # now reference tensor_b, that is, tensor_a
     ///                         # and tensor_b share exactly the same memory.
     /// tensor_a[:] = tensor_b  # tensor_a[:] is rvalue, tensor_b's values are
     ///                         # assigned to tensor_a's memory.
     /// \endcode
-    Tensor AsRvalue() const { return *this; }
+    Tensor AsRvalue() { return *this; }
+
+    /// Convert to constant rvalue.
+    const Tensor AsRvalue() const { return *this; }
 
     /// \brief Advanced indexing getter
     ///
@@ -1082,7 +1087,7 @@ public:
 
         // Iterator must be constructible, copy-constructible, copy-assignable,
         // destructible and swappable.
-        Iterator(Tensor* tensor, int64_t index);
+        Iterator(pointer tensor, int64_t index);
         Iterator(const Iterator&);
         ~Iterator();
         reference operator*() const;
@@ -1109,7 +1114,7 @@ public:
 
         // ConstIterator must be constructible, copy-constructible,
         // copy-assignable, destructible and swappable.
-        ConstIterator(const Tensor* tensor, int64_t index);
+        ConstIterator(pointer tensor, int64_t index);
         ConstIterator(const ConstIterator&);
         ~ConstIterator();
         reference operator*() const;

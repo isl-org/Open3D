@@ -3070,7 +3070,7 @@ TEST_P(TensorPermuteDevices, Iterator) {
     std::vector<core::Tensor> t_slices;  // Ground-truth slices.
     int index = 0;
 
-    // operator*() -> const core::Tensor &.
+    // operator*() -> const core::Tensor &. Not assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};
     index = 0;
@@ -3078,12 +3078,8 @@ TEST_P(TensorPermuteDevices, Iterator) {
         EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
         index++;
     }
-    for (const core::Tensor &t_slice : t) {
-        t_slice.AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
-    // operator*() -> core::Tensor.
+    // operator*() -> core::Tensor. Assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};
     index = 0;
@@ -3096,7 +3092,7 @@ TEST_P(TensorPermuteDevices, Iterator) {
     }
     EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
-    // operator*() -> const core::Tensor &&.
+    // operator*() -> const core::Tensor &&. Not assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};
     index = 0;
@@ -3104,12 +3100,8 @@ TEST_P(TensorPermuteDevices, Iterator) {
         EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
         index++;
     }
-    for (const core::Tensor &&t_slice : t) {
-        t_slice.AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
-    // operator*() -> core::Tensor &&.
+    // operator*() -> core::Tensor &&. Assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};
     index = 0;
@@ -3122,7 +3114,7 @@ TEST_P(TensorPermuteDevices, Iterator) {
     }
     EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
-    // operator->().
+    // operator->(). Assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};
     index = 0;
@@ -3156,7 +3148,7 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
     std::vector<core::Tensor> t_slices;  // Ground-truth slices.
     int index = 0;
 
-    // operator*() -> const core::Tensor &.
+    // operator*() -> const core::Tensor &. Not assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};
     index = 0;
@@ -3164,12 +3156,8 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
         EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
         index++;
     }
-    for (const core::Tensor &t_slice : AsConst(t)) {
-        t_slice.AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
-    // operator*() -> core::Tensor.
+    // operator*() -> core::Tensor. Assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};
     index = 0;
@@ -3182,7 +3170,7 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
     }
     EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
-    // operator*() -> const core::Tensor &&.
+    // operator*() -> const core::Tensor &&. Not assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};
     index = 0;
@@ -3190,12 +3178,8 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
         EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
         index++;
     }
-    for (const core::Tensor &&t_slice : AsConst(t)) {
-        t_slice.AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
-    // operator->() with cbegin() and cend().
+    // operator->() with cbegin() and cend(). Not assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};
     index = 0;
@@ -3204,13 +3188,8 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
         EXPECT_TRUE(iter->IsSame(t_slices[index]));
         index++;
     }
-    for (core::Tensor::ConstIterator iter = t.cbegin(); iter != t.cend();
-         ++iter) {
-        iter->AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
-    // operator->() with overloaded begin() and end().
+    // operator->() with overloaded begin() and end(). Not assignable.
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     const core::Tensor &t_const = t;
     t_slices = {t[0], t[1], t[2]};
@@ -3220,11 +3199,6 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
         EXPECT_TRUE(iter->IsSame(t_slices[index]));
         index++;
     }
-    for (core::Tensor::ConstIterator iter = t_const.begin();
-         iter != t_const.end(); ++iter) {
-        iter->AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
     // 0-d.
     t = core::Tensor::Init<int>(10, device);
