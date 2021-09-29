@@ -120,6 +120,9 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
             model_.SetSunFollowsCamera(false);
             model_.SetLightingProfile(
                     GuiSettingsModel::lighting_profiles_[index]);
+            if (GuiSettingsModel::lighting_profiles_[index].use_default_ibl) {
+                ibls_->SetSelectedValue(GuiSettingsModel::DEFAULT_IBL);
+            }
         }
     });
 
