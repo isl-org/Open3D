@@ -3195,19 +3195,6 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
     }
     EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
 
-    // operator*() -> core::Tensor &&.
-    t = core::Tensor::Init<int>({0, 1, 2}, device);
-    t_slices = {t[0], t[1], t[2]};
-    index = 0;
-    for (core::Tensor &&t_slice : AsConst(t)) {
-        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
-        index++;
-    }
-    for (core::Tensor &&t_slice : AsConst(t)) {
-        t_slice.AsRvalue() = 10;
-    }
-    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
-
     // operator->() with cbegin() and cend().
     t = core::Tensor::Init<int>({0, 1, 2}, device);
     t_slices = {t[0], t[1], t[2]};

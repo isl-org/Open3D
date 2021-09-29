@@ -205,7 +205,7 @@ struct Tensor::Iterator::Impl {
                            // of the tensor for Iterator::operator->.
 };
 
-Tensor::Iterator::Iterator(Tensor* tensor, int64_t index)
+Tensor::Iterator::Iterator(pointer tensor, int64_t index)
     : impl_(std::make_unique<Impl>()) {
     impl_->tensor_ = tensor;
     impl_->index_ = index;
@@ -272,7 +272,7 @@ struct Tensor::ConstIterator::Impl {
                            // of the tensor for ConstIterator::operator->.
 };
 
-Tensor::ConstIterator::ConstIterator(const Tensor* tensor, int64_t index)
+Tensor::ConstIterator::ConstIterator(pointer tensor, int64_t index)
     : impl_(std::make_unique<Impl>()) {
     impl_->tensor_ = tensor;
     impl_->index_ = index;

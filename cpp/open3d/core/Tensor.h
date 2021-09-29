@@ -1075,9 +1075,10 @@ public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type = std::ptrdiff_t;
         using value_type = Tensor;
-        using pointer = Tensor*;
-        using reference = Tensor;  // Typically Tensor&, but a tensor slice
-                                   // creates a new object with shared memory.
+        using pointer = value_type*;
+        using reference = value_type;  // Typically Tensor&, but a tensor slice
+                                       // creates a new Tensor object with
+                                       // shared memory.
 
         // Iterator must be constructible, copy-constructible, copy-assignable,
         // destructible and swappable.
@@ -1101,9 +1102,10 @@ public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type = std::ptrdiff_t;
         using value_type = const Tensor;
-        using pointer = Tensor*;
-        using reference = Tensor;  // Typically Tensor&, but a tensor slice
-                                   // creates a new object with shared memory.
+        using pointer = value_type*;
+        using reference = value_type;  // Typically Tensor&, but a tensor slice
+                                       // creates a new Tensor object with
+                                       // shared memory.
 
         // ConstIterator must be constructible, copy-constructible,
         // copy-assignable, destructible and swappable.
