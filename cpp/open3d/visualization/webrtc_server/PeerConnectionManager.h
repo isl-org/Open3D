@@ -235,7 +235,21 @@ class PeerConnectionManager {
             // to the client such that the video is not empty. Afterwards,
             // video frames will only be sent when the GUI redraws.
             if (label == "ClientDataChannel" && state == "open") {
+                {
+                    std::lock_guard<std::mutex> mutex_lock(
+                            peer_connection_manager_
+                                    ->peerid_data_channel_mutex_);
+                    peer_connection_manager_->peerid_data_channel_ready_.insert(
+                            peerid_);
+                }
                 peer_connection_manager_->SendInitFramesToPeer(peerid_);
+            }
+            if (label == "ClientDataChannel" &&
+                (state == "closed" || state == "closing")) {
+                std::lock_guard<std::mutex> mutex_lock(
+                        peer_connection_manager_->peerid_data_channel_mutex_);
+                peer_connection_manager_->peerid_data_channel_ready_.erase(
+                        peerid_);
             }
         }
         virtual void OnMessage(const webrtc::DataBuffer& buffer) {
@@ -337,6 +351,9 @@ class PeerConnectionManager {
                                                       channel, peerid_);
         }
         virtual void OnRenegotiationNeeded() {
+            std::lock_guard<std::mutex> mutex_lock(
+                    peer_connection_manager_->peerid_data_channel_mutex_);
+            peer_connection_manager_->peerid_data_channel_ready_.erase(peerid_);
             utility::LogDebug(
                     "PeerConnectionObserver::OnRenegotiationNeeded peerid: {}",
                     peerid_);
@@ -431,6 +448,9 @@ protected:
     std::unordered_map<std::string, PeerConnectionObserver*>
             peerid_to_connection_;
     std::mutex peerid_to_connection_mutex_;
+    // Set of peerids with data channel ready for communication
+    std::unordered_set<std::string> peerid_data_channel_ready_;
+    std::mutex peerid_data_channel_mutex_;
 
     // Each Window has exactly one TrackSource.
     std::unordered_map<std::string,

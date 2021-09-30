@@ -781,8 +781,16 @@ Ref:
     tensor.def_property_readonly("blob", &Tensor::GetBlob);
     tensor.def_property_readonly("ndim", &Tensor::NumDims);
     tensor.def("num_elements", &Tensor::NumElements);
-    tensor.def("__len__", &Tensor::GetLength);
     tensor.def("__bool__", &Tensor::IsNonZero);  // Python 3.X.
+
+    // Length and iterator.
+    tensor.def("__len__", &Tensor::GetLength);
+    tensor.def(
+            "__iter__",
+            [](Tensor& tensor) {
+                return py::make_iterator(tensor.begin(), tensor.end());
+            },
+            py::keep_alive<0, 1>());  // Keep object alive while iterator exists
 
     // Unary element-wise ops.
     tensor.def("sqrt", &Tensor::Sqrt);

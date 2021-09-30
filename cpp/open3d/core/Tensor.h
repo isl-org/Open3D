@@ -513,14 +513,19 @@ public:
                  int64_t step = 1) const;
 
     /// Convert to rvalue such that the Tensor can be assigned.
-    /// E.g. in numpy \code{.py}
+    ///
+    /// E.g. in numpy
+    /// \code{.py}
     /// tensor_a = tensor_b     # tensor_a is lvalue, tensor_a variable will
     ///                         # now reference tensor_b, that is, tensor_a
     ///                         # and tensor_b share exactly the same memory.
     /// tensor_a[:] = tensor_b  # tensor_a[:] is rvalue, tensor_b's values are
     ///                         # assigned to tensor_a's memory.
     /// \endcode
-    Tensor AsRvalue() const { return *this; }
+    Tensor AsRvalue() { return *this; }
+
+    /// Convert to constant rvalue.
+    const Tensor AsRvalue() const { return *this; }
 
     /// \brief Advanced indexing getter
     ///
@@ -908,6 +913,19 @@ public:
     /// the reduction is applied to all dimensions.
     bool Any() const;
 
+    /// Returns true if the two tensors are element-wise equal.
+    ///
+    /// - If the device is not the same: throws exception.
+    /// - If the dtype is not the same: throws exception.
+    /// - If the shape is not the same: returns false.
+    /// - Returns true if: the device, dtype and shape are the same and all
+    ///   corresponding elements are equal.
+    ///
+    /// TODO: support nan
+    ///
+    /// \param other The other tensor to compare with.
+    bool AllEqual(const Tensor& other) const;
+
     /// Returns true if the two tensors are element-wise equal within a
     /// tolerance.
     ///
@@ -1132,6 +1150,92 @@ public:
     /// Load tensor from numpy's npy format.
     static Tensor Load(const std::string& file_name);
 
+    /// Iterator for Tensor.
+    struct Iterator {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Tensor;
+        using pointer = value_type*;
+        using reference = value_type;  // Typically Tensor&, but a tensor slice
+                                       // creates a new Tensor object with
+                                       // shared memory.
+
+        // Iterator must be constructible, copy-constructible, copy-assignable,
+        // destructible and swappable.
+        Iterator(pointer tensor, int64_t index);
+        Iterator(const Iterator&);
+        ~Iterator();
+        reference operator*() const;
+        pointer operator->() const;
+        Iterator& operator++();
+        Iterator operator++(int);
+        bool operator==(const Iterator& other) const;
+        bool operator!=(const Iterator& other) const;
+
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> impl_;
+    };
+
+    /// Const iterator for Tensor.
+    struct ConstIterator {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = const Tensor;
+        using pointer = value_type*;
+        using reference = value_type;  // Typically Tensor&, but a tensor slice
+                                       // creates a new Tensor object with
+                                       // shared memory.
+
+        // ConstIterator must be constructible, copy-constructible,
+        // copy-assignable, destructible and swappable.
+        ConstIterator(pointer tensor, int64_t index);
+        ConstIterator(const ConstIterator&);
+        ~ConstIterator();
+        reference operator*() const;
+        pointer operator->() const;
+        ConstIterator& operator++();
+        ConstIterator operator++(int);
+        bool operator==(const ConstIterator& other) const;
+        bool operator!=(const ConstIterator& other) const;
+
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> impl_;
+    };
+
+    /// Returns the beginning of the tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    Iterator begin();
+
+    /// Returns the end of the tensor iterator. The iterator iterates over the
+    /// first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    Iterator end();
+
+    /// Returns the beginning of the const tensor iterator. The iterator
+    /// iterates over the first dimension of the tensor. The generated tensor
+    /// slices share the same memory with the original tensor.
+    ConstIterator cbegin() const;
+
+    /// Returns the end of the const tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    ConstIterator cend() const;
+
+    /// Returns the beginning of the const tensor iterator. The iterator
+    /// iterates over the first dimension of the tensor. The generated tensor
+    /// slices share the same memory with the original tensor. This is
+    /// equivalent to Tensor::cbegin().
+    ConstIterator begin() const { return cbegin(); }
+
+    /// Returns the end of the const tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor. This is equivalent to
+    /// Tensor::cend().
+    ConstIterator end() const { return cend(); }
+
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
@@ -1148,8 +1252,7 @@ private:
     }
 
 protected:
-    /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension
-    /// i.
+    /// SizeVector of the Tensor. shape_[i] is the legnth of dimension i.
     SizeVector shape_ = {0};
 
     /// Stride of a Tensor.
