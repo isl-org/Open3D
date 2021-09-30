@@ -342,40 +342,21 @@ public:
     /// ```
     Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
 
-    /// \brief Appends the two input tensor, along the given axis into a new
-    /// tensor. Both the tensors must have same data-type and device. If the
-    /// axis is not provided, then both the tensors are flattened, and appended
-    /// into a 1D tensor. If axis value is provided, the tensors are appended
-    /// along that axis, given that the all the dimentions expect that axis must
-    /// be same. The number of dimentions in `other` tensor, must be equal to,
-    /// or one less than the number of dimentions in `tensor`.
-    /// Ref:
+    /// \brief Appends the two tensors, along the given axis into a new tensor.
+    /// Both the tensors must have same data-type, device, and number of
+    /// dimentions. All dimensions must be the same, except the dimension along
+    /// the axis the tensors are to be appended.
+    ///
+    /// This is the same as NumPy's semantics:
     /// - https://numpy.org/doc/stable/reference/generated/numpy.append.html
     ///
-    /// For example, in open3d and numpy:
-    /// ```python
-    /// >>> np.append([[0, 1], [2, 3]], [[4, 5]], 0)
-    /// array([[0, 1],
-    ///   [2, 3],
-    ///   [4, 5]], dtype=int64)
-    ///
-    /// >>> open3d.core.Tensor.append([[0, 1], [2, 3]], [[4, 5]], 0)
-    ///  [[0 1],
-    ///   [2 3],
-    ///   [4 5]]
-    /// Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
-    ///
-    /// >>> np.append([[0, 1], [2, 3]], [[4, 5]])
-    /// array([0, 1, 2, 3, 4, 5])
-    /// ```
-    ///
-    /// The equivalent Open3D C++ calls:
-    /// ```cpp
+    /// Example:
+    /// \code{.cpp}
     /// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
     /// Tensor b = Tensor::Init<int64_t>({4, 5});
     /// Tensor t1 = Tensor::Append(a, b, 0);
     /// Tensor t2 = Tensor::Append(a, b);
-    /// ```
+    /// \endcode
     ///
     /// \param tensor Values are appended to a copy of this tensor.
     /// \param other Values of this tensor is appended to the `tensor`.
@@ -384,27 +365,26 @@ public:
     /// \return A copy of `tensor` with `other` values appended to axis. Note
     /// that append does not occur in-place: a new array is allocated and
     /// filled. If axis is None, out is a flattened tensor.
-    static Tensor Append(const Tensor& tensor,
-                         const Tensor& other,
-                         const utility::optional<int> axis = utility::nullopt);
+    static Tensor Append(
+            const Tensor& tensor,
+            const Tensor& other,
+            const utility::optional<int64_t> axis = utility::nullopt);
 
     /// \brief Appends the `other` tensor, along the given axis and returns a
-    /// copy of the tensor. The `other` tensors must have same data-type and
-    /// device. If the axis is not provided, then both the tensors are
-    /// flattened, and appended into a 1D tensor. If axis value is provided, the
-    /// tensors are appended along that axis, given that the all the dimentions
-    /// expect that axis must be same. The number of dimentions in `other`
-    /// tensor, must be equal to, or one less than the number of dimentions in
-    /// the tensor. Ref:
+    /// copy of the tensor. The `other` tensors must have same data-type,
+    /// device, and number of dimentions. All dimensions must be the same,
+    /// except the dimension along the axis the tensors are to be appended.
+    ///
+    /// This is the same as NumPy's semantics:
     /// - https://numpy.org/doc/stable/reference/generated/numpy.append.html
     ///
-    /// Open3D C++ calls:
-    /// ```cpp
+    /// Example:
+    /// \code{.cpp}
     /// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
     /// Tensor b = Tensor::Init<int64_t>({4, 5});
-    /// Tensor t1 = a.Append(b, 0);
-    /// Tensor t2 = a.Append(b);
-    /// ```
+    /// Tensor t1 = Tensor::Append(a, b, 0);
+    /// Tensor t2 = Tensor::Append(a, b);
+    /// \endcode
     ///
     /// \param other Values of this tensor is appended to the tensor.
     /// \param axis The axis along which values are appended. If axis is not
@@ -412,8 +392,9 @@ public:
     /// \return A copy of the tensor with `other` values appended to axis. Note
     /// that append does not occur in-place: a new array is allocated and
     /// filled. If axis is None, out is a flattened tensor.
-    Tensor Append(const Tensor& other,
-                  const utility::optional<int> axis = utility::nullopt) const {
+    Tensor Append(
+            const Tensor& other,
+            const utility::optional<int64_t> axis = utility::nullopt) const {
         return Tensor::Append(*this, other, axis);
     }
 

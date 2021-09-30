@@ -594,50 +594,9 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
 
 static Tensor StackAlongAxis(const Tensor& tensor,
                              const Tensor& other,
-                             int axis) {
+                             int64_t axis) {
     SizeVector shape = tensor.GetShape();
-    const SizeVector other_shape = other.GetShape();
-
-    const std::size_t shape_size = shape.size();
-    if (shape_size < static_cast<size_t>(axis)) {
-        utility::LogError("axis {} is out of bounds for array of dimension {}.",
-                          axis, tensor.GetShape());
-    }
-
-    // Asserting shape compatibility for appending.
-    int offset;
-    if (other_shape.size() == shape_size) {
-        offset = 0;
-        shape[axis] += other.GetShape()[axis];
-    } else if (other_shape.size() == shape_size - 1) {
-        // This for examples allows, appending tensor of shape shape [x, y, z]
-        // to tensor of shape [N, x, y, z] along axis 0, to give tensor of shape
-        // [N+1, x, y, z].
-        offset = -1;
-        shape[axis] += 1;
-    } else {
-        utility::LogError(
-                "Tensor with {} dimentions, can not be appended to tensor with "
-                "{} dimentions.",
-                other_shape.size(), shape_size);
-    }
-
-    for (int i = 0; i < static_cast<int>(shape_size); ++i) {
-        if (i < axis && shape[i] != other_shape[i]) {
-            utility::LogError(
-                    "Failed to append tensor with shape {}, to shape {}. "
-                    "Expected dimention value {}, but got {}.",
-                    other_shape.ToString(), shape.ToString(), other_shape[i],
-                    shape[i]);
-        }
-        if (i > axis && shape[i] != other_shape[i + offset]) {
-            utility::LogError(
-                    "Failed to append tensor with shape {}, to shape {}. "
-                    "Expected dimention value {}, but got {}.",
-                    other_shape.ToString(), shape.ToString(),
-                    other_shape[i + offset], shape[i]);
-        }
-    }
+    shape[axis] += other.GetShape()[axis];
 
     std::vector<TensorKey> tks_tensor;
     std::vector<TensorKey> tks_other;
@@ -646,40 +605,38 @@ static Tensor StackAlongAxis(const Tensor& tensor,
                 core::TensorKey::Slice(0, tensor.GetShape()[i], 1));
         tks_other.push_back(core::TensorKey::Slice(0, tensor.GetShape()[i], 1));
     }
+
     tks_tensor.push_back(core::TensorKey::Slice(0, tensor.GetShape()[axis], 1));
     tks_other.push_back(
             core::TensorKey::Slice(tensor.GetShape()[axis], shape[axis], 1));
 
     Tensor combined_tensor(shape, tensor.GetDtype(), tensor.GetDevice());
-
     combined_tensor.SetItem(tks_tensor, tensor);
+    combined_tensor.SetItem(tks_other, other);
 
-    // {x, y} shaped tensor copy to {x, y, 1} is not broadcast compatible.
-    // So, reshape the tensor.
-    if (offset == -1) {
-        shape[axis] = 1;
-        combined_tensor.SetItem(tks_other, other.Reshape(shape));
-        return combined_tensor;
-    }
-
-    return combined_tensor.SetItem(tks_other, other);
+    return combined_tensor;
 }
 
 Tensor Tensor::Append(const Tensor& tensor,
                       const Tensor& other,
-                      const utility::optional<int> axis) {
+                      const utility::optional<int64_t> axis) {
     core::AssertTensorDevice(other, tensor.GetDevice());
     core::AssertTensorDtype(other, tensor.GetDtype());
 
-    core::Tensor combined_tensor;
+    if (tensor.NumDims() != other.NumDims()) {
+        utility::LogError(
+                "Tensor with {} dimentions, can not be appended to tensor with "
+                "{} dimentions.",
+                other.NumDims(), tensor.NumDims());
+    }
 
     if (!axis.has_value()) {
         // Flatten both the tensor and append.
         const int64_t num_elements = tensor.NumElements();
         const int64_t other_num_elements = other.NumElements();
         const int64_t combined_num_elements = num_elements + other_num_elements;
-        combined_tensor = Tensor::Empty({combined_num_elements},
-                                        tensor.GetDtype(), tensor.GetDevice());
+        Tensor combined_tensor = Tensor::Empty(
+                {combined_num_elements}, tensor.GetDtype(), tensor.GetDevice());
         combined_tensor.SetItem(core::TensorKey::Slice(0, num_elements, 1),
                                 tensor.Reshape({num_elements}));
         combined_tensor.SetItem(
@@ -688,7 +645,22 @@ Tensor Tensor::Append(const Tensor& tensor,
 
         return combined_tensor;
     } else {
-        return StackAlongAxis(tensor, other, axis.value());
+        const int64_t axis_d =
+                shape_util::WrapDim(axis.value(), tensor.NumDims());
+
+        for (int64_t i = 0; i < tensor.NumDims(); ++i) {
+            if (i != axis_d && tensor.GetShape()[i] != other.GetShape()[i]) {
+                utility::LogError(
+                        "Failed to append tensor with shape {}, to shape {}, "
+                        "alone axis {}. Expected dimention value {}, but got "
+                        "{}.",
+                        other.GetShape().ToString(),
+                        tensor.GetShape().ToString(), axis_d,
+                        other.GetShape()[i], tensor.GetShape()[i]);
+            }
+        }
+
+        return StackAlongAxis(tensor, other, axis_d);
     }
 }
 

@@ -427,19 +427,19 @@ void pybind_core_tensor(py::module& m) {
     tensor.def_static(
             "append",
             [](const Tensor& arr, const Tensor& values,
-               const utility::optional<int> axis) {
+               const utility::optional<int64_t> axis) {
                 if (axis.has_value()) {
                     return core::Tensor::Append(arr, values, axis);
                 }
                 return core::Tensor::Append(arr, values);
             },
             R"(Appends the `values` tensor to `arr` tensor, along the given
-    axis and returns a copy. Both the tensors must have same data-type and
-    device. If the axis is not provided, then both the tensors are flattened,
-    and appended into a 1D tensor. If axis value is provided, the tensors 
-    are appended along that axis, given that the all the dimentions expect
-    that axis are same. The number of dimentions in `values` tensor, 
-    must be equal to, or one less than the number of dimentions in `arr`.
+axis and returns a copy. Both the tensors must have same data-type and
+device. If the axis is not provided, then both the tensors are flattened,
+and appended into a 1D tensor. If axis value is provided, the tensors 
+are appended along that axis, given that the all the dimentions expect
+that axis are same. The number of dimentions in `values` tensor, 
+must be equal to, or one less than the number of dimentions in `arr`.
 
 Ref:
 - https://numpy.org/doc/stable/reference/generated/numpy.append.html
