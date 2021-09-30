@@ -505,19 +505,12 @@ void VisualizerWithVertexSelection::KeyPressCallback(
             break;
         case GLFW_KEY_Z:
             view_control.ToggleEditingZ();
-            utility::LogDebug("[Visualizer] Enter orthogonal Z editing mode.");
+            utility::LogInfo("[Visualizer] Enter orthogonal Z editing mode.");
             break;
         case GLFW_KEY_R:
             if (mods & GLFW_MOD_CONTROL) {
-                ui_selected_points_geometry_ptr_->points_.clear();
-                ui_selected_points_geometry_ptr_->PaintUniformColor(
-                        SELECTED_POINTS_COLOR);
-                ui_selected_points_renderer_ptr_->UpdateGeometry();
-                
-                if (on_selection_changed_) {
-                    on_selection_changed_();
-                }
-                
+                ClearPickedPoints();
+
                 is_redraw_required_ = true;
             } else {
                 Visualizer::KeyPressCallback(window, key, scancode, action,
@@ -707,6 +700,10 @@ void VisualizerWithVertexSelection::ClearPickedPoints() {
     if (ui_selected_points_geometry_ptr_) {
         ui_selected_points_geometry_ptr_->points_.clear();
         ui_selected_points_renderer_ptr_->UpdateGeometry();
+    }
+
+    if (on_selection_changed_) {
+        on_selection_changed_();
     }
 }
 
