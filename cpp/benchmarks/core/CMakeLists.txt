@@ -1,8 +1,10 @@
 target_sources(benchmarks PRIVATE
+    BinaryEW.cpp
     HashMap.cpp
     MemoryManager.cpp
     ParallelFor.cpp
     Reduction.cpp
+    UnaryEW.cpp
     Zeros.cpp
 )
 

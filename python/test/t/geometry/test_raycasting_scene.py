@@ -176,6 +176,22 @@ def test_compute_closest_points():
                                atol=1e-6)
 
 
+# compute lots of closest points to test the internal batching
+# we expect no errors for this test
+def test_compute_lots_of_closest_points():
+    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=o3d.core.float32)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(vertices, triangles)
+
+    rs = np.random.RandomState(123)
+    query_points = o3d.core.Tensor.from_numpy(
+        rs.rand(1234567, 3).astype(np.float32))
+    _ = scene.compute_closest_points(query_points)
+
+
 def test_compute_distance():
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
