@@ -119,9 +119,6 @@ PointCloud PointCloud::To(const core::Device &device, bool copy) const {
 PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
 PointCloud PointCloud::Append(const PointCloud &other) const {
-    // TODO (@rishabh): Add Append to Tensor -> TensorMap -> Use that in
-    // t::geometry.
-
     PointCloud pcd(GetDevice());
 
     int64_t length = GetPointPositions().GetLength();
@@ -393,7 +390,6 @@ static PointCloud CreatePointCloudWithNormals(
         float depth_scale,
         float depth_max,
         int stride) {
-    // Asserts are performed in +1 level functions using this static function.
     using core::None;
     using core::Tensor;
     using core::TensorKey;
@@ -483,15 +479,21 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
     core::AssertTensorShape(intrinsics, {3, 3});
     core::AssertTensorShape(extrinsics, {4, 4});
 
+    core::Tensor intrinsics_host =
+            intrinsics.To(core::Device("CPU:0"), core::Float64);
+    core::Tensor extrinsics_host =
+            extrinsics.To(core::Device("CPU:0"), core::Float64);
+
     if (with_normals) {
-        return CreatePointCloudWithNormals(depth, Image(), intrinsics,
-                                           extrinsics, depth_scale, depth_max,
-                                           stride);
+        return CreatePointCloudWithNormals(depth, Image(), intrinsics_host,
+                                           extrinsics_host, depth_scale,
+                                           depth_max, stride);
     } else {
         core::Tensor points;
-        kernel::pointcloud::Unproject(
-                depth.AsTensor(), utility::nullopt, points, utility::nullopt,
-                intrinsics, extrinsics, depth_scale, depth_max, stride);
+        kernel::pointcloud::Unproject(depth.AsTensor(), utility::nullopt,
+                                      points, utility::nullopt, intrinsics_host,
+                                      extrinsics_host, depth_scale, depth_max,
+                                      stride);
         return PointCloud(points);
     }
 }
@@ -608,14 +610,6 @@ open3d::geometry::PointCloud PointCloud::ToLegacy() const {
             normalization_factor =
                     1.0 /
                     static_cast<double>(std::numeric_limits<uint16_t>::max());
-        } else if (point_color_dtype == core::UInt32) {
-            normalization_factor =
-                    1.0 /
-                    static_cast<double>(std::numeric_limits<uint32_t>::max());
-        } else if (point_color_dtype == core::UInt64) {
-            normalization_factor =
-                    1.0 /
-                    static_cast<double>(std::numeric_limits<uint64_t>::max());
         } else if (point_color_dtype != core::Float32 &&
                    point_color_dtype != core::Float64) {
             utility::LogWarning(

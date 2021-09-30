@@ -44,6 +44,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+using dtype_channels_pairs = std::vector<std::pair<core::Dtype, int64_t>>;
+
 Image::Image(int64_t rows,
              int64_t cols,
              int64_t channels,
@@ -106,17 +108,9 @@ Image Image::To(core::Dtype dtype,
     if (!scale_.has_value() &&
         (dtype == core::Float32 || dtype == core::Float64)) {
         if (GetDtype() == core::UInt8) {
-            scale = 1.0 /
-                    static_cast<double>(std::numeric_limits<uint8_t>::max());
+            scale = 1. / 255;
         } else if (GetDtype() == core::UInt16) {
-            scale = 1.0 /
-                    static_cast<double>(std::numeric_limits<uint16_t>::max());
-        } else if (GetDtype() == core::UInt32) {
-            scale = 1.0 /
-                    static_cast<double>(std::numeric_limits<uint32_t>::max());
-        } else if (GetDtype() == core::UInt64) {
-            scale = 1.0 /
-                    static_cast<double>(std::numeric_limits<uint64_t>::max());
+            scale = 1. / 65535;
         }
     } else {
         scale = scale_.value_or(1.0);
@@ -172,21 +166,33 @@ Image Image::To(core::Dtype dtype,
 }
 
 Image Image::RGBToGray() const {
-    const int64_t channels = GetChannels();
-    if (channels != 3) {
-        utility::LogError("Only 3 channels images are supported, but got {}.",
-                          channels);
+    if (GetChannels() != 3) {
+        utility::LogError(
+                "Input image channels must be 3 for RGBToGray, but got {}.",
+                GetChannels());
     }
-
-    core::AssertTensorDtypes(AsTensor(),
-                             {core::UInt8, core::UInt16, core::Float32});
+    static const dtype_channels_pairs ipp_supported{
+            {core::UInt8, 3},
+            {core::UInt16, 3},
+            {core::Float32, 3},
+    };
+    static const dtype_channels_pairs npp_supported{
+            {core::UInt8, 3},
+            {core::UInt16, 3},
+            {core::Float32, 3},
+    };
 
     Image dst_im;
     dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1}, GetDtype(),
                                        GetDevice());
-    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::RGBToGray, data_, dst_im.data_);
-    } else if (data_.GetDevice().GetType() == core::Device::DeviceType::CPU) {
+    } else if (HAVE_IPPICV &&
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::RGBToGray, data_, dst_im.data_);
     } else {
         utility::LogError(
@@ -201,15 +207,18 @@ Image Image::Resize(float sampling_rate, InterpType interp_type) const {
         return *this;
     }
 
-    const int64_t channels = GetChannels();
-    if (channels != 1 && channels != 3 && channels != 4) {
-        utility::LogError(
-                "Only 1, 3 and 4 channels images are supported, but got {}.",
-                channels);
-    }
+    static const dtype_channels_pairs npp_supported{
+            {core::UInt8, 1}, {core::UInt16, 1}, {core::Float32, 1},
+            {core::UInt8, 3}, {core::UInt16, 3}, {core::Float32, 3},
+            {core::UInt8, 4}, {core::UInt16, 4}, {core::Float32, 4},
 
-    core::AssertTensorDtypes(AsTensor(),
-                             {core::UInt8, core::UInt16, core::Float32});
+    };
+
+    static const dtype_channels_pairs ipp_supported{
+            {core::UInt8, 1}, {core::UInt16, 1}, {core::Float32, 1},
+            {core::UInt8, 3}, {core::UInt16, 3}, {core::Float32, 3},
+            {core::UInt8, 4}, {core::UInt16, 4}, {core::Float32, 4},
+    };
 
     Image dst_im;
     dst_im.data_ = core::Tensor::Empty(
@@ -217,10 +226,14 @@ Image Image::Resize(float sampling_rate, InterpType interp_type) const {
              static_cast<int64_t>(GetCols() * sampling_rate), GetChannels()},
             GetDtype(), GetDevice());
 
-    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::Resize, data_, dst_im.data_, interp_type);
     } else if (HAVE_IPPICV &&
-               data_.GetDevice().GetType() == core::Device::DeviceType::CPU) {
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Resize, data_, dst_im.data_, interp_type);
     } else {
         utility::LogError(
@@ -232,22 +245,33 @@ Image Image::Resize(float sampling_rate, InterpType interp_type) const {
 }
 
 Image Image::Dilate(int kernel_size) const {
-    const int64_t channels = GetChannels();
-    if (channels != 1 && channels != 3 && channels != 4) {
-        utility::LogError(
-                "Only 1, 3 and 4 channels images are supported, but got {}.",
-                channels);
-    }
-
-    core::AssertTensorDtypes(
-            AsTensor(), {core::Bool, core::UInt8, core::UInt16, core::Float32});
+    // Check NPP datatype support for each function in documentation:
+    // https://docs.nvidia.com/cuda/npp/group__nppi.html
+    static const dtype_channels_pairs npp_supported{
+            {core::Bool, 1},    {core::UInt8, 1},   {core::UInt16, 1},
+            {core::Int32, 1},   {core::Float32, 1}, {core::Bool, 3},
+            {core::UInt8, 3},   {core::UInt16, 3},  {core::Int32, 3},
+            {core::Float32, 3}, {core::Bool, 4},    {core::UInt8, 4},
+            {core::UInt16, 4},  {core::Int32, 4},   {core::Float32, 4},
+    };
+    // Check IPP datatype support for each function in IPP documentation:
+    // https://software.intel.com/content/www/us/en/develop/documentation/ipp-dev-reference/top/volume-2-image-processing.html
+    static const dtype_channels_pairs ipp_supported{
+            {core::Bool, 1},    {core::UInt8, 1}, {core::UInt16, 1},
+            {core::Float32, 1}, {core::Bool, 3},  {core::UInt8, 3},
+            {core::Float32, 3}, {core::Bool, 4},  {core::UInt8, 4},
+            {core::Float32, 4}};
 
     Image dst_im;
     dst_im.data_ = core::Tensor::EmptyLike(data_);
-    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::Dilate, data_, dst_im.data_, kernel_size);
     } else if (HAVE_IPPICV &&
-               data_.GetDevice().GetType() == core::Device::DeviceType::CPU) {
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Dilate, data_, dst_im.data_, kernel_size);
     } else {
         utility::LogError(
@@ -264,22 +288,28 @@ Image Image::FilterBilateral(int kernel_size,
         utility::LogError("Kernel size must be >= 3, but got {}.", kernel_size);
     }
 
-    const int64_t channels = GetChannels();
-    if (channels != 1 && channels != 3) {
-        utility::LogError(
-                "Only 1 and 3 channels images are supported, but got {}.",
-                channels);
-    }
-
-    core::AssertTensorDtypes(AsTensor(), {core::UInt8, core::Float32});
+    static const dtype_channels_pairs npp_supported{
+            {core::UInt8, 1}, {core::UInt16, 1}, {core::Float32, 1},
+            {core::UInt8, 3}, {core::UInt16, 3}, {core::Float32, 3},
+    };
+    static const dtype_channels_pairs ipp_supported{
+            {core::UInt8, 1},
+            {core::Float32, 1},
+            {core::UInt8, 3},
+            {core::Float32, 3},
+    };
 
     Image dst_im;
     dst_im.data_ = core::Tensor::EmptyLike(data_);
-    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterBilateral, data_, dst_im.data_, kernel_size,
                   value_sigma, dist_sigma);
     } else if (HAVE_IPPICV &&
-               data_.GetDevice().GetType() == core::Device::DeviceType::CPU) {
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterBilateral, data_, dst_im.data_, kernel_size,
                  value_sigma, dist_sigma);
     } else {
@@ -292,22 +322,27 @@ Image Image::FilterBilateral(int kernel_size,
 }
 
 Image Image::Filter(const core::Tensor &kernel) const {
-    const int64_t channels = GetChannels();
-    if (channels != 1 && channels != 3 && channels != 4) {
-        utility::LogError(
-                "Only 1, 3 and 4 channels images are supported, but got {}.",
-                channels);
-    }
-
-    core::AssertTensorDtypes(AsTensor(),
-                             {core::UInt8, core::UInt16, core::Float32});
+    static const dtype_channels_pairs npp_supported{
+            {core::UInt8, 1}, {core::UInt16, 1}, {core::Float32, 1},
+            {core::UInt8, 3}, {core::UInt16, 3}, {core::Float32, 3},
+            {core::UInt8, 4}, {core::UInt16, 4}, {core::Float32, 4},
+    };
+    static const dtype_channels_pairs ipp_supported{
+            {core::UInt8, 1}, {core::UInt16, 1}, {core::Float32, 1},
+            {core::UInt8, 3}, {core::UInt16, 3}, {core::Float32, 3},
+            {core::UInt8, 4}, {core::UInt16, 4}, {core::Float32, 4},
+    };
 
     Image dst_im;
     dst_im.data_ = core::Tensor::EmptyLike(data_);
-    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::Filter, data_, dst_im.data_, kernel);
     } else if (HAVE_IPPICV &&
-               data_.GetDevice().GetType() == core::Device::DeviceType::CPU) {
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Filter, data_, dst_im.data_, kernel);
     } else {
         utility::LogError(
@@ -324,22 +359,27 @@ Image Image::FilterGaussian(int kernel_size, float sigma) const {
                           kernel_size);
     }
 
-    const int64_t channels = GetChannels();
-    if (channels != 1 && channels != 3 && channels != 4) {
-        utility::LogError(
-                "Only 1, 3 and 4 channels images are supported, but got {}.",
-                channels);
-    }
-
-    core::AssertTensorDtypes(AsTensor(),
-                             {core::UInt8, core::UInt16, core::Float32});
+    static const dtype_channels_pairs npp_supported{
+            {core::UInt8, 1}, {core::UInt16, 1}, {core::Float32, 1},
+            {core::UInt8, 3}, {core::UInt16, 3}, {core::Float32, 3},
+            {core::UInt8, 4}, {core::UInt16, 4}, {core::Float32, 4},
+    };
+    static const dtype_channels_pairs ipp_supported{
+            {core::UInt8, 1}, {core::UInt16, 1}, {core::Float32, 1},
+            {core::UInt8, 3}, {core::UInt16, 3}, {core::Float32, 3},
+            {core::UInt8, 4}, {core::UInt16, 4}, {core::Float32, 4},
+    };
 
     Image dst_im;
     dst_im.data_ = core::Tensor::EmptyLike(data_);
-    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterGaussian, data_, dst_im.data_, kernel_size, sigma);
     } else if (HAVE_IPPICV &&
-               data_.GetDevice().GetType() == core::Device::DeviceType::CPU) {
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterGaussian, data_, dst_im.data_, kernel_size, sigma);
     } else {
         utility::LogError(
@@ -356,12 +396,17 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
                           kernel_size);
     }
 
-    if (GetChannels() != 1) {
-        utility::LogError("Only 1 channel images are supported, but got {}.",
-                          GetChannels());
-    }
-
-    core::AssertTensorDtypes(AsTensor(), {core::UInt8, core::Float32});
+    // 16 signed is also supported by the engines, but is non-standard thus
+    // not supported by open3d. To filter 16 bit unsigned depth images, we
+    // recommend first converting to Float32.
+    static const dtype_channels_pairs npp_supported{
+            {core::UInt8, 1},
+            {core::Float32, 1},
+    };
+    static const dtype_channels_pairs ipp_supported{
+            {core::UInt8, 1},
+            {core::Float32, 1},
+    };
 
     // Routines: 8u16s, 32f
     Image dst_im_dx, dst_im_dy;
@@ -376,11 +421,15 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
                                         data_.GetDevice());
     }
 
-    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (data_.GetDevice().GetType() == core::Device::DeviceType::CUDA &&
+        std::count(npp_supported.begin(), npp_supported.end(),
+                   std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterSobel, data_, dst_im_dx.data_, dst_im_dy.data_,
                   kernel_size);
     } else if (HAVE_IPPICV &&
-               data_.GetDevice().GetType() == core::Device::DeviceType::CPU) {
+               data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
+               std::count(ipp_supported.begin(), ipp_supported.end(),
+                          std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterSobel, data_, dst_im_dx.data_, dst_im_dy.data_,
                  kernel_size);
     } else {
@@ -404,7 +453,8 @@ Image Image::PyrDownDepth(float diff_threshold, float invalid_fill) const {
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    core::AssertTensorDtype(this->AsTensor(), core::Float32);
+
+    core::AssertTensorDtype(AsTensor(), core::Float32);
 
     core::Tensor dst_tensor = core::Tensor::Empty(
             {GetRows() / 2, GetCols() / 2, 1}, GetDtype(), GetDevice());
@@ -423,7 +473,8 @@ Image Image::ClipTransform(float scale,
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    core::AssertTensorDtypes(this->AsTensor(), {core::UInt16, core::Float32});
+
+    core::AssertTensorDtypes(AsTensor(), {core::UInt16, core::Float32});
 
     if (scale < 0 || min_value < 0 || max_value < 0) {
         utility::LogError(
@@ -452,7 +503,9 @@ Image Image::CreateVertexMap(const core::Tensor &intrinsics,
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    core::AssertTensorDtype(this->AsTensor(), core::Float32);
+
+    core::AssertTensorDtype(AsTensor(), core::Float32);
+    core::AssertTensorShape(intrinsics, {3, 3});
 
     Image dst_im(GetRows(), GetCols(), 3, GetDtype(), GetDevice());
     kernel::image::CreateVertexMap(data_, dst_im.data_, intrinsics,
@@ -467,7 +520,8 @@ Image Image::CreateNormalMap(float invalid_fill) {
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    core::AssertTensorDtype(this->AsTensor(), core::Float32);
+
+    core::AssertTensorDtype(AsTensor(), core::Float32);
 
     Image dst_im(GetRows(), GetCols(), 3, GetDtype(), GetDevice());
     kernel::image::CreateNormalMap(data_, dst_im.data_, invalid_fill);
@@ -481,7 +535,8 @@ Image Image::ColorizeDepth(float scale, float min_value, float max_value) {
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    core::AssertTensorDtypes(this->AsTensor(), {core::UInt16, core::Float32});
+
+    core::AssertTensorDtypes(AsTensor(), {core::UInt16, core::Float32});
 
     if (scale < 0 || min_value < 0 || max_value < 0 || min_value >= max_value) {
         utility::LogError(
@@ -526,18 +581,19 @@ Image Image::FromLegacy(const open3d::geometry::Image &image_legacy,
 }
 
 open3d::geometry::Image Image::ToLegacy() const {
-    core::AssertTensorDtypes(AsTensor(),
-                             {core::UInt8, core::UInt16, core::Float32});
-
+    auto dtype = GetDtype();
+    if (!(dtype == core::UInt8 || dtype == core::UInt16 ||
+          dtype == core::Float32))
+        utility::LogError("Legacy image does not support data type {}.",
+                          dtype.ToString());
     if (!data_.IsContiguous()) {
         utility::LogError("Image tensor must be contiguous.");
     }
-
     open3d::geometry::Image image_legacy;
     image_legacy.Prepare(static_cast<int>(GetCols()),
                          static_cast<int>(GetRows()),
                          static_cast<int>(GetChannels()),
-                         static_cast<int>(GetDtype().ByteSize()));
+                         static_cast<int>(dtype.ByteSize()));
     size_t num_bytes = image_legacy.height_ * image_legacy.BytesPerLine();
     core::MemoryManager::MemcpyToHost(image_legacy.data_.data(),
                                       data_.GetDataPtr(), data_.GetDevice(),

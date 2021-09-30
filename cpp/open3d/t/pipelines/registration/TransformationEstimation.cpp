@@ -35,19 +35,41 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
+static void AssertValidCorrespondences(
+        const core::Tensor &correspondence_indices,
+        const core::Tensor &source_points) {
+    core::AssertTensorDtype(correspondence_indices, core::Int64);
+    core::AssertTensorDevice(correspondence_indices, source_points.GetDevice());
+
+    if (correspondence_indices.GetShape() !=
+                core::SizeVector({source_points.GetLength(), 1}) &&
+        correspondence_indices.GetShape() !=
+                core::SizeVector({source_points.GetLength()})) {
+        utility::LogError(
+                "Correspondences must be of same length as source point-cloud "
+                "positions. Expected correspondences of shape {} or {}, but "
+                "got {}.",
+                core::SizeVector({source_points.GetLength()}).ToString(),
+                core::SizeVector({source_points.GetLength(), 1}).ToString(),
+                correspondence_indices.GetShape().ToString());
+    }
+}
+
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
     core::AssertTensorDtype(target.GetPointPositions(),
                             source.GetPointPositions().GetDtype());
-    core::AssertTensorDevice(target.GetPointPositions(),
-                             source.GetPointPositions().GetDevice());
-    core::AssertTensorDtype(correspondences, core::Int64);
-    core::AssertTensorDevice(correspondences,
-                             source.GetPointPositions().GetDevice());
-    core::AssertTensorShape(correspondences,
-                            {source.GetPointPositions().GetLength()});
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
     core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
     core::Tensor neighbour_indices =
@@ -68,7 +90,17 @@ core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
-    // Input asserts are performed at ComputeRtPointToPoint.
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
     core::Tensor R, t;
     // Get tuple of Rotation {3, 3} and Translation {3} of type Float64.
@@ -85,19 +117,18 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
-    core::AssertTensorDtype(target.GetPointPositions(),
-                            source.GetPointPositions().GetDtype());
-    core::AssertTensorDevice(target.GetPointPositions(),
-                             source.GetPointPositions().GetDevice());
-    core::AssertTensorDtype(correspondences, core::Int64);
-    core::AssertTensorDevice(correspondences,
-                             source.GetPointPositions().GetDevice());
-    core::AssertTensorShape(correspondences,
-                            {source.GetPointPositions().GetLength()});
-
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
     if (!target.HasPointNormals()) {
         utility::LogError("Target pointcloud missing normals attribute.");
     }
+
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
     core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
     core::Tensor neighbour_indices =
@@ -121,11 +152,22 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
     if (!target.HasPointNormals()) {
         utility::LogError("Target pointcloud missing normals attribute.");
     }
 
-    // Input asserts are performed at ComputePosePointToPlane.
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDtype(target.GetPointNormals(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
     // Get pose {6} of type Float64.
     core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
@@ -141,6 +183,9 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
     if (!target.HasPointColors() || !source.HasPointColors()) {
         utility::LogError(
                 "Source and/or Target pointcloud missing colors attribute.");
@@ -226,6 +271,12 @@ core::Tensor TransformationEstimationForColoredICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
     if (!target.HasPointColors() || !source.HasPointColors()) {
         utility::LogError(
                 "Source and/or Target pointcloud missing colors attribute.");
@@ -238,7 +289,19 @@ core::Tensor TransformationEstimationForColoredICP::ComputeTransformation(
                 "Target pointcloud missing color_gradients attribute.");
     }
 
-    // Input asserts are performed at ComputePosePointToPlane.
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    const core::Dtype dtype = source.GetPointPositions().GetDtype();
+
+    core::AssertTensorDtype(source.GetPointColors(), dtype);
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDtype(target.GetPointNormals(), dtype);
+    core::AssertTensorDtype(target.GetPointColors(), dtype);
+    core::AssertTensorDtype(target.GetPointAttr("color_gradients"), dtype);
+
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
     // Get pose {6} of type Float64 from correspondences indexed source and
     // target point cloud.

@@ -34,49 +34,12 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-static void AssertEmptyTensor(const core::Tensor &tensor,
-                              const std::string &name) {
-    if (!tensor.GetLength()) {
-        utility::LogError("{} is empty.", name);
-    }
-}
-
-static void AssertValidCorrespondences(
-        const core::Tensor &correspondence_indices,
-        const core::Tensor &source_points) {
-    core::AssertTensorDtype(correspondence_indices, core::Int64);
-    core::AssertTensorDevice(correspondence_indices, source_points.GetDevice());
-
-    if (correspondence_indices.GetShape() !=
-                core::SizeVector({source_points.GetLength(), 1}) &&
-        correspondence_indices.GetShape() !=
-                core::SizeVector({source_points.GetLength()})) {
-        utility::LogError(
-                "Correspondences must be of same length as source point-cloud "
-                "positions. Expected correspondences of shape {} or {}, but "
-                "got {}.",
-                core::SizeVector({source_points.GetLength()}).ToString(),
-                core::SizeVector({source_points.GetLength(), 1}).ToString(),
-                correspondence_indices.GetShape().ToString());
-    }
-}
-
 core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_points,
                                      const core::Tensor &target_normals,
                                      const core::Tensor &correspondence_indices,
                                      const registration::RobustKernel &kernel) {
     const core::Device device = source_points.GetDevice();
-    const core::Dtype dtype = source_points.GetDtype();
-
-    core::AssertTensorDtypes(source_points, {core::Float64, core::Float32});
-    core::AssertTensorDtype(target_points, dtype);
-    core::AssertTensorDtype(target_normals, dtype);
-    core::AssertTensorDevice(target_points, device);
-
-    AssertEmptyTensor(source_points, "Source PointCloud");
-    AssertEmptyTensor(target_points, "Target PointCloud");
-    AssertValidCorrespondences(correspondence_indices, source_points);
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
@@ -90,12 +53,12 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                 source_points.Contiguous(), target_points.Contiguous(),
                 target_normals.Contiguous(),
                 correspondence_indices.Contiguous(), pose, residual,
-                inlier_count, dtype, device, kernel);
+                inlier_count, source_points.GetDtype(), device, kernel);
     } else if (device_type == core::Device::DeviceType::CUDA) {
         CUDA_CALL(ComputePosePointToPlaneCUDA, source_points.Contiguous(),
                   target_points.Contiguous(), target_normals.Contiguous(),
                   correspondence_indices.Contiguous(), pose, residual,
-                  inlier_count, dtype, device, kernel);
+                  inlier_count, source_points.GetDtype(), device, kernel);
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -116,19 +79,6 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                                    const registration::RobustKernel &kernel,
                                    const double &lambda_geometric) {
     const core::Device device = source_points.GetDevice();
-    const core::Dtype dtype = source_points.GetDtype();
-
-    core::AssertTensorDtypes(source_points, {core::Float64, core::Float32});
-    core::AssertTensorDtype(source_colors, dtype);
-    core::AssertTensorDtype(target_points, dtype);
-    core::AssertTensorDtype(target_normals, dtype);
-    core::AssertTensorDtype(target_colors, dtype);
-    core::AssertTensorDtype(target_color_gradients, dtype);
-    core::AssertTensorDevice(target_points, device);
-
-    AssertEmptyTensor(source_points, "Source PointCloud");
-    AssertEmptyTensor(target_points, "Target PointCloud");
-    AssertValidCorrespondences(correspondence_indices, source_points);
 
     // Pose {6,} tensor [ouput].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
@@ -143,14 +93,16 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                 target_points.Contiguous(), target_normals.Contiguous(),
                 target_colors.Contiguous(), target_color_gradients.Contiguous(),
                 correspondence_indices.Contiguous(), pose, residual,
-                inlier_count, dtype, device, kernel, lambda_geometric);
+                inlier_count, source_points.GetDtype(), device, kernel,
+                lambda_geometric);
     } else if (device_type == core::Device::DeviceType::CUDA) {
         CUDA_CALL(ComputePoseColoredICPCUDA, source_points.Contiguous(),
                   source_colors.Contiguous(), target_points.Contiguous(),
                   target_normals.Contiguous(), target_colors.Contiguous(),
                   target_color_gradients.Contiguous(),
                   correspondence_indices.Contiguous(), pose, residual,
-                  inlier_count, dtype, device, kernel, lambda_geometric);
+                  inlier_count, source_points.GetDtype(), device, kernel,
+                  lambda_geometric);
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -166,15 +118,6 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &target_points,
         const core::Tensor &correspondence_indices) {
     const core::Device device = source_points.GetDevice();
-    const core::Dtype dtype = source_points.GetDtype();
-
-    core::AssertTensorDtypes(source_points, {core::Float64, core::Float32});
-    core::AssertTensorDtype(target_points, dtype);
-    core::AssertTensorDevice(target_points, device);
-
-    AssertEmptyTensor(source_points, "Source PointCloud");
-    AssertEmptyTensor(target_points, "Target PointCloud");
-    AssertValidCorrespondences(correspondence_indices, source_points);
 
     // [Output] Rotation and translation tensor of type Float64.
     core::Tensor R, t;
@@ -184,10 +127,10 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     const core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         // Pointer to point cloud data - indexed according to correspondences.
-        ComputeRtPointToPointCPU(source_points.Contiguous(),
-                                 target_points.Contiguous(),
-                                 correspondence_indices.Contiguous(), R, t,
-                                 inlier_count, dtype, device);
+        ComputeRtPointToPointCPU(
+                source_points.Contiguous(), target_points.Contiguous(),
+                correspondence_indices.Contiguous(), R, t, inlier_count,
+                source_points.GetDtype(), device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         // TODO: Implement optimised CUDA reduction kernel.
@@ -249,25 +192,19 @@ core::Tensor ComputeInformationMatrix(
         const core::Tensor &target_points,
         const core::Tensor &correspondence_indices) {
     const core::Device device = target_points.GetDevice();
-    const core::Dtype dtype = target_points.GetDtype();
-
-    core::AssertTensorDtypes(target_points, {core::Float64, core::Float32});
-    core::AssertTensorDtype(correspondence_indices, core::Int64);
-    core::AssertTensorDevice(correspondence_indices, device);
-    AssertEmptyTensor(target_points, "Target PointCloud");
 
     core::Tensor information_matrix =
             core::Tensor::Empty({6, 6}, core::Float64, core::Device("CPU:0"));
 
     const core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ComputeInformationMatrixCPU(target_points.Contiguous(),
-                                    correspondence_indices.Contiguous(),
-                                    information_matrix, dtype, device);
+        ComputeInformationMatrixCPU(
+                target_points.Contiguous(), correspondence_indices.Contiguous(),
+                information_matrix, target_points.GetDtype(), device);
     } else if (device_type == core::Device::DeviceType::CUDA) {
         CUDA_CALL(ComputeInformationMatrixCUDA, target_points.Contiguous(),
                   correspondence_indices.Contiguous(), information_matrix,
-                  dtype, device);
+                  target_points.GetDtype(), device);
     } else {
         utility::LogError("Unimplemented device.");
     }
