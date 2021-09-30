@@ -112,6 +112,7 @@ std::string LineSet::ToString() const {
 }
 
 LineSet &LineSet::Transform(const core::Tensor &transformation) {
+    core::AssertTensorShape(transformation, {4, 4});
     kernel::transform::TransformPoints(transformation, GetPointPositions());
     return *this;
 }
@@ -138,6 +139,8 @@ LineSet &LineSet::Scale(double scale, const core::Tensor &center) {
 }
 
 LineSet &LineSet::Rotate(const core::Tensor &R, const core::Tensor &center) {
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(center, {3});
     kernel::transform::RotatePoints(R, GetPointPositions(), center);
     return *this;
 }
