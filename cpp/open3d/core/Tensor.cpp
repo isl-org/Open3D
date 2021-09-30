@@ -656,7 +656,7 @@ Tensor Tensor::Append(const Tensor& tensor,
                         "{}.",
                         other.GetShape().ToString(),
                         tensor.GetShape().ToString(), axis_d,
-                        other.GetShape()[i], tensor.GetShape()[i]);
+                        tensor.GetShape()[i], other.GetShape()[i]);
             }
         }
 
