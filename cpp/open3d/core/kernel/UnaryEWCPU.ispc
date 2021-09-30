@@ -27,122 +27,134 @@
 #include "open3d/core/Indexer.isph"
 #include "open3d/core/ParallelFor.isph"
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUSqrtElement)(          \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = sqrt(*src);                                             \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPUSqrtElement)(                \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = sqrt(*src);                                                   \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_FLOAT_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUSinElement)(           \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = sin(*src);                                              \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPUSinElement)(                 \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = sin(*src);                                                    \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_FLOAT_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUCosElement)(           \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = cos(*src);                                              \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPUCosElement)(                 \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = cos(*src);                                                    \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_FLOAT_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUNegElement)(           \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = -*src;                                                  \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPUNegElement)(                 \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = -*src;                                                        \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUExpElement)(           \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = exp(*src);                                              \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPUExpElement)(                 \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = exp(*src);                                                    \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_FLOAT_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUAbsElement)(           \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = abs((double)*src);                                      \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPUAbsElement)(                 \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = abs((double)*src);                                            \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUFloorElement)(         \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = floor((double)*src);                                    \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPUFloorElement)(               \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = floor((double)*src);                                          \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUCeilElement)(          \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = ceil((double)*src);                                     \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPUCeilElement)(                \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = ceil((double)*src);                                           \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPURoundElement)(         \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = round((double)*src);                                    \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPURoundElement)(               \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = round((double)*src);                                          \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUTruncElement)(         \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = trunc((double)*src);                                    \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPUTruncElement)(               \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = trunc((double)*src);                                          \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPUIsNanElement)(         \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        bool* dst = (bool*)Indexer_GetOutputPtr(indexer, idx);         \
-        *dst = isnan((float)*src);                                     \
+#define TEMPLATE(T)                                                           \
+    static inline void OPEN3D_SPECIALIZED(T, CPUIsNanElement)(                \
+            int64_t idx, uniform Indexer * uniform indexer) {                 \
+        const T* src =                                                        \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx);  \
+        bool* dst =                                                           \
+                OPEN3D_SPECIALIZED(bool, Indexer_GetOutputPtr)(indexer, idx); \
+        *dst = isnan((float)*src);                                            \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE()
@@ -153,8 +165,10 @@ OPEN3D_INSTANTIATE_TEMPLATE()
 #define TEMPLATE(T)                                                    \
     static inline void OPEN3D_SPECIALIZED(T, CPUIsInfElement)(         \
             int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        bool* dst = (bool*)Indexer_GetOutputPtr(indexer, idx);         \
+        const T* src = OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0,
+idx); \
+        bool* dst = OPEN3D_SPECIALIZED(bool, Indexer_GetOutputPtr)(indexer,
+idx);         \
         *dst = isinf((float)*src);                                     \
     }
 #pragma ignore warning(perf)
@@ -167,8 +181,10 @@ OPEN3D_INSTANTIATE_TEMPLATE()
 #define TEMPLATE(T)                                                    \
     static inline void OPEN3D_SPECIALIZED(T, CPUIsFiniteElement)(      \
             int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        bool* dst = (bool*)Indexer_GetOutputPtr(indexer, idx);         \
+        const T* src = OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0,
+idx); \
+        bool* dst = OPEN3D_SPECIALIZED(bool, Indexer_GetOutputPtr)(indexer,
+idx);         \
         *dst = isfinite((float)*src);                                  \
     }
 #pragma ignore warning(perf)
@@ -176,23 +192,26 @@ OPEN3D_INSTANTIATE_TEMPLATE()
 #undef TEMPLATE
 */
 
-#define TEMPLATE(T)                                                    \
-    static inline void OPEN3D_SPECIALIZED(T, CPULogicalNotElement)(    \
-            int64_t idx, uniform Indexer * uniform indexer) {          \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx); \
-        T* dst = (T*)Indexer_GetOutputPtr(indexer, idx);               \
-        *dst = (T)(!(bool)(*src));                                     \
+#define TEMPLATE(T)                                                          \
+    static inline void OPEN3D_SPECIALIZED(T, CPULogicalNotElement)(          \
+            int64_t idx, uniform Indexer * uniform indexer) {                \
+        const T* src =                                                       \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx); \
+        T* dst = OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(indexer, idx);  \
+        *dst = (T)(!(bool)(*src));                                           \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
 #undef TEMPLATE
 
-#define TEMPLATE(T)                                                      \
-    static inline void OPEN3D_SPECIALIZED(T, CPULogicalNotElement_bool)( \
-            int64_t idx, uniform Indexer * uniform indexer) {            \
-        const T* src = (const T*)Indexer_GetInputPtr(indexer, 0, idx);   \
-        bool* dst = (bool*)Indexer_GetOutputPtr(indexer, idx);           \
-        *dst = !(bool)(*src);                                            \
+#define TEMPLATE(T)                                                           \
+    static inline void OPEN3D_SPECIALIZED(T, CPULogicalNotElement_bool)(      \
+            int64_t idx, uniform Indexer * uniform indexer) {                 \
+        const T* src =                                                        \
+                OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 0, idx);  \
+        bool* dst =                                                           \
+                OPEN3D_SPECIALIZED(bool, Indexer_GetOutputPtr)(indexer, idx); \
+        *dst = !(bool)(*src);                                                 \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
