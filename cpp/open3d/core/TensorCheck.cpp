@@ -31,6 +31,7 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -48,6 +49,27 @@ void AssertTensorDtype_(const char* file,
     std::string error_message =
             fmt::format("Tensor has dtype {}, but is expected to have {}.",
                         tensor.GetDtype().ToString(), dtype.ToString());
+    utility::Logger::LogError_(file, line, function, error_message.c_str());
+}
+
+void AssertTensorDtypes_(const char* file,
+                         int line,
+                         const char* function,
+                         const Tensor& tensor,
+                         const std::vector<Dtype>& dtypes) {
+    for (auto& it : dtypes) {
+        if (tensor.GetDtype() == it) {
+            return;
+        }
+    }
+
+    std::vector<std::string> dtype_strings;
+    for (const Dtype& dtype : dtypes) {
+        dtype_strings.push_back(dtype.ToString());
+    }
+    std::string error_message = fmt::format(
+            "Tensor has dtype {}, but is expected to have dtype among {{{}}}.",
+            tensor.GetDtype().ToString(), utility::JoinStrings(dtype_strings));
     utility::Logger::LogError_(file, line, function, error_message.c_str());
 }
 

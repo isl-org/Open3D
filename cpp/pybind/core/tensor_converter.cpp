@@ -252,57 +252,5 @@ Tensor PyHandleToTensor(const py::handle& handle,
     }
 }
 
-SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
-    SizeVector shape;
-    for (const py::handle item : tuple) {
-        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
-            shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
-        } else {
-            utility::LogError(
-                    "The tuple must be a 1D tuple of integers, but got {}.",
-                    item.attr("__str__")());
-        }
-    }
-    return shape;
-}
-
-SizeVector PyListToSizeVector(const py::list& list) {
-    SizeVector shape;
-    for (const py::handle item : list) {
-        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
-            shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
-        } else {
-            utility::LogError(
-                    "The list must be a 1D list of integers, but got {}.",
-                    item.attr("__str__")());
-        }
-    }
-    return shape;
-}
-
-SizeVector PyHandleToSizeVector(const py::handle& handle) {
-    std::string class_name(py::str(handle.get_type()));
-    if (class_name == "<class 'int'>") {
-        return SizeVector{static_cast<int64_t>(handle.cast<py::int_>())};
-    } else if (class_name == "<class 'list'>") {
-        return PyListToSizeVector(handle.cast<py::list>());
-    } else if (class_name == "<class 'tuple'>") {
-        return PyTupleToSizeVector(handle.cast<py::tuple>());
-    } else if (class_name.find("SizeVector") != std::string::npos) {
-        try {
-            SizeVector* sv = handle.cast<SizeVector*>();
-            return SizeVector(sv->begin(), sv->end());
-        } catch (...) {
-            utility::LogError(
-                    "PyHandleToSizeVector: cannot cast to SizeVector.");
-        }
-    } else {
-        utility::LogError(
-                "PyHandleToSizeVector has invalid input type {}. Only int, "
-                "tuple and list are supported.",
-                class_name);
-    }
-}
-
 }  // namespace core
 }  // namespace open3d

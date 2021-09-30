@@ -189,7 +189,7 @@ def _to_o3d(tensor):
 def _color_to_uint8(color_data):
     """
     Args:
-        color_data: o3d.core.Tensor [B,N,3] with any dtype. Float dtypes are
+        color_data: o3d.core.Tensor (B,N,3) with any dtype. Float dtypes are
         expected to have values in [0,1] and 8 bit Int dtypes in [0,255] and 16
         bit Int types in [0,2^16-1]
 
@@ -210,10 +210,15 @@ def _to_integer(tensor):
     try:
         if hasattr(tensor, 'ndim') and tensor.ndim > 0:
             return None
-        # sequence of tensors
-        if hasattr(tensor[0], 'ndim') and tensor[0].ndim > 0:
+        if hasattr(tensor, '__len__'):  # check for ((int,),)
+            return _to_integer(tensor[0])
+        # floats are material properties
+        if hasattr(tensor, 'dtype') and 'int' not in repr(tensor.dtype).lower():
             return None
-        return np.int64(tensor)
+        if hasattr(tensor, 'numpy'):
+            tensor_int = tensor.numpy().astype(np.int64)
+        tensor_int = np.int64(tensor)
+        return tensor_int if tensor_int.size == 1 else None
     except (TypeError, ValueError, RuntimeError):
         return None
 

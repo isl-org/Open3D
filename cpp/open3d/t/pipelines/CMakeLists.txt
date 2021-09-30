@@ -1,6 +1,6 @@
 add_subdirectory(kernel)
 
-add_library(tpipelines OBJECT)
+open3d_ispc_add_library(tpipelines OBJECT)
 
 target_sources(tpipelines PRIVATE
     odometry/RGBDOdometry.cpp

@@ -61,10 +61,16 @@ else()
 endif()
 foreach(DIRECTORY ${CPP_FORMAT_DIRS})
     file(GLOB_RECURSE FILES
-        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cpp"
-        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cu"
-        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cuh"
+        # C++
         "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h"
+        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cpp"
+        # CUDA
+        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cuh"
+        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.cu"
+        # ISPC
+        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.isph"
+        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.ispc"
+        # Generated files
         "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h.in"
     )
     foreach(FILE ${FILES})

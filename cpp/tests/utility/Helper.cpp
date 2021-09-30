@@ -28,8 +28,24 @@
 
 #include "tests/Tests.h"
 
+#ifdef BUILD_ISPC_MODULE
+#include "Helper_ispc.h"
+#endif
+
 namespace open3d {
 namespace tests {
+
+TEST(Helper, JoinStrings) {
+    std::vector<std::string> strings;
+
+    strings = {"a", "b", "c"};
+    EXPECT_EQ(utility::JoinStrings(strings), "a, b, c");
+    EXPECT_EQ(utility::JoinStrings(strings, "-"), "a-b-c");
+
+    strings = {};
+    EXPECT_EQ(utility::JoinStrings(strings), "");
+    EXPECT_EQ(utility::JoinStrings(strings, "-"), "");
+}
 
 TEST(Helper, UniformRandIntGeneratorWithFixedSeed) {
     std::array<int, 1024> values;
@@ -59,6 +75,26 @@ TEST(Helper, UniformRandIntGeneratorWithRandomSeed) {
             *it = new_rand_generator();
         EXPECT_FALSE(values == new_values);
     }
+}
+
+TEST(Helper, CHAR_BIT_constant) {
+#ifdef BUILD_ISPC_MODULE
+    int32_t value;
+    ispc::GetCharBit(&value);
+
+    EXPECT_EQ(value, CHAR_BIT);
+#endif
+}
+
+TEST(Helper, ENSURE_EXPORTED) {
+#ifdef BUILD_ISPC_MODULE
+    ispc::NotAutomaticallyExportedStruct s;
+    s.i = 1;
+    s.b = 255;
+
+    EXPECT_EQ(s.i, 1);
+    EXPECT_EQ(s.b, 255);
+#endif
 }
 
 }  // namespace tests

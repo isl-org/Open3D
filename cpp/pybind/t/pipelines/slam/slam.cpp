@@ -36,9 +36,6 @@ namespace slam {
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"voxel_size", "The voxel size of the volume in meters."},
-                {"sdf_trunc",
-                 "The SDF truncation distance to prune outlier observations. "
-                 "Typically no more than 10x voxel size."},
                 {"block_resolution",
                  "Resolution of local dense voxel blocks. By default 16 "
                  "is "
@@ -77,9 +74,9 @@ void pybind_slam_model(py::module &m) {
     py::detail::bind_copy_functions<Model>(model);
 
     model.def(py::init<>());
-    model.def(py::init<float, float, int, int, core::Tensor, core::Device>(),
-              "Constructor of a TSDFVoxelGrid", "voxel_size"_a, "sdf_trunc"_a,
-              "block_resolution"_a = 16, "block_count"_a = 10000,
+    model.def(py::init<float, int, int, core::Tensor, core::Device>(),
+              "Constructor of a TSDFVoxelGrid", "voxel_size"_a,
+              "block_resolution"_a = 16, " block_count"_a = 10000,
               "transformation"_a = core::Tensor::Eye(4, core::Float64,
                                                      core::Device("CPU:0")),
               "device"_a = core::Device("CUDA:0"));

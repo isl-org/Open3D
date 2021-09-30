@@ -1,0 +1,57 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+// This C/C++ header is compatible with ISPC.
+// Variadic macros, i.e. ellipsis (...) and __VA_ARGS__ are also supported.
+#include "open3d/utility/Preprocessor.h"
+
+/// CHAR_BIT
+///
+/// The number of bits per byte.
+#define CHAR_BIT 8
+
+/// Enable C/C++ fixed size integer types.
+typedef uint8 uint8_t;
+typedef int8 int8_t;
+typedef uint16 uint16_t;
+typedef int16 int16_t;
+typedef uint32 uint32_t;
+typedef int32 int32_t;
+typedef uint64 uint64_t;
+typedef int64 int64_t;
+
+/// OPEN3D_ENSURE_EXPORTED(StructOrEnum)
+///
+/// Ensures that the provided struct or enum is exported to the C++ side.
+///
+/// This is useful if no other exported function directly or indirectly
+/// references the struct or enum via its arguments.
+#define OPEN3D_ENSURE_EXPORTED(StructOrEnum) \
+    export void OPEN3D_CONCAT(               \
+            DummyToEnsureExported_,          \
+            OPEN3D_CONCAT(StructOrEnum, _))(uniform StructOrEnum * uniform) {}

@@ -2054,14 +2054,15 @@ TEST_P(TensorPermuteDevices, Sin) {
     std::transform(src_vals.begin(), src_vals.end(),
                    std::back_inserter(dst_vals),
                    [](float v) -> float { return std::sin(v); });
+    core::Tensor dst_ref(dst_vals, {2, 3}, core::Float32, device);
 
     core::Tensor src(src_vals, {2, 3}, core::Float32, device);
     core::Tensor dst = src.Sin();
-    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(dst.AllClose(dst_ref));
 
     // Inplace version.
     src.Sin_();
-    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(src.AllClose(dst_ref));
 
     // Only works for float types, throws exception otherwise.
     src = core::Tensor({2, 3}, core::Int32, device);
@@ -2076,14 +2077,15 @@ TEST_P(TensorPermuteDevices, Cos) {
     std::transform(src_vals.begin(), src_vals.end(),
                    std::back_inserter(dst_vals),
                    [](float v) -> float { return std::cos(v); });
+    core::Tensor dst_ref(dst_vals, {2, 3}, core::Float32, device);
 
     core::Tensor src(src_vals, {2, 3}, core::Float32, device);
     core::Tensor dst = src.Cos();
-    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(dst.AllClose(dst_ref));
 
     // Inplace version.
     src.Cos_();
-    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(src.AllClose(dst_ref));
 
     // Only works for float types, throws exception otherwise.
     src = core::Tensor({2, 3}, core::Int32, device);
@@ -2117,14 +2119,15 @@ TEST_P(TensorPermuteDevices, Exp) {
     std::transform(src_vals.begin(), src_vals.end(),
                    std::back_inserter(dst_vals),
                    [](float v) -> float { return std::exp(v); });
+    core::Tensor dst_ref(dst_vals, {2, 3}, core::Float32, device);
 
     core::Tensor src(src_vals, {2, 3}, core::Float32, device);
     core::Tensor dst = src.Exp();
-    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(dst.AllClose(dst_ref));
 
     // Inplace version.
     src.Exp_();
-    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(src.AllClose(dst_ref));
 
     // Only works for float types, throws exception otherwise.
     src = core::Tensor({2, 3}, core::Int32, device);

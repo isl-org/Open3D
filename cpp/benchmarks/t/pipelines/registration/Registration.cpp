@@ -51,7 +51,7 @@ static const double voxel_downsampling_factor = 0.02;
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 30;
+static const int max_iterations = 10;
 
 // NNS parameter.
 static const double max_correspondence_distance = 0.05;
@@ -74,42 +74,41 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
     io::ReadPointCloud(target_pointcloud_filename, target,
                        {"auto", false, false, true});
 
+    source = source.To(device);
+    target = target.To(device);
+
     // Eliminates the case of impractical values (including negative).
     if (voxel_downsample_factor > 0.001) {
-        // TODO: Use geometry::PointCloud::VoxelDownSample.
-        open3d::geometry::PointCloud legacy_s = source.ToLegacy();
-        open3d::geometry::PointCloud legacy_t = target.ToLegacy();
-
-        legacy_s = *legacy_s.VoxelDownSample(voxel_downsample_factor);
-        legacy_t = *legacy_t.VoxelDownSample(voxel_downsample_factor);
-
-        source = geometry::PointCloud::FromLegacy(legacy_s);
-        target = geometry::PointCloud::FromLegacy(legacy_t);
+        source = source.VoxelDownSample(voxel_downsample_factor);
+        target = target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                "VoxelDownsample: Impractical voxel size [< 0.001], skiping "
                 "downsampling.");
     }
 
-    geometry::PointCloud source_device(device), target_device(device);
+    source.SetPointPositions(source.GetPointPositions().To(dtype));
+    source.SetPointNormals(source.GetPointNormals().To(dtype));
+    if (source.HasPointColors()) {
+        source.SetPointColors(source.GetPointColors().To(dtype).Div(255.0));
+    }
 
-    core::Tensor source_points = source.GetPointPositions().To(device, dtype);
-    source_device.SetPointPositions(source_points);
+    target.SetPointPositions(target.GetPointPositions().To(dtype));
+    target.SetPointNormals(target.GetPointNormals().To(dtype));
+    if (target.HasPointColors()) {
+        target.SetPointColors(target.GetPointColors().To(dtype).Div(255.0));
+    }
 
-    core::Tensor target_points = target.GetPointPositions().To(device, dtype);
-    core::Tensor target_normals = target.GetPointNormals().To(device, dtype);
-    target_device.SetPointPositions(target_points);
-    target_device.SetPointNormals(target_normals);
-
-    return std::make_tuple(source_device, target_device);
+    return std::make_tuple(source, target);
 }
 
-static void BenchmarkRegistrationICP(benchmark::State& state,
-                                     const core::Device& device,
-                                     const core::Dtype& dtype,
-                                     const TransformationEstimationType& type) {
-    geometry::PointCloud source(device), target(device);
+static void BenchmarkICP(benchmark::State& state,
+                         const core::Device& device,
+                         const core::Dtype& dtype,
+                         const TransformationEstimationType& type) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Error);
 
+    geometry::PointCloud source(device), target(device);
     std::tie(source, target) = LoadTensorPointCloudFromFile(
             source_pointcloud_filename, target_pointcloud_filename,
             voxel_downsampling_factor, dtype, device);
@@ -119,6 +118,8 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
         estimation = std::make_shared<TransformationEstimationPointToPlane>();
     } else if (type == TransformationEstimationType::PointToPoint) {
         estimation = std::make_shared<TransformationEstimationPointToPoint>();
+    } else if (type == TransformationEstimationType::ColoredICP) {
+        estimation = std::make_shared<TransformationEstimationForColoredICP>();
     }
 
     core::Tensor init_trans =
@@ -128,89 +129,50 @@ static void BenchmarkRegistrationICP(benchmark::State& state,
     RegistrationResult reg_result(init_trans);
 
     // Warm up.
-    reg_result = RegistrationICP(
-            source, target, max_correspondence_distance, init_trans,
-            *estimation,
-            ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                   max_iterations));
+    reg_result = ICP(source, target, max_correspondence_distance, init_trans,
+                     *estimation,
+                     ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                            max_iterations));
+
     for (auto _ : state) {
-        reg_result = RegistrationICP(
-                source, target, max_correspondence_distance, init_trans,
-                *estimation,
-                ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                       max_iterations));
+        reg_result = ICP(source, target, max_correspondence_distance,
+                         init_trans, *estimation,
+                         ICPConvergenceCriteria(relative_fitness, relative_rmse,
+                                                max_iterations));
         core::cuda::Synchronize(device);
     }
-
-    utility::LogDebug(" PointCloud Size: Source: {}  Target: {}",
-                      source.GetPointPositions().GetShape().ToString(),
-                      target.GetPointPositions().GetShape().ToString());
-    utility::LogDebug(" Max iterations: {}, Max_correspondence_distance : {}",
-                      max_iterations, max_correspondence_distance);
 }
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CPU32,
-                  core::Device("CPU:0"),
-                  core::Float32,
-                  TransformationEstimationType::PointToPlane)
-        ->Unit(benchmark::kMillisecond);
+#define ENUM_ICP_METHOD_DEVICE(METHOD_NAME, TRANSFORMATION_TYPE, DEVICE) \
+    BENCHMARK_CAPTURE(BenchmarkICP, DEVICE METHOD_NAME##_Float32,        \
+                      core::Device(DEVICE), core::Float32,               \
+                      TRANSFORMATION_TYPE)                               \
+            ->Unit(benchmark::kMillisecond);                             \
+    BENCHMARK_CAPTURE(BenchmarkICP, DEVICE METHOD_NAME##_Float64,        \
+                      core::Device(DEVICE), core::Float64,               \
+                      TRANSFORMATION_TYPE)                               \
+            ->Unit(benchmark::kMillisecond);
+
+ENUM_ICP_METHOD_DEVICE(PointToPoint,
+                       TransformationEstimationType::PointToPoint,
+                       "CPU:0")
+ENUM_ICP_METHOD_DEVICE(PointToPlane,
+                       TransformationEstimationType::PointToPlane,
+                       "CPU:0")
+ENUM_ICP_METHOD_DEVICE(ColoredICP,
+                       TransformationEstimationType::ColoredICP,
+                       "CPU:0")
 
 #ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CUDA32,
-                  core::Device("CUDA:0"),
-                  core::Float32,
-                  TransformationEstimationType::PointToPlane)
-        ->Unit(benchmark::kMillisecond);
-#endif
-
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPoint / CPU32,
-                  core::Device("CPU:0"),
-                  core::Float32,
-                  TransformationEstimationType::PointToPoint)
-        ->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPoint / CUDA32,
-                  core::Device("CUDA:0"),
-                  core::Float32,
-                  TransformationEstimationType::PointToPoint)
-        ->Unit(benchmark::kMillisecond);
-#endif
-
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CPU64,
-                  core::Device("CPU:0"),
-                  core::Float64,
-                  TransformationEstimationType::PointToPlane)
-        ->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPlane / CUDA64,
-                  core::Device("CUDA:0"),
-                  core::Float64,
-                  TransformationEstimationType::PointToPlane)
-        ->Unit(benchmark::kMillisecond);
-#endif
-
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPoint / CPU64,
-                  core::Device("CPU:0"),
-                  core::Float64,
-                  TransformationEstimationType::PointToPoint)
-        ->Unit(benchmark::kMillisecond);
-
-#ifdef BUILD_CUDA_MODULE
-BENCHMARK_CAPTURE(BenchmarkRegistrationICP,
-                  PointToPoint / CUDA64,
-                  core::Device("CUDA:0"),
-                  core::Float64,
-                  TransformationEstimationType::PointToPoint)
-        ->Unit(benchmark::kMillisecond);
+ENUM_ICP_METHOD_DEVICE(PointToPoint,
+                       TransformationEstimationType::PointToPoint,
+                       "CUDA:0")
+ENUM_ICP_METHOD_DEVICE(PointToPlane,
+                       TransformationEstimationType::PointToPlane,
+                       "CUDA:0")
+ENUM_ICP_METHOD_DEVICE(ColoredICP,
+                       TransformationEstimationType::ColoredICP,
+                       "CUDA:0")
 #endif
 
 }  // namespace registration

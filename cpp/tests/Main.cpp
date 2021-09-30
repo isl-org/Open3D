@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     utility::CPUInfo::GetInstance().Print();
+    utility::ISAInfo::GetInstance().Print();
 
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {

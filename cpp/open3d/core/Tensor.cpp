@@ -221,13 +221,13 @@ Tensor& Tensor::operator=(Tensor&& other) & {
     return *this;
 }
 
-/// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`
+/// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`.
 Tensor& Tensor::operator=(const Tensor& other) && {
     kernel::Copy(other, *this);
     return *this;
 }
 
-/// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`
+/// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`.
 Tensor& Tensor::operator=(Tensor&& other) && {
     kernel::Copy(other, *this);
     return *this;
@@ -310,6 +310,9 @@ Tensor Tensor::GetItem(const TensorKey& tk) const {
     if (tk.GetMode() == TensorKey::TensorKeyMode::Index) {
         return IndexExtract(0, tk.GetIndex());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::Slice) {
+        if (NumDims() == 0) {
+            utility::LogError("Cannot slice a scalar (0-dim) tensor.");
+        }
         TensorKey tk_new = tk.InstantiateDimSize(shape_[0]);
         return Slice(0, tk_new.GetStart(), tk_new.GetStop(), tk_new.GetStep());
     } else if (tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor) {

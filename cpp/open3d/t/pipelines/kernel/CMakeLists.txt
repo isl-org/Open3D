@@ -1,4 +1,4 @@
-add_library(tpipelines_kernel OBJECT)
+open3d_ispc_add_library(tpipelines_kernel OBJECT)
 
 target_sources(tpipelines_kernel PRIVATE
     Registration.cpp

@@ -1,4 +1,4 @@
-add_library(geometry OBJECT)
+open3d_ispc_add_library(geometry OBJECT)
 
 target_sources(geometry PRIVATE
     BoundingVolume.cpp

@@ -33,6 +33,65 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+inline void CheckDepthTensor(const core::Tensor& depth) {
+    if (depth.NumElements() == 0) {
+        utility::LogError("Input depth is empty.");
+    }
+    if (depth.GetDtype() != core::UInt16 && depth.GetDtype() != core::Float32) {
+        utility::LogError("Unsupported depth image dtype {}.",
+                          depth.GetDtype().ToString());
+    }
+}
+
+inline void CheckColorTensor(const core::Tensor& color) {
+    if (color.NumElements() == 0) {
+        utility::LogError("Input color is empty.");
+    }
+    if (color.GetDtype() != core::UInt8 && color.GetDtype() != core::Float32) {
+        utility::LogError("Unsupported color image dtype {}.",
+                          color.GetDtype().ToString());
+    }
+}
+
+inline void CheckIntrinsicTensor(const core::Tensor& intrinsic) {
+    if (intrinsic.GetShape() != core::SizeVector{3, 3}) {
+        utility::LogError("Unsupported intrinsic matrix shape {}",
+                          intrinsic.GetShape());
+    }
+
+    if (intrinsic.GetDtype() != core::Dtype::Float64) {
+        utility::LogError("Unsupported intrinsic matrix dtype {}",
+                          intrinsic.GetDtype().ToString());
+    }
+
+    if (!intrinsic.IsContiguous()) {
+        utility::LogError("Intrinsic matrix must be contiguous.");
+    }
+}
+
+inline void CheckExtrinsicTensor(const core::Tensor& extrinsic) {
+    if (extrinsic.GetShape() != core::SizeVector{4, 4}) {
+        utility::LogError("Unsupported extrinsic matrix shape {}",
+                          extrinsic.GetShape());
+    }
+
+    if (extrinsic.GetDtype() != core::Dtype::Float64) {
+        utility::LogError("Unsupported extrinsic matrix dtype {}",
+                          extrinsic.GetDtype().ToString());
+    }
+
+    if (!extrinsic.IsContiguous()) {
+        utility::LogError("Extrinsic matrix must be contiguous.");
+    }
+}
+
+inline void CheckBlockCoorinates(const core::Tensor& block_coords) {
+    if (block_coords.GetDtype() != core::Dtype::Int32) {
+        utility::LogError("Unsupported block coordinate dtype {}",
+                          block_coords.GetDtype().ToString());
+    }
+}
+
 /// TODO(wei): find a proper place for such functionalities
 inline core::Tensor InverseTransformation(const core::Tensor& T) {
     core::AssertTensorShape(T, {4, 4});

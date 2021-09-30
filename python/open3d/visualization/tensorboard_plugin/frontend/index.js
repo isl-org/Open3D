@@ -130,14 +130,14 @@ class TensorboardOpen3DPluginClient {
             webRtcClient.dataChannel.send(JSON.stringify(jsonData));
           }
         }
-				this.messageId += 1;
-				const syncViewMessage = {   // sync current viewpoint
-					messageId: this.messageId,
-					window_uid_list: Array.from(this.windowState.keys()),
-					class_name: "tensorboard/sync_view",
-				};
-				window.console.info("Sending syncViewMessage:", syncViewMessage);
-				this.webRtcClientList.values().next().value.sendJsonData(syncViewMessage);
+        this.messageId += 1;
+        const syncViewMessage = {   // sync current viewpoint
+          messageId: this.messageId,
+          window_uid_list: Array.from(this.windowState.keys()),
+          class_name: "tensorboard/sync_view",
+        };
+        window.console.info("Sending syncViewMessage:", syncViewMessage);
+        this.webRtcClientList.values().next().value.sendJsonData(syncViewMessage);
       } else {
         for (let [windowUId, webRtcClient] of this.webRtcClientList) {
           webRtcClient.sendJsonData = WebRtcStreamer.prototype.sendJsonData;
@@ -281,32 +281,31 @@ class TensorboardOpen3DPluginClient {
   };
 
   /* Callback to toggle WebRTC window size in the browser.
-   */
-	toggleZoom = (windowUId) => {
-		let elem = document.getElementById("video_" + windowUId);
-		if (elem.width <= this.width) {        // zoom
+  */
+  toggleZoom = (windowUId) => {
+    let elem = document.getElementById("video_" + windowUId);
+    if (elem.width <= this.width) {        // zoom
       elem.width = this.full_width;
       elem.height = this.full_height;
-		} else {                                // original
+    } else {                                // original
       elem.width = this.width;
       elem.height = this.height;
-		}
+    }
     window.console.debug(`New ${windowUId} size: (${elem.width}, ${elem.height})`);
-	};
+  };
 
   /* Callback to toggle O3DVisualizer settings panel.
-   */
-	toggleSettings = (windowUId) => {
-		this.messageId += 1;
-		const toggleSettingsMessage = {
-			messageId: this.messageId,
-			window_uid: windowUId,
-			class_name: "tensorboard/" + windowUId + "/toggle_settings",
-		};
-		window.console.info("Sending toggleSettingsMessage:", toggleSettingsMessage);
-		this.webRtcClientList.get(windowUId).sendJsonData(toggleSettingsMessage);
-	};
-
+  */
+  toggleSettings = (windowUId) => {
+    this.messageId += 1;
+    const toggleSettingsMessage = {
+      messageId: this.messageId,
+      window_uid: windowUId,
+      class_name: "tensorboard/" + windowUId + "/toggle_settings",
+    };
+    window.console.info("Sending toggleSettingsMessage:", toggleSettingsMessage);
+    this.webRtcClientList.get(windowUId).sendJsonData(toggleSettingsMessage);
+  };
 
   /**
    * Create generic checkbox and radio button selectors used for Run and Tag
@@ -413,164 +412,164 @@ class TensorboardOpen3DPluginClient {
     }
   };
 
-/**
- * Send a data channel message to the server to request an update to the
- * geometry display.
- */
-requestGeometryUpdate = (windowUId) => {
-  this.messageId += 1;
-  const updateGeometryMessage = {
-    messageId: this.messageId,
-    window_uid: windowUId,
-    class_name: "tensorboard/" + windowUId + "/update_geometry",
-    run: this.windowState.get(windowUId).run,
-    tags: Array.from(this.selectedTags),
-    batch_idx: this.commonBatchIdx || this.windowState.get(windowUId).batch_idx,
-    step: this.commonStep || this.windowState.get(windowUId).step
+  /**
+   * Send a data channel message to the server to request an update to the
+   * geometry display.
+   */
+  requestGeometryUpdate = (windowUId) => {
+    this.messageId += 1;
+    const updateGeometryMessage = {
+      messageId: this.messageId,
+      window_uid: windowUId,
+      class_name: "tensorboard/" + windowUId + "/update_geometry",
+      run: this.windowState.get(windowUId).run,
+      tags: Array.from(this.selectedTags),
+      batch_idx: this.commonBatchIdx || this.windowState.get(windowUId).batch_idx,
+      step: this.commonStep || this.windowState.get(windowUId).step
+    };
+    window.console.info("Sending updateGeometryMessage:", updateGeometryMessage);
+    this.webRtcClientList.get(windowUId).sendJsonData(updateGeometryMessage);
+    // add busy indicator
+    document.getElementById("loader_video_" + windowUId).classList.add("loader");
   };
-  window.console.info("Sending updateGeometryMessage:", updateGeometryMessage);
-  this.webRtcClientList.get(windowUId).sendJsonData(updateGeometryMessage);
-  // add busy indicator
-  document.getElementById("loader_video_" + windowUId).classList.add("loader");
-};
 
-/**
- * Event handler for Run and Tags selector update. Triggers a geometry
- * update message.
- */
-onRunTagselect = (evt) => {
-  if (evt.target.name === "run-selector-checkboxes") {
-    if (this.runWindow.has(evt.target.id)) {
-      const windowUId = this.runWindow.get(evt.target.id);
-      let windowWidget = document.getElementById("widget_video_" + windowUId);
-      if (evt.target.checked) { // display window
-        windowWidget.style.display = "flex";
-        window.console.info("Showing window " + windowUId + " with run " + evt.target.id);
-      } else {    // hide window
-        windowWidget.style.display = "none";
-        window.console.info("Hiding window " + windowUId + " with run " + evt.target.id);
+  /**
+   * Event handler for Run and Tags selector update. Triggers a geometry
+   * update message.
+   */
+  onRunTagselect = (evt) => {
+    if (evt.target.name === "run-selector-checkboxes") {
+      if (this.runWindow.has(evt.target.id)) {
+        const windowUId = this.runWindow.get(evt.target.id);
+        let windowWidget = document.getElementById("widget_video_" + windowUId);
+        if (evt.target.checked) { // display window
+          windowWidget.style.display = "flex";
+          window.console.info("Showing window " + windowUId + " with run " + evt.target.id);
+        } else {    // hide window
+          windowWidget.style.display = "none";
+          window.console.info("Hiding window " + windowUId + " with run " + evt.target.id);
+        }
+      } else {    // create new window
+        this.requestNewWindow(evt.target.id);
       }
-    } else {    // create new window
-      this.requestNewWindow(evt.target.id);
-    }
-  } else if (evt.target.name ===   "tag-selector-checkboxes") {
-    if (evt.target.checked) {
-      this.selectedTags.add(evt.target.id);
-    } else {
-      this.selectedTags.delete(evt.target.id);
-    }
-    for (const windowUId of this.windowState.keys()) {
-      this.requestGeometryUpdate(windowUId);
-    }
-  }
-};
-
-/**
- * Event handler for Step and Batch Index selector update. Triggers a
- * geometry update message.
- */
-onStepBIdxSelect = (windowUId, evt) => {
-  window.console.debug("[onStepBIdxSelect] this.windowState: ",
-    this.windowState, "this.commonStep", this.commonStep,
-    "this.commonBatchIdx", this.commonBatchIdx);
-  if (evt.target.name.startsWith("batch-idx-selector")) {
-    if (this.commonBatchIdx != null) {
-      this.commonBatchIdx = evt.target.value;
+    } else if (evt.target.name === "tag-selector-checkboxes") {
+      if (evt.target.checked) {
+        this.selectedTags.add(evt.target.id);
+      } else {
+        this.selectedTags.delete(evt.target.id);
+      }
       for (const windowUId of this.windowState.keys()) {
         this.requestGeometryUpdate(windowUId);
       }
-    } else {
-      this.windowState.get(windowUId).batch_idx = evt.target.value;
-      this.requestGeometryUpdate(windowUId);
     }
-  } else if (evt.target.name.startsWith("step-selector")) {
-    if (this.commonStep != null) {
-      this.commonStep = evt.target.value;
-      for (const windowUId of this.windowState.keys()) {
+  };
+
+  /**
+   * Event handler for Step and Batch Index selector update. Triggers a
+   * geometry update message.
+   */
+  onStepBIdxSelect = (windowUId, evt) => {
+    window.console.debug("[onStepBIdxSelect] this.windowState: ",
+      this.windowState, "this.commonStep", this.commonStep,
+      "this.commonBatchIdx", this.commonBatchIdx);
+    if (evt.target.name.startsWith("batch-idx-selector")) {
+      if (this.commonBatchIdx != null) {
+        this.commonBatchIdx = evt.target.value;
+        for (const windowUId of this.windowState.keys()) {
+          this.requestGeometryUpdate(windowUId);
+        }
+      } else {
+        this.windowState.get(windowUId).batch_idx = evt.target.value;
         this.requestGeometryUpdate(windowUId);
       }
-    } else {
-      this.windowState.get(windowUId).step = evt.target.value;
-      this.requestGeometryUpdate(windowUId);
-    }
-  }
-};
-
-
-/**
- * Data channel message handler. Updates UI controls based on server state.
- */
-processDCMessage = (windowUId, evt) => {
-  let message = null;
-  try {
-    message = JSON.parse(evt.data);
-  } catch (err) {
-    if (err.name === "SyntaxError") {
-      if (evt.data.endsWith("DataChannel open")) {
-        return;
-      }
-      if (evt.data.startsWith("[Open3D WARNING]")) {
-        window.console.warn(evt.data);
-        return;
+    } else if (evt.target.name.startsWith("step-selector")) {
+      if (this.commonStep != null) {
+        this.commonStep = evt.target.value;
+        for (const windowUId of this.windowState.keys()) {
+          this.requestGeometryUpdate(windowUId);
+        }
+      } else {
+        this.windowState.get(windowUId).step = evt.target.value;
+        this.requestGeometryUpdate(windowUId);
       }
     }
-  }
-  if (message.class_name.endsWith("get_run_tags")) {
-    const runToTags = message.run_to_tags;
-    this.createSelector("run-selector-checkboxes", "run-selector",
-      Object.getOwnPropertyNames(runToTags), "checkbox",
-      [message.current.run]);
-    this.selectedTags = new Set(message.current.tags);
-    let allTags = new Set();
-    for (const run in runToTags) {
-      for (const tag of runToTags[run]) {
-        allTags.add(tag);
+  };
+
+
+  /**
+   * Data channel message handler. Updates UI controls based on server state.
+   */
+  processDCMessage = (windowUId, evt) => {
+    let message = null;
+    try {
+      message = JSON.parse(evt.data);
+    } catch (err) {
+      if (err.name === "SyntaxError") {
+        if (evt.data.endsWith("DataChannel open")) {
+          return;
+        }
+        if (evt.data.startsWith("[Open3D WARNING]")) {
+          window.console.warn(evt.data);
+          return;
+        }
       }
     }
-    this.createSelector("tag-selector-checkboxes", "tag-selector",
-      allTags, "checkbox", this.selectedTags);
+    if (message.class_name.endsWith("get_run_tags")) {
+      const runToTags = message.run_to_tags;
+      this.createSelector("run-selector-checkboxes", "run-selector",
+        Object.getOwnPropertyNames(runToTags), "checkbox",
+        [message.current.run]);
+      this.selectedTags = new Set(message.current.tags);
+      let allTags = new Set();
+      for (const run in runToTags) {
+        for (const tag of runToTags[run]) {
+          allTags.add(tag);
+        }
+      }
+      this.createSelector("tag-selector-checkboxes", "tag-selector",
+        allTags, "checkbox", this.selectedTags);
 
-    if (this.windowState.size === 0) { // First load
+      if (this.windowState.size === 0) { // First load
         this.runWindow.set(message.current.run, windowUId);
         this.windowState.set(windowUId, message.current);
         window.console.debug("[After get_run_tags] this.runWindow: ",
           this.runWindow, "this.windowState:", this.windowState);
-    }
-    for (const [windowUId, state] of this.windowState) {
-      if (runToTags.hasOwnProperty(state.run)) { // update window
-        this.requestGeometryUpdate(windowUId);
-      } else {   // stale run: close window
-        fetch(this.URL_ROUTE_PREFIX +  "/close_window?window_id=" + windowUId, null)
-          .then((response) => response.json())
-          .then((response) => window.console.log(response))
-          .then(this.runWindow.delete(state.run))
-          .then(this.windowState.delete(windowUId))
-          .then(this.webRtcClientList.delete(windowUId))
-          .then(document.getElementById("widget_video_" + windowUId).remove())
-          .catch((err) => window.console.error("Error closing widget:", err));
       }
+      for (const [windowUId, state] of this.windowState) {
+        if (runToTags.hasOwnProperty(state.run)) { // update window
+          this.requestGeometryUpdate(windowUId);
+        } else {   // stale run: close window
+          fetch(this.URL_ROUTE_PREFIX +  "/close_window?window_id=" + windowUId, null)
+            .then((response) => response.json())
+            .then((response) => window.console.log(response))
+            .then(this.runWindow.delete(state.run))
+            .then(this.windowState.delete(windowUId))
+            .then(this.webRtcClientList.delete(windowUId))
+            .then(document.getElementById("widget_video_" + windowUId).remove())
+            .catch((err) => window.console.error("Error closing widget:", err));
+        }
+      }
+    } else if (message.class_name.endsWith("update_geometry")) {
+      // Sync state with server
+      window.console.assert(message.window_uid === windowUId,
+        `windowUId mismatch: received ${message.window_uid} !== ${windowUId}`);
+      this.windowState.set(windowUId, message.current);
+      window.console.debug("[After update_geometry] this.runWindow: ",
+        this.runWindow, "this.windowState:", this.windowState);
+      this.createSlider(windowUId, "batch-idx-selector", "Batch index",
+        "batch-idx-selector-div-" + windowUId, 0,
+        message.current.batch_size - 1, message.current.batch_idx);
+      this.createSlider(windowUId, "step-selector", "Step",
+        "step-selector-div-" + windowUId, message.current.step_limits[0],
+        message.current.step_limits[1], message.current.step);
+      // Init with miliseconds
+      const wallTime = new Date(message.current.wall_time * 1000);
+      document.getElementById("video_" + windowUId).title = message.current.run
+        + " at " + wallTime.toLocaleString();
+      // remove busy indicator
+      document.getElementById("loader_video_" + windowUId).classList.remove("loader");
     }
-  } else if (message.class_name.endsWith("update_geometry")) {
-    // Sync state with server
-    window.console.assert(message.window_uid === windowUId,
-      `windowUId mismatch: received ${message.window_uid} !== ${windowUId}`);
-    this.windowState.set(windowUId, message.current);
-    window.console.debug("[After update_geometry] this.runWindow: ",
-      this.runWindow, "this.windowState:", this.windowState);
-    this.createSlider(windowUId, "batch-idx-selector", "Batch index",
-      "batch-idx-selector-div-" + windowUId, 0,
-      message.current.batch_size - 1, message.current.batch_idx);
-    this.createSlider(windowUId, "step-selector", "Step",
-      "step-selector-div-" + windowUId, message.current.step_limits[0],
-      message.current.step_limits[1], message.current.step);
-    // Init with miliseconds
-    const wallTime = new Date(message.current.wall_time * 1000);
-    document.getElementById("video_" + windowUId).title = message.current.run
-      + " at " + wallTime.toLocaleString();
-    // remove busy indicator
-    document.getElementById("loader_video_" + windowUId).classList.remove("loader");
-  }
-};
+  };
 
 }
 

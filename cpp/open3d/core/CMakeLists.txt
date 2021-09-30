@@ -1,4 +1,4 @@
-add_library(core OBJECT)
+open3d_ispc_add_library(core OBJECT)
 
 target_sources(core PRIVATE
     AdvancedIndexing.cpp
@@ -107,6 +107,17 @@ if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
         nns/KnnSearchOps.cu
         nns/FixedRadiusSearchOps.cu
+    )
+endif()
+
+if (BUILD_ISPC_MODULE)
+    target_sources(core PRIVATE
+        Indexer.ispc
+    )
+
+    target_sources(core PRIVATE
+        kernel/BinaryEWCPU.ispc
+        kernel/UnaryEWCPU.ispc
     )
 endif()
 

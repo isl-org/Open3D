@@ -25,12 +25,13 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/impl/misc/RadiusSearch.h"
+#include "open3d/core/nns/NanoFlannImpl.h"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace open3d::core::nns;
 
 template <class T>
 void RadiusSearchCPU(const torch::Tensor& points,
@@ -69,10 +70,15 @@ void RadiusSearchCPU(const torch::Tensor& points,
         int64_t* neighbors_row_splits_i =
                 (int64_t*)(neighbors_row_splits.data_ptr<int64_t>() +
                            queries_row_splits.data_ptr<int64_t>()[i]);
-        RadiusSearchCPU(neighbors_row_splits_i, num_points_i, points_i,
-                        num_queries_i, queries_i, radius_i, metric,
-                        ignore_query_point, return_distances,
-                        normalize_distances, batch_output_allocators[i]);
+
+        std::unique_ptr<NanoFlannIndexHolderBase> holder =
+                impl::BuildKdTree<T>(num_points_i, points_i, 3, metric);
+
+        open3d::core::nns::impl::RadiusSearchCPU(
+                holder.get(), neighbors_row_splits_i, num_points_i, points_i,
+                num_queries_i, queries_i, 3, radius_i, metric,
+                ignore_query_point, return_distances, normalize_distances,
+                /* sort */ false, batch_output_allocators[i]);
 
         if (i > 0) {
             for (size_t j = 0; j <= num_queries_i; ++j)

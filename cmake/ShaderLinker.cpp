@@ -44,8 +44,33 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    fprintf(file_out, "// ----------------------------------------------------------------------------\n");
+    fprintf(file_out, "// -                        Open3D: www.open3d.org                            -\n");
+    fprintf(file_out, "// ----------------------------------------------------------------------------\n");
+    fprintf(file_out, "// The MIT License (MIT)\n");
+    fprintf(file_out, "//\n");
+    fprintf(file_out, "// Copyright (c) 2018-2021 www.open3d.org\n");
+    fprintf(file_out, "//\n");
+    fprintf(file_out, "// Permission is hereby granted, free of charge, to any person obtaining a copy\n");
+    fprintf(file_out, "// of this software and associated documentation files (the \"Software\"), to deal\n");
+    fprintf(file_out, "// in the Software without restriction, including without limitation the rights\n");
+    fprintf(file_out, "// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n");
+    fprintf(file_out, "// copies of the Software, and to permit persons to whom the Software is\n");
+    fprintf(file_out, "// furnished to do so, subject to the following conditions:\n");
+    fprintf(file_out, "//\n");
+    fprintf(file_out, "// The above copyright notice and this permission notice shall be included in\n");
+    fprintf(file_out, "// all copies or substantial portions of the Software.\n");
+    fprintf(file_out, "//\n");
+    fprintf(file_out, "// THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n");
+    fprintf(file_out, "// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n");
+    fprintf(file_out, "// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n");
+    fprintf(file_out, "// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n");
+    fprintf(file_out, "// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\n");
+    fprintf(file_out, "// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS\n");
+    fprintf(file_out, "// IN THE SOFTWARE.\n");
+    fprintf(file_out, "// ----------------------------------------------------------------------------\n");
+    
     fprintf(file_out, "// Automatically generated header file for shader.\n");
-    fprintf(file_out, "// See LICENSE.txt for full license statement.\n");
     fprintf(file_out, "\n");
     fprintf(file_out, "#pragma once\n");
     fprintf(file_out, "\n");

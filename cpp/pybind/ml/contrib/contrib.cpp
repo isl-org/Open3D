@@ -38,7 +38,6 @@ void pybind_contrib(py::module& m) {
     py::module m_contrib = m.def_submodule("contrib");
 
     pybind_contrib_subsample(m_contrib);
-    pybind_contrib_nns(m_contrib);
     pybind_contrib_iou(m_contrib);
 }
 

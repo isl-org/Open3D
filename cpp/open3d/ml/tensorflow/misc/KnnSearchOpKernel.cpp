@@ -26,9 +26,9 @@
 
 #include "KnnSearchOpKernel.h"
 
-#include "open3d/ml/impl/misc/KnnSearch.h"
+#include "open3d/core/nns/NanoFlannImpl.h"
 
-using namespace open3d::ml::impl;
+using namespace open3d::core::nns;
 using namespace knn_search_opkernel;
 using namespace tensorflow;
 
@@ -104,10 +104,15 @@ public:
         if (batch_size == 1) {
             OutputAllocator<T> output_allocator(context);
 
-            KnnSearchCPU(
+            std::unique_ptr<NanoFlannIndexHolderBase> holder =
+                    impl::BuildKdTree<T>(points.shape().dim_size(0),
+                                         points.flat<T>().data(),
+                                         points.shape().dim_size(1), metric);
+            impl::KnnSearchCPU(
+                    holder.get(),
                     (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                     points.shape().dim_size(0), points.flat<T>().data(),
-                    queries.shape().dim_size(0), queries.flat<T>().data(), k,
+                    queries.shape().dim_size(0), queries.flat<T>().data(), 3, k,
                     metric, ignore_query_point, return_distances,
                     output_allocator);
         } else {
@@ -130,10 +135,14 @@ public:
                         (int64_t*)(query_neighbors_row_splits.flat<int64>()
                                            .data() +
                                    queries_row_splits.flat<int64>()(i));
-                KnnSearchCPU(neighbors_row_splits_i, num_points_i, points_i,
-                             num_queries_i, queries_i, k, metric,
-                             ignore_query_point, return_distances,
-                             output_allocators[i]);
+                std::unique_ptr<NanoFlannIndexHolderBase> holder =
+                        impl::BuildKdTree<T>(num_points_i, points_i,
+                                             points.shape().dim_size(1),
+                                             metric);
+                impl::KnnSearchCPU(holder.get(), neighbors_row_splits_i,
+                                   num_points_i, points_i, num_queries_i,
+                                   queries_i, 3, k, metric, ignore_query_point,
+                                   return_distances, output_allocators[i]);
 
                 if (i > 0) {
                     for (size_t j = 0; j <= num_queries_i; ++j)
