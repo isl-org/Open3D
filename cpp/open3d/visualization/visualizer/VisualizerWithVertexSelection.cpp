@@ -494,52 +494,54 @@ void VisualizerWithVertexSelection::KeyPressCallback(
         is_redraw_required_ = true;
     }
 
-    switch (key) {
-        case GLFW_KEY_X:
-            view_control.ToggleEditingX();
-            utility::LogDebug("[Visualizer] Enter orthogonal X editing mode.");
-            break;
-        case GLFW_KEY_Y:
-            view_control.ToggleEditingY();
-            utility::LogDebug("[Visualizer] Enter orthogonal Y editing mode.");
-            break;
-        case GLFW_KEY_Z:
-            view_control.ToggleEditingZ();
-            utility::LogInfo("[Visualizer] Enter orthogonal Z editing mode.");
-            break;
-        case GLFW_KEY_R:
-            if (mods & GLFW_MOD_CONTROL) {
-                ClearPickedPoints();
+    if (action != GLFW_RELEASE) {
+        switch (key) {
+            case GLFW_KEY_X:
+                view_control.ToggleEditingX();
+                utility::LogDebug("[Visualizer] Enter orthogonal X editing mode.");
+                break;
+            case GLFW_KEY_Y:
+                view_control.ToggleEditingY();
+                utility::LogDebug("[Visualizer] Enter orthogonal Y editing mode.");
+                break;
+            case GLFW_KEY_Z:
+                view_control.ToggleEditingZ();
+                utility::LogInfo("[Visualizer] Enter orthogonal Z editing mode.");
+                break;
+            case GLFW_KEY_R:
+                if (mods & GLFW_MOD_CONTROL) {
+                    ClearPickedPoints();
 
-                is_redraw_required_ = true;
-            } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action,
-                                             mods);
+                    is_redraw_required_ = true;
+                } else {
+                    Visualizer::KeyPressCallback(window, key, scancode, action,
+                                                 mods);
+                }
+                break;
+            case GLFW_KEY_MINUS: {
+                if (action == GLFW_PRESS) {
+                    SetPointSize(pick_point_opts_.point_size_ - 1.0);
+                    is_redraw_required_ = true;
+                } else {
+                    Visualizer::KeyPressCallback(window, key, scancode, action,
+                                                 mods);
+                }
+                break;
             }
-            break;
-        case GLFW_KEY_MINUS: {
-            if (action == GLFW_PRESS) {
-                SetPointSize(pick_point_opts_.point_size_ - 1.0);
-                is_redraw_required_ = true;
-            } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action,
-                                             mods);
+            case GLFW_KEY_EQUAL: {
+                if (action == GLFW_PRESS) {
+                    SetPointSize(pick_point_opts_.point_size_ + 1.0);
+                    is_redraw_required_ = true;
+                } else {
+                    Visualizer::KeyPressCallback(window, key, scancode, action,
+                                                 mods);
+                }
+                break;
             }
-            break;
+            default:
+                Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+                break;
         }
-        case GLFW_KEY_EQUAL: {
-            if (action == GLFW_PRESS) {
-                SetPointSize(pick_point_opts_.point_size_ + 1.0);
-                is_redraw_required_ = true;
-            } else {
-                Visualizer::KeyPressCallback(window, key, scancode, action,
-                                             mods);
-            }
-            break;
-        }
-        default:
-            Visualizer::KeyPressCallback(window, key, scancode, action, mods);
-            break;
     }
     is_redraw_required_ = true;
     UpdateWindowTitle();
