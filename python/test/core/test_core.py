@@ -246,7 +246,6 @@ def test_arange(device):
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
 @pytest.mark.parametrize("device", list_devices())
 def test_append(dtype, device):
-
     # Appending 0-D.
     # 0-D can only be appended along axis = null.
     tensor_arr = o3c.Tensor(0, dtype=dtype, device=device)
@@ -408,16 +407,6 @@ def test_append(dtype, device):
             RuntimeError,
             match=r"Tensor has dtype Float64, but is expected to have Float32"):
         o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=-1)
-
-    # tensors with different number of dimensions cannot be appended.
-    tensor_arr = o3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
-    tensor_values = o3c.Tensor([4, 5], dtype=dtype, device=device)
-    with pytest.raises(
-            RuntimeError,
-            match=
-            r"all the input tensors must have same number of dimensions, but the tensor at index 0 has 2 dimension(s) and the tensor at index 1 has 1 dimension(s)"
-    ):
-        o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=0)
 
 
 def test_tensor_from_to_numpy():
