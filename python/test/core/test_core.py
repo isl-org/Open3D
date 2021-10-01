@@ -325,21 +325,21 @@ def test_append(dtype, device):
     output_t = o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=1)
     output_np = np.append(arr=tensor_arr.cpu().numpy(),
                           values=tensor_values.cpu().numpy(),
-                          axis=-1)
+                          axis=1)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
     output_t = o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=-1)
     output_np = np.append(arr=tensor_arr.cpu().numpy(),
                           values=tensor_values.cpu().numpy(),
-                          axis=0)
+                          axis=-1)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
     output_t = o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=-2)
     output_np = np.append(arr=tensor_arr.cpu().numpy(),
                           values=tensor_values.cpu().numpy(),
-                          axis=-1)
+                          axis=-2)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
@@ -380,7 +380,7 @@ def test_append(dtype, device):
     output_t = o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=-2)
     output_np = np.append(arr=tensor_arr.cpu().numpy(),
                           values=tensor_values.cpu().numpy(),
-                          axis=-1)
+                          axis=-2)
 
     np.testing.assert_equal(output_np, output_t.cpu().numpy())
 
