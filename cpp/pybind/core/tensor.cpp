@@ -434,31 +434,28 @@ void pybind_core_tensor(py::module& m) {
                 return core::Tensor::Append(arr, values);
             },
             R"(Appends the `values` tensor to `arr` tensor, along the given
-axis and returns a copy. Both the tensors must have same data-type and
-device. If the axis is not provided, then both the tensors are flattened,
-and appended into a 1D tensor. If axis value is provided, the tensors 
-are appended along that axis, given that the all the dimentions expect
-that axis are same. The number of dimentions in `values` tensor, 
-must be equal to, or one less than the number of dimentions in `arr`.
+axis and returns a new tensor. Both the tensors must have same data-type 
+device, and number of dimentions. All dimensions must be the same, except the
+dimension along the axis the tensors are to be appended. 
 
-Ref:
+This is the same as NumPy's semantics:
 - https://numpy.org/doc/stable/reference/generated/numpy.append.html
     
 Returns:
-     A copy of `arr` with `values` appended to axis. Note that append does not
-     occur in-place: a new array is allocated and filled. If axis is None, 
-     out is a flattened tensor.
+A copy of `arr` with `values` appended to axis. Note that append does not
+occur in-place: a new array is allocated and filled. If axis is None, 
+out is a flattened tensor.
 
 Example:
-    >>> o3d.core.Tensor.append([[0, 1], [2, 3]], [[4, 5]], 0)
-      [[0 1],
-       [2 3],
-       [4 5]]
-     Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+>>> o3d.core.Tensor.append([[0, 1], [2, 3]], [[4, 5]], 0)
+[[0 1],
+ [2 3],
+ [4 5]]
+Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
  
-    >>> o3d.core.Tensor.append([[0, 1], [2, 3]], [[4, 5]])
-    [0 1 2 3 4 5]
-    Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
+>>> o3d.core.Tensor.append([[0, 1], [2, 3]], [[4, 5]])
+[0 1 2 3 4 5]
+Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
             "arr"_a, "values"_a, "axis"_a = py::none());
 
     // Device transfer.

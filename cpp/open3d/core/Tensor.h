@@ -355,7 +355,16 @@ public:
     /// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
     /// Tensor b = Tensor::Init<int64_t>({4, 5});
     /// Tensor t1 = Tensor::Append(a, b, 0);
+    /// // t1:
+    /// //  [[0 1],
+    /// //   [2 3],
+    /// //   [4 5]]
+    /// //  Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+    ///
     /// Tensor t2 = Tensor::Append(a, b);
+    /// // t2:
+    /// //  [0 1 2 3 4 5]
+    /// //  Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70]
     /// \endcode
     ///
     /// \param tensor Values are appended to a copy of this tensor.
@@ -383,7 +392,15 @@ public:
     /// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
     /// Tensor b = Tensor::Init<int64_t>({4, 5});
     /// Tensor t1 = Tensor::Append(a, b, 0);
+    /// // t1:
+    /// //  [[0 1],
+    /// //   [2 3],
+    /// //   [4 5]]
+    /// //  Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
     /// Tensor t2 = Tensor::Append(a, b);
+    /// // t2:
+    /// //  [0 1 2 3 4 5]
+    /// //  Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70]
     /// \endcode
     ///
     /// \param other Values of this tensor is appended to the tensor.
