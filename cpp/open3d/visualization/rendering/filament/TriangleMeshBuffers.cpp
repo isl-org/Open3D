@@ -267,6 +267,56 @@ std::tuple<vbdata, ibdata> CreateColoredBuffers(
 }
 
 // Transfers ownership on return for vbdata.bytes and ibdata.bytes
+std::tuple<vbdata, ibdata> CreateFromDuplicatedMesh(
+        const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
+    vbdata vertex_data;
+    ibdata index_data;
+
+    index_data.stride = sizeof(GeometryBuffersBuilder::IndexType);
+    index_data.byte_count = geometry.triangles_.size() * 3 * index_data.stride;
+    index_data.bytes = static_cast<GeometryBuffersBuilder::IndexType*>(
+            malloc(index_data.byte_count));
+    GeometryBuffersBuilder::IndexType* index_ptr = index_data.bytes;
+
+    vertex_data.byte_count =
+            geometry.triangles_.size() * 3 * sizeof(TexturedVertex);
+    vertex_data.bytes_to_copy = vertex_data.byte_count;
+    vertex_data.bytes = malloc(vertex_data.byte_count);
+    vertex_data.vertices_count = geometry.triangles_.size() * 3;
+
+    const TexturedVertex kDefault;
+    auto textured_vertices = static_cast<TexturedVertex*>(vertex_data.bytes);
+    for (size_t i = 0; i < geometry.triangles_.size(); ++i) {
+        const auto& triangle = geometry.triangles_[i];
+
+        for (size_t j = 0; j < 3; ++j) {
+            GeometryBuffersBuilder::IndexType index = triangle(j);
+
+            auto uv = geometry.triangle_uvs_[i * 3 + j];
+            auto pos = geometry.vertices_[index];
+
+            TexturedVertex& element = textured_vertices[index];
+            SetVertexPosition(element, pos);
+            if (tangents != nullptr) {
+                element.tangent = tangents[index];
+            } else {
+                element.tangent = kDefault.tangent;
+            }
+
+            SetVertexUV(element, uv);
+
+            if (geometry.HasVertexColors()) {
+                SetVertexColor(element, geometry.vertex_colors_[index]);
+            } else {
+                element.color = kDefault.color;
+            }
+            *index_ptr++ = index;
+        }
+    }
+
+    return std::make_tuple(vertex_data, index_data);
+}
+
 std::tuple<vbdata, ibdata> CreateTexturedBuffers(
         const math::quatf* tangents, const geometry::TriangleMesh& geometry) {
     vbdata vertex_data;
@@ -384,15 +434,56 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
 
-    const size_t n_vertices = geometry_.vertices_.size();
+    const geometry::TriangleMesh* internal_geom = &geometry_;
+    geometry::TriangleMesh duplicated_mesh;
+    if (geometry_.HasTriangleNormals() && !geometry_.HasVertexNormals()) {
+        // If the TriangleMesh has per-triangle normals then the normals must be
+        // converted to per-vertex and vertices/Uvs duplicated.
+        const size_t new_vertex_count = geometry_.triangles_.size() * 3;
+        duplicated_mesh.vertices_.reserve(new_vertex_count);
+        duplicated_mesh.vertex_normals_.reserve(new_vertex_count);
+        if (geometry_.HasVertexColors()) {
+            duplicated_mesh.vertex_colors_.reserve(new_vertex_count);
+        }
+        for (unsigned int i = 0; i < geometry_.triangles_.size(); ++i) {
+            auto& tri_idx = geometry_.triangles_[i];
+            duplicated_mesh.vertices_.push_back(
+                    geometry_.vertices_[tri_idx.x()]);
+            duplicated_mesh.vertices_.push_back(
+                    geometry_.vertices_[tri_idx.y()]);
+            duplicated_mesh.vertices_.push_back(
+                    geometry_.vertices_[tri_idx.z()]);
+            duplicated_mesh.vertex_normals_.push_back(
+                    geometry_.triangle_normals_[i]);
+            duplicated_mesh.vertex_normals_.push_back(
+                    geometry_.triangle_normals_[i]);
+            duplicated_mesh.vertex_normals_.push_back(
+                    geometry_.triangle_normals_[i]);
+            if (geometry_.HasVertexColors()) {
+                duplicated_mesh.vertex_colors_.push_back(
+                        geometry_.vertex_colors_[tri_idx.x()]);
+                duplicated_mesh.vertex_colors_.push_back(
+                        geometry_.vertex_colors_[tri_idx.y()]);
+                duplicated_mesh.vertex_colors_.push_back(
+                        geometry_.vertex_colors_[tri_idx.z()]);
+            }
+            duplicated_mesh.triangles_.push_back(
+                    Eigen::Vector3i(i * 3, i * 3 + 1, i * 3 + 2));
+        }
+        // utility::LogWarning("Taking the duplicate mesh path!");
+        duplicated_mesh.triangle_uvs_ = geometry_.triangle_uvs_;
+        internal_geom = &duplicated_mesh;
+    }
+
+    const size_t n_vertices = internal_geom->vertices_.size();
 
     math::quatf* float4v_tangents = nullptr;
-    if (geometry_.HasVertexNormals()) {
+    if (internal_geom->HasVertexNormals()) {
         // Converting vertex normals to float base
         std::vector<Eigen::Vector3f> normals;
         normals.resize(n_vertices);
         for (size_t i = 0; i < n_vertices; ++i) {
-            normals[i] = geometry_.vertex_normals_[i].cast<float>();
+            normals[i] = internal_geom->vertex_normals_[i].cast<float>();
         }
 
         // Converting normals to Filament type - quaternions
@@ -410,20 +501,25 @@ GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
     // NOTE: Both default lit and unlit material shaders require per-vertex
     // colors so we unconditionally assume the triangle mesh has color.
     const bool has_colors = true;
-    bool has_uvs = geometry_.HasTriangleUvs();
+    bool has_uvs = internal_geom->HasTriangleUvs();
+    bool using_duplicated_mesh = duplicated_mesh.vertices_.size() > 0;
 
     // We take ownership of vbdata.bytes and ibdata.bytes here.
     std::tuple<vbdata, ibdata> buffers_data;
     size_t stride = sizeof(BaseVertex);
-    if (has_uvs) {
-        buffers_data = CreateTexturedBuffers(float4v_tangents, geometry_);
+    if (has_uvs && using_duplicated_mesh) {
+        buffers_data =
+                CreateFromDuplicatedMesh(float4v_tangents, *internal_geom);
+        stride = sizeof(TexturedVertex);
+    } else if (has_uvs) {
+        buffers_data = CreateTexturedBuffers(float4v_tangents, *internal_geom);
         stride = sizeof(TexturedVertex);
     } else if (has_colors) {
-        buffers_data = CreateColoredBuffers(float4v_tangents, geometry_);
+        buffers_data = CreateColoredBuffers(float4v_tangents, *internal_geom);
         stride = sizeof(TexturedVertex);
         has_uvs = true;
     } else {
-        buffers_data = CreatePlainBuffers(float4v_tangents, geometry_);
+        buffers_data = CreatePlainBuffers(float4v_tangents, *internal_geom);
     }
 
     free(float4v_tangents);
