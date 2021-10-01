@@ -650,10 +650,10 @@ Tensor Tensor::Append(const Tensor& tensor,
         for (int64_t i = 0; i < tensor.NumDims(); ++i) {
             if (i != axis_d && tensor.GetShape()[i] != other.GetShape()[i]) {
                 utility::LogError(
-                        "all the input tensors dimensions for the "
-                        "concatenation axis must match exactly, but along "
-                        "dimension {}, the tensor at index 0 has size {} and "
-                        "the tensor at index 1 has size {}",
+                        "all the input tensor dimensions for the concatenation "
+                        "axis must match exactly, but along dimension {}, the "
+                        "tensor at index 0 has size {} and the tensor at index "
+                        "1 has size {}",
                         i, tensor.GetShape()[i], other.GetShape()[i]);
             }
         }
