@@ -302,7 +302,7 @@ def test_append(dtype, device):
             match=
             r"Index out-of-range: dim == -2, but it must satisfy -1 <= dim <= 0"
     ):
-        o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=1)
+        o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=-2)
 
     # Appending 2-D. [2, 2] to [2, 2].
     # [2, 2] to [2, 2] can be appended along axis = 0, 1, -1, -2.
