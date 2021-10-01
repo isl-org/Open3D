@@ -625,38 +625,36 @@ Tensor Tensor::Append(const Tensor& tensor,
 
     if (tensor.NumDims() != other.NumDims()) {
         utility::LogError(
-                "Tensor with {} dimentions, can not be appended to tensor with "
-                "{} dimentions.",
-                other.NumDims(), tensor.NumDims());
+                "all the input tensors must have same number of "
+                "dimensions, but the tensor at index 0 has {} "
+                "dimension(s) and the tensor at index 1 has {} "
+                "dimension(s)",
+                tensor.NumDims(), other.NumDims());
     }
 
     if (!axis.has_value()) {
-        // Flatten both the tensor and append.
-        const int64_t num_elements = tensor.NumElements();
-        const int64_t other_num_elements = other.NumElements();
-        const int64_t combined_num_elements = num_elements + other_num_elements;
-        Tensor combined_tensor = Tensor::Empty(
-                {combined_num_elements}, tensor.GetDtype(), tensor.GetDevice());
-        combined_tensor.SetItem(core::TensorKey::Slice(0, num_elements, 1),
-                                tensor.Reshape({num_elements}));
-        combined_tensor.SetItem(
-                core::TensorKey::Slice(num_elements, combined_num_elements, 1),
-                other.Reshape({other_num_elements}));
-
-        return combined_tensor;
+        return StackAlongAxis(tensor.Reshape({tensor.NumElements(), 1}),
+                              other.Reshape({other.NumElements(), 1}), 0)
+                .Reshape({-1});
     } else {
+        if (tensor.NumDims() == 0) {
+            utility::LogError(
+                    "zero-dimensional tensor can only br appended along axis = "
+                    "null, but got {}.",
+                    axis.value());
+        }
+
         const int64_t axis_d =
                 shape_util::WrapDim(axis.value(), tensor.NumDims());
 
         for (int64_t i = 0; i < tensor.NumDims(); ++i) {
             if (i != axis_d && tensor.GetShape()[i] != other.GetShape()[i]) {
                 utility::LogError(
-                        "Failed to append tensor with shape {}, to shape {}, "
-                        "alone axis {}. Expected dimention value {}, but got "
-                        "{}.",
-                        other.GetShape().ToString(),
-                        tensor.GetShape().ToString(), axis_d,
-                        tensor.GetShape()[i], other.GetShape()[i]);
+                        "all the input tensors dimensions for the "
+                        "concatenation axis must match exactly, but along "
+                        "dimension {}, the tensor at index 0 has size {} and "
+                        "the tensor at index 1 has size {}",
+                        i, tensor.GetShape()[i], other.GetShape()[i]);
             }
         }
 
