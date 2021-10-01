@@ -628,7 +628,7 @@ Tensor Tensor::Append(const Tensor& tensor,
                 "all the input tensors must have same number of "
                 "dimensions, but the tensor at index 0 has {} "
                 "dimension(s) and the tensor at index 1 has {} "
-                "dimension(s)",
+                "dimension(s).",
                 tensor.NumDims(), other.NumDims());
     }
 
@@ -653,7 +653,7 @@ Tensor Tensor::Append(const Tensor& tensor,
                         "all the input tensor dimensions for the concatenation "
                         "axis must match exactly, but along dimension {}, the "
                         "tensor at index 0 has size {} and the tensor at index "
-                        "1 has size {}",
+                        "1 has size {}.",
                         i, tensor.GetShape()[i], other.GetShape()[i]);
             }
         }
