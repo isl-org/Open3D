@@ -197,6 +197,142 @@ public:
     }
 };
 
+struct Tensor::Iterator::Impl {
+    Tensor* tensor_;
+    int64_t index_;
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for Iterator::operator->.
+};
+
+Tensor::Iterator::Iterator(pointer tensor, int64_t index)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = tensor;
+    impl_->index_ = index;
+}
+
+Tensor::Iterator::Iterator(const Tensor::Iterator& other)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = other.impl_->tensor_;
+    impl_->index_ = other.impl_->index_;
+}
+
+// Empty destructor since Impl is incomplete type in Tensor.h.
+// https://stackoverflow.com/a/34073093/1255535
+Tensor::Iterator::~Iterator() {}
+
+Tensor::Iterator::reference Tensor::Iterator::operator*() const {
+    return impl_->tensor_->operator[](impl_->index_);
+}
+
+Tensor::Iterator::pointer Tensor::Iterator::operator->() const {
+    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
+    return &impl_->tensor_slice_;
+}
+
+Tensor::Iterator& Tensor::Iterator::operator++() {
+    impl_->index_++;
+    return *this;
+}
+
+Tensor::Iterator Tensor::Iterator::operator++(int) {
+    Iterator tmp(impl_->tensor_, impl_->index_);
+    impl_->index_++;
+    return tmp;
+}
+
+bool Tensor::Iterator::operator==(const Tensor::Iterator& other) const {
+    return impl_->tensor_ == other.impl_->tensor_ &&
+           impl_->index_ == other.impl_->index_;
+}
+
+bool Tensor::Iterator::operator!=(const Tensor::Iterator& other) const {
+    return !(*this == other);
+}
+
+Tensor::Iterator Tensor::begin() {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return Iterator(this, 0);
+}
+
+Tensor::Iterator Tensor::end() {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return Iterator(this, shape_[0]);
+}
+
+struct Tensor::ConstIterator::Impl {
+    const Tensor* tensor_;
+    int64_t index_;
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for ConstIterator::operator->.
+};
+
+Tensor::ConstIterator::ConstIterator(pointer tensor, int64_t index)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = tensor;
+    impl_->index_ = index;
+}
+
+Tensor::ConstIterator::ConstIterator(const Tensor::ConstIterator& other)
+    : impl_(std::make_unique<Impl>()) {
+    impl_->tensor_ = other.impl_->tensor_;
+    impl_->index_ = other.impl_->index_;
+}
+
+// Empty destructor since Impl is incomplete type in Tensor.h.
+// https://stackoverflow.com/a/34073093/1255535
+Tensor::ConstIterator::~ConstIterator() {}
+
+Tensor::ConstIterator::reference Tensor::ConstIterator::operator*() const {
+    return impl_->tensor_->operator[](impl_->index_);
+}
+
+Tensor::ConstIterator::pointer Tensor::ConstIterator::operator->() const {
+    impl_->tensor_slice_ = impl_->tensor_->operator[](impl_->index_);
+    return &impl_->tensor_slice_;
+}
+
+Tensor::ConstIterator& Tensor::ConstIterator::operator++() {
+    impl_->index_++;
+    return *this;
+}
+
+Tensor::ConstIterator Tensor::ConstIterator::operator++(int) {
+    ConstIterator tmp(impl_->tensor_, impl_->index_);
+    impl_->index_++;
+    return tmp;
+}
+
+bool Tensor::ConstIterator::operator==(
+        const Tensor::ConstIterator& other) const {
+    return impl_->tensor_ == other.impl_->tensor_ &&
+           impl_->index_ == other.impl_->index_;
+}
+
+bool Tensor::ConstIterator::operator!=(
+        const Tensor::ConstIterator& other) const {
+    return !(*this == other);
+}
+
+Tensor::ConstIterator Tensor::cbegin() const {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return ConstIterator(this, 0);
+}
+
+Tensor::ConstIterator Tensor::cend() const {
+    if (NumDims() == 0) {
+        utility::LogError("Cannot iterate a scalar (0-dim) tensor.");
+    }
+    return ConstIterator(this, shape_[0]);
+}
+
 // Equivalent to `Tensor& operator=(const Tensor& other) & = default;`.
 // Manual implentaiton is need to avoid MSVC bug (error C2580:  multiple
 // versions of a defaulted special member functions are not allowed.)
@@ -1538,6 +1674,15 @@ void Tensor::Save(const std::string& file_name) const {
 
 Tensor Tensor::Load(const std::string& file_name) {
     return t::io::ReadNpy(file_name);
+}
+
+bool Tensor::AllEqual(const Tensor& other) const {
+    core::AssertTensorDevice(other, GetDevice());
+    core::AssertTensorDtype(other, GetDtype());
+    if (shape_ != other.shape_) {
+        return false;
+    }
+    return (*this == other).All();
 }
 
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
