@@ -259,8 +259,8 @@ def test_append(dtype, device):
     with pytest.raises(
             RuntimeError,
             match=
-            r"zero-dimensional tensor can only br appended along axis = null, but got 0."
-    ):
+            r"Zero-dimensional tensor can only be appended along axis = null, "
+            "but got 0."):
         o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=0)
 
     # Appending 1-D.
@@ -387,15 +387,15 @@ def test_append(dtype, device):
     with pytest.raises(
             RuntimeError,
             match=
-            r"all the input tensor dimensions for the concatenation axis must match exactly, but along dimension 0, the tensor at index 0 has size 2 and the tensor at index 1 has size 1"
-    ):
+            r"All the input tensor dimensions other than along axis must match "
+            "exactly, but along dimension 0, got size 2 and 1."):
         o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=1)
 
     with pytest.raises(
             RuntimeError,
             match=
-            r"all the input tensor dimensions for the concatenation axis must match exactly, but along dimension 0, the tensor at index 0 has size 2 and the tensor at index 1 has size 1"
-    ):
+            r"All the input tensor dimensions other than along axis must match "
+            "exactly, but along dimension 0, got size 2 and 1."):
         o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=-1)
 
     # dtype and device must be same for all the input tensors.

@@ -592,27 +592,30 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
     return *this;
 }
 
-static Tensor StackAlongAxis(const Tensor& tensor,
-                             const Tensor& other,
+static Tensor StackAlongAxis(const Tensor& this_tensor,
+                             const Tensor& other_tensor,
                              int64_t axis) {
-    SizeVector shape = tensor.GetShape();
-    shape[axis] += other.GetShape()[axis];
+    SizeVector combined_shape = this_tensor.GetShape();
+    combined_shape[axis] += other_tensor.GetShape(axis);
 
-    std::vector<TensorKey> tks_tensor;
+    std::vector<TensorKey> tks_this;
     std::vector<TensorKey> tks_other;
     for (int i = 0; i < axis; ++i) {
-        tks_tensor.push_back(
-                core::TensorKey::Slice(0, tensor.GetShape()[i], 1));
-        tks_other.push_back(core::TensorKey::Slice(0, tensor.GetShape()[i], 1));
+        tks_this.push_back(
+                core::TensorKey::Slice(0, this_tensor.GetShape(i), 1));
+        tks_other.push_back(
+                core::TensorKey::Slice(0, this_tensor.GetShape(i), 1));
     }
 
-    tks_tensor.push_back(core::TensorKey::Slice(0, tensor.GetShape()[axis], 1));
-    tks_other.push_back(
-            core::TensorKey::Slice(tensor.GetShape()[axis], shape[axis], 1));
+    tks_this.push_back(
+            core::TensorKey::Slice(0, this_tensor.GetShape(axis), 1));
+    tks_other.push_back(core::TensorKey::Slice(this_tensor.GetShape(axis),
+                                               combined_shape[axis], 1));
 
-    Tensor combined_tensor(shape, tensor.GetDtype(), tensor.GetDevice());
-    combined_tensor.SetItem(tks_tensor, tensor);
-    combined_tensor.SetItem(tks_other, other);
+    Tensor combined_tensor(combined_shape, this_tensor.GetDtype(),
+                           this_tensor.GetDevice());
+    combined_tensor.SetItem(tks_this, this_tensor);
+    combined_tensor.SetItem(tks_other, other_tensor);
 
     return combined_tensor;
 }
@@ -625,10 +628,8 @@ Tensor Tensor::Append(const Tensor& tensor,
 
     if (tensor.NumDims() != other.NumDims()) {
         utility::LogError(
-                "all the input tensors must have same number of "
-                "dimensions, but the tensor at index 0 has {} "
-                "dimension(s) and the tensor at index 1 has {} "
-                "dimension(s).",
+                "All the input tensors must have same number of dimensions, "
+                "but got {} and {} dimension(s).",
                 tensor.NumDims(), other.NumDims());
     }
 
@@ -639,7 +640,7 @@ Tensor Tensor::Append(const Tensor& tensor,
     } else {
         if (tensor.NumDims() == 0) {
             utility::LogError(
-                    "zero-dimensional tensor can only br appended along axis = "
+                    "Zero-dimensional tensor can only be appended along axis = "
                     "null, but got {}.",
                     axis.value());
         }
@@ -648,13 +649,12 @@ Tensor Tensor::Append(const Tensor& tensor,
                 shape_util::WrapDim(axis.value(), tensor.NumDims());
 
         for (int64_t i = 0; i < tensor.NumDims(); ++i) {
-            if (i != axis_d && tensor.GetShape()[i] != other.GetShape()[i]) {
+            if (i != axis_d && tensor.GetShape(i) != other.GetShape(i)) {
                 utility::LogError(
-                        "all the input tensor dimensions for the concatenation "
-                        "axis must match exactly, but along dimension {}, the "
-                        "tensor at index 0 has size {} and the tensor at index "
-                        "1 has size {}.",
-                        i, tensor.GetShape()[i], other.GetShape()[i]);
+                        "All the input tensor dimensions other than along axis "
+                        "must match exactly, but along dimension {}, got size "
+                        "{} and {}.",
+                        i, tensor.GetShape(i), other.GetShape(i));
             }
         }
 
