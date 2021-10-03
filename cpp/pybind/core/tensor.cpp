@@ -425,6 +425,33 @@ void pybind_core_tensor(py::module& m) {
             "dtype"_a = py::none(), "device"_a = py::none());
 
     tensor.def_static(
+            "concatenate", &Tensor::Concatenate,
+            R"(Concatenates the list of tensors in their order, along the given
+axis into a new tensor. All the tensors must have same data-type, device, and
+number of dimentions. All dimensions must be the same, except the dimension
+along the axis the tensors are to be concatinated.
+
+This is the same as NumPy's semantics:
+- https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html
+
+Returns:
+     A new tensor with the values of list of tensors concatenated in order,
+     along the given axis.
+
+Example:
+    >>> a = o3d.core.Tensor([[0, 1], [2, 3]])
+    >>> b = o3d.core.Tensor([[4, 5]])
+    >>> c = o3d.core.Tensor([[6, 7])
+    >>> o3d.core.Tensor.concatenate((a, b, c), 0)
+        [[0 1],
+         [2 3],
+         [4 5],
+         [6 7],
+         [8 9]]
+        Tensor[shape={5, 2}, stride={2, 1}, Int64, CPU:0, 0x55b454b09390])",
+            "tensor_list"_a, "axis"_a = 0);
+
+    tensor.def_static(
             "append",
             [](const Tensor& arr, const Tensor& values,
                const utility::optional<int64_t> axis) {
@@ -448,14 +475,14 @@ Returns:
 
 Example:
     >>> o3d.core.Tensor.append([[0, 1], [2, 3]], [[4, 5]], 0)
-      [[0 1],
-       [2 3],
-       [4 5]]
+     [[0 1],
+      [2 3],
+      [4 5]]
      Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
  
     >>> o3d.core.Tensor.append([[0, 1], [2, 3]], [[4, 5]])
-    [0 1 2 3 4 5]
-    Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
+     [0 1 2 3 4 5]
+     Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
             "arr"_a, "values"_a, "axis"_a = py::none());
 
     // Device transfer.

@@ -592,30 +592,75 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
     return *this;
 }
 
-static Tensor StackAlongAxis(const Tensor& this_tensor,
-                             const Tensor& other_tensor,
-                             int64_t axis) {
-    SizeVector combined_shape = this_tensor.GetShape();
-    combined_shape[axis] += other_tensor.GetShape(axis);
-
-    std::vector<TensorKey> tks_this;
-    std::vector<TensorKey> tks_other;
-    for (int i = 0; i < axis; ++i) {
-        tks_this.push_back(
-                core::TensorKey::Slice(0, this_tensor.GetShape(i), 1));
-        tks_other.push_back(
-                core::TensorKey::Slice(0, this_tensor.GetShape(i), 1));
+Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
+                           int64_t axis) {
+    const int num_tensors = tensor_list.size();
+    if (num_tensors < 2) {
+        utility::LogError("Expected atleast 2 tensors, but got {}.",
+                          num_tensors);
     }
 
-    tks_this.push_back(
-            core::TensorKey::Slice(0, this_tensor.GetShape(axis), 1));
-    tks_other.push_back(core::TensorKey::Slice(this_tensor.GetShape(axis),
-                                               combined_shape[axis], 1));
+    const int64_t num_dims = tensor_list[0].NumDims();
+    const int64_t axis_d = shape_util::WrapDim(axis, num_dims);
 
-    Tensor combined_tensor(combined_shape, this_tensor.GetDtype(),
-                           this_tensor.GetDevice());
-    combined_tensor.SetItem(tks_this, this_tensor);
-    combined_tensor.SetItem(tks_other, other_tensor);
+    const core::Device device = tensor_list[0].GetDevice();
+    const core::Dtype dtype = tensor_list[0].GetDtype();
+    SizeVector combined_shape = tensor_list[0].GetShape();
+
+    // Asserts input tensor properties such as device, dtype and dimentions.
+    for (int i = 1; i < num_tensors; ++i) {
+        core::AssertTensorDevice(tensor_list[i], device);
+        core::AssertTensorDtype(tensor_list[i], dtype);
+
+        if (tensor_list[i].NumDims() != num_dims) {
+            utility::LogError(
+                    "All the input tensors must have same number of "
+                    "dimensions, but the tensor at index 0 has {} dimension(s) "
+                    "and the tensor at index {} has {} dimension(s).",
+                    num_dims, i, tensor_list[i].NumDims());
+        }
+
+        // Check Shape.
+        for (int j = 0; j < num_dims; ++j) {
+            if (j != axis_d &&
+                combined_shape[j] != tensor_list[i].GetShape(j)) {
+                utility::LogError(
+                        "All the input tensor dimensions, other than dimension "
+                        "size along concatenation axis must be same, but along "
+                        "dimension {}, the tensor at index 0 has size {} and "
+                        "the tensor at index {} has size {}.",
+                        j, combined_shape[j], i, tensor_list[i].GetShape(j));
+            }
+        }
+
+        combined_shape[axis_d] += tensor_list[i].GetShape(axis_d);
+    }
+
+    // Common TensorKey for dimensions < axis_d.
+    std::vector<TensorKey> common_tks;
+    for (int i = 0; i < axis_d; ++i) {
+        common_tks.push_back(core::TensorKey::Slice(0, combined_shape[i], 1));
+    }
+
+    Tensor combined_tensor(combined_shape, tensor_list[0].GetDtype(),
+                           tensor_list[0].GetDevice());
+
+    // Cumulate length along `axis`.
+    int64_t length_cumulator = 0;
+
+    for (int i = 0; i < num_tensors; ++i) {
+        const int64_t updated_length =
+                length_cumulator + tensor_list[i].GetShape(axis_d);
+
+        // TensorKey(s) for individual tensors.
+        std::vector<TensorKey> local_tks = common_tks;
+        local_tks.push_back(
+                core::TensorKey::Slice(length_cumulator, updated_length, 1));
+
+        length_cumulator = updated_length;
+
+        combined_tensor.SetItem(local_tks, tensor_list[i]);
+    }
 
     return combined_tensor;
 }
@@ -623,19 +668,10 @@ static Tensor StackAlongAxis(const Tensor& this_tensor,
 Tensor Tensor::Append(const Tensor& tensor,
                       const Tensor& other,
                       const utility::optional<int64_t> axis) {
-    core::AssertTensorDevice(other, tensor.GetDevice());
-    core::AssertTensorDtype(other, tensor.GetDtype());
-
-    if (tensor.NumDims() != other.NumDims()) {
-        utility::LogError(
-                "All the input tensors must have same number of dimensions, "
-                "but got {} and {} dimension(s).",
-                tensor.NumDims(), other.NumDims());
-    }
-
     if (!axis.has_value()) {
-        return StackAlongAxis(tensor.Reshape({tensor.NumElements(), 1}),
-                              other.Reshape({other.NumElements(), 1}), 0)
+        return Concatenate({tensor.Reshape({tensor.NumElements(), 1}),
+                            other.Reshape({other.NumElements(), 1})},
+                           0)
                 .Reshape({-1});
     } else {
         if (tensor.NumDims() == 0) {
@@ -645,20 +681,7 @@ Tensor Tensor::Append(const Tensor& tensor,
                     axis.value());
         }
 
-        const int64_t axis_d =
-                shape_util::WrapDim(axis.value(), tensor.NumDims());
-
-        for (int64_t i = 0; i < tensor.NumDims(); ++i) {
-            if (i != axis_d && tensor.GetShape(i) != other.GetShape(i)) {
-                utility::LogError(
-                        "All the input tensor dimensions other than along axis "
-                        "must match exactly, but along dimension {}, got size "
-                        "{} and {}.",
-                        i, tensor.GetShape(i), other.GetShape(i));
-            }
-        }
-
-        return StackAlongAxis(tensor, other, axis_d);
+        return Concatenate({tensor, other}, axis.value());
     }
 }
 
