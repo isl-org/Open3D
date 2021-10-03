@@ -92,15 +92,15 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             # Now project them to the depth and find association
             # (3, N) -> (2, N)
             start = time.time()
-            extrinsic_dev = extrinsic.to(device, o3d.core.Dtype.Float32)
+            extrinsic_dev = extrinsic.to(device, o3c.float32)
             xyz = extrinsic_dev[:3, :3] @ voxel_coords.T() + extrinsic_dev[:3,
                                                                            3:]
 
-            intrinsic_dev = intrinsic.to(device, o3d.core.Dtype.Float32)
+            intrinsic_dev = intrinsic.to(device, o3c.float32)
             uvd = intrinsic_dev @ xyz
             d = uvd[2]
-            u = (uvd[0] / d).round().to(o3d.core.Dtype.Int64)
-            v = (uvd[1] / d).round().to(o3d.core.Dtype.Int64)
+            u = (uvd[0] / d).round().to(o3c.int64)
+            v = (uvd[1] / d).round().to(o3c.int64)
             o3d.core.cuda.synchronize()
             end = time.time()
 
@@ -112,7 +112,7 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             u_proj = u[mask_proj]
             d_proj = d[mask_proj]
             depth_readings = depth.as_tensor()[v_proj, u_proj, 0].to(
-                o3d.core.Dtype.Float32) / config.depth_scale
+                o3c.float32) / config.depth_scale
             sdf = depth_readings - d_proj
 
             mask_inlier = (depth_readings > 0) \
@@ -137,8 +137,8 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
                    sdf[mask_inlier].reshape(w.shape)) / (wp)
             if config.integrate_color:
                 color = o3d.t.io.read_image(color_file_names[i]).to(device)
-                color_readings = color.as_tensor()[v_proj, u_proj].to(
-                    o3d.core.Dtype.Float32)
+                color_readings = color.as_tensor()[v_proj,
+                                                   u_proj].to(o3c.float32)
 
                 color = vbg.attribute('color').reshape((-1, 3))
                 color[valid_voxel_indices] \
@@ -176,7 +176,8 @@ if __name__ == '__main__':
     if config.path_dataset == '':
         print('Dataset not found, falling back to test examples.')
         example_path = os.path.abspath(
-            os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir))
+            os.path.join(__file__, os.path.pardir, os.path.pardir,
+                         os.path.pardir))
         default_dataset_path = os.path.join(example_path, 'test_data', 'RGBD')
         config.path_dataset = default_dataset_path
         config.path_trajectory = os.path.join(default_dataset_path,
