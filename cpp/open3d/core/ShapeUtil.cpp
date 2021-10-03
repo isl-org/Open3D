@@ -149,7 +149,7 @@ SizeVector ReductionShape(const SizeVector& src_shape,
 
 int64_t WrapDim(int64_t dim, int64_t max_dim, bool inclusive) {
     if (max_dim <= 0) {
-        utility::LogError("max_dim {} must be >= 0.", max_dim);
+        utility::LogError("max_dim {} must be > 0.", max_dim);
     }
     int64_t min = -max_dim;
     int64_t max = inclusive ? max_dim : max_dim - 1;

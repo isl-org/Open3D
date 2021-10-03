@@ -854,6 +854,110 @@ TEST_P(TensorPermuteDevices, SliceAssign) {
                                   16, 17, 18, 19, 203, 21, 223, 23}));
 }
 
+TEST_P(TensorPermuteDevices, Concatenate) {
+    core::Device device = GetParam();
+
+    core::Tensor tensor_a, tensor_b, tensor_c, output_tensor;
+
+    // Atleast 2 tensors are requried.
+    tensor_a = core::Tensor::Init<float>({0, 1, 2}, device);
+    EXPECT_ANY_THROW(core::Tensor::Concatenate({tensor_a}));
+
+    // 0-D cannot be concatenated.
+    tensor_a = core::Tensor::Init<float>(0, device);
+    tensor_b = core::Tensor::Init<float>(1, device);
+    tensor_c = core::Tensor::Init<float>(1, device);
+    EXPECT_ANY_THROW(
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, 0));
+    EXPECT_ANY_THROW(
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, -1));
+
+    // Same Shape.
+    // Concatenating 1-D tensors.
+    tensor_a = core::Tensor::Init<float>({0, 1, 2}, device);
+    tensor_b = core::Tensor::Init<float>({3, 4}, device);
+    tensor_c = core::Tensor::Init<float>({5, 6, 7}, device);
+
+    // 1-D can be concatenated along axis = 0, -1.
+    // Default axis is 0.
+    output_tensor = core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c});
+    EXPECT_TRUE(output_tensor.AllClose(
+            core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6, 7}, device)));
+
+    output_tensor =
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, -1);
+    EXPECT_TRUE(output_tensor.AllClose(
+            core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6, 7}, device)));
+
+    // 1-D can be concatenated along axis = 1, -2.
+    EXPECT_ANY_THROW(
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, 1));
+    EXPECT_ANY_THROW(
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, -2));
+
+    // Concatenating 2-D tensors.
+    tensor_a = core::Tensor::Init<float>({{0, 1}, {2, 3}}, device);
+    tensor_b = core::Tensor::Init<float>({{4, 5}}, device);
+    tensor_c = core::Tensor::Init<float>({{6, 7}}, device);
+
+    // Above tensors can be concatenated along axis = 0, -2.
+    output_tensor =
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, 0);
+    EXPECT_TRUE(output_tensor.AllClose(core::Tensor::Init<float>(
+            {{0, 1}, {2, 3}, {4, 5}, {6, 7}}, device)));
+    output_tensor =
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, -2);
+    EXPECT_TRUE(output_tensor.AllClose(core::Tensor::Init<float>(
+            {{0, 1}, {2, 3}, {4, 5}, {6, 7}}, device)));
+
+    // Above 2-D tensors cannot be appended to 2-D along axis = 1, -1.
+    EXPECT_ANY_THROW(
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, 1));
+    EXPECT_ANY_THROW(
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, -1));
+
+    // Concatenating 2-D tensors of shape {3, 1}.
+    tensor_a = core::Tensor::Init<float>({{0}, {1}, {2}}, device);
+    tensor_b = core::Tensor::Init<float>({{3}, {4}, {5}}, device);
+    tensor_c = core::Tensor::Init<float>({{6}, {7}, {8}}, device);
+
+    // Above tensors can be concatenated along axis = 0, 1, -1, -2.
+    output_tensor =
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, 0);
+    EXPECT_TRUE(output_tensor.AllClose(core::Tensor::Init<float>(
+            {{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}}, device)));
+    output_tensor =
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, -2);
+    EXPECT_TRUE(output_tensor.AllClose(core::Tensor::Init<float>(
+            {{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}}, device)));
+
+    output_tensor =
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, 1);
+
+    EXPECT_TRUE(output_tensor.AllClose(core::Tensor::Init<float>(
+            {{0, 3, 6}, {1, 4, 7}, {2, 5, 8}}, device)));
+    output_tensor =
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, -1);
+    EXPECT_TRUE(output_tensor.AllClose(core::Tensor::Init<float>(
+            {{0, 3, 6}, {1, 4, 7}, {2, 5, 8}}, device)));
+
+    // 2-D can not be concatenated along axis = 2, -3.
+    EXPECT_ANY_THROW(
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, 2));
+    EXPECT_ANY_THROW(
+            core::Tensor::Concatenate({tensor_a, tensor_b, tensor_c}, -3));
+
+    // Dtype and Device of both the tensors must be same.
+    // Taking the above case of [1, 2] to [2, 2] with different dtype and
+    // device.
+    EXPECT_ANY_THROW(core::Tensor::Concatenate(
+            {tensor_a, tensor_b.To(core::Float64), tensor_c}));
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        EXPECT_ANY_THROW(core::Tensor::Concatenate(
+                {tensor_a, tensor_b.To(core::Device("CPU:0")), tensor_c}));
+    }
+}
+
 TEST_P(TensorPermuteDevices, Append) {
     core::Device device = GetParam();
 
