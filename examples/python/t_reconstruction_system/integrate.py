@@ -106,7 +106,8 @@ if __name__ == '__main__':
     if config.path_dataset == '':
         print('Dataset not found, falling back to test examples.')
         example_path = os.path.abspath(
-            os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir))
+            os.path.join(__file__, os.path.pardir, os.path.pardir,
+                         os.path.pardir))
         default_dataset_path = os.path.join(example_path, 'test_data', 'RGBD')
         config.path_dataset = default_dataset_path
         config.path_trajectory = os.path.join(default_dataset_path,
