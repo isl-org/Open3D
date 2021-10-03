@@ -531,15 +531,18 @@ def test_append(dtype, device):
     with pytest.raises(
             RuntimeError,
             match=
-            r"All the input tensor dimensions other than along axis must match "
-            "exactly, but along dimension 0, got size 2 and 1."):
+            r"All the input tensor dimensions, other than dimension size along "
+            "concatenation axis must be same, but along dimension 0, the "
+            "tensor at index 0 has size 2 and the tensor at index 1 has size 1."
+    ):
         o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=1)
 
     with pytest.raises(
             RuntimeError,
             match=
-            r"All the input tensor dimensions other than along axis must match "
-            "exactly, but along dimension 0, got size 2 and 1."):
+            r"All the input tensor dimensions, other than dimension size along "
+            "concatenation axis must be same, but along dimension 0, the tensor "
+            "at index 0 has size 2 and the tensor at index 1 has size 1."):
         o3c.Tensor.append(arr=tensor_arr, values=tensor_values, axis=-1)
 
     # dtype and device must be same for all the input tensors.
