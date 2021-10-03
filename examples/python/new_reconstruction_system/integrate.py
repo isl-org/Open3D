@@ -27,6 +27,7 @@
 import os
 import numpy as np
 import open3d as o3d
+import open3d.core as o3c
 import time
 import matplotlib.pyplot as plt
 
@@ -51,13 +52,11 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
         if config.integrate_color:
             vbg = o3d.t.geometry.VoxelBlockGrid(
                 ('tsdf', 'weight', 'color'),
-                (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32,
-                 o3d.core.Dtype.Float32), ((1), (1), (3)), 3.0 / 512, 8, 100000,
-                o3d.core.Device('CUDA:0'))
+                (o3c.float32, o3c.float32, o3c.float32), ((1), (1), (3)),
+                3.0 / 512, 8, 100000, o3d.core.Device('CUDA:0'))
         else:
             vbg = o3d.t.geometry.VoxelBlockGrid(
-                ('tsdf', 'weight'),
-                (o3d.core.Dtype.Float32, o3d.core.Dtype.Float32), ((1), (1)),
+                ('tsdf', 'weight'), (o3c.float32, o3c.float32), ((1), (1)),
                 3.0 / 512, 8, 100000, o3d.core.Device('CUDA:0'))
 
         start = time.time()
@@ -103,6 +102,15 @@ if __name__ == '__main__':
                help='path to the npz file that stores voxel block grid.',
                default='vbg.npz')
     config = parser.get_config()
+
+    if config.path_dataset == '':
+        print('Dataset not found, falling back to test examples.')
+        example_path = os.path.abspath(
+            os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir))
+        default_dataset_path = os.path.join(example_path, 'test_data', 'RGBD')
+        config.path_dataset = default_dataset_path
+        config.path_trajectory = os.path.join(default_dataset_path,
+                                              'trajectory.log')
 
     if config.integrate_color:
         depth_file_names, color_file_names = load_rgbd_file_names(config)
