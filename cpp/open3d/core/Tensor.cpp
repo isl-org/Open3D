@@ -642,11 +642,9 @@ Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
         common_tks.push_back(TensorKey::Slice(0, combined_shape[i], 1));
     }
 
-    Tensor combined_tensor(combined_shape, tensor_list[0].GetDtype(),
-                           tensor_list[0].GetDevice());
-
-    // Cumulate length along `axis`.
-    int64_t length_cumulator = 0;
+    tks_this.push_back(core::TensorKey::Slice(0, tensor.GetShape(axis), 1));
+    tks_other.push_back(core::TensorKey::Slice(tensor.GetShape(axis),
+                                               combined_shape[axis], 1));
 
     for (int i = 0; i < num_tensors; ++i) {
         const int64_t updated_length =
@@ -668,6 +666,17 @@ Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
 Tensor Tensor::Append(const Tensor& tensor,
                       const Tensor& values,
                       const utility::optional<int64_t> axis) {
+    core::AssertTensorDevice(values, tensor.GetDevice());
+    core::AssertTensorDtype(values, tensor.GetDtype());
+
+    if (tensor.NumDims() != values.NumDims()) {
+        utility::LogError(
+                "All the input tensors must have same number of "
+                "dimensions, but the tensor at index 0 has {} dimension(s) "
+                "and the tensor at index 1 has {} dimension(s).",
+                tensor.NumDims(), values.NumDims());
+    }
+
     if (!axis.has_value()) {
         return Concatenate({tensor.Reshape({tensor.NumElements(), 1}),
                             values.Reshape({values.NumElements(), 1})},
