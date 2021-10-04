@@ -2,7 +2,7 @@
 
 Customized Integration
 -------------------------------------
-You can prototype a new RGB-D volumetric reconstruction algorithm with additional properties (e.g. semantic labels) while maintaining a reasonable performance.
+You can prototype a new RGB-D volumetric reconstruction algorithm with additional properties (e.g. semantic labels) while maintaining a reasonable performance. An example can be found at ``examples/python/t_reconstruction_system/integrate_custom.py``.
 
 Activation
 ``````````

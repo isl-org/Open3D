@@ -2,9 +2,11 @@
 
 TSDF Integration
 -------------------------------------
-Truncated Signed Distance Function (TSDF) integration is the key of dense volumetric scene reconstruction. It receives relatively noisy depth images from RGB-D sensors such as Kinect and RealSense, and integrates depth readings into the :ref:`voxel_block_grid`. TSDF integration reduces noise and generates smooth surfaces.
+Truncated Signed Distance Function (TSDF) integration is the key of dense volumetric scene reconstruction. It receives relatively noisy depth images from RGB-D sensors such as Kinect and RealSense, and integrates depth readings into the :ref:`voxel_block_grid` given known camera poses. TSDF integration reduces noise and generates smooth surfaces. 
 
-The integration process mainly consists of two steps, (sparse) **block** selection and activation, and (dense) **voxel** value integration.
+The integration process mainly consists of two steps, (sparse) **block** selection and activation, and (dense) **voxel** value integration. An example can be found at ``examples/python/t_reconstruction_system/integrate.py``.
+
+The system may run at a minimal dataset in ``examples/test_data/RGBD``, but it is recommended to run on real-world longer sequences to demonstrate the functionality. Please refer to :ref:`tutorial/geometry/rgbd_image.ipynb` for more available datasets.
 
 Activation
 ``````````

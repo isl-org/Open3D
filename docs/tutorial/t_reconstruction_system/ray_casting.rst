@@ -6,7 +6,7 @@ Note: this is NOT ray casting for triangle meshes. Please refer to :ref:`../pyth
 
 Ray casting can be performed in a voxel block grid to generate depth and color images at specific view points without extracting the entire surface. It could be useful for frame-to-model tracking, and potentially differentiable volume rendering.
 
-We provide optimized conventional rendering, and basic support for customized rendering that may be used in differentiable rendering.
+We provide optimized conventional rendering, and basic support for customized rendering that may be used in differentiable rendering. An example can be found at ``examples/python/t_reconstruction_system/ray_casting.py``.
 
 Conventional rendering
 ``````````
