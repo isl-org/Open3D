@@ -56,10 +56,10 @@ class ReconstructionWindow:
         fixed_prop_grid.add_child(est_block_count_slider)
 
         est_point_count_label = gui.Label('Est. points')
-        est_point_count_slider = gui.Slider(gui.Slider.INT)
-        est_point_count_slider.set_limits(500000, 1000000)
+        self.est_point_count_slider = gui.Slider(gui.Slider.INT)
+        self.est_point_count_slider.set_limits(5000000, 10000000)
         fixed_prop_grid.add_child(est_point_count_label)
-        fixed_prop_grid.add_child(est_point_count_slider)
+        fixed_prop_grid.add_child(self.est_point_count_slider)
 
         ## Items in adjustable props
         adjustable_prop_grid = gui.VGrid(2, spacing, gui.Margins(em, 0, em, 0))
@@ -167,7 +167,6 @@ class ReconstructionWindow:
         # Start running
         threading.Thread(name='UpdateMain', target=self.update_main).start()
 
-    # Window layout callback
     def _on_layout(self, ctx):
         em = ctx.theme.font_size
 
@@ -187,8 +186,16 @@ class ReconstructionWindow:
                                         fps_panel_height)
 
     # Toggle callback: application's main controller
+    def _on_switch(self, is_on):
+        if not self.is_started:
+            gui.Application.instance.post_to_main_thread(
+                self.window, self._on_start)
+        self.is_running = not self.is_running
+
+    # On start: point cloud buffer and model initialization.
     def _on_start(self):
-        max_points = 8000000
+        max_points = self.est_point_count_slider.int_value
+
         pcd_placeholder = o3d.t.geometry.PointCloud(
             o3c.Tensor(np.zeros((max_points, 3), dtype=np.float32)))
         pcd_placeholder.point['colors'] = o3c.Tensor(
@@ -204,11 +211,6 @@ class ReconstructionWindow:
                                                 o3c.Device(self.config.device))
         self.is_started = True
 
-    def _on_switch(self, is_on):
-        if not self.is_started:
-            gui.Application.instance.post_to_main_thread(
-                self.window, self._on_start)
-        self.is_running = not self.is_running
 
     def init_render(self, depth_ref, color_ref):
         self.input_depth_image.update_image(
@@ -224,7 +226,7 @@ class ReconstructionWindow:
 
         bbox = o3d.geometry.AxisAlignedBoundingBox([-5, -5, -5], [5, 5, 5])
         self.widget3d.setup_camera(60, bbox, [0, 0, 0])
-        print(self.widget3d)
+        self.widget3d.look_at([0, 0, 0], [0, -1, -3], [0, -1, 0])
 
         # self.widget3d.look_at(center, center - (0, 1, 3), (0, -1, 0))
 
@@ -239,7 +241,7 @@ class ReconstructionWindow:
             raycast_depth.colorize_depth(config.depth_scale, config.depth_min,
                                          config.depth_max).to_legacy())
         self.raycast_color_image.update_image(raycast_color.to_legacy())
-        if pcd is not None:
+        if self.is_scene_updated and pcd is not None:
             self.widget3d.scene.scene.update_geometry(
                 'points', pcd, rendering.Scene.UPDATE_POINTS_FLAG |
                 rendering.Scene.UPDATE_COLORS_FLAG)
@@ -274,6 +276,7 @@ class ReconstructionWindow:
         poses = []
 
         i = 0
+        pcd = None
         while not self.is_done:
             if not self.is_started or not self.is_running:
                 time.sleep(0.05)
@@ -298,13 +301,14 @@ class ReconstructionWindow:
             self.model.synthesize_model_frame(raycast_frame, config.depth_scale,
                                               config.depth_min,
                                               config.depth_max, False)
-            i += 1
             if i % 50 == 0:
                 pcd = self.model.voxel_grid.extract_point_cloud().to(
                     o3d.core.Device('CPU:0'))
+                self.is_scene_updated = True
             else:
-                pcd = None
+                self.is_scene_updated = False
 
+            i += 1
             gui.Application.instance.post_to_main_thread(
                 self.window, lambda: self.update_render(
                     input_frame.get_data_as_image('depth'),
