@@ -12,4 +12,5 @@ The tutorials for tensor-based offline reconstruction system, simultaneous local
    voxel_block_grid
    integration
    customized_integration
+   ray_casting
    dense_slam
