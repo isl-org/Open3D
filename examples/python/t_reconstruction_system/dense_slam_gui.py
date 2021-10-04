@@ -136,7 +136,6 @@ class ReconstructionWindow:
         self.adjustable_prop_grid.add_child(self.raycast_box)
 
         set_enabled(self.fixed_prop_grid, True)
-        set_enabled(self.adjustable_prop_grid, False)
 
         ## Application control
         b = gui.ToggleSwitch('Resume/Pause')
@@ -197,6 +196,7 @@ class ReconstructionWindow:
         self.widget3d.scene.set_background([1, 1, 1, 1])
 
         w.set_on_layout(self._on_layout)
+        w.set_on_close(self._on_close)
 
         self.is_done = False
 
@@ -205,6 +205,7 @@ class ReconstructionWindow:
         self.is_surface_updated = False
 
         self.idx = 0
+        self.poses = []
 
         # Start running
         threading.Thread(name='UpdateMain', target=self.update_main).start()
@@ -255,6 +256,25 @@ class ReconstructionWindow:
 
         set_enabled(self.fixed_prop_grid, False)
         set_enabled(self.adjustable_prop_grid, True)
+
+    def _on_close(self):
+        if self.is_started:
+            print('Saving model to {}...'.format(config.path_npz))
+            self.model.voxel_grid.save(config.path_npz)
+            print('Finished.')
+
+            mesh_fname = '.'.join(config.path_npz.split('.')[:-1]) + '.ply'
+            print('Extracting and saving mesh to {}...'.format(mesh_fname))
+            mesh = extract_trianglemesh(self.model.voxel_grid, config,
+                                        mesh_fname)
+            print('Finished.')
+
+            log_fname = '.'.join(config.path_npz.split('.')[:-1]) + '.log'
+            print('Saving trajectory to {}...'.format(log_fname))
+            save_poses(log_fname, self.poses)
+            print('Finished.')
+
+        return True
 
     def init_render(self, depth_ref, color_ref):
         self.input_depth_image.update_image(
@@ -328,8 +348,6 @@ class ReconstructionWindow:
         gui.Application.instance.post_to_main_thread(
             self.window, lambda: self.init_render(depth_ref, color_ref))
 
-        poses = []
-
         fps_interval_len = 30
         self.idx = 0
         pcd = None
@@ -355,7 +373,7 @@ class ReconstructionWindow:
                 )
                 T_frame_to_model = T_frame_to_model @ result.transformation
 
-            poses.append(T_frame_to_model.cpu().numpy())
+            self.poses.append(T_frame_to_model.cpu().numpy())
             self.model.update_frame_pose(self.idx, T_frame_to_model)
             self.model.integrate(input_frame,
                                  float(self.scale_slider.int_value),
@@ -366,9 +384,9 @@ class ReconstructionWindow:
                 self.raycast_box.checked)
 
             if (self.idx % self.interval_slider.int_value == 0 and
-                    self.update_box.checked) or (self.idx
-                                                 == 0) or (self.idx
-                                                           == n_files - 1):
+                    self.update_box.checked) \
+                    or (self.idx == 3) \
+                    or (self.idx == n_files - 1):
                 pcd = self.model.voxel_grid.extract_point_cloud().to(
                     o3d.core.Device('CPU:0'))
                 self.is_scene_updated = True
@@ -425,6 +443,9 @@ if __name__ == '__main__':
         help='YAML config file path. Please refer to default_config.yml as a '
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
+    parser.add('--path_npz',
+               help='path to the npz file that stores voxel block grid.',
+               default='output.npz')
     config = parser.get_config()
 
     app = gui.Application.instance
