@@ -11,9 +11,15 @@ import time
 from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh
 
 
+def set_enabled(widget, enable):
+    widget.enabled = enable
+    for child in widget.get_children():
+        child.enabled = enable
+
+
 class ReconstructionWindow:
 
-    def __init__(self, config):
+    def __init__(self, config, font_id):
         self.config = config
 
         self.window = gui.Application.instance.create_window(
@@ -31,73 +37,80 @@ class ReconstructionWindow:
         self.panel = gui.Vert(spacing, margins)
 
         ## Items in fixed props
-        fixed_prop_grid = gui.VGrid(2, spacing, gui.Margins(em, 0, em, 0))
+        self.fixed_prop_grid = gui.VGrid(2, spacing, gui.Margins(em, 0, em, 0))
 
         ### Depth scale slider
         scale_label = gui.Label('Depth scale')
-        scale_slider = gui.Slider(gui.Slider.INT)
-        scale_slider.set_limits(1000, 5000)
-        scale_slider.int_value = int(config.depth_scale)
-        fixed_prop_grid.add_child(scale_label)
-        fixed_prop_grid.add_child(scale_slider)
+        self.scale_slider = gui.Slider(gui.Slider.INT)
+        self.scale_slider.set_limits(1000, 5000)
+        self.scale_slider.int_value = int(config.depth_scale)
+        self.fixed_prop_grid.add_child(scale_label)
+        self.fixed_prop_grid.add_child(self.scale_slider)
 
         voxel_size_label = gui.Label('Voxel size')
-        voxel_size_slider = gui.Slider(gui.Slider.DOUBLE)
-        voxel_size_slider.set_limits(3.0 / 512, 0.01)
-        voxel_size_slider.double_value = config.voxel_size
-        fixed_prop_grid.add_child(voxel_size_label)
-        fixed_prop_grid.add_child(voxel_size_slider)
+        self.voxel_size_slider = gui.Slider(gui.Slider.DOUBLE)
+        self.voxel_size_slider.set_limits(0.003, 0.01)
+        self.voxel_size_slider.double_value = config.voxel_size
+        self.fixed_prop_grid.add_child(voxel_size_label)
+        self.fixed_prop_grid.add_child(self.voxel_size_slider)
 
         est_block_count_label = gui.Label('Est. blocks')
-        est_block_count_slider = gui.Slider(gui.Slider.INT)
-        est_block_count_slider.set_limits(40000, 100000)
-        voxel_size_slider.int_value = config.block_count
-        fixed_prop_grid.add_child(est_block_count_label)
-        fixed_prop_grid.add_child(est_block_count_slider)
+        self.est_block_count_slider = gui.Slider(gui.Slider.INT)
+        self.est_block_count_slider.set_limits(40000, 100000)
+        self.est_block_count_slider.int_value = config.block_count
+        self.fixed_prop_grid.add_child(est_block_count_label)
+        self.fixed_prop_grid.add_child(self.est_block_count_slider)
 
         est_point_count_label = gui.Label('Est. points')
         self.est_point_count_slider = gui.Slider(gui.Slider.INT)
-        self.est_point_count_slider.set_limits(5000000, 10000000)
-        fixed_prop_grid.add_child(est_point_count_label)
-        fixed_prop_grid.add_child(self.est_point_count_slider)
+        self.est_point_count_slider.set_limits(3000000, 10000000)
+        self.fixed_prop_grid.add_child(est_point_count_label)
+        self.fixed_prop_grid.add_child(self.est_point_count_slider)
 
         ## Items in adjustable props
-        adjustable_prop_grid = gui.VGrid(2, spacing, gui.Margins(em, 0, em, 0))
+        self.adjustable_prop_grid = gui.VGrid(2, spacing,
+                                              gui.Margins(em, 0, em, 0))
 
         ### Reconstruction interval
         interval_label = gui.Label('Recon. interval')
-        interval_slider = gui.Slider(gui.Slider.INT)
-        interval_slider.set_limits(50, 500)
-        adjustable_prop_grid.add_child(interval_label)
-        adjustable_prop_grid.add_child(interval_slider)
+        self.interval_slider = gui.Slider(gui.Slider.INT)
+        self.interval_slider.set_limits(1, 500)
+        self.interval_slider.int_value = 50
+        self.adjustable_prop_grid.add_child(interval_label)
+        self.adjustable_prop_grid.add_child(self.interval_slider)
 
         ### Depth max slider
         max_label = gui.Label('Depth max')
-        max_slider = gui.Slider(gui.Slider.DOUBLE)
-        max_slider.set_limits(3.0, 6.0)
-        adjustable_prop_grid.add_child(max_label)
-        adjustable_prop_grid.add_child(max_slider)
+        self.max_slider = gui.Slider(gui.Slider.DOUBLE)
+        self.max_slider.set_limits(3.0, 6.0)
+        self.max_slider.double_value = config.depth_max
+        self.adjustable_prop_grid.add_child(max_label)
+        self.adjustable_prop_grid.add_child(self.max_slider)
 
         ### Depth diff slider
         diff_label = gui.Label('Depth diff')
-        diff_slider = gui.Slider(gui.Slider.DOUBLE)
-        diff_slider.set_limits(0.07, 0.5)
-        adjustable_prop_grid.add_child(diff_label)
-        adjustable_prop_grid.add_child(diff_slider)
+        self.diff_slider = gui.Slider(gui.Slider.DOUBLE)
+        self.diff_slider.set_limits(0.07, 0.5)
+        self.diff_slider.double_value = config.odometry_distance_thr
+        self.adjustable_prop_grid.add_child(diff_label)
+        self.adjustable_prop_grid.add_child(self.diff_slider)
 
         ### Update surface?
         update_label = gui.Label('Update surface?')
-        update_box = gui.Checkbox('')
-        update_box.checked = True
-        adjustable_prop_grid.add_child(update_label)
-        adjustable_prop_grid.add_child(update_box)
+        self.update_box = gui.Checkbox('')
+        self.update_box.checked = True
+        self.adjustable_prop_grid.add_child(update_label)
+        self.adjustable_prop_grid.add_child(self.update_box)
 
         ### Ray cast color?
         raycast_label = gui.Label('Raycast color?')
-        raycast_box = gui.Checkbox('')
-        raycast_box.checked = True
-        adjustable_prop_grid.add_child(raycast_label)
-        adjustable_prop_grid.add_child(raycast_box)
+        self.raycast_box = gui.Checkbox('')
+        self.raycast_box.checked = True
+        self.adjustable_prop_grid.add_child(raycast_label)
+        self.adjustable_prop_grid.add_child(self.raycast_box)
+
+        set_enabled(self.fixed_prop_grid, True)
+        set_enabled(self.adjustable_prop_grid, False)
 
         ## Application control
         b = gui.ToggleSwitch('Resume/Pause')
@@ -128,14 +141,15 @@ class ReconstructionWindow:
         ### Info tab
         tab3 = gui.Vert(0, tab_margins)
         self.output_info = gui.Label('Output info')
+        self.output_info.font_id = font_id
         tab3.add_child(self.output_info)
         tabs.add_tab('Info', tab3)
 
         self.panel.add_child(gui.Label('Starting settings'))
-        self.panel.add_child(fixed_prop_grid)
+        self.panel.add_child(self.fixed_prop_grid)
         self.panel.add_fixed(vspacing)
         self.panel.add_child(gui.Label('Reconstruction settings'))
-        self.panel.add_child(adjustable_prop_grid)
+        self.panel.add_child(self.adjustable_prop_grid)
         self.panel.add_child(b)
         self.panel.add_stretch()
         self.panel.add_child(tabs)
@@ -205,22 +219,26 @@ class ReconstructionWindow:
         mat.sRGB_color = True
         self.widget3d.scene.scene.add_geometry('points', pcd_placeholder, mat)
 
-        self.model = o3d.t.pipelines.slam.Model(self.config.voxel_size, 16,
-                                                self.config.block_count,
-                                                o3c.Tensor(np.eye(4)),
-                                                o3c.Device(self.config.device))
+        self.model = o3d.t.pipelines.slam.Model(
+            self.voxel_size_slider.double_value, 16,
+            self.est_block_count_slider.int_value, o3c.Tensor(np.eye(4)),
+            o3c.Device(self.config.device))
         self.is_started = True
 
+        set_enabled(self.fixed_prop_grid, False)
+        set_enabled(self.adjustable_prop_grid, True)
 
     def init_render(self, depth_ref, color_ref):
         self.input_depth_image.update_image(
-            depth_ref.colorize_depth(config.depth_scale, config.depth_min,
-                                     config.depth_max).to_legacy())
+            depth_ref.colorize_depth(float(self.scale_slider.int_value),
+                                     config.depth_min,
+                                     self.max_slider.double_value).to_legacy())
         self.input_color_image.update_image(color_ref.to_legacy())
 
         self.raycast_depth_image.update_image(
-            depth_ref.colorize_depth(config.depth_scale, config.depth_min,
-                                     config.depth_max).to_legacy())
+            depth_ref.colorize_depth(float(self.scale_slider.int_value),
+                                     config.depth_min,
+                                     self.max_slider.double_value).to_legacy())
         self.raycast_color_image.update_image(color_ref.to_legacy())
         self.window.set_needs_layout()
 
@@ -228,19 +246,20 @@ class ReconstructionWindow:
         self.widget3d.setup_camera(60, bbox, [0, 0, 0])
         self.widget3d.look_at([0, 0, 0], [0, -1, -3], [0, -1, 0])
 
-        # self.widget3d.look_at(center, center - (0, 1, 3), (0, -1, 0))
-
     def update_render(self, input_depth, input_color, raycast_depth,
                       raycast_color, pcd):
         self.input_depth_image.update_image(
-            input_depth.colorize_depth(config.depth_scale, config.depth_min,
-                                       config.depth_max).to_legacy())
+            input_depth.colorize_depth(
+                float(self.scale_slider.int_value), config.depth_min,
+                self.max_slider.double_value).to_legacy())
         self.input_color_image.update_image(input_color.to_legacy())
 
         self.raycast_depth_image.update_image(
-            raycast_depth.colorize_depth(config.depth_scale, config.depth_min,
-                                         config.depth_max).to_legacy())
-        self.raycast_color_image.update_image(raycast_color.to_legacy())
+            raycast_depth.colorize_depth(
+                float(self.scale_slider.int_value), config.depth_min,
+                self.max_slider.double_value).to_legacy())
+        self.raycast_color_image.update_image(
+            (raycast_color).to(o3c.uint8, False, 255.0).to_legacy())
         if self.is_scene_updated and pcd is not None:
             self.widget3d.scene.scene.update_geometry(
                 'points', pcd, rendering.Scene.UPDATE_POINTS_FLAG |
@@ -275,8 +294,13 @@ class ReconstructionWindow:
 
         poses = []
 
+        fps_interval_len = 30
+
         i = 0
         pcd = None
+
+        start = time.time()
+
         while not self.is_done:
             if not self.is_started or not self.is_running:
                 time.sleep(0.05)
@@ -290,31 +314,64 @@ class ReconstructionWindow:
 
             if i > 0:
                 result = self.model.track_frame_to_model(
-                    input_frame, raycast_frame, config.depth_scale,
-                    config.depth_max, config.odometry_distance_thr)
+                    input_frame,
+                    raycast_frame,
+                    float(self.scale_slider.int_value),
+                    self.max_slider.double_value,
+                )
                 T_frame_to_model = T_frame_to_model @ result.transformation
 
             poses.append(T_frame_to_model.cpu().numpy())
             self.model.update_frame_pose(i, T_frame_to_model)
-            self.model.integrate(input_frame, config.depth_scale,
-                                 config.depth_max)
-            self.model.synthesize_model_frame(raycast_frame, config.depth_scale,
-                                              config.depth_min,
-                                              config.depth_max, False)
-            if i % 50 == 0:
+            self.model.integrate(input_frame,
+                                 float(self.scale_slider.int_value),
+                                 self.max_slider.double_value)
+            self.model.synthesize_model_frame(
+                raycast_frame, float(self.scale_slider.int_value),
+                config.depth_min, self.max_slider.double_value,
+                self.raycast_box.checked)
+
+            if (i % self.interval_slider.int_value == 0 and
+                    self.update_box.checked) or (i == 0) or (i == n_files - 1):
                 pcd = self.model.voxel_grid.extract_point_cloud().to(
                     o3d.core.Device('CPU:0'))
                 self.is_scene_updated = True
             else:
                 self.is_scene_updated = False
 
-            i += 1
+            # Output FPS
+            if (i % fps_interval_len == 0):
+                end = time.time()
+                elapsed = end - start
+                start = time.time()
+                self.output_fps.text = 'FPS: {:.3f}'.format(fps_interval_len /
+                                                            elapsed)
+
+            # Output info
+            info = 'Frame {}/{}\n\n'.format(i, n_files)
+            info += 'Transformation:\n{}\n'.format(
+                np.array2string(T_frame_to_model.numpy(),
+                                precision=3,
+                                max_line_width=40,
+                                suppress_small=True))
+            info += 'Active voxel blocks: {}/{}\n'.format(
+                self.model.voxel_grid.hashmap().size(),
+                self.model.voxel_grid.hashmap().capacity())
+            info += 'Surface points: {}/{}\n'.format(
+                0 if pcd is None else pcd.point['positions'].shape[0],
+                self.est_point_count_slider.int_value)
+
+            self.output_info.text = info
+
             gui.Application.instance.post_to_main_thread(
                 self.window, lambda: self.update_render(
                     input_frame.get_data_as_image('depth'),
                     input_frame.get_data_as_image('color'),
                     raycast_frame.get_data_as_image('depth'),
                     raycast_frame.get_data_as_image('color'), pcd))
+
+            i += 1
+            self.is_done = self.is_done | (i >= n_files)
 
 
 if __name__ == '__main__':
@@ -327,6 +384,8 @@ if __name__ == '__main__':
         'overridden by other command line inputs.')
     config = parser.get_config()
 
-    gui.Application.instance.initialize()
-    w = ReconstructionWindow(config)
-    gui.Application.instance.run()
+    app = gui.Application.instance
+    app.initialize()
+    mono = app.add_font(gui.FontDescription(gui.FontDescription.MONOSPACE))
+    w = ReconstructionWindow(config, mono)
+    app.instance.run()
