@@ -665,23 +665,24 @@ Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
     return combined_tensor;
 }
 
-Tensor Tensor::Append(const Tensor& tensor,
-                      const Tensor& other,
+Tensor Tensor::Append(const Tensor& this_tensor,
+                      const Tensor& other_tensor,
                       const utility::optional<int64_t> axis) {
     if (!axis.has_value()) {
-        return Concatenate({tensor.Reshape({tensor.NumElements(), 1}),
-                            other.Reshape({other.NumElements(), 1})},
-                           0)
+        return Concatenate(
+                       {this_tensor.Reshape({this_tensor.NumElements(), 1}),
+                        other_tensor.Reshape({other_tensor.NumElements(), 1})},
+                       0)
                 .Reshape({-1});
     } else {
-        if (tensor.NumDims() == 0) {
+        if (this_tensor.NumDims() == 0) {
             utility::LogError(
                     "Zero-dimensional tensor can only be appended along axis = "
                     "null, but got {}.",
                     axis.value());
         }
 
-        return Concatenate({tensor, other}, axis.value());
+        return Concatenate({this_tensor, other_tensor}, axis.value());
     }
 }
 

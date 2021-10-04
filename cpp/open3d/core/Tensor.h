@@ -398,16 +398,16 @@ public:
     /// //  Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70]
     /// \endcode
     ///
-    /// \param tensor Values are appended to a copy of this tensor.
-    /// \param other Values of this tensor is appended to the `tensor`.
+    /// \param this_tensor Values are appended to a copy of this tensor.
+    /// \param other_tensor Values of this tensor is appended to the `tensor`.
     /// \param axis [optional] The axis along which values are appended. If axis
     /// is not given, both arr and values are flattened before use. \return A
     /// copy of `tensor` with `other` values appended to axis. Note that append
     /// does not occur in-place: a new array is allocated and filled. If axis is
     /// None, out is a flattened tensor.
     static Tensor Append(
-            const Tensor& tensor,
-            const Tensor& other,
+            const Tensor& this_tensor,
+            const Tensor& other_tensor,
             const utility::optional<int64_t> axis = utility::nullopt);
 
     /// \brief Appends the `other` tensor, along the given axis and returns a
