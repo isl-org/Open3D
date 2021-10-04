@@ -342,37 +342,6 @@ public:
     /// ```
     Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
 
-    /// \brief Concatenates the list of tensors in their order, along the given
-    /// axis into a new tensor. All the tensors must have same data-type,
-    /// device, and number of dimentions. All dimensions must be the same,
-    /// except the dimension along the axis the tensors are to be concatinated.
-    ///
-    /// This is the same as NumPy's semantics:
-    /// -
-    /// https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html
-    ///
-    /// Example:
-    /// \code{.cpp}
-    /// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
-    /// Tensor b = Tensor::Init<int64_t>({4, 5});
-    /// Tensor c = Tensor::Init<int64_t>({6, 7});
-    /// Tensor t1 = Tensor::Concatenate({a, b, c}, 0);
-    /// // t1:
-    /// //  [[0 1],
-    /// //   [2 3],
-    /// //   [4 5],
-    /// //   [6 7]]
-    /// //  Tensor[shape={4, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
-    /// \endcode
-    ///
-    /// \param tensor_list Vector of tensors to be concatenated.
-    /// \param axis The axis along which values are concatenated. [Default axis
-    /// is 0].
-    /// \return A new tensor with the values of list of tensors concatenated in
-    /// order, along the given axis.
-    static Tensor Concatenate(const std::vector<Tensor>& tensor_list,
-                              const int64_t axis = 0);
-
     /// \brief Appends the two tensors, along the given axis into a new tensor.
     /// Both the tensors must have same data-type, device, and number of
     /// dimentions. All dimensions must be the same, except the dimension along
@@ -399,19 +368,19 @@ public:
     /// \endcode
     ///
     /// \param tensor Values are appended to a copy of this tensor.
-    /// \param other Values of this tensor is appended to the `tensor`.
+    /// \param values Values of this tensor is appended to the `tensor`.
     /// \param axis [optional] The axis along which values are appended. If axis
-    /// is not given, both arr and values are flattened before use. \return A
-    /// copy of `tensor` with `other` values appended to axis. Note that append
-    /// does not occur in-place: a new array is allocated and filled. If axis is
-    /// None, out is a flattened tensor.
+    /// is not given, both tensors are flattened before use.
+    /// \return A copy of `tensor` with `values` appended to axis. Note that
+    /// append does not occur in-place: a new array is allocated and filled. If
+    /// axis is None, out is a flattened tensor.
     static Tensor Append(
             const Tensor& tensor,
-            const Tensor& other,
+            const Tensor& values,
             const utility::optional<int64_t> axis = utility::nullopt);
 
-    /// \brief Appends the `other` tensor, along the given axis and returns a
-    /// copy of the tensor. The `other` tensors must have same data-type,
+    /// \brief Appends the `values` tensor, along the given axis and returns a
+    /// copy of the tensor. The `values` tensors must have same data-type,
     /// device, and number of dimentions. All dimensions must be the same,
     /// except the dimension along the axis the tensors are to be appended.
     ///
@@ -434,16 +403,16 @@ public:
     /// //  Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70]
     /// \endcode
     ///
-    /// \param other Values of this tensor is appended to the tensor.
+    /// \param values Values of this tensor is appended to the tensor.
     /// \param axis The axis along which values are appended. If axis is not
-    /// given, both arr and values are flattened before use.
-    /// \return A copy of the tensor with `other` values appended to axis. Note
+    /// given, both tensors are flattened before use.
+    /// \return A copy of the tensor with `values` appended to axis. Note
     /// that append does not occur in-place: a new array is allocated and
     /// filled. If axis is None, out is a flattened tensor.
     Tensor Append(
-            const Tensor& other,
+            const Tensor& values,
             const utility::optional<int64_t> axis = utility::nullopt) const {
-        return Tensor::Append(*this, other, axis);
+        return Tensor::Append(*this, values, axis);
     }
 
     /// Assign (copy) values from another Tensor, shape, dtype, device may
