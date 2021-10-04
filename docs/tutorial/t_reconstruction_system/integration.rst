@@ -6,7 +6,7 @@ Truncated Signed Distance Function (TSDF) integration is the key of dense volume
 
 The integration process mainly consists of two steps, (sparse) **block** selection and activation, and (dense) **voxel** value integration. An example can be found at ``examples/python/t_reconstruction_system/integrate.py``.
 
-The system may run at a minimal dataset in ``examples/test_data/RGBD``, but it is recommended to run on real-world longer sequences to demonstrate the functionality. Please refer to :ref:`tutorial/geometry/rgbd_image.ipynb` for more available datasets.
+The system may run at a minimal dataset in ``examples/test_data/RGBD``, but it is recommended to run on real-world longer sequences to demonstrate the functionality. Please refer to :ref:`/tutorial/geometry/rgbd_image.ipynb` for more available datasets.
 
 Activation
 ``````````

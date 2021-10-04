@@ -2,7 +2,7 @@
 
 Ray Casting in a Voxel Block Grid
 -------------------
-Note: this is NOT ray casting for triangle meshes. Please refer to :ref:`../python_api/open3d.t.geometry.RayCastingScene` for that usage.
+Note: this is NOT ray casting for triangle meshes. Please refer to :ref:`/python_api/open3d.t.geometry.RayCastingScene.rst` for that usage.
 
 Ray casting can be performed in a voxel block grid to generate depth and color images at specific view points without extracting the entire surface. It could be useful for frame-to-model tracking, and potentially differentiable volume rendering.
 
