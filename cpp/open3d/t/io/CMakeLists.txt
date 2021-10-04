@@ -1,4 +1,4 @@
-add_library(tio OBJECT)
+open3d_ispc_add_library(tio OBJECT)
 
 target_sources(tio PRIVATE
     ImageIO.cpp
@@ -11,6 +11,7 @@ target_sources(tio PRIVATE
 
 target_sources(tio PRIVATE
     file_format/FileJPG.cpp
+    file_format/FilePCD.cpp
     file_format/FilePLY.cpp
     file_format/FilePNG.cpp
     file_format/FilePTS.cpp

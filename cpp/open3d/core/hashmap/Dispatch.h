@@ -28,36 +28,43 @@
 
 #include "open3d/core/Dtype.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/MiniVec.h"
 
 // TODO: dispatch more combinations.
 #define DISPATCH_DTYPE_AND_DIM_TO_TEMPLATE(DTYPE, DIM, ...)                  \
     [&] {                                                                    \
         if (DTYPE == open3d::core::Int32) {                                  \
             if (DIM == 1) {                                                  \
-                using key_t = Block<int, 1>;                                 \
-                using hash_t = BlockHash<int, 1>;                            \
+                using key_t = utility::MiniVec<int, 1>;                      \
+                using hash_t = utility::MiniVecHash<int, 1>;                 \
+                using eq_t = utility::MiniVecEq<int, 1>;                     \
                 return __VA_ARGS__();                                        \
             } else if (DIM == 2) {                                           \
-                using key_t = Block<int, 2>;                                 \
-                using hash_t = BlockHash<int, 2>;                            \
+                using key_t = utility::MiniVec<int, 2>;                      \
+                using hash_t = utility::MiniVecHash<int, 2>;                 \
+                using eq_t = utility::MiniVecEq<int, 2>;                     \
                 return __VA_ARGS__();                                        \
             } else if (DIM == 3) {                                           \
-                using key_t = Block<int, 3>;                                 \
-                using hash_t = BlockHash<int, 3>;                            \
+                using key_t = utility::MiniVec<int, 3>;                      \
+                using hash_t = utility::MiniVecHash<int, 3>;                 \
+                using eq_t = utility::MiniVecEq<int, 3>;                     \
                 return __VA_ARGS__();                                        \
             }                                                                \
         } else if (DTYPE == open3d::core::Int64) {                           \
             if (DIM == 1) {                                                  \
-                using key_t = Block<int64_t, 1>;                             \
-                using hash_t = BlockHash<int64_t, 1>;                        \
+                using key_t = utility::MiniVec<int64_t, 1>;                  \
+                using hash_t = utility::MiniVecHash<int64_t, 1>;             \
+                using eq_t = utility::MiniVecEq<int64_t, 1>;                 \
                 return __VA_ARGS__();                                        \
             } else if (DIM == 2) {                                           \
-                using key_t = Block<int64_t, 2>;                             \
-                using hash_t = BlockHash<int64_t, 2>;                        \
+                using key_t = utility::MiniVec<int64_t, 2>;                  \
+                using hash_t = utility::MiniVecHash<int64_t, 2>;             \
+                using eq_t = utility::MiniVecEq<int64_t, 2>;                 \
                 return __VA_ARGS__();                                        \
             } else if (DIM == 3) {                                           \
-                using key_t = Block<int64_t, 3>;                             \
-                using hash_t = BlockHash<int64_t, 3>;                        \
+                using key_t = utility::MiniVec<int64_t, 3>;                  \
+                using hash_t = utility::MiniVecHash<int64_t, 3>;             \
+                using eq_t = utility::MiniVecEq<int64_t, 3>;                 \
                 return __VA_ARGS__();                                        \
             }                                                                \
         } else {                                                             \
@@ -66,66 +73,68 @@
         }                                                                    \
     }()
 
+#ifdef __CUDACC__
+// Reinterpret hash maps' void* value arrays as CUDA primitive types arrays, to
+// avoid slow memcpy or byte-by-byte copy in kernels.
+// Not used in the CPU version since memcpy is relatively fast on CPU.
+#define DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(DIVISOR, ...) \
+    [&] {                                              \
+        if (DIVISOR == 16) {                           \
+            using block_t = int4;                      \
+            return __VA_ARGS__();                      \
+        } else if (DIVISOR == 12) {                    \
+            using block_t = int3;                      \
+            return __VA_ARGS__();                      \
+        } else if (DIVISOR == 8) {                     \
+            using block_t = int2;                      \
+            return __VA_ARGS__();                      \
+        } else if (DIVISOR == 4) {                     \
+            using block_t = int;                       \
+            return __VA_ARGS__();                      \
+        } else if (DIVISOR == 2) {                     \
+            using block_t = int16_t;                   \
+            return __VA_ARGS__();                      \
+        } else {                                       \
+            using block_t = uint8_t;                   \
+            return __VA_ARGS__();                      \
+        }                                              \
+    }()
+#endif
+
 namespace open3d {
-namespace core {
-template <typename T, size_t N>
-class Block {
+namespace utility {
+
+template <typename T, int N>
+struct MiniVecHash {
 public:
-    Block() = default;
-
-    OPEN3D_HOST_DEVICE Block(const Block<T, N>& other) {
-#if defined(__CUDA_ARCH__)
-#pragma unroll
-#endif
-        for (size_t i = 0; i < N; ++i) {
-            data_[i] = other.data_[i];
-        }
-    }
-
-    OPEN3D_HOST_DEVICE Block<T, N>& operator=(const Block<T, N>& other) {
-#if defined(__CUDA_ARCH__)
-#pragma unroll
-#endif
-        for (size_t i = 0; i < N; ++i) {
-            data_[i] = other.data_[i];
-        }
-
-        return *this;
-    }
-
-    OPEN3D_HOST_DEVICE bool operator==(const Block<T, N>& other) const {
-        bool is_eq = true;
-#if defined(__CUDA_ARCH__)
-#pragma unroll
-#endif
-        for (size_t i = 0; i < N; ++i) {
-            is_eq = is_eq && (data_[i] == other.data_[i]);
-        }
-        return is_eq;
-    }
-
-    OPEN3D_HOST_DEVICE T Get(size_t i) const { return data_[i]; }
-    OPEN3D_HOST_DEVICE void Set(size_t i, const T& value) { data_[i] = value; }
-
-private:
-    T data_[N];
-};
-
-template <typename T, size_t N>
-struct BlockHash {
-public:
-    OPEN3D_HOST_DEVICE uint64_t operator()(const Block<T, N>& key) const {
+    OPEN3D_HOST_DEVICE uint64_t operator()(const MiniVec<T, N>& key) const {
         uint64_t hash = UINT64_C(14695981039346656037);
 #if defined(__CUDA_ARCH__)
 #pragma unroll
 #endif
-        for (size_t i = 0; i < N; ++i) {
-            hash ^= static_cast<uint64_t>(key.Get(i));
+        for (int i = 0; i < N; ++i) {
+            hash ^= static_cast<uint64_t>(key[i]);
             hash *= UINT64_C(1099511628211);
         }
         return hash;
     }
 };
 
-}  // namespace core
+template <typename T, int N>
+struct MiniVecEq {
+public:
+    OPEN3D_HOST_DEVICE bool operator()(const MiniVec<T, N>& lhs,
+                                       const MiniVec<T, N>& rhs) const {
+        bool is_equal = true;
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+        for (int i = 0; i < N; ++i) {
+            is_equal = is_equal && (lhs[i] == rhs[i]);
+        }
+        return is_equal;
+    }
+};
+
+}  // namespace utility
 }  // namespace open3d

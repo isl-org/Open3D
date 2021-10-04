@@ -38,6 +38,7 @@
 #include <tuple>
 #include <vector>
 
+#include "open3d/core/TensorCheck.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -59,7 +60,7 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const open3d::core::Tensor& tensor,
                                            int64_t last_dim,
                                            const open3d::core::Device& device,
                                            int64_t min_ndim = 2) {
-    tensor.AssertDevice(device);
+    open3d::core::AssertTensorDevice(tensor, device);
     if (tensor.NumDims() < min_ndim) {
         open3d::utility::LogError(
                 "{} Tensor ndim is {} but expected ndim >= {}", tensor_name,
@@ -71,7 +72,8 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const open3d::core::Tensor& tensor,
                 "Tensor with shape {}",
                 tensor_name, last_dim, tensor.GetShape().ToString());
     }
-    tensor.AssertDtype(open3d::core::Dtype::FromType<DTYPE>());
+    open3d::core::AssertTensorDtype(tensor,
+                                    open3d::core::Dtype::FromType<DTYPE>());
 }
 
 struct CountIntersectionsContext {
@@ -288,6 +290,55 @@ struct RaycastingScene::Impl {
         }
     }
 
+    void TestOcclusions(const float* const rays,
+                        const size_t num_rays,
+                        const float tnear,
+                        const float tfar,
+                        int8_t* occluded) {
+        if (!scene_committed_) {
+            rtcCommitScene(scene_);
+            scene_committed_ = true;
+        }
+
+        struct RTCIntersectContext context;
+        rtcInitIntersectContext(&context);
+
+        std::vector<RTCRay> rayvec(std::min(num_rays, MAX_BATCH_SIZE));
+
+        const int num_batches = utility::DivUp(num_rays, rayvec.size());
+
+        for (int n = 0; n < num_batches; ++n) {
+            size_t start_idx = n * rayvec.size();
+            size_t end_idx = std::min(num_rays, (n + 1) * rayvec.size());
+
+            for (size_t i = start_idx; i < end_idx; ++i) {
+                RTCRay& ray = rayvec[i - start_idx];
+                const float* r = &rays[i * 6];
+                ray.org_x = r[0];
+                ray.org_y = r[1];
+                ray.org_z = r[2];
+                ray.dir_x = r[3];
+                ray.dir_y = r[4];
+                ray.dir_z = r[5];
+                ray.tnear = tnear;
+                ray.tfar = tfar;
+                ray.mask = 0;
+                ray.id = i - start_idx;
+                ray.flags = 0;
+            }
+
+            rtcOccluded1M(scene_, &context, &rayvec[0], end_idx - start_idx,
+                          sizeof(RTCRay));
+
+            for (size_t i = start_idx; i < end_idx; ++i) {
+                RTCRay ray = rayvec[i - start_idx];
+                size_t idx = ray.id + start_idx;
+                occluded[idx] = int8_t(
+                        -std::numeric_limits<float>::infinity() == ray.tfar);
+            }
+        }
+    }
+
     void CountIntersections(const float* const rays,
                             const size_t num_rays,
                             int* intersections) {
@@ -397,12 +448,12 @@ RaycastingScene::~RaycastingScene() {
 
 uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
                                        const core::Tensor& triangle_indices) {
-    vertex_positions.AssertDevice(impl_->tensor_device_);
-    vertex_positions.AssertShape({utility::nullopt, 3});
-    vertex_positions.AssertDtype(core::Float32);
-    triangle_indices.AssertDevice(impl_->tensor_device_);
-    triangle_indices.AssertShape({utility::nullopt, 3});
-    triangle_indices.AssertDtype(core::UInt32);
+    core::AssertTensorDevice(vertex_positions, impl_->tensor_device_);
+    core::AssertTensorShape(vertex_positions, {utility::nullopt, 3});
+    core::AssertTensorDtype(vertex_positions, core::Float32);
+    core::AssertTensorDevice(triangle_indices, impl_->tensor_device_);
+    core::AssertTensorShape(triangle_indices, {utility::nullopt, 3});
+    core::AssertTensorDtype(triangle_indices, core::UInt32);
 
     const size_t num_vertices = vertex_positions.GetLength();
     const size_t num_triangles = triangle_indices.GetLength();
@@ -478,6 +529,25 @@ std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
                            result["primitive_ids"].GetDataPtr<uint32_t>(),
                            result["primitive_uvs"].GetDataPtr<float>(),
                            result["primitive_normals"].GetDataPtr<float>());
+
+    return result;
+}
+
+core::Tensor RaycastingScene::TestOcclusions(const core::Tensor& rays,
+                                             const float tnear,
+                                             const float tfar) {
+    AssertTensorDtypeLastDimDeviceMinNDim<float>(rays, "rays", 6,
+                                                 impl_->tensor_device_);
+    auto shape = rays.GetShape();
+    shape.pop_back();  // Remove last dim, we want to use this shape for the
+                       // results.
+    size_t num_rays = shape.NumElements();
+
+    core::Tensor result(shape, core::Bool);
+
+    auto data = rays.Contiguous();
+    impl_->TestOcclusions(data.GetDataPtr<float>(), num_rays, tnear, tfar,
+                          reinterpret_cast<int8_t*>(result.GetDataPtr<bool>()));
 
     return result;
 }
@@ -608,10 +678,10 @@ core::Tensor RaycastingScene::CreateRaysPinhole(
         const core::Tensor& extrinsic_matrix,
         int width_px,
         int height_px) {
-    intrinsic_matrix.AssertDevice(core::Device());
-    intrinsic_matrix.AssertShape({3, 3});
-    extrinsic_matrix.AssertDevice(core::Device());
-    extrinsic_matrix.AssertShape({4, 4});
+    core::AssertTensorDevice(intrinsic_matrix, core::Device());
+    core::AssertTensorShape(intrinsic_matrix, {3, 3});
+    core::AssertTensorDevice(extrinsic_matrix, core::Device());
+    core::AssertTensorShape(extrinsic_matrix, {4, 4});
 
     auto intrinsic_matrix_contig =
             intrinsic_matrix.To(core::Float64).Contiguous();
@@ -653,12 +723,12 @@ core::Tensor RaycastingScene::CreateRaysPinhole(double fov_deg,
                                                 const core::Tensor& up,
                                                 int width_px,
                                                 int height_px) {
-    center.AssertDevice(core::Device());
-    center.AssertShape({3});
-    eye.AssertDevice(core::Device());
-    eye.AssertShape({3});
-    up.AssertDevice(core::Device());
-    up.AssertShape({3});
+    core::AssertTensorDevice(center, core::Device());
+    core::AssertTensorShape(center, {3});
+    core::AssertTensorDevice(eye, core::Device());
+    core::AssertTensorShape(eye, {3});
+    core::AssertTensorDevice(up, core::Device());
+    core::AssertTensorShape(up, {3});
 
     double focal_length =
             0.5 * width_px / std::tan(0.5 * (M_PI / 180) * fov_deg);

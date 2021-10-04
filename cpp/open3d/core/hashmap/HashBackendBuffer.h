@@ -89,6 +89,12 @@ public:
     /// Return value's data sizes in bytes.
     std::vector<int64_t> GetValueDsizes() const;
 
+    /// Get the common block size divisor of all values types.
+    int64_t GetCommonBlockSize() const;
+
+    /// Return value's data sizes in the unit of common block size divisor.
+    std::vector<int64_t> GetValueBlocksPerElement() const;
+
     /// Return the index heap tensor.
     Tensor GetIndexHeap() const;
 
@@ -114,6 +120,9 @@ protected:
 
     Tensor key_buffer_;
     std::vector<Tensor> value_buffers_;
+
+    int64_t common_block_size_;
+    std::vector<int64_t> blocks_per_element_;
 };
 }  // namespace core
 }  // namespace open3d

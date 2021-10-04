@@ -189,6 +189,8 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
 
     // Fill global strides master_strides_.
     UpdateMasterStrides();
+
+    UpdateContiguousFlags();
 }
 
 bool Indexer::CanUse32BitIndexing() const {
@@ -351,6 +353,9 @@ Indexer Indexer::GetPerOutputIndexer(int64_t output_idx) const {
         }
     }
     sub_indexer.UpdateMasterStrides();
+
+    sub_indexer.UpdateContiguousFlags();
+
     return sub_indexer;
 }
 
@@ -377,6 +382,8 @@ void Indexer::ShrinkDim(int64_t dim, int64_t start, int64_t size) {
 
     master_shape_[dim] = size;
     UpdateMasterStrides();
+
+    UpdateContiguousFlags();
 
     if (size == 1) {
         CoalesceDimensions();
@@ -475,6 +482,8 @@ void Indexer::CoalesceDimensions() {
     }
 
     UpdateMasterStrides();
+
+    UpdateContiguousFlags();
 }
 
 void Indexer::ReorderDimensions(const SizeVector& reduction_dims) {
@@ -548,6 +557,16 @@ void Indexer::UpdateMasterStrides() {
         master_strides_[i] = stride;
         // Handles 0-sized dimensions
         stride = master_shape_[i] > 1 ? stride * master_shape_[i] : stride;
+    }
+}
+
+void Indexer::UpdateContiguousFlags() {
+    for (int64_t i = 0; i < num_inputs_; ++i) {
+        inputs_contiguous_[i] = inputs_[i].IsContiguous();
+    }
+
+    for (int64_t i = 0; i < num_outputs_; ++i) {
+        outputs_contiguous_[i] = outputs_[i].IsContiguous();
     }
 }
 

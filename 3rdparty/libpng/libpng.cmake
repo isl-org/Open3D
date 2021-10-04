@@ -29,4 +29,4 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_libpng INSTALL_DIR)
 set(LIBPNG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(LIBPNG_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(LIBPNG_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
+set(LIBPNG_LIBRARIES ${lib_name}$<$<PLATFORM_ID:Windows>:$<$<CONFIG:Debug>:d>>)

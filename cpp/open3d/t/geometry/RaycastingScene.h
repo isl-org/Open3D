@@ -90,7 +90,24 @@ public:
     std::unordered_map<std::string, core::Tensor> CastRays(
             const core::Tensor &rays);
 
-    /// \brief Computes the first intersection of the rays with the scene.
+    /// \brief Checks if the rays have any intersection with the scene.
+    /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32
+    /// describing the rays.
+    /// {..} can be any number of dimensions, e.g., to organize rays for
+    /// creating an image the shape can be {height, width, 6}.
+    /// The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
+    /// with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
+    /// necessary to normalize the direction.
+    /// \param tnear The tnear offset for the rays. The default is 0.
+    /// \param tfar The tfar value for the ray. The default is infinity.
+    /// \return A boolean tensor which indicates if the ray is occluded by the
+    /// scene (true) or not (false).
+    core::Tensor TestOcclusions(
+            const core::Tensor &rays,
+            const float tnear = 0.f,
+            const float tfar = std::numeric_limits<float>::infinity());
+
+    /// \brief Computes the number of intersection of the rays with the scene.
     /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32
     /// describing the rays.
     /// {..} can be any number of dimensions, e.g., to organize rays for

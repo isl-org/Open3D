@@ -28,6 +28,7 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -96,9 +97,9 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     Dtype dtype = GetDtype();
     Device device = GetDevice();
 
-    query_points.AssertDtype(dtype);
-    query_points.AssertDevice(device);
-    query_points.AssertShape({utility::nullopt, GetDimension()});
+    AssertTensorDtype(query_points, dtype);
+    AssertTensorDevice(query_points, device);
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
     if (query_points.GetShape(0) != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
                 "KnnIndex::SearchKnn query_points and queries_row_splits have "

@@ -315,20 +315,20 @@ DataBufferToMetaGeometry(std::string& data) {
         if (messages::SetMeshData::MsgId() == req.msg_id) {
             auto oh = msgpack::unpack(buffer, buffer_size, offset, nullptr,
                                       nullptr, limits);
-            auto obj = oh.get();
+            auto mesh_obj = oh.get();
             messages::SetMeshData msg;
-            msg = obj.as<messages::SetMeshData>();
+            msg = mesh_obj.as<messages::SetMeshData>();
             auto result = MeshDataToGeometry(msg.data);
             double time = msg.time;
             return std::tie(msg.path, time, result);
         } else {
             LogWarning(
-                    "GetDataFromSetMeshDataBuffer: Wrong message id. Expected "
+                    "DataBufferToMetaGeometry: Wrong message id. Expected "
                     "'{}' but got '{}'.",
                     messages::SetMeshData::MsgId(), req.msg_id);
         }
     } catch (std::exception& err) {
-        LogWarning("GetDataFromSetMeshDataBuffer: {}", err.what());
+        LogWarning("DataBufferToMetaGeometry: {}", err.what());
     }
     return std::forward_as_tuple(std::string(), 0.,
                                  std::shared_ptr<t::geometry::Geometry>());

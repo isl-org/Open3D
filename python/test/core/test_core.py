@@ -145,49 +145,6 @@ def test_device():
     assert o3c.Device("CUDA", 1).__str__() == "CUDA:1"
 
 
-def test_size_vector():
-    # List
-    sv = o3c.SizeVector([-1, 2, 3])
-    assert "{}".format(sv) == "SizeVector[-1, 2, 3]"
-
-    # Tuple
-    sv = o3c.SizeVector((-1, 2, 3))
-    assert "{}".format(sv) == "SizeVector[-1, 2, 3]"
-
-    # Numpy 1D array
-    sv = o3c.SizeVector(np.array([-1, 2, 3]))
-    assert "{}".format(sv) == "SizeVector[-1, 2, 3]"
-
-    # Empty
-    sv = o3c.SizeVector()
-    assert "{}".format(sv) == "SizeVector[]"
-    sv = o3c.SizeVector([])
-    assert "{}".format(sv) == "SizeVector[]"
-    sv = o3c.SizeVector(())
-    assert "{}".format(sv) == "SizeVector[]"
-    sv = o3c.SizeVector(np.array([]))
-    assert "{}".format(sv) == "SizeVector[]"
-
-    # Not integer: thorws exception
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector([1.9, 2, 3])
-
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector([-1.5, 2, 3])
-
-    # 2D list exception
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector([[1, 2], [3, 4]])
-
-    # 2D Numpy array exception
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector(np.array([[1, 2], [3, 4]]))
-
-    # Garbage input
-    with pytest.raises(Exception):
-        sv = o3c.SizeVector(["foo", "bar"])
-
-
 @pytest.mark.parametrize("dtype", list_dtypes())
 @pytest.mark.parametrize("device", list_devices())
 def test_tensor_constructor(dtype, device):
@@ -440,6 +397,14 @@ def test_getitem(device):
     np.testing.assert_equal(o3_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3].cpu().numpy(),
                             np_t[0:2, 1:3, 0:4][0:1, 0:2, 2:3])
 
+    # Slice a zero-dim tensor
+    with pytest.raises(RuntimeError,
+                       match=r"Cannot slice a scalar \(0-dim\) tensor."):
+        o3c.Tensor.ones((), device=device)[:]
+    with pytest.raises(RuntimeError,
+                       match=r"Cannot slice a scalar \(0-dim\) tensor."):
+        o3c.Tensor.ones((), device=device)[0:1]
+
 
 @pytest.mark.parametrize("device", list_devices())
 def test_setitem(device):
@@ -547,6 +512,15 @@ def test_setitem(device):
     np_t[2, 2] = False
     o3_t[2, 2] = False
     np.testing.assert_equal(o3_t.cpu().numpy(), np_t)
+
+    # Slice a zero-dim tensor
+    # match=".*Cannot slice a scalar (0-dim) tensor.*"
+    with pytest.raises(RuntimeError,
+                       match=r"Cannot slice a scalar \(0-dim\) tensor."):
+        o3c.Tensor.ones((), device=device)[:] = 0
+    with pytest.raises(RuntimeError,
+                       match=r"Cannot slice a scalar \(0-dim\) tensor."):
+        o3c.Tensor.ones((), device=device)[0:1] = 0
 
 
 @pytest.mark.parametrize(
