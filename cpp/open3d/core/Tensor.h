@@ -399,7 +399,8 @@ public:
     /// \endcode
     ///
     /// \param this_tensor Values are appended to a copy of this tensor.
-    /// \param other_tensor Values of this tensor is appended to the `tensor`.
+    /// \param other_tensor Values of this tensor is appended to the
+    /// `this_tensor`.
     /// \param axis [optional] The axis along which values are appended. If axis
     /// is not given, both arr and values are flattened before use. \return A
     /// copy of `tensor` with `other` values appended to axis. Note that append
