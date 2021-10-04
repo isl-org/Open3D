@@ -1,3 +1,29 @@
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 
@@ -178,6 +204,8 @@ class ReconstructionWindow:
         self.is_running = False
         self.is_surface_updated = False
 
+        self.idx = 0
+
         # Start running
         threading.Thread(name='UpdateMain', target=self.update_main).start()
 
@@ -247,7 +275,7 @@ class ReconstructionWindow:
         self.widget3d.look_at([0, 0, 0], [0, -1, -3], [0, -1, 0])
 
     def update_render(self, input_depth, input_color, raycast_depth,
-                      raycast_color, pcd):
+                      raycast_color, pcd, frustum):
         self.input_depth_image.update_image(
             input_depth.colorize_depth(
                 float(self.scale_slider.int_value), config.depth_min,
@@ -260,10 +288,18 @@ class ReconstructionWindow:
                 self.max_slider.double_value).to_legacy())
         self.raycast_color_image.update_image(
             (raycast_color).to(o3c.uint8, False, 255.0).to_legacy())
-        if self.is_scene_updated and pcd is not None:
-            self.widget3d.scene.scene.update_geometry(
-                'points', pcd, rendering.Scene.UPDATE_POINTS_FLAG |
-                rendering.Scene.UPDATE_COLORS_FLAG)
+
+        if self.is_scene_updated:
+            if pcd is not None and pcd.point['positions'].shape[0] > 0:
+                self.widget3d.scene.scene.update_geometry(
+                    'points', pcd, rendering.Scene.UPDATE_POINTS_FLAG |
+                    rendering.Scene.UPDATE_COLORS_FLAG)
+
+        self.widget3d.scene.remove_geometry("frustum")
+        mat = rendering.Material()
+        mat.shader = "unlitLine"
+        mat.line_width = 5.0
+        self.widget3d.scene.add_geometry("frustum", frustum, mat)
 
     # Major loop
     def update_main(self):
@@ -295,24 +331,22 @@ class ReconstructionWindow:
         poses = []
 
         fps_interval_len = 30
-
-        i = 0
+        self.idx = 0
         pcd = None
 
         start = time.time()
-
         while not self.is_done:
             if not self.is_started or not self.is_running:
                 time.sleep(0.05)
                 continue
 
-            depth = o3d.t.io.read_image(depth_file_names[i]).to(device)
-            color = o3d.t.io.read_image(color_file_names[i]).to(device)
+            depth = o3d.t.io.read_image(depth_file_names[self.idx]).to(device)
+            color = o3d.t.io.read_image(color_file_names[self.idx]).to(device)
 
             input_frame.set_data_from_image('depth', depth)
             input_frame.set_data_from_image('color', color)
 
-            if i > 0:
+            if self.idx > 0:
                 result = self.model.track_frame_to_model(
                     input_frame,
                     raycast_frame,
@@ -322,7 +356,7 @@ class ReconstructionWindow:
                 T_frame_to_model = T_frame_to_model @ result.transformation
 
             poses.append(T_frame_to_model.cpu().numpy())
-            self.model.update_frame_pose(i, T_frame_to_model)
+            self.model.update_frame_pose(self.idx, T_frame_to_model)
             self.model.integrate(input_frame,
                                  float(self.scale_slider.int_value),
                                  self.max_slider.double_value)
@@ -331,16 +365,23 @@ class ReconstructionWindow:
                 config.depth_min, self.max_slider.double_value,
                 self.raycast_box.checked)
 
-            if (i % self.interval_slider.int_value == 0 and
-                    self.update_box.checked) or (i == 0) or (i == n_files - 1):
+            if (self.idx % self.interval_slider.int_value == 0 and
+                    self.update_box.checked) or (self.idx
+                                                 == 0) or (self.idx
+                                                           == n_files - 1):
                 pcd = self.model.voxel_grid.extract_point_cloud().to(
                     o3d.core.Device('CPU:0'))
                 self.is_scene_updated = True
             else:
                 self.is_scene_updated = False
 
+            frustum = o3d.geometry.LineSet.create_camera_visualization(
+                color.columns, color.rows, intrinsic.numpy(),
+                np.linalg.inv(T_frame_to_model.cpu().numpy()), 0.2)
+            frustum.paint_uniform_color([0.961, 0.475, 0.000])
+
             # Output FPS
-            if (i % fps_interval_len == 0):
+            if (self.idx % fps_interval_len == 0):
                 end = time.time()
                 elapsed = end - start
                 start = time.time()
@@ -348,7 +389,7 @@ class ReconstructionWindow:
                                                             elapsed)
 
             # Output info
-            info = 'Frame {}/{}\n\n'.format(i, n_files)
+            info = 'Frame {}/{}\n\n'.format(self.idx, n_files)
             info += 'Transformation:\n{}\n'.format(
                 np.array2string(T_frame_to_model.numpy(),
                                 precision=3,
@@ -368,10 +409,12 @@ class ReconstructionWindow:
                     input_frame.get_data_as_image('depth'),
                     input_frame.get_data_as_image('color'),
                     raycast_frame.get_data_as_image('depth'),
-                    raycast_frame.get_data_as_image('color'), pcd))
+                    raycast_frame.get_data_as_image('color'), pcd, frustum))
 
-            i += 1
-            self.is_done = self.is_done | (i >= n_files)
+            self.idx += 1
+            self.is_done = self.is_done | (self.idx >= n_files)
+
+        time.sleep(0.5)
 
 
 if __name__ == '__main__':
@@ -388,4 +431,4 @@ if __name__ == '__main__':
     app.initialize()
     mono = app.add_font(gui.FontDescription(gui.FontDescription.MONOSPACE))
     w = ReconstructionWindow(config, mono)
-    app.instance.run()
+    app.run()
