@@ -161,7 +161,6 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     core::AssertTensorDevice(tpcd_j.GetPointPositions(), device);
     core::AssertTensorDtype(tpcd_j.GetPointPositions(), dtype);
 
-    // TODO (@rishabh): AssertTransformation / IsTransformation.
     core::AssertTensorShape(T_i, {4, 4});
     core::AssertTensorShape(T_j, {4, 4});
     core::AssertTensorShape(T_ij, {4, 4});
@@ -180,6 +179,8 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     std::tie(target_indices, residual_distances_Tij, neighbour_counts) =
             tpcd_j_nns.HybridSearch(tpcd_i_transformed_Tij.GetPointPositions(),
                                     distance_threshold, 1);
+
+    target_indices = target_indices.To(core::Int64);
 
     // Get the correspondence_set Transformed of shape {C, 2}.
     core::Tensor correspondence_set =
