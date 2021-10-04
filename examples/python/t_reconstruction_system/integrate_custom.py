@@ -59,11 +59,11 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             vbg = o3d.t.geometry.VoxelBlockGrid(
                 ('tsdf', 'weight', 'color'),
                 (o3c.float32, o3c.float32, o3c.float32), ((1), (1), (3)),
-                3.0 / 512, 8, 100000, o3d.core.Device('CUDA:0'))
+                3.0 / 512, 8, 100000, device)
         else:
             vbg = o3d.t.geometry.VoxelBlockGrid(
                 ('tsdf', 'weight'), (o3c.float32, o3c.float32), ((1), (1)),
-                3.0 / 512, 8, 100000, o3d.core.Device('CUDA:0'))
+                3.0 / 512, 8, 100000, device)
 
         start = time.time()
         for i in tqdm(range(n_files)):
