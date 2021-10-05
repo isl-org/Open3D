@@ -359,16 +359,12 @@ Tensor& Tensor::operator=(Tensor&& other) & {
 
 /// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`.
 Tensor& Tensor::operator=(const Tensor& other) && {
-    // AssertTensorDevice(other, GetDevice());
-    // AssertTensorDtype(other, GetDtype());
     kernel::Copy(other, *this);
     return *this;
 }
 
 /// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`.
 Tensor& Tensor::operator=(Tensor&& other) && {
-    // AssertTensorDevice(other, GetDevice());
-    // AssertTensorDtype(other, GetDtype());
     kernel::Copy(other, *this);
     return *this;
 }

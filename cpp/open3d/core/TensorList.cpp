@@ -102,9 +102,9 @@ void TensorList::Resize(int64_t new_size) {
 void TensorList::PushBack(const Tensor& tensor) {
     AssertIsResizable(*this, __FUNCTION__);
 
-    AssertTensorDevice(tensor, element_shape_);
+    AssertTensorDevice(tensor, GetDevice());
     AssertTensorDtype(tensor, GetDtype());
-    AssertTensorShape(tensor, GetDevice());
+    AssertTensorShape(tensor, element_shape_);
 
     ResizeWithExpand(size_ + 1);
     internal_tensor_[size_ - 1] = tensor;  // same as operator[](-1) = tensor;
