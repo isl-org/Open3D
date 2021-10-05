@@ -33,14 +33,8 @@ namespace open3d {
 namespace core {
 
 double Det(const Tensor& A) {
-    // Check dtypes
-    Dtype dtype = A.GetDtype();
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                "Only tensors with Float32 or Float64 are supported, but "
-                "received {}.",
-                dtype.ToString());
-    }
+    AssertTensorDtypes(A, {Float32, Float64});
+    const Dtype dtype = A.GetDtype();
 
     double det = 1.0;
 

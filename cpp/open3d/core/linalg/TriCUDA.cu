@@ -33,9 +33,7 @@ namespace open3d {
 namespace core {
 
 void TriuCUDA(const Tensor &A, Tensor &output, const int diagonal) {
-    core::Dtype dtype = A.GetDtype();
-
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+    DISPATCH_DTYPE_TO_TEMPLATE(A.GetDtype(), [&]() {
         const scalar_t *A_ptr = static_cast<const scalar_t *>(A.GetDataPtr());
         scalar_t *output_ptr = static_cast<scalar_t *>(output.GetDataPtr());
         int cols = A.GetShape()[1];
@@ -53,9 +51,7 @@ void TriuCUDA(const Tensor &A, Tensor &output, const int diagonal) {
 }
 
 void TrilCUDA(const Tensor &A, Tensor &output, const int diagonal) {
-    core::Dtype dtype = A.GetDtype();
-
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+    DISPATCH_DTYPE_TO_TEMPLATE(A.GetDtype(), [&]() {
         const scalar_t *A_ptr = static_cast<const scalar_t *>(A.GetDataPtr());
         scalar_t *output_ptr = static_cast<scalar_t *>(output.GetDataPtr());
         int cols = A.GetShape()[1];
@@ -76,9 +72,7 @@ void TriulCUDA(const Tensor &A,
                Tensor &upper,
                Tensor &lower,
                const int diagonal) {
-    core::Dtype dtype = A.GetDtype();
-
-    DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+    DISPATCH_DTYPE_TO_TEMPLATE(A.GetDtype(), [&]() {
         const scalar_t *A_ptr = static_cast<const scalar_t *>(A.GetDataPtr());
         scalar_t *lower_ptr = static_cast<scalar_t *>(lower.GetDataPtr());
         scalar_t *upper_ptr = static_cast<scalar_t *>(upper.GetDataPtr());
