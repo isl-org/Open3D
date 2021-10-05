@@ -64,13 +64,12 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
 
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
-                "[FaissIndex::SetTensorData] dataset_points must be "
-                "2D matrix, with shape {n_dataset_points, d}.");
+                "dataset_points must be 2D matrix, with shape "
+                "{n_dataset_points, d}.");
     }
 
     if (dimension == 0 || dataset_size == 0) {
-        utility::LogWarning(
-                "[FaissIndex::SetTensorData] Failed due to no data.");
+        utility::LogWarning("Failed due to no data.");
     }
 
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
@@ -84,9 +83,8 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
                 res.get(), dimension, faiss::MetricType::METRIC_L2, config));
 #else
         utility::LogError(
-                "[FaissIndex::SetTensorData] GPU Tensor is not supported when "
-                "BUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
-                "BUILD_CUDA_MODULE=ON.");
+                "GPU Tensor is not supported when -DBUILD_CUDA_MODULE=OFF. "
+                "Please recompile Open3D with -DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
         index.reset(new faiss::IndexFlatL2(dimension));
@@ -98,15 +96,15 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
 
 std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                                                 int knn) const {
-    // Check dtype.
-    AssertTensorDtype(query_points, core::Float32);
+    // Check device and dtype.
+    AssertTensorDevice(query_points, GetDevice());
+    AssertTensorDtype(query_points, GetDtype());
 
     // Check shape.
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
-        utility::LogError(
-                "[FaissIndex::SearchKnn] knn should be larger than 0.");
+        utility::LogError("knn should be larger than 0.");
     }
 
     int64_t num_query_points = query_points.GetShape()[0];
@@ -129,19 +127,18 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
 
 std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
-    // Check dtype.
+    // Check device and dtype.
+    AssertTensorDevice(query_points, GetDevice());
     AssertTensorDtype(query_points, core::Float32);
 
     // Check shape.
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] max_knn should be larger than 0.");
+        utility::LogError("max_knn should be larger than 0.");
     }
     if (radius <= 0) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] radius should be larger than 0.");
+        utility::LogError("radius should be larger than 0.");
     }
 
     Tensor indices;
