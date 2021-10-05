@@ -945,109 +945,107 @@ TEST_P(TensorPermuteDevices, Concatenate) {
 TEST_P(TensorPermuteDevices, Append) {
     core::Device device = GetParam();
 
-    core::Tensor this_tensor, other_tensor, output_tensor;
+    core::Tensor tensor, values, output;
 
     // Appending 0-D to 0-D.
-    this_tensor = core::Tensor::Init<float>(0, device);
-    other_tensor = core::Tensor::Init<float>(1, device);
+    tensor = core::Tensor::Init<float>(0, device);
+    values = core::Tensor::Init<float>(1, device);
 
     // 0-D can be appended to 0-D along axis = null.
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor);
-    EXPECT_TRUE(
-            output_tensor.AllClose(core::Tensor::Init<float>({0, 1}, device)));
+    output = core::Tensor::Append(tensor, values);
+    EXPECT_TRUE(output.AllClose(core::Tensor::Init<float>({0, 1}, device)));
 
     // 0-D can not be appended to 0-D along axis = 0, -1.
-    EXPECT_ANY_THROW(core::Tensor::Append(this_tensor, other_tensor, 0));
-    EXPECT_ANY_THROW(core::Tensor::Append(this_tensor, other_tensor, -1));
+    EXPECT_ANY_THROW(core::Tensor::Append(tensor, values, 0));
+    EXPECT_ANY_THROW(core::Tensor::Append(tensor, values, -1));
 
     // Same Shape.
     // Appending 1-D [3,] tensor to 1-D [4,].
-    this_tensor = core::Tensor::Init<float>({0, 1, 2, 3}, device);
-    other_tensor = core::Tensor::Init<float>({4, 5, 6}, device);
+    tensor = core::Tensor::Init<float>({0, 1, 2, 3}, device);
+    values = core::Tensor::Init<float>({4, 5, 6}, device);
 
     // 1-D can be appended to 1-D along axis = null, 0, -1.
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor);
-    EXPECT_TRUE(output_tensor.AllClose(
+    output = core::Tensor::Append(tensor, values);
+    EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6}, device)));
 
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor, 0);
-    EXPECT_TRUE(output_tensor.AllClose(
+    output = core::Tensor::Append(tensor, values, 0);
+    EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6}, device)));
 
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor, -1);
-    EXPECT_TRUE(output_tensor.AllClose(
+    output = core::Tensor::Append(tensor, values, -1);
+    EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6}, device)));
 
     // 1-D can not be appended to 1-D along axis = 1, -2.
-    EXPECT_ANY_THROW(core::Tensor::Append(this_tensor, other_tensor, 1));
-    EXPECT_ANY_THROW(core::Tensor::Append(this_tensor, other_tensor, -2));
+    EXPECT_ANY_THROW(core::Tensor::Append(tensor, values, 1));
+    EXPECT_ANY_THROW(core::Tensor::Append(tensor, values, -2));
 
     // Appending 2-D [2, 2] tensor to 2-D [2, 2].
-    this_tensor = core::Tensor::Init<float>({{0, 1}, {2, 3}}, device);
-    other_tensor = core::Tensor::Init<float>({{4, 5}, {6, 7}}, device);
+    tensor = core::Tensor::Init<float>({{0, 1}, {2, 3}}, device);
+    values = core::Tensor::Init<float>({{4, 5}, {6, 7}}, device);
 
     // 2-D tensor can be appended to 2-D tensor along axis = null, 0, 1, -1, -2.
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor);
-    EXPECT_TRUE(output_tensor.AllClose(
+    output = core::Tensor::Append(tensor, values);
+    EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6, 7}, device)));
 
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor, 0);
-    EXPECT_TRUE(output_tensor.AllClose(core::Tensor::Init<float>(
+    output = core::Tensor::Append(tensor, values, 0);
+    EXPECT_TRUE(output.AllClose(core::Tensor::Init<float>(
             {{0, 1}, {2, 3}, {4, 5}, {6, 7}}, device)));
 
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor, -2);
-    EXPECT_TRUE(output_tensor.AllClose(core::Tensor::Init<float>(
+    output = core::Tensor::Append(tensor, values, -2);
+    EXPECT_TRUE(output.AllClose(core::Tensor::Init<float>(
             {{0, 1}, {2, 3}, {4, 5}, {6, 7}}, device)));
 
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor, 1);
-    EXPECT_TRUE(output_tensor.AllClose(
+    output = core::Tensor::Append(tensor, values, 1);
+    EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({{0, 1, 4, 5}, {2, 3, 6, 7}}, device)));
 
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor, -1);
-    EXPECT_TRUE(output_tensor.AllClose(
+    output = core::Tensor::Append(tensor, values, -1);
+    EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({{0, 1, 4, 5}, {2, 3, 6, 7}}, device)));
 
     // 2-D can not be appended to 2-D along axis = 2, -3.
-    EXPECT_ANY_THROW(core::Tensor::Append(this_tensor, other_tensor, 2));
-    EXPECT_ANY_THROW(core::Tensor::Append(this_tensor, other_tensor, -3));
+    EXPECT_ANY_THROW(core::Tensor::Append(tensor, values, 2));
+    EXPECT_ANY_THROW(core::Tensor::Append(tensor, values, -3));
 
     // Appending 2-D [1, 2] tensor to 2-D [2, 2].
-    this_tensor = core::Tensor::Init<float>({{0, 1}, {2, 3}}, device);
-    other_tensor = core::Tensor::Init<float>({{4, 5}}, device);
+    tensor = core::Tensor::Init<float>({{0, 1}, {2, 3}}, device);
+    values = core::Tensor::Init<float>({{4, 5}}, device);
 
     // Only the dimension along the axis can be different, so tensor of shape
     // [1, 2] can be appended to [2, 2] along axis = null, 0, -2.
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor);
-    EXPECT_TRUE(output_tensor.AllClose(
+    output = core::Tensor::Append(tensor, values);
+    EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({0, 1, 2, 3, 4, 5}, device)));
 
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor, 0);
-    EXPECT_TRUE(output_tensor.AllClose(
+    output = core::Tensor::Append(tensor, values, 0);
+    EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({{0, 1}, {2, 3}, {4, 5}}, device)));
 
-    output_tensor = core::Tensor::Append(this_tensor, other_tensor, -2);
-    EXPECT_TRUE(output_tensor.AllClose(
+    output = core::Tensor::Append(tensor, values, -2);
+    EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({{0, 1}, {2, 3}, {4, 5}}, device)));
 
     // [1, 2] can not be appended to [2, 2] along axis = 1, -1.
-    EXPECT_ANY_THROW(core::Tensor::Append(this_tensor, other_tensor, 1));
-    EXPECT_ANY_THROW(core::Tensor::Append(this_tensor, other_tensor, -1));
+    EXPECT_ANY_THROW(core::Tensor::Append(tensor, values, 1));
+    EXPECT_ANY_THROW(core::Tensor::Append(tensor, values, -1));
 
     // Dtype and Device of both the tensors must be same.
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
-    EXPECT_ANY_THROW(
-            core::Tensor::Append(this_tensor, other_tensor.To(core::Float64)));
+    EXPECT_ANY_THROW(core::Tensor::Append(tensor, values.To(core::Float64)));
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        EXPECT_ANY_THROW(core::Tensor::Append(
-                this_tensor, other_tensor.To(core::Device("CPU:0"))));
+        EXPECT_ANY_THROW(
+                core::Tensor::Append(tensor, values.To(core::Device("CPU:0"))));
     }
 
-    // output_tensor = core::Tensor::Append(this_tensor, other_tensor);
+    // output = core::Tensor::Append(tensor, values);
     // is same as:
-    // output_tensor = this_tensor.Append(other_tensor);
-    EXPECT_TRUE(core::Tensor::Append(this_tensor, other_tensor)
-                        .AllClose(this_tensor.Append(other_tensor)));
+    // output = tensor.Append(values);
+    EXPECT_TRUE(core::Tensor::Append(tensor, values)
+                        .AllClose(tensor.Append(values)));
 }
 
 TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {

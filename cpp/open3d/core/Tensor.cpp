@@ -603,8 +603,8 @@ Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
     const int64_t num_dims = tensor_list[0].NumDims();
     const int64_t axis_d = shape_util::WrapDim(axis, num_dims);
 
-    const core::Device device = tensor_list[0].GetDevice();
-    const core::Dtype dtype = tensor_list[0].GetDtype();
+    const Device device = tensor_list[0].GetDevice();
+    const Dtype dtype = tensor_list[0].GetDtype();
     SizeVector combined_shape = tensor_list[0].GetShape();
 
     // Asserts input tensor properties such as device, dtype and dimentions.
@@ -621,7 +621,7 @@ Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
         }
 
         // Check Shape.
-        for (int j = 0; j < num_dims; ++j) {
+        for (int64_t j = 0; j < num_dims; ++j) {
             if (j != axis_d &&
                 combined_shape[j] != tensor_list[i].GetShape(j)) {
                 utility::LogError(
@@ -639,7 +639,7 @@ Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
     // Common TensorKey for dimensions < axis_d.
     std::vector<TensorKey> common_tks;
     for (int i = 0; i < axis_d; ++i) {
-        common_tks.push_back(core::TensorKey::Slice(0, combined_shape[i], 1));
+        common_tks.push_back(TensorKey::Slice(0, combined_shape[i], 1));
     }
 
     Tensor combined_tensor(combined_shape, tensor_list[0].GetDtype(),
@@ -655,7 +655,7 @@ Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
         // TensorKey(s) for individual tensors.
         std::vector<TensorKey> local_tks = common_tks;
         local_tks.push_back(
-                core::TensorKey::Slice(length_cumulator, updated_length, 1));
+                TensorKey::Slice(length_cumulator, updated_length, 1));
 
         length_cumulator = updated_length;
 
@@ -665,24 +665,23 @@ Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
     return combined_tensor;
 }
 
-Tensor Tensor::Append(const Tensor& this_tensor,
-                      const Tensor& other_tensor,
+Tensor Tensor::Append(const Tensor& tensor,
+                      const Tensor& values,
                       const utility::optional<int64_t> axis) {
     if (!axis.has_value()) {
-        return Concatenate(
-                       {this_tensor.Reshape({this_tensor.NumElements(), 1}),
-                        other_tensor.Reshape({other_tensor.NumElements(), 1})},
-                       0)
+        return Concatenate({tensor.Reshape({tensor.NumElements(), 1}),
+                            values.Reshape({values.NumElements(), 1})},
+                           0)
                 .Reshape({-1});
     } else {
-        if (this_tensor.NumDims() == 0) {
+        if (tensor.NumDims() == 0) {
             utility::LogError(
                     "Zero-dimensional tensor can only be appended along axis = "
                     "null, but got {}.",
                     axis.value());
         }
 
-        return Concatenate({this_tensor, other_tensor}, axis.value());
+        return Concatenate({tensor, values}, axis.value());
     }
 }
 

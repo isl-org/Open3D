@@ -443,12 +443,12 @@ Example:
     >>> b = o3d.core.Tensor([[4, 5]])
     >>> c = o3d.core.Tensor([[6, 7])
     >>> o3d.core.Tensor.concatenate((a, b, c), 0)
-        [[0 1],
-         [2 3],
-         [4 5],
-         [6 7],
-         [8 9]]
-        Tensor[shape={5, 2}, stride={2, 1}, Int64, CPU:0, 0x55b454b09390])",
+    [[0 1],
+     [2 3],
+     [4 5],
+     [6 7],
+     [8 9]]
+    Tensor[shape={5, 2}, stride={2, 1}, Int64, CPU:0, 0x55b454b09390])",
             "tensor_list"_a, "axis"_a = 0);
 
     tensor.def_static(
@@ -469,20 +469,20 @@ This is the same as NumPy's semantics:
 - https://numpy.org/doc/stable/reference/generated/numpy.append.html
 
 Returns:
-     A copy of `arr` with `values` appended to axis. Note that append does not
-     occur in-place: a new array is allocated and filled. If axis is None, 
-     out is a flattened tensor.
+    A copy of `arr` with `values` appended to axis. Note that append does not
+    occur in-place: a new array is allocated and filled. If axis is None, 
+    out is a flattened tensor.
 
 Example:
     >>> o3d.core.Tensor.append([[0, 1], [2, 3]], [[4, 5]], 0)
-     [[0 1],
-      [2 3],
-      [4 5]]
-     Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+    [[0 1],
+     [2 3],
+     [4 5]]
+    Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
  
     >>> o3d.core.Tensor.append([[0, 1], [2, 3]], [[4, 5]])
-     [0 1 2 3 4 5]
-     Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
+    [0 1 2 3 4 5]
+    Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
             "arr"_a, "values"_a, "axis"_a = py::none());
 
     // Device transfer.
