@@ -119,7 +119,7 @@ void ComputeOdometryResultPointToPlaneCPU(
                 return result;
             });
 #endif
-    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Float32, device);
+    core::Tensor A_reduction_tensor(A_1x29, {29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
 
@@ -215,7 +215,7 @@ void ComputeOdometryResultIntensityCPU(
                 return result;
             });
 #endif
-    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Float32, device);
+    core::Tensor A_reduction_tensor(A_1x29, {29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
 
@@ -322,7 +322,7 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
                 return result;
             });
 #endif
-    core::Tensor A_reduction_tensor(A_1x29, {1, 29}, core::Float32, device);
+    core::Tensor A_reduction_tensor(A_1x29, {29}, core::Float32, device);
     DecodeAndSolve6x6(A_reduction_tensor, delta, inlier_residual, inlier_count);
 }
 

@@ -110,6 +110,8 @@ std::string TriangleMesh::ToString() const {
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
+    core::AssertTensorShape(transformation, {4, 4});
+
     kernel::transform::TransformPoints(transformation, GetVertexPositions());
     if (HasVertexNormals()) {
         kernel::transform::TransformNormals(transformation, GetVertexNormals());
@@ -146,6 +148,9 @@ TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
 
 TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
                                    const core::Tensor &center) {
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(center, {3});
+
     kernel::transform::RotatePoints(R, GetVertexPositions(), center);
     if (HasVertexNormals()) {
         kernel::transform::RotateNormals(R, GetVertexNormals());

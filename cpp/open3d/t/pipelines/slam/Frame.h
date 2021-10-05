@@ -74,6 +74,7 @@ public:
                           const t::geometry::Image& data) {
         SetData(name, data.AsTensor());
     }
+
     t::geometry::Image GetDataAsImage(const std::string& name) const {
         return t::geometry::Image(GetData(name));
     }
@@ -93,6 +94,7 @@ private:
     // normal_map: (H, W, 3), Float32
     std::unordered_map<std::string, core::Tensor> data_;
 };
+
 }  // namespace slam
 }  // namespace pipelines
 }  // namespace t

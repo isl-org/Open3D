@@ -80,11 +80,18 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                                         const geometry::PointCloud &target,
                                         double max_correspondence_distance,
                                         const core::Tensor &transformation) {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = source.GetPointPositions().GetDtype();
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
     geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(transformation.To(device, dtype));
+    source_transformed.Transform(transformation.To(
+            source.GetDevice(), source.GetPointPositions().GetDtype()));
 
     open3d::core::nns::NearestNeighborSearch target_nns(
             target.GetPointPositions());
@@ -124,17 +131,12 @@ static void AssertInputMultiScaleICP(
         const core::Dtype &dtype) {
     core::AssertTensorShape(init_source_to_target, {4, 4});
 
-    if (target.GetPointPositions().GetDtype() != dtype) {
-        utility::LogError(
-                "Target Pointcloud dtype {} != Source Pointcloud's dtype {}.",
-                target.GetPointPositions().GetDtype().ToString(),
-                dtype.ToString());
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
     }
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDevice(target.GetPointPositions(), device);
+
     if (dtype == core::Float64 &&
         device.GetType() == core::Device::DeviceType::CUDA) {
         utility::LogDebug(
@@ -143,7 +145,7 @@ static void AssertInputMultiScaleICP(
     if (!(criterias.size() == voxel_sizes.size() &&
           criterias.size() == max_correspondence_distances.size())) {
         utility::LogError(
-                " [MultiScaleICP]: Size of criterias, voxel_size,"
+                " [ICP]: Size of criterias, voxel_size,"
                 " max_correspondence_distances vectors must be same.");
     }
     if (estimation.GetTransformationEstimationType() ==
@@ -178,11 +180,10 @@ static void AssertInputMultiScaleICP(
                 max_correspondence_distances[0], 0);
     }
 
-    for (int64_t i = 1; i < num_iterations; i++) {
+    for (int64_t i = 1; i < num_iterations; ++i) {
         if (voxel_sizes[i] >= voxel_sizes[i - 1]) {
             utility::LogError(
-                    " [MultiScaleICP] Voxel sizes must be in strictly "
-                    "decreasing order.");
+                    " [ICP] Voxel sizes must be in strictly decreasing order.");
         }
         if (max_correspondence_distances[i] <= 0.0) {
             utility::LogError(
@@ -304,9 +305,12 @@ RegistrationResult MultiScaleICP(
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation) {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = source.GetPointPositions().GetDtype();
-    int64_t num_iterations = int64_t(criterias.size());
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+
+    const core::Device device = source.GetDevice();
+    const core::Dtype dtype = source.GetPointPositions().GetDtype();
+    const int64_t num_iterations = int64_t(criterias.size());
 
     AssertInputMultiScaleICP(source, target, voxel_sizes, criterias,
                              max_correspondence_distances,
@@ -365,8 +369,15 @@ core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
                                   const geometry::PointCloud &target,
                                   const double max_correspondence_distance,
                                   const core::Tensor &transformation) {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = source.GetPointPositions().GetDtype();
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    const core::Dtype dtype = source.GetPointPositions().GetDtype();
+    const core::Device device = source.GetDevice();
+
     core::AssertTensorDtype(target.GetPointPositions(), dtype);
     core::AssertTensorDevice(target.GetPointPositions(), device);
 
