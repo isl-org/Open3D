@@ -248,7 +248,7 @@ def test_arange(device):
 def test_concatenate(dtype, device):
 
     # Atleast 2 tensors are required.
-    a = o3c.Tensor(0, dtype=dtype, device=device)
+    a = o3c.Tensor([0], dtype=dtype, device=device)
     with pytest.raises(RuntimeError,
                        match=r"Expected atleast 2 tensors, but got 1"):
         o3c.Tensor.concatenate((a))
