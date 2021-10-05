@@ -276,8 +276,7 @@ private:
                     // The `target` pointcloud is transformed to it's global
                     // position in the model by it's `frame to model transform`.
                     pcd_and_bbox_.current_scan_ =
-                            target.Transform(cumulative_transform.To(device_,
-                                                                     dtype_))
+                            target.Transform(cumulative_transform)
                                     .To(core::Device("CPU:0"));
 
                     // Translate bounding box to current scan frame to model

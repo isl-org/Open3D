@@ -166,7 +166,7 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     core::AssertTensorShape(T_ij, {4, 4});
 
     PointCloud tpcd_i_transformed_Tij = tpcd_i.Clone();
-    tpcd_i_transformed_Tij.Transform(T_ij.To(device, dtype));
+    tpcd_i_transformed_Tij.Transform(T_ij);
 
     // Obtain correspondence via nns, between tpcd_i_transformed_Tij and tpcd_j.
     core::nns::NearestNeighborSearch tpcd_j_nns(tpcd_j.GetPointPositions());
@@ -194,8 +194,8 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
 
     // Inlier Ratio is calculated on pointclouds transformed by their pose in
     // model frame, to reject any suspicious pair.
-    tpcd_i_indexed.Transform(T_i.To(device, dtype));
-    tpcd_j_indexed.Transform(T_j.To(device, dtype));
+    tpcd_i_indexed.Transform(T_i);
+    tpcd_j_indexed.Transform(T_j);
 
     core::Tensor residual = (tpcd_i_indexed.GetPointPositions() -
                              tpcd_j_indexed.GetPointPositions());

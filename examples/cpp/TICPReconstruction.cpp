@@ -349,7 +349,7 @@ protected:
 
         // ---- Iterating over different resolution scale START
         for (int64_t i = 0; i < num_iterations; i++) {
-            source_down_pyramid[i].Transform(transformation.To(device, dtype));
+            source_down_pyramid[i].Transform(transformation);
 
             // Initialize Neighbor Search.
             core::nns::NearestNeighborSearch target_nns(
@@ -413,7 +413,7 @@ protected:
                 transformation = update.Matmul(transformation);
 
                 // Apply the transform on source pointcloud.
-                source_down_pyramid[i].Transform(update.To(device, dtype));
+                source_down_pyramid[i].Transform(update);
 
                 utility::LogDebug(
                         " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, "
@@ -448,9 +448,8 @@ protected:
                                     .IndexGet({target_indices})
                                     .To(host_));
 
-                    pcd_.source_ =
-                            source_.To(core::Device("CPU:0"), true)
-                                    .Transform(transformation.To(dtype_));
+                    pcd_.source_ = source_.To(core::Device("CPU:0"), true)
+                                           .Transform(transformation);
                 }
 
                 std::stringstream out_;
