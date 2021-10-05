@@ -51,14 +51,14 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points) {
 
 bool KnnIndex::SetTensorData(const Tensor& dataset_points,
                              const Tensor& points_row_splits) {
-    AssertTensorDtypes(dataset_points, {Dtype::Float64, Dtype::Float32});
-    AssertTensorDevice(points_row_splits, dataset_points.GetDevice());
-    AssertTensorDtype(points_row_splits, Dtype::Int64);
+    AssertTensorDtypes(dataset_points, {Float32, Float64});
+    // AssertTensorDevice(points_row_splits, GetDevice());
+    AssertTensorDtype(points_row_splits, Int64);
 
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
                 "dataset_points must be 2D matrix with shape "
-                "{n_dataset_points,d}.");
+                "{n_dataset_points, d}.");
     }
     if (dataset_points.GetShape(0) <= 0 || dataset_points.GetShape(1) <= 0) {
         utility::LogError("Failed due to no data.");
@@ -104,6 +104,8 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     AssertTensorDtype(query_points, dtype);
     AssertTensorDevice(query_points, device);
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorDtype(queries_row_splits, Int64);
+    // AssertTensorDevice(queries_row_splits, device);
 
     if (query_points.GetShape(0) != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(

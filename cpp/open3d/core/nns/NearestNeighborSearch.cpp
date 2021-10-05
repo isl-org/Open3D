@@ -40,7 +40,7 @@ bool NearestNeighborSearch::SetIndex() {
 };
 
 bool NearestNeighborSearch::KnnIndex() {
-    if (GetDevice().GetType() == Device::DeviceType::CUDA) {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         if (dataset_points_.GetShape()[1] == 3) {
             knn_index_.reset(new nns::KnnIndex());
@@ -57,8 +57,8 @@ bool NearestNeighborSearch::KnnIndex() {
         }
 #else
         utility::LogError(
-                "Currently, CUDA support is disabled. Please recompile Open3D "
-                "with -DBUILD_CUDA_MODULE=ON.");
+                "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
+                "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
         return SetIndex();
@@ -68,7 +68,7 @@ bool NearestNeighborSearch::KnnIndex() {
 bool NearestNeighborSearch::MultiRadiusIndex() { return SetIndex(); };
 
 bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
-    if (GetDevice().GetType() == Device::DeviceType::CUDA) {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (!radius.has_value())
             utility::LogError("radius is required for GPU FixedRadiusIndex.");
 #ifdef BUILD_CUDA_MODULE
@@ -88,7 +88,7 @@ bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
 }
 
 bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
-    if (GetDevice().GetType() == Device::DeviceType::CUDA) {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (!radius.has_value())
             utility::LogError("radius is required for GPU HybridIndex.");
 #ifdef BUILD_CUDA_MODULE
@@ -97,7 +97,6 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
                                                   radius.value());
 #else
         utility::LogError(
-                "HybridIndex with GPU tensor is disabled since "
                 "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
@@ -109,9 +108,9 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
 
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
-    core::AssertTensorDevice(query_points, GetDevice());
+    AssertTensorDevice(query_points, dataset_points_.GetDevice());
 
-    if (GetDevice().GetType() == Device::DeviceType::CUDA) {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (query_points.GetShape()[1] == 3 && knn_index_) {
             return knn_index_->SearchKnn(query_points, knn);
         } else if (faiss_index_) {
@@ -130,7 +129,7 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
         const Tensor& query_points, double radius, bool sort) {
-    core::AssertTensorDevice(query_points, GetDevice());
+    AssertTensorDevice(query_points, dataset_points_.GetDevice());
 
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {
@@ -151,26 +150,20 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
         const Tensor& query_points, const Tensor& radii) {
     AssertNotCUDA(query_points);
+    AssertTensorDtype(query_points, dataset_points_.GetDtype());
+    AssertTensorDtype(radii, dataset_points_.GetDtype());
 
     if (!nanoflann_index_) {
-        utility::LogError(
-                "[NearestNeighborSearch::MultiRadiusSearch] Index is not set.");
-    }
-
-    if (GetDtype() != query_points.GetDtype()) {
-        utility::LogError("query and data have different data types.");
-    }
-    if (GetDtype() != radii.GetDtype()) {
-        utility::LogError("radii and data have different data type.");
+        utility::LogError("Index is not set.");
     }
     return nanoflann_index_->SearchRadius(query_points, radii);
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearch(
         const Tensor& query_points, double radius, int max_knn) {
-    core::AssertTensorDevice(query_points, GetDevice());
+    AssertTensorDevice(query_points, dataset_points_.GetDevice());
 
-    if (GetDevice().GetType() == Device::DeviceType::CUDA) {
+    if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {
             return fixed_radius_index_->SearchHybrid(query_points, radius,
                                                      max_knn);

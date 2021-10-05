@@ -49,7 +49,7 @@ NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
 NanoFlannIndex::~NanoFlannIndex(){};
 
 bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
-    AssertTensorDtypes(dataset_points, {Dtype::Float32, Dtype::Float64});
+    AssertTensorDtypes(dataset_points, {Float32, Float64});
 
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
@@ -58,8 +58,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
     }
 
     dataset_points_ = dataset_points.Contiguous();
-    Dtype dtype = GetDtype();
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(GetDtype(), [&]() {
         holder_ = impl::BuildKdTree<scalar_t>(
                 dataset_points_.GetShape(0),
                 dataset_points_.GetDataPtr<scalar_t>(),
@@ -70,8 +69,11 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
 
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                                                     int knn) const {
-    core::AssertTensorDevice(query_points, GetDevice());
-    core::AssertTensorDtype(query_points, GetDtype());
+    const Dtype dtype = GetDtype();
+    const Device device = GetDevice();
+
+    core::AssertTensorDevice(query_points, device);
+    core::AssertTensorDtype(query_points, dtype);
     core::AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
@@ -81,8 +83,6 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     const int64_t num_neighbors = std::min(
             static_cast<int64_t>(GetDatasetSize()), static_cast<int64_t>(knn));
     const int64_t num_query_points = query_points.GetShape(0);
-    const Dtype dtype = GetDtype();
-    const Device device = GetDevice();
 
     Tensor indices, distances;
     Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
@@ -125,9 +125,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     // Check if the radii has negative values.
     Tensor below_zero = radii.Le(0);
     if (below_zero.Any()) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchRadius] radius should be "
-                "larger than 0.");
+        utility::LogError("radius should be larger than 0.");
     }
 
     Tensor indices, distances;
@@ -167,8 +165,11 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
-    AssertTensorDevice(query_points, GetDevice());
-    AssertTensorDtype(query_points, GetDtype());
+    const Device device = GetDevice();
+    const Dtype dtype = GetDtype();
+
+    AssertTensorDevice(query_points, device);
+    AssertTensorDtype(query_points, dtype);
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
