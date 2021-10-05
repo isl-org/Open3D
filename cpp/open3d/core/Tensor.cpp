@@ -359,12 +359,16 @@ Tensor& Tensor::operator=(Tensor&& other) & {
 
 /// Tensor assignment rvalue = lvalue, e.g. `tensor_a[0] = tensor_b`.
 Tensor& Tensor::operator=(const Tensor& other) && {
+    // AssertTensorDevice(other, GetDevice());
+    // AssertTensorDtype(other, GetDtype());
     kernel::Copy(other, *this);
     return *this;
 }
 
 /// Tensor assignment rvalue = rvalue, e.g. `tensor_a[0] = tensor_b[0]`.
 Tensor& Tensor::operator=(Tensor&& other) && {
+    // AssertTensorDevice(other, GetDevice());
+    // AssertTensorDtype(other, GetDtype());
     kernel::Copy(other, *this);
     return *this;
 }
@@ -405,10 +409,10 @@ Tensor Tensor::Diag(const Tensor& input) {
     return diag;
 }
 
-Tensor Tensor::Arange(Scalar start,
-                      Scalar stop,
-                      Scalar step,
-                      Dtype dtype,
+Tensor Tensor::Arange(const Scalar start,
+                      const Scalar stop,
+                      const Scalar step,
+                      const Dtype dtype,
                       const Device& device) {
     start.AssertSameScalarType(stop,
                                "start must have the same scalar type as stop.");
@@ -983,9 +987,15 @@ Tensor Tensor::T() const {
     }
 }
 
-double Tensor::Det() const { return core::Det(*this); }
+double Tensor::Det() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+    return core::Det(*this);
+}
 
 Tensor Tensor::Add(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
     kernel::Add(*this, value, dst_tensor);
@@ -1002,6 +1012,9 @@ Tensor Tensor::Add(Scalar value) const {
 }
 
 Tensor Tensor::Add_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     kernel::Add(*this, value, *this);
     return *this;
 }
@@ -1014,6 +1027,9 @@ Tensor Tensor::Add_(Scalar value) {
 }
 
 Tensor Tensor::Sub(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
     kernel::Sub(*this, value, dst_tensor);
@@ -1030,6 +1046,9 @@ Tensor Tensor::Sub(Scalar value) const {
 }
 
 Tensor Tensor::Sub_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     kernel::Sub(*this, value, *this);
     return *this;
 }
@@ -1042,6 +1061,9 @@ Tensor Tensor::Sub_(Scalar value) {
 }
 
 Tensor Tensor::Mul(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
     kernel::Mul(*this, value, dst_tensor);
@@ -1058,6 +1080,9 @@ Tensor Tensor::Mul(Scalar value) const {
 }
 
 Tensor Tensor::Mul_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     kernel::Mul(*this, value, *this);
     return *this;
 }
@@ -1070,6 +1095,9 @@ Tensor Tensor::Mul_(Scalar value) {
 }
 
 Tensor Tensor::Div(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
     kernel::Div(*this, value, dst_tensor);
@@ -1086,6 +1114,9 @@ Tensor Tensor::Div(Scalar value) const {
 }
 
 Tensor Tensor::Div_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     kernel::Div(*this, value, *this);
     return *this;
 }
@@ -1315,6 +1346,8 @@ Tensor Tensor::LogicalNot_() {
 }
 
 Tensor Tensor::LogicalAnd(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
@@ -1332,6 +1365,8 @@ Tensor Tensor::LogicalAnd(Scalar value) const {
 }
 
 Tensor Tensor::LogicalAnd_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalAnd);
     return *this;
 }
@@ -1345,6 +1380,8 @@ Tensor Tensor::LogicalAnd_(Scalar value) {
 }
 
 Tensor Tensor::LogicalOr(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
@@ -1362,6 +1399,8 @@ Tensor Tensor::LogicalOr(Scalar value) const {
 }
 
 Tensor Tensor::LogicalOr_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalOr);
     return *this;
 }
@@ -1374,6 +1413,8 @@ Tensor Tensor::LogicalOr_(Scalar value) {
 }
 
 Tensor Tensor::LogicalXor(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
@@ -1391,6 +1432,8 @@ Tensor Tensor::LogicalXor(Scalar value) const {
 }
 
 Tensor Tensor::LogicalXor_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalXor);
     return *this;
 }
@@ -1404,6 +1447,8 @@ Tensor Tensor::LogicalXor_(Scalar value) {
 }
 
 Tensor Tensor::Gt(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Gt);
@@ -1420,6 +1465,8 @@ Tensor Tensor::Gt(Scalar value) const {
 }
 
 Tensor Tensor::Gt_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Gt);
     return *this;
 }
@@ -1432,6 +1479,8 @@ Tensor Tensor::Gt_(Scalar value) {
 }
 
 Tensor Tensor::Lt(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Lt);
@@ -1448,6 +1497,8 @@ Tensor Tensor::Lt(Scalar value) const {
 }
 
 Tensor Tensor::Lt_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Lt);
     return *this;
 }
@@ -1460,6 +1511,8 @@ Tensor Tensor::Lt_(Scalar value) {
 }
 
 Tensor Tensor::Ge(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ge);
@@ -1476,6 +1529,8 @@ Tensor Tensor::Ge(Scalar value) const {
 }
 
 Tensor Tensor::Ge_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ge);
     return *this;
 }
@@ -1488,6 +1543,8 @@ Tensor Tensor::Ge_(Scalar value) {
 }
 
 Tensor Tensor::Le(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Le);
@@ -1504,6 +1561,8 @@ Tensor Tensor::Le(Scalar value) const {
 }
 
 Tensor Tensor::Le_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Le);
     return *this;
 }
@@ -1516,6 +1575,8 @@ Tensor Tensor::Le_(Scalar value) {
 }
 
 Tensor Tensor::Eq(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Eq);
@@ -1532,6 +1593,8 @@ Tensor Tensor::Eq(Scalar value) const {
 }
 
 Tensor Tensor::Eq_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Eq);
     return *this;
 }
@@ -1544,6 +1607,8 @@ Tensor Tensor::Eq_(Scalar value) {
 }
 
 Tensor Tensor::Ne(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ne);
@@ -1560,6 +1625,8 @@ Tensor Tensor::Ne(Scalar value) const {
 }
 
 Tensor Tensor::Ne_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ne);
     return *this;
 }
@@ -1666,8 +1733,9 @@ Tensor Tensor::Load(const std::string& file_name) {
 }
 
 bool Tensor::AllEqual(const Tensor& other) const {
-    core::AssertTensorDevice(other, GetDevice());
-    core::AssertTensorDtype(other, GetDtype());
+    AssertTensorDevice(other, GetDevice());
+    AssertTensorDtype(other, GetDtype());
+
     if (shape_ != other.shape_) {
         return false;
     }
@@ -1680,17 +1748,9 @@ bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
 }
 
 Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
-    if (GetDevice() != other.GetDevice()) {
-        utility::LogError("Device mismatch {} != {}.", GetDevice().ToString(),
-                          other.GetDevice().ToString());
-    }
-    if (dtype_ != other.dtype_) {
-        utility::LogError("Dtype mismatch {} != {}.", dtype_.ToString(),
-                          other.dtype_.ToString());
-    }
-    if (shape_ != other.shape_) {
-        utility::LogError("Shape mismatch {} != {}.", shape_, other.shape_);
-    }
+    AssertTensorDevice(other, GetDevice());
+    AssertTensorDtype(other, GetDtype());
+    AssertTensorShape(other, GetShape());
 
     Tensor lhs = this->To(core::Float64);
     Tensor rhs = other.To(core::Float64);
@@ -1706,30 +1766,45 @@ bool Tensor::IsSame(const Tensor& other) const {
 }
 
 Tensor Tensor::Matmul(const Tensor& rhs) const {
+    AssertTensorDevice(rhs, GetDevice());
+    AssertTensorDtype(rhs, GetDtype());
+
     Tensor output;
     core::Matmul(*this, rhs, output);
     return output;
 }
 
 Tensor Tensor::Solve(const Tensor& rhs) const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+    AssertTensorDevice(rhs, GetDevice());
+    AssertTensorDtype(rhs, GetDtype());
+
     Tensor output;
     core::Solve(*this, rhs, output);
     return output;
 }
 
 Tensor Tensor::LeastSquares(const Tensor& rhs) const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+    AssertTensorDevice(rhs, GetDevice());
+    AssertTensorDtype(rhs, GetDtype());
+
     Tensor output;
     core::LeastSquares(*this, rhs, output);
     return output;
 }
 
 std::tuple<Tensor, Tensor, Tensor> Tensor::LU(const bool permute_l) const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     core::Tensor permutation, lower, upper;
     core::LU(*this, permutation, lower, upper, permute_l);
     return std::make_tuple(permutation, lower, upper);
 }
 
 std::tuple<Tensor, Tensor> Tensor::LUIpiv() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     core::Tensor ipiv, output;
     core::LUIpiv(*this, ipiv, output);
     return std::make_tuple(ipiv, output);
@@ -1754,12 +1829,16 @@ std::tuple<Tensor, Tensor> Tensor::Triul(const int diagonal) const {
 }
 
 Tensor Tensor::Inverse() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     Tensor output;
     core::Inverse(*this, output);
     return output;
 }
 
 std::tuple<Tensor, Tensor, Tensor> Tensor::SVD() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     Tensor U, S, VT;
     core::SVD(*this, U, S, VT);
     return std::tie(U, S, VT);
