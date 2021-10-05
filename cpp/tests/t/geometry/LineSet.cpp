@@ -30,7 +30,6 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/TensorCheck.h"
-#include "open3d/core/TensorList.h"
 #include "tests/Tests.h"
 
 namespace open3d {

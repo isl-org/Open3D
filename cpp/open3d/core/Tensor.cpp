@@ -598,17 +598,6 @@ Tensor Tensor::Append(const Tensor& other,
     return core::Append(*this, other, axis);
 }
 
-/// Assign (copy) values from another Tensor, shape, dtype, device may change.
-void Tensor::Assign(const Tensor& other) {
-    shape_ = other.shape_;
-    strides_ = shape_util::DefaultStrides(shape_);
-    dtype_ = other.dtype_;
-    blob_ = std::make_shared<Blob>(shape_.NumElements() * dtype_.ByteSize(),
-                                   other.GetDevice());
-    data_ptr_ = blob_->GetDataPtr();
-    kernel::Copy(other, *this);
-}
-
 /// Broadcast Tensor to a new broadcastable shape
 Tensor Tensor::Broadcast(const SizeVector& dst_shape) const {
     if (!shape_util::CanBeBrocastedToShape(shape_, dst_shape)) {

@@ -35,19 +35,19 @@ static Tensor StackAlongAxis(const Tensor& self,
     SizeVector combined_shape = self.GetShape();
     combined_shape[axis] += other.GetShape(axis);
 
-    std::vector<TensorKey> tks_this;
+    std::vector<TensorKey> tks_self;
     std::vector<TensorKey> tks_other;
     for (int i = 0; i < axis; ++i) {
-        tks_this.push_back(core::TensorKey::Slice(0, self.GetShape(i), 1));
+        tks_self.push_back(core::TensorKey::Slice(0, self.GetShape(i), 1));
         tks_other.push_back(core::TensorKey::Slice(0, self.GetShape(i), 1));
     }
 
-    tks_this.push_back(core::TensorKey::Slice(0, self.GetShape(axis), 1));
+    tks_self.push_back(core::TensorKey::Slice(0, self.GetShape(axis), 1));
     tks_other.push_back(core::TensorKey::Slice(self.GetShape(axis),
                                                combined_shape[axis], 1));
 
     Tensor combined_tensor(combined_shape, self.GetDtype(), self.GetDevice());
-    combined_tensor.SetItem(tks_this, self);
+    combined_tensor.SetItem(tks_self, self);
     combined_tensor.SetItem(tks_other, other);
 
     return combined_tensor;

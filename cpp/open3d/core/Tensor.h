@@ -376,11 +376,6 @@ public:
             const Tensor& other,
             const utility::optional<int64_t> axis = utility::nullopt) const;
 
-    /// Assign (copy) values from another Tensor, shape, dtype, device may
-    /// change. Slices of the original Tensor still keeps the original memory.
-    /// After assignment, the Tensor will be contiguous.
-    void Assign(const Tensor& other);
-
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
 
