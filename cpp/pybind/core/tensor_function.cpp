@@ -43,10 +43,9 @@ void pybind_core_tensor_function(py::module& m) {
                 return core::Append(self, values);
             },
             R"(Appends the `values` tensor to the `self` tensor, along the 
-given axis and returns a copy of the original new tensor. Both the tensors
-must have same data-type device, and number of dimentions. All dimensions
-must be the same, except the dimension along the axis the tensors are to be
-appended. 
+given axis and returns a new tensor. Both the tensors must have same data-type
+device, and number of dimentions. All dimensions must be the same, except the
+dimension along the axis the tensors are to be appended. 
 
 This is the same as NumPy's semantics:
 - https://numpy.org/doc/stable/reference/generated/numpy.append.html

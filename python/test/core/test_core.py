@@ -357,7 +357,7 @@ def test_append(dtype, device):
 
     # Appending 2-D. [1, 2] to [2, 2].
     # [1, 2] to [2, 2] can be appended along axis = 0, -2.
-    tensor = o3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
+    self = o3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
     values = o3c.Tensor([[4, 5]], dtype=dtype, device=device)
 
     output_t = self.append(values)
