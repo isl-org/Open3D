@@ -38,6 +38,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorFunction.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
@@ -592,73 +593,9 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
     return *this;
 }
 
-static Tensor StackAlongAxis(const Tensor& tensor,
-                             const Tensor& values,
-                             int64_t axis) {
-    SizeVector combined_shape = tensor.GetShape();
-    combined_shape[axis] += values.GetShape(axis);
-
-    std::vector<TensorKey> tks_this;
-    std::vector<TensorKey> tks_other;
-    for (int i = 0; i < axis; ++i) {
-        tks_this.push_back(core::TensorKey::Slice(0, tensor.GetShape(i), 1));
-        tks_other.push_back(core::TensorKey::Slice(0, tensor.GetShape(i), 1));
-    }
-
-    tks_this.push_back(core::TensorKey::Slice(0, tensor.GetShape(axis), 1));
-    tks_other.push_back(core::TensorKey::Slice(tensor.GetShape(axis),
-                                               combined_shape[axis], 1));
-
-    Tensor combined_tensor(combined_shape, tensor.GetDtype(),
-                           tensor.GetDevice());
-    combined_tensor.SetItem(tks_this, tensor);
-    combined_tensor.SetItem(tks_other, values);
-
-    return combined_tensor;
-}
-
-Tensor Tensor::Append(const Tensor& tensor,
-                      const Tensor& values,
-                      const utility::optional<int64_t> axis) {
-    core::AssertTensorDevice(values, tensor.GetDevice());
-    core::AssertTensorDtype(values, tensor.GetDtype());
-
-    if (tensor.NumDims() != values.NumDims()) {
-        utility::LogError(
-                "All the input tensors must have same number of "
-                "dimensions, but the tensor at index 0 has {} dimension(s) "
-                "and the tensor at index 1 has {} dimension(s).",
-                tensor.NumDims(), values.NumDims());
-    }
-
-    if (!axis.has_value()) {
-        return StackAlongAxis(tensor.Reshape({tensor.NumElements(), 1}),
-                              values.Reshape({values.NumElements(), 1}), 0)
-                .Reshape({-1});
-    } else {
-        if (tensor.NumDims() == 0) {
-            utility::LogError(
-                    "Zero-dimensional tensor can only be appended along axis = "
-                    "null, but got {}.",
-                    axis.value());
-        }
-
-        const int64_t axis_d =
-                shape_util::WrapDim(axis.value(), tensor.NumDims());
-
-        for (int64_t i = 0; i < tensor.NumDims(); ++i) {
-            if (i != axis_d && tensor.GetShape(i) != values.GetShape(i)) {
-                utility::LogError(
-                        "All the input tensor dimensions, other than dimension "
-                        "size along concatenation axis must be same, but along "
-                        "dimension {}, the tensor at index 0 has size {} and "
-                        "the tensor at index 1 has size {}.",
-                        i, tensor.GetShape(i), values.GetShape(i));
-            }
-        }
-
-        return StackAlongAxis(tensor, values, axis_d);
-    }
+Tensor Tensor::Append(const Tensor& other,
+                      const utility::optional<int64_t> axis) const {
+    return core::Append(*this, other, axis);
 }
 
 /// Assign (copy) values from another Tensor, shape, dtype, device may change.

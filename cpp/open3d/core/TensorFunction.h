@@ -27,25 +27,46 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "pybind/open3d_pybind.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
 
-void pybind_core(py::module& m);
-void pybind_cuda_utils(py::module& m);
-void pybind_core_blob(py::module& m);
-void pybind_core_dtype(py::module& m);
-void pybind_core_device(py::module& m);
-void pybind_core_size_vector(py::module& m);
-void pybind_core_tensor(py::module& m);
-void pybind_core_tensor_accessor(py::class_<Tensor>& t);
-void pybind_core_tensor_function(py::module& m);
-void pybind_core_linalg(py::module& m);
-void pybind_core_kernel(py::module& m);
-void pybind_core_hashmap(py::module& m);
-void pybind_core_hashset(py::module& m);
-void pybind_core_scalar(py::module& m);
+/// \brief Appends the two tensors, along the given axis into a new tensor.
+/// Both the tensors must have same data-type, device, and number of
+/// dimentions. All dimensions must be the same, except the dimension along
+/// the axis the tensors are to be appended.
+///
+/// This is the same as NumPy's semantics:
+/// - https://numpy.org/doc/stable/reference/generated/numpy.append.html
+///
+/// Example:
+/// \code{.cpp}
+/// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
+/// Tensor b = Tensor::Init<int64_t>({4, 5});
+/// Tensor t1 = Tensor::Append(a, b, 0);
+/// // t1:
+/// //  [[0 1],
+/// //   [2 3],
+/// //   [4 5]]
+/// //  Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+///
+/// Tensor t2 = Tensor::Append(a, b);
+/// // t2:
+/// //  [0 1 2 3 4 5]
+/// //  Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70]
+/// \endcode
+///
+/// \param tensor Values are appended to a copy of this tensor.
+/// \param values Values of this tensor is appended to the `tensor`.
+/// \param axis [optional] The axis along which values are appended. If axis
+/// is not given, both tensors are flattened before use.
+/// \return A copy of `tensor` with `values` appended to axis. Note that
+/// append does not occur in-place: a new array is allocated and filled. If
+/// axis is None, out is a flattened tensor.
+Tensor Append(const Tensor& tensor,
+              const Tensor& values,
+              const utility::optional<int64_t> axis = utility::nullopt);
 
 }  // namespace core
 }  // namespace open3d
