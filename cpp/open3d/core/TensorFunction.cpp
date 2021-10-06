@@ -101,23 +101,23 @@ Tensor Concatenate(const std::vector<Tensor>& tensor_list, int64_t axis) {
     return combined_tensor;
 }
 
-Tensor Append(const Tensor& tensor,
+Tensor Append(const Tensor& self,
               const Tensor& other,
               const utility::optional<int64_t> axis) {
     if (!axis.has_value()) {
-        return Concatenate({tensor.Reshape({tensor.NumElements(), 1}),
+        return Concatenate({self.Reshape({self.NumElements(), 1}),
                             other.Reshape({other.NumElements(), 1})},
                            0)
                 .Reshape({-1});
     } else {
-        if (tensor.NumDims() == 0) {
+        if (self.NumDims() == 0) {
             utility::LogError(
                     "Zero-dimensional tensor can only be appended along axis = "
                     "null, but got {}.",
                     axis.value());
         }
 
-        return Concatenate({tensor, other}, axis.value());
+        return Concatenate({self, other}, axis.value());
     }
 }
 
