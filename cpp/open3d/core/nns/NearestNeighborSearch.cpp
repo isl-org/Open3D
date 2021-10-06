@@ -109,6 +109,7 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
 std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
         const Tensor& query_points, int knn) {
     AssertTensorDevice(query_points, dataset_points_.GetDevice());
+    AssertTensorDtype(query_points, dataset_points_.GetDtype());
 
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (query_points.GetShape()[1] == 3 && knn_index_) {
@@ -130,6 +131,7 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
         const Tensor& query_points, double radius, bool sort) {
     AssertTensorDevice(query_points, dataset_points_.GetDevice());
+    AssertTensorDtype(query_points, dataset_points_.GetDtype());
 
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
         if (fixed_radius_index_) {
