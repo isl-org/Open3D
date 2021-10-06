@@ -38,6 +38,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorFunction.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
@@ -165,7 +166,8 @@ private:
         dl_tensor.ctx = dl_context;
         dl_tensor.ndim = static_cast<int>(o3d_tensor_.GetShape().size());
         dl_tensor.dtype = dl_data_type;
-        // The shape pointer is alive for the lifetime of Open3DDLManagedTensor.
+        // The shape pointer is alive for the lifetime of
+        // Open3DDLManagedTensor.
         dl_tensor.shape =
                 const_cast<int64_t*>(o3d_tensor_.GetShapeRef().data());
         // The strides pointer is alive for the lifetime of
@@ -183,10 +185,11 @@ private:
     DLManagedTensor dl_managed_tensor_;
 
 public:
-    /// `DLManagedTensor* dmlt` is destroyed by calling `dmlt->deleter(dmlt)`.
-    /// The destruction happens when the DLPack python object goes out of scope,
-    /// and ultimately it decreases the reference count to the actual data
-    /// buffer (i.e. `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
+    /// `DLManagedTensor* dmlt` is destroyed by calling
+    /// `dmlt->deleter(dmlt)`. The destruction happens when the DLPack
+    /// python object goes out of scope, and ultimately it decreases the
+    /// reference count to the actual data buffer (i.e.
+    /// `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
     static DLManagedTensor* Create(const Tensor& o3d_tensor) {
         Open3DDLManagedTensor* o3d_dl_tensor =
                 new Open3DDLManagedTensor(o3d_tensor);
@@ -201,9 +204,10 @@ public:
 struct Tensor::Iterator::Impl {
     Tensor* tensor_;
     int64_t index_;
-    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
-                           // as the original tensor. This allows taking the &
-                           // of the tensor for Iterator::operator->.
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared
+                           // memory as the original tensor. This allows
+                           // taking the & of the tensor for
+                           // Iterator::operator->.
 };
 
 Tensor::Iterator::Iterator(pointer tensor, int64_t index)
@@ -268,9 +272,10 @@ Tensor::Iterator Tensor::end() {
 struct Tensor::ConstIterator::Impl {
     const Tensor* tensor_;
     int64_t index_;
-    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
-                           // as the original tensor. This allows taking the &
-                           // of the tensor for ConstIterator::operator->.
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared
+                           // memory as the original tensor. This allows
+                           // taking the & of the tensor for
+                           // ConstIterator::operator->.
 };
 
 Tensor::ConstIterator::ConstIterator(pointer tensor, int64_t index)
@@ -436,8 +441,8 @@ Tensor Tensor::Arange(Scalar start,
 }
 
 Tensor Tensor::Reverse() const {
-    // TODO: Unoptimized with ai. Can be improved when negative step in Slice is
-    // implemented.
+    // TODO: Unoptimized with ai. Can be improved when negative step in
+    // Slice is implemented.
     int64_t n = NumElements();
     Tensor reverse_idx = Tensor::Arange(n - 1, -1, -1);
     return View({n}).IndexGet({reverse_idx}).View(GetShape());
@@ -463,14 +468,17 @@ Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
     if (std::any_of(tks.begin(), tks.end(), [](const TensorKey& tk) {
             return tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor;
         })) {
-        // If tks contains one or more IndexTensor, the advanced indexing mode
-        // is enabled. Under Advanced indexing mode, we do some preprocessing
-        // with regular slicing, before sending to the advanced indexing engine.
+        // If tks contains one or more IndexTensor, the advanced indexing
+        // mode is enabled. Under Advanced indexing mode, we do some
+        // preprocessing with regular slicing, before sending to the
+        // advanced indexing engine.
         //
         // 1) TensorKey::Index: convert to a TensorKey::IndexTensor with the
         //    specified index.
-        // 2) TensorKey::Slice: if the slice is non-full slice, slice the tensor
-        //    first and then use full slice for the advanced indexing engine.
+        // 2) TensorKey::Slice: if the slice is non-full slice, slice the
+        // tensor
+        //    first and then use full slice for the advanced indexing
+        //    engine.
         //
         // e.g.
         // dst = src[1,     0:2,   [1, 2]]
@@ -592,108 +600,9 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
     return *this;
 }
 
-Tensor Tensor::Concatenate(const std::vector<Tensor>& tensor_list,
-                           int64_t axis) {
-    const int num_tensors = tensor_list.size();
-    if (num_tensors < 2) {
-        utility::LogError("Expected atleast 2 tensors, but got {}.",
-                          num_tensors);
-    }
-
-    const int64_t num_dims = tensor_list[0].NumDims();
-    const int64_t axis_d = shape_util::WrapDim(axis, num_dims);
-
-    const Device device = tensor_list[0].GetDevice();
-    const Dtype dtype = tensor_list[0].GetDtype();
-    SizeVector combined_shape = tensor_list[0].GetShape();
-
-    // Asserts input tensor properties such as device, dtype and dimentions.
-    for (int i = 1; i < num_tensors; ++i) {
-        core::AssertTensorDevice(tensor_list[i], device);
-        core::AssertTensorDtype(tensor_list[i], dtype);
-
-        if (tensor_list[i].NumDims() != num_dims) {
-            utility::LogError(
-                    "All the input tensors must have same number of "
-                    "dimensions, but the tensor at index 0 has {} dimension(s) "
-                    "and the tensor at index {} has {} dimension(s).",
-                    num_dims, i, tensor_list[i].NumDims());
-        }
-
-        // Check Shape.
-        for (int64_t j = 0; j < num_dims; ++j) {
-            if (j != axis_d &&
-                combined_shape[j] != tensor_list[i].GetShape(j)) {
-                utility::LogError(
-                        "All the input tensor dimensions, other than dimension "
-                        "size along concatenation axis must be same, but along "
-                        "dimension {}, the tensor at index 0 has size {} and "
-                        "the tensor at index {} has size {}.",
-                        j, combined_shape[j], i, tensor_list[i].GetShape(j));
-            }
-        }
-
-        combined_shape[axis_d] += tensor_list[i].GetShape(axis_d);
-    }
-
-    // Common TensorKey for dimensions < axis_d.
-    std::vector<TensorKey> common_tks;
-    for (int i = 0; i < axis_d; ++i) {
-        common_tks.push_back(TensorKey::Slice(0, combined_shape[i], 1));
-    }
-
-    Tensor combined_tensor(combined_shape, tensor_list[0].GetDtype(),
-                           tensor_list[0].GetDevice());
-
-    // Cumulate length along `axis`.
-    int64_t length_cumulator = 0;
-
-    for (int i = 0; i < num_tensors; ++i) {
-        const int64_t updated_length =
-                length_cumulator + tensor_list[i].GetShape(axis_d);
-
-        // TensorKey(s) for individual tensors.
-        std::vector<TensorKey> local_tks = common_tks;
-        local_tks.push_back(
-                TensorKey::Slice(length_cumulator, updated_length, 1));
-
-        length_cumulator = updated_length;
-
-        combined_tensor.SetItem(local_tks, tensor_list[i]);
-    }
-
-    return combined_tensor;
-}
-
-Tensor Tensor::Append(const Tensor& tensor,
-                      const Tensor& values,
-                      const utility::optional<int64_t> axis) {
-    if (!axis.has_value()) {
-        return Concatenate({tensor.Reshape({tensor.NumElements(), 1}),
-                            values.Reshape({values.NumElements(), 1})},
-                           0)
-                .Reshape({-1});
-    } else {
-        if (tensor.NumDims() == 0) {
-            utility::LogError(
-                    "Zero-dimensional tensor can only be appended along axis = "
-                    "null, but got {}.",
-                    axis.value());
-        }
-
-        return Concatenate({tensor, values}, axis.value());
-    }
-}
-
-/// Assign (copy) values from another Tensor, shape, dtype, device may change.
-void Tensor::Assign(const Tensor& other) {
-    shape_ = other.shape_;
-    strides_ = shape_util::DefaultStrides(shape_);
-    dtype_ = other.dtype_;
-    blob_ = std::make_shared<Blob>(shape_.NumElements() * dtype_.ByteSize(),
-                                   other.GetDevice());
-    data_ptr_ = blob_->GetDataPtr();
-    kernel::Copy(other, *this);
+Tensor Tensor::Append(const Tensor& other,
+                      const utility::optional<int64_t> axis) const {
+    return core::Append(*this, other, axis);
 }
 
 /// Broadcast Tensor to a new broadcastable shape
@@ -766,7 +675,8 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     } else {
         utility::LogError(
                 "View shape {} is not compatible with Tensor's size {} and "
-                "sride {}, at least one dimension spacs across two contiguous "
+                "sride {}, at least one dimension spacs across two "
+                "contiguous "
                 "subspaces. Use Reshape() instead.",
                 dst_shape, shape_, strides_);
     }
@@ -988,12 +898,13 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
         // t[np.array(True)]  = np.array(10)       // Works, assigned
         // t[np.array(True)]  = np.array([10])     // Works, assigned
         // t[np.array(True)]  = np.array([[10]])   // Cannot assign 2D
-        // t[np.array(True)]  = np.array([10, 11]) // Cannot assign 1+ values
-        // t[np.array(False)] = 10                 // Works, unchanged
-        // t[np.array(False)] = np.array(10)       // Works, unchanged
-        // t[np.array(False)] = np.array([10])     // Works, unchanged
-        // t[np.array(False)] = np.array([[10]])   // Cannot assign 2D
-        // t[np.array(False)] = np.array([10, 11]) // Cannot assign 1+ values
+        // t[np.array(True)]  = np.array([10, 11]) // Cannot assign 1+
+        // values t[np.array(False)] = 10                 // Works,
+        // unchanged t[np.array(False)] = np.array(10)       // Works,
+        // unchanged t[np.array(False)] = np.array([10])     // Works,
+        // unchanged t[np.array(False)] = np.array([[10]])   // Cannot
+        // assign 2D t[np.array(False)] = np.array([10, 11]) // Cannot
+        // assign 1+ values
 
         // Assert 0-D or 1-D.
         if (src_tensor.NumDims() > 1) {
@@ -1083,7 +994,8 @@ Tensor Tensor::T() const {
         return Transpose(0, 1);
     } else {
         utility::LogError(
-                "Tensor::T() expects a Tensor with <= 2 dimensions, but the "
+                "Tensor::T() expects a Tensor with <= 2 dimensions, but "
+                "the "
                 "Tensor as {} dimensions.");
     }
 }
@@ -1212,13 +1124,14 @@ Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
 Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
     if (dtype_ != core::Float32 && dtype_ != core::Float64) {
         utility::LogError(
-                "Can only compute mean for Float32 or Float64, got {} instead.",
+                "Can only compute mean for Float32 or Float64, got {} "
+                "instead.",
                 dtype_.ToString());
     }
 
-    // Following Numpy's semantics, reduction on 0-sized Tensor will result in
-    // NaNs and a warning. A straightforward method is used now. Later it can be
-    // extended to handle overflow and underflow in a better way.
+    // Following Numpy's semantics, reduction on 0-sized Tensor will result
+    // in NaNs and a warning. A straightforward method is used now. Later it
+    // can be extended to handle overflow and underflow in a better way.
     if (NumElements() == 0) {
         utility::LogWarning("Computing mean of 0-sized Tensor.");
     }
