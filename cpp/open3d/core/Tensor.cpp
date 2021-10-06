@@ -37,6 +37,8 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorFunction.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
@@ -589,6 +591,11 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
     }
 
     return *this;
+}
+
+Tensor Tensor::Append(const Tensor& other,
+                      const utility::optional<int64_t> axis) const {
+    return core::Append(*this, other, axis);
 }
 
 /// Broadcast Tensor to a new broadcastable shape

@@ -11,6 +11,7 @@ target_sources(pybind PRIVATE
     size_vector.cpp
     tensor_accessor.cpp
     tensor_converter.cpp
+    tensor_function.cpp
     tensor.cpp
 )
 
