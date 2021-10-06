@@ -166,8 +166,7 @@ private:
         dl_tensor.ctx = dl_context;
         dl_tensor.ndim = static_cast<int>(o3d_tensor_.GetShape().size());
         dl_tensor.dtype = dl_data_type;
-        // The shape pointer is alive for the lifetime of
-        // Open3DDLManagedTensor.
+        // The shape pointer is alive for the lifetime of Open3DDLManagedTensor.
         dl_tensor.shape =
                 const_cast<int64_t*>(o3d_tensor_.GetShapeRef().data());
         // The strides pointer is alive for the lifetime of
@@ -185,11 +184,10 @@ private:
     DLManagedTensor dl_managed_tensor_;
 
 public:
-    /// `DLManagedTensor* dmlt` is destroyed by calling
-    /// `dmlt->deleter(dmlt)`. The destruction happens when the DLPack
-    /// python object goes out of scope, and ultimately it decreases the
-    /// reference count to the actual data buffer (i.e.
-    /// `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
+    /// `DLManagedTensor* dmlt` is destroyed by calling `dmlt->deleter(dmlt)`.
+    /// The destruction happens when the DLPack python object goes out of scope,
+    /// and ultimately it decreases the reference count to the actual data
+    /// buffer (i.e. `dmlt.manager_ctx->o3d_tensor_.GetBlob()`) by 1.
     static DLManagedTensor* Create(const Tensor& o3d_tensor) {
         Open3DDLManagedTensor* o3d_dl_tensor =
                 new Open3DDLManagedTensor(o3d_tensor);
@@ -204,10 +202,9 @@ public:
 struct Tensor::Iterator::Impl {
     Tensor* tensor_;
     int64_t index_;
-    Tensor tensor_slice_;  // Stores temporary tensor slice with shared
-                           // memory as the original tensor. This allows
-                           // taking the & of the tensor for
-                           // Iterator::operator->.
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for Iterator::operator->.
 };
 
 Tensor::Iterator::Iterator(pointer tensor, int64_t index)
@@ -272,10 +269,9 @@ Tensor::Iterator Tensor::end() {
 struct Tensor::ConstIterator::Impl {
     const Tensor* tensor_;
     int64_t index_;
-    Tensor tensor_slice_;  // Stores temporary tensor slice with shared
-                           // memory as the original tensor. This allows
-                           // taking the & of the tensor for
-                           // ConstIterator::operator->.
+    Tensor tensor_slice_;  // Stores temporary tensor slice with shared memory
+                           // as the original tensor. This allows taking the &
+                           // of the tensor for ConstIterator::operator->.
 };
 
 Tensor::ConstIterator::ConstIterator(pointer tensor, int64_t index)
@@ -441,8 +437,8 @@ Tensor Tensor::Arange(Scalar start,
 }
 
 Tensor Tensor::Reverse() const {
-    // TODO: Unoptimized with ai. Can be improved when negative step in
-    // Slice is implemented.
+    // TODO: Unoptimized with ai. Can be improved when negative step in Slice is
+    // implemented.
     int64_t n = NumElements();
     Tensor reverse_idx = Tensor::Arange(n - 1, -1, -1);
     return View({n}).IndexGet({reverse_idx}).View(GetShape());
@@ -468,17 +464,14 @@ Tensor Tensor::GetItem(const std::vector<TensorKey>& tks) const {
     if (std::any_of(tks.begin(), tks.end(), [](const TensorKey& tk) {
             return tk.GetMode() == TensorKey::TensorKeyMode::IndexTensor;
         })) {
-        // If tks contains one or more IndexTensor, the advanced indexing
-        // mode is enabled. Under Advanced indexing mode, we do some
-        // preprocessing with regular slicing, before sending to the
-        // advanced indexing engine.
+        // If tks contains one or more IndexTensor, the advanced indexing mode
+        // is enabled. Under Advanced indexing mode, we do some preprocessing
+        // with regular slicing, before sending to the advanced indexing engine.
         //
         // 1) TensorKey::Index: convert to a TensorKey::IndexTensor with the
         //    specified index.
-        // 2) TensorKey::Slice: if the slice is non-full slice, slice the
-        // tensor
-        //    first and then use full slice for the advanced indexing
-        //    engine.
+        // 2) TensorKey::Slice: if the slice is non-full slice, slice the tensor
+        //    first and then use full slice for the advanced indexing engine.
         //
         // e.g.
         // dst = src[1,     0:2,   [1, 2]]
@@ -675,8 +668,7 @@ Tensor Tensor::View(const SizeVector& dst_shape) const {
     } else {
         utility::LogError(
                 "View shape {} is not compatible with Tensor's size {} and "
-                "sride {}, at least one dimension spacs across two "
-                "contiguous "
+                "sride {}, at least one dimension spacs across two contiguous "
                 "subspaces. Use Reshape() instead.",
                 dst_shape, shape_, strides_);
     }
@@ -898,13 +890,12 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
         // t[np.array(True)]  = np.array(10)       // Works, assigned
         // t[np.array(True)]  = np.array([10])     // Works, assigned
         // t[np.array(True)]  = np.array([[10]])   // Cannot assign 2D
-        // t[np.array(True)]  = np.array([10, 11]) // Cannot assign 1+
-        // values t[np.array(False)] = 10                 // Works,
-        // unchanged t[np.array(False)] = np.array(10)       // Works,
-        // unchanged t[np.array(False)] = np.array([10])     // Works,
-        // unchanged t[np.array(False)] = np.array([[10]])   // Cannot
-        // assign 2D t[np.array(False)] = np.array([10, 11]) // Cannot
-        // assign 1+ values
+        // t[np.array(True)]  = np.array([10, 11]) // Cannot assign 1+ values
+        // t[np.array(False)] = 10                 // Works, unchanged
+        // t[np.array(False)] = np.array(10)       // Works, unchanged
+        // t[np.array(False)] = np.array([10])     // Works, unchanged
+        // t[np.array(False)] = np.array([[10]])   // Cannot assign 2D
+        // t[np.array(False)] = np.array([10, 11]) // Cannot assign 1+ values
 
         // Assert 0-D or 1-D.
         if (src_tensor.NumDims() > 1) {
@@ -994,8 +985,7 @@ Tensor Tensor::T() const {
         return Transpose(0, 1);
     } else {
         utility::LogError(
-                "Tensor::T() expects a Tensor with <= 2 dimensions, but "
-                "the "
+                "Tensor::T() expects a Tensor with <= 2 dimensions, but the "
                 "Tensor as {} dimensions.");
     }
 }
@@ -1124,14 +1114,13 @@ Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
 Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
     if (dtype_ != core::Float32 && dtype_ != core::Float64) {
         utility::LogError(
-                "Can only compute mean for Float32 or Float64, got {} "
-                "instead.",
+                "Can only compute mean for Float32 or Float64, got {} instead.",
                 dtype_.ToString());
     }
 
-    // Following Numpy's semantics, reduction on 0-sized Tensor will result
-    // in NaNs and a warning. A straightforward method is used now. Later it
-    // can be extended to handle overflow and underflow in a better way.
+    // Following Numpy's semantics, reduction on 0-sized Tensor will result in
+    // NaNs and a warning. A straightforward method is used now. Later it can be
+    // extended to handle overflow and underflow in a better way.
     if (NumElements() == 0) {
         utility::LogWarning("Computing mean of 0-sized Tensor.");
     }
