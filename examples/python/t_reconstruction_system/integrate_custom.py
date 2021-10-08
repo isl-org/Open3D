@@ -32,7 +32,7 @@ import time
 import matplotlib.pyplot as plt
 
 from config import ConfigParser
-from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics
+from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics, get_default_testdata
 
 from tqdm import tqdm
 
@@ -174,13 +174,8 @@ if __name__ == '__main__':
     config = parser.get_config()
 
     if config.path_dataset == '':
-        print('Dataset not found, falling back to test examples.')
-        example_path = os.path.abspath(
-            os.path.join(__file__, os.path.pardir, os.path.pardir,
-                         os.path.pardir))
-        default_dataset_path = os.path.join(example_path, 'test_data', 'RGBD')
-        config.path_dataset = default_dataset_path
-        config.path_trajectory = os.path.join(default_dataset_path,
+        config.path_dataset = get_default_testdata()
+        config.path_trajectory = os.path.join(config.path_dataset,
                                               'trajectory.log')
 
     if config.integrate_color:

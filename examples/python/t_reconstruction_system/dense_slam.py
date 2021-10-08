@@ -30,7 +30,7 @@ import open3d as o3d
 import time
 
 from config import ConfigParser
-from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh
+from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_testdata
 
 
 def slam(depth_file_names, color_file_names, intrinsic, config):
@@ -90,6 +90,9 @@ if __name__ == '__main__':
                help='path to the npz file that stores voxel block grid.',
                default='output.npz')
     config = parser.get_config()
+
+    if config.path_dataset == '':
+        config.path_dataset = get_default_testdata()
 
     depth_file_names, color_file_names = load_rgbd_file_names(config)
     intrinsic = load_intrinsic(config)

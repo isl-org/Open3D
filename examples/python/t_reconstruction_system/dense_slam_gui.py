@@ -31,10 +31,11 @@ import open3d as o3d
 import open3d.core as o3c
 from config import ConfigParser
 
+import os, sys
 import numpy as np
 import threading
 import time
-from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh
+from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_testdata
 
 
 def set_enabled(widget, enable):
@@ -447,6 +448,9 @@ if __name__ == '__main__':
                help='path to the npz file that stores voxel block grid.',
                default='output.npz')
     config = parser.get_config()
+
+    if config.path_dataset == '':
+        config.path_dataset = get_default_testdata()
 
     app = gui.Application.instance
     app.initialize()
