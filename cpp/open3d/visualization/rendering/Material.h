@@ -45,7 +45,8 @@ public:
             Eigen::Vector4f,
             std::hash<std::string>,
             std::equal_to<std::string>,
-            Eigen::aligned_allocator<std::pair<std::string, Eigen::Vector4f>>>;
+            Eigen::aligned_allocator<
+                    std::pair<const std::string, Eigen::Vector4f>>>;
 
     /// Create an empty, invalid material
     Material() = default;
