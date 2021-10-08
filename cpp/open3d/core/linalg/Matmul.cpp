@@ -74,10 +74,10 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
-    Tensor A_T = A.Contiguous().To(dtype);
-    Tensor B_T = B.Contiguous().To(dtype);
-    void* A_data = A_T.GetDataPtr();
-    void* B_data = B_T.GetDataPtr();
+    Tensor A_contiguous = A.Contiguous().To(dtype);
+    Tensor B_contiguous = B.Contiguous().To(dtype);
+    void* A_data = A_contiguous.GetDataPtr();
+    void* B_data = B_contiguous.GetDataPtr();
 
     output = Tensor::Empty({m, n}, dtype, device);
     void* C_data = output.GetDataPtr();
