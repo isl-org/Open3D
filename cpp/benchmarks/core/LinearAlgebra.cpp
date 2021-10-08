@@ -36,7 +36,7 @@ namespace core {
 void MatmulAB(benchmark::State& state, const Device& device) {
     Tensor A = Tensor::Ones({1000000, 4}, core::Float32, device);
     Tensor B = Tensor::Ones({4, 4}, core::Float32, device);
-    // std::cout << "fine till here" << std::endl;
+
     Tensor output = A.Matmul(B);
     for (auto _ : state) {
         output = A.Matmul(B);
