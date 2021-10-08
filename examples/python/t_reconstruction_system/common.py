@@ -37,7 +37,8 @@ def get_default_testdata():
         os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir))
 
     path_dataset = os.path.join(example_path, 'test_data', 'RGBD')
-    print('Dataset not found, falling back to test examples {}'.format(path_dataset))
+    print('Dataset not found, falling back to test examples {}'.format(
+        path_dataset))
 
     return path_dataset
 
