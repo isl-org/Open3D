@@ -40,7 +40,12 @@ class Material {
 public:
     using TextureMaps = std::unordered_map<std::string, t::geometry::Image>;
     using ScalarPropertyMap = std::unordered_map<std::string, float>;
-    using VectorPropertyMap = std::unordered_map<std::string, Eigen::Vector4f>;
+    using VectorPropertyMap = std::unordered_map<
+            std::string,
+            Eigen::Vector4f,
+            std::hash<std::string>,
+            std::equal_to<std::string>,
+            Eigen::aligned_allocator<std::pair<std::string, Eigen::Vector4f>>>;
 
     /// Create an empty, invalid material
     Material() = default;
@@ -337,9 +342,9 @@ public:
 
 private:
     std::string material_name_;
-    std::unordered_map<std::string, t::geometry::Image> texture_maps_;
-    std::unordered_map<std::string, float> scalar_properties_;
-    std::unordered_map<std::string, Eigen::Vector4f> vector_properties_;
+    TextureMaps texture_maps_;
+    ScalarPropertyMap scalar_properties_;
+    VectorPropertyMap vector_properties_;
 };
 
 }  // namespace rendering
