@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#if defined (_MSC_VER)
-#pragma warning (push)
-#pragma warning (disable: 4789)
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4789)
 #endif
 
 #include "open3d/visualization/rendering/Material.h"
@@ -78,6 +78,6 @@ void pybind_material(py::module& m) {
 }  // namespace visualization
 }  // namespace open3d
 
-#if defined (_MSC_VER)
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
