@@ -6,12 +6,9 @@ Truncated Signed Distance Function (TSDF) integration is the key of dense volume
 
 The integration process mainly consists of two steps, (sparse) **block** selection and activation, and (dense) **voxel** value integration. An example can be found at ``examples/python/t_reconstruction_system/integrate.py``.
 
-The system may run at a minimal dataset in ``examples/test_data/RGBD``, but it is recommended to run on real-world longer sequences to demonstrate the functionality. Please refer to :ref:`/tutorial/geometry/rgbd_image.ipynb` for more available datasets.
-
 Activation
 ``````````
-In the activation step, coordinates of **blocks** that contain measurements from the depth frame are selected via a frustum hash map, where duplicates are removed:
-
+In the activation step, we first locate blocks that contain points unprojected from the current depth image. In other words, it finds active blocks in the current viewing frustum. Internally, this is achieved by a *frustum* hash map that produces duplicate-free block coordinates, and a *block* hash map that activates and query such block coordinates.
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
@@ -23,9 +20,9 @@ In the activation step, coordinates of **blocks** that contain measurements from
 
 Integration
 ``````````
-Now we can process the voxels in the blocks at ``frustum_block_coords``. This is done by projecting all such related voxels to the input images and perform weight average. A 
+Now we can process the voxels in the blocks at ``frustum_block_coords``. This is done by projecting all such related voxels to the input images and perform a weight average, which is a pure geometric process without hash map operations.
 
-Optimized function, along with raw depth images with calibration parameters to activate and perform TSDF integration, optionally with colors:
+We may use optimized functions, along with raw depth images with calibration parameters to activate and perform TSDF integration, optionally with colors:
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
@@ -62,7 +59,7 @@ You may use the provided APIs to extract surface points.
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
    :lineno-start: 126
-   :lines: 126-130
+   :lines: 127-131
    :linenos:
    :dedent:
 

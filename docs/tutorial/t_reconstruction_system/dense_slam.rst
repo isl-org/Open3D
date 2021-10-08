@@ -4,9 +4,8 @@ Dense RGB-D SLAM
 -------------------------------------
 Equipped with the fast volumetric reconstruction backend, we in addition provide a dense RGB-D SLAM system using frame-to-model tracking. The example can be found at ``examples/python/t_reconstruction_system/dense_slam.py`` for the cmd line version and ``examples/python/t_reconstruction_system/dense_slam_gui.py`` for a GUI. Similar cpp versions can be found at ``examples/cpp/DenseSLAM.cpp`` and ``examples/cpp/DenseSLAMGUI.cpp``.
 
-Disclaimer
-``````````
-This SLAM prototype is mainly a showcase of the real-time volumetric processing. Please be aware that the tracking/RGB-D odometry module is **not fully optimized for accuracy**, and there is **no relocalization module** implemented at current. In general, it works for room-scale scenes with relatively moderate motion, and may fail on more challenging sequences. More robust and reliable localization is our future work.
+.. note::
+   This SLAM prototype is mainly a showcase of the real-time volumetric processing. Please be aware that the tracking/RGB-D odometry module is **not fully optimized for accuracy**, and there is **no relocalization module** implemented at current. In general, it works for room-scale scenes with relatively moderate motion, and may fail on more challenging sequences. More robust and reliable localization is our future work.
 
 
 Model and frame intialization
