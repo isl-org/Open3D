@@ -43,10 +43,6 @@ TEST_P(TensorFunctionPermuteDevices, Concatenate) {
 
     core::Tensor a, b, c, output_tensor;
 
-    // Atleast 2 tensors are requried.
-    a = core::Tensor::Init<float>({0, 1, 2}, device);
-    EXPECT_ANY_THROW(core::Concatenate({a}));
-
     // 0-D cannot be concatenated.
     a = core::Tensor::Init<float>(0, device);
     b = core::Tensor::Init<float>(1, device);
@@ -115,6 +111,13 @@ TEST_P(TensorFunctionPermuteDevices, Concatenate) {
     // 2-D can not be concatenated along axis = 2, -3.
     EXPECT_ANY_THROW(core::Concatenate({a, b, c}, 2));
     EXPECT_ANY_THROW(core::Concatenate({a, b, c}, -3));
+
+    // Using Concatenate for a single tensor. The tensor is splited along it's
+    // first dimention, and concatenated along the axis.
+    a = core::Tensor::Init<float>(
+            {{{0, 1}, {2, 3}}, {{4, 5}, {6, 7}}, {{8, 9}, {10, 11}}}, device);
+    EXPECT_TRUE(core::Concatenate({a}, 1).AllClose(core::Tensor::Init<float>(
+            {{0, 1, 4, 5, 8, 9}, {2, 3, 6, 7, 10, 11}}, device)));
 
     // Dtype and Device of both the tensors must be same.
     // Taking the above case of [1, 2] to [2, 2] with different dtype and

@@ -202,6 +202,16 @@ def test_concatenate(dtype, device):
     ):
         o3c.concatenate((a, b, c), axis=-3)
 
+    # Using concatenate for a single tensor. The tensor is splited along it's
+    # first dimention, and concatenated along the axis.
+    a = o3c.Tensor([[[0, 1], [2, 3]],
+                    [[4, 5], [6, 7]],
+                    [[8, 9], [10, 11]]], dtype=o3c.Dtype.Float32, device=device)
+    output_t = o3c.concatenate((a), axis=1)
+    output_np = np.concatenate((a.cpu().numpy()), axis=1)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+    
     # dtype and device must be same for all the input tensors.
     a = o3c.Tensor([[0, 1], [2, 3]], dtype=o3c.Dtype.Float32, device=device)
     b = o3c.Tensor([[4, 5]], dtype=o3c.Dtype.Float64, device=device)

@@ -36,6 +36,8 @@ namespace core {
 /// axis into a new tensor. All the tensors must have same data-type,
 /// device, and number of dimentions. All dimensions must be the same,
 /// except the dimension along the axis the tensors are to be concatinated.
+/// Using Concatenate for a single tensor. The tensor is splited along it's
+/// first dimention (length), and concatenated along the axis.
 ///
 /// This is the same as NumPy's semantics:
 /// - https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html
@@ -45,22 +47,32 @@ namespace core {
 /// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
 /// Tensor b = Tensor::Init<int64_t>({4, 5});
 /// Tensor c = Tensor::Init<int64_t>({6, 7});
-/// Tensor t1 = core::Concatenate({a, b, c}, 0);
-/// // t1:
+/// Tensor output = core::Concatenate({a, b, c}, 0);
+/// // output:
 /// //  [[0 1],
 /// //   [2 3],
 /// //   [4 5],
 /// //   [6 7]]
 /// //  Tensor[shape={4, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+///
+/// Using Concatenate for a single tensor. The tensor is splited along it's
+/// first dimention, and concatenated along the axis.
+/// a = core::Tensor::Init<float>(
+///         {{{0, 1}, {2, 3}}, {{4, 5}, {6, 7}}, {{8, 9}, {10, 11}}}, device);
+/// output = core::Concatenate({a}, 1);
+/// //  output:
+/// //  [[0, 1, 4, 5, 8, 9],
+/// //   [2, 3, 6, 7, 10, 11]]
+/// //  Tensor[shape={2, 6}, stride={6, 1}, Int64, CPU:0, 0x55555abc6b00]
 /// \endcode
 ///
-/// \param tensor_list Vector of tensors to be concatenated.
-/// \param axis The axis along which values are concatenated. [Default axis
-/// is 0].
+/// \param tensors Vector of tensors to be concatenated.
+/// \param axis [optional] The axis along which values are concatenated.
+/// [Default axis is 0].
 /// \return A new tensor with the values of list of tensors concatenated in
 /// order, along the given axis.
-Tensor Concatenate(const std::vector<Tensor>& tensor_list,
-                   const int64_t axis = 0);
+Tensor Concatenate(const std::vector<Tensor>& tensors,
+                   const utility::optional<int64_t> axis = 0);
 
 /// \brief Appends the two tensors, along the given axis into a new tensor.
 /// Both the tensors must have same data-type, device, and number of

@@ -33,11 +33,21 @@ namespace open3d {
 namespace core {
 
 void pybind_core_tensor_function(py::module& m) {
-    m.def("concatenate", &core::Concatenate,
-          R"(Concatenates the list of tensors in their order, along the given
+    m.def(
+            "concatenate",
+            [](const std::vector<Tensor>& tensors,
+               const utility::optional<int64_t> axis) {
+                if (axis.has_value()) {
+                    return core::Concatenate(tensors, axis);
+                }
+                return core::Concatenate(tensors);
+            },
+            R"(Concatenates the list of tensors in their order, along the given
 axis into a new tensor. All the tensors must have same data-type, device, and
 number of dimentions. All dimensions must be the same, except the dimension
 along the axis the tensors are to be concatinated.
+Using Concatenate for a single tensor. The tensor is splited along it's first 
+dimention (length), and concatenated along the axis.
 
 This is the same as NumPy's semantics:
 - https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html
@@ -57,7 +67,7 @@ Example:
      [6 7],
      [8 9]]
     Tensor[shape={5, 2}, stride={2, 1}, Int64, CPU:0, 0x55b454b09390])",
-          "tensor_list"_a, "axis"_a = 0);
+            "tensors"_a, "axis"_a = 0);
 
     m.def(
             "append",
