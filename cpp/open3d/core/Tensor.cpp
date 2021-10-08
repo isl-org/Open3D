@@ -835,11 +835,11 @@ Tensor Tensor::Slice(int64_t dim,
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
     if (NumDims() == 0) {
-        const std::string error_prefix =
-                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
         if (index_tensors.size() != 1) {
-            utility::LogError("{}, but got {} index tensors.", error_prefix,
-                              index_tensors.size());
+            utility::LogError(
+                    "A 0-D tensor can only be indexed by a 0-D boolean tensor, "
+                    "but got {} index tensors.",
+                    index_tensors.size());
         }
         Tensor index_tensor = index_tensors[0];
         core::AssertTensorShape(index_tensor, {});
@@ -867,11 +867,11 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
     if (NumDims() == 0) {
-        const std::string error_prefix =
-                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
         if (index_tensors.size() != 1) {
-            utility::LogError("{}, but got {} index tensors.", error_prefix,
-                              index_tensors.size());
+            utility::LogError(
+                    "A 0-D tensor can only be indexed by a 0-D boolean tensor, "
+                    "but got {} index tensors.",
+                    index_tensors.size());
         }
         Tensor index_tensor = index_tensors[0];
         core::AssertTensorShape(index_tensor, {});
@@ -1132,11 +1132,7 @@ Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
 }
 
 Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
-    if (dtype_ != core::Float32 && dtype_ != core::Float64) {
-        utility::LogError(
-                "Can only compute mean for Float32 or Float64, got {} instead.",
-                dtype_.ToString());
-    }
+    AssertTensorDtypes(*this, {Float32, Float64});
 
     // Following Numpy's semantics, reduction on 0-sized Tensor will result in
     // NaNs and a warning. A straightforward method is used now. Later it can be
@@ -1756,6 +1752,7 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
 }
 
 bool Tensor::IsSame(const Tensor& other) const {
+    AssertTensorDevice(other, GetDevice());
     return blob_ == other.blob_ && shape_ == other.shape_ &&
            strides_ == other.strides_ && data_ptr_ == other.data_ptr_ &&
            dtype_ == other.dtype_;
