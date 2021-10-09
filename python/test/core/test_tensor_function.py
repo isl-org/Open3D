@@ -71,12 +71,6 @@ def list_non_bool_dtypes():
 @pytest.mark.parametrize("device", list_devices())
 def test_concatenate(dtype, device):
 
-    # Atleast 2 tensors are required.
-    a = o3c.Tensor([0], dtype=dtype, device=device)
-    with pytest.raises(RuntimeError,
-                       match=r"Expected atleast 2 tensors, but got 1"):
-        o3c.concatenate((a))
-
     # 0-D cannot be concatenated.
     a = o3c.Tensor(0, dtype=dtype, device=device)
     b = o3c.Tensor(0, dtype=dtype, device=device)
