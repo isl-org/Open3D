@@ -76,7 +76,10 @@ def test_concatenate(dtype, device):
     b = o3c.Tensor(0, dtype=dtype, device=device)
     c = o3c.Tensor(0, dtype=dtype, device=device)
 
-    with pytest.raises(RuntimeError, match=r"max_dim 0 must be > 0"):
+    with pytest.raises(
+            RuntimeError,
+            match=r"Zero-dimensional tensor can only be concatenated along "
+            "axis = null, but got 0."):
         o3c.concatenate((a, b, c))
 
     # Concatenating 1-D tensors.
