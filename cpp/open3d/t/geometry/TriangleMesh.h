@@ -395,7 +395,7 @@ public:
     ///  It applies the following general transform to each `positions` and
     ///  `normals`.
     ///   |x'|   | R(0,0) R(0,1) R(0,2) t(0)|   |x|
-    ///   |y'| = | R(1,0) R(1,1) R(1,2) t(1)| x |y|
+    ///   |y'| = | R(1,0) R(1,1) R(1,2) t(1)| @ |y|
     ///   |z'|   | R(2,0) R(2,1) R(2,2) t(2)|   |z|
     ///   |w'|   | O(0,0) O(0,1) O(0,2)  s  |   |1|
     ///
