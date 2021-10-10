@@ -29,11 +29,15 @@
 
 /* Styles for the Open3D Tensorboard plugin */
 
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic,500,500italic,700,700italic');
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono:400,700');
+
 html,
 body {
   font-family: Roboto, sans-serif;
-  color: #212121;   /* TB: --paper-gray-900 */
-  background-color: #f5f5f5;  /* --tb-layout-background-color */
+
+  /* color: #212121;   /1* TB: --paper-gray-900 *1/
+  background-color: #f5f5f5;  /1* --tb-layout-background-color *1/ */
 }
 
 #open3d-dashboard {
@@ -49,7 +53,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-width: 10em;
+  min-width: 20em;
   overflow-wrap: break-word;
   word-break: break-all;
   padding: 5px;
@@ -62,6 +66,9 @@ body {
   padding: 5px;
 }
 
+#logdir {
+  color: #757575;
+}
 /* Container for all runs */
 
 /* width is 6x left selctor, min-width=576px */
@@ -100,11 +107,13 @@ body {
 
 .webrtc button {
   width: 3em;
+  height: 3em;
   display: inline;
 }
 
 .webrtc button svg {
   height: 100%;
+  margin: -35%;
 }
 
 .batchidx-step-selector {
@@ -124,7 +133,7 @@ body {
 }
 
 .batchidx-step-selector label span {
-  width: 16em;
+  width: 14em;
   text-align: right;
   display: inline-block;
 }
@@ -136,99 +145,107 @@ body {
   display: inline-block;
 }
 
+select {
+  font-size: inherit;  /* Dont make options smaller */
+}
+
 /* Adapted from: https://www.w3schools.com/howto/howto_css_custom_checkbox.asp */
 
-/* Customize the label (the container) */
-.container {
+.selector {
+  display: block grid;
+  position: relative;
+  align-items: center;
+  text-transform: capitalize;
+}
+
+.sel-1button div {
+  grid-template-columns: 2em auto;
+}
+
+.sel-2button div {
+  grid-template-columns: 2em 2em auto;
+}
+
+.selector > * {
+  margin: 0.3em 1em;
+}
+
+.selector button {
+  width: 2em;
+  height: 2em;
+}
+
+/* Hide disabled button */
+.selector button:disabled {
+  opacity: 0;
+}
+
+.selector button svg {
+  width: 150%;
+  height: 150%;
+  margin: -35%;
+}
+
+.selector input[type="checkbox"] {
+  width: 1.5em;
+  height: 1.5em;
+  accent-color: #757575; /* --tb-ui-dark-accent */
+}
+
+.property-ui {
   display: block;
   position: relative;
-  padding-left: 2.5em;
-  margin-bottom: 1em;
+  margin: 1em;
   cursor: pointer;
   text-transform: capitalize;
-  user-select: none;
+  font-size: inherit;
 }
 
-/* Hide the browser's default checkbox */
-
-/* Hide the browser's default radio button */
-.container input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
+.property-ui label {
+  padding-left: 2em;
+  font-size: inherit;
 }
 
-/* Create a custom checkbox */
-
-/* Create a custom radio button */
-.checkmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 1.5em;
-  width: 1.5em;
-  background-color: #eee;
+.property-ui input {
+  font-size: inherit;
 }
 
-/* Additional style for radio button */
-input[type="radio"] ~ .checkmark {
+.property-ui input[type="number"] {
+  width: 5em;
+}
+
+.property-ui-colormap {
+  align-items: center;
+  display: block grid;
+  padding: 0.1em;
+  grid-template-columns: 1.5em 6.5em 2em;
+  column-gap: 1em;
+}
+
+.property-ui-colormap input[type="text"] {
+  border-width: 0;
+  font-size: inherit;
+}
+
+.property-ui-colormap input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #757575;  /* --tb-ui-dark-accent */
+}
+
+.property-ui-colormap input[type="color"] {
   border-radius: 50%;
-}
-
-/* On mouse-over, add a grey background color */
-.container:hover input ~ .checkmark {
-  background-color: #ccc;
-}
-
-/* When the checkbox is checked, add a TB gray background */
-.container input:checked ~ .checkmark {
-  background-color: #757575;
-}
-
-/* Create the checkmark/indicator (hidden when not checked) */
-
-/* Create the indicator (the dot/circle - hidden when not checked) */
-.checkmark::after {
-  content: "";
-  position: absolute;
-  display: none;
-}
-
-/* Show the checkmark when checked */
-
-/* Show the indicator (dot/circle) when checked */
-.container input:checked ~ .checkmark::after {
-  display: block;
-}
-
-/* Style the checkmark/indicator */
-.container input[type="checkbox"] ~ .checkmark::after {
-  left: 0.6em;
-  top: 0.3em;
-  width: 0.3em;
-  height: 0.6em;
-  border: solid white;
-  border-width: 0 3px 3px 0;
-  transform: rotate(45deg);
-}
-
-/* Style the indicator (dot/circle) */
-.container input[type="radio"] ~ .checkmark::after {
-  left: 0.45em;
-  top: 0.45em;
-  width: 0.6em;
-  height: 0.6em;
-  border-radius: 50%;
-  background: white;
+  border: 1px solid white;
+  height: 32px;
+  width: 32px;
+  outline: none;
 }
 
 /* Busy indicator while loading
  * From: https://www.w3schools.com/howto/howto_css_loader.asp
  */
 .loader {
-  position: absolute;
+  position: fixed;
   width: 120px;
   height: 120px;
   top: 50%;

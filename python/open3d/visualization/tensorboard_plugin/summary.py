@@ -62,6 +62,7 @@ import open3d as o3d
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 from open3d.visualization.tensorboard_plugin import metadata
 from open3d.visualization.tensorboard_plugin.util import _log
+from open3d.ml.vis import BoundingBox3D
 
 
 class _AsyncDataWriter:
@@ -70,7 +71,8 @@ class _AsyncDataWriter:
     thread. GFile (``tf.io.gfile``) is used for writing to local and remote
     (Google cloud storage with gs:// URI and HDFS with hdfs:// URIs) locations.
     If tensorflow is not available, we fallback to Python I/O. The filename
-    format is ``{tagfilepath}.{current time (s)}.{hostname}.{ProcessID}{filename_extension}``
+    format is
+    ``{tagfilepath}.{current time (s)}.{hostname}.{ProcessID}{filename_extension}``
     following the TensorFlow event file name format.
 
     This class is thread safe. A single global object is created when this
@@ -227,19 +229,20 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
     """Data conversion and other preprocessing.
     TODO(ssheorey): Convert to half precision, compression, etc.
     """
-    # Check if property is reference to prior step
-    step_ref = _to_integer(tensor)
-    if step_ref is not None:
-        if step_ref < 0 or step_ref >= step:
-            raise ValueError(f"Out of order step reference {step_ref} for "
-                             f"property {prop} at step {step}")
-        geometry_metadata.property_references.add(
-            geometry_property=plugin_data_pb2.Open3DPluginData.GeometryProperty.
-            Value(prop),
-            step_ref=step_ref)
-        return None
+    if prop in metadata.GEOMETRY_PROPERTY_DIMS:
+        # Check if property is reference to prior step
+        step_ref = _to_integer(tensor)
+        if step_ref is not None:
+            if step_ref < 0 or step_ref >= step:
+                raise ValueError(f"Out of order step reference {step_ref} for "
+                                 f"property {prop} at step {step}")
+            geometry_metadata.property_references.add(
+                geometry_property=plugin_data_pb2.Open3DPluginData.
+                GeometryProperty.Value(prop),
+                step_ref=step_ref)
+            return None
     if tensor[0].ndim == 2:  # (B,N,_) tensor or sequence of rank 2 tensors
-        if max_outputs is None:
+        if max_outputs > len(tensor):
             max_outputs = len(tensor)
         save_tensor = tuple(_to_o3d(tensor[k]) for k in range(max_outputs))
     elif tensor.ndim == 2:  # batch_size = 1
@@ -274,7 +277,46 @@ def _check_prop_shape(prop, tensor_tuple, exp_shape):
                          f"{exp_shape[2]}")
 
 
-def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
+def _convert_bboxes(bboxes):
+    """Convert (nested) Sequence of BoundingBox3D s with shape (B, Nbb) or
+    (Nbb,) to a geometry property dictionary.
+
+    Returns:
+        pair of dicts: geometry property dictionary, dict with labels and
+        confidences. Confidence values are cast to float32.
+    """
+
+    def append_key_values(dict1, dict2):
+        for key, val2 in dict2.items():
+            if key in dict1:
+                dict1[key].append(val2)
+            else:
+                dict1[key] = [val2]
+
+    vertices_per_bbox = 14
+    data = dict()
+    if hasattr(bboxes[0], "__len__"):  # Nested Seq. (B, Nbb)
+        for bb_batch in bboxes:
+            append_key_values(data,
+                              BoundingBox3D.create_lines(bb_batch, out='dict'))
+    else:
+        append_key_values(data, BoundingBox3D.create_lines(bboxes, out='dict'))
+    data.pop('line_colors')  # No LUT. Assign colors during rendering.
+    labels = data.pop('bbox_labels')
+    confidences = tuple(np.float32(c) for c in data.pop('bbox_confidences'))
+    if len(labels) > 0 and len(confidences) > 0:
+        for l, c, d in zip(labels, confidences, data['vertex_positions']):
+            if len(c) != len(l) or vertices_per_bbox * len(c) != len(d):
+                raise ValueError(
+                    f"BBox labels (len = {len(l)}) and confidences (len="
+                    f"{len(c)}) have incorrect shape for to "
+                    f"{len(data['vertex_positions'])/vertices_per_bbox} bboxes."
+                )
+    data_bbox = {'bbox_labels': labels, 'bbox_confidences': confidences}
+    return data, data_bbox
+
+
+def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
     """Serialize and write geometry data for a tag. Data is written to a
     separate file per tag.
     TODO: Add version specific reader / writer
@@ -286,6 +328,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         data (dict): Property name to tensor mapping.
         max_outputs (int): Only the first `max_samples` data points in each
             batch will be saved.
+        label_to_names (dict):
 
     Returns:
         A comma separated data location string with the format
@@ -295,15 +338,24 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     if not isinstance(data, dict):
         raise TypeError(
             "data should be a dict of geometry property names and tensors.")
+    data_bbox = None
+    if 'bboxes' in data:
+        if len(data) > 1:
+            raise ValueError("Saving bounding boxes. Please add other geometry"
+                             " data with a separate call.")
+        data, data_bbox = _convert_bboxes(data['bboxes'])
     unknown_props = [
-        prop for prop in data if prop not in metadata.GEOMETRY_PROPERTY_DIMS
+        prop for prop in data
+        if not prop.startswith(('vertex_', 'triangle_', 'line_'))
     ]
     if unknown_props:
         raise ValueError(
             f"Unknown geometry properties in data: {unknown_props}")
     if "vertex_positions" not in data:
         raise ValueError("Primary key 'vertex_positions' not provided.")
-    if max_outputs < 1:
+    if max_outputs is None:
+        max_outputs = np.iinfo(np.int32).max
+    elif max_outputs < 1:
         raise ValueError(
             f"max_outputs ({max_outputs}) should be a non-negative integer.")
     max_outputs = int(max_outputs)
@@ -319,7 +371,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         version=metadata._VERSION)
     o3d_type = "PointCloud"
     for prop, tensor in data.items():
-        if prop in ('vertex_positions',) + metadata.VERTEX_PROPERTIES:
+        if prop.startswith('vertex_'):
             prop_name = prop[7:]
             vertex_data[prop_name] = _preprocess(prop, tensor, step,
                                                  max_outputs, geometry_metadata)
@@ -334,7 +386,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                          metadata.GEOMETRY_PROPERTY_DIMS[prop])
             _check_prop_shape(prop, vertex_data[prop_name], exp_shape)
 
-        elif prop in ('triangle_indices',) + metadata.TRIANGLE_PROPERTIES:
+        elif prop.startswith('triangle_'):
             o3d_type = "TriangleMesh"
             prop_name = prop[9:]
             triangle_data[prop_name] = _preprocess(prop, tensor, step,
@@ -350,7 +402,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                          metadata.GEOMETRY_PROPERTY_DIMS[prop])
             _check_prop_shape(prop, triangle_data[prop_name], exp_shape)
 
-        elif prop in ('line_indices',) + metadata.LINE_PROPERTIES:
+        elif prop.startswith('line_'):
             if o3d_type != "TriangleMesh":
                 o3d_type = "LineSet"
             prop_name = prop[5:]
@@ -406,10 +458,32 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             start=this_write_location,
             size=len(data_buffer),
             masked_crc32c=masked_crc32c(data_buffer))
+        if data_bbox is not None:
+            data_bbox_proto = plugin_data_pb2.InferenceData()
+            for l, c in zip(data_bbox['bbox_labels'][bidx],
+                            data_bbox['bbox_confidences'][bidx]):
+                data_bbox_proto.inference_result.add(label=l, confidence=c)
+            data_bbox_serial = data_bbox_proto.SerializeToString()
+            filename, this_write_location = _async_data_writer.enqueue(
+                os.path.join(write_dir, tag.replace('/', '-')),
+                data_bbox_serial)
+            geometry_metadata.batch_index.start_size[
+                -1].aux_start = this_write_location
+            geometry_metadata.batch_index.start_size[-1].aux_size = len(
+                data_bbox_serial)
+            geometry_metadata.batch_index.start_size[
+                -1].aux_masked_crc32c = masked_crc32c(data_bbox_serial)
+
     return geometry_metadata.SerializeToString()
 
 
-def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
+def add_3d(name,
+           data,
+           step,
+           logdir=None,
+           max_outputs=1,
+           label_to_names=None,
+           description=None):
     """Write 3D geometry data as summary.
 
     Args:
@@ -423,19 +497,31 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
                 3D points. Will be cast to ``float32``.
           - ``vertex_colors``: shape `(B, N, 3)` Will be converted to ``uint8``.
           - ``vertex_normals``: shape `(B, N, 3)` Will be cast to ``float32``.
+          - ``vertex_*FEATURE*``: shape `(B, N, _)`. Store arbitrary vertex
+              features. Floats will be cast to ``float32`` and integers to
+              ``int32``.
           - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
+          - ``triangle_*FEATURE*``: shape `(B, Nf, _)`. Store arbitrary triangle
+              features.  Floats will be cast to ``float32`` and integers to
+              ``int32``.
           - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
+          - ``line_*FEATURE*``: shape `(B, Nl, _)`. Store arbitrary line features.
+                Floats will be cast to ``float32`` and integers to ``int32``.
+          - ``bboxes``: shape `(B, Nbb)`. The tensor dtype should be
+            `open3d.ml.vis.BoundingBox3D``. Property references not supported.
 
         For `batch_size` B=1, the tensors may have rank 2 instead of rank 3.
         Floating point color data will be clipped to the range [0,1] and
-        converted to `uint8` range [0,255]. Other data types will be clipped into
-        an allowed range for safe casting to uint8.
+        converted to `uint8` range [0,255]. Other data types will be clipped
+        into an allowed range for safe casting to uint8.
 
-        Any data tensor, may be replaced by an integer scalar referring to a
-        previous step. This allows reusing a previously written property tensor
-        in the case that it does not change at different steps.
-      step (int): Explicit ``int64``-castable monotonic step value for this summary.
-        [`TensorFlow`: If ``None``, this defaults to
+        Any data tensor for predefined geometry properties (not arbitrary
+        features), may be replaced by an integer scalar referring to a previous
+        step. This allows reusing a previously written property tensor in the
+        case that it does not change at different steps.
+
+      step (int): Explicit ``int64``-castable monotonic step value for this
+        summary.  [`TensorFlow`: If ``None``, this defaults to
         `tf.summary.experimental.get_step()`, which must not be ``None``.]
       logdir (str): The logging directory used to create the SummaryWriter.
         [`PyTorch`: This will be automatically inferred if not provided or
@@ -444,13 +530,17 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
         emitted at each step. When more than `max_outputs` 3D elements are
         provided, the first ``max_outputs`` 3D elements will be used and the
         rest silently discarded.
+      label_to_names (dict): Optional mapping from labels (e.g. int used in
+        labels for bboxes or vertices) to category names. Only data from the
+        first step is saved for any tag during a run.
       description (str): Optional long-form description for this summary, as a
         constant ``str``. Markdown is supported. Defaults to empty. Currently
         unused.
 
     Returns:
-      True on success, or false if no summary was emitted because no default
+      [TensorFlow] True on success, or false if no summary was emitted because no default
       summary writer was available.
+
 
     Raises:
       ValueError: if a default writer exists, but no step was provided and
@@ -513,7 +603,9 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
     if logdir is None:
         raise ValueError("logdir must be provided with TensorFlow.")
 
-    summary_metadata = metadata.create_summary_metadata(description=description)
+    mdata = {} if label_to_names is None else {'label_to_names': label_to_names}
+    summary_metadata = metadata.create_summary_metadata(description=description,
+                                                        metadata=mdata)
     # TODO(https://github.com/tensorflow/tensorboard/issues/2109): remove fallback
     summary_scope = (getattr(tf.summary.experimental, "summary_scope", None) or
                      tf.summary.summary_scope)
@@ -542,13 +634,18 @@ def _add_3d_torch(self,
                   step,
                   logdir=None,
                   max_outputs=1,
+                  label_to_names=None,
                   description=None):
     walltime = None
     if step is None:
         raise ValueError("Step is not provided or set.")
-    summary_metadata = metadata.create_summary_metadata(description=description)
+
+    mdata = {} if label_to_names is None else {'label_to_names': label_to_names}
+    summary_metadata = metadata.create_summary_metadata(description=description,
+                                                        metadata=mdata)
+    writer = self._get_file_writer()
     if logdir is None:
-        logdir = self._get_file_writer().get_logdir()
+        logdir = writer.get_logdir()
     write_dir = PluginDirectory(logdir, metadata.PLUGIN_NAME)
     geometry_metadata_string = _write_geometry_data(write_dir, tag, step, data,
                                                     max_outputs)
@@ -556,7 +653,7 @@ def _add_3d_torch(self,
                                string_val=[geometry_metadata_string],
                                tensor_shape=TensorShapeProto())
 
-    self._get_file_writer().add_summary(
+    writer.add_summary(
         Summary(value=[
             Summary.Value(
                 tag=tag, tensor=tensor_proto, metadata=summary_metadata)
@@ -567,7 +664,7 @@ def _add_3d_torch(self,
 if torch is not None:
     if not hasattr(SummaryWriter, "add_3d"):
         SummaryWriter.add_3d = _add_3d_torch
-        SummaryWriter.add_3d.__doc__ = add_3d.__doc__  # Copy docstring from TF function
+        SummaryWriter.add_3d.__doc__ = add_3d.__doc__  # Use docstring from TF function
     else:
         warnings.warn("Cannot bind add_3d() to SummaryWriter. Binding exists.",
                       RuntimeWarning)

@@ -26,6 +26,7 @@
 """Open3D visualization plugin for TensorBoard."""
 import os
 import sys
+import traceback
 import threading
 import json
 
@@ -39,36 +40,20 @@ if sys.platform == 'darwin':
 import open3d as o3d
 # TODO: Check for GPU / EGL else TensorBoard will crash.
 from open3d.visualization import O3DVisualizer
-from open3d.visualization.gui import Application
+from open3d.visualization import gui
 from open3d.visualization import webrtc_server
-from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 # Set window system before the GUI event loop
 webrtc_server.enable_webrtc()
 from open3d.visualization.async_event_loop import async_event_loop
-from open3d.visualization.tensorboard_plugin import metadata
-from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
-from open3d.visualization.tensorboard_plugin.util import _log
+o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+from . import plugin_data_pb2
+from . import metadata
+from .util import Open3DPluginDataReader
+from .util import RenderUpdate
+from .util import _log
+from open3d.ml.vis import LabelLUT
 
-
-def _postprocess(geometry):
-    """Post process geometry before displaying to account for WIP
-    Tensor API in Open3D.
-    """
-
-    if isinstance(geometry, o3d.t.geometry.PointCloud):
-        return geometry
-    legacy = geometry.to_legacy()
-    # color is FLoat64 but range is [0,255]!
-    if isinstance(geometry, o3d.t.geometry.TriangleMesh):
-        if legacy.has_vertex_colors():
-            legacy.vertex_colors = o3d.utility.Vector3dVector(
-                np.asarray(legacy.vertex_colors) / 255)
-    elif isinstance(geometry,
-                    (o3d.t.geometry.TriangleMesh, o3d.t.geometry.LineSet)):
-        if legacy.has_colors():
-            legacy.colors = o3d.utility.Vector3dVector(
-                np.asarray(legacy.colors) / 255)
-    return legacy
+import ipdb
 
 
 class Open3DPluginWindow:
@@ -89,8 +74,9 @@ class Open3DPluginWindow:
             height (int): Window height (px).
         """
         self.data_reader = data_reader
-        self.run = "."
+        self.run = "."  # fixed for a window once set
         self.tags = []
+        self.tag_prop_shape = dict()
         self.batch_idx = 0
         self.batch_size = 1
         self.step = 0
@@ -139,30 +125,62 @@ class Open3DPluginWindow:
                 "batch_idx": 0,
                 "wall_time": wall_time
               }
+              "colormaps": {
+                "RAINBOW" : { value0: rgba0, value1: rgba1, ...},
+                "GREYSCALE": { value0: rgba0, value1: rgba1, ...}
+              },
+              "LabelLUT.Colors": [[0, 0, 0, 255], ..., [224, 224, 224, 255]],
+              "status": 'OK'
             }
         """
-        try:
-            _log.debug(f"[DC message recv] {message}")
-            self.data_reader.reload_events()
-            self._validate_run(self.run)
-            self._validate_tags(self.tags, non_empty=True)
-            self._validate_step(self.step)
-            self._validate_batch_idx(self.batch_idx)
-            # Compose reply
-            message = json.loads(message)
-            message["run_to_tags"] = self.data_reader.run_to_tags
-            message["current"] = {
-                "run": self.run,
-                "tags": self.tags,
-                "step_limits": self.step_limits,
-                "step": self.step,
-                "batch_size": self.batch_size,
-                "batch_idx": self.batch_idx,
-                "wall_time": self.wall_time
+        _log.debug(f"[DC message recv] {message}")
+        self.data_reader.reload_events()
+        self._validate_run(self.run)
+        self._validate_tags(self.tags, non_empty=True)
+        self._validate_step(self.step)
+        self._validate_batch_idx(self.batch_idx)
+        # Compose reply
+        message = json.loads(message)
+        message["run_to_tags"] = self.data_reader.run_to_tags
+        message["current"] = {
+            "run": self.run,
+            "tags": self.tags,
+            "step_limits": self.step_limits,
+            "step": self.step,
+            "batch_size": self.batch_size,
+            "batch_idx": self.batch_idx,
+            "wall_time": self.wall_time
+        }
+        message["colormaps"] = RenderUpdate.DICT_COLORMAPS
+        message["LabelLUTColors"] = RenderUpdate.LABELLUT_COLORS
+        message["status"] = 'OK'
+        return json.dumps(message)
+
+    def _toggle_settings(self, message):
+        """
+        JSON message format:: json
+
+            {
+              "messageId": 2,
+              "window_uid": "window_2",
+              "class_name": "tensorboard/window_2/toggle_settings",
             }
-            return json.dumps(message)
-        except Exception as e:
-            return json.dumps({"message": message, "status": repr(e)})
+
+        Response:: json
+
+            {
+              "messageId": 2,
+              "window_uid": "window_2",
+              "class_name": "tensorboard/window_2/toggle_settings",
+              "status": "OK"
+            }
+        """
+        _log.debug(f"[DC message recv] {message}")
+        message = json.loads(message)
+        self.window.show_settings = not self.window.show_settings
+        async_event_loop.run_sync(self.window.post_redraw)
+        message["status"] = "OK"
+        return json.dumps(message)
 
     def _validate_run(self, selected_run):
         """Validate selected_run. Use self.run or the first valid run in case
@@ -237,10 +255,24 @@ class Open3DPluginWindow:
         JSON message format:: json
 
             {
-              "messageId": 0,
+              "messageId": 2,
               "class_name": "tensorboard/window_0/update_geometry",
               "run": "run_0",
               "tags": ["tag_0", "tag_1"],
+              "render_state": {
+                "tag_0": null,
+                "tag_1": {
+                      "property": Any vertex_*PROPERTY*
+                      "index": 0,
+                      "shader": , "color" (defaultUnlit), "solid" (unlitSolidColor),
+                      "labels", (unlitGradient + LUT), + unlitLine for BB
+                      (unlitGradient + GRADIENT) "rainbow" , "greyscale",
+                      "colormap": [
+                        label (LUT) / value (GRADIENT):  [r, g, b, a] (all uint8),
+                        ...
+                      ]
+                    }
+                },
               "batch_idx": 0,
               "step": 0
             }
@@ -248,97 +280,138 @@ class Open3DPluginWindow:
         Response:: json
 
             {
-              "messageId": 0,
+              "messageId": 2,
               "class_name": "tensorboard/window_0/update_geometry",
               "current": {
                 "run": "run_0",
-                "tags": ["tag_0", "tag_1", ...],
+                "tags": ["tag_0", "tag_1"],
+                "render_state": {
+                  "tag_0": {
+                        "property": Any vertex_*PROPERTY*
+                        "index": 0,
+                        "shader": , "color" (defaultUnlit), "solid" (unlitSolidColor),
+                        "labels", (unlitGradient + LUT), + unlitLine for BB
+                        (unlitGradient + GRADIENT) "rainbow" , "greyscale",
+                        "colormap": [
+                          label (LUT) / value (GRADIENT):  [r, g, b, a] (all uint8),
+                  },
+                  "tag_1": {
+                        "property": Any vertex_*PROPERTY*
+                        "index": 0,
+                        "shader": , "color" (defaultUnlit), "solid" (unlitSolidColor),
+                        "labels", (unlitGradient + LUT), + unlitLine for BB
+                        (unlitGradient + GRADIENT) "rainbow" , "greyscale",
+                        "colormap": [
+                          label (LUT) / value (GRADIENT):  [r, g, b, a] (all uint8),
+                          ...
+                        ]
+                      }
+                  },
                 "step_limits": [0, 100],
                 "step": 0
                 "batch_size": 8,
                 "batch_idx": 0,
                 "wall_time": wall_time
+                "tags_properties_shapes": {
+                    "tag_0": { "prop0": 3, "prop1": 1, ...},
+                    "tag_1": { "prop0": 3, "prop2": 2, ...},
+                ...},
+                "tag_label_to_names": {
+                    "tag_1": {"prop1": { label (int): name (str), ...},}
+                    ...
+                }
               }
               "status": OK
             }
         """
-        try:
-            _log.debug(f"[DC message recv] {message}")
-            message = json.loads(message)
-            self._validate_run(message["run"])
-            self._validate_tags(message["tags"])
-            self._validate_step(int(message["step"]))
-            self._validate_batch_idx(int(message["batch_idx"]))
+        _log.debug(f"[DC message recv] {message}")
+        message = json.loads(message)
+        self._validate_run(message["run"])
+        self._validate_tags(message["tags"])
+        self._validate_step(int(message["step"]))
+        self._validate_batch_idx(int(message["batch_idx"]))
 
-            status = self._update_scene()
+        status = self._update_scene(message)
+        message["status"] = status
+        tag_label_to_names = {}
+        for tag in self.tags:
+            lab2name = self.data_reader.get_label_to_names(self.run, tag)
+            n_class = len(lab2name)
+            if n_class > 0:
+                tag_label_to_names[tag] = dict(sorted(lab2name.items()))
+                colormap = message["render_state"][tag]["colormap"]
+                for label in list(colormap.keys()):
+                    if int(label) not in lab2name:
+                        colormap.pop(label)
+        message["tag_label_to_names"] = tag_label_to_names
 
-            # Compose reply
-            message["current"] = {
-                "run": self.run,
-                "tags": self.tags,
-                "step_limits": self.step_limits,
-                "step": self.step,
-                "batch_size": self.batch_size,
-                "batch_idx": self.batch_idx,
-                "wall_time": self.wall_time,
-                "status": status
-            }
-            return json.dumps(message)
-        except Exception as e:
-            return json.dumps({"message": message, "status": repr(e)})
+        # Compose reply
+        message["current"] = {
+            "run": self.run,
+            "tags": self.tags,
+            "render_state": message["render_state"],  # from _update_scene()
+            "step_limits": self.step_limits,
+            "step": self.step,
+            "batch_size": self.batch_size,
+            "batch_idx": self.batch_idx,
+            "wall_time": self.wall_time,
+            "tags_properties_shapes": self.tag_prop_shape
+        }
+        for key in ("run", "tags", "batch_idx", "step", "render_state"):
+            message.pop(key, None)
+        return json.dumps(message)
 
-    def _toggle_settings(self, message):
-        """
-        JSON message format:: json
+    def _update_tag_prop_shape(self, tag, geometry, inference_data_proto):
+        if tag not in self.tag_prop_shape:
+            self.tag_prop_shape[tag] = {}
+            for prop_type in ('point', 'vertex', 'line'):
+                if hasattr(geometry, prop_type):
+                    uniform_type = 'vertex' if prop_type == 'point' else prop_type
+                    prop_shape = {(uniform_type + "_" + prop): tensor.shape[1]
+                                  for prop, tensor in getattr(
+                                      geometry, prop_type).items()
+                                  if prop not in ('indices',)}
+                    self.tag_prop_shape[tag].update(prop_shape)
+            if len(inference_data_proto.inference_result) > 0:
+                self.tag_prop_shape[tag].update({'labels': 1})
 
-            {
-              "messageId": 2,
-              "window_uid": "window_2",
-              "class_name": "tensorboard/window_2/toggle_settings",
-            }
-
-        Response:: json
-
-            {
-              "messageId": 2,
-              "window_uid": "window_2",
-              "class_name": "tensorboard/window_2/toggle_settings",
-              "status": "OK"
-            }
-        """
-        try:
-            _log.debug(f"[DC message recv] {message}")
-            message = json.loads(message)
-            self.window.show_settings = not self.window.show_settings
-            async_event_loop.run_sync(self.window.post_redraw)
-            message["status"] = "OK"
-            return json.dumps(message)
-        except Exception as e:
-            return json.dumps({"message": message, "status": repr(e)})
-
-    def _update_scene(self):
+    def _update_scene(self, message=None):
         """Update scene by adding / removing geometry elements and redraw.
+        message["render_state"][tag] if present, is the initial render state for
+        the tag to be added. If not provided, this will be filled with the
+        render state after the update.
         """
+        if message is None:
+            message = {"render_state": {}}
         status = ""
         new_geometry_list = []
         for tag in self.tags:
-            geometry_name = f"{self.run}/{tag}/b{self.batch_idx}/s{self.step}"
+            message_tag = dict()
+            if tag in message["render_state"]:
+                message_tag["render_state"] = message["render_state"][tag]
+            render_update = RenderUpdate(self.window.scaling, message_tag)
+            # '\x1f' -> ASCII unit separator
+            geometry_name = "\x1f".join(
+                str(x) for x in (self.run, tag, self.batch_idx, self.step))
             new_geometry_list.append(geometry_name)
             if geometry_name not in self.geometry_list:
                 try:
-                    geometry = self.data_reader.read_geometry(
+                    geometry, inference_data_proto = self.data_reader.read_geometry(
                         self.run, tag, self.step, self.batch_idx,
                         self.step_to_idx)
                     _log.debug(
                         f"Displaying geometry {geometry_name}:{geometry}")
-                    pp_geometry = _postprocess(geometry)
-                    async_event_loop.run_sync(self.window.add_geometry,
-                                              geometry_name, pp_geometry)
+                    self._update_tag_prop_shape(tag, geometry,
+                                                inference_data_proto)
+                    render_update.apply(self.window, geometry_name, geometry,
+                                        inference_data_proto)
+                    message["render_state"][
+                        tag] = render_update.get_render_state()
                 except IOError as err:
                     new_geometry_list.pop()
                     err_msg = f"Error reading {geometry_name}: {err}"
                     status = '\n'.join((status, err_msg))
-                    _log.warning(err_msg)
+                    _log.warning(__name__, err_msg)
 
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
@@ -368,7 +441,8 @@ class Open3DPluginWindow:
         """
         self.window = O3DVisualizer(title, width, height)
         self.window.show_menu(False)
-        # Add 3D scene
+        self.window.scene.downsample_threshold = 400000
+        # ipdb.set_trace()
         self.window.set_background((1, 1, 1, 1), None)  # White background
         # Register frontend callbacks
         class_name_base = "tensorboard/" + self.window.uid
@@ -378,7 +452,7 @@ class Open3DPluginWindow:
             class_name_base + "/update_geometry", self._update_geometry)
         webrtc_server.register_data_channel_message_callback(
             class_name_base + "/toggle_settings", self._toggle_settings)
-        Application.instance.add_window(self.window)
+        gui.Application.instance.add_window(self.window)
 
 
 class Open3DPlugin(base_plugin.TBPlugin):
@@ -422,13 +496,16 @@ class Open3DPlugin(base_plugin.TBPlugin):
         # Dummy window to ensure GUI remains active even if all user windows are
         # closed.
         self._dummy_window = async_event_loop.run_sync(
-            Application.instance.create_window, "Open3D Dummy Window", 32, 32)
+            gui.Application.instance.create_window, "Open3D Dummy Window", 32,
+            32)
         webrtc_server.register_data_channel_message_callback(
             "tensorboard/show_hide_axes", self._show_hide)
         webrtc_server.register_data_channel_message_callback(
             "tensorboard/show_hide_ground", self._show_hide)
         webrtc_server.register_data_channel_message_callback(
             "tensorboard/sync_view", self._sync_view)
+        webrtc_server.register_data_channel_message_callback(
+            "tensorboard/update_rendering", self._update_rendering)
 
     def _show_hide(self, message):
         """
@@ -453,27 +530,24 @@ class Open3DPlugin(base_plugin.TBPlugin):
               status: "Bad window"   # or "OK"
             }
         """
-        try:
-            _log.debug(f"[DC message recv] {message}")
-            message = json.loads(message)
-            show = bool(message["show"])
-            message["status"] = 'OK'
-            window_uid_list = [
-                str(w)
-                for w in message["window_uid_list"]
-                if str(w) in self._windows
-            ]
-            for window_uid in window_uid_list:
-                window = self._windows[window_uid].window
-                if message["class_name"] == "tensorboard/show_hide_axes":
-                    window.show_axes = show
-                elif message["class_name"] == "tensorboard/show_hide_ground":
-                    window.show_ground = show
-                async_event_loop.run_sync(window.post_redraw)
-            message["window_uid_list"] = window_uid_list
-            return json.dumps(message)
-        except Exception as e:
-            return json.dumps({"message": message, "status": repr(e)})
+        _log.debug(f"[DC message recv] {message}")
+        message = json.loads(message)
+        show = bool(message["show"])
+        message["status"] = 'OK'
+        window_uid_list = [
+            str(w)
+            for w in message["window_uid_list"]
+            if str(w) in self._windows
+        ]
+        for window_uid in window_uid_list:
+            window = self._windows[window_uid].window
+            if message["class_name"] == "tensorboard/show_hide_axes":
+                window.show_axes = show
+            elif message["class_name"] == "tensorboard/show_hide_ground":
+                window.show_ground = show
+            async_event_loop.run_sync(window.post_redraw)
+        message["window_uid_list"] = window_uid_list
+        return json.dumps(message)
 
     def _sync_view(self, message):
         """
@@ -494,31 +568,105 @@ class Open3DPlugin(base_plugin.TBPlugin):
               "status": "OK"
             }
         """
-        try:
-            _log.debug(f"[DC message recv] {message}")
-            message = json.loads(message)
-            message["status"] = 'OK'
-            window_uid_list = [
-                str(w)
-                for w in message["window_uid_list"]
-                if str(w) in self._windows
-            ]
-            if len(window_uid_list) < 2:
-                return json.dumps(message)
-            target_camera = self._windows[
-                window_uid_list[0]].window.scene.camera
-
-            def copy_target_camera():
-                for window_uid in window_uid_list[1:]:
-                    o3dvis = self._windows[window_uid].window
-                    o3dvis.scene.camera.copy_from(target_camera)
-                    o3dvis.post_redraw()
-
-            async_event_loop.run_sync(copy_target_camera)
-            message["window_uid_list"] = window_uid_list
+        _log.debug(f"[DC message recv] {message}")
+        message = json.loads(message)
+        message["status"] = 'OK'
+        window_uid_list = [
+            str(w)
+            for w in message["window_uid_list"]
+            if str(w) in self._windows
+        ]
+        if len(window_uid_list) < 2:
             return json.dumps(message)
-        except Exception as e:
-            return json.dumps({"message": message, "status": repr(e)})
+        target_camera = self._windows[window_uid_list[0]].window.scene.camera
+
+        def copy_target_camera():
+            for window_uid in window_uid_list[1:]:
+                o3dvis = self._windows[window_uid].window
+                o3dvis.scene.camera.copy_from(target_camera)
+                o3dvis.post_redraw()
+
+        async_event_loop.run_sync(copy_target_camera)
+        message["window_uid_list"] = window_uid_list
+        return json.dumps(message)
+
+    def _update_rendering(self, message):
+        """Process an update_rendering message from the frontend (JS). Validate
+        message, update state, update scene and send response with validated
+        state.
+
+        JSON message format:: json
+
+            {
+              "messageId": 3,
+              "class_name": "tensorboard/update_rendering",
+              "window_uid_list": ["window_2",  "window_3"],
+              "tag": "tag_1",
+              "render_state": {
+                  "property": Any vertex_*PROPERTY*
+                  "index": 0,
+                  "shader": , "color" (defaultUnlit), "solid" (unlitSolidColor),
+                  "labels", (unlitGradient + LUT), + unlitLine for BB
+                  (unlitGradient + GRADIENT) "rainbow" , "greyscale",
+                  "colormap": [
+                    label (LUT) / value (GRADIENT):  [r, g, b, a] (all uint8),
+                    ...
+                  ]
+              },
+              "updated": ["property", "shader", "colormap"]
+            }
+
+        Response:: json
+
+            {
+              "messageId": 3,
+              "class_name": "tensorboard/update_rendering",
+              "window_uid_list": ["window_2",  "window_3"],
+              "tag": "tag_1",
+              "all_properties": [All properties from all tags in window_uid_list],
+              "render_state": {
+                  "property": Any vertex_*PROPERTY* or None,
+                  "index": 0,
+                  "range": [min, max],
+                  "shader": , "color" (defaultUnlit), "solid" (unlitSolidColor),
+                  "labels", (unlitGradient + LUT),
+                  (unlitGradient + GRADIENT) "rainbow" , "greyscale",
+                  "colormap": [
+                    label (LUT) / value (GRADIENT):  [r, g, b, a],
+                    ...
+                  ]
+              }
+              "updated": ["property", "shader", "colormap"],
+              "status": OK
+            }
+        """
+        _log.debug(f"[DC message recv] {message}")
+        message = json.loads(message)
+        window_uid_list = [
+            str(w)
+            for w in message["window_uid_list"]
+            if str(w) in self._windows
+        ]
+        render_update = RenderUpdate(
+            self._windows[window_uid_list[0]].window.scaling, message)
+
+        for window_uid in window_uid_list:
+            plugin_window = self._windows[window_uid]
+            o3dvis = plugin_window.window
+            for geometry_name in plugin_window.geometry_list:
+                run, tag, batch_idx, step = geometry_name.split('\x1f')
+                if tag != message["tag"]:
+                    continue
+                geometry, inference_data_proto = self.data_reader.read_geometry(
+                    run, tag, int(step), int(batch_idx),
+                    plugin_window.step_to_idx)
+                render_update.apply(o3dvis, geometry_name, geometry,
+                                    inference_data_proto)
+
+        message["window_uid_list"] = window_uid_list
+        message["render_state"] = render_update.get_render_state()
+        message["status"] = 'OK'
+        return json.dumps(message)
 
     def get_plugin_apps(self):
         """Returns a set of WSGI applications that the plugin implements.
