@@ -34,10 +34,10 @@ namespace core {
 
 /// \brief Concatenates the list of tensors in their order, along the given
 /// axis into a new tensor. All the tensors must have same data-type,
-/// device, and number of dimentions. All dimensions must be the same,
+/// device, and number of dimensions. All dimensions must be the same,
 /// except the dimension along the axis the tensors are to be concatinated.
-/// Using Concatenate for a single tensor. The tensor is splited along it's
-/// first dimention (length), and concatenated along the axis.
+/// Using Concatenate for a single tensor. The tensor is split along its
+/// first dimension (length), and concatenated along the axis.
 ///
 /// This is the same as NumPy's semantics:
 /// - https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html
@@ -55,8 +55,6 @@ namespace core {
 /// //   [6 7]]
 /// //  Tensor[shape={4, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
 ///
-/// Using Concatenate for a single tensor. The tensor is splited along it's
-/// first dimention, and concatenated along the axis.
 /// a = core::Tensor::Init<float>(
 ///         {{{0, 1}, {2, 3}}, {{4, 5}, {6, 7}}, {{8, 9}, {10, 11}}}, device);
 /// output = core::Concatenate({a}, 1);
@@ -76,7 +74,7 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
 
 /// \brief Appends the two tensors, along the given axis into a new tensor.
 /// Both the tensors must have same data-type, device, and number of
-/// dimentions. All dimensions must be the same, except the dimension along
+/// dimensions. All dimensions must be the same, except the dimension along
 /// the axis the tensors are to be appended.
 ///
 /// This is the same as NumPy's semantics:

@@ -112,8 +112,8 @@ TEST_P(TensorFunctionPermuteDevices, Concatenate) {
     EXPECT_ANY_THROW(core::Concatenate({a, b, c}, 2));
     EXPECT_ANY_THROW(core::Concatenate({a, b, c}, -3));
 
-    // Using Concatenate for a single tensor. The tensor is splited along it's
-    // first dimention, and concatenated along the axis.
+    // Using Concatenate for a single tensor. The tensor is split along its
+    // first dimension, and concatenated along the axis.
     a = core::Tensor::Init<float>(
             {{{0, 1}, {2, 3}}, {{4, 5}, {6, 7}}, {{8, 9}, {10, 11}}}, device);
     EXPECT_TRUE(core::Concatenate({a}, 1).AllClose(core::Tensor::Init<float>(

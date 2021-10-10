@@ -199,8 +199,8 @@ def test_concatenate(dtype, device):
     ):
         o3c.concatenate((a, b, c), axis=-3)
 
-    # Using concatenate for a single tensor. The tensor is splited along it's
-    # first dimention, and concatenated along the axis.
+    # Using concatenate for a single tensor. The tensor is split along its
+    # first dimension, and concatenated along the axis.
     a = o3c.Tensor([[[0, 1], [2, 3]], [[4, 5], [6, 7]], [[8, 9], [10, 11]]],
                    dtype=o3c.Dtype.Float32,
                    device=device)

@@ -39,7 +39,7 @@ static Tensor ConcatenateImpl(const std::vector<Tensor>& tensors,
     const Dtype dtype = tensors[0].GetDtype();
     SizeVector combined_shape = tensors[0].GetShape();
 
-    // Asserts input tensor properties such as device, dtype and dimentions.
+    // Asserts input tensor properties such as device, dtype and dimensions.
     for (int i = 1; i < num_tensors; ++i) {
         core::AssertTensorDevice(tensors[i], device);
         core::AssertTensorDtype(tensors[i], dtype);

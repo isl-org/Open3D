@@ -344,7 +344,7 @@ public:
 
     /// \brief Appends the `other` tensor, along the given axis and returns a
     /// copy of the tensor. The `other` tensors must have same data-type,
-    /// device, and number of dimentions. All dimensions must be the same,
+    /// device, and number of dimensions. All dimensions must be the same,
     /// except the dimension along the axis the tensors are to be appended.
     ///
     /// This is the same as NumPy's semantics:

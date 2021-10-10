@@ -44,10 +44,10 @@ void pybind_core_tensor_function(py::module& m) {
             },
             R"(Concatenates the list of tensors in their order, along the given
 axis into a new tensor. All the tensors must have same data-type, device, and
-number of dimentions. All dimensions must be the same, except the dimension
+number of dimensions. All dimensions must be the same, except the dimension
 along the axis the tensors are to be concatinated.
-Using Concatenate for a single tensor. The tensor is splited along it's first 
-dimention (length), and concatenated along the axis.
+Using Concatenate for a single tensor. The tensor is split along its first 
+dimension (length), and concatenated along the axis.
 
 This is the same as NumPy's semantics:
 - https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html
@@ -80,7 +80,7 @@ Example:
             },
             R"(Appends the `values` tensor to the `self` tensor, along the 
 given axis and returns a new tensor. Both the tensors must have same data-type
-device, and number of dimentions. All dimensions must be the same, except the
+device, and number of dimensions. All dimensions must be the same, except the
 dimension along the axis the tensors are to be appended. 
 
 This is the same as NumPy's semantics:
