@@ -272,7 +272,7 @@ public:
     /// Transformation matrix is a 4x4 matrix.
     ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
     ///               [ O(1x3)  s(1x1) ]]
-    ///  (s = 1 for Transformation wihtout scaling)
+    ///  (s = 1 for Transformation without scaling)
     ///
     ///  It applies the following general transform to each `positions` and
     ///  `normals`.
