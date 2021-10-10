@@ -258,7 +258,7 @@ def test_append(dtype, device):
     with pytest.raises(
             RuntimeError,
             match=
-            r"Zero-dimensional tensor can only be appended along axis = null, "
+            r"Zero-dimensional tensor can only be concatenated along axis = null, "
             "but got 0."):
         self.append(values, axis=0)
 
