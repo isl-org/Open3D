@@ -73,6 +73,11 @@ foreach(DIRECTORY ${CPP_FORMAT_DIRS})
         # Generated files
         "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h.in"
     )
+    set(IGNOFRED_FILES
+        "${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h"
+    )
+    list(REMOVE_ITEM FILES ${IGNOFRED_FILES})
+
     foreach(FILE ${FILES})
         style_apply_file_cpp(${FILE})
     endforeach(FILE)
