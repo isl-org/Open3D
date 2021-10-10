@@ -90,8 +90,7 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
     core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
     geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(transformation.To(
-            source.GetDevice(), source.GetPointPositions().GetDtype()));
+    source_transformed.Transform(transformation);
 
     open3d::core::nns::NearestNeighborSearch target_nns(
             target.GetPointPositions());
@@ -274,7 +273,7 @@ static RegistrationResult DoSingleScaleIterationsICP(
         transformation = update.Matmul(transformation);
 
         // Apply the transform on source pointcloud.
-        source.Transform(update.To(device, dtype));
+        source.Transform(update);
 
         utility::LogDebug(
                 " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, RMSE "
@@ -334,8 +333,8 @@ RegistrationResult MultiScaleICP(
     double prev_inlier_rmse = 0;
 
     // ---- Iterating over different resolution scale START -------------------
-    for (int64_t i = 0; i < num_iterations; i++) {
-        source_down_pyramid[i].Transform(transformation.To(device, dtype));
+    for (int64_t i = 0; i < num_iterations; ++i) {
+        source_down_pyramid[i].Transform(transformation);
 
         // Initialize Neighbor Search.
         core::nns::NearestNeighborSearch target_nns(
@@ -375,14 +374,13 @@ core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
 
     core::AssertTensorDtypes(source.GetPointPositions(),
                              {core::Float64, core::Float32});
-    const core::Dtype dtype = source.GetPointPositions().GetDtype();
-    const core::Device device = source.GetDevice();
 
-    core::AssertTensorDtype(target.GetPointPositions(), dtype);
-    core::AssertTensorDevice(target.GetPointPositions(), device);
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
     geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(transformation.To(device, dtype));
+    source_transformed.Transform(transformation);
 
     open3d::core::nns::NearestNeighborSearch target_nns(
             target.GetPointPositions());

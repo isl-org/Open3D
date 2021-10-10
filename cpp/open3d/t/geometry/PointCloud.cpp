@@ -178,9 +178,10 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
     core::AssertTensorShape(translation, {3});
-    core::AssertTensorDevice(translation, device_);
 
-    core::Tensor transform = translation;
+    core::Tensor transform =
+            translation.To(GetDevice(), GetPointPositions().GetDtype());
+
     if (!relative) {
         transform -= GetCenter();
     }
@@ -190,10 +191,11 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
 
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
     core::AssertTensorShape(center, {3});
-    core::AssertTensorDevice(center, device_);
 
-    core::Tensor points = GetPointPositions();
-    points.Sub_(center).Mul_(scale).Add_(center);
+    const core::Tensor center_d =
+            center.To(GetDevice(), GetPointPositions().GetDtype());
+
+    GetPointPositions().Sub_(center_d).Mul_(scale).Add_(center_d);
     return *this;
 }
 
