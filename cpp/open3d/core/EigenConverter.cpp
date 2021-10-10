@@ -100,6 +100,8 @@ TensorToEigenMatrixXi(const core::Tensor &tensor) {
 template <typename T, int N>
 static std::vector<Eigen::Matrix<T, N, 1>> TensorToEigenVectorNxVector(
         const core::Tensor &tensor) {
+    AssertTensorShape(tensor, {utility::nullopt, N});
+
     static_assert(
             (std::is_same<T, double>::value || std::is_same<T, int>::value) &&
                     N > 0,
@@ -114,13 +116,12 @@ static std::vector<Eigen::Matrix<T, N, 1>> TensorToEigenVectorNxVector(
         utility::LogError("Internal error: dtype size mismatch {} != {}.",
                           dtype.ByteSize() * N, sizeof(Eigen::Matrix<T, N, 1>));
     }
-    AssertTensorShape(tensor, {utility::nullopt, N});
 
     // Eigen::VectorNx is not a "fixed-size vectorizable Eigen type" thus it is
     // safe to write directly into std vector memory, see:
     // https://eigen.tuxfamily.org/dox/group__TopicStlContainers.html.
     std::vector<Eigen::Matrix<T, N, 1>> eigen_vector(tensor.GetLength());
-    core::Tensor t = tensor.Contiguous().To(dtype);
+    const core::Tensor t = tensor.To(dtype).Contiguous();
     MemoryManager::MemcpyToHost(eigen_vector.data(), t.GetDataPtr(),
                                 t.GetDevice(),
                                 t.GetDtype().ByteSize() * t.NumElements());
