@@ -102,20 +102,10 @@ void TensorList::Resize(int64_t new_size) {
 void TensorList::PushBack(const Tensor& tensor) {
     AssertIsResizable(*this, __FUNCTION__);
 
-    if (element_shape_ != tensor.GetShape()) {
-        utility::LogError(
-                "TensorList has element shape {}, but tensor has shape {}.",
-                element_shape_, tensor.GetShape());
-    }
-    if (GetDtype() != tensor.GetDtype()) {
-        utility::LogError("TensorList has dtype {}, but tensor has shape {}.",
-                          GetDtype().ToString(), tensor.GetDtype().ToString());
-    }
-    if (GetDevice() != tensor.GetDevice()) {
-        utility::LogError("TensorList has device {}, but tensor has shape {}.",
-                          GetDevice().ToString(),
-                          tensor.GetDevice().ToString());
-    }
+    AssertTensorDevice(tensor, GetDevice());
+    AssertTensorDtype(tensor, GetDtype());
+    AssertTensorShape(tensor, element_shape_);
+
     ResizeWithExpand(size_ + 1);
     internal_tensor_[size_ - 1] = tensor;  // same as operator[](-1) = tensor;
 }

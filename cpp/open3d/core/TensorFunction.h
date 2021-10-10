@@ -24,37 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
+#pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Logging.h"
-#include "pybind/core/nns/nearest_neighbor_search.h"
-#include "pybind/open3d_pybind.h"
-#include "pybind/pybind_utils.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
 
-void pybind_core(py::module& m) {
-    py::module m_core = m.def_submodule("core");
-
-    // opn3d::core namespace.
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensor_function(m_core);
-    pybind_core_linalg(m_core);
-    pybind_core_kernel(m_core);
-    pybind_core_hashmap(m_core);
-    pybind_core_hashset(m_core);
-    pybind_core_scalar(m_core);
-
-    // opn3d::core::nns namespace.
-    nns::pybind_core_nns(m_core);
-}
+/// \brief Appends the two tensors, along the given axis into a new tensor.
+/// Both the tensors must have same data-type, device, and number of
+/// dimentions. All dimensions must be the same, except the dimension along
+/// the axis the tensors are to be appended.
+///
+/// This is the same as NumPy's semantics:
+/// - https://numpy.org/doc/stable/reference/generated/numpy.append.html
+///
+/// Example:
+/// \code{.cpp}
+/// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
+/// Tensor b = Tensor::Init<int64_t>({4, 5});
+/// Tensor t1 = core::Append(a, b, 0);
+/// // t1:
+/// //  [[0 1],
+/// //   [2 3],
+/// //   [4 5]]
+/// //  Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+///
+/// Tensor t2 = core::Append(a, b);
+/// // t2:
+/// //  [0 1 2 3 4 5]
+/// //  Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70]
+/// \endcode
+///
+/// \param self Values are appended to a copy of this tensor.
+/// \param other Values of this tensor is appended to the `self`.
+/// \param axis [optional] The axis along which values are appended. If axis
+/// is not given, both tensors are flattened before use.
+/// \return A copy of `tensor` with `values` appended to axis. Note that
+/// append does not occur in-place: a new array is allocated and filled. If
+/// axis is None, out is a flattened tensor.
+Tensor Append(const Tensor& self,
+              const Tensor& other,
+              const utility::optional<int64_t> axis = utility::nullopt);
 
 }  // namespace core
 }  // namespace open3d
