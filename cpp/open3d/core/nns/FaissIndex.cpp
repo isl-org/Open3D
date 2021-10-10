@@ -97,8 +97,8 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
 std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                                                 int knn) const {
     // Check device and dtype.
-    AssertTensorDevice(query_points, GetDevice());
-    AssertTensorDtype(query_points, GetDtype());
+    AssertTensorDevice(query_points, dataset_points_.GetDevice());
+    AssertTensorDtype(query_points, Float32);
 
     // Check shape.
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
@@ -128,7 +128,7 @@ std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
 std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
     // Check device and dtype.
-    AssertTensorDevice(query_points, GetDevice());
+    AssertTensorDevice(query_points, dataset_points_.GetDevice());
     AssertTensorDtype(query_points, Float32);
 
     // Check shape.

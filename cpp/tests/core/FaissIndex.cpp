@@ -49,17 +49,24 @@ INSTANTIATE_TEST_SUITE_P(FaissIndex,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
 TEST_P(FaissPermuteDevices, KnnSearch) {
+    const core::Device device = GetParam();
+
     // Set up faiss index.
-    int size = 10;
-    core::Device device = GetParam();
-    std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
-                              0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
-                              0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Float32, device);
+    const core::Tensor ref = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                                        {0.0, 0.0, 0.1},
+                                                        {0.0, 0.0, 0.2},
+                                                        {0.0, 0.1, 0.0},
+                                                        {0.0, 0.1, 0.1},
+                                                        {0.0, 0.1, 0.2},
+                                                        {0.0, 0.2, 0.0},
+                                                        {0.0, 0.2, 0.1},
+                                                        {0.0, 0.2, 0.2},
+                                                        {0.1, 0.0, 0.0}},
+                                                       device);
     core::nns::FaissIndex faiss_index(ref);
 
-    core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Float32);
+    core::Tensor query =
+            core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, device);
     std::pair<core::Tensor, core::Tensor> result;
     core::Tensor indices;
     core::Tensor distances;
@@ -88,9 +95,9 @@ TEST_P(FaissPermuteDevices, KnnSearch) {
                                  0.0362638, 0.0411266}));
 
     // Multiple points.
-    query = core::Tensor(std::vector<float>({0.064705, 0.043921, 0.087843,
-                                             0.064705, 0.043921, 0.087843}),
-                         {2, 3}, core::Float32);
+    query = core::Tensor::Init<float>(
+            {{0.064705, 0.043921, 0.087843}, {0.064705, 0.043921, 0.087843}},
+            device);
     result = faiss_index.SearchKnn(query, 3);
     indices = result.first;
     distances = result.second;
@@ -107,16 +114,23 @@ TEST_P(FaissPermuteDevices, KnnSearch) {
 
 TEST_P(FaissPermuteDevices, HybridSearch) {
     // Set up faiss index.
-    int size = 10;
-    core::Device device = GetParam();
-    std::vector<float> points{0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.0,
-                              0.1, 0.0, 0.0, 0.1, 0.1, 0.0, 0.1, 0.2, 0.0, 0.2,
-                              0.0, 0.0, 0.2, 0.1, 0.0, 0.2, 0.2, 0.1, 0.0, 0.0};
-    core::Tensor ref(points, {size, 3}, core::Float32, device);
+    const core::Device device = GetParam();
+
+    const core::Tensor ref = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                                        {0.0, 0.0, 0.1},
+                                                        {0.0, 0.0, 0.2},
+                                                        {0.0, 0.1, 0.0},
+                                                        {0.0, 0.1, 0.1},
+                                                        {0.0, 0.1, 0.2},
+                                                        {0.0, 0.2, 0.0},
+                                                        {0.0, 0.2, 0.1},
+                                                        {0.0, 0.2, 0.2},
+                                                        {0.1, 0.0, 0.0}},
+                                                       device);
     core::nns::FaissIndex faiss_index(ref);
 
-    core::Tensor query(std::vector<float>({0.064705, 0.043921, 0.087843}),
-                       {1, 3}, core::Float32);
+    core::Tensor query =
+            core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, device);
 
     core::Tensor indices, distances, counts;
     std::tie(indices, distances, counts) =
