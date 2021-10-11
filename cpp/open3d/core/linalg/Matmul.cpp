@@ -32,24 +32,19 @@ namespace open3d {
 namespace core {
 
 void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
-    // Check devices
-    Device device = A.GetDevice();
-    if (device != B.GetDevice()) {
-        utility::LogError("Tensor A device {} and Tensor B device {} mismatch.",
-                          A.GetDevice().ToString(), B.GetDevice().ToString());
-    }
+    AssertTensorDevice(B, A.GetDevice());
+    AssertTensorDtype(B, A.GetDtype());
 
-    // Check dtypes
-    Dtype dtype = A.GetDtype(), dtype_original = dtype;
-    if (dtype != B.GetDtype()) {
-        utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch.",
-                          A.GetDtype().ToString(), B.GetDtype().ToString());
-    }
+    const Device device = A.GetDevice();
+    const Dtype dtype_original = A.GetDtype();
+    Dtype dtype;
 
-    if (dtype != core::Float32 && dtype != core::Float64) {
+    if (dtype_original != core::Float32 && dtype_original != core::Float64) {
         utility::LogDebug("Converting to Float32 dtype to from {}.",
-                          dtype.ToString());
+                          dtype_original.ToString());
         dtype = core::Float32;
+    } else {
+        dtype = dtype_original;
     }
 
     // Check shapes
@@ -79,25 +74,25 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
-    Tensor A_T = A.T().Contiguous().To(dtype);
-    Tensor B_T = B.T().Contiguous().To(dtype);
-    void* A_data = A_T.GetDataPtr();
-    void* B_data = B_T.GetDataPtr();
+    Tensor A_contiguous = A.Contiguous().To(dtype);
+    Tensor B_contiguous = B.Contiguous().To(dtype);
+    void* A_data = A_contiguous.GetDataPtr();
+    void* B_data = B_contiguous.GetDataPtr();
 
-    output = Tensor::Empty({n, m}, dtype, device);
+    output = Tensor::Empty({m, n}, dtype, device);
     void* C_data = output.GetDataPtr();
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        MatmulCUDA(A_data, B_data, C_data, m, k, n, dtype);
+        MatmulCUDA(B_data, A_data, C_data, n, k, m, dtype);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        MatmulCPU(A_data, B_data, C_data, m, k, n, dtype);
+        MatmulCPU(B_data, A_data, C_data, n, k, m, dtype);
     }
 
-    output = output.T().To(dtype_original);
+    output = output.To(dtype_original);
 };
 
 }  // namespace core
