@@ -32,6 +32,21 @@
 @import url('https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic,500,500italic,700,700italic');
 @import url('https://fonts.googleapis.com/css?family=Roboto+Mono:400,700');
 
+/* tensorboardColorBlindAssist (standard) palette from tensorboard/components/tf_color_scale/palettes.ts */
+:root {
+  --paper-grey-800: #424242;
+  --tb-ui-dark-accent: #757575;
+  --primary-background-color: #fff;
+
+  --tb-run-color-0: #ff7043; /* orange */
+  --tb-run-color-1: #0077bb; /* blue   */
+  --tb-run-color-2: #cc3311; /* red    */
+  --tb-run-color-3: #33bbee; /* cyan   */
+  --tb-run-color-4: #ee3377; /* magenta*/
+  --tb-run-color-5: #009988; /* teal   */
+  --tb-run-color-6: #bbbbbb; /* grey   */
+}
+
 html,
 body {
   font-family: Roboto, sans-serif;
@@ -57,7 +72,7 @@ body {
   overflow-wrap: break-word;
   word-break: break-all;
   padding: 5px;
-  color: #424242;  /* --paper-grey-800 */
+  color: var(--paper-grey-800);
 }
 
 #run-selector,
@@ -67,13 +82,13 @@ body {
 }
 
 #logdir {
-  color: #757575;
+  color: var(--tb-ui-dark-accent);
 }
 /* Container for all runs */
 
 /* width is 6x left selctor, min-width=576px */
 #widget-view {
-  background-color: #fff;  /* --primary-background-color */
+  background-color: var(--primary-background-color);
 
   /* parent is flex container. Most of the width increase goes here. */
   flex: 16 576;
@@ -120,7 +135,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 5px;
-  color: #424242;  /* TB --paper-grey-800 */
+  color: var(--paper-grey-800);
 }
 
 .batchidx-step-selector input {
@@ -133,7 +148,7 @@ body {
 }
 
 .batchidx-step-selector label span {
-  width: 14em;
+  width: 10em;
   text-align: right;
   display: inline-block;
 }
@@ -149,10 +164,37 @@ select {
   font-size: inherit;  /* Dont make options smaller */
 }
 
-/* Adapted from: https://www.w3schools.com/howto/howto_css_custom_checkbox.asp */
+/* Add color accent to match run widget to tun table */
+.webrtc:nth-child(7n+1) tbody {
+  border-bottom: solid 4px var(--tb-run-color-0);
+}
+
+.webrtc:nth-child(7n+2) tbody {
+  border-bottom: solid 4px var(--tb-run-color-1);
+}
+
+.webrtc:nth-child(7n+3) tbody {
+  border-bottom: solid 4px var(--tb-run-color-2);
+}
+
+.webrtc:nth-child(7n+4) tbody {
+  border-bottom: solid 4px var(--tb-run-color-3);
+}
+
+.webrtc:nth-child(7n+5) tbody {
+  border-bottom: solid 4px var(--tb-run-color-4);
+}
+
+.webrtc:nth-child(7n+6) tbody {
+  border-bottom: solid 4px var(--tb-run-color-5);
+}
+
+.webrtc:nth-child(7n) tbody {
+  border-bottom: solid 4px var(--tb-run-color-6);
+}
 
 .selector {
-  display: block grid;
+  display: grid;
   position: relative;
   align-items: center;
   text-transform: capitalize;
@@ -189,7 +231,7 @@ select {
 .selector input[type="checkbox"] {
   width: 1.5em;
   height: 1.5em;
-  accent-color: #757575; /* --tb-ui-dark-accent */
+  accent-color: var(--tb-ui-dark-accent);
 }
 
 .property-ui {
@@ -216,7 +258,7 @@ select {
 
 .property-ui-colormap {
   align-items: center;
-  display: block grid;
+  display: grid;
   padding: 0.1em;
   grid-template-columns: 1.5em 6.5em 2em;
   column-gap: 1em;
@@ -230,7 +272,43 @@ select {
 .property-ui-colormap input[type="checkbox"] {
   width: 20px;
   height: 20px;
-  accent-color: #757575;  /* --tb-ui-dark-accent */
+  accent-color: var(--tb-ui-dark-accent);
+}
+
+/* Add color accent to match run widget to tun table */
+#run-selector .selector:nth-child(7n+1) input[type="checkbox"],
+.webrtc:nth-child(7n+1) input[type="range"] {
+  accent-color: var(--tb-run-color-0);
+}
+
+#run-selector .selector:nth-child(7n+2) input[type="checkbox"],
+.webrtc:nth-child(7n+2) input[type="range"] {
+  accent-color: var(--tb-run-color-1);
+}
+
+#run-selector .selector:nth-child(7n+3) input[type="checkbox"],
+.webrtc:nth-child(7n+3) input[type="range"] {
+  accent-color: var(--tb-run-color-2);
+}
+
+#run-selector .selector:nth-child(7n+4) input[type="checkbox"],
+.webrtc:nth-child(7n+4) input[type="range"] {
+  accent-color: var(--tb-run-color-3);
+}
+
+#run-selector .selector:nth-child(7n+5) input[type="checkbox"],
+.webrtc:nth-child(7n+5) input[type="range"] {
+  accent-color: var(--tb-run-color-4);
+}
+
+#run-selector .selector:nth-child(7n+6) input[type="checkbox"],
+.webrtc:nth-child(7n+6) input[type="range"] {
+  accent-color: var(--tb-run-color-5);
+}
+
+#run-selector .selector:nth-child(7n) input[type="checkbox"],
+.webrtc:nth-child(7n) input[type="range"] {
+  accent-color: var(--tb-run-color-6);
 }
 
 .property-ui-colormap input[type="color"] {

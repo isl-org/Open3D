@@ -367,10 +367,12 @@ class Open3DPluginWindow:
             for prop_type in ('point', 'vertex', 'line'):
                 if hasattr(geometry, prop_type):
                     uniform_type = 'vertex' if prop_type == 'point' else prop_type
-                    prop_shape = {(uniform_type + "_" + prop): tensor.shape[1]
-                                  for prop, tensor in getattr(
-                                      geometry, prop_type).items()
-                                  if prop not in ('indices',)}
+                    prop_shape = {
+                        (uniform_type + "_" + prop): tensor.shape[1]
+                        for prop, tensor in getattr(geometry,
+                                                    prop_type).items()
+                        if prop not in ('indices',) and not prop.startswith('_')
+                    }
                     self.tag_prop_shape[tag].update(prop_shape)
             if len(inference_data_proto.inference_result) > 0:
                 self.tag_prop_shape[tag].update({'labels': 1})
@@ -418,8 +420,8 @@ class Open3DPluginWindow:
                 _log.debug(f"Removing geometry {current_item}")
                 async_event_loop.run_sync(self.window.remove_geometry,
                                           current_item)
-        if len(self.geometry_list
-              ) == 0:  # Reset view only if previous empty scene
+        # Reset view only if scene changed from empty -> not empty
+        if len(self.geometry_list) == 0 and len(new_geometry_list) > 0:
             async_event_loop.run_sync(self.window.reset_camera_to_default)
         else:
             async_event_loop.run_sync(self.window.post_redraw)

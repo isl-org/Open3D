@@ -381,13 +381,16 @@ class TensorboardOpen3DPluginClient {
     initialCheckedOptions = new Set(initialCheckedOptions);
     const selTypes = type.split('-');
     let BUTTON_TEMPLATE = "";
+    let PROP_DIV_TEMPLATE = "";
     for (const option of options) {
       const checked = initialCheckedOptions.has(option) ? "checked" : "";
       if (selTypes.length==2) {
-        BUTTON_TEMPLATE=`
+        BUTTON_TEMPLATE = `
               <button id="toggle-property-${option}" type="button" disabled>
                   <svg> <use href="#settings" /> </svg>
               </button>`
+        PROP_DIV_TEMPLATE = `
+          <div id="property-${option}" style="display: none;"></div>`;
       }
       const OPTION_TEMPLATE=`
         <div class="selector">
@@ -395,7 +398,7 @@ class TensorboardOpen3DPluginClient {
             ${BUTTON_TEMPLATE}
             <label for="${name}">${option}</label>
         </div>
-        <div id="property-${option}" style="display: none;"></div>`;
+        ${PROP_DIV_TEMPLATE}`;
       parentElement.insertAdjacentHTML("beforeend", OPTION_TEMPLATE);
       document.getElementById(option).addEventListener("change",
         this.onRunTagselect);
@@ -513,7 +516,7 @@ class TensorboardOpen3DPluginClient {
     idxListEl.max = propertiesShapes[selectedProperty]-1;
     propListEl.addEventListener('change', (evt) => {
       idxListEl.value = 0;
-      idxListEl.max = this.tagsPropertiesShapes.get(tag)[propListEl.value]-1;
+      idxListEl.max = this.tagsPropertiesShapes.get(tag)[evt.target.value]-1;
     });
     this.onShaderChanged(tag, /* onCreate=*/true);
     shaderListEl.addEventListener('change', this.onShaderChanged.bind(this, tag));
