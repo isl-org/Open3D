@@ -38,6 +38,7 @@ FixedRadiusIndex::FixedRadiusIndex(){};
 
 FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
                                    double radius) {
+    AssertTensorDtypes(dataset_points, {Float32, Float64});
     SetTensorData(dataset_points, radius);
 };
 
@@ -45,7 +46,7 @@ FixedRadiusIndex::~FixedRadiusIndex(){};
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius) {
-    int64_t num_dataset_points = dataset_points.GetShape()[0];
+    const int64_t num_dataset_points = dataset_points.GetShape()[0];
     Tensor points_row_splits(std::vector<int64_t>({0, num_dataset_points}), {2},
                              Int64);
     return SetTensorData(dataset_points, points_row_splits, radius);
@@ -54,23 +55,26 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      const Tensor &points_row_splits,
                                      double radius) {
+    AssertTensorDtypes(dataset_points, {Float32, Float64});
+    // AssertTensorDevice(points_row_splits, dataset_points.GetDevice());
+    AssertTensorDtype(points_row_splits, Int64);
+
     if (radius <= 0) {
-        utility::LogError(
-                "[FixedRadiusIndex::SetTensorData] radius should be positive.");
+        utility::LogError("radius should be positive.");
     }
     if (dataset_points.GetShape()[0] != points_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
-                "[FixedRadiusIndex::SetTensorData] dataset_points and "
-                "points_row_splits have incompatible shapes.");
+                "dataset_points and points_row_splits have incompatible "
+                "shapes.");
     }
 
     dataset_points_ = dataset_points.Contiguous();
     points_row_splits_ = points_row_splits.Contiguous();
 
-    int64_t num_dataset_points = GetDatasetSize();
-    int64_t num_batch = points_row_splits.GetShape()[0] - 1;
-    Device device = GetDevice();
-    Dtype dtype = GetDtype();
+    const int64_t num_dataset_points = GetDatasetSize();
+    const int64_t num_batch = points_row_splits.GetShape()[0] - 1;
+    const Device device = GetDevice();
+    const Dtype dtype = GetDtype();
 
     std::vector<uint32_t> hash_table_splits(num_batch + 1, 0);
     for (int i = 0; i < num_batch; ++i) {
@@ -106,8 +110,8 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
         CALL_BUILD(double, BuildSpatialHashTableCUDA)
 #else
         utility::LogError(
-                "FixedRadiusIndex::SetTensorData BUILD_CUDA_MODULE is OFF. "
-                "Please compile Open3d with BUILD_CUDA_MODULE=ON.");
+                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
+                "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
         CALL_BUILD(float, BuildSpatialHashTableCPU)
@@ -118,7 +122,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         const Tensor &query_points, double radius, bool sort) const {
-    int64_t num_query_points = query_points.GetShape()[0];
+    const int64_t num_query_points = query_points.GetShape()[0];
     Tensor queries_row_splits(std::vector<int64_t>({0, num_query_points}), {2},
                               Int64);
     return SearchRadius(query_points, queries_row_splits, radius, sort);
@@ -129,36 +133,35 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         const Tensor &queries_row_splits,
         double radius,
         bool sort) const {
-    Dtype dtype = GetDtype();
-    Device device = GetDevice();
-    int64_t num_query_points = query_points.GetShape()[0];
+    const Dtype dtype = GetDtype();
+    const Device device = GetDevice();
 
-    // Check dtype.
+    // Check device and dtype.
+    AssertTensorDevice(query_points, device);
     AssertTensorDtype(query_points, dtype);
+    // AssertTensorDevice(queries_row_splits, device);
+    AssertTensorDtype(queries_row_splits, Int64);
 
     // Check shape.
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
     AssertTensorShape(queries_row_splits, points_row_splits_.GetShape());
+
+    const int64_t num_query_points = query_points.GetShape()[0];
     if (num_query_points != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
-                "[FixedRadiusIndex::SearchRadius] query_points and "
-                "queries_row_splits have incompatible shapes.");
+                "query_points and queries_row_splits have incompatible "
+                "shapes.");
     }
 
-    // Check device.
-    AssertTensorDevice(query_points, device);
-
     if (radius <= 0) {
-        utility::LogError(
-                "[FixedRadiusIndex::SearchRadius] radius should be positive.");
+        utility::LogError("radius should be positive.");
     }
 
     Tensor query_points_ = query_points.Contiguous();
     Tensor queries_row_splits_ = queries_row_splits.Contiguous();
 
     Tensor neighbors_index, neighbors_distance;
-    Tensor neighbors_row_splits =
-            Tensor({num_query_points + 1}, core::Int64, device);
+    Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64, device);
 
 #define RADIUS_PARAMETERS                                               \
     dataset_points_, query_points_, radius, points_row_splits_,         \
@@ -177,8 +180,8 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         CALL_RADIUS(double, FixedRadiusSearchCUDA)
 #else
         utility::LogError(
-                "FixedRadiusIndex::SearchRadius BUILD_CUDA_MODULE is OFF. "
-                "Please compile Open3d with BUILD_CUDA_MODULE=ON.");
+                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
+                "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
         CALL_RADIUS(float, FixedRadiusSearchCPU)
@@ -191,7 +194,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
-    int64_t num_query_points = query_points.GetShape()[0];
+    const int64_t num_query_points = query_points.GetShape()[0];
     Tensor queries_row_splits(std::vector<int64_t>({0, num_query_points}), {2},
                               Int64);
     return SearchHybrid(query_points, queries_row_splits, radius, max_knn);
@@ -202,28 +205,28 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         const Tensor &queries_row_splits,
         double radius,
         int max_knn) const {
-    Dtype dtype = GetDtype();
-    Device device = GetDevice();
-    int64_t num_query_points = query_points.GetShape()[0];
+    const Dtype dtype = GetDtype();
+    const Device device = GetDevice();
 
-    // Check dtype.
+    // Check device and dtype.
+    AssertTensorDevice(query_points, device);
     AssertTensorDtype(query_points, dtype);
+    // AssertTensorDevice(queries_row_splits, device);
+    AssertTensorDtype(queries_row_splits, Int64);
 
     // Check shape.
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
     AssertTensorShape(queries_row_splits, points_row_splits_.GetShape());
+
+    const int64_t num_query_points = query_points.GetShape()[0];
     if (num_query_points != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
-                "[FixedRadiusIndex::SearchRadius] query_points and "
-                "queries_row_splits have incompatible shapes.");
+                "query_points and queries_row_splits have incompatible "
+                "shapes.");
     }
 
-    // Check device.
-    AssertTensorDevice(query_points, device);
-
     if (radius <= 0) {
-        utility::LogError(
-                "[FixedRadiusIndex::SearchHybrid] radius should be positive.");
+        utility::LogError("radius should be positive.");
     }
 
     Tensor query_points_ = query_points.Contiguous();
@@ -248,8 +251,8 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         CALL_HYBRID(double, HybridSearchCUDA)
 #else
         utility::LogError(
-                "FixedRadiusIndex::SearchHybrid BUILD_CUDA_MODULE is OFF. "
-                "Please compile Open3d with BUILD_CUDA_MODULE=ON.");
+                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
+                "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
         CALL_HYBRID(float, HybridSearchCPU)
