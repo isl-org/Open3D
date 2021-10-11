@@ -7,7 +7,7 @@ It is globally sparse since 2D object surfaces are usually occupying a small por
 
 To represent such a structure, we first coarsely divide the 3D space into **block** grids. Blocks containing surfaces are organized in a hash map by 3D coordinates (sparse globally), and are further divided into dense **voxels** that can be accessed by array indices (dense locally). The reason why we do not maintain a voxel hash map is that we can preserve the data locality instead of scattering adjacent data uniformly into the memory.
 
-Please first check :ref:`/tutorial/core/hashmap.ipynb`, especially section :ref:`/tutorial/core/hashmap.ipynb#Multi-valued-hash-map` to acquire a basic understanding of the underlying data structure. Please refer to [Dong2021]_ for more explanation.
+Please first check the :ref:`/tutorial/core/hashmap.ipynb`, especially section the :ref:`/tutorial/core/hashmap.ipynb#Multi-valued-hash-map` to acquire a basic understanding of the underlying data structure. Please refer to [Dong2021]_ for more explanation.
 
 Construction
 ````````````````````
@@ -15,22 +15,24 @@ A voxel block grid can be constructed by
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 52
-   :lines: 52-60
+   :lineno-start: 57
+   :lines: 27,57-74
    :linenos:
    :dedent:
 
 
 In this example, internally, the key of the hash map is trivially of element shape ``(3,)`` and dtype ``int32``.
-The multiple values, on the other hand, are organized as a structure of array (SoA). It by default contains
+The multiple values, on the other hand, are organized as a structure of array (SoA). 
 
-- Truncated Signed Distance Function (TSDF) of element shape ``(8, 8, 8, 1)``,
-- Weight of element shape ``(8, 8, 8, 1)``,
-- (Optionally) RGB color of element shape ``(8, 8, 8, 3)``,
+By default it contains:
+
+- Truncated Signed Distance Function (TSDF) of element shape ``(8, 8, 8, 1)``
+- Weight of element shape ``(8, 8, 8, 1)``
+- (Optionally) RGB color of element shape ``(8, 8, 8, 3)``
 
 where ``8`` stands for the local voxel block grid resolution.
 
-By convention we use ``3.0 / 512`` as the voxel resolution. This spatial resolution is equivalent to representing a ``3m x 3m x 3m`` room with a dense ``512x512x512`` voxel grid.
+By convention, we use ``3.0 / 512`` as the voxel resolution. This spatial resolution is equivalent to representing a ``3m x 3m x 3m`` (m = meter) room with a dense ``512 x 512 x 512`` voxel grid.
 
 The voxel block grid is recommended to be used on GPU (optimized), but should also work on CPU (slow but works).
 Empirically, we reserve ``100000`` such blocks for a living room-scale scene to avoid time and memory consuming rehashing. 

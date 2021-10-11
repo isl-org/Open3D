@@ -16,8 +16,8 @@ From a reconstructed voxel block grid from :ref:`optimized_integration`, we can 
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/ray_casting.py
    :language: python
-   :lineno-start: 73
-   :lines: 73-89
+   :lineno-start: 77
+   :lines: 27,77-92
    :linenos:
    :dedent:
 
@@ -25,8 +25,8 @@ The results could be directly obtained and visualized by
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/ray_casting.py
    :language: python
-   :lineno-start: 91
-   :lines: 91,94-95,105,108,111
+   :lineno-start: 93
+   :lines: 27,91,93-95,105-112
    :linenos:
    :dedent:
 
@@ -37,7 +37,7 @@ In customized rendering, we manually perform trilinear-interpolation by accessin
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/ray_casting.py
    :language: python
    :lineno-start: 98
-   :lines: 98-102, 114-115
+   :lines: 27,98-103,114-115
    :linenos:
    :dedent:
 

@@ -24,6 +24,11 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+# examples/python/t_reconstruction_system/ray_casting.py
+
+# P.S. This example is used in documentation, so, please ensure the changes are
+# synchronized.
+
 import os
 import numpy as np
 import open3d as o3d

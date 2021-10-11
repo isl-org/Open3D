@@ -24,6 +24,11 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+# examples/python/t_reconstruction_system/dense_slam_gui.py
+
+# P.S. This example is used in documentation, so, please ensure the changes are
+# synchronized.
+
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 

@@ -12,11 +12,10 @@ In the activation step, we first locate blocks that contain points unprojected f
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 69
-   :lines: 69-71
+   :lineno-start: 83
+   :lines: 27,83-85
    :linenos:
    :dedent:
-
 
 Integration
 ``````````
@@ -26,11 +25,10 @@ We may use optimized functions, along with raw depth images with calibration par
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 73
-   :lines: 73-79
+   :lineno-start: 87
+   :lines: 27,87-93
    :linenos:
    :dedent:
-
 
 At current, to use our optimized function, we assume the below combinations of data types, in the order of ``depth image``, ``color image``, ``tsdf in voxel grid``, ``weight in voxel grid``, ``color in voxel grid`` in CPU
 
@@ -58,8 +56,8 @@ You may use the provided APIs to extract surface points.
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 126
-   :lines: 127-131
+   :lineno-start: 136
+   :lines: 27,136-140
    :linenos:
    :dedent:
 
@@ -72,11 +70,11 @@ The voxel block grids can be saved to and loaded from `.npz` files that are acce
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 43
-   :lines: 43,84
+   :lineno-start: 48
+   :lines: 27,48,98
    :linenos:
    :dedent:
-
+   
 The `.npz` file of the aforementioned voxel block grid contains the following entries:
 
 - ``attr_name_tsdf``: stores the value buffer index: 0
