@@ -43,8 +43,6 @@ from open3d.visualization import O3DVisualizer
 from open3d.visualization import gui
 from open3d.visualization import webrtc_server
 # Set window system before the GUI event loop
-webrtc_server.enable_webrtc()
-from open3d.visualization.async_event_loop import async_event_loop
 o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
 from . import plugin_data_pb2
 from . import metadata
@@ -76,7 +74,6 @@ class Open3DPluginWindow:
         self.data_reader = data_reader
         self.run = "."  # fixed for a window once set
         self.tags = []
-        self.tag_prop_shape = dict()
         self.batch_idx = 0
         self.batch_size = 1
         self.step = 0
@@ -91,7 +88,9 @@ class Open3DPluginWindow:
         self.geometry_list = []
         self.init_done = threading.Event()  # Notify when WebRTC is ready
 
-        async_event_loop.run_sync(self._create_ui, title, width, height)
+        from open3d.visualization.async_event_loop import async_event_loop
+        self._gui = async_event_loop
+        self._gui.run_sync(self._create_ui, title, width, height)
         self._update_scene()
 
     def _get_run_tags(self, message):
@@ -178,7 +177,7 @@ class Open3DPluginWindow:
         _log.debug(f"[DC message recv] {message}")
         message = json.loads(message)
         self.window.show_settings = not self.window.show_settings
-        async_event_loop.run_sync(self.window.post_redraw)
+        self._gui.run_sync(self.window.post_redraw)
         message["status"] = "OK"
         return json.dumps(message)
 
@@ -355,27 +354,14 @@ class Open3DPluginWindow:
             "batch_size": self.batch_size,
             "batch_idx": self.batch_idx,
             "wall_time": self.wall_time,
-            "tags_properties_shapes": self.tag_prop_shape
+            "tags_properties_shapes": {
+                tag: self.data_reader.runtag_prop_shape[self.run][tag]
+                for tag in self.tags
+            }
         }
         for key in ("run", "tags", "batch_idx", "step", "render_state"):
             message.pop(key, None)
         return json.dumps(message)
-
-    def _update_tag_prop_shape(self, tag, geometry, inference_data_proto):
-        if tag not in self.tag_prop_shape:
-            self.tag_prop_shape[tag] = {}
-            for prop_type in ('point', 'vertex', 'line'):
-                if hasattr(geometry, prop_type):
-                    uniform_type = 'vertex' if prop_type == 'point' else prop_type
-                    prop_shape = {
-                        (uniform_type + "_" + prop): tensor.shape[1]
-                        for prop, tensor in getattr(geometry,
-                                                    prop_type).items()
-                        if prop not in ('indices',) and not prop.startswith('_')
-                    }
-                    self.tag_prop_shape[tag].update(prop_shape)
-            if len(inference_data_proto.inference_result) > 0:
-                self.tag_prop_shape[tag].update({'labels': 1})
 
     def _update_scene(self, message=None):
         """Update scene by adding / removing geometry elements and redraw.
@@ -403,8 +389,6 @@ class Open3DPluginWindow:
                         self.step_to_idx)
                     _log.debug(
                         f"Displaying geometry {geometry_name}:{geometry}")
-                    self._update_tag_prop_shape(tag, geometry,
-                                                inference_data_proto)
                     render_update.apply(self.window, geometry_name, geometry,
                                         inference_data_proto)
                     message["render_state"][
@@ -418,13 +402,12 @@ class Open3DPluginWindow:
         for current_item in self.geometry_list:
             if current_item not in new_geometry_list:
                 _log.debug(f"Removing geometry {current_item}")
-                async_event_loop.run_sync(self.window.remove_geometry,
-                                          current_item)
+                self._gui.run_sync(self.window.remove_geometry, current_item)
         # Reset view only if scene changed from empty -> not empty
         if len(self.geometry_list) == 0 and len(new_geometry_list) > 0:
-            async_event_loop.run_sync(self.window.reset_camera_to_default)
+            self._gui.run_sync(self.window.reset_camera_to_default)
         else:
-            async_event_loop.run_sync(self.window.post_redraw)
+            self._gui.run_sync(self.window.post_redraw)
         self.geometry_list = new_geometry_list
 
         if not self.init_done.is_set():
@@ -444,7 +427,6 @@ class Open3DPluginWindow:
         self.window = O3DVisualizer(title, width, height)
         self.window.show_menu(False)
         self.window.scene.downsample_threshold = 400000
-        # ipdb.set_trace()
         self.window.set_background((1, 1, 1, 1), None)  # White background
         # Register frontend callbacks
         class_name_base = "tensorboard/" + self.window.uid
@@ -492,12 +474,19 @@ class Open3DPlugin(base_plugin.TBPlugin):
         self.window_lock = threading.Lock()  # protect self._windows
         self._http_api_lock = threading.Lock()
         self._windows = {}
-        webrtc_server.disable_http_handshake()
+        self._dummy_window = None
+        self._gui = None
         # TODO(@ssheorey): Remove before merge
         o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)
+
+    def _start_gui(self):
+        webrtc_server.disable_http_handshake()
+        webrtc_server.enable_webrtc()
+        from open3d.visualization.async_event_loop import async_event_loop
+        self._gui = async_event_loop
         # Dummy window to ensure GUI remains active even if all user windows are
         # closed.
-        self._dummy_window = async_event_loop.run_sync(
+        self._dummy_window = self._gui.run_sync(
             gui.Application.instance.create_window, "Open3D Dummy Window", 32,
             32)
         webrtc_server.register_data_channel_message_callback(
@@ -547,7 +536,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
                 window.show_axes = show
             elif message["class_name"] == "tensorboard/show_hide_ground":
                 window.show_ground = show
-            async_event_loop.run_sync(window.post_redraw)
+            self._gui.run_sync(window.post_redraw)
         message["window_uid_list"] = window_uid_list
         return json.dumps(message)
 
@@ -588,7 +577,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
                 o3dvis.scene.camera.copy_from(target_camera)
                 o3dvis.post_redraw()
 
-        async_event_loop.run_sync(copy_target_camera)
+        self._gui.run_sync(copy_target_camera)
         message["window_uid_list"] = window_uid_list
         return json.dumps(message)
 
@@ -719,6 +708,9 @@ class Open3DPlugin(base_plugin.TBPlugin):
     @wrappers.Request.application
     def _new_window(self, request):
 
+        if self._gui is None:
+            self._start_gui()
+
         win_width = min(3840,
                         max(640, int(float(request.args.get('width', 1024)))))
         win_height = min(2400,
@@ -749,7 +741,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
                 f"Invalid Window ID {this_window_id}",
                 response=self._ERROR_RESPONSE)
 
-        async_event_loop.run_sync(self._windows[this_window_id].window.close)
+        self._gui.run_sync(self._windows[this_window_id].window.close)
         with self.window_lock:
             del self._windows[this_window_id]
         _log.debug(f"Window {this_window_id} closed.")

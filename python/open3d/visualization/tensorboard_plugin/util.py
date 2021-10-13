@@ -38,7 +38,6 @@ from tensorboard.compat.tensorflow_stub.pywrap_tensorflow import masked_crc32c
 
 import open3d as o3d
 from open3d.visualization import rendering
-from open3d.visualization.async_event_loop import async_event_loop
 from open3d.ml.vis import Colormap
 from open3d.ml.vis import LabelLUT
 from . import plugin_data_pb2
@@ -189,6 +188,7 @@ class Open3DPluginDataReader:
         # Geometry data reading
         self._tensor_events = dict()
         self.geometry_cache = LRUCache(max_items=cache_max_items)
+        self.runtag_prop_shape = dict()
         self._file_handles = {}  # {filename, (open_handle, read_lock)}
         self._file_handles_lock = threading.Lock()
         self.reload_events()
@@ -260,6 +260,24 @@ class Open3DPluginDataReader:
             return buf
         else:
             return None
+
+    def update_runtag_prop_shape(self, run, tag, geometry,
+                                 inference_data_proto):
+        tag_prop_shape = self.runtag_prop_shape.setdefault(run, dict())
+        prop_shape = tag_prop_shape.setdefault(tag, dict())
+        if len(prop_shape) == 0:
+            for prop_type in ('point', 'vertex', 'line'):
+                if hasattr(geometry, prop_type):
+                    uniform_type = 'vertex' if prop_type == 'point' else prop_type
+                    pshape = {
+                        (uniform_type + "_" + prop): tensor.shape[1]
+                        for prop, tensor in getattr(geometry,
+                                                    prop_type).items()
+                        if prop not in ('indices',) and not prop.startswith('_')
+                    }
+                    prop_shape.update(pshape)
+            if len(inference_data_proto.inference_result) > 0:
+                prop_shape.update({'labels': 1, 'confidence': 1})
 
     def read_geometry(self, run, tag, step, batch_idx, step_to_idx):
         """Geometry reader from msgpack files.
@@ -335,6 +353,7 @@ class Open3DPluginDataReader:
                               "mismatch in protobuf data.")
             data_bbox_proto.ParseFromString(data_bbox_serial)
 
+        self.update_runtag_prop_shape(run, tag, geometry, data_bbox_proto)
         return geometry, data_bbox_proto
 
 
@@ -405,6 +424,8 @@ class RenderUpdate:
     }
 
     def __init__(self, window_scaling, message):
+        from open3d.visualization.async_event_loop import async_event_loop
+        self._gui = async_event_loop
         self._window_scaling = window_scaling
         # TODO: validate message
         render_state = message.get("render_state", {
@@ -550,46 +571,52 @@ class RenderUpdate:
 
         # Bounding boxes with labels
         # TODO: Support for hiding specific classes through alpha=0
-        if (isinstance(geometry, o3d.t.geometry.LineSet) and
-                len(inference_result) > 0):
-            if self._colormap is None:
-                self._colormap = deepcopy(self.LABELLUT_COLORS)
+        if isinstance(geometry, o3d.t.geometry.LineSet):
             if 'shader' in updated:  # shader is always "unlitLine"
                 updated.remove("shader")
             material.shader = "unlitLine"
             material.line_width = 2 * self._window_scaling
-            if "colormap" in updated:
-                if "__indices" not in geometry.line:
-                    geometry.line["__indices"] = geometry.line["indices"].clone(
-                    )
-                else:
-                    geometry.line["indices"] = geometry.line["__indices"].clone(
-                    )
-                t_vis_lines = geometry.line["indices"]
-                tcolors = o3d.core.Tensor.empty(
-                    (len(geometry.line["indices"]), 3), dtype=o3d.core.uint8)
-                idx = 0
-                for k in range(len(inference_result)):
-                    label = inference_result[k].label
-                    if label in self._colormap:
-                        col = self._colormap[label]
-                        col, alpha = col[:3], col[3]
+            if self._property == "colors":
+                if "__colors" in geometry.line:
+                    geometry.line["colors"] = geometry.line["__colors"]
+            elif len(inference_result) > 0:
+                if self._colormap is None:
+                    self._colormap = deepcopy(self.LABELLUT_COLORS)
+                if "colormap" in updated:
+                    if "__indices" not in geometry.line:
+                        geometry.line["__indices"] = geometry.line[
+                            "indices"].clone()
                     else:
-                        col, alpha = (128, 128, 128), 255
-                    tcolors[idx:idx + self._LINES_PER_BBOX] = col
-                    if alpha == 0:
-                        t_vis_lines[idx:idx + self._LINES_PER_BBOX] = 0
-                    idx += self._LINES_PER_BBOX
-                    self._update_range(label, label)
+                        geometry.line["indices"] = geometry.line[
+                            "__indices"].clone()
+                    t_vis_lines = geometry.line["indices"]
+                    tcolors = o3d.core.Tensor.empty(
+                        (len(geometry.line["indices"]), 3),
+                        dtype=o3d.core.uint8)
+                    idx = 0
+                    for k in range(len(inference_result)):
+                        label = inference_result[k].label
+                        if label in self._colormap:
+                            col = self._colormap[label]
+                            col, alpha = col[:3], col[3]
+                        else:
+                            col, alpha = (128, 128, 128), 255
+                        tcolors[idx:idx + self._LINES_PER_BBOX] = col
+                        if alpha == 0:
+                            t_vis_lines[idx:idx + self._LINES_PER_BBOX] = 0
+                        idx += self._LINES_PER_BBOX
+                        self._update_range(label, label)
 
-                geometry.line["colors"] = tcolors
+                    if "__colors" in geometry.line:
+                        geometry.line["__colors"] = geometry.line["colors"]
+                    geometry.line["colors"] = tcolors
 
         # PointCloud, Mesh, LineSet with colors
         elif "shader" in updated or "colormap" in updated:
             material_update_flag = 1
-            if self._colormap is None:
-                self._colormap = deepcopy(self.DICT_COLORMAPS["RAINBOW"])
-            if self._shader == "defaultUnlit":
+            if self._shader == "defaultLit":
+                material.shader = "defaultLit"
+            elif self._shader == "defaultUnlit":
                 material.shader = "defaultUnlit"
                 material.base_color = [1.0, 1.0, 1.0, 1.0]
             elif self._shader == "unlitSolidColor":
@@ -597,6 +624,8 @@ class RenderUpdate:
                 material.base_color = _u8_float(
                     next(iter(self._colormap.values())))
             elif self._shader == "unlitGradient.LUT":  # Label Colormap
+                if self._colormap is None:
+                    self._colormap = deepcopy(self.LABELLUT_COLORS)
                 material.shader = "unlitGradient"
                 material.gradient = rendering.Gradient()
                 if len(self._colormap) > 1:
@@ -613,6 +642,8 @@ class RenderUpdate:
                 self._set_vis_minmax(geometry_vertex, material)
             # Colormap (RAINBOW / GREYSCALE): continuous data
             elif self._shader.startswith("unlitGradient.GRADIENT."):
+                if self._colormap is None:
+                    self._colormap = deepcopy(self.DICT_COLORMAPS["RAINBOW"])
                 material.shader = "unlitGradient"
                 material.gradient = rendering.Gradient()
                 material.gradient.points = list(
@@ -624,19 +655,19 @@ class RenderUpdate:
         pp_geometry = _postprocess(geometry)
         if o3dscene.has_geometry(geometry_name):
             if geometry_update_flag > 0:
-                async_event_loop.run_sync(o3dscene.scene.update_geometry,
-                                          geometry_name, pp_geometry,
-                                          geometry_update_flag)
+                self._gui.run_sync(o3dscene.scene.update_geometry,
+                                   geometry_name, pp_geometry,
+                                   geometry_update_flag)
             if material_update_flag > 0:
-                async_event_loop.run_sync(o3dscene.modify_geometry_material,
-                                          geometry_name, material)
+                self._gui.run_sync(o3dscene.modify_geometry_material,
+                                   geometry_name, material)
             _log.debug(
                 f"Geometry {geometry_name} updated with flags "
                 f"Geo:{geometry_update_flag:b}, Mat:{material_update_flag:b}")
         else:
-            async_event_loop.run_sync(o3dscene.add_geometry, geometry_name,
-                                      pp_geometry, material)
-        async_event_loop.run_sync(o3dvis.post_redraw)
+            self._gui.run_sync(o3dscene.add_geometry, geometry_name,
+                               pp_geometry, material)
+        self._gui.run_sync(o3dvis.post_redraw)
         _log.debug(f"apply complete: {geometry_name}")
 
 

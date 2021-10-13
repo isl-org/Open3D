@@ -124,6 +124,7 @@ class _AsyncDataWriter:
                         with self._file_lock:
                             handle = next(file_handle_iter)
                         handle.flush()  # release lock for expensive I/O op
+                        _log.debug(f"Flushed {tagfilepath}.")
                 except (StopIteration, RuntimeError):
                     # RuntimeError: possible race condition in dict iterator,
                     # but PEP3106 guarantees no coruption. Try again later.
@@ -271,10 +272,11 @@ def _check_prop_shape(prop, tensor_tuple, exp_shape):
         raise ValueError(
             f"Property {prop} tensor should have shape[1] {exp_shape[1]} but "
             f"is {tuple(len(tensor_tuple[k]) for k in range(exp_shape[0]))}.")
-    if any(tensor_tuple[k].shape[1] != exp_shape[2]
-           for k in range(exp_shape[0])):
+    # Any shape[2] is OK, check all are same.
+    eshape_2 = tensor_tuple[0].shape[1] if exp_shape[2] == -1 else exp_shape[2]
+    if any(tensor_tuple[k].shape[1] != eshape_2 for k in range(exp_shape[0])):
         raise ValueError(f"Property {prop} tensor should have shape[2] "
-                         f"{exp_shape[2]}")
+                         f"{eshape_2}")
 
 
 def _convert_bboxes(bboxes):
@@ -328,7 +330,6 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
         data (dict): Property name to tensor mapping.
         max_outputs (int): Only the first `max_samples` data points in each
             batch will be saved.
-        label_to_names (dict):
 
     Returns:
         A comma separated data location string with the format
@@ -346,7 +347,8 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
         data, data_bbox = _convert_bboxes(data['bboxes'])
     unknown_props = [
         prop for prop in data
-        if not prop.startswith(('vertex_', 'triangle_', 'line_'))
+        if (prop not in metadata.GEOMETRY_PROPERTY_DIMS and
+            not prop.startswith('vertex_'))
     ]
     if unknown_props:
         raise ValueError(
@@ -383,10 +385,10 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
                 n_vertices = tuple(
                     len(vertex_data[prop_name][k]) for k in range(batch_size))
             exp_shape = (batch_size, n_vertices,
-                         metadata.GEOMETRY_PROPERTY_DIMS[prop])
+                         metadata.GEOMETRY_PROPERTY_DIMS.get(prop, -1))
             _check_prop_shape(prop, vertex_data[prop_name], exp_shape)
 
-        elif prop.startswith('triangle_'):
+        elif prop in ('triangle_indices',) + metadata.TRIANGLE_PROPERTIES:
             o3d_type = "TriangleMesh"
             prop_name = prop[9:]
             triangle_data[prop_name] = _preprocess(prop, tensor, step,
@@ -402,7 +404,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
                          metadata.GEOMETRY_PROPERTY_DIMS[prop])
             _check_prop_shape(prop, triangle_data[prop_name], exp_shape)
 
-        elif prop.startswith('line_'):
+        elif prop in ('line_indices',) + metadata.LINE_PROPERTIES:
             if o3d_type != "TriangleMesh":
                 o3d_type = "LineSet"
             prop_name = prop[5:]
@@ -501,14 +503,10 @@ def add_3d(name,
               features. Floats will be cast to ``float32`` and integers to
               ``int32``.
           - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
-          - ``triangle_*FEATURE*``: shape `(B, Nf, _)`. Store arbitrary triangle
-              features.  Floats will be cast to ``float32`` and integers to
-              ``int32``.
           - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
-          - ``line_*FEATURE*``: shape `(B, Nl, _)`. Store arbitrary line features.
-                Floats will be cast to ``float32`` and integers to ``int32``.
           - ``bboxes``: shape `(B, Nbb)`. The tensor dtype should be
             `open3d.ml.vis.BoundingBox3D``. Property references not supported.
+            Use separate from other 3D properties.
 
         For `batch_size` B=1, the tensors may have rank 2 instead of rank 3.
         Floating point color data will be clipped to the range [0,1] and

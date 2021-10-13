@@ -56,11 +56,7 @@ function setColorTitle(evt) {
  */
 function showHideDiv(evt) {
   let elt = document.getElementById(evt.currentTarget.id.slice(7));
-  if (elt.style.display === "none") {
-    elt.style.display = "block";
-  } else {
-    elt.style.display = "none";
-  }
+  elt.style.display = (elt.style.display === "none") ? "block" : "none";
 }
 
 // Check if a tag (geometry series) contains a property as part of any map
@@ -470,7 +466,6 @@ class TensorboardOpen3DPluginClient {
       <div class="property-ui" id="ui-options-${tag}-colormap"> </div>
       <button class="property-ui" type="button" id="ui-render-${tag}-button">Update
       </button>`;
-    // tagPropEl.replaceChildren();   // remove existing childen, if any
     tagPropEl.insertAdjacentHTML('beforeend', PROPERTY_TEMPLATE);
 
     this.tagsPropertiesShapes = new Map();
@@ -614,7 +609,7 @@ class TensorboardOpen3DPluginClient {
     let shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
     let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
 
-    let updated = ['colormap'];
+    let updated = [];
     let renderStateTag = this.renderState.get(tag);
     if (typeof renderStateTag == 'undefined') {
       renderStateTag = {
@@ -636,7 +631,6 @@ class TensorboardOpen3DPluginClient {
     }
     renderStateTag.shader = shaderListEl.value;
     const currentRange = renderStateTag["range"];
-    let colormap_updated = false;
     let cmap = renderStateTag.colormap;
     let n_cols = 0;
     if (renderStateTag.shader == "unlitSolidColor") {
@@ -660,6 +654,8 @@ class TensorboardOpen3DPluginClient {
       color.push(alpha);
       cmap.set(label_value, color);
     }
+    if (!(n_cols == 0 && cmap.size == 0))
+      updated.push('colormap');
 
     this.messageId += 1;
     let updateRenderingMessage = {
@@ -735,7 +731,7 @@ class TensorboardOpen3DPluginClient {
     // Need colormap Object for JSON (not Map)
     for (const tag of this.selectedTags) {
       let rst = updateGeometryMessage.render_state[tag];
-      if (typeof rst != "undefined")
+      if (typeof rst != "undefined" &&  this.renderState.get(tag).colormap != null)
         rst.colormap = Object.fromEntries(this.renderState.get(tag).colormap.entries());
     }
     console.log("Before update_geometry:", this.renderState);
@@ -765,18 +761,18 @@ class TensorboardOpen3DPluginClient {
         this.requestNewWindow(evt.target.id);
       }
     } else if (evt.target.name === "tag-selector-checkboxes") {
+      let tagPropEl = document.getElementById(`property-${evt.target.id}`);
       if (evt.target.checked) {
         this.selectedTags.add(evt.target.id);
       } else {
         this.selectedTags.delete(evt.target.id);
-      }
-      for (const windowUId of this.windowState.keys()) {
-        this.requestGeometryUpdate(windowUId);
+        tagPropEl.style.display =  "none";
       }
       let tagPropButtonEl = document.getElementById(`toggle-property-${evt.target.id}`);
       tagPropButtonEl.disabled = !evt.target.checked;
-      let tagPropEl = document.getElementById(`property-${evt.target.id}`);
-      tagPropEl.hidden = !evt.target.checked;
+      for (const windowUId of this.windowState.keys()) {
+        this.requestGeometryUpdate(windowUId);
+      }
     }
   };
 
@@ -895,7 +891,9 @@ class TensorboardOpen3DPluginClient {
       for (const tag of message.current.tags) {
         this.renderState.set(tag, message.current.render_state[tag]);
         const cmap = this.renderState.get(tag).colormap;  // Object
-        this.renderState.get(tag).colormap = new Map(Object.entries(cmap));  // Map
+        if (cmap) {
+          this.renderState.get(tag).colormap = new Map(Object.entries(cmap));  // Map
+        }
         this.createPropertyPanel(tag);
       }
       console.log("After update_geometry:", this.renderState);
@@ -905,7 +903,10 @@ class TensorboardOpen3DPluginClient {
     } else if (message.class_name.endsWith("update_rendering")) {
       this.renderState.set(message.tag, message.render_state);
       const cmap = this.renderState.get(message.tag).colormap;  // Object
-      this.renderState.get(message.tag).colormap = new Map(Object.entries(cmap));  // Map
+      if (cmap) {
+        this.renderState.get(message.tag).colormap = new
+          Map(Object.entries(cmap));  // Map
+      }
       this.createPropertyPanel(message.tag);
       console.log("After update_rendering:", this.renderState);
       // remove busy indicator
