@@ -518,8 +518,8 @@ TMeshBuffersBuilder::TMeshBuffersBuilder(
         auto colors = geometry_.GetVertexColors();
 
         utility::LogWarning(
-                "Tensor triange mesh colors must have DType of Float32 not {}. "
-                "Converting.",
+                "Tensor triangle mesh colors must have DType of Float32 not "
+                "{}. Converting.",
                 colors.GetDtype().ToString());
         geometry_.GetVertexColors() = colors.To(core::Float32);
         // special case for Uint8
