@@ -480,19 +480,12 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
         std::iota(line_indices, line_indices + n_vertices, 0);
     } else {
         n_vertices = points.GetLength();
-        auto position_data = static_cast<const float*>(points.GetDataPtr());
+        core::Tensor filament_data =
+                core::Tensor::Ones({n_vertices, 7}, core::Float32);
+        filament_data.Slice(1, 0, 3) = points;
         const auto vertex_array_size = n_vertices * vertex_stride;
         vertex_data = static_cast<float*>(malloc(vertex_array_size));
-        float* vertex_data_ptr = vertex_data;
-        for (auto i = 0ul; i < n_vertices; ++i) {
-            *vertex_data_ptr++ = *position_data++;
-            *vertex_data_ptr++ = *position_data++;
-            *vertex_data_ptr++ = *position_data++;
-            *vertex_data_ptr++ = 1.f;
-            *vertex_data_ptr++ = 1.f;
-            *vertex_data_ptr++ = 1.f;
-            *vertex_data_ptr++ = 1.f;
-        }
+        memcpy(vertex_data, filament_data.GetDataPtr(), vertex_array_size);
         indices_bytes =
                 geometry_.GetLineIndices().GetLength() * 2 * sizeof(IndexType);
         n_indices = geometry_.GetLineIndices().GetLength() * 2;
