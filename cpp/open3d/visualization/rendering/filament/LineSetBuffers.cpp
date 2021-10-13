@@ -448,28 +448,26 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
         const auto& lines = geometry_.GetLineIndices();
         const auto& colors = geometry_.GetLineColors();
         n_vertices = lines.GetLength() * 2;
+        core::Tensor dup_vertices =
+                points.IndexGet({lines.Reshape({n_vertices}).To(core::Int64)});
         vertex_data = static_cast<float*>(malloc(n_vertices * vertex_stride));
         float* vertex_data_ptr = vertex_data;
-        const uint32_t* index_data =
-                static_cast<const uint32_t*>(lines.GetDataPtr());
+        const float* current_vertex =
+                static_cast<float*>(dup_vertices.GetDataPtr());
         const float* color_data =
                 static_cast<const float*>(colors.GetDataPtr());
         for (int i = 0; i < lines.GetLength(); ++i) {
             // Vertex one of the line
-            uint32_t idx1 = *index_data++;
-            const float* current_vertex = points[idx1].GetDataPtr<float>();
-            *vertex_data_ptr++ = *current_vertex;
-            *vertex_data_ptr++ = *(current_vertex + 1);
-            *vertex_data_ptr++ = *(current_vertex + 2);
+            *vertex_data_ptr++ = *current_vertex++;
+            *vertex_data_ptr++ = *current_vertex++;
+            *vertex_data_ptr++ = *current_vertex++;
             *vertex_data_ptr++ = *color_data;
             *vertex_data_ptr++ = *(color_data + 1);
             *vertex_data_ptr++ = *(color_data + 2);
             *vertex_data_ptr++ = 1.f;
-            uint32_t idx2 = *index_data++;
-            current_vertex = points[idx2].GetDataPtr<float>();
-            *vertex_data_ptr++ = *current_vertex;
-            *vertex_data_ptr++ = *(current_vertex + 1);
-            *vertex_data_ptr++ = *(current_vertex + 2);
+            *vertex_data_ptr++ = *current_vertex++;
+            *vertex_data_ptr++ = *current_vertex++;
+            *vertex_data_ptr++ = *current_vertex++;
             *vertex_data_ptr++ = *color_data;
             *vertex_data_ptr++ = *(color_data + 1);
             *vertex_data_ptr++ = *(color_data + 2);
