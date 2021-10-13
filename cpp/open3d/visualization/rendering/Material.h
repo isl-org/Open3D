@@ -183,10 +183,10 @@ public:
         return GetTextureMap("reflectance");
     }
     const t::geometry::Image &GetClearcoatMap() const {
-        return GetTextureMap("clearcoat");
+        return GetTextureMap("clear_coat");
     }
     const t::geometry::Image &GetClearcoatRoughnessMap() const {
-        return GetTextureMap("clearcoat_roughness");
+        return GetTextureMap("clear_coat_roughness");
     }
     const t::geometry::Image &GetAnisotropyMap() const {
         return GetTextureMap("anisotropy");
@@ -197,13 +197,13 @@ public:
 
     bool HasAlbedoMap() const { return HasTextureMap("albedo"); }
     bool HasNormalMap() const { return HasTextureMap("normal"); }
-    bool HasAOMap() const { return HasTextureMap("ao"); }
+    bool HasAOMap() const { return HasTextureMap("ambient_occlusion"); }
     bool HasMetallicMap() const { return HasTextureMap("metallic"); }
     bool HasRoughnessMap() const { return HasTextureMap("roughness"); }
     bool HasReflectanceMap() const { return HasTextureMap("reflectance"); }
-    bool HasClearcoatMap() const { return HasTextureMap("clearcoat"); }
+    bool HasClearcoatMap() const { return HasTextureMap("clear_coat"); }
     bool HasClearcoatRoughnessMap() const {
-        return HasTextureMap("clearcoat_roughness");
+        return HasTextureMap("clear_coat_roughness");
     }
     bool HasAnisotropyMap() const { return HasTextureMap("anisotropy"); }
     bool HasAORoughnessMetalMap() const {
@@ -217,7 +217,7 @@ public:
         SetTextureMap("normal", image);
     }
     void SetAOMap(const t::geometry::Image &image) {
-        SetTextureMap("ao", image);
+        SetTextureMap("ambient_occlusion", image);
     }
     void SetMetallicMap(const t::geometry::Image &image) {
         SetTextureMap("metallic", image);
@@ -229,10 +229,10 @@ public:
         SetTextureMap("reflectance", image);
     }
     void SetClearcoatMap(const t::geometry::Image &image) {
-        SetTextureMap("clearcoat", image);
+        SetTextureMap("clear_coat", image);
     }
     void SetClearcoatRoughnessMap(const t::geometry::Image &image) {
-        SetTextureMap("clearcoat_roughness", image);
+        SetTextureMap("clear_coat_roughness", image);
     }
     void SetAnisotropyMap(const t::geometry::Image &image) {
         SetTextureMap("anisotropy", image);
@@ -244,20 +244,20 @@ public:
     Eigen::Vector4f GetBaseColor() const {
         return GetVectorProperty("base_color");
     }
-    float GetBaseMetallic() const { return GetScalarProperty("base_metallic"); }
+    float GetBaseMetallic() const { return GetScalarProperty("metallic"); }
     float GetBaseRoughness() const {
-        return GetScalarProperty("base_roughness");
+        return GetScalarProperty("roughness");
     }
     float GetBaseReflectance() const {
-        return GetScalarProperty("base_reflectance");
+        return GetScalarProperty("reflectance");
     }
     float GetBaseClearcoat() const {
-        return GetScalarProperty("base_clearcoat");
+        return GetScalarProperty("clear_coat");
     }
     float GetBaseClearcoatRoughness() const {
-        return GetScalarProperty("base_clearcoat_roughness");
+        return GetScalarProperty("clear_coat_roughness");
     }
-    float GetAnisotropy() const { return GetScalarProperty("base_anisotropy"); }
+    float GetAnisotropy() const { return GetScalarProperty("anisotropy"); }
     float GetThickness() const { return GetScalarProperty("thickness"); }
     float GetTransmission() const { return GetScalarProperty("transmission"); }
     Eigen::Vector4f GetAbsorptionColor() const {
@@ -267,21 +267,21 @@ public:
         return GetScalarProperty("absorption_distance");
     }
 
-    bool HasBaseColor() const { return HasVectorProperty("base_color"); }
-    bool HasBaseMetallic() const { return HasScalarProperty("base_metallic"); }
+    bool HasBaseColor() const { return HasVectorProperty("color"); }
+    bool HasBaseMetallic() const { return HasScalarProperty("metallic"); }
     bool HasBaseRoughness() const {
-        return HasScalarProperty("base_roughness");
+        return HasScalarProperty("roughness");
     }
     bool HasBaseReflectance() const {
-        return HasScalarProperty("base_reflectance");
+        return HasScalarProperty("reflectance");
     }
     bool HasBaseClearcoat() const {
-        return HasScalarProperty("base_clearcoat");
+        return HasScalarProperty("clear_coat");
     }
     bool HasBaseClearcoatRoughness() const {
-        return HasScalarProperty("base_clearcoat_roughness");
+        return HasScalarProperty("clear_coat_roughness");
     }
-    bool HasAnisotropy() const { return HasScalarProperty("base_anisotropy"); }
+    bool HasAnisotropy() const { return HasScalarProperty("anisotropy"); }
     bool HasThickness() const { return HasScalarProperty("thickness"); }
     bool HasTransmission() const { return HasScalarProperty("transmission"); }
     bool HasAbsorptionColor() const {
@@ -295,22 +295,22 @@ public:
         SetVectorProperty("base_color", value);
     }
     void SetBaseMetallic(float value) {
-        SetScalarProperty("base_metallic", value);
+        SetScalarProperty("metallic", value);
     }
     void SetBaseRoughness(float value) {
-        SetScalarProperty("base_roughness", value);
+        SetScalarProperty("roughness", value);
     }
     void SetBaseReflectance(float value) {
-        SetScalarProperty("base_reflectance", value);
+        SetScalarProperty("reflectance", value);
     }
     void SetBaseClearcoat(float value) {
-        SetScalarProperty("base_clearcoat", value);
+        SetScalarProperty("clear_coat", value);
     }
     void SetBaseClearcoatRoughness(float value) {
-        SetScalarProperty("base_clearcoat_roughness", value);
+        SetScalarProperty("clear_coat_roughness", value);
     }
     void SetAnisotropy(float value) {
-        SetScalarProperty("base_anisotropy", value);
+        SetScalarProperty("anisotropy", value);
     }
     void SetThickness(float value) { SetScalarProperty("thickness", value); }
     void SetTransmission(float value) {

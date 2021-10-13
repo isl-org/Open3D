@@ -50,7 +50,7 @@ def main():
         if os.path.exists(texture_file):
             material.texture_maps[texture] = o3d.t.io.read_image(texture_file)
     if "metallic" in material.texture_maps:
-        material.scalar_properties["base_metallic"] = 1.0
+        material.scalar_properties["metallic"] = 1.0
 
     o3d.visualization.draw(mesh, title=model_name)
 
