@@ -537,8 +537,13 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
 
+    bool need_duplicate_vertices = geometry_.HasTriangleNormals() ||
+                                   geometry_.HasTriangleColors() ||
+                                   geometry_.HasTriangleAttr("texture_uvs");
     const auto& points = geometry_.GetVertexPositions();
-    const size_t n_vertices = points.GetLength();
+    const auto& indices = geometry_.GetTriangleIndices();
+    const size_t n_vertices = need_duplicate_vertices ? indices.GetLength() * 3
+                                                      : points.GetLength();
 
     // We use CUSTOM0 for tangents along with TANGENTS attribute
     // because Filament would optimize out anything about normals and lightning
@@ -571,18 +576,30 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
     // Vertices
     const size_t vertex_array_size = n_vertices * 3 * sizeof(float);
     float* vertex_array = static_cast<float*>(malloc(vertex_array_size));
-    memcpy(vertex_array, points.GetDataPtr(), vertex_array_size);
+    if (need_duplicate_vertices) {
+        core::Tensor dup_vertices = points.IndexGet(
+                {indices.Reshape({static_cast<long>(n_vertices)})});
+        memcpy(vertex_array, dup_vertices.GetDataPtr(), vertex_array_size);
+    } else {
+        memcpy(vertex_array, points.GetDataPtr(), vertex_array_size);
+    }
     VertexBuffer::BufferDescriptor pts_descriptor(
             vertex_array, vertex_array_size,
             GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(pts_descriptor));
 
-    // Per-vertex color
+    // Prepare color array
     const size_t color_array_size = n_vertices * 3 * sizeof(float);
     float* color_array = static_cast<float*>(malloc(color_array_size));
     if (geometry_.HasVertexColors()) {
-        memcpy(color_array, geometry_.GetVertexColors().GetDataPtr(),
-               color_array_size);
+        if (need_duplicate_vertices) {
+            core::Tensor dup_colors = geometry_.GetVertexColors().IndexGet(
+                    {indices.Reshape({static_cast<long>(n_vertices)})});
+            memcpy(color_array, dup_colors.GetDataPtr(), color_array_size);
+        } else {
+            memcpy(color_array, geometry_.GetVertexColors().GetDataPtr(),
+                   color_array_size);
+        }
     } else {
         for (size_t i = 0; i < n_vertices * 3; ++i) {
             color_array[i] = 1.f;
@@ -593,27 +610,49 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
             GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
 
-    // Normals
+    // Prepare normal array
     const size_t normal_array_size = n_vertices * 4 * sizeof(float);
+    float* normal_array = static_cast<float*>(malloc(normal_array_size));
     if (geometry_.HasVertexNormals()) {
-        const auto& normals = geometry_.GetVertexNormals();
-
-        // Converting normals to Filament type - quaternions
-        auto float4v_tangents =
-                static_cast<math::quatf*>(malloc(normal_array_size));
+        if (need_duplicate_vertices) {
+            core::Tensor dup_normals = geometry_.GetVertexNormals().IndexGet(
+                    {indices.Reshape({static_cast<long>(n_vertices)})});
+            auto orientation =
+                    filament::geometry::SurfaceOrientation::Builder()
+                            .vertexCount(n_vertices)
+                            .normals(reinterpret_cast<const math::float3*>(
+                                    dup_normals.GetDataPtr()))
+                            .build();
+            orientation->getQuats(reinterpret_cast<math::quatf*>(normal_array),
+                                  n_vertices);
+        } else {
+            const auto& normals = geometry_.GetVertexNormals();
+            // Converting normals to Filament type - quaternions
+            auto orientation =
+                    filament::geometry::SurfaceOrientation::Builder()
+                            .vertexCount(n_vertices)
+                            .normals(reinterpret_cast<const math::float3*>(
+                                    normals.GetDataPtr()))
+                            .build();
+            orientation->getQuats(reinterpret_cast<math::quatf*>(normal_array),
+                                  n_vertices);
+        }
+    } else if (geometry_.HasTriangleNormals()) {
+        const auto& normals = geometry_.GetTriangleNormals();
+        core::Tensor dup_normals = core::Tensor::Empty(
+                {static_cast<long>(n_vertices), 3}, core::Float32);
+        dup_normals.Slice(0, 0, n_vertices, 3) = normals;
+        dup_normals.Slice(0, 1, n_vertices, 3) = normals;
+        dup_normals.Slice(0, 2, n_vertices, 3) = normals;
         auto orientation =
                 filament::geometry::SurfaceOrientation::Builder()
                         .vertexCount(n_vertices)
                         .normals(reinterpret_cast<const math::float3*>(
-                                normals.GetDataPtr()))
+                                dup_normals.GetDataPtr()))
                         .build();
-        orientation->getQuats(float4v_tangents, n_vertices);
-        VertexBuffer::BufferDescriptor normals_descriptor(
-                float4v_tangents, normal_array_size,
-                GeometryBuffersBuilder::DeallocateBuffer);
-        vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
+        orientation->getQuats(reinterpret_cast<math::quatf*>(normal_array),
+                              n_vertices);
     } else {
-        float* normal_array = static_cast<float*>(malloc(normal_array_size));
         float* normal_ptr = normal_array;
         for (size_t i = 0; i < n_vertices; ++i) {
             *normal_ptr++ = 0.f;
@@ -621,18 +660,27 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
             *normal_ptr++ = 0.f;
             *normal_ptr++ = 1.f;
         }
-        VertexBuffer::BufferDescriptor normals_descriptor(
-                normal_array, normal_array_size,
-                GeometryBuffersBuilder::DeallocateBuffer);
-        vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
     }
+    VertexBuffer::BufferDescriptor normals_descriptor(
+            normal_array, normal_array_size,
+            GeometryBuffersBuilder::DeallocateBuffer);
+    vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
 
-    // UVs
+    // Prepare UV array
     const size_t uv_array_size = n_vertices * 2 * sizeof(float);
     float* uv_array = static_cast<float*>(malloc(uv_array_size));
     if (geometry_.HasVertexAttr("texture_uvs")) {
-        memcpy(uv_array, geometry_.GetVertexAttr("texture_uvs").GetDataPtr(),
-               uv_array_size);
+        if (need_duplicate_vertices) {
+            core::Tensor dup_uvs =
+                    geometry_.GetVertexAttr("texture_uvs")
+                            .IndexGet({indices.Reshape(
+                                    {static_cast<long>(n_vertices)})});
+            memcpy(uv_array, dup_uvs.GetDataPtr(), uv_array_size);
+        } else {
+            memcpy(uv_array,
+                   geometry_.GetVertexAttr("texture_uvs").GetDataPtr(),
+                   uv_array_size);
+        }
     } else {
         memset(uv_array, 0x0, uv_array_size);
     }
@@ -641,12 +689,15 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
     vbuf->setBufferAt(engine, 3, std::move(uv_descriptor));
 
     // Create the index buffer - indices are expected to be Uint32
-    auto indices = geometry_.GetTriangleIndices().To(core::UInt32);
-    const uint32_t n_indices = indices.GetLength() * 3;
+    const uint32_t n_indices =
+            need_duplicate_vertices ? n_vertices : indices.GetLength() * 3;
     const size_t n_bytes = n_indices * sizeof(IndexType);
     auto* uint_indices = static_cast<IndexType*>(malloc(n_bytes));
-    memcpy(uint_indices, indices.GetDataPtr(), n_bytes);
-
+    if (need_duplicate_vertices) {
+        std::iota(uint_indices, uint_indices + n_vertices, 0);
+    } else {
+        memcpy(uint_indices, indices.GetDataPtr(), n_bytes);
+    }
     auto ib_handle =
             resource_mgr.CreateIndexBuffer(n_indices, sizeof(IndexType));
     auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
