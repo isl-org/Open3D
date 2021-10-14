@@ -425,8 +425,8 @@ std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
     NanoFlannIndexHolderBase *holder = nullptr;
 #define FN_PARAMETERS num_points, points, dimension, &holder
 
-#define CALL_TEMPLATE(METRIC)                   \
-    if (METRIC == metric) {                     \
+#define CALL_TEMPLATE(METRIC)                            \
+    if (METRIC == metric) {                              \
         _BuildKdTree<T, index_t, METRIC>(FN_PARAMETERS); \
     }
 
@@ -513,8 +513,8 @@ void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
             queries, dimension, knn, ignore_query_point, return_distances, \
             output_allocator
 
-#define CALL_TEMPLATE(METRIC)                                      \
-    if (METRIC == metric) {                                        \
+#define CALL_TEMPLATE(METRIC)                                               \
+    if (METRIC == metric) {                                                 \
         _KnnSearchCPU<T, index_t, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
     }
 
@@ -609,8 +609,8 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
             queries, dimension, radii, ignore_query_point, return_distances, \
             normalize_distances, sort, output_allocator
 
-#define CALL_TEMPLATE(METRIC)                                         \
-    if (METRIC == metric) {                                           \
+#define CALL_TEMPLATE(METRIC)                                                  \
+    if (METRIC == metric) {                                                    \
         _RadiusSearchCPU<T, index_t, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
     }
 
@@ -694,8 +694,8 @@ void HybridSearchCPU(NanoFlannIndexHolderBase *holder,
     holder, num_points, points, num_queries, queries, dimension, radius, \
             max_knn, ignore_query_point, return_distances, output_allocator
 
-#define CALL_TEMPLATE(METRIC)                                         \
-    if (METRIC == metric) {                                           \
+#define CALL_TEMPLATE(METRIC)                                                  \
+    if (METRIC == metric) {                                                    \
         _HybridSearchCPU<T, index_t, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
     }
 

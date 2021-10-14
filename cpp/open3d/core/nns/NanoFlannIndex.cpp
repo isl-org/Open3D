@@ -38,7 +38,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-typedef int32_t index_t;
+typedef int32_t index_t;  // TODO(chunghyun): use GetIndexDtype()?
 
 NanoFlannIndex::NanoFlannIndex(){};
 
@@ -59,7 +59,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
 
     dataset_points_ = dataset_points.Contiguous();
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(GetDtype(), [&]() {
-        holder_ = impl::BuildKdTree<scalar_t>(
+        holder_ = impl::BuildKdTree<scalar_t, index_t>(
                 dataset_points_.GetShape(0),
                 dataset_points_.GetDataPtr<scalar_t>(),
                 dataset_points_.GetShape(1), /* metric */ L2);
@@ -88,9 +88,9 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
     Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
-        NeighborSearchAllocator<scalar_t> output_allocator(device);
+        NeighborSearchAllocator<scalar_t, index_t> output_allocator(device);
 
-        impl::KnnSearchCPU(
+        impl::KnnSearchCPU<scalar_t, index_t>(
                 holder_.get(), neighbors_row_splits.GetDataPtr<int64_t>(),
                 dataset_points_.GetShape(0),
                 dataset_points_.GetDataPtr<scalar_t>(),
@@ -132,9 +132,9 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
     Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
-        NeighborSearchAllocator<scalar_t> output_allocator(device);
+        NeighborSearchAllocator<scalar_t, index_t> output_allocator(device);
 
-        impl::RadiusSearchCPU(
+        impl::RadiusSearchCPU<scalar_t, index_t>(
                 holder_.get(), neighbors_row_splits.GetDataPtr<int64_t>(),
                 dataset_points_.GetShape(0),
                 dataset_points_.GetDataPtr<scalar_t>(),
@@ -184,16 +184,17 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     Tensor indices, distances, counts;
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
-        NeighborSearchAllocator<scalar_t> output_allocator(device);
+        NeighborSearchAllocator<scalar_t, index_t> output_allocator(device);
 
-        impl::HybridSearchCPU(holder_.get(), dataset_points_.GetShape(0),
-                              dataset_points_.GetDataPtr<scalar_t>(),
-                              query_contiguous.GetShape(0),
-                              query_contiguous.GetDataPtr<scalar_t>(),
-                              query_contiguous.GetShape(1),
-                              static_cast<scalar_t>(radius), max_knn,
-                              /* metric*/ L2, /* ignore_query_point */ false,
-                              /* return_distances */ true, output_allocator);
+        impl::HybridSearchCPU<scalar_t, index_t>(
+                holder_.get(), dataset_points_.GetShape(0),
+                dataset_points_.GetDataPtr<scalar_t>(),
+                query_contiguous.GetShape(0),
+                query_contiguous.GetDataPtr<scalar_t>(),
+                query_contiguous.GetShape(1), static_cast<scalar_t>(radius),
+                max_knn,
+                /* metric*/ L2, /* ignore_query_point */ false,
+                /* return_distances */ true, output_allocator);
 
         indices = output_allocator.NeighborsIndex().View(
                 {num_query_points, max_knn});
