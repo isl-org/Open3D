@@ -40,8 +40,6 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-typedef int32_t index_t;
-
 /// NanoFlann Index Holder.
 template <int METRIC, class TReal, class TIndex>
 struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
@@ -106,7 +104,7 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
 namespace impl {
 
 namespace {
-template <class T, int METRIC>
+template <class T, class index_t, int METRIC>
 void _BuildKdTree(size_t num_points,
                   const T *const points,
                   size_t dimension,
@@ -115,7 +113,7 @@ void _BuildKdTree(size_t num_points,
                                                            dimension, points);
 }
 
-template <class T, class OUTPUT_ALLOCATOR, int METRIC>
+template <class T, class index_t, class OUTPUT_ALLOCATOR, int METRIC>
 void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                    int64_t *query_neighbors_row_splits,
                    size_t num_points,
@@ -218,7 +216,7 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                       });
 }
 
-template <class T, class OUTPUT_ALLOCATOR, int METRIC>
+template <class T, class index_t, class OUTPUT_ALLOCATOR, int METRIC>
 void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                       int64_t *query_neighbors_row_splits,
                       size_t num_points,
@@ -336,7 +334,7 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
             });
 }
 
-template <class T, class OUTPUT_ALLOCATOR, int METRIC>
+template <class T, class index_t, class OUTPUT_ALLOCATOR, int METRIC>
 void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                       size_t num_points,
                       const T *const points,
@@ -419,7 +417,7 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
 /// \param metric   Onf of L1, L2. Defines the distance metric for the
 /// search
 ///
-template <class T>
+template <class T, class index_t>
 std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
                                                       const T *const points,
                                                       size_t dimension,
@@ -429,7 +427,7 @@ std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
 
 #define CALL_TEMPLATE(METRIC)                   \
     if (METRIC == metric) {                     \
-        _BuildKdTree<T, METRIC>(FN_PARAMETERS); \
+        _BuildKdTree<T, index_t, METRIC>(FN_PARAMETERS); \
     }
 
 #define CALL_TEMPLATE2 \
@@ -497,7 +495,7 @@ std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
 ///
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class index_t, class OUTPUT_ALLOCATOR>
 void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                   int64_t *query_neighbors_row_splits,
                   size_t num_points,
@@ -517,7 +515,7 @@ void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 
 #define CALL_TEMPLATE(METRIC)                                      \
     if (METRIC == metric) {                                        \
-        _KnnSearchCPU<T, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
+        _KnnSearchCPU<T, index_t, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
     }
 
 #define CALL_TEMPLATE2 \
@@ -591,7 +589,7 @@ void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
 ///
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class index_t, class OUTPUT_ALLOCATOR>
 void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                      int64_t *query_neighbors_row_splits,
                      size_t num_points,
@@ -613,7 +611,7 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
 
 #define CALL_TEMPLATE(METRIC)                                         \
     if (METRIC == metric) {                                           \
-        _RadiusSearchCPU<T, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
+        _RadiusSearchCPU<T, index_t, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
     }
 
 #define CALL_TEMPLATE2 \
@@ -679,7 +677,7 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
 ///
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class index_t, class OUTPUT_ALLOCATOR>
 void HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                      size_t num_points,
                      const T *const points,
@@ -698,7 +696,7 @@ void HybridSearchCPU(NanoFlannIndexHolderBase *holder,
 
 #define CALL_TEMPLATE(METRIC)                                         \
     if (METRIC == metric) {                                           \
-        _HybridSearchCPU<T, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
+        _HybridSearchCPU<T, index_t, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
     }
 
 #define CALL_TEMPLATE2 \
