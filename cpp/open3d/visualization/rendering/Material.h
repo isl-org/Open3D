@@ -245,15 +245,11 @@ public:
         return GetVectorProperty("base_color");
     }
     float GetBaseMetallic() const { return GetScalarProperty("metallic"); }
-    float GetBaseRoughness() const {
-        return GetScalarProperty("roughness");
-    }
+    float GetBaseRoughness() const { return GetScalarProperty("roughness"); }
     float GetBaseReflectance() const {
         return GetScalarProperty("reflectance");
     }
-    float GetBaseClearcoat() const {
-        return GetScalarProperty("clear_coat");
-    }
+    float GetBaseClearcoat() const { return GetScalarProperty("clear_coat"); }
     float GetBaseClearcoatRoughness() const {
         return GetScalarProperty("clear_coat_roughness");
     }
@@ -269,15 +265,9 @@ public:
 
     bool HasBaseColor() const { return HasVectorProperty("color"); }
     bool HasBaseMetallic() const { return HasScalarProperty("metallic"); }
-    bool HasBaseRoughness() const {
-        return HasScalarProperty("roughness");
-    }
-    bool HasBaseReflectance() const {
-        return HasScalarProperty("reflectance");
-    }
-    bool HasBaseClearcoat() const {
-        return HasScalarProperty("clear_coat");
-    }
+    bool HasBaseRoughness() const { return HasScalarProperty("roughness"); }
+    bool HasBaseReflectance() const { return HasScalarProperty("reflectance"); }
+    bool HasBaseClearcoat() const { return HasScalarProperty("clear_coat"); }
     bool HasBaseClearcoatRoughness() const {
         return HasScalarProperty("clear_coat_roughness");
     }
@@ -294,9 +284,7 @@ public:
     void SetBaseColor(const Eigen::Vector4f &value) {
         SetVectorProperty("base_color", value);
     }
-    void SetBaseMetallic(float value) {
-        SetScalarProperty("metallic", value);
-    }
+    void SetBaseMetallic(float value) { SetScalarProperty("metallic", value); }
     void SetBaseRoughness(float value) {
         SetScalarProperty("roughness", value);
     }
@@ -309,9 +297,7 @@ public:
     void SetBaseClearcoatRoughness(float value) {
         SetScalarProperty("clear_coat_roughness", value);
     }
-    void SetAnisotropy(float value) {
-        SetScalarProperty("anisotropy", value);
-    }
+    void SetAnisotropy(float value) { SetScalarProperty("anisotropy", value); }
     void SetThickness(float value) { SetScalarProperty("thickness", value); }
     void SetTransmission(float value) {
         SetScalarProperty("transmission", value);
