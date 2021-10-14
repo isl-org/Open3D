@@ -51,8 +51,6 @@ from .util import RenderUpdate
 from .util import _log
 from open3d.ml.vis import LabelLUT
 
-import ipdb
-
 
 class Open3DPluginWindow:
     """Create and manage a single Open3D WebRTC GUI window.
@@ -311,14 +309,14 @@ class Open3DPluginWindow:
                 "batch_size": 8,
                 "batch_idx": 0,
                 "wall_time": wall_time
-                "tags_properties_shapes": {
-                    "tag_0": { "prop0": 3, "prop1": 1, ...},
-                    "tag_1": { "prop0": 3, "prop2": 2, ...},
-                ...},
-                "tag_label_to_names": {
-                    "tag_1": {"prop1": { label (int): name (str), ...},}
-                    ...
-                }
+              }
+              "tags_properties_shapes": {
+                  "tag_0": { "prop0": 3, "prop1": 1, ...},
+                  "tag_1": { "prop0": 3, "prop2": 2, ...},
+              ...},
+              "tag_label_to_names": {
+                  "tag_1": { label (int): name (str), ...}
+                  ...
               }
               "status": OK
             }
@@ -332,19 +330,6 @@ class Open3DPluginWindow:
 
         status = self._update_scene(message)
         message["status"] = status
-        tag_label_to_names = {}
-        for tag in self.tags:
-            lab2name = self.data_reader.get_label_to_names(self.run, tag)
-            n_class = len(lab2name)
-            if n_class > 0:
-                tag_label_to_names[tag] = dict(sorted(lab2name.items()))
-                colormap = message["render_state"][tag]["colormap"]
-                for label in list(colormap.keys()):
-                    if int(label) not in lab2name:
-                        colormap.pop(label)
-        message["tag_label_to_names"] = tag_label_to_names
-
-        # Compose reply
         message["current"] = {
             "run": self.run,
             "tags": self.tags,
@@ -354,10 +339,11 @@ class Open3DPluginWindow:
             "batch_size": self.batch_size,
             "batch_idx": self.batch_idx,
             "wall_time": self.wall_time,
-            "tags_properties_shapes": {
-                tag: self.data_reader.runtag_prop_shape[self.run][tag]
-                for tag in self.tags
-            }
+        }
+        # Compose reply
+        message["tags_properties_shapes"] = {
+            tag: self.data_reader.runtag_prop_shape[self.run][tag]
+            for tag in self.tags
         }
         for key in ("run", "tags", "batch_idx", "step", "render_state"):
             message.pop(key, None)
@@ -373,11 +359,16 @@ class Open3DPluginWindow:
             message = {"render_state": {}}
         status = ""
         new_geometry_list = []
+        tag_label_to_names = message.setdefault("tag_label_to_names", dict())
         for tag in self.tags:
+            if tag not in tag_label_to_names:
+                tag_label_to_names[tag] = self.data_reader.get_label_to_names(
+                    self.run, tag)
             message_tag = dict()
             if tag in message["render_state"]:
                 message_tag["render_state"] = message["render_state"][tag]
-            render_update = RenderUpdate(self.window.scaling, message_tag)
+            render_update = RenderUpdate(self.window.scaling, message_tag,
+                                         tag_label_to_names[tag])
             # '\x1f' -> ASCII unit separator
             geometry_name = "\x1f".join(
                 str(x) for x in (self.run, tag, self.batch_idx, self.step))
@@ -638,8 +629,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
             for w in message["window_uid_list"]
             if str(w) in self._windows
         ]
-        render_update = RenderUpdate(
-            self._windows[window_uid_list[0]].window.scaling, message)
+        render_update = None  # Initialize on first use
 
         for window_uid in window_uid_list:
             plugin_window = self._windows[window_uid]
@@ -648,6 +638,10 @@ class Open3DPlugin(base_plugin.TBPlugin):
                 run, tag, batch_idx, step = geometry_name.split('\x1f')
                 if tag != message["tag"]:
                     continue
+                if render_update is None:
+                    render_update = RenderUpdate(
+                        o3dvis.scaling, message,
+                        self.data_reader.get_label_to_names(run, tag))
                 geometry, inference_data_proto = self.data_reader.read_geometry(
                     run, tag, int(step), int(batch_idx),
                     plugin_window.step_to_idx)

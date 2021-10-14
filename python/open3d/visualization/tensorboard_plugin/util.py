@@ -59,8 +59,6 @@ _stream_handler.setLevel(logging.DEBUG)
 _log.setLevel(logging.DEBUG)
 _log.addHandler(_stream_handler)
 
-import ipdb
-
 
 class ReadWriteLock:
     """ A lock object that allows many simultaneous "read locks", but
@@ -167,6 +165,20 @@ class LRUCache:
                 f"Hits: {self.hits}, Misses: {self.misses}")
 
 
+def get_custom_properties(geometry_attr):
+    """Get list of custom properties and their per-vertex shape.
+
+    Args:
+        geometry_attr: geometry TensorMap (e.g.: `point` or `vertex`)
+    """
+    return {
+        prop: tensor.shape[1]
+        for prop, tensor in geometry_attr.items()
+        if prop not in ('indices', 'positions', 'colors',
+                        'normals') and not prop.startswith('_')
+    }
+
+
 class Open3DPluginDataReader:
     """Manage TB event data and geometry data for common use by all
     Open3DPluginWindow instances. This is thread safe for simultaneous use by
@@ -238,10 +250,15 @@ class Open3DPluginDataReader:
         """ Get label (id) to name (category) mapping for a tag.
         """
         md_proto = self.event_mux.SummaryMetadata(run, tag)
-        return metadata.parse_plugin_metadata(md_proto.plugin_data.content)
+        lab2name = metadata.parse_plugin_metadata(md_proto.plugin_data.content)
+        return dict(sorted(lab2name.items()))
 
     def read_from_file(self, filename, read_location, read_size,
                        read_masked_crc32c):
+        """Read data from the file ``filename`` from a given offset
+        ``read_location`` and size ``read_size``. Data is validated with the provided
+        ``masked_crc32c``. This is thread safe and manages a list of open files.
+        """
         with self._file_handles_lock:
             if filename not in self._file_handles:
                 self._file_handles[filename] = (_fileopen(filename, "rb"),
@@ -263,19 +280,16 @@ class Open3DPluginDataReader:
 
     def update_runtag_prop_shape(self, run, tag, geometry,
                                  inference_data_proto):
+        """Update list of custom properties and their shapes for different runs
+        and tags.
+        """
         tag_prop_shape = self.runtag_prop_shape.setdefault(run, dict())
         prop_shape = tag_prop_shape.setdefault(tag, dict())
         if len(prop_shape) == 0:
-            for prop_type in ('point', 'vertex', 'line'):
+            for prop_type in ('point', 'vertex'):  # exclude 'line'
                 if hasattr(geometry, prop_type):
-                    uniform_type = 'vertex' if prop_type == 'point' else prop_type
-                    pshape = {
-                        (uniform_type + "_" + prop): tensor.shape[1]
-                        for prop, tensor in getattr(geometry,
-                                                    prop_type).items()
-                        if prop not in ('indices',) and not prop.startswith('_')
-                    }
-                    prop_shape.update(pshape)
+                    prop_shape.update(
+                        get_custom_properties(getattr(geometry, prop_type)))
             if len(inference_data_proto.inference_result) > 0:
                 prop_shape.update({'labels': 1, 'confidence': 1})
 
@@ -378,13 +392,14 @@ def _postprocess(geometry):
     return legacy
 
 
-def _normalize(tensor, to_range=(0., 1.)):
+def _normalize(tensor):
     if tensor.dtype in (o3d.core.float32, o3d.core.float64, np.float32,
                         np.float64):
         m, M = tensor.min().item(), tensor.max().item()
-        if M > m:
-            return (tensor - m) * (1. / (M - m)), m, M
-    return tensor, m, M
+        if M <= m + 1e-6:  # stretch degenerate range to include [0, 1]
+            m, M = min(m, 0), max(M, 1)
+        return (tensor - m) * (1. / (M - m)), m, M
+    return tensor, 0, 1
 
 
 def _u8_float(color):
@@ -423,10 +438,11 @@ class RenderUpdate:
         for label, color in enumerate(LabelLUT.Colors)
     }
 
-    def __init__(self, window_scaling, message):
+    def __init__(self, window_scaling, message, label_to_names):
         from open3d.visualization.async_event_loop import async_event_loop
         self._gui = async_event_loop
         self._window_scaling = window_scaling
+        self._label_to_names = label_to_names
         # TODO: validate message
         render_state = message.get("render_state", {
             "property": "",
@@ -435,13 +451,7 @@ class RenderUpdate:
             "colormap": None,
         })
         self._updated = message.get("updated", deepcopy(self.ALL_UPDATED))
-        prop = render_state["property"].split('_')  # eg: triangle_texture_uvs
-        if prop[0] == 'point':
-            prop[0] = 'vertex'
-        if len(prop) == 1:  # eg: 'labels' -> ['labels'] -> ('', 'labels')
-            prop = ('', prop[0])
-        self._prop_type = prop[0]  # eg: 'triangle' or ''
-        self._property = '_'.join(prop[1:])  # eg: 'texture_uvs' or 'labels'
+        self._property = render_state["property"]
         if int(render_state["index"]) >= 0:
             self._index = int(render_state["index"])
         # For custom scalar / 3-vector visualization
@@ -461,12 +471,8 @@ class RenderUpdate:
     def get_render_state(self):
         """Return current render state.
         """
-        if len(self._prop_type) > 0:
-            prop = '_'.join((self._prop_type, self._property))
-        else:
-            prop = self._property
         return {
-            "property": prop,
+            "property": self._property,
             "index": self._index,
             "shader": self._shader,
             "colormap": self._colormap,
@@ -483,14 +489,14 @@ class RenderUpdate:
             ]
 
     def _set_vis_minmax(self, geometry_vertex, material):
+        m, M = 0., 1.
         if "__visualization_scalar" in geometry_vertex:
-            material.scalar_min = geometry_vertex["__visualization_scalar"].min(
-            ).item()
-            material.scalar_max = geometry_vertex["__visualization_scalar"].max(
-            ).item()
-            self._update_range(material.scalar_min, material.scalar_max)
-        else:
-            material.scalar_min, material.scalar_max = 0., 1.
+            m = geometry_vertex["__visualization_scalar"].min().item()
+            M = geometry_vertex["__visualization_scalar"].max().item()
+            if M <= m + 1e-6:  # stretch degenerate range to include [0, 1]
+                m, M = min(m, 0), max(M, 1)
+            self._update_range(m, M)
+        material.scalar_min, material.scalar_max = m, M
         _log.debug("material colormap range range set to "
                    f"{material.scalar_min, material.scalar_max}")
 
@@ -508,33 +514,26 @@ class RenderUpdate:
             inference_result = []
         # Set default shader and property
         if self._shader == "":
+            custom_props = get_custom_properties(geometry_vertex)
             if (len(inference_result) > 0  # Have BB labels
                     or "labels" in geometry_vertex):  # Have vertex labels
                 self._shader = "unlitGradient.LUT"
                 if self._property == "":
                     self._property = "labels"
+                    self._index = 0
             elif isinstance(geometry, o3d.t.geometry.LineSet):
                 self._shader = "unlitLine"
-                if self._property == "" and "colors" in geometry.line:
-                    self._property = "colors"
-            elif "normals" in geometry_vertex:
-                self._shader = "defaultLit"
-                if self._property == "" and "colors" in geometry_vertex:
-                    self._property = "colors"
-            elif "normals" in geometry_vertex:
-                self._shader = "defaultLit"
-                if self._property == "" and "colors" in geometry_vertex:
-                    self._property = "colors"
+            elif len(custom_props) > 0:
+                self._shader = "unlitGradient.GRADIENT.RAINBOW"
+                if self._property == "":
+                    self._property = next(iter(custom_props))
+                    self._index = 0
             elif "normals" in geometry_vertex:
                 self._shader = "defaultLit"
             elif "colors" in geometry_vertex:
                 self._shader = "defaultUnlit"
-            else:  # Only XYZ -> rainbow colormap on X
-                self._shader = "unlitGradient.GRADIENT.RAINBOW"
-                if self._property == "":
-                    self._property = "positions"
-                if self._index not in (0, 1, 2):
-                    self._index = 0
+            else:  # Only XYZ
+                self._shader = "unlitSolidColor"
 
         o3dscene = o3dvis.scene
         if o3dscene.has_geometry(geometry_name):
@@ -549,7 +548,7 @@ class RenderUpdate:
         material_update_flag = 0
         material = rendering.Material()
 
-        # Visualize scalar property with color map
+        # Visualize scalar / 3-vector property with color map
         if ("property" in updated and self._property in geometry_vertex):
             if (self._shader.startswith("unlitGradient") and
                     geometry_vertex[self._property].shape[1] > self._index):
@@ -570,18 +569,20 @@ class RenderUpdate:
                 geometry_update_flag |= rendering.Scene.UPDATE_COLORS_FLAG
 
         # Bounding boxes with labels
-        # TODO: Support for hiding specific classes through alpha=0
         if isinstance(geometry, o3d.t.geometry.LineSet):
             if 'shader' in updated:  # shader is always "unlitLine"
                 updated.remove("shader")
             material.shader = "unlitLine"
             material.line_width = 2 * self._window_scaling
-            if self._property == "colors":
+            if self._property == "":
                 if "__colors" in geometry.line:
                     geometry.line["colors"] = geometry.line["__colors"]
             elif len(inference_result) > 0:
                 if self._colormap is None:
                     self._colormap = deepcopy(self.LABELLUT_COLORS)
+                    for label in list(self._colormap):
+                        if label not in self._label_to_names:
+                            self._colormap.pop(label)
                 if "colormap" in updated:
                     if "__indices" not in geometry.line:
                         geometry.line["__indices"] = geometry.line[
@@ -605,7 +606,6 @@ class RenderUpdate:
                         if alpha == 0:
                             t_vis_lines[idx:idx + self._LINES_PER_BBOX] = 0
                         idx += self._LINES_PER_BBOX
-                        self._update_range(label, label)
 
                     if "__colors" in geometry.line:
                         geometry.line["__colors"] = geometry.line["colors"]
@@ -614,6 +614,7 @@ class RenderUpdate:
         # PointCloud, Mesh, LineSet with colors
         elif "shader" in updated or "colormap" in updated:
             material_update_flag = 1
+            material.point_size = 2 * self._window_scaling
             if self._shader == "defaultLit":
                 material.shader = "defaultLit"
             elif self._shader == "defaultUnlit":
@@ -626,6 +627,9 @@ class RenderUpdate:
             elif self._shader == "unlitGradient.LUT":  # Label Colormap
                 if self._colormap is None:
                     self._colormap = deepcopy(self.LABELLUT_COLORS)
+                    for label in list(self._colormap):
+                        if label not in self._label_to_names:
+                            self._colormap.pop(label)
                 material.shader = "unlitGradient"
                 material.gradient = rendering.Gradient()
                 if len(self._colormap) > 1:
@@ -639,7 +643,8 @@ class RenderUpdate:
                         rendering.Gradient.Point(0.0, [1.0, 0.0, 1.0, 1.0])
                     ]
                 material.gradient.mode = rendering.Gradient.LUT
-                self._set_vis_minmax(geometry_vertex, material)
+                material.scalar_min, material.scalar_max = 0, max(
+                    self._label_to_names.keys())
             # Colormap (RAINBOW / GREYSCALE): continuous data
             elif self._shader.startswith("unlitGradient.GRADIENT."):
                 if self._colormap is None:

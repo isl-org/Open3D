@@ -239,7 +239,6 @@ select {
   position: relative;
   margin: 1em;
   cursor: pointer;
-  text-transform: capitalize;
   font-size: inherit;
 }
 
@@ -254,6 +253,10 @@ select {
 
 .property-ui input[type="number"] {
   width: 5em;
+}
+
+.property-ui option {
+  text-transform: capitalize;
 }
 
 .property-ui-colormap {

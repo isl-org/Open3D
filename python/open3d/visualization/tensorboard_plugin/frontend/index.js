@@ -90,6 +90,8 @@ class TensorboardOpen3DPluginClient {
   renderState = new Map();  // {tag : {'property':__, 'index': 0, 'shader': __, 'colormap': []}}
   commonStep = null;
   commonBatchIdx = null;
+  validShaders = ['unlitSolidColor', 'unlitGradient.GRADIENT.RAINBOW',
+    'unlitGradient.GRADIENT.GREYSCALE','defaultUnlit', 'defaultLit'];
 
   /**
    * Entry point for the TensorBoard Open3D plugin client
@@ -348,6 +350,14 @@ class TensorboardOpen3DPluginClient {
   /* Callback to toggle O3DVisualizer settings panel.
   */
   toggleSettings = (windowUId) => {
+    // O3DVisualizer controls work only with full size.
+    let elem = document.getElementById("video_" + windowUId);
+    if (elem.width <= this.width) {        // zoom
+      elem.width = this.full_width;
+      elem.height = this.full_height;
+    }
+    // Disable view sync on opening options panel
+    document.getElementById("ui-options-view").checked = false;
     this.messageId += 1;
     const toggleSettingsMessage = {
       messageId: this.messageId,
@@ -445,9 +455,14 @@ class TensorboardOpen3DPluginClient {
 
     let tagPropEl = document.getElementById(`property-${tag}`);
     tagPropEl.replaceChildren();  // clean up
+    const propertiesShapes = this.tagsPropertiesShapes.get(tag);
+    if (Object.keys(propertiesShapes).length==0) {
+      return;
+    }
     const PROPERTY_TEMPLATE =
       `<label class="property-ui">Data
           <select name="property" id="ui-options-${tag}-property">
+            <option value="">Geometry</option>
           </select>
       </label>
       <label class="property-ui">Index
@@ -455,48 +470,35 @@ class TensorboardOpen3DPluginClient {
       </label>
       <label class="property-ui">Shader
           <select name="shader" id="ui-options-${tag}-shader">
-            <option value="unlitSolidColor">Solid Color</option>
-            <option value="unlitGradient.LUT">Label Colormap</option>
-            <option value="unlitGradient.GRADIENT.RAINBOW">Colormap (Rainbow)</option>
-            <option value="unlitGradient.GRADIENT.GREYSCALE">Colormap (Greyscale)</option>
-            <option value="defaultUnlit">RGB</option>
-            <option value="defaultLit">With lighting</option>
+            <option value="unlitSolidColor" title="Uniform color for the entire geometry."
+            >Solid Color</option>
+            <option value="unlitGradient.LUT"
+            title="Colors based on discrete labels for points or bounding boxes."
+            >Label Colormap</option>
+            <option value="unlitGradient.GRADIENT.RAINBOW"
+            title="Render a scalar point property in full color"
+            >Colormap (Rainbow)</option>
+            <option value="unlitGradient.GRADIENT.GREYSCALE"
+            title="Render a scalar point property in grayscale."
+            >Colormap (Greyscale)</option>
+            <option value="defaultUnlit"
+            title="Use colors or another 3 element property of the points as RGB.\nOnly the first 3 dimensions of a custom property are used."
+            >RGB</option>
+            <option value="defaultLit"
+            title="Visualize geometry with lighting."
+            >Default</option>
           </select>
       </label>
       <div class="property-ui" id="ui-options-${tag}-colormap"> </div>
-      <button class="property-ui" type="button" id="ui-render-${tag}-button">Update
-      </button>`;
+      `;
+      // <button class="property-ui" type="button" id="ui-render-${tag}-button">Update</button>
     tagPropEl.insertAdjacentHTML('beforeend', PROPERTY_TEMPLATE);
 
-    this.tagsPropertiesShapes = new Map();
-    for (const [windowUId, state] of this.windowState) {
-      this.tagsPropertiesShapes = new Map([...this.tagsPropertiesShapes,
-        ...Object.entries(state.tags_properties_shapes)]);
-    }
-    const propertiesShapes = this.tagsPropertiesShapes.get(tag);
     let propListEl = document.getElementById(`ui-options-${tag}-property`);
     let idxListEl = document.getElementById(`ui-options-${tag}-index`);
     let shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
     let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
-    let submitEl = document.getElementById(`ui-render-${tag}-button`);
-
-    // Disable incompatible options
-    /* shader : requiredProperties
-     * Assume "positions" always present.
-     * unlitSolidColor: ("positions",)
-     * unlitGradient.LUT: ("labels", "positions")
-     * unlitGradient.GRADIENT: ("positions",)
-     * defaultUnlit: ("positions", "colors")
-     * defaultLit: ("positions", "normals")
-     */
-
-    // unlitGradient.LUT
-    const propLabels = haveProperty(propertiesShapes, 'labels');
-    shaderListEl.children[1].hidden = (propLabels === null);
-    // defaultlit
-    const propNormals = haveProperty(propertiesShapes, 'normals');
-    shaderListEl.children[5].hidden = (propNormals === null);
-    const propPositions = haveProperty(propertiesShapes, 'positions');
+    // let submitEl = document.getElementById(`ui-render-${tag}-button`);
 
     const renderStateTag = this.renderState.get(tag);
     shaderListEl.value = renderStateTag.shader;
@@ -507,53 +509,118 @@ class TensorboardOpen3DPluginClient {
       propListEl.insertAdjacentHTML("beforeend",
         `<option ${selected}>${property}</option>`);
     }
-    idxListEl.value = renderStateTag.index;
     idxListEl.max = propertiesShapes[selectedProperty]-1;
-    propListEl.addEventListener('change', (evt) => {
-      idxListEl.value = 0;
-      idxListEl.max = this.tagsPropertiesShapes.get(tag)[evt.target.value]-1;
-    });
-    this.onShaderChanged(tag, /* onCreate=*/true);
-    shaderListEl.addEventListener('change', this.onShaderChanged.bind(this, tag));
-    submitEl.addEventListener('click', this.requestRenderUpdate.bind(this, tag));
+    idxListEl.value = renderStateTag.index;
+    idxListEl.disabled = (idxListEl.max == 0);
+
+    propListEl.addEventListener('change', this.onPropertyChanged.bind(this,
+      tag, /* onCreate=*/false));
+    idxListEl.addEventListener('change', this.requestRenderUpdate.bind(this,
+      tag));
+    shaderListEl.addEventListener('change', this.onShaderChanged.bind(this,
+      tag, /* onCreate=*/false));
+    // submitEl.addEventListener('click', this.requestRenderUpdate.bind(this, tag));
     document.getElementById(`toggle-property-${tag}`).disabled = false;
+    this.onPropertyChanged(tag, /* onCreate=*/true);
   };
 
-  onShaderChanged = (tag, onCreate) => {
+  setEnabledShaders = (tag, shaderList) => {
+    const shaderChild = [
+      'unlitSolidColor',
+      'unlitGradient.LUT',
+      'unlitGradient.GRADIENT.RAINBOW',
+      'unlitGradient.GRADIENT.GREYSCALE',
+      'defaultUnlit',
+      'defaultLit'
+    ];
     let shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
+    shaderChild.forEach( function (item, index, array) {
+      shaderListEl[index].hidden = !shaderList.includes(item);
+      console.debug(shaderListEl[index].value, " is hidden ", shaderListEl[index].hidden);
+    });
+  }
+
+  onPropertyChanged = (tag, onCreate, evt) => {
+    // Disable incompatible options
+    /* shader : requiredProperties
+     * Assume "positions" always present.
+     * unlitSolidColor: ("positions",)
+     * unlitGradient.LUT: ("labels", "positions")
+     * unlitGradient.GRADIENT: ("positions",)
+     * defaultUnlit: ("positions", "colors")
+     * defaultLit: ("positions", "normals")
+     */
+    let propListEl = document.getElementById(`ui-options-${tag}-property`);
+    let idxListEl = document.getElementById(`ui-options-${tag}-index`);
+    let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
+    if (propListEl.value === "") {  // Geometry
+      cmapEl.style.display = "none";
+      cmapEl.previousElementSibling.style.display = "none";   // shader
+      cmapEl.previousElementSibling.previousElementSibling.style.display
+        = "none";  // index
+      this.validShaders = ['defaultLit', 'unlitSolidColor', 'defaultUnlit'];
+    } else {
+      cmapEl.style.display = "block";
+      cmapEl.previousElementSibling.style.display = "block";   // shader
+      cmapEl.previousElementSibling.previousElementSibling.style.display
+        = "block";  // index
+      // idxListEl.value = 0;
+      idxListEl.max = this.tagsPropertiesShapes.get(tag)[propListEl.value]-1;
+      idxListEl.disabled = (idxListEl.max == 0);
+      if (propListEl.value === "labels") {
+        this.validShaders = ['unlitGradient.LUT'];
+      } else {
+        this.validShaders = ['unlitGradient.GRADIENT.RAINBOW',
+          'unlitGradient.GRADIENT.GREYSCALE'];
+        if (idxListEl.max >= 2) {
+          this.validShaders.push('defaultUnlit');   // RGB
+        }
+      }
+    }
+    this.setEnabledShaders(tag, this.validShaders);
+    this.onShaderChanged(tag, onCreate);
+  }
+
+  onShaderChanged = (tag, onCreate, evt) => {
+    let shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
+    let idxListEl = document.getElementById(`ui-options-${tag}-index`);
+    idxListEl.parentElement.hidden = (shaderListEl.value === "defaultUnlit");
     let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
     const renderStateTag = this.renderState.get(tag);
 
+    let needRenderUpdate = false;
+    if (!this.validShaders.includes(shaderListEl.value)) {
+      shaderListEl.value = this.validShaders[0];
+      needRenderUpdate = true;  // need update with valid shader
+    }
+
     cmapEl.replaceChildren();  // delete all children
+    let idx = 0;
     if (shaderListEl.value === "unlitSolidColor") {
-      // this.colormap.set(tag, new Map([[0, [128, 128, 128, 255]]]));
-      // renderStateTag.colormap = new Map(Object.entries(renderStateTag.colormap));
+      idx = 1;
       let color = [128, 128, 128, 255];
-      if (typeof onCreate != "undefined" && renderStateTag.colormap.size == 1) {
+      if (!onCreate && renderStateTag.colormap.size == 1) {
         color = renderStateTag.colormap.values().next().value;
       }
       cmapEl.innerHTML =
         `<label class="property-ui-colormap">
-          <input type="checkbox" id="ui-cmap-${tag}-alpha-0" checked hidden>
-          <input type="text" id="ui-cmap-${tag}-val-0" value="0" hidden>
+          <input type="checkbox" id="ui-cmap-${tag}-alpha-0" checked disabled>
+          <input type="text" id="ui-cmap-${tag}-val-0" value="0" disabled>
           <input type="color" id="ui-cmap-${tag}-col-0"
             value="${rgbToHex(color)}"
             title="R:${color[0]} G:${color[1]} B:${color[2]}">
         </label>`;
-        document.getElementById(`ui-cmap-${tag}-col-0`).addEventListener(
-          "input", setColorTitle);
     } else if (shaderListEl.value === "unlitGradient.LUT") {
       // create LabelLUT
       if (this.tagLabelsNames.has(tag)) {
         const labelNames = this.tagLabelsNames.get(tag);
-        if (typeof onCreate === "undefined") {
+        if (!onCreate) {
           renderStateTag.colormap = new Map(
             Object.entries(this.LabelLUTColors).slice(0, Object.entries(labelNames).length)
           );
         }
-        let idx=0;
         for (const [label, name] of Object.entries(labelNames).sort(
-        (l1, l2) => parseInt(l1) > parseInt(l2))) {
+          (l1, l2) => parseInt(l1) > parseInt(l2))) {
           const color = renderStateTag.colormap.get(label);
           const checked = color[3] > 0 ? "checked" : "";
           cmapEl.insertAdjacentHTML("beforeend",
@@ -564,22 +631,19 @@ class TensorboardOpen3DPluginClient {
                 title="R:${color[0]}, G:${color[1]}, B:${color[2]}"
                 value="${rgbToHex(color)}">
             </label>`);
-          document.getElementById(`ui-cmap-${tag}-col-${idx}`).addEventListener(
-            "input", setColorTitle);
           idx = idx+1;
         }
       }
     } else if (shaderListEl.value.startsWith("unlitGradient.GRADIENT.")) {
-        if (typeof onCreate === "undefined") {
-          renderStateTag.colormap = new Map(
-            Object.entries(this.COLORMAPS[shaderListEl.value.slice(23)]));
-        }
+      if (!onCreate) {
+        renderStateTag.colormap = new Map(
+          Object.entries(this.COLORMAPS[shaderListEl.value.slice(23)]));
+      }
       let currentRange = renderStateTag.range;
       cmapEl.insertAdjacentHTML("beforeend",
         `<p>Range: [${currentRange[0].toPrecision(4)}, ${currentRange[1].toPrecision(4)}]</p>`);
       if(!currentRange) { currentRange = [0.0, 1.0]; }
       const step = (currentRange[1] - currentRange[0])/16;
-      let idx=0;
       for (const [value, color] of renderStateTag.colormap) {
         const valueFlt = currentRange[0] + parseFloat(value) *
           (currentRange[1] - currentRange[0]);
@@ -594,20 +658,31 @@ class TensorboardOpen3DPluginClient {
               title="R:${color[0]}, G:${color[1]}, B:${color[2]}"
               value="${rgbToHex(color)}">
           </label>`);
-        document.getElementById(`ui-cmap-${tag}-col-${idx}`).addEventListener(
-          "input", setColorTitle);
         idx = idx+1;
       }
     } else if (shaderListEl.value === "defaultUnlit") {
-      ;
+      idxListEl.value = 0;  // Index is unused in this case
+    }
+    // Setup colormap callbacks:
+    for (let ncol = 0; ncol < idx; ++ncol) {
+      document.getElementById(`ui-cmap-${tag}-col-${ncol}`).addEventListener(
+        "change", setColorTitle);
+      document.getElementById(`ui-cmap-${tag}-col-${ncol}`).addEventListener(
+        "change", this.requestRenderUpdate.bind(this, tag));
+      document.getElementById(`ui-cmap-${tag}-val-${ncol}`).addEventListener(
+        "change", this.requestRenderUpdate.bind(this, tag));
+      document.getElementById(`ui-cmap-${tag}-alpha-${ncol}`).addEventListener(
+        "change", this.requestRenderUpdate.bind(this, tag));
+    }
+    if (!onCreate || needRenderUpdate) {
+      this.requestRenderUpdate(tag);
     }
   };
 
-  requestRenderUpdate = (tag) => {
-    let propListEl = document.getElementById(`ui-options-${tag}-property`);
-    let idxListEl = document.getElementById(`ui-options-${tag}-index`);
-    let shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
-    let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
+  requestRenderUpdate = (tag, evt) => {
+    const propListEl = document.getElementById(`ui-options-${tag}-property`);
+    const idxListEl = document.getElementById(`ui-options-${tag}-index`);
+    const shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
 
     let updated = [];
     let renderStateTag = this.renderState.get(tag);
@@ -716,7 +791,7 @@ class TensorboardOpen3DPluginClient {
    */
   requestGeometryUpdate = (windowUId) => {
     this.messageId += 1;
-    let updateGeometryMessage = JSON.parse(JSON.stringify({
+    let updateGeometryMessage = JSON.parse(JSON.stringify({  // deep copy
       messageId: this.messageId,
       window_uid: windowUId,
       class_name: "tensorboard/" + windowUId + "/update_geometry",
@@ -731,7 +806,7 @@ class TensorboardOpen3DPluginClient {
     // Need colormap Object for JSON (not Map)
     for (const tag of this.selectedTags) {
       let rst = updateGeometryMessage.render_state[tag];
-      if (typeof rst != "undefined" &&  this.renderState.get(tag).colormap != null)
+      if (typeof rst != "undefined" && this.renderState.get(tag).colormap != null)
         rst.colormap = Object.fromEntries(this.renderState.get(tag).colormap.entries());
     }
     console.log("Before update_geometry:", this.renderState);
@@ -766,10 +841,8 @@ class TensorboardOpen3DPluginClient {
         this.selectedTags.add(evt.target.id);
       } else {
         this.selectedTags.delete(evt.target.id);
-        tagPropEl.style.display =  "none";
+        tagPropEl.style.display = "none";
       }
-      let tagPropButtonEl = document.getElementById(`toggle-property-${evt.target.id}`);
-      tagPropButtonEl.disabled = !evt.target.checked;
       for (const windowUId of this.windowState.keys()) {
         this.requestGeometryUpdate(windowUId);
       }
@@ -888,27 +961,29 @@ class TensorboardOpen3DPluginClient {
       // Update app level selectors
       this.tagLabelsNames = new Map([...this.tagLabelsNames,
         ...Object.entries(message.tag_label_to_names)]);
+      this.tagsPropertiesShapes = new Map([...this.tagsPropertiesShapes,
+        ...Object.entries(message.tags_properties_shapes)]);
       for (const tag of message.current.tags) {
         this.renderState.set(tag, message.current.render_state[tag]);
         const cmap = this.renderState.get(tag).colormap;  // Object
-        if (cmap) {
+        if (typeof cmap != 'undefined' && cmap != null) {
           this.renderState.get(tag).colormap = new Map(Object.entries(cmap));  // Map
         }
         this.createPropertyPanel(tag);
       }
-      console.log("After update_geometry:", this.renderState);
+      console.debug("[After update_geometry] this.renderState", this.renderState);
       // remove busy indicator
       document.getElementById("loader_video_" +
         windowUId).classList.remove("loader");
     } else if (message.class_name.endsWith("update_rendering")) {
       this.renderState.set(message.tag, message.render_state);
       const cmap = this.renderState.get(message.tag).colormap;  // Object
-      if (cmap) {
+      if (typeof cmap != 'undefined' && cmap != null) {
         this.renderState.get(message.tag).colormap = new
           Map(Object.entries(cmap));  // Map
       }
       this.createPropertyPanel(message.tag);
-      console.log("After update_rendering:", this.renderState);
+      console.log("[After update_rendering] this.renderState", this.renderState);
       // remove busy indicator
       document.getElementById("loader_video_" + windowUId).classList.remove("loader");
     }

@@ -117,7 +117,6 @@ def geometry_data():
     }
 
 
-@pytest.mark.skip(reason="This will only run on a local machine with GPU.")
 def test_tensorflow_summary(geometry_data):
     """Test writing summary from TensorFlow
     """
@@ -214,7 +213,6 @@ def test_tensorflow_summary(geometry_data):
     shutil.rmtree(logdir)
 
 
-@pytest.mark.skip(reason="This will only run on a local machine with GPU.")
 def test_pytorch_summary(geometry_data):
     """Test writing summary from PyTorch"""
 
@@ -304,7 +302,6 @@ def test_pytorch_summary(geometry_data):
     shutil.rmtree(logdir)
 
 
-@pytest.mark.skip(reason="This will only run on a local machine with GPU.")
 def test_plugin_data_reader(geometry_data):
     """Test reading summary data"""
     shutil.unpack_archive(
@@ -395,7 +392,7 @@ def test_plugin_data_reader(geometry_data):
     shutil.rmtree(logdir)
 
 
-# @pytest.mark.skip(reason="This will only run on a local machine with GPU.")
+@pytest.mark.skip(reason="This will only run on a local machine with GPU.")
 def test_tensorboard_app():
     shutil.unpack_archive(
         os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
@@ -404,7 +401,7 @@ def test_tensorboard_app():
         sleep(5)
         webbrowser.open('http://localhost:6006/')
         sleep(5)
-        # tb_proc.terminate()
+        tb_proc.terminate()
         sleep(2)
-        # tb_proc.kill()
+        tb_proc.kill()
     shutil.rmtree(logdir)
