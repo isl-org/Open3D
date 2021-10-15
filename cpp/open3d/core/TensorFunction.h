@@ -36,7 +36,7 @@ namespace core {
 /// axis into a new tensor. All the tensors must have same data-type,
 /// device, and number of dimensions. All dimensions must be the same,
 /// except the dimension along the axis the tensors are to be concatinated.
-/// Using Concatenate for a single tensor. The tensor is split along its
+/// Using Concatenate for a single tensor, the tensor is split along its
 /// first dimension (length), and concatenated along the axis.
 ///
 /// This is the same as NumPy's semantics:
@@ -64,13 +64,15 @@ namespace core {
 /// //  Tensor[shape={2, 6}, stride={6, 1}, Int64, CPU:0, 0x55555abc6b00]
 /// \endcode
 ///
-/// \param tensors Vector of tensors to be concatenated.
+/// \param tensors Vector of tensors to be concatenated. If only one tensor is
+/// present, the tensor is split along its first dimension (length), and
+/// concatenated along the axis.
 /// \param axis [optional] The axis along which values are concatenated.
 /// [Default axis is 0].
-/// \return A new tensor with the values of list of tensors concatenated in
-/// order, along the given axis.
+/// \return A new tensor with the values of list of tensors
+/// concatenated in order, along the given axis.
 Tensor Concatenate(const std::vector<Tensor>& tensors,
-                   const utility::optional<int64_t> axis = 0);
+                   const utility::optional<int64_t>& axis = 0);
 
 /// \brief Appends the two tensors, along the given axis into a new tensor.
 /// Both the tensors must have same data-type, device, and number of
@@ -106,7 +108,7 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
 /// axis is None, out is a flattened tensor.
 Tensor Append(const Tensor& self,
               const Tensor& other,
-              const utility::optional<int64_t> axis = utility::nullopt);
+              const utility::optional<int64_t>& axis = utility::nullopt);
 
 }  // namespace core
 }  // namespace open3d

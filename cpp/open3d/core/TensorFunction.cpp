@@ -30,7 +30,7 @@ namespace open3d {
 namespace core {
 
 static Tensor ConcatenateImpl(const std::vector<Tensor>& tensors,
-                              int64_t axis) {
+                              const int64_t axis) {
     const int num_tensors = tensors.size();
     const int64_t num_dims = tensors[0].NumDims();
     const int64_t axis_d = shape_util::WrapDim(axis, num_dims);
@@ -73,8 +73,7 @@ static Tensor ConcatenateImpl(const std::vector<Tensor>& tensors,
         common_tks.push_back(TensorKey::Slice(0, combined_shape[i], 1));
     }
 
-    Tensor combined_tensor(combined_shape, tensors[0].GetDtype(),
-                           tensors[0].GetDevice());
+    Tensor combined_tensor(combined_shape, dtype, device);
 
     // Cumulate length along `axis`.
     int64_t cumulated_length = 0;
@@ -95,18 +94,21 @@ static Tensor ConcatenateImpl(const std::vector<Tensor>& tensors,
 }
 
 Tensor Concatenate(const std::vector<Tensor>& tensors,
-                   const utility::optional<int64_t> axis) {
+                   const utility::optional<int64_t>& axis) {
     const int num_tensors = tensors.size();
 
     if (num_tensors < 1) {
         utility::LogError("Expected atleast 1 tensor, but got 0.");
     }
     if (num_tensors == 1) {
-        std::vector<Tensor> split_tensor;
+        std::vector<Tensor> split_tensors;
+        split_tensors.reserve(tensors[0].GetLength());
+
         for (int i = 0; i < tensors[0].GetLength(); ++i) {
-            split_tensor.push_back(tensors[0][i]);
+            split_tensors.push_back(tensors[0][i]);
         }
-        return Concatenate(split_tensor, axis);
+
+        return Concatenate(split_tensors, axis);
     }
 
     if (!axis.has_value()) {
@@ -132,7 +134,7 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
 
 Tensor Append(const Tensor& self,
               const Tensor& other,
-              const utility::optional<int64_t> axis) {
+              const utility::optional<int64_t>& axis) {
     return Concatenate({self, other}, axis);
 }
 

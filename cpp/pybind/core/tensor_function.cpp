@@ -36,7 +36,7 @@ void pybind_core_tensor_function(py::module& m) {
     m.def(
             "concatenate",
             [](const std::vector<Tensor>& tensors,
-               const utility::optional<int64_t> axis) {
+               const utility::optional<int64_t>& axis) {
                 if (axis.has_value()) {
                     return core::Concatenate(tensors, axis);
                 }
@@ -46,7 +46,7 @@ void pybind_core_tensor_function(py::module& m) {
 axis into a new tensor. All the tensors must have same data-type, device, and
 number of dimensions. All dimensions must be the same, except the dimension
 along the axis the tensors are to be concatinated.
-Using Concatenate for a single tensor. The tensor is split along its first 
+Using Concatenate for a single tensor, the tensor is split along its first 
 dimension (length), and concatenated along the axis.
 
 This is the same as NumPy's semantics:
@@ -72,7 +72,7 @@ Example:
     m.def(
             "append",
             [](const Tensor& self, const Tensor& values,
-               const utility::optional<int64_t> axis) {
+               const utility::optional<int64_t>& axis) {
                 if (axis.has_value()) {
                     return core::Append(self, values, axis);
                 }

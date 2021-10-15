@@ -374,7 +374,7 @@ public:
     /// filled. If axis is None, out is a flattened tensor.
     Tensor Append(
             const Tensor& other,
-            const utility::optional<int64_t> axis = utility::nullopt) const;
+            const utility::optional<int64_t>& axis = utility::nullopt) const;
 
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
