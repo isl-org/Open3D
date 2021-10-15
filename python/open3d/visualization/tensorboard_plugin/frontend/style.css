@@ -263,7 +263,7 @@ select {
   align-items: center;
   display: grid;
   padding: 0.1em;
-  grid-template-columns: 1.5em 6.5em 2em;
+  grid-template-columns: 3.5em 6.5em 2em;
   column-gap: 1em;
 }
 

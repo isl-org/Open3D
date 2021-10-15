@@ -502,6 +502,19 @@ class RenderUpdate:
 
     def apply(self, o3dvis, geometry_name, geometry, inference_data_proto=None):
 
+        def swap__(tensormap, prop):
+            """If backup of prop exists, restore it. Else save prop to a backup.
+            prop can now be safely modified for visualization. Returns True if
+            prop exists, else False.
+            """
+            if "__" + prop in tensormap:
+                tensormap[prop][:] = tensormap["__" + prop][:]  # restore
+                return True
+            if prop in tensormap:
+                tensormap["__" + prop] = tensormap[prop].clone()  # backup
+                return True
+            return False
+
         if (len(self._updated) == 0 or geometry.is_empty()):
             _log.debug("No updates, or empty geometry.")
             return
@@ -557,15 +570,10 @@ class RenderUpdate:
                 geometry_update_flag |= rendering.Scene.UPDATE_UV0_FLAG
             elif (self._shader == "defaultUnlit" and
                   geometry_vertex[self._property].shape[1] >= 3):
-                if self._property == "colors" and "__colors" in geometry_vertex:
-                    # reuse "colors"
-                    geometry_vertex["colors"] = geometry_vertex["__colors"]
-                else:  # Save backup of "colors" and use custom property
-                    if "colors" in geometry_vertex:
-                        geometry_vertex["__colors"] = geometry_vertex["colors"]
-                    geometry_vertex["colors"], min_val, max_val = _normalize(
-                        geometry_vertex[self._property][:, :3])
-                    self._update_range(min_val, max_val)
+                swap__(geometry_vertex, "colors")
+                geometry_vertex["colors"], min_val, max_val = _normalize(
+                    geometry_vertex[self._property][:, :3])
+                self._update_range(min_val, max_val)
                 geometry_update_flag |= rendering.Scene.UPDATE_COLORS_FLAG
 
         # Bounding boxes with labels
@@ -574,26 +582,22 @@ class RenderUpdate:
                 updated.remove("shader")
             material.shader = "unlitLine"
             material.line_width = 2 * self._window_scaling
-            if self._property == "":
-                if "__colors" in geometry.line:
-                    geometry.line["colors"] = geometry.line["__colors"]
-            elif len(inference_result) > 0:
+            if not swap__(geometry.line, "colors"):
+                geometry.line["colors"] = o3d.core.Tensor.full(
+                    (len(geometry.line["indices"]), 3),
+                    128,
+                    dtype=o3d.core.uint8)
+                swap__(geometry.line, "colors")
+            if self._property != "" and len(inference_result) > 0:  # labels
                 if self._colormap is None:
                     self._colormap = deepcopy(self.LABELLUT_COLORS)
                     for label in list(self._colormap):
                         if label not in self._label_to_names:
                             self._colormap.pop(label)
                 if "colormap" in updated:
-                    if "__indices" not in geometry.line:
-                        geometry.line["__indices"] = geometry.line[
-                            "indices"].clone()
-                    else:
-                        geometry.line["indices"] = geometry.line[
-                            "__indices"].clone()
+                    swap__(geometry.line, "indices")
                     t_vis_lines = geometry.line["indices"]
-                    tcolors = o3d.core.Tensor.empty(
-                        (len(geometry.line["indices"]), 3),
-                        dtype=o3d.core.uint8)
+                    tcolors = geometry.line["colors"]
                     idx = 0
                     for k in range(len(inference_result)):
                         label = inference_result[k].label
@@ -607,14 +611,10 @@ class RenderUpdate:
                             t_vis_lines[idx:idx + self._LINES_PER_BBOX] = 0
                         idx += self._LINES_PER_BBOX
 
-                    if "__colors" in geometry.line:
-                        geometry.line["__colors"] = geometry.line["colors"]
-                    geometry.line["colors"] = tcolors
-
         # PointCloud, Mesh, LineSet with colors
         elif "shader" in updated or "colormap" in updated:
             material_update_flag = 1
-            material.point_size = 2 * self._window_scaling
+            material.point_size = 12 * self._window_scaling
             if self._shader == "defaultLit":
                 material.shader = "defaultLit"
             elif self._shader == "defaultUnlit":
@@ -652,7 +652,8 @@ class RenderUpdate:
                 material.shader = "unlitGradient"
                 material.gradient = rendering.Gradient()
                 material.gradient.points = list(
-                    rendering.Gradient.Point(value, _u8_float(color))
+                    rendering.Gradient.Point(value,
+                                             _u8_float(color[:3]) + (1.,))
                     for value, color in self._colormap.items())
                 material.gradient.mode = rendering.Gradient.GRADIENT
                 self._set_vis_minmax(geometry_vertex, material)

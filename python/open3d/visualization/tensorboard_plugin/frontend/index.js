@@ -497,7 +497,6 @@ class TensorboardOpen3DPluginClient {
     let propListEl = document.getElementById(`ui-options-${tag}-property`);
     let idxListEl = document.getElementById(`ui-options-${tag}-index`);
     let shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
-    let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
     // let submitEl = document.getElementById(`ui-render-${tag}-button`);
 
     const renderStateTag = this.renderState.get(tag);
@@ -536,7 +535,6 @@ class TensorboardOpen3DPluginClient {
     let shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
     shaderChild.forEach( function (item, index, array) {
       shaderListEl[index].hidden = !shaderList.includes(item);
-      console.debug(shaderListEl[index].value, " is hidden ", shaderListEl[index].hidden);
     });
   }
 
@@ -554,14 +552,10 @@ class TensorboardOpen3DPluginClient {
     let idxListEl = document.getElementById(`ui-options-${tag}-index`);
     let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
     if (propListEl.value === "") {  // Geometry
-      cmapEl.style.display = "none";
-      cmapEl.previousElementSibling.style.display = "none";   // shader
       cmapEl.previousElementSibling.previousElementSibling.style.display
         = "none";  // index
       this.validShaders = ['defaultLit', 'unlitSolidColor', 'defaultUnlit'];
     } else {
-      cmapEl.style.display = "block";
-      cmapEl.previousElementSibling.style.display = "block";   // shader
       cmapEl.previousElementSibling.previousElementSibling.style.display
         = "block";  // index
       // idxListEl.value = 0;
@@ -569,7 +563,7 @@ class TensorboardOpen3DPluginClient {
       idxListEl.disabled = (idxListEl.max == 0);
       if (propListEl.value === "labels") {
         this.validShaders = ['unlitGradient.LUT'];
-      } else {
+      } else {      // custom properties
         this.validShaders = ['unlitGradient.GRADIENT.RAINBOW',
           'unlitGradient.GRADIENT.GREYSCALE'];
         if (idxListEl.max >= 2) {
@@ -584,7 +578,12 @@ class TensorboardOpen3DPluginClient {
   onShaderChanged = (tag, onCreate, evt) => {
     let shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
     let idxListEl = document.getElementById(`ui-options-${tag}-index`);
-    idxListEl.parentElement.hidden = (shaderListEl.value === "defaultUnlit");
+    if (['unlitGradient.GRADIENT.RAINBOW', 'unlitGradient.GRADIENT.GREYSCALE']
+      .includes(shaderListEl.value))  {
+      idxListEl.parentElement.style.display = "block";
+    } else {
+      idxListEl.parentElement.style.display = "none";
+    }
     let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
     const renderStateTag = this.renderState.get(tag);
 
@@ -599,7 +598,7 @@ class TensorboardOpen3DPluginClient {
     if (shaderListEl.value === "unlitSolidColor") {
       idx = 1;
       let color = [128, 128, 128, 255];
-      if (!onCreate && renderStateTag.colormap.size == 1) {
+      if (onCreate) {
         color = renderStateTag.colormap.values().next().value;
       }
       cmapEl.innerHTML =
@@ -650,7 +649,10 @@ class TensorboardOpen3DPluginClient {
         const checked = color[3] > 0 ? "checked" : "";
         cmapEl.insertAdjacentHTML("beforeend",
           `<label class="property-ui-colormap">
-            <input type="checkbox" id="ui-cmap-${tag}-alpha-${idx}" ${checked}>
+            <span>
+              <button type="button" id="ui-cmap-${tag}-add-${idx}">&#xff0b;</button>
+              <button type="button" id="ui-cmap-${tag}-rem-${idx}">&#xff0d;</button>
+            </span>
             <input type="number" id="ui-cmap-${tag}-val-${idx}"
             value=${valueFlt.toPrecision(4)} step=${step} min=${currentRange[0]}
             max=${currentRange[1]}>
@@ -662,6 +664,7 @@ class TensorboardOpen3DPluginClient {
       }
     } else if (shaderListEl.value === "defaultUnlit") {
       idxListEl.value = 0;  // Index is unused in this case
+      idxListEl.value = 0;  // Index is unused in this case
     }
     // Setup colormap callbacks:
     for (let ncol = 0; ncol < idx; ++ncol) {
@@ -671,12 +674,49 @@ class TensorboardOpen3DPluginClient {
         "change", this.requestRenderUpdate.bind(this, tag));
       document.getElementById(`ui-cmap-${tag}-val-${ncol}`).addEventListener(
         "change", this.requestRenderUpdate.bind(this, tag));
-      document.getElementById(`ui-cmap-${tag}-alpha-${ncol}`).addEventListener(
-        "change", this.requestRenderUpdate.bind(this, tag));
+      let alphaCheck = document.getElementById(`ui-cmap-${tag}-alpha-${ncol}`);
+      if (alphaCheck != null) {
+        alphaCheck.addEventListener("change", this.requestRenderUpdate.bind(this, tag));
+      }
+      let addBtn = document.getElementById(`ui-cmap-${tag}-add-${ncol}`);
+      if (typeof addBtn != "undefined" && addBtn != null) {
+        addBtn.addEventListener("click", this.cmapAdd.bind(this, tag, ncol));
+        let remBtn = document.getElementById(`ui-cmap-${tag}-rem-${ncol}`);
+        remBtn.addEventListener("click", this.cmapRem.bind(this, tag, ncol));
+      }
     }
     if (!onCreate || needRenderUpdate) {
       this.requestRenderUpdate(tag);
     }
+  };
+
+  cmapAdd = (tag, ncol, evt) => {
+    let renderStateTag = this.renderState.get(tag);
+    let cmap = [...renderStateTag.colormap];
+    // If ncol is last, new value, color is average with 2nd last entry.
+    // If colormap has only one entry, add (1.0 or 0.0, white)
+    let ncol1 = (ncol == cmap.length-1) ? ncol-1 : ncol+1;
+    let newVal = parseFloat(cmap[ncol][0]) > 0.0 ? 0.0 : 1.0;
+    let newCol = [255, 255, 255, 255];
+    if (ncol1 >= 0) {
+      newVal =  (parseFloat(cmap[ncol][0]) + parseFloat(cmap[ncol1][0]))/2;
+      for( let k=0; k<3; ++k) {
+        newCol[k] = Math.round(cmap[ncol][1][k] + cmap[ncol1][1][k])/2;
+      }
+    }
+    renderStateTag.colormap.set(newVal, newCol);
+    let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
+    cmapEl.outdated = true;  // Custom property to indicate cmapEl is outdated
+    this.requestRenderUpdate(tag);
+  };
+
+  cmapRem = (tag, ncol, evt) => {
+    let renderStateTag = this.renderState.get(tag);
+    let cmap = [...renderStateTag.colormap];
+    renderStateTag.colormap.delete(cmap[ncol][0]);
+    let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
+    cmapEl.outdated = true;  // Custom property to indicate cmapEl is outdated
+    this.requestRenderUpdate(tag);
   };
 
   requestRenderUpdate = (tag, evt) => {
@@ -705,29 +745,33 @@ class TensorboardOpen3DPluginClient {
       updated.push('shader');
     }
     renderStateTag.shader = shaderListEl.value;
-    const currentRange = renderStateTag["range"];
+
     let cmap = renderStateTag.colormap;
     let n_cols = 0;
-    if (renderStateTag.shader == "unlitSolidColor") {
-      n_cols = 1;
-    } else if (renderStateTag.shader.startsWith("unlitGradient")) {
-      n_cols = cmap.size;
-    }
-    cmap.clear();
-    for (let idx=0; idx<n_cols; ++idx) {
-      const alpha = document.getElementById(`ui-cmap-${tag}-alpha-${idx}`)
-        .checked ? 255 : 0;
-      let label_value = document.getElementById(`ui-cmap-${tag}-val-${idx}`)
-        .value;
-      if (label_value.includes(':')) {   // LabelLUT
-        label_value = label_value.split(':')[0];
-      } else {                          // Colormap
-        label_value = (parseFloat(label_value) - currentRange[0]) /
-          (currentRange[1]-currentRange[0]);
+    const cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
+    if (cmapEl.outdated == null) {
+      if (renderStateTag.shader == "unlitSolidColor") {
+        n_cols = 1;
+      } else if (renderStateTag.shader.startsWith("unlitGradient")) {
+        n_cols = cmap.size;
       }
-      let color = hexToRgb(document.getElementById(`ui-cmap-${tag}-col-${idx}`).value);
-      color.push(alpha);
-      cmap.set(label_value, color);
+      const currentRange = renderStateTag["range"];
+      cmap.clear();
+      for (let idx=0; idx<n_cols; ++idx) {
+        const alphaEl = document.getElementById(`ui-cmap-${tag}-alpha-${idx}`)
+        const alpha = (alphaEl == null || alphaEl.checked) ? 255 : 0;
+        let label_value = document.getElementById(`ui-cmap-${tag}-val-${idx}`)
+          .value;
+        if (label_value.includes(':')) {   // LabelLUT
+          label_value = label_value.split(':')[0];
+        } else {                          // Colormap
+          label_value = (parseFloat(label_value) - currentRange[0]) /
+            (currentRange[1]-currentRange[0]);
+        }
+        let color = hexToRgb(document.getElementById(`ui-cmap-${tag}-col-${idx}`).value);
+        color.push(alpha);
+        cmap.set(label_value, color);
+      }
     }
     if (!(n_cols == 0 && cmap.size == 0))
       updated.push('colormap');
@@ -836,12 +880,12 @@ class TensorboardOpen3DPluginClient {
         this.requestNewWindow(evt.target.id);
       }
     } else if (evt.target.name === "tag-selector-checkboxes") {
-      let tagPropEl = document.getElementById(`property-${evt.target.id}`);
       if (evt.target.checked) {
         this.selectedTags.add(evt.target.id);
       } else {
         this.selectedTags.delete(evt.target.id);
-        tagPropEl.style.display = "none";
+        document.getElementById(`property-${evt.target.id}`).style.display = "none";
+        document.getElementById(`toggle-property-${evt.target.id}`).disabled = true;
       }
       for (const windowUId of this.windowState.keys()) {
         this.requestGeometryUpdate(windowUId);
