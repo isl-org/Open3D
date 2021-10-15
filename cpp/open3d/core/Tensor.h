@@ -367,11 +367,11 @@ public:
     /// \endcode
     ///
     /// \param other Values of this tensor is appended to the tensor.
-    /// \param axis The axis along which values are appended. If axis is not
-    /// given, both tensors are flattened before use.
-    /// \return A copy of the tensor with `values` appended to axis. Note
-    /// that append does not occur in-place: a new array is allocated and
-    /// filled. If axis is None, out is a flattened tensor.
+    /// \param axis [optional] The axis along which values are appended. If axis
+    /// is not given, both tensors are flattened before use.
+    /// \return A copy of the tensor with `values` appended to axis. Note that
+    /// append does not occur in-place: a new array is allocated and filled. If
+    /// axis is None, out is a flattened tensor.
     Tensor Append(
             const Tensor& other,
             const utility::optional<int64_t>& axis = utility::nullopt) const;
