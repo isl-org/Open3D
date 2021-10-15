@@ -1404,6 +1404,15 @@ open3d_import_3rdparty_library(3rdparty_embree
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
 
+# Intel OneAPI (a.k.a DPC++, SYCL, OpenCL)
+open3d_find_package_3rdparty_library(3rdparty_sycl
+    PACKAGE IntelSYCL
+    TARGETS Intel::SYCL
+)
+target_compile_options(3rdparty_sycl INTERFACE -fsycl)
+# target_link_options(3rdparty_sycl INTERFACE -fsycl)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_sycl)
+
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
 list(REMOVE_DUPLICATES Open3D_3RDPARTY_EXTERNAL_MODULES)
