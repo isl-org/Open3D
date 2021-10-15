@@ -1,0 +1,24 @@
+From 318c3df5c60a5c5ec5fba964ebf23e2e12f1dae4 Mon Sep 17 00:00:00 2001
+From: Yixing Lao <yixing.lao@gmail.com>
+Date: Tue, 21 Sep 2021 06:08:43 -0700
+Subject: [PATCH] patch intelllvm
+
+---
+ CMakeLists.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b304c9c..6bd693f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -210,6 +210,7 @@ ELSE (WIN32)
+   ELSE()
+     STRING(TOLOWER "${CMAKE_CXX_COMPILER_ID}" _LOWER_CXX_COMPILER_ID)
+     STRING(REPLACE "appleclang" "clang" _LOWER_CXX_COMPILER_ID ${_LOWER_CXX_COMPILER_ID})
++    STRING(REPLACE "intelllvm" "clang" _LOWER_CXX_COMPILER_ID ${_LOWER_CXX_COMPILER_ID})
+     INCLUDE(${_LOWER_CXX_COMPILER_ID} OPTIONAL RESULT_VARIABLE COMPILER_FOUND)
+     IF (NOT COMPILER_FOUND)
+       MESSAGE(FATAL_ERROR "Unsupported compiler: " ${CMAKE_CXX_COMPILER_ID})
+-- 
+2.25.1
+
