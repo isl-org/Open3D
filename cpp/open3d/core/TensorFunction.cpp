@@ -29,6 +29,8 @@
 namespace open3d {
 namespace core {
 
+void RunSYCLDemo() { utility::LogInfo("Hello world!"); }
+
 static Tensor StackAlongAxis(const Tensor& self,
                              const Tensor& other,
                              int64_t axis) {
