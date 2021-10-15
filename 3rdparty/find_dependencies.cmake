@@ -1405,13 +1405,21 @@ open3d_import_3rdparty_library(3rdparty_embree
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
 
 # Intel OneAPI (a.k.a DPC++, SYCL, OpenCL)
-open3d_find_package_3rdparty_library(3rdparty_sycl
-    PACKAGE IntelSYCL
-    TARGETS Intel::SYCL
-)
-target_compile_options(3rdparty_sycl INTERFACE -fsycl)
-# target_link_options(3rdparty_sycl INTERFACE -fsycl)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_sycl)
+# FIXME: open3d_find_package_3rdparty_library cannot import ${SYCL_FLAGS}
+find_package(IntelSYCL)
+if(IntelSYCL_FOUND)
+    set(SYCL_TARGET Intel::SYCL)
+    set(SYCL_FLAGS ${INTEL_SYCL_FLAGS})
+    set(SYCL_INCLUDE_DIRS ${INTEL_SYCL_INCLUDE_DIRS})
+    set(SYCL_LIBRARIES ${INTEL_SYCL_LIBRARIES})
+    message(STATUS "SYCL_FLAGS: ${INTEL_SYCL_FLAGS}")
+    message(STATUS "SYCL_INCLUDE_DIRS: ${INTEL_SYCL_INCLUDE_DIRS}")
+    message(STATUS "SYCL_LIBRARIES: ${INTEL_SYCL_LIBRARIES}")
+    target_compile_options(Intel::SYCL INTERFACE ${SYCL_FLAGS})
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Intel::SYCL)
+else()
+    message(FATAL_ERROR "IntelSYCL cannot be found.")
+endif()
 
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
