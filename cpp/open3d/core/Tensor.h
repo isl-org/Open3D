@@ -256,10 +256,10 @@ public:
     static Tensor Diag(const Tensor& input);
 
     /// Create a 1D tensor with evenly spaced values in the given interval.
-    static Tensor Arange(Scalar start,
-                         Scalar stop,
-                         Scalar step = 1,
-                         Dtype dtype = core::Int64,
+    static Tensor Arange(const Scalar start,
+                         const Scalar stop,
+                         const Scalar step = 1,
+                         const Dtype dtype = core::Int64,
                          const Device& device = core::Device("CPU:0"));
 
     /// Reverse a Tensor's elements by viewing the tensor as a 1D array.
@@ -342,10 +342,39 @@ public:
     /// ```
     Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
 
-    /// Assign (copy) values from another Tensor, shape, dtype, device may
-    /// change. Slices of the original Tensor still keeps the original memory.
-    /// After assignment, the Tensor will be contiguous.
-    void Assign(const Tensor& other);
+    /// \brief Appends the `other` tensor, along the given axis and returns a
+    /// copy of the tensor. The `other` tensors must have same data-type,
+    /// device, and number of dimentions. All dimensions must be the same,
+    /// except the dimension along the axis the tensors are to be appended.
+    ///
+    /// This is the same as NumPy's semantics:
+    /// - https://numpy.org/doc/stable/reference/generated/numpy.append.html
+    ///
+    /// Example:
+    /// \code{.cpp}
+    /// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
+    /// Tensor b = Tensor::Init<int64_t>({4, 5});
+    /// Tensor t1 = a.Append(b, 0);
+    /// // t1:
+    /// //  [[0 1],
+    /// //   [2 3],
+    /// //   [4 5]]
+    /// //  Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+    /// Tensor t2 = a.Append(b);
+    /// // t2:
+    /// //  [0 1 2 3 4 5]
+    /// //  Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70]
+    /// \endcode
+    ///
+    /// \param other Values of this tensor is appended to the tensor.
+    /// \param axis The axis along which values are appended. If axis is not
+    /// given, both tensors are flattened before use.
+    /// \return A copy of the tensor with `values` appended to axis. Note
+    /// that append does not occur in-place: a new array is allocated and
+    /// filled. If axis is None, out is a flattened tensor.
+    Tensor Append(
+            const Tensor& other,
+            const utility::optional<int64_t> axis = utility::nullopt) const;
 
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
@@ -1183,7 +1212,7 @@ protected:
     /// Stride of a Tensor.
     /// The stride of a n-dimensional tensor is also n-dimensional.
     /// Stride(i) is the number of elements (not bytes) to jump in a
-    /// continuous memory space before eaching the next element in dimension
+    /// continuous memory space before reaching the next element in dimension
     /// i. For example, a 2x3x4 float32 dense tensor has shape(2, 3, 4) and
     /// stride(12, 4, 1). A slicing operation performed on the tensor can
     /// change the shape and stride.

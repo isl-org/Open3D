@@ -475,7 +475,8 @@ private:
                         const GuiSettingsModel::LightingProfile &lighting) {
         auto scene = scene_wgt_->GetScene();
         auto *render_scene = scene->GetScene();
-        if (lighting.use_default_ibl) {
+        if (lighting.use_default_ibl &&
+            !settings_.model_.GetUserHasCustomizedLighting()) {
             this->SetIBL(renderer, "");
         }
 
@@ -805,10 +806,24 @@ void GuiVisualizer::Init() {
     // ... lighting and materials
     settings.view_ = std::make_shared<GuiSettingsView>(
             settings.model_, theme, resource_path, [this](const char *name) {
-                std::string resource_path =
-                        gui::Application::GetInstance().GetResourcePath();
-                impl_->SetIBL(GetRenderer(),
-                              resource_path + "/" + name + "_ibl.ktx");
+                if (std::string(name) ==
+                    std::string(GuiSettingsModel::CUSTOM_IBL)) {
+                    auto dlg = std::make_shared<gui::FileDialog>(
+                            gui::FileDialog::Mode::OPEN, "Open HDR Map",
+                            GetTheme());
+                    dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
+                    dlg->SetOnCancel([this]() { CloseDialog(); });
+                    dlg->SetOnDone([this](const char *path) {
+                        CloseDialog();
+                        impl_->SetIBL(GetRenderer(), path);
+                    });
+                    ShowDialog(dlg);
+                } else {
+                    std::string resource_path =
+                            gui::Application::GetInstance().GetResourcePath();
+                    impl_->SetIBL(GetRenderer(),
+                                  resource_path + "/" + name + "_ibl.ktx");
+                }
             });
     settings.model_.SetOnChanged([this](bool material_type_changed) {
         impl_->settings_.view_->Update();

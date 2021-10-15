@@ -37,6 +37,8 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorFunction.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
 #include "open3d/core/kernel/Kernel.h"
@@ -405,10 +407,10 @@ Tensor Tensor::Diag(const Tensor& input) {
     return diag;
 }
 
-Tensor Tensor::Arange(Scalar start,
-                      Scalar stop,
-                      Scalar step,
-                      Dtype dtype,
+Tensor Tensor::Arange(const Scalar start,
+                      const Scalar stop,
+                      const Scalar step,
+                      const Dtype dtype,
                       const Device& device) {
     start.AssertSameScalarType(stop,
                                "start must have the same scalar type as stop.");
@@ -591,15 +593,9 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
     return *this;
 }
 
-/// Assign (copy) values from another Tensor, shape, dtype, device may change.
-void Tensor::Assign(const Tensor& other) {
-    shape_ = other.shape_;
-    strides_ = shape_util::DefaultStrides(shape_);
-    dtype_ = other.dtype_;
-    blob_ = std::make_shared<Blob>(shape_.NumElements() * dtype_.ByteSize(),
-                                   other.GetDevice());
-    data_ptr_ = blob_->GetDataPtr();
-    kernel::Copy(other, *this);
+Tensor Tensor::Append(const Tensor& other,
+                      const utility::optional<int64_t> axis) const {
+    return core::Append(*this, other, axis);
 }
 
 /// Broadcast Tensor to a new broadcastable shape
@@ -846,11 +842,11 @@ Tensor Tensor::Slice(int64_t dim,
 
 Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
     if (NumDims() == 0) {
-        const std::string error_prefix =
-                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
         if (index_tensors.size() != 1) {
-            utility::LogError("{}, but got {} index tensors.", error_prefix,
-                              index_tensors.size());
+            utility::LogError(
+                    "A 0-D tensor can only be indexed by a 0-D boolean tensor, "
+                    "but got {} index tensors.",
+                    index_tensors.size());
         }
         Tensor index_tensor = index_tensors[0];
         core::AssertTensorShape(index_tensor, {});
@@ -878,11 +874,11 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
                       const Tensor& src_tensor) {
     if (NumDims() == 0) {
-        const std::string error_prefix =
-                "A 0-D tensor can only be indexed by a 0-D boolean tensor";
         if (index_tensors.size() != 1) {
-            utility::LogError("{}, but got {} index tensors.", error_prefix,
-                              index_tensors.size());
+            utility::LogError(
+                    "A 0-D tensor can only be indexed by a 0-D boolean tensor, "
+                    "but got {} index tensors.",
+                    index_tensors.size());
         }
         Tensor index_tensor = index_tensors[0];
         core::AssertTensorShape(index_tensor, {});
@@ -994,9 +990,15 @@ Tensor Tensor::T() const {
     }
 }
 
-double Tensor::Det() const { return core::Det(*this); }
+double Tensor::Det() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+    return core::Det(*this);
+}
 
 Tensor Tensor::Add(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
     kernel::Add(*this, value, dst_tensor);
@@ -1013,6 +1015,9 @@ Tensor Tensor::Add(Scalar value) const {
 }
 
 Tensor Tensor::Add_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     kernel::Add(*this, value, *this);
     return *this;
 }
@@ -1025,6 +1030,9 @@ Tensor Tensor::Add_(Scalar value) {
 }
 
 Tensor Tensor::Sub(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
     kernel::Sub(*this, value, dst_tensor);
@@ -1041,6 +1049,9 @@ Tensor Tensor::Sub(Scalar value) const {
 }
 
 Tensor Tensor::Sub_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     kernel::Sub(*this, value, *this);
     return *this;
 }
@@ -1053,6 +1064,9 @@ Tensor Tensor::Sub_(Scalar value) {
 }
 
 Tensor Tensor::Mul(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
     kernel::Mul(*this, value, dst_tensor);
@@ -1069,6 +1083,9 @@ Tensor Tensor::Mul(Scalar value) const {
 }
 
 Tensor Tensor::Mul_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     kernel::Mul(*this, value, *this);
     return *this;
 }
@@ -1081,6 +1098,9 @@ Tensor Tensor::Mul_(Scalar value) {
 }
 
 Tensor Tensor::Div(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
     kernel::Div(*this, value, dst_tensor);
@@ -1097,6 +1117,9 @@ Tensor Tensor::Div(Scalar value) const {
 }
 
 Tensor Tensor::Div_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+    AssertTensorDtype(value, GetDtype());
+
     kernel::Div(*this, value, *this);
     return *this;
 }
@@ -1116,11 +1139,7 @@ Tensor Tensor::Sum(const SizeVector& dims, bool keepdim) const {
 }
 
 Tensor Tensor::Mean(const SizeVector& dims, bool keepdim) const {
-    if (dtype_ != core::Float32 && dtype_ != core::Float64) {
-        utility::LogError(
-                "Can only compute mean for Float32 or Float64, got {} instead.",
-                dtype_.ToString());
-    }
+    AssertTensorDtypes(*this, {Float32, Float64});
 
     // Following Numpy's semantics, reduction on 0-sized Tensor will result in
     // NaNs and a warning. A straightforward method is used now. Later it can be
@@ -1326,6 +1345,8 @@ Tensor Tensor::LogicalNot_() {
 }
 
 Tensor Tensor::LogicalAnd(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
@@ -1343,6 +1364,8 @@ Tensor Tensor::LogicalAnd(Scalar value) const {
 }
 
 Tensor Tensor::LogicalAnd_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalAnd);
     return *this;
 }
@@ -1356,6 +1379,8 @@ Tensor Tensor::LogicalAnd_(Scalar value) {
 }
 
 Tensor Tensor::LogicalOr(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
@@ -1373,6 +1398,8 @@ Tensor Tensor::LogicalOr(Scalar value) const {
 }
 
 Tensor Tensor::LogicalOr_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalOr);
     return *this;
 }
@@ -1385,6 +1412,8 @@ Tensor Tensor::LogicalOr_(Scalar value) {
 }
 
 Tensor Tensor::LogicalXor(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor,
@@ -1402,6 +1431,8 @@ Tensor Tensor::LogicalXor(Scalar value) const {
 }
 
 Tensor Tensor::LogicalXor_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::LogicalXor);
     return *this;
 }
@@ -1415,6 +1446,8 @@ Tensor Tensor::LogicalXor_(Scalar value) {
 }
 
 Tensor Tensor::Gt(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Gt);
@@ -1431,6 +1464,8 @@ Tensor Tensor::Gt(Scalar value) const {
 }
 
 Tensor Tensor::Gt_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Gt);
     return *this;
 }
@@ -1443,6 +1478,8 @@ Tensor Tensor::Gt_(Scalar value) {
 }
 
 Tensor Tensor::Lt(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Lt);
@@ -1459,6 +1496,8 @@ Tensor Tensor::Lt(Scalar value) const {
 }
 
 Tensor Tensor::Lt_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Lt);
     return *this;
 }
@@ -1471,6 +1510,8 @@ Tensor Tensor::Lt_(Scalar value) {
 }
 
 Tensor Tensor::Ge(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ge);
@@ -1487,6 +1528,8 @@ Tensor Tensor::Ge(Scalar value) const {
 }
 
 Tensor Tensor::Ge_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ge);
     return *this;
 }
@@ -1499,6 +1542,8 @@ Tensor Tensor::Ge_(Scalar value) {
 }
 
 Tensor Tensor::Le(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Le);
@@ -1515,6 +1560,8 @@ Tensor Tensor::Le(Scalar value) const {
 }
 
 Tensor Tensor::Le_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Le);
     return *this;
 }
@@ -1527,6 +1574,8 @@ Tensor Tensor::Le_(Scalar value) {
 }
 
 Tensor Tensor::Eq(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Eq);
@@ -1543,6 +1592,8 @@ Tensor Tensor::Eq(Scalar value) const {
 }
 
 Tensor Tensor::Eq_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Eq);
     return *this;
 }
@@ -1555,6 +1606,8 @@ Tensor Tensor::Eq_(Scalar value) {
 }
 
 Tensor Tensor::Ne(const Tensor& value) const {
+    AssertTensorDevice(value, GetDevice());
+
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       core::Bool, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Ne);
@@ -1571,6 +1624,8 @@ Tensor Tensor::Ne(Scalar value) const {
 }
 
 Tensor Tensor::Ne_(const Tensor& value) {
+    AssertTensorDevice(value, GetDevice());
+
     kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Ne);
     return *this;
 }
@@ -1677,8 +1732,9 @@ Tensor Tensor::Load(const std::string& file_name) {
 }
 
 bool Tensor::AllEqual(const Tensor& other) const {
-    core::AssertTensorDevice(other, GetDevice());
-    core::AssertTensorDtype(other, GetDtype());
+    AssertTensorDevice(other, GetDevice());
+    AssertTensorDtype(other, GetDtype());
+
     if (shape_ != other.shape_) {
         return false;
     }
@@ -1691,17 +1747,9 @@ bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
 }
 
 Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
-    if (GetDevice() != other.GetDevice()) {
-        utility::LogError("Device mismatch {} != {}.", GetDevice().ToString(),
-                          other.GetDevice().ToString());
-    }
-    if (dtype_ != other.dtype_) {
-        utility::LogError("Dtype mismatch {} != {}.", dtype_.ToString(),
-                          other.dtype_.ToString());
-    }
-    if (shape_ != other.shape_) {
-        utility::LogError("Shape mismatch {} != {}.", shape_, other.shape_);
-    }
+    AssertTensorDevice(other, GetDevice());
+    AssertTensorDtype(other, GetDtype());
+    AssertTensorShape(other, GetShape());
 
     Tensor lhs = this->To(core::Float64);
     Tensor rhs = other.To(core::Float64);
@@ -1711,36 +1759,52 @@ Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
 }
 
 bool Tensor::IsSame(const Tensor& other) const {
+    AssertTensorDevice(other, GetDevice());
     return blob_ == other.blob_ && shape_ == other.shape_ &&
            strides_ == other.strides_ && data_ptr_ == other.data_ptr_ &&
            dtype_ == other.dtype_;
 }
 
 Tensor Tensor::Matmul(const Tensor& rhs) const {
+    AssertTensorDevice(rhs, GetDevice());
+    AssertTensorDtype(rhs, GetDtype());
+
     Tensor output;
     core::Matmul(*this, rhs, output);
     return output;
 }
 
 Tensor Tensor::Solve(const Tensor& rhs) const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+    AssertTensorDevice(rhs, GetDevice());
+    AssertTensorDtype(rhs, GetDtype());
+
     Tensor output;
     core::Solve(*this, rhs, output);
     return output;
 }
 
 Tensor Tensor::LeastSquares(const Tensor& rhs) const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+    AssertTensorDevice(rhs, GetDevice());
+    AssertTensorDtype(rhs, GetDtype());
+
     Tensor output;
     core::LeastSquares(*this, rhs, output);
     return output;
 }
 
 std::tuple<Tensor, Tensor, Tensor> Tensor::LU(const bool permute_l) const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     core::Tensor permutation, lower, upper;
     core::LU(*this, permutation, lower, upper, permute_l);
     return std::make_tuple(permutation, lower, upper);
 }
 
 std::tuple<Tensor, Tensor> Tensor::LUIpiv() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     core::Tensor ipiv, output;
     core::LUIpiv(*this, ipiv, output);
     return std::make_tuple(ipiv, output);
@@ -1765,12 +1829,16 @@ std::tuple<Tensor, Tensor> Tensor::Triul(const int diagonal) const {
 }
 
 Tensor Tensor::Inverse() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     Tensor output;
     core::Inverse(*this, output);
     return output;
 }
 
 std::tuple<Tensor, Tensor, Tensor> Tensor::SVD() const {
+    AssertTensorDtypes(*this, {Float32, Float64});
+
     Tensor U, S, VT;
     core::SVD(*this, U, S, VT);
     return std::tie(U, S, VT);
