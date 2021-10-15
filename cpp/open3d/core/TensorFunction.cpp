@@ -27,11 +27,76 @@
 #include "open3d/core/TensorFunction.h"
 
 #include <CL/sycl.hpp>
+#include <array>
 
 namespace open3d {
 namespace core {
 
-void RunSYCLDemo() { utility::LogInfo("Hello world!"); }
+void RunSYCLDemo() {
+    using namespace sycl;
+
+    utility::LogInfo("Hello world!");
+
+    constexpr int size = 16;
+    std::array<int, size> data;
+    // Create queue on implementation-chosen default device
+    sycl::queue Q;
+    // Create buffer using host allocated "data" array
+    buffer B{data};
+    Q.submit([&](handler& h) {
+        accessor A{B, h};
+        h.parallel_for(size, [=](auto& idx) { A[idx] = idx; });
+    });
+    // Obtain access to buffer on the host
+    // Will wait for device kernel to execute to generate data
+    host_accessor A{B};
+    for (int i = 0; i < size; i++) {
+        std::cout << "data[" << i << "] = " << A[i] << "\n";
+    }
+
+    // // Creating buffer of 4 ints to be used inside the kernel code
+    // cl::sycl::buffer<cl::sycl::cl_int, 1> buffer(1024 * 1024 * 1024);
+
+    // // Creating SYCL queue
+    // cl::sycl::queue queue;
+
+    // // Size of index space for kernel
+    // cl::sycl::range<1> num_work_items{buffer.size()};
+
+    // // Submitting command group(work) to queue
+    // queue.submit([&](cl::sycl::handler& cgh) {
+    //     // Getting write only access to the buffer on a device
+    //     auto accessor =
+    //     buffer.get_access<cl::sycl::access::mode::write>(cgh);
+    //     // Executing kernel
+    //     cgh.parallel_for<class FillBuffer>(
+    //             num_work_items, [=](cl::sycl::id<1> wlid) {
+    //                 // Fill buffer with indexes
+    //                 accessor[wlid] = (cl::sycl::cl_int)wlid.get(0);
+    //             });
+    // });
+
+    // // Getting read only access to the buffer on the host.
+    // // Implicit barrier waiting for queue to complete the work.
+    // const auto host_accessor =
+    //         buffer.get_access<cl::sycl::access::mode::read>();
+
+    // // Check the results
+    // bool mispatch_found = false;
+    // for (size_t i = 0; i < buffer.size(); ++i) {
+    //     if (host_accessor[i] != i) {
+    //         std::cout << "The result is incorrect for element: " << i
+    //                   << " , expected: " << i << " , got: " <<
+    //                   host_accessor[i]
+    //                   << std::endl;
+    //         mispatch_found = true;
+    //     }
+    // }
+
+    // if (!mispatch_found) {
+    //     std::cout << "The results are correct!" << std::endl;
+    // }
+}
 
 static Tensor StackAlongAxis(const Tensor& self,
                              const Tensor& other,
