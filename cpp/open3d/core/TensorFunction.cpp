@@ -26,6 +26,8 @@
 
 #include "open3d/core/TensorFunction.h"
 
+#include <CL/sycl.hpp>
+
 namespace open3d {
 namespace core {
 
