@@ -435,7 +435,7 @@ void pybind_core_tensor(py::module& m) {
             },
             R"(Appends the `values` tensor, along the given axis and returns
 a copy of the original tensor. Both the tensors must have same data-type 
-device, and number of dimentions. All dimensions must be the same, except the
+device, and number of dimensions. All dimensions must be the same, except the
 dimension along the axis the tensors are to be appended. 
 
 This is the similar to NumPy's semantics:
