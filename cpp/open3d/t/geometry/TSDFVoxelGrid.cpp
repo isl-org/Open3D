@@ -157,10 +157,9 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     } catch (const std::runtime_error &) {
         utility::LogError(
                 "[TSDFIntegrate] Unable to allocate volume during rehashing. "
-                "Consider using a "
-                "larger block_count at initialization to avoid rehashing "
-                "(currently {}), or choosing a larger voxel_size "
-                "(currently {})",
+                "Consider using a larger block_count at initialization to "
+                "avoid rehashing (currently {}), or choosing a larger "
+                "voxel_size (currently {})",
                 n, voxel_size_);
     }
 
