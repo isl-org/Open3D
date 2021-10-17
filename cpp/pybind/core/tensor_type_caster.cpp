@@ -24,37 +24,34 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
+#include "pybind/core/tensor_type_caster.h"
 
-#include "open3d/core/Tensor.h"
-#include "open3d/utility/Logging.h"
-#include "pybind/core/nns/nearest_neighbor_search.h"
-#include "pybind/open3d_pybind.h"
-#include "pybind/pybind_utils.h"
+#include "pybind/core/tensor_converter.h"
 
-namespace open3d {
-namespace core {
+namespace pybind11 {
+namespace detail {
 
-void pybind_core(py::module& m) {
-    py::module m_core = m.def_submodule("core");
+bool type_caster<open3d::core::Tensor>::load(handle src, bool convert) {
+    using base = type_caster_base<open3d::core::Tensor>;
+    if (this->base::load(src, convert)) {
+        return true;
+    }
 
-    // opn3d::core namespace.
-    pybind_cuda_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensor_function(m_core);
-    pybind_core_linalg(m_core);
-    pybind_core_kernel(m_core);
-    pybind_core_hashmap(m_core);
-    pybind_core_hashset(m_core);
-    pybind_core_scalar(m_core);
+    if (convert) {
+        std::string class_name(py::str(src.get_type()));
+        if (class_name == "<class 'bool'>" || class_name == "<class 'int'>" ||
+            class_name == "<class 'float'>" || class_name == "<class 'list'>" ||
+            class_name == "<class 'tuple'>" ||
+            class_name == "<class 'numpy.ndarray'>") {
+            holder_ = std::make_unique<open3d::core::Tensor>(
+                    open3d::core::PyHandleToTensor(src));
+            value = holder_.get();
+            return true;
+        }
+    }
 
-    // opn3d::core::nns namespace.
-    nns::pybind_core_nns(m_core);
+    return false;
 }
 
-}  // namespace core
-}  // namespace open3d
+}  // namespace detail
+}  // namespace pybind11

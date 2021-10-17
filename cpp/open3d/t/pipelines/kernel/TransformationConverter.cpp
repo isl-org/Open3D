@@ -40,22 +40,17 @@ namespace pipelines {
 namespace kernel {
 
 core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
-    core::Device device = R.GetDevice();
-    core::Dtype dtype = R.GetDtype();
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(t, {3});
+    core::AssertTensorDtypes(R, {core::Float32, core::Float64});
 
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                " [RtToTransformation]: Only Float32 abd Float64 supported, "
-                "but got {} ",
-                dtype.ToString());
-    }
+    const core::Device device = R.GetDevice();
+    const core::Dtype dtype = R.GetDtype();
+
+    core::AssertTensorDtype(t, dtype);
+    core::AssertTensorDevice(t, device);
 
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
-    core::AssertTensorShape(R, {3, 3});
-    core::AssertTensorDtype(R, dtype);
-    core::AssertTensorShape(t, {3});
-    core::AssertTensorDevice(t, device);
-    core::AssertTensorDtype(t, dtype);
 
     // Rotation.
     transformation.SetItem(
@@ -92,17 +87,11 @@ static void PoseToTransformationDevice(
 }
 
 core::Tensor PoseToTransformation(const core::Tensor &pose) {
-    core::Device device = pose.GetDevice();
-    core::Dtype dtype = pose.GetDtype();
-
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                " [PoseToTransformation]: Only Float32 abd Float64 supported, "
-                "but got {} ",
-                dtype.ToString());
-    }
-
     core::AssertTensorShape(pose, {6});
+    core::AssertTensorDtypes(pose, {core::Float32, core::Float64});
+
+    const core::Device device = pose.GetDevice();
+    const core::Dtype dtype = pose.GetDtype();
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     transformation = transformation.Contiguous();
     core::Tensor pose_ = pose.Contiguous();
@@ -128,6 +117,8 @@ void DecodeAndSolve6x6(const core::Tensor &A_reduction,
                        int &inlier_count) {
     const core::Device host(core::Device("CPU:0"));
     core::Tensor A_1x29_host = A_reduction.To(host, core::Float64);
+    core::AssertTensorShape(A_reduction, {29});
+
     double *A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
 
     core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Float64, host);

@@ -424,6 +424,42 @@ void pybind_core_tensor(py::module& m) {
             "start"_a = py::none(), "stop"_a, "step"_a = py::none(),
             "dtype"_a = py::none(), "device"_a = py::none());
 
+    tensor.def(
+            "append",
+            [](const Tensor& tensor, const Tensor& values,
+               const utility::optional<int64_t> axis) {
+                if (axis.has_value()) {
+                    return tensor.Append(values, axis);
+                }
+                return tensor.Append(values);
+            },
+            R"(Appends the `values` tensor, along the given axis and returns
+a copy of the original tensor. Both the tensors must have same data-type 
+device, and number of dimensions. All dimensions must be the same, except the
+dimension along the axis the tensors are to be appended. 
+
+This is the similar to NumPy's semantics:
+- https://numpy.org/doc/stable/reference/generated/numpy.append.html
+
+Returns:
+    A copy of the tensor with `values` appended to axis. Note that append
+    does not occur in-place: a new array is allocated and filled. If axis
+    is None, out is a flattened tensor.
+
+Example:
+    >>> a = o3d.core.Tensor([[0, 1], [2, 3]])
+    >>> b = o3d.core.Tensor([[4, 5]])
+    >>> a.append(b, axis = 0)
+    [[0 1],
+     [2 3],
+     [4 5]]
+    Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+ 
+    >>> a.append(b)
+    [0 1 2 3 4 5]
+    Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
+            "values"_a, "axis"_a = py::none());
+
     // Device transfer.
     tensor.def(
             "cpu",
