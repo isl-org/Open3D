@@ -191,6 +191,8 @@ public:
     const t::geometry::Image &GetAnisotropyMap() const {
         return GetTextureMap("anisotropy");
     }
+    /// Ambient occlusion, roughness, and metallic maps in a single 3 channel
+    /// texture. Commonly used in glTF models.
     const t::geometry::Image &GetAORoughnessMetalMap() const {
         return GetTextureMap("ao_rough_metal");
     }
