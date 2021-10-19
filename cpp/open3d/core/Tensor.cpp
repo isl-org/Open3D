@@ -594,7 +594,7 @@ Tensor Tensor::SetItem(const std::vector<TensorKey>& tks, const Tensor& value) {
 }
 
 Tensor Tensor::Append(const Tensor& other,
-                      const utility::optional<int64_t> axis) const {
+                      const utility::optional<int64_t>& axis) const {
     return core::Append(*this, other, axis);
 }
 
