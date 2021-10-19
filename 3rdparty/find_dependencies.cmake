@@ -1202,39 +1202,40 @@ if (WITH_FAISS)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
 endif()
 
-if(NOT)
-    # MKL/BLAS
-    if(USE_BLAS)
-        find_package(BLAS)
-        find_package(LAPACK)
-        find_package(LAPACKE)
-        if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
-            message(STATUS "Using system BLAS/LAPACK")
-            # OpenBLAS/LAPACK/LAPACKE are shared libraries. This is uncommon for
-            # Open3D. When building with this option, the Python wheel is less
-            # portable as it depends on the external shared libraries.
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
-                ${BLAS_LIBRARIES}
-                ${LAPACK_LIBRARIES}
-                ${LAPACKE_LIBRARIES}
-            )
-        else()
-            # Install gfortran first for compiling OpenBLAS/Lapack from source.
-            message(STATUS "Building OpenBLAS with LAPACK from source")
-            set(BLAS_BUILD_FROM_SOURCE ON)
 
-            include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
-            open3d_import_3rdparty_library(3rdparty_blas
-                HIDDEN
-                INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
-                LIB_DIR      ${OPENBLAS_LIB_DIR}
-                LIBRARIES    ${OPENBLAS_LIBRARIES}
-                DEPENDS      ext_openblas
-            )
-            target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
-        endif()
+# MKL/BLAS
+if(USE_BLAS)
+    find_package(BLAS)
+    find_package(LAPACK)
+    find_package(LAPACKE)
+    if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+        message(STATUS "Using system BLAS/LAPACK")
+        # OpenBLAS/LAPACK/LAPACKE are shared libraries. This is uncommon for
+        # Open3D. When building with this option, the Python wheel is less
+        # portable as it depends on the external shared libraries.
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
+            ${BLAS_LIBRARIES}
+            ${LAPACK_LIBRARIES}
+            ${LAPACKE_LIBRARIES}
+        )
     else()
+        # Install gfortran first for compiling OpenBLAS/Lapack from source.
+        message(STATUS "Building OpenBLAS with LAPACK from source")
+        set(BLAS_BUILD_FROM_SOURCE ON)
+
+        include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
+        open3d_import_3rdparty_library(3rdparty_blas
+            HIDDEN
+            INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
+            LIB_DIR      ${OPENBLAS_LIB_DIR}
+            LIBRARIES    ${OPENBLAS_LIBRARIES}
+            DEPENDS      ext_openblas
+        )
+        target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
+    endif()
+else()
+    if(NOT USE_ONE_API)
         include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
         # MKL, cuSOLVER, cuBLAS
         # We link MKL statically. For MKL link flags, refer to:
