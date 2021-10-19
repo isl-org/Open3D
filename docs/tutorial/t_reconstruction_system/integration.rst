@@ -2,13 +2,13 @@
 
 TSDF Integration
 -------------------------------------
-Truncated Signed Distance Function (TSDF) integration is the key of dense volumetric scene reconstruction. It receives relatively noisy depth images from RGB-D sensors such as Kinect and RealSense, and integrates depth readings into the :ref:`voxel_block_grid` given known camera poses. TSDF integration reduces noise and generates smooth surfaces. 
+Truncated Signed Distance Function (TSDF) integration is the key of dense volumetric scene reconstruction. It receives relatively noisy depth images from RGB-D sensors such as Kinect and RealSense, and integrates depth readings into the :ref:`voxel_block_grid` given known camera poses. TSDF integration reduces noise and generates smooth surfaces.
 
 The integration process mainly consists of two steps, (sparse) **block** selection and activation, and (dense) **voxel** value integration. An example can be found at ``examples/python/t_reconstruction_system/integrate.py``.
 
 Activation
 ``````````
-In the activation step, we first locate blocks that contain points unprojected from the current depth image. In other words, it finds active blocks in the current viewing frustum. Internally, this is achieved by a *frustum* hash map that produces duplicate-free block coordinates, and a *block* hash map that activates and query such block coordinates.
+In the activation step, we first locate blocks that contain points unprojected from the current depth image. In other words, it finds active blocks in the current viewing frustum. Internally, this is achieved by a *frustum* hash map that produces duplication-free block coordinates, and a *block* hash map that activates and query such block coordinates.
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
@@ -19,8 +19,8 @@ In the activation step, we first locate blocks that contain points unprojected f
 
 
 Integration
-``````````
-Now we can process the voxels in the blocks at ``frustum_block_coords``. This is done by projecting all such related voxels to the input images and perform a weight average, which is a pure geometric process without hash map operations.
+````````````
+Now we can process the voxels in the blocks at ``frustum_block_coords``. This is done by projecting all such related voxels to the input images and perform a weighted average, which is a pure geometric process without hash map operations.
 
 We may use optimized functions, along with raw depth images with calibration parameters to activate and perform TSDF integration, optionally with colors:
 
@@ -32,7 +32,7 @@ We may use optimized functions, along with raw depth images with calibration par
    :dedent:
 
 
-At current, to use our optimized function, we assume the below combinations of data types, in the order of ``depth image``, ``color image``, ``tsdf in voxel grid``, ``weight in voxel grid``, ``color in voxel grid`` in CPU
+Currently, to use our optimized function, we assume the below combinations of data types, in the order of ``depth image``, ``color image``, ``tsdf in voxel grid``, ``weight in voxel grid``, ``color in voxel grid`` in CPU
 
 .. literalinclude:: ../../../cpp/open3d/t/geometry/kernel/VoxelBlockGridCPU.cpp
    :language: cpp
@@ -50,11 +50,11 @@ and CUDA
    :linenos:
    :dedent:
 
-To generalize the functionality, you may extend the macros and/or the kernel functions and compile from scratch achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
+For more generalized functionalities, you may extend the macros and/or the kernel functions and compile Open3D from scratch achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
 
 Surface extraction
-``````````
-You may use the provided APIs to extract surface points. 
+``````````````````
+You may use the provided APIs to extract surface points.
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
@@ -67,7 +67,7 @@ Note ``extract_triangle_mesh`` applies marching cubes and generate mesh. ``extra
 
 
 Save and load
-``````````
+``````````````
 The voxel block grids can be saved to and loaded from `.npz` files that are accessible via numpy.
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
