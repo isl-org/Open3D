@@ -28,6 +28,7 @@ endif()
 include(CMakeDependentOption)
 
 # Open3D build options
+option(USE_ONE_API                "Use Intel OneAPI BaseKit"                 ON )
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
 option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
 option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF)

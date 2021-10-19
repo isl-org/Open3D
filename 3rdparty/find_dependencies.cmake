@@ -1156,25 +1156,29 @@ open3d_import_3rdparty_library(3rdparty_msgpack
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
-# TBB
-include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-open3d_import_3rdparty_library(3rdparty_tbb
-    INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
-    LIB_DIR      ${STATIC_TBB_LIB_DIR}
-    LIBRARIES    ${STATIC_TBB_LIBRARIES}
-    DEPENDS      ext_tbb
-)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
+if (NOT USE_ONE_API)
+    # TBB
+    include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
+    open3d_import_3rdparty_library(3rdparty_tbb
+        INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
+        LIB_DIR      ${STATIC_TBB_LIB_DIR}
+        LIBRARIES    ${STATIC_TBB_LIBRARIES}
+        DEPENDS      ext_tbb
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
+endif()
 
-# parallelstl
-include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
-open3d_import_3rdparty_library(3rdparty_parallelstl
-    PUBLIC
-    INCLUDE_DIRS ${PARALLELSTL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    DEPENDS      ext_parallelstl
-)
-list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
+if (NOT USE_ONE_API)
+    # parallelstl
+    include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
+    open3d_import_3rdparty_library(3rdparty_parallelstl
+        PUBLIC
+        INCLUDE_DIRS ${PARALLELSTL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        DEPENDS      ext_parallelstl
+    )
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
+endif()
 
 # Faiss
 # Open3D should link Faiss before cuBLAS to avoid missing symbols error since
@@ -1197,56 +1201,58 @@ if (WITH_FAISS)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
 endif()
 
-# MKL/BLAS
-if(USE_BLAS)
-    find_package(BLAS)
-    find_package(LAPACK)
-    find_package(LAPACKE)
-    if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
-        message(STATUS "Using system BLAS/LAPACK")
-        # OpenBLAS/LAPACK/LAPACKE are shared libraries. This is uncommon for
-        # Open3D. When building with this option, the Python wheel is less
-        # portable as it depends on the external shared libraries.
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
-            ${BLAS_LIBRARIES}
-            ${LAPACK_LIBRARIES}
-            ${LAPACKE_LIBRARIES}
-        )
-    else()
-        # Install gfortran first for compiling OpenBLAS/Lapack from source.
-        message(STATUS "Building OpenBLAS with LAPACK from source")
-        set(BLAS_BUILD_FROM_SOURCE ON)
+if(NOT)
+    # MKL/BLAS
+    if(USE_BLAS)
+        find_package(BLAS)
+        find_package(LAPACK)
+        find_package(LAPACKE)
+        if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+            message(STATUS "Using system BLAS/LAPACK")
+            # OpenBLAS/LAPACK/LAPACKE are shared libraries. This is uncommon for
+            # Open3D. When building with this option, the Python wheel is less
+            # portable as it depends on the external shared libraries.
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
+                ${BLAS_LIBRARIES}
+                ${LAPACK_LIBRARIES}
+                ${LAPACKE_LIBRARIES}
+            )
+        else()
+            # Install gfortran first for compiling OpenBLAS/Lapack from source.
+            message(STATUS "Building OpenBLAS with LAPACK from source")
+            set(BLAS_BUILD_FROM_SOURCE ON)
 
-        include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
+            include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
+            open3d_import_3rdparty_library(3rdparty_blas
+                HIDDEN
+                INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
+                LIB_DIR      ${OPENBLAS_LIB_DIR}
+                LIBRARIES    ${OPENBLAS_LIBRARIES}
+                DEPENDS      ext_openblas
+            )
+            target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
+        endif()
+    else()
+        include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
+        # MKL, cuSOLVER, cuBLAS
+        # We link MKL statically. For MKL link flags, refer to:
+        # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
+        message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
         open3d_import_3rdparty_library(3rdparty_blas
             HIDDEN
-            INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
-            LIB_DIR      ${OPENBLAS_LIB_DIR}
-            LIBRARIES    ${OPENBLAS_LIBRARIES}
-            DEPENDS      ext_openblas
+            INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
+            LIB_DIR      ${STATIC_MKL_LIB_DIR}
+            LIBRARIES    ${STATIC_MKL_LIBRARIES}
+            DEPENDS      ext_tbb ext_mkl_include ext_mkl
         )
-        target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+        if(UNIX)
+            target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
+            target_link_libraries(3rdparty_blas INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
+        endif()
+        target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
-else()
-    include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
-    # MKL, cuSOLVER, cuBLAS
-    # We link MKL statically. For MKL link flags, refer to:
-    # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
-    message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
-    open3d_import_3rdparty_library(3rdparty_blas
-        HIDDEN
-        INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
-        LIB_DIR      ${STATIC_MKL_LIB_DIR}
-        LIBRARIES    ${STATIC_MKL_LIBRARIES}
-        DEPENDS      ext_tbb ext_mkl_include ext_mkl
-    )
-    if(UNIX)
-        target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
-        target_link_libraries(3rdparty_blas INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
-    endif()
-    target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
 endif()
 
 # cuBLAS
@@ -1406,22 +1412,54 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
 
 # Intel OneAPI (a.k.a DPC++, SYCL, OpenCL)
 # FIXME: open3d_find_package_3rdparty_library cannot import ${SYCL_FLAGS}
-find_package(IntelSYCL)
-if(IntelSYCL_FOUND)
-    set(SYCL_TARGET Intel::SYCL)
-    set(SYCL_FLAGS ${INTEL_SYCL_FLAGS})
-    set(SYCL_INCLUDE_DIRS ${INTEL_SYCL_INCLUDE_DIRS})
-    set(SYCL_LIBRARIES ${INTEL_SYCL_LIBRARIES})
-    message(STATUS "SYCL_FLAGS: ${INTEL_SYCL_FLAGS}")
-    message(STATUS "SYCL_INCLUDE_DIRS: ${INTEL_SYCL_INCLUDE_DIRS}")
-    message(STATUS "SYCL_LIBRARIES: ${INTEL_SYCL_LIBRARIES}")
-    target_compile_options(Intel::SYCL INTERFACE ${SYCL_FLAGS})
-    # target_link_options(Intel::SYCL INTERFACE ${SYCL_FLAGS})
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Intel::SYCL)
+list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/compiler/latest/linux/cmake/SYCL)
+find_package(IntelDPCPP REQUIRED)
+if(IntelDPCPP_FOUND)
+    add_library(SYCL INTERFACE)
+    message(STATUS "SYCL_INCLUDE_DIR: ${SYCL_INCLUDE_DIR}")
+    message(STATUS "SYCL_FLAGS: ${SYCL_FLAGS}")
+    target_compile_options(SYCL INTERFACE -fsycl)
+    target_include_directories(SYCL INTERFACE ${SYCL_INCLUDE_DIR})
+    # target_link_options(SYCL INTERFACE ${SYCL_FLAGS})
+    add_library(${PROJECT_NAME}::SYCL ALIAS SYCL)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::SYCL)
 else()
-    message(FATAL_ERROR "IntelSYCL cannot be found.")
+    message(FATAL_ERROR "IntelDPCPP_FOUND cannot be found.")
 endif()
 
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
 list(REMOVE_DUPLICATES Open3D_3RDPARTY_EXTERNAL_MODULES)
+
+
+# add_library(${name} INTERFACE)
+# if(arg_TARGETS)
+#     foreach(target IN LISTS arg_TARGETS)
+#         if (TARGET ${target})
+#             target_link_libraries(${name} INTERFACE ${target})
+#         else()
+#             message(WARNING "Skipping undefined target ${target}")
+#         endif()
+#     endforeach()
+# endif()
+# if(arg_INCLUDE_DIRS)
+#     foreach(incl IN LISTS arg_INCLUDE_DIRS)
+#         target_include_directories(${name} INTERFACE ${${incl}})
+#     endforeach()
+# endif()
+# if(arg_LIBRARIES)
+#     foreach(lib IN LISTS arg_LIBRARIES)
+#         target_link_libraries(${name} INTERFACE ${${lib}})
+#     endforeach()
+# endif()
+# if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
+#     install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
+#     # Ensure that imported targets will be found again.
+#     if(arg_TARGETS)
+#         list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES ${arg_PACKAGE})
+#         set(Open3D_3RDPARTY_EXTERNAL_MODULES ${Open3D_3RDPARTY_EXTERNAL_MODULES} PARENT_SCOPE)
+#     endif()
+# endif()
+# set(${name}_FOUND TRUE PARENT_SCOPE)
+# set(${name}_VERSION ${${arg_PACKAGE_VERSION_VAR}} PARENT_SCOPE)
+# add_library(${PROJECT_NAME}::${name} ALIAS ${name})
