@@ -8,6 +8,17 @@ cmake_minimum_required(VERSION 3.19.2)
 # - parse JSON files for downloading files from the open3d_downloads repository
 # - use first-class language support for ISPC (3.19.2 patch release required)
 
+option(USE_ONE_API                "Use Intel OneAPI BaseKit"                 ON )
+if (USE_ONE_API)
+    if(UNIX)
+        set(CMAKE_C_COMPILER clang)
+        set(CMAKE_CXX_COMPILER clang++)
+    endif(UNIX)
+
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
 if (APPLE)
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
     "Minimum OS X deployment version" FORCE)
@@ -28,7 +39,6 @@ endif()
 include(CMakeDependentOption)
 
 # Open3D build options
-option(USE_ONE_API                "Use Intel OneAPI BaseKit"                 ON )
 option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
 option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
 option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF)
@@ -217,7 +227,6 @@ if (BUILD_CUDA_MODULE
     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
 )
     # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
-    set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CUDA_STANDARD 17)
     # Suppress warnings for deprecated C++17 functions.
     add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
