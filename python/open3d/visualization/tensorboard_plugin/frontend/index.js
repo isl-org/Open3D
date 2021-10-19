@@ -491,13 +491,11 @@ class TensorboardOpen3DPluginClient {
       </label>
       <div class="property-ui" id="ui-options-${tag}-colormap"> </div>
       `;
-      // <button class="property-ui" type="button" id="ui-render-${tag}-button">Update</button>
     tagPropEl.insertAdjacentHTML('beforeend', PROPERTY_TEMPLATE);
 
     let propListEl = document.getElementById(`ui-options-${tag}-property`);
     let idxListEl = document.getElementById(`ui-options-${tag}-index`);
     let shaderListEl = document.getElementById(`ui-options-${tag}-shader`);
-    // let submitEl = document.getElementById(`ui-render-${tag}-button`);
 
     const renderStateTag = this.renderState.get(tag);
     shaderListEl.value = renderStateTag.shader;
@@ -518,7 +516,6 @@ class TensorboardOpen3DPluginClient {
       tag));
     shaderListEl.addEventListener('change', this.onShaderChanged.bind(this,
       tag, /* onCreate=*/false));
-    // submitEl.addEventListener('click', this.requestRenderUpdate.bind(this, tag));
     document.getElementById(`toggle-property-${tag}`).disabled = false;
     this.onPropertyChanged(tag, /* onCreate=*/true);
   };
@@ -540,14 +537,6 @@ class TensorboardOpen3DPluginClient {
 
   onPropertyChanged = (tag, onCreate, evt) => {
     // Disable incompatible options
-    /* shader : requiredProperties
-     * Assume "positions" always present.
-     * unlitSolidColor: ("positions",)
-     * unlitGradient.LUT: ("labels", "positions")
-     * unlitGradient.GRADIENT: ("positions",)
-     * defaultUnlit: ("positions", "colors")
-     * defaultLit: ("positions", "normals")
-     */
     let propListEl = document.getElementById(`ui-options-${tag}-property`);
     let idxListEl = document.getElementById(`ui-options-${tag}-index`);
     let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
@@ -558,17 +547,18 @@ class TensorboardOpen3DPluginClient {
     } else {
       cmapEl.previousElementSibling.previousElementSibling.style.display
         = "block";  // index
-      // idxListEl.value = 0;
       idxListEl.max = this.tagsPropertiesShapes.get(tag)[propListEl.value]-1;
+      idxListEl.value = Math.min(idxListEl.value, idxListEl.max);
       idxListEl.disabled = (idxListEl.max == 0);
-      if (propListEl.value === "labels") {
-        this.validShaders = ['unlitGradient.LUT'];
-      } else {      // custom properties
-        this.validShaders = ['unlitGradient.GRADIENT.RAINBOW',
-          'unlitGradient.GRADIENT.GREYSCALE'];
-        if (idxListEl.max >= 2) {
-          this.validShaders.push('defaultUnlit');   // RGB
-        }
+       // custom properties
+      this.validShaders = ['unlitGradient.GRADIENT.RAINBOW',
+        'unlitGradient.GRADIENT.GREYSCALE'];
+      const labelNames = this.tagLabelsNames.get(tag);
+      if (idxListEl.max == 0 && labelNames != null) {
+        this.validShaders.unshift('unlitGradient.LUT'); // first item
+      }
+      if (idxListEl.max >= 2) {
+        this.validShaders.push('defaultUnlit');   // RGB
       }
     }
     this.setEnabledShaders(tag, this.validShaders);
@@ -663,7 +653,6 @@ class TensorboardOpen3DPluginClient {
         idx = idx+1;
       }
     } else if (shaderListEl.value === "defaultUnlit") {
-      idxListEl.value = 0;  // Index is unused in this case
       idxListEl.value = 0;  // Index is unused in this case
     }
     // Setup colormap callbacks:
@@ -768,7 +757,8 @@ class TensorboardOpen3DPluginClient {
           label_value = (parseFloat(label_value) - currentRange[0]) /
             (currentRange[1]-currentRange[0]);
         }
-        let color = hexToRgb(document.getElementById(`ui-cmap-${tag}-col-${idx}`).value);
+        let color =
+          hexToRgb(document.getElementById(`ui-cmap-${tag}-col-${idx}`).value);
         color.push(alpha);
         cmap.set(label_value, color);
       }
@@ -786,13 +776,14 @@ class TensorboardOpen3DPluginClient {
       updated: updated
     };
     // Need colormap Object for JSON
-    updateRenderingMessage.render_state.colormap = Object.fromEntries(renderStateTag.colormap.entries());
+    updateRenderingMessage.render_state.colormap =
+      Object.fromEntries(renderStateTag.colormap.entries());
     console.log("Before update_rendering:", this.renderState);
     console.info("Sending updateRenderingMessage:", updateRenderingMessage);
     this.webRtcClientList.values().next().value.sendJsonData(updateRenderingMessage);
     // add busy indicator
-    document.getElementById("loader_video_" + updateRenderingMessage.window_uid_list[0])
-      .classList.add("loader");
+    document.getElementById("loader_video_" +
+      updateRenderingMessage.window_uid_list[0]) .classList.add("loader");
   };
 
   /**
@@ -850,8 +841,10 @@ class TensorboardOpen3DPluginClient {
     // Need colormap Object for JSON (not Map)
     for (const tag of this.selectedTags) {
       let rst = updateGeometryMessage.render_state[tag];
-      if (typeof rst != "undefined" && this.renderState.get(tag).colormap != null)
-        rst.colormap = Object.fromEntries(this.renderState.get(tag).colormap.entries());
+      if (typeof rst != "undefined" && this.renderState.get(tag).colormap !=
+        null)
+        rst.colormap =
+          Object.fromEntries(this.renderState.get(tag).colormap.entries());
     }
     console.log("Before update_geometry:", this.renderState);
     console.info("Sending updateGeometryMessage:", updateGeometryMessage);

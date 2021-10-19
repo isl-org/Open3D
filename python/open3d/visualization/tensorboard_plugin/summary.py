@@ -258,7 +258,7 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
             _color_to_uint8(st) for st in save_tensor)  # includes scaling
     elif prop.endswith("_indices"):
         save_tensor = tuple(st.to(dtype=o3d.core.int32) for st in save_tensor)
-    else:
+    elif save_tensor[0].dtype == o3d.core.float64:
         save_tensor = tuple(st.to(dtype=o3d.core.float32) for st in save_tensor)
 
     return save_tensor
@@ -335,7 +335,6 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
         A comma separated data location string with the format
         f"{filename},{write_location},{write_size}"
     """
-
     if not isinstance(data, dict):
         raise TypeError(
             "data should be a dict of geometry property names and tensors.")
