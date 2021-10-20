@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <array>
 #include <map>
 
 #include "open3d/camera/PinholeCameraParameters.h"
@@ -68,7 +69,7 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
                            std::shared_ptr<ConnectionBase>());
 
 /// Function for sending a TriangleMesh.
-/// \param mesh         The TriangleMesh object.
+/// \param mesh        The TriangleMesh object.
 ///
 /// \param path        Path descriptor defining a location in the scene tree.
 /// E.g., 'mygroup/mypoints'.
@@ -119,13 +120,14 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
 /// \param line_attributes    Map with Tensors storing line attributes. The
 /// first dim of each attribute must match the number of lines.
 ///
-/// \param material_name      Material name for a DrawableGeometry Material.
-///                           Must be non-empty if any material attributes or
-///                           texture maps are provided.
+/// \param material_name      Basic material model for rendering a
+///                           DrawableGeometry (e.g. defaultLit or
+///                           defaultUnlit). Must be non-empty if any material
+///                           attributes or texture maps are provided.
 /// \param material_scalar_attributes Map of material scalar attributes for a
 ///                           DrawableGeometry  Material (e.g. "point_size",
 ///                           "line_width" or "base_reflectance")
-/// \[aram material_vector_attributes  Map of material Vector4f attributes for a
+/// \param material_vector_attributes  Map of material 4-vector attributes for a
 ///                           DrawableGeometry Material (e.g. "base_color" or
 ///                           "absorption_color")
 /// \param texture_maps       Map of t::geometry::Image for storing textures.
@@ -155,9 +157,9 @@ bool SetMeshData(
         const std::string& material_name = "",
         const std::map<std::string, float>& material_scalar_attributes =
                 std::map<std::string, float>(),
-        const std::map<std::string, Eigen::Vector4f>&
+        const std::map<std::string, std::array<float, 4>>&
                 material_vector_attributes =
-                        std::map<std::string, Eigen::Vector4f>(),
+                        std::map<std::string, std::array<float, 4>>(),
         const std::map<std::string, t::geometry::Image>& texture_maps =
                 std::map<std::string, t::geometry::Image>(),
         const std::string& o3d_type = "",

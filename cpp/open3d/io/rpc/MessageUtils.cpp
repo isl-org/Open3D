@@ -164,8 +164,7 @@ static Material GetMaterialFromMeshData(const messages::MeshData& mesh_data,
     for (const auto& vec : mesh_data.material_vector_attributes)
         material.SetVectorProperty(vec.first,
                                    Eigen::Vector4f(vec.second.data()));
-    // Allow 2, 3 dim images. Don't restrict n_channels, since channel packing
-    // is a way to efficiently store multiple maps.
+    // Allow 2, 3 dim images. Don't restrict n_channels to allow channel packing
     const std::vector<int64_t> expected_shapes[] = {{-1, -1}, {-1, -1, -1}};
     for (const auto& texture : mesh_data.texture_maps) {
         std::string es(texture.first + ": ");

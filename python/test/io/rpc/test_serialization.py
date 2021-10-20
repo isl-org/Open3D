@@ -83,11 +83,9 @@ def test_set_mesh_data_deserialization():
     }
 
     # Material data
-    material_name = "testMaterial"
-    material_scalar_attributes = {'a': np.float32(rng.uniform(0, 1))}
-    material_vector_attributes = {
-        'a': rng.uniform(0, 1, (4,)).astype(np.float32)
-    }
+    material_name = "defaultUnlit"
+    material_scalar_attributes = {'a': rng.uniform(0, 1)}
+    material_vector_attributes = {'a': rng.uniform(0, 1, (4,))}
     texture_maps = {
         'a': rng.uniform(0, 256, size=(2, 2)).astype(rng.choice(dtypes)),
         'b': rng.uniform(0, 256, size=(2, 2, 1)).astype(rng.choice(dtypes)),
@@ -138,11 +136,11 @@ def test_set_mesh_data_deserialization():
     assert len(
         geom.material.scalar_properties) == len(material_scalar_attributes)
     for key, value in geom.material.scalar_properties.items():
-        assert material_scalar_attributes[key] == value
+        np.testing.assert_allclose(material_scalar_attributes[key], value)
     assert len(
         geom.material.vector_properties) == len(material_vector_attributes)
     for key, value in geom.material.vector_properties.items():
-        np.testing.assert_equal(material_vector_attributes[key], value)
+        np.testing.assert_allclose(material_vector_attributes[key], value)
     assert len(geom.material.texture_maps) == len(texture_maps)
     for key, value in geom.material.texture_maps.items():
         np.testing.assert_equal(np.squeeze(texture_maps[key]),
