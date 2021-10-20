@@ -15,6 +15,7 @@ target_sources(tests PRIVATE
     SizeVector.cpp
     Tensor.cpp
     TensorCheck.cpp
+    TensorFunction.cpp
     TensorList.cpp
     TensorObject.cpp
 )
@@ -29,6 +30,7 @@ endif()
 
 if (BUILD_ISPC_MODULE)
     target_sources(tests PRIVATE
+        Indexer.ispc
         ParallelFor.ispc
     )
 endif()

@@ -51,9 +51,11 @@ void Material::SetDefaultProperties() {
 
 void Material::SetTextureMap(const std::string &key,
                              const t::geometry::Image &image) {
-    // Keep a clone of the Image since texture maps get asynchronously copied to
-    // GPU and may be used internally again later
-    texture_maps_[key] = image.Clone();
+    // The Image must be on the CPU since GPU-resident images are not currently
+    // supported. Also, we copy the Image here because the image data is
+    // asynchronously copied to the GPU and we want to make sure the Image data
+    // doesn't get modified while being copied.
+    texture_maps_[key] = image.To(core::Device("CPU:0"), true);
 }
 
 void Material::ToMaterialRecord(MaterialRecord &record) const {

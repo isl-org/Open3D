@@ -36,6 +36,15 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/MiniVec.h"
 
+// The generated "Indexer_ispc.h" header will not be available outside the
+// library. Therefore, forward declare all exported ISPC classes.
+#ifdef BUILD_ISPC_MODULE
+namespace ispc {
+struct TensorRef;
+struct Indexer;
+}  // namespace ispc
+#endif
+
 namespace open3d {
 namespace core {
 
@@ -193,6 +202,11 @@ struct TensorRef {
     }
 
     bool operator!=(const TensorRef& other) const { return !(*this == other); }
+
+#ifdef BUILD_ISPC_MODULE
+    /// Converts this object to an corresponsing ISPC-compatible object.
+    ispc::TensorRef ToISPC() const;
+#endif
 
     void* data_ptr_;
     int64_t ndims_ = 0;
@@ -416,6 +430,25 @@ public:
                                   inputs_contiguous_[input_idx], workload_idx);
     }
 
+    /// Get input Tensor data pointer based on \p workload_idx.
+    ///
+    /// \param input_idx Input tensor index.
+    /// \param workload_idx The index of the compute workload, similar to
+    /// thread_id, if a thread only processes one workload.
+    ///
+    /// Note: Assumes that sizeof(T) matches the input's dtype size, but does
+    /// not check this constraint for performance reasons.
+    template <typename T>
+    OPEN3D_HOST_DEVICE T* GetInputPtr(int64_t input_idx,
+                                      int64_t workload_idx) const {
+        if (input_idx < 0 || input_idx >= num_inputs_) {
+            return nullptr;
+        }
+        return GetWorkloadDataPtr<T>(inputs_[input_idx],
+                                     inputs_contiguous_[input_idx],
+                                     workload_idx);
+    }
+
     /// Get output Tensor data pointer based on \p workload_idx.
     ///
     /// \param workload_idx The index of the compute workload, similar to
@@ -423,6 +456,19 @@ public:
     OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
         return GetWorkloadDataPtr(outputs_[0], outputs_contiguous_[0],
                                   workload_idx);
+    }
+
+    /// Get output Tensor data pointer based on \p workload_idx.
+    ///
+    /// \param workload_idx The index of the compute workload, similar to
+    /// thread_id, if a thread only processes one workload.
+    ///
+    /// Note: Assumes that sizeof(T) matches the output's dtype size, but does
+    /// not check this constraint for performance reasons.
+    template <typename T>
+    OPEN3D_HOST_DEVICE T* GetOutputPtr(int64_t workload_idx) const {
+        return GetWorkloadDataPtr<T>(outputs_[0], outputs_contiguous_[0],
+                                     workload_idx);
     }
 
     /// Get output Tensor data pointer based on \p workload_idx.
@@ -436,6 +482,24 @@ public:
                                   outputs_contiguous_[output_idx],
                                   workload_idx);
     }
+
+    /// Get output Tensor data pointer based on \p workload_idx.
+    ///
+    /// \param output_idx Output tensor index.
+    /// \param workload_idx The index of the compute workload, similar to
+    /// thread_id, if a thread only processes one workload.
+    template <typename T>
+    OPEN3D_HOST_DEVICE T* GetOutputPtr(int64_t output_idx,
+                                       int64_t workload_idx) const {
+        return GetWorkloadDataPtr<T>(outputs_[output_idx],
+                                     outputs_contiguous_[output_idx],
+                                     workload_idx);
+    }
+
+#ifdef BUILD_ISPC_MODULE
+    /// Converts this object to an corresponsing ISPC-compatible object.
+    ispc::Indexer ToISPC() const;
+#endif
 
 protected:
     /// Merge adjacent dimensions if either dim is 1 or if:
@@ -501,18 +565,47 @@ protected:
         if (workload_idx < 0) {
             return nullptr;
         }
-        int64_t offset = 0;
         if (tr_contiguous) {
             return static_cast<char*>(tr.data_ptr_) +
                    workload_idx * tr.dtype_byte_size_;
         } else {
+            int64_t offset = 0;
             for (int64_t i = 0; i < ndims_; ++i) {
                 offset +=
                         workload_idx / master_strides_[i] * tr.byte_strides_[i];
                 workload_idx = workload_idx % master_strides_[i];
             }
+            return static_cast<char*>(tr.data_ptr_) + offset;
         }
-        return static_cast<char*>(tr.data_ptr_) + offset;
+    }
+
+    /// Get data pointer from a TensorRef with \p workload_idx.
+    /// Note: can be optimized by computing all input ptrs and output ptr
+    /// together.
+    ///
+    /// Note: Assumes that sizeof(T) matches the data's dtype size, but does
+    /// not check this constraint for performance reasons.
+    template <typename T>
+    OPEN3D_HOST_DEVICE T* GetWorkloadDataPtr(const TensorRef& tr,
+                                             bool tr_contiguous,
+                                             int64_t workload_idx) const {
+        // For 0-sized input reduction op, the output Tensor
+        // workload_idx == 1 > NumWorkloads() == 0.
+        if (workload_idx < 0) {
+            return nullptr;
+        }
+        if (tr_contiguous) {
+            return static_cast<T*>(tr.data_ptr_) + workload_idx;
+        } else {
+            int64_t offset = 0;
+            for (int64_t i = 0; i < ndims_; ++i) {
+                offset +=
+                        workload_idx / master_strides_[i] * tr.byte_strides_[i];
+                workload_idx = workload_idx % master_strides_[i];
+            }
+            return static_cast<T*>(static_cast<void*>(
+                    static_cast<char*>(tr.data_ptr_) + offset));
+        }
     }
 
     /// Number of input and output Tensors.

@@ -157,8 +157,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
             utility::LogError(
                     "The pointcloud is missing attribute {}. The pointcloud "
                     "being appended, must have all the attributes present in "
-                    "the "
-                    "pointcloud it is being appended to.",
+                    "the pointcloud it is being appended to.",
                     kv.first);
         }
     }
@@ -166,6 +165,8 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
 }
 
 PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
+    core::AssertTensorShape(transformation, {4, 4});
+
     kernel::transform::TransformPoints(transformation, GetPointPositions());
     if (HasPointNormals()) {
         kernel::transform::TransformNormals(transformation, GetPointNormals());
@@ -177,9 +178,10 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
 PointCloud &PointCloud::Translate(const core::Tensor &translation,
                                   bool relative) {
     core::AssertTensorShape(translation, {3});
-    core::AssertTensorDevice(translation, device_);
 
-    core::Tensor transform = translation;
+    core::Tensor transform =
+            translation.To(GetDevice(), GetPointPositions().GetDtype());
+
     if (!relative) {
         transform -= GetCenter();
     }
@@ -189,15 +191,19 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
 
 PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
     core::AssertTensorShape(center, {3});
-    core::AssertTensorDevice(center, device_);
 
-    core::Tensor points = GetPointPositions();
-    points.Sub_(center).Mul_(scale).Add_(center);
+    const core::Tensor center_d =
+            center.To(GetDevice(), GetPointPositions().GetDtype());
+
+    GetPointPositions().Sub_(center_d).Mul_(scale).Add_(center_d);
     return *this;
 }
 
 PointCloud &PointCloud::Rotate(const core::Tensor &R,
                                const core::Tensor &center) {
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(center, {3});
+
     kernel::transform::RotatePoints(R, GetPointPositions(), center);
 
     if (HasPointNormals()) {
@@ -238,24 +244,20 @@ PointCloud PointCloud::VoxelDownSample(
 void PointCloud::EstimateNormals(
         const int max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
-    core::Dtype dtype = this->GetPointPositions().GetDtype();
-    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
-        utility::LogError(
-                "Only Float32 and Float64 type color attribute supported for "
-                "estimating color gradient.");
-    }
-    const bool has_normals = HasPointNormals();
+    core::AssertTensorDtypes(this->GetPointPositions(),
+                             {core::Float32, core::Float64});
+
+    const core::Dtype dtype = this->GetPointPositions().GetDtype();
     const core::Device device = GetDevice();
     const core::Device::DeviceType device_type = device.GetType();
+    const bool has_normals = HasPointNormals();
 
     if (!has_normals) {
         this->SetPointNormals(core::Tensor::Empty(
                 {GetPointPositions().GetLength(), 3}, dtype, device));
     } else {
-        if (this->GetPointNormals().GetDtype() != dtype) {
-            utility::LogError(
-                    "Normals attribute must have same dtype as positions.");
-        }
+        core::AssertTensorDtype(this->GetPointNormals(), dtype);
+
         this->SetPointNormals(GetPointNormals().Contiguous());
     }
 
@@ -323,14 +325,10 @@ void PointCloud::EstimateColorGradients(
                 "PointCloud must have colors and normals attribute "
                 "to compute color gradients.");
     }
+    core::AssertTensorDtypes(this->GetPointColors(),
+                             {core::Float32, core::Float64});
 
-    core::Dtype dtype = this->GetPointColors().GetDtype();
-    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
-        utility::LogError(
-                "Only Float32 and Float64 type color attribute supported for "
-                "estimating color gradient.");
-    }
-
+    const core::Dtype dtype = this->GetPointColors().GetDtype();
     const core::Device device = GetDevice();
     const core::Device::DeviceType device_type = device.GetType();
 
@@ -484,23 +482,25 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                             float depth_max,
                                             int stride,
                                             bool with_normals) {
-    core::Dtype dtype = depth.AsTensor().GetDtype();
-    if (dtype != core::UInt16 && dtype != core::Float32) {
-        utility::LogError(
-                "Unsupported dtype for CreateFromDepthImage, expected UInt16 "
-                "or Float32, but got {}.",
-                dtype.ToString());
-    }
+    core::AssertTensorDtypes(depth.AsTensor(), {core::UInt16, core::Float32});
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
+
+    core::Tensor intrinsics_host =
+            intrinsics.To(core::Device("CPU:0"), core::Float64);
+    core::Tensor extrinsics_host =
+            extrinsics.To(core::Device("CPU:0"), core::Float64);
 
     if (with_normals) {
-        return CreatePointCloudWithNormals(depth, Image(), intrinsics,
-                                           extrinsics, depth_scale, depth_max,
-                                           stride);
+        return CreatePointCloudWithNormals(depth, Image(), intrinsics_host,
+                                           extrinsics_host, depth_scale,
+                                           depth_max, stride);
     } else {
         core::Tensor points;
-        kernel::pointcloud::Unproject(
-                depth.AsTensor(), utility::nullopt, points, utility::nullopt,
-                intrinsics, extrinsics, depth_scale, depth_max, stride);
+        kernel::pointcloud::Unproject(depth.AsTensor(), utility::nullopt,
+                                      points, utility::nullopt, intrinsics_host,
+                                      extrinsics_host, depth_scale, depth_max,
+                                      stride);
         return PointCloud(points);
     }
 }
@@ -512,13 +512,10 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
                                            float depth_max,
                                            int stride,
                                            bool with_normals) {
-    auto dtype = rgbd_image.depth_.AsTensor().GetDtype();
-    if (dtype != core::UInt16 && dtype != core::Float32) {
-        utility::LogError(
-                "Unsupported dtype for CreateFromRGBDImage, expected UInt16 "
-                "or Float32, but got {}.",
-                dtype.ToString());
-    }
+    core::AssertTensorDtypes(rgbd_image.depth_.AsTensor(),
+                             {core::UInt16, core::Float32});
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
 
     Image image_colors = rgbd_image.color_.To(core::Float32, /*copy=*/false);
 
@@ -541,6 +538,9 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
                                                 const core::Tensor &extrinsics,
                                                 float depth_scale,
                                                 float depth_max) {
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
+
     core::Tensor depth =
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
     kernel::pointcloud::Project(depth, utility::nullopt, GetPointPositions(),
@@ -561,6 +561,8 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
                 "Unable to project to RGBD without the Color attribute in the "
                 "point cloud.");
     }
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
 
     core::Tensor depth =
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);

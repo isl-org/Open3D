@@ -24,15 +24,33 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4789)
+#endif
+
 #include "open3d/visualization/rendering/Material.h"
 
 #include "pybind/open3d_pybind.h"
+
+PYBIND11_MAKE_OPAQUE(
+        std::unordered_map<std::string, open3d::t::geometry::Image>)
+PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, float>)
+// NOTE: The following line triggers buffer overflow warnings on Windows which
+// is why warning 4789 is disabled when building on Windows
+PYBIND11_MAKE_OPAQUE(
+        open3d::visualization::rendering::Material::VectorPropertyMap)
 
 namespace open3d {
 namespace visualization {
 namespace rendering {
 
 void pybind_material(py::module& m) {
+    py::bind_map<std::unordered_map<std::string, t::geometry::Image>>(
+            m, "TextureMaps");
+    py::bind_map<std::unordered_map<std::string, float>>(m, "ScalarProperties");
+    py::bind_map<Material::VectorPropertyMap>(m, "VectorProperties");
+
     py::class_<Material, std::shared_ptr<Material>> mat(
             m, "Material",
             "Properties (texture maps, scalar and vector) related to "
@@ -53,27 +71,13 @@ void pybind_material(py::module& m) {
             .def_property_readonly("scalar_properties",
                                    &Material::GetScalarProperties)
             .def_property_readonly("vector_properties",
-                                   &Material::GetVectorProperties)
-            .def("get_texture_map", &Material::GetTextureMap,
-                 "Return the image associated with key")
-            .def("set_texture_map", &Material::SetTextureMap,
-                 "Associates image with key")
-            .def("has_texture_map", &Material::HasTextureMap,
-                 "Returns true if the material has the specified map")
-            .def("get_scalar_property", &Material::GetScalarProperty,
-                 "Return the scalar property associated with key")
-            .def("set_scalar_property", &Material::SetScalarProperty,
-                 "Set value of a scalar property of the Material")
-            .def("has_scalar_property", &Material::HasScalarProperty,
-                 "Returns true if the material has the scalar property")
-            .def("get_vector_property", &Material::GetVectorProperty,
-                 "Return the vector property associated with key")
-            .def("set_vector_property", &Material::SetVectorProperty,
-                 "Set value of a vector property of the Material")
-            .def("has_vector_property", &Material::HasVectorProperty,
-                 "Returns true if the material has the vector property");
+                                   &Material::GetVectorProperties);
 }
 
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

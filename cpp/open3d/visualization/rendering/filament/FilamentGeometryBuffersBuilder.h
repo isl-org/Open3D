@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 
@@ -44,6 +45,9 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293)
+// Filament uses OPAQUE and TRANSPARENT as enums which conflicts with windows.h
+#undef OPAQUE
+#undef TRANSPARENT
 #endif // _MSC_VER
 
 #include <filament/Box.h>
@@ -147,6 +151,22 @@ private:
     const geometry::PointCloud& geometry_;
 };
 
+class LineSetBuffersBuilder : public GeometryBuffersBuilder {
+public:
+    explicit LineSetBuffersBuilder(const geometry::LineSet& geometry);
+
+    filament::RenderableManager::PrimitiveType GetPrimitiveType()
+            const override;
+
+    Buffers ConstructBuffers() override;
+    filament::Box ComputeAABB() override;
+
+private:
+    Buffers ConstructThinLines();
+
+    const geometry::LineSet& geometry_;
+};
+
 class TMeshBuffersBuilder : public GeometryBuffersBuilder {
 public:
     explicit TMeshBuffersBuilder(const t::geometry::TriangleMesh& geometry);
@@ -175,9 +195,9 @@ private:
     t::geometry::PointCloud geometry_;
 };
 
-class LineSetBuffersBuilder : public GeometryBuffersBuilder {
+class TLineSetBuffersBuilder : public GeometryBuffersBuilder {
 public:
-    explicit LineSetBuffersBuilder(const geometry::LineSet& geometry);
+    explicit TLineSetBuffersBuilder(const t::geometry::LineSet& geometry);
 
     filament::RenderableManager::PrimitiveType GetPrimitiveType()
             const override;
@@ -188,7 +208,7 @@ public:
 private:
     Buffers ConstructThinLines();
 
-    const geometry::LineSet& geometry_;
+    t::geometry::LineSet geometry_;
 };
 
 }  // namespace rendering
