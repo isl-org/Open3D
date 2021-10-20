@@ -24,6 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4789)
+#endif
+
 #include "open3d/visualization/rendering/Material.h"
 
 #include "pybind/open3d_pybind.h"
@@ -31,7 +36,10 @@
 PYBIND11_MAKE_OPAQUE(
         std::unordered_map<std::string, open3d::t::geometry::Image>)
 PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, float>)
-PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, Eigen::Vector4f>)
+// NOTE: The following line triggers buffer overflow warnings on Windows which
+// is why warning 4789 is disabled when building on Windows
+PYBIND11_MAKE_OPAQUE(
+        open3d::visualization::rendering::Material::VectorPropertyMap)
 
 namespace open3d {
 namespace visualization {
@@ -41,8 +49,7 @@ void pybind_material(py::module& m) {
     py::bind_map<std::unordered_map<std::string, t::geometry::Image>>(
             m, "TextureMaps");
     py::bind_map<std::unordered_map<std::string, float>>(m, "ScalarProperties");
-    py::bind_map<std::unordered_map<std::string, Eigen::Vector4f>>(
-            m, "VectorProperties");
+    py::bind_map<Material::VectorPropertyMap>(m, "VectorProperties");
 
     py::class_<Material, std::shared_ptr<Material>> mat(
             m, "Material",
@@ -70,3 +77,7 @@ void pybind_material(py::module& m) {
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif

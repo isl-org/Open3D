@@ -14,6 +14,7 @@ target_sources(core PRIVATE
     SizeVector.cpp
     Tensor.cpp
     TensorCheck.cpp
+    TensorFunction.cpp
     TensorKey.cpp
     TensorList.cpp
 )
@@ -107,6 +108,17 @@ if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
         nns/KnnSearchOps.cu
         nns/FixedRadiusSearchOps.cu
+    )
+endif()
+
+if (BUILD_ISPC_MODULE)
+    target_sources(core PRIVATE
+        Indexer.ispc
+    )
+
+    target_sources(core PRIVATE
+        kernel/BinaryEWCPU.ispc
+        kernel/UnaryEWCPU.ispc
     )
 endif()
 

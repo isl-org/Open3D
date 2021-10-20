@@ -448,28 +448,26 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
         const auto& lines = geometry_.GetLineIndices();
         const auto& colors = geometry_.GetLineColors();
         n_vertices = lines.GetLength() * 2;
+        core::Tensor dup_vertices =
+                points.IndexGet({lines.Reshape({n_vertices}).To(core::Int64)});
         vertex_data = static_cast<float*>(malloc(n_vertices * vertex_stride));
         float* vertex_data_ptr = vertex_data;
-        const uint32_t* index_data =
-                static_cast<const uint32_t*>(lines.GetDataPtr());
+        const float* current_vertex =
+                static_cast<float*>(dup_vertices.GetDataPtr());
         const float* color_data =
                 static_cast<const float*>(colors.GetDataPtr());
         for (int i = 0; i < lines.GetLength(); ++i) {
             // Vertex one of the line
-            uint32_t idx1 = *index_data++;
-            const float* current_vertex = points[idx1].GetDataPtr<float>();
-            *vertex_data_ptr++ = *current_vertex;
-            *vertex_data_ptr++ = *(current_vertex + 1);
-            *vertex_data_ptr++ = *(current_vertex + 2);
+            *vertex_data_ptr++ = *current_vertex++;
+            *vertex_data_ptr++ = *current_vertex++;
+            *vertex_data_ptr++ = *current_vertex++;
             *vertex_data_ptr++ = *color_data;
             *vertex_data_ptr++ = *(color_data + 1);
             *vertex_data_ptr++ = *(color_data + 2);
             *vertex_data_ptr++ = 1.f;
-            uint32_t idx2 = *index_data++;
-            current_vertex = points[idx2].GetDataPtr<float>();
-            *vertex_data_ptr++ = *current_vertex;
-            *vertex_data_ptr++ = *(current_vertex + 1);
-            *vertex_data_ptr++ = *(current_vertex + 2);
+            *vertex_data_ptr++ = *current_vertex++;
+            *vertex_data_ptr++ = *current_vertex++;
+            *vertex_data_ptr++ = *current_vertex++;
             *vertex_data_ptr++ = *color_data;
             *vertex_data_ptr++ = *(color_data + 1);
             *vertex_data_ptr++ = *(color_data + 2);
@@ -482,19 +480,12 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
         std::iota(line_indices, line_indices + n_vertices, 0);
     } else {
         n_vertices = points.GetLength();
-        auto position_data = static_cast<const float*>(points.GetDataPtr());
+        core::Tensor filament_data =
+                core::Tensor::Ones({n_vertices, 7}, core::Float32);
+        filament_data.Slice(1, 0, 3) = points;
         const auto vertex_array_size = n_vertices * vertex_stride;
         vertex_data = static_cast<float*>(malloc(vertex_array_size));
-        float* vertex_data_ptr = vertex_data;
-        for (auto i = 0ul; i < n_vertices; ++i) {
-            *vertex_data_ptr++ = *position_data++;
-            *vertex_data_ptr++ = *position_data++;
-            *vertex_data_ptr++ = *position_data++;
-            *vertex_data_ptr++ = 1.f;
-            *vertex_data_ptr++ = 1.f;
-            *vertex_data_ptr++ = 1.f;
-            *vertex_data_ptr++ = 1.f;
-        }
+        memcpy(vertex_data, filament_data.GetDataPtr(), vertex_array_size);
         indices_bytes =
                 geometry_.GetLineIndices().GetLength() * 2 * sizeof(IndexType);
         n_indices = geometry_.GetLineIndices().GetLength() * 2;

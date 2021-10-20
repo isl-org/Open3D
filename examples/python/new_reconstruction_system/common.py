@@ -175,7 +175,7 @@ def extract_pointcloud(volume, config, file_name=None):
             o3d.io.write_point_cloud(file_name, pcd)
 
     elif config.engine == 'tensor':
-        pcd = volume.extract_point_clound(
+        pcd = volume.extract_point_cloud(
             weight_threshold=config.surface_weight_thr)
 
         if file_name is not None:

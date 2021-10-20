@@ -49,7 +49,7 @@ TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
     for (core::Dtype dtype :
          {core::Float32, core::Float64, core::Int32, core::Int64}) {
         // Testing on shapes {i, j} : {0, 0}, {0, 1}, {1, 0}, {1, 1}.
-        for (const auto& shape :
+        for (const auto &shape :
              std::vector<core::SizeVector>({{0, 0}, {0, 1}, {1, 0}, {1, 1}})) {
             // TensorToEigenMatrixXd.
             core::Tensor tensor_d = core::Tensor::Ones(shape, dtype, device);

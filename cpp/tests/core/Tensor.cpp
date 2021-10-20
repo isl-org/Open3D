@@ -64,6 +64,13 @@ INSTANTIATE_TEST_SUITE_P(
                 testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
                 testing::ValuesIn(PermuteDevices::TestCases())));
 
+/// Convert to const reference.
+/// https://stackoverflow.com/a/15519125/1255535
+template <typename T>
+static constexpr const T &AsConst(T &t) noexcept {
+    return t;
+}
+
 TEST_P(TensorPermuteDevices, Constructor) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Float32;
@@ -845,6 +852,105 @@ TEST_P(TensorPermuteDevices, SliceAssign) {
               std::vector<float>({0,  1,  2,  3,  4,   5,  6,   7,
                                   8,  9,  10, 11, 123, 13, 143, 15,
                                   16, 17, 18, 19, 203, 21, 223, 23}));
+}
+
+TEST_P(TensorPermuteDevices, Append) {
+    core::Device device = GetParam();
+
+    core::Tensor self, other, output;
+
+    // Appending 0-D to 0-D.
+    self = core::Tensor::Init<float>(0, device);
+    other = core::Tensor::Init<float>(1, device);
+
+    // 0-D can be appended to 0-D along axis = null.
+    output = self.Append(other);
+    EXPECT_TRUE(output.AllClose(core::Tensor::Init<float>({0, 1}, device)));
+
+    // 0-D can not be appended to 0-D along axis = 0, -1.
+    EXPECT_ANY_THROW(self.Append(other, 0));
+    EXPECT_ANY_THROW(self.Append(other, -1));
+
+    // Same Shape.
+    // Appending 1-D [3,] tensor to 1-D [4,].
+    self = core::Tensor::Init<float>({0, 1, 2, 3}, device);
+    other = core::Tensor::Init<float>({4, 5, 6}, device);
+
+    // 1-D can be appended to 1-D along axis = null, 0, -1.
+    output = self.Append(other);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6}, device)));
+
+    output = self.Append(other, 0);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6}, device)));
+
+    output = self.Append(other, -1);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6}, device)));
+
+    // 1-D can not be appended to 1-D along axis = 1, -2.
+    EXPECT_ANY_THROW(self.Append(other, 1));
+    EXPECT_ANY_THROW(self.Append(other, -2));
+
+    // Appending 2-D [2, 2] tensor to 2-D [2, 2].
+    self = core::Tensor::Init<float>({{0, 1}, {2, 3}}, device);
+    other = core::Tensor::Init<float>({{4, 5}, {6, 7}}, device);
+
+    // 2-D tensor can be appended to 2-D tensor along axis = null, 0, 1, -1, -2.
+    output = self.Append(other);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({0, 1, 2, 3, 4, 5, 6, 7}, device)));
+
+    output = self.Append(other, 0);
+    EXPECT_TRUE(output.AllClose(core::Tensor::Init<float>(
+            {{0, 1}, {2, 3}, {4, 5}, {6, 7}}, device)));
+
+    output = self.Append(other, -2);
+    EXPECT_TRUE(output.AllClose(core::Tensor::Init<float>(
+            {{0, 1}, {2, 3}, {4, 5}, {6, 7}}, device)));
+
+    output = self.Append(other, 1);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({{0, 1, 4, 5}, {2, 3, 6, 7}}, device)));
+
+    output = self.Append(other, -1);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({{0, 1, 4, 5}, {2, 3, 6, 7}}, device)));
+
+    // 2-D can not be appended to 2-D along axis = 2, -3.
+    EXPECT_ANY_THROW(self.Append(other, 2));
+    EXPECT_ANY_THROW(self.Append(other, -3));
+
+    // Appending 2-D [1, 2] tensor to 2-D [2, 2].
+    self = core::Tensor::Init<float>({{0, 1}, {2, 3}}, device);
+    other = core::Tensor::Init<float>({{4, 5}}, device);
+
+    // Only the dimension along the axis can be different, so tensor of shape
+    // [1, 2] can be appended to [2, 2] along axis = null, 0, -2.
+    output = self.Append(other);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({0, 1, 2, 3, 4, 5}, device)));
+
+    output = self.Append(other, 0);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({{0, 1}, {2, 3}, {4, 5}}, device)));
+
+    output = self.Append(other, -2);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({{0, 1}, {2, 3}, {4, 5}}, device)));
+
+    // [1, 2] can not be appended to [2, 2] along axis = 1, -1.
+    EXPECT_ANY_THROW(self.Append(other, 1));
+    EXPECT_ANY_THROW(self.Append(other, -1));
+
+    // Dtype and Device of both the tensors must be same.
+    // Taking the above case of [1, 2] to [2, 2] with different dtype and
+    // device.
+    EXPECT_ANY_THROW(self.Append(other.To(core::Float64)));
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        EXPECT_ANY_THROW(self.Append(other.To(core::Device("CPU:0"))));
+    }
 }
 
 TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {
@@ -2054,14 +2160,15 @@ TEST_P(TensorPermuteDevices, Sin) {
     std::transform(src_vals.begin(), src_vals.end(),
                    std::back_inserter(dst_vals),
                    [](float v) -> float { return std::sin(v); });
+    core::Tensor dst_ref(dst_vals, {2, 3}, core::Float32, device);
 
     core::Tensor src(src_vals, {2, 3}, core::Float32, device);
     core::Tensor dst = src.Sin();
-    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(dst.AllClose(dst_ref));
 
     // Inplace version.
     src.Sin_();
-    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(src.AllClose(dst_ref));
 
     // Only works for float types, throws exception otherwise.
     src = core::Tensor({2, 3}, core::Int32, device);
@@ -2076,14 +2183,15 @@ TEST_P(TensorPermuteDevices, Cos) {
     std::transform(src_vals.begin(), src_vals.end(),
                    std::back_inserter(dst_vals),
                    [](float v) -> float { return std::cos(v); });
+    core::Tensor dst_ref(dst_vals, {2, 3}, core::Float32, device);
 
     core::Tensor src(src_vals, {2, 3}, core::Float32, device);
     core::Tensor dst = src.Cos();
-    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(dst.AllClose(dst_ref));
 
     // Inplace version.
     src.Cos_();
-    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(src.AllClose(dst_ref));
 
     // Only works for float types, throws exception otherwise.
     src = core::Tensor({2, 3}, core::Int32, device);
@@ -2117,14 +2225,15 @@ TEST_P(TensorPermuteDevices, Exp) {
     std::transform(src_vals.begin(), src_vals.end(),
                    std::back_inserter(dst_vals),
                    [](float v) -> float { return std::exp(v); });
+    core::Tensor dst_ref(dst_vals, {2, 3}, core::Float32, device);
 
     core::Tensor src(src_vals, {2, 3}, core::Float32, device);
     core::Tensor dst = src.Exp();
-    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(dst.AllClose(dst_ref));
 
     // Inplace version.
     src.Exp_();
-    EXPECT_EQ(src.ToFlatVector<float>(), dst_vals);
+    EXPECT_TRUE(src.AllClose(dst_ref));
 
     // Only works for float types, throws exception otherwise.
     src = core::Tensor({2, 3}, core::Int32, device);
@@ -3017,6 +3126,194 @@ TEST_P(TensorPermuteDevices, Clip_) {
                                         device);
     t.Clip_(5.2, 9223372036854775807);
     EXPECT_TRUE(t.AllClose(t_ref));
+}
+
+TEST_P(TensorPermuteDevicePairs, AllEqual) {
+    core::Device device_a;
+    core::Device device_b;
+    std::tie(device_a, device_b) = GetParam();
+
+    core::Tensor src;
+    core::Tensor dst;
+
+    // Normal case.
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<float>({0, 1, 2.5}, device_a);
+    EXPECT_FALSE(src.AllEqual(dst));
+
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    EXPECT_TRUE(src.AllEqual(dst));
+
+    // Different device.
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<float>({0, 1, 2}, device_b);
+    if (device_a != device_b) {
+        EXPECT_ANY_THROW(src.AllEqual(dst));
+    } else {
+        EXPECT_TRUE(src.AllEqual(dst));
+    }
+
+    // Different dtype.
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<int>({0, 1, 2}, device_a);
+    EXPECT_ANY_THROW(src.AllEqual(dst));
+
+    // Different shape.
+    src = core::Tensor::Init<float>({0, 1, 2}, device_a);
+    dst = core::Tensor::Init<float>({{0, 1, 2}}, device_a);
+    EXPECT_FALSE(src.AllEqual(dst));
+}
+
+TEST_P(TensorPermuteDevices, Iterator) {
+    core::Device device = GetParam();
+
+    core::Tensor t;
+    std::vector<core::Tensor> t_slices;  // Ground-truth slices.
+    int index = 0;
+
+    // operator*() -> const core::Tensor &. Not assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (const core::Tensor &t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+
+    // operator*() -> core::Tensor. Assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor t_slice : t) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator*() -> const core::Tensor &&. Not assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (const core::Tensor &&t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+
+    // operator*() -> core::Tensor &&. Assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor &&t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor &&t_slice : t) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator->(). Assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor::Iterator iter = t.begin(); iter != t.end(); ++iter) {
+        EXPECT_TRUE(iter->IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor::Iterator iter = t.begin(); iter != t.end(); ++iter) {
+        iter->AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // 0-d.
+    t = core::Tensor::Init<int>(10, device);
+    EXPECT_ANY_THROW(t.begin());
+
+    // 2-d.
+    t = core::Tensor::Init<int>({{0, 1, 2}, {3, 4, 5}}, device);
+    t_slices = {t[0], t[1]};
+    index = 0;
+    for (const core::Tensor &t_slice : t) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+}
+
+TEST_P(TensorPermuteDevices, ConstIterator) {
+    core::Device device = GetParam();
+
+    core::Tensor t;
+    std::vector<core::Tensor> t_slices;  // Ground-truth slices.
+    int index = 0;
+
+    // operator*() -> const core::Tensor &. Not assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (const core::Tensor &t_slice : AsConst(t)) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+
+    // operator*() -> core::Tensor. Assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor t_slice : AsConst(t)) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+    for (core::Tensor t_slice : AsConst(t)) {
+        t_slice.AsRvalue() = 10;
+    }
+    EXPECT_TRUE(t.AllEqual(core::Tensor::Init<int>({10, 10, 10}, device)));
+
+    // operator*() -> const core::Tensor &&. Not assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (const core::Tensor &&t_slice : AsConst(t)) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
+
+    // operator->() with cbegin() and cend(). Not assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor::ConstIterator iter = t.cbegin(); iter != t.cend();
+         ++iter) {
+        EXPECT_TRUE(iter->IsSame(t_slices[index]));
+        index++;
+    }
+
+    // operator->() with overloaded begin() and end(). Not assignable.
+    t = core::Tensor::Init<int>({0, 1, 2}, device);
+    const core::Tensor &t_const = t;
+    t_slices = {t[0], t[1], t[2]};
+    index = 0;
+    for (core::Tensor::ConstIterator iter = t_const.begin();
+         iter != t_const.end(); ++iter) {
+        EXPECT_TRUE(iter->IsSame(t_slices[index]));
+        index++;
+    }
+
+    // 0-d.
+    t = core::Tensor::Init<int>(10, device);
+    EXPECT_ANY_THROW(t.begin());
+
+    // 2-d.
+    t = core::Tensor::Init<int>({{0, 1, 2}, {3, 4, 5}}, device);
+    t_slices = {t[0], t[1]};
+    index = 0;
+    for (const core::Tensor &t_slice : AsConst(t)) {
+        EXPECT_TRUE(t_slice.IsSame(t_slices[index]));
+        index++;
+    }
 }
 
 }  // namespace tests

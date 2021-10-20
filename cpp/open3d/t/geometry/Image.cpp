@@ -453,10 +453,8 @@ Image Image::PyrDownDepth(float diff_threshold, float invalid_fill) const {
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::Float32) {
-        utility::LogError("Expected a Float32 image, but got {}",
-                          GetDtype().ToString());
-    }
+
+    core::AssertTensorDtype(AsTensor(), core::Float32);
 
     core::Tensor dst_tensor = core::Tensor::Empty(
             {GetRows() / 2, GetCols() / 2, 1}, GetDtype(), GetDevice());
@@ -475,10 +473,9 @@ Image Image::ClipTransform(float scale,
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::UInt16 && GetDtype() != core::Float32) {
-        utility::LogError("Expected a UInt16 or Float32 image, but got {}",
-                          GetDtype().ToString());
-    }
+
+    core::AssertTensorDtypes(AsTensor(), {core::UInt16, core::Float32});
+
     if (scale < 0 || min_value < 0 || max_value < 0) {
         utility::LogError(
                 "Expected positive scale, min_value, and max_value, but got "
@@ -506,10 +503,9 @@ Image Image::CreateVertexMap(const core::Tensor &intrinsics,
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::Float32) {
-        utility::LogError("Expected a Float32 image, but got {}",
-                          GetDtype().ToString());
-    }
+
+    core::AssertTensorDtype(AsTensor(), core::Float32);
+    core::AssertTensorShape(intrinsics, {3, 3});
 
     Image dst_im(GetRows(), GetCols(), 3, GetDtype(), GetDevice());
     kernel::image::CreateVertexMap(data_, dst_im.data_, intrinsics,
@@ -524,10 +520,8 @@ Image Image::CreateNormalMap(float invalid_fill) {
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::Float32) {
-        utility::LogError("Expected a Float32 image, but got {}",
-                          GetDtype().ToString());
-    }
+
+    core::AssertTensorDtype(AsTensor(), core::Float32);
 
     Image dst_im(GetRows(), GetCols(), 3, GetDtype(), GetDevice());
     kernel::image::CreateNormalMap(data_, dst_im.data_, invalid_fill);
@@ -541,10 +535,9 @@ Image Image::ColorizeDepth(float scale, float min_value, float max_value) {
                 "{})",
                 GetRows(), GetCols(), GetChannels());
     }
-    if (GetDtype() != core::UInt16 && GetDtype() != core::Float32) {
-        utility::LogError("Expected a UInt16 or Float32 image, but got {}",
-                          GetDtype().ToString());
-    }
+
+    core::AssertTensorDtypes(AsTensor(), {core::UInt16, core::Float32});
+
     if (scale < 0 || min_value < 0 || max_value < 0 || min_value >= max_value) {
         utility::LogError(
                 "Expected positive scale, min_value, and max_value, but got "

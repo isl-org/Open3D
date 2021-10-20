@@ -61,7 +61,7 @@ public:
 
         cudaError_t err;
 
-        unsigned int n_threads = opt_n_threads(n);
+        unsigned int n_threads = OptNumThreads(n);
 
         switch (n_threads) {
             case 1024:

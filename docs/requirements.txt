@@ -1,0 +1,6 @@
+sphinx==3.3.1
+sphinx-rtd-theme==0.5.2
+nbsphinx==0.8.3
+matplotlib==3.3.3
+jinja2==2.11.3
+m2r2==0.2.7

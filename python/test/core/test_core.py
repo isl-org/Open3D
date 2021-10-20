@@ -243,6 +243,170 @@ def test_arange(device):
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
+@pytest.mark.parametrize("dtype", list_non_bool_dtypes())
+@pytest.mark.parametrize("device", list_devices())
+def test_append(dtype, device):
+    # Appending 0-D.
+    # 0-D can only be appended along axis = null.
+    self = o3c.Tensor(0, dtype=dtype, device=device)
+    values = o3c.Tensor(1, dtype=dtype, device=device)
+    output_t = self.append(values)
+    output_np = np.append(arr=self.cpu().numpy(), values=values.cpu().numpy())
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    with pytest.raises(
+            RuntimeError,
+            match=r"Zero-dimensional tensor can only be concatenated along "
+            "axis = null, but got 0."):
+        self.append(values, axis=0)
+
+    # Appending 1-D.
+    # 1-D can be appended along axis = 0, -1.
+    self = o3c.Tensor([0, 1], dtype=dtype, device=device)
+    values = o3c.Tensor([2, 3, 4], dtype=dtype, device=device)
+    output_t = self.append(values)
+    output_np = np.append(arr=self.cpu().numpy(), values=values.cpu().numpy())
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = self.append(values, axis=0)
+    output_np = np.append(arr=self.cpu().numpy(),
+                          values=values.cpu().numpy(),
+                          axis=0)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = self.append(values, axis=-1)
+    output_np = np.append(arr=self.cpu().numpy(),
+                          values=values.cpu().numpy(),
+                          axis=-1)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    # axis must always be in range [-num_dims, num_dims).
+    # So, 1-D tensor cannot be appended along axis 1 or -2.
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"Index out-of-range: dim == 1, but it must satisfy -1 <= dim <= 0"
+    ):
+        self.append(values, axis=1)
+
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"Index out-of-range: dim == -2, but it must satisfy -1 <= dim <= 0"
+    ):
+        self.append(values, axis=-2)
+
+    # Appending 2-D. [2, 2] to [2, 2].
+    # [2, 2] to [2, 2] can be appended along axis = 0, 1, -1, -2.
+    self = o3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
+    values = o3c.Tensor([[4, 5], [6, 7]], dtype=dtype, device=device)
+
+    output_t = self.append(values)
+    output_np = np.append(arr=self.cpu().numpy(), values=values.cpu().numpy())
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = self.append(values, axis=0)
+    output_np = np.append(arr=self.cpu().numpy(),
+                          values=values.cpu().numpy(),
+                          axis=0)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = self.append(values, axis=1)
+    output_np = np.append(arr=self.cpu().numpy(),
+                          values=values.cpu().numpy(),
+                          axis=1)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = self.append(values, axis=-1)
+    output_np = np.append(arr=self.cpu().numpy(),
+                          values=values.cpu().numpy(),
+                          axis=-1)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = self.append(values, axis=-2)
+    output_np = np.append(arr=self.cpu().numpy(),
+                          values=values.cpu().numpy(),
+                          axis=-2)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    # axis must always be in range [-num_dims, num_dims).
+    # So, 2-D tensor cannot be appended along axis 2 or -3.
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"Index out-of-range: dim == 2, but it must satisfy -2 <= dim <= 1"
+    ):
+        self.append(values, axis=2)
+
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"Index out-of-range: dim == -3, but it must satisfy -2 <= dim <= 1"
+    ):
+        self.append(values, axis=-3)
+
+    # Appending 2-D. [1, 2] to [2, 2].
+    # [1, 2] to [2, 2] can be appended along axis = 0, -2.
+    self = o3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
+    values = o3c.Tensor([[4, 5]], dtype=dtype, device=device)
+
+    output_t = self.append(values)
+    output_np = np.append(arr=self.cpu().numpy(), values=values.cpu().numpy())
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = self.append(values, axis=0)
+    output_np = np.append(arr=self.cpu().numpy(),
+                          values=values.cpu().numpy(),
+                          axis=0)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = self.append(values, axis=-2)
+    output_np = np.append(arr=self.cpu().numpy(),
+                          values=values.cpu().numpy(),
+                          axis=-2)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    # all the dimensions other than the dimension along the axis, must be
+    # exactly same.
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"All the input tensor dimensions, other than dimension size along "
+            "concatenation axis must be same, but along dimension 0, the "
+            "tensor at index 0 has size 2 and the tensor at index 1 has size 1."
+    ):
+        self.append(values, axis=1)
+
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"All the input tensor dimensions, other than dimension size along "
+            "concatenation axis must be same, but along dimension 0, the "
+            "tensor at index 0 has size 2 and the tensor at index 1 has size 1."
+    ):
+        self.append(values, axis=-1)
+
+    # dtype and device must be same for all the input tensors.
+    self = o3c.Tensor([[0, 1], [2, 3]], dtype=o3c.Dtype.Float32, device=device)
+    values = o3c.Tensor([[4, 5]], dtype=o3c.Dtype.Float64, device=device)
+    with pytest.raises(
+            RuntimeError,
+            match=r"Tensor has dtype Float64, but is expected to have Float32"):
+        self.append(values)
+
+
 def test_tensor_from_to_numpy():
     # a->b copy; b, c share memory
     a = np.ones((2, 2))
@@ -1239,3 +1403,40 @@ def test_save_load(device):
         o3_t_load = o3c.Tensor.load(file_name)
         assert o3_t_load.is_contiguous()
         np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_iterator(device):
+    # 0-d.
+    o3_t = o3c.Tensor.ones((), dtype=o3c.float32, device=device)
+    with pytest.raises(Exception, match=r'Cannot iterate a scalar'):
+        for o3_t_slice in o3_t:
+            pass
+
+    # 1-d.
+    o3_t = o3c.Tensor([0, 1, 2], device=device)
+    np_t = np.array([0, 1, 2])
+    for o3_t_slice, np_t_slice in zip(o3_t, np_t):
+        np.testing.assert_equal(o3_t_slice.cpu().numpy(), np_t_slice)
+
+    # TODO: 1-d with assignment (assigning to a 0-d slice) is not possible with
+    # our current slice API. This issue is not related to the iterator.
+    # Operator [:] requires 1 or more dimensions. We need to implement the [...]
+    # operator. See: https://stackoverflow.com/a/49581266/1255535.
+
+    # 2-d.
+    o3_t = o3c.Tensor([[0, 1, 2], [3, 4, 5]], device=device)
+    np_t = np.array([[0, 1, 2], [3, 4, 5]])
+    for o3_t_slice, np_t_slice in zip(o3_t, np_t):
+        np.testing.assert_equal(o3_t_slice.cpu().numpy(), np_t_slice)
+
+    # 2-d with assignment.
+    o3_t = o3c.Tensor([[0, 1, 2], [3, 4, 5]], device=device)
+    new_o3_t_slices = [
+        o3c.Tensor([0, 10, 20], device=device),
+        o3c.Tensor([30, 40, 50], device=device)
+    ]
+    for o3_t_slice, new_o3_t_slice in zip(o3_t, new_o3_t_slices):
+        o3_t_slice[:] = new_o3_t_slice
+    np.testing.assert_equal(o3_t.cpu().numpy(),
+                            np.array([[0, 10, 20], [30, 40, 50]]))

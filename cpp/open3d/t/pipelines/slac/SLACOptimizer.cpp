@@ -161,13 +161,12 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     core::AssertTensorDevice(tpcd_j.GetPointPositions(), device);
     core::AssertTensorDtype(tpcd_j.GetPointPositions(), dtype);
 
-    // TODO (@rishabh): AssertTransformation / IsTransformation.
     core::AssertTensorShape(T_i, {4, 4});
     core::AssertTensorShape(T_j, {4, 4});
     core::AssertTensorShape(T_ij, {4, 4});
 
     PointCloud tpcd_i_transformed_Tij = tpcd_i.Clone();
-    tpcd_i_transformed_Tij.Transform(T_ij.To(device, dtype));
+    tpcd_i_transformed_Tij.Transform(T_ij);
 
     // Obtain correspondence via nns, between tpcd_i_transformed_Tij and tpcd_j.
     core::nns::NearestNeighborSearch tpcd_j_nns(tpcd_j.GetPointPositions());
@@ -181,6 +180,8 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
             tpcd_j_nns.HybridSearch(tpcd_i_transformed_Tij.GetPointPositions(),
                                     distance_threshold, 1);
 
+    target_indices = target_indices.To(core::Int64);
+
     // Get the correspondence_set Transformed of shape {C, 2}.
     core::Tensor correspondence_set =
             ConvertCorrespondencesTargetIndexedToCx2Form(target_indices);
@@ -193,8 +194,8 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
 
     // Inlier Ratio is calculated on pointclouds transformed by their pose in
     // model frame, to reject any suspicious pair.
-    tpcd_i_indexed.Transform(T_i.To(device, dtype));
-    tpcd_j_indexed.Transform(T_j.To(device, dtype));
+    tpcd_i_indexed.Transform(T_i);
+    tpcd_j_indexed.Transform(T_j);
 
     core::Tensor residual = (tpcd_i_indexed.GetPointPositions() -
                              tpcd_j_indexed.GetPointPositions());

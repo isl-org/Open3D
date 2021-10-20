@@ -110,6 +110,8 @@ std::string TriangleMesh::ToString() const {
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
+    core::AssertTensorShape(transformation, {4, 4});
+
     kernel::transform::TransformPoints(transformation, GetVertexPositions());
     if (HasVertexNormals()) {
         kernel::transform::TransformNormals(transformation, GetVertexNormals());
@@ -125,9 +127,10 @@ TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
 TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
                                       bool relative) {
     core::AssertTensorShape(translation, {3});
-    core::AssertTensorDevice(translation, device_);
 
-    core::Tensor transform = translation;
+    core::Tensor transform =
+            translation.To(GetDevice(), GetVertexPositions().GetDtype());
+
     if (!relative) {
         transform -= GetCenter();
     }
@@ -139,13 +142,18 @@ TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
     core::AssertTensorShape(center, {3});
     core::AssertTensorDevice(center, device_);
 
-    core::Tensor points = GetVertexPositions();
-    points.Sub_(center).Mul_(scale).Add_(center);
+    const core::Tensor center_d =
+            center.To(GetDevice(), GetVertexPositions().GetDtype());
+
+    GetVertexPositions().Sub_(center_d).Mul_(scale).Add_(center_d);
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
                                    const core::Tensor &center) {
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(center, {3});
+
     kernel::transform::RotatePoints(R, GetVertexPositions(), center);
     if (HasVertexNormals()) {
         kernel::transform::RotateNormals(R, GetVertexNormals());
