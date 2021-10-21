@@ -16,5 +16,4 @@ target_sources(pybind PRIVATE
 
 target_sources(pybind PRIVATE
     nns/nearest_neighbor_search.cpp
-    nns/nns_knn.cpp
 )

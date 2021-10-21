@@ -86,20 +86,14 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points,
 
 std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
                                               int knn) const {
-    return SearchKnn(query_points, knn, false);
-}
-std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
-                                              int knn,
-                                              bool test) const {
     int64_t num_query_points = query_points.GetShape(0);
     Tensor queries_row_splits = Tensor::Init<int64_t>({0, num_query_points});
-    return SearchKnn(query_points, queries_row_splits, knn, test);
+    return SearchKnn(query_points, queries_row_splits, knn);
 }
 
 std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
                                               const Tensor& queries_row_splits,
-                                              int knn,
-                                              bool test) const {
+                                              int knn) const {
     Dtype dtype = GetDtype();
     Device device = GetDevice();
 
@@ -132,13 +126,8 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        if (test) {
-            CALL(float, KnnSearchCUDANew)
-            CALL(double, KnnSearchCUDANew)
-        } else {
-            CALL(float, KnnSearchCUDA)
-            CALL(double, KnnSearchCUDA)
-        }
+        CALL(float, KnnSearchCUDA)
+        CALL(double, KnnSearchCUDA)
 #else
         utility::LogError(
                 "KnnIndex::SearchKnn BUILD_CUDA_MODULE is OFF. "
