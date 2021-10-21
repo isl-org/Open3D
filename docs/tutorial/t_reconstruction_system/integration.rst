@@ -36,7 +36,6 @@ Currently, to use our optimized function, we assume the below combinations of da
    :language: cpp
    :lineno-start: 229
    :lines: 230-236
-   :linenos:
 
 and CUDA
 
@@ -56,8 +55,6 @@ You may use the provided APIs to extract surface points.
    :language: python
    :lineno-start: 135
    :lines: 27,136-140
-   :linenos:
-   :dedent: 4
 
 Note ``extract_triangle_mesh`` applies marching cubes and generate mesh. ``extract_point_cloud`` uses the similar algorithm, but skips the triangle face generation step.
 
