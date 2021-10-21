@@ -10,8 +10,8 @@ The frustum **block** selection remains the same, but then we manually activate 
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate_custom.py
    :language: python
-   :lineno-start: 74
-   :lines: 74-82
+   :lineno-start: 79
+   :lines: 27,79-87
    :linenos:
    :dedent:
 
@@ -21,8 +21,8 @@ We can then unroll **voxel** indices in these **blocks** into a flattened array,
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate_custom.py
    :language: python
-   :lineno-start: 87
-   :lines: 87-88
+   :lineno-start: 92
+   :lines: 27,92-93
    :linenos:
    :dedent:
 
@@ -34,8 +34,8 @@ We first transform the voxel coordinates to the frame's coordinate system, proje
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate_custom.py
    :language: python
-   :lineno-start: 95
-   :lines: 95-113
+   :lineno-start: 100
+   :lines: 27,100-118
    :linenos:
    :dedent:
 
@@ -49,8 +49,8 @@ With the data association, we are able to conduct integration. In this example, 
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate_custom.py
    :language: python
-   :lineno-start: 114
-   :lines: 114-123,128-148
+   :lineno-start: 119
+   :lines: 27,119-128,133-151
    :linenos:
    :dedent:
 

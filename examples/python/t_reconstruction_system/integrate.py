@@ -24,6 +24,11 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+# examples/python/t_reconstruction_system/integrate.py
+
+# P.S. This example is used in documentation, so, please ensure the changes are
+# synchronized.
+
 import os
 import numpy as np
 import open3d as o3d
@@ -51,13 +56,22 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
 
         if config.integrate_color:
             vbg = o3d.t.geometry.VoxelBlockGrid(
-                ('tsdf', 'weight', 'color'),
-                (o3c.float32, o3c.float32, o3c.float32), ((1), (1), (3)),
-                3.0 / 512, 8, 100000, o3d.core.Device('CUDA:0'))
+                attr_names=('tsdf', 'weight', 'color'),
+                attr_dtypes=(o3c.float32, o3c.float32, o3c.float32),
+                attr_channels=((1), (1), (3)),
+                voxel_size=3.0 / 512,
+                block_resolution=8,
+                block_count=100000,
+                device=o3d.core.Device('CUDA:0'))
         else:
             vbg = o3d.t.geometry.VoxelBlockGrid(
-                ('tsdf', 'weight'), (o3c.float32, o3c.float32), ((1), (1)),
-                3.0 / 512, 8, 100000, o3d.core.Device('CUDA:0'))
+                attr_names=('tsdf', 'weight'),
+                attr_dtypes=(o3c.float32, o3c.float32),
+                attr_channels=((1), (1)),
+                voxel_size=3.0 / 512,
+                block_resolution=8,
+                block_count=100000,
+                device=o3d.core.Device('CUDA:0'))
 
         start = time.time()
         for i in range(n_files):
