@@ -52,29 +52,33 @@ endif()
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
 target_sources(Open3D PRIVATE
     Open3DConfig.cpp
-    $<TARGET_OBJECTS:camera>
-    $<TARGET_OBJECTS:core>
-    $<TARGET_OBJECTS:geometry>
-    $<TARGET_OBJECTS:tgeometry>
-    $<TARGET_OBJECTS:tgeometry_kernel>
-    $<TARGET_OBJECTS:io>
-    $<TARGET_OBJECTS:tio>
-    $<TARGET_OBJECTS:ml_contrib>
-    $<TARGET_OBJECTS:pipelines>
-    $<TARGET_OBJECTS:tpipelines>
-    $<TARGET_OBJECTS:utility>
-    $<TARGET_OBJECTS:visualization>
+)
+
+open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
+    camera
+    core
+    geometry
+    tgeometry
+    tgeometry_kernel
+    io
+    tio
+    ml_contrib
+    pipelines
+    tpipelines
+    tpipelines_kernel
+    utility
+    visualization
 )
 
 if (BUILD_GUI)
-    target_sources(Open3D PRIVATE
-        $<TARGET_OBJECTS:GUI>
+    open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
+        GUI
     )
 endif()
 
 if (BUILD_WEBRTC)
-    target_sources(Open3D PRIVATE
-        $<TARGET_OBJECTS:webrtc_server>
+    open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
+        webrtc_server
     )
 endif()
 

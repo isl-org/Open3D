@@ -126,12 +126,18 @@ void pybind_registration_classes(py::module &m) {
             m, "RANSACConvergenceCriteria",
             "Class that defines the convergence criteria of "
             "RANSAC. RANSAC algorithm stops if the iteration "
-            "number hits ``max_iteration``, or the validation "
-            "has been run for ``max_validation`` times. Note "
+            "number hits ``max_iteration``, or the fitness "
+            "measured during validation suggests that the "
+            "algorithm can be terminated early with some "
+            "``confidence``. Early termination takes place "
+            "when the number of iterations reaches ``k = "
+            "log(1 - confidence)/log(1 - fitness^{ransac_n})``, "
+            "where ``ransac_n`` is the number of points used "
+            "during a ransac iteration. Note "
             "that the validation is the most computational "
             "expensive operator in an iteration. Most "
             "iterations do not do full validation. It is "
-            "crucial to control ``max_validation`` so that the "
+            "crucial to control ``confidence`` so that the "
             "computation time is acceptable.");
     py::detail::bind_copy_functions<RANSACConvergenceCriteria>(ransac_criteria);
     ransac_criteria
@@ -145,8 +151,8 @@ void pybind_registration_classes(py::module &m) {
                            "Maximum iteration before iteration stops.")
             .def_readwrite(
                     "confidence", &RANSACConvergenceCriteria::confidence_,
-                    "Maximum times the validation has been run before the "
-                    "iteration stops.")
+                    "Desired probability of success. Used for estimating early "
+                    "termination.")
             .def("__repr__", [](const RANSACConvergenceCriteria &c) {
                 return fmt::format(
                         "RANSACConvergenceCriteria "
@@ -569,12 +575,9 @@ static const std::unordered_map<std::string, std::string>
                 {"checkers",
                  "Vector of Checker class to check if two point "
                  "clouds can be aligned. One of "
-                 "(``"
-                 "CorrespondenceCheckerBasedOnEdgeLength``, "
-                 "``"
-                 "CorrespondenceCheckerBasedOnDistance``, "
-                 "``"
-                 "CorrespondenceCheckerBasedOnNormal``)"},
+                 "(``CorrespondenceCheckerBasedOnEdgeLength``, "
+                 "``CorrespondenceCheckerBasedOnDistance``, "
+                 "``CorrespondenceCheckerBasedOnNormal``)"},
                 {"confidence",
                  "Desired probability of success for RANSAC. Used for "
                  "estimating early termination by k = log(1 - "
@@ -585,14 +588,10 @@ static const std::unordered_map<std::string, std::string>
                 {"criteria", "Convergence criteria"},
                 {"estimation_method",
                  "Estimation method. One of "
-                 "(``"
-                 "TransformationEstimationPointToPoint``, "
-                 "``"
-                 "TransformationEstimationPointToPlane``, "
-                 "``"
-                 "TransformationEstimationForGeneralizedICP``, "
-                 "``"
-                 "TransformationEstimationForColoredICP``)"},
+                 "(``TransformationEstimationPointToPoint``, "
+                 "``TransformationEstimationPointToPlane``, "
+                 "``TransformationEstimationForGeneralizedICP``, "
+                 "``TransformationEstimationForColoredICP``)"},
                 {"init", "Initial transformation estimation"},
                 {"lambda_geometric", "lambda_geometric value"},
                 {"epsilon", "epsilon value"},

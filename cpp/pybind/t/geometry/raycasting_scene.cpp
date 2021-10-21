@@ -33,7 +33,7 @@ namespace t {
 namespace geometry {
 
 void pybind_raycasting_scene(py::module& m) {
-    py::class_<RaycastingScene> raycasting_scene(m, "RaycastingScene", R"doc( 
+    py::class_<RaycastingScene> raycasting_scene(m, "RaycastingScene", R"doc(
 A scene class with basic ray casting and closest point queries.
 
 The RaycastingScene allows to compute ray intersections with triangle meshes
@@ -48,7 +48,7 @@ The following shows how to create a scene and compute ray intersections::
     import open3d as o3d
     import matplotlib.pyplot as plt
 
-    cube = o3d.t.geometry.TriangleMesh.from_legacy_triangle_mesh(
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
                                         o3d.geometry.TriangleMesh.create_box())
 
     # Create scene and add the cube mesh
@@ -57,11 +57,11 @@ The following shows how to create a scene and compute ray intersections::
 
     # Rays are 6D vectors with origin and ray direction.
     # Here we use a helper function to create rays for a pinhole camera.
-    rays = scene.create_rays_pinhole(fov_deg=60, 
-                                     center=[0.5,0.5,0.5], 
-                                     eye=[-1,-1,-1], 
-                                     up=[0,0,1], 
-                                     width_px=320, 
+    rays = scene.create_rays_pinhole(fov_deg=60,
+                                     center=[0.5,0.5,0.5],
+                                     eye=[-1,-1,-1],
+                                     up=[0,0,1],
+                                     width_px=320,
                                      height_px=240)
 
     # Compute the ray intersections.
@@ -79,7 +79,7 @@ The following shows how to create a scene and compute ray intersections::
             "add_triangles",
             py::overload_cast<const core::Tensor&, const core::Tensor&>(
                     &RaycastingScene::AddTriangles),
-            "vertices"_a, "triangles"_a, R"doc(
+            "vertex_positions"_a, "triangle_indices"_a, R"doc(
 Add a triangle mesh to the scene.
 
 Args:
@@ -106,6 +106,7 @@ Returns:
 )doc");
 
     raycasting_scene.def("cast_rays", &RaycastingScene::CastRays, "rays"_a,
+                         "nthreads"_a = 0,
                          R"doc(
 Computes the first intersection of the rays with the scene.
 
@@ -119,6 +120,8 @@ Args:
         not necessary to normalize the direction but the returned hit distance
         uses the length of the direction vector as unit.
 
+    nthreads (int): The number of threads to use. Set to 0 for automatic.
+
 Returns:
     A dictionary which contains the following keys
 
@@ -129,7 +132,7 @@ Returns:
     geometry_ids
         A tensor with the geometry IDs. The shape is {..}. If there
         is no intersection the ID is *INVALID_ID*.
-    
+
     primitive_ids
         A tensor with the primitive IDs, which corresponds to the triangle
         index. The shape is {..}.  If there is no intersection the ID is
@@ -143,18 +146,48 @@ Returns:
         A tensor with the normals of the hit triangles. The shape is {.., 3}.
 )doc");
 
-    raycasting_scene.def("count_intersections",
-                         &RaycastingScene::CountIntersections, "rays"_a, R"doc(
-Computes the first intersection of the rays with the scene.
+    raycasting_scene.def("test_occlusions", &RaycastingScene::TestOcclusions,
+                         "rays"_a, "tnear"_a = 0.f,
+                         "tfar"_a = std::numeric_limits<float>::infinity(),
+                         "nthreads"_a = 0,
+                         R"doc(
+Checks if the rays have any intersection with the scene.
 
 Args:
     rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
-        Float32 describing the rays. 
-        {..} can be any number of dimensions, e.g., to organize rays for 
+        Float32 describing the rays.
+        {..} can be any number of dimensions, e.g., to organize rays for
         creating an image the shape can be {height, width, 6}.
         The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
         with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
         necessary to normalize the direction.
+
+    tnear (float): The tnear offset for the rays. The default is 0.
+
+    tfar (float): The tfar value for the ray. The default is infinity.
+
+    nthreads (int): The number of threads to use. Set to 0 for automatic.
+
+Returns:
+    A boolean tensor which indicates if the ray is occluded by the scene (true)
+    or not (false).
+)doc");
+
+    raycasting_scene.def("count_intersections",
+                         &RaycastingScene::CountIntersections, "rays"_a,
+                         "nthreads"_a = 0, R"doc(
+Computes the number of intersection of the rays with the scene.
+
+Args:
+    rays (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 6}, and Dtype
+        Float32 describing the rays.
+        {..} can be any number of dimensions, e.g., to organize rays for
+        creating an image the shape can be {height, width, 6}.
+        The last dimension must be 6 and has the format [ox, oy, oz, dx, dy, dz]
+        with [ox,oy,oz] as the origin and [dx,dy,dz] as the direction. It is not
+        necessary to normalize the direction.
+
+    nthreads (int): The number of threads to use. Set to 0 for automatic.
 
 Returns:
     A tensor with the number of intersections. The shape is {..}.
@@ -162,15 +195,17 @@ Returns:
 
     raycasting_scene.def("compute_closest_points",
                          &RaycastingScene::ComputeClosestPoints,
-                         "query_points"_a, R"doc(
+                         "query_points"_a, "nthreads"_a = 0, R"doc(
 Computes the closest points on the surfaces of the scene.
 
 Args:
-    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3}, 
-        and Dtype Float32 describing the query points. 
-        {..} can be any number of dimensions, e.g., to organize the query_point 
+    query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
+        and Dtype Float32 describing the query points.
+        {..} can be any number of dimensions, e.g., to organize the query_point
         to create a 3D grid the shape can be {depth, height, width, 3}.
         The last dimension must be 3 and has the format [x, y, z].
+
+    nthreads (int): The number of threads to use. Set to 0 for automatic.
 
 Returns:
     The returned dictionary contains
@@ -188,16 +223,18 @@ Returns:
 )doc");
 
     raycasting_scene.def("compute_distance", &RaycastingScene::ComputeDistance,
-                         "query_points"_a, R"doc(
+                         "query_points"_a, "nthreads"_a = 0, R"doc(
 Computes the distance to the surface of the scene.
 
 Args:
     query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
-        and Dtype Float32 describing the query points. 
+        and Dtype Float32 describing the query points.
         {..} can be any number of dimensions, e.g., to organize the
         query points to create a 3D grid the shape can be
         {depth, height, width, 3}.
         The last dimension must be 3 and has the format [x, y, z].
+
+    nthreads (int): The number of threads to use. Set to 0 for automatic.
 
 Returns:
     A tensor with the distances to the surface. The shape is {..}.
@@ -205,7 +242,7 @@ Returns:
 
     raycasting_scene.def("compute_signed_distance",
                          &RaycastingScene::ComputeSignedDistance,
-                         "query_points"_a, R"doc(
+                         "query_points"_a, "nthreads"_a = 0, R"doc(
 Computes the signed distance to the surface of the scene.
 
 This function computes the signed distance to the meshes in the scene.
@@ -216,19 +253,22 @@ the intersections of a rays starting at the query points.
 
 Args:
     query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
-        and Dtype Float32 describing the query_points. 
-        {..} can be any number of dimensions, e.g., to organize the 
+        and Dtype Float32 describing the query_points.
+        {..} can be any number of dimensions, e.g., to organize the
         query points to create a 3D grid the shape can be
         {depth, height, width, 3}.
         The last dimension must be 3 and has the format [x, y, z].
 
+    nthreads (int): The number of threads to use. Set to 0 for automatic.
+
 Returns:
-    A tensor with the signed distances to the surface. The shape is {..}. 
+    A tensor with the signed distances to the surface. The shape is {..}.
     Negative distances mean a point is inside a closed surface.
 )doc");
 
     raycasting_scene.def("compute_occupancy",
                          &RaycastingScene::ComputeOccupancy, "query_points"_a,
+                         "nthreads"_a = 0,
                          R"doc(
 Computes the occupancy at the query point positions.
 
@@ -241,10 +281,12 @@ intersections of a rays starting at the query points.
 Args:
     query_points (open3d.core.Tensor): A tensor with >=2 dims, shape {.., 3},
         and Dtype Float32 describing the query points.
-        {..} can be any number of dimensions, e.g., to organize the 
+        {..} can be any number of dimensions, e.g., to organize the
         query points to create a 3D grid the shape can be
         {depth, height, width, 3}.
         The last dimension must be 3 and has the format [x, y, z].
+
+    nthreads (int): The number of threads to use. Set to 0 for automatic.
 
 Returns:
     A tensor with the occupancy values. The shape is {..}. Values are either 0

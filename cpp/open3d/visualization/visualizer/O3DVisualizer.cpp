@@ -37,6 +37,8 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/io/rpc/ZMQReceiver.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/FileSystem.h"
@@ -62,8 +64,8 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
+#include "open3d/visualization/visualizer/MessageProcessor.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
-#include "open3d/visualization/visualizer/Receiver.h"
 
 #define GROUPS_USE_TREE 1
 
@@ -305,7 +307,8 @@ struct O3DVisualizer::Impl {
     bool selections_need_update_ = true;
     std::function<void(double)> on_animation_;
     std::function<bool()> on_animation_tick_;
-    std::shared_ptr<Receiver> receiver_;
+    std::shared_ptr<io::rpc::ZMQReceiver> receiver_;
+    std::shared_ptr<MessageProcessor> message_processor_;
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
@@ -820,7 +823,7 @@ struct O3DVisualizer::Impl {
                      std::shared_ptr<geometry::Geometry3D> geom,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
                      std::shared_ptr<rendering::TriangleMeshModel> model,
-                     const rendering::Material *material,
+                     const rendering::MaterialRecord *material,
                      const std::string &group,
                      double time,
                      bool is_visible) {
@@ -830,15 +833,13 @@ struct O3DVisualizer::Impl {
         }
         bool is_default_color = false;
         bool no_shadows = false;
-        Material mat;
-        t::geometry::PointCloud *valid_tpcd = nullptr;
+        MaterialRecord mat;
 
         if (material) {
             mat = *material;
             is_default_color = false;
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
-            valid_tpcd = t_cloud.get();
         } else if (model) {
             // Adding a triangle mesh model. Shader needs to be set to
             // defaultLit for O3D shader handling logic to work.
@@ -863,6 +864,8 @@ struct O3DVisualizer::Impl {
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
             auto t_mesh =
                     std::dynamic_pointer_cast<t::geometry::TriangleMesh>(tgeom);
+            auto t_lines =
+                    std::dynamic_pointer_cast<t::geometry::LineSet>(tgeom);
 
             if (cloud) {
                 has_colors = !cloud->colors_.empty();
@@ -870,9 +873,11 @@ struct O3DVisualizer::Impl {
             } else if (t_cloud) {
                 has_colors = t_cloud->HasPointColors();
                 has_normals = t_cloud->HasPointNormals();
-                valid_tpcd = t_cloud.get();
             } else if (lines) {
                 has_colors = !lines->colors_.empty();
+                no_shadows = true;
+            } else if (t_lines) {
+                has_colors = t_lines->HasLineColors();
                 no_shadows = true;
             } else if (obb) {
                 has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
@@ -884,7 +889,7 @@ struct O3DVisualizer::Impl {
                 has_normals = !mesh->vertex_normals_.empty();
                 has_colors = true;  // always want base_color as white
             } else if (t_mesh) {
-                has_normals = !t_mesh->HasVertexNormals();
+                has_normals = t_mesh->HasVertexNormals();
                 has_colors = true;  // always want base_color as white
             } else if (voxel_grid) {
                 has_normals = false;
@@ -911,6 +916,15 @@ struct O3DVisualizer::Impl {
                 is_default_color = false;
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
+
+            // If T Geometry has a valid material convert it to MaterialRecord
+            if (t_mesh && t_mesh->HasMaterial()) {
+                t_mesh->GetMaterial().ToMaterialRecord(mat);
+            } else if (t_cloud && t_cloud->HasMaterial()) {
+                t_cloud->GetMaterial().ToMaterialRecord(mat);
+            } else if (t_lines && t_lines->HasMaterial()) {
+                t_lines->GetMaterial().ToMaterialRecord(mat);
+            }
 
             // Finally assign material properties if geometry is a triangle mesh
             auto tmesh =
@@ -976,15 +990,15 @@ struct O3DVisualizer::Impl {
         // Do we have a geometry, tgeometry or model?
         if (geom) {
             scene->AddGeometry(name, geom.get(), mat);
-        } else if (tgeom && valid_tpcd) {
-            scene->AddGeometry(name, valid_tpcd, mat);
+        } else if (tgeom) {
+            scene->AddGeometry(name, tgeom.get(), mat);
         } else if (model) {
             scene->AddModel(name, *model);
         } else {
             utility::LogWarning(
                     "No valid geometry specified to O3DVisualizer. Only "
-                    "supported "
-                    "geometries are Geometry3D and TGeometry PointClouds.");
+                    "supported geometries are Geometry3D and TGeometry "
+                    "PointClouds and TriangleMeshes.");
         }
 
         if (no_shadows) {
@@ -1232,7 +1246,7 @@ struct O3DVisualizer::Impl {
     }
 
     void OverrideMaterial(const std::string &name,
-                          const Material &original_material,
+                          const MaterialRecord &original_material,
                           O3DVisualizer::Shader shader) {
         bool is_lines = (original_material.shader == "unlitLine");
         auto scene = scene_->GetScene();
@@ -1242,7 +1256,7 @@ struct O3DVisualizer::Impl {
             (shader == Shader::UNLIT && is_lines)) {
             scene->ModifyGeometryMaterial(name, original_material);
         } else {
-            Material m = original_material;
+            MaterialRecord m = original_material;
             m.shader = GetShaderString(shader);
             scene->ModifyGeometryMaterial(name, m);
         }
@@ -1809,6 +1823,19 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     : Window(title, width, height), impl_(new O3DVisualizer::Impl()) {
     impl_->Construct(this);
 
+    // Create a message processor for incoming messages.
+    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
+                              const std::string &path, int time,
+                              const std::string &layer) {
+        impl_->AddGeometry(path, geom, nullptr, nullptr, nullptr, layer, time,
+                           true);
+        if (impl_->objects_.size() == 1) {
+            impl_->ResetCameraToDefault();
+        }
+    };
+    impl_->message_processor_ =
+            std::make_shared<MessageProcessor>(this, on_geometry);
+
     // Create the app menu. We will take over the existing menubar (if any)
     // since a) we need to cache a pointer, and b) we should be the only
     // window, since the whole point of this class is to have an easy way to
@@ -1861,18 +1888,9 @@ Open3DScene *O3DVisualizer::GetScene() const {
 }
 
 void O3DVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
-                              const std::string &path, int time,
-                              const std::string &layer) {
-        impl_->AddGeometry(path, geom, nullptr, nullptr, nullptr, layer, time,
-                           true);
-        if (impl_->objects_.size() == 1) {
-            impl_->ResetCameraToDefault();
-        }
-    };
+    impl_->receiver_ = std::make_shared<io::rpc::ZMQReceiver>(address, timeout);
+    impl_->receiver_->SetMessageProcessor(impl_->message_processor_);
 
-    impl_->receiver_ =
-            std::make_shared<Receiver>(address, timeout, this, on_geometry);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();
@@ -1925,7 +1943,7 @@ void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<geometry::Geometry3D> geom,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1936,7 +1954,7 @@ void O3DVisualizer::AddGeometry(
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<t::geometry::Geometry> tgeom,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1947,7 +1965,7 @@ void O3DVisualizer::AddGeometry(
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<rendering::TriangleMeshModel> model,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {

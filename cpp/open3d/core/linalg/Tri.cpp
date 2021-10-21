@@ -56,12 +56,12 @@ void Triu(const Tensor& A, Tensor& output, const int diagonal) {
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        TriuCUDA(A, output, diagonal);
+        TriuCUDA(A.Contiguous(), output, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        TriuCPU(A, output, diagonal);
+        TriuCPU(A.Contiguous(), output, diagonal);
     }
 }
 
@@ -71,12 +71,12 @@ void Tril(const Tensor& A, Tensor& output, const int diagonal) {
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        TrilCUDA(A, output, diagonal);
+        TrilCUDA(A.Contiguous(), output, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        TrilCPU(A, output, diagonal);
+        TrilCPU(A.Contiguous(), output, diagonal);
     }
 }
 
@@ -87,12 +87,12 @@ void Triul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
     lower = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        TriulCUDA(A, upper, lower, diagonal);
+        TriulCUDA(A.Contiguous(), upper, lower, diagonal);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
-        TriulCPU(A, upper, lower, diagonal);
+        TriulCPU(A.Contiguous(), upper, lower, diagonal);
     }
 }
 

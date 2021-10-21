@@ -29,7 +29,7 @@
 #include <unordered_map>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/Hashmap.h"
+#include "open3d/core/hashmap/HashMap.h"
 
 namespace open3d {
 namespace t {
@@ -37,7 +37,7 @@ namespace geometry {
 namespace kernel {
 namespace tsdf {
 
-void Touch(std::shared_ptr<core::Hashmap>& hashmap,
+void Touch(std::shared_ptr<core::HashMap>& hashmap,
            const core::Tensor& points,
            core::Tensor& voxel_block_coords,
            int64_t voxel_grid_resolution,
@@ -69,7 +69,7 @@ void EstimateRange(const core::Tensor& block_keys,
                    float depth_min,
                    float depth_max);
 
-void RayCast(std::shared_ptr<core::DeviceHashmap>& hashmap,
+void RayCast(std::shared_ptr<core::DeviceHashBackend>& hashmap,
              const core::Tensor& block_values,
              const core::Tensor& range_map,
              core::Tensor& vertex_map,
@@ -118,7 +118,7 @@ void ExtractSurfaceMesh(
         float weight_threshold,
         int& vertex_count);
 
-void TouchCPU(std::shared_ptr<core::Hashmap>& hashmap,
+void TouchCPU(std::shared_ptr<core::HashMap>& hashmap,
               const core::Tensor& points,
               core::Tensor& voxel_block_coords,
               int64_t voxel_grid_resolution,
@@ -150,7 +150,7 @@ void EstimateRangeCPU(const core::Tensor& block_keys,
                       float depth_min,
                       float depth_max);
 
-void RayCastCPU(std::shared_ptr<core::DeviceHashmap>& hashmap,
+void RayCastCPU(std::shared_ptr<core::DeviceHashBackend>& hashmap,
                 const core::Tensor& block_values,
                 const core::Tensor& range_map,
                 core::Tensor& vertex_map,
@@ -200,7 +200,7 @@ void ExtractSurfaceMeshCPU(
         int& vertex_count);
 
 #ifdef BUILD_CUDA_MODULE
-void TouchCUDA(std::shared_ptr<core::Hashmap>& hashmap,
+void TouchCUDA(std::shared_ptr<core::HashMap>& hashmap,
                const core::Tensor& points,
                core::Tensor& voxel_block_coords,
                int64_t voxel_grid_resolution,
@@ -232,7 +232,7 @@ void EstimateRangeCUDA(const core::Tensor& block_keys,
                        float depth_min,
                        float depth_max);
 
-void RayCastCUDA(std::shared_ptr<core::DeviceHashmap>& hashmap,
+void RayCastCUDA(std::shared_ptr<core::DeviceHashBackend>& hashmap,
                  const core::Tensor& block_values,
                  const core::Tensor& range_map,
                  core::Tensor& vertex_map,

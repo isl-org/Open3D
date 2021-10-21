@@ -72,6 +72,24 @@ void TensorMap::AssertSizeSynchronized() const {
     }
 }
 
+bool TensorMap::IsContiguous() const {
+    for (const auto& kv : *this) {
+        if (!kv.second.IsContiguous()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+TensorMap TensorMap::Contiguous() const {
+    TensorMap tensor_map_contiguous(GetPrimaryKey());
+    for (const auto& kv : *this) {
+        // If the tensor is contiguous, the underlying memory is used.
+        tensor_map_contiguous[kv.first] = kv.second.Contiguous();
+    }
+    return tensor_map_contiguous;
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

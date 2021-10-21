@@ -78,24 +78,19 @@ static void OutputToPLU(const Tensor& output,
 }
 
 void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
-    Device device = A.GetDevice();
-    // Check dtypes.
-    Dtype dtype = A.GetDtype();
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                "Only tensors with Float32 or Float64 are supported, but "
-                "received {}.",
-                dtype.ToString());
-    }
+    AssertTensorDtypes(A, {Float32, Float64});
+
+    const Device device = A.GetDevice();
+    const Dtype dtype = A.GetDtype();
 
     // Check dimensions.
-    SizeVector A_shape = A.GetShape();
+    const SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
         utility::LogError("Tensor must be 2D, but got {}D.", A_shape.size());
     }
 
-    int64_t rows = A_shape[0];
-    int64_t cols = A_shape[1];
+    const int64_t rows = A_shape[0];
+    const int64_t cols = A_shape[1];
     if (rows == 0 || cols == 0) {
         utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
@@ -144,6 +139,8 @@ void LU(const Tensor& A,
         Tensor& lower,
         Tensor& upper,
         const bool permute_l) {
+    AssertTensorDtypes(A, {Float32, Float64});
+
     // Get output matrix and ipiv.
     core::Tensor ipiv, output;
     LUIpiv(A, ipiv, output);

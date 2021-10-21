@@ -31,6 +31,7 @@ _vimrc_local.vim
 .vs/
 .vscode/
 .clangd/
+.ccls-cache/
 
 # Build artifacts
 **/package-lock.json
@@ -83,6 +84,7 @@ docs/test_data
 docs/tutorial/**/*.ipynb
 docs/tutorial/**/*.py
 docs/tutorial/**/*.jpg
+docs/tutorial/**/*.gif
 docs/tutorial/**/*.ply
 docs/tutorial/**/*.pcd
 docs/tutorial/**/*.json

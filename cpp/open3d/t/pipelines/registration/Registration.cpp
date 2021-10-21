@@ -27,8 +27,10 @@
 #include "open3d/t/pipelines/registration/Registration.h"
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/pipelines/kernel/Registration.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -42,7 +44,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
         open3d::core::nns::NearestNeighborSearch &target_nns,
         double max_correspondence_distance,
         const core::Tensor &transformation) {
-    transformation.AssertShape({4, 4});
+    core::AssertTensorShape(transformation, {4, 4});
 
     core::Tensor transformation_host =
             transformation.To(core::Device("CPU:0"), core::Float64);
@@ -51,7 +53,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
 
     core::Tensor distances, counts;
     std::tie(result.correspondences_, distances, counts) =
-            target_nns.HybridSearch(source.GetPoints(),
+            target_nns.HybridSearch(source.GetPointPositions(),
                                     max_correspondence_distance, 1);
     result.correspondences_ = result.correspondences_.To(core::Int64);
     double num_correspondences =
@@ -66,8 +68,9 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     // Reduction sum of "distances" for error.
     double squared_error = distances.Sum({0}).To(core::Float64).Item<double>();
 
-    result.fitness_ = num_correspondences /
-                      static_cast<double>(source.GetPoints().GetLength());
+    result.fitness_ =
+            num_correspondences /
+            static_cast<double>(source.GetPointPositions().GetLength());
     result.inlier_rmse_ = std::sqrt(squared_error / num_correspondences);
 
     return result;
@@ -77,13 +80,20 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                                         const geometry::PointCloud &target,
                                         double max_correspondence_distance,
                                         const core::Tensor &transformation) {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = source.GetPoints().GetDtype();
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
     geometry::PointCloud source_transformed = source.Clone();
-    source_transformed.Transform(transformation.To(device, dtype));
+    source_transformed.Transform(transformation);
 
-    open3d::core::nns::NearestNeighborSearch target_nns(target.GetPoints());
+    open3d::core::nns::NearestNeighborSearch target_nns(
+            target.GetPointPositions());
 
     bool check = target_nns.HybridIndex(max_correspondence_distance);
     if (!check) {
@@ -96,15 +106,15 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
             transformation);
 }
 
-RegistrationResult RegistrationICP(const geometry::PointCloud &source,
-                                   const geometry::PointCloud &target,
-                                   double max_correspondence_distance,
-                                   const core::Tensor &init_source_to_target,
-                                   const TransformationEstimation &estimation,
-                                   const ICPConvergenceCriteria &criteria) {
-    return RegistrationMultiScaleICP(source, target, {-1}, {criteria},
-                                     {max_correspondence_distance},
-                                     init_source_to_target, estimation);
+RegistrationResult ICP(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       double max_correspondence_distance,
+                       const core::Tensor &init_source_to_target,
+                       const TransformationEstimation &estimation,
+                       const ICPConvergenceCriteria &criteria) {
+    return MultiScaleICP(source, target, {-1}, {criteria},
+                         {max_correspondence_distance}, init_source_to_target,
+                         estimation);
 }
 
 static void AssertInputMultiScaleICP(
@@ -118,18 +128,14 @@ static void AssertInputMultiScaleICP(
         const int64_t &num_iterations,
         const core::Device &device,
         const core::Dtype &dtype) {
-    init_source_to_target.AssertShape({4, 4});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
 
-    if (target.GetPoints().GetDtype() != dtype) {
-        utility::LogError(
-                "Target Pointcloud dtype {} != Source Pointcloud's dtype {}.",
-                target.GetPoints().GetDtype().ToString(), dtype.ToString());
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
     }
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
-    }
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDevice(target.GetPointPositions(), device);
+
     if (dtype == core::Float64 &&
         device.GetType() == core::Device::DeviceType::CUDA) {
         utility::LogDebug(
@@ -138,7 +144,7 @@ static void AssertInputMultiScaleICP(
     if (!(criterias.size() == voxel_sizes.size() &&
           criterias.size() == max_correspondence_distances.size())) {
         utility::LogError(
-                " [RegistrationMultiScaleICP]: Size of criterias, voxel_size,"
+                " [ICP]: Size of criterias, voxel_size,"
                 " max_correspondence_distances vectors must be same.");
     }
     if (estimation.GetTransformationEstimationType() ==
@@ -149,9 +155,21 @@ static void AssertInputMultiScaleICP(
                 "normal vectors for target PointCloud.");
     }
 
+    // ColoredICP requires pre-computed color_gradients for target points.
     if (estimation.GetTransformationEstimationType() ==
         TransformationEstimationType::ColoredICP) {
-        utility::LogError("Tensor PointCloud ColoredICP is not implemented.");
+        if (!target.HasPointNormals()) {
+            utility::LogError(
+                    "ColoredICP requires target pointcloud to have normals.");
+        }
+        if (!target.HasPointColors()) {
+            utility::LogError(
+                    "ColoredICP requires target pointcloud to have colors.");
+        }
+        if (!source.HasPointColors()) {
+            utility::LogError(
+                    "ColoredICP requires source pointcloud to have colors.");
+        }
     }
 
     if (max_correspondence_distances[0] <= 0.0) {
@@ -161,11 +179,10 @@ static void AssertInputMultiScaleICP(
                 max_correspondence_distances[0], 0);
     }
 
-    for (int64_t i = 1; i < num_iterations; i++) {
+    for (int64_t i = 1; i < num_iterations; ++i) {
         if (voxel_sizes[i] >= voxel_sizes[i - 1]) {
             utility::LogError(
-                    " [MultiScaleICP] Voxel sizes must be in strictly "
-                    "decreasing order.");
+                    " [ICP] Voxel sizes must be in strictly decreasing order.");
         }
         if (max_correspondence_distances[i] <= 0.0) {
             utility::LogError(
@@ -182,6 +199,7 @@ InitializePointCloudPyramidForMultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
+        const double &max_correspondence_distance,
         const TransformationEstimation &estimation,
         const int64_t &num_iterations) {
     std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
@@ -197,10 +215,20 @@ InitializePointCloudPyramidForMultiScaleICP(
                 target.VoxelDownSample(voxel_sizes[num_iterations - 1]);
     }
 
-    // TODO(@rishabh): Estimate Color-Gradient here, for ColoredICP.
+    // Computing Color Gradients.
     if (estimation.GetTransformationEstimationType() ==
-        TransformationEstimationType::ColoredICP) {
-        utility::LogError(" ColoredICP requires pre-computed color-gradients.");
+                TransformationEstimationType::ColoredICP &&
+        !target.HasPointAttr("color_gradients")) {
+        if (voxel_sizes[num_iterations - 1] == -1) {
+            utility::LogWarning(
+                    "Use voxel size parameter, for better performance in "
+                    "ColoredICP.");
+            target_down_pyramid[num_iterations - 1].EstimateColorGradients(
+                    30, max_correspondence_distance * 2.0);
+        } else {
+            target_down_pyramid[num_iterations - 1].EstimateColorGradients(
+                    30, voxel_sizes[num_iterations - 1] * 2.0);
+        }
     }
 
     for (int k = num_iterations - 2; k >= 0; k--) {
@@ -229,8 +257,8 @@ static RegistrationResult DoSingleScaleIterationsICP(
     RegistrationResult result;
     for (int j = 0; j < criteria.max_iteration_; j++) {
         result = GetRegistrationResultAndCorrespondences(
-                source.GetPoints(), target_nns, max_correspondence_distance,
-                transformation);
+                source.GetPointPositions(), target_nns,
+                max_correspondence_distance, transformation);
 
         // Computing Transform between source and target, given
         // correspondences. ComputeTransformation returns {4,4} shaped
@@ -245,7 +273,7 @@ static RegistrationResult DoSingleScaleIterationsICP(
         transformation = update.Matmul(transformation);
 
         // Apply the transform on source pointcloud.
-        source.Transform(update.To(device, dtype));
+        source.Transform(update);
 
         utility::LogDebug(
                 " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, RMSE "
@@ -268,7 +296,7 @@ static RegistrationResult DoSingleScaleIterationsICP(
     return result;
 }
 
-RegistrationResult RegistrationMultiScaleICP(
+RegistrationResult MultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
@@ -276,9 +304,12 @@ RegistrationResult RegistrationMultiScaleICP(
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation) {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = source.GetPoints().GetDtype();
-    int64_t num_iterations = int64_t(criterias.size());
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+
+    const core::Device device = source.GetDevice();
+    const core::Dtype dtype = source.GetPointPositions().GetDtype();
+    const int64_t num_iterations = int64_t(criterias.size());
 
     AssertInputMultiScaleICP(source, target, voxel_sizes, criterias,
                              max_correspondence_distances,
@@ -289,7 +320,9 @@ RegistrationResult RegistrationMultiScaleICP(
     std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);
     std::tie(source_down_pyramid, target_down_pyramid) =
             InitializePointCloudPyramidForMultiScaleICP(
-                    source, target, voxel_sizes, estimation, num_iterations);
+                    source, target, voxel_sizes,
+                    max_correspondence_distances[num_iterations - 1],
+                    estimation, num_iterations);
 
     // Transformation tensor is always of shape {4,4}, type Float64 on CPU:0.
     core::Tensor transformation =
@@ -300,12 +333,12 @@ RegistrationResult RegistrationMultiScaleICP(
     double prev_inlier_rmse = 0;
 
     // ---- Iterating over different resolution scale START -------------------
-    for (int64_t i = 0; i < num_iterations; i++) {
-        source_down_pyramid[i].Transform(transformation.To(device, dtype));
+    for (int64_t i = 0; i < num_iterations; ++i) {
+        source_down_pyramid[i].Transform(transformation);
 
         // Initialize Neighbor Search.
         core::nns::NearestNeighborSearch target_nns(
-                target_down_pyramid[i].GetPoints());
+                target_down_pyramid[i].GetPointPositions());
         bool check = target_nns.HybridIndex(max_correspondence_distances[i]);
         if (!check) {
             utility::LogError(
@@ -329,6 +362,47 @@ RegistrationResult RegistrationMultiScaleICP(
     // ---- Iterating over different resolution scale END ---------------------
 
     return result;
+}
+
+core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
+                                  const geometry::PointCloud &target,
+                                  const double max_correspondence_distance,
+                                  const core::Tensor &transformation) {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    geometry::PointCloud source_transformed = source.Clone();
+    source_transformed.Transform(transformation);
+
+    open3d::core::nns::NearestNeighborSearch target_nns(
+            target.GetPointPositions());
+
+    target_nns.HybridIndex(max_correspondence_distance);
+
+    core::Tensor correspondences, distances, counts;
+    std::tie(correspondences, distances, counts) =
+            target_nns.HybridSearch(source_transformed.GetPointPositions(),
+                                    max_correspondence_distance, 1);
+
+    correspondences = correspondences.To(core::Int64);
+    int32_t num_correspondences = counts.Sum({0}).Item<int32_t>();
+
+    if (num_correspondences == 0) {
+        utility::LogError(
+                "0 correspondence present between the pointclouds. Try "
+                "increasing the max_correspondence_distance parameter.");
+    }
+
+    return kernel::ComputeInformationMatrix(target.GetPointPositions(),
+                                            correspondences);
 }
 
 }  // namespace registration

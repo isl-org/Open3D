@@ -27,6 +27,7 @@
 #include "pybind/visualization/visualization.h"
 
 #include "pybind/visualization/gui/gui.h"
+#include "pybind/visualization/rendering/material.h"
 #include "pybind/visualization/rendering/rendering.h"
 
 #ifdef BUILD_WEBRTC
@@ -49,6 +50,7 @@ void pybind_visualization(py::module &m) {
 
 #ifdef BUILD_GUI
     rendering::pybind_rendering(m_visualization);
+    rendering::pybind_material(m_visualization);
     gui::pybind_gui(m_visualization);
     pybind_o3dvisualizer(m_visualization);
 #endif

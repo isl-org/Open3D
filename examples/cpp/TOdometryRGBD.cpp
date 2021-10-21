@@ -112,12 +112,12 @@ int main(int argc, char* argv[]) {
     auto source_pcd = std::make_shared<open3d::geometry::PointCloud>(
             PointCloud::CreateFromDepthImage(src.depth_, intrinsic_t, trans,
                                              depth_scale)
-                    .ToLegacyPointCloud());
+                    .ToLegacy());
     source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
     auto target_pcd = std::make_shared<open3d::geometry::PointCloud>(
             PointCloud::CreateFromDepthImage(dst.depth_, intrinsic_t, trans,
                                              depth_scale)
-                    .ToLegacyPointCloud());
+                    .ToLegacy());
     target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 
@@ -146,13 +146,13 @@ int main(int argc, char* argv[]) {
             PointCloud::CreateFromRGBDImage(
                     RGBDImage(src.color_, src.depth_), intrinsic_t,
                     result.transformation_.Inverse(), depth_scale)
-                    .ToLegacyPointCloud());
+                    .ToLegacy());
     source_pcd->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
     target_pcd = std::make_shared<open3d::geometry::PointCloud>(
             PointCloud::CreateFromRGBDImage(
                     RGBDImage(dst.color_, dst.depth_), intrinsic_t,
                     Tensor::Eye(4, core::Dtype::Float32, device), depth_scale)
-                    .ToLegacyPointCloud());
+                    .ToLegacy());
     target_pcd->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
     visualization::DrawGeometries({source_pcd, target_pcd});
 }

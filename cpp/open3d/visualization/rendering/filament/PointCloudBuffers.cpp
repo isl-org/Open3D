@@ -283,14 +283,21 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     const auto geometry_aabb = geometry_.GetAxisAlignedBoundingBox();
-
-    const filament::math::float3 min(geometry_aabb.min_bound_.x(),
-                                     geometry_aabb.min_bound_.y(),
-                                     geometry_aabb.min_bound_.z());
-    const filament::math::float3 max(geometry_aabb.max_bound_.x(),
-                                     geometry_aabb.max_bound_.y(),
-                                     geometry_aabb.max_bound_.z());
-
+    filament::math::float3 min(geometry_aabb.min_bound_.x(),
+                               geometry_aabb.min_bound_.y(),
+                               geometry_aabb.min_bound_.z());
+    filament::math::float3 max(geometry_aabb.max_bound_.x(),
+                               geometry_aabb.max_bound_.y(),
+                               geometry_aabb.max_bound_.z());
+    // Filament chokes on empty bounding boxes so don't allow it
+    if (geometry_aabb.IsEmpty()) {
+        min.x -= 0.1f;
+        min.y -= 0.1f;
+        min.z -= 0.1f;
+        max.x += 0.1f;
+        max.y += 0.1f;
+        max.z += 0.1f;
+    }
     Box aabb;
     aabb.set(min, max);
 
@@ -299,7 +306,46 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
 
 TPointCloudBuffersBuilder::TPointCloudBuffersBuilder(
         const t::geometry::PointCloud& geometry)
-    : geometry_(geometry) {}
+    : geometry_(geometry) {
+    // Make sure geometry is on CPU
+    auto pts = geometry.GetPointPositions();
+    if (pts.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        utility::LogWarning(
+                "GPU resident point clouds are not currently supported for "
+                "visualization. Copying data to CPU.");
+        geometry_ = geometry.To(core::Device("CPU:0"));
+    }
+
+    // Now make sure data types are Float32
+    if (pts.GetDtype() != core::Float32) {
+        utility::LogWarning(
+                "Tensor point cloud points must have DType of Float32 not {}. "
+                "Converting.",
+                pts.GetDtype().ToString());
+        geometry_.GetPointPositions() = pts.To(core::Float32);
+    }
+    if (geometry_.HasPointNormals() &&
+        geometry_.GetPointNormals().GetDtype() != core::Float32) {
+        auto normals = geometry_.GetPointNormals();
+        utility::LogWarning(
+                "Tensor point cloud normals must have DType of Float32 not {}. "
+                "Converting.",
+                normals.GetDtype().ToString());
+        geometry_.GetPointNormals() = normals.To(core::Float32);
+    }
+    if (geometry_.HasPointColors() &&
+        geometry_.GetPointColors().GetDtype() != core::Float32) {
+        auto colors = geometry_.GetPointColors();
+        utility::LogWarning(
+                "Tensor point cloud colors must have DType of Float32 not {}. "
+                "Converting.",
+                colors.GetDtype().ToString());
+        geometry_.GetPointColors() = colors.To(core::Float32);
+        if (colors.GetDtype() == core::UInt8) {
+            geometry_.GetPointColors() = geometry_.GetPointColors() / 255.0f;
+        }
+    }
+}
 
 RenderableManager::PrimitiveType TPointCloudBuffersBuilder::GetPrimitiveType()
         const {
@@ -310,11 +356,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
 
-    // NOTE: ConstructBuffers assumes caller has checked that DTYPE of the
-    // tensor is float32. It is an error to call this with a tensor of any other
-    // dtype
-
-    const auto& points = geometry_.GetPoints();
+    const auto& points = geometry_.GetPointPositions();
     const size_t n_vertices = points.GetLength();
 
     // We use CUSTOM0 for tangents along with TANGENTS attribute
@@ -356,27 +398,12 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     const size_t color_array_size = n_vertices * 3 * sizeof(float);
     if (geometry_.HasPointColors()) {
         float* color_array = static_cast<float*>(malloc(color_array_size));
-        if (geometry_.GetPointColors().GetDtype() == core::UInt8) {
-            float* color_array_ptr = color_array;
-            const uint8_t* color_uint8_array = static_cast<const uint8_t*>(
-                    geometry_.GetPointColors().GetDataPtr());
-            for (size_t i = 0; i < n_vertices; ++i) {
-                *color_array_ptr++ = *color_uint8_array++ / 255.f;
-                *color_array_ptr++ = *color_uint8_array++ / 255.f;
-                *color_array_ptr++ = *color_uint8_array++ / 255.f;
-            }
-            VertexBuffer::BufferDescriptor color_descriptor(
-                    color_array, color_array_size,
-                    GeometryBuffersBuilder::DeallocateBuffer);
-            vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
-        } else {
-            memcpy(color_array, geometry_.GetPointColors().GetDataPtr(),
-                   color_array_size);
-            VertexBuffer::BufferDescriptor color_descriptor(
-                    color_array, color_array_size,
-                    GeometryBuffersBuilder::DeallocateBuffer);
-            vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
-        }
+        memcpy(color_array, geometry_.GetPointColors().GetDataPtr(),
+               color_array_size);
+        VertexBuffer::BufferDescriptor color_descriptor(
+                color_array, color_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
     } else {
         float* color_array = static_cast<float*>(malloc(color_array_size));
         for (size_t i = 0; i < n_vertices * 3; ++i) {

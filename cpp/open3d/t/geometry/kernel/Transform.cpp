@@ -28,6 +28,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ShapeUtil.h"
+#include "open3d/core/TensorCheck.h"
 
 namespace open3d {
 namespace t {
@@ -36,17 +37,15 @@ namespace kernel {
 namespace transform {
 
 void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
-    points.AssertShapeCompatible({utility::nullopt, 3});
-    transformation.AssertShape({4, 4});
-    core::Dtype dtype = points.GetDtype();
-    transformation.AssertDtype(dtype);
-    core::Device device = points.GetDevice();
-    transformation.AssertDevice(device);
+    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(transformation, {4, 4});
 
     core::Tensor points_contiguous = points.Contiguous();
-    core::Tensor transformation_contiguous = transformation.Contiguous();
+    core::Tensor transformation_contiguous =
+            transformation.To(points.GetDevice(), points.GetDtype())
+                    .Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
+    core::Device::DeviceType device_type = points.GetDevice().GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         TransformPointsCPU(transformation_contiguous, points_contiguous);
     } else if (device_type == core::Device::DeviceType::CUDA) {
@@ -61,17 +60,15 @@ void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
 
 void TransformNormals(const core::Tensor& transformation,
                       core::Tensor& normals) {
-    normals.AssertShapeCompatible({utility::nullopt, 3});
-    transformation.AssertShape({4, 4});
-    core::Dtype dtype = normals.GetDtype();
-    transformation.AssertDtype(dtype);
-    core::Device device = normals.GetDevice();
-    transformation.AssertDevice(device);
+    core::AssertTensorShape(normals, {utility::nullopt, 3});
+    core::AssertTensorShape(transformation, {4, 4});
 
     core::Tensor normals_contiguous = normals.Contiguous();
-    core::Tensor transformation_contiguous = transformation.Contiguous();
+    core::Tensor transformation_contiguous =
+            transformation.To(normals.GetDevice(), normals.GetDtype())
+                    .Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
+    core::Device::DeviceType device_type = normals.GetDevice().GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         TransformNormalsCPU(transformation_contiguous, normals_contiguous);
     } else if (device_type == core::Device::DeviceType::CUDA) {
@@ -87,21 +84,17 @@ void TransformNormals(const core::Tensor& transformation,
 void RotatePoints(const core::Tensor& R,
                   core::Tensor& points,
                   const core::Tensor& center) {
-    points.AssertShapeCompatible({utility::nullopt, 3});
-    R.AssertShape({3, 3});
-    center.AssertShape({3});
-    core::Dtype dtype = points.GetDtype();
-    R.AssertDtype(dtype);
-    center.AssertDtype(dtype);
-    core::Device device = points.GetDevice();
-    R.AssertDevice(device);
-    center.AssertDevice(device);
+    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(center, {3});
 
     core::Tensor points_contiguous = points.Contiguous();
-    core::Tensor R_contiguous = R.Contiguous();
-    core::Tensor center_contiguous = center.Contiguous();
+    core::Tensor R_contiguous =
+            R.To(points.GetDevice(), points.GetDtype()).Contiguous();
+    core::Tensor center_contiguous =
+            center.To(points.GetDevice(), points.GetDtype()).Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
+    core::Device::DeviceType device_type = points.GetDevice().GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         RotatePointsCPU(R_contiguous, points_contiguous, center_contiguous);
     } else if (device_type == core::Device::DeviceType::CUDA) {
@@ -115,17 +108,14 @@ void RotatePoints(const core::Tensor& R,
 }
 
 void RotateNormals(const core::Tensor& R, core::Tensor& normals) {
-    normals.AssertShapeCompatible({utility::nullopt, 3});
-    R.AssertShape({3, 3});
-    core::Dtype dtype = normals.GetDtype();
-    R.AssertDtype(dtype);
-    core::Device device = normals.GetDevice();
-    R.AssertDevice(device);
+    core::AssertTensorShape(normals, {utility::nullopt, 3});
+    core::AssertTensorShape(R, {3, 3});
 
     core::Tensor normals_contiguous = normals.Contiguous();
-    core::Tensor R_contiguous = R.Contiguous();
+    core::Tensor R_contiguous =
+            R.To(normals.GetDevice(), normals.GetDtype()).Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
+    core::Device::DeviceType device_type = normals.GetDevice().GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         RotateNormalsCPU(R_contiguous, normals_contiguous);
     } else if (device_type == core::Device::DeviceType::CUDA) {

@@ -135,18 +135,18 @@ public:
         // --------------------- VISUALIZER ---------------------
         gui::Application::GetInstance().Initialize();
 
-        src_cloud_mat_ = rendering::Material();
+        src_cloud_mat_ = rendering::MaterialRecord();
         src_cloud_mat_.shader = "defaultUnlit";
 
-        tar_cloud_mat_ = rendering::Material();
+        tar_cloud_mat_ = rendering::MaterialRecord();
         tar_cloud_mat_.shader = "defaultUnlit";
 
-        src_corres_mat_ = rendering::Material();
+        src_corres_mat_ = rendering::MaterialRecord();
         src_corres_mat_.shader = "defaultUnlit";
         src_corres_mat_.base_color = Eigen::Vector4f(0.f, 1.0f, 0.0f, 1.0f);
         src_corres_mat_.point_size = 4.0f;
 
-        tar_corres_mat_ = rendering::Material();
+        tar_corres_mat_ = rendering::MaterialRecord();
         tar_corres_mat_.shader = "defaultUnlit";
         tar_corres_mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
         tar_corres_mat_.point_size = 4.0f;
@@ -185,8 +185,8 @@ public:
 
                     // Copying the pointcloud on CPU, as required by
                     // the visualizer.
-                    pcd_.source_ = source_.CPU();
-                    pcd_.target_ = target_.CPU();
+                    pcd_.source_ = source_.To(core::Device("CPU:0"));
+                    pcd_.target_ = target_.To(core::Device("CPU:0"));
                 }
 
                 gui::Application::GetInstance().PostToMainThread(
@@ -306,7 +306,7 @@ protected:
 
     void UpdateMain() {
         // ----- Class members passed to function arguments
-        // ----- in t::pipeline::registration::RegistrationMultiScaleICP
+        // ----- in t::pipeline::registration::MultiScaleICP
         const t::geometry::PointCloud source = source_.To(device_);
         const t::geometry::PointCloud target = target_.To(device_);
         const std::vector<double> voxel_sizes = voxel_sizes_;
@@ -316,99 +316,27 @@ protected:
         const core::Tensor init_source_to_target = transformation_;
         auto& estimation = *estimation_;
 
-        // ----- RegistrationMultiScaleICP Function directly taken from
+        // ----- MultiScaleICP Function directly taken from
         // ----- t::pipelines::registration, and added O3DVisualizer to it.
         core::Device device = source.GetDevice();
-        core::Dtype dtype = source.GetPoints().GetDtype();
-
-        // ---- Asserts START
-        init_source_to_target.AssertShape({4, 4});
-
-        if (target.GetPoints().GetDtype() != dtype) {
-            utility::LogError(
-                    "Target Pointcloud dtype {} != Source Pointcloud's dtype "
-                    "{}.",
-                    target.GetPoints().GetDtype().ToString(), dtype.ToString());
-        }
-        if (target.GetDevice() != device) {
-            utility::LogError(
-                    "Target Pointcloud device {} != Source Pointcloud's device "
-                    "{}.",
-                    target.GetDevice().ToString(), device.ToString());
-        }
-        if (dtype == core::Dtype::Float64 &&
-            device.GetType() == core::Device::DeviceType::CUDA) {
-            utility::LogDebug("Use Float32 pointcloud for best performance.");
-        }
-        if (!(criterias.size() == voxel_sizes.size() &&
-              criterias.size() == max_correspondence_distances.size())) {
-            utility::LogError(
-                    " [RegistrationMultiScaleICP]: Size of criterias, "
-                    "voxel_size,"
-                    " max_correspondence_distances vectors must be same.");
-        }
-        if (estimation.GetTransformationEstimationType() ==
-                    TransformationEstimationType::PointToPlane &&
-            (!target.HasPointNormals())) {
-            utility::LogError(
-                    "TransformationEstimationPointToPlane require pre-computed "
-                    "normal vectors for target PointCloud.");
-        }
-
-        if (estimation.GetTransformationEstimationType() ==
-            TransformationEstimationType::ColoredICP) {
-            utility::LogError(
-                    "Tensor PointCloud ColoredICP is not Implemented.");
-        }
-
-        if (max_correspondence_distances[0] <= 0.0) {
-            utility::LogError(
-                    " Max correspondence distance must be greater than 0, but"
-                    " got {} in scale: {}.",
-                    max_correspondence_distances[0], 0);
-        }
+        core::Dtype dtype = source.GetPointPositions().GetDtype();
 
         int64_t num_iterations = int64_t(criterias.size());
 
-        for (int64_t i = 1; i < num_iterations; i++) {
-            if (voxel_sizes[i] >= voxel_sizes[i - 1]) {
-                utility::LogError(
-                        " [MultiScaleICP] Voxel sizes must be in strictly "
-                        "decreasing order.");
-            }
-            if (max_correspondence_distances[i] <= 0.0) {
-                utility::LogError(
-                        " Max correspondence distance must be greater than 0, "
-                        "but"
-                        " got {} in scale: {}.",
-                        max_correspondence_distances[i], i);
-            }
-        }
-        // ---- Asserts END
+        AssertInputMultiScaleICP(source, target, voxel_sizes, criterias,
+                                 max_correspondence_distances,
+                                 init_source_to_target, estimation,
+                                 num_iterations, device, dtype);
 
-        // ---- Creating pointcloud pyramid START
         std::vector<t::geometry::PointCloud> source_down_pyramid(
                 num_iterations);
         std::vector<t::geometry::PointCloud> target_down_pyramid(
                 num_iterations);
-
-        if (voxel_sizes[num_iterations - 1] == -1) {
-            source_down_pyramid[num_iterations - 1] = source.Clone();
-            target_down_pyramid[num_iterations - 1] = target;
-        } else {
-            source_down_pyramid[num_iterations - 1] =
-                    source.VoxelDownSample(voxel_sizes[num_iterations - 1]);
-            target_down_pyramid[num_iterations - 1] =
-                    target.VoxelDownSample(voxel_sizes[num_iterations - 1]);
-        }
-
-        for (int k = num_iterations - 2; k >= 0; k--) {
-            source_down_pyramid[k] =
-                    source_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
-            target_down_pyramid[k] =
-                    target_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
-        }
-        // ---- Creating pointcloud pyramid END
+        std::tie(source_down_pyramid, target_down_pyramid) =
+                InitializePointCloudPyramidForMultiScaleICP(
+                        source, target, voxel_sizes,
+                        max_correspondence_distances[num_iterations - 1],
+                        estimation, num_iterations);
 
         // Transformation tensor is always of shape {4,4}, type Float64 on
         // CPU:0.
@@ -421,9 +349,11 @@ protected:
 
         // ---- Iterating over different resolution scale START
         for (int64_t i = 0; i < num_iterations; i++) {
-            source_down_pyramid[i].Transform(transformation.To(device, dtype));
+            source_down_pyramid[i].Transform(transformation);
+
+            // Initialize Neighbor Search.
             core::nns::NearestNeighborSearch target_nns(
-                    target_down_pyramid[i].GetPoints());
+                    target_down_pyramid[i].GetPointPositions());
             bool check =
                     target_nns.HybridIndex(max_correspondence_distances[i]);
             if (!check) {
@@ -444,8 +374,12 @@ protected:
                 core::Tensor distances, counts;
                 std::tie(result.correspondences_, distances, counts) =
                         target_nns.HybridSearch(
-                                source_down_pyramid[i].GetPoints(),
+                                source_down_pyramid[i].GetPointPositions(),
                                 max_correspondence_distances[i], 1);
+
+                result.correspondences_ =
+                        result.correspondences_.To(core::Int64);
+
                 double num_correspondences =
                         counts.Sum({0}).To(core::Dtype::Float64).Item<double>();
 
@@ -456,7 +390,8 @@ protected:
 
                 result.fitness_ =
                         num_correspondences /
-                        static_cast<double>(source.GetPoints().GetLength());
+                        static_cast<double>(
+                                source.GetPointPositions().GetLength());
                 result.inlier_rmse_ =
                         std::sqrt(squared_error / num_correspondences);
                 // ---- NNS End ----
@@ -478,7 +413,7 @@ protected:
                 transformation = update.Matmul(transformation);
 
                 // Apply the transform on source pointcloud.
-                source_down_pyramid[i].Transform(update.To(device, dtype));
+                source_down_pyramid[i].Transform(update);
 
                 utility::LogDebug(
                         " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, "
@@ -493,28 +428,28 @@ protected:
                 // source[i] and target[corres[i]] is a correspondence.
 
                 core::Tensor source_indices =
-                        core::Tensor::Arange(0,
-                                             source.GetPoints().GetShape()[0],
-                                             1, core::Dtype::Int64, device)
+                        core::Tensor::Arange(
+                                0, source.GetPointPositions().GetShape()[0], 1,
+                                core::Dtype::Int64, device)
                                 .IndexGet({valid});
                 // Only take valid indices.
                 core::Tensor target_indices =
                         result.correspondences_.IndexGet({valid}).Reshape({-1});
                 {
                     std::lock_guard<std::mutex> lock(pcd_.lock_);
-                    pcd_.correspondence_src_.SetPoints(
+                    pcd_.correspondence_src_.SetPointPositions(
                             source_down_pyramid[i]
-                                    .GetPoints()
+                                    .GetPointPositions()
                                     .IndexGet({source_indices})
                                     .To(host_));
-                    pcd_.correspondence_tar_.SetPoints(
+                    pcd_.correspondence_tar_.SetPointPositions(
                             target_down_pyramid[i]
-                                    .GetPoints()
+                                    .GetPointPositions()
                                     .IndexGet({target_indices})
                                     .To(host_));
 
-                    pcd_.source_ =
-                            source_.CPU().Transform(transformation.To(dtype_));
+                    pcd_.source_ = source_.To(core::Device("CPU:0"), true)
+                                           .Transform(transformation);
                 }
 
                 std::stringstream out_;
@@ -702,8 +637,11 @@ private:
         } else if (registration_method_ == "PointToPlane") {
             estimation_ =
                     std::make_shared<TransformationEstimationPointToPlane>();
+        } else if (registration_method_ == "ColoredICP") {
+            estimation_ =
+                    std::make_shared<TransformationEstimationForColoredICP>();
         } else {
-            utility::LogError(" Registration method {}, not implemented.",
+            utility::LogError("Registration method {}, not implemented.",
                               registration_method_);
         }
 
@@ -735,13 +673,13 @@ private:
 
         // Converting point and normals attributes to Floar32 and currently only
         // Float32 pointcloud is supported by the tensor registration module.
-        source.SetPoints(source.GetPoints().To(dtype_));
+        source.SetPointPositions(source.GetPointPositions().To(dtype_));
         if (source.HasPointNormals()) {
             source.SetPointNormals(source.GetPointNormals().To(dtype_));
         }
         // Converting attributes to Floar32 and currently only
         // Float32 pointcloud is supported by the tensor registration module.
-        target.SetPoints(target.GetPoints().To(dtype_));
+        target.SetPointPositions(target.GetPointPositions().To(dtype_));
         if (target.HasPointNormals()) {
             target.SetPointNormals(target.GetPointNormals().To(dtype_));
         }
@@ -793,11 +731,11 @@ private:
         // Currenly Normal Estimation is not supported by Tensor Pointcloud.
         if (registration_method_ == "PointToPlane" &&
             !target.HasPointNormals()) {
-            auto target_legacy = target.ToLegacyPointCloud();
+            auto target_legacy = target.ToLegacy();
             target_legacy.EstimateNormals(geometry::KDTreeSearchParamKNN(),
                                           false);
             core::Tensor target_normals =
-                    t::geometry::PointCloud::FromLegacyPointCloud(target_legacy)
+                    t::geometry::PointCloud::FromLegacy(target_legacy)
                             .GetPointNormals()
                             .To(device_, dtype_);
             target.SetPointNormals(target_normals);
@@ -806,16 +744,148 @@ private:
         return std::make_tuple(source, target);
     }
 
+    void AssertInputMultiScaleICP(
+            const t::geometry::PointCloud& source,
+            const t::geometry::PointCloud& target,
+            const std::vector<double>& voxel_sizes,
+            const std::vector<ICPConvergenceCriteria>& criterias,
+            const std::vector<double>& max_correspondence_distances,
+            const core::Tensor& init_source_to_target,
+            const TransformationEstimation& estimation,
+            const int64_t& num_iterations,
+            const core::Device& device,
+            const core::Dtype& dtype) {
+        core::AssertTensorShape(init_source_to_target, {4, 4});
+
+        if (target.GetPointPositions().GetDtype() != dtype) {
+            utility::LogError(
+                    "Target Pointcloud dtype {} != Source Pointcloud's dtype "
+                    "{}.",
+                    target.GetPointPositions().GetDtype().ToString(),
+                    dtype.ToString());
+        }
+        if (target.GetDevice() != device) {
+            utility::LogError(
+                    "Target Pointcloud device {} != Source Pointcloud's device "
+                    "{}.",
+                    target.GetDevice().ToString(), device.ToString());
+        }
+        if (dtype == core::Float64 &&
+            device.GetType() == core::Device::DeviceType::CUDA) {
+            utility::LogDebug(
+                    "Use Float32 pointcloud for best performance on CUDA "
+                    "device.");
+        }
+        if (!(criterias.size() == voxel_sizes.size() &&
+              criterias.size() == max_correspondence_distances.size())) {
+            utility::LogError(
+                    " [MultiScaleICP]: Size of criterias, "
+                    "voxel_size,"
+                    " max_correspondence_distances vectors must be same.");
+        }
+        if (estimation.GetTransformationEstimationType() ==
+                    TransformationEstimationType::PointToPlane &&
+            (!target.HasPointNormals())) {
+            utility::LogError(
+                    "TransformationEstimationPointToPlane require pre-computed "
+                    "normal vectors for target PointCloud.");
+        }
+
+        // ColoredICP requires pre-computed color_gradients for target points.
+        if (estimation.GetTransformationEstimationType() ==
+            TransformationEstimationType::ColoredICP) {
+            if (!target.HasPointNormals()) {
+                utility::LogError(
+                        "ColoredICP requires target pointcloud to have "
+                        "normals.");
+            }
+            if (!target.HasPointColors()) {
+                utility::LogError(
+                        "ColoredICP requires target pointcloud to have "
+                        "colors.");
+            }
+            if (!source.HasPointColors()) {
+                utility::LogError(
+                        "ColoredICP requires source pointcloud to have "
+                        "colors.");
+            }
+        }
+
+        if (max_correspondence_distances[0] <= 0.0) {
+            utility::LogError(
+                    " Max correspondence distance must be greater than 0, but"
+                    " got {} in scale: {}.",
+                    max_correspondence_distances[0], 0);
+        }
+
+        for (int64_t i = 1; i < num_iterations; i++) {
+            if (voxel_sizes[i] >= voxel_sizes[i - 1]) {
+                utility::LogError(
+                        " [MultiScaleICP] Voxel sizes must be in strictly "
+                        "decreasing order.");
+            }
+            if (max_correspondence_distances[i] <= 0.0) {
+                utility::LogError(
+                        " Max correspondence distance must be greater than 0, "
+                        "but"
+                        " got {} in scale: {}.",
+                        max_correspondence_distances[i], i);
+            }
+        }
+    }
+
+    std::tuple<std::vector<t::geometry::PointCloud>,
+               std::vector<t::geometry::PointCloud>>
+    InitializePointCloudPyramidForMultiScaleICP(
+            const t::geometry::PointCloud& source,
+            const t::geometry::PointCloud& target,
+            const std::vector<double>& voxel_sizes,
+            const double& max_correspondence_distance,
+            const TransformationEstimation& estimation,
+            const int64_t& num_iterations) {
+        std::vector<t::geometry::PointCloud> source_down_pyramid(
+                num_iterations);
+        std::vector<t::geometry::PointCloud> target_down_pyramid(
+                num_iterations);
+
+        if (voxel_sizes[num_iterations - 1] == -1) {
+            source_down_pyramid[num_iterations - 1] = source.Clone();
+            target_down_pyramid[num_iterations - 1] = target;
+        } else {
+            source_down_pyramid[num_iterations - 1] =
+                    source.VoxelDownSample(voxel_sizes[num_iterations - 1]);
+            target_down_pyramid[num_iterations - 1] =
+                    target.VoxelDownSample(voxel_sizes[num_iterations - 1]);
+        }
+
+        // Computing Color Gradients.
+        if (estimation.GetTransformationEstimationType() ==
+                    TransformationEstimationType::ColoredICP &&
+            !target.HasPointAttr("color_gradients")) {
+            target_down_pyramid[num_iterations - 1].EstimateColorGradients(
+                    30, max_correspondence_distance * 2.0);
+        }
+
+        for (int k = num_iterations - 2; k >= 0; k--) {
+            source_down_pyramid[k] =
+                    source_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
+            target_down_pyramid[k] =
+                    target_down_pyramid[k + 1].VoxelDownSample(voxel_sizes[k]);
+        }
+
+        return std::make_tuple(source_down_pyramid, target_down_pyramid);
+    }
+
 private:
     core::Device device_;
     core::Device host_;
     core::Dtype dtype_;
 
 private:
-    open3d::visualization::rendering::Material src_cloud_mat_;
-    open3d::visualization::rendering::Material tar_cloud_mat_;
-    open3d::visualization::rendering::Material src_corres_mat_;
-    open3d::visualization::rendering::Material tar_corres_mat_;
+    open3d::visualization::rendering::MaterialRecord src_cloud_mat_;
+    open3d::visualization::rendering::MaterialRecord tar_cloud_mat_;
+    open3d::visualization::rendering::MaterialRecord src_corres_mat_;
+    open3d::visualization::rendering::MaterialRecord tar_corres_mat_;
 
     // For Visualization.
     // The members of this structure can be protected by the mutex lock,

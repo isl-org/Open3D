@@ -95,7 +95,7 @@ bool WriteImage(const std::string &filename,
                 "Write geometry::Image failed: unknown file extension.");
         return false;
     }
-    return map_itr->second(filename, image.CPU(), quality);
+    return map_itr->second(filename, image.To(core::Device("CPU:0")), quality);
 }
 
 }  // namespace io

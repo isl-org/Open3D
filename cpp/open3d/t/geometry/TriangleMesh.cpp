@@ -33,6 +33,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 
@@ -43,27 +44,75 @@ namespace geometry {
 TriangleMesh::TriangleMesh(const core::Device &device)
     : Geometry(Geometry::GeometryType::TriangleMesh, 3),
       device_(device),
-      vertex_attr_(TensorMap("vertices")),
-      triangle_attr_(TensorMap("triangles")) {}
+      vertex_attr_(TensorMap("positions")),
+      triangle_attr_(TensorMap("indices")) {}
 
-TriangleMesh::TriangleMesh(const core::Tensor &vertices,
-                           const core::Tensor &triangles)
+TriangleMesh::TriangleMesh(const core::Tensor &vertex_positions,
+                           const core::Tensor &triangle_indices)
     : TriangleMesh([&]() {
-          if (vertices.GetDevice() != triangles.GetDevice()) {
+          if (vertex_positions.GetDevice() != triangle_indices.GetDevice()) {
               utility::LogError(
-                      "vertices' device {} does not match triangles' device "
-                      "{}.",
-                      vertices.GetDevice().ToString(),
-                      triangles.GetDevice().ToString());
+                      "vertex_positions' device {} does not match "
+                      "triangle_indices' device {}.",
+                      vertex_positions.GetDevice().ToString(),
+                      triangle_indices.GetDevice().ToString());
           }
-          return vertices.GetDevice();
+          return vertex_positions.GetDevice();
       }()) {
-    SetVertices(vertices);
-    SetTriangles(triangles);
+    SetVertexPositions(vertex_positions);
+    SetTriangleIndices(triangle_indices);
+}
+
+std::string TriangleMesh::ToString() const {
+    if (vertex_attr_.size() == 0 || triangle_attr_.size() == 0)
+        return fmt::format("TriangleMesh on {} [{} vertices and {} triangles].",
+                           GetDevice().ToString(), vertex_attr_.size(),
+                           triangle_attr_.size());
+
+    auto str = fmt::format(
+            "TriangleMesh on {} [{} vertices ({}) and {} triangles ({})].",
+            GetDevice().ToString(), GetVertexPositions().GetLength(),
+            GetVertexPositions().GetDtype().ToString(),
+            GetTriangleIndices().GetLength(),
+            GetTriangleIndices().GetDtype().ToString());
+
+    std::string vertices_attr_str = "\nVertices Attributes:";
+    if (vertex_attr_.size() == 1) {
+        vertices_attr_str += " None.";
+    } else {
+        for (const auto &kv : vertex_attr_) {
+            if (kv.first != "positions") {
+                vertices_attr_str +=
+                        fmt::format(" {} (dtype = {}, shape = {}),", kv.first,
+                                    kv.second.GetDtype().ToString(),
+                                    kv.second.GetShape().ToString());
+            }
+        }
+        vertices_attr_str[vertices_attr_str.size() - 1] = '.';
+    }
+
+    std::string triangles_attr_str = "\nTriangles Attributes:";
+    if (triangle_attr_.size() == 1) {
+        triangles_attr_str += " None.";
+    } else {
+        for (const auto &kv : triangle_attr_) {
+            if (kv.first != "indices") {
+                triangles_attr_str +=
+                        fmt::format(" {} (dtype = {}, shape = {}),", kv.first,
+                                    kv.second.GetDtype().ToString(),
+                                    kv.second.GetShape().ToString());
+            }
+        }
+        triangles_attr_str[triangles_attr_str.size() - 1] = '.';
+    }
+
+    return str + vertices_attr_str + triangles_attr_str;
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
-    kernel::transform::TransformPoints(transformation, GetVertices());
+    core::AssertTensorShape(transformation, {4, 4});
+
+    kernel::transform::TransformPoints(transformation, GetVertexPositions());
     if (HasVertexNormals()) {
         kernel::transform::TransformNormals(transformation, GetVertexNormals());
     }
@@ -77,29 +126,35 @@ TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
 
 TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
                                       bool relative) {
-    translation.AssertShape({3});
-    translation.AssertDevice(device_);
+    core::AssertTensorShape(translation, {3});
 
-    core::Tensor transform = translation;
+    core::Tensor transform =
+            translation.To(GetDevice(), GetVertexPositions().GetDtype());
+
     if (!relative) {
         transform -= GetCenter();
     }
-    GetVertices() += transform;
+    GetVertexPositions() += transform;
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
-    center.AssertShape({3});
-    center.AssertDevice(device_);
+    core::AssertTensorShape(center, {3});
+    core::AssertTensorDevice(center, device_);
 
-    core::Tensor points = GetVertices();
-    points.Sub_(center).Mul_(scale).Add_(center);
+    const core::Tensor center_d =
+            center.To(GetDevice(), GetVertexPositions().GetDtype());
+
+    GetVertexPositions().Sub_(center_d).Mul_(scale).Add_(center_d);
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
                                    const core::Tensor &center) {
-    kernel::transform::RotatePoints(R, GetVertices(), center);
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(center, {3});
+
+    kernel::transform::RotatePoints(R, GetVertexPositions(), center);
     if (HasVertexNormals()) {
         kernel::transform::RotateNormals(R, GetVertexNormals());
     }
@@ -109,7 +164,7 @@ TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
     return *this;
 }
 
-geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
+geometry::TriangleMesh TriangleMesh::FromLegacy(
         const open3d::geometry::TriangleMesh &mesh_legacy,
         core::Dtype float_dtype,
         core::Dtype int_dtype,
@@ -125,8 +180,9 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
 
     TriangleMesh mesh(device);
     if (mesh_legacy.HasVertices()) {
-        mesh.SetVertices(core::eigen_converter::EigenVector3dVectorToTensor(
-                mesh_legacy.vertices_, float_dtype, device));
+        mesh.SetVertexPositions(
+                core::eigen_converter::EigenVector3dVectorToTensor(
+                        mesh_legacy.vertices_, float_dtype, device));
     } else {
         utility::LogWarning("Creating from empty legacy TriangleMesh.");
     }
@@ -140,8 +196,9 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
                         mesh_legacy.vertex_normals_, float_dtype, device));
     }
     if (mesh_legacy.HasTriangles()) {
-        mesh.SetTriangles(core::eigen_converter::EigenVector3iVectorToTensor(
-                mesh_legacy.triangles_, int_dtype, device));
+        mesh.SetTriangleIndices(
+                core::eigen_converter::EigenVector3iVectorToTensor(
+                        mesh_legacy.triangles_, int_dtype, device));
     }
     if (mesh_legacy.HasTriangleNormals()) {
         mesh.SetTriangleNormals(
@@ -151,12 +208,12 @@ geometry::TriangleMesh TriangleMesh::FromLegacyTriangleMesh(
     return mesh;
 }
 
-open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
+open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
     open3d::geometry::TriangleMesh mesh_legacy;
-    if (HasVertices()) {
+    if (HasVertexPositions()) {
         mesh_legacy.vertices_ =
                 core::eigen_converter::TensorToEigenVector3dVector(
-                        GetVertices());
+                        GetVertexPositions());
     }
     if (HasVertexColors()) {
         mesh_legacy.vertex_colors_ =
@@ -168,10 +225,10 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacyTriangleMesh() const {
                 core::eigen_converter::TensorToEigenVector3dVector(
                         GetVertexNormals());
     }
-    if (HasTriangles()) {
+    if (HasTriangleIndices()) {
         mesh_legacy.triangles_ =
                 core::eigen_converter::TensorToEigenVector3iVector(
-                        GetTriangles());
+                        GetTriangleIndices());
     }
     if (HasTriangleNormals()) {
         mesh_legacy.triangle_normals_ =

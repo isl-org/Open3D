@@ -32,17 +32,16 @@
 
 // This header is in the embree src dir (embree/src/ext_embree/..).
 #include <embree3/rtcore.h>
+#include <tbb/parallel_for.h>
 #include <tutorials/common/math/closest_point.h>
 
 #include <Eigen/Core>
 #include <tuple>
 #include <vector>
 
+#include "open3d/core/TensorCheck.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
-
-// The maximum number of rays used in calls to embree.
-static const size_t MAX_BATCH_SIZE = 1048576;
 
 namespace {
 
@@ -59,7 +58,7 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const open3d::core::Tensor& tensor,
                                            int64_t last_dim,
                                            const open3d::core::Device& device,
                                            int64_t min_ndim = 2) {
-    tensor.AssertDevice(device);
+    open3d::core::AssertTensorDevice(tensor, device);
     if (tensor.NumDims() < min_ndim) {
         open3d::utility::LogError(
                 "{} Tensor ndim is {} but expected ndim >= {}", tensor_name,
@@ -71,7 +70,8 @@ void AssertTensorDtypeLastDimDeviceMinNDim(const open3d::core::Tensor& tensor,
                 "Tensor with shape {}",
                 tensor_name, last_dim, tensor.GetShape().ToString());
     }
-    tensor.AssertDtype(open3d::core::Dtype::FromType<DTYPE>());
+    open3d::core::AssertTensorDtype(tensor,
+                                    open3d::core::Dtype::FromType<DTYPE>());
 }
 
 struct CountIntersectionsContext {
@@ -157,18 +157,18 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
             std::get<2>(result->geometry_ptrs_ptr->operator[](geomID));
 
     if (RTC_GEOMETRY_TYPE_TRIANGLE == geom_type) {
-        const float* vertices = (const float*)ptr1;
-        const uint32_t* triangles = (const uint32_t*)ptr2;
+        const float* vertex_positions = (const float*)ptr1;
+        const uint32_t* triangle_indices = (const uint32_t*)ptr2;
 
-        Vec3fa v0(vertices[3 * triangles[3 * primID + 0] + 0],
-                  vertices[3 * triangles[3 * primID + 0] + 1],
-                  vertices[3 * triangles[3 * primID + 0] + 2]);
-        Vec3fa v1(vertices[3 * triangles[3 * primID + 1] + 0],
-                  vertices[3 * triangles[3 * primID + 1] + 1],
-                  vertices[3 * triangles[3 * primID + 1] + 2]);
-        Vec3fa v2(vertices[3 * triangles[3 * primID + 2] + 0],
-                  vertices[3 * triangles[3 * primID + 2] + 1],
-                  vertices[3 * triangles[3 * primID + 2] + 2]);
+        Vec3fa v0(vertex_positions[3 * triangle_indices[3 * primID + 0] + 0],
+                  vertex_positions[3 * triangle_indices[3 * primID + 0] + 1],
+                  vertex_positions[3 * triangle_indices[3 * primID + 0] + 2]);
+        Vec3fa v1(vertex_positions[3 * triangle_indices[3 * primID + 1] + 0],
+                  vertex_positions[3 * triangle_indices[3 * primID + 1] + 1],
+                  vertex_positions[3 * triangle_indices[3 * primID + 1] + 2]);
+        Vec3fa v2(vertex_positions[3 * triangle_indices[3 * primID + 2] + 0],
+                  vertex_positions[3 * triangle_indices[3 * primID + 2] + 1],
+                  vertex_positions[3 * triangle_indices[3 * primID + 2] + 2]);
 
         // Determine distance to closest point on triangle (implemented in
         // common/math/closest_point.h).
@@ -197,6 +197,8 @@ namespace t {
 namespace geometry {
 
 struct RaycastingScene::Impl {
+    // The maximum number of rays used in calls to embree.
+    const size_t BATCH_SIZE = 1024;
     RTCDevice device_;
     RTCScene scene_;
     bool scene_committed_;  // true if the scene has been committed.
@@ -212,7 +214,8 @@ struct RaycastingScene::Impl {
                   unsigned int* geometry_ids,
                   unsigned int* primitive_ids,
                   float* primitive_uvs,
-                  float* primitive_normals) {
+                  float* primitive_normals,
+                  const int nthreads) {
         if (!scene_committed_) {
             rtcCommitScene(scene_);
             scene_committed_ = true;
@@ -221,16 +224,11 @@ struct RaycastingScene::Impl {
         struct RTCIntersectContext context;
         rtcInitIntersectContext(&context);
 
-        std::vector<RTCRayHit> rayhits(std::min(num_rays, MAX_BATCH_SIZE));
+        auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
+            std::vector<RTCRayHit> rayhits(range.size());
 
-        const int num_batches = utility::DivUp(num_rays, rayhits.size());
-
-        for (int n = 0; n < num_batches; ++n) {
-            size_t start_idx = n * rayhits.size();
-            size_t end_idx = std::min(num_rays, (n + 1) * rayhits.size());
-
-            for (size_t i = start_idx; i < end_idx; ++i) {
-                RTCRayHit& rh = rayhits[i - start_idx];
+            for (size_t i = range.begin(); i < range.end(); ++i) {
+                RTCRayHit& rh = rayhits[i - range.begin()];
                 const float* r = &rays[i * 6];
                 rh.ray.org_x = r[0];
                 rh.ray.org_y = r[1];
@@ -251,18 +249,18 @@ struct RaycastingScene::Impl {
                     rh.ray.tfar = std::numeric_limits<float>::infinity();
                 }
                 rh.ray.mask = 0;
-                rh.ray.id = i - start_idx;
+                rh.ray.id = i - range.begin();
                 rh.ray.flags = 0;
                 rh.hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             }
 
-            rtcIntersect1M(scene_, &context, &rayhits[0], end_idx - start_idx,
+            rtcIntersect1M(scene_, &context, &rayhits[0], range.size(),
                            sizeof(RTCRayHit));
 
-            for (size_t i = start_idx; i < end_idx; ++i) {
-                RTCRayHit rh = rayhits[i - start_idx];
-                size_t idx = rh.ray.id + start_idx;
+            for (size_t i = range.begin(); i < range.end(); ++i) {
+                RTCRayHit rh = rayhits[i - range.begin()];
+                size_t idx = rh.ray.id + range.begin();
                 t_hit[idx] = rh.ray.tfar;
                 if (rh.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
                     geometry_ids[idx] = rh.hit.geomID;
@@ -285,12 +283,83 @@ struct RaycastingScene::Impl {
                     primitive_normals[idx * 3 + 2] = 0;
                 }
             }
+        };
+
+        if (nthreads > 0) {
+            tbb::task_arena arena(nthreads);
+            arena.execute([&]() {
+                tbb::parallel_for(
+                        tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                        LoopFn);
+            });
+        } else {
+            tbb::parallel_for(
+                    tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                    LoopFn);
+        }
+    }
+
+    void TestOcclusions(const float* const rays,
+                        const size_t num_rays,
+                        const float tnear,
+                        const float tfar,
+                        int8_t* occluded,
+                        const int nthreads) {
+        if (!scene_committed_) {
+            rtcCommitScene(scene_);
+            scene_committed_ = true;
+        }
+
+        struct RTCIntersectContext context;
+        rtcInitIntersectContext(&context);
+
+        auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
+            std::vector<RTCRay> rayvec(range.size());
+            for (size_t i = range.begin(); i < range.end(); ++i) {
+                RTCRay& ray = rayvec[i - range.begin()];
+                const float* r = &rays[i * 6];
+                ray.org_x = r[0];
+                ray.org_y = r[1];
+                ray.org_z = r[2];
+                ray.dir_x = r[3];
+                ray.dir_y = r[4];
+                ray.dir_z = r[5];
+                ray.tnear = tnear;
+                ray.tfar = tfar;
+                ray.mask = 0;
+                ray.id = i - range.begin();
+                ray.flags = 0;
+            }
+
+            rtcOccluded1M(scene_, &context, &rayvec[0], range.size(),
+                          sizeof(RTCRay));
+
+            for (size_t i = range.begin(); i < range.end(); ++i) {
+                RTCRay ray = rayvec[i - range.begin()];
+                size_t idx = ray.id + range.begin();
+                occluded[idx] = int8_t(
+                        -std::numeric_limits<float>::infinity() == ray.tfar);
+            }
+        };
+
+        if (nthreads > 0) {
+            tbb::task_arena arena(nthreads);
+            arena.execute([&]() {
+                tbb::parallel_for(
+                        tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                        LoopFn);
+            });
+        } else {
+            tbb::parallel_for(
+                    tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                    LoopFn);
         }
     }
 
     void CountIntersections(const float* const rays,
                             const size_t num_rays,
-                            int* intersections) {
+                            int* intersections,
+                            const int nthreads) {
         if (!scene_committed_) {
             rtcCommitScene(scene_);
             scene_committed_ = true;
@@ -311,16 +380,11 @@ struct RaycastingScene::Impl {
         context.previous_geom_prim_ID_tfar = &previous_geom_prim_ID_tfar;
         context.intersections = intersections;
 
-        std::vector<RTCRayHit> rayhits(std::min(num_rays, MAX_BATCH_SIZE));
+        auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
+            std::vector<RTCRayHit> rayhits(range.size());
 
-        const int num_batches = utility::DivUp(num_rays, rayhits.size());
-
-        for (int n = 0; n < num_batches; ++n) {
-            size_t start_idx = n * rayhits.size();
-            size_t end_idx = std::min(num_rays, (n + 1) * rayhits.size());
-
-            for (size_t i = start_idx; i < end_idx; ++i) {
-                RTCRayHit* rh = &rayhits[i - start_idx];
+            for (size_t i = range.begin(); i < range.end(); ++i) {
+                RTCRayHit* rh = &rayhits[i - range.begin()];
                 const float* r = &rays[i * 6];
                 rh->ray.org_x = r[0];
                 rh->ray.org_y = r[1];
@@ -336,9 +400,21 @@ struct RaycastingScene::Impl {
                 rh->hit.geomID = RTC_INVALID_GEOMETRY_ID;
                 rh->hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             }
+            rtcIntersect1M(scene_, &context.context, &rayhits[0], range.size(),
+                           sizeof(RTCRayHit));
+        };
 
-            rtcIntersect1M(scene_, &context.context, &rayhits[0],
-                           end_idx - start_idx, sizeof(RTCRayHit));
+        if (nthreads > 0) {
+            tbb::task_arena arena(nthreads);
+            arena.execute([&]() {
+                tbb::parallel_for(
+                        tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                        LoopFn);
+            });
+        } else {
+            tbb::parallel_for(
+                    tbb::blocked_range<size_t>(0, num_rays, BATCH_SIZE),
+                    LoopFn);
         }
     }
 
@@ -346,33 +422,49 @@ struct RaycastingScene::Impl {
                               const size_t num_query_points,
                               float* closest_points,
                               unsigned int* geometry_ids,
-                              unsigned int* primitive_ids) {
+                              unsigned int* primitive_ids,
+                              const int nthreads) {
         if (!scene_committed_) {
             rtcCommitScene(scene_);
             scene_committed_ = true;
         }
 
-        for (size_t i = 0; i < num_query_points; ++i) {
-            RTCPointQuery query;
-            query.x = query_points[i * 3 + 0];
-            query.y = query_points[i * 3 + 1];
-            query.z = query_points[i * 3 + 2];
-            query.radius = std::numeric_limits<float>::infinity();
-            query.time = 0.f;
+        auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
+            for (size_t i = range.begin(); i < range.end(); ++i) {
+                RTCPointQuery query;
+                query.x = query_points[i * 3 + 0];
+                query.y = query_points[i * 3 + 1];
+                query.z = query_points[i * 3 + 2];
+                query.radius = std::numeric_limits<float>::infinity();
+                query.time = 0.f;
 
-            ClosestPointResult result;
-            result.geometry_ptrs_ptr = &geometry_ptrs_;
+                ClosestPointResult result;
+                result.geometry_ptrs_ptr = &geometry_ptrs_;
 
-            RTCPointQueryContext instStack;
-            rtcInitPointQueryContext(&instStack);
-            rtcPointQuery(scene_, &query, &instStack, &ClosestPointFunc,
-                          (void*)&result);
+                RTCPointQueryContext instStack;
+                rtcInitPointQueryContext(&instStack);
+                rtcPointQuery(scene_, &query, &instStack, &ClosestPointFunc,
+                              (void*)&result);
 
-            closest_points[3 * i + 0] = result.p.x;
-            closest_points[3 * i + 1] = result.p.y;
-            closest_points[3 * i + 2] = result.p.z;
-            geometry_ids[i] = result.geomID;
-            primitive_ids[i] = result.primID;
+                closest_points[3 * i + 0] = result.p.x;
+                closest_points[3 * i + 1] = result.p.y;
+                closest_points[3 * i + 2] = result.p.z;
+                geometry_ids[i] = result.geomID;
+                primitive_ids[i] = result.primID;
+            }
+        };
+
+        if (nthreads > 0) {
+            tbb::task_arena arena(nthreads);
+            arena.execute([&]() {
+                tbb::parallel_for(tbb::blocked_range<size_t>(
+                                          0, num_query_points, BATCH_SIZE),
+                                  LoopFn);
+            });
+        } else {
+            tbb::parallel_for(
+                    tbb::blocked_range<size_t>(0, num_query_points, BATCH_SIZE),
+                    LoopFn);
         }
     }
 };
@@ -395,17 +487,17 @@ RaycastingScene::~RaycastingScene() {
     rtcReleaseDevice(impl_->device_);
 }
 
-uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertices,
-                                       const core::Tensor& triangles) {
-    vertices.AssertDevice(impl_->tensor_device_);
-    vertices.AssertShapeCompatible({utility::nullopt, 3});
-    vertices.AssertDtype(core::Float32);
-    triangles.AssertDevice(impl_->tensor_device_);
-    triangles.AssertShapeCompatible({utility::nullopt, 3});
-    triangles.AssertDtype(core::UInt32);
+uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
+                                       const core::Tensor& triangle_indices) {
+    core::AssertTensorDevice(vertex_positions, impl_->tensor_device_);
+    core::AssertTensorShape(vertex_positions, {utility::nullopt, 3});
+    core::AssertTensorDtype(vertex_positions, core::Float32);
+    core::AssertTensorDevice(triangle_indices, impl_->tensor_device_);
+    core::AssertTensorShape(triangle_indices, {utility::nullopt, 3});
+    core::AssertTensorDtype(triangle_indices, core::UInt32);
 
-    const size_t num_vertices = vertices.GetLength();
-    const size_t num_triangles = triangles.GetLength();
+    const size_t num_vertices = vertex_positions.GetLength();
+    const size_t num_triangles = triangle_indices.GetLength();
 
     // scene needs to be recommitted
     impl_->scene_committed_ = false;
@@ -422,12 +514,12 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertices,
             3 * sizeof(uint32_t), num_triangles);
 
     {
-        auto data = vertices.Contiguous();
+        auto data = vertex_positions.Contiguous();
         memcpy(vertex_buffer, data.GetDataPtr(),
                sizeof(float) * 3 * num_vertices);
     }
     {
-        auto data = triangles.Contiguous();
+        auto data = triangle_indices.Contiguous();
         memcpy(index_buffer, data.GetDataPtr(),
                sizeof(uint32_t) * 3 * num_triangles);
     }
@@ -443,18 +535,18 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertices,
 }
 
 uint32_t RaycastingScene::AddTriangles(const TriangleMesh& mesh) {
-    size_t num_verts = mesh.GetVertices().GetLength();
+    size_t num_verts = mesh.GetVertexPositions().GetLength();
     if (num_verts > std::numeric_limits<uint32_t>::max()) {
         utility::LogError(
                 "Cannot add mesh with more than {} vertices to the scene",
                 std::numeric_limits<uint32_t>::max());
     }
-    return AddTriangles(mesh.GetVertices(),
-                        mesh.GetTriangles().To(core::UInt32));
+    return AddTriangles(mesh.GetVertexPositions(),
+                        mesh.GetTriangleIndices().To(core::UInt32));
 }
 
 std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
-        const core::Tensor& rays) {
+        const core::Tensor& rays, const int nthreads) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(rays, "rays", 6,
                                                  impl_->tensor_device_);
     auto shape = rays.GetShape();
@@ -477,12 +569,35 @@ std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(
                            result["geometry_ids"].GetDataPtr<uint32_t>(),
                            result["primitive_ids"].GetDataPtr<uint32_t>(),
                            result["primitive_uvs"].GetDataPtr<float>(),
-                           result["primitive_normals"].GetDataPtr<float>());
+                           result["primitive_normals"].GetDataPtr<float>(),
+                           nthreads);
 
     return result;
 }
 
-core::Tensor RaycastingScene::CountIntersections(const core::Tensor& rays) {
+core::Tensor RaycastingScene::TestOcclusions(const core::Tensor& rays,
+                                             const float tnear,
+                                             const float tfar,
+                                             const int nthreads) {
+    AssertTensorDtypeLastDimDeviceMinNDim<float>(rays, "rays", 6,
+                                                 impl_->tensor_device_);
+    auto shape = rays.GetShape();
+    shape.pop_back();  // Remove last dim, we want to use this shape for the
+                       // results.
+    size_t num_rays = shape.NumElements();
+
+    core::Tensor result(shape, core::Bool);
+
+    auto data = rays.Contiguous();
+    impl_->TestOcclusions(data.GetDataPtr<float>(), num_rays, tnear, tfar,
+                          reinterpret_cast<int8_t*>(result.GetDataPtr<bool>()),
+                          nthreads);
+
+    return result;
+}
+
+core::Tensor RaycastingScene::CountIntersections(const core::Tensor& rays,
+                                                 const int nthreads) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(rays, "rays", 6,
                                                  impl_->tensor_device_);
     auto shape = rays.GetShape();
@@ -495,12 +610,13 @@ core::Tensor RaycastingScene::CountIntersections(const core::Tensor& rays) {
     auto data = rays.Contiguous();
 
     impl_->CountIntersections(data.GetDataPtr<float>(), num_rays,
-                              intersections.GetDataPtr<int>());
+                              intersections.GetDataPtr<int>(), nthreads);
     return intersections;
 }
 
 std::unordered_map<std::string, core::Tensor>
-RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points) {
+RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points,
+                                      const int nthreads) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device_);
     auto shape = query_points.GetShape();
@@ -518,13 +634,14 @@ RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points) {
     impl_->ComputeClosestPoints(data.GetDataPtr<float>(), num_query_points,
                                 result["points"].GetDataPtr<float>(),
                                 result["geometry_ids"].GetDataPtr<uint32_t>(),
-                                result["primitive_ids"].GetDataPtr<uint32_t>());
+                                result["primitive_ids"].GetDataPtr<uint32_t>(),
+                                nthreads);
 
     return result;
 }
 
-core::Tensor RaycastingScene::ComputeDistance(
-        const core::Tensor& query_points) {
+core::Tensor RaycastingScene::ComputeDistance(const core::Tensor& query_points,
+                                              const int nthreads) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device_);
     auto shape = query_points.GetShape();
@@ -532,7 +649,7 @@ core::Tensor RaycastingScene::ComputeDistance(
                        // results.
 
     auto data = query_points.Contiguous();
-    auto closest_points = ComputeClosestPoints(data);
+    auto closest_points = ComputeClosestPoints(data, nthreads);
 
     size_t num_query_points = shape.NumElements();
     Eigen::Map<Eigen::MatrixXf> query_points_map(data.GetDataPtr<float>(), 3,
@@ -548,7 +665,7 @@ core::Tensor RaycastingScene::ComputeDistance(
 }
 
 core::Tensor RaycastingScene::ComputeSignedDistance(
-        const core::Tensor& query_points) {
+        const core::Tensor& query_points, const int nthreads) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device_);
     auto shape = query_points.GetShape();
@@ -557,7 +674,7 @@ core::Tensor RaycastingScene::ComputeSignedDistance(
     size_t num_query_points = shape.NumElements();
 
     auto data = query_points.Contiguous();
-    auto distance = ComputeDistance(data);
+    auto distance = ComputeDistance(data, nthreads);
     core::Tensor rays({int64_t(num_query_points), 6}, core::Float32);
     rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
                   core::TensorKey::Slice(0, 3, 1)},
@@ -566,7 +683,7 @@ core::Tensor RaycastingScene::ComputeSignedDistance(
                   core::TensorKey::Slice(3, 6, 1)},
                  core::Tensor::Ones({1}, core::Float32, impl_->tensor_device_)
                          .Expand({int64_t(num_query_points), 3}));
-    auto intersections = CountIntersections(rays);
+    auto intersections = CountIntersections(rays, nthreads);
 
     Eigen::Map<Eigen::VectorXf> distance_map(distance.GetDataPtr<float>(),
                                              num_query_points);
@@ -578,8 +695,8 @@ core::Tensor RaycastingScene::ComputeSignedDistance(
     return distance;
 }
 
-core::Tensor RaycastingScene::ComputeOccupancy(
-        const core::Tensor& query_points) {
+core::Tensor RaycastingScene::ComputeOccupancy(const core::Tensor& query_points,
+                                               const int nthreads) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device_);
     auto shape = query_points.GetShape();
@@ -595,7 +712,7 @@ core::Tensor RaycastingScene::ComputeOccupancy(
                   core::TensorKey::Slice(3, 6, 1)},
                  core::Tensor::Ones({1}, core::Float32, impl_->tensor_device_)
                          .Expand({int64_t(num_query_points), 3}));
-    auto intersections = CountIntersections(rays);
+    auto intersections = CountIntersections(rays, nthreads);
     Eigen::Map<Eigen::VectorXi> intersections_map(
             intersections.GetDataPtr<int>(), num_query_points);
     intersections_map =
@@ -608,10 +725,10 @@ core::Tensor RaycastingScene::CreateRaysPinhole(
         const core::Tensor& extrinsic_matrix,
         int width_px,
         int height_px) {
-    intrinsic_matrix.AssertDevice(core::Device());
-    intrinsic_matrix.AssertShape({3, 3});
-    extrinsic_matrix.AssertDevice(core::Device());
-    extrinsic_matrix.AssertShape({4, 4});
+    core::AssertTensorDevice(intrinsic_matrix, core::Device());
+    core::AssertTensorShape(intrinsic_matrix, {3, 3});
+    core::AssertTensorDevice(extrinsic_matrix, core::Device());
+    core::AssertTensorShape(extrinsic_matrix, {4, 4});
 
     auto intrinsic_matrix_contig =
             intrinsic_matrix.To(core::Float64).Contiguous();
@@ -653,12 +770,12 @@ core::Tensor RaycastingScene::CreateRaysPinhole(double fov_deg,
                                                 const core::Tensor& up,
                                                 int width_px,
                                                 int height_px) {
-    center.AssertDevice(core::Device());
-    center.AssertShape({3});
-    eye.AssertDevice(core::Device());
-    eye.AssertShape({3});
-    up.AssertDevice(core::Device());
-    up.AssertShape({3});
+    core::AssertTensorDevice(center, core::Device());
+    core::AssertTensorShape(center, {3});
+    core::AssertTensorDevice(eye, core::Device());
+    core::AssertTensorShape(eye, {3});
+    core::AssertTensorDevice(up, core::Device());
+    core::AssertTensorShape(up, {3});
 
     double focal_length =
             0.5 * width_px / std::tan(0.5 * (M_PI / 180) * fov_deg);

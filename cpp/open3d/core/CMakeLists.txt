@@ -1,4 +1,4 @@
-add_library(core OBJECT)
+open3d_ispc_add_library(core OBJECT)
 
 target_sources(core PRIVATE
     AdvancedIndexing.cpp
@@ -11,18 +11,24 @@ target_sources(core PRIVATE
     MemoryManagerCPU.cpp
     MemoryManagerStatistic.cpp
     ShapeUtil.cpp
+    SizeVector.cpp
     Tensor.cpp
+    TensorCheck.cpp
+    TensorFunction.cpp
     TensorKey.cpp
     TensorList.cpp
 )
 
 target_sources(core PRIVATE
-    hashmap/DeviceHashmap.cpp
-    hashmap/Hashmap.cpp
+    hashmap/DeviceHashBackend.cpp
+    hashmap/HashMap.cpp
+    hashmap/HashSet.cpp
+    hashmap/HashBackendBuffer.cpp
 )
 
 target_sources(core PRIVATE
-    hashmap/CPU/CreateCPUHashmap.cpp
+    hashmap/CPU/CreateCPUHashBackend.cpp
+    hashmap/CPU/CPUHashBackendBuffer.cpp
 )
 
 target_sources(core PRIVATE
@@ -74,8 +80,8 @@ if (BUILD_CUDA_MODULE)
     )
 
     target_sources(core PRIVATE
-        hashmap/CUDA/CreateCUDAHashmap.cu
-        hashmap/CUDA/CUDAHashmapBufferAccessor.cu
+        hashmap/CUDA/CreateCUDAHashBackend.cu
+        hashmap/CUDA/CUDAHashBackendBuffer.cu
         hashmap/CUDA/SlabNodeManager.cu
     )
 
@@ -102,6 +108,17 @@ if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
         nns/KnnSearchOps.cu
         nns/FixedRadiusSearchOps.cu
+    )
+endif()
+
+if (BUILD_ISPC_MODULE)
+    target_sources(core PRIVATE
+        Indexer.ispc
+    )
+
+    target_sources(core PRIVATE
+        kernel/BinaryEWCPU.ispc
+        kernel/UnaryEWCPU.ispc
     )
 endif()
 

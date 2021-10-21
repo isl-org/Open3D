@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     size_t frame_id = 0;
     rs.StartCapture(flag_start);
     do {
-        im_rgbd = rs.CaptureFrame(true, align_streams).ToLegacyRGBDImage();
+        im_rgbd = rs.CaptureFrame(true, align_streams).ToLegacy();
 
         // Improve depth visualization by scaling
         /* im_rgbd.depth_.LinearTransform(0.25); */

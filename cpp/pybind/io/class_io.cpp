@@ -189,8 +189,8 @@ void pybind_class_io(py::module &m_io) {
                 return pcd;
             },
             "Function to read PointCloud from file", "filename"_a,
-            "format"_a = "auto", "remove_nan_points"_a = true,
-            "remove_infinite_points"_a = true, "print_progress"_a = false);
+            "format"_a = "auto", "remove_nan_points"_a = false,
+            "remove_infinite_points"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_point_cloud",
                                  map_shared_argument_docstrings);
 

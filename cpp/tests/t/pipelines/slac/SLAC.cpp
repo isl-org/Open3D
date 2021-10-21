@@ -41,7 +41,7 @@
 #include "open3d/t/pipelines/slac/SLACOptimizer.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Timer.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -71,9 +71,8 @@ static bool IsPointCloudSimilar(t::geometry::PointCloud source,
 TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     core::Device device = GetParam();
 
-    std::string dataset_folder =
-            std::string(TEST_DATA_DIR) +
-            "/reconstruction_system/livingroom1_clean_micro";
+    std::string dataset_folder = utility::GetDataPathCommon(
+            "reconstruction_system/livingroom1_clean_micro");
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string scene_folder = dataset_folder + "/test_scene";
     std::string slac_folder = dataset_folder + "/output_slac";
@@ -86,8 +85,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
         utility::LogError(
                 "No fragment found in {}, please make sure the test dataset "
                 "has been downloaded in "
-                "open3d_downloads/tests/reconstruction_system/ been "
-                "downloaded.",
+                "GetDataPathDownload(\"tests/reconstruction_system/\").",
                 fragment_folder);
     }
     std::sort(fragment_fnames.begin(), fragment_fnames.end());
@@ -123,13 +121,13 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     // AssertSavedCorrespondences();
 
     // Write control grids.
-    auto hashmap = control_grid.GetHashmap();
-    core::Tensor active_addrs;
-    hashmap->GetActiveIndices(active_addrs);
-    active_addrs = active_addrs.To(core::Int64);
+    auto hashmap = control_grid.GetHashMap();
+    core::Tensor active_buf_indices;
+    hashmap->GetActiveIndices(active_buf_indices);
+    active_buf_indices = active_buf_indices.To(core::Int64);
 
     hashmap->GetKeyTensor()
-            .IndexGet({active_addrs})
+            .IndexGet({active_buf_indices})
             .Save(params.GetSubfolderName() + "/ctr_grid_keys.npy");
     // Check if same.
     core::Tensor output_control_grid_keys = core::Tensor::Load(
@@ -138,7 +136,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
             test_slac_folder + "/0.050" + "/ctr_grid_keys.npy");
 
     hashmap->GetValueTensor()
-            .IndexGet({active_addrs})
+            .IndexGet({active_buf_indices})
             .Save(params.GetSubfolderName() + "/ctr_grid_values.npy");
     // Check if same.
     core::Tensor output_control_grid_values = core::Tensor::Load(
@@ -181,9 +179,8 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
 TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     core::Device device = GetParam();
 
-    std::string dataset_folder =
-            std::string(TEST_DATA_DIR) +
-            "/reconstruction_system/livingroom1_clean_micro";
+    std::string dataset_folder = utility::GetDataPathCommon(
+            "reconstruction_system/livingroom1_clean_micro");
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string color_folder = dataset_folder + "/image";
     std::string depth_folder = dataset_folder + "/depth";

@@ -35,7 +35,7 @@
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/utility/Helper.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
@@ -465,12 +465,13 @@ TEST_P(LinalgPermuteDevices, KernelOps) {
     core::Tensor A_3x3 =
             core::Tensor::Init<float>({{0, 1, 0}, {1, 0, 0}, {0, 0, 1}});
     core::Tensor B_3x1 = core::Tensor::Init<float>({{1}, {3}, {6}});
-    core::Tensor I_3x3 = core::Tensor::Eye(3, core::Float32, core::HOST);
+    core::Tensor I_3x3 =
+            core::Tensor::Eye(3, core::Float32, core::Device("CPU:0"));
 
     core::Tensor output3x3 =
-            core::Tensor::Empty({3, 3}, core::Float32, core::HOST);
+            core::Tensor::Empty({3, 3}, core::Float32, core::Device("CPU:0"));
     core::Tensor output3x1 =
-            core::Tensor::Empty({3, 1}, core::Float32, core::HOST);
+            core::Tensor::Empty({3, 1}, core::Float32, core::Device("CPU:0"));
 
     // {3, 3} x {3, 3} MatMul
     auto matmul3x3_expected = A_3x3.Matmul(I_3x3);

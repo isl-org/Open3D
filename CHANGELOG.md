@@ -1,6 +1,7 @@
 ## Master
 
 * Python 3.9 support. Tensorflow bump 2.4.1 -> 2.5.0. PyTorch bump 1.7.1 -> 1.8.1 (LTS)
+* Fix undefined names: docstr and VisibleDeprecationWarning (PR #3844)
 
 ## 0.13
 

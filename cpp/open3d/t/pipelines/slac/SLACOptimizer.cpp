@@ -27,6 +27,7 @@
 #include "open3d/t/pipelines/slac/SLACOptimizer.h"
 
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/pipelines/slac/FillInLinearSystemImpl.h"
@@ -92,9 +93,9 @@ static std::vector<std::string> PreprocessPointClouds(
 // shaped CorrespondenceSet, where C is the number of correspondences such that
 //
 // For getting correspondence indexed pointclouds:
-//  source_indexed_pcd = source.GetPoints()
+//  source_indexed_pcd = source.GetPointPositions()
 //                            .IndexGet({correspondence_set.T()[0]});
-//  target_indexed_pcd = target.GetPoints()
+//  target_indexed_pcd = target.GetPointPositions()
 //                            .IndexGet({correspondence_set.T()[1]});
 //
 // For getting the i-th correspondence pair:
@@ -155,21 +156,20 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
         float fitness_threshold,
         bool debug) {
     core::Device device = tpcd_i.GetDevice();
-    core::Dtype dtype = tpcd_i.GetPoints().GetDtype();
+    core::Dtype dtype = tpcd_i.GetPointPositions().GetDtype();
 
-    tpcd_j.GetPoints().AssertDevice(device);
-    tpcd_j.GetPoints().AssertDtype(dtype);
+    core::AssertTensorDevice(tpcd_j.GetPointPositions(), device);
+    core::AssertTensorDtype(tpcd_j.GetPointPositions(), dtype);
 
-    // TODO (@rishabh): AssertTransformation / IsTransformation.
-    T_i.AssertShape({4, 4});
-    T_j.AssertShape({4, 4});
-    T_ij.AssertShape({4, 4});
+    core::AssertTensorShape(T_i, {4, 4});
+    core::AssertTensorShape(T_j, {4, 4});
+    core::AssertTensorShape(T_ij, {4, 4});
 
     PointCloud tpcd_i_transformed_Tij = tpcd_i.Clone();
-    tpcd_i_transformed_Tij.Transform(T_ij.To(device, dtype));
+    tpcd_i_transformed_Tij.Transform(T_ij);
 
     // Obtain correspondence via nns, between tpcd_i_transformed_Tij and tpcd_j.
-    core::nns::NearestNeighborSearch tpcd_j_nns(tpcd_j.GetPoints());
+    core::nns::NearestNeighborSearch tpcd_j_nns(tpcd_j.GetPointPositions());
     bool check = tpcd_j_nns.HybridIndex(distance_threshold);
     if (!check) {
         utility::LogError(
@@ -177,8 +177,10 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     }
     core::Tensor target_indices, residual_distances_Tij, neighbour_counts;
     std::tie(target_indices, residual_distances_Tij, neighbour_counts) =
-            tpcd_j_nns.HybridSearch(tpcd_i_transformed_Tij.GetPoints(),
+            tpcd_j_nns.HybridSearch(tpcd_i_transformed_Tij.GetPointPositions(),
                                     distance_threshold, 1);
+
+    target_indices = target_indices.To(core::Int64);
 
     // Get the correspondence_set Transformed of shape {C, 2}.
     core::Tensor correspondence_set =
@@ -186,17 +188,17 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
 
     // Get correspondence indexed pointcloud.
     PointCloud tpcd_i_indexed(
-            tpcd_i.GetPoints().IndexGet({correspondence_set.T()[0]}));
+            tpcd_i.GetPointPositions().IndexGet({correspondence_set.T()[0]}));
     PointCloud tpcd_j_indexed(
-            tpcd_j.GetPoints().IndexGet({correspondence_set.T()[1]}));
+            tpcd_j.GetPointPositions().IndexGet({correspondence_set.T()[1]}));
 
     // Inlier Ratio is calculated on pointclouds transformed by their pose in
     // model frame, to reject any suspicious pair.
-    tpcd_i_indexed.Transform(T_i.To(device, dtype));
-    tpcd_j_indexed.Transform(T_j.To(device, dtype));
+    tpcd_i_indexed.Transform(T_i);
+    tpcd_j_indexed.Transform(T_j);
 
-    core::Tensor residual =
-            (tpcd_i_indexed.GetPoints() - tpcd_j_indexed.GetPoints());
+    core::Tensor residual = (tpcd_i_indexed.GetPointPositions() -
+                             tpcd_j_indexed.GetPointPositions());
     core::Tensor square_residual = (residual * residual).Sum({1});
     core::Tensor inliers =
             square_residual.Le(distance_threshold * distance_threshold);

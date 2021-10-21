@@ -45,17 +45,17 @@ public:
     Device() = default;
 
     /// Constructor with device specified.
-    Device(DeviceType device_type, int device_id)
+    explicit Device(DeviceType device_type, int device_id)
         : device_type_(device_type), device_id_(device_id) {
         AssertCPUDeviceIDIsZero();
     }
 
     /// Constructor from device type string and device id.
-    Device(const std::string& device_type, int device_id)
+    explicit Device(const std::string& device_type, int device_id)
         : Device(device_type + ":" + std::to_string(device_id)) {}
 
     /// Constructor from string, e.g. "CUDA:0".
-    Device(const std::string& type_colon_id)
+    explicit Device(const std::string& type_colon_id)
         : device_type_(StringToDeviceType(type_colon_id)),
           device_id_(StringToDeviceId(type_colon_id)) {
         AssertCPUDeviceIDIsZero();
@@ -131,8 +131,6 @@ protected:
     DeviceType device_type_ = DeviceType::CPU;
     int device_id_ = 0;
 };
-
-const Device HOST = Device("CPU:0");
 
 }  // namespace core
 }  // namespace open3d

@@ -1,4 +1,4 @@
-add_library(io OBJECT)
+open3d_ispc_add_library(io OBJECT)
 
 target_sources(io PRIVATE
     FeatureIO.cpp
@@ -40,10 +40,11 @@ target_sources(io PRIVATE
     rpc/BufferConnection.cpp
     rpc/Connection.cpp
     rpc/DummyReceiver.cpp
+    rpc/MessageProcessorBase.cpp
     rpc/MessageUtils.cpp
-    rpc/ReceiverBase.cpp
     rpc/RemoteFunctions.cpp
     rpc/ZMQContext.cpp
+    rpc/ZMQReceiver.cpp
 )
 
 if (BUILD_AZURE_KINECT)

@@ -97,15 +97,15 @@ bool ReadTriangleMesh(const std::string &filename,
         if (!success) {
             return false;
         }
-        mesh = geometry::TriangleMesh::FromLegacyTriangleMesh(legacy_mesh);
+        mesh = geometry::TriangleMesh::FromLegacy(legacy_mesh);
     } else {
         success = map_itr->second(filename, mesh, params);
         utility::LogDebug(
                 "Read geometry::TriangleMesh: {:d} triangles and {:d} "
                 "vertices.",
-                mesh.GetTriangles().GetLength(),
-                mesh.GetVertices().GetLength());
-        if (mesh.HasVertices() && !mesh.HasTriangles()) {
+                mesh.GetTriangleIndices().GetLength(),
+                mesh.GetVertexPositions().GetLength());
+        if (mesh.HasVertexPositions() && !mesh.HasTriangleIndices()) {
             utility::LogWarning(
                     "geometry::TriangleMesh appears to be a "
                     "geometry::PointCloud "
@@ -135,7 +135,7 @@ bool WriteTriangleMesh(const std::string &filename,
             file_extension_to_trianglemesh_write_function.find(filename_ext);
     if (map_itr == file_extension_to_trianglemesh_write_function.end()) {
         return open3d::io::WriteTriangleMesh(
-                filename, mesh.ToLegacyTriangleMesh(), write_ascii, compressed,
+                filename, mesh.ToLegacy(), write_ascii, compressed,
                 write_vertex_normals, write_vertex_colors, write_triangle_uvs,
                 print_progress);
     }
@@ -144,7 +144,8 @@ bool WriteTriangleMesh(const std::string &filename,
                                    write_triangle_uvs, print_progress);
     utility::LogDebug(
             "Write geometry::TriangleMesh: {:d} triangles and {:d} vertices.",
-            mesh.GetTriangles().GetLength(), mesh.GetVertices().GetLength());
+            mesh.GetTriangleIndices().GetLength(),
+            mesh.GetVertexPositions().GetLength());
     return success;
 }
 

@@ -229,8 +229,7 @@ public:
         int dim1_pow2 = dim1 < MAX_NUM_THREADS
                                 ? static_cast<int>(LastPow2(dim1))
                                 : MAX_NUM_THREADS;
-        block_width_ =
-                std::min(dim0_pow2, CUDAState::GetInstance()->GetWarpSize());
+        block_width_ = std::min(dim0_pow2, GetCUDACurrentWarpSize());
         block_height_ =
                 std::min(dim1_pow2, int(MAX_NUM_THREADS / block_width_));
         block_width_ =
@@ -305,7 +304,7 @@ public:
     int SharedMemorySize() const {
         if (!ShouldBlockYReduce() &&
             (!ShouldBlockXReduce() ||
-             block_width_ <= CUDAState::GetInstance()->GetWarpSize())) {
+             block_width_ <= GetCUDACurrentWarpSize())) {
             return 0;
         }
         return element_size_bytes_ * num_threads_;
@@ -597,7 +596,7 @@ public:
         // unroll that exposes instruction level parallelism.
         while (idx < config_.num_inputs_per_output_) {
             // load input
-            SmallArray<scalar_t, vt0> values;
+            utility::MiniVec<scalar_t, vt0> values;
             if (input_calc_.dims_ == 1) {
                 StridedIterate<vt0>(
                         [&](index_t i, index_t idx) {
@@ -846,8 +845,7 @@ public:
             numerator_ = 1;
             denominator_ = 1;
         } else {
-            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
-            Device device(Device::DeviceType::CUDA, device_id);
+            Device device(Device::DeviceType::CUDA, cuda::GetDevice());
             buffer_ = std::make_unique<Blob>(size, device);
             acc_ptr_ = (char*)buffer_->GetDataPtr();
             numerator_ = acc_t_size;
@@ -972,8 +970,7 @@ private:
         void* buffer = nullptr;
         void* semaphores = nullptr;
         if (config.ShouldGlobalReduce()) {
-            int device_id = CUDAState::GetInstance()->GetCurrentDeviceID();
-            Device device(Device::DeviceType::CUDA, device_id);
+            Device device(Device::DeviceType::CUDA, cuda::GetDevice());
 
             buffer_blob =
                     std::make_unique<Blob>(config.GlobalMemorySize(), device);

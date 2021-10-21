@@ -142,8 +142,9 @@ void pybind_slac_classes(py::module &m) {
                  "regularizer. "
                  "Returns a 6-way neighbor grid map for all the active "
                  "entries of shape (N, ). "
-                 "\n - addrs Active indices in the buffer of shape (N, ) "
-                 "\n - addrs_nb Neighbor indices (including non-allocated "
+                 "\n - buf_indices Active indices in the buffer of shape (N, ) "
+                 "\n - buf_indices_nb Neighbor indices (including "
+                 "non-allocated "
                  "entries) for the active entries of shape (N, 6). "
                  "\n - masks_nb Corresponding neighbor masks of shape (N, "
                  "6). ")
@@ -211,7 +212,7 @@ void pybind_slac_classes(py::module &m) {
             .def(
                     "get_hashmap",
                     [](ControlGrid &control_grid) {
-                        return *control_grid.GetHashmap();
+                        return *control_grid.GetHashMap();
                     },
                     "Get the control grid hashmap.")
             .def("size", &ControlGrid::Size)

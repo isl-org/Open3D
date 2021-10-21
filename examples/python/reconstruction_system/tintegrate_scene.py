@@ -1,6 +1,28 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 # examples/python/reconstruction_system/integrate_scene.py
 
@@ -13,6 +35,7 @@ import argparse
 
 sys.path.append("../utility")
 from file import *
+
 sys.path.append(".")
 
 if __name__ == '__main__':
@@ -113,10 +136,10 @@ if __name__ == '__main__':
 
     for i in range(n_files):
         rgb = o3d.io.read_image(color_files[i])
-        rgb = o3d.t.geometry.Image.from_legacy_image(rgb, device=device)
+        rgb = o3d.t.geometry.Image.from_legacy(rgb, device=device)
 
         depth = o3d.io.read_image(depth_files[i])
-        depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
+        depth = o3d.t.geometry.Image.from_legacy(depth, device=device)
 
         extrinsic = o3d.core.Tensor(extrinsics[i], o3d.core.Dtype.Float32,
                                     device)
@@ -137,13 +160,13 @@ if __name__ == '__main__':
             colormap = result[o3d.t.geometry.SurfaceMaskCode.ColorMap]
 
             o3d.visualization.draw_geometries(
-                [o3d.t.geometry.Image(vertexmap).to_legacy_image()])
+                [o3d.t.geometry.Image(vertexmap).to_legacy()])
             o3d.visualization.draw_geometries(
-                [o3d.t.geometry.Image(colormap).to_legacy_image()])
+                [o3d.t.geometry.Image(colormap).to_legacy()])
 
         end = time.time()
         print('Integration {:04d}/{:04d} takes {:.3f} ms'.format(
             i, n_files, (end - start) * 1000.0))
 
-    mesh = volume.cpu().extract_surface_mesh().to_legacy_triangle_mesh()
+    mesh = volume.cpu().extract_surface_mesh().to_legacy()
     o3d.io.write_triangle_mesh(args.mesh_name, mesh, False, True)

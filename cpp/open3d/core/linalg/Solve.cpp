@@ -38,26 +38,12 @@ namespace open3d {
 namespace core {
 
 void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
-    // Check devices
-    Device device = A.GetDevice();
-    if (device != B.GetDevice()) {
-        utility::LogError("Tensor A device {} and Tensor B device {} mismatch",
-                          A.GetDevice().ToString(), B.GetDevice().ToString());
-    }
+    AssertTensorDtypes(A, {Float32, Float64});
+    const Device device = A.GetDevice();
+    const Dtype dtype = A.GetDtype();
 
-    // Check dtypes
-    Dtype dtype = A.GetDtype();
-    if (dtype != B.GetDtype()) {
-        utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch",
-                          A.GetDtype().ToString(), B.GetDtype().ToString());
-    }
-
-    if (dtype != core::Float32 && dtype != core::Float64) {
-        utility::LogError(
-                "Only tensors with Float32 or Float64 are supported, but "
-                "received {}",
-                dtype.ToString());
-    }
+    AssertTensorDtype(B, dtype);
+    AssertTensorDevice(B, device);
 
     // Check dimensions
     SizeVector A_shape = A.GetShape();
@@ -86,10 +72,10 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     }
 
     // A and B are modified in-place
-    Tensor A_copy = A.T().To(device, /*copy=*/true);
+    Tensor A_copy = A.T().Clone();
     void *A_data = A_copy.GetDataPtr();
 
-    X = B.T().To(device, /*copy=*/true);
+    X = B.T().Clone();
     void *B_data = X.GetDataPtr();
 
     if (device.GetType() == Device::DeviceType::CUDA) {
