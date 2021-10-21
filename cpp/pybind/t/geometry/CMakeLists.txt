@@ -1,5 +1,6 @@
 target_sources(pybind PRIVATE
     geometry.cpp
+    drawablegeometry.cpp
     image.cpp
     lineset.cpp
     pointcloud.cpp

@@ -18,6 +18,7 @@ if (BUILD_GUI)
 
     target_sources(pybind PRIVATE
         rendering/rendering.cpp
+        rendering/material.cpp
     )
 endif()
 
