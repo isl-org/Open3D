@@ -15,6 +15,7 @@ In the activation step, we first locate blocks that contain points unprojected f
    :lineno-start: 82
    :lines: 27,83-85
    :linenos:
+   :dedent: 4
 
 Integration
 ````````````
@@ -27,7 +28,7 @@ We may use optimized functions, along with raw depth images with calibration par
    :lineno-start: 86
    :lines: 27,87-93
    :linenos:
-
+   :dedent: 4
 
 Currently, to use our optimized function, we assume the below combinations of data types, in the order of ``depth image``, ``color image``, ``tsdf in voxel grid``, ``weight in voxel grid``, ``color in voxel grid`` in CPU
 
@@ -56,6 +57,7 @@ You may use the provided APIs to extract surface points.
    :lineno-start: 135
    :lines: 27,136-140
    :linenos:
+   :dedent: 4
 
 Note ``extract_triangle_mesh`` applies marching cubes and generate mesh. ``extract_point_cloud`` uses the similar algorithm, but skips the triangle face generation step.
 
@@ -69,6 +71,7 @@ The voxel block grids can be saved to and loaded from `.npz` files that are acce
    :lineno-start: 47
    :lines: 27,48,98
    :linenos:
+   :dedent: 4
    
 The `.npz` file of the aforementioned voxel block grid contains the following entries:
 
