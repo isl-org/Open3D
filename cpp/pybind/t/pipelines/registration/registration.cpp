@@ -282,6 +282,12 @@ static const std::unordered_map<std::string, std::string>
                 {"transformation",
                  "The 4x4 transformation matrix of type Float64 "
                  "to transform ``source`` to ``target``"},
+                {"voxel_size",
+                 "The input pointclouds will be down-sampled to this "
+                 "`voxel_size` scale. If `voxel_size` < 0, original scale will "
+                 "be used. However it is highly recommended to down-sample the "
+                 "point-cloud for performance. By default origianl scale of "
+                 "the point-cloud will be used."},
                 {"voxel_sizes",
                  "o3d.utility.DoubleVector of voxel sizes in strictly "
                  "decreasing order, for multi-scale icp."}};
@@ -302,7 +308,7 @@ void pybind_registration_methods(py::module &m) {
           "init_source_to_target"_a =
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint(),
-          "criteria"_a = ICPConvergenceCriteria());
+          "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0);
     docstring::FunctionDocInject(m, "icp", map_shared_argument_docstrings);
 
     m.def("multi_scale_icp", &MultiScaleICP,

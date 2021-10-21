@@ -108,11 +108,12 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
 
 RegistrationResult ICP(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       double max_correspondence_distance,
+                       const double max_correspondence_distance,
                        const core::Tensor &init_source_to_target,
                        const TransformationEstimation &estimation,
-                       const ICPConvergenceCriteria &criteria) {
-    return MultiScaleICP(source, target, {-1}, {criteria},
+                       const ICPConvergenceCriteria &criteria,
+                       const double voxel_size = -1.0) {
+    return MultiScaleICP(source, target, {voxel_size}, {criteria},
                          {max_correspondence_distance}, init_source_to_target,
                          estimation);
 }
@@ -144,8 +145,8 @@ static void AssertInputMultiScaleICP(
     if (!(criterias.size() == voxel_sizes.size() &&
           criterias.size() == max_correspondence_distances.size())) {
         utility::LogError(
-                " [ICP]: Size of criterias, voxel_size,"
-                " max_correspondence_distances vectors must be same.");
+                "Size of criterias, voxel_size, max_correspondence_distances "
+                "vectors must be same.");
     }
     if (estimation.GetTransformationEstimationType() ==
                 TransformationEstimationType::PointToPlane &&

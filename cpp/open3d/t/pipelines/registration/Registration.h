@@ -136,15 +136,20 @@ RegistrationResult EvaluateRegistration(
 /// Float64 on CPU.
 /// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
+/// \param voxel_size The input pointclouds will be down-sampled to this
+/// `voxel_size` scale. If `voxel_size` < 0, original scale will be used.
+/// However it is highly recommended to down-sample the point-cloud for
+/// performance. By default origianl scale of the point-cloud will be used.
 RegistrationResult ICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        double max_correspondence_distance,
+        const double max_correspondence_distance,
         const core::Tensor &init_source_to_target =
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
-        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
+        const double voxel_size = -1.0);
 
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
