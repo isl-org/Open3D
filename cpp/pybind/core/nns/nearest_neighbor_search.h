@@ -34,8 +34,6 @@ namespace core {
 namespace nns {
 
 void pybind_core_nns(py::module &m);
-void pybind_core_knn(py::module &m);
-void pybind_core_faiss(py::module &m);
 
 }  // namespace nns
 }  // namespace core
