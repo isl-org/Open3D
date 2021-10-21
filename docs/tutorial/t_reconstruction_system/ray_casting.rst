@@ -16,19 +16,17 @@ From a reconstructed voxel block grid from :ref:`optimized_integration`, we can 
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/ray_casting.py
    :language: python
-   :lineno-start: 77
+   :lineno-start: 76
    :lines: 27,77-92
    :linenos:
-   :dedent:
 
 The results could be directly obtained and visualized by
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/ray_casting.py
    :language: python
-   :lineno-start: 93
+   :lineno-start: 90
    :lines: 27,91,93-95,105-112
    :linenos:
-   :dedent:
 
 Customized rendering
 `````````````````````
@@ -36,9 +34,8 @@ In customized rendering, we manually perform trilinear-interpolation by accessin
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/ray_casting.py
    :language: python
-   :lineno-start: 98
+   :lineno-start: 97
    :lines: 27,98-103,114-115
    :linenos:
-   :dedent:
 
 Since the output is rendered via indices, the rendering process could be rewritten in differentiable engines like PyTorch seamlessly via :ref:`/tutorial/core/tensor.ipynb#PyTorch-I/O-with-DLPack-memory-map`.
