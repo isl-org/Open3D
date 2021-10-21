@@ -16,8 +16,6 @@ In a SLAM system, we maintain a ``model`` built upon a :ref:`voxel_block_grid`, 
    :language: python
    :lineno-start: 45
    :lines: 27,46-54
-   :dedent: 4
-   :linenos:
 
 Frame-to-model tracking
 ````````````````````````
@@ -27,7 +25,6 @@ The frame-to-model tracking runs in a loop:
    :language: python
    :lineno-start: 57
    :lines: 27,58-78
-   :dedent: 4
 
 where we iteratively update the synthesized frame via ray-casting from the model, and perform the tensor version of :ref:`/tutorial/pipelines/rgbd_odometry.ipynb` between the input frame and the synthesized frame.
 

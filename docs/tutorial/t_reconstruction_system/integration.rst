@@ -14,8 +14,6 @@ In the activation step, we first locate blocks that contain points unprojected f
    :language: python
    :lineno-start: 82
    :lines: 27,83-85
-   :linenos:
-   :dedent: 4
 
 Integration
 ````````````
@@ -27,8 +25,6 @@ We may use optimized functions, along with raw depth images with calibration par
    :language: python
    :lineno-start: 86
    :lines: 27,87-93
-   :linenos:
-   :dedent: 4
 
 Currently, to use our optimized function, we assume the below combinations of data types, in the order of ``depth image``, ``color image``, ``tsdf in voxel grid``, ``weight in voxel grid``, ``color in voxel grid`` in CPU
 
@@ -43,7 +39,6 @@ and CUDA
    :language: cpp
    :lineno-start: 255
    :lines: 256-262
-   :linenos:
 
 For more generalized functionalities, you may extend the macros and/or the kernel functions and compile Open3D from scratch achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
 
@@ -67,8 +62,6 @@ The voxel block grids can be saved to and loaded from `.npz` files that are acce
    :language: python
    :lineno-start: 47
    :lines: 27,48,98
-   :linenos:
-   :dedent: 4
    
 The `.npz` file of the aforementioned voxel block grid contains the following entries:
 

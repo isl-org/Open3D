@@ -16,7 +16,6 @@ A voxel block grid can be constructed by:
    :language: python
    :lineno-start: 56
    :lines: 27,57-74
-   :linenos:
 
 In this example, the multi-value hash map has key shape shape ``(3,)`` and dtype ``int32``. The hash map values are organized as a structure of array (SoA). The hash map values include:
 
