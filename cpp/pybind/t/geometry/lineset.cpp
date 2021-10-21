@@ -37,7 +37,8 @@ namespace t {
 namespace geometry {
 
 void pybind_lineset(py::module& m) {
-    py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>, Geometry>
+    py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>, Geometry,
+               DrawableGeometry>
             line_set(m, "LineSet", R"(
 A LineSet contains points and lines joining them and optionally attributes on
 the points and lines.  The ``LineSet`` class stores the attribute data in
