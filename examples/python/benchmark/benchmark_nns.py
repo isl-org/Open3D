@@ -1,7 +1,5 @@
 import os
 
-from numpy.random.mtrand import sample
-
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'  # does not affect results
 
 import argparse
@@ -12,209 +10,131 @@ from pathlib import Path
 
 import numpy as np
 import open3d as o3d
+from scipy.spatial import cKDTree
 
 pwd = Path(os.path.dirname(os.path.realpath(__file__)))
 open3d_root = pwd.parent.parent.parent
 
-from benchmark_utils import measure_time, print_system_info, print_table, sample_points
+from benchmark_utils import measure_time, print_system_info, print_table
 
 
 # Define NNS methods
-class O3DKnn:
+class NNS:
 
-    def __init__(self):
-        pass
+    def __init__(self, device, search_type):
+        self.device = device
+        self.search_type = search_type
 
-    def setup(self, points, queries):
-        index = o3d.core.nns.KnnIndex()
-        index.set_tensor_data(points)
-        return index, queries
+    def setup(self, points, queries, radius):
+        points_dev = points.to(self.device)
+        queries_dev = queries.to(self.device)
+        index = o3d.core.nns.NearestNeighborSearch(points_dev)
+        if self.search_type == "knn":
+            index.knn_index()
+        elif self.search_type == "radius":
+            index.fixed_radius_index(radius)
+        elif self.search_type == "hybrid":
+            index.hybrid_index(radius)
+        else:
+            raise ValueError(f"{self.search_type} is not supported.")
+        return index, queries_dev
 
-    def search(self, index, queries, knn):
-        ans = index.knn_search(queries, knn)
+    def search(self, index, queries, search_args):
+        if self.search_type == "knn":
+            index.knn_search(queries, search_args["knn"])
+        elif self.search_type == "radius":
+            index.fixed_radius_search(queries, search_args["radius"])
+        elif self.search_type == "hybrid":
+            index.hybrid_search(queries, search_args["radius"],
+                                search_args["knn"])
+        else:
+            raise ValueError(f"{self.search_type} is not supported.")
         return ans
 
-
-class O3DKnnCPU(O3DKnn):
-
-    def setup(self, points, queries):
-        points_cpu = points.cpu()
-        queries_cpu = queries.cpu()
-        index = o3d.core.nns.NearestNeighborSearch(points_cpu)
-        index.knn_index()
-        return index, queries_cpu
-
-    def search(self, index, queries, knn):
-        indices, distances = index.knn_search(queries, knn)
-        indices_gpu = indices.cuda()
-        distances_gpu = distances.cuda()
-        return indices_gpu, distances_gpu
+    def __str__(self):
+        return f"{self.search_type.capitalize()}({self.device})"
 
 
-class O3DFaiss(O3DKnn):
-
-    def setup(self, points, queries):
-        index = o3d.core.nns.FaissIndex()
-        index.set_tensor_data(points)
-        return index, queries
-
-
-class NativeFaiss:
-
-    @staticmethod
-    def swig_ptr_from_FloatTensor(x):
-        assert x.is_contiguous()
-        assert x.dtype == torch.float32
-        return faiss.cast_integer_to_float_ptr(x.storage().data_ptr() +
-                                               x.storage_offset() * 4)
-
-    @staticmethod
-    def swig_ptr_from_LongTensor(x):
-        assert x.is_contiguous()
-        assert x.dtype == torch.int64, "dtype=%s" % x.dtype
-        return faiss.cast_integer_to_idx_t_ptr(x.storage().data_ptr() +
-                                               x.storage_offset() * 8)
-
-    @staticmethod
-    def search_index_pytorch(index, x, k, D=None, I=None):
-        """call the search function of an index with pytorch tensor I/O (CPU
-            and GPU supported)"""
-        assert x.is_contiguous()
-        n, d = x.size()
-        assert d == index.d
-
-        if D is None:
-            D = torch.empty((n, k), dtype=torch.float32, device=x.device)
-        else:
-            assert D.size() == (n, k)
-
-        if I is None:
-            I = torch.empty((n, k), dtype=torch.int64, device=x.device)
-        else:
-            assert I.size() == (n, k)
-        torch.cuda.synchronize()
-        xptr = NativeFaiss.swig_ptr_from_FloatTensor(x)
-        Iptr = NativeFaiss.swig_ptr_from_LongTensor(I)
-        Dptr = NativeFaiss.swig_ptr_from_FloatTensor(D)
-        index.search_c(n, xptr, k, Dptr, Iptr)
-        torch.cuda.synchronize()
-        return D, I
-
-    def __init__(self, d=3):
-        self.res = faiss.StandardGpuResources()
-        self.d = d
-
-    def prepare_data(self, points, queries):
-        points_np = points.cpu().numpy()
-        queries_np = queries.cpu().numpy()
-        return points_np, queries_np
-
-    def setup(self, points):
-        print("setup")
-        index_cpu = faiss.IndexFlatL2(self.d)
-        index = faiss.index_cpu_to_gpu(self.res, 0, index_cpu)
-        index.add(points)
-        return index
-
-    def search(self, index, queries, knn):
-        print("search")
-        result = index.search(queries, knn)
-        return result
-
-
-class NativeFaissIVF(NativeFaiss):
-
-    def __init__(self, d=3, nlist=100, nprobe=5):
-        super().__init__(d)
-        self.nlist = nlist
-        self.nprobe = nprobe
-
-    def setup(self, points):
-        print("setup")
-        quantizer = faiss.IndexFlatL2(self.d)  # the other index
-        index_cpu = faiss.IndexIVFFlat(quantizer, self.d, self.nlist)
-        # index_cpu.nprobe = self.nprobe
-        index = faiss.index_cpu_to_gpu(self.res, 0, index_cpu)
-        index.train(points)
-        index.add(points)
-        return index
+def compute_avg_radii(points, queries, neighbors):
+    """Computes the radii based on the number of neighbors"""
+    tree = cKDTree(points.numpy())
+    avg_radii = []
+    for k in neighbors:
+        dist, _ = tree.query(queries.numpy(), k=k + 1)
+        avg_radii.append(np.mean(dist.max(axis=-1)))
+    return avg_radii
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--search_type",
+                        type=str,
+                        default="knn",
+                        choices=["knn", "radius", "hybrid"])
     parser.add_argument("--overwrite", action="store_true")
-    parser.add_argument("--file",
-                        action="append",
-                        default=[str(open3d_root / "small_tower.ply")])
-    parser.add_argument("--test_faiss", action="store_true")
     args = parser.parse_args()
 
-    # cuda device
+    # devices
+    o3d_cpu_dev = o3d.core.Device()
     o3d_cuda_dev = o3d.core.Device(o3d.core.Device.CUDA, 0)
+
     # collects runtimes for all examples
     results = OrderedDict()
-
     # setup dataset examples
     datasets = OrderedDict()
 
     # TODO: remove hard-coded file list.
     files = [
-        "small_tower.ply", "kitti_1.ply", "kitti_2.ply", "fluid_1000.ply",
-        "s3dis_1.ply", "s3dis_2.ply"
+        "small_tower.ply",
+        "kitti_1.ply",
+        "kitti_2.ply",
+        "fluid_1000.ply",
+        # "s3dis_1.ply", "s3dis_2.ply"
     ]
     for i, file in enumerate(files):
         filepath = os.path.join(open3d_root, file)
         pcd = o3d.t.io.read_point_cloud(filepath)
-        points = queries = pcd.point['points'].to(o3d.core.Dtype.Float32)
+        points = queries = pcd.point['positions'].to(o3d.core.Dtype.Float32)
+        queries = queries[::10]
         filename = os.path.basename(filepath)
         datasets[filename] = {'points': points, 'queries': queries}
 
-    # random data
-    points = queries = o3d.core.Tensor.from_numpy(
-        np.random.rand(points.shape[0], 3).astype(np.float32))
-    datasets['random'] = {'points': points, 'queries': queries}
+    if args.search_type == "knn":
+        # random data
+        for dim in (3, 4, 8, 16, 32):
+            points = o3d.core.Tensor.from_numpy(
+                np.random.rand(100000, dim).astype(np.float32))
+            queries = o3d.core.Tensor.from_numpy(
+                np.random.rand(100000, dim).astype(np.float32))
+            datasets['random{}'.format(dim)] = {
+                'points': points,
+                'queries': queries
+            }
 
     # prepare methods
-    methods = [O3DKnn(), O3DFaiss(), O3DKnnCPU()]
-    if args.test_faiss:
-        try:
-            # Requires faiss and torch.
-            # conda install faiss=1.6.5 pytorch -c pytorch
-            # NOTE: faiss >= 1.7 has some error related with index other than IndexFlat
-            # see https://github.com/facebookresearch/faiss/issues/1771
-            import faiss
-            import torch
-            import torch.utils.dlpack
-            methods.append(NativeFaiss())
-            methods.append(NativeFaissIVF())
-        except ImportError as e:
-            print("faiss is not available. Please install faiss first.")
-
-    method_names = [m.__class__.__name__ for m in methods]
+    methods = [
+        NNS(o3d_cuda_dev, args.search_type),
+        NNS(o3d_cpu_dev, args.search_type),
+    ]
+    neighbors = (1, 37, 64)
 
     # run benchmark
-    for method_name, method in zip(method_names, methods):
-
-        print(method_name)
-        if not args.overwrite and os.path.exists(f"{method_name}.pkl"):
-            print(f"skip {method_name}")
+    for method in methods:
+        if not args.overwrite and os.path.exists(f"{method}.pkl"):
+            print(f"skip {method}")
             continue
+        print(method)
 
         for example_name, example in datasets.items():
-            print(example_name)
-            points = example['points']
-            queries = example['queries']
+            points, queries = example['points'], example['queries']
+            if args.search_type == "knn":
+                radii = neighbors
+            else:
+                radii = compute_avg_radii(points, queries, neighbors)
+            print(f"{example_name} {points.shape[0]}")
 
-            for knn, num_points in itertools.product(
-                (1, 37, 64),
-                    map(lambda x: x * 1000,
-                        (1, 10, 50, 75, 100, 150, 200, 500, 1000))):
-                print(knn, num_points)
-                points = example['points']
-                queries = example['queries']
-
-                points = sample_points(points, num_sample=num_points)
-                queries = sample_points(queries, num_sample=num_points)
+            for (knn, radius) in zip(neighbors, radii):
+                points, queries = example['points'], example['queries']
                 points = points.contiguous().to(o3d_cuda_dev)
                 queries = queries.contiguous().to(o3d_cuda_dev)
 
@@ -223,33 +143,33 @@ if __name__ == "__main__":
                 if hasattr(method, "prepare_data"):
                     points, queries = method.prepare_data(points, queries)
 
-                ans = measure_time(lambda: method.setup(points, queries))
-                example_results['knn_setup'] = ans
+                ans = measure_time(
+                    lambda: method.setup(points, queries, radius))
+                example_results['setup'] = ans
 
-                index, queries = method.setup(points, queries)
+                index, queries = method.setup(points, queries, radius)
 
-                ans = measure_time(lambda: method.search(index, queries, knn))
-                example_results['knn_search'] = ans
-
-                del index
-                o3d.core.cuda.release_cache()
+                ans = measure_time(lambda: method.search(
+                    index, queries, dict(knn=knn, radius=radius)))
+                example_results['search'] = ans
 
                 results[
                     f'{example_name} n={points.shape[0]} k={knn}'] = example_results
 
+                del index
                 del points
                 del queries
                 o3d.core.cuda.release_cache()
 
-        with open(f'{method_name}.pkl', 'wb') as f:
+        with open(f'{method}.pkl', 'wb') as f:
             pickle.dump(results, f)
 
     results = []
-    for method_name, method in zip(method_names, methods):
-        with open(f"{method_name}.pkl", "rb") as f:
-            print(f"{method_name}.pkl")
+    for method in methods:
+        with open(f"{method}.pkl", "rb") as f:
+            print(f"{method}.pkl")
             data = pickle.load(f)
             results.append(data)
 
     print_system_info()
-    print_table(method_names, results)
+    print_table(methods, results)

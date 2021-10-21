@@ -52,7 +52,7 @@ def print_system_info():
     print("======System Info [End]=")
 
 
-def measure_time(fn, min_samples=10, max_samples=100, max_time_in_sec=100.0):
+def measure_time(fn, min_samples=10, max_samples=100, max_time_in_sec=10.0):
     """Measure time to run fn. Returns the elapsed time each run."""
     from time import perf_counter_ns
     t = []
@@ -71,15 +71,15 @@ def measure_time(fn, min_samples=10, max_samples=100, max_time_in_sec=100.0):
     return np.array(t) / 1e9
 
 
-def print_table(method_names, results):
-    headers = [''] + [f'{n}_setup' for n in method_names
-                     ] + [f'{n}_search' for n in method_names]
+def print_table(methods, results):
+    headers = [''] + [f'{n}_setup' for n in methods
+                     ] + [f'{n}_search' for n in methods]
     rows = []
 
     for x in results[0]:
         r = [x] + list(
-            map(np.median, [r[x]['knn_setup'] for r in results] +
-                [r[x]['knn_search'] for r in results]))
+            map(np.median, [r[x]['setup'] for r in results] +
+                [r[x]['search'] for r in results]))
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))
