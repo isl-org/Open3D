@@ -10,10 +10,8 @@ The frustum **block** selection remains the same, but then we manually activate 
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate_custom.py
    :language: python
-   :lineno-start: 79
+   :lineno-start: 78
    :lines: 27,79-87
-   :linenos:
-   :dedent:
 
 Voxel Indices
 ``````````````
@@ -21,10 +19,8 @@ We can then unroll **voxel** indices in these **blocks** into a flattened array,
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate_custom.py
    :language: python
-   :lineno-start: 92
+   :lineno-start: 91
    :lines: 27,92-93
-   :linenos:
-   :dedent:
 
 Up to now we have finished preparation. Then we can perform customized geometry transformation in the Tensor interface, with the same fashion as we conduct in numpy or pytorch.
 
@@ -34,10 +30,8 @@ We first transform the voxel coordinates to the frame's coordinate system, proje
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate_custom.py
    :language: python
-   :lineno-start: 100
+   :lineno-start: 99
    :lines: 27,100-118
-   :linenos:
-   :dedent:
 
 Customized integration
 ````````````````````````
@@ -49,9 +43,7 @@ With the data association, we are able to conduct integration. In this example, 
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate_custom.py
    :language: python
-   :lineno-start: 119
+   :lineno-start: 118
    :lines: 27,119-128,133-151
-   :linenos:
-   :dedent:
 
 You may follow the example and adapt it to your customized properties. Open3D supports conversion from and to PyTorch tensors without memory any copy, see :ref:`/tutorial/core/tensor.ipynb#PyTorch-I/O-with-DLPack-memory-map`. This can be use to leverage PyTorch's capabilities such as automatic differentiation and other operators.

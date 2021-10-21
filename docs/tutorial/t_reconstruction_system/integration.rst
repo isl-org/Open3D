@@ -12,10 +12,8 @@ In the activation step, we first locate blocks that contain points unprojected f
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 83
+   :lineno-start: 82
    :lines: 27,83-85
-   :linenos:
-   :dedent:
 
 Integration
 ````````````
@@ -25,29 +23,22 @@ We may use optimized functions, along with raw depth images with calibration par
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 87
+   :lineno-start: 86
    :lines: 27,87-93
-   :linenos:
-   :dedent:
-
 
 Currently, to use our optimized function, we assume the below combinations of data types, in the order of ``depth image``, ``color image``, ``tsdf in voxel grid``, ``weight in voxel grid``, ``color in voxel grid`` in CPU
 
 .. literalinclude:: ../../../cpp/open3d/t/geometry/kernel/VoxelBlockGridCPU.cpp
    :language: cpp
-   :lineno-start: 230
+   :lineno-start: 229
    :lines: 230-236
-   :linenos:
-   :dedent:
 
 and CUDA
 
 .. literalinclude:: ../../../cpp/open3d/t/geometry/kernel/VoxelBlockGridCUDA.cu
    :language: cpp
-   :lineno-start: 256
+   :lineno-start: 255
    :lines: 256-262
-   :linenos:
-   :dedent:
 
 For more generalized functionalities, you may extend the macros and/or the kernel functions and compile Open3D from scratch achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
 
@@ -57,10 +48,8 @@ You may use the provided APIs to extract surface points.
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 136
+   :lineno-start: 135
    :lines: 27,136-140
-   :linenos:
-   :dedent:
 
 Note ``extract_triangle_mesh`` applies marching cubes and generate mesh. ``extract_point_cloud`` uses the similar algorithm, but skips the triangle face generation step.
 
@@ -71,10 +60,8 @@ The voxel block grids can be saved to and loaded from `.npz` files that are acce
 
 .. literalinclude:: ../../../examples/python/t_reconstruction_system/integrate.py
    :language: python
-   :lineno-start: 48
+   :lineno-start: 47
    :lines: 27,48,98
-   :linenos:
-   :dedent:
    
 The `.npz` file of the aforementioned voxel block grid contains the following entries:
 
@@ -88,4 +75,3 @@ The `.npz` file of the aforementioned voxel block grid contains the following en
 - ``block_resolution``: 8
 - ``voxel_size``: 0.0059 = 3.0 / 512
 - ``CUDA:0``: the device
-
