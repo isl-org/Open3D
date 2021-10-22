@@ -56,7 +56,7 @@ TEST_P(TensorFunctionPermuteDevices, AddBenchmark) {
     timer.Stop();
     (void)c;
 
-    utility::LogInfo("AddBenchmark (1M float32 numbers) took {} ms,",
+    utility::LogInfo("AddBenchmark (1M float32 numbers) took {} ms.",
                      timer.GetDuration());
 }
 
