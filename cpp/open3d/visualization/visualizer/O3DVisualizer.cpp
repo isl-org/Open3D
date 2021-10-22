@@ -1123,6 +1123,7 @@ struct O3DVisualizer::Impl {
                        std::shared_ptr<geometry::Image> bg_image) {
         auto old_default_color = CalcDefaultUnlitColor();
         ui_state_.bg_color = bg_color;
+        settings.bg_color->SetValue(bg_color.x(), bg_color.y(), bg_color.z());
         auto scene = scene_->GetScene();
         scene->SetBackground(ui_state_.bg_color, bg_image);
 
@@ -1273,26 +1274,34 @@ struct O3DVisualizer::Impl {
     }
 
     void SetIBL(std::string path) {
+        utility::LogWarning("Setting IBL to {}", path);
+        std::string ibl_path;
         if (path == "") {
-            path = std::string(Application::GetInstance().GetResourcePath()) +
+            // Set IBL back to default
+            ibl_path = std::string(Application::GetInstance().GetResourcePath()) +
                    std::string("/") + std::string(kDefaultIBL);
-        }
-        if (utility::filesystem::FileExists(path + "_ibl.ktx")) {
-            scene_->GetScene()->GetScene()->SetIndirectLight(path);
-            scene_->ForceRedraw();
-            ui_state_.ibl_path = path;
+        } else if (utility::filesystem::FileExists(path + "_ibl.ktx")) {
+            // 
+            ibl_path = path;
         } else if (utility::filesystem::FileExists(path)) {
             if (path.find("_ibl.ktx") == path.size() - 8) {
-                ui_state_.ibl_path = path.substr(0, path.size() - 8);
-                scene_->GetScene()->GetScene()->SetIndirectLight(
-                        ui_state_.ibl_path);
-                scene_->ForceRedraw();
+                ibl_path = path.substr(0, path.size() - 8);
             } else {
                 utility::LogWarning(
                         "Could not load IBL path. Filename must be of the form "
                         "'name_ibl.ktx' and be paired with 'name_skybox.ktx'");
+                return;
+            }
+        } else {
+            ibl_path = std::string(Application::GetInstance().GetResourcePath()) +
+                   std::string("/") + path;
+            if (!utility::filesystem::FileExists(ibl_path)) {
+                return;
             }
         }
+        ui_state_.ibl_path = ibl_path;
+        scene_->GetScene()->GetScene()->SetIndirectLight(ibl_path);
+        scene_->ForceRedraw();
     }
 
     void SetLightingProfile(const LightingProfile &profile) {
@@ -1983,6 +1992,10 @@ O3DVisualizer::DrawObject O3DVisualizer::GetGeometry(
 void O3DVisualizer::ShowSettings(bool show) { impl_->ShowSettings(show); }
 
 void O3DVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
+
+void O3DVisualizer::SetIBL(const std::string &path, float intensity) {
+    impl_->SetIBL(path);
+}
 
 void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 
