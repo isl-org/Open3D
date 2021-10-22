@@ -157,8 +157,8 @@ static std::map<std::string, messages::Array> TensorMapToArrayMap(
 
 static Material GetMaterialFromMeshData(const messages::MeshData& mesh_data,
                                         std::string& errstr) {
-    Material material(mesh_data.material_name);
-    if (mesh_data.material_name.empty()) return material;
+    Material material(mesh_data.material);
+    if (mesh_data.material.empty()) return material;
     for (const auto& scalar : mesh_data.material_scalar_attributes)
         material.SetScalarProperty(scalar.first, scalar.second);
     for (const auto& vec : mesh_data.material_vector_attributes)
@@ -261,7 +261,7 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
 static void AddMaterialToMeshData(messages::MeshData& mesh_data,
                                   const Material& material) {
     if (!material.IsValid()) return;
-    mesh_data.material_name = material.GetMaterialName();
+    mesh_data.material = material.GetMaterialName();
     auto scalars = material.GetScalarProperties();
     mesh_data.material_scalar_attributes =
             std::map<std::string, float>(scalars.begin(), scalars.end());

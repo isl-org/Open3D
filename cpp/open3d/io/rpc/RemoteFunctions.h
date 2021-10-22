@@ -120,7 +120,7 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
 /// \param line_attributes    Map with Tensors storing line attributes. The
 /// first dim of each attribute must match the number of lines.
 ///
-/// \param material_name      Basic material model for rendering a
+/// \param material           Basic material model for rendering a
 ///                           DrawableGeometry (e.g. defaultLit or
 ///                           defaultUnlit). Must be non-empty if any material
 ///                           attributes or texture maps are provided.
@@ -154,7 +154,7 @@ bool SetMeshData(
         const core::Tensor& lines = core::Tensor({0}, core::Int32),
         const std::map<std::string, core::Tensor>& line_attributes =
                 std::map<std::string, core::Tensor>(),
-        const std::string& material_name = "",
+        const std::string& material = "",
         const std::map<std::string, float>& material_scalar_attributes =
                 std::map<std::string, float>(),
         const std::map<std::string, std::array<float, 4>>&

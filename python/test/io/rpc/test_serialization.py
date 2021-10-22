@@ -114,7 +114,7 @@ def test_set_mesh_data_deserialization():
         faces=tris,
         vertex_attributes=vert_attrs,
         face_attributes=tri_attrs,
-        material_name=material_name,
+        material=material_name,
         material_scalar_attributes=material_scalar_attributes,
         material_vector_attributes=material_vector_attributes,
         texture_maps=o3d_texture_maps,
@@ -149,12 +149,12 @@ def test_set_mesh_data_deserialization():
     # Catch Material errors
     with pytest.raises(
             RuntimeError,
-            match=
-            "SetMeshData: Please provide a material_name for the texture maps"):
+            match="SetMeshData: Please provide a material for the texture maps"
+    ):
         path, time, geom = set_mesh_data_to_geometry(
             vertices=verts,
             faces=tris,
-            material_name="",
+            material="",
             material_scalar_attributes=material_scalar_attributes,
             material_vector_attributes=material_vector_attributes,
             texture_maps=o3d_texture_maps,
@@ -225,3 +225,44 @@ def test_set_mesh_data_deserialization():
     assert path == "unknown"
     assert time == 123
     assert geom is None
+
+
+def test_recv_msgpack():
+    """Test receiving messages constructed with msgpack.
+    """
+    msgpack = pytest.importorskip('msgpack')
+
+    def numpy_to_Array(arr):
+        if isinstance(arr, np.ndarray):
+            return {
+                'type': arr.dtype.str,
+                'shape': arr.shape,
+                'data': arr.tobytes()
+            }
+        raise ValueError('Object is not a Numpy array.')
+
+    verts = np.array([[1, 2, 3]], dtype=np.float32)
+    roughness = 0.3
+    base_color = [0.2, 0.1, 0.9, 0.77]
+    data = msgpack.packb({'msg_id': 'set_mesh_data'})
+    data += msgpack.packb({
+        'path': 'test',
+        'data': {
+            'vertices': numpy_to_Array(verts),
+            'material': 'lit',
+            'material_scalar_attributes': {
+                'roughness': roughness
+            },
+            'material_vector_attributes': {
+                'base_color': base_color
+            }
+        }
+    })
+
+    out_o3d = o3d.io.rpc.data_buffer_to_meta_geometry(data)
+    assert out_o3d[:2] == ("test", 0.)
+    assert np.allclose(out_o3d[2].point["positions"].numpy(), verts)
+    assert np.isclose(out_o3d[2].material.scalar_properties['roughness'],
+                      roughness)
+    assert np.allclose(out_o3d[2].material.vector_properties['base_color'],
+                       base_color)

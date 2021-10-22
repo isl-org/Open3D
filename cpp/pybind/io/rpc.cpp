@@ -134,7 +134,7 @@ A connection writing to a memory buffer.
           "face_attributes"_a = std::map<std::string, core::Tensor>(),
           "lines"_a = core::Tensor({0}, core::Int32),
           "line_attributes"_a = std::map<std::string, core::Tensor>(),
-          "material_name"_a = "",
+          "material"_a = "",
           "material_scalar_attributes"_a = std::map<std::string, float>(),
           "material_vector_attributes"_a =
                   std::map<std::string, Eigen::Vector4f>(),
@@ -157,8 +157,8 @@ A connection writing to a memory buffer.
                     {"lines", "Tensor defining lines with vertex indices."},
                     {"line_attributes",
                      "dict of Tensors with line attributes."},
-                    {"material_name",
-                     "Material name for geometry drawing.  Must be non-empty "
+                    {"material",
+                     "Basic Material for geometry drawing.  Must be non-empty "
                      "if any material attributes or texture maps are "
                      "provided."},
                     {"material_scalar_attributes",
