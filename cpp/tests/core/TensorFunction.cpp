@@ -42,8 +42,8 @@ INSTANTIATE_TEST_SUITE_P(Tensor,
 TEST_P(TensorFunctionPermuteDevices, RunSYCLDemo) { core::RunSYCLDemo(); }
 
 TEST_P(TensorFunctionPermuteDevices, AddBenchmark) {
-    core::Tensor a = core::Tensor::Ones({1000000}, core::Float32);
-    core::Tensor b = core::Tensor::Ones({1000000}, core::Float32);
+    core::Tensor a = core::Tensor::Ones({1000000000}, core::Float32);
+    core::Tensor b = core::Tensor::Ones({1000000000}, core::Float32);
 
     // Warm up.
     for (int i = 0; i < 2; i++) {
@@ -54,10 +54,9 @@ TEST_P(TensorFunctionPermuteDevices, AddBenchmark) {
     timer.Start();
     core::Tensor c = a + b;
     timer.Stop();
-    (void)c;
 
-    utility::LogInfo("AddBenchmark (1M float32 numbers) took {} ms.",
-                     timer.GetDuration());
+    utility::LogInfo("AddBenchmark ({} float32 numbers) took {} ms.",
+                     c.GetShape().ToString(), timer.GetDuration());
 }
 
 TEST_P(TensorFunctionPermuteDevices, Append) {
