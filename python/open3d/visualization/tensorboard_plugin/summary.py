@@ -309,16 +309,6 @@ def _preprocess(prop,
     return save_tensor
 
 
-def _check_assign(to_list, from_list):
-    match = True
-    for k in range(len(to_list)):
-        if to_list[k] is None:
-            to_list[k] = from_list[k]
-        else:
-            match &= (to_list[k] == from_list[k])
-    return match
-
-
 def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     """Serialize and write geometry data for a tag. Data is written to a
     separate file per tag.
@@ -458,9 +448,8 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                     prop: tensor[bidx, :, :]
                     for prop, tensor in line_data.items()
                 },
-                material_name=(
-                    "" if material["name"] == "" else material["name"][bidx])
-                if material["name"] != "" else "",
+                material=("" if material["name"] == "" else
+                          material["name"][bidx]),
                 material_scalar_attributes={
                     prop: val[bidx].item()
                     for prop, val in material["scalar_properties"].items()

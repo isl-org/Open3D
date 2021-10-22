@@ -347,8 +347,9 @@ def to_dict_batch(o3d_geometry_list):
             'vertex_colors': np.stack(vertex_colors, axis=0),
             'vertex_normals': np.stack(vertex_normals, axis=0),
             'triangle_indices': np.stack(triangle_indices, axis=0),
-            'triangle_texture_uvs': np.stack(triangle_uvs, axis=0)
         }
+        if len(triangle_uvs) > 0:
+            geo_dict.update(triangle_texture_uvs=np.stack(triangle_uvs, axis=0))
 
     elif isinstance(o3d_geometry_list[0], o3d.geometry.LineSet):
         for geometry in o3d_geometry_list:

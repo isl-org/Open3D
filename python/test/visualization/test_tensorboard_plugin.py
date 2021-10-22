@@ -44,8 +44,8 @@ from open3d_test import test_data_dir
 @pytest.fixture
 def geometry_data():
     """Common geometry data for tests"""
-    cube = (o3d.geometry.TriangleMesh.create_box(1, 2, 4),
-            o3d.geometry.TriangleMesh.create_box(1, 2, 4))
+    cube = (o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True),
+            o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True))
     cube[0].compute_vertex_normals()
     cube[1].compute_vertex_normals()
 
@@ -63,7 +63,7 @@ def geometry_data():
             (0.25, 0.25, 0.25, 1.0), (0.25, 0.25, 0.25, 1.0)),
         "material_texture_map_metallic":
             np.full((2, 8, 8, 1), 128, dtype=np.uint8),
-        "material_texture_map_base_color":
+        "material_texture_map_albedo":  # albedo = 64 is fairly dark
             np.full((2, 8, 8, 3), 64, dtype=np.uint8),
     }
 
@@ -126,7 +126,9 @@ def test_tensorflow_summary(geometry_data, tmp_path):
                            step=step,
                            logdir=logdir,
                            max_outputs=max_outputs)
-            cube_summary.pop('triangle_indices')  # Convert to PointCloud
+            for key in tuple(cube_summary):  # Convert to PointCloud
+                if key.startswith(('triangle_', 'material_texture_map_')):
+                    cube_summary.pop(key)
             summary.add_3d('cube_pcd',
                            cube_summary,
                            step=step,
@@ -170,7 +172,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
     # Complete write is guaranteed after Python has exited.
-    # shutil.rmtree(logdir)
+    shutil.rmtree(logdir)
 
 
 def test_pytorch_summary(geometry_data, tmp_path):
@@ -209,7 +211,9 @@ def test_pytorch_summary(geometry_data, tmp_path):
                         prop.startswith("material_texture_map_")):
                     cube_summary[prop] = rng.choice(tensor_converter)(tensor)
         writer.add_3d('cube', cube_summary, step=step, max_outputs=max_outputs)
-        cube_summary.pop('triangle_indices')  # Convert to PointCloud
+        for key in tuple(cube_summary):  # Convert to PointCloud
+            if key.startswith(('triangle_', 'material_texture_map_')):
+                cube_summary.pop(key)
         writer.add_3d('cube_pcd',
                       cube_summary,
                       step=step,
@@ -283,7 +287,7 @@ def check_material_dict(o3d_geo, material, batch_idx):
 
 @pytest.fixture
 def logdir():
-    """Extract logdir zipto provide logdir for tests, cleanup afterwards."""
+    """Extract logdir zip to provide logdir for tests, cleanup afterwards."""
     shutil.unpack_archive(
         os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
     yield "test_tensorboard_plugin"
@@ -332,6 +336,9 @@ def test_plugin_data_reader(geometry_data, logdir):
                    ).all()
             assert (cube_pcd_out.point['colors'] == cube_ref.vertex['colors']
                    ).all()
+            for key in tuple(material):
+                if key.startswith('material_texture_map_'):
+                    material.pop(key)
             check_material_dict(cube_pcd_out, material, batch_idx)
 
             cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
@@ -357,7 +364,5 @@ def test_tensorboard_app(logdir):
     with sp.Popen(['tensorboard', '--logdir', logdir]) as tb_proc:
         sleep(5)
         webbrowser.open('http://localhost:6006/')
-        sleep(5)
-        tb_proc.terminate()
-        sleep(2)
+        sleep(8)
         tb_proc.kill()
