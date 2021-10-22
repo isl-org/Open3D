@@ -169,9 +169,9 @@ bool SetMeshData(const std::string& path,
                  const std::map<std::string, core::Tensor>& face_attributes,
                  const core::Tensor& lines,
                  const std::map<std::string, core::Tensor>& line_attributes,
-                 const std::string& material_name,
+                 const std::string& material,
                  const std::map<std::string, float>& material_scalar_attributes,
-                 const std::map<std::string, Eigen::Vector4f>&
+                 const std::map<std::string, std::array<float, 4>>&
                          material_vector_attributes,
                  const std::map<std::string, t::geometry::Image>& texture_maps,
                  const std::string& o3d_type,
@@ -268,13 +268,11 @@ bool SetMeshData(const std::string& path,
         }
     }
 
-    if (!material_name.empty()) {
-        msg.data.material_name = material_name;
+    if (!material.empty()) {
+        msg.data.material = material;
         msg.data.material_scalar_attributes = material_scalar_attributes;
         for (const auto& item : material_vector_attributes) {
-            msg.data.material_vector_attributes[item.first] = {
-                    item.second[0], item.second[1], item.second[2],
-                    item.second[3]};
+            msg.data.material_vector_attributes[item.first] = item.second;
         }
         for (const auto& texture_map : texture_maps) {
             if (texture_map.second.IsEmpty()) {
@@ -290,8 +288,7 @@ bool SetMeshData(const std::string& path,
     } else if (!material_scalar_attributes.empty() ||
                !material_vector_attributes.empty() || !texture_maps.empty()) {
         LogError("{}",
-                 "SetMeshData: Please provide a material_name for the texture "
-                 "maps");
+                 "SetMeshData: Please provide a material for the texture maps");
     }
 
     {

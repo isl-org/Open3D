@@ -307,8 +307,8 @@ struct MeshData {
     /// stores arbitrary attributes for each line
     std::map<std::string, Array> line_attributes;
 
-    /// Material name for DrawableGeometry
-    std::string material_name = "";
+    /// Material for DrawableGeometry
+    std::string material = "";
     /// Material scalar properties
     std::map<std::string, float> material_scalar_attributes;
     /// Material vector[4] properties
@@ -399,7 +399,7 @@ struct MeshData {
                        face_attributes,
                        lines,
                        line_attributes,
-                       material_name,
+                       material,
                        material_scalar_attributes,
                        material_vector_attributes,
                        texture_maps);

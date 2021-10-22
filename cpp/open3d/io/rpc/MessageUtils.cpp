@@ -157,15 +157,14 @@ static std::map<std::string, messages::Array> TensorMapToArrayMap(
 
 static Material GetMaterialFromMeshData(const messages::MeshData& mesh_data,
                                         std::string& errstr) {
-    Material material(mesh_data.material_name);
-    if (mesh_data.material_name.empty()) return material;
+    Material material(mesh_data.material);
+    if (mesh_data.material.empty()) return material;
     for (const auto& scalar : mesh_data.material_scalar_attributes)
         material.SetScalarProperty(scalar.first, scalar.second);
     for (const auto& vec : mesh_data.material_vector_attributes)
         material.SetVectorProperty(vec.first,
                                    Eigen::Vector4f(vec.second.data()));
-    // Allow 2, 3 dim images. Don't restrict n_channels, since channel packing
-    // is a way to efficiently store multiple maps.
+    // Allow 2, 3 dim images. Don't restrict n_channels to allow channel packing
     const std::vector<int64_t> expected_shapes[] = {{-1, -1}, {-1, -1, -1}};
     for (const auto& texture : mesh_data.texture_maps) {
         std::string es(texture.first + ": ");
@@ -262,7 +261,7 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
 static void AddMaterialToMeshData(messages::MeshData& mesh_data,
                                   const Material& material) {
     if (!material.IsValid()) return;
-    mesh_data.material_name = material.GetMaterialName();
+    mesh_data.material = material.GetMaterialName();
     auto scalars = material.GetScalarProperties();
     mesh_data.material_scalar_attributes =
             std::map<std::string, float>(scalars.begin(), scalars.end());
