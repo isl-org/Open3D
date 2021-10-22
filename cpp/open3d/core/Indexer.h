@@ -63,6 +63,57 @@ static constexpr int64_t MAX_INPUTS = 10;
 // necessary.
 static constexpr int64_t MAX_OUTPUTS = 2;
 
+/// A minimalistic class that reference a Tensor.
+struct SYCLTensorRef {
+    void* data_ptr_;
+    int64_t ndims_;
+    int64_t dtype_byte_size_;
+    int64_t shape_[MAX_DIMS];
+    int64_t byte_strides_[MAX_DIMS];
+};
+
+struct SYCLIndexer {
+    int64_t num_inputs_;
+    int64_t num_outputs_;
+    SYCLTensorRef inputs_[MAX_INPUTS];
+    SYCLTensorRef outputs_[MAX_OUTPUTS];
+    bool inputs_contiguous_[MAX_INPUTS];
+    bool outputs_contiguous_[MAX_OUTPUTS];
+    int64_t master_shape_[MAX_DIMS];
+    int64_t master_strides_[MAX_DIMS];
+    int64_t ndims_;
+};
+
+inline uint8_t* SYCLGetWorkloadDataPtr(const SYCLIndexer* self,
+                                       const SYCLTensorRef* tr,
+                                       int64_t workload_idx) {
+    if (workload_idx < 0) {
+        return nullptr;
+    }
+    int64_t offset = 0;
+    for (int64_t i = 0; i < self->ndims_; ++i) {
+        offset +=
+                workload_idx / self->master_strides_[i] * tr->byte_strides_[i];
+        workload_idx = workload_idx % self->master_strides_[i];
+    }
+    return (uint8_t*)(tr->data_ptr_) + offset;
+}
+
+inline uint8_t* SYCLGetOutputPtr(const SYCLIndexer* self,
+                                 int64_t workload_idx) {
+    return SYCLGetWorkloadDataPtr(self, &(self->outputs_[0]), workload_idx);
+}
+
+inline uint8_t* SYCLGetInputPtr(const SYCLIndexer* self,
+                                int64_t input_idx,
+                                int64_t workload_idx) {
+    if (input_idx < 0 || input_idx >= self->num_inputs_) {
+        return nullptr;
+    }
+    return SYCLGetWorkloadDataPtr(self, &(self->inputs_[input_idx]),
+                                  workload_idx);
+}
+
 template <int NARGS, typename index_t = uint32_t>
 struct OffsetCalculator {
     OffsetCalculator(int dims,

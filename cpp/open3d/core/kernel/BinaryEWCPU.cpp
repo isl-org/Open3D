@@ -38,6 +38,9 @@
 #include "BinaryEWCPU_ispc.h"
 #endif
 
+#include <CL/sycl.hpp>
+#include <array>
+
 namespace open3d {
 namespace core {
 namespace kernel {
@@ -51,6 +54,22 @@ static void LaunchBinaryEWKernel(const Indexer& indexer,
                                  indexer.GetInputPtr<src_t>(1, i),
                                  indexer.GetOutputPtr<dst_t>(i));
                 });
+}
+
+template <typename src_t, typename dst_t, typename element_func_t>
+static void LaunchBinaryEWKernelSYCL(const Indexer& indexer,
+                                     const element_func_t& element_func) {
+    const Indexer* indexer_ptr = &indexer;
+    sycl::queue Q;
+    Q.submit([&](sycl::handler& h) {
+        h.parallel_for(indexer.NumWorkloads(), [=](int64_t i) {
+            *static_cast<dst_t*>(indexer_ptr->GetOutputPtr<dst_t>(i)) =
+                    *static_cast<const src_t*>(
+                            indexer_ptr->GetInputPtr<src_t>(0, i)) +
+                    *static_cast<const src_t*>(
+                            indexer_ptr->GetInputPtr<src_t>(1, i));
+        });
+    });
 }
 
 template <typename src_t,
@@ -350,11 +369,8 @@ void BinaryEWCPU(const Tensor& lhs,
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case BinaryEWOpCode::Add:
-                    LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                            indexer, CPUAddElementKernel<scalar_t>,
-                            OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
-                                                       CPUAddElementKernel,
-                                                       &ispc_indexer));
+                    LaunchBinaryEWKernelSYCL<scalar_t, scalar_t>(
+                            indexer, CPUAddElementKernel<scalar_t>);
                     break;
                 case BinaryEWOpCode::Sub:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
