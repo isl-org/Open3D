@@ -59,17 +59,19 @@ static void LaunchBinaryEWKernel(const Indexer& indexer,
 template <typename src_t, typename dst_t, typename element_func_t>
 static void LaunchBinaryEWKernelSYCL(const Indexer& indexer,
                                      const element_func_t& element_func) {
-    const Indexer* indexer_ptr = &indexer;
+    SYCLIndexer sycl_indexer = indexer.ToSYCL();
+    SYCLIndexer* sycl_indexer_ptr = &sycl_indexer;
     sycl::queue Q;
     Q.submit([&](sycl::handler& h) {
-        h.parallel_for(indexer.NumWorkloads(), [=](int64_t i) {
-            *static_cast<dst_t*>(indexer_ptr->GetOutputPtr<dst_t>(i)) =
-                    *static_cast<const src_t*>(
-                            indexer_ptr->GetInputPtr<src_t>(0, i)) +
-                    *static_cast<const src_t*>(
-                            indexer_ptr->GetInputPtr<src_t>(1, i));
-        });
-    });
+         h.parallel_for(indexer.NumWorkloads(), [=](int64_t i) {
+             *static_cast<dst_t*>(static_cast<void*>(
+                     SYCLGetOutputPtr(sycl_indexer_ptr, i))) =
+                     *static_cast<const src_t*>(static_cast<void*>(
+                             SYCLGetInputPtr(sycl_indexer_ptr, 0, i))) +
+                     *static_cast<const src_t*>(static_cast<void*>(
+                             SYCLGetInputPtr(sycl_indexer_ptr, 1, i)));
+         });
+     }).wait();
 }
 
 template <typename src_t,

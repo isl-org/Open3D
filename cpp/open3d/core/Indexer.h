@@ -84,9 +84,9 @@ struct SYCLIndexer {
     int64_t ndims_;
 };
 
-inline uint8_t* SYCLGetWorkloadDataPtr(const SYCLIndexer* self,
-                                       const SYCLTensorRef* tr,
-                                       int64_t workload_idx) {
+inline char* SYCLGetWorkloadDataPtr(const SYCLIndexer* self,
+                                    const SYCLTensorRef* tr,
+                                    int64_t workload_idx) {
     if (workload_idx < 0) {
         return nullptr;
     }
@@ -96,17 +96,16 @@ inline uint8_t* SYCLGetWorkloadDataPtr(const SYCLIndexer* self,
                 workload_idx / self->master_strides_[i] * tr->byte_strides_[i];
         workload_idx = workload_idx % self->master_strides_[i];
     }
-    return (uint8_t*)(tr->data_ptr_) + offset;
+    return (char*)(tr->data_ptr_) + offset;
 }
 
-inline uint8_t* SYCLGetOutputPtr(const SYCLIndexer* self,
-                                 int64_t workload_idx) {
+inline char* SYCLGetOutputPtr(const SYCLIndexer* self, int64_t workload_idx) {
     return SYCLGetWorkloadDataPtr(self, &(self->outputs_[0]), workload_idx);
 }
 
-inline uint8_t* SYCLGetInputPtr(const SYCLIndexer* self,
-                                int64_t input_idx,
-                                int64_t workload_idx) {
+inline char* SYCLGetInputPtr(const SYCLIndexer* self,
+                             int64_t input_idx,
+                             int64_t workload_idx) {
     if (input_idx < 0 || input_idx >= self->num_inputs_) {
         return nullptr;
     }
