@@ -297,7 +297,7 @@ class Open3DPluginDataReader:
 
 def to_dict_batch(o3d_geometry_list):
     """Convert sequence of identical (legacy) Open3D geometry types to
-    attribute-tensor dictionary. The geometry seequence forms a batch of data.
+    attribute-tensor dictionary. The geometry sequence forms a batch of data.
     Custom attributes are not supported.
 
     TODO: This involves a data copy. Add support for List[Open3D geometry]
@@ -317,6 +317,7 @@ def to_dict_batch(o3d_geometry_list):
     vertex_colors = []
     vertex_normals = []
     triangle_indices = []
+    triangle_uvs = []
     line_colors = []
     line_indices = []
     if isinstance(o3d_geometry_list[0], o3d.geometry.PointCloud):
@@ -337,12 +338,16 @@ def to_dict_batch(o3d_geometry_list):
             vertex_colors.append(np.asarray(geometry.vertex_colors))
             vertex_normals.append(np.asarray(geometry.vertex_normals))
             triangle_indices.append(np.asarray(geometry.triangles))
+            if geometry.has_triangle_uvs():
+                triangle_uvs.append(
+                    np.asarray(geometry.triangle_uvs).reshape((-1, 3, 2)))
 
         geo_dict = {
             'vertex_positions': np.stack(vertex_positions, axis=0),
             'vertex_colors': np.stack(vertex_colors, axis=0),
             'vertex_normals': np.stack(vertex_normals, axis=0),
             'triangle_indices': np.stack(triangle_indices, axis=0),
+            'triangle_texture_uvs': np.stack(triangle_uvs, axis=0)
         }
 
     elif isinstance(o3d_geometry_list[0], o3d.geometry.LineSet):
@@ -359,7 +364,7 @@ def to_dict_batch(o3d_geometry_list):
 
     else:
         raise NotImplementedError(
-            f"Geometry type {type(o3d_geometry_list[0])} is not suported yet.")
+            f"Geometry type {type(o3d_geometry_list[0])} is not supported yet.")
 
     # remove empty arrays
     for prop in tuple(geo_dict.keys()):

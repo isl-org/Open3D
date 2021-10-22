@@ -172,7 +172,9 @@ public:
     const t::geometry::Image &GetNormalMap() const {
         return GetTextureMap("normal");
     }
-    const t::geometry::Image &GetAOMap() const { return GetTextureMap("ao"); }
+    const t::geometry::Image &GetAOMap() const {
+        return GetTextureMap("ambient_occlusion");
+    }
     const t::geometry::Image &GetMetallicMap() const {
         return GetTextureMap("metallic");
     }

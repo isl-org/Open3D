@@ -206,29 +206,13 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                         mesh_legacy.triangle_normals_, float_dtype, device));
     }
     if (mesh_legacy.HasTriangleUvs()) {
-        // Legacy uses UVs as triangle attributes
-        // Check length and issue warning on mismatch
-        if (mesh_legacy.triangle_uvs_.size() != mesh_legacy.vertices_.size()) {
-            utility::LogWarning(
-                    "Ignoring UV coordinates since n_vertices ({}) != "
-                    "length(UV) ({})",
-                    mesh_legacy.vertices_.size(),
-                    mesh_legacy.triangle_uvs_.size());
-        } else {
-            mesh.SetVertexAttr(
-                    "texture_uvs",
-                    core::eigen_converter::EigenVector2dVectorToTensor(
-                            mesh_legacy.triangle_uvs_, float_dtype, device));
-        }
-    }
-    if (mesh_legacy.HasTriangleMaterialIds()) {  // unused by visualizer
         mesh.SetTriangleAttr(
-                "material_ids",
-                core::Tensor(
-                        mesh_legacy.triangle_material_ids_,
-                        {static_cast<int64_t>(
-                                mesh_legacy.triangle_material_ids_.size())},
-                        core::Dtype::Int32, device));
+                "texture_uvs",
+                core::eigen_converter::EigenVector2dVectorToTensor(
+                        mesh_legacy.triangle_uvs_, float_dtype, device)
+                        .Reshape({static_cast<long>(
+                                          mesh_legacy.triangles_.size()),
+                                  3, 2}));
     }
     return mesh;
 }
@@ -260,14 +244,20 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
                 core::eigen_converter::TensorToEigenVector3dVector(
                         GetTriangleNormals());
     }
-    if (HasVertexAttr("texture_uvs")) {
+    if (HasTriangleAttr("texture_uvs")) {
         mesh_legacy.triangle_uvs_ =
                 core::eigen_converter::TensorToEigenVector2dVector(
-                        GetVertexAttr("texture_uvs"));
+                        GetTriangleAttr("texture_uvs")
+                                .Reshape(
+                                        {static_cast<long>(
+                                                 3 *
+                                                 mesh_legacy.triangles_.size()),
+                                         2}));
     }
-    if (HasTriangleAttr("material_ids")) {
-        mesh_legacy.triangle_material_ids_ =
-                GetTriangleAttr("material_ids").ToFlatVector<int32_t>();
+    if (HasVertexAttr("texture_uvs")) {
+        utility::LogWarning("{}",
+                            "texture_uvs as a vertex attribute is not "
+                            "supported by legacy TriangleMesh. Ignored.");
     }
 
     return mesh_legacy;

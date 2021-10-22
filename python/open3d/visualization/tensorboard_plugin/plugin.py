@@ -272,6 +272,12 @@ class Open3DPluginWindow:
                     geometry = self.data_reader.read_geometry(
                         self.run, tag, self.step, self.batch_idx,
                         self.step_to_idx)
+                    # FIXME: TriangleMeshBuffers needs UINt32, but indexing uses
+                    # Int64 (?)
+                    if (hasattr(geometry, "triangle") and
+                            "texture_uvs" in geometry.triangle):
+                        geometry.triangle["indices"] = geometry.triangle[
+                            "indices"].to(o3d.core.int64)
                     _log.debug(
                         f"Displaying geometry {geometry_name}:{geometry}")
                     async_event_loop.run_sync(self.window.add_geometry,
