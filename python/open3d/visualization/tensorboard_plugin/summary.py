@@ -541,7 +541,7 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
         [0,1] and converted to ``uint8`` range [0,255]. ``uint16`` data will be
         compressed to the range [0,255].
 
-        Any data tensor (with ndim>=2, including batch_size, i.e. excluding
+        Any data tensor (with ndim>=2 including batch_size, i.e. excluding
         ``material_name`` and ``material_scalar_*PROPERTY*``), may be replaced by
         an ``int`` scalar referring to a previous step. This allows reusing a
         previously written property in case that it does not change at different
