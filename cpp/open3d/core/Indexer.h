@@ -259,6 +259,20 @@ struct TensorRef {
     ispc::TensorRef ToISPC() const;
 #endif
 
+    SYCLTensorRef ToSYCL() const {
+        SYCLTensorRef sycl_tensor_ref;
+
+        sycl_tensor_ref.data_ptr_ = data_ptr_;
+        sycl_tensor_ref.ndims_ = ndims_;
+        sycl_tensor_ref.dtype_byte_size_ = dtype_byte_size_;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            sycl_tensor_ref.shape_[i] = shape_[i];
+            sycl_tensor_ref.byte_strides_[i] = byte_strides_[i];
+        }
+
+        return sycl_tensor_ref;
+    }
+
     void* data_ptr_;
     int64_t ndims_ = 0;
     int64_t dtype_byte_size_ = 0;
@@ -551,6 +565,28 @@ public:
     /// Converts this object to an corresponsing ISPC-compatible object.
     ispc::Indexer ToISPC() const;
 #endif
+
+    SYCLIndexer ToSYCL() const {
+        SYCLIndexer sycl_indexer;
+
+        sycl_indexer.num_inputs_ = NumInputs();
+        sycl_indexer.num_outputs_ = NumOutputs();
+        for (int64_t i = 0; i < NumInputs(); ++i) {
+            sycl_indexer.inputs_[i] = GetInput(i).ToSYCL();
+            sycl_indexer.inputs_contiguous_[i] = GetInput(i).IsContiguous();
+        }
+        for (int64_t i = 0; i < NumOutputs(); ++i) {
+            sycl_indexer.outputs_[i] = GetOutput(i).ToSYCL();
+            sycl_indexer.outputs_contiguous_[i] = GetOutput(i).IsContiguous();
+        }
+        for (int64_t i = 0; i < NumDims(); ++i) {
+            sycl_indexer.master_shape_[i] = GetMasterShape()[i];
+            sycl_indexer.master_strides_[i] = GetMasterStrides()[i];
+        }
+        sycl_indexer.ndims_ = NumDims();
+
+        return sycl_indexer;
+    }
 
 protected:
     /// Merge adjacent dimensions if either dim is 1 or if:
