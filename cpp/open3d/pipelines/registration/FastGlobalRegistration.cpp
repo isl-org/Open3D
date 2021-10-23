@@ -315,6 +315,16 @@ RegistrationResult FastGlobalRegistrationBasedOnCorrespondence(
         corresvec.push_back({corres[i](0), corres[i](1)});
     }
 
+    if (option.tuple_test_) {
+        // for AdvancedMatching ensure the first point cloud is the larger one
+        if (source.points_.size() > target.points_.size()) {
+            corresvec = AdvancedMatching(source, target, corresvec, option);
+        } else {
+            corresvec = AdvancedMatching(target, source, corresvec, option);
+            for (auto& p : corresvec) std::swap(p.first, p.second);
+        }
+    }
+
     Eigen::Matrix4d transformation;
     transformation = OptimizePairwiseRegistration(point_cloud_vec, corresvec,
                                                   scale_global, option);
@@ -347,17 +357,21 @@ RegistrationResult FastGlobalRegistrationBasedOnFeatureMatching(
     std::tie(pcd_mean_vec, scale_global, scale_start) =
             NormalizePointCloud(point_cloud_vec, option);
 
-    // for AdvancedMatching ensure the first point cloud is the larger one
     std::vector<std::pair<int, int>> corres;
-    if (source.points_.size() > target.points_.size()) {
-        corres = AdvancedMatching(
-                source, target, InitialMatching(source_feature, target_feature),
-                option);
+    if (option.tuple_test_) {
+        // for AdvancedMatching ensure the first point cloud is the larger one
+        if (source.points_.size() > target.points_.size()) {
+            corres = AdvancedMatching(
+                    source, target,
+                    InitialMatching(source_feature, target_feature), option);
+        } else {
+            corres = AdvancedMatching(
+                    target, source,
+                    InitialMatching(target_feature, source_feature), option);
+            for (auto& p : corres) std::swap(p.first, p.second);
+        }
     } else {
-        corres = AdvancedMatching(
-                target, source, InitialMatching(target_feature, source_feature),
-                option);
-        for (auto& p : corres) std::swap(p.first, p.second);
+        corres = InitialMatching(source_feature, target_feature);
     }
 
     Eigen::Matrix4d transformation;
