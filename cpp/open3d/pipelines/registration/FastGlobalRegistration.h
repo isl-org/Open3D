@@ -31,6 +31,7 @@
 #include <tuple>
 #include <vector>
 
+#include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Optional.h"
 
 namespace open3d {
@@ -105,7 +106,26 @@ public:
     utility::optional<unsigned int> seed_;
 };
 
-RegistrationResult FastGlobalRegistration(
+/// \brief Fast Global Registration based on a given set of correspondences.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param corres Correspondence indices between source and target point clouds.
+/// \param option FGR options
+RegistrationResult FastGlobalRegistrationBasedOnCorrespondence(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres,
+        const FastGlobalRegistrationOption &option =
+                FastGlobalRegistrationOption());
+
+/// \brief Fast Global Registration based on a given set of FPFH features.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param corres Correspondence indices between source and target point clouds.
+/// \param option FGR options
+RegistrationResult FastGlobalRegistrationBasedOnFeatureMatching(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const Feature &source_feature,
