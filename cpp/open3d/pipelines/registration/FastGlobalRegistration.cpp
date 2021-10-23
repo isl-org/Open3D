@@ -291,7 +291,44 @@ static Eigen::Matrix4d GetTransformationOriginalScale(
     return transtemp;
 }
 
-RegistrationResult FastGlobalRegistration(
+RegistrationResult FastGlobalRegistrationBasedOnCorrespondence(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres,
+        const FastGlobalRegistrationOption &option /* =
+                FastGlobalRegistrationOption()*/) {
+    geometry::PointCloud source_orig = source;
+    geometry::PointCloud target_orig = target;
+
+    std::vector<geometry::PointCloud> point_cloud_vec;
+    point_cloud_vec.push_back(source);
+    point_cloud_vec.push_back(target);
+
+    double scale_global, scale_start;
+    std::vector<Eigen::Vector3d> pcd_mean_vec;
+    std::tie(pcd_mean_vec, scale_global, scale_start) =
+            NormalizePointCloud(point_cloud_vec, option);
+
+    std::vector<std::pair<int, int>> corresvec;
+    corresvec.reserve(corres.size());
+    for (size_t i = 0; i < corres.size(); ++i) {
+        corresvec.push_back({corres[i](0), corres[i](1)});
+    }
+
+    Eigen::Matrix4d transformation;
+    transformation = OptimizePairwiseRegistration(point_cloud_vec, corresvec,
+                                                  scale_global, option);
+
+    // as the original code T * point_cloud_vec[1] is aligned with
+    // point_cloud_vec[0] matrix inverse is applied here.
+    return EvaluateRegistration(
+            source_orig, target_orig, option.maximum_correspondence_distance_,
+            GetTransformationOriginalScale(transformation, pcd_mean_vec,
+                                           scale_global)
+                    .inverse());
+}
+
+RegistrationResult FastGlobalRegistrationBasedOnFeatureMatching(
         const geometry::PointCloud& source,
         const geometry::PointCloud& target,
         const Feature& source_feature,

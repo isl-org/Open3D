@@ -682,13 +682,24 @@ void pybind_registration_methods(py::module &m) {
             m, "registration_ransac_based_on_feature_matching",
             map_shared_argument_docstrings);
 
-    m.def("registration_fast_based_on_feature_matching",
-          &FastGlobalRegistration, py::call_guard<py::gil_scoped_release>(),
+    m.def("registration_fgr_based_on_correspondence",
+          &FastGlobalRegistrationBasedOnCorrespondence,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for fast global registration based on a set of "
+          "correspondences",
+          "source"_a, "target"_a, "corres"_a,
+          "option"_a = FastGlobalRegistrationOption());
+    docstring::FunctionDocInject(m, "registration_fgr_based_on_correspondence",
+                                 map_shared_argument_docstrings);
+
+    m.def("registration_fgr_based_on_feature_matching",
+          &FastGlobalRegistrationBasedOnFeatureMatching,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for fast global registration based on feature matching",
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
           "option"_a = FastGlobalRegistrationOption());
     docstring::FunctionDocInject(m,
-                                 "registration_fast_based_on_feature_matching",
+                                 "registration_fgr_based_on_feature_matching",
                                  map_shared_argument_docstrings);
 
     m.def("get_information_matrix_from_point_clouds",
