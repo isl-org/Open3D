@@ -51,6 +51,7 @@ void pybind_geometry(py::module& m) {
             "geometry", "Tensor-based geometry defining module.");
 
     pybind_geometry_class(m_submodule);
+    pybind_drawable_geometry_class(m_submodule);
     pybind_tensormap(m_submodule);
     pybind_pointcloud(m_submodule);
     pybind_lineset(m_submodule);
