@@ -166,9 +166,10 @@ class Redwood(Dataset):
     downloded zip file. The example below illustrates the usage."
 
     Arguments:
-      data_root: The class downloads the bunny.tar.gz file to the data_root 
-        folder, if not already present. By default the data_root is set to 
-        'open3d/data/' directory.
+      data_root: The class downloads four zip files namely; livingroom1.zip, 
+      livingroom2.zip, office1.zip, office2.zip file to the data_root folder,
+      if not already present. By default the data_root is set to 
+      'open3d/data/' directory.
        
     Example:
     
