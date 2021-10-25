@@ -55,6 +55,11 @@ class Bunny(SingleFileDataset):
       intermediate files are deleted. The path variable of Bunny() dataset 
       can be used to retrive the bunny ply path. Sha256 checksum is used to 
       verify the downloded file. 
+
+    Arguments:
+      data_root: The class downloads the bunny.tar.gz file to the data_root 
+        folder, if not already present. By default the data_root is set to 
+        'open3d/data/' directory.
        
     Example:
       This example shows how to access the path of bunny class to
@@ -63,11 +68,6 @@ class Bunny(SingleFileDataset):
       import open3d as o3d
       bunny_dataset = o3d.data.dataset.Bunny()
       bunny_mesh = o3d.io.read_triangle_mesh(bunny_dataset.path)
-
-    Arguments:
-      data_root: The class downloads the bunny.tar.gz file to the data_root 
-        folder, if not already present. By default the data_root is set to 
-        'open3d/data/' directory.
     """
 
     url = "http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz"
@@ -106,6 +106,11 @@ class Fountain(Dataset):
       camera tragectory, mesh variables can be used to access the depth image 
       path list, color image path list, camera tragectory and mesh respectively. 
       Sha256 checksum is used to verify the downloded zip file. 
+  
+    Arguments:
+      data_root: The class downloads the fountain.zip file to the data_root 
+        folder, if not already present. By default the data_root is set to 
+        'open3d/data/' directory.
        
     Example:
 
@@ -122,11 +127,6 @@ class Fountain(Dataset):
       camera_trajectory = o3d.io.read_pinhole_camera_trajectory(
        fountain_dataset.camera_trajectory)
       mesh = o3d.io.read_triangle_mesh(fountain_dataset.mesh)
-
-    Arguments:
-      data_root: The class downloads the fountain.zip file to the data_root 
-        folder, if not already present. By default the data_root is set to 
-        'open3d/data/' directory.
     """
 
     url = "https://github.com/isl-org/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
@@ -158,33 +158,48 @@ class Fountain(Dataset):
 
 
 class Redwood(Dataset):
-    """Python class to download redwood dataset. The class also extracts the 
-      redwood dataset from zip file. Both 'fountain.zip' and 'fountain' folder 
-      are kept in the download directory. depth_image_path, color_image_path, 
-      camera tragectory, mesh variables can be used to access the depth image 
-      path list, color image path list, camera tragectory and mesh respectively. 
-      sha256 checksum is used to verify the downloded zip file. 
-       
-    Example:
-
-      import open3d as o3d
-      redwood_dataset = o3d.data.dataset.Redwood()
-      rgbd_images = []
-      for i in range(len(fountain_dataset.depth_image_path)):
-        depth = o3d.io.read_image(fountain_dataset.depth_image_path[i])
-        color = o3d.io.read_image(fountain_dataset.color_image_path[i])
-        rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-            color, depth, convert_rgb_to_intensity=False)
-        rgbd_images.append(rgbd_image)
-
-      camera_trajectory = o3d.io.read_pinhole_camera_trajectory(
-       fountain_dataset.camera_trajectory)
-      mesh = o3d.io.read_triangle_mesh(fountain_dataset.mesh)
+    """Python class to download redwood dataset. The datset has four zip files
+    namely; livingroom1, livingroom2, office1, office2. The class downloads
+    each of these zip files and extracts them to seperate folders. It then 
+    returns a list of size four where each element contains the list of ply 
+    files in the corresponding folder. Sha256 checksum is used to verify the 
+    downloded zip file. The example below illustrates the usage."
 
     Arguments:
       data_root: The class downloads the bunny.tar.gz file to the data_root 
         folder, if not already present. By default the data_root is set to 
         'open3d/data/' directory.
+       
+    Example:
+    
+    import open3d as o3d
+    import pickle
+    redwood = o3d.data.dataset.Redwood()
+    voxel_size = 0.05
+
+    def preprocess_point_cloud(pcd, config):
+      voxel_size = config["voxel_size"]
+      pcd_down = pcd.voxel_down_sample(voxel_size)
+      pcd_down.estimate_normals(
+          o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0,
+                                              max_nn=30))
+      pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
+          pcd_down,
+          o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5.0,
+                                              max_nn=100))
+      return (pcd_down, pcd_fpfh)
+
+    # do RANSAC based alignment
+    for ply_file_list in redwood.ply_paths:
+
+        alignment = []
+        for ply_file in ply_file_list:
+            source = o3d.io.read_point_cloud(ply_file)
+            source_down, source_fpfh = preprocess_point_cloud(
+                source, voxel_size)
+            f = open('store.pckl', 'wb')
+            pickle.dump([source_down, source_fpfh], f)
+            f.close()
     """
 
     names = ['livingroom1', 'livingroom2', 'office1', 'office2']
@@ -220,19 +235,19 @@ class Redwood(Dataset):
             unzip_data(pathlib.Path(redwood_path,
                                     file_url.split("/")[-1]), file_path)
 
-        self.livingroom1_ply_path = get_file_list(pathlib.Path(
+        self.livingroom1_ply_paths = get_file_list(pathlib.Path(
             redwood_path, Redwood.names[0]),
-                                                  extension=".ply")
-        self.livingroom2_ply_path = get_file_list(pathlib.Path(
+                                                   extension=".ply")
+        self.livingroom2_ply_paths = get_file_list(pathlib.Path(
             redwood_path, Redwood.names[1]),
-                                                  extension=".ply")
-        self.office1_ply_path = get_file_list(pathlib.Path(
+                                                   extension=".ply")
+        self.office1_ply_paths = get_file_list(pathlib.Path(
             redwood_path, Redwood.names[2]),
-                                              extension=".ply")
-        self.office2_ply_path = get_file_list(pathlib.Path(
+                                               extension=".ply")
+        self.office2_ply_paths = get_file_list(pathlib.Path(
             redwood_path, Redwood.names[3]),
-                                              extension=".ply")
+                                               extension=".ply")
         self.ply_paths = [
-            self.livingroom1_ply_path, self.livingroom2_ply_path,
-            self.office1_ply_path, self.office2_ply_path
+            self.livingroom1_ply_paths, self.livingroom2_ply_paths,
+            self.office1_ply_paths, self.office2_ply_paths
         ]

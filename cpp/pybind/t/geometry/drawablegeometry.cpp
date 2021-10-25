@@ -24,41 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/visualization/visualization.h"
+#include "open3d/t/geometry/DrawableGeometry.h"
 
-#include "pybind/visualization/gui/gui.h"
-#include "pybind/visualization/rendering/material.h"
-#include "pybind/visualization/rendering/rendering.h"
-
-#ifdef BUILD_WEBRTC
-#include "pybind/visualization/webrtc_server/webrtc_window_system.h"
-#endif
+#include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
-namespace visualization {
+namespace t {
+namespace geometry {
 
-void pybind_visualization(py::module &m) {
-    py::module m_visualization = m.def_submodule("visualization");
-    pybind_renderoption(m_visualization);
-    pybind_viewcontrol(m_visualization);
-    pybind_visualizer(m_visualization);
-    pybind_visualization_utility(m_visualization);
-    pybind_renderoption_method(m_visualization);
-    pybind_viewcontrol_method(m_visualization);
-    pybind_visualizer_method(m_visualization);
-    pybind_visualization_utility_methods(m_visualization);
-
-#ifdef BUILD_GUI
-    rendering::pybind_rendering(m_visualization);
-    rendering::pybind_material(m_visualization);
-    gui::pybind_gui(m_visualization);
-    pybind_o3dvisualizer(m_visualization);
-#endif
-
-#ifdef BUILD_WEBRTC
-    webrtc_server::pybind_webrtc_server(m_visualization);
-#endif
+void pybind_drawable_geometry_class(py::module& m) {
+    // open3d.t.geometry.DrawableGeometry
+    py::class_<DrawableGeometry, std::shared_ptr<DrawableGeometry>>
+            drawable_geometry(
+                    m, "DrawableGeometry",
+                    "Base class for geometry types which can be visualized.");
+    drawable_geometry.def("has_valid_material", &DrawableGeometry::HasMaterial,
+                          "Returns true if the geometry's material is valid.");
+    drawable_geometry.def_property(
+            "material", py::overload_cast<>(&DrawableGeometry::GetMaterial),
+            &DrawableGeometry::SetMaterial);
 }
 
-}  // namespace visualization
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d
