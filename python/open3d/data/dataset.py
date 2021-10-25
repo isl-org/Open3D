@@ -188,15 +188,19 @@ class Redwood(Dataset):
     """
 
     names = ['livingroom1', 'livingroom2', 'office1', 'office2']
-    url = ["https://github.com/isl-org/open3d_downloads/releases/download/redwood/livingroom1-fragments-ply.zip",
-          "https://github.com/isl-org/open3d_downloads/releases/download/redwood/livingroom2-fragments-ply.zip",
-          "https://github.com/isl-org/open3d_downloads/releases/download/redwood/office1-fragments-ply.zip",
-          "https://github.com/isl-org/open3d_downloads/releases/download/redwood/office2-fragments-ply.zip"]
+    url = [
+        "https://github.com/isl-org/open3d_downloads/releases/download/redwood/livingroom1-fragments-ply.zip",
+        "https://github.com/isl-org/open3d_downloads/releases/download/redwood/livingroom2-fragments-ply.zip",
+        "https://github.com/isl-org/open3d_downloads/releases/download/redwood/office1-fragments-ply.zip",
+        "https://github.com/isl-org/open3d_downloads/releases/download/redwood/office2-fragments-ply.zip"
+    ]
 
-    sha256 = ["642d62dae824b95a220370a15d4d5e2cc2b33d47a7e1075dc058047510813f70",
-              "c8d68d18a02b1152052cd761566bc88ca7a75c027a8676180a3f81597f9ad34e",
-              "3cf4ddec1f30ec8c43a65e32bff5cf5afe4316f1069c5b0e66f573ba9f4eb6f5",
-              "8a0f99217b4de27c9bf2c2beb432248c61a7a73c1af2b44fd39fb88bcfee793d"]
+    sha256 = [
+        "642d62dae824b95a220370a15d4d5e2cc2b33d47a7e1075dc058047510813f70",
+        "c8d68d18a02b1152052cd761566bc88ca7a75c027a8676180a3f81597f9ad34e",
+        "3cf4ddec1f30ec8c43a65e32bff5cf5afe4316f1069c5b0e66f573ba9f4eb6f5",
+        "8a0f99217b4de27c9bf2c2beb432248c61a7a73c1af2b44fd39fb88bcfee793d"
+    ]
 
     def __init__(self, data_root=None):
         import os
@@ -207,13 +211,28 @@ class Redwood(Dataset):
 
         super(Redwood, self).__init__(data_root)
         redwood_path = pathlib.Path(self.data_root, "redwood")
-        for file_name, file_url, file_sha256 in zip(Redwood.names, Redwood.url, Redwood.sha256):
-          file_path = pathlib.Path(redwood_path, file_name)
-          _download_file(file_url, pathlib.Path(redwood_path, file_url.split("/")[-1]), file_sha256)
-          unzip_data(pathlib.Path(redwood_path, file_url.split("/")[-1]), file_path)
-        
-        self.livingroom1_ply_path = get_file_list(pathlib.Path(redwood_path, Redwood.names[0]), extension=".ply")
-        self.livingroom2_ply_path = get_file_list(pathlib.Path(redwood_path, Redwood.names[1]), extension=".ply")
-        self.office1_ply_path = get_file_list(pathlib.Path(redwood_path, Redwood.names[2]), extension=".ply")
-        self.office2_ply_path = get_file_list(pathlib.Path(redwood_path, Redwood.names[3]), extension=".ply")
-        self.ply_paths = [self.livingroom1_ply_path, self.livingroom2_ply_path, self.office1_ply_path, self.office2_ply_path]
+        for file_name, file_url, file_sha256 in zip(Redwood.names, Redwood.url,
+                                                    Redwood.sha256):
+            file_path = pathlib.Path(redwood_path, file_name)
+            _download_file(file_url,
+                           pathlib.Path(redwood_path,
+                                        file_url.split("/")[-1]), file_sha256)
+            unzip_data(pathlib.Path(redwood_path,
+                                    file_url.split("/")[-1]), file_path)
+
+        self.livingroom1_ply_path = get_file_list(pathlib.Path(
+            redwood_path, Redwood.names[0]),
+                                                  extension=".ply")
+        self.livingroom2_ply_path = get_file_list(pathlib.Path(
+            redwood_path, Redwood.names[1]),
+                                                  extension=".ply")
+        self.office1_ply_path = get_file_list(pathlib.Path(
+            redwood_path, Redwood.names[2]),
+                                              extension=".ply")
+        self.office2_ply_path = get_file_list(pathlib.Path(
+            redwood_path, Redwood.names[3]),
+                                              extension=".ply")
+        self.ply_paths = [
+            self.livingroom1_ply_path, self.livingroom2_ply_path,
+            self.office1_ply_path, self.office2_ply_path
+        ]

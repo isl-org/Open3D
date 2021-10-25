@@ -26,3 +26,4 @@
 
 from .dataset import Bunny
 from .dataset import Fountain
+from .dataset import Redwood

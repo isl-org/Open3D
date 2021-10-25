@@ -78,6 +78,7 @@ if __name__ == "__main__":
                 if do_visualization:
                     draw_registration_result(source_down, target_down,
                                              result.transformation)
-        write_trajectory(alignment, redwood.data_root+"/ransac_"+name+".log")
+        write_trajectory(alignment,
+                         redwood.data_root + "/ransac_" + name + ".log")
 
     # do evaluation
