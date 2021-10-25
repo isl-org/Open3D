@@ -180,26 +180,8 @@ def armadillo():
 
 
 def bunny():
-    bunny_path = _relative_path("../../test_data/Bunny.ply")
-    if not os.path.exists(bunny_path):
-        print("downloading bunny mesh")
-        url = "http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz"
-        urllib.request.urlretrieve(url, bunny_path + ".tar.gz")
-        print("extract bunny mesh")
-        with tarfile.open(bunny_path + ".tar.gz") as tar:
-            tar.extractall(path=os.path.dirname(bunny_path))
-        shutil.move(
-            os.path.join(
-                os.path.dirname(bunny_path),
-                "bunny",
-                "reconstruction",
-                "bun_zipper.ply",
-            ),
-            bunny_path,
-        )
-        os.remove(bunny_path + ".tar.gz")
-        shutil.rmtree(os.path.join(os.path.dirname(bunny_path), "bunny"))
-    mesh = o3d.io.read_triangle_mesh(bunny_path)
+    _dataset = o3d.data.dataset.Bunny()
+    mesh = o3d.io.read_triangle_mesh(bunny_dataset.path)
     mesh.compute_vertex_normals()
     return mesh
 

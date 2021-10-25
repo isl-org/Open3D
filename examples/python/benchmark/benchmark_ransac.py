@@ -40,59 +40,44 @@ from trajectory_io import *
 
 do_visualization = False
 
-
-def get_ply_path(dataset_name, id):
-    return "%s/%s/cloud_bin_%d.ply" % (dataset_path, dataset_name, id)
-
-
-def get_log_path(dataset_name):
-    return "%s/ransac_%s.log" % (dataset_path, dataset_name)
-
-
 if __name__ == "__main__":
     # data preparation
-    get_redwood_dataset()
+    redwood = o3d.data.dataset.Redwood()
     voxel_size = 0.05
 
     # do RANSAC based alignment
-    for dataset_name in dataset_names:
-        ply_file_names = get_file_list("%s/%s/" % (dataset_path, dataset_name),
-                                       ".ply")
-        n_ply_files = len(ply_file_names)
-
+    for name, ply_file_list in zip(redwood.names, redwood.ply_paths):
+        n_ply_files = len(ply_file_list)
         alignment = []
         for s in range(n_ply_files):
             for t in range(s + 1, n_ply_files):
 
-                print("%s:: matching %d-%d" % (dataset_name, s, t))
-                source = o3d.io.read_point_cloud(get_ply_path(dataset_name, s))
-                target = o3d.io.read_point_cloud(get_ply_path(dataset_name, t))
+                print("%s:: matching %d-%d" % (name, s, t))
+                source = o3d.io.read_point_cloud(ply_file_list[s])
+                target = o3d.io.read_point_cloud(ply_file_list[t])
                 source_down, source_fpfh = preprocess_point_cloud(
                     source, voxel_size)
                 target_down, target_fpfh = preprocess_point_cloud(
                     target, voxel_size)
 
-                result = execute_global_registration(source_down, target_down,
-                                                     source_fpfh, target_fpfh,
-                                                     voxel_size)
+                result = execute_fast_global_registration(
+                    source_down, target_down, source_fpfh, target_fpfh,
+                    voxel_size)
                 if (result.transformation.trace() == 4.0):
                     success = False
                 else:
                     success = True
 
-                # Note: we save inverse of result.transformation
+                # Note: we save inverse of result_ransac.transformation
                 # to comply with http://redwood-data.org/indoor/fileformat.html
-                if not success:
-                    print("No reasonable solution.")
-                else:
-                    alignment.append(
-                        CameraPose([s, t, n_ply_files],
-                                   np.linalg.inv(result.transformation)))
-                    print(np.linalg.inv(result.transformation))
+                alignment.append(
+                    CameraPose([s, t, n_ply_files],
+                               np.linalg.inv(result.transformation)))
+                print(np.linalg.inv(result.transformation))
 
                 if do_visualization:
                     draw_registration_result(source_down, target_down,
                                              result.transformation)
-        write_trajectory(alignment, get_log_path(dataset_name))
+        write_trajectory(alignment, redwood.data_root+"/ransac_"+name+".log")
 
     # do evaluation

@@ -24,46 +24,5 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/benchmark/benchmark_pre.py
-
-import os
-import sys
-sys.path.append("../pipelines")
-sys.path.append("../geometry")
-sys.path.append("../utility")
-import numpy as np
-from file import *
-from visualization import *
-from downloader import *
-from fast_global_registration import *
-from trajectory_io import *
-
-import pickle
-
-do_visualization = False
-
-
-def get_ply_path(dataset_name, id):
-    return "%s/%s/cloud_bin_%d.ply" % (dataset_path, dataset_name, id)
-
-
-def get_log_path(dataset_name):
-    return "%s/fgr_%s.log" % (dataset_path, dataset_name)
-
-
-if __name__ == "__main__":
-    # data preparation
-    redwood = o3d.data.dataset.Redwood()
-    voxel_size = 0.05
-
-    # do RANSAC based alignment
-    for ply_file_list in redwood.ply_paths:
-
-        alignment = []
-        for ply_file in ply_file_list:
-            source = o3d.io.read_point_cloud(ply_file)
-            source_down, source_fpfh = preprocess_point_cloud(
-                source, voxel_size)
-            f = open('store.pckl', 'wb')
-            pickle.dump([source_down, source_fpfh], f)
-            f.close()
+from .dataset import Bunny
+from .dataset import Fountain

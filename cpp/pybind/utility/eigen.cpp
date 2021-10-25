@@ -33,7 +33,7 @@ template <typename Vector,
           typename holder_type = std::unique_ptr<Vector>,
           typename... Args>
 py::class_<Vector, holder_type> bind_vector_without_repr(
-        py::module &m, std::string const &name, Args &&... args) {
+        py::module &m, std::string const &name, Args &&...args) {
     // hack function to disable __repr__ for the convenient function
     // bind_vector()
     using Class_ = py::class_<Vector, holder_type>;

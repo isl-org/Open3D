@@ -119,20 +119,6 @@ def _relative_path(path):
     return os.path.join(script_dir, path)
 
 
-def download_fountain_dataset():
-    fountain_path = _relative_path("../test_data/fountain_small")
-    fountain_zip_path = _relative_path("../test_data/fountain.zip")
-    if not os.path.exists(fountain_path):
-        print("downloading fountain dataset")
-        url = "https://github.com/isl-org/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
-        urllib.request.urlretrieve(url, fountain_zip_path)
-        print("extract fountain dataset")
-        with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:
-            zip_ref.extractall(os.path.dirname(fountain_path))
-        os.remove(fountain_zip_path)
-    return fountain_path
-
-
 def get_non_manifold_edge_mesh():
     verts = np.array(
         [[-1, 0, 0], [0, 1, 0], [1, 0, 0], [0, -1, 0], [0, 0, 1]],
@@ -227,26 +213,8 @@ def get_armadillo_mesh():
 
 
 def get_bunny_mesh():
-    bunny_path = _relative_path("../test_data/Bunny.ply")
-    if not os.path.exists(bunny_path):
-        print("downloading bunny mesh")
-        url = "http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz"
-        urllib.request.urlretrieve(url, bunny_path + ".tar.gz")
-        print("extract bunny mesh")
-        with tarfile.open(bunny_path + ".tar.gz") as tar:
-            tar.extractall(path=os.path.dirname(bunny_path))
-        shutil.move(
-            os.path.join(
-                os.path.dirname(bunny_path),
-                "bunny",
-                "reconstruction",
-                "bun_zipper.ply",
-            ),
-            bunny_path,
-        )
-        os.remove(bunny_path + ".tar.gz")
-        shutil.rmtree(os.path.join(os.path.dirname(bunny_path), "bunny"))
-    mesh = o3d.io.read_triangle_mesh(bunny_path)
+    bunny_dataset = o3d.data.dataset.Bunny()
+    mesh = o3d.io.read_triangle_mesh(bunny_dataset.path)
     mesh.compute_vertex_normals()
     return mesh
 

@@ -90,6 +90,7 @@ if __DEVICE_API__ == 'cpu':
     from open3d.cpu.pybind import (camera, geometry, io, pipelines, utility, t)
     from open3d.cpu import pybind
 
+import open3d.data
 import open3d.core
 import open3d.visualization
 

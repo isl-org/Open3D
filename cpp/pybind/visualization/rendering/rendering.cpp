@@ -136,9 +136,9 @@ void pybind_rendering_classes(py::module &m) {
                  "is True if the image is in the sRGB colorspace and False "
                  "otherwise")
             .def("update_texture",
-                 (bool (Renderer::*)(TextureHandle,
-                                     const std::shared_ptr<geometry::Image>,
-                                     bool)) &
+                 (bool(Renderer::*)(TextureHandle,
+                                    const std::shared_ptr<geometry::Image>,
+                                    bool)) &
                          Renderer::UpdateTexture,
                  "texture"_a, "image"_a, "is_sRGB"_a = false,
                  "Updates the contents of the texture to be the new image, or "
@@ -227,21 +227,20 @@ void pybind_rendering_classes(py::module &m) {
             .export_values();
 
     cam.def("set_projection",
-            (void (Camera::*)(double, double, double, double,
-                              Camera::FovType)) &
+            (void(Camera::*)(double, double, double, double, Camera::FovType)) &
                     Camera::SetProjection,
             "Sets a perspective projection. set_projection(field_of_view, "
             "aspect_ratio, far_plane, field_of_view_type)")
             .def("set_projection",
-                 (void (Camera::*)(Camera::Projection, double, double, double,
-                                   double, double, double)) &
+                 (void(Camera::*)(Camera::Projection, double, double, double,
+                                  double, double, double)) &
                          Camera::SetProjection,
                  "Sets the camera projection via a viewing frustum. "
                  "set_projection(projection_type, left, right, bottom, top, "
                  "near, far)")
             .def("set_projection",
-                 (void (Camera::*)(const Eigen::Matrix3d &, double, double,
-                                   double, double)) &
+                 (void(Camera::*)(const Eigen::Matrix3d &, double, double,
+                                  double, double)) &
                          Camera::SetProjection,
                  "Sets the camera projection via intrinsics matrix. "
                  "set_projection(intrinsics, near_place, far_plane, "
@@ -468,15 +467,15 @@ void pybind_rendering_classes(py::module &m) {
                  "Sets the camera with the given name as the active camera for "
                  "the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(
-                         const std::string &, const geometry::Geometry3D &,
-                         const Material &, const std::string &, size_t)) &
+                 (bool(Scene::*)(const std::string &,
+                                 const geometry::Geometry3D &, const Material &,
+                                 const std::string &, size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
                  "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
             .def("add_geometry",
-                 (bool (Scene::*)(
+                 (bool(Scene::*)(
                          const std::string &, const t::geometry::PointCloud &,
                          const Material &, const std::string &, size_t)) &
                          Scene::AddGeometry,
