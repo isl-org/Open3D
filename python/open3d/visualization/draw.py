@@ -40,6 +40,7 @@ def draw(geometry=None,
          bg_color=(1.0, 1.0, 1.0, 1.0),
          bg_image=None,
          ibl=None,
+         ibl_intensity=None,
          show_ui=None,
          point_size=None,
          animation_time_step=1.0,
@@ -86,7 +87,10 @@ def draw(geometry=None,
         w.show_settings = show_ui
 
     if ibl is not None:
-        w.set_ibl(ibl, 40000.0)
+        w.set_ibl(ibl)
+
+    if ibl_intensity is not None:
+        w.set_ibl_intensity(ibl_intensity)
 
     if rpc_interface:
         w.start_rpc_interface(address="tcp://127.0.0.1:51454", timeout=10000)

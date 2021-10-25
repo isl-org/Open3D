@@ -331,7 +331,10 @@ void pybind_o3dvisualizer(py::module& m) {
                  "and, optionally, the background image. Passing None for the "
                  "background image will clear any image already there.")
             .def("set_ibl", &O3DVisualizer::SetIBL,
-                 "set_ibl(path, intensity): Sets the IBL and its intensity")
+                 "set_ibl(path): Sets the IBL from its stem name or full path")
+            .def("set_ibl_intensity", &O3DVisualizer::SetIBLIntensity,
+                 "set_ibl_intensity(intensity): Sets the intensity of the "
+                 "current IBL")
             .def_property(
                     "show_settings",
                     [](const O3DVisualizer& dv) {

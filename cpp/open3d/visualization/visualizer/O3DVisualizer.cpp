@@ -1274,16 +1274,17 @@ struct O3DVisualizer::Impl {
     }
 
     void SetIBL(std::string path) {
-        utility::LogWarning("Setting IBL to {}", path);
         std::string ibl_path;
         if (path == "") {
             // Set IBL back to default
-            ibl_path = std::string(Application::GetInstance().GetResourcePath()) +
-                   std::string("/") + std::string(kDefaultIBL);
+            ibl_path =
+                    std::string(Application::GetInstance().GetResourcePath()) +
+                    std::string("/") + std::string(kDefaultIBL);
         } else if (utility::filesystem::FileExists(path + "_ibl.ktx")) {
-            // 
+            // Set IBL to named IBL - probably came from selecting in UI
             ibl_path = path;
         } else if (utility::filesystem::FileExists(path)) {
+            // User specified full path to IBL file
             if (path.find("_ibl.ktx") == path.size() - 8) {
                 ibl_path = path.substr(0, path.size() - 8);
             } else {
@@ -1293,15 +1294,22 @@ struct O3DVisualizer::Impl {
                 return;
             }
         } else {
-            ibl_path = std::string(Application::GetInstance().GetResourcePath()) +
-                   std::string("/") + path;
-            if (!utility::filesystem::FileExists(ibl_path)) {
+            // User specified the IBL 'stem' without the full path
+            ibl_path =
+                    std::string(Application::GetInstance().GetResourcePath()) +
+                    "/" + path;
+            if (!utility::filesystem::FileExists(ibl_path + "_ibl.ktx")) {
                 return;
             }
         }
         ui_state_.ibl_path = ibl_path;
         scene_->GetScene()->GetScene()->SetIndirectLight(ibl_path);
         scene_->ForceRedraw();
+    }
+
+    void SetIBLIntensity(float intensity) {
+        ui_state_.ibl_intensity = intensity;
+        SetUIState(ui_state_);
     }
 
     void SetLightingProfile(const LightingProfile &profile) {
@@ -1993,8 +2001,10 @@ void O3DVisualizer::ShowSettings(bool show) { impl_->ShowSettings(show); }
 
 void O3DVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
 
-void O3DVisualizer::SetIBL(const std::string &path, float intensity) {
-    impl_->SetIBL(path);
+void O3DVisualizer::SetIBL(const std::string &path) { impl_->SetIBL(path); }
+
+void O3DVisualizer::SetIBLIntensity(float intensity) {
+    impl_->SetIBLIntensity(intensity);
 }
 
 void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
