@@ -65,8 +65,8 @@ public:
                            {"weight", core::UInt16},
                            {"color", core::UInt16}},
                   float voxel_size = 3.0 / 512.0, /* in meter */
-                  float sdf_trunc = 0.04,         /*  in meter  */
-                  int64_t block_resolution = 16, /*  block Tensor resolution  */
+                  float sdf_trunc = 0.04,         /* in meter */
+                  int64_t block_resolution = 16,  /* block Tensor resolution */
                   int64_t block_count = 1000,
                   const core::Device &device = core::Device("CPU:0"),
                   const core::HashBackendType &backend =

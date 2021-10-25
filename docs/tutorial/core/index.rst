@@ -1,6 +1,8 @@
-Tensor
+.. _core
+
+Core
 ======
 
 .. toctree::
-
     tensor
+    hashmap
