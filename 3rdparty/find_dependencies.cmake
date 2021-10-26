@@ -1188,10 +1188,15 @@ if (USE_ONE_API)
     # else()
     #     message(FATAL_ERROR "IntelSYCL cannot be found.")
     # endif()
-
     add_library(SYCL INTERFACE)
-    target_compile_options(SYCL INTERFACE -fsycl -fsycl-unnamed-lambda)
-    target_link_libraries(SYCL INTERFACE sycl -fsycl)
+    # target_compile_options(SYCL INTERFACE $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda>)
+    set_property(TARGET SYCL
+                 PROPERTY INTERFACE_COMPILE_OPTIONS
+                 $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda>)
+    # target_link_libraries(SYCL INTERFACE $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:sycl -fsycl>)
+    set_property(TARGET SYCL
+                 PROPERTY INTERFACE_LINK_LIBRARIES
+                 $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl -fsycl>)
     add_library(Open3D::SYCL ALIAS SYCL)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::SYCL)
 
