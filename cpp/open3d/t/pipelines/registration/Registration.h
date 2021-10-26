@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
@@ -87,8 +88,13 @@ public:
     /// \param transformation The estimated transformation matrix of dtype
     /// Float64 on CPU device.
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
-                               4, core::Float64, core::Device("CPU:0")))
-        : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
+                               4, core::Float64, core::Device("CPU:0")),
+                       bool save_info_map = false)
+        : transformation_(transformation),
+          inlier_rmse_(0.0),
+          fitness_(0.0),
+          save_info_map_(save_info_map),
+          info_map_("index") {}
 
     ~RegistrationResult() {}
 
@@ -109,6 +115,12 @@ public:
     /// For ICP: the overlapping area (# of inlier correspondences / # of points
     /// in target). Higher is better.
     double fitness_;
+    /// To store iteration-wise information in `info_map_`, mark this as `True`.
+    bool save_info_map_;
+    /// TensorMap containing iteration-wise information. The TensorMap contains
+    /// `index` (primary-key), `scale`, `iteration`, `inlier_rmse`, `fitness`,
+    /// `transformation`, on CPU device.
+    t::geometry::TensorMap info_map_;
 };
 
 /// \brief Function for evaluating registration between point clouds.
@@ -140,6 +152,9 @@ RegistrationResult EvaluateRegistration(
 /// `voxel_size` scale. If `voxel_size` < 0, original scale will be used.
 /// However it is highly recommended to down-sample the point-cloud for
 /// performance. By default origianl scale of the point-cloud will be used.
+/// \param save_info_map When `True`, it saves the iteration-wise values of
+/// `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration` in a
+/// `TensorMap` `info_map_` in `RegsitrationResult`. Default: False.
 RegistrationResult ICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -149,7 +164,8 @@ RegistrationResult ICP(
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
-        const double voxel_size = -1.0);
+        const double voxel_size = -1.0,
+        const bool save_info_map = false);
 
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
@@ -172,6 +188,9 @@ RegistrationResult ICP(
 /// \param init_source_to_target Initial transformation estimation of type
 /// Float64 on CPU.
 /// \param estimation Estimation method.
+/// \param save_info_map When `True`, it saves the iteration-wise values of
+/// `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration` in a
+/// `TensorMap` `info_map_` in `RegsitrationResult`. Default: False.
 RegistrationResult MultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -181,7 +200,8 @@ RegistrationResult MultiScaleICP(
         const core::Tensor &init_source_to_target =
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint());
+                TransformationEstimationPointToPoint(),
+        const bool save_info_map = false);
 
 /// \brief Computes `Information Matrix`, from the transfromation between source
 /// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},
