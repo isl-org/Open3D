@@ -451,9 +451,6 @@ include(3rdparty/find_dependencies.cmake)
 # Open3D library
 add_subdirectory(cpp)
 
-# Examples
-add_subdirectory(examples)
-
 # Documentation
 add_subdirectory(docs)
 
