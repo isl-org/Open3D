@@ -1,6 +1,0 @@
-Tensor
-======
-
-.. toctree::
-
-    tensor
