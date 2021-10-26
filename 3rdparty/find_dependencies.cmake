@@ -60,51 +60,6 @@ set(ExternalProject_CMAKE_ARGS_hidden
     -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON
     )
 
-# open3d_pkg_config_3rdparty_library(name ...)
-#
-# Creates an interface library for a pkg-config dependency.
-#
-# The function will set ${name}_FOUND to TRUE or FALSE
-# indicating whether or not the library could be found.
-#
-# Valid options:
-#    PUBLIC
-#        the library belongs to the public interface and must be installed
-#    HEADER
-#        the library headers belong to the public interface, but the library
-#        itself is linked privately
-#    SEARCH_ARGS
-#        the arguments passed to pkg_search_module()
-#
-function(open3d_pkg_config_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER" "" "SEARCH_ARGS" ${ARGN})
-    if(arg_UNPARSED_ARGUMENTS)
-        message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
-        message(FATAL_ERROR "Invalid syntax: open3d_pkg_config_3rdparty_library(${name} ${ARGN})")
-    endif()
-    if(PKGCONFIG_FOUND)
-        pkg_search_module(pc_${name} ${arg_SEARCH_ARGS})
-    endif()
-    if(pc_${name}_FOUND)
-        message(STATUS "Using installed third-party library ${name} ${${name_uc}_VERSION}")
-        add_library(${name} INTERFACE)
-        target_include_directories(${name} SYSTEM INTERFACE ${pc_${name}_INCLUDE_DIRS})
-        target_link_libraries(${name} INTERFACE ${pc_${name}_LINK_LIBRARIES})
-        foreach(flag IN LISTS pc_${name}_CFLAGS_OTHER)
-            if(flag MATCHES "-D(.*)")
-                target_compile_definitions(${name} INTERFACE ${CMAKE_MATCH_1})
-            endif()
-        endforeach()
-        if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
-            install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
-        endif()
-        set(${name}_FOUND TRUE PARENT_SCOPE)
-        add_library(${PROJECT_NAME}::${name} ALIAS ${name})
-    else()
-        message(STATUS "Unable to find installed third-party library ${name}")
-        set(${name}_FOUND FALSE PARENT_SCOPE)
-    endif()
-endfunction()
 
 # open3d_find_package_3rdparty_library(name ...)
 #
