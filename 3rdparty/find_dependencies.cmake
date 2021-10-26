@@ -459,16 +459,6 @@ open3d_find_package_3rdparty_library(3rdparty_threads
     TARGETS Threads::Threads
 )
 
-# Assimp
-include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
-open3d_import_3rdparty_library(3rdparty_assimp
-    INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
-    LIB_DIR      ${ASSIMP_LIB_DIR}
-    LIBRARIES    ${ASSIMP_LIBRARIES}
-    DEPENDS      ext_assimp
-)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_assimp)
-
 # Google benchmark
 if (BUILD_BENCHMARKS)
     include(${Open3D_3RDPARTY_DIR}/benchmark/benchmark.cmake)
