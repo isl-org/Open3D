@@ -17,18 +17,17 @@ function(open3d_set_global_properties target)
     # Require 64-bit indexing in vectorized code
     target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--addressing=64>)
 
-    # Set architecture flag
-    if(LINUX_AARCH64)
-        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=aarch64>)
-    else()
-        target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
-    endif()
-
     # Turn off fast math for IntelLLVM DPC++ compiler
     # Fast math is turned off for clang by default even for -O3.
     # We may make this optional and tune unit tests floating point precisions.
     target_compile_options(${target} PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
+
+    if (GLIBCXX_USE_CXX11_ABI)
+        target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
+    else()
+        target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
+    endif()
 
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
