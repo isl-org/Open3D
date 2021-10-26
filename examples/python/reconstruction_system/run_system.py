@@ -57,7 +57,7 @@ if __name__ == "__main__":
         action="store_true")
     parser.add_argument(
         "--slac",
-        help="Step 5) (optional) run slac optimisation for fragments.",
+        help="Step 5) (optional) run slac optimization for fragments.",
         action="store_true")
     parser.add_argument(
         "--slac_integrate",
