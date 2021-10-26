@@ -48,23 +48,4 @@ function(open3d_set_global_properties target)
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 
-    # Download test data files from open3d_downloads repo.
-    add_dependencies(${target} open3d_downloads)
-
-    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
-    # (from pybind11)
-    # macOS: -x: strip local symbols
-    # Linux: defaults
-    if(UNIX AND CMAKE_STRIP)
-        get_target_property(target_type ${target} TYPE)
-        if(target_type MATCHES
-                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
-            add_custom_command(TARGET ${target} POST_BUILD
-                COMMAND
-                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
-                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
-                COMMAND_EXPAND_LISTS)
-        endif()
-    endif()
-
 endfunction()
