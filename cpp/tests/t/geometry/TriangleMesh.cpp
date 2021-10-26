@@ -26,6 +26,8 @@
 
 #include "open3d/t/geometry/TriangleMesh.h"
 
+#include <gmock/gmock.h>
+
 #include "core/CoreTest.h"
 #include "open3d/core/TensorCheck.h"
 #include "tests/Tests.h"
@@ -355,6 +357,10 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
             Eigen::Vector3i(3, 3, 3), Eigen::Vector3i(3, 3, 3)};
     legacy_mesh.triangle_normals_ = std::vector<Eigen::Vector3d>{
             Eigen::Vector3d(4, 4, 4), Eigen::Vector3d(4, 4, 4)};
+    legacy_mesh.triangle_uvs_ = std::vector<Eigen::Vector2d>{
+            Eigen::Vector2d(0.0, 0.1), Eigen::Vector2d(0.2, 0.3),
+            Eigen::Vector2d(0.4, 0.5), Eigen::Vector2d(0.6, 0.7),
+            Eigen::Vector2d(0.8, 0.9), Eigen::Vector2d(1.0, 1.1)};
 
     core::Dtype float_dtype = core::Float32;
     core::Dtype int_dtype = core::Int64;
@@ -367,6 +373,8 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
     EXPECT_TRUE(mesh.HasTriangleIndices());
     EXPECT_TRUE(mesh.HasTriangleNormals());
     EXPECT_FALSE(mesh.HasTriangleColors());
+    EXPECT_TRUE(mesh.HasTriangleAttr("texture_uvs"));
+    EXPECT_FALSE(mesh.HasVertexAttr("texture_uvs"));
 
     EXPECT_NO_THROW(
             core::AssertTensorDtype(mesh.GetVertexPositions(), float_dtype));
@@ -380,6 +388,8 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
             core::AssertTensorDtype(mesh.GetTriangleIndices(), int_dtype));
     EXPECT_NO_THROW(
             core::AssertTensorDtype(mesh.GetTriangleNormals(), float_dtype));
+    EXPECT_NO_THROW(core::AssertTensorDtype(mesh.GetTriangleAttr("texture_uvs"),
+                                            float_dtype));
 
     EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
             core::Tensor::Ones({2, 3}, float_dtype, device) * 0));
@@ -391,9 +401,16 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
             core::Tensor::Ones({2, 3}, int_dtype, device) * 3));
     EXPECT_TRUE(mesh.GetTriangleNormals().AllClose(
             core::Tensor::Ones({2, 3}, float_dtype, device) * 4));
+    EXPECT_TRUE(mesh.GetTriangleAttr("texture_uvs")
+                        .AllClose(core::Tensor::Arange(0., 1.1, 0.1,
+                                                       float_dtype, device)
+                                          .Reshape({-1, 3, 2})));
 }
 
 TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
+    using ::testing::ElementsAreArray;
+    using ::testing::FloatEq;
+    using ::testing::Pointwise;
     core::Device device = GetParam();
 
     core::Dtype float_dtype = core::Float32;
@@ -407,6 +424,9 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
     mesh.SetTriangleIndices(core::Tensor::Ones({2, 3}, int_dtype, device) * 3);
     mesh.SetTriangleNormals(core::Tensor::Ones({2, 3}, float_dtype, device) *
                             4);
+    mesh.SetTriangleAttr("texture_uvs",
+                         core::Tensor::Arange(0., 1.1, 0.1, float_dtype, device)
+                                 .Reshape({-1, 3, 2}));
 
     geometry::TriangleMesh legacy_mesh = mesh.ToLegacy();
     EXPECT_EQ(legacy_mesh.vertices_,
@@ -424,6 +444,13 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
     EXPECT_EQ(legacy_mesh.triangle_normals_,
               std::vector<Eigen::Vector3d>(
                       {Eigen::Vector3d(4, 4, 4), Eigen::Vector3d(4, 4, 4)}));
+    EXPECT_THAT(legacy_mesh.triangle_uvs_,
+                ElementsAreArray({Pointwise(FloatEq(), {0.0, 0.1}),
+                                  Pointwise(FloatEq(), {0.2, 0.3}),
+                                  Pointwise(FloatEq(), {0.4, 0.5}),
+                                  Pointwise(FloatEq(), {0.6, 0.7}),
+                                  Pointwise(FloatEq(), {0.8, 0.9}),
+                                  Pointwise(FloatEq(), {1.0, 1.1})}));
 }
 
 }  // namespace tests

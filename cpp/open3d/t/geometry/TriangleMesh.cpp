@@ -210,9 +210,7 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                 "texture_uvs",
                 core::eigen_converter::EigenVector2dVectorToTensor(
                         mesh_legacy.triangle_uvs_, float_dtype, device)
-                        .Reshape({static_cast<long>(
-                                          mesh_legacy.triangles_.size()),
-                                  3, 2}));
+                        .Reshape({-1, 3, 2}));
     }
     return mesh;
 }
@@ -247,12 +245,7 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
     if (HasTriangleAttr("texture_uvs")) {
         mesh_legacy.triangle_uvs_ =
                 core::eigen_converter::TensorToEigenVector2dVector(
-                        GetTriangleAttr("texture_uvs")
-                                .Reshape(
-                                        {static_cast<long>(
-                                                 3 *
-                                                 mesh_legacy.triangles_.size()),
-                                         2}));
+                        GetTriangleAttr("texture_uvs").Reshape({-1, 2}));
     }
     if (HasVertexAttr("texture_uvs")) {
         utility::LogWarning("{}",
