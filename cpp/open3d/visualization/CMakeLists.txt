@@ -42,6 +42,10 @@ target_sources(visualization PRIVATE
     visualizer/VisualizerWithVertexSelection.cpp
 )
 
+target_sources(visualization PRIVATE
+    rendering/Material.cpp  # For RPC serialization
+)
+
 if (BUILD_GUI)
     target_sources(visualization PRIVATE
         rendering/Camera.cpp
@@ -51,7 +55,6 @@ if (BUILD_GUI)
         rendering/Gradient.cpp
         rendering/IBLRotationInteractorLogic.cpp
         rendering/LightDirectionInteractorLogic.cpp
-        rendering/Material.cpp
         rendering/MaterialModifier.cpp
         rendering/MatrixInteractorLogic.cpp
         rendering/ModelInteractorLogic.cpp
