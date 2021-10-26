@@ -332,19 +332,19 @@ if (USE_ONE_API)
 
     add_library(SYCL INTERFACE)
     target_compile_options(SYCL INTERFACE -fsycl -fsycl-unnamed-lambda)
-    target_link_libraries(SYCL INTERFACE sycl -fsycl)
+    target_link_libraries(SYCL INTERFACE sycl)
     add_library(Open3D::SYCL ALIAS SYCL)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::SYCL)
 
-    list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/tbb/latest/lib/cmake/tbb)
-    find_package(TBB REQUIRED)
-    message(STATUS "TBB_FOUND: ${TBB_FOUND}")
-    message(STATUS "TBB_IMPORTED_TARGETS: ${TBB_IMPORTED_TARGETS}")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${TBB_IMPORTED_TARGETS})
+    # list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/tbb/latest/lib/cmake/tbb)
+    # find_package(TBB REQUIRED)
+    # message(STATUS "TBB_FOUND: ${TBB_FOUND}")
+    # message(STATUS "TBB_IMPORTED_TARGETS: ${TBB_IMPORTED_TARGETS}")
+    # list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${TBB_IMPORTED_TARGETS})
 
-    list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL)
-    find_package(oneDPL REQUIRED)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS oneDPL)
+    # list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL)
+    # find_package(oneDPL REQUIRED)
+    # list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS oneDPL)
 
 endif()
 
