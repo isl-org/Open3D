@@ -19,7 +19,7 @@ endif()
 
 open3d_show_and_abort_on_warning(benchmarks)
 open3d_set_global_properties(benchmarks)
-open3d_link_3rdparty_libraries(benchmarks)
+# open3d_link_3rdparty_libraries(benchmarks)
 
 if (BUILD_CUDA_MODULE)
     target_include_directories(benchmarks SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})

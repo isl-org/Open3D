@@ -332,7 +332,7 @@ if (USE_ONE_API)
 
     add_library(SYCL INTERFACE)
     target_compile_options(SYCL INTERFACE -fsycl -fsycl-unnamed-lambda)
-    target_link_libraries(SYCL INTERFACE sycl)
+    target_link_libraries(SYCL INTERFACE sycl -fsycl)
     add_library(Open3D::SYCL ALIAS SYCL)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::SYCL)
 
