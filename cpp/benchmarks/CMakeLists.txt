@@ -1,13 +1,13 @@
 open3d_ispc_add_executable(benchmarks)
 
-add_subdirectory(benchmark_utilities)
-add_subdirectory(core)
-add_subdirectory(geometry)
-add_subdirectory(io)
-add_subdirectory(pipelines)
-add_subdirectory(t/geometry)
-add_subdirectory(t/io)
-add_subdirectory(t/pipelines)
+# add_subdirectory(benchmark_utilities)
+# add_subdirectory(core)
+# add_subdirectory(geometry)
+# add_subdirectory(io)
+# add_subdirectory(pipelines)
+# add_subdirectory(t/geometry)
+# add_subdirectory(t/io)
+# add_subdirectory(t/pipelines)
 
 target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
 
