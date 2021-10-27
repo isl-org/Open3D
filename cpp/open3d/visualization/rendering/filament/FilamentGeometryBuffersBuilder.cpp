@@ -32,6 +32,10 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/geometry/VoxelGrid.h"
+#include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/LineSet.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 
 namespace open3d {
 namespace visualization {
@@ -261,8 +265,24 @@ std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
 }
 
 std::unique_ptr<GeometryBuffersBuilder> GeometryBuffersBuilder::GetBuilder(
-        const t::geometry::PointCloud& geometry) {
-    return std::make_unique<TPointCloudBuffersBuilder>(geometry);
+        const t::geometry::Geometry& geometry) {
+    using GT = t::geometry::Geometry::GeometryType;
+
+    switch (geometry.GetGeometryType()) {
+        case GT::PointCloud:
+            return std::make_unique<TPointCloudBuffersBuilder>(
+                    static_cast<const t::geometry::PointCloud&>(geometry));
+        case GT::TriangleMesh:
+            return std::make_unique<TMeshBuffersBuilder>(
+                    static_cast<const t::geometry::TriangleMesh&>(geometry));
+        case GT::LineSet:
+            return std::make_unique<TLineSetBuffersBuilder>(
+                    static_cast<const t::geometry::LineSet&>(geometry));
+        default:
+            break;
+    }
+
+    return nullptr;
 }
 
 void GeometryBuffersBuilder::DeallocateBuffer(void* buffer,

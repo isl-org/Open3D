@@ -428,6 +428,13 @@ class JupyterFormatter:
         return changed_files
 
 
+def _filter_files(files, ignored_patterns):
+    return [
+        file for file in files if not any(
+            [ignored_pattern in file for ignored_pattern in ignored_patterns])
+    ]
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -458,24 +465,13 @@ if __name__ == "__main__":
     pwd = Path(os.path.dirname(os.path.abspath(__file__)))
     python_style_config = str(pwd.parent / ".style.yapf")
 
+    cpp_ignored_files = ['cpp/open3d/visualization/shader/Shader.h']
+    cpp_files = _glob_files(CPP_FORMAT_DIRS,
+                            ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in"])
+    cpp_files = _filter_files(cpp_files, cpp_ignored_files)
+
     # Check or apply style
-    cpp_formatter = CppFormatter(
-        _glob_files(
-            CPP_FORMAT_DIRS,
-            [
-                # C++
-                "h",
-                "cpp",
-                # CUDA
-                "cuh",
-                "cu",
-                # ISPC
-                "isph",
-                "ispc",
-                # Generated files
-                "h.in",
-            ]),
-        clang_format_bin=clang_format_bin)
+    cpp_formatter = CppFormatter(cpp_files, clang_format_bin=clang_format_bin)
     python_formatter = PythonFormatter(_glob_files(PYTHON_FORMAT_DIRS, ["py"]),
                                        style_config=python_style_config)
     jupyter_formatter = JupyterFormatter(_glob_files(JUPYTER_FORMAT_DIRS,

@@ -42,7 +42,7 @@ namespace visualization {
 
 namespace rendering {
 class Camera;
-struct Material;
+struct MaterialRecord;
 class MatrixInteractorLogic;
 class Open3DScene;
 }  // namespace rendering
@@ -97,7 +97,7 @@ public:
 protected:
     void OnPickImageDone(std::shared_ptr<geometry::Image> img);
 
-    rendering::Material MakeMaterial();
+    rendering::MaterialRecord MakeMaterial();
 
 private:
     rendering::Open3DScene* scene_;

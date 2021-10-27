@@ -62,10 +62,18 @@ namespace contrib {
 #define THREADS_PER_BLOCK 256
 #define DIVUP(m, n) ((m) / (n) + ((m) % (n) > 0))
 
-inline int opt_n_threads(int work_size) {
+inline int OptNumThreads(int work_size) {
     const int pow_2 = std::log(static_cast<double>(work_size)) / std::log(2.0);
 
     return max(min(1 << pow_2, TOTAL_THREADS), 1);
+}
+
+inline dim3 OptBlockConfig(int x, int y) {
+    const int x_threads = OptNumThreads(x);
+    const int y_threads =
+            max(min(OptNumThreads(y), TOTAL_THREADS / x_threads), 1);
+    dim3 block_config(x_threads, y_threads, 1);
+    return block_config;
 }
 
 }  // namespace contrib

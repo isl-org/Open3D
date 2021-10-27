@@ -844,7 +844,7 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tinyobjloader)
 if(USE_SYSTEM_QHULLCPP)
     open3d_find_package_3rdparty_library(3rdparty_qhullcpp
         PACKAGE Qhull
-        TARGETS Qhull::qhullcpp
+        TARGETS Qhull::qhullcpp Qhull::qhull_r
     )
     if(NOT 3rdparty_qhullcpp_FOUND)
         set(USE_SYSTEM_QHULLCPP OFF)

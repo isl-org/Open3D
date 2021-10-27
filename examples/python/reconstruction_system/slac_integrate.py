@@ -37,7 +37,7 @@ sys.path.append(".")
 
 
 def run(config):
-    print("slac non-rigid optimisation.")
+    print("slac non-rigid optimization.")
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
 
     # dataset path and slac subfolder path
@@ -72,14 +72,15 @@ def run(config):
                                    [0, focal_length[1], principal_point[1]],
                                    [0, 0, 1]])
 
-    device = o3d.core.Device(str(config["device"]))
+    device = o3d.core.Device(
+        'CUDA:0' if o3d.core.cuda.is_available() else 'CPU:0')
     voxel_grid = o3d.t.geometry.TSDFVoxelGrid(
         {
             "tsdf": o3d.core.Dtype.Float32,
             "weight": o3d.core.Dtype.UInt16,
             "color": o3d.core.Dtype.UInt16
-        }, config["voxel_size"], config["sdf_trunc"], 16, config["block_count"],
-        device)
+        }, config["tsdf_cubic_size"] / 512.0, config["sdf_trunc"], 16,
+        config["block_count"], device)
 
     # Load control grid.
     ctr_grid_keys = o3d.core.Tensor.load(slac_folder + "ctr_grid_keys.npy")
@@ -107,6 +108,7 @@ def run(config):
             color = o3d.t.io.read_image(color_files[k]).to(device)
             rgbd = o3d.t.geometry.RGBDImage(color, depth)
 
+            print('Integrating Frame {:3d}'.format(k))
             rgbd_projected = ctr_grid.deform(rgbd, intrinsic_t,
                                              extrinsic_local_t,
                                              config["depth_scale"],
@@ -114,10 +116,7 @@ def run(config):
             voxel_grid.integrate(rgbd_projected.depth, rgbd_projected.color,
                                  intrinsic_t, extrinsic_t,
                                  config["depth_scale"], config["max_depth"])
-
             k = k + 1
-            if (device.get_type() == o3d.core.Device.CUDA and k % 10 == 0):
-                o3d.core.cuda.release_cache()
 
     if (config["save_output_as"] == "pointcloud"):
         pcd = voxel_grid.extract_surface_points().to(o3d.core.Device("CPU:0"))

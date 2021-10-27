@@ -32,6 +32,17 @@ import open3d as o3d
 import glob
 
 
+def get_default_testdata():
+    example_path = os.path.abspath(
+        os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir))
+
+    path_dataset = os.path.join(example_path, 'test_data', 'RGBD')
+    print('Dataset not found, falling back to test examples {}'.format(
+        path_dataset))
+
+    return path_dataset
+
+
 def load_depth_file_names(config):
     if not os.path.exists(config.path_dataset):
         print(
@@ -175,7 +186,7 @@ def extract_pointcloud(volume, config, file_name=None):
             o3d.io.write_point_cloud(file_name, pcd)
 
     elif config.engine == 'tensor':
-        pcd = volume.extract_point_clound(
+        pcd = volume.extract_point_cloud(
             weight_threshold=config.surface_weight_thr)
 
         if file_name is not None:

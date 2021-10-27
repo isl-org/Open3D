@@ -158,7 +158,9 @@ class PyAPIDocsBuilder:
         out_string += "\n\n" + ".. autoclass:: %s" % class_name
         out_string += "\n    :members:"
         out_string += "\n    :undoc-members:"
-        out_string += "\n    :inherited-members:"
+        if not (full_module_name.startswith("open3d.ml.tf") or
+                full_module_name.startswith("open3d.ml.torch")):
+            out_string += "\n    :inherited-members:"
         out_string += "\n"
 
         with open(output_path, "w") as f:
@@ -385,7 +387,7 @@ class JupyterDocsBuilder:
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
-        nb_direct_copy = ['tensor.ipynb']
+        nb_direct_copy = ['tensor.ipynb', 'hashmap.ipynb']
         example_dirs = [
             "geometry",
             "core",

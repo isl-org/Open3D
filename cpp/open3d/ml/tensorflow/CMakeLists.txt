@@ -59,6 +59,7 @@ target_sources(open3d_tf_ops PRIVATE
     pointnet/InterpolateOps.cpp
     pointnet/RoiPoolOps.cpp
     pointnet/SamplingOps.cpp
+    pvcnn/TrilinearDevoxelizeOps.cpp
 )
 
 target_sources(open3d_tf_ops PRIVATE
@@ -101,6 +102,7 @@ if (BUILD_CUDA_MODULE)
         pointnet/InterpolateOpKernel.cu
         pointnet/RoiPoolOpKernel.cu
         pointnet/SamplingOpKernel.cu
+        pvcnn/TrilinearDevoxelizeKernel.cu
     )
 
     target_sources(open3d_tf_ops PRIVATE
@@ -113,6 +115,7 @@ if (BUILD_CUDA_MODULE)
         ../contrib/InterpolatePoints.cu
         ../contrib/Nms.cu
         ../contrib/RoiPoolKernel.cu
+        ../contrib/TrilinearDevoxelize.cu
     )
 endif()
 

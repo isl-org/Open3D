@@ -187,7 +187,7 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("add_geometry",
                  py::overload_cast<const std::string&,
                                    std::shared_ptr<geometry::Geometry3D>,
-                                   const rendering::Material*,
+                                   const rendering::MaterialRecord*,
                                    const std::string&, double, bool>(
                          &O3DVisualizer::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
@@ -197,7 +197,7 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("add_geometry",
                  py::overload_cast<const std::string&,
                                    std::shared_ptr<t::geometry::Geometry>,
-                                   const rendering::Material*,
+                                   const rendering::MaterialRecord*,
                                    const std::string&, double, bool>(
                          &O3DVisualizer::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
@@ -209,8 +209,8 @@ void pybind_o3dvisualizer(py::module& m) {
                  py::overload_cast<
                          const std::string&,
                          std::shared_ptr<rendering::TriangleMeshModel>,
-                         const rendering::Material*, const std::string&, double,
-                         bool>(&O3DVisualizer::AddGeometry),
+                         const rendering::MaterialRecord*, const std::string&,
+                         double, bool>(&O3DVisualizer::AddGeometry),
                  "name"_a, "model"_a, "material"_a = nullptr, "group"_a = "",
                  "time"_a = 0.0, "is_visible"_a = true,
                  "Adds a TriangleMeshModel: add_geometry(name, model, "
@@ -220,14 +220,14 @@ void pybind_o3dvisualizer(py::module& m) {
             .def(
                     "add_geometry",
                     [](py::object dv, const py::dict& d) {
-                        rendering::Material* material = nullptr;
+                        rendering::MaterialRecord* material = nullptr;
                         std::string group = "";
                         double time = 0;
                         bool is_visible = true;
 
                         std::string name = py::cast<std::string>(d["name"]);
                         if (d.contains("material")) {
-                            material = py::cast<rendering::Material*>(
+                            material = py::cast<rendering::MaterialRecord*>(
                                     d["material"]);
                         }
                         if (d.contains("group")) {
@@ -259,6 +259,11 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("remove_geometry", &O3DVisualizer::RemoveGeometry,
                  "remove_geometry(name): removes the geometry with the "
                  "name.")
+            .def("update_geometry", &O3DVisualizer::UpdateGeometry,
+                 "update_geometry(name, tpoint_cloud, update_flags): updates "
+                 "the attributes of the named geometry specified by "
+                 "update_flags with tpoint_cloud. Note: Currently this "
+                 "function only works with T Geometry Point Clouds.")
             .def("show_geometry", &O3DVisualizer::ShowGeometry,
                  "Checks or unchecks the named geometry in the list. Note that "
                  "even if show_geometry(name, True) is called, the object may "

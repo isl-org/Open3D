@@ -239,6 +239,7 @@ void GuiSettingsModel::SetBackgroundColor(const Eigen::Vector3f& color) {
 const GuiSettingsModel::LightingProfile& GuiSettingsModel::GetLighting() const {
     return lighting_;
 }
+
 void GuiSettingsModel::SetLightingProfile(const LightingProfile& profile) {
     lighting_ = profile;
     user_has_changed_lighting_profile_ = true;

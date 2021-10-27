@@ -55,6 +55,7 @@ In the next step, there are two cmake flags that need to be specified.
   In most cases, these versions are not installed in vanilla Ubuntu systems.
   Use these CMake options to force to build glew 2.1 and glfw 3.3-dev from source included with Open3D.
 - The Filament-based GUI implementation is not compatible with headless rendering, please set ``-DBUILD_GUI=OFF``.
+- With ``-DBUILD_GUI=OFF`` webRTC support must also be disabled ``-DBUILD_WEBRTC=OFF``.
 
 As a result, the cmake command is the following
 
@@ -62,6 +63,7 @@ As a result, the cmake command is the following
 
     (py3env) $ cmake -DENABLE_HEADLESS_RENDERING=ON \
                      -DBUILD_GUI=OFF \
+                     -DBUILD_WEBRTC=OFF \
                      -DUSE_SYSTEM_GLEW=OFF \
                      -DUSE_SYSTEM_GLFW=OFF \
                      ..

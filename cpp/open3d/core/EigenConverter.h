@@ -32,7 +32,6 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 
 namespace open3d {
 namespace core {

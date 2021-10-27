@@ -100,10 +100,7 @@ RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-conda with-jupyter
 
 # Open3D WebRTC dependencies
-RUN NODE_SETUP_SHA256=22e2048e76f0b0dd5e126cb816e59665ca4b402ffe9bb542005ad661b36a9eb6 \
- && wget https://deb.nodesource.com/setup_16.x \
- && sha256sum --status -c <(echo "$NODE_SETUP_SHA256 setup_16.x") \
- && bash setup_16.x \
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
  && node --version

@@ -122,6 +122,7 @@ t::geometry::TriangleMesh Model::ExtractTriangleMesh(int estimated_number,
 }
 
 core::HashMap Model::GetHashMap() { return voxel_grid_.GetHashMap(); }
+
 }  // namespace slam
 }  // namespace pipelines
 }  // namespace t
