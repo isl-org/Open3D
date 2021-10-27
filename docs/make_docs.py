@@ -387,7 +387,7 @@ class JupyterDocsBuilder:
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
-        nb_direct_copy = ['tensor.ipynb']
+        nb_direct_copy = ['tensor.ipynb', 'hashmap.ipynb']
         example_dirs = [
             "geometry",
             "core",

@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstring>
 #include <map>
 #include <msgpack.hpp>
@@ -306,8 +307,14 @@ struct MeshData {
     /// stores arbitrary attributes for each line
     std::map<std::string, Array> line_attributes;
 
+    /// Material for DrawableGeometry
+    std::string material = "";
+    /// Material scalar properties
+    std::map<std::string, float> material_scalar_attributes;
+    /// Material vector[4] properties
+    std::map<std::string, std::array<float, 4>> material_vector_attributes;
     /// map of arrays that can be interpreted as textures
-    std::map<std::string, Array> textures;
+    std::map<std::string, Array> texture_maps;
 
     void SetO3DTypeToPointCloud() { o3d_type = "PointCloud"; }
     void SetO3DTypeToLineSet() { o3d_type = "LineSet"; }
@@ -392,7 +399,10 @@ struct MeshData {
                        face_attributes,
                        lines,
                        line_attributes,
-                       textures);
+                       material,
+                       material_scalar_attributes,
+                       material_vector_attributes,
+                       texture_maps);
 };
 
 /// struct for defining a "set_mesh_data" message, which adds or replaces mesh
