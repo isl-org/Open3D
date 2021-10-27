@@ -1013,6 +1013,23 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
+    void UpdateGeometry(const std::string &name,
+                        std::shared_ptr<t::geometry::Geometry> tgeom,
+                        uint32_t update_flags) {
+        auto t_cloud =
+                std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
+        if (!t_cloud) {
+            utility::LogWarning(
+                    "Only TGeometry PointClouds can currently be updated using "
+                    "UpdateGeometry. Try removing the geometry that needs to "
+                    "be updated then adding the update geometry.");
+            return;
+        }
+        scene_->GetScene()->GetScene()->UpdateGeometry(name, *t_cloud,
+                                                       update_flags);
+        scene_->ForceRedraw();
+    }
+
     void RemoveGeometry(const std::string &name) {
         std::string group;
         for (size_t i = 0; i < objects_.size(); ++i) {
@@ -1978,6 +1995,12 @@ void O3DVisualizer::Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
 }
 
 void O3DVisualizer::Clear3DLabels() { impl_->Clear3DLabels(); }
+
+void O3DVisualizer::UpdateGeometry(const std::string &name,
+                                   std::shared_ptr<t::geometry::Geometry> tgeom,
+                                   uint32_t update_flags) {
+    impl_->UpdateGeometry(name, tgeom, update_flags);
+}
 
 void O3DVisualizer::RemoveGeometry(const std::string &name) {
     return impl_->RemoveGeometry(name);
