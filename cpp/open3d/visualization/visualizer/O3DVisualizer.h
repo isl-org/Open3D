@@ -138,6 +138,10 @@ public:
 
     void RemoveGeometry(const std::string& name);
 
+    void UpdateGeometry(const std::string& name,
+                        std::shared_ptr<t::geometry::Geometry> tgeom,
+                        uint32_t update_flags);
+
     void ShowGeometry(const std::string& name, bool show);
 
     DrawObject GetGeometry(const std::string& name) const;

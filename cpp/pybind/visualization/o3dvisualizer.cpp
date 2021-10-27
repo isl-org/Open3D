@@ -259,6 +259,11 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("remove_geometry", &O3DVisualizer::RemoveGeometry,
                  "remove_geometry(name): removes the geometry with the "
                  "name.")
+            .def("update_geometry", &O3DVisualizer::UpdateGeometry,
+                 "update_geometry(name, tpoint_cloud, update_flags): updates "
+                 "the attributes of the named geometry specified by "
+                 "update_flags with tpoint_cloud. Note: Currently this "
+                 "function only works with T Geometry Point Clouds.")
             .def("show_geometry", &O3DVisualizer::ShowGeometry,
                  "Checks or unchecks the named geometry in the list. Note that "
                  "even if show_geometry(name, True) is called, the object may "
