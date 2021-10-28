@@ -1191,9 +1191,21 @@ if (USE_ONE_API)
     find_package(oneDPL REQUIRED)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS oneDPL)
 
-endif()
+    set(MKL_THREADING tbb_thread)
+    list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
+    find_package(MKL CONFIG REQUIRED)
+    message(STATUS "MKL_THREAD: ${MKL_THREAD}")
+    message(STATUS "MKL_LIBRARIES: ${MKL_THREAD}")
+    message(STATUS "MKL_LINK_LINE: ${MKL_LINK_LINE}")
 
-if (NOT USE_ONE_API)
+    add_library(3rdparty_mkl INTERFACE)
+    target_include_directories(3rdparty_mkl INTERFACE ${MKL_INCLUDE})
+    target_link_libraries(3rdparty_mkl INTERFACE MKL::mkl_intel_ilp64 MKL::mkl_core MKL::mkl_tbb_thread)
+    add_library(Open3D::3rdparty_mkl ALIAS 3rdparty_mkl)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
+
+else() # USE_ONE_API
+
     # TBB
     include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
     open3d_import_3rdparty_library(3rdparty_tbb
@@ -1203,9 +1215,7 @@ if (NOT USE_ONE_API)
         DEPENDS      ext_tbb
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
-endif()
 
-if (NOT USE_ONE_API)
     # parallelstl
     include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
     open3d_import_3rdparty_library(3rdparty_parallelstl
@@ -1215,17 +1225,17 @@ if (NOT USE_ONE_API)
         DEPENDS      ext_parallelstl
     )
     list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
-endif()
 
-# Faiss
-# Open3D should link Faiss before cuBLAS to avoid missing symbols error since
-# Faiss uses cuBLAS symbols. For the same reason, Open3D should link Faiss
-# before BLAS/Lapack if BLAS/Lapack are static libraries.
-if (WITH_FAISS AND WIN32)
+
+    # Faiss
+    # Open3D should link Faiss before cuBLAS to avoid missing symbols error since
+    # Faiss uses cuBLAS symbols. For the same reason, Open3D should link Faiss
+    # before BLAS/Lapack if BLAS/Lapack are static libraries.
+    if (WITH_FAISS AND WIN32)
     message(STATUS "Faiss is not supported on Windows")
     set(WITH_FAISS OFF)
-endif()
-if (WITH_FAISS)
+    endif()
+    if (WITH_FAISS)
     message(STATUS "Building third-party library faiss from source")
     include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
     open3d_import_3rdparty_library(3rdparty_faiss
@@ -1236,10 +1246,10 @@ if (WITH_FAISS)
     )
     target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
-endif()
+    endif()
 
-# MKL/BLAS
-if(USE_BLAS)
+    # MKL/BLAS
+    if(USE_BLAS)
     find_package(BLAS)
     find_package(LAPACK)
     find_package(LAPACKE)
@@ -1269,41 +1279,28 @@ if(USE_BLAS)
         target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
-else()
-    if (USE_ONE_API)
-        set(MKL_THREADING tbb_thread)
-        list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
-        find_package(MKL CONFIG REQUIRED)
-        message(STATUS "MKL_THREAD: ${MKL_THREAD}")
-        message(STATUS "MKL_LIBRARIES: ${MKL_THREAD}")
-        message(STATUS "MKL_LINK_LINE: ${MKL_LINK_LINE}")
-
-        add_library(3rdparty_mkl INTERFACE)
-        target_include_directories(3rdparty_mkl INTERFACE ${MKL_INCLUDE})
-        target_link_libraries(3rdparty_mkl INTERFACE MKL::mkl_intel_ilp64 MKL::mkl_core MKL::mkl_tbb_thread)
-        add_library(Open3D::3rdparty_mkl ALIAS 3rdparty_mkl)
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
     else()
-        include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
-        # MKL, cuSOLVER, cuBLAS
-        # We link MKL statically. For MKL link flags, refer to:
-        # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
-        message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
-        open3d_import_3rdparty_library(3rdparty_blas
-            HIDDEN
-            INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
-            LIB_DIR      ${STATIC_MKL_LIB_DIR}
-            LIBRARIES    ${STATIC_MKL_LIBRARIES}
-            DEPENDS      ext_tbb ext_mkl_include ext_mkl
-        )
-        if(UNIX)
-            target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
-            target_link_libraries(3rdparty_blas INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
-        endif()
-        target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
+    include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
+    # MKL, cuSOLVER, cuBLAS
+    # We link MKL statically. For MKL link flags, refer to:
+    # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
+    message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
+    open3d_import_3rdparty_library(3rdparty_blas
+        HIDDEN
+        INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
+        LIB_DIR      ${STATIC_MKL_LIB_DIR}
+        LIBRARIES    ${STATIC_MKL_LIBRARIES}
+        DEPENDS      ext_tbb ext_mkl_include ext_mkl
+    )
+    if(UNIX)
+        target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
+        target_link_libraries(3rdparty_blas INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
     endif()
-endif()
+    target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
+    endif()
+
+endif() # USE_ONE_API
 
 # cuBLAS
 if(BUILD_CUDA_MODULE)
