@@ -1173,6 +1173,7 @@ if (USE_ONE_API)
     #     message(FATAL_ERROR "IntelDPCPP_FOUND cannot be found.")
     # endif()
 
+    # DPC++
     add_library(SYCL INTERFACE)
     target_compile_options(SYCL INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda>)
@@ -1181,26 +1182,29 @@ if (USE_ONE_API)
     add_library(Open3D::SYCL ALIAS SYCL)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::SYCL)
 
+    # oneTBB
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/tbb/latest/lib/cmake/tbb)
     find_package(TBB REQUIRED)
     message(STATUS "TBB_FOUND: ${TBB_FOUND}")
     message(STATUS "TBB_IMPORTED_TARGETS: ${TBB_IMPORTED_TARGETS}")
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${TBB_IMPORTED_TARGETS})
 
+    # oneDPL
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL)
     find_package(oneDPL REQUIRED)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS oneDPL)
 
+    # oneMKL
     set(MKL_THREADING tbb_thread)
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
     find_package(MKL CONFIG REQUIRED)
-    message(STATUS "MKL_THREAD: ${MKL_THREAD}")
-    message(STATUS "MKL_LIBRARIES: ${MKL_THREAD}")
-    message(STATUS "MKL_LINK_LINE: ${MKL_LINK_LINE}")
-
     add_library(3rdparty_mkl INTERFACE)
     target_include_directories(3rdparty_mkl INTERFACE ${MKL_INCLUDE})
-    target_link_libraries(3rdparty_mkl INTERFACE MKL::mkl_intel_ilp64 MKL::mkl_core MKL::mkl_tbb_thread)
+    target_link_libraries(3rdparty_mkl INTERFACE
+        MKL::mkl_intel_ilp64
+        MKL::mkl_core
+        MKL::mkl_tbb_thread
+    )
     add_library(Open3D::3rdparty_mkl ALIAS 3rdparty_mkl)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 
