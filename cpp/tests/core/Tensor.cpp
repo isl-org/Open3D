@@ -951,11 +951,6 @@ TEST_P(TensorPermuteDevices, Append) {
     if (device.GetType() == core::Device::DeviceType::CUDA) {
         EXPECT_ANY_THROW(self.Append(other.To(core::Device("CPU:0"))));
     }
-
-    // output = self.Append(other);
-    // is same as:
-    // output = self.Append(other);
-    EXPECT_TRUE(self.Append(other).AllClose(self.Append(other)));
 }
 
 TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {

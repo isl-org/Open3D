@@ -251,7 +251,7 @@ public:
                                     {max_points, 3}, core::Dtype::Float32,
                                     core::Device("CPU:0")));
 
-                            auto mat = rendering::Material();
+                            auto mat = rendering::MaterialRecord();
                             mat.shader = "defaultUnlit";
                             mat.sRGB_vertex_color = true;
                             this->widget3d_->GetScene()
@@ -305,9 +305,6 @@ public:
         tabs->AddTab("Input images", tab1);
 
         auto tab2 = std::make_shared<gui::Vert>(0, tab_margins);
-
-        output_info_ = std::make_shared<gui::Label>("");
-        output_info_->SetFontId(monospace_);
         raycast_color_image_ = std::make_shared<gui::ImageWidget>();
         raycast_depth_image_ = std::make_shared<gui::ImageWidget>();
 
@@ -317,6 +314,8 @@ public:
         tabs->AddTab("Raycast images", tab2);
 
         auto tab3 = std::make_shared<gui::Vert>(0, tab_margins);
+        output_info_ = std::make_shared<gui::Label>("");
+        output_info_->SetFontId(monospace_);
         tab3->AddChild(output_info_);
         tabs->AddTab("Info", tab3);
 
@@ -762,7 +761,7 @@ protected:
                                 raycast_depth_colored);
 
                         this->widget3d_->GetScene()->RemoveGeometry("frustum");
-                        auto mat = rendering::Material();
+                        auto mat = rendering::MaterialRecord();
                         mat.shader = "unlitLine";
                         mat.line_width = 5.0f;
                         this->widget3d_->GetScene()->AddGeometry(
@@ -774,7 +773,7 @@ protected:
                             // TPointCloud
                             this->widget3d_->GetScene()->RemoveGeometry(
                                     "trajectory");
-                            auto mat = rendering::Material();
+                            auto mat = rendering::MaterialRecord();
                             mat.shader = "unlitLine";
                             mat.line_width = 5.0f;
                             this->widget3d_->GetScene()->AddGeometry(
