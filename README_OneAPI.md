@@ -1,5 +1,11 @@
 # OneAPI Readme
 
+## Known limitations
+- TBB issue: `cpp/open3d/utility/ParallelScan.h` is disabled.
+- Does not work with `-DBUILD_SHARED_LIBS=OFF`: need to refactor installation mechanism.
+- Does not work with `-DBUILD_CUDA_MODULE=ON`: Faiss does not support icpx compiler.
+- Python: dynamic library loading
+
 ## Python packages
 
 https://pypi.org/user/IntelAutomationEngineering/
@@ -18,7 +24,9 @@ https://pypi.org/user/IntelAutomationEngineering/
 - Imported by another C++ library, after `make install`.
 - Distribute with Python (pip).
 
-## Plan (2021-10-27)
-- MKL: use static version
+## Decisions
+- MKL: use shared version
 - IPP: use static version
-- TBB: we want TBB to work on ARM
+- TBB: for ARM
+  - C++: compile TBB from source, static or dynamic?
+  - Python release: TODO
