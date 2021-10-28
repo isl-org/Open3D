@@ -1209,7 +1209,6 @@ if (USE_ONE_API)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 
 else() # USE_ONE_API
-
     # TBB
     include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
     open3d_import_3rdparty_library(3rdparty_tbb
@@ -1229,28 +1228,6 @@ else() # USE_ONE_API
         DEPENDS      ext_parallelstl
     )
     list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
-
-
-    # Faiss
-    # Open3D should link Faiss before cuBLAS to avoid missing symbols error since
-    # Faiss uses cuBLAS symbols. For the same reason, Open3D should link Faiss
-    # before BLAS/Lapack if BLAS/Lapack are static libraries.
-    if (WITH_FAISS AND WIN32)
-    message(STATUS "Faiss is not supported on Windows")
-    set(WITH_FAISS OFF)
-    endif()
-    if (WITH_FAISS)
-    message(STATUS "Building third-party library faiss from source")
-    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
-    open3d_import_3rdparty_library(3rdparty_faiss
-        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
-        LIBRARIES    ${FAISS_LIBRARIES}
-        LIB_DIR      ${FAISS_LIB_DIR}
-        DEPENDS      ext_faiss
-    )
-    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
-    endif()
 
     # MKL/BLAS
     if(USE_BLAS)
@@ -1305,6 +1282,27 @@ else() # USE_ONE_API
     endif()
 
 endif() # USE_ONE_API
+
+# Faiss
+# Open3D should link Faiss before cuBLAS to avoid missing symbols error since
+# Faiss uses cuBLAS symbols. For the same reason, Open3D should link Faiss
+# before BLAS/Lapack if BLAS/Lapack are static libraries.
+if (WITH_FAISS AND WIN32)
+    message(STATUS "Faiss is not supported on Windows")
+    set(WITH_FAISS OFF)
+endif()
+if (WITH_FAISS)
+    message(STATUS "Building third-party library faiss from source")
+    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
+    open3d_import_3rdparty_library(3rdparty_faiss
+        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
+        LIBRARIES    ${FAISS_LIBRARIES}
+        LIB_DIR      ${FAISS_LIB_DIR}
+        DEPENDS      ext_faiss
+    )
+    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
+endif()
 
 # cuBLAS
 if(BUILD_CUDA_MODULE)
