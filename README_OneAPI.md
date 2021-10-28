@@ -12,3 +12,13 @@ https://pypi.org/user/IntelAutomationEngineering/
 - ipp              https://pypi.org/project/ipp/#history              2021.4.0
 - ipp-static       https://pypi.org/project/ipp-static/#history       2021.4.0
 - tbb              https://pypi.org/project/tbb/#history              2021.4.0
+
+## Use cases
+- Run example and tests inside the `build/` directory.
+- Imported by another C++ library, after `make install`.
+- Distribute with Python (pip).
+
+## Plan (2021-10-27)
+- MKL: use static version
+- IPP: use static version
+- TBB: we want TBB to work on ARM
