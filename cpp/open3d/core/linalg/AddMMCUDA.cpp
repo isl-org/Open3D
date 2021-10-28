@@ -41,15 +41,19 @@ void AddMMCUDA(void* A_data,
                int64_t n,
                T alpha,
                T beta,
+               bool gemmTrA,
+               bool gemmTrB,
                int lda,
                int ldb,
                int ldc) {
     cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
-    OPEN3D_CUBLAS_CHECK(gemm_cuda<T>(handle, CUBLAS_OP_T, CUBLAS_OP_N, m, n, k,
-                                     &alpha, static_cast<const T*>(A_data), lda,
-                                     static_cast<const T*>(B_data), ldb, &beta,
-                                     static_cast<T*>(C_data), ldc),
-                        "cuda gemm failed");
+    OPEN3D_CUBLAS_CHECK(
+            gemm_cuda<T>(handle, gemmTrA ? CUBLAS_OP_T : CUBLAS_OP_N,
+                         gemmTrB ? CUBLAS_OP_T : CUBLAS_OP_N, m, n, k, &alpha,
+                         static_cast<const T*>(A_data), lda,
+                         static_cast<const T*>(B_data), ldb, &beta,
+                         static_cast<T*>(C_data), ldc),
+            "cuda gemm failed");
 }
 
 template void AddMMCUDA(void* A_data,
@@ -60,6 +64,8 @@ template void AddMMCUDA(void* A_data,
                         int64_t n,
                         float alpha,
                         float beta,
+                        bool gemmTrA,
+                        bool gemmTrB,
                         int lda,
                         int ldb,
                         int ldc);
@@ -72,6 +78,8 @@ template void AddMMCUDA(void* A_data,
                         int64_t n,
                         double alpha,
                         double beta,
+                        bool gemmTrA,
+                        bool gemmTrB,
                         int lda,
                         int ldb,
                         int ldc);

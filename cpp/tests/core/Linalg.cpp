@@ -33,6 +33,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Kernel.h"
+#include "open3d/core/linalg/AddMM.h"
 #include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/utility/Helper.h"
 #include "tests/Tests.h"
@@ -87,6 +88,61 @@ TEST_P(LinalgPermuteDevices, Matmul) {
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({3, 4, 5}, dtype)));
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({3, 0}, dtype)));
     EXPECT_ANY_THROW(A.Matmul(core::Tensor::Zeros({2, 4}, dtype)));
+}
+
+TEST_P(LinalgPermuteDevices, AddMM) {
+    const float EPSILON = 1e-8;
+
+    core::Device device = GetParam();
+    core::Dtype dtype = core::Float32;
+
+    // addmm test.
+    core::Tensor A = core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
+    core::Tensor B = core::Tensor::Init<float>(
+            {{7, 8, 9, 10}, {11, 12, 13, 14}, {15, 16, 17, 18}}, device);
+    core::Tensor B_T = core::Tensor::Init<float>(
+            {{7, 11, 15}, {8, 12, 16}, {9, 13, 17}, {10, 14, 18}}, device);
+
+    core::Tensor C = core::Tensor::Ones({2, 4}, dtype, device);
+    core::AddMM<float>(A, B, C, 1.0, 1.0);
+    EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
+    std::vector<float> C_data = C.ToFlatVector<float>();
+    std::vector<float> C_gt = {75, 81, 87, 93, 174, 189, 204, 219};
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
+    }
+
+    // alpha = -2.0 & beta = 5.0.
+    C = core::Tensor::Ones({2, 4}, dtype, device);
+    core::AddMM<float>(A, B, C, -2.0, 5.0);
+    EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
+    C_data = C.ToFlatVector<float>();
+    C_gt = {-143, -155, -167, -179, -341, -371, -401, -431};
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
+    }
+
+    // Transposed addmm test.
+    C = core::Tensor::Ones({2, 4}, dtype, device);
+    core::Tensor B_T_T = B_T.T();
+    core::AddMM<float>(A, B_T_T, C, 1.0, 1.0);
+    EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
+    C_data = C.ToFlatVector<float>();
+    C_gt = {75, 81, 87, 93, 174, 189, 204, 219};
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
+    }
+
+    // Transposed addmm + alpha = -2.0 & beta = 5.0.
+    C = core::Tensor::Ones({2, 4}, dtype, device);
+    B_T_T = B_T.T();
+    core::AddMM<float>(A, B_T_T, C, -2.0, 5.0);
+    EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
+    C_data = C.ToFlatVector<float>();
+    C_gt = {-143, -155, -167, -179, -341, -371, -401, -431};
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
+    }
 }
 
 TEST_P(LinalgPermuteDevices, LU) {
