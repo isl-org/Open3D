@@ -1238,7 +1238,6 @@ if (WITH_FAISS)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
 endif()
 
-
 # MKL/BLAS
 if(USE_BLAS)
     find_package(BLAS)
@@ -1271,7 +1270,20 @@ if(USE_BLAS)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
 else()
-    if(NOT USE_ONE_API)
+    if (USE_ONE_API)
+        list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
+        find_package(MKL CONFIG REQUIRED)
+        message(STATUS "${MKL_IMPORTED_TARGETS}")
+
+        add_library(3rdparty_mkl INTERFACE)
+        # target_compile_options(3rdparty_mkl INTERFACE $<TARGET_PROPERTY:MKL::MKL_C,INTERFACE_COMPILE_OPTIONS>)
+        # target_link_libraries(3rdparty_mkl INTERFACE $<TARGET_PROPERTY:MKL::MKL_C,INTERFACE_INCLUDE_DIRECTORIES>)
+        target_include_directories(3rdparty_mkl INTERFACE ${MKL_INCLUDE})
+        target_link_libraries(3rdparty_mkl INTERFACE MKL::mkl_intel_ilp64 MKL::mkl_core MKL::mkl_intel_thread)
+        # target_link_libraries(3rdparty_mkl INTERFACE MKL::MKL)
+        add_library(Open3D::3rdparty_mkl ALIAS 3rdparty_mkl)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
+    else()
         include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
         # MKL, cuSOLVER, cuBLAS
         # We link MKL statically. For MKL link flags, refer to:
