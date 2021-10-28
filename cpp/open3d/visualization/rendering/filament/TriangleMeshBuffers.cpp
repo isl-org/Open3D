@@ -697,6 +697,14 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
             memcpy(color_array, geometry_.GetVertexColors().GetDataPtr(),
                    color_array_size);
         }
+    } else if (geometry_.HasTriangleColors()) {
+        const auto& colors = geometry_.GetTriangleColors();
+        core::Tensor dup_colors = core::Tensor::Empty(
+                {static_cast<long>(n_vertices), 3}, core::Float32);
+        dup_colors.Slice(0, 0, n_vertices, 3) = colors;
+        dup_colors.Slice(0, 1, n_vertices, 3) = colors;
+        dup_colors.Slice(0, 2, n_vertices, 3) = colors;
+        memcpy(color_array, dup_colors.GetDataPtr(), color_array_size);
     } else {
         for (size_t i = 0; i < n_vertices * 3; ++i) {
             color_array[i] = 1.f;
@@ -778,6 +786,9 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
                    geometry_.GetVertexAttr("texture_uvs").GetDataPtr(),
                    uv_array_size);
         }
+    } else if (geometry_.HasTriangleAttr("texture_uvs")) {
+        memcpy(uv_array, geometry_.GetTriangleAttr("texture_uvs").GetDataPtr(),
+               uv_array_size);
     } else {
         memset(uv_array, 0x0, uv_array_size);
     }
