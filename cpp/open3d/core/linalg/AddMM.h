@@ -32,39 +32,39 @@ namespace open3d {
 namespace core {
 
 /// Computes matrix multiplication C = AB.
-template <class T>
-void AddMM(const Tensor& A, const Tensor& B, Tensor& C, T alpha, T beta);
+void AddMM(
+        const Tensor& A, const Tensor& B, Tensor& C, double alpha, double beta);
 
 #ifdef BUILD_CUDA_MODULE
-template <class T>
 void AddMMCUDA(void* A_data,
                void* B_data,
                void* C_data,
                int64_t m,
                int64_t k,
                int64_t n,
-               T alpha,
-               T beta,
+               double alpha,
+               double beta,
                bool gemmTrA,
                bool gemmTrB,
                int lda,
                int ldb,
-               int ldc);
+               int ldc,
+               Dtype dtype);
 #endif
 
-template <class T>
 void AddMMCPU(void* A_data,
               void* B_data,
               void* C_data,
               int64_t m,
               int64_t k,
               int64_t n,
-              T alpha,
-              T beta,
+              double alpha,
+              double beta,
               bool gemmTrA,
               bool gemmTrB,
               int lda,
               int ldb,
-              int ldc);
+              int ldc,
+              Dtype dtype);
 }  // namespace core
 }  // namespace open3d

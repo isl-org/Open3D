@@ -31,8 +31,11 @@
 namespace open3d {
 namespace core {
 
-template <class T>
-void AddMM(const Tensor& A, const Tensor& B, Tensor& output, T alpha, T beta) {
+void AddMM(const Tensor& A,
+           const Tensor& B,
+           Tensor& output,
+           double alpha,
+           double beta) {
     AssertTensorDevice(B, A.GetDevice());
     AssertTensorDtype(B, A.GetDtype());
 
@@ -89,28 +92,17 @@ void AddMM(const Tensor& A, const Tensor& B, Tensor& output, T alpha, T beta) {
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         AddMMCUDA(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
-                  ldb, lda, ldc);
+                  ldb, lda, ldc, dtype);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
         AddMMCPU(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
-                 ldb, lda, ldc);
+                 ldb, lda, ldc, dtype);
     }
 
     output = output.To(dtype_original);
 };
 
-template void AddMM(const Tensor& A,
-                    const Tensor& B,
-                    Tensor& output,
-                    float alpha,
-                    float beta);
-
-template void AddMM(const Tensor& A,
-                    const Tensor& B,
-                    Tensor& output,
-                    double alpha,
-                    double beta);
 }  // namespace core
 }  // namespace open3d

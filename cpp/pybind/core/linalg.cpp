@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/linalg/AddMM.h"
 #include "open3d/core/linalg/Det.h"
 #include "open3d/core/linalg/Inverse.h"
 #include "open3d/core/linalg/LU.h"
@@ -50,7 +51,23 @@ void pybind_core_linalg(py::module &m) {
             "Function to perform matrix multiplication of two 2D tensors with "
             "compatible shapes.",
             "A"_a, "B"_a);
-
+    m.def(
+            "addmm",
+            [](Tensor &input, const Tensor &A, const Tensor &B, double alpha,
+               double beta, utility::optional<Tensor> output) {
+                input = input.Expand({A.GetShape(0), B.GetShape(1)});
+                AddMM(A, B, input, alpha, beta);
+                if (output.has_value()) {
+                    output.value().AsRvalue() = input;
+                    return input;
+                } else {
+                    return input;
+                }
+            },
+            "Function to perform addmm of two 2D tensors with compatible "
+            "shapes.",
+            "input"_a, "A"_a, "B"_a, "alpha"_a, "beta"_a,
+            py::arg("output") = py::none());
     m.def(
             "det",
             [](Tensor &A) {
