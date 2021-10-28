@@ -143,6 +143,7 @@ protected:
     std::unique_ptr<nns::FixedRadiusIndex> fixed_radius_index_;
     std::unique_ptr<nns::KnnIndex> knn_index_;
     const Tensor dataset_points_;
+    const Dtype index_t_;
 };
 }  // namespace nns
 }  // namespace core

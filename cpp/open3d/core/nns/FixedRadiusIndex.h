@@ -408,21 +408,28 @@ public:
     /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     FixedRadiusIndex(const Tensor& dataset_points, double radius);
+    FixedRadiusIndex(const Tensor& dataset_points,
+                     double radius,
+                     const Dtype index_t);
     ~FixedRadiusIndex();
     FixedRadiusIndex(const FixedRadiusIndex&) = delete;
     FixedRadiusIndex& operator=(const FixedRadiusIndex&) = delete;
 
 public:
-    bool SetTensorData(const Tensor& dataset_points) override {
+    bool SetTensorData(const Tensor& dataset_points,
+                       const Dtype index_t = core::Int32) override {
         utility::LogError(
                 "FixedRadiusIndex::SetTensorData witout radius not "
                 "implemented.");
     }
 
-    bool SetTensorData(const Tensor& dataset_points, double radius) override;
+    bool SetTensorData(const Tensor& dataset_points,
+                       double radius,
+                       const Dtype index_t = core::Int32) override;
     bool SetTensorData(const Tensor& dataset_points,
                        const Tensor& points_row_splits,
-                       double radius);
+                       double radius,
+                       const Dtype index_t = core::Int32);
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override {

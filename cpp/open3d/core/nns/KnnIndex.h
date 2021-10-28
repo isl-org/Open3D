@@ -56,15 +56,20 @@ public:
     /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     KnnIndex(const Tensor& dataset_points);
+    KnnIndex(const Tensor& dataset_points, const Dtype index_t);
     ~KnnIndex();
     KnnIndex(const KnnIndex&) = delete;
     KnnIndex& operator=(const KnnIndex&) = delete;
 
 public:
-    bool SetTensorData(const Tensor& dataset_points) override;
     bool SetTensorData(const Tensor& dataset_points,
-                       const Tensor& points_row_splits);
-    bool SetTensorData(const Tensor& dataset_points, double radius) override {
+                       const Dtype index_t = core::Int32) override;
+    bool SetTensorData(const Tensor& dataset_points,
+                       const Tensor& points_row_splits,
+                       const Dtype index_t = core::Int32);
+    bool SetTensorData(const Tensor& dataset_points,
+                       double radius,
+                       const Dtype index_t = core::Int32) override {
         utility::LogError(
                 "[KnnIndex::SetTensorData with radius not implemented.");
     }

@@ -56,15 +56,19 @@ public:
     /// \param dataset_points Provides tensor from which Faiss Index is
     /// constructed.
     FaissIndex(const Tensor &dataset_points);
+    FaissIndex(const Tensor &dataset_points, const Dtype index_t);
     ~FaissIndex();
     FaissIndex(const FaissIndex &) = delete;
     FaissIndex &operator=(const FaissIndex &) = delete;
 
 public:
     // dataset_points must be float32.
-    bool SetTensorData(const Tensor &dataset_points) override;
+    bool SetTensorData(const Tensor &dataset_points,
+                       const Dtype index_t = core::Int32) override;
 
-    bool SetTensorData(const Tensor &dataset_points, double radius) override {
+    bool SetTensorData(const Tensor &dataset_points,
+                       double radius,
+                       const Dtype index_t = core::Int32) override {
         utility::LogError(
                 "FaissIndex::SetTensorData with radius not implemented.");
     }

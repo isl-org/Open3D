@@ -105,3 +105,30 @@
             utility::LogError("Unsupported data type."); \
         }                                                \
     }()
+
+#define DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(FDTYPE, IDTYPE, ...) \
+    [&] {                                                         \
+        if (FDTYPE == open3d::core::Float32 &&                    \
+            IDTYPE == open3d::core::Int32) {                      \
+            using scalar_t = float;                               \
+            using int_t = int32_t;                                \
+            return __VA_ARGS__();                                 \
+        } else if (FDTYPE == open3d::core::Float32 &&             \
+                   IDTYPE == open3d::core::Int64) {               \
+            using scalar_t = float;                               \
+            using int_t = int64_t;                                \
+            return __VA_ARGS__();                                 \
+        } else if (FDTYPE == open3d::core::Float64 &&             \
+                   IDTYPE == open3d::core::Int32) {               \
+            using scalar_t = double;                              \
+            using int_t = int32_t;                                \
+            return __VA_ARGS__();                                 \
+        } else if (FDTYPE == open3d::core::Float64 &&             \
+                   IDTYPE == open3d::core::Int64) {               \
+            using scalar_t = double;                              \
+            using int_t = int64_t;                                \
+            return __VA_ARGS__();                                 \
+        } else {                                                  \
+            utility::LogError("Unsupported data type.");          \
+        }                                                         \
+    }()

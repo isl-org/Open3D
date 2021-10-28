@@ -42,19 +42,28 @@ FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
     SetTensorData(dataset_points, radius);
 };
 
+FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
+                                   double radius,
+                                   const Dtype index_t) {
+    AssertTensorDtypes(dataset_points, {Float32, Float64});
+    SetTensorData(dataset_points, radius, index_t);
+};
+
 FixedRadiusIndex::~FixedRadiusIndex(){};
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
-                                     double radius) {
+                                     double radius,
+                                     const Dtype index_t) {
     const int64_t num_dataset_points = dataset_points.GetShape()[0];
     Tensor points_row_splits(std::vector<int64_t>({0, num_dataset_points}), {2},
                              Int64);
-    return SetTensorData(dataset_points, points_row_splits, radius);
+    return SetTensorData(dataset_points, points_row_splits, radius, index_t);
 }
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      const Tensor &points_row_splits,
-                                     double radius) {
+                                     double radius,
+                                     const Dtype index_t) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
     // AssertTensorDevice(points_row_splits, dataset_points.GetDevice());
     AssertTensorDtype(points_row_splits, Int64);
