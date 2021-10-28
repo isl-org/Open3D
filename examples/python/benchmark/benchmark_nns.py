@@ -25,21 +25,20 @@
 # ----------------------------------------------------------------------------
 
 import os
+import sys
+
+sys.path.append("../utility")
+from downloader import file_downloader, unzip_data
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'  # does not affect results
 
 import argparse
-import itertools
 import pickle
 from collections import OrderedDict
-from pathlib import Path
 
 import numpy as np
 import open3d as o3d
 from scipy.spatial import cKDTree
-
-pwd = Path(os.path.dirname(os.path.realpath(__file__)))
-open3d_root = pwd.parent.parent.parent
 
 from benchmark_utils import measure_time, print_system_info, print_table
 
@@ -91,6 +90,45 @@ def compute_avg_radii(points, queries, neighbors):
     return avg_radii
 
 
+def prepare_benchmark_data():
+    # setup dataset examples
+    datasets = OrderedDict()
+
+    # download data from open3d_download
+    base_url = "https://github.com/isl-org/open3d_downloads/releases/download/nns/"
+    files = (
+        "canyon.ply",
+        "fluid_1000.ply",
+        "kitti_1.ply",
+        "kitti_2.ply",
+        "small_tower.ply",
+    )
+    out_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                           "testdata")
+
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+
+    for file in files:
+        print("==================================")
+        remote_file = os.path.join(base_url, f"{file}.zip")
+        zip_file = os.path.join(out_dir, f"{file}.zip")
+        ply_file = os.path.join(out_dir, file)
+
+        if not os.path.exists(zip_file) or not os.path.exists(ply_file):
+            file_downloader(remote_file, out_dir)
+            unzip_data(zip_file, out_dir)
+            os.remove(zip_file)
+
+        pcd = o3d.t.io.read_point_cloud(ply_file)
+        points = queries = pcd.point['positions'].to(o3d.core.Dtype.Float32)
+        queries = queries[::10]
+        filename = os.path.basename(ply_file)
+        datasets[filename] = {'points': points, 'queries': queries}
+        print("")
+    return datasets
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--search_type",
@@ -106,24 +144,8 @@ if __name__ == "__main__":
 
     # collects runtimes for all examples
     results = OrderedDict()
-    # setup dataset examples
-    datasets = OrderedDict()
 
-    # TODO: remove hard-coded file list.
-    files = [
-        "small_tower.ply",
-        "kitti_1.ply",
-        "kitti_2.ply",
-        "fluid_1000.ply",
-        # "s3dis_1.ply", "s3dis_2.ply"
-    ]
-    for i, file in enumerate(files):
-        filepath = os.path.join(open3d_root, file)
-        pcd = o3d.t.io.read_point_cloud(filepath)
-        points = queries = pcd.point['positions'].to(o3d.core.Dtype.Float32)
-        queries = queries[::10]
-        filename = os.path.basename(filepath)
-        datasets[filename] = {'points': points, 'queries': queries}
+    datasets = prepare_benchmark_data()
 
     if args.search_type == "knn":
         # random data
