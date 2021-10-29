@@ -1,10 +1,12 @@
 # OneAPI Readme
 
 ## Known limitations
-- TBB issue: `cpp/open3d/utility/ParallelScan.h` is disabled.
+- (fixed) TBB issue: `cpp/open3d/utility/ParallelScan.h` is disabled.
 - Does not work with `-DBUILD_SHARED_LIBS=OFF`: need to refactor installation mechanism.
 - Does not work with `-DBUILD_CUDA_MODULE=ON`: Faiss does not support icpx compiler.
-- Python: dynamic library loading
+  - Simlify to two binaries.
+- Python: dynamic library loading.
+- ABI=1 currently required.
 
 ## Python packages
 
