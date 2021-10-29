@@ -136,6 +136,8 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const double distance_threshold /* = 0.01 */,
         const int ransac_n /* = 3 */,
         const int num_iterations /* = 100 */) const {
+    ransac_n = 3;
+    
     RANSACResult result;
     double error = 0;
 
