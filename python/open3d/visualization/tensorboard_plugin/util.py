@@ -49,7 +49,7 @@ _stream_handler = logging.StreamHandler()
 _stream_handler.setFormatter(
     logging.Formatter('[%(name)s %(levelname)s T:%(threadName)s] %(message)s'))
 _stream_handler.setLevel(logging.WARNING)
-_log.setLevel(logging.WARNING)
+_log.setLevel(logging.DEBUG)
 _log.addHandler(_stream_handler)
 
 
@@ -223,7 +223,6 @@ class Open3DPluginDataReader:
 
     def read_geometry(self, run, tag, step, batch_idx, step_to_idx):
         """Geometry reader from msgpack files.
-        TODO(ssheorey): Add CRC-32C
         """
         idx = step_to_idx[step]
         metadata_proto = plugin_data_pb2.Open3DPluginData()
@@ -297,7 +296,7 @@ class Open3DPluginDataReader:
 
 def to_dict_batch(o3d_geometry_list):
     """Convert sequence of identical (legacy) Open3D geometry types to
-    attribute-tensor dictionary. The geometry seequence forms a batch of data.
+    attribute-tensor dictionary. The geometry sequence forms a batch of data.
     Custom attributes are not supported.
 
     TODO: This involves a data copy. Add support for List[Open3D geometry]
@@ -313,10 +312,14 @@ def to_dict_batch(o3d_geometry_list):
     """
     if len(o3d_geometry_list) == 0:
         return {}
+    vertex_positions = []
+    vertex_colors = []
+    vertex_normals = []
+    triangle_indices = []
+    triangle_uvs = []
+    line_colors = []
+    line_indices = []
     if isinstance(o3d_geometry_list[0], o3d.geometry.PointCloud):
-        vertex_positions = []
-        vertex_colors = []
-        vertex_normals = []
         for geometry in o3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.points))
             vertex_colors.append(np.asarray(geometry.colors))
@@ -329,15 +332,14 @@ def to_dict_batch(o3d_geometry_list):
         }
 
     elif isinstance(o3d_geometry_list[0], o3d.geometry.TriangleMesh):
-        vertex_positions = []
-        vertex_colors = []
-        vertex_normals = []
-        triangle_indices = []
         for geometry in o3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.vertices))
             vertex_colors.append(np.asarray(geometry.vertex_colors))
             vertex_normals.append(np.asarray(geometry.vertex_normals))
             triangle_indices.append(np.asarray(geometry.triangles))
+            if geometry.has_triangle_uvs():
+                triangle_uvs.append(
+                    np.asarray(geometry.triangle_uvs).reshape((-1, 3, 2)))
 
         geo_dict = {
             'vertex_positions': np.stack(vertex_positions, axis=0),
@@ -345,11 +347,10 @@ def to_dict_batch(o3d_geometry_list):
             'vertex_normals': np.stack(vertex_normals, axis=0),
             'triangle_indices': np.stack(triangle_indices, axis=0),
         }
+        if len(triangle_uvs) > 0:
+            geo_dict.update(triangle_texture_uvs=np.stack(triangle_uvs, axis=0))
 
     elif isinstance(o3d_geometry_list[0], o3d.geometry.LineSet):
-        vertex_positions = []
-        line_colors = []
-        line_indices = []
         for geometry in o3d_geometry_list:
             vertex_positions.append(np.asarray(geometry.points))
             line_colors.append(np.asarray(geometry.colors))
@@ -363,7 +364,7 @@ def to_dict_batch(o3d_geometry_list):
 
     else:
         raise NotImplementedError(
-            f"Geometry type {type(o3d_geometry_list[0])} is not suported yet.")
+            f"Geometry type {type(o3d_geometry_list[0])} is not supported yet.")
 
     # remove empty arrays
     for prop in tuple(geo_dict.keys()):

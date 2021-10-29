@@ -239,7 +239,7 @@ class PyAPIDocsBuilder:
         function_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isroutine(obj[1]) and not obj[0][0] == '_'
+            if inspect.isroutine(obj[1]) and not obj[0].startswith('_')
         ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (full_module_name, function_name)
@@ -256,7 +256,7 @@ class PyAPIDocsBuilder:
         sub_module_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.ismodule(obj[1]) and not obj[0][0] == '_'
+            if inspect.ismodule(obj[1]) and not obj[0].startswith('_')
         ]
         documented_sub_module_names = [
             sub_module_name for sub_module_name in sub_module_names if "%s.%s" %

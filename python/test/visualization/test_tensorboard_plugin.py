@@ -44,8 +44,8 @@ from open3d_test import test_data_dir
 @pytest.fixture
 def geometry_data():
     """Common geometry data for tests"""
-    cube = (o3d.geometry.TriangleMesh.create_box(1, 2, 4),
-            o3d.geometry.TriangleMesh.create_box(1, 2, 4))
+    cube = (o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True),
+            o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True))
     cube[0].compute_vertex_normals()
     cube[1].compute_vertex_normals()
 
@@ -55,38 +55,60 @@ def geometry_data():
     colors = (((1.0, 0.0, 0.0), (0.0, 1.0, 1.0)),
               ((0.0, 1.0, 0.0), (1.0, 0.0, 1.0)), ((0.0, 0.0, 1.0), (1.0, 1.0,
                                                                      0.0)))
+    material = {
+        "material_name": ("defaultLit", "defaultUnlit"),
+        "material_scalar_point_size": (2, 20),
+        "material_scalar_metallic": (0.25, 0.75),
+        "material_vector_base_color": (
+            (0.25, 0.25, 0.25, 1.0), (0.25, 0.25, 0.25, 1.0)),
+        "material_texture_map_metallic":
+            np.full((2, 8, 8, 1), 128, dtype=np.uint8),
+        "material_texture_map_albedo":  # albedo = 64 is fairly dark
+            np.full((2, 8, 8, 3), 64, dtype=np.uint8),
+    }
+
+    material_ls = {
+        "material_name": ("unlitLine", "unlitLine"),
+        "material_scalar_line_width": (2, 20),
+        "material_vector_base_color": (
+            (0.25, 0.25, 0.25, 1.0), (0.25, 0.25, 0.25, 1.0))
+    }
 
     return {
         'cube': cube,
+        'material': material,
         'cube_ls': cube_ls,
+        'material_ls': material_ls,
         'colors': colors,
         'max_outputs': 2
     }
 
 
-def test_tensorflow_summary(geometry_data):
+def test_tensorflow_summary(geometry_data, tmp_path):
     """Test writing summary from TensorFlow
     """
 
     tf = pytest.importorskip("tensorflow")
-    logdir = tempfile.mkdtemp(prefix='open3d_tb_plugin_test')
+    logdir = str(tmp_path)
     writer = tf.summary.create_file_writer(logdir)
 
-    rng = np.random
+    rng = np.random.default_rng()
     tensor_converter = (tf.convert_to_tensor, o3d.core.Tensor.from_numpy,
                         np.array)
 
-    cube = geometry_data['cube']
-    cube_ls = geometry_data['cube_ls']
+    cube, material = geometry_data['cube'], geometry_data['material']
+    cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
+        'material_ls']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
     with writer.as_default():
         for step in range(3):
             cube[0].paint_uniform_color(colors[step][0])
             cube[1].paint_uniform_color(colors[step][1])
+            cube_summary = to_dict_batch(cube)
+            cube_summary.update(material)
             # Randomly convert to TF, Open3D, Numpy tensors, or use property
             # reference
-            cube_summary = to_dict_batch(cube)
             if step > 0:
                 cube_summary['vertex_positions'] = 0
                 cube_summary['vertex_normals'] = 0
@@ -94,13 +116,19 @@ def test_tensorflow_summary(geometry_data):
                     cube_summary['vertex_colors'])
             else:
                 for prop, tensor in cube_summary.items():
-                    cube_summary[prop] = rng.choice(tensor_converter)(tensor)
+                    # skip material scalar and vector props
+                    if (not prop.startswith("material_") or
+                            prop.startswith("material_texture_map_")):
+                        cube_summary[prop] = rng.choice(tensor_converter)(
+                            tensor)
             summary.add_3d('cube',
                            cube_summary,
                            step=step,
                            logdir=logdir,
                            max_outputs=max_outputs)
-            cube_summary.pop('triangle_indices')  # Convert to PointCloud
+            for key in tuple(cube_summary):  # Convert to PointCloud
+                if key.startswith(('triangle_', 'material_texture_map_')):
+                    cube_summary.pop(key)
             summary.add_3d('cube_pcd',
                            cube_summary,
                            step=step,
@@ -109,8 +137,11 @@ def test_tensorflow_summary(geometry_data):
             cube_ls[0].paint_uniform_color(colors[step][0])
             cube_ls[1].paint_uniform_color(colors[step][1])
             cube_ls_summary = to_dict_batch(cube_ls)
+            cube_ls_summary.update(material_ls)
             for prop, tensor in cube_ls_summary.items():
-                cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
+                if (not prop.startswith("material_") or
+                        prop.startswith("material_texture_map_")):
+                    cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
             summary.add_3d('cube_ls',
                            cube_ls_summary,
                            step=step,
@@ -144,26 +175,28 @@ def test_tensorflow_summary(geometry_data):
     shutil.rmtree(logdir)
 
 
-def test_pytorch_summary(geometry_data):
+def test_pytorch_summary(geometry_data, tmp_path):
     """Test writing summary from PyTorch"""
 
     torch = pytest.importorskip("torch")
     torch_tb = pytest.importorskip("torch.utils.tensorboard")
     SummaryWriter = torch_tb.SummaryWriter
-    logdir = tempfile.mkdtemp(prefix='open3d_tb_plugin_test')
+    logdir = str(tmp_path)
     writer = SummaryWriter(logdir)
 
-    rng = np.random
+    rng = np.random.default_rng()
     tensor_converter = (torch.from_numpy, o3d.core.Tensor.from_numpy, np.array)
 
-    cube = geometry_data['cube']
-    cube_ls = geometry_data['cube_ls']
+    cube, material = geometry_data['cube'], geometry_data['material']
+    cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
+        'material_ls']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
     for step in range(3):
         cube[0].paint_uniform_color(colors[step][0])
         cube[1].paint_uniform_color(colors[step][1])
         cube_summary = to_dict_batch(cube)
+        cube_summary.update(material)
         # Randomly convert to PyTorch, Open3D, Numpy tensors, or use property
         # reference
         if step > 0:
@@ -173,9 +206,14 @@ def test_pytorch_summary(geometry_data):
                 cube_summary['vertex_colors'])
         else:
             for prop, tensor in cube_summary.items():
-                cube_summary[prop] = rng.choice(tensor_converter)(tensor)
+                # skip material scalar and vector props
+                if (not prop.startswith("material_") or
+                        prop.startswith("material_texture_map_")):
+                    cube_summary[prop] = rng.choice(tensor_converter)(tensor)
         writer.add_3d('cube', cube_summary, step=step, max_outputs=max_outputs)
-        cube_summary.pop('triangle_indices')  # Convert to PointCloud
+        for key in tuple(cube_summary):  # Convert to PointCloud
+            if key.startswith(('triangle_', 'material_texture_map_')):
+                cube_summary.pop(key)
         writer.add_3d('cube_pcd',
                       cube_summary,
                       step=step,
@@ -183,8 +221,11 @@ def test_pytorch_summary(geometry_data):
         cube_ls[0].paint_uniform_color(colors[step][0])
         cube_ls[1].paint_uniform_color(colors[step][1])
         cube_ls_summary = to_dict_batch(cube_ls)
+        cube_ls_summary.update(material_ls)
         for prop, tensor in cube_ls_summary.items():
-            cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
+            if (not prop.startswith("material_") or
+                    prop.startswith("material_texture_map_")):
+                cube_ls_summary[prop] = rng.choice(tensor_converter)(tensor)
         writer.add_3d('cube_ls',
                       cube_ls_summary,
                       step=step,
@@ -217,13 +258,47 @@ def test_pytorch_summary(geometry_data):
     shutil.rmtree(logdir)
 
 
-def test_plugin_data_reader(geometry_data):
-    """Test reading summary data"""
+def check_material_dict(o3d_geo, material, batch_idx):
+    assert o3d_geo.has_valid_material()
+    assert o3d_geo.material.material_name == material['material_name'][
+        batch_idx]
+    for prop, value in material.items():
+        if prop == "material_name":
+            assert o3d_geo.material.material_name == material[prop][batch_idx]
+        elif prop.startswith("material_scalar_"):
+            assert o3d_geo.material.scalar_properties[
+                prop[16:]] == value[batch_idx]
+        elif prop.startswith("material_vector_"):
+            assert all(o3d_geo.material.vector_properties[prop[16:]] ==
+                       value[batch_idx])
+        elif prop.startswith("material_texture_map_"):
+            if value[batch_idx].dtype == np.uint8:
+                ref_value = value[batch_idx]
+            elif value[batch_idx].dtype == np.uint16:
+                ref_value = (value[batch_idx] // 256).astype(np.uint8)
+            elif value[batch_idx].dtype in (np.float32, np.float64):
+                ref_value = (value[batch_idx] * 255).astype(np.uint8)
+            else:
+                raise ValueError("Reference texture map has unsupported dtype:"
+                                 f"{value[batch_idx].dtype}")
+            assert (o3d_geo.material.texture_maps[
+                prop[21:]].as_tensor().numpy() == ref_value).all()
+
+
+@pytest.fixture
+def logdir():
+    """Extract logdir zip to provide logdir for tests, cleanup afterwards."""
     shutil.unpack_archive(
         os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
-    logdir = "test_tensorboard_plugin"
-    cube = geometry_data['cube']
-    cube_ls = geometry_data['cube_ls']
+    yield "test_tensorboard_plugin"
+    shutil.rmtree("test_tensorboard_plugin")
+
+
+def test_plugin_data_reader(geometry_data, logdir):
+    """Test reading summary data"""
+    cube, material = geometry_data['cube'], geometry_data['material']
+    cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
+        'material_ls']
     colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
 
@@ -250,15 +325,21 @@ def test_plugin_data_reader(geometry_data):
                 cube_out.vertex['colors'] == cube_ref.vertex['colors']).all()
             assert (cube_out.triangle['indices'] == cube_ref.triangle['indices']
                    ).all()
+            check_material_dict(cube_out, material, batch_idx)
 
             cube_pcd_out = reader.read_geometry(".", "cube_pcd", step,
                                                 batch_idx, step_to_idx)
             assert (cube_pcd_out.point['positions'] ==
                     cube_ref.vertex['positions']).all()
+            assert cube_pcd_out.has_valid_material()
             assert (cube_pcd_out.point['normals'] == cube_ref.vertex['normals']
                    ).all()
             assert (cube_pcd_out.point['colors'] == cube_ref.vertex['colors']
                    ).all()
+            for key in tuple(material):
+                if key.startswith('material_texture_map_'):
+                    material.pop(key)
+            check_material_dict(cube_pcd_out, material, batch_idx)
 
             cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
             cube_ls_ref = o3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
@@ -275,20 +356,13 @@ def test_plugin_data_reader(geometry_data):
                    ).all()
             assert (
                 cube_ls_out.line['colors'] == cube_ls_ref.line['colors']).all()
+            check_material_dict(cube_ls_out, material_ls, batch_idx)
 
-    shutil.rmtree(logdir)
 
-
-@pytest.mark.skip(reason="This will only run on a local machine with GPU.")
-def test_tensorboard_app():
-    shutil.unpack_archive(
-        os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
-    logdir = "test_tensorboard_plugin"
+@pytest.mark.skip(reason="This will only run on a machine with GPU and GUI.")
+def test_tensorboard_app(logdir):
     with sp.Popen(['tensorboard', '--logdir', logdir]) as tb_proc:
         sleep(5)
         webbrowser.open('http://localhost:6006/')
-        sleep(5)
-        tb_proc.terminate()
-        sleep(2)
+        sleep(8)
         tb_proc.kill()
-    shutil.rmtree(logdir)

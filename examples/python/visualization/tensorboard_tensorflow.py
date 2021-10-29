@@ -26,6 +26,7 @@
 # ----------------------------------------------------------------------------
 import copy
 import os
+import sys
 import numpy as np
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
@@ -33,6 +34,8 @@ from open3d.visualization.tensorboard_plugin.util import to_dict_batch
 import tensorflow as tf
 
 BASE_LOGDIR = "demo_logs/tf/"
+MODEL_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
+                         '..', "test_data", "monkey")
 
 
 def small_scale(run_name="small_scale"):
@@ -41,12 +44,13 @@ def small_scale(run_name="small_scale"):
     logdir = os.path.join(BASE_LOGDIR, run_name)
     writer = tf.summary.create_file_writer(logdir)
 
-    cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+    cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True)
     cube.compute_vertex_normals()
     cylinder = o3d.geometry.TriangleMesh.create_cylinder(radius=1.0,
                                                          height=2.0,
                                                          resolution=20,
-                                                         split=4)
+                                                         split=4,
+                                                         create_uv_map=True)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
     with writer.as_default():
@@ -70,12 +74,13 @@ def property_reference(run_name="property_reference"):
     logdir = os.path.join(BASE_LOGDIR, run_name)
     writer = tf.summary.create_file_writer(logdir)
 
-    cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+    cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True)
     cube.compute_vertex_normals()
     cylinder = o3d.geometry.TriangleMesh.create_cylinder(radius=1.0,
                                                          height=2.0,
                                                          resolution=20,
-                                                         split=4)
+                                                         split=4,
+                                                         create_uv_map=True)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
     with writer.as_default():
@@ -144,7 +149,51 @@ def large_scale(n_steps=16,
                            max_outputs=batch_size)
 
 
+def with_material(model_dir=MODEL_DIR):
+    """Read an obj model from a directory and write as a TensorBoard summary.
+    """
+    model_name = os.path.basename(model_dir)
+    logdir = os.path.join(BASE_LOGDIR, model_name)
+    model_path = os.path.join(model_dir, model_name + ".obj")
+    model = o3d.t.geometry.TriangleMesh.from_legacy(
+        o3d.io.read_triangle_mesh(model_path))
+    summary_3d = {
+        "vertex_positions": model.vertex["positions"],
+        "vertex_normals": model.vertex["normals"],
+        "triangle_texture_uvs": model.triangle["texture_uvs"],
+        "triangle_indices": model.triangle["indices"],
+        "material_name": "defaultLit"
+    }
+    names_to_o3dprop = {"ao": "ambient_occlusion"}
+
+    for texture in ("albedo", "normal", "ao", "metallic", "roughness"):
+        texture_file = os.path.join(model_dir, texture + ".png")
+        if os.path.exists(texture_file):
+            texture = names_to_o3dprop.get(texture, texture)
+            summary_3d.update({
+                ("material_texture_map_" + texture):
+                    o3d.t.io.read_image(texture_file)
+            })
+            if texture == "metallic":
+                summary_3d.update(material_scalar_metallic=1.0)
+
+    writer = tf.summary.create_file_writer(logdir)
+    with writer.as_default():
+        summary.add_3d(model_name, summary_3d, step=0, logdir=logdir)
+
+
 if __name__ == "__main__":
-    small_scale()
-    property_reference()
-    large_scale()
+
+    examples = ('small_scale', 'large_scale', 'property_reference',
+                'with_material')
+    selected = tuple(eg for eg in sys.argv[1:] if eg in examples)
+    if len(selected) == 0:
+        print(f'Usage: python {__file__} EXAMPLE...')
+        print(f'  where EXAMPLE are from {examples}')
+        selected = ('property_reference', 'with_material')
+
+    for eg in selected:
+        locals()[eg]()
+
+    print(f"Run 'tensorboard --logdir {BASE_LOGDIR}' to visualize the 3D "
+          "summary.")

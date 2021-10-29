@@ -638,6 +638,7 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
                                    geometry_.HasTriangleAttr("texture_uvs");
     const auto& points = geometry_.GetVertexPositions();
     const auto& indices = geometry_.GetTriangleIndices();
+    const auto indices_64 = indices.To(core::Int64);  // for Tensor indexing
     const size_t n_vertices = need_duplicate_vertices ? indices.GetLength() * 3
                                                       : points.GetLength();
 
@@ -674,7 +675,7 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
     float* vertex_array = static_cast<float*>(malloc(vertex_array_size));
     if (need_duplicate_vertices) {
         core::Tensor dup_vertices = points.IndexGet(
-                {indices.Reshape({static_cast<long>(n_vertices)})});
+                {indices_64.Reshape({static_cast<long>(n_vertices)})});
         memcpy(vertex_array, dup_vertices.GetDataPtr(), vertex_array_size);
     } else {
         memcpy(vertex_array, points.GetDataPtr(), vertex_array_size);
@@ -690,12 +691,20 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
     if (geometry_.HasVertexColors()) {
         if (need_duplicate_vertices) {
             core::Tensor dup_colors = geometry_.GetVertexColors().IndexGet(
-                    {indices.Reshape({static_cast<long>(n_vertices)})});
+                    {indices_64.Reshape({static_cast<long>(n_vertices)})});
             memcpy(color_array, dup_colors.GetDataPtr(), color_array_size);
         } else {
             memcpy(color_array, geometry_.GetVertexColors().GetDataPtr(),
                    color_array_size);
         }
+    } else if (geometry_.HasTriangleColors()) {
+        const auto& colors = geometry_.GetTriangleColors();
+        core::Tensor dup_colors = core::Tensor::Empty(
+                {static_cast<long>(n_vertices), 3}, core::Float32);
+        dup_colors.Slice(0, 0, n_vertices, 3) = colors;
+        dup_colors.Slice(0, 1, n_vertices, 3) = colors;
+        dup_colors.Slice(0, 2, n_vertices, 3) = colors;
+        memcpy(color_array, dup_colors.GetDataPtr(), color_array_size);
     } else {
         for (size_t i = 0; i < n_vertices * 3; ++i) {
             color_array[i] = 1.f;
@@ -712,7 +721,7 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
     if (geometry_.HasVertexNormals()) {
         if (need_duplicate_vertices) {
             core::Tensor dup_normals = geometry_.GetVertexNormals().IndexGet(
-                    {indices.Reshape({static_cast<long>(n_vertices)})});
+                    {indices_64.Reshape({static_cast<long>(n_vertices)})});
             auto orientation =
                     filament::geometry::SurfaceOrientation::Builder()
                             .vertexCount(n_vertices)
@@ -769,7 +778,7 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
         if (need_duplicate_vertices) {
             core::Tensor dup_uvs =
                     geometry_.GetVertexAttr("texture_uvs")
-                            .IndexGet({indices.Reshape(
+                            .IndexGet({indices_64.Reshape(
                                     {static_cast<long>(n_vertices)})});
             memcpy(uv_array, dup_uvs.GetDataPtr(), uv_array_size);
         } else {
@@ -777,6 +786,9 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
                    geometry_.GetVertexAttr("texture_uvs").GetDataPtr(),
                    uv_array_size);
         }
+    } else if (geometry_.HasTriangleAttr("texture_uvs")) {
+        memcpy(uv_array, geometry_.GetTriangleAttr("texture_uvs").GetDataPtr(),
+               uv_array_size);
     } else {
         memset(uv_array, 0x0, uv_array_size);
     }

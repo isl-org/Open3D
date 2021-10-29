@@ -481,7 +481,7 @@ Example:
     tensor.def("numpy", &core::TensorToPyArray);
 
     tensor.def_static("from_numpy", [](py::array np_array) {
-        return core::PyArrayToTensor(np_array, true);
+        return core::PyArrayToTensor(np_array, /*inplace=*/true);
     });
 
     tensor.def("to_dlpack", [](const Tensor& tensor) {

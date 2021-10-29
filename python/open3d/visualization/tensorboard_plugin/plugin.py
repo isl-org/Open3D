@@ -29,7 +29,6 @@ import sys
 import threading
 import json
 
-import numpy as np
 from tensorboard.plugins import base_plugin
 import werkzeug
 from werkzeug import wrappers
@@ -40,7 +39,6 @@ import open3d as o3d
 # TODO: Check for GPU / EGL else TensorBoard will crash.
 from open3d.visualization import O3DVisualizer
 from open3d.visualization import gui
-from open3d.visualization import rendering
 from open3d.visualization import webrtc_server
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 # Set window system before the GUI event loop
@@ -49,26 +47,6 @@ from open3d.visualization.async_event_loop import async_event_loop
 from open3d.visualization.tensorboard_plugin import metadata
 from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
 from open3d.visualization.tensorboard_plugin.util import _log
-
-
-def _postprocess(geometry):
-    """Post process geometry before displaying to account for WIP
-    Tensor API in Open3D.
-    """
-
-    if isinstance(geometry, o3d.t.geometry.PointCloud):
-        return geometry
-    legacy = geometry.to_legacy()
-    # color is FLoat64 but range is [0,255]!
-    if isinstance(geometry, o3d.t.geometry.TriangleMesh):
-        if legacy.has_vertex_colors():
-            legacy.vertex_colors = o3d.utility.Vector3dVector(
-                np.asarray(legacy.vertex_colors) / 255)
-    elif isinstance(geometry, o3d.t.geometry.TriangleMesh):
-        if legacy.has_colors():
-            legacy.colors = o3d.utility.Vector3dVector(
-                np.asarray(legacy.colors) / 255)
-    return legacy
 
 
 class Open3DPluginWindow:
@@ -296,9 +274,8 @@ class Open3DPluginWindow:
                         self.step_to_idx)
                     _log.debug(
                         f"Displaying geometry {geometry_name}:{geometry}")
-                    pp_geometry = _postprocess(geometry)
                     async_event_loop.run_sync(self.window.add_geometry,
-                                              geometry_name, pp_geometry)
+                                              geometry_name, geometry)
                 except IOError as err:
                     new_geometry_list.pop()
                     err_msg = f"Error reading {geometry_name}: {err}"
@@ -380,6 +357,8 @@ class Open3DPlugin(base_plugin.TBPlugin):
         self._http_api_lock = threading.Lock()
         self._windows = {}
         webrtc_server.disable_http_handshake()
+        # TODO(@ssheorey): Remove before merge
+        o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)
         # Dummy window to ensure GUI remains active even if all user windows are
         # closed.
         self._dummy_window = async_event_loop.run_sync(
