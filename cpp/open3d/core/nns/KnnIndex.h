@@ -37,7 +37,7 @@ namespace core {
 namespace nns {
 
 #ifdef BUILD_CUDA_MODULE
-template <class T>
+template <class T, class TIndex>
 void KnnSearchCUDA(const Tensor& points,
                    const Tensor& points_row_splits,
                    const Tensor& queries,

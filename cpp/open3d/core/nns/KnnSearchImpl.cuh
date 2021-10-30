@@ -157,7 +157,7 @@ void KnnQuery(const cudaStream_t &stream,
 
 }  // namespace
 
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void KnnSearchCUDA(const cudaStream_t stream,
                    size_t num_points,
                    const T *const points,
@@ -173,7 +173,7 @@ void KnnSearchCUDA(const cudaStream_t stream,
 
     const size_t num_indices = num_queries * knn;
 
-    int32_t *indices_ptr;
+    TIndex *indices_ptr;
     T *distances_ptr;
 
     output_allocator.AllocIndices(&indices_ptr, num_indices);
@@ -187,7 +187,7 @@ void KnnSearchCUDA(const cudaStream_t stream,
 
         const T *const points_i = points + 3 * points_row_splits[i];
         const T *const queries_i = queries + 3 * queries_row_splits[i];
-        int32_t *indices_ptr_i = indices_ptr + queries_row_splits[i] * knn;
+        TIndex *indices_ptr_i = indices_ptr + queries_row_splits[i] * knn;
         T *distances_ptr_i = distances_ptr + queries_row_splits[i] * knn;
         KnnQuery(stream, indices_ptr_i, distances_ptr_i, num_points_i, points_i,
                  num_queries_i, queries_i, knn);

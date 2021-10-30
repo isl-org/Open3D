@@ -79,6 +79,7 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points,
 #ifdef BUILD_CUDA_MODULE
         dataset_points_ = dataset_points.Contiguous();
         points_row_splits_ = points_row_splits.Contiguous();
+        index_dtype_ = index_dtype;
         return true;
 #else
         utility::LogError(
@@ -105,6 +106,7 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
                                               int knn) const {
     const Dtype dtype = GetDtype();
     const Device device = GetDevice();
+    const Dtype index_dtype = GetIndexDtype();
 
     // Only Float32, Float64 type dataset_points are supported.
     AssertTensorDtype(query_points, dtype);
@@ -131,16 +133,19 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     dataset_points_, points_row_splits_, query_points_, queries_row_splits_, \
             knn, neighbors_index, neighbors_distance
 
-#define CALL(type, fn)                                              \
-    if (Dtype::FromType<type>() == dtype) {                         \
-        fn<type>(FN_PARAMETERS);                                    \
+#define CALL(ftype, itype, fn)                                      \
+    if (Dtype::FromType<ftype>() == dtype &&                        \
+        Dtype::FromType<itype>() == index_dtype) {                  \
+        fn<ftype, itype>(FN_PARAMETERS);                            \
         return std::make_pair(neighbors_index, neighbors_distance); \
     }
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        CALL(float, KnnSearchCUDA)
-        CALL(double, KnnSearchCUDA)
+        CALL(float, int32_t, KnnSearchCUDA)
+        CALL(double, int32_t, KnnSearchCUDA)
+        CALL(float, int64_t, KnnSearchCUDA)
+        CALL(double, int64_t, KnnSearchCUDA)
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "

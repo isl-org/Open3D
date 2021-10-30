@@ -34,7 +34,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-template <class T>
+template <class T, class TIndex>
 void KnnSearchCUDA(const Tensor& points,
                    const Tensor& points_row_splits,
                    const Tensor& queries,
@@ -45,19 +45,19 @@ void KnnSearchCUDA(const Tensor& points,
     const cudaStream_t stream = cuda::GetStream();
 
     Device device = points.GetDevice();
-    NeighborSearchAllocator<T> output_allocator(device);
+    NeighborSearchAllocator<T, TIndex> output_allocator(device);
 
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     knn = num_points > knn ? knn : num_points;
 
-    impl::KnnSearchCUDA(stream, points.GetShape(0), points.GetDataPtr<T>(),
-                        queries.GetShape(0), queries.GetDataPtr<T>(),
-                        points_row_splits.GetShape(0),
-                        points_row_splits.GetDataPtr<int64_t>(),
-                        queries_row_splits.GetShape(0),
-                        queries_row_splits.GetDataPtr<int64_t>(), knn,
-                        output_allocator);
+    impl::KnnSearchCUDA<T, TIndex, NeighborSearchAllocator<T, TIndex>>(
+            stream, points.GetShape(0), points.GetDataPtr<T>(),
+            queries.GetShape(0), queries.GetDataPtr<T>(),
+            points_row_splits.GetShape(0),
+            points_row_splits.GetDataPtr<int64_t>(),
+            queries_row_splits.GetShape(0),
+            queries_row_splits.GetDataPtr<int64_t>(), knn, output_allocator);
 
     neighbors_index =
             output_allocator.NeighborsIndex().View({num_queries, knn});
@@ -65,14 +65,16 @@ void KnnSearchCUDA(const Tensor& points,
             output_allocator.NeighborsDistance().View({num_queries, knn});
 }
 
-#define INSTANTIATE(T)                                                        \
-    template void KnnSearchCUDA<T>(                                           \
+#define INSTANTIATE(T, TIndex)                                                \
+    template void KnnSearchCUDA<T, TIndex>(                                   \
             const Tensor& points, const Tensor& points_row_splits,            \
             const Tensor& queries, const Tensor& queries_row_splits, int knn, \
             Tensor& neighbors_index, Tensor& neighbors_distance);
 
-INSTANTIATE(float)
-INSTANTIATE(double)
+INSTANTIATE(float, int32_t)
+INSTANTIATE(double, int32_t)
+INSTANTIATE(float, int64_t)
+INSTANTIATE(double, int64_t)
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

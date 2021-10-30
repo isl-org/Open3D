@@ -44,7 +44,7 @@ bool NearestNeighborSearch::KnnIndex() {
 #ifdef BUILD_CUDA_MODULE
         if (dataset_points_.GetShape()[1] == 3) {
             knn_index_.reset(new nns::KnnIndex());
-            return knn_index_->SetTensorData(dataset_points_);
+            return knn_index_->SetTensorData(dataset_points_, index_dtype_);
         } else {
 #ifdef WITH_FAISS
             faiss_index_.reset(new nns::FaissIndex());
