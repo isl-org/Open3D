@@ -30,7 +30,6 @@ import traceback
 import threading
 import json
 
-import numpy as np
 from tensorboard.plugins import base_plugin
 import werkzeug
 from werkzeug import wrappers
@@ -43,6 +42,7 @@ from open3d.visualization import O3DVisualizer
 from open3d.visualization import gui
 from open3d.visualization import webrtc_server
 # Set window system before the GUI event loop
+# TODO(@ssheorey): Remove before merge
 o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
 from . import plugin_data_pb2
 from . import metadata
@@ -467,8 +467,6 @@ class Open3DPlugin(base_plugin.TBPlugin):
         self._windows = {}
         self._dummy_window = None
         self._gui = None
-        # TODO(@ssheorey): Remove before merge
-        o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)
 
     def _start_gui(self):
         webrtc_server.disable_http_handshake()

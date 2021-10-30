@@ -840,6 +840,7 @@ struct O3DVisualizer::Impl {
             is_default_color = false;
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
+            ui_state_.point_size = static_cast<int>(mat.point_size);
         } else if (model) {
             // Adding a triangle mesh model. Shader needs to be set to
             // defaultLit for O3D shader handling logic to work.
