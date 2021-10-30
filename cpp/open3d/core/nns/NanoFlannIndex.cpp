@@ -45,14 +45,14 @@ NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
 };
 
 NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points,
-                               const Dtype index_t) {
-    SetTensorData(dataset_points, index_t);
+                               const Dtype index_dtype) {
+    SetTensorData(dataset_points, index_dtype);
 };
 
 NanoFlannIndex::~NanoFlannIndex(){};
 
 bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points,
-                                   const Dtype index_t) {
+                                   const Dtype index_dtype) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
 
     if (dataset_points.NumDims() != 2) {
@@ -62,7 +62,7 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points,
     }
 
     dataset_points_ = dataset_points.Contiguous();
-    index_t_ = index_t;
+    index_dtype_ = index_dtype;
     DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(GetDtype(), GetIndexDtype(), [&]() {
         holder_ = impl::BuildKdTree<scalar_t, int_t>(
                 dataset_points_.GetShape(0),
@@ -76,7 +76,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                                                     int knn) const {
     const Dtype dtype = GetDtype();
     const Device device = GetDevice();
-    const Dtype index_t = GetIndexDtype();
+    const Dtype index_dtype = GetIndexDtype();
 
     core::AssertTensorDevice(query_points, device);
     core::AssertTensorDtype(query_points, dtype);
@@ -92,7 +92,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 
     Tensor indices, distances;
     Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
-    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_t, [&]() {
+    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
         NeighborSearchAllocator<scalar_t, int_t> output_allocator(device);
 
@@ -117,7 +117,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         const Tensor &query_points, const Tensor &radii, bool sort) const {
     const Dtype dtype = GetDtype();
     const Device device = GetDevice();
-    const Dtype index_t = GetIndexDtype();
+    const Dtype index_dtype = GetIndexDtype();
 
     core::AssertTensorDevice(query_points, device);
     core::AssertTensorDevice(radii, device);
@@ -137,7 +137,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
     Tensor indices, distances;
     Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
-    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_t, [&]() {
+    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
         NeighborSearchAllocator<scalar_t, int_t> output_allocator(device);
 
@@ -174,7 +174,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
     const Device device = GetDevice();
     const Dtype dtype = GetDtype();
-    const Dtype index_t = GetIndexDtype();
+    const Dtype index_dtype = GetIndexDtype();
 
     AssertTensorDevice(query_points, device);
     AssertTensorDtype(query_points, dtype);
@@ -190,7 +190,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
     int64_t num_query_points = query_points.GetShape(0);
 
     Tensor indices, distances, counts;
-    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_t, [&]() {
+    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
         NeighborSearchAllocator<scalar_t, int_t> output_allocator(device);
 

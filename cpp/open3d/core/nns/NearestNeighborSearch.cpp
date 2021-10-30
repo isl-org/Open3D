@@ -36,7 +36,7 @@ NearestNeighborSearch::~NearestNeighborSearch(){};
 
 bool NearestNeighborSearch::SetIndex() {
     nanoflann_index_.reset(new NanoFlannIndex());
-    return nanoflann_index_->SetTensorData(dataset_points_, index_t_);
+    return nanoflann_index_->SetTensorData(dataset_points_, index_dtype_);
 };
 
 bool NearestNeighborSearch::KnnIndex() {

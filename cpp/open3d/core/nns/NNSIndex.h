@@ -52,7 +52,7 @@ public:
     /// 2D, with shape {n, d}.
     /// \return Returns true if the construction success, otherwise false.
     virtual bool SetTensorData(const Tensor &dataset_points,
-                               const Dtype index_t) = 0;
+                               const Dtype index_dtype) = 0;
 
     /// Set the data for the nearest neighbor search.
     ///
@@ -61,7 +61,7 @@ public:
     /// \return Returns true if the construction success, otherwise false.
     virtual bool SetTensorData(const Tensor &dataset_points,
                                double radius,
-                               const Dtype index_t) = 0;
+                               const Dtype index_dtype) = 0;
 
     /// Perform K nearest neighbor search.
     ///
@@ -137,7 +137,7 @@ public:
 
 protected:
     Tensor dataset_points_;
-    Dtype index_t_;
+    Dtype index_dtype_;
 };
 }  // namespace nns
 }  // namespace core

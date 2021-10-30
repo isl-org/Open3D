@@ -44,7 +44,7 @@ Dtype NNSIndex::GetDtype() const { return dataset_points_.GetDtype(); }
 
 Device NNSIndex::GetDevice() const { return dataset_points_.GetDevice(); }
 
-Dtype NNSIndex::GetIndexDtype() const { return index_t_; }
+Dtype NNSIndex::GetIndexDtype() const { return index_dtype_; }
 
 }  // namespace nns
 }  // namespace core

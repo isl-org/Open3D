@@ -53,15 +53,15 @@ FaissIndex::FaissIndex(const Tensor &dataset_points) {
     SetTensorData(dataset_points);
 }
 
-FaissIndex::FaissIndex(const Tensor &dataset_points, const Dtype index_t) {
+FaissIndex::FaissIndex(const Tensor &dataset_points, const Dtype index_dtype) {
     AssertTensorDtype(dataset_points, Float32);
-    SetTensorData(dataset_points, index_t);
+    SetTensorData(dataset_points, index_dtype);
 }
 
 FaissIndex::~FaissIndex() {}
 
 bool FaissIndex::SetTensorData(const Tensor &dataset_points,
-                               const Dtype index_t) {
+                               const Dtype index_dtype) {
     AssertTensorDtype(dataset_points, Float32);
 
     dataset_points_ = dataset_points.Contiguous();

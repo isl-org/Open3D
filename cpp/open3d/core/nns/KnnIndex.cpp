@@ -41,22 +41,22 @@ KnnIndex::KnnIndex(const Tensor& dataset_points) {
     SetTensorData(dataset_points);
 }
 
-KnnIndex::KnnIndex(const Tensor& dataset_points, const Dtype index_t) {
-    SetTensorData(dataset_points, index_t);
+KnnIndex::KnnIndex(const Tensor& dataset_points, const Dtype index_dtype) {
+    SetTensorData(dataset_points, index_dtype);
 }
 
 KnnIndex::~KnnIndex() {}
 
 bool KnnIndex::SetTensorData(const Tensor& dataset_points,
-                             const Dtype index_t) {
+                             const Dtype index_dtype) {
     int64_t num_dataset_points = dataset_points.GetShape(0);
     Tensor points_row_splits = Tensor::Init<int64_t>({0, num_dataset_points});
-    return SetTensorData(dataset_points, points_row_splits, index_t);
+    return SetTensorData(dataset_points, points_row_splits, index_dtype);
 }
 
 bool KnnIndex::SetTensorData(const Tensor& dataset_points,
                              const Tensor& points_row_splits,
-                             const Dtype index_t) {
+                             const Dtype index_dtype) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
     // AssertTensorDevice(points_row_splits, GetDevice());
     AssertTensorDtype(points_row_splits, Int64);
