@@ -37,7 +37,6 @@
   --paper-grey-800: #424242;
   --tb-ui-dark-accent: #757575;
   --primary-background-color: #fff;
-
   --tb-run-color-0: #ff7043; /* orange */
   --tb-run-color-1: #0077bb; /* blue   */
   --tb-run-color-2: #cc3311; /* red    */
@@ -84,6 +83,7 @@ body {
 #logdir {
   color: var(--tb-ui-dark-accent);
 }
+
 /* Container for all runs */
 
 /* width is 6x left selctor, min-width=576px */

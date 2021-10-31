@@ -42,7 +42,7 @@ function rgbToHex(rgb) {
  * @return {Array[Number]} rgb RGB UInt8 color
  */
 function hexToRgb(hex) {
-    if (hex[0] != '#') {
+    if (hex[0] !== '#') {
         console.error('Bad hex value:', hex);
         return [0, 0, 0];
     }
@@ -82,9 +82,9 @@ class TensorboardOpen3DPluginClient {
     /** @const {String} Options for WebRTC session */
     webRtcOptions = 'rtptransport=tcp&timeout=60';
     /** @const {Number} WebRTC video stream width */
-    full_width = 1280;
+    fullWidth = 1280;
     /** @const {Number} WebRTC video stream height */
-    full_height = 960;
+    fullHeight = 960;
     /** @const {Number} Small widget width */
     width = 640;
     /** @const {Number} Small widget height */
@@ -113,17 +113,17 @@ class TensorboardOpen3DPluginClient {
     tagLabelsNames = new Map();
     /**
      * @var {Object} Default colormaps (currently RAINBOW and GRAYSCALE). Get
-     * as response to 'get_run_tags' message.
+     * as response to "get_run_tags" message.
      */
     COLORMAPS = null;
     /**
      * @var {Object} Default LabelLUT colormap. Get as response to
-     * 'get_run_tags' message
+     * "get_run_tags" message
      */
     LabelLUTColors = null;
     /**
      * @var {Map} Current rendering state for a tag.
-     * tag -> Object {'property':__, 'index': 0, 'shader': __, 'colormap': []}}
+     * tag -> Object {"property":__, "index": 0, "shader": __, "colormap": []}}
      */
     renderState = new Map();
     /**
@@ -197,7 +197,7 @@ class TensorboardOpen3DPluginClient {
              <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path>
            </symbol>
          </defs>
-      </svg>`
+      </svg>`;
         document.body.insertAdjacentHTML('beforeend', ICONS);
         this.requestNewWindow();
     }
@@ -209,10 +209,10 @@ class TensorboardOpen3DPluginClient {
      */
     requestNewWindow = (run) => {
         console.info(
-                'Requesting window with size: (' + this.full_width + ',' +
-                this.full_height + ')');
-        fetch(this.URL_ROUTE_PREFIX + '/new_window?width=' + this.full_width +
-                      '&height=' + this.full_height,
+                'Requesting window with size: (' + this.fullWidth + ',' +
+                this.fullHeight + ')');
+        fetch(this.URL_ROUTE_PREFIX + '/new_window?width=' + this.fullWidth +
+                      '&height=' + this.fullHeight,
               null)
                 .then((response) => response.json())
                 .then((response) => this.addConnection(
@@ -240,7 +240,7 @@ class TensorboardOpen3DPluginClient {
                                 Array.from(this.webRtcClientList.keys());
                     }
                     webRtcClient.dataChannel.send(JSON.stringify(jsonData));
-                }
+                };
             }
             this.messageId += 1;
             // sync current viewpoint
@@ -452,13 +452,13 @@ class TensorboardOpen3DPluginClient {
     /**
      * Toggle WebRTC widget size in the browser.
      * @callback
-     * @param {String} windowUId e.g. 'window_2'
+     * @param {String} windowUId e.g. "window_2"
      */
     toggleZoom = (windowUId) => {
         let elem = document.getElementById('video_' + windowUId);
         if (elem.width <= this.width) {  // zoom
-            elem.width = this.full_width;
-            elem.height = this.full_height;
+            elem.width = this.fullWidth;
+            elem.height = this.fullHeight;
         } else {  // original
             elem.width = this.width;
             elem.height = this.height;
@@ -469,14 +469,14 @@ class TensorboardOpen3DPluginClient {
     /**
      * Send message to toggle O3DVisualizer settings panel.
      * @callback
-     * @param {String} windowUId e.g. 'window_2'
+     * @param {String} windowUId e.g. "window_2"
      */
     toggleSettings = (windowUId) => {
         // O3DVisualizer controls work only with full size.
         let elem = document.getElementById('video_' + windowUId);
         if (elem.width <= this.width) {  // zoom
-            elem.width = this.full_width;
-            elem.height = this.full_height;
+            elem.width = this.fullWidth;
+            elem.height = this.fullHeight;
         }
         // Disable view sync on opening options panel
         document.getElementById('ui-options-view').checked = false;
@@ -514,7 +514,7 @@ class TensorboardOpen3DPluginClient {
         let PROP_DIV_TEMPLATE = '';
         for (const option of options) {
             const checked = initialCheckedOptions.has(option) ? 'checked' : '';
-            if (selTypes.length == 2) {
+            if (selTypes.length === 2) {
                 BUTTON_TEMPLATE = `
               <button id="toggle-property-${option}" type="button" disabled>
                   <svg> <use href="#settings" /> </svg>
@@ -555,7 +555,7 @@ class TensorboardOpen3DPluginClient {
         let parentElement = document.getElementById(parentId);
         parentElement.replaceChildren(); /* Remove existing children */
         const nameWid = name + '-' + windowUId;
-        if (max > min) {  // Don't create slider if no choice
+        if (max > min) {  // Don"t create slider if no choice
             const sliderTemplate = `
             <form oninput="document.getElementById("${nameWid}_output").value
                 = document.getElementById("${nameWid}").valueAsNumber;">
@@ -585,7 +585,7 @@ class TensorboardOpen3DPluginClient {
         let tagPropEl = document.getElementById(`property-${tag}`);
         tagPropEl.replaceChildren();  // clean up
         const propertiesShapes = this.tagsPropertiesShapes.get(tag);
-        if (Object.keys(propertiesShapes).length == 0) {
+        if (Object.keys(propertiesShapes).length === 0) {
             return;
         }
         const PROPERTY_TEMPLATE = `<label class="property-ui">Data
@@ -638,7 +638,7 @@ class TensorboardOpen3DPluginClient {
         }
         idxListEl.max = propertiesShapes[selectedProperty] - 1;
         idxListEl.value = renderStateTag.index;
-        idxListEl.disabled = (idxListEl.max == 0);
+        idxListEl.disabled = (idxListEl.max === 0);
 
         propListEl.addEventListener(
                 'change',
@@ -703,7 +703,7 @@ class TensorboardOpen3DPluginClient {
                 'unlitGradient.GRADIENT.GREYSCALE'
             ];
             const labelNames = this.tagLabelsNames.get(tag);
-            if (idxListEl.max == 0 && labelNames != null) {
+            if (idxListEl.max === 0 && labelNames != null) {
                 this.validShaders.unshift('unlitGradient.LUT');  // first item
             }
             if (idxListEl.max >= 2) {
@@ -870,7 +870,7 @@ class TensorboardOpen3DPluginClient {
         let cmap = [...renderStateTag.colormap];
         // If ncol is last, new value, color is average with 2nd last entry.
         // If colormap has only one entry, add (1.0 or 0.0, white)
-        let ncol1 = (ncol == cmap.length - 1) ? ncol - 1 : ncol + 1;
+        let ncol1 = (ncol === cmap.length - 1) ? ncol - 1 : ncol + 1;
         let newVal = parseFloat(cmap[ncol][0]) > 0.0 ? 0.0 : 1.0;
         let newCol = [255, 255, 255, 255];
         if (ncol1 >= 0) {
@@ -931,7 +931,7 @@ class TensorboardOpen3DPluginClient {
                 range: [0.0, 1.0]
             };
         }
-        if (propListEl.value != renderStateTag.property ||
+        if (propListEl.value !== renderStateTag.property ||
             idxListEl.value != renderStateTag.index) {
             updated.push('property');
         }
@@ -943,37 +943,37 @@ class TensorboardOpen3DPluginClient {
         renderStateTag.shader = shaderListEl.value;
 
         let cmap = renderStateTag.colormap;
-        let n_cols = 0;
+        let nCols = 0;
         const cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
         if (cmapEl.outdated == null) {
             if (renderStateTag.shader == 'unlitSolidColor') {
-                n_cols = 1;
+                nCols = 1;
             } else if (renderStateTag.shader.startsWith('unlitGradient')) {
-                n_cols = cmap.size;
+                nCols = cmap.size;
             }
             const currentRange = renderStateTag['range'];
             cmap.clear();
-            for (let idx = 0; idx < n_cols; ++idx) {
+            for (let idx = 0; idx < nCols; ++idx) {
                 const alphaEl =
                         document.getElementById(`ui-cmap-${tag}-alpha-${idx}`)
                 const alpha = (alphaEl == null || alphaEl.checked) ? 255 : 0;
-                let label_value =
+                let labelValue =
                         document.getElementById(`ui-cmap-${tag}-val-${idx}`)
                                 .value;
-                if (label_value.includes(':')) {  // LabelLUT
-                    label_value = label_value.split(':')[0];
+                if (labelValue.includes(':')) {  // LabelLUT
+                    labelValue = labelValue.split(':')[0];
                 } else {  // Colormap
-                    label_value = (parseFloat(label_value) - currentRange[0]) /
+                    labelValue = (parseFloat(labelValue) - currentRange[0]) /
                             (currentRange[1] - currentRange[0]);
                 }
                 let color = hexToRgb(
                         document.getElementById(`ui-cmap-${tag}-col-${idx}`)
                                 .value);
                 color.push(alpha);
-                cmap.set(label_value, color);
+                cmap.set(labelValue, color);
             }
         }
-        if (!(n_cols == 0 && cmap.size == 0)) updated.push('colormap');
+        if (!(nCols == 0 && cmap.size == 0)) updated.push('colormap');
 
         this.messageId += 1;
         let updateRenderingMessage = {
@@ -1183,7 +1183,7 @@ class TensorboardOpen3DPluginClient {
                 console.error(err.name, err.message, evt.data);
             }
         }
-        if (message.status != 'OK') {
+        if (message.status !== 'OK') {
             console.error(message.status);
         }
         if (message.class_name.endsWith('get_run_tags')) {
