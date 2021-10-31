@@ -517,6 +517,15 @@ class RenderUpdate:
                    f"{material.scalar_min, material.scalar_max}")
 
     def apply(self, o3dvis, geometry_name, geometry, inference_data_proto=None):
+        """Apply the RenderUpdate to a geometry.
+
+        Args:
+            o3dvis (O3DVisualizer): Window containing the geometry.
+            geometry_name (str): Geometry name in the window.
+            geometry (o3d.t.geometry): Geometry whose rendering is to be
+                updated.
+            inference_data_proto : BoundingBox labels and confidences.
+        """
 
         def swap__(tensormap, prop):
             """If backup of prop exists, restore it. Else save prop to a backup.
@@ -714,9 +723,6 @@ def to_dict_batch(o3d_geometry_list):
     """Convert sequence of identical (legacy) Open3D geometry types to
     attribute-tensor dictionary. The geometry sequence forms a batch of data.
     Custom attributes are not supported.
-
-    TODO: This involves a data copy. Add support for List[Open3D geometry]
-    directly to add_3d() if needed.
 
     Args:
         o3d_geometry_list (Iterable): Iterable (list / tuple / sequence

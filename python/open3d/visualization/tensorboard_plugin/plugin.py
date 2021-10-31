@@ -699,6 +699,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
 
     @wrappers.Request.application
     def _new_window(self, request):
+        """Create a new WebRTC window on request."""
 
         if self._gui is None:
             self._start_gui()
@@ -725,6 +726,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
 
     @wrappers.Request.application
     def _close_window(self, request):
+        """Close a WebRTC window on request."""
 
         this_window_id = request.args.get('window_id', "")
         if this_window_id not in self._windows.keys():
@@ -743,6 +745,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
 
     @wrappers.Request.application
     def _webrtc_http_api(self, request):
+        """Relay WebRTC connection setup messages coming as HTTP requests."""
         try:
             entry_point = request.path[(len(self._PLUGIN_DIRECTORY_PATH_PART) -
                                         1):]
@@ -771,6 +774,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
 
     @wrappers.Request.application
     def _serve_js(self, request):
+        """Serve frontend JS files on request."""
         if request.is_multiprocess:
             return werkzeug.exceptions.ExpectationFailed(
                 "Open3D plugin does not run on a multi-process web server.",
@@ -796,6 +800,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
 
     @wrappers.Request.application
     def _serve_css(self, unused_request):
+        """Serve frontend stylesheet on request."""
         with open(
                 os.path.join(os.path.dirname(__file__), "frontend",
                              "style.css")) as cssfile:
