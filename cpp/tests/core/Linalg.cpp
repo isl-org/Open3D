@@ -100,8 +100,7 @@ TEST_P(LinalgPermuteDevices, AddMM) {
     core::Tensor A = core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
     core::Tensor B = core::Tensor::Init<float>(
             {{7, 8, 9, 10}, {11, 12, 13, 14}, {15, 16, 17, 18}}, device);
-    core::Tensor B_T = core::Tensor::Init<float>(
-            {{7, 11, 15}, {8, 12, 16}, {9, 13, 17}, {10, 14, 18}}, device);
+    core::Tensor B_T = B.T().Contiguous();
 
     core::Tensor C = core::Tensor::Ones({2, 4}, dtype, device);
     core::AddMM(A, B, C, 1.0, 1.0);
@@ -141,6 +140,25 @@ TEST_P(LinalgPermuteDevices, AddMM) {
     C_data = C.ToFlatVector<float>();
     C_gt = {-143, -155, -167, -179, -341, -371, -401, -431};
     for (int i = 0; i < 8; ++i) {
+        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
+    }
+
+    // Non-contiguous addmm test.
+    core::Tensor A_slice = A.GetItem(
+            {core::TensorKey::Slice(core::None, core::None, core::None),
+             core::TensorKey::Slice(1, core::None, core::None)});
+    core::Tensor B_slice =
+            B.IndexGet({core::Tensor(std::vector<int64_t>{0, 2}, {2},
+                                     core::Int64, device)})
+                    .GetItem({core::TensorKey::Slice(core::None, core::None,
+                                                     core::None)});
+
+    C = core::Tensor::Ones({2, 4}, dtype, device);
+    core::AddMM(A_slice, B_slice, C, 1.0, 1.0);
+    EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
+    C_data = C.ToFlatVector<float>();
+    C_gt = {60, 65, 70, 75, 126, 137, 148, 159};
+    for (int i = 0; i < 6; ++i) {
         EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
     }
 }
