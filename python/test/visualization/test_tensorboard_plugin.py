@@ -37,10 +37,8 @@ import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.util import to_dict_batch
 from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
-try:
-    from open3d.ml.vis import BoundingBox3D
-except ImportError:
-    BoundingBox3D = None
+vis = pytest.importorskip("open3d.ml.vis")
+BoundingBox3D = vis.BoundingBox3D
 
 from open3d_test import test_data_dir
 
@@ -100,20 +98,19 @@ def geometry_data():
     }
 
     bboxes = []
-    if BoundingBox3D:
-        for step in range(3):
-            bboxes.append([])
-            for batch_idx in range(2):
-                nbb = 1 + step * batch_idx
-                center = np.linspace(-nbb, nbb, num=3 * nbb).reshape((nbb, 3))
-                size = np.linspace(nbb, 4 * nbb, num=3 * nbb).reshape((nbb, 3))
-                label_class = list(range(nbb))
-                confidence = np.linspace(0., 1., num=nbb)
-                bboxes[-1].append(
-                    tuple(
-                        BoundingBox3D(center[k], (0, 0, 1), (0, 1, 0), (
-                            1, 0, 0), size[k], label_class[k], confidence[k])
-                        for k in range(nbb)))
+    for step in range(3):
+        bboxes.append([])
+        for batch_idx in range(2):
+            nbb = 1 + step * batch_idx
+            center = np.linspace(-nbb, nbb, num=3 * nbb).reshape((nbb, 3))
+            size = np.linspace(nbb, 4 * nbb, num=3 * nbb).reshape((nbb, 3))
+            label_class = list(range(nbb))
+            confidence = np.linspace(0., 1., num=nbb)
+            bboxes[-1].append(
+                tuple(
+                    BoundingBox3D(center[k], (0, 0, 1), (0, 1, 0), (
+                        1, 0, 0), size[k], label_class[k], confidence[k])
+                    for k in range(nbb)))
 
     tags = ['cube', 'cube_pcd', 'cube_ls']
     filenames = [['events.out.tfevents.*'], [], ['cube.*.msgpack'],
@@ -454,24 +451,22 @@ def test_plugin_data_reader(geometry_data, logdir):
                 cube_ls_out.line['colors'] == cube_ls_ref.line['colors']).all()
             check_material_dict(cube_ls_out, material_ls, batch_idx)
 
-            if BoundingBox3D:
-                bbox_ls_out, data_bbox_proto = reader.read_geometry(
-                    ".", "bboxes", step, batch_idx, step_to_idx)
-                bbox_ls_ref = o3d.t.geometry.LineSet.from_legacy(
-                    BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
-                bbox_ls_ref.line["indices"] = bbox_ls_ref.line["indices"].to(
-                    o3d.core.int32)
-                assert (bbox_ls_out.point["positions"] ==
-                        bbox_ls_ref.point["positions"]).all()
-                assert (bbox_ls_out.line["indices"] ==
-                        bbox_ls_ref.line["indices"]).all()
-                assert "colors" not in bbox_ls_out.line
-                label_conf_ref = tuple((bb.label_class, bb.confidence)
-                                       for bb in bboxes_ref[step][batch_idx])
-                label_conf_out = tuple(
-                    (bb.label, bb.confidence)
-                    for bb in data_bbox_proto.inference_result)
-                assert label_conf_ref == label_conf_out
+            bbox_ls_out, data_bbox_proto = reader.read_geometry(
+                ".", "bboxes", step, batch_idx, step_to_idx)
+            bbox_ls_ref = o3d.t.geometry.LineSet.from_legacy(
+                BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
+            bbox_ls_ref.line["indices"] = bbox_ls_ref.line["indices"].to(
+                o3d.core.int32)
+            assert (bbox_ls_out.point["positions"] ==
+                    bbox_ls_ref.point["positions"]).all()
+            assert (bbox_ls_out.line["indices"] == bbox_ls_ref.line["indices"]
+                   ).all()
+            assert "colors" not in bbox_ls_out.line
+            label_conf_ref = tuple((bb.label_class, bb.confidence)
+                                   for bb in bboxes_ref[step][batch_idx])
+            label_conf_out = tuple((bb.label, bb.confidence)
+                                   for bb in data_bbox_proto.inference_result)
+            assert label_conf_ref == label_conf_out
 
 
 @pytest.mark.skip(reason="This will only run on a machine with GPU and GUI.")

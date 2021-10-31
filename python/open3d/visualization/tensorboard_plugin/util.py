@@ -452,7 +452,7 @@ class RenderUpdate:
     }
     LABELLUT_COLORS = {
         label: _float_u8(color + [1.0])
-        for label, color in enumerate(LabelLUT.COLORS['default'])
+        for label, color in enumerate(LabelLUT.Colors)
     }
 
     def __init__(self, window_scaling, message, label_to_names):
