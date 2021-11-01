@@ -114,7 +114,7 @@ RUN ./util/install_deps_ubuntu.sh assume-yes \
 
 # Open3D Python dependencies
 RUN source util/ci_utils.sh \
- && install_python_dependencies with-conda with-jupyter \
+ && install_python_dependencies with-conda with-cuda with-jupyter \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
