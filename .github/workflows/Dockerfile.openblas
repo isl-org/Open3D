@@ -117,7 +117,8 @@ RUN mkdir build \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
     .. \
  && make -j$(nproc) \
- && make install-pip-package -j$(nproc)
+ && make install-pip-package -j$(nproc) \
+ && make install -j$(nproc)
 
 # Compress ccache folder, move to / directory (optional)
 RUN ccache -s \
