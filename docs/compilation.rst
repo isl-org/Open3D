@@ -84,7 +84,7 @@ If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=
 
     mkdir build
     cd build
-    cmake -DCMAKE_BUILD_TYPE=Release ..
+    cmake ..
 
 You can specify ``-DCMAKE_INSTALL_PREFIX=$HOME/open3d_install`` to control the
 installation directory of ``make install``. In the absence of
