@@ -47,7 +47,7 @@ If all above have been correctly set but still no luck, please file an issue.
 
 **Q**: So WHY did my tracking fail?
 
-**A**: For the front end, we are using direct RGB-D odometry. Comparing to feature-based odometry, RGB-D odometry is more accurate when it completes successfully but is less robust. We add support for feature-based tracking in the future. For the backend, unlike our offline reconstruction system, we do not detect loop closures, and do not perform pose graph optimization or bundle adjustment at the moment.
+**A**: For the front end, we are using direct RGB-D odometry. Comparing to feature-based odometry, RGB-D odometry is more accurate when it completes successfully but is less robust. We will add support for feature-based tracking in the future. For the backend, unlike our offline reconstruction system, we do not detect loop closures, and do not perform pose graph optimization or bundle adjustment at the moment.
 
 
 **Q**: Why don't you implement loop closure or relocalization?
