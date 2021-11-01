@@ -53,21 +53,16 @@ void pybind_core_linalg(py::module &m) {
             "A"_a, "B"_a);
     m.def(
             "addmm",
-            [](Tensor &input, const Tensor &A, const Tensor &B, double alpha,
-               double beta, utility::optional<Tensor> output) {
-                input = input.Expand({A.GetShape(0), B.GetShape(1)});
-                AddMM(A, B, input, alpha, beta);
-                if (output.has_value()) {
-                    output.value().AsRvalue() = input;
-                    return input;
-                } else {
-                    return input;
-                }
+            [](const Tensor &input, const Tensor &A, const Tensor &B,
+               double alpha, double beta) {
+                Tensor output =
+                        input.Expand({A.GetShape(0), B.GetShape(1)}).Clone();
+                AddMM(A, B, output, alpha, beta);
+                return output;
             },
             "Function to perform addmm of two 2D tensors with compatible "
             "shapes.",
-            "input"_a, "A"_a, "B"_a, "alpha"_a, "beta"_a,
-            py::arg("output") = py::none());
+            "input"_a, "A"_a, "B"_a, "alpha"_a, "beta"_a);
     m.def(
             "det",
             [](Tensor &A) {
