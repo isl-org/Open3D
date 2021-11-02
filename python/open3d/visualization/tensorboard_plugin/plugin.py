@@ -41,9 +41,6 @@ import open3d as o3d
 from open3d.visualization import O3DVisualizer
 from open3d.visualization import gui
 from open3d.visualization import webrtc_server
-# Set window system before the GUI event loop
-# TODO(@ssheorey): Remove before merge
-o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
 from . import plugin_data_pb2
 from . import metadata
 from .util import Open3DPluginDataReader
@@ -369,8 +366,7 @@ class Open3DPluginWindow:
                 message_tag["render_state"] = message["render_state"][tag]
             render_update = RenderUpdate(self.window.scaling, message_tag,
                                          tag_label_to_names[tag])
-            # '\x1f' -> ASCII unit separator
-            geometry_name = "\x1f".join(
+            geometry_name = ", ".join(
                 str(x) for x in (self.run, tag, self.batch_idx, self.step))
             new_geometry_list.append(geometry_name)
             if geometry_name not in self.geometry_list:
@@ -633,7 +629,8 @@ class Open3DPlugin(base_plugin.TBPlugin):
             plugin_window = self._windows[window_uid]
             o3dvis = plugin_window.window
             for geometry_name in plugin_window.geometry_list:
-                run, tag, batch_idx, step = geometry_name.split('\x1f')
+                *run, tag, batch_idx, step = geometry_name.split(', ')
+                run = ', '.join(run)
                 if tag != message["tag"]:
                     continue
                 if render_update is None:

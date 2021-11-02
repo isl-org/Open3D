@@ -54,9 +54,8 @@ _log.propagate = False
 _stream_handler = logging.StreamHandler()
 _stream_handler.setFormatter(
     logging.Formatter('[%(name)s %(levelname)s T:%(threadName)s] %(message)s'))
-# TODO(@ssheorey): Change to WARNING before merge
-_stream_handler.setLevel(logging.DEBUG)
-_log.setLevel(logging.DEBUG)
+_stream_handler.setLevel(logging.WARNING)
+_log.setLevel(logging.WARNING)
 _log.addHandler(_stream_handler)
 
 
@@ -300,7 +299,7 @@ class Open3DPluginDataReader:
         """
         tag_prop_shape = self.runtag_prop_shape.setdefault(run, dict())
         prop_shape = tag_prop_shape.setdefault(tag, dict())
-        if len(prop_shape) == 0:
+        if len(prop_shape) == 0 and not geometry.is_empty():
             for prop_type in ('point', 'vertex'):  # exclude 'line'
                 if hasattr(geometry, prop_type):
                     label_props, custom_props = classify_properties(

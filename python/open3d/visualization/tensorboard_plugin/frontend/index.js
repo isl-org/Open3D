@@ -687,12 +687,12 @@ class TensorboardOpen3DPluginClient {
         let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
         if (propListEl.value === '') {  // Geometry
             cmapEl.previousElementSibling.previousElementSibling.style.display =
-                    'none';  // index
+                    'none';  // Hide index
             this.validShaders =
                     ['defaultLit', 'unlitSolidColor', 'defaultUnlit'];
         } else {
             cmapEl.previousElementSibling.previousElementSibling.style.display =
-                    'block';  // index
+                    'block';  // Show index
             idxListEl.max =
                     this.tagsPropertiesShapes.get(tag)[propListEl.value] - 1;
             idxListEl.value = Math.min(idxListEl.value, idxListEl.max);
@@ -704,7 +704,8 @@ class TensorboardOpen3DPluginClient {
             ];
             const labelNames = this.tagLabelsNames.get(tag);
             if (idxListEl.max === 0 && labelNames != null) {
-                this.validShaders.unshift('unlitGradient.LUT');  // first item
+                this.validShaders.unshift(
+                        'unlitGradient.LUT');  // Add as first item
             }
             if (idxListEl.max >= 2) {
                 this.validShaders.push('defaultUnlit');  // RGB
