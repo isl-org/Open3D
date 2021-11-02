@@ -164,6 +164,8 @@ public:
 
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
+    void SetIBL(const std::string& path);
+    void SetIBLIntensity(float intensity);
     void ShowAxes(bool show);
     void ShowGround(bool show);
     void SetGroundPlane(rendering::Scene::GroundPlane plane);
