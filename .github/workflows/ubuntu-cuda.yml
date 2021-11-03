@@ -131,8 +131,8 @@ jobs:
             --zone="${GCE_ZONE}" \
             --command="sudo Open3D/.github/workflows/docker_test.sh ${CI_CONFIG}"
       - name: VM ccache upload
+        if: ${{ github.ref == 'refs/heads/master' }}
         run: |
-          # if: ${{ github.ref == 'refs/heads/master' }}
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
             --command="ls -alh \
