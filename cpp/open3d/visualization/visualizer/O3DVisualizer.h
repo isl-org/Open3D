@@ -145,11 +145,6 @@ public:
     void ShowGeometry(const std::string& name, bool show);
 
     DrawObject GetGeometry(const std::string& name) const;
-    rendering::MaterialRecord GetGeometryMaterial(
-            const std::string& name) const;
-
-    void ModifyGeometryMaterial(const std::string& name,
-                                const rendering::MaterialRecord* material);
 
     void Add3DLabel(const Eigen::Vector3f& pos, const char* text);
     void Clear3DLabels();

@@ -587,7 +587,7 @@ class RenderUpdate:
 
         geometry_update_flag = 0
         material_update_flag = 0
-        material = o3dvis.get_geometry_material(geometry_name)
+        material = rendering.MaterialRecord()
 
         # Visualize scalar / 3-vector property with color map
         if "property" in updated:
@@ -697,7 +697,7 @@ class RenderUpdate:
         pp_geometry = _postprocess(geometry)
         if o3dscene.has_geometry(geometry_name):
             if material_update_flag > 0:
-                self._gui.run_sync(o3dvis.modify_geometry_material,
+                self._gui.run_sync(o3dscene.modify_geometry_material,
                                    geometry_name, material)
                 # does not do force_redraw(), so also need update_geometry()
             self._gui.run_sync(o3dvis.update_geometry, geometry_name,

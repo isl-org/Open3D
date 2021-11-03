@@ -274,15 +274,6 @@ void pybind_o3dvisualizer(py::module& m) {
                  "the name. This should be treated as read-only. Modify "
                  "visibility with show_geometry(), and other values by "
                  "removing the object and re-adding it with the new values")
-            .def("get_geometry_material", &O3DVisualizer::GetGeometryMaterial,
-                 "get_geometry_material(name): Returns the MaterialRecord "
-                 "corresponding to the name. The returned material is a copy, "
-                 "therefore modifying it directly will not change the "
-                 "visualization.")
-            .def("modify_geometry_material",
-                 &O3DVisualizer::ModifyGeometryMaterial,
-                 "modify_geometry_material(name,material): Updates the named "
-                 "geometry to use the new provided material.")
             .def("add_3d_label", &O3DVisualizer::Add3DLabel,
                  "add_3d_label([x,y,z], text): displays text anchored at the "
                  "3D coordinate specified")
