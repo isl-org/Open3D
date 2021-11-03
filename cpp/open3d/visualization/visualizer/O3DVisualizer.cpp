@@ -1112,6 +1112,26 @@ struct O3DVisualizer::Impl {
         return DrawObject();
     }
 
+    MaterialRecord GetGeometryMaterial(const std::string &name) {
+        for (auto &o : objects_) {
+            if (o.name == name) {
+                return o.material;
+            }
+        }
+        return MaterialRecord();
+    }
+
+    void ModifyGeometryMaterial(const std::string &name,
+                                const MaterialRecord *material) {
+        for (auto &o : objects_) {
+            if (o.name == name) {
+                o.material = *material;
+                scene_->GetScene()->ModifyGeometryMaterial(name, *material);
+                break;
+            }
+        }
+    }
+
     void Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
         scene_->AddLabel(pos, text);
     }
@@ -1267,10 +1287,11 @@ struct O3DVisualizer::Impl {
                           const MaterialRecord &original_material,
                           O3DVisualizer::Shader shader) {
         bool is_lines = (original_material.shader == "unlitLine");
+        bool is_gradient = (original_material.shader == "unlitGradient");
         auto scene = scene_->GetScene();
         // Lines are already unlit, so keep using the original shader when in
         // unlit mode so that we can keep the wide lines.
-        if (shader == Shader::STANDARD ||
+        if (shader == Shader::STANDARD || is_gradient ||
             (shader == Shader::UNLIT && is_lines)) {
             scene->ModifyGeometryMaterial(name, original_material);
         } else {
@@ -2014,6 +2035,16 @@ void O3DVisualizer::ShowGeometry(const std::string &name, bool show) {
 O3DVisualizer::DrawObject O3DVisualizer::GetGeometry(
         const std::string &name) const {
     return impl_->GetGeometry(name);
+}
+
+MaterialRecord O3DVisualizer::GetGeometryMaterial(
+        const std::string &name) const {
+    return impl_->GetGeometryMaterial(name);
+}
+
+void O3DVisualizer::ModifyGeometryMaterial(
+        const std::string &name, const rendering::MaterialRecord *material) {
+    impl_->ModifyGeometryMaterial(name, material);
 }
 
 void O3DVisualizer::ShowSettings(bool show) { impl_->ShowSettings(show); }
