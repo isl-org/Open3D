@@ -212,7 +212,8 @@ build_all() {
     mkdir -p build
     cd build
 
-    cmakeOptions=(-DBUILD_SHARED_LIBS="$SHARED"
+    cmakeOptions=(
+        -DBUILD_SHARED_LIBS="$SHARED"
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
