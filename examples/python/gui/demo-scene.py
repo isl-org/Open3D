@@ -16,13 +16,20 @@ def create_material(directory, name):
     '''
     mat = vis.rendering.MaterialRecord()
     mat.shader = "defaultLit"
+    # Color, Roughness and Normal textures are always present
     mat.albedo_img = o3d.io.read_image(os.path.join(directory, name+'_Color.jpg'))
     mat.roughness_img = o3d.io.read_image(os.path.join(directory, name+'_Roughness.jpg'))
     mat.normal_img = o3d.io.read_image(os.path.join(directory, name+'_NormalDX.jpg'))
-    mat.ao_img = o3d.io.read_image(os.path.join(directory, name+'_AmbientOcclusion.jpg'))
-    mat.metallic_img = o3d.io.read_image(os.path.join(directory, name+'_Metalness.jpg'))
-    if not mat.metallic_img.is_empty():
-         mat.base_metallic = 1.0
+    # Ambient occlusion and metal textures are not always available 
+    # NOTE: Checking for their existence is not necessary but checking first
+    # avoids annoying warning output
+    ao_img_name = os.path.join(directory, name+'_AmbientOcclusion.jpg')
+    metallic_img_name = os.path.join(directory, name+'_Metalness.jpg')
+    if os.path.exists(ao_img_name):
+        mat.ao_img = o3d.io.read_image(ao_img_name)
+    if os.path.exists(metallic_img_name):
+        mat.metallic_img = o3d.io.read_image(metallic_img_name)
+        mat.base_metallic = 1.0
     return mat
 
 
