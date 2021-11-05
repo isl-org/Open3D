@@ -284,6 +284,8 @@ public:
 
     void SetCurrentCount(size_t n);
 
+    size_t GetCurrentCount() const;
+
 private:
     const size_t resolution_ = 40;
     size_t expected_count_;

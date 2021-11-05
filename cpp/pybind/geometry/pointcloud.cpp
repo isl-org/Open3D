@@ -117,7 +117,7 @@ void pybind_pointcloud(py::module &m) {
             .def("remove_radius_outlier", &PointCloud::RemoveRadiusOutliers,
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
-                 "nb_points"_a, "radius"_a)
+                 "nb_points"_a, "radius"_a, "print_progress"_a = false)
             .def("remove_statistical_outlier",
                  &PointCloud::RemoveStatisticalOutliers,
                  "Function to remove points that are further away from their "

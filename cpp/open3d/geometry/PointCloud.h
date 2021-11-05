@@ -200,8 +200,11 @@ public:
     ///
     /// \param nb_points Number of points within the radius.
     /// \param search_radius Radius of the sphere.
+    /// \param print_progress Whether to print the progress bar.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-    RemoveRadiusOutliers(size_t nb_points, double search_radius) const;
+    RemoveRadiusOutliers(size_t nb_points,
+                         double search_radius,
+                         bool print_progress = false) const;
 
     /// \brief Function to remove points that are further away from their
     /// \p nb_neighbor neighbors in average.

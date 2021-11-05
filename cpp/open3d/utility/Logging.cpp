@@ -191,6 +191,8 @@ void ConsoleProgressBar::SetCurrentCount(size_t n) {
     }
 }
 
+size_t ConsoleProgressBar::GetCurrentCount() const { return current_count_; }
+
 void SetVerbosityLevel(VerbosityLevel level) {
     Logger::GetInstance().SetVerbosityLevel(level);
 }

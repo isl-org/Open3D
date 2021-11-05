@@ -497,7 +497,9 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
+PointCloud::RemoveRadiusOutliers(size_t nb_points,
+                                 double search_radius,
+                                 bool print_progress /* = false */) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(
                 "[RemoveRadiusOutliers] Illegal input parameters,"
@@ -506,6 +508,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     std::vector<bool> mask = std::vector<bool>(points_.size());
+    utility::ConsoleProgressBar progress_bar(points_.size(),
+                                             "Remove radius outliers: ", true);
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
@@ -514,6 +518,10 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
         size_t nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
                                                   tmp_indices, dist);
         mask[i] = (nb_neighbors > nb_points);
+        if (print_progress && (i + 1) > int(progress_bar.GetCurrentCount())) {
+            // In parallel loop, progess bar maybe up and down...
+            progress_bar.SetCurrentCount(i + 1);
+        }
     }
     std::vector<size_t> indices;
     for (size_t i = 0; i < mask.size(); i++) {
