@@ -86,13 +86,6 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
                       ReadTriangleMeshOptions params /*={}*/) {
-
-    utility::ConsoleProgressBar progress_bar(10,
-                                             "Cropping geometry: ", true);
-    for (size_t i = 0; i < 10; i++) {
-        ++progress_bar;
-    }
-
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {
