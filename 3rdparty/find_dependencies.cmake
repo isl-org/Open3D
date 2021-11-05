@@ -1156,7 +1156,7 @@ open3d_import_3rdparty_library(3rdparty_msgpack
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
-if (USE_ONE_API)
+if (OPEN3D_USE_ONE_API)
     # # DPC++ compiler
     # list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/compiler/latest/linux/cmake/SYCL)
     # find_package(IntelDPCPP REQUIRED)
@@ -1210,7 +1210,7 @@ if (USE_ONE_API)
     add_library(Open3D::3rdparty_mkl ALIAS 3rdparty_mkl)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 
-else() # USE_ONE_API
+else() # OPEN3D_USE_ONE_API
     # TBB
     include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
     open3d_import_3rdparty_library(3rdparty_tbb
@@ -1283,7 +1283,7 @@ else() # USE_ONE_API
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
 
-endif() # USE_ONE_API
+endif() # OPEN3D_USE_ONE_API
 
 # Faiss
 # Open3D should link Faiss before cuBLAS to avoid missing symbols error since

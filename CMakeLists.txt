@@ -8,22 +8,18 @@ cmake_minimum_required(VERSION 3.19.2)
 # - parse JSON files for downloading files from the open3d_downloads repository
 # - use first-class language support for ISPC (3.19.2 patch release required)
 
-option(USE_ONE_API                "Use Intel OneAPI BaseKit"                 ON )
-if (USE_ONE_API)
-    if(UNIX)
-        set(CMAKE_C_COMPILER icx)
-        set(CMAKE_CXX_COMPILER icpx)
-        # set(CMAKE_C_COMPILER clang)
-        # set(CMAKE_CXX_COMPILER clang++)
-    endif(UNIX)
-
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+option(OPEN3D_USE_ONE_API "Use Intel OneAPI BaseKit and DPC++" ON)
+if (OPEN3D_USE_ONE_API)
+    if (NOT UNIX OR APPLE)
+        message(FATAL_ERROR "Open3D OneAPI support is only available on Linux")
+    endif()
+    set(CMAKE_C_COMPILER icx)
+    set(CMAKE_CXX_COMPILER icpx)
 endif()
 
 if (APPLE)
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
-    "Minimum OS X deployment version" FORCE)
+    set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+        "Minimum OS X deployment version" FORCE)
 endif()
 
 if(UNIX AND NOT APPLE)
