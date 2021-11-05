@@ -38,14 +38,9 @@ System requirements
 Cloning Open3D
 --------------
 
-Make sure to use the ``--recursive`` flag when cloning Open3D.
-
 .. code-block:: bash
 
-    git clone --recursive https://github.com/isl-org/Open3D
-
-    # You can also update the submodule manually
-    git submodule update --init --recursive
+    git clone https://github.com/isl-org/Open3D
 
 .. _compilation_unix:
 
@@ -59,10 +54,9 @@ Ubuntu/macOS
 
 .. code-block:: bash
 
-    # On Ubuntu
+    # Only needed for Ubuntu
     util/install_deps_ubuntu.sh
 
-    # On macOS: skip this step
 
 .. _compilation_unix_python:
 
