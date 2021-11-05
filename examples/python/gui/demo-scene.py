@@ -10,6 +10,15 @@ import os
 import open3d as o3d
 import open3d.visualization as vis
 
+# Check for assets
+if not os.path.exists("examples/test_data/demo_scene_assets"):
+    print("This demo requires assets that appear to be missing. Please download"
+        " the assets from here:"
+        " https://github.com/isl-org/open3d_downloads/releases/download/o3d_demo_scene/demo_scene_assets.tgz"
+        " and unpack into the examples/test_data directory")
+    exit()
+
+
 def create_material(directory, name):
     '''
     Convenience function for creating material and loading a set of associated shaders
