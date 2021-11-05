@@ -698,6 +698,12 @@ class Open3DPlugin(base_plugin.TBPlugin):
     def _new_window(self, request):
         """Create a new WebRTC window on request."""
 
+        if not self.data_reader.is_active():  # no data
+            response = json.dumps({"window_id": -1, "logdir": self._logdir})
+            return werkzeug.Response(response,
+                                     content_type="application/json",
+                                     headers=self._HEADERS)
+
         if self._gui is None:
             self._start_gui()
 

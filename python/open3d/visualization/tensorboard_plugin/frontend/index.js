@@ -375,6 +375,33 @@ class TensorboardOpen3DPluginClient {
      *                     case the server will assign a run.
      */
     addConnection = (windowUId, logdir, run) => {
+        if (windowUId === -1) {
+            let widgetView = document.getElementById('widget-view');
+            widgetView.insertAdjacentHTML('beforeend', `
+                <div class="no-data-warning">
+                <h3>No 3D data was found.</h3>
+                <p>Probable causes:</p>
+                <ul>
+                  <li>You haven’t written any 3D data to your event files.</li>
+                  <li>TensorBoard can’t find your event files.</li>
+                </ul>
+
+                <p>
+                  If you’re new to using TensorBoard, and want to find out how to
+                  add data and set up your event files, check out the
+                  <a href="https://github.com/tensorflow/tensorboard/blob/master/README.md">README</a>
+                  and perhaps the
+                  <a href="https://www.tensorflow.org/get_started/summaries_and_tensorboard">TensorBoard tutorial</a>.
+                </p>
+
+                <p>
+                  If you think TensorBoard is configured properly, please see
+                  <a href="https://github.com/tensorflow/tensorboard/blob/master/README.md#my-tensorboard-isnt-showing-any-data-whats-wrong">the section of the README devoted to missing data problems</a>
+                  and consider filing an issue on GitHub.
+                </p>
+              </div>`);
+            return;
+        }
         const videoId = 'video_' + windowUId;
         let logdirElt = document.getElementById('logdir');
         logdirElt.innerText = logdir;
@@ -703,7 +730,7 @@ class TensorboardOpen3DPluginClient {
                 'unlitGradient.GRADIENT.GREYSCALE'
             ];
             const labelNames = this.tagLabelsNames.get(tag);
-            if (idxListEl.max === 0 && labelNames != null) {
+            if (idxListEl.max == 0 && labelNames != null) {
                 this.validShaders.unshift(
                         'unlitGradient.LUT');  // Add as first item
             }
