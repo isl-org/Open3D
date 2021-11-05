@@ -63,9 +63,8 @@ Build
     source ${HOME}/venv/bin/activate
 
     # Clone
-    git clone --recursive https://github.com/isl-org/Open3D
+    git clone https://github.com/isl-org/Open3D
     cd Open3D
-    git submodule update --init --recursive
     mkdir build
     cd build
 
