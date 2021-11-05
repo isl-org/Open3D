@@ -212,7 +212,9 @@ public:
     /// \param nb_neighbors Number of neighbors around the target point.
     /// \param std_ratio Standard deviation ratio.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-    RemoveStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
+    RemoveStatisticalOutliers(size_t nb_neighbors,
+                              double std_ratio,
+                              bool print_progress = false) const;
 
     /// \brief Function to compute the normals of a point cloud.
     ///

@@ -534,7 +534,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points,
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
 PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
-                                      double std_ratio) const {
+                                      double std_ratio,
+                                      bool print_progress /* = false */) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         utility::LogError(
                 "[RemoveStatisticalOutliers] Illegal input parameters, number "
@@ -549,6 +550,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     std::vector<double> avg_distances = std::vector<double>(points_.size());
     std::vector<size_t> indices;
     size_t valid_distances = 0;
+    utility::ConsoleProgressBar progress_bar(
+            points_.size(), "Remove statistical outliers: ", true);
 
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
@@ -564,6 +567,11 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
         }
         avg_distances[i] = mean;
+
+        if (print_progress && (i + 1) > int(progress_bar.GetCurrentCount())) {
+            // In parallel loop, progess bar maybe up and down...
+            progress_bar.SetCurrentCount(i + 1);
+        }
     }
     if (valid_distances == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),

@@ -122,7 +122,7 @@ void pybind_pointcloud(py::module &m) {
                  &PointCloud::RemoveStatisticalOutliers,
                  "Function to remove points that are further away from their "
                  "neighbors in average",
-                 "nb_neighbors"_a, "std_ratio"_a)
+                 "nb_neighbors"_a, "std_ratio"_a, "print_progress"_a = false)
             .def("estimate_normals", &PointCloud::EstimateNormals,
                  "Function to compute the normals of a point cloud. Normals "
                  "are oriented with respect to the input point cloud if "
