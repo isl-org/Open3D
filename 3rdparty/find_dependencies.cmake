@@ -1157,22 +1157,6 @@ open3d_import_3rdparty_library(3rdparty_msgpack
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
 if (OPEN3D_USE_ONE_API)
-    # # DPC++ compiler
-    # list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/compiler/latest/linux/cmake/SYCL)
-    # find_package(IntelDPCPP REQUIRED)
-    # if(IntelDPCPP_FOUND)
-    #     add_library(SYCL INTERFACE)
-    #     message(STATUS "SYCL_INCLUDE_DIR: ${SYCL_INCLUDE_DIR}")
-    #     message(STATUS "SYCL_FLAGS: ${SYCL_FLAGS}")
-    #     # target_compile_options(SYCL INTERFACE -fsycl)
-    #     # target_include_directories(SYCL INTERFACE ${SYCL_INCLUDE_DIR})
-    #     # # target_link_options(SYCL INTERFACE ${SYCL_FLAGS})
-    #     # add_library(${PROJECT_NAME}::SYCL ALIAS SYCL)
-    #     # list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::SYCL)
-    # else()
-    #     message(FATAL_ERROR "IntelDPCPP_FOUND cannot be found.")
-    # endif()
-
     # DPC++
     add_library(SYCL INTERFACE)
     target_compile_options(SYCL INTERFACE
