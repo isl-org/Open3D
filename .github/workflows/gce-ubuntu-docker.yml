@@ -48,8 +48,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -86,8 +84,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          submodules: 'false'
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
@@ -122,8 +118,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          submodules: 'false'
 
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
