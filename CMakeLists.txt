@@ -58,7 +58,11 @@ option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF
 cmake_dependent_option(
        STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON
        "NOT BUILD_SHARED_LIBS"                                               OFF)
-option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON)
+if(OPEN3D_USE_ONE_API)
+    option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
+else()
+    option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
+endif()
 if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
     cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
 else()
@@ -192,6 +196,9 @@ if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_WEBRTC)
 endif()
 if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
+endif()
+if(OPEN3D_USE_ONE_API AND NOT GLIBCXX_USE_CXX11_ABI)
+    message(FATAL_ERROR "OPEN3D_USE_ONE_API=ON requires GLIBCXX_USE_CXX11_ABI=ON")
 endif()
 
 # Parse Open3D version number
