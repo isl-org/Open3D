@@ -172,24 +172,35 @@ class _AsyncDataWriter:
 _async_data_writer = _AsyncDataWriter()
 
 
-def _to_o3d(tensor):
+def _to_o3d(tensor, min_ndim=None, max_len=None):
     """Convert Tensorflow, PyTorch and Numpy tensors to Open3D tensor without
-    copying.
-    """
+    copying. Python lists and tuples are also accepted, but will be copied.
 
+    Args:
+        tensor: Input tensor to be converted.
+        min_ndim (int): Tensor shape will be padded with ones on the left to
+            reach this minimum number of dimensions.
+        max_len (int): The max size along the first dimension. Other data will
+            be discarded.
+    """
     if isinstance(tensor, o3d.core.Tensor):
-        return tensor
-    if tf is not None and isinstance(tensor, tf.Tensor):
-        return o3d.core.Tensor.from_dlpack(tf_dlpack.to_dlpack(tensor))
-    if torch is not None and isinstance(tensor, torch.Tensor):
-        return o3d.core.Tensor.from_dlpack(torch_dlpack.to_dlpack(tensor))
-    return o3d.core.Tensor.from_numpy(np.asarray(tensor))
+        pass
+    elif tf is not None and isinstance(tensor, tf.Tensor):
+        tensor = o3d.core.Tensor.from_dlpack(tf_dlpack.to_dlpack(tensor))
+    elif torch is not None and isinstance(tensor, torch.Tensor):
+        tensor = o3d.core.Tensor.from_dlpack(torch_dlpack.to_dlpack(tensor))
+    else:
+        tensor = o3d.core.Tensor.from_numpy(np.asarray(tensor))
+    exp_shape = tensor.shape
+    for _ in range(tensor.ndim, min_ndim):
+        exp_shape.insert(0, 1)
+    return tensor.reshape(exp_shape)[:max_len]
 
 
 def _color_to_uint8(color_data):
     """
     Args:
-        color_data: o3d.core.Tensor [B,N,3] with any dtype. Float dtypes are
+        color_data: o3d.core.Tensor (B,N,3) with any dtype. Float dtypes are
         expected to have values in [0,1] and 8 bit Int dtypes in [0,255] and 16
         bit Int types in [0,2^16-1]
 
@@ -210,16 +221,47 @@ def _to_integer(tensor):
     try:
         if hasattr(tensor, 'ndim') and tensor.ndim > 0:
             return None
-        return np.int64(tensor)
+        if hasattr(tensor, 'dtype') and 'int' not in repr(tensor.dtype).lower():
+            return None
+        if hasattr(tensor, 'numpy'):
+            tensor_int = tensor.numpy().astype(np.int64)
+        tensor_int = np.int64(tensor)
+        return tensor_int if tensor_int.size == 1 else None
     except (TypeError, ValueError, RuntimeError):
         return None
 
 
-def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
-    """Data conversion and other preprocessing.
+def _preprocess(prop,
+                tensor,
+                step,
+                max_outputs,
+                geometry_metadata,
+                material=None):
+    """Data conversion (format and dtype), validation and other preprocessing.
+    Step reference support.
     TODO(ssheorey): Convert to half precision, compression, etc.
     """
-    # Check if property is reference to prior step
+
+    if prop == "material_name":
+        if isinstance(tensor, (bytes, str)):
+            material["name"] = (tensor,)
+        elif isinstance(tensor[0], (bytes, str)):
+            material["name"] = tensor
+        else:
+            raise ValueError(
+                f"Value of the key `material_name` should be a str, bytes or"
+                f" Sequence of str or bytes. Got {tensor} instead.")
+        return material["name"]
+    if prop.startswith("material_scalar_"):
+        save_tensor = _to_o3d(tensor, min_ndim=1, max_len=max_outputs)
+        if save_tensor.ndim != 1:
+            raise ValueError(f"Material scalar property {prop} has shape "
+                             f"{tensor.shape} instead of (B,)")
+        material["scalar_properties"][prop[16:]] = save_tensor
+        return save_tensor
+
+    # Check if property is reference to prior step (not allowed for
+    # material_name and material_scalar_*)
     step_ref = _to_integer(tensor)
     if step_ref is not None:
         if step_ref < 0 or step_ref >= step:
@@ -230,21 +272,38 @@ def _preprocess(prop, tensor, step, max_outputs, geometry_metadata):
             Value(prop),
             step_ref=step_ref)
         return None
-    if tensor.ndim == 2:  # batch_size = 1
-        save_tensor = _to_o3d(tensor)
-        save_tensor.reshape((1,) + tuple(save_tensor.shape))
-    elif tensor.ndim == 3:
-        save_tensor = _to_o3d(tensor[:max_outputs])
-    else:
-        raise ValueError(f"Property {prop} tensor should be of shape (N,Np) or"
-                         f" (B,N,Np) or a scalar but is {tensor.shape}.")
+
+    if prop.startswith("material_vector_"):
+        save_tensor = _to_o3d(tensor, min_ndim=2, max_len=max_outputs)
+        if save_tensor.ndim != 2 or save_tensor.shape[-1] != 4:
+            raise ValueError(f"Material vector property {prop} has shape "
+                             f"{tensor.shape} instead of (B, 4)")
+        material["vector_properties"][prop[16:]] = save_tensor
+        return save_tensor
+    if prop.startswith("material_texture_map_"):
+        save_tensor = _to_o3d(tensor, min_ndim=4, max_len=max_outputs)
+        if save_tensor.ndim != 4:
+            raise ValueError(f"Material texture map {prop} has shape "
+                             f"{tensor.shape} instead of (B, Nr, Nc, C)")
+        material["texture_maps"][prop[21:]] = tuple(
+            o3d.t.geometry.Image(_color_to_uint8(save_tensor[bidx]))
+            for bidx in range(save_tensor.shape[0]))
+        return save_tensor
+    if prop.startswith("material_"):
+        raise ValueError(f"Unknown material property {prop}.")
+
+    min_ndim = 4 if prop == "triangle_texture_uvs" else 3
+    save_tensor = _to_o3d(tensor, min_ndim=min_ndim, max_len=max_outputs)
+    if save_tensor.ndim != min_ndim:
+        raise ValueError(f"Property {prop} tensor has shape {tensor.shape} "
+                         f"instead of (B, N, 2) or (B, N, 3)")
 
     # Datatype conversion
     if prop.endswith("_colors"):
         save_tensor = _color_to_uint8(save_tensor)  # includes scaling
     elif prop.endswith("_indices"):
         save_tensor = save_tensor.to(dtype=o3d.core.int32)
-    else:
+    elif save_tensor.dtype == o3d.core.float64:
         save_tensor = save_tensor.to(dtype=o3d.core.float32)
 
     return save_tensor
@@ -272,13 +331,16 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         raise TypeError(
             "data should be a dict of geometry property names and tensors.")
     unknown_props = [
-        prop for prop in data if prop not in metadata.GEOMETRY_PROPERTY_DIMS
+        prop for prop in data if prop not in metadata.SUPPORTED_PROPERTIES
     ]
     if unknown_props:
         raise ValueError(
             f"Unknown geometry properties in data: {unknown_props}")
     if "vertex_positions" not in data:
         raise ValueError("Primary key 'vertex_positions' not provided.")
+    if 'triangle_texture_uvs' in data and 'vertex_texture_uvs' in data:
+        raise ValueError("Please provide only one of triangle_texture_uvs "
+                         "or vertex_texture_uvs.")
     if max_outputs < 1:
         raise ValueError(
             f"max_outputs ({max_outputs}) should be a non-negative integer.")
@@ -291,6 +353,20 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
     vertex_data = {}
     triangle_data = {}
     line_data = {}
+    material = {
+        "name": "",
+        "scalar_properties": {},
+        "vector_properties": {},
+        "texture_maps": {}
+    }
+
+    def get_or_check_shape(prop, shape, exp_shape):
+        for k, s in enumerate(exp_shape):
+            if s is not None and s != shape[k]:
+                raise ValueError(f"Property {prop} tensor should be of shape "
+                                 f"{exp_shape} but is {shape}.")
+        return shape[:2]
+
     geometry_metadata = plugin_data_pb2.Open3DPluginData(
         version=metadata._VERSION)
     o3d_type = "PointCloud"
@@ -302,14 +378,10 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             if vertex_data[prop_name] is None:  # Step reference
                 del vertex_data[prop_name]
                 continue
-            if batch_size is None:  # Get tensor dims from earlier property
-                batch_size, n_vertices, _ = vertex_data[prop_name].shape
-            exp_shape = (batch_size, n_vertices,
-                         metadata.GEOMETRY_PROPERTY_DIMS[prop])
-            if tuple(vertex_data[prop_name].shape) != exp_shape:
-                raise ValueError(
-                    f"Property {prop} tensor should be of shape "
-                    f"{exp_shape} but is {vertex_data[prop_name].shape}.")
+            # Get tensor dims from earlier property
+            batch_size, n_vertices = get_or_check_shape(
+                prop, vertex_data[prop_name].shape, (batch_size, n_vertices) +
+                metadata.GEOMETRY_PROPERTY_DIMS[prop])
 
         elif prop in ('triangle_indices',) + metadata.TRIANGLE_PROPERTIES:
             o3d_type = "TriangleMesh"
@@ -320,14 +392,11 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             if triangle_data[prop_name] is None:  # Step reference
                 del triangle_data[prop_name]
                 continue
-            if n_triangles is None:  # Get tensor dims from earlier property
-                _, n_triangles, _ = triangle_data[prop_name].shape
-            exp_shape = (batch_size, n_triangles,
-                         metadata.GEOMETRY_PROPERTY_DIMS[prop])
-            if tuple(triangle_data[prop_name].shape) != exp_shape:
-                raise ValueError(
-                    f"Property {prop} tensor should be of shape "
-                    f"{exp_shape} but is {triangle_data[prop_name].shape}.")
+            # Get tensor dims from earlier property
+            batch_size, n_triangles = get_or_check_shape(
+                prop, triangle_data[prop_name].shape,
+                (batch_size, n_triangles) +
+                metadata.GEOMETRY_PROPERTY_DIMS[prop])
 
         elif prop in ('line_indices',) + metadata.LINE_PROPERTIES:
             if o3d_type != "TriangleMesh":
@@ -338,15 +407,20 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             if line_data[prop_name] is None:  # Step reference
                 del line_data[prop_name]
                 continue
-            if n_lines is None:  # Get tensor dims from earlier property
-                _, n_lines, _ = line_data[prop_name].shape
-            exp_shape = (batch_size, n_lines,
-                         metadata.GEOMETRY_PROPERTY_DIMS[prop])
-            if tuple(line_data[prop_name].shape) != exp_shape:
-                raise ValueError(
-                    f"Property {prop} tensor should be of shape "
-                    f"{exp_shape} but is {line_data[prop_name].shape}.")
+            # Get tensor dims from earlier property
+            batch_size, n_lines = get_or_check_shape(
+                prop, line_data[prop_name].shape,
+                (batch_size, n_lines) + metadata.GEOMETRY_PROPERTY_DIMS[prop])
 
+        elif prop.startswith("material_"):  # Set property in material directly
+            _preprocess(prop, tensor, step, max_outputs, geometry_metadata,
+                        material)
+
+    if (len(material["texture_maps"]) > 0 and
+            'triangle_texture_uvs' not in data and
+            'vertex_texture_uvs' not in data):
+        raise ValueError("Please provide texture coordinates "
+                         "'[vertex|triangle]_texture_uvs' to use texture maps.")
     vertices = vertex_data.pop("positions",
                                o3d.core.Tensor((), dtype=o3d.core.float32))
     faces = triangle_data.pop("indices",
@@ -373,6 +447,20 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 line_attributes={
                     prop: tensor[bidx, :, :]
                     for prop, tensor in line_data.items()
+                },
+                material=("" if material["name"] == "" else
+                          material["name"][bidx]),
+                material_scalar_attributes={
+                    prop: val[bidx].item()
+                    for prop, val in material["scalar_properties"].items()
+                },
+                material_vector_attributes={
+                    prop: val[bidx].numpy()
+                    for prop, val in material["vector_properties"].items()
+                },
+                texture_maps={
+                    prop: val[bidx]
+                    for prop, val in material["texture_maps"].items()
                 },
                 o3d_type=o3d_type,
                 connection=buf_con):
@@ -407,17 +495,51 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
                 3D points. Will be cast to ``float32``.
           - ``vertex_colors``: shape `(B, N, 3)` Will be converted to ``uint8``.
           - ``vertex_normals``: shape `(B, N, 3)` Will be cast to ``float32``.
+          - ``vertex_texture_uvs``: shape `(B, N, 2)` Per vertex UV coordinates
+            for applying material texture maps. Will be cast to ``float32``.
+            Only one of ``vertex|triangle_texture_uvs`` should be provided.
           - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
+          - ``triangle_texture_uvs``: shape `(B, Nf, 3, 2)` Per triangle UV
+            coordinates for applying material texture maps. Will be cast to
+            ``float32``. Only one of ``[vertex|triangle]_texture_uvs`` should be
+            provided.
           - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
+          - ``material_name``: shape `(B,)` and dtype ``str``. Base PBR material
+            name is required to specify any material properties.  Open3D
+            built-in materials: ``defaultLit``, ``defaultUnlit``, ``unlitLine``,
+            ``unlitGradient``, ``unlitSolidColor``.
+          - ``material_scalar_*PROPERTY*``: Any material scalar property with
+            float values of shape `(B,)`. e.g. To specify the property
+            `metallic`, use the key `material_scalar_metallic`.
+          -  ``material_vector_*PROPERTY*``: Any material 4-vector property with
+             float values of shape `(B, 4)` e.g. To specify the property
+            `baseColor`, use the key `material_vector_base_color`.
+          -  ``material_texture_map_*TEXTURE_MAP*``: PBR Material texture maps.
+             e.g. ``material_texture_map_metallic`` represents a texture map
+             describing the metallic property for rendering.
+             Values are Tensors with shape `(B, Nr, Nc, C)`, corresponding to a
+             batch of texture maps with `C` channels and shape `(Nr, Nc)`. The
+             geometry must have ``[vertex|triangle]_texture_uvs`` coordinates to
+             use any texture map.
 
-        For `batch_size` B=1, the tensors may have rank 2 instead of rank 3.
-        Floating point color data will be clipped to the range [0,1] and
-        converted to `uint8` range [0,255]. Other data types will be clipped into
-        an allowed range for safe casting to uint8.
+        For batch_size B=1, the tensors may drop a rank (e.g. (N,3)
+        vertex_positions, (4,) material vector properties or float scalar ()
+        material scalar properties.)
 
-        Any data tensor, may be replaced by an integer scalar referring to a
-        previous step. This allows reusing a previously written property tensor
-        in the case that it does not change at different steps.
+        Floating point color and texture map data will be clipped to the range
+        [0,1] and converted to ``uint8`` range [0,255]. ``uint16`` data will be
+        compressed to the range [0,255].
+
+        Any data tensor (with ndim>=2 including batch_size, i.e. excluding
+        ``material_name`` and ``material_scalar_*PROPERTY*``), may be replaced by
+        an ``int`` scalar referring to a previous step. This allows reusing a
+        previously written property in case that it does not change at different
+        steps.
+
+        Please see the `Filament Materials Guide
+        <https://google.github.io/filament/Materials.html#materialmodels>`__ for
+        a complete explanation of material properties.
+
       step (int): Explicit ``int64``-castable monotonic step value for this summary.
         [`TensorFlow`: If ``None``, this defaults to
         `tf.summary.experimental.get_step()`, which must not be ``None``.]
@@ -428,9 +550,8 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
         emitted at each step. When more than `max_outputs` 3D elements are
         provided, the first ``max_outputs`` 3D elements will be used and the
         rest silently discarded.
-      description (str): Optional long-form description for this summary, as a
-        constant ``str``. Markdown is supported. Defaults to empty. Currently
-        unused.
+      description (str): Optional long-form description for this summary.
+        Markdown is supported. Defaults to empty. Currently unused.
 
     Returns:
       True on success, or false if no summary was emitted because no default
@@ -445,6 +566,7 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
         instead.
 
     Examples:
+        # TODO(ssheorey): Update example with material properties.
         With Tensorflow:
 
         .. code::
@@ -456,7 +578,8 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
 
             logdir = "demo_logs/"
             writer = tf.summary.create_file_writer(logdir)
-            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4,
+                create_uv_map=True)
             cube.compute_vertex_normals()
             colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
             with writer.as_default():
@@ -476,7 +599,8 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
             from open3d.visualization.tensorboard_plugin import summary
             from open3d.visualization.tensorboard_plugin.util import to_dict_batch
             writer = SummaryWriter("demo_logs/")
-            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4,
+                create_uv_map=True)
             cube.compute_vertex_normals()
             colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
             for step in range(3):

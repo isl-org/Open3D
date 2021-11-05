@@ -88,13 +88,6 @@ class TensorboardOpen3DPluginClient {
     */
     addAppEventListeners = () => {
         window.addEventListener("beforeunload", this.closeWindow);
-        // TODO: Ensure TB data reload maintains app state
-        // Listen for the user clicking on the main TB reload button
-        // let tbReloadButton =
-        //     parent.document.querySelector(".reload-button");
-        // if (tbReloadButton != null) {
-        //     tbReloadButton.addEventListener("click", this.reloadRunTags);
-        // }
         // App option handling
         document.getElementById("ui-options-step").addEventListener("change", (evt) => {
             if (evt.target.checked) {

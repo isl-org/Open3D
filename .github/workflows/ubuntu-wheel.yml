@@ -1,4 +1,4 @@
-name: Ubuntu CUDA CI
+name: Ubuntu Wheel
 
 on:
   workflow_dispatch:

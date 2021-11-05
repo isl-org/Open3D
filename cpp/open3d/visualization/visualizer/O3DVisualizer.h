@@ -145,6 +145,11 @@ public:
     void ShowGeometry(const std::string& name, bool show);
 
     DrawObject GetGeometry(const std::string& name) const;
+    rendering::MaterialRecord GetGeometryMaterial(
+            const std::string& name) const;
+
+    void ModifyGeometryMaterial(const std::string& name,
+                                const rendering::MaterialRecord* material);
 
     void Add3DLabel(const Eigen::Vector3f& pos, const char* text);
     void Clear3DLabels();
@@ -164,6 +169,8 @@ public:
 
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
+    void SetIBL(const std::string& path);
+    void SetIBLIntensity(float intensity);
     void ShowAxes(bool show);
     void ShowGround(bool show);
     void SetGroundPlane(rendering::Scene::GroundPlane plane);

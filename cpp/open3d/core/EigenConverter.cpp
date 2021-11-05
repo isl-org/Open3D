@@ -161,6 +161,11 @@ static core::Tensor EigenVectorNxVectorToTensor(
     return tensor_cpu.To(device);
 }
 
+std::vector<Eigen::Vector2d> TensorToEigenVector2dVector(
+        const core::Tensor &tensor) {
+    return TensorToEigenVectorNxVector<double, 2>(tensor);
+}
+
 std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
         const core::Tensor &tensor) {
     return TensorToEigenVectorNxVector<double, 3>(tensor);
@@ -178,6 +183,13 @@ std::vector<Eigen::Vector2i> TensorToEigenVector2iVector(
 
 core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device) {
+    return EigenVectorNxVectorToTensor(values, dtype, device);
+}
+
+core::Tensor EigenVector2dVectorToTensor(
+        const std::vector<Eigen::Vector2d> &values,
         core::Dtype dtype,
         const core::Device &device) {
     return EigenVectorNxVectorToTensor(values, dtype, device);
