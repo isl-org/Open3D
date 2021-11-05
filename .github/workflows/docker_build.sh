@@ -47,7 +47,7 @@ print_usage_and_exit() {
     exit 1
 }
 
-openblas() {
+openblas_build() {
     options="$(echo "$@" | tr ' ' '|')"
     echo "[openblas()] options: ${options}"
     if [[ "x86_64" =~ ^($options)$ ]]; then
@@ -63,9 +63,9 @@ openblas() {
         echo "Invalid architecture."
         print_usage_and_exit
     fi
-    echo "[cuda_wheel()] BASE_IMAGE: ${BASE_IMAGE}"
-    echo "[cuda_wheel()] CMAKE_VER: ${CMAKE_VER}"
-    echo "[cuda_wheel()] CCACHE_TAR_NAME: ${CCACHE_TAR_NAME}"
+    echo "[openblas_build()] BASE_IMAGE: ${BASE_IMAGE}"
+    echo "[openblas_build()] CMAKE_VER: ${CMAKE_VER}"
+    echo "[openblas_build()] CCACHE_TAR_NAME: ${CCACHE_TAR_NAME}"
 
     # Docker build
     pushd "${HOST_OPEN3D_ROOT}"
@@ -82,14 +82,14 @@ openblas() {
                  chown $(id -u):$(id -g) /opt/mount/*"
 }
 
-cuda_wheel() {
+cuda_wheel_build() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
     CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
     CCACHE_VERSION=4.3
 
     options="$(echo "$@" | tr ' ' '|')"
-    echo "[cuda_wheel()] options: ${options}"
+    echo "[cuda_wheel_build()] options: ${options}"
     if [[ "py36" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.6
     elif [[ "py37" =~ ^($options)$ ]]; then
@@ -107,8 +107,8 @@ cuda_wheel() {
     else
         DEVELOPER_BUILD=OFF
     fi
-    echo "[cuda_wheel()] PYTHON_VERSION: ${PYTHON_VERSION}"
-    echo "[cuda_wheel()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
+    echo "[cuda_wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
+    echo "[cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
 
     # Docker build
     pushd "${HOST_OPEN3D_ROOT}"
@@ -164,7 +164,7 @@ cuda_build() {
                  chown $(id -u):$(id -g) /opt/mount/*"
 }
 
-export_env_2-bionic() {
+2-bionic_export_env() {
     export DOCKER_TAG=open3d-ci:2-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
@@ -176,7 +176,7 @@ export_env_2-bionic() {
     export BUILD_PYTORCH_OPS=OFF
 }
 
-export_env_3-ml-shared-bionic() {
+3-ml-shared-bionic_export_env() {
     export DOCKER_TAG=open3d-ci:3-ml-shared-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
@@ -188,7 +188,7 @@ export_env_3-ml-shared-bionic() {
     export BUILD_PYTORCH_OPS=ON
 }
 
-export_env_4-ml-bionic() {
+4-ml-bionic_export_env() {
     export DOCKER_TAG=open3d-ci:4-ml-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
@@ -200,7 +200,7 @@ export_env_4-ml-bionic() {
     export BUILD_PYTORCH_OPS=ON
 }
 
-export_env_5-ml-focal() {
+5-ml-focal_export_env() {
     export DOCKER_TAG=open3d-ci:5-ml-focal
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
@@ -220,49 +220,49 @@ function main () {
     echo "[$(basename $0)] building $1"
     case "$1" in
         openblas_x86_64)
-            openblas x86_64
+            openblas_build x86_64
             ;;
         openblas_arm64)
-            openblas arm64
+            openblas_build arm64
             ;;
         cuda_wheel_py36_dev)
-            cuda_wheel py36 dev
+            cuda_wheel_build py36 dev
             ;;
         cuda_wheel_py37_dev)
-            cuda_wheel py37 dev
+            cuda_wheel_build py37 dev
             ;;
         cuda_wheel_py38_dev)
-            cuda_wheel py38 dev
+            cuda_wheel_build py38 dev
             ;;
         cuda_wheel_py39_dev)
-            cuda_wheel py39 dev
+            cuda_wheel_build py39 dev
             ;;
         cuda_wheel_py36)
-            cuda_wheel py36
+            cuda_wheel_build py36
             ;;
         cuda_wheel_py37)
-            cuda_wheel py37
+            cuda_wheel_build py37
             ;;
         cuda_wheel_py38)
-            cuda_wheel py38
+            cuda_wheel_build py38
             ;;
         cuda_wheel_py39)
-            cuda_wheel py39
+            cuda_wheel_build py39
             ;;
         2-bionic)
-            export_env_2-bionic
+            2-bionic_export_env
             cuda_build
             ;;
         3-ml-shared-bionic)
-            export_env_3-ml-shared-bionic
+            3-ml-shared-bionic_export_env
             cuda_build
             ;;
         4-ml-bionic)
-            export_env_4-ml-bionic
+            4-ml-bionic_export_env
             cuda_build
             ;;
         5-ml-focal)
-            export_env_5-ml-focal
+            5-ml-focal_export_env
             cuda_build
             ;;
         *)

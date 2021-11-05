@@ -41,7 +41,7 @@ print_env() {
     echo "[print_env()] DOCKER_TAG=${DOCKER_TAG}"
 }
 
-test_cpp_python_linking_uninstall() {
+cpp_python_linking_uninstall_test() {
     # C++ test
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     docker run -i --rm --gpus all ${DOCKER_TAG} /bin/bash -c "\
@@ -77,30 +77,6 @@ test_cpp_python_linking_uninstall() {
     "
 }
 
-2-bionic() {
-    export_env_2-bionic
-    print_env
-    test_cpp_python_linking_uninstall
-}
-
-3-ml-shared-bionic() {
-    export_env_3-ml-shared-bionic
-    print_env
-    test_cpp_python_linking_uninstall
-}
-
-4-ml-bionic() {
-    export_env_4-ml-bionic
-    print_env
-    test_cpp_python_linking_uninstall
-}
-
-5-ml-focal() {
-    export_env_5-ml-focal
-    print_env
-    test_cpp_python_linking_uninstall
-}
-
 if [[ "$#" -ne 1 ]]; then
     echo "Error: invalid number of arguments." >&2
     print_usage_and_exit
@@ -109,16 +85,24 @@ echo "[$(basename $0)] building $1"
 source "${HOST_OPEN3D_ROOT}/.github/workflows/docker_build.sh"
 case "$1" in
     2-bionic)
-        2-bionic
+        2-bionic_export_env
+        print_env
+        cpp_python_linking_uninstall_test
         ;;
     3-ml-shared-bionic)
-        3-ml-shared-bionic
+        3-ml-shared-bionic_export_env
+        print_env
+        cpp_python_linking_uninstall_test
         ;;
     4-ml-bionic)
-        4-ml-bionic
+        4-ml-bionic_export_env
+        print_env
+        cpp_python_linking_uninstall_test
         ;;
     5-ml-focal)
-        5-ml-focal
+        5-ml-focal_export_env
+        print_env
+        cpp_python_linking_uninstall_test
         ;;
     *)
         echo "Error: invalid argument: ${1}." >&2
