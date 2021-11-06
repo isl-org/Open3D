@@ -38,7 +38,6 @@ jobs:
     if: needs.skip-check.outputs.skip == 'no'
     strategy:
       fail-fast: false
-      max-parallel: 4 # Limit parallel runs to max GPU quota (4)
       matrix:
         include:
           - CI_CONFIG: 2-bionic
