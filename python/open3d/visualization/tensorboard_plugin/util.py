@@ -387,27 +387,6 @@ class Open3DPluginDataReader:
         return geometry, data_bbox_proto
 
 
-def _postprocess(geometry):
-    """Post process geometry before displaying to account for WIP
-    Tensor API in Open3D.
-    """
-
-    if isinstance(geometry, o3d.t.geometry.PointCloud):
-        return geometry
-    legacy = geometry.to_legacy()
-    # color is FLoat64 but range is [0,255]!
-    if isinstance(geometry, o3d.t.geometry.TriangleMesh):
-        if legacy.has_vertex_colors():
-            legacy.vertex_colors = o3d.utility.Vector3dVector(
-                np.asarray(legacy.vertex_colors) / 255)
-    elif isinstance(geometry,
-                    (o3d.t.geometry.TriangleMesh, o3d.t.geometry.LineSet)):
-        if legacy.has_colors():
-            legacy.colors = o3d.utility.Vector3dVector(
-                np.asarray(legacy.colors) / 255)
-    return legacy
-
-
 def _normalize(tensor):
     if tensor.dtype in (o3d.core.float32, o3d.core.float64, np.float32,
                         np.float64):
@@ -527,9 +506,9 @@ class RenderUpdate:
         """
 
         def swap__(tensormap, prop):
-            """If backup of prop exists, restore it. Else save prop to a backup.
-            prop can now be safely modified for visualization. Returns True if
-            prop exists, else False.
+            """If backup of property prop exists, restore it. Else save prop to
+            a backup (__prop).  prop can now be safely modified for
+            visualization. Returns True if prop exists, else False.
             """
             if "__" + prop in tensormap:
                 tensormap[prop][:] = tensormap["__" + prop][:]  # restore
@@ -694,20 +673,19 @@ class RenderUpdate:
                 material.gradient.mode = rendering.Gradient.GRADIENT
                 self._set_vis_minmax(geometry_vertex, material)
 
-        pp_geometry = _postprocess(geometry)
         if o3dscene.has_geometry(geometry_name):
             if material_update_flag > 0:
                 self._gui.run_sync(o3dvis.modify_geometry_material,
                                    geometry_name, material)
                 # does not do force_redraw(), so also need update_geometry()
-            self._gui.run_sync(o3dvis.update_geometry, geometry_name,
-                               pp_geometry, geometry_update_flag)
+            self._gui.run_sync(o3dvis.update_geometry, geometry_name, geometry,
+                               geometry_update_flag)
             _log.debug(
                 f"Geometry {geometry_name} updated with flags "
                 f"Geo:{geometry_update_flag:b}, Mat:{material_update_flag:b}")
         else:
-            self._gui.run_sync(o3dvis.add_geometry, geometry_name, pp_geometry,
-                               material)
+            self._gui.run_sync(o3dvis.add_geometry, geometry_name, geometry,
+                               material if self._shader == "" else None)
         self._gui.run_sync(o3dvis.post_redraw)
         if not have_colors:  # reset colors
             if hasattr(geometry, "line") and "colors" in geometry.line:
