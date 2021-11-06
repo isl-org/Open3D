@@ -41,6 +41,26 @@ print_env() {
     echo "[print_env()] DOCKER_TAG=${DOCKER_TAG}"
 }
 
+restart_docker_daemon_if_on_gcloud() {
+    # Sometimes `docker run` may fail on the second run on Google Cloud with the
+    # following erorr:
+    # ```
+    # docker: Error response from daemon: OCI runtime create failed:
+    # container_linux.go:349: starting container process caused
+    # "process_linux.go:449: container init caused \"process_linux.go:432:
+    # running prestart hook 0 caused \\\"error running hook: exit status 1,
+    # stdout: , stderr: nvidia-container-cli: initialization error:
+    # nvml error: driver/library version mismatch\\\\n\\\"\"": unknown.
+    # ```
+    if curl metadata.google.internal -i | grep Google; then
+        # https://stackoverflow.com/a/30921162/1255535
+        echo "[restart_docker_daemon_if_on_gcloud()] Restarting Docker daemon on Google Cloud."
+        sudo systemctl start docker
+    else
+        echo "[restart_docker_daemon_if_on_gcloud()] Skipped."
+    fi
+}
+
 cpp_python_linking_uninstall_test() {
     # C++ test
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
@@ -48,6 +68,7 @@ cpp_python_linking_uninstall_test() {
         cd build \
      && ./bin/tests --gtest_shuffle \
     "
+    restart_docker_daemon_if_on_gcloud
 
     # Python test
     echo "pytest is randomized, add --rondomly-seed=SEED to repeat the test sequence."
@@ -58,6 +79,7 @@ cpp_python_linking_uninstall_test() {
     docker run -i --rm --gpus all "${DOCKER_TAG}" /bin/bash -c "\
         pytest python/test ${pytest_args} \
     "
+    restart_docker_daemon_if_on_gcloud
 
     # C++ linking
     docker run -i --rm --gpus all "${DOCKER_TAG}" /bin/bash -c "\
@@ -69,6 +91,7 @@ cpp_python_linking_uninstall_test() {
      && make -j$(nproc) VERBOSE=1 \
      && ./Draw --skip-for-unit-test \
     "
+    restart_docker_daemon_if_on_gcloud
 
     # Uninstall
     docker run -i --rm --gpus all "${DOCKER_TAG}" /bin/bash -c "\
