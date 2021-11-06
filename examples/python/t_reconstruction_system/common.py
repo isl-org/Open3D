@@ -75,6 +75,7 @@ def load_rgbd_file_names(config):
         if len(color_file_names) == len(depth_file_names):
             return depth_file_names, sorted(color_file_names)
 
+    depth_folder = os.path.join(config.path_dataset, config.depth_folder)
     print('Found {} depth images in {}, but cannot find matched number of '
           'color images in {} with extensions {}, abort!'.format(
               len(depth_file_names), depth_folder, color_folder, extensions))
