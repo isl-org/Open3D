@@ -62,15 +62,17 @@ import open3d as o3d
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 from open3d.visualization.tensorboard_plugin import metadata
 from open3d.visualization.tensorboard_plugin.util import _log
+from open3d.ml.vis import BoundingBox3D
 
 
 class _AsyncDataWriter:
-    """ Write binary data to file asynchronously. Data buffers and files are
+    """Write binary data to file asynchronously. Data buffers and files are
     queued with ``enqueue()`` and actual writing is done in a separate
     thread. GFile (``tf.io.gfile``) is used for writing to local and remote
     (Google cloud storage with gs:// URI and HDFS with hdfs:// URIs) locations.
     If tensorflow is not available, we fallback to Python I/O. The filename
-    format is ``{tagfilepath}.{current time (s)}.{hostname}.{ProcessID}{filename_extension}``
+    format is
+    ``{tagfilepath}.{current time (s)}.{hostname}.{ProcessID}{filename_extension}``
     following the TensorFlow event file name format.
 
     This class is thread safe. A single global object is created when this
@@ -122,6 +124,7 @@ class _AsyncDataWriter:
                         with self._file_lock:
                             handle = next(file_handle_iter)
                         handle.flush()  # release lock for expensive I/O op
+                        _log.debug(f"Flushed {tagfilepath}.")
                 except (StopIteration, RuntimeError):
                     # RuntimeError: possible race condition in dict iterator,
                     # but PEP3106 guarantees no coruption. Try again later.
@@ -172,9 +175,12 @@ class _AsyncDataWriter:
 _async_data_writer = _AsyncDataWriter()
 
 
-def _to_o3d(tensor, min_ndim=None, max_len=None):
+def _to_o3d(tensor, min_ndim=0, max_len=None):
     """Convert Tensorflow, PyTorch and Numpy tensors to Open3D tensor without
-    copying. Python lists and tuples are also accepted, but will be copied.
+    copying. Python lists and tuples are also accepted, but will be copied. If
+    max_len is specified, a tuple of tensors is returned, with the input split
+    into tuple elements along the first dimension.  This allows converting a
+    batch of variable size data.
 
     Args:
         tensor: Input tensor to be converted.
@@ -183,6 +189,10 @@ def _to_o3d(tensor, min_ndim=None, max_len=None):
         max_len (int): The max size along the first dimension. Other data will
             be discarded.
     """
+    if max_len is not None:
+        return tuple(
+            _to_o3d(tensor[k], min_ndim - 1)
+            for k in range(min(max_len, len(tensor))))
     if isinstance(tensor, o3d.core.Tensor):
         pass
     elif tf is not None and isinstance(tensor, tf.Tensor):
@@ -194,13 +204,13 @@ def _to_o3d(tensor, min_ndim=None, max_len=None):
     exp_shape = tensor.shape
     for _ in range(tensor.ndim, min_ndim):
         exp_shape.insert(0, 1)
-    return tensor.reshape(exp_shape)[:max_len]
+    return tensor.reshape(exp_shape)
 
 
 def _color_to_uint8(color_data):
     """
     Args:
-        color_data: o3d.core.Tensor (B,N,3) with any dtype. Float dtypes are
+        color_data: o3d.core.Tensor with any dtype and shape. Float dtypes are
         expected to have values in [0,1] and 8 bit Int dtypes in [0,255] and 16
         bit Int types in [0,2^16-1]
 
@@ -221,6 +231,9 @@ def _to_integer(tensor):
     try:
         if hasattr(tensor, 'ndim') and tensor.ndim > 0:
             return None
+        if hasattr(tensor, '__len__'):  # check for ((int,),)
+            return _to_integer(tensor[0])
+        # floats are material properties
         if hasattr(tensor, 'dtype') and 'int' not in repr(tensor.dtype).lower():
             return None
         if hasattr(tensor, 'numpy'):
@@ -241,7 +254,6 @@ def _preprocess(prop,
     Step reference support.
     TODO(ssheorey): Convert to half precision, compression, etc.
     """
-
     if prop == "material_name":
         if isinstance(tensor, (bytes, str)):
             material["name"] = (tensor,)
@@ -253,7 +265,7 @@ def _preprocess(prop,
                 f" Sequence of str or bytes. Got {tensor} instead.")
         return material["name"]
     if prop.startswith("material_scalar_"):
-        save_tensor = _to_o3d(tensor, min_ndim=1, max_len=max_outputs)
+        save_tensor = _to_o3d(tensor, min_ndim=1)[:max_outputs]
         if save_tensor.ndim != 1:
             raise ValueError(f"Material scalar property {prop} has shape "
                              f"{tensor.shape} instead of (B,)")
@@ -262,26 +274,27 @@ def _preprocess(prop,
 
     # Check if property is reference to prior step (not allowed for
     # material_name and material_scalar_*)
-    step_ref = _to_integer(tensor)
-    if step_ref is not None:
-        if step_ref < 0 or step_ref >= step:
-            raise ValueError(f"Out of order step reference {step_ref} for "
-                             f"property {prop} at step {step}")
-        geometry_metadata.property_references.add(
-            geometry_property=plugin_data_pb2.Open3DPluginData.GeometryProperty.
-            Value(prop),
-            step_ref=step_ref)
-        return None
+    if prop in metadata.GEOMETRY_PROPERTY_DIMS:
+        step_ref = _to_integer(tensor)
+        if step_ref is not None:
+            if step_ref < 0 or step_ref >= step:
+                raise ValueError(f"Out of order step reference {step_ref} for "
+                                 f"property {prop} at step {step}")
+            geometry_metadata.property_references.add(
+                geometry_property=plugin_data_pb2.Open3DPluginData.
+                GeometryProperty.Value(prop),
+                step_ref=step_ref)
+            return None
 
     if prop.startswith("material_vector_"):
-        save_tensor = _to_o3d(tensor, min_ndim=2, max_len=max_outputs)
+        save_tensor = _to_o3d(tensor, min_ndim=2)[:max_outputs]
         if save_tensor.ndim != 2 or save_tensor.shape[-1] != 4:
             raise ValueError(f"Material vector property {prop} has shape "
                              f"{tensor.shape} instead of (B, 4)")
         material["vector_properties"][prop[16:]] = save_tensor
         return save_tensor
     if prop.startswith("material_texture_map_"):
-        save_tensor = _to_o3d(tensor, min_ndim=4, max_len=max_outputs)
+        save_tensor = _to_o3d(tensor, min_ndim=4)[:max_outputs]
         if save_tensor.ndim != 4:
             raise ValueError(f"Material texture map {prop} has shape "
                              f"{tensor.shape} instead of (B, Nr, Nc, C)")
@@ -289,27 +302,65 @@ def _preprocess(prop,
             o3d.t.geometry.Image(_color_to_uint8(save_tensor[bidx]))
             for bidx in range(save_tensor.shape[0]))
         return save_tensor
-    if prop.startswith("material_"):
-        raise ValueError(f"Unknown material property {prop}.")
 
+    # Geometry or custom vertex property
     min_ndim = 4 if prop == "triangle_texture_uvs" else 3
+    if tensor[0].ndim == min_ndim - 2:  # batch_size = 1
+        max_outputs = None  # Do not convert to tuple
     save_tensor = _to_o3d(tensor, min_ndim=min_ndim, max_len=max_outputs)
-    if save_tensor.ndim != min_ndim:
-        raise ValueError(f"Property {prop} tensor has shape {tensor.shape} "
-                         f"instead of (B, N, 2) or (B, N, 3)")
 
     # Datatype conversion
     if prop.endswith("_colors"):
-        save_tensor = _color_to_uint8(save_tensor)  # includes scaling
+        save_tensor = tuple(
+            _color_to_uint8(st) for st in save_tensor)  # includes scaling
     elif prop.endswith("_indices"):
-        save_tensor = save_tensor.to(dtype=o3d.core.int32)
-    elif save_tensor.dtype == o3d.core.float64:
-        save_tensor = save_tensor.to(dtype=o3d.core.float32)
+        save_tensor = tuple(st.to(o3d.core.int32) for st in save_tensor)
+    elif save_tensor[0].dtype == o3d.core.float64:
+        save_tensor = tuple(st.to(o3d.core.float32) for st in save_tensor)
 
     return save_tensor
 
 
-def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
+def _convert_bboxes(bboxes):
+    """Convert (nested) Sequence of BoundingBox3D s with shape (B, Nbb) or
+    (Nbb,) to a geometry property dictionary.
+
+    Returns:
+        pair of dicts: geometry property dictionary, dict with labels and
+        confidences. Confidence values are cast to float32.
+    """
+
+    def append_key_values(dict1, dict2):
+        for key, val2 in dict2.items():
+            if key in dict1:
+                dict1[key].append(val2)
+            else:
+                dict1[key] = [val2]
+
+    vertices_per_bbox = 14
+    data = dict()
+    if hasattr(bboxes[0], "__len__"):  # Nested Seq. (B, Nbb)
+        for bb_batch in bboxes:
+            append_key_values(data,
+                              BoundingBox3D.create_lines(bb_batch, out='dict'))
+    else:
+        append_key_values(data, BoundingBox3D.create_lines(bboxes, out='dict'))
+    data.pop('line_colors')  # No LUT. Assign colors during rendering.
+    labels = data.pop('bbox_labels')
+    confidences = tuple(np.float32(c) for c in data.pop('bbox_confidences'))
+    if len(labels) > 0 and len(confidences) > 0:
+        for l, c, d in zip(labels, confidences, data['vertex_positions']):
+            if len(c) != len(l) or vertices_per_bbox * len(c) != len(d):
+                raise ValueError(
+                    f"BBox labels (len = {len(l)}) and confidences (len="
+                    f"{len(c)}) have incorrect shape for to "
+                    f"{len(data['vertex_positions'])/vertices_per_bbox} bboxes."
+                )
+    data_bbox = {'bbox_labels': labels, 'bbox_confidences': confidences}
+    return data, data_bbox
+
+
+def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
     """Serialize and write geometry data for a tag. Data is written to a
     separate file per tag.
     TODO: Add version specific reader / writer
@@ -326,25 +377,34 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         A comma separated data location string with the format
         f"{filename},{write_location},{write_size}"
     """
-
     if not isinstance(data, dict):
         raise TypeError(
             "data should be a dict of geometry property names and tensors.")
+    data_bbox = None
+    if 'bboxes' in data:
+        if len(data) > 1:
+            raise ValueError("Saving bounding boxes. Please add other geometry"
+                             " data with a separate call.")
+        data, data_bbox = _convert_bboxes(data['bboxes'])
     unknown_props = [
-        prop for prop in data if prop not in metadata.SUPPORTED_PROPERTIES
+        prop for prop in data
+        if (prop not in metadata.SUPPORTED_PROPERTIES and
+            not prop.startswith('vertex_'))  # custom vertex properties
     ]
     if unknown_props:
         raise ValueError(
             f"Unknown geometry properties in data: {unknown_props}")
     if "vertex_positions" not in data:
         raise ValueError("Primary key 'vertex_positions' not provided.")
-    if 'triangle_texture_uvs' in data and 'vertex_texture_uvs' in data:
-        raise ValueError("Please provide only one of triangle_texture_uvs "
-                         "or vertex_texture_uvs.")
-    if max_outputs < 1:
+    if max_outputs == 0:  # save all
+        max_outputs = np.iinfo(np.int32).max
+    elif max_outputs < 1:
         raise ValueError(
             f"max_outputs ({max_outputs}) should be a non-negative integer.")
     max_outputs = int(max_outputs)
+    if 'triangle_texture_uvs' in data and 'vertex_texture_uvs' in data:
+        raise ValueError("Please provide only one of triangle_texture_uvs "
+                         "or vertex_texture_uvs.")
 
     batch_size = None
     n_vertices = None
@@ -360,18 +420,31 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
         "texture_maps": {}
     }
 
-    def get_or_check_shape(prop, shape, exp_shape):
+    def get_or_check_shape(prop, tensor_tuple, exp_shape):
+        shape = [len(tensor_tuple)] + list(tensor_tuple[0].shape)
+        if len(shape) > 1:
+            shape[1] = tuple(tensor.shape[0] for tensor in tensor_tuple)
+
         for k, s in enumerate(exp_shape):
-            if s is not None and s != shape[k]:
+            if k < 2 and s is not None and s != shape[k]:
                 raise ValueError(f"Property {prop} tensor should be of shape "
                                  f"{exp_shape} but is {shape}.")
+            if k > 1 and s is None:
+                s = tensor_tuple[0].shape[k - 1]
+            if k > 1 and any(
+                    s != tensor.shape[k - 1] for tensor in tensor_tuple):
+                raise ValueError(
+                    f"Property {prop} tensor should have shape[{k}]"
+                    f"={s} for all elements but is "
+                    f"{tensor.shape[k-1] for tensor in tensor_tuple}.")
+
         return shape[:2]
 
     geometry_metadata = plugin_data_pb2.Open3DPluginData(
         version=metadata._VERSION)
     o3d_type = "PointCloud"
     for prop, tensor in data.items():
-        if prop in ('vertex_positions',) + metadata.VERTEX_PROPERTIES:
+        if prop.startswith('vertex_'):
             prop_name = prop[7:]
             vertex_data[prop_name] = _preprocess(prop, tensor, step,
                                                  max_outputs, geometry_metadata)
@@ -380,8 +453,8 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 continue
             # Get tensor dims from earlier property
             batch_size, n_vertices = get_or_check_shape(
-                prop, vertex_data[prop_name].shape, (batch_size, n_vertices) +
-                metadata.GEOMETRY_PROPERTY_DIMS[prop])
+                prop, vertex_data[prop_name], (batch_size, n_vertices) +
+                metadata.GEOMETRY_PROPERTY_DIMS.get(prop, (None,)))
 
         elif prop in ('triangle_indices',) + metadata.TRIANGLE_PROPERTIES:
             o3d_type = "TriangleMesh"
@@ -394,9 +467,8 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 continue
             # Get tensor dims from earlier property
             batch_size, n_triangles = get_or_check_shape(
-                prop, triangle_data[prop_name].shape,
-                (batch_size, n_triangles) +
-                metadata.GEOMETRY_PROPERTY_DIMS[prop])
+                prop, triangle_data[prop_name], (batch_size, n_triangles) +
+                metadata.GEOMETRY_PROPERTY_DIMS.get(prop, (None,)))
 
         elif prop in ('line_indices',) + metadata.LINE_PROPERTIES:
             if o3d_type != "TriangleMesh":
@@ -409,8 +481,8 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 continue
             # Get tensor dims from earlier property
             batch_size, n_lines = get_or_check_shape(
-                prop, line_data[prop_name].shape,
-                (batch_size, n_lines) + metadata.GEOMETRY_PROPERTY_DIMS[prop])
+                prop, line_data[prop_name], (batch_size, n_lines) +
+                metadata.GEOMETRY_PROPERTY_DIMS.get(prop, (None,)))
 
         elif prop.startswith("material_"):  # Set property in material directly
             _preprocess(prop, tensor, step, max_outputs, geometry_metadata,
@@ -421,6 +493,11 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             'vertex_texture_uvs' not in data):
         raise ValueError("Please provide texture coordinates "
                          "'[vertex|triangle]_texture_uvs' to use texture maps.")
+    if material["name"] == "" and any(
+            len(value) > 0 for value in material.values()):
+        raise ValueError(
+            "Please provide a 'material_name' for the material properties.")
+
     vertices = vertex_data.pop("positions",
                                o3d.core.Tensor((), dtype=o3d.core.float32))
     faces = triangle_data.pop("indices",
@@ -432,21 +509,18 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
                 path=tag,
                 time=step,
                 layer="",
-                vertices=vertices[bidx, :, :]
-                if vertices.ndim == 3 else vertices,
+                vertices=vertices[bidx] if len(vertices) > 0 else vertices,
                 vertex_attributes={
-                    prop: tensor[bidx, :, :]
-                    for prop, tensor in vertex_data.items()
+                    prop: tensor[bidx] for prop, tensor in vertex_data.items()
                 },
-                faces=faces[bidx, :, :] if faces.ndim == 3 else faces,
+                faces=faces[bidx] if len(faces) > 0 else faces,
                 face_attributes={
-                    prop: tensor[bidx, :, :]
+                    prop: tensor[bidx]
                     for prop, tensor in triangle_data.items()
                 },
-                lines=lines[bidx, :, :] if lines.ndim == 3 else lines,
+                lines=lines[bidx] if len(lines) > 0 else lines,
                 line_attributes={
-                    prop: tensor[bidx, :, :]
-                    for prop, tensor in line_data.items()
+                    prop: tensor[bidx] for prop, tensor in line_data.items()
                 },
                 material=("" if material["name"] == "" else
                           material["name"][bidx]),
@@ -478,15 +552,37 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=3):
             start=this_write_location,
             size=len(data_buffer),
             masked_crc32c=masked_crc32c(data_buffer))
+        if data_bbox is not None:
+            data_bbox_proto = plugin_data_pb2.InferenceData()
+            for l, c in zip(data_bbox['bbox_labels'][bidx],
+                            data_bbox['bbox_confidences'][bidx]):
+                data_bbox_proto.inference_result.add(label=l, confidence=c)
+            data_bbox_serial = data_bbox_proto.SerializeToString()
+            filename, this_write_location = _async_data_writer.enqueue(
+                os.path.join(write_dir, tag.replace('/', '-')),
+                data_bbox_serial)
+            geometry_metadata.batch_index.start_size[
+                -1].aux_start = this_write_location
+            geometry_metadata.batch_index.start_size[-1].aux_size = len(
+                data_bbox_serial)
+            geometry_metadata.batch_index.start_size[
+                -1].aux_masked_crc32c = masked_crc32c(data_bbox_serial)
+
     return geometry_metadata.SerializeToString()
 
 
-def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
+def add_3d(name,
+           data,
+           step,
+           logdir=None,
+           max_outputs=1,
+           label_to_names=None,
+           description=None):
     """Write 3D geometry data as summary.
 
     Args:
-      name (str): A name or tag for this summary. The summary tag used for TensorBoard
-        will be this name prefixed by any active name scopes.
+      name (str): A name or tag for this summary. The summary tag used for
+        TensorBoard will be this name prefixed by any active name scopes.
       data (dict): A dictionary of tensors representing 3D data. Tensorflow,
         PyTorch, Numpy and Open3D tensors are supported. The following keys
         are supported:
@@ -497,13 +593,19 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
           - ``vertex_normals``: shape `(B, N, 3)` Will be cast to ``float32``.
           - ``vertex_texture_uvs``: shape `(B, N, 2)` Per vertex UV coordinates
             for applying material texture maps. Will be cast to ``float32``.
-            Only one of ``vertex|triangle_texture_uvs`` should be provided.
+            Only one of ``[vertex|triangle]_texture_uvs`` should be provided.
+          - ``vertex_*FEATURE*``: shape `(B, N, _)`. Store arbitrary vertex
+              features. Floats will be cast to ``float32`` and integers to
+              ``int32``.
           - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
           - ``triangle_texture_uvs``: shape `(B, Nf, 3, 2)` Per triangle UV
             coordinates for applying material texture maps. Will be cast to
             ``float32``. Only one of ``[vertex|triangle]_texture_uvs`` should be
             provided.
           - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
+          - ``bboxes``: shape `(B, Nbb)`. The tensor dtype should be
+            `open3d.ml.vis.BoundingBox3D``. Property references not supported.
+            Use separate from other 3D properties.
           - ``material_name``: shape `(B,)` and dtype ``str``. Base PBR material
             name is required to specify any material properties.  Open3D
             built-in materials: ``defaultLit``, ``defaultUnlit``, ``unlitLine``,
@@ -523,25 +625,29 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
              use any texture map.
 
         For batch_size B=1, the tensors may drop a rank (e.g. (N,3)
-        vertex_positions, (4,) material vector properties or float scalar ()
-        material scalar properties.)
+        ``vertex_positions``, (4,) material vector properties or float scalar ()
+        material scalar properties.). Variable sized elements in a batch are
+        also supported. In this case, use a sequence of tensors. For example, to
+        save a batch of 2 point clouds with 8 and 16 points each, data should
+        contain `{'vertex_positions': (pcd1, pcd2)}` where `pcd1.shape = (8, 3)` and
+        `pcd2.shape = (16, 3)`.
 
         Floating point color and texture map data will be clipped to the range
         [0,1] and converted to ``uint8`` range [0,255]. ``uint16`` data will be
         compressed to the range [0,255].
 
-        Any data tensor (with ndim>=2 including batch_size, i.e. excluding
-        ``material_name`` and ``material_scalar_*PROPERTY*``), may be replaced by
+        Any data tensor (with ndim>=2 including batch_size), may be replaced by
         an ``int`` scalar referring to a previous step. This allows reusing a
         previously written property in case that it does not change at different
-        steps.
+        steps. This is not supported for ``material_name``,
+        ``material_scalar_*PROPERTY*`` and custom vertex features.
 
         Please see the `Filament Materials Guide
         <https://google.github.io/filament/Materials.html#materialmodels>`__ for
         a complete explanation of material properties.
 
-      step (int): Explicit ``int64``-castable monotonic step value for this summary.
-        [`TensorFlow`: If ``None``, this defaults to
+      step (int): Explicit ``int64``-castable monotonic step value for this
+        summary.  [`TensorFlow`: If ``None``, this defaults to
         `tf.summary.experimental.get_step()`, which must not be ``None``.]
       logdir (str): The logging directory used to create the SummaryWriter.
         [`PyTorch`: This will be automatically inferred if not provided or
@@ -549,13 +655,17 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
       max_outputs (int): Optional integer. At most this many 3D elements will be
         emitted at each step. When more than `max_outputs` 3D elements are
         provided, the first ``max_outputs`` 3D elements will be used and the
-        rest silently discarded.
-      description (str): Optional long-form description for this summary.
-        Markdown is supported. Defaults to empty. Currently unused.
+        rest silently discarded. Use ``0`` to save everything.
+      label_to_names (dict): Optional mapping from labels (e.g. int used in
+        labels for bboxes or vertices) to category names. Only data from the
+        first step is saved for any tag during a run.
+      description (str): Optional long-form description for this summary, as a
+        constant ``str``. Markdown is supported. Defaults to empty. Currently
+        unused.
 
     Returns:
-      True on success, or false if no summary was emitted because no default
-      summary writer was available.
+      [TensorFlow] True on success, or false if no summary was emitted because
+      no default summary writer was available.
 
     Raises:
       ValueError: if a default writer exists, but no step was provided and
@@ -566,7 +676,6 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
         instead.
 
     Examples:
-        # TODO(ssheorey): Update example with material properties.
         With Tensorflow:
 
         .. code::
@@ -575,11 +684,9 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
             import open3d as o3d
             from open3d.visualization.tensorboard_plugin import summary
             from open3d.visualization.tensorboard_plugin.util import to_dict_batch
-
             logdir = "demo_logs/"
             writer = tf.summary.create_file_writer(logdir)
-            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4,
-                create_uv_map=True)
+            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
             cube.compute_vertex_normals()
             colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
             with writer.as_default():
@@ -599,8 +706,7 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
             from open3d.visualization.tensorboard_plugin import summary
             from open3d.visualization.tensorboard_plugin.util import to_dict_batch
             writer = SummaryWriter("demo_logs/")
-            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4,
-                create_uv_map=True)
+            cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
             cube.compute_vertex_normals()
             colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
             for step in range(3):
@@ -621,7 +727,9 @@ def add_3d(name, data, step, logdir=None, max_outputs=1, description=None):
     if logdir is None:
         raise ValueError("logdir must be provided with TensorFlow.")
 
-    summary_metadata = metadata.create_summary_metadata(description=description)
+    mdata = {} if label_to_names is None else {'label_to_names': label_to_names}
+    summary_metadata = metadata.create_summary_metadata(description=description,
+                                                        metadata=mdata)
     # TODO(https://github.com/tensorflow/tensorboard/issues/2109): remove fallback
     summary_scope = (getattr(tf.summary.experimental, "summary_scope", None) or
                      tf.summary.summary_scope)
@@ -650,13 +758,18 @@ def _add_3d_torch(self,
                   step,
                   logdir=None,
                   max_outputs=1,
+                  label_to_names=None,
                   description=None):
     walltime = None
     if step is None:
         raise ValueError("Step is not provided or set.")
-    summary_metadata = metadata.create_summary_metadata(description=description)
+
+    mdata = {} if label_to_names is None else {'label_to_names': label_to_names}
+    summary_metadata = metadata.create_summary_metadata(description=description,
+                                                        metadata=mdata)
+    writer = self._get_file_writer()
     if logdir is None:
-        logdir = self._get_file_writer().get_logdir()
+        logdir = writer.get_logdir()
     write_dir = PluginDirectory(logdir, metadata.PLUGIN_NAME)
     geometry_metadata_string = _write_geometry_data(write_dir, tag, step, data,
                                                     max_outputs)
@@ -664,7 +777,7 @@ def _add_3d_torch(self,
                                string_val=[geometry_metadata_string],
                                tensor_shape=TensorShapeProto())
 
-    self._get_file_writer().add_summary(
+    writer.add_summary(
         Summary(value=[
             Summary.Value(
                 tag=tag, tensor=tensor_proto, metadata=summary_metadata)
@@ -675,7 +788,7 @@ def _add_3d_torch(self,
 if torch is not None:
     if not hasattr(SummaryWriter, "add_3d"):
         SummaryWriter.add_3d = _add_3d_torch
-        SummaryWriter.add_3d.__doc__ = add_3d.__doc__  # Copy docstring from TF function
+        SummaryWriter.add_3d.__doc__ = add_3d.__doc__  # Use docstring from TF function
     else:
         warnings.warn("Cannot bind add_3d() to SummaryWriter. Binding exists.",
                       RuntimeWarning)
