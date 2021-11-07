@@ -1,4 +1,4 @@
-name: Ubuntu CUDA CI
+name: Ubuntu Wheel
 
 on:
   workflow_dispatch:
@@ -41,8 +41,6 @@ jobs:
           github_token: ${{ github.token }}
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
@@ -130,8 +128,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: false
       - name: Maximize build space
         run: |
           source util/ci_utils.sh

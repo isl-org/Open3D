@@ -473,18 +473,20 @@ must hold true for all edges.)");
                              bool decrease_mu,
                              double maximum_correspondence_distance,
                              int iteration_number, double tuple_scale,
-                             int maximum_tuple_count,
+                             int maximum_tuple_count, bool tuple_test,
                              utility::optional<unsigned int> seed) {
                      return new FastGlobalRegistrationOption(
                              division_factor, use_absolute_scale, decrease_mu,
                              maximum_correspondence_distance, iteration_number,
-                             tuple_scale, maximum_tuple_count, seed);
+                             tuple_scale, maximum_tuple_count, tuple_test,
+                             seed);
                  }),
                  "division_factor"_a = 1.4, "use_absolute_scale"_a = false,
                  "decrease_mu"_a = false,
                  "maximum_correspondence_distance"_a = 0.025,
                  "iteration_number"_a = 64, "tuple_scale"_a = 0.95,
-                 "maximum_tuple_count"_a = 1000, "seed"_a = py::none())
+                 "maximum_tuple_count"_a = 1000, "tuple_test"_a = true,
+                 "seed"_a = py::none())
             .def_readwrite(
                     "division_factor",
                     &FastGlobalRegistrationOption::division_factor_,
@@ -512,6 +514,10 @@ must hold true for all edges.)");
             .def_readwrite("maximum_tuple_count",
                            &FastGlobalRegistrationOption::maximum_tuple_count_,
                            "float: Maximum tuple numbers.")
+            .def_readwrite(
+                    "tuple_test", &FastGlobalRegistrationOption::tuple_test_,
+                    "bool: Set to `true` to perform geometric compatibility "
+                    "tests on initial set of correspondences.")
             .def_readwrite("seed", &FastGlobalRegistrationOption::seed_,
                            "unsigned int: Random seed.")
             .def("__repr__", [](const FastGlobalRegistrationOption &c) {
@@ -525,10 +531,10 @@ must hold true for all edges.)");
                         "\niteration_number={}"
                         "\ntuple_scale={}"
                         "\nmaximum_tuple_count={}",
-                        "\nseed={}", c.division_factor_, c.use_absolute_scale_,
-                        c.decrease_mu_, c.maximum_correspondence_distance_,
-                        c.iteration_number_, c.tuple_scale_,
-                        c.maximum_tuple_count_,
+                        "\ntuple_test={}", "\nseed={}", c.division_factor_,
+                        c.use_absolute_scale_, c.decrease_mu_,
+                        c.maximum_correspondence_distance_, c.iteration_number_,
+                        c.tuple_scale_, c.maximum_tuple_count_, c.tuple_test_,
                         c.seed_.has_value() ? std::to_string(c.seed_.value())
                                             : "None");
             });
@@ -682,13 +688,24 @@ void pybind_registration_methods(py::module &m) {
             m, "registration_ransac_based_on_feature_matching",
             map_shared_argument_docstrings);
 
-    m.def("registration_fast_based_on_feature_matching",
-          &FastGlobalRegistration, py::call_guard<py::gil_scoped_release>(),
+    m.def("registration_fgr_based_on_correspondence",
+          &FastGlobalRegistrationBasedOnCorrespondence,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for fast global registration based on a set of "
+          "correspondences",
+          "source"_a, "target"_a, "corres"_a,
+          "option"_a = FastGlobalRegistrationOption());
+    docstring::FunctionDocInject(m, "registration_fgr_based_on_correspondence",
+                                 map_shared_argument_docstrings);
+
+    m.def("registration_fgr_based_on_feature_matching",
+          &FastGlobalRegistrationBasedOnFeatureMatching,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for fast global registration based on feature matching",
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
           "option"_a = FastGlobalRegistrationOption());
     docstring::FunctionDocInject(m,
-                                 "registration_fast_based_on_feature_matching",
+                                 "registration_fgr_based_on_feature_matching",
                                  map_shared_argument_docstrings);
 
     m.def("get_information_matrix_from_point_clouds",

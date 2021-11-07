@@ -249,7 +249,7 @@ class ReconstructionWindow:
             o3c.Tensor(np.zeros((max_points, 3), dtype=np.float32)))
         pcd_placeholder.point['colors'] = o3c.Tensor(
             np.zeros((max_points, 3), dtype=np.float32))
-        mat = rendering.Material()
+        mat = rendering.MaterialRecord()
         mat.shader = 'defaultUnlit'
         mat.sRGB_color = True
         self.widget3d.scene.scene.add_geometry('points', pcd_placeholder, mat)
@@ -322,7 +322,7 @@ class ReconstructionWindow:
                     rendering.Scene.UPDATE_COLORS_FLAG)
 
         self.widget3d.scene.remove_geometry("frustum")
-        mat = rendering.Material()
+        mat = rendering.MaterialRecord()
         mat.shader = "unlitLine"
         mat.line_width = 5.0
         self.widget3d.scene.add_geometry("frustum", frustum, mat)
