@@ -291,6 +291,6 @@ def _trilinear_devoxelize_gradient(op, grad_out, grad_inds, grad_wgts):
     wgts = op.outputs[2]
     r = op.attrs[1]
 
-    grad_input = ml_ops.trilinear_devoxelize_grad(grad_out, inds, wgts, r)
+    grad_input = _lib.trilinear_devoxelize_grad(grad_out, inds, wgts, r)
 
     return None, grad_input
