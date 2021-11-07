@@ -1,5 +1,11 @@
-name: Lint Python
-on: [pull_request, push]
+name: lint_python.yml
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 jobs:
   lint_python:
     runs-on: ubuntu-latest
@@ -7,16 +13,14 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
       - run: pip install --upgrade pip wheel
-      - run: pip install bandit black codespell flake8 isort mypy pyupgrade safety
+      - run: pip install bandit flake8 isort mypy pyupgrade safety
       - run: bandit --recursive --skip B101,B108,B110,B310,B311,B403,B404,B603 .
-      - run: black --check . || true
-      - run: codespell || true  # --ignore-words-list="ans,kno,lof,te,thisy" --skip="*.css,*.js,*.lock"
       - run: flake8 . --count --select=E501,E9,F63,F7,F82 --max-complexity=18
-                      --max-line-length=215 --show-source --statistics
-      - run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --show-source --statistics
-      - run: isort --check-only --profile black . || true
-      - run: pip install -r requirements.txt || true
-      # - run: pip install -e .
+                      --max-line-length=2444 --show-source --statistics
+      - run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=80 --show-source --statistics
+      - run: isort --check-only --profile google .
+      - run: pip install -r python/requirements.txt
+      # - run: pip install -e python/
       - run: mkdir -p .mypy_cache
       - run: mypy --ignore-missing-imports --install-types --non-interactive . || true
       - run: shopt -s globstar && pyupgrade --py36-plus **/*.py || true
