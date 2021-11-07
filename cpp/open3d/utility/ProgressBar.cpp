@@ -24,34 +24,57 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ModelIO.h"
-
-#include <unordered_map>
-
-#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/ProgressBar.h"
-#include "open3d/utility/Logging.h"
+
+#include <fmt/printf.h>
 
 namespace open3d {
-namespace io {
+namespace utility {
 
-bool ReadModelUsingAssimp(const std::string& filename,
-                          visualization::rendering::TriangleMeshModel& model,
-                          const ReadTriangleModelOptions& params /*={}*/);
-
-bool ReadTriangleModel(const std::string& filename,
-                       visualization::rendering::TriangleMeshModel& model,
-                       ReadTriangleModelOptions params /*={}*/) {
-    if (params.print_progress) {
-        auto progress_text = std::string("Reading model file") + filename;
-        auto pbar = utility::ProgressBar(100, progress_text, true);
-        params.update_progress = [pbar](double percent) mutable -> bool {
-            pbar.SetCurrentCount(size_t(percent));
-            return true;
-        };
-    }
-    return ReadModelUsingAssimp(filename, model, params);
+ProgressBar::ProgressBar(size_t expected_count,
+                         const std::string &progress_info,
+                         bool active) {
+    Reset(expected_count, progress_info, active);
 }
 
-}  // namespace io
+void ProgressBar::Reset(size_t expected_count,
+                        const std::string &progress_info,
+                        bool active) {
+    expected_count_ = expected_count;
+    current_count_ = static_cast<size_t>(-1);  // Guaranteed to wraparound
+    progress_info_ = progress_info;
+    progress_pixel_ = 0;
+    active_ = active;
+    operator++();
+}
+
+ProgressBar &ProgressBar::operator++() {
+    SetCurrentCount(current_count_ + 1);
+    return *this;
+}
+
+void ProgressBar::SetCurrentCount(size_t n) {
+    current_count_ = n;
+    if (!active_) {
+        return;
+    }
+    if (current_count_ >= expected_count_) {
+        fmt::print("{}[{}] 100%\n", progress_info_,
+                   std::string(resolution_, '='));
+    } else {
+        size_t new_progress_pixel =
+                int(current_count_ * resolution_ / expected_count_);
+        if (new_progress_pixel > progress_pixel_) {
+            progress_pixel_ = new_progress_pixel;
+            int percent = int(current_count_ * 100 / expected_count_);
+            fmt::print("{}[{}>{}] {:d}%\r", progress_info_,
+                       std::string(progress_pixel_, '='),
+                       std::string(resolution_ - 1 - progress_pixel_, ' '),
+                       percent);
+            fflush(stdout);
+        }
+    }
+}
+
+}  // namespace utility
 }  // namespace open3d
