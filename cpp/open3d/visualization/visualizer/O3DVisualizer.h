@@ -123,7 +123,7 @@ public:
                      double time = 0.0,
                      bool is_visible = true);
 
-    /// Adds a t geometry to the Visualizer, only DrawableGeometries are
+    /// Adds a t-geometry to the Visualizer, only DrawableGeometries are
     /// supported.
     void AddGeometry(const std::string& name,
                      std::shared_ptr<t::geometry::Geometry> tgeom,

@@ -98,13 +98,12 @@ def create_summary_metadata(description, metadata):
     """Creates summary metadata. Reserved for future use. Required by
     TensorBoard.
 
-    Arguments:
+    Args:
       description: The description to show in TensorBoard.
 
     Returns:
       A `SummaryMetadata` protobuf object.
     """
-
     ln_proto = LabelToNames()
     if 'label_to_names' in metadata:
         ln_proto.label_to_names.update(metadata['label_to_names'])

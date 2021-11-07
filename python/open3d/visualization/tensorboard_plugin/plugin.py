@@ -50,8 +50,7 @@ from open3d.ml.vis import LabelLUT
 
 
 class Open3DPluginWindow:
-    """Create and manage a single Open3D WebRTC GUI window.
-    """
+    """Create and manage a single Open3D WebRTC GUI window."""
 
     def __init__(self,
                  data_reader,
@@ -212,7 +211,8 @@ class Open3DPluginWindow:
 
     def _validate_step(self, selected_step):
         """Validate step assuming self.run and self.tags are valid. Use
-        self.step or first valid step if selected_step is invalid."""
+        self.step or first valid step if selected_step is invalid.
+        """
         if len(self.tags) == 0:  # No tags in this run
             return
         if selected_step not in self.step_to_idx:
@@ -697,7 +697,6 @@ class Open3DPlugin(base_plugin.TBPlugin):
     @wrappers.Request.application
     def _new_window(self, request):
         """Create a new WebRTC window on request."""
-
         if not self.data_reader.is_active():  # no data
             response = json.dumps({"window_id": -1, "logdir": self._logdir})
             return werkzeug.Response(response,
@@ -730,7 +729,6 @@ class Open3DPlugin(base_plugin.TBPlugin):
     @wrappers.Request.application
     def _close_window(self, request):
         """Close a WebRTC window on request."""
-
         this_window_id = request.args.get('window_id', "")
         if this_window_id not in self._windows.keys():
             _log.warning(f"Invalid Window ID {this_window_id}")

@@ -66,7 +66,7 @@ from open3d.ml.vis import BoundingBox3D
 
 
 class _AsyncDataWriter:
-    """ Write binary data to file asynchronously. Data buffers and files are
+    """Write binary data to file asynchronously. Data buffers and files are
     queued with ``enqueue()`` and actual writing is done in a separate
     thread. GFile (``tf.io.gfile``) is used for writing to local and remote
     (Google cloud storage with gs:// URI and HDFS with hdfs:// URIs) locations.

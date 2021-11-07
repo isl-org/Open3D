@@ -60,7 +60,7 @@ _log.addHandler(_stream_handler)
 
 
 class ReadWriteLock:
-    """ A lock object that allows many simultaneous "read locks", but
+    """A lock object that allows many simultaneous "read locks", but
     only one "write lock."
 
     Implmentation from Python Cookbook (O'Reilly)
@@ -74,7 +74,8 @@ class ReadWriteLock:
 
     def acquire_read(self):
         """Acquire a read lock. Blocks only if a thread has acquired the write
-        lock."""
+        lock.
+        """
         self._read_ready.acquire()
         try:
             self._readers += 1
@@ -93,7 +94,8 @@ class ReadWriteLock:
 
     def acquire_write(self):
         """Acquire a write lock. Blocks until there are no acquired read or
-        write locks."""
+        write locks.
+        """
         self._read_ready.acquire()
         while self._readers > 0:
             self._read_ready.wait()
@@ -144,7 +146,8 @@ class LRUCache:
 
     def put(self, key, value):
         """Add (key, value) pair to the cache. If cache limits are exceeded,
-        eject key-value pairs till the cache is within limits."""
+        eject key-value pairs till the cache is within limits.
+        """
         self.rwlock.acquire_write()
         self.cache[key] = value
         self.cache.move_to_end(key)
@@ -261,8 +264,7 @@ class Open3DPluginDataReader:
             return self._tensor_events[run]
 
     def get_label_to_names(self, run, tag):
-        """ Get label (id) to name (category) mapping for a tag.
-        """
+        """Get label (id) to name (category) mapping for a tag."""
         md_proto = self.event_mux.SummaryMetadata(run, tag)
         lab2name = metadata.parse_plugin_metadata(md_proto.plugin_data.content)
         return dict(sorted(lab2name.items()))
@@ -310,8 +312,7 @@ class Open3DPluginDataReader:
                 prop_shape.update({'labels': 1, 'confidence': 1})
 
     def read_geometry(self, run, tag, step, batch_idx, step_to_idx):
-        """Geometry reader from msgpack files.
-        """
+        """Geometry reader from msgpack files."""
         idx = step_to_idx[step]
         metadata_proto = plugin_data_pb2.Open3DPluginData()
         run_tensor_events = self.tensor_events(run)
@@ -388,6 +389,15 @@ class Open3DPluginDataReader:
 
 
 def _normalize(tensor):
+    """Normalize tensor by scaling and shifting to range [0, 1].
+
+    Args:
+        tensor: Open3D float tensor. Int tensors are returned unchanged.
+
+    Return:
+        tuple: (Normalized tensor, min value of tensor, max value of tensor) min
+        and max are stretched to include 0 or 1 for degenerate tensors.
+    """
     if tensor.dtype in (o3d.core.float32, o3d.core.float64, np.float32,
                         np.float64):
         m, M = tensor.min().item(), tensor.max().item()
@@ -397,12 +407,12 @@ def _normalize(tensor):
     return tensor, 0, 1
 
 
-def _u8_float(color):
+def _u8_to_float(color):
     return tuple(float(c) / 255 for c in color)
 
 
-def _float_u8(color):
-    return tuple(int(255 * c + 0.5) for c in color)
+def _float_to_u8(color):
+    return tuple(round(255 * c) for c in color)
 
 
 class RenderUpdate:
@@ -463,8 +473,7 @@ class RenderUpdate:
             }
 
     def get_render_state(self):
-        """Return current render state.
-        """
+        """Return current render state."""
         return {
             "property": self._property,
             "index": self._index,
@@ -600,7 +609,7 @@ class RenderUpdate:
                     128,
                     dtype=o3d.core.uint8)
             if self._property == "" and self._shader == "unlitSolidColor":
-                geometry.line["colors"][:] = _u8_float(
+                geometry.line["colors"][:] = _u8_to_float(
                     next(iter(self._colormap.values())))[:3]
             elif self._property != "" and len(inference_result) > 0:  # labels
                 if self._colormap is None:
@@ -637,7 +646,7 @@ class RenderUpdate:
                 material.shader = "unlitSolidColor"
                 if self._colormap is None:
                     self._colormap = {0.0: [128, 128, 128, 255]}
-                material.base_color = _u8_float(
+                material.base_color = _u8_to_float(
                     next(iter(self._colormap.values())))
             elif self._shader == "unlitGradient.LUT":  # Label Colormap
                 if self._colormap is None:
@@ -651,7 +660,7 @@ class RenderUpdate:
                     material.gradient.points = list(
                         rendering.Gradient.Point(
                             float(i) /
-                            (len(self._colormap) - 1), _u8_float(color))
+                            (len(self._colormap) - 1), _u8_to_float(color))
                         for i, color in enumerate(self._colormap.values()))
                 else:
                     material.gradient.points = [
@@ -668,7 +677,7 @@ class RenderUpdate:
                 material.gradient = rendering.Gradient()
                 material.gradient.points = list(
                     rendering.Gradient.Point(value,
-                                             _u8_float(color[:3]) + (1.,))
+                                             _u8_to_float(color[:3]) + (1.,))
                     for value, color in self._colormap.items())
                 material.gradient.mode = rendering.Gradient.GRADIENT
                 self._set_vis_minmax(geometry_vertex, material)
@@ -697,13 +706,13 @@ class RenderUpdate:
 
 
 def to_dict_batch(o3d_geometry_list):
-    """Convert sequence of identical (legacy) Open3D geometry types to
+    """Convert sequence of identical Open3D Eigen geometry types to
     attribute-tensor dictionary. The geometry sequence forms a batch of data.
     Custom attributes are not supported.
 
     Args:
         o3d_geometry_list (Iterable): Iterable (list / tuple / sequence
-            generator) of Open3D Tensor geometry types.
+            generator) of Open3D Eigen geometry types.
 
     Returns:
         Dict[str: numpy.array]: Dictionary of property names and corresponding
