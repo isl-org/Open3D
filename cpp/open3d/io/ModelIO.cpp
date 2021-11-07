@@ -29,8 +29,8 @@
 #include <unordered_map>
 
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/ProgressBar.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace io {
