@@ -24,7 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 import os
-import tempfile
 from time import sleep
 import subprocess as sp
 import webbrowser
@@ -44,6 +43,8 @@ from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.util import to_dict_batch
 from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
 
+import sys, os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import test_data_dir
 
 
