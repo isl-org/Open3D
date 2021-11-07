@@ -145,17 +145,13 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(
 
 TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     // if already have a vertex normal, just skip
-    if (!HasVertexNormals()) {
-        if (!HasTriangleNormals()) {
-            ComputeTriangleNormals(false);
-        }
-        vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
-        for (size_t i = 0; i < triangles_.size(); i++) {
-            auto &triangle = triangles_[i];
-            vertex_normals_[triangle(0)] += triangle_normals_[i];
-            vertex_normals_[triangle(1)] += triangle_normals_[i];
-            vertex_normals_[triangle(2)] += triangle_normals_[i];
-        }
+    ComputeTriangleNormals(false);
+    vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
+    for (size_t i = 0; i < triangles_.size(); i++) {
+        auto &triangle = triangles_[i];
+        vertex_normals_[triangle(0)] += triangle_normals_[i];
+        vertex_normals_[triangle(1)] += triangle_normals_[i];
+        vertex_normals_[triangle(2)] += triangle_normals_[i];
     }
     if (normalized) {
         NormalizeNormals();
