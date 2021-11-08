@@ -158,8 +158,8 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
     return pointcloud;
 }
 
-std::shared_ptr<geometry::TriangleMesh>
-UniformTSDFVolume::ExtractTriangleMesh() {
+std::shared_ptr<geometry::TriangleMesh> UniformTSDFVolume::ExtractTriangleMesh(
+        bool fill_holes /* = false*/) {
     // implementation of marching cubes, based on
     // http://paulbourke.net/geometry/polygonise/
     auto mesh = std::make_shared<geometry::TriangleMesh>();
@@ -180,7 +180,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                 for (int i = 0; i < 8; i++) {
                     Eigen::Vector3i idx = Eigen::Vector3i(x, y, z) + shift[i];
 
-                    if (voxels_[IndexOf(idx)].weight_ == 0.0f) {
+                    if (voxels_[IndexOf(idx)].weight_ == 0.0f && !fill_holes) {
                         cube_index = 0;
                         break;
                     } else {

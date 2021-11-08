@@ -221,8 +221,8 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
     return pointcloud;
 }
 
-std::shared_ptr<geometry::TriangleMesh>
-ScalableTSDFVolume::ExtractTriangleMesh() {
+std::shared_ptr<geometry::TriangleMesh> ScalableTSDFVolume::ExtractTriangleMesh(
+        bool fill_holes /* = false*/) {
     // implementation of marching cubes, based on
     // http://paulbourke.net/geometry/polygonise/
     auto mesh = std::make_shared<geometry::TriangleMesh>();
@@ -298,7 +298,7 @@ ScalableTSDFVolume::ExtractTriangleMesh() {
                                                        .color_.cast<double>();
                                 }
                             }
-                            if (w[i] == 0.0f) {
+                            if (w[i] == 0.0f && !fill_holes) {
                                 cube_index = 0;
                                 break;
                             } else {

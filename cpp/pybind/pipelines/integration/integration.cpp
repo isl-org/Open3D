@@ -51,7 +51,8 @@ public:
         PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::PointCloud>,
                                TSDFVolumeBase, );
     }
-    std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() override {
+    std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh(
+            bool fill_holes = false) override {
         PYBIND11_OVERLOAD_PURE(std::shared_ptr<geometry::TriangleMesh>,
                                TSDFVolumeBase, );
     }
@@ -93,7 +94,10 @@ In SIGGRAPH, 1996)");
             .def("extract_point_cloud", &TSDFVolume::ExtractPointCloud,
                  "Function to extract a point cloud with normals")
             .def("extract_triangle_mesh", &TSDFVolume::ExtractTriangleMesh,
-                 "Function to extract a triangle mesh")
+                 "fill_holes"_a = false,
+                 "Function to extract a triangle mesh, specify fill_holes=True "
+                 "to use the Hole filling algorithm describded in the original "
+                 "paper.")
             .def_readwrite("voxel_length", &TSDFVolume::voxel_length_,
                            "float: Length of the voxel in meters.")
             .def_readwrite("sdf_trunc", &TSDFVolume::sdf_trunc_,

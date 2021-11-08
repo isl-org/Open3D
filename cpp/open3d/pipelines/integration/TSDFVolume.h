@@ -87,7 +87,10 @@ public:
 
     /// \brief Function to extract a triangle mesh, using the marching cubes
     /// algorithm. (https://en.wikipedia.org/wiki/Marching_cubes)
-    virtual std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh() = 0;
+    /// \param fill_holes Use the Hole filling algorithm describded in section 4
+    /// of the Curless and Levoy paper.
+    virtual std::shared_ptr<geometry::TriangleMesh> ExtractTriangleMesh(
+            bool fill_holes = false) = 0;
 
 public:
     /// Length of the voxel in meters.
