@@ -62,6 +62,17 @@ bool ContainsString(const std::string& src, const std::string& dst) {
     return src.find(dst) != std::string::npos;
 }
 
+bool StringStartsWith(const std::string& src, const std::string& tar) {
+    // https://stackoverflow.com/a/42844629/1255535
+    return src.size() >= tar.size() && 0 == src.compare(0, tar.size(), tar);
+}
+
+bool StringEndsWith(const std::string& src, const std::string& tar) {
+    // https://stackoverflow.com/a/42844629/1255535
+    return src.size() >= tar.size() &&
+           0 == src.compare(src.size() - tar.size(), tar.size(), tar);
+}
+
 std::string JoinStrings(const std::vector<std::string>& strs,
                         const std::string& delimiter) {
     std::ostringstream oss;
