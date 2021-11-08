@@ -39,8 +39,8 @@ TEST(Dataset, LocateDataRoot) {
     EXPECT_EQ(ds.GetDataRoot(),
               utility::filesystem::GetHomeDirectory() + "/open3d_data");
 
-    data::Dataset ds_custom("/my/custom");
-    EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/open3d_data");
+    data::Dataset ds_custom("/my/custom/data_root");
+    EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
 }
 
 }  // namespace tests
