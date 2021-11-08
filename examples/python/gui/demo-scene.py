@@ -41,10 +41,17 @@ def check_for_required_assets():
     Check for demo scene assets and print usage if necessary
     '''
     if not os.path.exists("examples/test_data/demo_scene_assets"):
-        print(
-            "This demo requires assets that appear to be missing. Please execute the follow:\n  cd examples/test_data\n  wget https://github.com/isl-org/open3d_downloads/releases/download/o3d_demo_scene/demo_scene_assets.tgz\n  tar xzvf demo_scene_assets.tgz\n  cd ../..\n  python examples/python/gui/demo-scene.py\n"
-        )
-        exit()
+        print("""This demo requires assets that appear to be missing.
+Please execute the follow commands:
+```
+cd examples/test_data
+wget https://github.com/isl-org/open3d_downloads/releases/download/o3d_demo_scene/demo_scene_assets.tgz
+tar xzvf demo_scene_assets.tgz
+cd ../..
+python examples/python/gui/demo-scene.py
+```
+""")
+        exit(1)
 
 
 def create_material(directory, name):
