@@ -454,6 +454,10 @@ TEST(TriangleMesh, ComputeVertexNormals) {
     tm.ComputeVertexNormals();
 
     ExpectEQ(ref, tm.vertex_normals_);
+
+    tm.ComputeVertexNormals();
+
+    ExpectEQ(ref, tm.vertex_normals_);
 }
 
 TEST(TriangleMesh, ComputeAdjacencyList) {
