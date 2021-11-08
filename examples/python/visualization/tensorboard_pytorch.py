@@ -29,6 +29,7 @@ import os
 import sys
 import numpy as np
 import open3d as o3d
+# pylint: disable-next=unused-import
 from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.util import to_dict_batch
 from torch.utils.tensorboard import SummaryWriter

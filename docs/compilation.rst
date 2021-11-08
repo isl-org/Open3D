@@ -38,14 +38,9 @@ System requirements
 Cloning Open3D
 --------------
 
-Make sure to use the ``--recursive`` flag when cloning Open3D.
-
 .. code-block:: bash
 
-    git clone --recursive https://github.com/isl-org/Open3D
-
-    # You can also update the submodule manually
-    git submodule update --init --recursive
+    git clone https://github.com/isl-org/Open3D
 
 .. _compilation_unix:
 
@@ -59,10 +54,9 @@ Ubuntu/macOS
 
 .. code-block:: bash
 
-    # On Ubuntu
+    # Only needed for Ubuntu
     util/install_deps_ubuntu.sh
 
-    # On macOS: skip this step
 
 .. _compilation_unix_python:
 
@@ -84,12 +78,15 @@ If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=
 
     mkdir build
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
+    cmake ..
 
-The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
-Open3D to a user location. In the absence of this argument Open3D will be
-installed to a system location where ``sudo`` is required) For more
-options of the build, see :ref:`compilation_options`.
+You can specify ``-DCMAKE_INSTALL_PREFIX=$HOME/open3d_install`` to control the
+installation directory of ``make install``. In the absence of
+``CMAKE_INSTALL_PREFIX``, Open3D will be installed to a system location where
+``sudo`` may be required.
+
+For more build options, see :ref:`compilation_options` and the root
+``CMakeLists.txt``.
 
 .. _compilation_unix_build:
 

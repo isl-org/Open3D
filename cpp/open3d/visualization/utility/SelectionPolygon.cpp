@@ -29,6 +29,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 #include "open3d/visualization/utility/GLHelper.h"
 #include "open3d/visualization/utility/SelectionPolygonVolume.h"
 #include "open3d/visualization/visualizer/ViewControl.h"
@@ -235,8 +236,8 @@ std::vector<size_t> SelectionPolygon::CropInRectangle(
     double half_height = (double)view.GetWindowHeight() * 0.5;
     auto min_bound = GetMinBound();
     auto max_bound = GetMaxBound();
-    utility::ConsoleProgressBar progress_bar((int64_t)input.size(),
-                                             "Cropping geometry: ");
+    utility::ProgressBar progress_bar((int64_t)input.size(),
+                                      "Cropping geometry: ");
     for (size_t i = 0; i < input.size(); i++) {
         ++progress_bar;
         const auto &point = input[i];
@@ -261,8 +262,8 @@ std::vector<size_t> SelectionPolygon::CropInPolygon(
     double half_width = (double)view.GetWindowWidth() * 0.5;
     double half_height = (double)view.GetWindowHeight() * 0.5;
     std::vector<double> nodes;
-    utility::ConsoleProgressBar progress_bar((int64_t)input.size(),
-                                             "Cropping geometry: ");
+    utility::ProgressBar progress_bar((int64_t)input.size(),
+                                      "Cropping geometry: ");
     for (size_t k = 0; k < input.size(); k++) {
         ++progress_bar;
         const auto &point = input[k];

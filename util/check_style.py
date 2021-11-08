@@ -36,7 +36,7 @@ import time
 import sys
 
 # Yapf requires python 3.6+
-if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
+if sys.version_info < (3, 6):
     raise RuntimeError(
         "Requires Python 3.6+, currently using Python {}.{}.".format(
             sys.version_info.major, sys.version_info.minor))
