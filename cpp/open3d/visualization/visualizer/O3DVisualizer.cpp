@@ -413,7 +413,7 @@ struct O3DVisualizer::Impl {
 
         MakeSettingsUI();
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
-        SetLightingProfile(gLightingProfiles[2]);  // med shadows
+        SetLightingProfile(gLightingProfiles[3]);  // soft shadows
         SetPointSize(ui_state_.point_size);  // sync selections_' point size
     }
 
@@ -710,7 +710,7 @@ struct O3DVisualizer::Impl {
 
         settings.sun_intensity = new Slider(Slider::INT);
         settings.sun_intensity->SetLimits(0.0, 150000.0);
-        settings.sun_intensity->SetValue(ui_state_.ibl_intensity);
+        settings.sun_intensity->SetValue(ui_state_.sun_intensity);
         settings.sun_intensity->SetOnValueChanged([this](double new_value) {
             this->ui_state_.sun_intensity = int(new_value);
             this->SetUIState(ui_state_);
