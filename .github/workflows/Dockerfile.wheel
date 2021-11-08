@@ -84,7 +84,7 @@ RUN which python \
 # Checkout Open3D-ML master branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone --recursive https://github.com/intel-isl/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN git clone https://github.com/intel-isl/Open3D-ML.git ${OPEN3D_ML_ROOT}
 
 # Open3D C++ dependencies
 # Done before copying the full Open3D directory for better Docker caching
@@ -100,18 +100,7 @@ RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-conda with-jupyter
 
 # Open3D WebRTC dependencies
-# Temporary fix for cetificate issue:
-# https://github.com/nodesource/distributions/issues/1266#issuecomment-932422525
-RUN apt-get update && apt-get install -y \
-    openssl \
-    ca-certificates \
- && rm -rf /var/lib/apt/lists/* \
- && rm -rf /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt \
- && update-ca-certificates \
- && NODE_SETUP_SHA256=22e2048e76f0b0dd5e126cb816e59665ca4b402ffe9bb542005ad661b36a9eb6 \
- && wget https://deb.nodesource.com/setup_16.x \
- && sha256sum --status -c <(echo "$NODE_SETUP_SHA256 setup_16.x") \
- && bash setup_16.x \
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
  && node --version

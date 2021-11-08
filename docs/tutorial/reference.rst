@@ -28,3 +28,4 @@ Reference
 .. [Zhou2016] Q.-Y. Zhou, J. Park, and V. Koltun, Fast Global Registration, ECCV, 2016.
 .. [Babin2019] P. Babin, P. Giguère and F. Pomerleau: Analysis of Robust Functions for Registration Algorithms, ICRA, 2019.
 .. [Segal2009] A. Segal, D. Haehnel and S. Thrun: Generalized-icp, RSS, 2009.
+.. [Dong2021] W. Dong, Y. Lao, M. Kaess and V. Koltun: ASH: A Modern Framework for Parallel Spatial Hashing in 3D Perception, arXiv, 2021.

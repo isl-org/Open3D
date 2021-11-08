@@ -70,6 +70,17 @@ if(NOT Pytorch_FOUND)
         set_target_properties( torch_cuda PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
         set_target_properties( torch_cpu PROPERTIES INTERFACE_COMPILE_OPTIONS "" )
     endif()
+
+    # If MKL is installed in the system level (e.g. for oneAPI Toolkit),
+    # caffe2::mkl and caffe2::mkldnn will be added to torch_cpu's
+    # INTERFACE_LINK_LIBRARIES. However, Open3D already comes with MKL linkage
+    # and we're not using MKLDNN.
+    get_target_property(torch_cpu_INTERFACE_LINK_LIBRARIES torch_cpu
+                        INTERFACE_LINK_LIBRARIES)
+    list(REMOVE_ITEM torch_cpu_INTERFACE_LINK_LIBRARIES caffe2::mkl)
+    list(REMOVE_ITEM torch_cpu_INTERFACE_LINK_LIBRARIES caffe2::mkldnn)
+    set_target_properties(torch_cpu PROPERTIES INTERFACE_LINK_LIBRARIES
+                          "${torch_cpu_INTERFACE_LINK_LIBRARIES}")
 endif()
 
 message(STATUS "PyTorch         version: ${Pytorch_VERSION}")

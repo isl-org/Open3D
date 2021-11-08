@@ -29,11 +29,36 @@
 
 /* Styles for the Open3D Tensorboard plugin */
 
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic,500,500italic,700,700italic');
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono:400,700');
+
+/* tensorboardColorBlindAssist (standard) palette from tensorboard/components/tf_color_scale/palettes.ts */
+:root {
+  --paper-grey-800: #424242;
+  --tb-ui-dark-accent: #757575;
+  --primary-background-color: #fff;
+  --tb-run-color-0: #ff7043; /* orange */
+  --tb-run-color-1: #0077bb; /* blue   */
+  --tb-run-color-2: #cc3311; /* red    */
+  --tb-run-color-3: #33bbee; /* cyan   */
+  --tb-run-color-4: #ee3377; /* magenta*/
+  --tb-run-color-5: #009988; /* teal   */
+  --tb-run-color-6: #bbbbbb; /* grey   */
+}
+
+html,
+body {
+  font-family: Roboto, sans-serif;
+
+  /* color: #212121;   /1* TB: --paper-gray-900 *1/
+  background-color: #f5f5f5;  /1* --tb-layout-background-color *1/ */
+}
+
 #open3d-dashboard {
   /* Layout children as flex */
   display: flex;
   flex-direction: row;
-  padding: 2em;
+  padding: 1em;
 }
 
 /* Options for the whole plugin, runs and tag selection */
@@ -42,11 +67,11 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-width: 10em;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 20em;
+  overflow-wrap: break-word;
+  word-break: break-all;
   padding: 5px;
-  color: #424242;  /* TB --paper-grey-800 */
+  color: var(--paper-grey-800);
 }
 
 #run-selector,
@@ -55,10 +80,16 @@
   padding: 5px;
 }
 
+#logdir {
+  color: var(--tb-ui-dark-accent);
+}
+
 /* Container for all runs */
 
 /* width is 6x left selctor, min-width=576px */
 #widget-view {
+  background-color: var(--primary-background-color);
+
   /* parent is flex container. Most of the width increase goes here. */
   flex: 16 576;
 
@@ -69,8 +100,7 @@
 
 /* Container for a single run */
 .webrtc {
-  /* Child of a flex container */
-  flex: 1 1 576;
+  z-index: 1000;
 
   /* Layout children as flex */
   display: flex;
@@ -78,22 +108,49 @@
   padding: 1em;
 }
 
+.webrtc td {
+  text-align: center;
+}
+
+.webrtc td:first-child {
+  text-align: left;
+}
+
+.webrtc td:last-child {
+  text-align: right;
+}
+
+.webrtc button {
+  width: 3em;
+  height: 3em;
+  display: inline;
+}
+
+.webrtc button svg {
+  height: 100%;
+  margin: -35%;
+}
+
 .batchidx-step-selector {
   display: flex;
   flex-direction: column;
-  width: 60%;
   padding: 5px;
-  align-items: end;
-  color: #424242;  /* TB --paper-grey-800 */
+  color: var(--paper-grey-800);
 }
 
 .batchidx-step-selector input {
   vertical-align: middle;
+  width: 50%;
 }
 
 .batchidx-step-selector label {
-  width: 20em;
   font-weight: bold;
+}
+
+.batchidx-step-selector label span {
+  width: 10em;
+  text-align: right;
+  display: inline-block;
 }
 
 .batchidx-step-selector output {
@@ -103,90 +160,187 @@
   display: inline-block;
 }
 
-/* Adapted from: https://www.w3schools.com/howto/howto_css_custom_checkbox.asp */
+select {
+  font-size: inherit;  /* Dont make options smaller */
+}
 
-/* Customize the label (the container) */
-.container {
+/* Add color accent to match run widget to tun table */
+.webrtc:nth-child(7n+1) tbody {
+  border-bottom: solid 4px var(--tb-run-color-0);
+}
+
+.webrtc:nth-child(7n+2) tbody {
+  border-bottom: solid 4px var(--tb-run-color-1);
+}
+
+.webrtc:nth-child(7n+3) tbody {
+  border-bottom: solid 4px var(--tb-run-color-2);
+}
+
+.webrtc:nth-child(7n+4) tbody {
+  border-bottom: solid 4px var(--tb-run-color-3);
+}
+
+.webrtc:nth-child(7n+5) tbody {
+  border-bottom: solid 4px var(--tb-run-color-4);
+}
+
+.webrtc:nth-child(7n+6) tbody {
+  border-bottom: solid 4px var(--tb-run-color-5);
+}
+
+.webrtc:nth-child(7n) tbody {
+  border-bottom: solid 4px var(--tb-run-color-6);
+}
+
+.selector {
+  display: grid;
+  position: relative;
+  align-items: center;
+  text-transform: capitalize;
+}
+
+.sel-1button div {
+  grid-template-columns: 2em auto;
+}
+
+.sel-2button div {
+  grid-template-columns: 2em 2em auto;
+}
+
+.selector > * {
+  margin: 0.3em 1em;
+}
+
+.selector button {
+  width: 2em;
+  height: 2em;
+}
+
+/* Hide disabled button */
+.selector button:disabled {
+  opacity: 0;
+}
+
+.selector button svg {
+  width: 150%;
+  height: 150%;
+  margin: -35%;
+}
+
+.selector input[type="checkbox"] {
+  width: 1.5em;
+  height: 1.5em;
+  accent-color: var(--tb-ui-dark-accent);
+}
+
+.property-ui {
   display: block;
   position: relative;
-  padding-left: 2.5em;
-  margin-bottom: 1em;
+  margin: 1em;
   cursor: pointer;
+  font-size: inherit;
+}
+
+.property-ui label {
+  padding-left: 2em;
+  font-size: inherit;
+}
+
+.property-ui input {
+  font-size: inherit;
+}
+
+.property-ui input[type="number"] {
+  width: 5em;
+}
+
+.property-ui option {
   text-transform: capitalize;
-  user-select: none;
 }
 
-/* Hide the browser's default checkbox */
-
-/* Hide the browser's default radio button */
-.container input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
+.property-ui-colormap {
+  align-items: center;
+  display: grid;
+  padding: 0.1em;
+  grid-template-columns: 3.5em 6.5em 2em;
+  column-gap: 1em;
 }
 
-/* Create a custom checkbox */
-
-/* Create a custom radio button */
-.checkmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 1.5em;
-  width: 1.5em;
-  background-color: #eee;
+.property-ui-colormap input[type="text"] {
+  border-width: 0;
+  font-size: inherit;
 }
 
-/* Additional style for radio button */
-input[type="radio"] ~ .checkmark {
+.property-ui-colormap input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--tb-ui-dark-accent);
+}
+
+/* Add color accent to match run widget to tun table */
+#run-selector .selector:nth-child(7n+1) input[type="checkbox"],
+.webrtc:nth-child(7n+1) input[type="range"] {
+  accent-color: var(--tb-run-color-0);
+}
+
+#run-selector .selector:nth-child(7n+2) input[type="checkbox"],
+.webrtc:nth-child(7n+2) input[type="range"] {
+  accent-color: var(--tb-run-color-1);
+}
+
+#run-selector .selector:nth-child(7n+3) input[type="checkbox"],
+.webrtc:nth-child(7n+3) input[type="range"] {
+  accent-color: var(--tb-run-color-2);
+}
+
+#run-selector .selector:nth-child(7n+4) input[type="checkbox"],
+.webrtc:nth-child(7n+4) input[type="range"] {
+  accent-color: var(--tb-run-color-3);
+}
+
+#run-selector .selector:nth-child(7n+5) input[type="checkbox"],
+.webrtc:nth-child(7n+5) input[type="range"] {
+  accent-color: var(--tb-run-color-4);
+}
+
+#run-selector .selector:nth-child(7n+6) input[type="checkbox"],
+.webrtc:nth-child(7n+6) input[type="range"] {
+  accent-color: var(--tb-run-color-5);
+}
+
+#run-selector .selector:nth-child(7n) input[type="checkbox"],
+.webrtc:nth-child(7n) input[type="range"] {
+  accent-color: var(--tb-run-color-6);
+}
+
+.property-ui-colormap input[type="color"] {
   border-radius: 50%;
+  border: 1px solid white;
+  height: 32px;
+  width: 32px;
+  outline: none;
 }
 
-/* On mouse-over, add a grey background color */
-.container:hover input ~ .checkmark {
-  background-color: #ccc;
-}
-
-/* When the checkbox is checked, add a blue background */
-.container input:checked ~ .checkmark {
-  background-color: #2196f3;
-}
-
-/* Create the checkmark/indicator (hidden when not checked) */
-
-/* Create the indicator (the dot/circle - hidden when not checked) */
-.checkmark::after {
-  content: "";
-  position: absolute;
-  display: none;
-}
-
-/* Show the checkmark when checked */
-
-/* Show the indicator (dot/circle) when checked */
-.container input:checked ~ .checkmark::after {
-  display: block;
-}
-
-/* Style the checkmark/indicator */
-.container input[type="checkbox"] ~ .checkmark::after {
-  left: 0.6em;
-  top: 0.3em;
-  width: 0.3em;
-  height: 0.6em;
-  border: solid white;
-  border-width: 0 3px 3px 0;
-  transform: rotate(45deg);
-}
-
-/* Style the indicator (dot/circle) */
-.container input[type="radio"] ~ .checkmark::after {
-  left: 0.45em;
-  top: 0.45em;
-  width: 0.6em;
-  height: 0.6em;
+/* Busy indicator while loading
+ * From: https://www.w3schools.com/howto/howto_css_loader.asp
+ */
+.loader {
+  position: fixed;
+  width: 120px;
+  height: 120px;
+  top: 50%;
+  left: 50%;
+  border: 16px solid whitesmoke;
+  border-top: 16px solid darkgray;
+  border-bottom: 16px solid darkgray;
   border-radius: 50%;
-  background: white;
+  animation: spin 2s linear infinite;
+  z-index: 2000;    /* Higher than for .webrtc */
+  opacity: 50%;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

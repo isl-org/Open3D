@@ -32,6 +32,17 @@ import open3d as o3d
 import glob
 
 
+def get_default_testdata():
+    example_path = os.path.abspath(
+        os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir))
+
+    path_dataset = os.path.join(example_path, 'test_data', 'RGBD')
+    print('Dataset not found, falling back to test examples {}'.format(
+        path_dataset))
+
+    return path_dataset
+
+
 def load_depth_file_names(config):
     if not os.path.exists(config.path_dataset):
         print(
@@ -64,6 +75,7 @@ def load_rgbd_file_names(config):
         if len(color_file_names) == len(depth_file_names):
             return depth_file_names, sorted(color_file_names)
 
+    depth_folder = os.path.join(config.path_dataset, config.depth_folder)
     print('Found {} depth images in {}, but cannot find matched number of '
           'color images in {} with extensions {}, abort!'.format(
               len(depth_file_names), depth_folder, color_folder, extensions))

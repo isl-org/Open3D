@@ -30,6 +30,7 @@
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace io {
@@ -43,7 +44,7 @@ bool ReadTriangleModel(const std::string& filename,
                        ReadTriangleModelOptions params /*={}*/) {
     if (params.print_progress) {
         auto progress_text = std::string("Reading model file") + filename;
-        auto pbar = utility::ConsoleProgressBar(100, progress_text, true);
+        auto pbar = utility::ProgressBar(100, progress_text, true);
         params.update_progress = [pbar](double percent) mutable -> bool {
             pbar.SetCurrentCount(size_t(percent));
             return true;
