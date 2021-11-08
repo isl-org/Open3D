@@ -60,9 +60,14 @@ static void GetRegistrationResultAndCorrespondences(
             counts.Sum({0}).To(core::Float64).Item<double>();
 
     if (num_correspondences == 0) {
-        utility::LogError(
+        utility::LogWarning(
                 "0 correspondence present between the pointclouds. Try "
                 "increasing the max_correspondence_distance parameter.");
+        result.fitness_ = 0.0;
+        result.inlier_rmse_ = 0.0;
+        result.transformation_ =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
+        return;
     }
 
     // Reduction sum of "distances" for error.
@@ -262,6 +267,10 @@ static void DoSingleScaleIterationsICP(
                 source.GetPointPositions(), target_nns,
                 max_correspondence_distance, transformation, result);
 
+        if (result.fitness_ < 1e-5) {
+            return;
+        }
+
         // Computing Transform between source and target, given
         // correspondences. ComputeTransformation returns {4,4} shaped
         // Float64 transformation tensor on CPU device.
@@ -360,11 +369,14 @@ RegistrationResult MultiScaleICP(
     const core::Dtype dtype = source.GetPointPositions().GetDtype();
     const int64_t num_iterations = int64_t(criterias.size());
 
+    // Asseting input parameters.
     AssertInputMultiScaleICP(source, target, voxel_sizes, criterias,
                              max_correspondence_distances,
                              init_source_to_target, estimation, num_iterations,
                              device, dtype);
 
+    // Initializing point-cloud by down-sampling and computing required
+    // attributes.
     std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
     std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);
     std::tie(source_down_pyramid, target_down_pyramid) =
@@ -408,8 +420,13 @@ RegistrationResult MultiScaleICP(
                     source_down_pyramid[i], target_nns,
                     max_correspondence_distances[i], transformation, result);
         }
+
+        // No correspondences.
+        if (result.fitness_ < 1e-5) {
+            return result;
+        }
     }
-    // ---- Iterating over different resolution scale END ---------------------
+    // ---- Iterating over different resolution scale END --------------------
 
     return result;
 }
