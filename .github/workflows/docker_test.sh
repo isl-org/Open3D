@@ -55,7 +55,8 @@ restart_docker_daemon_if_on_gcloud() {
     if curl metadata.google.internal -i | grep Google; then
         # https://stackoverflow.com/a/30921162/1255535
         echo "[restart_docker_daemon_if_on_gcloud()] Restarting Docker daemon on Google Cloud."
-        sudo systemctl start docker
+        sudo systemctl daemon-reload
+        sudo systemctl restart docker
     else
         echo "[restart_docker_daemon_if_on_gcloud()] Skipped."
     fi
