@@ -55,13 +55,16 @@ restart_docker_daemon_if_on_gcloud() {
     if curl metadata.google.internal -i | grep Google; then
         # https://stackoverflow.com/a/30921162/1255535
         echo "[restart_docker_daemon_if_on_gcloud()] Restarting Docker daemon on Google Cloud."
-        sudo systemctl start docker
+        sudo systemctl daemon-reload
+        sudo systemctl restart docker
     else
         echo "[restart_docker_daemon_if_on_gcloud()] Skipped."
     fi
 }
 
 cpp_python_linking_uninstall_test() {
+    restart_docker_daemon_if_on_gcloud
+
     # C++ test
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     docker run -i --rm --gpus all ${DOCKER_TAG} /bin/bash -c "\
