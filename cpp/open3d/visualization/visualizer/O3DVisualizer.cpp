@@ -290,7 +290,6 @@ struct LightingProfile {
 
 static const char *kCustomName = "Custom";
 static const std::vector<LightingProfile> gLightingProfiles = {
-        {"Hard shadows", Open3DScene::LightingProfile::HARD_SHADOWS},
         {"Dark shadows", Open3DScene::LightingProfile::DARK_SHADOWS},
         {"Medium shadows", Open3DScene::LightingProfile::MED_SHADOWS},
         {"Soft shadows", Open3DScene::LightingProfile::SOFT_SHADOWS},
@@ -413,7 +412,7 @@ struct O3DVisualizer::Impl {
 
         MakeSettingsUI();
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
-        SetLightingProfile(gLightingProfiles[3]);  // soft shadows
+        SetLightingProfile(gLightingProfiles[2]);  // soft shadows
         SetPointSize(ui_state_.point_size);  // sync selections_' point size
     }
 
