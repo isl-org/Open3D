@@ -64,7 +64,7 @@ gcloud-setup)
     gcloud info
     ;;
 
-    # Build the Docker image
+# Build the Docker image
 docker-build)
     docker build -t "$DC_IMAGE_TAG" \
         -f util/docker/open3d-gpu/Dockerfile \
@@ -73,7 +73,7 @@ docker-build)
     docker tag "$DC_IMAGE_TAG" "$DC_IMAGE_LATEST_TAG"
     ;;
 
-    # Push the Docker image to Google Container Registry
+# Push the Docker image to Google Container Registry
 docker-push)
     docker push "$DC_IMAGE_TAG"
     docker push "$DC_IMAGE_LATEST_TAG"

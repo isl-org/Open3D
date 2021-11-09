@@ -1,4 +1,4 @@
-name: WebRTC build
+name: WebRTC
 
 on:
   workflow_dispatch:
