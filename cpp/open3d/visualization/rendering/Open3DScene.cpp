@@ -210,7 +210,7 @@ void Open3DScene::SetLighting(LightingProfile profile,
         case LightingProfile::DARK_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(7500);
+            scene->SetIndirectLightIntensity(10000);
             scene->SetSunLight(sun_dir, sun_color, 85000);
             break;
         default:
@@ -218,13 +218,13 @@ void Open3DScene::SetLighting(LightingProfile profile,
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
             scene->SetIndirectLightIntensity(20000);
-            scene->SetSunLight(sun_dir, sun_color, 70000);
+            scene->SetSunLight(sun_dir, sun_color, 80000);
             break;
         case LightingProfile::SOFT_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
             scene->SetIndirectLightIntensity(37500);
-            scene->SetSunLight(sun_dir, sun_color, 70000);
+            scene->SetSunLight(sun_dir, sun_color, 75000);
             break;
         case LightingProfile::NO_SHADOWS:
             scene->EnableIndirectLight(true);
