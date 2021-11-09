@@ -1,6 +1,40 @@
-# CI workflows
+# Running workflows locally
 
-## A. Documentation deployment
+You may run the Ubuntu CI workflows locally on a Linux, macOS and Windows host.
+This allows you to debug CI issues in a local environment.
+
+First, you'll need to install Docker.
+
+- [Install Docker](https://docs.docker.com/get-docker/).
+- [Install Nvidia Docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#setting-up-nvidia-container-toolkit). This
+  is required for testing CUDA builds. For multi-GPU tests, you'll need to have
+  multiple CUDA GPUs, otherwise only the single-GPU tests will be executed.
+- [Post-installation steps for linux](https://docs.docker.com/engine/install/linux-postinstall/). Make sure that `docker` can be executed without root
+  privileges.
+
+Then, use the following commands to build and test the Ubuntu CI workflows.
+
+```bash
+cd .github/workflows
+
+# Build Docker
+# This step does not require nvidia-docker or CUDA GPU.
+./docker_build.sh 2-bionic
+./docker_build.sh 3-ml-shared-bionic
+./docker_build.sh 4-ml-bionic
+./docker_build.sh 5-ml-focal
+
+# Test Docker (run unit tests)
+# Requires nvidia-docker and CUDA GPU for GPU tests.
+./docker_test.sh 2-bionic
+./docker_test.sh 3-ml-shared-bionic
+./docker_test.sh 4-ml-bionic
+./docker_test.sh 5-ml-focal
+```
+
+# Running workflows on GitHub Actions
+
+## Documentation deployment
 
 ### Directory structure
 
@@ -67,7 +101,7 @@ Now `~/open3d-ci-sa-key.json` should have been created.
 
 2. Also add secret `GCE_DOCS_PROJECT: isl-buckets`
 
-## B. Google compute engine setup for GPU CI
+## Google compute engine setup for GPU CI
 
 ### CI Procedure
 
@@ -136,7 +170,7 @@ used for running CI.
     with name `GCE_SA_KEY_GPU_CI`
 2.  Also add secret `GCE_PROJECT: open3d-dev`
 
-## C. Ccache strategy
+## Ccache strategy
 
 - Typically, a build generates ~500MB cache. A build with Filament compiled from
   source generates ~600MB cache.
@@ -156,7 +190,7 @@ used for running CI.
   builds use `gsutil rsync` to update the cache in GCS. Cache transfer only
   takes a few minutes, but reduces ARM64 CI time to about 1:15 hours.
 
-## D. Development wheels for user testing
+## Development wheels for user testing
 
 `master` branch Python wheels are uploaded to a world readable GCS bucket for
 users to try out development wheels.
