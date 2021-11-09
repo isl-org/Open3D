@@ -503,9 +503,10 @@ build_docs() {
     )
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
-        -DBUILD_JUPYTER_EXTENSION=OFF \
         -DENABLE_HEADLESS_RENDERING=ON \
         -DBUILD_GUI=OFF \
+        -DBUILD_WEBRTC=OFF \
+        -DBUILD_JUPYTER_EXTENSION=OFF \
         ..
     make install-pip-package -j$NPROC
     make -j$NPROC
@@ -521,9 +522,10 @@ build_docs() {
     echo
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
-        -DBUILD_JUPYTER_EXTENSION=ON \
         -DENABLE_HEADLESS_RENDERING=OFF \
         -DBUILD_GUI=ON \
+        -DBUILD_WEBRTC=ON \
+        -DBUILD_JUPYTER_EXTENSION=OFF \
         ..
     make install-pip-package -j$NPROC
     make -j$NPROC

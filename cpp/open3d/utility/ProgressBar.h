@@ -24,34 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/io/ModelIO.h"
+#pragma once
 
-#include <unordered_map>
-
-#include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Logging.h"
-#include "open3d/utility/ProgressBar.h"
+#include <string>
 
 namespace open3d {
-namespace io {
+namespace utility {
 
-bool ReadModelUsingAssimp(const std::string& filename,
-                          visualization::rendering::TriangleMeshModel& model,
-                          const ReadTriangleModelOptions& params /*={}*/);
+class ProgressBar {
+public:
+    ProgressBar(size_t expected_count,
+                const std::string &progress_info,
+                bool active = false);
 
-bool ReadTriangleModel(const std::string& filename,
-                       visualization::rendering::TriangleMeshModel& model,
-                       ReadTriangleModelOptions params /*={}*/) {
-    if (params.print_progress) {
-        auto progress_text = std::string("Reading model file") + filename;
-        auto pbar = utility::ProgressBar(100, progress_text, true);
-        params.update_progress = [pbar](double percent) mutable -> bool {
-            pbar.SetCurrentCount(size_t(percent));
-            return true;
-        };
-    }
-    return ReadModelUsingAssimp(filename, model, params);
-}
+    void Reset(size_t expected_count,
+               const std::string &progress_info,
+               bool active);
 
-}  // namespace io
+    ProgressBar &operator++();
+
+    void SetCurrentCount(size_t n);
+
+private:
+    const size_t resolution_ = 40;
+    size_t expected_count_;
+    size_t current_count_;
+    std::string progress_info_;
+    size_t progress_pixel_;
+    bool active_;
+};
+
+}  // namespace utility
 }  // namespace open3d

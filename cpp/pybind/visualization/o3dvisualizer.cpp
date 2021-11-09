@@ -347,7 +347,7 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("set_ibl", &O3DVisualizer::SetIBL,
                  "set_ibl(ibl_name): Sets the IBL and its matching skybox. If "
                  "ibl_name_ibl.ktx is found in the default resource directory "
-                 "then it is used. Otherwise, ibl_name is assumt to be a path "
+                 "then it is used. Otherwise, ibl_name is assumed to be a path "
                  "to the ibl KTX file.")
             .def("set_ibl_intensity", &O3DVisualizer::SetIBLIntensity,
                  "set_ibl_intensity(intensity): Sets the intensity of the "

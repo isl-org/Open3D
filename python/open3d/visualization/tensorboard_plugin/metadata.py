@@ -26,6 +26,7 @@
 """Internal information about the Open3D plugin."""
 
 from tensorboard.compat.proto.summary_pb2 import SummaryMetadata
+from .plugin_data_pb2 import LabelToNames
 
 PLUGIN_NAME = "Open3D"
 
@@ -33,7 +34,7 @@ PLUGIN_NAME = "Open3D"
 # `Open3DPluginData` proto. Sync with Open3D version (MAJOR*100 + MINOR)
 _VERSION = 14
 
-SUPPORTED_FILEFOPRMAT_VERSIONS = [14]
+SUPPORTED_FILEFORMAT_VERSIONS = [14]
 
 GEOMETRY_PROPERTY_DIMS = {
     'vertex_positions': (3,),
@@ -93,28 +94,33 @@ SUPPORTED_PROPERTIES = set(
            MATERIAL_TEXTURE_MAPS)))
 
 
-def create_summary_metadata(description):
+def create_summary_metadata(description, metadata):
     """Creates summary metadata. Reserved for future use. Required by
     TensorBoard.
 
-    Arguments:
+    Args:
       description: The description to show in TensorBoard.
 
     Returns:
       A `SummaryMetadata` protobuf object.
     """
+    ln_proto = LabelToNames()
+    if 'label_to_names' in metadata:
+        ln_proto.label_to_names.update(metadata['label_to_names'])
     return SummaryMetadata(
         summary_description=description,
-        plugin_data=SummaryMetadata.PluginData(plugin_name=PLUGIN_NAME,
-                                               content=b''),
+        plugin_data=SummaryMetadata.PluginData(
+            plugin_name=PLUGIN_NAME, content=ln_proto.SerializeToString()),
     )
 
 
-def parse_plugin_metadata(unused_content):
+def parse_plugin_metadata(content):
     """Parse summary metadata to a Python object. Reserved for future use.
 
     Arguments:
       content: The `content` field of a `SummaryMetadata` proto
         corresponding to the Open3D plugin.
     """
-    return b''
+    ln_proto = LabelToNames()
+    ln_proto.ParseFromString(content)
+    return ln_proto.label_to_names
