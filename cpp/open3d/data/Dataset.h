@@ -45,7 +45,7 @@ namespace data {
 ///   (c) $HOME/open3d_data.
 ///   By default, (c) will be used, and it is also the recommended way.
 /// - When a dataset object is instantiated, the corresponding data will be
-///   downloaed and extracted. If the data already exists and the checksum
+///   downloaded and extracted. If the data already exists and the checksum
 ///   matches, the download will be skipped.
 /// - After the data is downloaded and extracted, the dataset object will NOT
 ///   load the data for you. Instead, you will get the paths to the data files
