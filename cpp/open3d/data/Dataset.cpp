@@ -40,8 +40,8 @@ namespace data {
 /// (b) OPEN3D_DATA_ROOT environment variable.
 /// (c) $HOME/open3d_data.
 ///
-/// LocateDataRoot() shall be called when the user-specified is not set,
-/// i.e. case (b) and (c).
+/// LocateDataRoot() shall be called when the user-specified data root is not
+/// set, i.e. in case (b) and (c).
 static std::string LocateDataRoot() {
     std::string data_root = "";
     if (const char* env_p = std::getenv("OPEN3D_DATA_ROOT")) {

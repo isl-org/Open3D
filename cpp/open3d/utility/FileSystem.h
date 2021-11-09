@@ -45,7 +45,7 @@ namespace filesystem {
 ///   - %HOMEDRIVE%
 ///   - %HOMEPATH%
 ///   - %HOME%
-///   - "C:/"
+///   - C:/
 ///
 /// This is the same logics as used in Qt.
 /// - src/corelib/io/qfilesystemengine_win.cpp

@@ -68,6 +68,7 @@ std::string GetHomeDirectory() {
     // %HOMEDRIVE%
     // %HOMEPATH%
     // %HOME%
+    // C:/
     home_dir = GetEnvVar("USERPROFILE");
     if (home_dir.empty() || !DirectoryExists(home_dir)) {
         home_dir = GetEnvVar("HOMEDRIVE");
