@@ -76,5 +76,9 @@ void ProgressBar::SetCurrentCount(size_t n) {
     }
 }
 
+void ProgressBar::UpdateCurrentCount(size_t n) {
+    SetCurrentCount(current_count_ + n);
+}
+
 }  // namespace utility
 }  // namespace open3d

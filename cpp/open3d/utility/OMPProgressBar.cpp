@@ -24,37 +24,27 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include <string>
+#include "OMPProgressBar.h"
 
 namespace open3d {
 namespace utility {
 
-class ProgressBar {
-public:
-    ProgressBar(size_t expected_count,
-                const std::string &progress_info,
-                bool active = false);
+ProgressBar &OMPProgressBar::operator++() {
+    // Ref: https://stackoverflow.com/a/44555438
 
-    void Reset(size_t expected_count,
-               const std::string &progress_info,
-               bool active);
+    int number_of_threads = omp_get_num_threads();
+    int thread_id = omp_get_thread_num();
 
-    virtual ProgressBar &operator++();
+    // check if inside OMP loop
+    if (number_of_threads > 1) {
+        // check thread_id == 0
+        if (thread_id == 0) UpdateCurrentCount(number_of_threads);
+    } else {
+        UpdateCurrentCount(number_of_threads);
+    }
 
-    void SetCurrentCount(size_t n);
-
-    void UpdateCurrentCount(size_t n);
-
-private:
-    const size_t resolution_ = 40;
-    size_t expected_count_;
-    size_t current_count_;
-    std::string progress_info_;
-    size_t progress_pixel_;
-    bool active_;
-};
+    return *this;
+}
 
 }  // namespace utility
 }  // namespace open3d

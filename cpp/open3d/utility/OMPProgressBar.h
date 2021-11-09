@@ -26,34 +26,28 @@
 
 #pragma once
 
-#include <string>
+#ifdef _OPENMP
+/// Multi-threading - yay!
+#include <omp.h>
+#else
+/// Macros used to disguise the fact that we do not have multithreading enabled.
+#define omp_get_thread_num() 0
+#define omp_get_num_threads() 1
+#endif
+
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace utility {
 
-class ProgressBar {
+class OMPProgressBar : public ProgressBar {
 public:
-    ProgressBar(size_t expected_count,
-                const std::string &progress_info,
-                bool active = false);
+    OMPProgressBar(size_t expected_count,
+                   const std::string &progress_info,
+                   bool active = false)
+        : ProgressBar(expected_count, progress_info, active){};
 
-    void Reset(size_t expected_count,
-               const std::string &progress_info,
-               bool active);
-
-    virtual ProgressBar &operator++();
-
-    void SetCurrentCount(size_t n);
-
-    void UpdateCurrentCount(size_t n);
-
-private:
-    const size_t resolution_ = 40;
-    size_t expected_count_;
-    size_t current_count_;
-    std::string progress_info_;
-    size_t progress_pixel_;
-    bool active_;
+    ProgressBar &operator++() override;
 };
 
 }  // namespace utility
