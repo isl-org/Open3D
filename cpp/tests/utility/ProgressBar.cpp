@@ -24,39 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/utility/ProgressBar.h"
 
-#include <string>
+#include "open3d/utility/OMPProgressBar.h"
+#include "open3d/utility/Parallel.h"
+#include "tests/Tests.h"
 
 namespace open3d {
-namespace utility {
+namespace tests {
+TEST(ProgressBar, ProgressBar) {
+    size_t iterations = 1000;
+    utility::ProgressBar progress_bar(iterations, "ProgressBar test: ", true);
 
-class ProgressBar {
-public:
-    ProgressBar(size_t expected_count,
-                const std::string &progress_info,
-                bool active = false);
+    for (size_t i = 0; i < iterations; ++i) {
+        ++progress_bar;
+    }
+    EXPECT_EQ(iterations, progress_bar.GetCurrentCount());
+}
 
-    void Reset(size_t expected_count,
-               const std::string &progress_info,
-               bool active);
+TEST(ProgressBar, OMPProgressBar) {
+    size_t iterations = 1000;
+    utility::OMPProgressBar progress_bar(iterations,
+                                         "OMPProgressBar test: ", true);
 
-    virtual ProgressBar &operator++();
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+    for (size_t i = 0; i < iterations; ++i) {
+        ++progress_bar;
+    }
+    EXPECT_TRUE(progress_bar.GetCurrentCount() >= iterations);
+}
 
-    void SetCurrentCount(size_t n);
-
-    void UpdateCurrentCount(size_t n);
-
-    size_t GetCurrentCount() const;
-
-private:
-    const size_t resolution_ = 40;
-    size_t expected_count_;
-    size_t current_count_;
-    std::string progress_info_;
-    size_t progress_pixel_;
-    bool active_;
-};
-
-}  // namespace utility
+}  // namespace tests
 }  // namespace open3d
