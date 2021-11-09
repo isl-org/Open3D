@@ -80,10 +80,7 @@ void ProgressBar::UpdateCurrentCount(size_t n) {
     SetCurrentCount(current_count_ + n);
 }
 
-size_t ProgressBar::GetCurrentCount() const {
-    return current_count_;
-}
-
+size_t ProgressBar::GetCurrentCount() const { return current_count_; }
 
 }  // namespace utility
 }  // namespace open3d
