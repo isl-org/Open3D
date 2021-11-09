@@ -58,63 +58,6 @@ YAPF_VER="0.30.0"
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
-install_cuda_toolkit() {
-
-    SUDO=${SUDO:-sudo}
-    options="$(echo "$@" | tr ' ' '|')"
-
-    if [[ $UBUNTU_VERSION == "bionic" ]]; then
-        echo "Installing CUDA ${CUDA_VERSION[1]} with apt from bionic repos..."
-        $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
-    elif [[ $UBUNTU_VERSION == "focal" ]]; then
-        echo "Installing CUDA ${CUDA_VERSION[1]} with apt from focal repos..."
-        $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
-        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
-    else
-        echo "Unsupported OS or version $UBUNTU_VERSION for CUDA toolkit" \
-            " install." && return 1
-    fi
-    $SUDO apt-get install --yes --no-install-recommends "cuda-toolkit-${CUDA_VERSION[0]}"
-    if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
-        echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
-        dpkg -L libcublas10 libcublas-dev | while read -r cufile; do
-            if [ -f "$cufile" ] && [ ! -e "${cufile/10.2/10.1}" ]; then
-                set -x
-                $SUDO ln -s "$cufile" "${cufile/10.2/10.1}"
-                set +x
-            fi
-        done
-    fi
-    options="$(echo "$@" | tr ' ' '|')"
-    if [[ "with-cudnn" =~ ^($options)$ ]]; then
-        echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
-        $SUDO apt-get install --yes --no-install-recommends --allow-downgrades \
-            "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
-            "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
-    fi
-    $SUDO update-alternatives --install /usr/local/cuda cuda \
-        "/usr/local/cuda-${CUDA_VERSION[1]}" 100
-    CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
-    set +u -x # Disable "unbound variable is error" since that gives a false alarm error below:
-    export PATH="${CUDA_TOOLKIT_DIR}/bin${PATH:+:$PATH}"
-    export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    set -u +x
-    # Ensure g++ < {8,10} is installed for CUDA {10.1,11.0}
-    cpp_version=$(c++ --version 2>/dev/null | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
-    if dpkg --compare-versions "$cpp_version" ge-nl $((GCC_MAX_VER + 1)); then
-        $SUDO apt-get install --yes --no-install-recommends g++-$GCC_MAX_VER gcc-$GCC_MAX_VER
-        $SUDO update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-$GCC_MAX_VER 70 \
-            --slave /usr/bin/gcc gcc /usr/bin/gcc-$GCC_MAX_VER
-        $SUDO update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-$GCC_MAX_VER 70 \
-            --slave /usr/bin/g++ g++ /usr/bin/g++-$GCC_MAX_VER
-    fi
-    if [[ "purge-cache" =~ ^($options)$ ]]; then
-        $SUDO apt-get clean
-        $SUDO rm -rf /var/lib/apt/lists/*
-    fi
-}
-
 install_python_dependencies() {
 
     echo "Installing Python dependencies"
