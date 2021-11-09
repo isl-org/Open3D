@@ -1663,6 +1663,7 @@ void pybind_gui_classes(py::module &m) {
             py::none(), py::none(), "");
     filedlg_mode.value("OPEN", FileDialog::Mode::OPEN)
             .value("SAVE", FileDialog::Mode::SAVE)
+            .value("OPEN_DIR", FileDialog::Mode::OPEN_DIR)
             .export_values();
     filedlg.def(py::init<FileDialog::Mode, const char *, const Theme &>(),
                 "Creates either an open or save file dialog. The first "
