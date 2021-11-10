@@ -42,12 +42,15 @@ GEOMETRY_PROPERTY_DIMS = {
     'vertex_colors': (3,),
     'vertex_texture_uvs': (2,),
     'triangle_indices': (3,),
+    'triangle_normals': (3,),
+    'triangle_colors': (3,),
     'triangle_texture_uvs': (3, 2),
     'line_indices': (2,),
     'line_colors': (3,)
 }
 VERTEX_PROPERTIES = ('vertex_normals', 'vertex_colors', 'vertex_texture_uvs')
-TRIANGLE_PROPERTIES = ('triangle_texture_uvs',)
+TRIANGLE_PROPERTIES = ('triangle_normals', 'triangle_colors',
+                       'triangle_texture_uvs')
 LINE_PROPERTIES = ('line_colors',)
 MATERIAL_SCALAR_PROPERTIES = (
     'point_size',

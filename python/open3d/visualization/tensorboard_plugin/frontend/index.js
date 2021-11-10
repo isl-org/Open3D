@@ -117,10 +117,10 @@ class TensorboardOpen3DPluginClient {
      */
     COLORMAPS = null;
     /**
-     * @var {Object} Default LabelLUT colormap. Get as response to
+     * @var {Array} Default LabelLUT colormap. Get as response to
      * "get_run_tags" message
      */
-    LabelLUTColors = null;
+    labelLUTColors = null;
     /**
      * @var {Map} Current rendering state for a tag.
      * tag -> Object {"property":__, "index": 0, "shader": __, "colormap": []}}
@@ -641,7 +641,7 @@ class TensorboardOpen3DPluginClient {
             title="Use colors or another 3 element property of the points as RGB.\nOnly the first 3 dimensions of a custom property are used."
             >RGB</option>
             <option value="defaultLit"
-            title="Visualize geometry with lighting."
+            title="Default geometry visualization."
             >Default</option>
           </select>
       </label>
@@ -763,7 +763,7 @@ class TensorboardOpen3DPluginClient {
             idxListEl.parentElement.style.display = 'none';
         }
         let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
-        const renderStateTag = this.renderState.get(tag);
+        let renderStateTag = this.renderState.get(tag);
 
         let needRenderUpdate = false;
         if (!this.validShaders.includes(shaderListEl.value)) {
@@ -792,9 +792,9 @@ class TensorboardOpen3DPluginClient {
                 const labelNames = this.tagLabelsNames.get(tag);
                 if (!onCreate) {
                     renderStateTag.colormap = new Map(
-                            Object.entries(this.LabelLUTColors)
-                                    .slice(0,
-                                           Object.entries(labelNames).length));
+                            Object.keys(labelNames)
+                                    .map((lab,
+                                          k) => [lab, this.labelLUTColors[k]]));
                 }
                 for (const [label, name] of Object.entries(labelNames)
                              .sort((l1, l2) => parseInt(l1) > parseInt(l2))) {
@@ -1238,7 +1238,7 @@ class TensorboardOpen3DPluginClient {
                         '[After get_run_tags] this.runWindow: ', this.runWindow,
                         'this.windowState:', this.windowState);
                 this.COLORMAPS = message.colormaps;  // Object (not Map)
-                this.LabelLUTColors =
+                this.labelLUTColors =
                         message.LabelLUTColors;  // Object (not Map)
             }
             for (const [windowUId, state] of this.windowState) {

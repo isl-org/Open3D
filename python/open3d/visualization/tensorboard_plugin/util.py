@@ -309,7 +309,9 @@ class Open3DPluginDataReader:
                     prop_shape.update(custom_props)
                     prop_shape.update(label_props)
             if len(inference_data_proto.inference_result) > 0:
-                prop_shape.update({'labels': 1, 'confidence': 1})
+                # 'confidence' requires unlitGradient.GRADIENT shader support
+                # for LineSet
+                prop_shape.update({'labels': 1})
 
     def read_geometry(self, run, tag, step, batch_idx, step_to_idx):
         """Geometry reader from msgpack files."""
@@ -434,14 +436,12 @@ class RenderUpdate:
     DICT_COLORMAPS = {
         name: {
             # float -> uint8, and RGB -> RGBA
-            point.value: _float_u8(point.color) + (255,)
+            point.value: _float_to_u8(point.color) + (255,)
             for point in cmap.points
         } for name, cmap in _CMAPS.items()
     }
-    LABELLUT_COLORS = {
-        label: _float_u8(color + [1.0])
-        for label, color in enumerate(LabelLUT.Colors)
-    }
+    LABELLUT_COLORS = tuple(
+        _float_to_u8(color + [1.0]) for color in LabelLUT.Colors)
 
     def __init__(self, window_scaling, message, label_to_names):
         from open3d.visualization.async_event_loop import async_event_loop
@@ -527,14 +527,21 @@ class RenderUpdate:
                 return True
             return False
 
+        def get_labelLUT():
+            return {
+                label: self.LABELLUT_COLORS[k]
+                for k, label in enumerate(self._label_to_names)
+            }
+
         if (len(self._updated) == 0 or geometry.is_empty()):
             _log.debug("No updates, or empty geometry.")
             return
 
         geometry_vertex = (geometry.point
                            if hasattr(geometry, 'point') else geometry.vertex)
-        have_colors = ("colors" in geometry.line if hasattr(geometry, 'line')
-                       else "colors" in geometry_vertex)
+        have_colors = ("colors" in geometry.line if hasattr(
+            geometry, 'line') else ("colors" in geometry.triangle if hasattr(
+                geometry, 'triangle') else "colors" in geometry_vertex))
 
         if inference_data_proto is not None:
             inference_result = inference_data_proto.inference_result
@@ -550,14 +557,13 @@ class RenderUpdate:
                     self._property = (next(iter(label_props))
                                       if len(label_props) > 0 else "labels")
                     self._index = 0
-            elif isinstance(geometry, o3d.t.geometry.LineSet):
-                self._shader = "unlitLine"
             elif len(custom_props) > 0:
                 self._shader = "unlitGradient.GRADIENT.RAINBOW"
                 if self._property == "":
                     self._property = next(iter(custom_props))
                     self._index = 0
-            elif "normals" in geometry_vertex:
+            elif (isinstance(geometry, o3d.t.geometry.LineSet) or
+                  "normals" in geometry_vertex):
                 self._shader = "defaultLit"
             elif "colors" in geometry_vertex:
                 self._shader = "defaultUnlit"
@@ -597,35 +603,27 @@ class RenderUpdate:
                 self._update_range(min_val, max_val)
                 geometry_update_flag |= rendering.Scene.UPDATE_COLORS_FLAG
 
-        # Bounding boxes
+        # Bounding boxes / LineSet
         if isinstance(geometry, o3d.t.geometry.LineSet):
-            if 'shader' in updated:  # shader is always "unlitLine"
-                updated.remove("shader")
-            material.shader = "unlitLine"
-            material.line_width = 2 * self._window_scaling
             if not swap__(geometry.line, "colors"):
                 geometry.line["colors"] = o3d.core.Tensor.full(
                     (len(geometry.line["indices"]), 3),
                     128,
                     dtype=o3d.core.uint8)
             if self._property == "" and self._shader == "unlitSolidColor":
-                geometry.line["colors"][:] = _u8_to_float(
-                    next(iter(self._colormap.values())))[:3]
-            elif self._property != "" and len(inference_result) > 0:  # labels
+                geometry.line["colors"][:] = next(iter(
+                    self._colormap.values()))[:3]
+            elif self._property != "" and self._shader == "unlitGradient.LUT":
                 if self._colormap is None:
-                    self._colormap = deepcopy(self.LABELLUT_COLORS)
-                    for label in list(self._colormap):
-                        if label not in self._label_to_names:
-                            self._colormap.pop(label)
+                    self._colormap = get_labelLUT()
                 if "colormap" in updated:
                     swap__(geometry.line, "indices")
                     t_lines = geometry.line["indices"]
                     t_colors = geometry.line["colors"]
                     idx = 0
-                    for k in range(len(inference_result)):
-                        label = inference_result[k].label
-                        if label in self._colormap:
-                            col = self._colormap[label]
+                    for bbir in inference_result:
+                        if bbir.label in self._colormap:
+                            col = self._colormap[bbir.label]
                             col, alpha = col[:3], col[3]
                         else:
                             col, alpha = (128, 128, 128), 255
@@ -650,10 +648,7 @@ class RenderUpdate:
                     next(iter(self._colormap.values())))
             elif self._shader == "unlitGradient.LUT":  # Label Colormap
                 if self._colormap is None:
-                    self._colormap = deepcopy(self.LABELLUT_COLORS)
-                    for label in list(self._colormap):
-                        if label not in self._label_to_names:
-                            self._colormap.pop(label)
+                    self._colormap = get_labelLUT()
                 material.shader = "unlitGradient"
                 material.gradient = rendering.Gradient()
                 if len(self._colormap) > 1:
@@ -694,13 +689,16 @@ class RenderUpdate:
                 f"Geo:{geometry_update_flag:b}, Mat:{material_update_flag:b}")
         else:
             self._gui.run_sync(o3dvis.add_geometry, geometry_name, geometry,
-                               material if self._shader == "" else None)
+                               material if material_update_flag else None)
         self._gui.run_sync(o3dvis.post_redraw)
         if not have_colors:  # reset colors
             if hasattr(geometry, "line") and "colors" in geometry.line:
                 del geometry.line["colors"]
             elif "colors" in geometry_vertex:
                 del geometry_vertex["colors"]
+            elif (hasattr(geometry, "triangle") and
+                  "colors" in geometry.triangle):
+                del geometry.triangle["colors"]
         _log.debug(f"apply complete: {geometry_name} with "
                    f"{self._property}[{self._index}]/{self._shader}")
 

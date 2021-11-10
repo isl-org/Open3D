@@ -131,12 +131,12 @@ message Open3DPluginData {
 
 message InferenceData {
     message InferenceResult {
-        uint32 label = 1;
+        int32 label = 1;
         float confidence = 2;
     }
     repeated InferenceResult inference_result = 1;
 }
 
 message LabelToNames {
-    map<uint32, string> label_to_names = 1;
+    map<int32, string> label_to_names = 1;
 }
