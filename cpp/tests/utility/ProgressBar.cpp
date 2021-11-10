@@ -33,26 +33,26 @@
 namespace open3d {
 namespace tests {
 TEST(ProgressBar, ProgressBar) {
-    size_t iterations = 1000;
+    int iterations = 1000;
     utility::ProgressBar progress_bar(iterations, "ProgressBar test: ", true);
 
-    for (size_t i = 0; i < iterations; ++i) {
+    for (int i = 0; i < iterations; ++i) {
         ++progress_bar;
     }
-    EXPECT_EQ(iterations, progress_bar.GetCurrentCount());
+    EXPECT_EQ(iterations, int(progress_bar.GetCurrentCount()));
 }
 
 TEST(ProgressBar, OMPProgressBar) {
-    size_t iterations = 1000;
+    int iterations = 1000;
     utility::OMPProgressBar progress_bar(iterations,
                                          "OMPProgressBar test: ", true);
 
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
-    for (size_t i = 0; i < iterations; ++i) {
+    for (int i = 0; i < iterations; ++i) {
         ++progress_bar;
     }
-    EXPECT_TRUE(progress_bar.GetCurrentCount() >= iterations);
+    EXPECT_TRUE(int(progress_bar.GetCurrentCount()) >= iterations);
 }
 
 }  // namespace tests
