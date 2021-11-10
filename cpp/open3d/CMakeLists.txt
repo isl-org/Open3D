@@ -30,6 +30,7 @@ add_library(Open3D)
 
 add_subdirectory(camera)
 add_subdirectory(core)
+add_subdirectory(data)
 add_subdirectory(geometry)
 add_subdirectory(io)
 add_subdirectory(ml)
@@ -57,6 +58,7 @@ target_sources(Open3D PRIVATE
 open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
     camera
     core
+    data
     geometry
     tgeometry
     tgeometry_kernel
@@ -85,6 +87,7 @@ endif()
 # Source group for Visual Studio
 add_source_group(camera)
 add_source_group(core)
+add_source_group(data)
 add_source_group(geometry)
 add_source_group(tgeometry)
 add_source_group(io)
