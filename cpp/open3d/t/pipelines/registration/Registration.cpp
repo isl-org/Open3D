@@ -273,7 +273,7 @@ static void DoSingleScaleIterationsICP(
                 source.GetPointPositions(), target_nns,
                 max_correspondence_distance, transformation, result);
 
-        if (result.fitness_ < 1e-5) {
+        if (result.fitness_ <= std::numeric_limits<double>::min()) {
             return;
         }
 
@@ -428,7 +428,7 @@ RegistrationResult MultiScaleICP(
         }
 
         // No correspondences.
-        if (result.fitness_ < 1e-5) {
+        if (result.fitness_ <= std::numeric_limits<double>::min()) {
             return result;
         }
     }

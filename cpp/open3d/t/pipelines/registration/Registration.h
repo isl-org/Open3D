@@ -86,7 +86,10 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param transformation The estimated transformation matrix of dtype
-    /// Float64 on CPU device.
+    /// Float64 on CPU device. Default: Identity tensor.
+    /// \param save_loss_log When `True`, it saves the iteration-wise values of
+    /// `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration` in a
+    /// `TensorMap` `loss_log_` in `RegsitrationResult`. Default: False.
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
                                4, core::Float64, core::Device("CPU:0")),
                        bool save_loss_log = false)
