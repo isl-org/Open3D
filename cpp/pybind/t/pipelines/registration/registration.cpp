@@ -121,10 +121,10 @@ void pybind_registration_classes(py::module &m) {
                            "float: The overlapping area (# of inlier "
                            "correspondences "
                            "/ # of points in target). Higher is better.")
-            .def_readwrite("save_info_map", &RegistrationResult::save_info_map_,
+            .def_readwrite("save_loss_log", &RegistrationResult::save_loss_log_,
                            "To store iteration-wise information in "
-                           "`info_map_`, mark this as `True`.")
-            .def_readwrite("info_map", &RegistrationResult::info_map_,
+                           "`loss_log_`, mark this as `True`.")
+            .def_readwrite("loss_log", &RegistrationResult::loss_log_,
                            "tensor_map containing iteration-wise information. "
                            "The tensor_map contains `index` (primary-key), "
                            "`scale`, `iteration`, `inlier_rmse`, `fitness`, "
@@ -299,10 +299,10 @@ static const std::unordered_map<std::string, std::string>
                 {"voxel_sizes",
                  "o3d.utility.DoubleVector of voxel sizes in strictly "
                  "decreasing order, for multi-scale icp."},
-                {"save_info_map",
+                {"save_loss_log",
                  "When `True`, it saves the iteration-wise values of "
                  "`fitness`, `inlier_rmse`, `transformaton`, `scale`, "
-                 "`iteration` in `info_map_` in `regsitration_result`. "
+                 "`iteration` in `loss_log_` in `regsitration_result`. "
                  "Default: False."}};
 
 void pybind_registration_methods(py::module &m) {
@@ -322,7 +322,7 @@ void pybind_registration_methods(py::module &m) {
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint(),
           "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
-          "save_info_map"_a = false);
+          "save_loss_log"_a = false);
     docstring::FunctionDocInject(m, "icp", map_shared_argument_docstrings);
 
     m.def("multi_scale_icp", &MultiScaleICP,
@@ -332,7 +332,7 @@ void pybind_registration_methods(py::module &m) {
           "init_source_to_target"_a =
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint(),
-          "save_info_map"_a = false);
+          "save_loss_log"_a = false);
     docstring::FunctionDocInject(m, "multi_scale_icp",
                                  map_shared_argument_docstrings);
 

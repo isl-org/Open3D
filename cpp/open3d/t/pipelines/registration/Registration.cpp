@@ -118,10 +118,10 @@ RegistrationResult ICP(const geometry::PointCloud &source,
                        const TransformationEstimation &estimation,
                        const ICPConvergenceCriteria &criteria,
                        const double voxel_size,
-                       const bool save_info_map) {
+                       const bool save_loss_log) {
     return MultiScaleICP(source, target, {voxel_size}, {criteria},
                          {max_correspondence_distance}, init_source_to_target,
-                         estimation, save_info_map);
+                         estimation, save_loss_log);
 }
 
 static void AssertInputMultiScaleICP(
@@ -212,7 +212,7 @@ InitializePointCloudPyramidForMultiScaleICP(
     std::vector<t::geometry::PointCloud> source_down_pyramid(num_iterations);
     std::vector<t::geometry::PointCloud> target_down_pyramid(num_iterations);
 
-    if (voxel_sizes[num_iterations - 1] < 0) {
+    if (voxel_sizes[num_iterations - 1] <= 0) {
         source_down_pyramid[num_iterations - 1] = source.Clone();
         target_down_pyramid[num_iterations - 1] = target;
     } else {
@@ -226,7 +226,13 @@ InitializePointCloudPyramidForMultiScaleICP(
     if (estimation.GetTransformationEstimationType() ==
                 TransformationEstimationType::ColoredICP &&
         !target.HasPointAttr("color_gradients")) {
-        if (voxel_sizes[num_iterations - 1] < 0) {
+        // `max_correspondence_distance * 2.0` or
+        // `voxel_sizes[num_iterations - 1] * 4.0` is an approximation, for
+        // `search_radius` in `EstimateColorGradients`. For more control /
+        // performance tunning, one may compute and save the `color_gradient`
+        // attribute in the target pointcloud manually by calling the function
+        // `EstimateColorGradients`, before passing it to the `ICP` function.
+        if (voxel_sizes[num_iterations - 1] <= 0) {
             utility::LogWarning(
                     "Use voxel size parameter, for better performance in "
                     "ColoredICP.");
@@ -291,26 +297,26 @@ static void DoSingleScaleIterationsICP(
                 "{:.4f}",
                 iteration_idx, j, result.fitness_, result.inlier_rmse_);
 
-        if (result.save_info_map_) {
+        if (result.save_loss_log_) {
             const core::Device host("CPU:0");
 
             if (iteration_idx == 0 && j == 0) {
                 // Initialize attributes for first iteration.
-                result.info_map_["index"] =
+                result.loss_log_["index"] =
                         core::Tensor::Init<int64_t>({{0}}, host);
-                result.info_map_["scale"] =
+                result.loss_log_["scale"] =
                         core::Tensor::Init<int64_t>({{0}}, host);
-                result.info_map_["iteration"] =
+                result.loss_log_["iteration"] =
                         core::Tensor::Init<int64_t>({{0}}, host);
-                result.info_map_["inlier_rmse"] = core::Tensor::Init<double>(
+                result.loss_log_["inlier_rmse"] = core::Tensor::Init<double>(
                         {{result.inlier_rmse_}}, host);
-                result.info_map_["fitness"] =
+                result.loss_log_["fitness"] =
                         core::Tensor::Init<double>({{result.fitness_}}, host);
-                result.info_map_["transformation"] = transformation.To(host);
+                result.loss_log_["transformation"] = transformation.To(host);
             } else {
                 // Get iteration debug tensors for this iteration.
                 core::Tensor local_index = core::Tensor::Init<int64_t>(
-                        {{result.info_map_["index"].GetLength() + 1}}, host);
+                        {{result.loss_log_["index"].GetLength() + 1}}, host);
                 core::Tensor local_scale =
                         core::Tensor::Init<int64_t>({{iteration_idx}}, host);
                 core::Tensor local_iteration =
@@ -322,18 +328,18 @@ static void DoSingleScaleIterationsICP(
 
                 // Concatenate the result of this iteration to the existing
                 // TensorMap.
-                result.info_map_["index"] = core::Concatenate(
-                        {result.info_map_["index"], local_index}, 0);
-                result.info_map_["scale"] = core::Concatenate(
-                        {result.info_map_["scale"], local_scale}, 0);
-                result.info_map_["iteration"] = core::Concatenate(
-                        {result.info_map_["iteration"], local_iteration}, 0);
-                result.info_map_["inlier_rmse"] = core::Concatenate(
-                        {result.info_map_["inlier_rmse"], local_rmse}, 0);
-                result.info_map_["fitness"] = core::Concatenate(
-                        {result.info_map_["fitness"], local_fitness}, 0);
-                result.info_map_["transformation"] =
-                        core::Concatenate({result.info_map_["transformation"],
+                result.loss_log_["index"] = core::Concatenate(
+                        {result.loss_log_["index"], local_index}, 0);
+                result.loss_log_["scale"] = core::Concatenate(
+                        {result.loss_log_["scale"], local_scale}, 0);
+                result.loss_log_["iteration"] = core::Concatenate(
+                        {result.loss_log_["iteration"], local_iteration}, 0);
+                result.loss_log_["inlier_rmse"] = core::Concatenate(
+                        {result.loss_log_["inlier_rmse"], local_rmse}, 0);
+                result.loss_log_["fitness"] = core::Concatenate(
+                        {result.loss_log_["fitness"], local_fitness}, 0);
+                result.loss_log_["transformation"] =
+                        core::Concatenate({result.loss_log_["transformation"],
                                            transformation.To(host)},
                                           0);
             }
@@ -361,7 +367,7 @@ RegistrationResult MultiScaleICP(
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation,
-        const bool save_info_map) {
+        const bool save_loss_log) {
     core::AssertTensorDtypes(source.GetPointPositions(),
                              {core::Float64, core::Float32});
 
@@ -388,7 +394,7 @@ RegistrationResult MultiScaleICP(
     // Transformation tensor is always of shape {4,4}, type Float64 on CPU:0.
     core::Tensor transformation =
             init_source_to_target.To(core::Device("CPU:0"), core::Float64);
-    RegistrationResult result(transformation, save_info_map);
+    RegistrationResult result(transformation, save_loss_log);
 
     double prev_fitness = 0;
     double prev_inlier_rmse = 0;
