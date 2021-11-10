@@ -804,7 +804,8 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
     if (need_duplicate_vertices) {
         std::iota(uint_indices, uint_indices + n_vertices, 0);
     } else {
-        memcpy(uint_indices, indices.GetDataPtr(), n_bytes);
+        const auto indices_32 = indices.To(core::UInt32);
+        memcpy(uint_indices, indices_32.GetDataPtr(), n_bytes);
     }
     auto ib_handle =
             resource_mgr.CreateIndexBuffer(n_indices, sizeof(IndexType));
