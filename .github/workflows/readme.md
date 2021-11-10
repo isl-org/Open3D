@@ -19,6 +19,16 @@ cd .github/workflows
 
 # Build Docker
 # This step does not require nvidia-docker or CUDA GPU.
+./docker_build.sh openblas-x86_64
+./docker_build.sh openblas-arm64
+./docker_build.sh cuda_wheel_py36_dev
+./docker_build.sh cuda_wheel_py37_dev
+./docker_build.sh cuda_wheel_py38_dev
+./docker_build.sh cuda_wheel_py39_dev
+./docker_build.sh cuda_wheel_py36
+./docker_build.sh cuda_wheel_py37
+./docker_build.sh cuda_wheel_py38
+./docker_build.sh cuda_wheel_py39
 ./docker_build.sh 2-bionic
 ./docker_build.sh 3-ml-shared-bionic
 ./docker_build.sh 4-ml-bionic
@@ -26,6 +36,8 @@ cd .github/workflows
 
 # Test Docker (run unit tests)
 # Requires nvidia-docker and CUDA GPU for GPU tests.
+./docker_test.sh openblas-x86_64
+./docker_test.sh openblas-arm64
 ./docker_test.sh 2-bionic
 ./docker_test.sh 3-ml-shared-bionic
 ./docker_test.sh 4-ml-bionic

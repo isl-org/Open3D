@@ -15,6 +15,8 @@ __usage="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
+    openblas-x86_64    : OpenBLAS x86_64
+    openblas-arm64     : OpenBLAS ARM64
     2-bionic           : CUDA CI, 2-bionic
     3-ml-shared-bionic : CUDA CI, 3-ml-shared-bionic
     4-ml-bionic        : CUDA CI, 4-ml-bionic
@@ -28,17 +30,24 @@ print_usage_and_exit() {
     exit 1
 }
 
-print_env() {
-    echo "[print_env()] BASE_IMAGE=${BASE_IMAGE}"
-    echo "[print_env()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
-    echo "[print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
-    echo "[print_env()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[print_env()] CCACHE_VERSION=${CCACHE_VERSION}"
-    echo "[print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
-    echo "[print_env()] SHARED=${SHARED}"
-    echo "[print_env()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
-    echo "[print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-    echo "[print_env()] DOCKER_TAG=${DOCKER_TAG}"
+cuda_print_env() {
+    echo "[cuda_print_env()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[cuda_print_env()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[cuda_print_env()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
+    echo "[cuda_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
+    echo "[cuda_print_env()] CMAKE_VERSION=${CMAKE_VERSION}"
+    echo "[cuda_print_env()] CCACHE_VERSION=${CCACHE_VERSION}"
+    echo "[cuda_print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
+    echo "[cuda_print_env()] SHARED=${SHARED}"
+    echo "[cuda_print_env()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
+    echo "[cuda_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+}
+
+openblas_print_env() {
+    echo "[openblas_print_env()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[openblas_print_env()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[openblas_print_env()] CMAKE_VER=${CMAKE_VER}"
+    echo "[openblas_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
 }
 
 restart_docker_daemon_if_on_gcloud() {
@@ -63,29 +72,49 @@ restart_docker_daemon_if_on_gcloud() {
 }
 
 cpp_python_linking_uninstall_test() {
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_CUDA_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    echo "[cpp_python_linking_uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[cpp_python_linking_uninstall_test()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
+    echo "[cpp_python_linking_uninstall_test()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+    echo "[cpp_python_linking_uninstall_test()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
+
+    # Config-dependent argument: gpu_run_args
+    if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
+        docker_run="docker run --gpus all"
+    else
+        docker_run="docker run"
+    fi
+
+    # Config-dependent argument: pytest_args
+    if [ "${BUILD_PYTORCH_OPS}" == "OFF" ] || [ "${BUILD_TENSORFLOW_OPS}" == "OFF" ]; then
+        pytest_args="--ignore python/test/ml_ops/"
+    else
+        pytest_args=""
+    fi
+
     restart_docker_daemon_if_on_gcloud
 
     # C++ test
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
-    docker run -i --rm --gpus all ${DOCKER_TAG} /bin/bash -c "\
+    ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c "\
         cd build \
      && ./bin/tests --gtest_shuffle \
     "
     restart_docker_daemon_if_on_gcloud
 
     # Python test
-    echo "pytest is randomized, add --rondomly-seed=SEED to repeat the test sequence."
-    pytest_args=""
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-        pytest_args="${pytest_args} --ignore python/test/ml_ops/"
-    fi
-    docker run -i --rm --gpus all "${DOCKER_TAG}" /bin/bash -c "\
+    echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
         pytest python/test ${pytest_args} \
     "
     restart_docker_daemon_if_on_gcloud
 
     # C++ linking
-    docker run -i --rm --gpus all "${DOCKER_TAG}" /bin/bash -c "\
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
         git clone https://github.com/isl-org/open3d-cmake-find-package.git \
      && cd open3d-cmake-find-package \
      && mkdir build \
@@ -97,7 +126,7 @@ cpp_python_linking_uninstall_test() {
     restart_docker_daemon_if_on_gcloud
 
     # Uninstall
-    docker run -i --rm --gpus all "${DOCKER_TAG}" /bin/bash -c "\
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
         cd build \
      && make uninstall \
     "
@@ -112,22 +141,42 @@ source "${HOST_OPEN3D_ROOT}/.github/workflows/docker_build.sh"
 case "$1" in
     2-bionic)
         2-bionic_export_env
-        print_env
+        cuda_print_env
+        export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
     3-ml-shared-bionic)
         3-ml-shared-bionic_export_env
-        print_env
+        cuda_print_env
+        export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
     4-ml-bionic)
         4-ml-bionic_export_env
-        print_env
+        cuda_print_env
+        export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
     5-ml-focal)
         5-ml-focal_export_env
-        print_env
+        cuda_print_env
+        export BUILD_CUDA_MODULE=ON
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-x86_64)
+        openblas-x86_64_export_env
+        openblas_print_env
+        export BUILD_CUDA_MODULE=OFF
+        export BUILD_PYTORCH_OPS=OFF
+        export BUILD_TENSORFLOW_OPS=OFF
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-arm64)
+        openblas-arm64_export_env
+        openblas_print_env
+        export BUILD_CUDA_MODULE=OFF
+        export BUILD_PYTORCH_OPS=OFF
+        export BUILD_TENSORFLOW_OPS=OFF
         cpp_python_linking_uninstall_test
         ;;
     *)

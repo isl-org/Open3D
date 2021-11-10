@@ -29,7 +29,7 @@ RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD  
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
-ARG CCACHE_VERSION=${CCACHE_VERSION}
+ENV CCACHE_VERSION=${CCACHE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV SHARED=${SHARED}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
@@ -70,9 +70,9 @@ RUN git clone https://github.com/ccache/ccache.git \
 # Download ccache from GCS bucket
 # If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
 # Example directory structure:
-# CCACHE_DIR        = ~/.cache/ccache
-# CCACHE_DIR_NAME   = ccache
-# CCACHE_DIR_PARENT = ~/.cache
+# - CCACHE_DIR        = ~/.cache/ccache
+# - CCACHE_DIR_NAME   = ccache
+# - CCACHE_DIR_PARENT = ~/.cache
 RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
