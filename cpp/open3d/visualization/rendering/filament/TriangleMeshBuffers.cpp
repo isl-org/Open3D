@@ -796,19 +796,23 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
             uv_array, uv_array_size, GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 3, std::move(uv_descriptor));
 
-    // Create the index buffer - indices are expected to be Uint32
+    // Create the index buffer
+    // NOTE: Filament supports both UInt16 and UInt32 triangle indices.
+    // Currently, however, we only support 32bit indices. This may change in the
+    // future.
     const uint32_t n_indices =
             need_duplicate_vertices ? n_vertices : indices.GetLength() * 3;
-    const size_t n_bytes = n_indices * sizeof(IndexType);
-    auto* uint_indices = static_cast<IndexType*>(malloc(n_bytes));
+    const size_t n_bytes = n_indices * sizeof(uint32_t);
+    auto* uint_indices = static_cast<uint32_t*>(malloc(n_bytes));
     if (need_duplicate_vertices) {
         std::iota(uint_indices, uint_indices + n_vertices, 0);
     } else {
+        // NOTE: if indices is already UInt32 the following is as no-op
         const auto indices_32 = indices.To(core::UInt32);
         memcpy(uint_indices, indices_32.GetDataPtr(), n_bytes);
     }
     auto ib_handle =
-            resource_mgr.CreateIndexBuffer(n_indices, sizeof(IndexType));
+            resource_mgr.CreateIndexBuffer(n_indices, sizeof(uint32_t));
     auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
     IndexBuffer::BufferDescriptor indices_descriptor(
             uint_indices, n_bytes, GeometryBuffersBuilder::DeallocateBuffer);
