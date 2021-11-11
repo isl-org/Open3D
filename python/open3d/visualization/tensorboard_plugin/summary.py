@@ -341,10 +341,11 @@ def _convert_bboxes(bboxes):
     data = dict()
     if hasattr(bboxes[0], "__len__"):  # Nested Seq. (B, Nbb)
         for bb_batch in bboxes:
-            append_key_values(data,
-                              BoundingBox3D.create_lines(bb_batch, out='dict'))
+            append_key_values(
+                data, BoundingBox3D.create_lines(bb_batch, out_format='dict'))
     else:
-        append_key_values(data, BoundingBox3D.create_lines(bboxes, out='dict'))
+        append_key_values(data,
+                          BoundingBox3D.create_lines(bboxes, out_format='dict'))
     data.pop('line_colors')  # No LUT. Assign colors during rendering.
     labels = data.pop('bbox_labels')
     confidences = tuple(np.float32(c) for c in data.pop('bbox_confidences'))
