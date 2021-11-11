@@ -1190,20 +1190,12 @@ if (OPEN3D_USE_ONE_API)
     # oneMKL
     set(MKL_THREADING tbb_thread)
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
-    find_package(MKL CONFIG REQUIRED)
-    add_library(3rdparty_mkl INTERFACE)
-    target_include_directories(3rdparty_mkl INTERFACE ${MKL_INCLUDE})
-    target_link_libraries(3rdparty_mkl INTERFACE
-        MKL::mkl_intel_ilp64
-        MKL::mkl_core
-        MKL::mkl_tbb_thread
+    open3d_find_package_3rdparty_library(3rdparty_mkl
+        PACKAGE MKL
+        TARGETS MKL::mkl_intel_ilp64 MKL::mkl_core MKL::mkl_tbb_thread
+        INCLUDE_DIRS MKL_INCLUDE
     )
-    if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
-        install(TARGETS 3rdparty_mkl EXPORT Open3DTargets)
-    endif()
-    add_library(Open3D::3rdparty_mkl ALIAS 3rdparty_mkl)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
-
 else() # OPEN3D_USE_ONE_API
     # TBB
     include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
