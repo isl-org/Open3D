@@ -1194,6 +1194,9 @@ if (OPEN3D_USE_ONE_API)
         MKL::mkl_core
         MKL::mkl_tbb_thread
     )
+    if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
+        install(TARGETS 3rdparty_mkl EXPORT Open3DTargets)
+    endif()
     add_library(Open3D::3rdparty_mkl ALIAS 3rdparty_mkl)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 
