@@ -258,6 +258,7 @@ static Eigen::Matrix4d OptimizePairwiseRegistration(
             r2 += r * r * s[c2];
             r2 += (par * (1.0 - sqrt(s[c2])) * (1.0 - sqrt(s[c2])));
         }
+        (void)r2;  // Fix warning in Clang.
         bool success;
         Eigen::VectorXd result;
         std::tie(success, result) = utility::SolveLinearSystemPSD(-JTJ, JTr);

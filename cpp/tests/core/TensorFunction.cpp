@@ -27,6 +27,7 @@
 #include "open3d/core/TensorFunction.h"
 
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Timer.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
@@ -37,6 +38,26 @@ class TensorFunctionPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
                          TensorFunctionPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
+
+TEST_P(TensorFunctionPermuteDevices, RunSYCLDemo) { core::RunSYCLDemo(); }
+
+TEST_P(TensorFunctionPermuteDevices, AddBenchmark) {
+    core::Tensor a = core::Tensor::Ones({1000000000}, core::Float32);
+    core::Tensor b = core::Tensor::Ones({1000000000}, core::Float32);
+
+    // Warm up.
+    for (int i = 0; i < 2; i++) {
+        core::Tensor c = a + b;
+    }
+
+    utility::Timer timer;
+    timer.Start();
+    core::Tensor c = a + b;
+    timer.Stop();
+
+    utility::LogInfo("AddBenchmark ({} float32 numbers) took {} ms.",
+                     c.GetShape().ToString(), timer.GetDuration());
+}
 
 TEST_P(TensorFunctionPermuteDevices, Concatenate) {
     core::Device device = GetParam();

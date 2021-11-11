@@ -63,6 +63,64 @@ static constexpr int64_t MAX_INPUTS = 10;
 // necessary.
 static constexpr int64_t MAX_OUTPUTS = 2;
 
+/// A minimalistic class that reference a Tensor.
+struct SYCLTensorRef {
+    void* data_ptr_;
+    int64_t ndims_;
+    int64_t dtype_byte_size_;
+    int64_t shape_[MAX_DIMS];
+    int64_t byte_strides_[MAX_DIMS];
+};
+
+struct SYCLIndexer {
+    int64_t num_inputs_;
+    int64_t num_outputs_;
+    SYCLTensorRef inputs_[MAX_INPUTS];
+    SYCLTensorRef outputs_[MAX_OUTPUTS];
+    bool inputs_contiguous_[MAX_INPUTS];
+    bool outputs_contiguous_[MAX_OUTPUTS];
+    int64_t master_shape_[MAX_DIMS];
+    int64_t master_strides_[MAX_DIMS];
+    int64_t ndims_;
+};
+
+inline char* SYCLGetWorkloadDataPtr(const SYCLIndexer* self,
+                                    const SYCLTensorRef* tr,
+                                    bool tr_contiguous,
+                                    int64_t workload_idx) {
+    if (workload_idx < 0) {
+        return nullptr;
+    }
+    int64_t offset = 0;
+    if (tr_contiguous) {
+        return (char*)(tr->data_ptr_) + workload_idx * tr->dtype_byte_size_;
+    } else {
+        for (int64_t i = 0; i < self->ndims_; ++i) {
+            offset += workload_idx / self->master_strides_[i] *
+                      tr->byte_strides_[i];
+            workload_idx = workload_idx % self->master_strides_[i];
+        }
+    }
+
+    return (char*)(tr->data_ptr_) + offset;
+}
+
+inline char* SYCLGetOutputPtr(const SYCLIndexer* self, int64_t workload_idx) {
+    return SYCLGetWorkloadDataPtr(self, &(self->outputs_[0]),
+                                  self->outputs_contiguous_[0], workload_idx);
+}
+
+inline char* SYCLGetInputPtr(const SYCLIndexer* self,
+                             int64_t input_idx,
+                             int64_t workload_idx) {
+    if (input_idx < 0 || input_idx >= self->num_inputs_) {
+        return nullptr;
+    }
+    return SYCLGetWorkloadDataPtr(self, &(self->inputs_[input_idx]),
+                                  self->inputs_contiguous_[input_idx],
+                                  workload_idx);
+}
+
 template <int NARGS, typename index_t = uint32_t>
 struct OffsetCalculator {
     OffsetCalculator(int dims,
@@ -207,6 +265,20 @@ struct TensorRef {
     /// Converts this object to an corresponsing ISPC-compatible object.
     ispc::TensorRef ToISPC() const;
 #endif
+
+    SYCLTensorRef ToSYCL() const {
+        SYCLTensorRef sycl_tensor_ref;
+
+        sycl_tensor_ref.data_ptr_ = data_ptr_;
+        sycl_tensor_ref.ndims_ = ndims_;
+        sycl_tensor_ref.dtype_byte_size_ = dtype_byte_size_;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            sycl_tensor_ref.shape_[i] = shape_[i];
+            sycl_tensor_ref.byte_strides_[i] = byte_strides_[i];
+        }
+
+        return sycl_tensor_ref;
+    }
 
     void* data_ptr_;
     int64_t ndims_ = 0;
@@ -500,6 +572,28 @@ public:
     /// Converts this object to an corresponsing ISPC-compatible object.
     ispc::Indexer ToISPC() const;
 #endif
+
+    SYCLIndexer ToSYCL() const {
+        SYCLIndexer sycl_indexer;
+
+        sycl_indexer.num_inputs_ = NumInputs();
+        sycl_indexer.num_outputs_ = NumOutputs();
+        for (int64_t i = 0; i < NumInputs(); ++i) {
+            sycl_indexer.inputs_[i] = GetInput(i).ToSYCL();
+            sycl_indexer.inputs_contiguous_[i] = GetInput(i).IsContiguous();
+        }
+        for (int64_t i = 0; i < NumOutputs(); ++i) {
+            sycl_indexer.outputs_[i] = GetOutput(i).ToSYCL();
+            sycl_indexer.outputs_contiguous_[i] = GetOutput(i).IsContiguous();
+        }
+        for (int64_t i = 0; i < NumDims(); ++i) {
+            sycl_indexer.master_shape_[i] = GetMasterShape()[i];
+            sycl_indexer.master_strides_[i] = GetMasterStrides()[i];
+        }
+        sycl_indexer.ndims_ = NumDims();
+
+        return sycl_indexer;
+    }
 
 protected:
     /// Merge adjacent dimensions if either dim is 1 or if:

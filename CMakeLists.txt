@@ -8,9 +8,18 @@ cmake_minimum_required(VERSION 3.19.2)
 # - parse JSON files for downloading files from the open3d_downloads repository
 # - use first-class language support for ISPC (3.19.2 patch release required)
 
+option(OPEN3D_USE_ONE_API "Use Intel OneAPI BaseKit and DPC++" ON)
+if (OPEN3D_USE_ONE_API)
+    if (NOT UNIX OR APPLE)
+        message(FATAL_ERROR "Open3D OneAPI support is only available on Linux")
+    endif()
+    set(CMAKE_C_COMPILER icx)
+    set(CMAKE_CXX_COMPILER icpx)
+endif()
+
 if (APPLE)
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
-    "Minimum OS X deployment version" FORCE)
+    set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+        "Minimum OS X deployment version" FORCE)
 endif()
 
 if(UNIX AND NOT APPLE)
@@ -50,6 +59,11 @@ if(BUILD_SHARED_LIBS)
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
 else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
+endif()
+if(OPEN3D_USE_ONE_API)
+    option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
+else()
+    option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64))
@@ -186,6 +200,9 @@ endif()
 if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
+if(OPEN3D_USE_ONE_API AND NOT GLIBCXX_USE_CXX11_ABI)
+    message(FATAL_ERROR "OPEN3D_USE_ONE_API=ON requires GLIBCXX_USE_CXX11_ABI=ON")
+endif()
 
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
@@ -218,7 +235,6 @@ if (BUILD_CUDA_MODULE
     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
 )
     # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
-    set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CUDA_STANDARD 17)
     # Suppress warnings for deprecated C++17 functions.
     add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
