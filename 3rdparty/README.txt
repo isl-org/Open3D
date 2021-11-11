@@ -122,4 +122,7 @@ curl                        7.79.1           https://curl.se/docs/copyright.html
 Curl is a command-line tool for transferring data specified with URL syntax.
 https://github.com/curl/curl
 --------------------------------------------------------------------------------
-
+openssl                     1.1.1k                              Apache-2 license
+TLS/SSL and crypto library
+https://github.com/openssl/openssl
+--------------------------------------------------------------------------------
