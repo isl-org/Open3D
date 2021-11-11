@@ -1157,12 +1157,15 @@ open3d_import_3rdparty_library(3rdparty_msgpack
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
 if (OPEN3D_USE_ONE_API)
-    # DPC++
+    # DPC++ (compile and link flags only)
     add_library(SYCL INTERFACE)
     target_compile_options(SYCL INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda>)
     target_link_libraries(SYCL INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl -fsycl>)
+    if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
+        install(TARGETS SYCL EXPORT Open3DTargets)
+    endif()
     add_library(Open3D::SYCL ALIAS SYCL)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::SYCL)
 
