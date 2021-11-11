@@ -1179,10 +1179,13 @@ if (OPEN3D_USE_ONE_API)
 
     # oneDPL
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL)
-    find_package(oneDPL REQUIRED)
-    target_compile_definitions(oneDPL INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
-    target_compile_definitions(oneDPL INTERFACE PSTL_USE_PARALLEL_POLICIES=0)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS oneDPL)
+    open3d_find_package_3rdparty_library(3rdparty_onedpl
+        PACKAGE oneDPL
+        TARGETS oneDPL
+    )
+    target_compile_definitions(3rdparty_onedpl INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
+    target_compile_definitions(3rdparty_onedpl INTERFACE PSTL_USE_PARALLEL_POLICIES=0)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_onedpl)
 
     # oneMKL
     set(MKL_THREADING tbb_thread)
