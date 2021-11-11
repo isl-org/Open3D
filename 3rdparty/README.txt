@@ -118,3 +118,8 @@ embree                      3.13.0                              Apache-2 license
 Embree is a collection of high-performance ray tracing kernels
 https://github.com/embree/embree
 --------------------------------------------------------------------------------
+curl                        7.79.1           https://curl.se/docs/copyright.html 
+Curl is a command-line tool for transferring data specified with URL syntax.
+https://github.com/curl/curl
+--------------------------------------------------------------------------------
+

@@ -1351,8 +1351,49 @@ if (BUILD_CUDA_MODULE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_stdgpu)
 endif ()
 
+# embree
+include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+open3d_import_3rdparty_library(3rdparty_embree
+    HIDDEN
+    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+    LIB_DIR      ${EMBREE_LIB_DIR}
+    LIBRARIES    ${EMBREE_LIBRARIES}
+    DEPENDS      ext_embree
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
+
+# openssl
+include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
+open3d_import_3rdparty_library(3rdparty_openssl
+    INCLUDE_DIRS ${OPENSSL_INCLUDE_DIRS}
+    INCLUDE_ALL
+    LIB_DIR      ${OPENSSL_LIB_DIR}
+    LIBRARIES    ${OPENSSL_LIBRARIES}
+    DEPENDS      ext_zlib ext_openssl
+)
+# list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_openssl)
+
+# curl
+include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
+open3d_import_3rdparty_library(3rdparty_curl
+    LIB_DIR      ${CURL_LIB_DIR}
+    LIBRARIES    ${CURL_LIBRARIES}
+    DEPENDS      ext_zlib ext_openssl ext_curl
+)
+# target_link_libraries(3rdparty_curl STATIC Open3D::3rdparty_zlib Open3D::3rdparty_openssl -lpthread dl)
+target_link_libraries(3rdparty_curl INTERFACE
+    /home/rey/workspace/experiment/install_dir/zlib/lib/libz.a
+    /home/rey/workspace/experiment/install_dir/openssl/lib/libssl.a
+    /home/rey/workspace/experiment/install_dir/openssl/lib/libcrypto.a
+    -lpthread 
+    dl
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
+
 # WebRTC
 if(BUILD_WEBRTC)
+    message(FATAL_ERROR "PROBLEM")
+    
     # Include WebRTC headers in Open3D.h.
     set(BUILD_WEBRTC_COMMENT "")
 
@@ -1392,17 +1433,6 @@ else()
     # Don't include WebRTC headers in Open3D.h.
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
-
-# embree
-include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-open3d_import_3rdparty_library(3rdparty_embree
-    HIDDEN
-    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-    LIB_DIR      ${EMBREE_LIB_DIR}
-    LIBRARIES    ${EMBREE_LIBRARIES}
-    DEPENDS      ext_embree
-)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
 
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
