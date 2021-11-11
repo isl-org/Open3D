@@ -1171,10 +1171,11 @@ if (OPEN3D_USE_ONE_API)
 
     # oneTBB
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/tbb/latest/lib/cmake/tbb)
-    find_package(TBB REQUIRED)
-    message(STATUS "TBB_FOUND: ${TBB_FOUND}")
-    message(STATUS "TBB_IMPORTED_TARGETS: ${TBB_IMPORTED_TARGETS}")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${TBB_IMPORTED_TARGETS})
+    open3d_find_package_3rdparty_library(3rdparty_tbb
+        PACKAGE TBB
+        TARGETS TBB::tbb TBB::tbbmalloc TBB::tbbmalloc_proxy
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
 
     # oneDPL
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL)
