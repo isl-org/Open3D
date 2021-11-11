@@ -40,6 +40,7 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 
 .. code-block:: bash
 
+    # Navigate to the Open3D directory you have cloned
     pip install -r docs/requirements.txt
 
 
