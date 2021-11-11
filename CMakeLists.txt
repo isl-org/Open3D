@@ -18,8 +18,8 @@ if (OPEN3D_USE_ONE_API)
 endif()
 
 if (APPLE)
-    set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
-        "Minimum OS X deployment version" FORCE)
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+    "Minimum OS X deployment version" FORCE)
 endif()
 
 if(UNIX AND NOT APPLE)
