@@ -1156,7 +1156,7 @@ open3d_import_3rdparty_library(3rdparty_msgpack
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
-if (OPEN3D_USE_ONE_API)
+if (OPEN3D_USE_ONEAPI)
     # DPC++ (compile and link flags only)
     add_library(SYCL INTERFACE)
     target_compile_options(SYCL INTERFACE
@@ -1196,7 +1196,7 @@ if (OPEN3D_USE_ONE_API)
         INCLUDE_DIRS MKL_INCLUDE
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
-else() # OPEN3D_USE_ONE_API
+else() # OPEN3D_USE_ONEAPI
     # TBB
     include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
     open3d_import_3rdparty_library(3rdparty_tbb
@@ -1269,7 +1269,7 @@ else() # OPEN3D_USE_ONE_API
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
 
-endif() # OPEN3D_USE_ONE_API
+endif() # OPEN3D_USE_ONEAPI
 
 # Faiss
 # Open3D should link Faiss before cuBLAS to avoid missing symbols error since
