@@ -84,7 +84,7 @@ RUN which python \
 # Checkout Open3D-ML master branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone --recursive https://github.com/intel-isl/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN git clone https://github.com/intel-isl/Open3D-ML.git ${OPEN3D_ML_ROOT}
 
 # Open3D C++ dependencies
 # Done before copying the full Open3D directory for better Docker caching
@@ -97,9 +97,9 @@ COPY ./util/ci_utils.sh /root/Open3D/util/
 COPY ./python/requirements.txt /root/Open3D/python/
 COPY ./python/requirements_jupyter.txt /root/Open3D/python/
 RUN source /root/Open3D/util/ci_utils.sh \
- && install_python_dependencies with-conda with-jupyter
+ && install_python_dependencies with-conda with-cuda with-jupyter
 
-# Open3D WebRTC dependencies
+# Open3D Jupyter dependencies
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \

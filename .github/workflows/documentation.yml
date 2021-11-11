@@ -1,4 +1,4 @@
-name: Documentation build
+name: Documentation
 
 on:
   workflow_dispatch:
@@ -32,8 +32,6 @@ jobs:
 
       - name: Checkout Open3D source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Maximize build space
         run: |

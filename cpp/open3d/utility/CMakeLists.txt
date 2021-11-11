@@ -10,6 +10,7 @@ target_sources(utility PRIVATE
     ISAInfo.cpp
     Logging.cpp
     Parallel.cpp
+    ProgressBar.cpp
     Timer.cpp
 )
 

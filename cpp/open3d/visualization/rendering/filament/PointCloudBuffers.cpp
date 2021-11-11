@@ -487,14 +487,22 @@ filament::Box TPointCloudBuffersBuilder::ComputeAABB() {
     auto* min_bounds_float = min_bounds.GetDataPtr<float>();
     auto* max_bounds_float = max_bounds.GetDataPtr<float>();
 
-    const filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
-                                     min_bounds_float[2]);
-    const filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
-                                     max_bounds_float[2]);
+    filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
+                               min_bounds_float[2]);
+    filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
+                               max_bounds_float[2]);
 
     Box aabb;
     aabb.set(min, max);
-
+    if (aabb.isEmpty()) {
+        min.x -= 0.1f;
+        min.y -= 0.1f;
+        min.z -= 0.1f;
+        max.x += 0.1f;
+        max.y += 0.1f;
+        max.z += 0.1f;
+        aabb.set(min, max);
+    }
     return aabb;
 }
 
