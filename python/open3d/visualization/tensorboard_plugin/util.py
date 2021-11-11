@@ -528,6 +528,7 @@ class RenderUpdate:
             return False
 
         def get_labelLUT():
+            """Create {label: color} mapping from list of colors."""
             return {
                 label: self.LABELLUT_COLORS[k]
                 for k, label in enumerate(self._label_to_names)
@@ -569,6 +570,16 @@ class RenderUpdate:
                 self._shader = "defaultUnlit"
             else:  # Only XYZ
                 self._shader = "unlitSolidColor"
+
+        # Fix incompatible option
+        if (self._property in custom_props and
+                self._shader == "unlitGradient.LUT"):
+            self._shader = "unlitGradient.GRADIENT.RAINBOW"
+            self._colormap = None
+        if (self._property in label_props and
+                self._shader.startswith("unlitGradient.GRADIENT.")):
+            self._shader = "unlitGradient.LUT"
+            self._colormap = None
 
         o3dscene = o3dvis.scene
         if o3dscene.has_geometry(geometry_name):
@@ -639,7 +650,6 @@ class RenderUpdate:
                 material.shader = "defaultLit"
             elif self._shader == "defaultUnlit":
                 material.shader = "defaultUnlit"
-                material.base_color = [0.5, 0.5, 0.5, 1.0]
             elif self._shader == "unlitSolidColor":
                 material.shader = "unlitSolidColor"
                 if self._colormap is None:
@@ -667,7 +677,8 @@ class RenderUpdate:
             # Colormap (RAINBOW / GREYSCALE): continuous data
             elif self._shader.startswith("unlitGradient.GRADIENT."):
                 if self._colormap is None:
-                    self._colormap = deepcopy(self.DICT_COLORMAPS["RAINBOW"])
+                    self._colormap = deepcopy(
+                        self.DICT_COLORMAPS[self._shader[23:]])
                 material.shader = "unlitGradient"
                 material.gradient = rendering.Gradient()
                 material.gradient.points = list(
