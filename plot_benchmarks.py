@@ -94,53 +94,69 @@ def parse_benchmark_log_file(log_file):
 
 if __name__ == "__main__":
 
-    log_file = "open3d_0.13.log"
-    entries = parse_benchmark_log_file(log_file)
+    old_log_file = "open3d_0.13.log"
+    new_log_file = "open3d_0.15.log"
+    old_entries = parse_benchmark_log_file(old_log_file)
+    new_entries = parse_benchmark_log_file(new_log_file)
 
     operands = ["unary", "binary"]
     fig, axes = plt.subplots(2, 1)
 
-    for i in range(2):
-        operand = operands[i]
-        ax = axes[i]
+    for index, operand in enumerate(["unary", "binary"]):
+        ax = axes[index]
+
+        # Get ops, e.g. "add", '"mul"
+        old_ops = [
+            old_entry["op"]
+            for old_entry in old_entries
+            if old_entry["operand"] == operand
+        ]
+        new_ops = [
+            new_entry["op"]
+            for new_entry in new_entries
+            if new_entry["operand"] == operand
+        ]
+        old_ops = sorted(list(set(old_ops)))
+        new_ops = sorted(list(set(new_ops)))
+        assert old_ops == new_ops
+        ops = old_ops
 
         # Compute geometirc mean
-        times = dict()
-        ops = [entry["op"] for entry in entries if entry["operand"] == operand]
-        ops = sorted(list(set(ops)))
+        old_gmean_times = dict()
+        new_gmean_times = dict()
         for op in ops:
-            open3d_times = [
-                entry["mean"]
-                for entry in entries
-                if entry["op"] == op and entry["engine"] == "open3d"
+            old_times = [
+                old_entry["mean"]
+                for old_entry in old_entries
+                if old_entry["op"] == op and old_entry["engine"] == "open3d"
             ]
-            numpy_times = [
-                entry["mean"]
-                for entry in entries
-                if entry["op"] == op and entry["engine"] == "numpy"
+            new_times = [
+                new_entry["mean"]
+                for new_entry in new_entries
+                if new_entry["op"] == op and new_entry["engine"] == "open3d"
             ]
-            times[op] = dict()
-            times[op]["open3d"] = gmean(open3d_times)
-            times[op]["numpy"] = gmean(numpy_times)
-        pprint(times)
+            old_gmean_times[op] = gmean(old_times)
+            new_gmean_times[op] = gmean(new_times)
+        pprint(old_gmean_times)
+        pprint(new_gmean_times)
 
         # Plot
         # https://matplotlib.org/2.0.2/examples/api/barchart_demo.html
-        open3d_times = [times[op]["open3d"] for op in ops]
-        numpy_times = [times[op]["numpy"] for op in ops]
+        old_gmean_times = [old_gmean_times[op] for op in ops]
+        new_gmean_times = [new_gmean_times[op] for op in ops]
 
         ind = np.arange(len(ops))  # the x locations for the groups
         width = 0.35  # the width of the bars
 
-        rects1 = ax.bar(ind, open3d_times, width, color='r')
-        rects2 = ax.bar(ind + width, numpy_times, width, color='y')
+        rects1 = ax.bar(ind, old_gmean_times, width, color='r')
+        rects2 = ax.bar(ind + width, new_gmean_times, width, color='y')
 
         ax.set_ylabel('Time (ms)')
-        ax.set_title(f'{log_file}: {operand} op benchmarks')
+        ax.set_title(f'{operand} op benchmarks')
         ax.set_xticks(ind + width / 2)
         ax.set_xticklabels(ops)
 
-        ax.legend((rects1[0], rects2[0]), ('Open3D', 'Numpy'))
+        ax.legend((rects1[0], rects2[0]), ("old", "new"))
 
         autolabel(rects1)
         autolabel(rects2)
