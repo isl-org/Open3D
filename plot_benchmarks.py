@@ -95,7 +95,7 @@ def parse_benchmark_log_file(log_file):
 if __name__ == "__main__":
 
     old_log_file = "open3d_0.13.log"
-    new_log_file = "open3d_0.15.log"
+    new_log_file = "open3d_0.14.log"
     old_entries = parse_benchmark_log_file(old_log_file)
     new_entries = parse_benchmark_log_file(new_log_file)
 
