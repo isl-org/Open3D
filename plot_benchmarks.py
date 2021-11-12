@@ -152,11 +152,15 @@ if __name__ == "__main__":
         new_rects = ax.bar(ind + width, new_gmean_times, width, color='r')
 
         ax.set_ylabel('Time (ms)')
-        ax.set_title(f'{operand} op benchmarks')
+        ax.set_title(
+            f'Open3D v0.13 v.s. v0.14 {operand} op benchmark (lower is better)',
+            fontweight="bold")
         ax.set_xticks(ind + width / 2)
         ax.set_xticklabels(ops)
 
-        ax.legend((old_rects[0], new_rects[0]), ("old", "new"))
+        ax.legend((old_rects[0], new_rects[0]),
+                  ("Open3D v0.13", "Open3D v0.14"),
+                  loc='upper center')
 
         autolabel(old_rects)
         autolabel(new_rects)
