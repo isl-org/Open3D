@@ -79,7 +79,7 @@ public:
                 gui::SceneWidget::Controls::ROTATE_CAMERA;
         Shader scene_shader = Shader::STANDARD;
         bool show_settings = false;
-        bool show_skybox = false;
+        bool show_skybox = true;
         bool show_axes = false;
         bool show_ground = false;
         rendering::Scene::GroundPlane ground_plane =
