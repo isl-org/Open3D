@@ -148,17 +148,17 @@ if __name__ == "__main__":
         ind = np.arange(len(ops))  # the x locations for the groups
         width = 0.35  # the width of the bars
 
-        rects1 = ax.bar(ind, old_gmean_times, width, color='r')
-        rects2 = ax.bar(ind + width, new_gmean_times, width, color='y')
+        old_rects = ax.bar(ind, old_gmean_times, width, color='y')
+        new_rects = ax.bar(ind + width, new_gmean_times, width, color='r')
 
         ax.set_ylabel('Time (ms)')
         ax.set_title(f'{operand} op benchmarks')
         ax.set_xticks(ind + width / 2)
         ax.set_xticklabels(ops)
 
-        ax.legend((rects1[0], rects2[0]), ("old", "new"))
+        ax.legend((old_rects[0], new_rects[0]), ("old", "new"))
 
-        autolabel(rects1)
-        autolabel(rects2)
+        autolabel(old_rects)
+        autolabel(new_rects)
 
     plt.show()
