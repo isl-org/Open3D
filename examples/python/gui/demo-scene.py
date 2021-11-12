@@ -142,25 +142,25 @@ def create_scene():
     mat_ground.vector_properties['absorption_color'] = np.array(
         [0.82, 0.98, 0.972, 1.0])
     mat_ground.texture_maps['albedo'] = o3d.t.io.read_image(
-        "examples/test_data/demo_scene_assets/PaintedPlaster017_4K_Color.jpg")
+        "examples/test_data/demo_scene_assets/PaintedPlaster017_Color.jpg")
     mat_ground.texture_maps['roughness'] = o3d.t.io.read_image(
         "examples/test_data/demo_scene_assets/noiseTexture.png")
     mat_ground.texture_maps['normal'] = o3d.t.io.read_image(
-        "examples/test_data/demo_scene_assets/PaintedPlaster017_4K_NormalDX.jpg"
+        "examples/test_data/demo_scene_assets/PaintedPlaster017_NormalDX.jpg"
     )
     ground_plane.material = mat_ground
 
     # Load textures and create materials for each of our demo items
     monkey.material = create_material("examples/test_data/demo_scene_assets",
-                                      "WoodFloor050_4K")
+                                      "WoodFloor050")
     a_cube.material = create_material("examples/test_data/demo_scene_assets",
-                                      "Wood049_4K")
+                                      "Wood049")
     a_sphere.material = create_material("examples/test_data/demo_scene_assets",
-                                        "Tiles074_4K")
+                                        "Tiles074")
     a_ico.material = create_material("examples/test_data/demo_scene_assets",
-                                     "Terrazzo018_4K")
+                                     "Terrazzo018")
     a_cylinder.material = create_material(
-        "examples/test_data/demo_scene_assets", "Metal008_2K")
+        "examples/test_data/demo_scene_assets", "Metal008")
     geoms = [{
         "name": "plane",
         "geometry": ground_plane
