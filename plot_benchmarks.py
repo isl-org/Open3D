@@ -7,22 +7,6 @@ from scipy.stats import gmean
 from pprint import pprint
 import argparse
 
-decimal_with_parenthesis = r"([0-9\.\,]+) \([^)]*\)"
-regex_dict = {
-    "name": r"(\w+\[[^\]]*])",
-    "min": decimal_with_parenthesis,
-    "max": decimal_with_parenthesis,
-    "mean": decimal_with_parenthesis,
-    "stddev": decimal_with_parenthesis,
-    "median": decimal_with_parenthesis,
-    "iqr": None,
-    "outliers": None,
-    "ops": None,
-    "rounds": None,
-    "iterations": None,
-    "spaces": r"\s+"
-}
-
 
 def to_float(string):
     return float(string.replace(",", ""))
@@ -50,22 +34,23 @@ def autolabel(rects):
                 va='bottom')
 
 
-# Install Intel python
-# conda create -n intel-python -c intel intelpython3_core python=3
-# python -c "import numpy as np; print(np.show_config())"
-# python --version
+def parse_benchmark_log_file(log_file):
+    decimal_with_parenthesis = r"([0-9\.\,]+) \([^)]*\)"
+    regex_dict = {
+        "name": r"(\w+\[[^\]]*])",
+        "min": decimal_with_parenthesis,
+        "max": decimal_with_parenthesis,
+        "mean": decimal_with_parenthesis,
+        "stddev": decimal_with_parenthesis,
+        "median": decimal_with_parenthesis,
+        "iqr": None,
+        "outliers": None,
+        "ops": None,
+        "rounds": None,
+        "iterations": None,
+        "spaces": r"\s+"
+    }
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('log_file', type=str, help='log_file')
-    args = parser.parse_args()
-    print(args.log_file)
-
-    # log_file = "benchmark_patrick.log"
-    # log_file = "benchmark_regular_numpy.log"
-    # log_file = "benchmark_intel_numpy.log"
-    log_file = args.log_file
     with open(log_file, "r") as f:
         lines = f.readlines()
         lines = [line.strip() for line in lines]
@@ -97,7 +82,20 @@ if __name__ == "__main__":
                 entry["stddev"] = to_float(match.group(5).strip())
                 entry["median"] = to_float(match.group(6).strip())
                 entries.append(entry)
-        print(f"len(entries): {len(entries)}")
+
+    print(f"len(entries): {len(entries)}")
+    return entries
+
+
+# Install Intel python
+# conda create -n intel-python -c intel intelpython3_core python=3
+# python -c "import numpy as np; print(np.show_config())"
+# python --version
+
+if __name__ == "__main__":
+
+    log_file = "open3d_0.13.log"
+    entries = parse_benchmark_log_file(log_file)
 
     operands = ["unary", "binary"]
     fig, axes = plt.subplots(2, 1)
