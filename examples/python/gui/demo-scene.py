@@ -146,8 +146,7 @@ def create_scene():
     mat_ground.texture_maps['roughness'] = o3d.t.io.read_image(
         "examples/test_data/demo_scene_assets/noiseTexture.png")
     mat_ground.texture_maps['normal'] = o3d.t.io.read_image(
-        "examples/test_data/demo_scene_assets/PaintedPlaster017_NormalDX.jpg"
-    )
+        "examples/test_data/demo_scene_assets/PaintedPlaster017_NormalDX.jpg")
     ground_plane.material = mat_ground
 
     # Load textures and create materials for each of our demo items
