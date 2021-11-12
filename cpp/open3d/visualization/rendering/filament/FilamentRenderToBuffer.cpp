@@ -122,6 +122,7 @@ void FilamentRenderToBuffer::Configure(const View* view,
     auto* downcast_scene = dynamic_cast<FilamentScene*>(scene);
     if (downcast_scene) {
         view_->SetScene(*downcast_scene);
+        scene_ = downcast_scene;
     }
     SetDimensions(width, height);
 }
@@ -189,6 +190,7 @@ void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
 
 void FilamentRenderToBuffer::Render() {
     frame_done_ = false;
+    scene_->HideRefractedMaterials();
     if (renderer_->beginFrame(swapchain_)) {
         renderer_->render(view_->GetNativeView());
 
@@ -212,6 +214,7 @@ void FilamentRenderToBuffer::Render() {
 
         renderer_->endFrame();
     }
+    scene_->HideRefractedMaterials(false);
 
     pending_ = false;
 }

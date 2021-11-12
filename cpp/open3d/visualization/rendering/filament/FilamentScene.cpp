@@ -1897,6 +1897,14 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
     }
 }
 
+void FilamentScene::HideRefractedMaterials(bool hide) {
+    for (auto geom : geometries_) {
+        if (geom.second.mat.properties.shader == "defaultLitSSR") {
+            ShowGeometry(geom.first, !hide);
+        }
+    }
+}
+
 }  // namespace rendering
 }  // namespace visualization
 }  // namespace open3d
