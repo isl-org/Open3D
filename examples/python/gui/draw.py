@@ -78,10 +78,12 @@ def multi_objects():
     sphere_colored_lit.translate((6, 1, 0))
     big_bbox = o3d.geometry.AxisAlignedBoundingBox((-pc_rad, -3, -pc_rad),
                                                    (6.0 + r, 1.0 + r, pc_rad))
+    big_bbox.color = (0.0, 0.0, 0.0)
     sphere_bbox = sphere_unlit.get_axis_aligned_bounding_box()
     sphere_bbox.color = (1.0, 0.5, 0.0)
     lines = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
         sphere_lit.get_axis_aligned_bounding_box())
+    lines.paint_uniform_color((0.0, 1.0, 0.0))
     lines_colored = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
         sphere_colored_lit.get_axis_aligned_bounding_box())
     lines_colored.paint_uniform_color((0.0, 0.0, 1.0))
