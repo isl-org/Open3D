@@ -423,8 +423,8 @@ class RenderUpdate:
     empty message.
 
     We use uint8 colors everywhere, since they are more compact to store during
-    serialization. Colormaps are converted to float here, since rendering uses float
-    colormaps.
+    serialization. Colormaps are converted to float here, since rendering uses
+    float colormaps.
     """
 
     _LINES_PER_BBOX = 17  # BoundingBox3D
@@ -441,7 +441,8 @@ class RenderUpdate:
         } for name, cmap in _CMAPS.items()
     }
     LABELLUT_COLORS = tuple(
-        _float_to_u8(color + [1.0]) for color in LabelLUT.Colors)
+        _float_to_u8(color + [1.0])
+        for color in LabelLUT.get_colors(mode='lightbg'))
 
     def __init__(self, window_scaling, message, label_to_names):
         from open3d.visualization.async_event_loop import async_event_loop
