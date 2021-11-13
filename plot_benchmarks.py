@@ -99,11 +99,15 @@ if __name__ == "__main__":
     old_entries = parse_benchmark_log_file(old_log_file)
     new_entries = parse_benchmark_log_file(new_log_file)
 
-    operands = ["unary", "binary"]
-    fig, axes = plt.subplots(2, 1)
+    # operands = ["unary", "binary"]
+    operands = ["binary"]
+    fig, axes = plt.subplots(len(operands), 1)
 
-    for index, operand in enumerate(["unary", "binary"]):
-        ax = axes[index]
+    for index, operand in enumerate(operands):
+        if len(operands) > 1:
+            ax = axes[index]
+        else:
+            ax = axes
 
         # Get ops, e.g. "add", '"mul"
         old_ops = [
