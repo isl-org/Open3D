@@ -634,13 +634,10 @@ class RenderUpdate:
                     t_colors = geometry.line["colors"]
                     idx = 0
                     for bbir in inference_result:
-                        if bbir.label in self._colormap:
-                            col = self._colormap[bbir.label]
-                            col, alpha = col[:3], col[3]
-                        else:
-                            col, alpha = (128, 128, 128), 255
-                        t_colors[idx:idx + self._LINES_PER_BBOX] = col
-                        if alpha == 0:
+                        col = self._colormap.setdefault(bbir.label,
+                                                        (128, 128, 128, 255))
+                        t_colors[idx:idx + self._LINES_PER_BBOX] = col[:3]
+                        if col[3] == 0:  # alpha
                             t_lines[idx:idx + self._LINES_PER_BBOX] = 0
                         idx += self._LINES_PER_BBOX
 
@@ -662,19 +659,20 @@ class RenderUpdate:
                     self._colormap = get_labelLUT()
                 material.shader = "unlitGradient"
                 material.gradient = rendering.Gradient()
+                material.gradient.mode = rendering.Gradient.LUT
+                lmin = min(self._label_to_names.keys())
+                lmax = max(self._label_to_names.keys())
+                material.scalar_min, material.scalar_max = lmin, lmax
                 if len(self._colormap) > 1:
+                    norm_cmap = list((float(label - lmin) / (lmax - lmin),
+                                      _u8_to_float(color))
+                                     for label, color in self._colormap.items())
                     material.gradient.points = list(
-                        rendering.Gradient.Point(
-                            float(i) /
-                            (len(self._colormap) - 1), _u8_to_float(color))
-                        for i, color in enumerate(self._colormap.values()))
+                        rendering.Gradient.Point(*lc) for lc in norm_cmap)
                 else:
                     material.gradient.points = [
                         rendering.Gradient.Point(0.0, [1.0, 0.0, 1.0, 1.0])
                     ]
-                material.gradient.mode = rendering.Gradient.LUT
-                material.scalar_min, material.scalar_max = 0, max(
-                    self._label_to_names.keys())
             # Colormap (RAINBOW / GREYSCALE): continuous data
             elif self._shader.startswith("unlitGradient.GRADIENT."):
                 if self._colormap is None:
