@@ -393,6 +393,10 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
     buffer_builder->SetAdjustColorsForSRGBToneMapping(material.sRGB_color);
+    if (material.shader == "unlitLine") {
+        buffer_builder->SetWideLines();
+    }
+
     auto buffers = buffer_builder->ConstructBuffers();
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
