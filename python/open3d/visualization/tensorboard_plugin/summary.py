@@ -579,7 +579,8 @@ def add_3d(name,
            max_outputs=1,
            label_to_names=None,
            description=None):
-    """Write 3D geometry data as summary.
+    """Write 3D geometry data as TensorBoard summary for visualization with the
+    Open3D for TensorBoard plugin.
 
     Args:
         name (str): A name or tag for this summary. The summary tag used for
