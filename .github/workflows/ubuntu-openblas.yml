@@ -79,9 +79,6 @@ jobs:
       - name: Docker build
         run: |
           .github/workflows/docker_build.sh openblas-arm64
-      - name: Docker test
-        run: |
-          .github/workflows/docker_test.sh openblas-arm64
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@master
         with:
@@ -92,3 +89,6 @@ jobs:
       - name: Upload ccache to GCS
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-arm64.tar.gz gs://open3d-ci-cache/ || true
+      - name: Docker test
+        run: |
+          .github/workflows/docker_test.sh openblas-arm64
