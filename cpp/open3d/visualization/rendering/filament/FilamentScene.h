@@ -284,6 +284,7 @@ private:
     struct RenderableGeometry {
         std::string name;
         bool visible = true;
+        bool was_hidden_before_picking = false;
         bool cast_shadows = true;
         bool receive_shadows = true;
         bool culling_enabled = true;

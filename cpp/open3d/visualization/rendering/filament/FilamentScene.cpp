@@ -498,6 +498,7 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                 object_name,
                 RenderableGeometry{object_name,
                                    true,
+                                   false,
                                    true,
                                    true,
                                    true,
@@ -1900,7 +1901,17 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
 void FilamentScene::HideRefractedMaterials(bool hide) {
     for (auto geom : geometries_) {
         if (geom.second.mat.properties.shader == "defaultLitSSR") {
-            ShowGeometry(geom.first, !hide);
+            if (hide) {
+                if (!geom.second.visible) {
+                    geom.second.was_hidden_before_picking = true;
+                } else {
+                    ShowGeometry(geom.first, false);
+                }
+            } else {
+                if (!geom.second.was_hidden_before_picking) {
+                    ShowGeometry(geom.first, true);
+                }
+            }
         }
     }
 }
