@@ -206,8 +206,16 @@ public:
     filament::Box ComputeAABB() override;
 
 private:
-    Buffers ConstructThinLines();
-
+    void ConstructThinLines(uint32_t& n_vertices,
+                            float** vertex_data,
+                            uint32_t& n_indices,
+                            uint32_t& indices_bytes,
+                            uint32_t** line_indices);
+    void ConstructWideLines(uint32_t& n_vertices,
+                            float** vertex_data,
+                            uint32_t& n_indices,
+                            uint32_t& indices_bytes,
+                            uint32_t** line_indices);
     t::geometry::LineSet geometry_;
 };
 
