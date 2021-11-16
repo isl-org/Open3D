@@ -26,6 +26,7 @@
 
 #include "pybind/visualization/webrtc_server/webrtc_window_system.h"
 
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 #include "pybind/docstring.h"
 
@@ -74,8 +75,8 @@ be called. The string return value of the callback will be sent back as a reply,
 if it is not empty.
 
 .. note:: Ordering between the message and the reply is not guaranteed, since
-some messages may take longer to process than others. If ordering is important,
-use a unique message id for every message and include it in the reply.
+   some messages may take longer to process than others. If ordering is important,
+   use a unique message id for every message and include it in the reply.
 
 .. code:: python
 
@@ -103,13 +104,15 @@ use a unique message id for every message and include it in the reply.
              {"callback",
               "The callback function that will be called when a JSON object "
               "with the matching ``class_name`` is received via the data "
-              "channel. The function should accept a string argument "
+              "channel. The function should accept a ``string`` argument "
               "(corresponding to the event data, such as form data or updated "
-              "value of a slider) and not return anything."}});
+              "value of a slider) and return a ``string``."}});
 }
 
 void pybind_webrtc_server(py::module &m) {
-    py::module m_submodule = m.def_submodule("webrtc_server");
+    py::module m_submodule = m.def_submodule(
+            "webrtc_server",
+            "Functionality for remote visualization over WebRTC.");
     pybind_webrtc_server_functions(m_submodule);
 }
 

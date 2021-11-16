@@ -76,7 +76,7 @@ std::string TriangleMesh::ToString() const {
             GetTriangleIndices().GetLength(),
             GetTriangleIndices().GetDtype().ToString());
 
-    std::string vertices_attr_str = "\nVertices Attributes:";
+    std::string vertices_attr_str = "\nVertex Attributes:";
     if (vertex_attr_.size() == 1) {
         vertices_attr_str += " None.";
     } else {
@@ -91,7 +91,7 @@ std::string TriangleMesh::ToString() const {
         vertices_attr_str[vertices_attr_str.size() - 1] = '.';
     }
 
-    std::string triangles_attr_str = "\nTriangles Attributes:";
+    std::string triangles_attr_str = "\nTriangle Attributes:";
     if (triangle_attr_.size() == 1) {
         triangles_attr_str += " None.";
     } else {
@@ -110,6 +110,8 @@ std::string TriangleMesh::ToString() const {
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
+    core::AssertTensorShape(transformation, {4, 4});
+
     kernel::transform::TransformPoints(transformation, GetVertexPositions());
     if (HasVertexNormals()) {
         kernel::transform::TransformNormals(transformation, GetVertexNormals());
@@ -125,9 +127,10 @@ TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
 TriangleMesh &TriangleMesh::Translate(const core::Tensor &translation,
                                       bool relative) {
     core::AssertTensorShape(translation, {3});
-    core::AssertTensorDevice(translation, device_);
 
-    core::Tensor transform = translation;
+    core::Tensor transform =
+            translation.To(GetDevice(), GetVertexPositions().GetDtype());
+
     if (!relative) {
         transform -= GetCenter();
     }
@@ -139,13 +142,18 @@ TriangleMesh &TriangleMesh::Scale(double scale, const core::Tensor &center) {
     core::AssertTensorShape(center, {3});
     core::AssertTensorDevice(center, device_);
 
-    core::Tensor points = GetVertexPositions();
-    points.Sub_(center).Mul_(scale).Add_(center);
+    const core::Tensor center_d =
+            center.To(GetDevice(), GetVertexPositions().GetDtype());
+
+    GetVertexPositions().Sub_(center_d).Mul_(scale).Add_(center_d);
     return *this;
 }
 
 TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
                                    const core::Tensor &center) {
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(center, {3});
+
     kernel::transform::RotatePoints(R, GetVertexPositions(), center);
     if (HasVertexNormals()) {
         kernel::transform::RotateNormals(R, GetVertexNormals());
@@ -197,6 +205,13 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                 core::eigen_converter::EigenVector3dVectorToTensor(
                         mesh_legacy.triangle_normals_, float_dtype, device));
     }
+    if (mesh_legacy.HasTriangleUvs()) {
+        mesh.SetTriangleAttr(
+                "texture_uvs",
+                core::eigen_converter::EigenVector2dVectorToTensor(
+                        mesh_legacy.triangle_uvs_, float_dtype, device)
+                        .Reshape({-1, 3, 2}));
+    }
     return mesh;
 }
 
@@ -226,6 +241,16 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
         mesh_legacy.triangle_normals_ =
                 core::eigen_converter::TensorToEigenVector3dVector(
                         GetTriangleNormals());
+    }
+    if (HasTriangleAttr("texture_uvs")) {
+        mesh_legacy.triangle_uvs_ =
+                core::eigen_converter::TensorToEigenVector2dVector(
+                        GetTriangleAttr("texture_uvs").Reshape({-1, 2}));
+    }
+    if (HasVertexAttr("texture_uvs")) {
+        utility::LogWarning("{}",
+                            "texture_uvs as a vertex attribute is not "
+                            "supported by legacy TriangleMesh. Ignored.");
     }
 
     return mesh_legacy;

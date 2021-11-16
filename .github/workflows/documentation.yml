@@ -1,4 +1,4 @@
-name: Documentation build
+name: Documentation
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -32,8 +32,6 @@ jobs:
 
       - name: Checkout Open3D source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Maximize build space
         run: |

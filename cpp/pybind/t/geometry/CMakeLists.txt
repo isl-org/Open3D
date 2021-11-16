@@ -1,5 +1,6 @@
 target_sources(pybind PRIVATE
     geometry.cpp
+    drawablegeometry.cpp
     image.cpp
     lineset.cpp
     pointcloud.cpp
@@ -7,4 +8,5 @@ target_sources(pybind PRIVATE
     tensormap.cpp
     trianglemesh.cpp
     tsdf_voxelgrid.cpp
+    voxel_block_grid.cpp
 )

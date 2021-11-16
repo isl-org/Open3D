@@ -39,8 +39,12 @@ def draw(geometry=None,
          field_of_view=60.0,
          bg_color=(1.0, 1.0, 1.0, 1.0),
          bg_image=None,
+         ibl=None,
+         ibl_intensity=None,
+         show_skybox=None,
          show_ui=None,
          point_size=None,
+         line_width=None,
          animation_time_step=1.0,
          animation_duration=None,
          rpc_interface=False,
@@ -58,6 +62,9 @@ def draw(geometry=None,
 
     if point_size is not None:
         w.point_size = point_size
+
+    if line_width is not None:
+        w.line_width = line_width
 
     def add(g, n):
         if isinstance(g, dict):
@@ -83,6 +90,15 @@ def draw(geometry=None,
 
     if show_ui is not None:
         w.show_settings = show_ui
+
+    if ibl is not None:
+        w.set_ibl(ibl)
+
+    if ibl_intensity is not None:
+        w.set_ibl_intensity(ibl_intensity)
+
+    if show_skybox is not None:
+        w.show_skybox(show_skybox)
 
     if rpc_interface:
         w.start_rpc_interface(address="tcp://127.0.0.1:51454", timeout=10000)

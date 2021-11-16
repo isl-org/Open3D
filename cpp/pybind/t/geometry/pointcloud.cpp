@@ -66,7 +66,7 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
-               Geometry>
+               Geometry, DrawableGeometry>
             pointcloud(m, "PointCloud",
                        R"(
 A point cloud contains a list of 3D points. The point cloud class stores the
@@ -198,6 +198,13 @@ The attributes of the point cloud have different levels::
                    "with respect to the same. It uses KNN search if only "
                    "max_nn parameter is provided, and HybridSearch if radius "
                    "parameter is also provided.");
+    pointcloud.def("estimate_color_gradients",
+                   &PointCloud::EstimateColorGradients,
+                   py::call_guard<py::gil_scoped_release>(),
+                   py::arg("max_nn") = 30, py::arg("radius") = py::none(),
+                   "Function to estimate point color gradients. If radius is "
+                   "provided, then HybridSearch is used, otherwise KNN-Search "
+                   "is used.");
 
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,

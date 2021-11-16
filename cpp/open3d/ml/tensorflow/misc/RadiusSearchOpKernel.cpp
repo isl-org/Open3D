@@ -26,9 +26,9 @@
 
 #include "RadiusSearchOpKernel.h"
 
-#include "open3d/ml/impl/misc/RadiusSearch.h"
+#include "open3d/core/nns/NanoFlannImpl.h"
 
-using namespace open3d::ml::impl;
+using namespace open3d::core::nns;
 using namespace radius_search_opkernel;
 using namespace tensorflow;
 
@@ -103,12 +103,19 @@ public:
         const int batch_size = points_row_splits.shape().dim_size(0) - 1;
         if (batch_size == 1) {
             OutputAllocator<T> output_allocator(context);
-            RadiusSearchCPU(
+
+            std::unique_ptr<NanoFlannIndexHolderBase> holder =
+                    impl::BuildKdTree<T>(points.shape().dim_size(0),
+                                         points.flat<T>().data(),
+                                         points.shape().dim_size(1), metric);
+            impl::RadiusSearchCPU(
+                    holder.get(),
                     (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                     points.shape().dim_size(0), points.flat<T>().data(),
-                    queries.shape().dim_size(0), queries.flat<T>().data(),
+                    queries.shape().dim_size(0), queries.flat<T>().data(), 3,
                     radius.flat<T>().data(), metric, ignore_query_point,
-                    return_distances, normalize_distances, output_allocator);
+                    return_distances, normalize_distances, /* sort */ false,
+                    output_allocator);
         } else {
             // run radius search for each batch item
             std::vector<OutputAllocatorTmp<T>> output_allocators(batch_size);
@@ -131,10 +138,17 @@ public:
                         (int64_t*)(query_neighbors_row_splits.flat<int64>()
                                            .data() +
                                    queries_row_splits.flat<int64>()(i));
-                RadiusSearchCPU(neighbors_row_splits_i, num_points_i, points_i,
-                                num_queries_i, queries_i, radius_i, metric,
-                                ignore_query_point, return_distances,
-                                normalize_distances, output_allocators[i]);
+
+                std::unique_ptr<NanoFlannIndexHolderBase> holder =
+                        impl::BuildKdTree<T>(num_points_i, points_i,
+                                             points.shape().dim_size(1),
+                                             metric);
+                impl::RadiusSearchCPU(holder.get(), neighbors_row_splits_i,
+                                      num_points_i, points_i, num_queries_i,
+                                      queries_i, 3, radius_i, metric,
+                                      ignore_query_point, return_distances,
+                                      normalize_distances, /* sort */ false,
+                                      output_allocators[i]);
                 if (i > 0) {
                     for (size_t j = 0; j <= num_queries_i; ++j)
                         neighbors_row_splits_i[j] += last_neighbors_count;

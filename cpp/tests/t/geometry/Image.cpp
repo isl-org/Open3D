@@ -29,12 +29,12 @@
 #include <gmock/gmock.h>
 
 #include "core/CoreTest.h"
-#include "open3d/core/TensorList.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/t/io/ImageIO.h"
+#include "open3d/utility/Preprocessor.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -856,9 +856,8 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =
-            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
-                                                   std::string(TEST_DATA_DIR),
-                                                   1))
+            t::io::CreateImageFromFile(utility::GetDataPathCommon(fmt::format(
+                                               "RGBD/depth/{:05d}.png", 1)))
                     ->To(device);
 
     float invalid_fill = 0.0f;
@@ -874,9 +873,8 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =
-            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
-                                                   std::string(TEST_DATA_DIR),
-                                                   1))
+            t::io::CreateImageFromFile(utility::GetDataPathCommon(fmt::format(
+                                               "RGBD/depth/{:05d}.png", 1)))
                     ->To(device);
 
     float invalid_fill = 0.0f;
@@ -907,9 +905,8 @@ TEST_P(ImagePermuteDevices, DISABLED_ColorizeDepth) {
     core::Device device = GetParam();
 
     t::geometry::Image depth =
-            t::io::CreateImageFromFile(fmt::format("{}/RGBD/depth/{:05d}.png",
-                                                   std::string(TEST_DATA_DIR),
-                                                   1))
+            t::io::CreateImageFromFile(utility::GetDataPathCommon(fmt::format(
+                                               "RGBD/depth/{:05d}.png", 1)))
                     ->To(device);
 
     auto color_depth = depth.ColorizeDepth(1000.0, 0.0, 3.0);

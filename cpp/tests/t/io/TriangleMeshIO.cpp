@@ -28,21 +28,23 @@
 
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/t/geometry/TriangleMesh.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
 
 TEST(TriangleMeshIO, CreateMeshFromFile) {
-    auto mesh = t::io::CreateMeshFromFile(TEST_DATA_DIR "/knot.ply");
+    auto mesh =
+            t::io::CreateMeshFromFile(utility::GetDataPathCommon("knot.ply"));
     EXPECT_EQ(mesh->GetTriangleIndices().GetLength(), 2880);
     EXPECT_EQ(mesh->GetVertexPositions().GetLength(), 1440);
 }
 
 TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
     t::geometry::TriangleMesh mesh, mesh_read;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/knot.ply", mesh));
-    std::string file_name = std::string(TEST_DATA_DIR) + "/test_mesh.ply";
+    EXPECT_TRUE(t::io::ReadTriangleMesh(utility::GetDataPathCommon("knot.ply"),
+                                        mesh));
+    std::string file_name = utility::GetDataPathCommon("test_mesh.ply");
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(
@@ -55,43 +57,41 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
 TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(
-            TEST_DATA_DIR "/open3d_downloads/tests/cube.obj", mesh));
+            utility::GetDataPathDownload("tests/cube.obj"), mesh));
 
-    core::Tensor triangles = core::Tensor::Init<int64_t>({{0, 1, 2},
-                                                          {3, 4, 5},
-                                                          {6, 7, 8},
-                                                          {9, 10, 11},
-                                                          {12, 13, 14},
-                                                          {15, 16, 17},
-                                                          {18, 19, 20},
-                                                          {21, 22, 23},
-                                                          {24, 25, 26},
-                                                          {27, 28, 29},
-                                                          {30, 31, 32},
-                                                          {33, 34, 35}});
     core::Tensor vertices = core::Tensor::Init<float>(
             {{0.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {1.0, 0.0, 0.0},
-             {0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0},
-             {0.0, 0.0, 0.0}, {0.0, 1.0, 1.0}, {0.0, 1.0, 0.0},
-             {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 1.0},
-             {0.0, 1.0, 0.0}, {1.0, 1.0, 1.0}, {1.0, 1.0, 0.0},
-             {0.0, 1.0, 0.0}, {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0},
+             {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 1.0, 1.0},
+             {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0},
+             {1.0, 1.0, 1.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 1.0},
              {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {1.0, 1.0, 1.0},
-             {1.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {1.0, 0.0, 1.0},
-             {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 0.0, 1.0},
-             {0.0, 0.0, 0.0}, {1.0, 0.0, 1.0}, {0.0, 0.0, 1.0},
-             {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0},
-             {0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}});
-    EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(triangles));
+             {1.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0},
+             {1.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0},
+             {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}});
     EXPECT_TRUE(mesh.GetVertexPositions().AllClose(vertices));
 
-    std::string file_name = std::string(TEST_DATA_DIR) + "/test_mesh.obj";
+    core::Tensor triangles = core::Tensor::Init<int64_t>({{0, 1, 2},
+                                                          {0, 3, 1},
+                                                          {4, 5, 6},
+                                                          {4, 7, 5},
+                                                          {8, 9, 10},
+                                                          {8, 11, 9},
+                                                          {12, 13, 14},
+                                                          {12, 14, 15},
+                                                          {16, 17, 18},
+                                                          {16, 18, 19},
+                                                          {20, 21, 22},
+                                                          {20, 22, 23}});
+    EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(triangles));
+
+    std::string file_name = utility::GetDataPathCommon("test_mesh.obj");
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(
-            mesh.GetTriangleIndices().AllClose(mesh_read.GetTriangleIndices()));
-    EXPECT_TRUE(
             mesh.GetVertexPositions().AllClose(mesh_read.GetVertexPositions()));
+    EXPECT_TRUE(
+            mesh.GetTriangleIndices().AllClose(mesh_read.GetTriangleIndices()));
+
     std::remove(file_name.c_str());
 }
 
@@ -100,10 +100,10 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
 TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     t::geometry::TriangleMesh mesh_tensor, mesh_tensor_read;
     geometry::TriangleMesh mesh_legacy, mesh_legacy_read;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(TEST_DATA_DIR "/monkey/monkey.obj",
-                                        mesh_tensor));
-    EXPECT_TRUE(io::ReadTriangleMesh(TEST_DATA_DIR "/monkey/monkey.obj",
-                                     mesh_legacy));
+    EXPECT_TRUE(t::io::ReadTriangleMesh(
+            utility::GetDataPathDownload("tests/cube.obj"), mesh_tensor));
+    EXPECT_TRUE(io::ReadTriangleMesh(
+            utility::GetDataPathDownload("tests/cube.obj"), mesh_legacy));
 
     EXPECT_EQ(mesh_tensor.GetTriangleIndices().GetLength(),
               static_cast<int64_t>(mesh_legacy.triangles_.size()));
@@ -113,9 +113,9 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
               static_cast<int64_t>(mesh_legacy.vertex_normals_.size()));
 
     std::string file_name_tensor =
-            std::string(TEST_DATA_DIR) + "/test_mesh_tensor.obj";
+            utility::GetDataPathCommon("test_mesh_tensor.obj");
     std::string file_name_legacy =
-            std::string(TEST_DATA_DIR) + "/test_mesh_legacy.obj";
+            utility::GetDataPathCommon("test_mesh_legacy.obj");
 
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name_tensor, mesh_tensor));
     EXPECT_TRUE(io::WriteTriangleMesh(file_name_legacy, mesh_legacy));
@@ -131,7 +131,7 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     std::remove(file_name_tensor.c_str());
     std::remove(file_name_legacy.c_str());
     std::string file_name_legacy_mtl =
-            std::string(TEST_DATA_DIR) + "/test_mesh_legacy.mtl";
+            utility::GetDataPathCommon("test_mesh_legacy.mtl");
     std::remove(file_name_legacy_mtl.c_str());
 }
 

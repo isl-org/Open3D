@@ -124,25 +124,5 @@ Tensor PyHandleToTensor(const py::handle& handle,
                         utility::optional<Device> device = utility::nullopt,
                         bool force_copy = false);
 
-/// Convert py::tuple to SizeVector.
-///
-/// The tuple must contain a list of (1D) integers. Floats are not allowed.
-SizeVector PyTupleToSizeVector(const py::tuple& tuple);
-
-/// Convert py::list to SizeVector.
-///
-/// The list must contain a list of (1D) integers. Floats are not allowed.
-SizeVector PyListToSizeVector(const py::list& list);
-
-/// Convert supported python types to reduction dimensions.
-///
-/// Supported types:
-/// 1) int
-/// 3) list of ints (1D)
-/// 4) tuple of ints (1D)
-///
-/// An exception will be thrown if the type is not supported.
-SizeVector PyHandleToSizeVector(const py::handle& handle);
-
 }  // namespace core
 }  // namespace open3d

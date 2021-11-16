@@ -29,7 +29,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
-#include "open3d/t/geometry/TSDFVoxelGrid.h"
+#include "open3d/t/geometry/VoxelBlockGrid.h"
 #include "open3d/t/pipelines/odometry/RGBDOdometry.h"
 #include "open3d/t/pipelines/slam/Frame.h"
 
@@ -45,7 +45,6 @@ class Model {
 public:
     Model() {}
     Model(float voxel_size,
-          float sdf_trunc,
           int block_resolution,
           int block_count,
           const core::Tensor& T_init = core::Tensor::Eye(4,
@@ -120,7 +119,8 @@ public:
 
 public:
     /// Maintained volumetric map.
-    t::geometry::TSDFVoxelGrid voxel_grid_;
+    t::geometry::VoxelBlockGrid voxel_grid_;
+    core::Tensor frustum_block_coords_;
 
     /// T_frame_to_model, maintained tracking state in a (4, 4), Float64 Tensor
     /// on CPU.

@@ -28,7 +28,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -450,6 +450,10 @@ TEST(TriangleMesh, ComputeVertexNormals) {
     for (size_t i = 0; i < size; i++)
         tm.triangles_.push_back(
                 Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
+
+    tm.ComputeVertexNormals();
+
+    ExpectEQ(ref, tm.vertex_normals_);
 
     tm.ComputeVertexNormals();
 

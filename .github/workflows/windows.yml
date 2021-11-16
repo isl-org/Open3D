@@ -1,4 +1,4 @@
-name: Windows CI
+name: Windows
 
 on:
   workflow_dispatch:
@@ -90,8 +90,6 @@ jobs:
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
@@ -107,6 +105,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
@@ -178,12 +177,10 @@ jobs:
             python_version: 3.9
 
     env:
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Set up Python version
         uses: conda-incubator/setup-miniconda@v2
@@ -213,6 +210,7 @@ jobs:
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
+            -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=ON `
@@ -301,8 +299,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: false
 
       - name: Download wheels
         uses: actions/download-artifact@v2
@@ -328,7 +324,8 @@ jobs:
             setuptools==${{ env.STOOLS_VER }}
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U pytest-randomly==${{ env.PYTEST_RANDOMLY_VER }}
-          python -m pip install -U scipy==${{ env.SCIPY_VER }}
+          python -m pip install -U scipy==${{ env.SCIPY_VER }} `
+            tensorboard==${{ env.TENSORFLOW_VER }}
           $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$pi_tag-*.whl).Name
           echo "Installing Open3D wheel pip_package\$PIP_PKG_NAME in virtual environment..."
@@ -343,7 +340,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
-          echo "Add --rondomly-seed=SEED to the test command to reproduce test order."
+          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
           python -m pytest python/test/ --ignore python/test/ml_ops/
           deactivate

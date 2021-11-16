@@ -30,8 +30,10 @@
 
 #include "open3d/io/rpc/Messages.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/visualization/rendering/Material.h"
 
 using namespace open3d::utility;
+using open3d::visualization::rendering::Material;
 
 namespace open3d {
 namespace io {
@@ -107,7 +109,10 @@ std::shared_ptr<zmq::message_t> CreateStatusOKMsg() {
             new zmq::message_t(sbuf.data(), sbuf.size()));
 }
 
-core::Tensor ArrayToTensor(const messages::Array& array) {
+/// Creates a Tensor from an Array. This function also returns a contiguous CPU
+/// Tensor. Note that the msgpack object backing the memory for \p array must be
+/// alive for calling this function.
+static core::Tensor ArrayToTensor(const messages::Array& array) {
     auto TypeStrToDtype = [](const std::string& ts) {
         if ("<f4" == ts) {
             return core::Float32;
@@ -140,13 +145,43 @@ core::Tensor ArrayToTensor(const messages::Array& array) {
     return result;
 }
 
-std::map<std::string, messages::Array> TensorMapToArrayMap(
+/// Converts a TensorMap to an Array map.
+static std::map<std::string, messages::Array> TensorMapToArrayMap(
         const t::geometry::TensorMap& tensor_map) {
     std::map<std::string, messages::Array> result;
     for (auto item : tensor_map) {
         result[item.first] = messages::Array::FromTensor(item.second);
     }
     return result;
+}
+
+static Material GetMaterialFromMeshData(const messages::MeshData& mesh_data,
+                                        std::string& errstr) {
+    Material material(mesh_data.material);
+    if (mesh_data.material.empty()) return material;
+    for (const auto& scalar : mesh_data.material_scalar_attributes)
+        material.SetScalarProperty(scalar.first, scalar.second);
+    for (const auto& vec : mesh_data.material_vector_attributes)
+        material.SetVectorProperty(vec.first,
+                                   Eigen::Vector4f(vec.second.data()));
+    // Allow 2, 3 dim images. Don't restrict n_channels to allow channel packing
+    const std::vector<int64_t> expected_shapes[] = {{-1, -1}, {-1, -1, -1}};
+    for (const auto& texture : mesh_data.texture_maps) {
+        std::string es(texture.first + ": ");
+        bool is_right_shape = false;
+        for (const auto& shape : expected_shapes) {
+            is_right_shape = texture.second.CheckShape(shape, es);
+            if (is_right_shape) break;
+        }
+        if (!is_right_shape) {
+            errstr = errstr.empty() ? es : errstr + '\n' + es;
+        } else {
+            material.SetTextureMap(
+                    texture.first,
+                    t::geometry::Image(ArrayToTensor(texture.second)));
+        }
+    }
+    return material;
 }
 
 std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
@@ -166,13 +201,15 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
                 if (mesh_data.faces.CheckShape({-1, 3}, errstr)) {
                     mesh->SetTriangleIndices(ArrayToTensor(mesh_data.faces));
                 } else {
-                    LogWarning(
-                            "MeshDataToGeometry: Invalid shape for faces, {}",
-                            errstr);
+                    errstr = "Invalid shape for faces, " + errstr;
                 }
             }
             for (auto item : mesh_data.face_attributes) {
                 mesh->SetTriangleAttr(item.first, ArrayToTensor(item.second));
+            }
+            mesh->SetMaterial(GetMaterialFromMeshData(mesh_data, errstr));
+            if (!errstr.empty()) {
+                LogWarning("MeshDataToGeometry: {}", errstr);
             }
             return mesh;
         } else if (mesh_data.O3DTypeIsLineSet() ||
@@ -188,13 +225,15 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
                 if (mesh_data.lines.CheckShape({-1, 2}, errstr)) {
                     ls->SetLineIndices(ArrayToTensor(mesh_data.lines));
                 } else {
-                    LogWarning(
-                            "MeshDataToGeometry: Invalid shape for lines, {}",
-                            errstr);
+                    errstr = "Invalid shape for lines, " + errstr;
                 }
             }
             for (auto item : mesh_data.line_attributes) {
                 ls->SetLineAttr(item.first, ArrayToTensor(item.second));
+            }
+            ls->SetMaterial(GetMaterialFromMeshData(mesh_data, errstr));
+            if (!errstr.empty()) {
+                LogWarning("MeshDataToGeometry: {}", errstr);
             }
             return ls;
         } else if (mesh_data.O3DTypeIsPointCloud() ||
@@ -206,18 +245,34 @@ std::shared_ptr<t::geometry::Geometry> MeshDataToGeometry(
             for (auto item : mesh_data.vertex_attributes) {
                 pcd->SetPointAttr(item.first, ArrayToTensor(item.second));
             }
+            pcd->SetMaterial(GetMaterialFromMeshData(mesh_data, errstr));
+            if (!errstr.empty()) {
+                LogWarning("MeshDataToGeometry: {}", errstr);
+            }
             return pcd;
         } else {
-            LogWarning(
-                    "MeshDataToGeometry: MeshData has no triangles, lines, or "
-                    "vertices");
+            errstr += "MeshData has no triangles, lines, or vertices";
         }
-
-    } else {
-        LogWarning("MeshDataToGeometry: {}", errstr);
     }
-
+    LogWarning("MeshDataToGeometry: {}", errstr);
     return std::shared_ptr<t::geometry::Geometry>();
+}
+
+static void AddMaterialToMeshData(messages::MeshData& mesh_data,
+                                  const Material& material) {
+    if (!material.IsValid()) return;
+    mesh_data.material = material.GetMaterialName();
+    auto scalars = material.GetScalarProperties();
+    mesh_data.material_scalar_attributes =
+            std::map<std::string, float>(scalars.begin(), scalars.end());
+    for (const auto& item : material.GetVectorProperties()) {
+        mesh_data.material_vector_attributes[item.first] = {
+                item.second[0], item.second[1], item.second[2], item.second[3]};
+    }
+    for (const auto& item : material.GetTextureMaps()) {
+        mesh_data.texture_maps[item.first] =
+                messages::Array::FromTensor(item.second.AsTensor());
+    }
 }
 
 messages::MeshData GeometryToMeshData(
@@ -244,6 +299,9 @@ messages::MeshData GeometryToMeshData(
 
     mesh_data.SetO3DTypeToTriangleMesh();
 
+    // material
+    AddMaterialToMeshData(mesh_data, trimesh.GetMaterial());
+
     return mesh_data;
 }
 
@@ -261,6 +319,9 @@ messages::MeshData GeometryToMeshData(const t::geometry::PointCloud& pcd) {
     }
 
     mesh_data.SetO3DTypeToPointCloud();
+
+    // material
+    AddMaterialToMeshData(mesh_data, pcd.GetMaterial());
 
     return mesh_data;
 }
@@ -287,6 +348,9 @@ messages::MeshData GeometryToMeshData(const t::geometry::LineSet& ls) {
     }
 
     mesh_data.SetO3DTypeToLineSet();
+
+    // material
+    AddMaterialToMeshData(mesh_data, ls.GetMaterial());
 
     return mesh_data;
 }
@@ -315,20 +379,20 @@ DataBufferToMetaGeometry(std::string& data) {
         if (messages::SetMeshData::MsgId() == req.msg_id) {
             auto oh = msgpack::unpack(buffer, buffer_size, offset, nullptr,
                                       nullptr, limits);
-            auto obj = oh.get();
+            auto mesh_obj = oh.get();
             messages::SetMeshData msg;
-            msg = obj.as<messages::SetMeshData>();
+            msg = mesh_obj.as<messages::SetMeshData>();
             auto result = MeshDataToGeometry(msg.data);
             double time = msg.time;
             return std::tie(msg.path, time, result);
         } else {
             LogWarning(
-                    "GetDataFromSetMeshDataBuffer: Wrong message id. Expected "
+                    "DataBufferToMetaGeometry: Wrong message id. Expected "
                     "'{}' but got '{}'.",
                     messages::SetMeshData::MsgId(), req.msg_id);
         }
     } catch (std::exception& err) {
-        LogWarning("GetDataFromSetMeshDataBuffer: {}", err.what());
+        LogWarning("DataBufferToMetaGeometry: {}", err.what());
     }
     return std::forward_as_tuple(std::string(), 0.,
                                  std::shared_ptr<t::geometry::Geometry>());

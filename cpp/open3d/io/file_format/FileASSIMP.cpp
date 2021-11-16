@@ -40,7 +40,7 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Model.h"
 
 #define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
@@ -55,10 +55,13 @@ FileGeometry ReadFileGeometryTypeFBX(const std::string& path) {
     return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
 }
 
-const unsigned int kPostProcessFlags =
-        aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials |
-        aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_SortByPType |
-        aiProcess_OptimizeMeshes | aiProcess_PreTransformVertices;
+const unsigned int kPostProcessFlags_compulsory =
+        aiProcess_JoinIdenticalVertices;
+
+const unsigned int kPostProcessFlags_fast =
+        aiProcessPreset_TargetRealtime_Fast |
+        aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes |
+        aiProcess_PreTransformVertices;
 
 struct TextureImages {
     std::shared_ptr<geometry::Image> albedo;
@@ -143,10 +146,10 @@ bool ReadTriangleMeshUsingASSIMP(
         const ReadTriangleMeshOptions& params /*={}*/) {
     Assimp::Importer importer;
 
-    unsigned int post_process_flags = 0;
+    unsigned int post_process_flags = kPostProcessFlags_compulsory;
 
     if (params.enable_post_processing) {
-        post_process_flags = kPostProcessFlags;
+        post_process_flags = kPostProcessFlags_fast;
     }
 
     const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
@@ -305,7 +308,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
     // is silent on this salient point).
     importer.SetProgressHandler(
             new AssimpProgress(params, readfile_total / progress_total));
-    const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
+    const auto* scene =
+            importer.ReadFile(filename.c_str(), kPostProcessFlags_fast);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
@@ -384,7 +388,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
-        visualization::rendering::Material o3d_mat;
+        visualization::rendering::MaterialRecord o3d_mat;
 
         o3d_mat.name = mat->GetName().C_Str();
 

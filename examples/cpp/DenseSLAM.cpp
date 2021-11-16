@@ -40,7 +40,6 @@ void PrintHelp() {
     utility::LogInfo("    --voxel_size [=0.0058 (m)]");
     utility::LogInfo("    --depth_scale [=1000.0]");
     utility::LogInfo("    --max_depth [=3.0]");
-    utility::LogInfo("    --sdf_trunc [=0.04]");
     utility::LogInfo("    --block_count [=10000]");
     utility::LogInfo("    --device [CPU:0]");
     utility::LogInfo("    --pointcloud");
@@ -109,8 +108,6 @@ int main(int argc, char* argv[]) {
     // VoxelBlock configurations
     float voxel_size = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--voxel_size", 3.f / 512.f));
-    float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
-            argc, argv, "--sdf_trunc", 0.04f));
     int block_resolution = utility::GetProgramOptionAsInt(
             argc, argv, "--block_resolution", 16);
     int block_count =
@@ -128,8 +125,8 @@ int main(int argc, char* argv[]) {
     Tensor T_frame_to_model =
             Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
 
-    t::pipelines::slam::Model model(voxel_size, sdf_trunc, block_resolution,
-                                    block_count, T_frame_to_model, device);
+    t::pipelines::slam::Model model(voxel_size, block_resolution, block_count,
+                                    T_frame_to_model, device);
 
     // Initialize frame
     Image ref_depth = *t::io::CreateImageFromFile(depth_filenames[0]);

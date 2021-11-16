@@ -100,6 +100,8 @@ TensorToEigenMatrixXi(const core::Tensor &tensor) {
 template <typename T, int N>
 static std::vector<Eigen::Matrix<T, N, 1>> TensorToEigenVectorNxVector(
         const core::Tensor &tensor) {
+    AssertTensorShape(tensor, {utility::nullopt, N});
+
     static_assert(
             (std::is_same<T, double>::value || std::is_same<T, int>::value) &&
                     N > 0,
@@ -114,13 +116,12 @@ static std::vector<Eigen::Matrix<T, N, 1>> TensorToEigenVectorNxVector(
         utility::LogError("Internal error: dtype size mismatch {} != {}.",
                           dtype.ByteSize() * N, sizeof(Eigen::Matrix<T, N, 1>));
     }
-    AssertTensorShape(tensor, {utility::nullopt, N});
 
     // Eigen::VectorNx is not a "fixed-size vectorizable Eigen type" thus it is
     // safe to write directly into std vector memory, see:
     // https://eigen.tuxfamily.org/dox/group__TopicStlContainers.html.
     std::vector<Eigen::Matrix<T, N, 1>> eigen_vector(tensor.GetLength());
-    core::Tensor t = tensor.Contiguous().To(dtype);
+    const core::Tensor t = tensor.To(dtype).Contiguous();
     MemoryManager::MemcpyToHost(eigen_vector.data(), t.GetDataPtr(),
                                 t.GetDevice(),
                                 t.GetDtype().ByteSize() * t.NumElements());
@@ -160,6 +161,11 @@ static core::Tensor EigenVectorNxVectorToTensor(
     return tensor_cpu.To(device);
 }
 
+std::vector<Eigen::Vector2d> TensorToEigenVector2dVector(
+        const core::Tensor &tensor) {
+    return TensorToEigenVectorNxVector<double, 2>(tensor);
+}
+
 std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
         const core::Tensor &tensor) {
     return TensorToEigenVectorNxVector<double, 3>(tensor);
@@ -177,6 +183,13 @@ std::vector<Eigen::Vector2i> TensorToEigenVector2iVector(
 
 core::Tensor EigenVector3dVectorToTensor(
         const std::vector<Eigen::Vector3d> &values,
+        core::Dtype dtype,
+        const core::Device &device) {
+    return EigenVectorNxVectorToTensor(values, dtype, device);
+}
+
+core::Tensor EigenVector2dVectorToTensor(
+        const std::vector<Eigen::Vector2d> &values,
         core::Dtype dtype,
         const core::Device &device) {
     return EigenVectorNxVectorToTensor(values, dtype, device);

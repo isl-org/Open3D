@@ -37,7 +37,7 @@
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -126,25 +126,25 @@ TEST(PointCloud, GetAxisAlignedBoundingBox) {
     aabb = pcd.GetAxisAlignedBoundingBox();
     EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(0, 0, 0));
-    EXPECT_EQ(aabb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
 
     pcd = geometry::PointCloud({{0, 0, 0}});
     aabb = pcd.GetAxisAlignedBoundingBox();
     EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(0, 0, 0));
-    EXPECT_EQ(aabb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
 
     pcd = geometry::PointCloud({{0, 2, 0}, {1, 1, 2}, {1, 0, 3}});
     aabb = pcd.GetAxisAlignedBoundingBox();
     EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(1, 2, 3));
-    EXPECT_EQ(aabb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
 
     pcd = geometry::PointCloud({{0, 0, 0}, {1, 2, 3}});
     aabb = pcd.GetAxisAlignedBoundingBox();
     EXPECT_EQ(aabb.min_bound_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(aabb.max_bound_, Eigen::Vector3d(1, 2, 3));
-    EXPECT_EQ(aabb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(aabb.color_, Eigen::Vector3d(1, 1, 1));
 }
 
 TEST(PointCloud, GetOrientedBoundingBox) {
@@ -187,7 +187,7 @@ TEST(PointCloud, GetOrientedBoundingBox) {
     obb = pcd.GetOrientedBoundingBox();
     EXPECT_EQ(obb.center_, Eigen::Vector3d(1.5, 1, 0.5));
     EXPECT_EQ(obb.extent_, Eigen::Vector3d(3, 2, 1));
-    EXPECT_EQ(obb.color_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(obb.color_, Eigen::Vector3d(1, 1, 1));
     EXPECT_EQ(obb.R_, Eigen::Matrix3d::Identity());
     ExpectEQ(Sort(obb.GetBoxPoints()),
              Sort(std::vector<Eigen::Vector3d>({{0, 0, 0},
@@ -1172,7 +1172,7 @@ TEST(PointCloud, ComputeConvexHull) {
 
 TEST(PointCloud, HiddenPointRemoval) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
     ExpectEQ(pcd.GetMaxBound(), Eigen::Vector3d(3.96609, 2.427476, 2.55859));
     ExpectEQ(pcd.GetMinBound(), Eigen::Vector3d(0.558594, 0.832031, 0.566637));
@@ -1188,7 +1188,7 @@ TEST(PointCloud, HiddenPointRemoval) {
 
 TEST(PointCloud, ClusterDBSCAN) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
 
     // Hard-coded test
@@ -1202,7 +1202,7 @@ TEST(PointCloud, ClusterDBSCAN) {
 
 TEST(PointCloud, SegmentPlane) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.pcd", pcd);
+    io::ReadPointCloud(utility::GetDataPathCommon("fragment.pcd"), pcd);
     EXPECT_EQ(pcd.points_.size(), 113662);
 
     // Hard-coded test
@@ -1231,9 +1231,9 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
 
 TEST(PointCloud, CreateFromDepthImage) {
     const std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/trajectory.log";
+            utility::GetDataPathCommon("RGBD/trajectory.log");
     const std::string im_depth_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png";
+            utility::GetDataPathCommon("RGBD/depth/00000.png");
 
     camera::PinholeCameraTrajectory trajectory;
     io::ReadPinholeCameraTrajectory(trajectory_path, trajectory);
@@ -1259,11 +1259,11 @@ TEST(PointCloud, CreateFromDepthImage) {
 
 TEST(PointCloud, CreateFromRGBDImage) {
     const std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/trajectory.log";
+            utility::GetDataPathCommon("RGBD/trajectory.log");
     const std::string im_depth_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png";
+            utility::GetDataPathCommon("RGBD/depth/00000.png");
     const std::string im_rgb_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00000.jpg";
+            utility::GetDataPathCommon("RGBD/color/00000.jpg");
 
     camera::PinholeCameraTrajectory trajectory;
     io::ReadPinholeCameraTrajectory(trajectory_path, trajectory);
