@@ -129,6 +129,7 @@ void KnnSearchCUDA(const Tensor& points,
 
 INSTANTIATE(float)
 INSTANTIATE(double)
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

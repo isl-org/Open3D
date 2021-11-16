@@ -130,7 +130,7 @@ TEST(KnnIndex, KnnSearchHighdim) {
     core::Tensor query_points;
     core::Tensor gt_indices, gt_distances;
 
-    // dimension = 5.
+    // Dimension = 5.
     dataset_points = dataset_points.Reshape({-1, 5});
     query_points = core::Tensor::Init<float>(
             {{0.064705, 0.043921, 0.087843, 0.0, 0.0}}, device);
@@ -154,7 +154,7 @@ TEST(KnnIndex, KnnSearchHighdim) {
     EXPECT_TRUE(indices.AllClose(gt_indices));
     EXPECT_TRUE(distances.AllClose(gt_distances));
 
-    // dimension = 6.
+    // Dimension = 6.
     dataset_points = dataset_points.Reshape({-1, 6});
     query_points = core::Tensor::Init<float>(
             {{0.064705, 0.043921, 0.087843, 0.0, 0.0, 0.0}}, device);
