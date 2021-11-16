@@ -119,7 +119,7 @@ void FilamentRenderToBuffer::Configure(const View* view,
 
     // Create a proper copy of the View with scen attached
     CopySettings(view);
-    auto* downcast_scene = dynamic_cast<FilamentScene*>(scene);
+    auto* downcast_scene = static_cast<FilamentScene*>(scene);
     if (downcast_scene) {
         view_->SetScene(*downcast_scene);
         scene_ = downcast_scene;
@@ -154,7 +154,7 @@ void FilamentRenderToBuffer::SetDimensions(const std::uint32_t width,
 
 void FilamentRenderToBuffer::CopySettings(const View* view) {
     view_ = new FilamentView(engine_, EngineInstance::GetResourceManager());
-    auto* downcast = dynamic_cast<const FilamentView*>(view);
+    auto* downcast = static_cast<const FilamentView*>(view);
     if (downcast) {
         view_->CopySettingsFrom(*downcast);
     }
