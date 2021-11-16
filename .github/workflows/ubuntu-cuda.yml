@@ -91,14 +91,14 @@ jobs:
           # GCE only supports GPU on n1-standard (2020/07)
           ZONE_ID=0
           until ((ZONE_ID >= ${#INSTANCE_ZONES[@]})) ||
-            gcloud compute instances create "$INSTANCE_NAME" \
+            gcloud compute instances create "${INSTANCE_NAME}" \
               --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
               --accelerator="count=2,type=nvidia-tesla-t4" \
               --maintenance-policy="TERMINATE" \
               --machine-type=n1-standard-8 \
               --boot-disk-size="128GB" \
               --boot-disk-type="pd-ssd" \
-              --image-family="ubuntu-os-docker-gpu-2004-lts" \
+              --image-family="ubuntu-os-docker-gpu-2004-20211116" \
               --scopes "https://www.googleapis.com/auth/devstorage.full_control" \
               --service-account="$GCE_GPU_CI_SA"; do
               ((ZONE_ID = ZONE_ID + 1))
