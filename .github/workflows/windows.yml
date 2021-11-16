@@ -1,4 +1,4 @@
-name: Windows CI
+name: Windows
 
 on:
   workflow_dispatch:
@@ -340,7 +340,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
-          echo "Add --rondomly-seed=SEED to the test command to reproduce test order."
+          echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           echo "Testing ML and ML Ops disabled"
           python -m pytest python/test/ --ignore python/test/ml_ops/
           deactivate

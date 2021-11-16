@@ -434,12 +434,12 @@ class RenderUpdate:
     DICT_COLORMAPS = {
         name: {
             # float -> uint8, and RGB -> RGBA
-            point.value: _float_u8(point.color) + (255,)
+            point.value: _float_to_u8(point.color) + (255,)
             for point in cmap.points
         } for name, cmap in _CMAPS.items()
     }
     LABELLUT_COLORS = {
-        label: _float_u8(color + [1.0])
+        label: _float_to_u8(color + [1.0])
         for label, color in enumerate(LabelLUT.Colors)
     }
 
