@@ -116,11 +116,18 @@ def create_scene():
     a_ico = o3d.t.geometry.TriangleMesh.from_legacy(a_ico)
 
     # Load an OBJ model for our scene
-    monkey = o3d.io.read_triangle_mesh("examples/test_data/monkey/monkey.obj")
-    monkey.paint_uniform_color((1.0, 0.75, 0.3))
-    monkey.scale(1.5, (0.0, 0.0, 0.0))
-    monkey.translate((0, 1.4, 0))
-    monkey = o3d.t.geometry.TriangleMesh.from_legacy(monkey)
+    helmet = o3d.io.read_triangle_model("examples/test_data/demo_scene_assets/FlightHelmet.gltf")
+    helmet_parts = []
+    for m in helmet.meshes:
+        m.mesh.paint_uniform_color((1.0, 0.75, 0.3))
+        m.mesh.scale(10.0, (0.0, 0.0, 0.0))
+        helmet_parts.append(m)
+
+#     monkey = o3d.io.read_triangle_mesh("examples/test_data/demo_scene_assets/FlightHelmet.gltf")
+    # monkey.paint_uniform_color((1.0, 0.75, 0.3))
+    # monkey.scale(1.5, (0.0, 0.0, 0.0))
+    # monkey.translate((0, 1.4, 0))
+#     monkey = o3d.t.geometry.TriangleMesh.from_legacy(monkey)
 
     # Create a ground plane
     ground_plane = o3d.geometry.TriangleMesh.create_box(
@@ -150,8 +157,8 @@ def create_scene():
     ground_plane.material = mat_ground
 
     # Load textures and create materials for each of our demo items
-    monkey.material = create_material("examples/test_data/demo_scene_assets",
-                                      "WoodFloor050")
+#     monkey.material = create_material("examples/test_data/demo_scene_assets",
+#                                       "WoodFloor050")
     a_cube.material = create_material("examples/test_data/demo_scene_assets",
                                       "Wood049")
     a_sphere.material = create_material("examples/test_data/demo_scene_assets",
@@ -167,9 +174,6 @@ def create_scene():
         "name": "cube",
         "geometry": a_cube
     }, {
-        "name": "monkey",
-        "geometry": monkey
-    }, {
         "name": "cylinder",
         "geometry": a_cylinder
     }, {
@@ -179,6 +183,9 @@ def create_scene():
         "name": "sphere",
         "geometry": a_sphere
     }]
+    for part in helmet_parts:
+        name = part.mesh_name
+        geoms.append({"name": name, "geometry": part.mesh})
     return geoms
 
 
