@@ -190,6 +190,4 @@ if __name__ == "__main__":
              bg_color=(0.8, 0.9, 0.9, 1.0),
              show_ui=True,
              width=1920,
-             height=1080,
-             ibl="default",
-             ibl_intensity=37500)
+             height=1080)

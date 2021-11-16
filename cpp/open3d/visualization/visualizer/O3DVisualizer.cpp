@@ -290,7 +290,6 @@ struct LightingProfile {
 
 static const char *kCustomName = "Custom";
 static const std::vector<LightingProfile> gLightingProfiles = {
-        {"Hard shadows", Open3DScene::LightingProfile::HARD_SHADOWS},
         {"Dark shadows", Open3DScene::LightingProfile::DARK_SHADOWS},
         {"Medium shadows", Open3DScene::LightingProfile::MED_SHADOWS},
         {"Soft shadows", Open3DScene::LightingProfile::SOFT_SHADOWS},
@@ -413,7 +412,7 @@ struct O3DVisualizer::Impl {
 
         MakeSettingsUI();
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
-        SetLightingProfile(gLightingProfiles[2]);  // med shadows
+        SetLightingProfile(gLightingProfiles[2]);  // soft shadows
         SetPointSize(ui_state_.point_size);  // sync selections_' point size
     }
 
@@ -710,7 +709,7 @@ struct O3DVisualizer::Impl {
 
         settings.sun_intensity = new Slider(Slider::INT);
         settings.sun_intensity->SetLimits(0.0, 150000.0);
-        settings.sun_intensity->SetValue(ui_state_.ibl_intensity);
+        settings.sun_intensity->SetValue(ui_state_.sun_intensity);
         settings.sun_intensity->SetOnValueChanged([this](double new_value) {
             this->ui_state_.sun_intensity = int(new_value);
             this->SetUIState(ui_state_);
@@ -902,7 +901,7 @@ struct O3DVisualizer::Impl {
 
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
-            if (lines || obb || aabb) {
+            if (lines || obb || aabb || t_lines) {
                 mat.shader = kShaderUnlitLines;
                 mat.line_width = ui_state_.line_width * window_->GetScaling();
             }
