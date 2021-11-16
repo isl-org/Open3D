@@ -201,6 +201,7 @@ def create_scene():
         geoms.append({"name": name, "geometry": tgeom})
     return geoms
 
+
 if __name__ == "__main__":
     check_for_required_assets()
     geoms = create_scene()
