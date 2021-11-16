@@ -305,7 +305,7 @@ run_python_tests() {
         pytest-randomly=="$PYTEST_RANDOMLY_VER" \
         scipy=="$SCIPY_VER" \
         tensorboard=="$TENSORBOARD_VER"
-    echo Add --rondomly-seed=SEED to the test command to reproduce test order.
+    echo Add --randomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
         echo Testing ML Ops disabled
