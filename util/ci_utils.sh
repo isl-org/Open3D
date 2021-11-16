@@ -40,11 +40,13 @@ else
 fi
 # ML
 TENSORFLOW_VER="2.5.2"
+TENSORBOARD_VER="2.5"
 # TORCH_CUDA_GLNX_VER="1.8.2+cu110"
 # TORCH_CPU_GLNX_VER="1.8.2+cpu"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_MACOS_VER="1.8.2"
+TORCH_MACOS_URL="https://download.pytorch.org/whl/lts/1.8/torch_lts.html"
 # Python
 CONDA_BUILD_VER="3.21.4"
 PIP_VER="21.1.1"
@@ -154,7 +156,7 @@ install_python_dependencies() {
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             python -m pip install -U "${TORCH_CUDA_GLNX_URL}"
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_MACOS_VER"
+            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_MACOS_URL"
         else
             echo "unknown OS $OSTYPE"
             exit 1
@@ -394,7 +396,7 @@ run_python_tests() {
     python -m pip install -U pytest=="$PYTEST_VER" \
         pytest-randomly=="$PYTEST_RANDOMLY_VER" \
         scipy=="$SCIPY_VER" \
-        tensorboard=="$TENSORFLOW_VER"
+        tensorboard=="$TENSORBOARD_VER"
     echo Add --rondomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
