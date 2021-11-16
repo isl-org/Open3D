@@ -169,13 +169,14 @@ def create_scene():
 
     # Load textures and create materials for each of our demo items
     a_cube.material = create_material("examples/test_data/demo_scene_assets",
-                                      "Wood049")
+                                      "WoodFloor050")
     a_sphere.material = create_material("examples/test_data/demo_scene_assets",
                                         "Tiles074")
     a_ico.material = create_material("examples/test_data/demo_scene_assets",
                                      "Terrazzo018")
     a_cylinder.material = create_material(
         "examples/test_data/demo_scene_assets", "Metal008")
+
     geoms = [{
         "name": "plane",
         "geometry": ground_plane
