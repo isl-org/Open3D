@@ -206,11 +206,15 @@ public:
     filament::Box ComputeAABB() override;
 
 private:
+    /// Utility function for building GPU assets needed for rendering lines as
+    /// lines. Used for 'thin' lines.
     void ConstructThinLines(uint32_t& n_vertices,
                             float** vertex_data,
                             uint32_t& n_indices,
                             uint32_t& indices_bytes,
                             uint32_t** line_indices);
+    /// Utility method for building GPU assets needed for rendering wide lines
+    /// which are rendered as pairs of triangles per line
     void ConstructWideLines(uint32_t& n_vertices,
                             float** vertex_data,
                             uint32_t& n_indices,
