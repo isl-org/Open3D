@@ -1,4 +1,4 @@
-name: Ubuntu CI
+name: Ubuntu
 
 on:
   workflow_dispatch:
@@ -37,8 +37,6 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Maximize build space
         run: |

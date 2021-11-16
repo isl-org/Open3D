@@ -67,6 +67,50 @@ def test_cast_lots_of_rays():
     _ = scene.cast_rays(rays)
 
 
+# test occlusion with a single triangle
+def test_test_occlusions():
+    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=o3d.core.float32)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(vertices, triangles)
+
+    rays = o3d.core.Tensor([[0.2, 0.1, 1, 0, 0, -1], [10, 10, 10, 1, 0, 0]],
+                           dtype=o3d.core.float32)
+    ans = scene.test_occlusions(rays)
+
+    # first ray is occluded by the triangle
+    assert ans[0] == True
+
+    # second ray is not occluded
+    assert ans[1] == False
+
+    # set tfar such that no ray is occluded
+    ans = scene.test_occlusions(rays, tfar=0.5)
+    assert ans.any() == False
+
+    # set tnear such that no ray is occluded
+    ans = scene.test_occlusions(rays, tnear=1.5)
+    assert ans.any() == False
+
+
+# test lots of random rays for occlusions to test the internal batching
+# we expect no errors for this test
+def test_test_lots_of_occlusions():
+    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=o3d.core.float32)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(vertices, triangles)
+
+    rs = np.random.RandomState(123)
+    rays = o3d.core.Tensor.from_numpy(rs.rand(7654321, 6).astype(np.float32))
+
+    _ = scene.test_occlusions(rays)
+
+
 def test_add_triangle_mesh():
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
@@ -130,6 +174,22 @@ def test_compute_closest_points():
                                np.array([[0.2, 0.1, 0.0], [1, 1, 0]]),
                                rtol=1e-6,
                                atol=1e-6)
+
+
+# compute lots of closest points to test the internal batching
+# we expect no errors for this test
+def test_compute_lots_of_closest_points():
+    vertices = o3d.core.Tensor([[0, 0, 0], [1, 0, 0], [1, 1, 0]],
+                               dtype=o3d.core.float32)
+    triangles = o3d.core.Tensor([[0, 1, 2]], dtype=o3d.core.uint32)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(vertices, triangles)
+
+    rs = np.random.RandomState(123)
+    query_points = o3d.core.Tensor.from_numpy(
+        rs.rand(1234567, 3).astype(np.float32))
+    _ = scene.compute_closest_points(query_points)
 
 
 def test_compute_distance():

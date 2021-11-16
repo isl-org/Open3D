@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 #include <unordered_set>
 
 #ifdef _WIN32
@@ -59,6 +60,29 @@ std::vector<std::string> SplitString(const std::string& str,
 
 bool ContainsString(const std::string& src, const std::string& dst) {
     return src.find(dst) != std::string::npos;
+}
+
+bool StringStartsWith(const std::string& src, const std::string& tar) {
+    // https://stackoverflow.com/a/42844629/1255535
+    return src.size() >= tar.size() && 0 == src.compare(0, tar.size(), tar);
+}
+
+bool StringEndsWith(const std::string& src, const std::string& tar) {
+    // https://stackoverflow.com/a/42844629/1255535
+    return src.size() >= tar.size() &&
+           0 == src.compare(src.size() - tar.size(), tar.size(), tar);
+}
+
+std::string JoinStrings(const std::vector<std::string>& strs,
+                        const std::string& delimiter) {
+    std::ostringstream oss;
+    for (size_t i = 0; i < strs.size(); ++i) {
+        oss << strs[i];
+        if (i != strs.size() - 1) {
+            oss << delimiter;
+        }
+    }
+    return oss.str();
 }
 
 std::string& LeftStripString(std::string& str, const std::string& chars) {

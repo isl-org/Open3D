@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
@@ -85,10 +86,18 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param transformation The estimated transformation matrix of dtype
-    /// Float64 on CPU device.
+    /// Float64 on CPU device. Default: Identity tensor.
+    /// \param save_loss_log When `True`, it saves the iteration-wise values of
+    /// `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration` in a
+    /// `TensorMap` `loss_log_` in `RegsitrationResult`. Default: False.
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
-                               4, core::Float64, core::Device("CPU:0")))
-        : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
+                               4, core::Float64, core::Device("CPU:0")),
+                       bool save_loss_log = false)
+        : transformation_(transformation),
+          inlier_rmse_(0.0),
+          fitness_(0.0),
+          save_loss_log_(save_loss_log),
+          loss_log_("index") {}
 
     ~RegistrationResult() {}
 
@@ -109,6 +118,12 @@ public:
     /// For ICP: the overlapping area (# of inlier correspondences / # of points
     /// in target). Higher is better.
     double fitness_;
+    /// To store iteration-wise information in `loss_log_`, mark this as `True`.
+    bool save_loss_log_;
+    /// TensorMap containing iteration-wise information. The TensorMap contains
+    /// `index` (primary-key), `scale`, `iteration`, `inlier_rmse`, `fitness`,
+    /// `transformation`, on CPU device.
+    t::geometry::TensorMap loss_log_;
 };
 
 /// \brief Function for evaluating registration between point clouds.
@@ -136,15 +151,24 @@ RegistrationResult EvaluateRegistration(
 /// Float64 on CPU.
 /// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
-RegistrationResult RegistrationICP(
+/// \param voxel_size The input pointclouds will be down-sampled to this
+/// `voxel_size` scale. If `voxel_size` < 0, original scale will be used.
+/// However it is highly recommended to down-sample the point-cloud for
+/// performance. By default origianl scale of the point-cloud will be used.
+/// \param save_loss_log When `True`, it saves the iteration-wise values of
+/// `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration` in a
+/// `TensorMap` `loss_log_` in `RegsitrationResult`. Default: False.
+RegistrationResult ICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        double max_correspondence_distance,
+        const double max_correspondence_distance,
         const core::Tensor &init_source_to_target =
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
-        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
+        const double voxel_size = -1.0,
+        const bool save_loss_log = false);
 
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
@@ -167,7 +191,10 @@ RegistrationResult RegistrationICP(
 /// \param init_source_to_target Initial transformation estimation of type
 /// Float64 on CPU.
 /// \param estimation Estimation method.
-RegistrationResult RegistrationMultiScaleICP(
+/// \param save_loss_log When `True`, it saves the iteration-wise values of
+/// `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration` in a
+/// `TensorMap` `loss_log_` in `RegsitrationResult`. Default: False.
+RegistrationResult MultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const std::vector<double> &voxel_sizes,
@@ -176,7 +203,8 @@ RegistrationResult RegistrationMultiScaleICP(
         const core::Tensor &init_source_to_target =
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint());
+                TransformationEstimationPointToPoint(),
+        const bool save_loss_log = false);
 
 /// \brief Computes `Information Matrix`, from the transfromation between source
 /// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},
@@ -188,11 +216,10 @@ RegistrationResult RegistrationMultiScaleICP(
 /// distance.
 /// \param transformation The 4x4 transformation matrix to transform
 /// `source` to `target`.
-core::Tensor GetInformationMatrixFromPointClouds(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const double max_correspondence_distance,
-        const core::Tensor &transformation);
+core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
+                                  const geometry::PointCloud &target,
+                                  const double max_correspondence_distance,
+                                  const core::Tensor &transformation);
 
 }  // namespace registration
 }  // namespace pipelines

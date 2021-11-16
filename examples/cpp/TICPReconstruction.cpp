@@ -135,18 +135,18 @@ public:
         // --------------------- VISUALIZER ---------------------
         gui::Application::GetInstance().Initialize();
 
-        src_cloud_mat_ = rendering::Material();
+        src_cloud_mat_ = rendering::MaterialRecord();
         src_cloud_mat_.shader = "defaultUnlit";
 
-        tar_cloud_mat_ = rendering::Material();
+        tar_cloud_mat_ = rendering::MaterialRecord();
         tar_cloud_mat_.shader = "defaultUnlit";
 
-        src_corres_mat_ = rendering::Material();
+        src_corres_mat_ = rendering::MaterialRecord();
         src_corres_mat_.shader = "defaultUnlit";
         src_corres_mat_.base_color = Eigen::Vector4f(0.f, 1.0f, 0.0f, 1.0f);
         src_corres_mat_.point_size = 4.0f;
 
-        tar_corres_mat_ = rendering::Material();
+        tar_corres_mat_ = rendering::MaterialRecord();
         tar_corres_mat_.shader = "defaultUnlit";
         tar_corres_mat_.base_color = Eigen::Vector4f(1.f, 0.0f, 0.0f, 1.0f);
         tar_corres_mat_.point_size = 4.0f;
@@ -306,7 +306,7 @@ protected:
 
     void UpdateMain() {
         // ----- Class members passed to function arguments
-        // ----- in t::pipeline::registration::RegistrationMultiScaleICP
+        // ----- in t::pipeline::registration::MultiScaleICP
         const t::geometry::PointCloud source = source_.To(device_);
         const t::geometry::PointCloud target = target_.To(device_);
         const std::vector<double> voxel_sizes = voxel_sizes_;
@@ -316,7 +316,7 @@ protected:
         const core::Tensor init_source_to_target = transformation_;
         auto& estimation = *estimation_;
 
-        // ----- RegistrationMultiScaleICP Function directly taken from
+        // ----- MultiScaleICP Function directly taken from
         // ----- t::pipelines::registration, and added O3DVisualizer to it.
         core::Device device = source.GetDevice();
         core::Dtype dtype = source.GetPointPositions().GetDtype();
@@ -349,7 +349,7 @@ protected:
 
         // ---- Iterating over different resolution scale START
         for (int64_t i = 0; i < num_iterations; i++) {
-            source_down_pyramid[i].Transform(transformation.To(device, dtype));
+            source_down_pyramid[i].Transform(transformation);
 
             // Initialize Neighbor Search.
             core::nns::NearestNeighborSearch target_nns(
@@ -413,7 +413,7 @@ protected:
                 transformation = update.Matmul(transformation);
 
                 // Apply the transform on source pointcloud.
-                source_down_pyramid[i].Transform(update.To(device, dtype));
+                source_down_pyramid[i].Transform(update);
 
                 utility::LogDebug(
                         " ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, "
@@ -448,9 +448,8 @@ protected:
                                     .IndexGet({target_indices})
                                     .To(host_));
 
-                    pcd_.source_ =
-                            source_.To(core::Device("CPU:0"), true)
-                                    .Transform(transformation.To(dtype_));
+                    pcd_.source_ = source_.To(core::Device("CPU:0"), true)
+                                           .Transform(transformation);
                 }
 
                 std::stringstream out_;
@@ -780,7 +779,7 @@ private:
         if (!(criterias.size() == voxel_sizes.size() &&
               criterias.size() == max_correspondence_distances.size())) {
             utility::LogError(
-                    " [RegistrationMultiScaleICP]: Size of criterias, "
+                    " [MultiScaleICP]: Size of criterias, "
                     "voxel_size,"
                     " max_correspondence_distances vectors must be same.");
         }
@@ -883,10 +882,10 @@ private:
     core::Dtype dtype_;
 
 private:
-    open3d::visualization::rendering::Material src_cloud_mat_;
-    open3d::visualization::rendering::Material tar_cloud_mat_;
-    open3d::visualization::rendering::Material src_corres_mat_;
-    open3d::visualization::rendering::Material tar_corres_mat_;
+    open3d::visualization::rendering::MaterialRecord src_cloud_mat_;
+    open3d::visualization::rendering::MaterialRecord tar_cloud_mat_;
+    open3d::visualization::rendering::MaterialRecord src_corres_mat_;
+    open3d::visualization::rendering::MaterialRecord tar_corres_mat_;
 
     // For Visualization.
     // The members of this structure can be protected by the mutex lock,

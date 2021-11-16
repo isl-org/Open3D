@@ -1,6 +1,6 @@
 add_subdirectory(kernel)
 
-add_library(tgeometry OBJECT)
+open3d_ispc_add_library(tgeometry OBJECT)
 
 target_sources(tgeometry PRIVATE
     Image.cpp
@@ -11,6 +11,7 @@ target_sources(tgeometry PRIVATE
     TensorMap.cpp
     TriangleMesh.cpp
     TSDFVoxelGrid.cpp
+    VoxelBlockGrid.cpp
 )
 
 open3d_show_and_abort_on_warning(tgeometry)

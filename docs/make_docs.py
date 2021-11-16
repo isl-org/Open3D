@@ -158,7 +158,9 @@ class PyAPIDocsBuilder:
         out_string += "\n\n" + ".. autoclass:: %s" % class_name
         out_string += "\n    :members:"
         out_string += "\n    :undoc-members:"
-        out_string += "\n    :inherited-members:"
+        if not (full_module_name.startswith("open3d.ml.tf") or
+                full_module_name.startswith("open3d.ml.torch")):
+            out_string += "\n    :inherited-members:"
         out_string += "\n"
 
         with open(output_path, "w") as f:
@@ -222,7 +224,7 @@ class PyAPIDocsBuilder:
         class_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isclass(obj[1])
+            if inspect.isclass(obj[1]) and not obj[0].startswith('_')
         ]
         for class_name in class_names:
             file_name = "%s.%s.rst" % (full_module_name, class_name)
@@ -237,7 +239,7 @@ class PyAPIDocsBuilder:
         function_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isroutine(obj[1])
+            if inspect.isroutine(obj[1]) and not obj[0].startswith('_')
         ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (full_module_name, function_name)
@@ -254,7 +256,7 @@ class PyAPIDocsBuilder:
         sub_module_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.ismodule(obj[1])
+            if inspect.ismodule(obj[1]) and not obj[0].startswith('_')
         ]
         documented_sub_module_names = [
             sub_module_name for sub_module_name in sub_module_names if "%s.%s" %
@@ -385,12 +387,12 @@ class JupyterDocsBuilder:
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
-        nb_direct_copy = ['tensor.ipynb']
+        nb_direct_copy = [
+            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration',
+            't_robust_kernel'
+        ]
         example_dirs = [
-            "geometry",
-            "core",
-            "pipelines",
-            "visualization",
+            "geometry", "core", "pipelines", "visualization", "t_pipelines"
         ]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir).parent / "examples" /

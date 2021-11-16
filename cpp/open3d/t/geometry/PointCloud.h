@@ -34,6 +34,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/hashmap/HashMap.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
@@ -91,7 +92,7 @@ namespace geometry {
 ///       PointCloud::GetPointAttr("positions")
 ///     - PointCloud::HasPointNormals() is the same as
 ///       PointCloud::HasPointAttr("normals")
-class PointCloud : public Geometry {
+class PointCloud : public Geometry, public DrawableGeometry {
 public:
     /// Construct an empty point cloud on the provided device.
     /// \param device The device on which to initialize the point cloud
@@ -266,20 +267,28 @@ public:
         return Append(other);
     }
 
-    /// \brief Transforms the points and normals (if exist)
+    /// \brief Transforms the PointPositions and PointNormals (if exist)
     /// of the PointCloud.
-    /// Extracts R, t from Transformation
+    ///
+    /// Transformation matrix is a 4x4 matrix.
     ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
     ///               [ O(1x3)  s(1x1) ]]
-    ///  (s = 1 for Transformation wihtout scaling)
-    /// PS. It Assumes s = 1 and O = [0,0,0]
-    /// and applies the transformation as P = R(P) + t
+    ///  (s = 1 for Transformation without scaling)
+    ///
+    ///  It applies the following general transform to each `positions` and
+    ///  `normals`.
+    ///   |x'|   | R(0,0) R(0,1) R(0,2) t(0)|   |x|
+    ///   |y'| = | R(1,0) R(1,1) R(1,2) t(1)| @ |y|
+    ///   |z'|   | R(2,0) R(2,1) R(2,2) t(2)|   |z|
+    ///   |w'|   | O(0,0) O(0,1) O(0,2)  s  |   |1|
+    ///
+    ///   [x, y, z] = [x', y', z'] / w'
+    ///
     /// \param transformation Transformation [Tensor of dim {4,4}].
-    /// Should be on the same device as the PointCloud
     /// \return Transformed point cloud
     PointCloud &Transform(const core::Tensor &transformation);
 
-    /// \brief Translates the points of the PointCloud.
+    /// \brief Translates the PointPositions of the PointCloud.
     /// \param translation translation tensor of dimension {3}
     /// Should be on the same device as the PointCloud
     /// \param relative if true (default): translates relative to Center
@@ -287,14 +296,14 @@ public:
     PointCloud &Translate(const core::Tensor &translation,
                           bool relative = true);
 
-    /// \brief Scales the points of the PointCloud.
+    /// \brief Scales the PointPositions of the PointCloud.
     /// \param scale Scale [double] of dimension
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is
     /// to be scaled. Should be on the same device as the PointCloud
     /// \return Scaled point cloud
     PointCloud &Scale(double scale, const core::Tensor &center);
 
-    /// \brief Rotates the points and normals (if exists).
+    /// \brief Rotates the PointPositions and PointNormals (if exists).
     /// \param R Rotation [Tensor of dim {3,3}].
     /// Should be on the same device as the PointCloud
     /// \param center Center [Tensor of dim {3}] about which the PointCloud is

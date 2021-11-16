@@ -62,6 +62,7 @@ target_sources(open3d_torch_ops PRIVATE
     pointnet/BallQueryOps.cpp
     pointnet/InterpolateOps.cpp
     pointnet/SamplingOps.cpp
+    pvcnn/TrilinearDevoxelizeOps.cpp
 )
 
 target_sources(open3d_torch_ops PRIVATE
@@ -96,6 +97,7 @@ if (BUILD_CUDA_MODULE)
         pointnet/BallQueryKernel.cu
         pointnet/InterpolateKernel.cu
         pointnet/SamplingKernel.cu
+        pvcnn/TrilinearDevoxelizeKernel.cu
     )
 
     target_sources(open3d_torch_ops PRIVATE
@@ -108,6 +110,7 @@ if (BUILD_CUDA_MODULE)
         ../contrib/InterpolatePoints.cu
         ../contrib/Nms.cu
         ../contrib/RoiPoolKernel.cu
+        ../contrib/TrilinearDevoxelize.cu
     )
 endif()
 
@@ -154,3 +157,8 @@ if (BUILD_CUDA_MODULE)
         )
     endif()
 endif()
+
+install(TARGETS open3d_torch_ops EXPORT Open3DTorchOps
+    LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
+)
+install(EXPORT Open3DTorchOps NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})

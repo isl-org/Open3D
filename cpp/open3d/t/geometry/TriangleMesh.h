@@ -29,6 +29,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
 
@@ -102,7 +103,7 @@ namespace geometry {
 ///
 /// Note that the we can also use the generalized helper functions for the
 /// default and common attributes.
-class TriangleMesh : public Geometry {
+class TriangleMesh : public Geometry, public DrawableGeometry {
 public:
     /// Construct an empty pointcloud on the provided device.
     /// \param device The device on which to initialize the trianglemesh
@@ -384,13 +385,47 @@ public:
 
     core::Tensor GetCenter() const { return GetVertexPositions().Mean({0}); }
 
+    /// \brief Transforms the VertexPositions, VertexNormals and TriangleNormals
+    /// (if exist) of the TriangleMesh.
+    ///
+    /// Transformation matrix is a 4x4 matrix.
+    ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
+    ///               [ O(1x3)  s(1x1) ]]
+    ///  (s = 1 for Transformation without scaling)
+    ///
+    ///  It applies the following general transform to each `positions` and
+    ///  `normals`.
+    ///   |x'|   | R(0,0) R(0,1) R(0,2) t(0)|   |x|
+    ///   |y'| = | R(1,0) R(1,1) R(1,2) t(1)| @ |y|
+    ///   |z'|   | R(2,0) R(2,1) R(2,2) t(2)|   |z|
+    ///   |w'|   | O(0,0) O(0,1) O(0,2)  s  |   |1|
+    ///
+    ///   [x, y, z] = [x', y', z'] / w'
+    ///
+    /// \param transformation Transformation [Tensor of dim {4,4}].
+    /// \return Transformed TriangleMesh
     TriangleMesh &Transform(const core::Tensor &transformation);
 
+    /// \brief Translates the VertexPositions of the TriangleMesh.
+    /// \param translation translation tensor of dimension {3}
+    /// \param relative if true (default): translates relative to Center
+    /// \return Translated TriangleMesh
     TriangleMesh &Translate(const core::Tensor &translation,
                             bool relative = true);
 
+    /// \brief Scales the VertexPositions of the TriangleMesh.
+    /// \param scale Scale [double] of dimension
+    /// \param center Center [Tensor of dim {3}] about which the TriangleMesh is
+    /// to be scaled.
+    /// \return Scaled TriangleMesh
     TriangleMesh &Scale(double scale, const core::Tensor &center);
 
+    /// \brief Rotates the VertexPositions, VertexNormals and TriangleNormals
+    /// (if exists).
+    /// \param R Rotation [Tensor of dim {3,3}].
+    /// \param center Center [Tensor of dim {3}] about which the TriangleMesh is
+    /// to be scaled.
+    /// \return Rotated TriangleMesh
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     core::Device GetDevice() const { return device_; }

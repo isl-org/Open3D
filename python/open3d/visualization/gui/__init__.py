@@ -23,6 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
+"""Functionality for quickly building Graphical User Interfaces."""
 
 if "@BUILD_GUI@" == "ON":
     import open3d

@@ -73,7 +73,7 @@ void furthest_point_sampling_launcher(
 
     auto stream = at::cuda::getCurrentCUDAStream();
 
-    unsigned int n_threads = opt_n_threads(n);
+    unsigned int n_threads = OptNumThreads(n);
 
     switch (n_threads) {
         case 1024:

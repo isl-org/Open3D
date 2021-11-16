@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
+#include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/utility/Logging.h"
@@ -96,7 +97,7 @@ namespace geometry {
 /// Note that `{Get|Set|Has}{Point|Line}Attr()` functions also work "positions"
 /// and "indices".
 
-class LineSet : public Geometry {
+class LineSet : public Geometry, public DrawableGeometry {
 public:
     /// Construct an empty LineSet on the provided device.
     LineSet(const core::Device &device = core::Device("CPU:0"));
@@ -307,19 +308,26 @@ public:
     ///
     /// Custom attributes (e.g.: point or line normals) are not transformed.
     ///
-    /// Extracts \f$ R, t \f$ from Transformation \f[
-    /// T_{(4,4)} = \begin{bmatrix} R_{(3,3)} & t_{(3,1)} \\*
-    ///                             O_{(1,3)} & s_{(1,1)} \end{bmatrix} \f]
-    ///  It Assumes \f$s = 1\f$ (no scaling) and \f$O = [0,0,0]\f$ and applies
-    ///  the transformation as \f$P = R(P) + t\f$.
+    /// Transformation matrix is a 4x4 matrix.
+    ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
+    ///               [ O(1x3)  s(1x1) ]]
+    ///  (s = 1 for Transformation without scaling)
+    ///
+    ///  It applies the following general transform to each `positions` and
+    ///  `normals`.
+    ///   |x'|   | R(0,0) R(0,1) R(0,2) t(0)|   |x|
+    ///   |y'| = | R(1,0) R(1,1) R(1,2) t(1)| @ |y|
+    ///   |z'|   | R(2,0) R(2,1) R(2,2) t(2)|   |z|
+    ///   |w'|   | O(0,0) O(0,1) O(0,2)  s  |   |1|
+    ///
+    ///   [x, y, z] = [x', y', z'] / w'
+    ///
     /// \param transformation Transformation [Tensor of shape {4,4}].
-    /// Should be on the same device as the LineSet.
     /// \return Transformed line set.
     LineSet &Transform(const core::Tensor &transformation);
 
     /// \brief Translates the points and lines of the LineSet.
     /// \param translation Translation tensor of shape {3}
-    /// Should be on the same device as the LineSet.
     /// \param relative If true (default) translates relative to center of
     /// LineSet.
     /// \return Translated line set.
@@ -328,16 +336,14 @@ public:
     /// \brief Scales the points and lines of the LineSet.
     /// \param scale Scale magnitude.
     /// \param center Center [Tensor of shape {3}] about which the LineSet is
-    /// to be scaled. Should be on the same device as the LineSet.
     /// \return Scaled line set.
     LineSet &Scale(double scale, const core::Tensor &center);
 
     /// \brief Rotates the points and lines of the line set. Custom attributes
     /// (e.g.: point or line normals) are not transformed.
     /// \param R Rotation [Tensor of shape {3,3}].
-    /// Should be on the same device as the LineSet
     /// \param center Center [Tensor of shape {3}] about which the LineSet is
-    /// to be scaled. Should be on the same device as the LineSet.
+    /// to be scaled.
     /// \return Rotated line set.
     LineSet &Rotate(const core::Tensor &R, const core::Tensor &center);
 

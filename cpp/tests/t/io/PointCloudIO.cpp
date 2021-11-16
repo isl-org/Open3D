@@ -33,7 +33,6 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "tests/Tests.h"
 
@@ -288,12 +287,12 @@ TEST(TPointCloudIO, WritePTSColorConversion1) {
             utility::GetDataPathCommon("test_color_conversion.pts");
     pcd.SetPointPositions(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
     pcd.SetPointColors(
-            core::Tensor::Init<float>({{-1, 0.25, 0.3}, {0, 4, 0.1}}));
+            core::Tensor::Init<float>({{-1, 0.25, 0.4}, {0, 4, 0.1}}));
     EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
     EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
                                       {"auto", false, false, true}));
     EXPECT_EQ(pcd_read.GetPointColors().ToFlatVector<uint8_t>(),
-              std::vector<uint8_t>({0, 64, 77, 0, 255, 26}));
+              std::vector<uint8_t>({0, 64, 102, 0, 255, 26}));
     std::remove(file_name.c_str());
 }
 

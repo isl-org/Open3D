@@ -83,17 +83,17 @@ OdometryResult RGBDOdometryMultiScale(
         const Method method,
         const OdometryLossParams& params) {
     // TODO (wei): more device check
-    core::Device device = source.depth_.GetDevice();
-    if (target.depth_.GetDevice() != device) {
-        utility::LogError(
-                "Device mismatch, got {} for source and {} for target.",
-                device.ToString(), target.depth_.GetDevice().ToString());
-    }
+    const core::Device device = source.depth_.GetDevice();
+    core::AssertTensorDevice(target.depth_.AsTensor(), device);
+
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
 
     // 4x4 transformations are always float64 and stay on CPU.
-    core::Device host("CPU:0");
-    Tensor intrinsics_d = intrinsics.To(host, core::Float64).Clone();
-    Tensor trans_d = init_source_to_target.To(host, core::Float64).Clone();
+    const core::Device host("CPU:0");
+    const Tensor intrinsics_d = intrinsics.To(host, core::Float64).Clone();
+    const Tensor trans_d =
+            init_source_to_target.To(host, core::Float64).Clone();
 
     Image source_depth = source.depth_;
     Image target_depth = target.depth_;
