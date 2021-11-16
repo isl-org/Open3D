@@ -1,4 +1,4 @@
-name: WebRTC build
+name: WebRTC
 
 on:
   workflow_dispatch:
@@ -37,8 +37,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: false
 
       - name: Set up Python version
         uses: actions/setup-python@v2
@@ -84,8 +82,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: false
 
       - name: Set up Python version
         uses: actions/setup-python@v2

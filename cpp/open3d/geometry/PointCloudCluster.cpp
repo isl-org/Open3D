@@ -31,6 +31,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace geometry {
@@ -42,8 +43,8 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
 
     // Precompute all neighbors.
     utility::LogDebug("Precompute neighbors.");
-    utility::ConsoleProgressBar progress_bar(
-            points_.size(), "Precompute neighbors.", print_progress);
+    utility::ProgressBar progress_bar(points_.size(), "Precompute neighbors.",
+                                      print_progress);
     std::vector<std::vector<int>> nbs(points_.size());
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())

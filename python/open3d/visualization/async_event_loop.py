@@ -35,7 +35,6 @@ cannot be started in the main thread. Currently does not work in macOS.
 import threading
 from collections import deque
 import open3d as o3d
-from open3d.visualization.tensorboard_plugin.util import _log
 
 
 class _AsyncEventLoop:
@@ -71,6 +70,7 @@ class _AsyncEventLoop:
     def run_sync(self, func, *args, **kwargs):
         """Enqueue task, wait for completion and return result. Can run in any
         thread."""
+        from open3d.visualization.tensorboard_plugin.util import _log
         if not self._started:
             raise RuntimeError("GUI thread has exited.")
 
@@ -89,7 +89,6 @@ class _AsyncEventLoop:
 
     def _thread_main(self):
         """Main GUI thread event loop"""
-        # TODO(Sameer): This event loop uses up a CPU core completely
         app = o3d.visualization.gui.Application.instance
         app.initialize()
 

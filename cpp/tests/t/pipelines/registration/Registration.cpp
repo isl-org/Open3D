@@ -237,7 +237,8 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPoint) {
                 initial_transform_t,
                 t_reg::TransformationEstimationPointToPoint(),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                              max_iterations));
+                                              max_iterations),
+                -1.0);
 
         // PointToPoint - Legacy.
         l_reg::RegistrationResult reg_p2p_l = l_reg::RegistrationICP(
@@ -291,7 +292,8 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
                                             /*scale parameter =*/1.0,
                                             /*shape parameter =*/1.0)),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                              max_iterations));
+                                              max_iterations),
+                -1.0);
 
         // PointToPlane - Legacy.
         l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationICP(
@@ -355,15 +357,16 @@ TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
         double relative_rmse = 1e-6;
         int max_iterations = 2;
 
-        // PointToPlane - Tensor.
+        // ColoredICP - Tensor.
         t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
                 initial_transform_t,
                 t_reg::TransformationEstimationForColoredICP(),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                              max_iterations));
+                                              max_iterations),
+                -1.0);
 
-        // PointToPlane - Legacy.
+        // ColoredICP - Legacy.
         l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationColoredICP(
                 source_lpcd, target_lpcd, max_correspondence_dist,
                 initial_transform_l,

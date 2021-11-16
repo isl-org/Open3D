@@ -169,6 +169,25 @@ WebRTCWindowSystem::WebRTCWindowSystem()
                 return "";  // empty string is not sent back
             });
 
+    // Synchronized MouseEvents over multiple windows
+    RegisterDataChannelMessageCallback(
+            "SyncMouseEvent",
+            [this](const std::string &message) -> std::string {
+                Json::Value value = utility::StringToJson(message);
+                if (value.get("class_name", "").asString() != "SyncMouseEvent")
+                    return "Error.";
+                value["class_name"] = "MouseEvent";
+                gui::MouseEvent me;
+                if (!me.FromJson(value)) return "Bad MouseEvent. Ignoring.";
+                for (const auto &json_window_uid :
+                     value.get("window_uid_list", "")) {
+                    const auto os_window =
+                            GetOSWindowByUID(json_window_uid.asString());
+                    if (os_window != nullptr) PostMouseEvent(os_window, me);
+                }
+                return "";  // empty string is not sent back
+            });
+
     RegisterDataChannelMessageCallback(
             "ResizeEvent", [this](const std::string &message) -> std::string {
                 const Json::Value value = utility::StringToJson(message);

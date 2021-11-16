@@ -33,7 +33,7 @@ def main():
     if len(sys.argv) < 2:
         print("""Usage: textured-mesh.py [model directory]
     This example will load [model directory].obj plus any of albedo, normal,
-    ao, metallic and roughness textures present. The textures should be name
+    ao, metallic and roughness textures present. The textures should be named
     albedo.png, normal.png, ao.png, metallic.png and roughness.png
     respectively.""")
         sys.exit()
@@ -45,9 +45,11 @@ def main():
     material = mesh.material
     material.material_name = "defaultLit"
 
+    names_to_o3dprop = {"ao": "ambient_occlusion"}
     for texture in ("albedo", "normal", "ao", "metallic", "roughness"):
         texture_file = os.path.join(model_dir, texture + ".png")
         if os.path.exists(texture_file):
+            texture = names_to_o3dprop.get(texture, texture)
             material.texture_maps[texture] = o3d.t.io.read_image(texture_file)
     if "metallic" in material.texture_maps:
         material.scalar_properties["metallic"] = 1.0

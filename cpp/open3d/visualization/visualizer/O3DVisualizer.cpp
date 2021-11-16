@@ -290,7 +290,6 @@ struct LightingProfile {
 
 static const char *kCustomName = "Custom";
 static const std::vector<LightingProfile> gLightingProfiles = {
-        {"Hard shadows", Open3DScene::LightingProfile::HARD_SHADOWS},
         {"Dark shadows", Open3DScene::LightingProfile::DARK_SHADOWS},
         {"Medium shadows", Open3DScene::LightingProfile::MED_SHADOWS},
         {"Soft shadows", Open3DScene::LightingProfile::SOFT_SHADOWS},
@@ -413,7 +412,7 @@ struct O3DVisualizer::Impl {
 
         MakeSettingsUI();
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
-        SetLightingProfile(gLightingProfiles[2]);  // med shadows
+        SetLightingProfile(gLightingProfiles[2]);  // soft shadows
         SetPointSize(ui_state_.point_size);  // sync selections_' point size
     }
 
@@ -710,7 +709,7 @@ struct O3DVisualizer::Impl {
 
         settings.sun_intensity = new Slider(Slider::INT);
         settings.sun_intensity->SetLimits(0.0, 150000.0);
-        settings.sun_intensity->SetValue(ui_state_.ibl_intensity);
+        settings.sun_intensity->SetValue(ui_state_.sun_intensity);
         settings.sun_intensity->SetOnValueChanged([this](double new_value) {
             this->ui_state_.sun_intensity = int(new_value);
             this->SetUIState(ui_state_);
@@ -840,6 +839,7 @@ struct O3DVisualizer::Impl {
             is_default_color = false;
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
+            ui_state_.point_size = static_cast<int>(mat.point_size);
         } else if (model) {
             // Adding a triangle mesh model. Shader needs to be set to
             // defaultLit for O3D shader handling logic to work.
@@ -901,7 +901,7 @@ struct O3DVisualizer::Impl {
 
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
-            if (lines || obb || aabb) {
+            if (lines || obb || aabb || t_lines) {
                 mat.shader = kShaderUnlitLines;
                 mat.line_width = ui_state_.line_width * window_->GetScaling();
             }
@@ -1013,6 +1013,23 @@ struct O3DVisualizer::Impl {
         scene_->ForceRedraw();
     }
 
+    void UpdateGeometry(const std::string &name,
+                        std::shared_ptr<t::geometry::Geometry> tgeom,
+                        uint32_t update_flags) {
+        auto t_cloud =
+                std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
+        if (!t_cloud) {
+            utility::LogWarning(
+                    "Only TGeometry PointClouds can currently be updated using "
+                    "UpdateGeometry. Try removing the geometry that needs to "
+                    "be updated then adding the update geometry.");
+            return;
+        }
+        scene_->GetScene()->GetScene()->UpdateGeometry(name, *t_cloud,
+                                                       update_flags);
+        scene_->ForceRedraw();
+    }
+
     void RemoveGeometry(const std::string &name) {
         std::string group;
         for (size_t i = 0; i < objects_.size(); ++i) {
@@ -1094,6 +1111,26 @@ struct O3DVisualizer::Impl {
         return DrawObject();
     }
 
+    MaterialRecord GetGeometryMaterial(const std::string &name) {
+        for (auto &o : objects_) {
+            if (o.name == name) {
+                return o.material;
+            }
+        }
+        return MaterialRecord();
+    }
+
+    void ModifyGeometryMaterial(const std::string &name,
+                                const MaterialRecord *material) {
+        for (auto &o : objects_) {
+            if (o.name == name) {
+                o.material = *material;
+                scene_->GetScene()->ModifyGeometryMaterial(name, *material);
+                break;
+            }
+        }
+    }
+
     void Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
         scene_->AddLabel(pos, text);
     }
@@ -1135,6 +1172,7 @@ struct O3DVisualizer::Impl {
                        std::shared_ptr<geometry::Image> bg_image) {
         auto old_default_color = CalcDefaultUnlitColor();
         ui_state_.bg_color = bg_color;
+        settings.bg_color->SetValue(bg_color.x(), bg_color.y(), bg_color.z());
         auto scene = scene_->GetScene();
         scene->SetBackground(ui_state_.bg_color, bg_image);
 
@@ -1249,10 +1287,11 @@ struct O3DVisualizer::Impl {
                           const MaterialRecord &original_material,
                           O3DVisualizer::Shader shader) {
         bool is_lines = (original_material.shader == "unlitLine");
+        bool is_gradient = (original_material.shader == "unlitGradient");
         auto scene = scene_->GetScene();
         // Lines are already unlit, so keep using the original shader when in
         // unlit mode so that we can keep the wide lines.
-        if (shader == Shader::STANDARD ||
+        if (shader == Shader::STANDARD || is_gradient ||
             (shader == Shader::UNLIT && is_lines)) {
             scene->ModifyGeometryMaterial(name, original_material);
         } else {
@@ -1285,26 +1324,42 @@ struct O3DVisualizer::Impl {
     }
 
     void SetIBL(std::string path) {
+        std::string ibl_path;
         if (path == "") {
-            path = std::string(Application::GetInstance().GetResourcePath()) +
-                   std::string("/") + std::string(kDefaultIBL);
-        }
-        if (utility::filesystem::FileExists(path + "_ibl.ktx")) {
-            scene_->GetScene()->GetScene()->SetIndirectLight(path);
-            scene_->ForceRedraw();
-            ui_state_.ibl_path = path;
+            // Set IBL back to default
+            ibl_path =
+                    std::string(Application::GetInstance().GetResourcePath()) +
+                    std::string("/") + std::string(kDefaultIBL);
+        } else if (utility::filesystem::FileExists(path + "_ibl.ktx")) {
+            // Set IBL to named IBL - probably came from selecting in UI
+            ibl_path = path;
         } else if (utility::filesystem::FileExists(path)) {
+            // User specified full path to IBL file
             if (path.find("_ibl.ktx") == path.size() - 8) {
-                ui_state_.ibl_path = path.substr(0, path.size() - 8);
-                scene_->GetScene()->GetScene()->SetIndirectLight(
-                        ui_state_.ibl_path);
-                scene_->ForceRedraw();
+                ibl_path = path.substr(0, path.size() - 8);
             } else {
                 utility::LogWarning(
                         "Could not load IBL path. Filename must be of the form "
                         "'name_ibl.ktx' and be paired with 'name_skybox.ktx'");
+                return;
+            }
+        } else {
+            // User specified the IBL 'stem' without the full path
+            ibl_path =
+                    std::string(Application::GetInstance().GetResourcePath()) +
+                    "/" + path;
+            if (!utility::filesystem::FileExists(ibl_path + "_ibl.ktx")) {
+                return;
             }
         }
+        ui_state_.ibl_path = ibl_path;
+        scene_->GetScene()->GetScene()->SetIndirectLight(ibl_path);
+        scene_->ForceRedraw();
+    }
+
+    void SetIBLIntensity(float intensity) {
+        ui_state_.ibl_intensity = intensity;
+        SetUIState(ui_state_);
     }
 
     void SetLightingProfile(const LightingProfile &profile) {
@@ -1979,6 +2034,12 @@ void O3DVisualizer::Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
 
 void O3DVisualizer::Clear3DLabels() { impl_->Clear3DLabels(); }
 
+void O3DVisualizer::UpdateGeometry(const std::string &name,
+                                   std::shared_ptr<t::geometry::Geometry> tgeom,
+                                   uint32_t update_flags) {
+    impl_->UpdateGeometry(name, tgeom, update_flags);
+}
+
 void O3DVisualizer::RemoveGeometry(const std::string &name) {
     return impl_->RemoveGeometry(name);
 }
@@ -1992,9 +2053,25 @@ O3DVisualizer::DrawObject O3DVisualizer::GetGeometry(
     return impl_->GetGeometry(name);
 }
 
+MaterialRecord O3DVisualizer::GetGeometryMaterial(
+        const std::string &name) const {
+    return impl_->GetGeometryMaterial(name);
+}
+
+void O3DVisualizer::ModifyGeometryMaterial(
+        const std::string &name, const rendering::MaterialRecord *material) {
+    impl_->ModifyGeometryMaterial(name, material);
+}
+
 void O3DVisualizer::ShowSettings(bool show) { impl_->ShowSettings(show); }
 
 void O3DVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
+
+void O3DVisualizer::SetIBL(const std::string &path) { impl_->SetIBL(path); }
+
+void O3DVisualizer::SetIBLIntensity(float intensity) {
+    impl_->SetIBLIntensity(intensity);
+}
 
 void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 

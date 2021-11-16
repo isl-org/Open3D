@@ -83,15 +83,6 @@ std::tuple<int32_t, std::string> GetStatusCodeAndStr(
 
 std::shared_ptr<zmq::message_t> CreateStatusOKMsg();
 
-/// Creates a Tensor from an Array. This function also returns a contiguous CPU
-/// Tensor. Note that the msgpack object backing the memory for \p array must be
-/// alive for calling this function.
-core::Tensor ArrayToTensor(const messages::Array& array);
-
-/// Converts a TensorMap to an Array map.
-std::map<std::string, messages::Array> TensorMapToArrayMap(
-        const t::geometry::TensorMap& tensor_map);
-
 /// Converts MeshData to a geometry type. MeshData can store TriangleMesh,
 /// PointCloud, and LineSet. The function returns a pointer to the base class
 /// Geometry. The pointer is null if the conversion is not successful. Note that

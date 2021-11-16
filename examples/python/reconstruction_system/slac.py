@@ -36,6 +36,7 @@ sys.path.append(".")
 
 
 def run(config):
+    print("slac non-rigid optimization.")
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
 
     path_dataset = config['path_dataset']
