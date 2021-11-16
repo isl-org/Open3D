@@ -901,7 +901,7 @@ struct O3DVisualizer::Impl {
 
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
-            if (lines || obb || aabb) {
+            if (lines || obb || aabb || t_lines) {
                 mat.shader = kShaderUnlitLines;
                 mat.line_width = ui_state_.line_width * window_->GetScaling();
             }
