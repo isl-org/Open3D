@@ -415,7 +415,7 @@ public:
     /// - https://pytorch.org/docs/stable/tensors.html
     /// - aten/src/ATen/native/TensorShape.cpp
     /// - aten/src/ATen/TensorUtils.cpp
-    Tensor Flatten(int64_t start_dim=0, int64_t end_dim=-1) const;
+    Tensor Flatten(int64_t start_dim = 0, int64_t end_dim = -1) const;
 
     /// Returns a new tensor view with the same data but of a different shape.
     ///

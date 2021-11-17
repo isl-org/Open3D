@@ -242,19 +242,25 @@ def test_arange(device):
     assert o3_t.dtype == o3c.int64
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
+
 @pytest.mark.parametrize("device", list_devices())
 def test_arange(device):
     src_t = o3c.Tensor([[[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]],
-             [[12, 13, 14, 15], [16, 17, 18, 19], [20, 21, 22, 23]]]).to(device)
-    
-    dst_t_no_param = o3c.Tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]).to(device)
-    
-    dst_t_with_param = o3c.Tensor([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-             [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]]).to(device)
- 
-    assert((dst_t_no_param == src_t.flatten()).all())
-    assert((dst_t_with_param == src_t.flatten(1)).all())
+                        [[12, 13, 14, 15], [16, 17, 18, 19], [20, 21, 22,
+                                                              23]]]).to(device)
+
+    dst_t_no_param = o3c.Tensor([
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+        20, 21, 22, 23
+    ]).to(device)
+
+    dst_t_with_param = o3c.Tensor(
+        [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+         [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]]).to(device)
+
+    assert ((dst_t_no_param == src_t.flatten()).all())
+    assert ((dst_t_with_param == src_t.flatten(1)).all())
+
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
 @pytest.mark.parametrize("device", list_devices())
