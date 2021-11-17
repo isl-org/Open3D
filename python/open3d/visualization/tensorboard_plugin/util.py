@@ -43,6 +43,8 @@ from open3d.ml.vis import LabelLUT
 from . import plugin_data_pb2
 from . import metadata
 
+import ipdb
+
 try:
     from tensorflow.io.gfile import GFile as _fileopen
 except ImportError:
@@ -54,8 +56,8 @@ _log.propagate = False
 _stream_handler = logging.StreamHandler()
 _stream_handler.setFormatter(
     logging.Formatter('[%(name)s %(levelname)s T:%(threadName)s] %(message)s'))
-_stream_handler.setLevel(logging.WARNING)
-_log.setLevel(logging.WARNING)
+_stream_handler.setLevel(logging.DEBUG)
+_log.setLevel(logging.DEBUG)
 _log.addHandler(_stream_handler)
 
 
@@ -309,8 +311,9 @@ class Open3DPluginDataReader:
                     prop_shape.update(custom_props)
                     prop_shape.update(label_props)
             if len(inference_data_proto.inference_result) > 0:
-                # 'confidence' requires unlitGradient.GRADIENT shader support
-                # for LineSet
+                # Only bbox labels can be visualized. Scalars such as
+                # 'confidence' from BoundingBox3D requires
+                # unlitGradient.GRADIENT shader support for LineSet.
                 prop_shape.update({'labels': 1})
 
     def read_geometry(self, run, tag, step, batch_idx, step_to_idx):
@@ -597,6 +600,7 @@ class RenderUpdate:
 
         # Visualize scalar / 3-vector property with color map
         if "property" in updated:
+            ipdb.set_trace()
             # Float Scalar with colormap
             if ((self._property in custom_props or
                  self._property in label_props) and

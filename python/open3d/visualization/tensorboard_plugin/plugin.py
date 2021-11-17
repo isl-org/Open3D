@@ -415,7 +415,8 @@ class Open3DPluginWindow:
         self.window.show_menu(False)
         self.window.scene.downsample_threshold = 400000
         self.window.set_background((1, 1, 1, 1), None)  # White background
-        self.window.line_width = int(5 * self.window.scaling)
+        self.window.show_skybox(False)
+        self.window.line_width = int(3 * self.window.scaling)
         # Register frontend callbacks
         class_name_base = "tensorboard/" + self.window.uid
         webrtc_server.register_data_channel_message_callback(

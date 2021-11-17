@@ -157,15 +157,22 @@ class TensorboardOpen3DPluginClient {
                       <h3>Options</h3>
                       <div class="selector">
                         <input type="checkbox" id="ui-options-view">
-                        <label for="ui-options-view"> Sync view </label>
+                        <label for="ui-options-view" title=
+                        "Show all current runs from the same view point"> Sync view </label>
                         <input type="checkbox" id="ui-options-step">
-                        <label for="ui-options-step"> Sync step </label>
+                        <label for="ui-options-step" title=
+                        "Use a common step for all runs"> Sync step </label>
                         <input type="checkbox" id="ui-options-bidx">
-                        <label for="ui-options-bidx"> Sync batch index </label>
+                        <label for="ui-options-bidx" title=
+                        "Use a common batch index for all runs"> Sync batch index </label>
                         <input type="checkbox" id="ui-options-axes">
-                        <label for="ui-options-axes"> Show axes </label>
+                        <label for="ui-options-axes" title=
+                        "Show coordinate axes X (red), Y (green), Z (blue) in all current runs">
+                        Show axes </label>
                         <input type="checkbox" id="ui-options-ground">
-                        <label for="ui-options-ground"> Show ground </label>
+                        <label for="ui-options-ground" title=
+                        "Show  a ground plane grid. Change the plane assigned as
+ground from the Open3D GUI settings for each widget."> Show ground </label>
                       </div>
                     </div>
 
@@ -543,7 +550,8 @@ class TensorboardOpen3DPluginClient {
             const checked = initialCheckedOptions.has(option) ? 'checked' : '';
             if (selTypes.length === 2) {
                 BUTTON_TEMPLATE = `
-              <button id="toggle-property-${option}" type="button" disabled>
+              <button id="toggle-property-${option}" type="button" disabled
+              title="Change display properties, including selecting data and adjusting colors.">
                   <svg> <use href="#settings" /> </svg>
               </button>`
                 PROP_DIV_TEMPLATE = `
@@ -804,12 +812,14 @@ class TensorboardOpen3DPluginClient {
                             'beforeend',
                             `<label class="property-ui-colormap">
               <input type="checkbox" id="ui-cmap-${tag}-alpha-${idx}" ${
-                                    checked}>
+                                    checked} title="Show / hide data for this label">
               <input type="text" id="ui-cmap-${tag}-val-${idx}" value="${
-                                    label}: ${name}" readonly>
+                                    label}: ${
+                                    name}" title="label: class name" readonly>
               <input type="color" id="ui-cmap-${tag}-col-${idx}"
-                title="R:${color[0]}, G:${color[1]}, B:${color[2]}"
-                value="${rgbToHex(color)}">
+                value="${rgbToHex(color)}"
+                title="R:${color[0]}, G:${color[1]}, B:${color[2]}
+Click to change">
             </label>`);
                     idx = idx + 1;
                 }
@@ -833,20 +843,21 @@ class TensorboardOpen3DPluginClient {
                         parseFloat(value) * (currentRange[1] - currentRange[0]);
                 const checked = color[3] > 0 ? 'checked' : '';
                 cmapEl.insertAdjacentHTML(
-                        'beforeend',
-                        `<label class="property-ui-colormap">
+                        'beforeend', `<label class="property-ui-colormap">
             <span>
-              <button type="button" id="ui-cmap-${tag}-add-${
-                                idx}">&#xff0b;</button>
-              <button type="button" id="ui-cmap-${tag}-rem-${
-                                idx}">&#xff0d;</button>
+              <button type="button" id="ui-cmap-${tag}-add-${idx}" title=
+              "Insert a new color point in the color gradient">&#xff0b;</button>
+              <button type="button" id="ui-cmap-${tag}-rem-${idx}" title=
+              "Delete this color point from the color gradient">&#xff0d;</button>
             </span>
-            <input type="number" id="ui-cmap-${tag}-val-${idx}"
+            <input type="number" id="ui-cmap-${tag}-val-${idx}" title=
+            "Associated data value for this color point. Values will be sorted automatically."
             value=${valueFlt.toPrecision(4)} step=${step} min=${currentRange[0]}
             max=${currentRange[1]}>
             <input type="color" id="ui-cmap-${tag}-col-${idx}"
-              title="R:${color[0]}, G:${color[1]}, B:${color[2]}"
-              value="${rgbToHex(color)}">
+              value="${rgbToHex(color)}"
+              title="R:${color[0]}, G:${color[1]}, B:${color[2]}
+Click to change">
           </label>`);
                 idx = idx + 1;
             }
