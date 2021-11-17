@@ -411,6 +411,28 @@ TEST_P(TensorPermuteDevices, Expand) {
     EXPECT_EQ(dst_t.GetDataPtr(), src_t.GetDataPtr());
 }
 
+TEST_P(TensorPermuteDevices, Flatten) {
+    core::Device device = GetParam();
+
+    core::Tensor src_t = core::Tensor::Init<float>(
+            {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
+             {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
+            device);
+
+    core::Tensor dst_t_no_param = core::Tensor::Init<float>(
+            {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23},
+            device);
+
+    core::Tensor dst_t_with_param = core::Tensor::Init<float>(
+            {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
+             {12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}},
+            device);
+
+    EXPECT_TRUE((dst_t_no_param == src_t.Flatten()).All());
+    EXPECT_TRUE((dst_t_with_param == src_t.Flatten(1)).All());
+}
+
 TEST_P(TensorPermuteDevices, DefaultStrides) {
     core::Device device = GetParam();
 

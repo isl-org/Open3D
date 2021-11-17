@@ -656,7 +656,8 @@ Tensor Tensor::Reshape(const SizeVector& dst_shape) const {
     }
 }
 
-Tensor Tensor::Flatten(int64_t start_dim, int64_t end_dim) const {
+Tensor Tensor::Flatten(int64_t start_dim /*= 0*/,
+                       int64_t end_dim /*= false*/) const {
     core::SizeVector shape = GetShape();
     core::SizeVector dst_shape;
     if (start_dim < -(int64_t)shape.size() ||
@@ -676,6 +677,7 @@ Tensor Tensor::Flatten(int64_t start_dim, int64_t end_dim) const {
         utility::LogError(
                 "Flatten() has invalid args: start_dim cannot come after "
                 "end_dim");
+    // Multiply the flattened dimensions together
     int64_t flat_dimension_size = 1;
     for (int64_t dim = 0; dim < (int64_t)shape.size(); dim++) {
         if (dim >= start_dim && dim <= end_dim) {
