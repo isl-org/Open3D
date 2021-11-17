@@ -100,11 +100,11 @@ struct NonRigidOptimizerOption {
     std::string debug_output_dir_ = "";
 };
 
-geometry::TriangleMesh RunNonRigidOptimizer(
-        const geometry::TriangleMesh& mesh,
-        const std::vector<geometry::RGBDImage>& images_rgbd,
-        const camera::PinholeCameraTrajectory& camera_trajectory,
-        const NonRigidOptimizerOption& option);
+std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
+RunNonRigidOptimizer(const geometry::TriangleMesh& mesh,
+                     const std::vector<geometry::RGBDImage>& images_rgbd,
+                     const camera::PinholeCameraTrajectory& camera_trajectory,
+                     const NonRigidOptimizerOption& option);
 
 }  // namespace color_map
 }  // namespace pipelines
