@@ -656,18 +656,20 @@ Tensor Tensor::Reshape(const SizeVector& dst_shape) const {
     }
 }
 
-Tensor Tensor::Flatten(int64_t start_dim,
-                       int64_t end_dim) const {
+Tensor Tensor::Flatten(int64_t start_dim, int64_t end_dim) const {
     core::SizeVector shape = GetShape();
     core::SizeVector dst_shape;
-    if (start_dim < -(int64_t)shape.size() || start_dim >= (int64_t)shape.size())
+    if (start_dim < -(int64_t)shape.size() ||
+        start_dim >= (int64_t)shape.size())
         utility::LogError(
                 "Dimension out of range (expected to be in range of [{}, {}], "
-                "but got {})", -(int64_t)shape.size(), (int64_t)shape.size()-1, start_dim);
+                "but got {})",
+                -(int64_t)shape.size(), (int64_t)shape.size() - 1, start_dim);
     if (end_dim < -(int64_t)shape.size() || end_dim >= (int64_t)shape.size())
         utility::LogError(
                 "Dimension out of range (expected to be in range of [{}, {}], "
-                "but got {})", -(int64_t)shape.size(), (int64_t)shape.size()-1, end_dim);
+                "but got {})",
+                -(int64_t)shape.size(), (int64_t)shape.size() - 1, end_dim);
     if (end_dim < 0) end_dim += (int64_t)shape.size();
     if (start_dim < 0) start_dim += (int64_t)shape.size();
     if (end_dim < start_dim)
@@ -678,9 +680,8 @@ Tensor Tensor::Flatten(int64_t start_dim,
     for (int64_t dim = 0; dim < (int64_t)shape.size(); dim++) {
         if (dim >= start_dim && dim <= end_dim) {
             flat_dimension_size *= shape[dim];
-            if (dim == end_dim) 
-                dst_shape.push_back(flat_dimension_size);
-        } else 
+            if (dim == end_dim) dst_shape.push_back(flat_dimension_size);
+        } else
             dst_shape.push_back(shape[dim]);
     }
     return Reshape(dst_shape);
