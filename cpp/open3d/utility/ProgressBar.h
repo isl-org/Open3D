@@ -56,9 +56,7 @@ class OMPProgressBar : public ProgressBar {
 public:
     OMPProgressBar(size_t expected_count,
                    const std::string &progress_info,
-                   bool active = false)
-        : ProgressBar(expected_count, progress_info, active) {}
-
+                   bool active = false);
     ProgressBar &operator++() override;
 };
 

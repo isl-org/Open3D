@@ -82,6 +82,11 @@ void ProgressBar::SetCurrentCount(size_t n) {
 
 size_t ProgressBar::GetCurrentCount() const { return current_count_; }
 
+OMPProgressBar::OMPProgressBar(size_t expected_count,
+                               const std::string &progress_info,
+                               bool active)
+    : ProgressBar(expected_count, progress_info, active) {}
+
 ProgressBar &OMPProgressBar::operator++() {
     // Ref: https://stackoverflow.com/a/44555438
 #ifdef _OPENMP
