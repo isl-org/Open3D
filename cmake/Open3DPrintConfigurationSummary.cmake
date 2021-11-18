@@ -46,7 +46,7 @@ function(open3d_print_configuration_summary)
             "   '-Xcompiler -fno-gnu-unique'                                                 \n"
             "                                                                                \n"
             " or use the PyTorch wheels at                                                   \n"
-            "   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1          \n"
+            "   https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2          \n"
             "                                                                                \n"
             "--------------------------------------------------------------------------------\n"
         )
