@@ -41,7 +41,6 @@ public:
                bool active);
     virtual ProgressBar &operator++();
     void SetCurrentCount(size_t n);
-    void UpdateCurrentCount(size_t n);
     size_t GetCurrentCount() const;
 
 protected:

@@ -80,10 +80,6 @@ void ProgressBar::SetCurrentCount(size_t n) {
     }
 }
 
-void ProgressBar::UpdateCurrentCount(size_t n) {
-    SetCurrentCount(current_count_ + n);
-}
-
 size_t ProgressBar::GetCurrentCount() const { return current_count_; }
 
 ProgressBar &OMPProgressBar::operator++() {
@@ -93,13 +89,13 @@ ProgressBar &OMPProgressBar::operator++() {
     int thread_id = omp_get_thread_num();
     if (number_of_threads > 1) {
         if (thread_id == 0) {
-            UpdateCurrentCount(number_of_threads);
+            SetCurrentCount(current_count_ + number_of_threads);
         }
     } else {
-        UpdateCurrentCount(1);
+        SetCurrentCount(current_count_ + 1);
     }
 #else
-    UpdateCurrentCount(1);
+    SetCurrentCount(current_count_ + 1);
 #endif
     return *this;
 }
