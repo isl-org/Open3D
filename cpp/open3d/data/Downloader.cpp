@@ -38,7 +38,7 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
-#define CURL_STATICLIB
+// #define CURL_STATICLIB
 
 namespace open3d {
 namespace data {
