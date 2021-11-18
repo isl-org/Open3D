@@ -79,8 +79,8 @@ def test_tensormap_modify(device):
     tm["a"] = o3c.Tensor([100], device=device)
     a_alias = tm["a"]
     a_alias[:] = o3c.Tensor([200], device=device)
-    np.testing.assert_equal(a_alias.numpy(), [200])
-    np.testing.assert_equal(tm["a"].numpy(), [200])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [200])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
 
     # Assigning a new tensor to an alias should not change the tensor in the
     # map. The alias name simply points to a new tensor.
@@ -88,8 +88,8 @@ def test_tensormap_modify(device):
     tm["a"] = o3c.Tensor([100], device=device)
     a_alias = tm["a"]
     a_alias = o3c.Tensor([200], device=device)
-    np.testing.assert_equal(a_alias.numpy(), [200])
-    np.testing.assert_equal(tm["a"].numpy(), [100])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [200])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [100])
 
     # Pybind always returns a "shallow copy" of the tensor. This is a copy since
     # the new variable points to a different tensor object, and thus the id() is
@@ -107,9 +107,9 @@ def test_tensormap_modify(device):
     assert len(tm) == 1
     del tm["a"]
     assert len(tm) == 0
-    np.testing.assert_equal(a_alias.numpy(), [100])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [100])
     a_alias[:] = 200
-    np.testing.assert_equal(a_alias.numpy(), [200])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [200])
 
     # With this, swapping elements are supported.
     tm = o3d.t.geometry.TensorMap("positions")
@@ -118,10 +118,10 @@ def test_tensormap_modify(device):
     a_alias = tm["a"]
     b_alias = tm["b"]
     tm["a"], tm["b"] = tm["b"], tm["a"]
-    np.testing.assert_equal(a_alias.numpy(), [100])
-    np.testing.assert_equal(b_alias.numpy(), [200])
-    np.testing.assert_equal(tm["a"].numpy(), [200])
-    np.testing.assert_equal(tm["b"].numpy(), [100])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [100])
+    np.testing.assert_equal(b_alias.cpu().numpy(), [200])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
+    np.testing.assert_equal(tm["b"].cpu().numpy(), [100])
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -135,16 +135,16 @@ def test_tensor_dict_modify(device):
     tm["a"] = o3c.Tensor([100], device=device)
     a_alias = tm["a"]
     a_alias[:] = o3c.Tensor([200], device=device)
-    np.testing.assert_equal(a_alias.numpy(), [200])
-    np.testing.assert_equal(tm["a"].numpy(), [200])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [200])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
 
     # Assign a new tensor.
     tm = dict()
     tm["a"] = o3c.Tensor([100], device=device)
     a_alias = tm["a"]
     a_alias = o3c.Tensor([200], device=device)
-    np.testing.assert_equal(a_alias.numpy(), [200])
-    np.testing.assert_equal(tm["a"].numpy(), [100])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [200])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [100])
 
     # Object id.
     tm = dict()
@@ -159,9 +159,9 @@ def test_tensor_dict_modify(device):
     assert len(tm) == 1
     del tm["a"]
     assert len(tm) == 0
-    np.testing.assert_equal(a_alias.numpy(), [100])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [100])
     a_alias[:] = 200
-    np.testing.assert_equal(a_alias.numpy(), [200])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [200])
 
     # Swap.
     tm = dict()
@@ -170,10 +170,10 @@ def test_tensor_dict_modify(device):
     a_alias = tm["a"]
     b_alias = tm["b"]
     tm["a"], tm["b"] = tm["b"], tm["a"]
-    np.testing.assert_equal(a_alias.numpy(), [100])
-    np.testing.assert_equal(b_alias.numpy(), [200])
-    np.testing.assert_equal(tm["a"].numpy(), [200])
-    np.testing.assert_equal(tm["b"].numpy(), [100])
+    np.testing.assert_equal(a_alias.cpu().numpy(), [100])
+    np.testing.assert_equal(b_alias.cpu().numpy(), [200])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
+    np.testing.assert_equal(tm["b"].cpu().numpy(), [100])
 
 
 @pytest.mark.skip("This test is just for documentation purpose.")
