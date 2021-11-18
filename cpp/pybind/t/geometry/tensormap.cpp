@@ -69,19 +69,19 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
             "__bool__", [](const Map &m) -> bool { return !m.empty(); },
             "Check whether the map is nonempty");
 
+    // Essential: keep list alive while iterator exists
     cl.def(
             "__iter__",
             [](Map &m) { return py::make_key_iterator(m.begin(), m.end()); },
             py::keep_alive<0, 1>()
-            /* Essential: keep list alive while iterator exists */
+
     );
 
+    // Essential: keep list alive while iterator exists
     cl.def(
             "items",
             [](Map &m) { return py::make_iterator(m.begin(), m.end()); },
-            py::keep_alive<0, 1>()
-            /* Essential: keep list alive while iterator exists */
-    );
+            py::keep_alive<0, 1>());
 
     cl.def(
             "__getitem__",
@@ -90,8 +90,22 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
                 if (it == m.end()) throw py::key_error();
                 return it->second;
             },
-            py::return_value_policy::reference_internal  // ref + keepalive
-    );
+            // py::return_value_policy::copy is used as the safest option.
+            // The goal is to make TensorMap works similarly as putting Tensors
+            // into a python dict, i.e., {"a": Tensor(xx), "b": Tensor(XX)}.
+            // Accesing a value in the map will return a shallow copy of the
+            // tensor that shares the same underlying memory.
+            //
+            // - automatic          : works, different id
+            // - automatic_reference: works, different id
+            // - take_ownership     : doesn't work, segfault
+            // - copy               : works, different id
+            // - move               : doesn't work, blob is null
+            // - reference          : doesn't work, when a key is deleted, the
+            //                        alias becomes invalid
+            // - reference_internal : doesn't work, value in map overwritten
+            //                        when assigning to alias
+            py::return_value_policy::copy);
 
     cl.def("__contains__", [](Map &m, const KeyType &k) -> bool {
         auto it = m.find(k);
@@ -103,6 +117,7 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
     py::detail::map_assignment<Map, Class_>(cl);
 
     // Deleted the "__delitem__" function.
+    // This will be implemented in `pybind_tensormap()`.
 
     cl.def("__len__", &Map::size);
 
@@ -111,7 +126,7 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
 
 void pybind_tensormap(py::module &m) {
     // Bind to the generic dictionary interface such that it works the same as a
-    // regular dictionay in Python, except that types are enforced. Supported
+    // regular dictionary in Python, except that types are enforced. Supported
     // functions include `__bool__`, `__iter__`, `items`, `__getitem__`,
     // `__contains__`, `__len__` and map assignment.
     // The `__delitem__` function is removed from bind_map, in bind_tensor_map,
