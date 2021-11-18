@@ -9,7 +9,6 @@ target_sources(utility PRIVATE
     IJsonConvertible.cpp
     ISAInfo.cpp
     Logging.cpp
-    OMPProgressBar.cpp
     Parallel.cpp
     ProgressBar.cpp
     Timer.cpp

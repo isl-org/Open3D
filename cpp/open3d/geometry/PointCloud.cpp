@@ -37,8 +37,8 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/OMPProgressBar.h"
 #include "open3d/utility/Parallel.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace geometry {

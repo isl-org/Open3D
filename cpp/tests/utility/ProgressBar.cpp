@@ -29,8 +29,8 @@
 #include <chrono>
 #include <thread>
 
-#include "open3d/utility/OMPProgressBar.h"
 #include "open3d/utility/Parallel.h"
+#include "open3d/utility/ProgressBar.h"
 #include "tests/Tests.h"
 
 namespace open3d {
