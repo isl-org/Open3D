@@ -43,8 +43,6 @@ from open3d.ml.vis import LabelLUT
 from . import plugin_data_pb2
 from . import metadata
 
-import ipdb
-
 try:
     from tensorflow.io.gfile import GFile as _fileopen
 except ImportError:
@@ -397,7 +395,7 @@ def _normalize(tensor):
     """Normalize tensor by scaling and shifting to range [0, 1].
 
     Args:
-        tensor: Open3D float tensor. Int tensors are returned unchanged.
+        tensor: Open3D / Numpy float tensor. Int tensors are returned unchanged.
 
     Return:
         tuple: (Normalized tensor, min value of tensor, max value of tensor) min
@@ -599,15 +597,15 @@ class RenderUpdate:
         material = o3dvis.get_geometry_material(geometry_name)
 
         # Visualize scalar / 3-vector property with color map
-        if "property" in updated:
-            ipdb.set_trace()
+        if "property" in updated or "shader" in updated:
             # Float Scalar with colormap
             if ((self._property in custom_props or
                  self._property in label_props) and
                     self._shader.startswith("unlitGradient") and
                     geometry_vertex[self._property].shape[1] > self._index):
                 geometry_vertex["__visualization_scalar"] = geometry_vertex[
-                    self._property][:, self._index].to(o3d.core.float32)
+                    self._property][:, self._index].to(
+                        o3d.core.float32).contiguous()
                 geometry_update_flag |= rendering.Scene.UPDATE_UV0_FLAG
             # 3-vector as RGB
             elif (self._property in custom_props and
@@ -648,6 +646,8 @@ class RenderUpdate:
         # PointCloud, Mesh, LineSet with colors
         elif "shader" in updated or "colormap" in updated:
             material_update_flag = 1
+            material.base_color = ((1.0, 1.0, 1.0, 1.0) if have_colors else
+                                   (0.5, 0.5, 0.5, 1.0))
             if self._shader == "defaultLit":
                 material.shader = "defaultLit"
             elif self._shader == "defaultUnlit":

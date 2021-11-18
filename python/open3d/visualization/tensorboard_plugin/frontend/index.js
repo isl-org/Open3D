@@ -372,6 +372,18 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
     };
 
     /**
+     * Show popup asking the user to reload the page if network connection is
+     * lost.
+     */
+    onClose = () => {
+        let userChoice = window.confirm(
+                `Network connection to Open3D server lost. If TensorBoard is still running, press OK to reload the page.`);
+        if (userChoice == true) {
+            location.reload();
+        }
+    };
+
+    /**
      * Create a video element to display geometry and initiate WebRTC connection
      * with server. Attach listeners to process data channel messages.
      *
@@ -442,8 +454,8 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
         widgetView.insertAdjacentHTML('beforeend', widgetTemplate);
 
         let videoElt = document.getElementById(videoId);
-        let client =
-                new WebRtcStreamer(videoElt, this.URL_ROUTE_PREFIX, null, null);
+        let client = new WebRtcStreamer(
+                videoElt, this.URL_ROUTE_PREFIX, this.onClose, null);
         console.info('[addConnection] videoId: ' + videoId);
 
         client.connect(windowUId, /*audio*/ null, this.webRtcOptions);
@@ -788,11 +800,13 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
                 color = renderStateTag.colormap.values().next().value;
             }
             cmapEl.innerHTML = `<label class="property-ui-colormap">
-          <input type="checkbox" id="ui-cmap-${tag}-alpha-0" checked disabled>
-          <input type="text" id="ui-cmap-${tag}-val-0" value="0" disabled>
+          <input type="checkbox" id="ui-cmap-${
+                    tag}-alpha-0" checked disabled style="display:none;">
+          <input type="text" id="ui-cmap-${tag}-val-0" value="" disabled>
           <input type="color" id="ui-cmap-${tag}-col-0"
             value="${rgbToHex(color)}"
-            title="R:${color[0]} G:${color[1]} B:${color[2]}">
+            title="R:${color[0]} G:${color[1]} B:${color[2]}
+Click to change">
         </label>`;
         } else if (shaderListEl.value === 'unlitGradient.LUT') {
             // create LabelLUT

@@ -90,8 +90,7 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
                 if (it == m.end()) throw py::key_error();
                 return it->second;
             },
-            py::return_value_policy::reference_internal  // ref + keepalive
-    );
+            py::return_value_policy::copy);
 
     cl.def("__contains__", [](Map &m, const KeyType &k) -> bool {
         auto it = m.find(k);
