@@ -82,6 +82,13 @@ def test_tensormap_modify(device):
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
 
+    tm = o3d.t.geometry.TensorMap("positions")
+    tm["a"] = o3c.Tensor([100], device=device)
+    a_alias = tm["a"]
+    tm["a"][:] = o3c.Tensor([200], device=device)
+    np.testing.assert_equal(a_alias.cpu().numpy(), [200])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
+
     # Assigning a new tensor to an alias should not change the tensor in the
     # map. The alias name simply points to a new tensor.
     tm = o3d.t.geometry.TensorMap("positions")
@@ -90,6 +97,13 @@ def test_tensormap_modify(device):
     a_alias = o3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm["a"].cpu().numpy(), [100])
+
+    tm = o3d.t.geometry.TensorMap("positions")
+    tm["a"] = o3c.Tensor([100], device=device)
+    a_alias = tm["a"]
+    tm["a"] = o3c.Tensor([200], device=device)
+    np.testing.assert_equal(a_alias.cpu().numpy(), [100])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
 
     # Pybind always returns a "shallow copy" of the tensor. This is a copy since
     # the new variable points to a different tensor object, and thus the id() is
@@ -138,6 +152,13 @@ def test_tensor_dict_modify(device):
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
 
+    tm = dict()
+    tm["a"] = o3c.Tensor([100], device=device)
+    a_alias = tm["a"]
+    tm["a"][:] = o3c.Tensor([200], device=device)
+    np.testing.assert_equal(a_alias.cpu().numpy(), [200])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
+
     # Assign a new tensor.
     tm = dict()
     tm["a"] = o3c.Tensor([100], device=device)
@@ -145,6 +166,13 @@ def test_tensor_dict_modify(device):
     a_alias = o3c.Tensor([200], device=device)
     np.testing.assert_equal(a_alias.cpu().numpy(), [200])
     np.testing.assert_equal(tm["a"].cpu().numpy(), [100])
+
+    tm = dict()
+    tm["a"] = o3c.Tensor([100], device=device)
+    a_alias = tm["a"]
+    tm["a"] = o3c.Tensor([200], device=device)
+    np.testing.assert_equal(a_alias.cpu().numpy(), [100])
+    np.testing.assert_equal(tm["a"].cpu().numpy(), [200])
 
     # Object id.
     tm = dict()
@@ -176,7 +204,6 @@ def test_tensor_dict_modify(device):
     np.testing.assert_equal(tm["b"].cpu().numpy(), [100])
 
 
-@pytest.mark.skip("This test is just for documentation purpose.")
 def test_numpy_dict_modify():
     """
     Same as test_tensor_dict_modify(), but we put numpy arrays in a python dict.
@@ -190,7 +217,21 @@ def test_numpy_dict_modify():
     np.testing.assert_equal(a_alias, [200])
     np.testing.assert_equal(tm["a"], [200])
 
+    tm = dict()
+    tm["a"] = np.array([100])
+    a_alias = tm["a"]
+    tm["a"][:] = np.array([200])
+    np.testing.assert_equal(a_alias, [200])
+    np.testing.assert_equal(tm["a"], [200])
+
     # Assign a new tensor.
+    tm = dict()
+    tm["a"] = np.array([100])
+    a_alias = tm["a"]
+    tm["a"] = np.array([200])
+    np.testing.assert_equal(a_alias, [100])
+    np.testing.assert_equal(tm["a"], [200])
+
     tm = dict()
     tm["a"] = np.array([100])
     a_alias = tm["a"]
