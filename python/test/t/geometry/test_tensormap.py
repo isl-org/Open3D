@@ -92,8 +92,9 @@ def test_tensormap_modify(device):
     np.testing.assert_equal(tm["a"].numpy(), [100])
 
     # Pybind always returns a "shallow copy" of the tensor. This is a copy since
-    # the new variable points to a different tensor object. The copy is shallow
-    # because the new tensor shares the same memory as the tensor in the map.
+    # the new variable points to a different tensor object, and thus the id() is
+    # different. The copy is shallow because the new tensor shares the same
+    # memory as the tensor in the map.
     tm = o3d.t.geometry.TensorMap("positions")
     tm["a"] = o3c.Tensor([100], device=device)
     a_alias = tm["a"]
@@ -127,7 +128,7 @@ def test_tensormap_modify(device):
 def test_tensor_dict_modify(device):
     """
     Same as test_tensormap_modify(), but we put Tensors in a python dict.
-    The only difference is that id of alias will be the same.
+    The only difference is that the id of the alias will be the same.
     """
     # Assign to elements.
     tm = dict()
@@ -175,10 +176,11 @@ def test_tensor_dict_modify(device):
     np.testing.assert_equal(tm["b"].numpy(), [100])
 
 
+@pytest.mark.skip("This test is just for documentation purpose.")
 def test_numpy_dict_modify():
     """
     Same as test_tensor_dict_modify(), but we put numpy arrays in a python dict.
-    The only difference is that id of alias will be the same.
+    The id of the alias will be the same.
     """
     # Assign to elements.
     tm = dict()

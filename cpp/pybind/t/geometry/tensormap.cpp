@@ -90,7 +90,7 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
                 if (it == m.end()) throw py::key_error();
                 return it->second;
             },
-            // py::return_value_policy::copy is used as the safetest option.
+            // py::return_value_policy::copy is used as the safest option.
             // The goal is to make TensorMap works similarly as putting Tensors
             // into a python dict, i.e., {"a": Tensor(xx), "b": Tensor(XX)}.
             // Accesing a value in the map will return a shallow copy of the
