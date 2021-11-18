@@ -30,6 +30,15 @@
 #include "open3d/core/nns/KnnSearchImpl.cuh"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
 
+#define KNN_CUDA_IMPL_DIM(NDIM)                                 \
+    impl::KnnSearchCUDA<T, NeighborSearchAllocator<T>, NDIM>(   \
+            stream, points.GetShape(0), points.GetDataPtr<T>(), \
+            queries.GetShape(0), queries.GetDataPtr<T>(),       \
+            points_row_splits.GetShape(0),                      \
+            points_row_splits.GetDataPtr<int64_t>(),            \
+            queries_row_splits.GetShape(0),                     \
+            queries_row_splits.GetDataPtr<int64_t>(), knn, output_allocator);
+
 namespace open3d {
 namespace core {
 namespace nns {
@@ -51,13 +60,60 @@ void KnnSearchCUDA(const Tensor& points,
     int num_queries = queries.GetShape(0);
     knn = num_points > knn ? knn : num_points;
 
-    impl::KnnSearchCUDA(stream, points.GetShape(0), points.GetDataPtr<T>(),
-                        queries.GetShape(0), queries.GetDataPtr<T>(),
-                        points_row_splits.GetShape(0),
-                        points_row_splits.GetDataPtr<int64_t>(),
-                        queries_row_splits.GetShape(0),
-                        queries_row_splits.GetDataPtr<int64_t>(), knn,
-                        output_allocator);
+    switch (points.GetShape(1)) {
+        case 1:
+            KNN_CUDA_IMPL_DIM(1);
+            break;
+        case 2:
+            KNN_CUDA_IMPL_DIM(2);
+            break;
+        case 3:
+            KNN_CUDA_IMPL_DIM(3);
+            break;
+        case 4:
+            KNN_CUDA_IMPL_DIM(4);
+            break;
+        case 5:
+            KNN_CUDA_IMPL_DIM(5);
+            break;
+        case 6:
+            KNN_CUDA_IMPL_DIM(6);
+            break;
+        case 7:
+            KNN_CUDA_IMPL_DIM(7);
+            break;
+        case 8:
+            KNN_CUDA_IMPL_DIM(8);
+            break;
+        case 9:
+            KNN_CUDA_IMPL_DIM(9);
+            break;
+        case 10:
+            KNN_CUDA_IMPL_DIM(10);
+            break;
+        case 11:
+            KNN_CUDA_IMPL_DIM(11);
+            break;
+        case 12:
+            KNN_CUDA_IMPL_DIM(12);
+            break;
+        case 13:
+            KNN_CUDA_IMPL_DIM(13);
+            break;
+        case 14:
+            KNN_CUDA_IMPL_DIM(14);
+            break;
+        case 15:
+            KNN_CUDA_IMPL_DIM(15);
+            break;
+        case 16:
+            KNN_CUDA_IMPL_DIM(16);
+            break;
+        default:
+            utility::LogError(
+                    "KnnSearchOps only support data with dimension 1 to 16.");
+            break;
+    }
 
     neighbors_index =
             output_allocator.NeighborsIndex().View({num_queries, knn});
@@ -73,6 +129,7 @@ void KnnSearchCUDA(const Tensor& points,
 
 INSTANTIATE(float)
 INSTANTIATE(double)
+
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d

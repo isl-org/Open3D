@@ -42,7 +42,7 @@ class FileDialog : public Dialog {
     using Super = Dialog;
 
 public:
-    enum class Mode { OPEN, SAVE };
+    enum class Mode { OPEN, SAVE, OPEN_DIR };
 
     FileDialog(Mode type, const char *title, const Theme &theme);
     virtual ~FileDialog();

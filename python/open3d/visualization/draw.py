@@ -44,6 +44,7 @@ def draw(geometry=None,
          show_skybox=None,
          show_ui=None,
          point_size=None,
+         line_width=None,
          animation_time_step=1.0,
          animation_duration=None,
          rpc_interface=False,
@@ -61,6 +62,9 @@ def draw(geometry=None,
 
     if point_size is not None:
         w.point_size = point_size
+
+    if line_width is not None:
+        w.line_width = line_width
 
     def add(g, n):
         if isinstance(g, dict):

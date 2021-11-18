@@ -78,12 +78,14 @@ void MultiObjects() {
     auto big_bbox = std::make_shared<geometry::AxisAlignedBoundingBox>(
             Eigen::Vector3d{-pc_rad, -3, -pc_rad},
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
+    big_bbox->color_ = {0.0, 0.0, 0.0};
     auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
     auto sphere_bbox = std::make_shared<geometry::AxisAlignedBoundingBox>(
             bbox.min_bound_, bbox.max_bound_);
     sphere_bbox->color_ = {1.0, 0.5, 0.0};
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             sphere_lit->GetAxisAlignedBoundingBox());
+    lines->PaintUniformColor({0.0, 1.0, 0.0});
     auto lines_colored = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             sphere_colored_lit->GetAxisAlignedBoundingBox());
     lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
