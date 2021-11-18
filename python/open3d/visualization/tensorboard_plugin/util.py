@@ -43,6 +43,8 @@ from open3d.ml.vis import LabelLUT
 from . import plugin_data_pb2
 from . import metadata
 
+import ipdb
+
 try:
     from tensorflow.io.gfile import GFile as _fileopen
 except ImportError:
@@ -167,7 +169,7 @@ class LRUCache:
                 f"Hits: {self.hits}, Misses: {self.misses}")
 
 
-def classify_properties(tensormap):
+def _classify_properties(tensormap):
     """Classify custom geometry properties (other than positions, indices,
     colors, normals) into labels and other custom properties.
 
@@ -304,7 +306,7 @@ class Open3DPluginDataReader:
         if len(prop_shape) == 0 and not geometry.is_empty():
             for prop_type in ('point', 'vertex'):  # exclude 'line'
                 if hasattr(geometry, prop_type):
-                    label_props, custom_props = classify_properties(
+                    label_props, custom_props = _classify_properties(
                         getattr(geometry, prop_type))
                     prop_shape.update(custom_props)
                     prop_shape.update(label_props)
@@ -505,6 +507,44 @@ class RenderUpdate:
         _log.debug("material colormap range range set to "
                    f"{material.scalar_min, material.scalar_max}")
 
+    def _set_render_defaults(self, geometry, inference_result, label_props,
+                             custom_props):
+        """Set default options for rendering (shader and property), based on
+        data type and properties.
+        """
+        geometry_vertex = (geometry.point
+                           if hasattr(geometry, 'point') else geometry.vertex)
+        if self._shader == "":
+            if (len(inference_result) > 0  # Have BB labels
+                    or len(label_props) > 0):  # Have vertex labels
+                self._shader = "unlitGradient.LUT"
+                if self._property == "":
+                    self._property = (next(iter(label_props))
+                                      if len(label_props) > 0 else "labels")
+                    self._index = 0
+            elif len(custom_props) > 0:
+                self._shader = "unlitGradient.GRADIENT.RAINBOW"
+                if self._property == "":
+                    self._property = next(iter(custom_props))
+                    self._index = 0
+            elif (isinstance(geometry, o3d.t.geometry.LineSet) or
+                  "normals" in geometry_vertex):
+                self._shader = "defaultLit"  # also proxy for unlitLine
+            elif "colors" in geometry_vertex:
+                self._shader = "defaultUnlit"
+            else:  # Only XYZ
+                self._shader = "unlitSolidColor"
+
+        # Fix incompatible option. TODO(Sameer): Move this logic to JS
+        if (self._property in custom_props and
+                self._shader == "unlitGradient.LUT"):
+            self._shader = "unlitGradient.GRADIENT.RAINBOW"
+            self._colormap = None
+        if (self._property in label_props and
+                self._shader.startswith("unlitGradient.GRADIENT.")):
+            self._shader = "unlitGradient.LUT"
+            self._colormap = None
+
     def apply(self, o3dvis, geometry_name, geometry, inference_data_proto=None):
         """Apply the RenderUpdate to a geometry.
 
@@ -515,6 +555,9 @@ class RenderUpdate:
                 updated.
             inference_data_proto : BoundingBox labels and confidences.
         """
+        if (len(self._updated) == 0 or geometry.is_empty()):
+            _log.debug("No updates, or empty geometry.")
+            return
 
         def swap__(tensormap, prop):
             """If backup of property prop exists, restore it. Else save prop to
@@ -536,10 +579,6 @@ class RenderUpdate:
                 for k, label in enumerate(self._label_to_names)
             }
 
-        if (len(self._updated) == 0 or geometry.is_empty()):
-            _log.debug("No updates, or empty geometry.")
-            return
-
         geometry_vertex = (geometry.point
                            if hasattr(geometry, 'point') else geometry.vertex)
         have_colors = ("colors" in geometry.line if hasattr(
@@ -550,41 +589,11 @@ class RenderUpdate:
             inference_result = inference_data_proto.inference_result
         else:
             inference_result = []
-        # Set default shader and property
-        label_props, custom_props = classify_properties(geometry_vertex)
-        if self._shader == "":
-            if (len(inference_result) > 0  # Have BB labels
-                    or len(label_props) > 0):  # Have vertex labels
-                self._shader = "unlitGradient.LUT"
-                if self._property == "":
-                    self._property = (next(iter(label_props))
-                                      if len(label_props) > 0 else "labels")
-                    self._index = 0
-            elif len(custom_props) > 0:
-                self._shader = "unlitGradient.GRADIENT.RAINBOW"
-                if self._property == "":
-                    self._property = next(iter(custom_props))
-                    self._index = 0
-            elif (isinstance(geometry, o3d.t.geometry.LineSet) or
-                  "normals" in geometry_vertex):
-                self._shader = "defaultLit"
-            elif "colors" in geometry_vertex:
-                self._shader = "defaultUnlit"
-            else:  # Only XYZ
-                self._shader = "unlitSolidColor"
+        label_props, custom_props = _classify_properties(geometry_vertex)
+        self._set_render_defaults(geometry, inference_result, label_props,
+                                  custom_props)
 
-        # Fix incompatible option
-        if (self._property in custom_props and
-                self._shader == "unlitGradient.LUT"):
-            self._shader = "unlitGradient.GRADIENT.RAINBOW"
-            self._colormap = None
-        if (self._property in label_props and
-                self._shader.startswith("unlitGradient.GRADIENT.")):
-            self._shader = "unlitGradient.LUT"
-            self._colormap = None
-
-        o3dscene = o3dvis.scene
-        if o3dscene.has_geometry(geometry_name):
+        if o3dvis.scene.has_geometry(geometry_name):
             updated = self._updated
             # update_geometry() only accepts tPointCloud
             if not isinstance(geometry, o3d.t.geometry.PointCloud):
@@ -691,11 +700,11 @@ class RenderUpdate:
                 material.gradient.mode = rendering.Gradient.GRADIENT
                 self._set_vis_minmax(geometry_vertex, material)
 
-        if o3dscene.has_geometry(geometry_name):
+        if o3dvis.scene.has_geometry(geometry_name):
             if material_update_flag > 0:
-                self._gui.run_sync(o3dvis.modify_geometry_material,
-                                   geometry_name, material)
-                # does not do force_redraw(), so also need update_geometry()
+                self._gui.run_sync(
+                    o3dvis.modify_geometry_material, geometry_name, material
+                )  # does not do force_redraw(), so also need update_geometry()
             self._gui.run_sync(o3dvis.update_geometry, geometry_name, geometry,
                                geometry_update_flag)
             _log.debug(
