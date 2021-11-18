@@ -189,9 +189,6 @@ private:
     std::unordered_map<REHandle_abstract, std::unordered_set<REHandle_abstract>>
             dependencies_;
 
-    // Simple texture cache to avoid redundant texture creation
-    std::unordered_map<const void*, TextureHandle> loaded_textures_;
-
     filament::Texture* LoadTextureFromImage(
             const std::shared_ptr<geometry::Image>& image, bool srgb);
     filament::Texture* LoadTextureFromImage(const t::geometry::Image& image,

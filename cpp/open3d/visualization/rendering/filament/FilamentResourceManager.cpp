@@ -441,15 +441,10 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path,
 TextureHandle FilamentResourceManager::CreateTexture(
         const std::shared_ptr<geometry::Image>& img, bool srgb) {
     TextureHandle handle;
-    // Check if texture is cached...
-    if (loaded_textures_.count(img.get()) > 0) {
-        return loaded_textures_[img.get()];
-    }
     if (img->HasData()) {
         auto texture = LoadTextureFromImage(img, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
-        loaded_textures_[img.get()] = handle;
     }
 
     return handle;
@@ -458,17 +453,12 @@ TextureHandle FilamentResourceManager::CreateTexture(
 TextureHandle FilamentResourceManager::CreateTexture(
         const geometry::Image& image, bool srgb) {
     TextureHandle handle;
-    // Check if texture is cached...
-    if (loaded_textures_.count(&image) > 0) {
-        return loaded_textures_[&image];
-    }
     if (image.HasData()) {
         auto copy = std::make_shared<geometry::Image>(image);
 
         auto texture = LoadTextureFromImage(copy, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
-        loaded_textures_[&image] = handle;
     }
 
     return handle;
