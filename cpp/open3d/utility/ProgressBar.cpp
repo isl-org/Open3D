@@ -29,12 +29,7 @@
 #include <fmt/printf.h>
 
 #ifdef _OPENMP
-/// Multi-threading - yay!
 #include <omp.h>
-#else
-/// Macros used to disguise the fact that we do not have multithreading enabled.
-#define omp_get_thread_num() 0
-#define omp_get_num_threads() 1
 #endif
 
 namespace open3d {
@@ -93,20 +88,19 @@ size_t ProgressBar::GetCurrentCount() const { return current_count_; }
 
 ProgressBar &OMPProgressBar::operator++() {
     // Ref: https://stackoverflow.com/a/44555438
-
+#ifdef _OPENMP
     int number_of_threads = omp_get_num_threads();
     int thread_id = omp_get_thread_num();
-
-    // check if inside OMP loop
     if (number_of_threads > 1) {
-        // check thread_id == 0
         if (thread_id == 0) {
             UpdateCurrentCount(number_of_threads);
         }
     } else {
-        UpdateCurrentCount(number_of_threads);
+        UpdateCurrentCount(1);
     }
-
+#else
+    UpdateCurrentCount(1);
+#endif
     return *this;
 }
 
