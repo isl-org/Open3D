@@ -45,6 +45,7 @@ void KnnSearchCUDA(const Tensor& points,
                    int knn,
                    Tensor& neighbors_index,
                    Tensor& neighbors_distance);
+
 #endif
 
 class KnnIndex : public NNSIndex {
@@ -71,6 +72,7 @@ public:
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override;
+
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         const Tensor& queries_row_splits,
                                         int knn) const;
