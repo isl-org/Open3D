@@ -230,15 +230,15 @@ def time_animation():
 
 
 def groups():
-    building_mat = vis.rendering.Material()
+    building_mat = vis.rendering.MaterialRecord()
     building_mat.shader = "defaultLit"
     building_mat.base_color = (1.0, .90, .75, 1.0)
     building_mat.base_reflectance = 0.1
-    midrise_mat = vis.rendering.Material()
+    midrise_mat = vis.rendering.MaterialRecord()
     midrise_mat.shader = "defaultLit"
     midrise_mat.base_color = (.475, .450, .425, 1.0)
     midrise_mat.base_reflectance = 0.1
-    skyscraper_mat = vis.rendering.Material()
+    skyscraper_mat = vis.rendering.MaterialRecord()
     skyscraper_mat.shader = "defaultLit"
     skyscraper_mat.base_color = (.05, .20, .55, 1.0)
     skyscraper_mat.base_reflectance = 0.9

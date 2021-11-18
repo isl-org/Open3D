@@ -51,7 +51,7 @@ def main():
     # so the renderer requires a custom shader to implement this: "unlitLine".
     # The line_width field is only used by this shader; all other shaders ignore
     # it.
-    mat = o3d.visualization.rendering.Material()
+    mat = o3d.visualization.rendering.MaterialRecord()
     mat.shader = "unlitLine"
     mat.line_width = 10  # note that this is scaled with respect to pixels,
     # so will give different results depending on the
