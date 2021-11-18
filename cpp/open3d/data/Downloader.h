@@ -38,17 +38,20 @@ namespace data {
 ///
 class Downloader {
 public:
-    Downloader();
-    ~Downloader();
+    Downloader(const std::string& data_root = "");
+    ~Downloader() {}
 
-    void DownloadFromURL(
-            const std::string& url = "",
-            const std::string& output_filename = "open3d_output.zip") {}
+    /// Get data root directory. The data root is set at construction time or
+    /// automatically determined.
+    std::string GetDataRoot() const;
 
-private:
-    void* curl;
-    //     std::string url_;
-    //     std::string output_filename_;
+    bool DownloadFromURL(const std::string& url,
+                         const std::string& output_file_path = "",
+                         const std::string& output_file_name = "");
+
+protected:
+    /// Open3D data root.
+    std::string data_root_;
 };
 
 }  // namespace data

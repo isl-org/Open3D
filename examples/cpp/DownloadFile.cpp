@@ -1,73 +1,68 @@
-#define CURL_STATICLIB
-#include <curl/curl.h>
-#include <stdio.h>
-// #include <curl/types.h>
-#include <curl/easy.h>
-#include <stdlib.h>
-#include <string.h>
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
 
-#define false 0
+#include "open3d/Open3D.h"
 
-size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    size_t written;
-    written = fwrite(ptr, size, nmemb, stream);
-    return written;
-}
+using namespace open3d;
 
-int main(void) {
-    CURL *curl;
-    FILE *fp;
-    CURLcode res;
+int main() {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    const char url[] =
+    const std::string url =
             "https://github.com/reyanshsolis/rey_download/releases/download/"
             "test_data/test_file.zip";
-    const char outfilename[FILENAME_MAX] = "test_file.zip";
 
-    curl_version_info_data *vinfo = curl_version_info(CURLVERSION_NOW);
+    std::string random_dir_hierarchy = utility::filesystem::GetHomeDirectory() +
+                                       "/test_folder1/test_folder2";
 
-    if (vinfo->features & CURL_VERSION_SSL) {
-        printf("CURL: SSL enabled\n");
-    } else {
-        printf("CURL: SSL not enabled\n");
+    data::Downloader downloader;
+
+    // Download in Open3D Data Root directory, with the original file name
+    // extracted from the url.
+    if (!downloader.DownloadFromURL(url)) {
+        utility::LogInfo("Method 1 Failed");
     }
 
-    curl = curl_easy_init();
-    if (curl) {
-        fp = fopen(outfilename, "wb");
-
-        /* Setup the https:// verification options. Note we   */
-        /* do this on all requests as there may be a redirect */
-        /* from http to https and we still want to verify     */
-        curl_easy_setopt(curl, CURLOPT_URL, url);
-
-        // Follow redirection in link.
-        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-
-        // curl_easy_setopt(curl, CURLOPT_CAINFO, "./ca-bundle.crt");
-
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
-
-        // Write function callback.
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-
-        // curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1); //Prevent "longjmp
-        // causes uninitialized stack frame" bug curl_easy_setopt(curl,
-        // CURLOPT_ACCEPT_ENCODING, "deflate"); std::stringstream out;
-        // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-        // curl_easy_setopt(curl, CURLOPT_WRITEDATA, &out);
-
-        // Performs the request. res gets the retun code.
-        res = curl_easy_perform(curl);
-        (void)res;
-
-        // Cleanup.
-        curl_easy_cleanup(curl);
-        // Close file.
-        fclose(fp);
+    // Download in Open3D Data Root directory, with the given file name.
+    if (!downloader.DownloadFromURL(url, "", "random_name.zip")) {
+        utility::LogInfo("Method 2 Failed");
     }
+
+    // Download in specified directory (creates the directory hierarchy if not
+    // present), with the original file name extracted from the url.
+    if (!downloader.DownloadFromURL(url, random_dir_hierarchy)) {
+        utility::LogInfo("Method 3 Failed");
+    }
+
+    // Download in specified directory (creates the directory hierarchy if not
+    // present), with the given name.
+    if (!downloader.DownloadFromURL(url, random_dir_hierarchy,
+                                    "random_name.zip")) {
+        utility::LogInfo("Method 4 Failed");
+    }
+
     return 0;
 }
