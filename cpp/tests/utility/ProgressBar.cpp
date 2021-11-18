@@ -35,6 +35,7 @@
 
 namespace open3d {
 namespace tests {
+
 TEST(ProgressBar, ProgressBar) {
     size_t iterations = 1000;
     utility::ProgressBar progress_bar(iterations, "ProgressBar test: ", true);
