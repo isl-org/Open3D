@@ -100,7 +100,9 @@ ProgressBar &OMPProgressBar::operator++() {
     // check if inside OMP loop
     if (number_of_threads > 1) {
         // check thread_id == 0
-        if (thread_id == 0) UpdateCurrentCount(number_of_threads);
+        if (thread_id == 0) {
+            UpdateCurrentCount(number_of_threads);
+        }
     } else {
         UpdateCurrentCount(number_of_threads);
     }
