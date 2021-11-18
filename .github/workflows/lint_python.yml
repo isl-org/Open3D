@@ -16,7 +16,7 @@ jobs:
       - run: pip install bandit flake8 isort mypy safety
       - run: bandit --recursive --skip B101,B108,B110,B310,B311,B403,B404,B603,B607 .
       - run: flake8 . --count --select=E501,E9,F63,F7,F82 --max-complexity=18
-                      --max-line-length=2444 --show-source --statistics
+                      --max-line-length=3050 --show-source --statistics
       - run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=80 --show-source --statistics
       - run: isort --check-only --profile google ./python ./examples/python || true
       - run: pip install -r python/requirements.txt
