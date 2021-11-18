@@ -30,6 +30,7 @@ add_library(Open3D)
 
 add_subdirectory(camera)
 add_subdirectory(core)
+add_subdirectory(data)
 add_subdirectory(geometry)
 add_subdirectory(io)
 add_subdirectory(ml)
@@ -52,36 +53,41 @@ endif()
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
 target_sources(Open3D PRIVATE
     Open3DConfig.cpp
-    $<TARGET_OBJECTS:camera>
-    $<TARGET_OBJECTS:core>
-    $<TARGET_OBJECTS:geometry>
-    $<TARGET_OBJECTS:tgeometry>
-    $<TARGET_OBJECTS:tgeometry_kernel>
-    $<TARGET_OBJECTS:io>
-    $<TARGET_OBJECTS:tio>
-    $<TARGET_OBJECTS:ml_contrib>
-    $<TARGET_OBJECTS:pipelines>
-    $<TARGET_OBJECTS:tpipelines>
-    $<TARGET_OBJECTS:tpipelines_kernel>
-    $<TARGET_OBJECTS:utility>
-    $<TARGET_OBJECTS:visualization>
+)
+
+open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
+    camera
+    core
+    data
+    geometry
+    tgeometry
+    tgeometry_kernel
+    io
+    tio
+    ml_contrib
+    pipelines
+    tpipelines
+    tpipelines_kernel
+    utility
+    visualization
 )
 
 if (BUILD_GUI)
-    target_sources(Open3D PRIVATE
-        $<TARGET_OBJECTS:GUI>
+    open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
+        GUI
     )
 endif()
 
 if (BUILD_WEBRTC)
-    target_sources(Open3D PRIVATE
-        $<TARGET_OBJECTS:webrtc_server>
+    open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
+        webrtc_server
     )
 endif()
 
 # Source group for Visual Studio
 add_source_group(camera)
 add_source_group(core)
+add_source_group(data)
 add_source_group(geometry)
 add_source_group(tgeometry)
 add_source_group(io)

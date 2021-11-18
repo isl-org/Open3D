@@ -7,17 +7,7 @@ source "$(dirname "$0")"/ci_utils.sh
 
 echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
-if [ "$BUILD_CUDA_MODULE" == "ON" ] &&
-    ! nvcc --version 2>/dev/null | grep -q "release ${CUDA_VERSION[1]}"; then
-    install_cuda_toolkit with-cudnn purge-cache
-    nvcc --version
-fi
-
-if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
-    install_python_dependencies with-unit-test with-cuda purge-cache
-else
-    install_python_dependencies with-unit-test purge-cache
-fi
+install_python_dependencies with-unit-test purge-cache
 
 build_all
 

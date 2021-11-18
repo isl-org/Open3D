@@ -24,18 +24,19 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import sys
+import os
 import open3d as o3d
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
-import sys, os
 
 
 def main():
     if len(sys.argv) < 2:
-        print(
-            "Usage: texture-model.py [model directory]\n\t This example will load [model direcotry].obj plus any of albedo, normal, ao, metallic and roughness textures present."
-        )
-        exit()
+        print("""Usage: texture-model.py [model directory]
+    This example will load [model directory].obj plus any of albedo, normal,
+    ao, metallic and roughness textures present.""")
+        sys.exit()
 
     model_dir = sys.argv[1]
     model_name = os.path.join(model_dir, os.path.basename(model_dir) + ".obj")

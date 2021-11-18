@@ -127,6 +127,9 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
                 "[TSDFVoxelGrid] input depth is empty for integration.");
     }
 
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
+
     // Create a point cloud from a low-resolution depth input to roughly
     // estimate surfaces.
     // TODO(wei): merge CreateFromDepth and Touch in one kernel.
@@ -157,10 +160,9 @@ void TSDFVoxelGrid::Integrate(const Image &depth,
     } catch (const std::runtime_error &) {
         utility::LogError(
                 "[TSDFIntegrate] Unable to allocate volume during rehashing. "
-                "Consider using a "
-                "larger block_count at initialization to avoid rehashing "
-                "(currently {}), or choosing a larger voxel_size "
-                "(currently {})",
+                "Consider using a larger block_count at initialization to "
+                "avoid rehashing (currently {}), or choosing a larger "
+                "voxel_size (currently {})",
                 n, voxel_size_);
     }
 
@@ -216,6 +218,9 @@ TSDFVoxelGrid::RayCast(const core::Tensor &intrinsics,
                        float depth_max,
                        float weight_threshold,
                        int ray_cast_mask) {
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
+
     // Extrinsic: world to camera -> pose: camera to world
     core::Tensor vertex_map, depth_map, color_map, normal_map;
     if (ray_cast_mask & TSDFVoxelGrid::SurfaceMaskCode::VertexMap) {
@@ -384,8 +389,9 @@ std::pair<core::Tensor, core::Tensor> TSDFVoxelGrid::BufferRadiusNeighbors(
     // with coordinates as hashmap keys.
     core::Tensor key_buffer_int3_tensor = block_hashmap_->GetKeyTensor();
 
-    core::Tensor active_keys = key_buffer_int3_tensor.IndexGet(
-            {active_buf_indices.To(core::Int64)});
+    core::Tensor active_keys =
+            key_buffer_int3_tensor.IndexGet({active_buf_indices.To(
+                    key_buffer_int3_tensor.GetDevice(), core::Int64)});
     int64_t n = active_keys.GetShape()[0];
 
     // Fill in radius nearest neighbors.

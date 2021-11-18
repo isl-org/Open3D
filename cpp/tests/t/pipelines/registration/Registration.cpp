@@ -203,7 +203,7 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     }
 }
 
-TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
+TEST_P(RegistrationPermuteDevices, ICPPointToPoint) {
     core::Device device = GetParam();
 
     for (auto dtype : {core::Float32, core::Float64}) {
@@ -232,12 +232,13 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
         int max_iterations = 2;
 
         // PointToPoint - Tensor.
-        t_reg::RegistrationResult reg_p2p_t = t_reg::RegistrationICP(
+        t_reg::RegistrationResult reg_p2p_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
                 initial_transform_t,
                 t_reg::TransformationEstimationPointToPoint(),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                              max_iterations));
+                                              max_iterations),
+                -1.0);
 
         // PointToPoint - Legacy.
         l_reg::RegistrationResult reg_p2p_l = l_reg::RegistrationICP(
@@ -252,7 +253,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPoint) {
     }
 }
 
-TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
+TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
     core::Device device = GetParam();
 
     for (auto dtype : {core::Float32, core::Float64}) {
@@ -283,7 +284,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
         // L1Loss Method:
 
         // PointToPlane - Tensor.
-        t_reg::RegistrationResult reg_p2plane_t = t_reg::RegistrationICP(
+        t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
                 initial_transform_t,
                 t_reg::TransformationEstimationPointToPlane(
@@ -291,7 +292,8 @@ TEST_P(RegistrationPermuteDevices, RegistrationICPPointToPlane) {
                                             /*scale parameter =*/1.0,
                                             /*shape parameter =*/1.0)),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                              max_iterations));
+                                              max_iterations),
+                -1.0);
 
         // PointToPlane - Legacy.
         l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationICP(
@@ -355,15 +357,16 @@ TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
         double relative_rmse = 1e-6;
         int max_iterations = 2;
 
-        // PointToPlane - Tensor.
-        t_reg::RegistrationResult reg_p2plane_t = t_reg::RegistrationICP(
+        // ColoredICP - Tensor.
+        t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
                 initial_transform_t,
                 t_reg::TransformationEstimationForColoredICP(),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                              max_iterations));
+                                              max_iterations),
+                -1.0);
 
-        // PointToPlane - Legacy.
+        // ColoredICP - Legacy.
         l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationColoredICP(
                 source_lpcd, target_lpcd, max_correspondence_dist,
                 initial_transform_l,
@@ -479,10 +482,9 @@ TEST_P(RegistrationPermuteDevices, GetInformationMatrixFromPointCloud) {
         double max_correspondence_dist = 3.0;
 
         // Tensor information matrix.
-        core::Tensor information_matrix_t =
-                t_reg::GetInformationMatrixFromPointClouds(
-                        source_tpcd, target_tpcd, max_correspondence_dist,
-                        initial_transform_t);
+        core::Tensor information_matrix_t = t_reg::GetInformationMatrix(
+                source_tpcd, target_tpcd, max_correspondence_dist,
+                initial_transform_t);
 
         // Legacy evaluation.
         Eigen::Matrix6d information_matrix_l =

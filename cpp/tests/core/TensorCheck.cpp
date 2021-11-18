@@ -76,6 +76,35 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
     }
 }
 
+TEST_P(TensorCheckPermuteDevices, AssertTensorDtypes) {
+    core::Device device = GetParam();
+    core::Tensor t = core::Tensor::Empty({}, core::Float32, device);
+
+    core::AssertTensorDtypes(t, {core::Float32});
+    core::AssertTensorDtypes(t, {core::Float32, core::Float64});
+
+    try {
+        core::AssertTensorDtypes(t, {core::Int32, core::Int64});
+        FAIL() << "Should not reach here.";
+    } catch (std::runtime_error const& err) {
+        EXPECT_TRUE(utility::ContainsString(
+                err.what(),
+                "Tensor has dtype Float32, but is expected to have dtype among "
+                "{Int32, Int64}."));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "TensorCheck.cpp:"));
+        EXPECT_TRUE(utility::ContainsString(err.what(), "AssertTensorDtypes"));
+    } catch (...) {
+        FAIL() << "std::runtime_error not thrown.";
+    }
+
+    // More tests for macro expansion.
+    EXPECT_ANY_THROW(core::AssertTensorDtypes(t, {}));
+    EXPECT_ANY_THROW(core::AssertTensorDtypes(
+            t, std::vector<core::Dtype>{core::Int32, core::Int64}));
+    EXPECT_ANY_THROW(core::AssertTensorDtypes(
+            t, std::vector<core::Dtype>({core::Int32, core::Int64})));
+}
+
 TEST_P(TensorCheckPermuteDevices, AssertTensorDevice) {
     core::Device device = GetParam();
     core::Tensor t = core::Tensor::Empty({}, core::Float32, device);

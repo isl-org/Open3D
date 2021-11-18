@@ -58,7 +58,7 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
@@ -338,9 +338,9 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<MessageProcessor> message_processor_;
 
     struct Settings {
-        rendering::Material lit_material_;
-        rendering::Material unlit_material_;
-        rendering::Material normal_depth_material_;
+        rendering::MaterialRecord lit_material_;
+        rendering::MaterialRecord unlit_material_;
+        rendering::MaterialRecord normal_depth_material_;
 
         GuiSettingsModel model_;
         std::shared_ptr<gui::Vert> wgt_base;
@@ -475,7 +475,8 @@ private:
                         const GuiSettingsModel::LightingProfile &lighting) {
         auto scene = scene_wgt_->GetScene();
         auto *render_scene = scene->GetScene();
-        if (lighting.use_default_ibl) {
+        if (lighting.use_default_ibl &&
+            !settings_.model_.GetUserHasCustomizedLighting()) {
             this->SetIBL(renderer, "");
         }
 
@@ -535,7 +536,7 @@ private:
                         visualizer_, [this]() {
                             auto scene3d = scene_wgt_->GetScene();
                             scene3d->ClearGeometry();
-                            rendering::Material mat;
+                            rendering::MaterialRecord mat;
                             scene3d->AddGeometry(MODEL_NAME, loaded_pcd_.get(),
                                                  mat);
                             UpdateSceneMaterial();
@@ -648,7 +649,7 @@ GuiVisualizer::GuiVisualizer(
         // just add with the default material and pretend the user changed the
         // current material and update everyone's material.
         impl_->scene_wgt_->GetScene()->AddGeometry(path, geom.get(),
-                                                   rendering::Material());
+                                                   rendering::MaterialRecord());
         impl_->UpdateFromModel(GetRenderer(), true);
     };
     impl_->message_processor_ =
@@ -805,10 +806,24 @@ void GuiVisualizer::Init() {
     // ... lighting and materials
     settings.view_ = std::make_shared<GuiSettingsView>(
             settings.model_, theme, resource_path, [this](const char *name) {
-                std::string resource_path =
-                        gui::Application::GetInstance().GetResourcePath();
-                impl_->SetIBL(GetRenderer(),
-                              resource_path + "/" + name + "_ibl.ktx");
+                if (std::string(name) ==
+                    std::string(GuiSettingsModel::CUSTOM_IBL)) {
+                    auto dlg = std::make_shared<gui::FileDialog>(
+                            gui::FileDialog::Mode::OPEN, "Open HDR Map",
+                            GetTheme());
+                    dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
+                    dlg->SetOnCancel([this]() { CloseDialog(); });
+                    dlg->SetOnDone([this](const char *path) {
+                        CloseDialog();
+                        impl_->SetIBL(GetRenderer(), path);
+                    });
+                    ShowDialog(dlg);
+                } else {
+                    std::string resource_path =
+                            gui::Application::GetInstance().GetResourcePath();
+                    impl_->SetIBL(GetRenderer(),
+                                  resource_path + "/" + name + "_ibl.ktx");
+                }
             });
     settings.model_.SetOnChanged([this](bool material_type_changed) {
         impl_->settings_.view_->Update();
@@ -856,7 +871,7 @@ void GuiVisualizer::SetGeometry(
 
     impl_->SetMaterialsToDefault();
 
-    rendering::Material loaded_material;
+    rendering::MaterialRecord loaded_material;
     if (loaded_model) {
         scene3d->AddModel(MODEL_NAME, impl_->loaded_model_);
         impl_->settings_.model_.SetDisplayingPointClouds(false);

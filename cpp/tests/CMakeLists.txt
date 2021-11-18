@@ -1,7 +1,8 @@
-add_executable(tests)
+open3d_ispc_add_executable(tests)
 
 add_subdirectory(camera)
 add_subdirectory(core)
+add_subdirectory(data)
 add_subdirectory(geometry)
 add_subdirectory(io)
 add_subdirectory(ml)
@@ -35,13 +36,18 @@ else()
     target_compile_definitions(tests PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
 endif()
 
-find_package(Threads REQUIRED)
 target_link_libraries(tests PRIVATE
     Open3D::Open3D
     Open3D::3rdparty_jsoncpp
     Open3D::3rdparty_googletest
     Open3D::3rdparty_threads
 )
+
+if (TARGET Open3D::3rdparty_openmp)
+    target_link_libraries(tests PRIVATE
+        Open3D::3rdparty_openmp
+    )
+endif()
 
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)

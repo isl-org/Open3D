@@ -1,8 +1,8 @@
 # Windows build temp cmake file
 CMakeSettings.json
 
-# Docs tar file created by travis deploy
-.travis/*.tar.gz
+# Ccache tar files generated from Docker build
+.github/workflows/*.tar.gz
 
 # CMake configured files
 cpp/open3d/Open3D.h
@@ -31,6 +31,7 @@ _vimrc_local.vim
 .vs/
 .vscode/
 .clangd/
+.ccls-cache/
 
 # Build artifacts
 **/package-lock.json

@@ -29,9 +29,14 @@
 #include <unordered_map>
 
 #include "open3d/core/Device.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
+
+#ifdef BUILD_ISPC_MODULE
+#include "Indexer_ispc.h"
+#endif
 
 namespace open3d {
 namespace tests {
@@ -170,6 +175,103 @@ TEST_P(IndexerPermuteDevices, GetPointers) {
     EXPECT_EQ(indexer.GetOutputPtr(3), output_base_ptr + 3 * dtype_byte_size);
     EXPECT_EQ(indexer.GetOutputPtr(4), output_base_ptr + 4 * dtype_byte_size);
     EXPECT_EQ(indexer.GetOutputPtr(5), output_base_ptr + 5 * dtype_byte_size);
+}
+
+TEST_P(IndexerPermuteDevices, GetPointersVectorized) {
+    core::Device device = GetParam();
+
+    core::Tensor input0({3, 1, 1}, core::Float32, device);
+    core::Tensor input1({2, 1}, core::Float32, device);
+    core::Tensor output({3, 2, 1}, core::Float32, device);
+    core::Indexer indexer({input0, input1}, output);
+
+    char* input0_base_ptr = static_cast<char*>(input0.GetDataPtr());
+    char* input1_base_ptr = static_cast<char*>(input1.GetDataPtr());
+    char* output_base_ptr = static_cast<char*>(output.GetDataPtr());
+    int64_t dtype_byte_size = core::Float32.ByteSize();
+
+    constexpr int64_t size = 6;
+    void* input0_ptrs[size];
+    void* input1_ptrs[size];
+    void* output_ptrs[size];
+#ifdef BUILD_ISPC_MODULE
+    ispc::Indexer ispc_indexer = indexer.ToISPC();
+#endif
+
+    core::ParallelFor(
+            core::Device("CPU:0"), size,
+            [&](int64_t idx) {
+                input0_ptrs[idx] = indexer.GetInputPtr(0, idx);
+            },
+            OPEN3D_VECTORIZED(GetInputPointersKernel, &ispc_indexer, 0,
+                              input0_ptrs));
+
+    core::ParallelFor(
+            core::Device("CPU:0"), size,
+            [&](int64_t idx) {
+                input1_ptrs[idx] = indexer.GetInputPtr(1, idx);
+            },
+            OPEN3D_VECTORIZED(GetInputPointersKernel, &ispc_indexer, 1,
+                              input1_ptrs));
+
+    core::ParallelFor(
+            core::Device("CPU:0"), size,
+            [&](int64_t idx) { output_ptrs[idx] = indexer.GetOutputPtr(idx); },
+            OPEN3D_VECTORIZED(GetOutputPointersKernel_Zero, &ispc_indexer,
+                              output_ptrs));
+
+    void* expected_input0_ptrs[size] = {input0_base_ptr + 0 * dtype_byte_size,
+                                        input0_base_ptr + 0 * dtype_byte_size,
+                                        input0_base_ptr + 1 * dtype_byte_size,
+                                        input0_base_ptr + 1 * dtype_byte_size,
+                                        input0_base_ptr + 2 * dtype_byte_size,
+                                        input0_base_ptr + 2 * dtype_byte_size};
+
+    void* expected_input1_ptrs[size] = {input1_base_ptr + 0 * dtype_byte_size,
+                                        input1_base_ptr + 1 * dtype_byte_size,
+                                        input1_base_ptr + 0 * dtype_byte_size,
+                                        input1_base_ptr + 1 * dtype_byte_size,
+                                        input1_base_ptr + 0 * dtype_byte_size,
+                                        input1_base_ptr + 1 * dtype_byte_size};
+
+    void* expected_output_ptrs[size] = {output_base_ptr + 0 * dtype_byte_size,
+                                        output_base_ptr + 1 * dtype_byte_size,
+                                        output_base_ptr + 2 * dtype_byte_size,
+                                        output_base_ptr + 3 * dtype_byte_size,
+                                        output_base_ptr + 4 * dtype_byte_size,
+                                        output_base_ptr + 5 * dtype_byte_size};
+
+    for (int64_t i = 0; i < size; ++i) {
+        EXPECT_EQ(input0_ptrs[i], expected_input0_ptrs[i]);
+        EXPECT_EQ(input1_ptrs[i], expected_input1_ptrs[i]);
+        EXPECT_EQ(output_ptrs[i], expected_output_ptrs[i]);
+    }
+}
+
+TEST_P(IndexerPermuteDevices, IsContiguous) {
+    core::Device device = GetParam();
+
+    core::Tensor input0({3, 1, 1}, core::Float32, device);
+    core::Tensor input1({2, 1}, core::Float32, device);
+    core::Tensor input2_full({3, 4, 1}, core::Float32, device);
+    core::Tensor input2 = input2_full.Slice(1, 0, 4, 2);  // Shape {3, 2, 1}.
+    core::Tensor output({3, 2, 1}, core::Float32, device);
+    core::Indexer indexer({input0, input1, input2}, output);
+
+    EXPECT_FALSE(indexer.GetInput(0).IsContiguous());  // Broadcasted.
+    EXPECT_FALSE(indexer.GetInput(1).IsContiguous());  // Broadcasted.
+    EXPECT_FALSE(indexer.GetInput(2).IsContiguous());  // Sliced.
+    EXPECT_TRUE(indexer.GetOutput().IsContiguous());
+
+    EXPECT_TRUE(core::TensorRef(input0).IsContiguous());
+    EXPECT_TRUE(core::TensorRef(input1).IsContiguous());
+    EXPECT_FALSE(core::TensorRef(input2).IsContiguous());
+    EXPECT_TRUE(core::TensorRef(output).IsContiguous());
+
+    EXPECT_TRUE(input0.IsContiguous());
+    EXPECT_TRUE(input1.IsContiguous());
+    EXPECT_FALSE(input2.IsContiguous());
+    EXPECT_TRUE(output.IsContiguous());
 }
 
 }  // namespace tests

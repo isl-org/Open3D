@@ -42,6 +42,17 @@
             __FILE__, __LINE__, static_cast<const char*>(OPEN3D_FUNCTION), \
             tensor, __VA_ARGS__)
 
+/// Assert Tensor's dtype is among one of the expected dtypes. When an error
+/// occurs, the corresponding file name, line number and function name will be
+/// printed in the error message.
+///
+/// Example: check that the tensor has dtype Float32 or Float64
+/// core::AssertTensorDtypes(tensor, {core::Float32, core::Float64});
+#define AssertTensorDtypes(tensor, ...)                                    \
+    tensor_check::AssertTensorDtypes_(                                     \
+            __FILE__, __LINE__, static_cast<const char*>(OPEN3D_FUNCTION), \
+            tensor, __VA_ARGS__)
+
 /// Assert Tensor's device is the same as the expected device. When an error
 /// occurs, the corresponding file name, line number and function name will be
 /// printed in the error message.
@@ -53,10 +64,10 @@
             __FILE__, __LINE__, static_cast<const char*>(OPEN3D_FUNCTION), \
             tensor, __VA_ARGS__)
 
-/// Assert Tensor's shape is the same as the expected shape. When an error
-/// occurs, the corresponding file name, line number and function name will be
-/// printed in the error message. AssertTensorShape takes a shape (SizeVector)
-/// or dynamic shape (DynamicSizeVector).
+/// Assert Tensor's shape is the same as the expected shape. AssertTensorShape
+/// takes a shape (SizeVector) or dynamic shape (DynamicSizeVector). When an
+/// error occurs, the corresponding file name, line number and function name
+/// will be printed in the error message.
 ///
 /// Example: check that the tensor has shape {100, 3}
 /// core::AssertTensorShape(tensor, {100, 3});
@@ -77,6 +88,12 @@ void AssertTensorDtype_(const char* file,
                         const char* function,
                         const Tensor& tensor,
                         const Dtype& dtype);
+
+void AssertTensorDtypes_(const char* file,
+                         int line,
+                         const char* function,
+                         const Tensor& tensor,
+                         const std::vector<Dtype>& dtypes);
 
 void AssertTensorDevice_(const char* file,
                          int line,

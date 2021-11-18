@@ -121,6 +121,14 @@ void pybind_registration_classes(py::module &m) {
                            "float: The overlapping area (# of inlier "
                            "correspondences "
                            "/ # of points in target). Higher is better.")
+            .def_readwrite("save_loss_log", &RegistrationResult::save_loss_log_,
+                           "To store iteration-wise information in "
+                           "`loss_log_`, mark this as `True`.")
+            .def_readwrite("loss_log", &RegistrationResult::loss_log_,
+                           "tensor_map containing iteration-wise information. "
+                           "The tensor_map contains `index` (primary-key), "
+                           "`scale`, `iteration`, `inlier_rmse`, `fitness`, "
+                           "`transformation`, on CPU device.")
             .def("__repr__", [](const RegistrationResult &rr) {
                 return fmt::format(
                         "RegistrationResult[fitness_={:e}, "
@@ -282,9 +290,20 @@ static const std::unordered_map<std::string, std::string>
                 {"transformation",
                  "The 4x4 transformation matrix of type Float64 "
                  "to transform ``source`` to ``target``"},
+                {"voxel_size",
+                 "The input pointclouds will be down-sampled to this "
+                 "`voxel_size` scale. If `voxel_size` < 0, original scale will "
+                 "be used. However it is highly recommended to down-sample the "
+                 "point-cloud for performance. By default origianl scale of "
+                 "the point-cloud will be used."},
                 {"voxel_sizes",
                  "o3d.utility.DoubleVector of voxel sizes in strictly "
-                 "decreasing order, for multi-scale icp."}};
+                 "decreasing order, for multi-scale icp."},
+                {"save_loss_log",
+                 "When `True`, it saves the iteration-wise values of "
+                 "`fitness`, `inlier_rmse`, `transformaton`, `scale`, "
+                 "`iteration` in `loss_log_` in `regsitration_result`. "
+                 "Default: False."}};
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
@@ -296,36 +315,35 @@ void pybind_registration_methods(py::module &m) {
     docstring::FunctionDocInject(m, "evaluate_registration",
                                  map_shared_argument_docstrings);
 
-    m.def("registration_icp", &RegistrationICP,
-          py::call_guard<py::gil_scoped_release>(),
+    m.def("icp", &ICP, py::call_guard<py::gil_scoped_release>(),
           "Function for ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init_source_to_target"_a =
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint(),
-          "criteria"_a = ICPConvergenceCriteria());
-    docstring::FunctionDocInject(m, "registration_icp",
-                                 map_shared_argument_docstrings);
+          "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
+          "save_loss_log"_a = false);
+    docstring::FunctionDocInject(m, "icp", map_shared_argument_docstrings);
 
-    m.def("registration_multi_scale_icp", &RegistrationMultiScaleICP,
+    m.def("multi_scale_icp", &MultiScaleICP,
           py::call_guard<py::gil_scoped_release>(),
           "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
           "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
           "init_source_to_target"_a =
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-          "estimation_method"_a = TransformationEstimationPointToPoint());
-    docstring::FunctionDocInject(m, "registration_multi_scale_icp",
+          "estimation_method"_a = TransformationEstimationPointToPoint(),
+          "save_loss_log"_a = false);
+    docstring::FunctionDocInject(m, "multi_scale_icp",
                                  map_shared_argument_docstrings);
 
-    m.def("get_information_matrix_from_point_clouds",
-          &GetInformationMatrixFromPointClouds,
+    m.def("get_information_matrix", &GetInformationMatrix,
           py::call_guard<py::gil_scoped_release>(),
           "Function for computing information matrix from transformation "
           "matrix. Information matrix is tensor of shape {6, 6}, dtype Float64 "
           "on CPU device.",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
           "transformation"_a);
-    docstring::FunctionDocInject(m, "get_information_matrix_from_point_clouds",
+    docstring::FunctionDocInject(m, "get_information_matrix",
                                  map_shared_argument_docstrings);
 }
 

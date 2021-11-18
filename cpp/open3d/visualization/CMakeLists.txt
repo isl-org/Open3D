@@ -1,4 +1,4 @@
-add_library(visualization OBJECT)
+open3d_ispc_add_library(visualization OBJECT)
 
 target_sources(visualization PRIVATE
     shader/GeometryRenderer.cpp
@@ -26,7 +26,6 @@ target_sources(visualization PRIVATE
 )
 
 target_sources(visualization PRIVATE
-    visualizer/MessageProcessor.cpp
     visualizer/RenderOption.cpp
     visualizer/RenderOptionWithEditing.cpp
     visualizer/ViewControl.cpp
@@ -41,6 +40,10 @@ target_sources(visualization PRIVATE
     visualizer/VisualizerWithEditing.cpp
     visualizer/VisualizerWithKeyCallback.cpp
     visualizer/VisualizerWithVertexSelection.cpp
+)
+
+target_sources(visualization PRIVATE
+    rendering/Material.cpp  # For RPC serialization
 )
 
 if (BUILD_GUI)
@@ -81,6 +84,7 @@ if (BUILD_GUI)
     )
 
     target_sources(visualization PRIVATE
+        visualizer/MessageProcessor.cpp
         visualizer/GuiSettingsModel.cpp
         visualizer/GuiSettingsView.cpp
         visualizer/GuiVisualizer.cpp

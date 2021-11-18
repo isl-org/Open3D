@@ -72,6 +72,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
     if (inp_neighbors_index.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
         // pass to cuda function
+        CALL(int32_t, uint8_t, InvertNeighborsListCUDA)
+        CALL(int32_t, int8_t, InvertNeighborsListCUDA)
+        CALL(int32_t, int16_t, InvertNeighborsListCUDA)
         CALL(int32_t, int32_t, InvertNeighborsListCUDA)
         CALL(int32_t, int64_t, InvertNeighborsListCUDA)
         CALL(int32_t, float, InvertNeighborsListCUDA)
@@ -81,6 +84,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
                     "InvertNeighborsList was not compiled with CUDA support")
 #endif
     } else {
+        CALL(int32_t, uint8_t, InvertNeighborsListCPU)
+        CALL(int32_t, int8_t, InvertNeighborsListCPU)
+        CALL(int32_t, int16_t, InvertNeighborsListCPU)
         CALL(int32_t, int32_t, InvertNeighborsListCPU)
         CALL(int32_t, int64_t, InvertNeighborsListCPU)
         CALL(int32_t, float, InvertNeighborsListCPU)
