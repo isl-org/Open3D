@@ -648,9 +648,11 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                 //     TPointCloudBuffersBuilder::ConstructBuffers
                 float* uv_array = static_cast<float*>(malloc(uv_array_size));
                 memset(uv_array, 0, uv_array_size);
-                const float* src = static_cast<const float*>(
+                auto vis_scalars =
                         point_cloud.GetPointAttr("__visualization_scalar")
-                                .GetDataPtr());
+                                .Contiguous();
+                const float* src =
+                        static_cast<const float*>(vis_scalars.GetDataPtr());
                 const size_t n = 2 * n_vertices;
                 for (size_t i = 0; i < n; i += 2) {
                     uv_array[i] = *src++;

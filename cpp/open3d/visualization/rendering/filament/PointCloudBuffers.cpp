@@ -457,8 +457,9 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     } else if (geometry_.HasPointAttr("__visualization_scalar")) {
         // Update in FilamentScene::UpdateGeometry(), too.
         memset(uv_array, 0, uv_array_size);
-        const float* src = static_cast<const float*>(
-                geometry_.GetPointAttr("__visualization_scalar").GetDataPtr());
+        auto vis_scalars =
+                geometry_.GetPointAttr("__visualization_scalar").Contiguous();
+        const float* src = static_cast<const float*>(vis_scalars.GetDataPtr());
         const size_t n = 2 * n_vertices;
         for (size_t i = 0; i < n; i += 2) {
             uv_array[i] = *src++;
