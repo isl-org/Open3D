@@ -28,6 +28,10 @@
 
 #include <fmt/printf.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 namespace open3d {
 namespace utility {
 
@@ -74,6 +78,31 @@ void ProgressBar::SetCurrentCount(size_t n) {
             fflush(stdout);
         }
     }
+}
+
+size_t ProgressBar::GetCurrentCount() const { return current_count_; }
+
+OMPProgressBar::OMPProgressBar(size_t expected_count,
+                               const std::string &progress_info,
+                               bool active)
+    : ProgressBar(expected_count, progress_info, active) {}
+
+ProgressBar &OMPProgressBar::operator++() {
+    // Ref: https://stackoverflow.com/a/44555438
+#ifdef _OPENMP
+    int number_of_threads = omp_get_num_threads();
+    int thread_id = omp_get_thread_num();
+    if (number_of_threads > 1) {
+        if (thread_id == 0) {
+            SetCurrentCount(current_count_ + number_of_threads);
+        }
+    } else {
+        SetCurrentCount(current_count_ + 1);
+    }
+#else
+    SetCurrentCount(current_count_ + 1);
+#endif
+    return *this;
 }
 
 }  // namespace utility
